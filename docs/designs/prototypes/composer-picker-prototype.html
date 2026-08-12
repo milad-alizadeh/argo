@@ -1,0 +1,1518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PROTOTYPE — the composer's / picker and + menu</title>
+<!--
+  THROWAWAY PROTOTYPE for #590, under #535. Three variants of the `/` surface and of the `+`
+  menu, switchable via ?variant=A|B|C (or ←/→), with every state in the ticket reachable via
+  ?state=<key> (or ↑/↓, or the picker in the floating bar). `&bare=1` hides the switcher.
+
+  THE COMPOSER ITSELF IS FROZEN. It is variant B of #536 — the floating glass vessel, its
+  footer, its measurements — settled in docs/designs/cockpit-session-composer.md and rendered
+  in docs/designs/composer/. Nothing below is allowed to redraw it; the variants disagree only
+  about the surface that opens over it. The shell and roster come from #502 the same way.
+
+  Every colour, radius, spacing step and type role is transcribed from
+  apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ — GraphitePalette.swift,
+  ArgoGeometry.swift, ArgoLayout.swift, ArgoTypography.swift. Nothing here is invented.
+  Type is San Francisco throughout — SF Pro and SF Mono. The contract has no serif.
+
+  THE CATALOG IS REAL, which is the whole point of this study:
+    · 39 project skills — read from .claude/skills/*/SKILL.md in this repo, name and
+      description verbatim from each frontmatter.
+    · 3 user-global skills — from ~/.claude/skills.
+    · 16 plugin skills — the bundled set this machine's CLI actually advertises.
+    · 24 built-in commands — name, description AND argumentHint extracted from the installed
+      claude 2.1.228 binary, so the strings are the CLI's own words rather than a guess.
+    · the file rows are real paths from `git ls-files`.
+  Nothing here is padded to make a list look full: it is past anyone's recall because the real
+  thing is.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift — ground */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --glass-tint: rgba(255,255,255,.06);
+    --hover:      rgba(255,255,255,.045);
+    --selected:   rgba(255,255,255,.058);
+    --marked:     rgba(255,255,255,.07);
+    --scrim:      rgba(11,12,14,.90);
+
+    /* text */
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #868D94;
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    /* edges */
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+    --glass-rim: rgba(255,255,255,.30);
+
+    /* accent + state */
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    --running:   #46D3A8;
+    --idle:      #868E96;
+    --attention: #E8B24A;
+    --failure:   #F2555C;
+
+    /* ArgoGeometry.swift — radii */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+    /* ArgoGeometry.swift — spacing */
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px;
+
+    /* ArgoLayout.swift */
+    --sidebar-w: 320px;
+    --deck-header-h: 56px;
+    --deck-tab-h: 40px;
+    --dot: 6px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0d0e10;
+    color: var(--text-1);
+    font: 13px/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* ---------- window ---------- */
+  .window {
+    position: fixed; inset: var(--s-section) var(--s-section) 78px;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--subtle);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    background: var(--base);
+    min-width: 980px;
+  }
+  .panes { display: grid; grid-template-columns: var(--sidebar-w) 1fr; height: 100%; }
+
+  /* ---------- titlebar ---------- */
+  .titlebar {
+    position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 20;
+    display: grid; grid-template-columns: var(--sidebar-w) 1fr; pointer-events: none;
+  }
+  .titlebar > * { pointer-events: auto; }
+  .tb-lead { display: flex; align-items: center; padding-left: var(--s-base); }
+  .tb-trail { display: flex; align-items: center; gap: var(--s-comfortable);
+              padding: 0 var(--s-comfortable) 0 var(--s-loose); }
+  .lights { display: flex; gap: var(--s-base); padding: 0 var(--s-base) 0 var(--s-tight); }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .bare {
+    border: none; background: none; cursor: pointer; color: var(--text-3);
+    width: 26px; height: 26px; border-radius: var(--r-control);
+    display: grid; place-items: center; flex: none;
+  }
+  .bare:hover { background: rgba(255,255,255,.07); color: var(--text-1); }
+  .bare svg { width: 15px; height: 15px; display: block; }
+  .vessel {
+    display: inline-flex; align-items: center;
+    background: var(--glass-tint); border: 1px solid var(--hairline);
+    border-radius: 999px; padding: 3px; height: 30px;
+  }
+  .vessel > button {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    border: none; background: none; cursor: pointer; color: var(--text-2);
+    padding: 0 10px; height: 24px; border-radius: 999px; font: 13px var(--sans);
+  }
+  .vessel .project { font-weight: 500; color: var(--text-1); }
+  .vessel .checkout { font-family: var(--mono); font-size: 12px; }
+  .vessel .divider { width: 1px; height: 16px; background: var(--subtle); flex: none; }
+  .vessel svg { width: 13px; height: 13px; flex: none; }
+  .vessel .chev { width: 9px; height: 9px; opacity: .65; }
+  .rooms { display: inline-flex; gap: 2px; background: var(--glass-tint);
+           border: 1px solid var(--hairline); border-radius: 999px; padding: 3px; }
+  .rooms button {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    border: none; background: none; cursor: pointer; color: var(--text-3);
+    font: 500 12px var(--sans); padding: 0 var(--s-comfortable); height: 24px; border-radius: 999px;
+  }
+  .rooms button svg { width: 13px; height: 13px; flex: none; }
+  .rooms button.on { background: var(--overlay); color: var(--text-1); box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+
+  /* ---------- sidebar / roster (settled by #502 — context, not under test) ---------- */
+  .sidebar {
+    display: flex; flex-direction: column; border-right: 1px solid var(--hairline);
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    backdrop-filter: blur(34px) saturate(140%);
+  }
+  .sidebar-head { display: flex; align-items: center; gap: 2px;
+                  height: 46px; flex: none; padding: 0 var(--s-snug) 0 var(--s-comfortable); }
+  .roster { flex: 1; overflow-y: auto; padding: 0 var(--s-base) var(--s-base); }
+  .sidebar-foot { padding: var(--s-base) var(--s-comfortable) var(--s-comfortable);
+                  border-top: 1px solid var(--hairline); color: var(--text-3); font-size: 12px; }
+  .row { position: relative; border-radius: var(--r-control);
+         padding: 7px var(--s-base); margin-bottom: 1px; cursor: default; }
+  .row:hover { background: var(--hover); }
+  .row.sel { background: var(--selected); }
+  .row.ext { opacity: .58; }
+  .dot { width: var(--dot); height: var(--dot); border-radius: 50%; flex: none; }
+  .dot.running   { background: var(--running); box-shadow: 0 0 6px rgba(70,211,168,.5); }
+  .dot.attn      { background: var(--attention); box-shadow: 0 0 6px rgba(232,178,74,.45); }
+  .dot.idle      { background: var(--idle); }
+  .dot.hollow    { background: transparent; box-shadow: inset 0 0 0 1px var(--text-off); }
+  .title { font-size: 13px; font-weight: 500; color: var(--text-1); letter-spacing: -.05px;
+           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta { font-family: var(--mono); font-size: 11px; color: var(--text-3);
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .time { font-family: var(--mono); font-size: 11px; color: var(--text-3); flex: none; }
+  .badge { flex: none; font-size: 10px; font-weight: 600; letter-spacing: .5px;
+           text-transform: uppercase; color: var(--attention); }
+
+  /* ---------- deck ---------- */
+  .deck { position: relative; display: flex; flex-direction: column;
+          background: var(--base); min-width: 0; padding-top: 46px; overflow: hidden; }
+  .band { position: relative;
+          height: var(--deck-header-h); flex: none; display: flex; align-items: center;
+          gap: var(--s-comfortable); padding: 0 var(--s-section); }
+  .tabslot { height: var(--deck-tab-h); flex: none; display: flex; align-items: flex-end;
+             gap: var(--s-loose); padding: 0 var(--s-section); border-bottom: 1px solid var(--hairline); }
+  .tab { font-size: 12px; color: var(--text-3); padding-bottom: var(--s-base);
+         border-bottom: 1.5px solid transparent; margin-bottom: -1px; }
+  .tab.on { color: var(--text-1); font-weight: 500; border-bottom-color: var(--accent); }
+  .h-title { font-size: 19px; font-weight: 600; letter-spacing: -.35px; color: var(--text-1);
+             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fact { font-size: 11px; color: var(--text-2); white-space: nowrap; }
+  .fact.mono { font-family: var(--mono); font-size: 11px; }
+  .fact.dim { color: var(--text-3); }
+  .fact.warn { color: var(--attention); }
+  .fact.link { color: var(--accent); }
+  .factline { display: flex; align-items: center; gap: var(--s-snug); min-width: 0; overflow: hidden; }
+  .dotsep { color: var(--text-off); font-size: 11px; }
+  svg.g { width: 13px; height: 13px; flex: none; display: inline-block; vertical-align: -2px; }
+  .gitline { display: inline-flex; align-items: center; gap: var(--s-tight); }
+  .gitline .g { width: 12px; height: 12px; flex: none; opacity: .8; }
+
+  /* ---------- feed ---------- */
+  .feed { flex: 1; overflow-y: auto; padding: var(--s-loose) var(--s-section) var(--s-loose); }
+  .fr { display: flex; gap: var(--s-comfortable); padding: var(--s-snug) 0; align-items: baseline; }
+  .fr .k { width: 52px; flex: none; font-size: 11px; color: var(--text-3); text-align: right; }
+  .fr .v { font-size: 12px; color: var(--text-2); min-width: 0; }
+  .fr .v code { font-family: var(--mono); font-size: 11px; color: var(--text-1); }
+  .fr .add { color: #A9D18E; font-family: var(--mono); font-size: 11px; }
+  .fr .rem { color: #D98C93; font-family: var(--mono); font-size: 11px; }
+  .fr.user .k { color: var(--accent); font-weight: 600; }
+  .fr.user .v { color: var(--text-1); white-space: pre-wrap; }
+  .fr.user { padding-bottom: var(--s-base); }
+  .fr.pending .k { color: var(--attention); }
+  .fr .v.dim { color: var(--text-3); }
+  @keyframes accepted { from { background: rgba(62,155,255,.16); } to { background: transparent; } }
+  .fr.fresh { animation: accepted 1400ms ease-out both; border-radius: var(--r-control);
+              margin: 0 calc(var(--s-base) * -1); padding-left: var(--s-base); padding-right: var(--s-base); }
+  .working { display: inline-flex; align-items: center; gap: var(--s-snug); color: var(--text-3); font-size: 12px; }
+  .working i { width: 5px; height: 5px; border-radius: 50%; background: var(--running); display: block;
+               animation: pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: .35 } 50% { opacity: 1 } }
+  /* The `@` mention is the user's own text, so it renders in their bubble as what they typed —
+     tinted only enough to say Argo resolved it to a real file. */
+  .fr.user .v .mention { color: var(--accent-bright); font-family: var(--mono); font-size: 11px; }
+  /* "Skill Loaded" is a transcript record, not an Argo caption: the marker is a feed row with
+     an evidence affordance, and a built-in gets the same row with nothing behind it. */
+  .loaded { display: inline-flex; align-items: center; gap: var(--s-snug);
+            font-size: 11px; color: var(--text-2); background: var(--glass-tint);
+            border: 1px solid var(--hairline); border-radius: var(--r-marker);
+            padding: 2px var(--s-snug); cursor: pointer; }
+  .loaded b { font-weight: 600; color: var(--text-1); }
+  .loaded.flat { cursor: default; color: var(--text-3); }
+  .loaded .g { width: 11px; height: 11px; }
+
+  /* ---------- composer: FROZEN (variant B of #536) ---------- */
+  .ta {
+    display: block; width: 100%; resize: none; border: none; outline: none; background: none;
+    color: var(--text-1); font: 13px/1.5 var(--sans); padding: 0;
+    max-height: 132px; overflow-y: auto;
+  }
+  .ta::placeholder { color: var(--text-off); }
+  /* The argument affordance is ghost text after the inserted name, in the field itself — and it
+     is the CLI's own argumentHint string, so it only appears where the source has one. A skill
+     has no such field and gets nothing invented in its place. */
+  .ghostwrap { position: relative; display: block; }
+  .ghostwrap .ghost {
+    position: absolute; inset: 0; pointer-events: none;
+    font: 13px/1.5 var(--sans); color: var(--text-off); white-space: pre-wrap;
+  }
+  .ghostwrap .ghost .inv { visibility: hidden; }
+  .send {
+    flex: none; border: none; cursor: pointer; display: inline-flex; align-items: center;
+    justify-content: center; border-radius: var(--r-control);
+    background: var(--accent); color: #fff; font: 600 12px var(--sans);
+  }
+  .send:hover { filter: brightness(1.1); }
+  .send:disabled { background: var(--glass-tint); color: var(--text-off); cursor: default; filter: none; }
+  .send svg { width: 14px; height: 14px; }
+  .send.round { width: 26px; height: 26px; border-radius: 50%; padding: 0; }
+  .send.stop { background: var(--attention); color: var(--on-accent); }
+  .clip {
+    flex: none; border: none; background: none; cursor: pointer; color: var(--text-3);
+    width: 26px; height: 26px; border-radius: var(--r-control); display: grid; place-items: center;
+  }
+  .clip:hover { background: rgba(255,255,255,.07); color: var(--text-1); }
+  .clip.on { background: rgba(255,255,255,.10); color: var(--text-1); }
+  .clip svg { width: 15px; height: 15px; display: block; }
+  .kbd { font: 10px var(--mono); color: var(--text-3); background: rgba(255,255,255,.06);
+         border: 1px solid var(--hairline); border-radius: var(--r-marker); padding: 0 4px; }
+
+  .tray { display: flex; flex-wrap: wrap; gap: var(--s-snug); }
+  .att {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    background: var(--raised); border: 1px solid var(--hairline);
+    border-radius: var(--r-control); padding: 3px 3px 3px var(--s-snug); max-width: 240px;
+  }
+  .att .ico { width: 20px; height: 20px; flex: none; display: grid; place-items: center; color: var(--text-3); }
+  .att .ico svg { width: 14px; height: 14px; }
+  .att .nm { font-size: 11px; color: var(--text-1); overflow: hidden;
+             text-overflow: ellipsis; white-space: nowrap; }
+  .att .sz { font: 10px var(--mono); color: var(--text-3); flex: none; }
+
+  .seam {
+    display: flex; align-items: center; gap: var(--s-snug);
+    font-size: 11px; color: var(--text-3); padding: var(--s-snug) 0;
+  }
+  .seam.warn { color: var(--attention); }
+  .seam .grow { flex: 1; }
+  .seam svg.g { width: 12px; height: 12px; }
+
+  .queued {
+    display: flex; align-items: flex-start; gap: var(--s-snug);
+    background: rgba(255,255,255,.045); border: 1px solid var(--hairline);
+    border-left: 2px solid var(--accent);
+    border-radius: var(--r-control); padding: var(--s-snug) var(--s-base);
+  }
+  .queued .qt { font-size: 12px; color: var(--text-2); min-width: 0; overflow: hidden;
+                text-overflow: ellipsis; white-space: nowrap; }
+  .queued .ql { font-size: 10px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase;
+                color: var(--accent); flex: none; padding-top: 1px; }
+
+  .cB-wrap { position: absolute; left: var(--s-section); right: var(--s-section); bottom: var(--s-loose); z-index: 12; }
+  .cB {
+    position: relative;
+    background: var(--glass-tint);
+    backdrop-filter: blur(42px) saturate(180%);
+    border: 1px solid var(--glass-rim);
+    border-radius: var(--r-popover);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.16) inset,
+      0 0 0 1px rgba(0,0,0,.35),
+      0 26px 64px rgba(0,0,0,.55);
+    padding: var(--s-comfortable) var(--s-base) var(--s-base) var(--s-loose);
+  }
+  .cB::before {
+    content: ''; position: absolute; inset: -10px; z-index: -1; border-radius: 28px;
+    background: radial-gradient(120% 140% at 50% 100%, rgba(255,255,255,.045), transparent 70%);
+    pointer-events: none;
+  }
+  .cB .fieldrow { display: flex; align-items: flex-end; gap: var(--s-base); }
+  .cB .footrow { position: relative; display: flex; align-items: center; gap: var(--s-base); padding-top: var(--s-base); }
+  .cB .tray { padding-bottom: var(--s-base); }
+  .cB .queued { margin-bottom: var(--s-base); background: rgba(255,255,255,.07); }
+  .cB-wrap .seam { padding: 0 var(--s-tight) var(--s-snug); }
+  .deck.floating .feed { padding-bottom: 128px;
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 108px), transparent calc(100% - 28px)); }
+
+  /* run settings — frozen by #536, here so the footer is the real footer */
+  .runfacts {
+    display: inline-flex; align-items: baseline; gap: var(--s-snug);
+    border: none; background: none; cursor: pointer; padding: 2px var(--s-snug);
+    border-radius: var(--r-marker); font: 11px var(--mono); color: var(--text-3);
+  }
+  .runfacts:hover { color: var(--text-1); background: rgba(255,255,255,.05); }
+  .runfacts .sep { color: var(--text-off); }
+  .runfacts b { font-weight: 400; color: var(--text-2); }
+  .seg {
+    display: inline-flex; gap: 2px; background: rgba(255,255,255,.05);
+    border: 1px solid var(--hairline); border-radius: 7px; padding: 2px;
+  }
+  .seg button {
+    border: none; background: none; cursor: pointer; color: var(--text-2);
+    font: 500 11px var(--sans); padding: 0 10px; height: 20px; border-radius: 5px;
+  }
+  .seg button.on {
+    background: rgba(255,255,255,.16); color: var(--text-1);
+    box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 0 0 .5px rgba(255,255,255,.10);
+  }
+  .seg button.on.ask  { color: var(--attention); }
+  .seg button.on.plan { color: var(--accent-bright); }
+
+  /* ============================================================================
+     THE PICKER — the thing under evaluation.
+     Shared row vocabulary first; the three variants differ in the surface that holds it,
+     how origin is stated, and how many rows are in view at rest.
+     ============================================================================ */
+
+  /* One row = one invocable thing. `nm` is mono because it is text the user is about to have
+     typed for them; `ds` is the frontmatter's own words, clamped (see the doc: a real
+     `description:` is trigger prose, not a caption). `hint` is the CLI's own argumentHint. */
+  /* A fixed 26pt row, so a list's height is a whole number of rows rather than a row cut in
+     half at the bottom edge. It is the to-do list's own rhythm, which the user named as the
+     reference — and it survives carrying a description because the description is one line
+     beside the name, not under it. */
+  .pk-row {
+    display: flex; align-items: center; gap: var(--s-base); width: 100%; text-align: left;
+    height: 26px; padding: 0 var(--s-base); border-radius: var(--r-control);
+    border: none; background: none; cursor: pointer; color: var(--text-1);
+    font: 13px var(--sans);
+  }
+  .pk-row .nm { font: 12px var(--mono); color: var(--text-1); flex: none; white-space: nowrap; }
+  .pk-row .hint { font: 11px var(--mono); color: var(--text-off); flex: none; white-space: nowrap; }
+  .pk-row .ds {
+    font-size: 11px; color: var(--text-3); min-width: 0; flex: 1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pk-row .ds.none { color: var(--text-off); font-style: italic; }
+  .pk-row .org {
+    flex: none; font: 10px var(--sans); font-weight: 600; letter-spacing: .4px;
+    text-transform: uppercase; color: var(--text-off);
+  }
+  .pk-row:hover { background: var(--hover); }
+  /* the keyboard cursor. A hover highlight and a selection highlight cannot be the same ink,
+     or the list has two cursors the moment the pointer crosses it. */
+  .pk-row.cur { background: rgba(62,155,255,.18); box-shadow: inset 0 0 0 1px rgba(62,155,255,.35); }
+  .pk-row.cur .ds { color: var(--text-2); }
+  .pk-row mark { background: none; color: var(--accent-bright); font-weight: 600; }
+  .pk-row .nm mark { color: var(--accent-bright); }
+
+  .pk-sec {
+    font-size: 10px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--text-3); padding: var(--s-snug) var(--s-base) var(--s-tight);
+    position: sticky; top: 0; z-index: 2;
+    background: linear-gradient(180deg, rgba(46,49,54,.96), rgba(46,49,54,.86));
+    backdrop-filter: blur(12px);
+    display: flex; align-items: baseline; gap: var(--s-snug);
+  }
+  .pk-sec .n { color: var(--text-off); font-weight: 400; letter-spacing: 0;
+               text-transform: none; font-family: var(--mono); font-size: 10px; }
+  .pk-list { overflow-y: auto; overscroll-behavior: contain; }
+  .pk-empty { padding: var(--s-base); font-size: 12px; color: var(--text-3); }
+  .pk-empty b { color: var(--text-2); }
+  /* the two enumeration sources arrive separately, so the list says which half it is waiting
+     on rather than holding the whole surface back for the slower one */
+  .pk-wait { display: flex; align-items: center; gap: var(--s-snug);
+             padding: var(--s-snug) var(--s-base); font-size: 11px; color: var(--text-3); }
+  .pk-wait i { width: 5px; height: 5px; border-radius: 50%; background: var(--text-3); display: block;
+               animation: pulse 1.1s ease-in-out infinite; }
+  .pk-fail { display: flex; align-items: flex-start; gap: var(--s-snug);
+             padding: var(--s-snug) var(--s-base); font-size: 11px; color: var(--attention); }
+  .pk-fail .g { margin-top: 2px; }
+  /* the footer states the keys, once, on the surface that owns them */
+  .pk-foot {
+    display: flex; align-items: center; gap: var(--s-comfortable);
+    border-top: 1px solid var(--hairline); padding: var(--s-snug) var(--s-base);
+    font-size: 10px; color: var(--text-off);
+  }
+  .pk-foot .grow { flex: 1; }
+  .pk-foot .kbd { font-size: 9px; }
+  .pk-shadow { font: 10px var(--sans); color: var(--attention); flex: none; }
+
+  /* ---- VARIANT A — a popover above the vessel, origin as section headers ----
+     The user's own starting point: "a popover as we type /, similar style to the to-do list
+     but scrollable". It is the same material as the run-settings popover already on this
+     footer, anchored to the vessel's leading edge and capped at the vessel's own width. */
+  /* Full vessel width, not a narrow menu: the description is the reason the picker exists, and
+     at 560px two thirds of every real description is an ellipsis. */
+  .pkA {
+    position: absolute; left: 0; bottom: calc(100% + var(--s-base)); z-index: 30;
+    width: 100%;
+    background: rgba(52,55,61,.78); backdrop-filter: blur(44px) saturate(180%);
+    border: 1px solid var(--glass-rim); border-radius: var(--r-popover);
+    box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 24px 60px rgba(0,0,0,.6);
+    padding: var(--s-tight) var(--s-tight) 0;
+    display: flex; flex-direction: column;
+  }
+  /* ten rows and a section header at rest, then it scrolls: 10 × 26 + 25. Deeper than that and
+     the popover is a window; shallower and no second origin is ever in view. */
+  .pkA .pk-list { max-height: 285px; }
+  .pkA .pk-foot { margin: 0 calc(var(--s-tight) * -1); }
+
+  /* the `+` menu, variant A: three destinations, not a drawer of everything */
+  /* It rises above the whole vessel, not off the footer: a menu that overlaps the field covers
+     the draft it is about to add to. */
+  .plusA {
+    position: absolute; left: var(--s-loose); bottom: calc(100% + var(--s-base)); z-index: 31; width: 268px;
+    background: rgba(52,55,61,.80); backdrop-filter: blur(44px) saturate(180%);
+    border: 1px solid var(--glass-rim); border-radius: var(--r-popover);
+    box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 20px 48px rgba(0,0,0,.6);
+    padding: var(--s-tight);
+  }
+  .plusA button {
+    display: flex; align-items: center; gap: var(--s-base); width: 100%; text-align: left;
+    border: none; background: none; cursor: pointer; color: var(--text-1);
+    font: 13px var(--sans); padding: var(--s-snug) var(--s-base); border-radius: var(--r-control);
+  }
+  .plusA button:hover { background: var(--hover); }
+  .plusA button .g { color: var(--text-3); }
+  .plusA button .k2 { font: 11px var(--mono); color: var(--text-off); }
+  .plusA button .grow { flex: 1; }
+
+  /* ---- VARIANT B — the vessel grows the list inside itself, origin as a row badge ----
+     No second surface at all: the glass gets taller and the rows live inside its own rim,
+     above the field, separated by one hairline. One flat relevance-ordered list, so origin
+     has to travel on the row. */
+  .pkB { margin: 0 calc(var(--s-base) * -1) var(--s-base) calc(var(--s-base) * -1);
+         border-bottom: 1px solid var(--hairline); padding-bottom: var(--s-tight); }
+  /* six rows exactly (6 × 26): the vessel has to stay a vessel, so the list stops on a whole
+     row rather than clipping one against the field below it */
+  .pkB .pk-list { max-height: 156px; padding: 0 var(--s-base); }
+  .pkB .pk-sec { background: none; backdrop-filter: none; padding-left: var(--s-base); }
+  .pkB .pk-foot { border: none; padding: var(--s-tight) var(--s-loose) 0; }
+  .pkB .pk-empty, .pkB .pk-wait, .pkB .pk-fail { padding-left: var(--s-loose); }
+
+  /* ---- VARIANT C — a command palette over the deck, three tabs ----
+     Deliberately not attached to the composer: a wide surface with room for two lines per row
+     and for a Files tree, reached identically by `/`, `@` and `+`. */
+  .pkC-scrim { position: absolute; inset: 0; z-index: 40; background: rgba(11,12,14,.42); }
+  .pkC {
+    position: absolute; z-index: 41; left: 50%; top: 96px; transform: translateX(-50%);
+    width: 640px; max-width: calc(100% - 96px);
+    background: rgba(52,55,61,.82); backdrop-filter: blur(48px) saturate(180%);
+    border: 1px solid var(--glass-rim); border-radius: var(--r-popover);
+    box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 34px 80px rgba(0,0,0,.66);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  /* the palette carries its own query field — it is not the composer's caret any more, which
+     is the trade: a bigger surface at the cost of the draft being somewhere else */
+  .pkC-q { display: flex; align-items: center; gap: var(--s-base);
+           padding: var(--s-comfortable) var(--s-loose); border-bottom: 1px solid var(--hairline); }
+  .pkC-q .qi { flex: 1; font: 15px var(--sans); color: var(--text-1); background: none;
+               border: none; outline: none; }
+  .pkC-q .qi::placeholder { color: var(--text-off); }
+  .pkC-tabs { display: flex; gap: var(--s-tight); padding: var(--s-base) var(--s-loose) 0; }
+  .pkC-tabs button {
+    border: none; background: none; cursor: pointer; color: var(--text-3);
+    font: 500 12px var(--sans); padding: var(--s-tight) var(--s-base);
+    border-radius: var(--r-control);
+  }
+  .pkC-tabs button.on { background: rgba(255,255,255,.10); color: var(--text-1); }
+  .pkC-tabs button .n { color: var(--text-off); font-weight: 400; }
+  .pkC .pk-list { max-height: 384px; padding: var(--s-base) var(--s-base) 0; }
+  /* two lines per row: at 640px the first sentence of a real description fits, which is the
+     thing variants A and B have to clamp */
+  .pkC .pk-row { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--s-base);
+                 height: auto; padding: var(--s-snug) var(--s-base); align-items: baseline; }
+  .pkC .pk-row .nm { grid-column: 1; font-size: 13px; }
+  .pkC .pk-row .org { grid-column: 2; grid-row: 1; }
+  .pkC .pk-row .hint { grid-column: 1; justify-self: start; }
+  /* two lines of description, clamped hard — the point of the wider surface. It needs
+     overflow:hidden as well as the clamp, or a three-sentence description overruns the row
+     below it instead of ending in an ellipsis. */
+  .pkC .pk-row .ds { grid-column: 1 / -1; white-space: normal; overflow: hidden;
+                     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+                     line-height: 1.4; }
+  .pkC .pk-row .nmline { grid-column: 1; display: flex; align-items: baseline; gap: var(--s-snug); }
+  .pkC .pk-foot { padding: var(--s-snug) var(--s-loose); }
+
+  /* file rows — the same row, with the path where the description goes. The name leads and the
+     directory follows dimmed, because a leading path is a column of identical prefixes. */
+  .pk-row .path { font: 11px var(--mono); color: var(--text-3); min-width: 0; flex: 1;
+                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl;
+                  text-align: left; }
+
+  /* the read-only / orphaned replacement for the composer (frozen by #536) */
+  .noinput {
+    flex: none; border-top: 1px solid var(--hairline); background: var(--sunken);
+    padding: var(--s-comfortable) var(--s-section);
+    display: flex; align-items: center; gap: var(--s-base);
+    font-size: 12px; color: var(--text-3);
+  }
+  .noinput .grow { flex: 1; }
+  .noinput b { color: var(--text-2); font-weight: 600; }
+  .noinput button {
+    border: 1px solid var(--subtle); background: var(--glass-tint); color: var(--text-2);
+    font: 500 11px var(--sans); padding: 4px var(--s-base); border-radius: var(--r-control); cursor: pointer;
+  }
+
+  /* Permission (frozen by #536) — it takes the composer's whole slot, which is why a picker
+     cannot be open at the same time */
+  .permB { border-color: rgba(232,178,74,.5); }
+  .permB-body { padding: var(--s-tight) var(--s-tight) 0; }
+  .perm-head { display: flex; align-items: center; gap: var(--s-snug); }
+  .perm-head .lbl { font-size: 10px; font-weight: 600; letter-spacing: .5px;
+                    text-transform: uppercase; color: var(--attention); }
+  .perm-head .grow { flex: 1; }
+  .perm-head .left { font: 11px var(--mono); color: var(--text-3); }
+  .perm-tool { display: flex; align-items: baseline; gap: var(--s-snug); flex-wrap: wrap; margin-top: var(--s-snug); }
+  .perm-tool .name { font: 600 12px var(--sans); color: var(--text-1); }
+  .perm-tool .why { font-size: 11px; color: var(--text-3); }
+  .perm-target {
+    font: 11px/1.55 var(--mono); color: var(--text-1); white-space: pre-wrap; word-break: break-word;
+    background: var(--sunken); border: 1px solid var(--hairline); border-radius: var(--r-control);
+    padding: var(--s-snug) var(--s-base); margin: var(--s-base) 0;
+  }
+  .perm-acts { display: flex; align-items: center; gap: var(--s-base); flex-wrap: wrap; }
+  .perm-acts .grow { flex: 1; }
+  .pbtn {
+    display: inline-flex; align-items: center; gap: var(--s-snug); cursor: pointer;
+    font: 600 12px var(--sans); padding: 5px var(--s-comfortable); border-radius: var(--r-control);
+    border: 1px solid var(--subtle); background: var(--glass-tint); color: var(--text-2);
+  }
+  .pbtn.allow { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .pbtn.deny  { border-color: rgba(242,85,92,.35); color: #F0989C; }
+  .pbtn.quiet { border-color: transparent; background: none; color: var(--text-3); font-weight: 500; }
+  .pbtn .kbd { background: rgba(255,255,255,.14); border-color: transparent; color: inherit; opacity: .85; }
+  .fuse { height: 2px; background: rgba(255,255,255,.07); border-radius: 1px; overflow: hidden; margin-top: var(--s-base); }
+  .fuse > i { display: block; height: 100%; background: var(--attention); width: 100%; }
+
+  /* ---------- switcher (not part of the design under evaluation) ---------- */
+  .switch {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 60;
+    display: flex; align-items: center; gap: var(--s-snug);
+    background: #fff; color: #111; border-radius: 999px; padding: 4px 6px 4px 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55); font: 600 12px/1 var(--sans);
+  }
+  .switch button { border: none; background: none; cursor: pointer; width: 26px; height: 26px;
+                   border-radius: 999px; font-size: 15px; color: #111; }
+  .switch button:hover { background: rgba(0,0,0,.08); }
+  .switch .lab { padding: 0 var(--s-snug); white-space: nowrap; }
+  .switch select { font: 600 12px var(--sans); border: none; background: rgba(0,0,0,.06);
+                   border-radius: 999px; padding: 5px var(--s-base); color: #111; cursor: pointer; }
+  .switch .sep { width: 1px; height: 18px; background: rgba(0,0,0,.14); }
+  .note {
+    position: fixed; bottom: 54px; left: 50%; transform: translateX(-50%); z-index: 59;
+    max-width: 760px; text-align: center; font-size: 11px; color: var(--text-3);
+    background: rgba(0,0,0,.55); border-radius: var(--r-control); padding: 4px var(--s-comfortable);
+  }
+
+  .flex { display: flex; align-items: center; }
+  .col { display: flex; flex-direction: column; }
+  .grow { flex: 1; min-width: 0; }
+  .g2 { gap: 2px } .g4 { gap: var(--s-tight) } .g6 { gap: var(--s-snug) }
+  .g8 { gap: var(--s-base) } .g12 { gap: var(--s-comfortable) }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <header class="titlebar">
+    <div class="tb-lead">
+      <span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+    </div>
+    <div class="tb-trail">
+      <div id="scope"></div>
+      <span style="flex:1"></span>
+      <div class="rooms">
+        <button class="on"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M2.5 6.5v3M5.5 4v8M8.5 2.5v11M11.5 5v6M14 7v2"/></svg>Sessions</button>
+        <button><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="3" cy="4" r="1.2"/><circle cx="3" cy="9.5" r="1.2"/><path d="M6.5 4h7M6.5 9.5h7M6.5 13.5h4"/></svg>Work</button>
+        <button><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5.5 5 2.5 8l3 3M10.5 5l3 3-3 3"/></svg>Code</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="panes">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <span style="flex:1"></span>
+        <button class="bare" aria-label="New Session" title="New Session  ⌘N">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M8 3.4v9.2M3.4 8h9.2"/></svg>
+        </button>
+      </div>
+      <div class="roster" id="roster"></div>
+      <div class="sidebar-foot">Archived (2)</div>
+    </aside>
+
+    <section class="deck" id="deck">
+      <div id="hdr"></div>
+      <div class="feed" id="feed"></div>
+      <div id="composer"></div>
+      <div id="palette"></div>
+    </section>
+  </div>
+</div>
+
+<div class="note" id="note"></div>
+<div class="switch">
+  <button onclick="cycleVariant(-1)" aria-label="Previous variant">‹</button>
+  <span class="lab" id="switch-label"></span>
+  <button onclick="cycleVariant(1)" aria-label="Next variant">›</button>
+  <span class="sep"></span>
+  <select id="state-picker" onchange="setState(this.value)" aria-label="State"></select>
+</div>
+
+<script>
+/* ============================================================================
+   THE SESSIONS — the same real ones read off this machine for #502 and #536.
+   Only liveness and the managed/external/orphaned posture are assigned.
+   `caps` is the per-adapter capability declaration from the #589 answer: an affordance that
+   cannot work is ABSENT, not disabled. claude declares commands + files; codex, files only.
+   ============================================================================ */
+const sessions = [
+  { id:'0ec3b3b6', title:'Drive a Session from a composer', state:'running', access:'managed',
+    branch:'argo/#535-session-drive-port', worktree:true, cli:'Claude Code',
+    ticket:'#535', seen:null, caps:{ commands:true, files:true } },
+  { id:'1986b0e5', title:'Restore the sessions Warp closed', state:'idle', access:'managed',
+    branch:'main', worktree:false, cli:'Claude Code',
+    ticket:null, seen:'2m', caps:{ commands:true, files:true } },
+  /* A Codex Session Argo spawned: it steers, so the composer is there — but Codex parses `/`
+     in its own TUI, which Argo's `codex mcp-server` path never touches. */
+  { id:'codex-2f11', title:'Port the roster projection to Codex', state:'idle', access:'managed',
+    branch:'argo/#377-native-session-roster', worktree:true, cli:'Codex',
+    ticket:'#377', seen:'14m', caps:{ commands:false, files:true } },
+  /* Observed from disk under ~/.codex, never spawned by Argo. */
+  { id:'codex-56bf', title:'Native Session roster in Swift', state:'idle', access:'external',
+    branch:'argo/#377-native-session-roster', worktree:true, cli:'Codex',
+    ticket:'#377', seen:'2d', caps:{ commands:false, files:false } },
+  /* Its worktree survives, but nothing owns the PTY any more. */
+  { id:'w-375', title:'Graphite and Ion Blue across the shell', state:'idle', access:'orphaned',
+    branch:'worktree-ticket-375-graphite-ion-blue', worktree:true, cli:'Claude Code',
+    ticket:'#375', seen:'3d', caps:{ commands:false, files:false } },
+];
+
+/* ============================================================================
+   THE CATALOG — REAL. See the header comment for where each half comes from.
+   `o` is origin: project | global | plugin | builtin.
+   `d` is the frontmatter `description:` VERBATIM — which is why they are this long. They are
+   written to make a model trigger, not to caption a row, and the picker has to clamp them.
+   `h` is the CLI's own `argumentHint`, which only built-ins have.
+   `sh` marks a row the CLI would never run because a nearer origin shadows the same name.
+   ============================================================================ */
+const PROJECT = [
+  ['ask-argo', "Router for Argo's own skills, and for the design route ask-matt has no stage for. Use when the next step is unclear, when work touches a design or the token contract, or when the user asks what to run."],
+  ['ask-matt', 'Ask which skill or flow fits your situation. A router over the skills in this repo.'],
+  ['audit-agent-context', 'Measure what a project loads into every agent session before the first prompt, and cut it. Use when the user says their CLAUDE.md or AGENTS.md is too long or bloated, asks why context fills up so fast or why sessions cost so much.'],
+  ['claude-handoff', 'Hand the current conversation off to a fresh background agent that picks up the work immediately.'],
+  ['code-review', "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/spec asked for?)."],
+  ['codebase-design', 'Shared vocabulary for designing deep modules. Use when the user wants to design or improve a module’s interface, find deepening opportunities, decide where a seam goes, make code more testable or AI-navigable.'],
+  ['design-to-code', 'Build a screen from an approved design — assembled from existing primitives, components extracted only on evidence. Once per ticket.'],
+  ['diagnosing-bugs', 'Diagnosis loop for hard bugs and performance regressions. Use when the user says "diagnose"/"debug this", or reports something broken/throwing/failing/slow.'],
+  ['domain-modeling', "Build and sharpen a project's domain model. Use when the user wants to pin down domain terminology or a ubiquitous language, record an architectural decision."],
+  ['find-skills', 'Helps users discover and install agent skills when they ask questions like "how do I do X", "find a skill for X", or express interest in extending capabilities.'],
+  ['frontend-design', 'Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don’t read as templated defaults.'],
+  ['grill-me', 'A relentless interview to sharpen a plan or design.'],
+  ['grill-with-docs', "A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go."],
+  ['grilling', 'Grill the user relentlessly about a plan, decision, or idea. Use when the user wants to stress-test their thinking, or uses any ‘grill’ trigger phrases.'],
+  ['handoff', 'Compact the current conversation into a handoff document for another agent to pick up.'],
+  ['implement', 'Implement a piece of work based on a spec or set of tickets.'],
+  ['improve-codebase-architecture', 'Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick.'],
+  ['pixel-review', 'Judge a UI change by its pixels — render the affected states and have a fresh agent compare them against the approved design.'],
+  ['prototype', 'Build a throwaway prototype to answer a design question. Use when the user wants to sanity-check whether a state model or logic feels right, or explore what a UI should look like.'],
+  ['prototype-to-design', 'Turn an agreed prototype variant into the approved design — values snapped to the token contract, a render committed beside it. Once per screen, before any code.'],
+  ['research', 'Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo.'],
+  ['resolving-merge-conflicts', 'Use when you need to resolve an in-progress git merge/rebase conflict.'],
+  ['scaffold-project', "Scaffold a new project of any stack from the ecosystem's own generator, with its language server wired into whichever agent is running."],
+  ['setup-argo-skills', 'The one project-bootstrap command. Installs the skill bundle, then wizards over the repo — which infra do you want — and dispatches each choice to its setup skill.'],
+  ['setup-design-foundations', "Design a project's type ramp, spacing rhythm, colour roles, radii and motion, bless them, and land them in the token contract."],
+  ['setup-design-infra', 'Install a project’s design→code machinery — token contract, docs/designs/ scaffolding, no-raw-values check, render method.'],
+  ['setup-module-boundaries', 'Install a mechanical module-boundary checker, so a leak fails the build instead of relying on review.'],
+  ['setup-output-style', "Install Argo's Out Loud output style as the Claude Code session default."],
+  ['setup-quality-gates', 'Turn the arithmetic half of the house rules — length, complexity, parameter count, escape hatches, duplication — into build failures.'],
+  ['setup-rules', "Install Argo's engineering rules plus a binding naming how this stack spells them, wired into CLAUDE.md/AGENTS.md so agents load them."],
+  ['setup-task-tracking', "Install Argo's standing task-tracking instruction into a project's agent-facing docs."],
+  ['ship', 'Close out an implemented ticket: commit the work, push its branch, and open one PR that closes the ticket.'],
+  ['skill-creator', 'Create new skills, modify and improve existing skills, and measure skill performance.'],
+  ['tdd', 'Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.'],
+  ['to-spec', 'Turn the current conversation into a spec and publish it to the project issue tracker — no interview, just synthesis of what you’ve already discussed.'],
+  ['to-tickets', 'Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker.'],
+  ['triage', 'Move issues and external PRs through a state machine of triage roles — categorise, verify, grill if needed, and write agent-ready briefs.'],
+  ['wayfinder', 'Plan a huge chunk of work — more than one agent session can hold — as a shared map of decision tickets on your issue tracker.'],
+  /* A REAL row with no `description:` in its frontmatter. Nothing is invented in its place. */
+  ['writing-great-skills', null],
+];
+
+const GLOBAL = [
+  ['ux-writing', 'Write or review interface copy (microcopy) — buttons, labels, error messages, notifications, forms, onboarding, empty states, help text.'],
+  /* Both of these exist in ~/.claude/skills AND in this repo's .claude/skills. The project
+     copy wins, so the CLI would never run these two — they are listed as shadowed. */
+  ['find-skills', 'Helps users discover and install agent skills when they ask questions like "how do I do X", "find a skill for X".', true],
+  ['writing-great-skills', 'Reference for writing and editing skills well — the vocabulary and principles that make a skill predictable.', true],
+];
+
+const PLUGIN = [
+  ['artifact-design', 'Design guidance and fundamentals for Artifacts.'],
+  ['artifact-diagramming', 'Diagramming know-how for Artifacts — when a picture earns its place, how to draw one that shows the real mechanism, and the inline-SVG mechanics that keep it legible in both themes.'],
+  ['artifact-capabilities', 'Runtime capabilities a published Artifact page can be granted — behavior static HTML cannot provide on its own, such as the page reading live or connected data.'],
+  ['claude-api', 'Reference for the Claude API / Anthropic SDK — model ids, pricing, params, streaming, tool use, MCP, agents, caching, token counting, model migration.'],
+  ['claude-in-chrome', 'Automates your Chrome browser to interact with web pages — clicking elements, filling forms, capturing screenshots, reading console logs, and navigating sites.'],
+  ['dataviz', 'Use this skill whenever you are about to create ANY chart, graph, plot, dashboard, or data visualization, in ANY output medium — an HTML or React artifact, inline SVG, plotting code in any library.'],
+  ['fewer-permission-prompts', 'Scan your transcripts for common read-only Bash and MCP tool calls, then add a prioritized allowlist to project .claude/settings.json to reduce permission prompts.'],
+  /* The plugin-namespaced name shape, verbatim: a plugin skill whose name collides with a
+     project one is addressed `plugin:skill` rather than shadowed away. */
+  ['frontend-design:frontend-design', 'Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one.'],
+  ['init', 'Initialize a new CLAUDE.md file with codebase documentation'],
+  ['keybindings-help', 'Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.claude/keybindings.json.'],
+  ['loop', 'Run a prompt or slash command on a recurring interval (e.g. /loop 5m /foo). Omit the interval to let the model self-pace.'],
+  ['run', "Launch and drive this project's app to see a change working. Use when asked to run, start, or screenshot the app, or to confirm a change works in the real app."],
+  ['schedule', 'Create, update, list, or run scheduled cloud agents (routines) that execute on a cron schedule.'],
+  ['security-review', 'Complete a security review of the pending changes on the current branch'],
+  ['simplify', 'Review the changed code for reuse, simplification, efficiency, and altitude cleanups, then apply the fixes. Quality only — it does not hunt for bugs; use /code-review for that.'],
+  ['update-config', 'Use this skill to configure the Claude Code harness via settings.json. Automated behaviors ("from now on when X", "each time X") require hooks configured in settings.json.'],
+];
+
+/* Built-ins: name, description AND argumentHint extracted from the installed claude 2.1.228
+   binary (2026-08-12). This is the curated KEEP set from #589 — the drops are terminal chrome
+   and Argo's own surfaces, and they are absent here rather than greyed. */
+const BUILTIN = [
+  ['compact', 'Free up context by summarizing the conversation so far', '<optional custom summarization instructions>'],
+  ['clear', 'Start a new session with empty context; previous session stays on disk (resumable with /resume)', '[name]'],
+  ['plan', 'Enable plan mode or view the current session plan', '[open|share|<description>]'],
+  ['subtask', 'Send a subagent off with your full context; its result comes back here', '<task>'],
+  ['btw', 'Ask a quick side question without interrupting the main conversation', '[question]'],
+  ['goal', 'Set a goal Claude checks before stopping', '[<condition> | clear]'],
+  ['recap', 'Generate a one-line session recap now', null],
+  ['add-dir', 'Add a new working directory', '<path>'],
+  ['cd', 'Move this session to a new working directory', '<path>'],
+  ['rename', 'Rename the current conversation', '[name]'],
+  ['branch', 'Create a branch of the current conversation at this point', '[name]'],
+  ['autocompact', 'Configure the auto-compact window size', '[auto|<tokens>]'],
+  ['advisor', 'Let Claude consult a stronger model at key moments', null],
+  ['memory', 'Edit CLAUDE.md files and memory settings', null],
+  ['insights', 'Generate a report analyzing your Claude Code sessions', null],
+  ['reload-skills', 'Pick up skills added or changed on disk during this session', null],
+  ['reload-plugins', 'Activate pending plugin changes in the current session', '[--force]'],
+  ['team-onboarding', 'Help teammates ramp on Claude Code with a guide from your usage', null],
+  ['loops', 'List, create, and delete loops', null],
+];
+
+const ORIGINS = [
+  { o:'project', label:'Project', where:'.claude/skills' },
+  { o:'global',  label:'You',     where:'~/.claude/skills' },
+  { o:'plugin',  label:'Plugin',  where:'installed plugins' },
+  { o:'builtin', label:'Claude Code', where:"the CLI's own list" },
+];
+
+const CATALOG = [].concat(
+  PROJECT.map(([n, d]) => ({ n, d, o:'project' })),
+  GLOBAL.map(([n, d, sh]) => ({ n, d, o:'global', sh: !!sh })),
+  PLUGIN.map(([n, d]) => ({ n, d, o:'plugin' })),
+  BUILTIN.map(([n, d, h]) => ({ n, d, h, o:'builtin' })),
+);
+
+/* Real paths from `git ls-files`, in the order a Workspace tree would offer them: the files
+   this Session has touched first, then the rest. Deep paths are the normal case here, which is
+   why the row leads with the filename. */
+const FILES_RECENT = [
+  'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/SessionComposer.swift',
+  'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionDriver.swift',
+  'docs/designs/cockpit-session-composer.md',
+];
+const FILES_REST = [
+  'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift',
+  'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession+Status.swift',
+  'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository/WorkspaceProjection.swift',
+  'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionStatus.swift',
+  'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionStatusReading.swift',
+  'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/ToolCall.swift',
+  'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Session.swift',
+  'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCallLine.swift',
+  'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/Syntax/SyntaxHighlight.swift',
+  'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Roster/SessionRow.swift',
+  'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/GraphitePalette.swift',
+  'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoLayout.swift',
+  'apps/macOS/ArgoE2ETests/FeedKeyboardE2ETests.swift',
+  'docs/adr/ADR-0024-session-drive-port.md',
+  'rules/designs.md',
+  'CONTEXT.md',
+  'AGENTS.md',
+];
+const FILES = FILES_RECENT.concat(FILES_REST);
+
+/* ============================================================================
+   STATES — every one #590 asks for, each addressable as ?state=<key>.
+   ============================================================================ */
+const STATES = [
+  { k:'slash', sid:'1986b0e5', g:'The / surface', label:'Just typed / — the whole catalog',
+    note:'One keystroke, 77 invocable things. This is the discovery problem: 19 curated built-ins, 39 project skills, 16 plugin skills, 3 of yours — none of it visible before this popover existed.' },
+  { k:'slash-filter', sid:'1986b0e5', g:'The / surface', label:'Filtering — /impl',
+    note:'Four keystrokes to /implement. The list narrows AND reorders: prefix matches first, in origin order, then name-substring matches under a dimmed heading. The match itself is inked.' },
+  { k:'slash-args', sid:'1986b0e5', g:'The / surface', label:'Arguments after the name',
+    note:'Selecting inserts “/code-review ” with the caret after it — text, not a send. A built-in shows the CLI’s own argumentHint as ghost text; a skill has none to show, so nothing is invented.' },
+  { k:'slash-builtin', sid:'1986b0e5', g:'The / surface', label:'A built-in with an argumentHint',
+    note:'/compact <optional custom summarization instructions> — the hint is the CLI’s own string, extracted from the binary. Skills carry no such field, which is why only this half of the list has one.' },
+  { k:'slash-zero', sid:'1986b0e5', g:'The / surface', label:'Zero matches',
+    note:'Nothing matches, and the draft is still just text: the composer stays sendable underneath, because “/graphify” is a perfectly good thing to say to an agent that has the skill installed under another name.' },
+  { k:'slash-late', sid:'1986b0e5', g:'The / surface', label:'Built-ins still arriving',
+    note:'Two sources, two clocks. Skills are a filesystem re-scan (milliseconds, never stale); built-ins are the version-keyed scrape. The skills draw immediately and the slower half says it is coming.' },
+  { k:'slash-fail', sid:'1986b0e5', g:'The / surface', label:'Enumeration failed',
+    note:'The scrape broke — a Help-panel redesign, per #589. The section says so in one line and the picker still works for everything Argo read itself. Degrade-down: never a guessed list.' },
+  { k:'slash-edge', sid:'1986b0e5', g:'The / surface', label:'No description, and a shadowed name',
+    note:'A skill whose frontmatter has no description: shows its name and nothing invented. The same name in ~/.claude/skills is shadowed by the project copy, so it is marked rather than offered twice.' },
+
+  { k:'at', sid:'1986b0e5', g:'The @ surface', label:'Typed @ — the Workspace tree',
+    note:'Real paths from git ls-files. The filename leads and the directory follows dimmed, because a leading path is a column of identical prefixes. Touched-this-Session first.' },
+  { k:'at-filter', sid:'1986b0e5', g:'The @ surface', label:'Fuzzy path match — @sesdri',
+    note:'Subsequence match across the whole path, so SessionDriver.swift is six keystrokes deep in a nine-segment path.' },
+  { k:'at-inserted', sid:'1986b0e5', g:'The @ surface', label:'The mention, inserted',
+    note:'A picked file becomes a real @ mention in the text, not an AttachmentChip: the CLI resolves it itself (verified). Blocked on #682 — a pasted burst with an @ token swallows its carriage return.' },
+
+  { k:'plus', sid:'1986b0e5', g:'The + menu', label:'+ open — the same three sections',
+    note:'Everything reachable by shortcut is reachable by click. Files · Skills · Commands, and no fourth section: MCP is deferred with a named unlock (#589), and an empty Connectors row would promise what Argo cannot see.' },
+  { k:'plus-files', sid:'1986b0e5', g:'The + menu', label:'+ → Files',
+    note:'The in-app Workspace tree, not the system panel: Argo already knows the tree, and a system panel cannot produce an @ mention. Dropping and pasting still make AttachmentChips (#540) — those are a different act.' },
+
+  { k:'codex', sid:'codex-2f11', g:'Degraded', label:'Codex — no command surface at all',
+    note:'Capability is declared, not discovered. Codex parses / in its own TUI, which Argo never touches, so / types a literal slash and nothing opens. @ still works: that is Argo-side path expansion.' },
+  { k:'running', sid:'0ec3b3b6', g:'Degraded', label:'Picker open while a Turn runs',
+    note:'The field stays live while the agent works, so the picker opens over a running Turn exactly as it does at rest. Send is Stop; committing the line queues it.' },
+  { k:'queued', sid:'0ec3b3b6', g:'Degraded', label:'Queued follow-up above, picker below',
+    note:'Both live at once: the queued chip rides above the field, the picker above that. The vessel grows upward from the same edge, so the two never overlap — in B they share one rim.' },
+  { k:'perm', sid:'0ec3b3b6', g:'Degraded', label:'Permission holds the slot',
+    note:'The Permission takes the whole composer, so there is no field and no caret: the picker cannot be opened, not merely suppressed. Nothing new is drawn — that is the answer.' },
+  { k:'external', sid:'codex-56bf', g:'Degraded', label:'Read-only external Session',
+    note:'The composer is already absent (decision 7 of the approved design), so no picker either. Nothing new appears — this render exists to prove that.' },
+  { k:'orphaned', sid:'w-375', g:'Degraded', label:'Orphaned Session',
+    note:'Same again: nothing to type into, so nothing to open. The exit offered is still a fresh Session on the same branch.' },
+
+  { k:'loaded', sid:'1986b0e5', g:'In the feed', label:'Sent, and the skill loaded',
+    note:'The sent line is an ordinary user bubble — it is just a prompt. The “Skill Loaded” marker comes from the transcript; clicking it opens the SKILL.md body. A built-in gets the same marker with nothing behind it.' },
+];
+
+/* --------------------------- state model --------------------------- */
+const qs = new URLSearchParams(location.search);
+const VARIANTS = ['A','B','C'];
+const NAMES = {
+  A: 'Popover above the vessel · origin as section headers',
+  B: 'The vessel grows the list · origin on the row',
+  C: 'Palette over the deck · three tabs, two-line rows',
+};
+let variant = (qs.get('variant') || 'A').toUpperCase();
+if (!VARIANTS.includes(variant)) variant = 'A';
+let stateKey = qs.get('state') || 'slash';
+if (!STATES.some(s => s.k === stateKey)) stateKey = 'slash';
+const bare = qs.get('bare') === '1';
+
+/* Live UI state, so this can be driven rather than only looked at: typing / really opens the
+   picker, ↑↓ really move, ⏎ really inserts. */
+const ui = {
+  text: '', queue: null, fresh: false, atts: [],
+  pick: null,          // null | { scope:'commands'|'files'|'all', q:'', cur:0 }
+  plus: false,         // the + menu (variant A only — B and C fold it into the list)
+  builtins: 'ready',   // ready | late | failed  — the second enumeration source
+  run: { model:'Opus 5', mode:'Code', effort:'Medium' },
+  loaded: null,
+};
+
+/* --------------------------- glyphs --------------------------- */
+const SVG = {
+  branch: `<path d="M4.5 5.3v5.4"/><circle cx="4.5" cy="3.6" r="1.7"/><circle cx="4.5" cy="12.4" r="1.7"/>
+           <circle cx="11.5" cy="3.6" r="1.7"/><path d="M11.5 5.3v1.4a2.4 2.4 0 0 1-2.4 2.4H6.2"/>`,
+  worktree: `<rect x="5.4" y="5.4" width="8.2" height="8.2" rx="1.4"/><path d="M10.6 2.4H3.8a1.4 1.4 0 0 0-1.4 1.4v6.8"/>`,
+  folder: `<path d="M1.9 4.6a1.4 1.4 0 0 1 1.4-1.4h2.4l1.5 1.7h5.5a1.4 1.4 0 0 1 1.4 1.4v5.7a1.4 1.4 0 0 1-1.4 1.4H3.3a1.4 1.4 0 0 1-1.4-1.4z"/>`,
+  arrowUp: `<path d="M8 12.6V4"/><path d="M4.2 7.6 8 3.8l3.8 3.8"/>`,
+  stop: `<rect x="4.6" y="4.6" width="6.8" height="6.8" rx="1.4" fill="currentColor" stroke="none"/>`,
+  x: `<path d="M3.6 3.6l8.8 8.8M12.4 3.6l-8.8 8.8"/>`,
+  doc: `<path d="M4 2.4h5l3 3v8.2H4z"/><path d="M9 2.4v3h3"/>`,
+  warn: `<path d="M8 3.2 14 13H2z"/><path d="M8 6.8v3M8 11.3v.4"/>`,
+  info: `<circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4"/><path d="M8 4.8v.5"/>`,
+  lock: `<rect x="3.4" y="7" width="9.2" height="6.4" rx="1.6"/><path d="M5.6 7V5.4a2.4 2.4 0 0 1 4.8 0V7"/>`,
+  clock: `<circle cx="8" cy="8" r="5.8"/><path d="M8 4.8V8l2.2 1.6"/>`,
+  plus: `<path d="M8 3.4v9.2M3.4 8h9.2"/>`,
+  slash: `<path d="M10.4 3 5.6 13"/>`,
+  at: `<circle cx="8" cy="8" r="2.6"/><path d="M10.6 8v1.2a1.9 1.9 0 0 0 3.1 1.5A6.2 6.2 0 1 0 11.6 13"/>`,
+  chevR: `<path d="M6.2 3.6 10.6 8l-4.4 4.4"/>`,
+  book: `<path d="M2.6 3.4h4a2 2 0 0 1 2 2v8a1.6 1.6 0 0 0-1.6-1.6H2.6z"/><path d="M13.4 3.4h-4a2 2 0 0 0-2 2v8a1.6 1.6 0 0 1 1.6-1.6h4.4z"/>`,
+};
+const glyph = (d, cls = '') => `<svg class="g ${cls}" viewBox="0 0 16 16" fill="none"
+  stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+/* --------------------------- shell chrome --------------------------- */
+const CHEV = `<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5 8 10.5l4-4"/></svg>`;
+function renderScope() {
+  document.getElementById('scope').innerHTML = `
+    <div class="vessel">
+      <button class="project">${glyph(SVG.folder)}argo${CHEV}</button>
+      <span class="divider"></span>
+      <button class="checkout">${glyph(SVG.branch)}main${CHEV}</button>
+    </div>`;
+}
+
+function renderRoster(sel, needs) {
+  document.getElementById('roster').innerHTML = sessions.map(s => `
+    <div class="row ${s.id === sel.id ? 'sel' : ''} ${s.access === 'external' ? 'ext' : ''}"
+         onclick="pickSession('${s.id}')">
+      <div class="flex g8">
+        <span class="dot ${s.access === 'external' ? 'hollow' : (needs && s.id === sel.id) ? 'attn' : s.state}"></span>
+        <span class="title grow">${esc(s.title)}</span>
+        ${needs && s.id === sel.id ? `<span class="badge">Needs input</span>` : ''}
+      </div>
+      <div class="flex g8" style="padding-left:14px">
+        <span class="meta grow">${esc(s.branch)}</span>
+        ${s.state !== 'running' && s.seen ? `<span class="time">${s.seen} ago</span>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function renderHeader(s, needs) {
+  const status = needs ? `<span class="fact warn">Needs input</span>`
+    : s.state === 'running' ? `<span class="working"><i></i>Running</span>`
+    : `<span class="fact dim">Idle</span>`;
+  document.getElementById('hdr').innerHTML = `
+    <div class="band">
+      <div class="col g2 grow">
+        <span class="h-title">${esc(s.title)}</span>
+        <div class="factline">
+          <span class="fact mono dim"><span class="gitline">${glyph(s.worktree ? SVG.worktree : SVG.branch)}<span>${esc(s.branch)}</span></span></span>
+          <span class="dotsep">·</span>
+          <span class="fact dim">${s.cli}</span>
+          ${s.ticket ? `<span class="dotsep">·</span><span class="fact link">Issue ${s.ticket} ↗</span>` : ''}
+          ${s.access !== 'managed' ? `<span class="dotsep">·</span><span class="fact ${s.access === 'orphaned' ? 'warn' : 'dim'}">${s.access === 'orphaned' ? 'orphaned' : 'read-only'}</span>` : ''}
+        </div>
+      </div>
+      ${status}
+    </div>
+    <div class="tabslot"><span class="tab on">Activity</span><span class="tab">Delivery</span></div>`;
+}
+
+/* --------------------------- feed --------------------------- */
+const BASE_FEED = [
+  { k:'Search', v:`<code>rg "scroll anchor" apps/macOS</code> · 41 matches · 180ms` },
+  { k:'Read',   v:`<code>CockpitPresentation.swift</code> · 142 lines` },
+  { k:'Message',v:`The anchor is recomputed on every projection, which is why it slips after a compaction.` },
+  { k:'Edit',   v:`<span class="add">+18</span> <span class="rem">−6</span> &nbsp;<code>SessionFeedView.swift</code>` },
+];
+
+function renderFeed(st) {
+  let html = BASE_FEED.map(r => `<div class="fr"><span class="k">${r.k}</span><span class="v">${r.v}</span></div>`).join('');
+
+  if (st.k === 'running' || st.k === 'queued') {
+    html += `<div class="fr user"><span class="k">You</span><span class="v">Check whether SessionRow reads the same field twice.</span></div>`;
+    html += `<div class="fr"><span class="k">Read</span><span class="v"><code>SessionRow.swift</code> · 88 lines</span></div>`;
+    html += `<div class="fr"><span class="k"></span><span class="v"><span class="working"><i></i>Working…</span></span></div>`;
+  }
+  if (st.k === 'perm') {
+    html += `<div class="fr user"><span class="k">You</span><span class="v">Run the roster suite and push if it is green.</span></div>`;
+    html += `<div class="fr pending"><span class="k">Bash</span><span class="v dim">waiting for you — see the prompt</span></div>`;
+  }
+  if (st.k === 'loaded') {
+    /* The sent line is the user's own words, verbatim, mention and all — no expanded prompt,
+       and no third representation Argo invents. */
+    html += `<div class="fr user fresh"><span class="k">You</span><span class="v">/code-review since main — focus on <span class="mention">@SessionComposer.swift</span></span></div>`;
+    html += `<div class="fr"><span class="k"></span><span class="v">
+      <span class="loaded" title="Show the SKILL.md Argo read">${glyph(SVG.book)}Skill Loaded: <b>code-review</b></span></span></div>`;
+    html += `<div class="fr"><span class="k">Message</span><span class="v">Reviewing the diff on two axes. Starting with Standards.</span></div>`;
+    html += `<div class="fr"><span class="k"></span><span class="v"><span class="working"><i></i>Working…</span></span></div>`;
+  }
+  const feed = document.getElementById('feed');
+  feed.innerHTML = html;
+  feed.scrollTop = feed.scrollHeight;
+}
+
+/* ============================================================================
+   THE PICKER
+   ============================================================================ */
+
+/* The `description:` in a SKILL.md is trigger prose for a model, not a caption for a row —
+   several are three sentences long. The row shows the FIRST SENTENCE and clamps the rest;
+   nothing is rewritten, because a picker that paraphrases its own catalog is a picker that
+   can be wrong about it. */
+function firstSentence(d) {
+  if (!d) return null;
+  const m = /^(.{20,}?[.?!])(\s|$)/.exec(d);
+  return m ? m[1] : d;
+}
+
+const shown = () => CATALOG.filter(r => !r.sh && (r.o !== 'builtin' || ui.builtins === 'ready'));
+
+/* Filtering narrows AND reorders. Prefix hits first, in origin order; then name-substring
+   hits under their own dim heading, so the good matches never move down the list as you type. */
+function matches(q) {
+  const needle = q.toLowerCase();
+  const rows = shown();
+  if (!needle) return { prefix: rows, loose: [] };
+  return {
+    prefix: rows.filter(r => r.n.toLowerCase().startsWith(needle)),
+    loose: rows.filter(r => !r.n.toLowerCase().startsWith(needle) && r.n.toLowerCase().includes(needle)),
+  };
+}
+
+/* Fuzzy subsequence over the whole path, so a nine-segment path is reachable in six keys. */
+function fileMatches(q) {
+  const needle = q.toLowerCase().replace(/\s/g, '');
+  if (!needle) return FILES.slice();
+  return FILES.filter(p => {
+    const hay = p.toLowerCase();
+    let i = 0;
+    for (const ch of needle) { i = hay.indexOf(ch, i) + 1; if (i === 0) return false; }
+    return true;
+  });
+}
+
+const inkMatch = (name, q) => {
+  if (!q) return esc(name);
+  const i = name.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return esc(name);
+  return esc(name.slice(0, i)) + '<mark>' + esc(name.slice(i, i + q.length)) + '</mark>' + esc(name.slice(i + q.length));
+};
+
+const originLabel = o => (ORIGINS.find(x => x.o === o) || {}).label || o;
+
+/* Names that exist in two origins at once. The shadowed copy is NOT listed — the CLI would
+   never run it, and a picker that offers a row the CLI ignores is lying. The winning row says
+   so instead, which is the only place the collision can be told. */
+const SHADOWED = new Set(CATALOG.filter(r => r.sh).map(r => r.n));
+
+/* One row shape for every entry, in all three variants. Origin travels on the row in B and C
+   and is dropped in A, where a section header already said it. */
+function catalogRow(r, i, cur, q, withOrigin) {
+  const ds = firstSentence(r.d);
+  const twoLine = variant === 'C';
+  const nm = `<span class="nm">/${inkMatch(r.n, q)}</span>`;
+  const hint = r.h ? `<span class="hint">${esc(r.h)}</span>` : '';
+  const desc = ds
+    ? `<span class="ds">${esc(ds)}</span>`
+    : `<span class="ds none">no description in its frontmatter</span>`;
+  const org = withOrigin ? `<span class="org">${originLabel(r.o)}</span>` : '';
+  const shadow = SHADOWED.has(r.n) ? `<span class="pk-shadow" title="A skill of this name in ~/.claude/skills is shadowed by this one">shadows yours</span>` : '';
+  const body = twoLine
+    ? `<span class="nmline">${nm}${hint}${shadow}</span>${org}${desc}`
+    : `${nm}${hint}${desc}${shadow}${org}`;
+  return `<button class="pk-row ${i === cur ? 'cur' : ''}" role="option" aria-selected="${i === cur}"
+    onclick="choose(${i})" onmouseenter="hoverRow(${i})">${body}</button>`;
+}
+
+function fileRow(p, i, cur, q) {
+  const slash = p.lastIndexOf('/');
+  const name = p.slice(slash + 1), dir = p.slice(0, slash);
+  const recent = FILES_RECENT.includes(p);
+  return `<button class="pk-row ${i === cur ? 'cur' : ''}" role="option" aria-selected="${i === cur}"
+    onclick="choose(${i})" onmouseenter="hoverRow(${i})">
+    <span class="nm">${esc(name)}</span>
+    <span class="path" title="${esc(p)}">${esc(dir)}</span>
+    ${recent ? `<span class="org">touched</span>` : ''}
+  </button>`;
+}
+
+/* The list body, shared by all three surfaces. `sectioned` is variant A's answer to origin;
+   B and C run one flat list with the badge on the row instead. */
+function listBody(sectioned) {
+  const p = ui.pick;
+  if (p.scope === 'files') {
+    const rows = fileMatches(p.q);
+    if (!rows.length) return `<div class="pk-empty">No file in this Workspace matches <b>${esc(p.q)}</b>.</div>`;
+    return rows.map((f, i) => fileRow(f, i, p.cur, p.q)).join('');
+  }
+
+  const { prefix, loose } = matches(p.q);
+  const total = prefix.length + loose.length;
+  let html = '';
+
+  if (!total) {
+    html += `<div class="pk-empty">No skill or command matches <b>/${esc(p.q)}</b>.
+      <span style="color:var(--text-off)">Your line is still just text — ⏎ sends it as written.</span></div>`;
+  } else if (sectioned && !p.q) {
+    /* at rest, one section per origin, in the order a repo wants them */
+    let i = 0;
+    for (const g of ORIGINS) {
+      const rows = prefix.filter(r => r.o === g.o);
+      if (!rows.length) continue;
+      html += `<div class="pk-sec">${g.label}<span class="n">${g.where} · ${rows.length}</span></div>`;
+      html += rows.map(r => catalogRow(r, i++, p.cur, p.q, false)).join('');
+    }
+  } else {
+    let i = 0;
+    html += prefix.map(r => catalogRow(r, i++, p.cur, p.q, true)).join('');
+    if (loose.length) {
+      /* the query keeps its own case — the header is uppercased, and a name is not */
+      html += `<div class="pk-sec">Also contains<span class="n">“${esc(p.q)}” · ${loose.length}</span></div>`;
+      html += loose.map(r => catalogRow(r, i++, p.cur, p.q, true)).join('');
+    }
+  }
+
+  return html;
+}
+
+/* The state of the second enumeration source is PINNED ABOVE THE LIST, not appended to it.
+   Rendered in place, the Built-in section's own notice sits below ten rows of skills and is
+   never seen — a list that is quietly missing half of itself has to say so where the eye
+   already is. */
+function pickStatus() {
+  if (ui.pick.scope === 'files' || ui.builtins === 'ready') return '';
+  if (ui.builtins === 'late') {
+    return `<div class="pk-wait"><i></i>Reading Claude Code's own commands — your skills are already here.</div>`;
+  }
+  return `<div class="pk-fail">${glyph(SVG.warn)}<span>Argo could not read this CLI's built-in
+    commands, so only skills are listed. Typing a built-in by name still works.</span></div>`;
+}
+
+const rowCount = () => {
+  const p = ui.pick;
+  if (p.scope === 'files') return fileMatches(p.q).length;
+  const m = matches(p.q);
+  return m.prefix.length + m.loose.length;
+};
+
+const pickFoot = () => {
+  const p = ui.pick;
+  const what = p.scope === 'files' ? 'insert the mention' : 'insert the command';
+  return `<div class="pk-foot">
+    <span class="kbd">↑↓</span><span>move</span>
+    <span class="kbd">⏎</span><span>${what}</span>
+    <span class="kbd">esc</span><span>dismiss</span>
+    <span class="grow"></span>
+    <span>${rowCount()} of ${p.scope === 'files' ? FILES.length : shown().length}</span>
+  </div>`;
+};
+
+/* ---- VARIANT A — the popover, with a section per origin ---- */
+const pickerA = () => !ui.pick ? '' : `
+  <div class="pkA" role="listbox" aria-label="Skills and commands" onclick="event.stopPropagation()">
+    ${pickStatus()}
+    <div class="pk-list" id="pk-list">${listBody(true)}</div>
+    ${pickFoot()}
+  </div>`;
+
+/* A's `+`: the destinations, not a drawer of everything.
+   TWO rows, not the three the ticket asked for, and both halves of that are findings:
+     · Skills and commands are ONE namespace — the CLI addresses both as `/name` and would not
+       accept a distinction Argo invented, so splitting them would be two rows opening one list.
+     · Connectors is ABSENT rather than greyed: MCP is deferred (#589), and a row that opens
+       nothing promises a surface Argo cannot see. */
+const plusMenuA = s => !ui.plus ? '' : `
+  <div class="plusA" role="menu" onclick="event.stopPropagation()">
+    <button role="menuitem" onclick="openPick('files')">${glyph(SVG.folder)}<span class="grow">Files in this Workspace</span><span class="k2">@</span></button>
+    ${s.caps.commands ? `
+    <button role="menuitem" onclick="openPick('commands')">${glyph(SVG.book)}<span class="grow">Skills &amp; commands</span><span class="k2">/</span></button>` : ''}
+  </div>`;
+
+/* ---- VARIANT B — the list inside the vessel ---- */
+const pickerB = () => !ui.pick ? '' : `
+  <div class="pkB" role="listbox" aria-label="Skills and commands">
+    ${pickStatus()}
+    <div class="pk-list" id="pk-list">${listBody(false)}</div>
+    ${pickFoot()}
+  </div>`;
+
+/* ---- VARIANT C — the palette over the deck ---- */
+const TABS = [['files','Files'], ['commands','Skills & commands']];
+const pickerC = s => !ui.pick ? '' : `
+  <div class="pkC-scrim" onclick="closePick()"></div>
+  <div class="pkC" role="dialog" aria-label="Run something">
+    <div class="pkC-q">
+      ${glyph(ui.pick.scope === 'files' ? SVG.at : SVG.slash)}
+      <input class="qi" id="pk-q" placeholder="${ui.pick.scope === 'files' ? 'Find a file in this Workspace…' : 'Run a skill or a command…'}"
+        value="${esc(ui.pick.q)}" oninput="setQuery(this.value)" onkeydown="pickKeys(event)" />
+    </div>
+    ${s.caps.commands ? `<div class="pkC-tabs">${TABS.map(([k, lab]) => `
+      <button class="${ui.pick.scope === k ? 'on' : ''}" onclick="openPick('${k}')">${lab}
+        <span class="n">${k === 'files' ? FILES.length : shown().length}</span></button>`).join('')}</div>` : ''}
+    ${pickStatus()}
+    <div class="pk-list" id="pk-list">${listBody(false)}</div>
+    ${pickFoot()}
+  </div>`;
+
+/* --------------------------- the composer (frozen) --------------------------- */
+const sendGlyph = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+  stroke-linecap="round" stroke-linejoin="round">${SVG.arrowUp}</svg>`;
+const stopGlyph = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">${SVG.stop}</svg>`;
+
+const queuedChip = () => ui.queue ? `
+  <div class="queued">
+    <span class="ql">Queued</span>
+    <span class="qt grow">${esc(ui.queue)}</span>
+  </div>` : '';
+
+const runControls = () => `
+  <span class="seg" role="radiogroup" aria-label="Mode">
+    ${[['Ask','ask'],['Plan','plan'],['Code','code']].map(([v, c]) =>
+      `<button class="${ui.run.mode === v ? 'on ' + c : ''}">${v}</button>`).join('')}
+  </span>
+  <button class="runfacts"><b>${ui.run.model}</b><span class="sep">·</span><b>${ui.run.effort}</b></button>`;
+
+const tray = () => ui.atts.length ? `<div class="tray">${ui.atts.map(a => `
+  <span class="att"><span class="ico">${glyph(SVG.doc)}</span><span class="nm">${esc(a)}</span></span>`).join('')}</div>` : '';
+
+const placeholder = s => s.state === 'running' ? 'Queue a follow-up…'
+  : s.caps.commands ? `Message ${s.cli}…  /  for skills` : `Message ${s.cli}…`;
+
+const showHint = () => ui.hint && /^\/[\w:-]+\s*$/.test(ui.text);
+const field = s => `<span class="ghostwrap">
+  <textarea class="ta" id="ta" rows="1" placeholder="${placeholder(s)}"
+    oninput="typed(this)" onkeydown="keys(event)">${esc(ui.text)}</textarea>
+  ${showHint() ? `<span class="ghost"><span class="inv">${esc(ui.text)}</span>${esc(ui.hint)}</span>` : ''}
+</span>`;
+
+const seamFor = st => st.k === 'at-inserted' ? `
+  <div class="seam">${glyph(SVG.info)}<span>@ mentions ride the send path as text — blocked on #682 until the pasted burst stops swallowing its carriage return.</span></div>` : '';
+
+function composerVessel(s, st) {
+  return `
+    <div class="cB-wrap">
+      ${seamFor(st)}
+      <div class="cB">
+        ${variant === 'A' ? pickerA() : ''}
+        ${variant === 'A' ? plusMenuA(s) : ''}
+        ${variant === 'B' ? pickerB() : ''}
+        ${queuedChip()}
+        ${tray()}
+        <div class="fieldrow"><span class="grow">${field(s)}</span></div>
+        <div class="footrow">
+          <button class="clip ${ui.plus ? 'on' : ''}" aria-label="Add to this turn"
+            title="Files, skills and commands" onclick="event.stopPropagation();togglePlus()">${glyph(SVG.plus)}</button>
+          <span class="grow"></span>
+          ${runControls()}
+          ${s.state === 'running'
+            ? `<button class="send round stop" title="Stop this Turn  esc">${stopGlyph}</button>`
+            : `<button class="send round" title="Send  ⏎" onclick="send()"
+                 ${ui.text.trim() ? '' : 'disabled'}>${sendGlyph}</button>`}
+        </div>
+      </div>
+    </div>`;
+}
+
+/* Permission takes the whole slot — which is the answer to "what if a picker is open while a
+   Permission holds the composer": there is no field to type into, so there is no picker. */
+const permissionComposer = () => `
+  <div class="cB-wrap">
+    <div class="cB permB">
+      <div class="permB-body">
+        <div class="perm-head">
+          <span class="lbl">${glyph(SVG.lock)} Permission</span>
+          <span class="grow"></span><span class="left">denies in 4:12</span>
+        </div>
+        <div class="perm-tool"><span class="name">Bash</span>
+          <span class="why">wants to run a command in this Workspace</span></div>
+        <div class="perm-target">swift test --filter SessionRosterProjectionTests 2>&amp;1 | tail -40</div>
+        <div class="perm-acts">
+          <button class="pbtn allow">Allow <span class="kbd">⏎</span></button>
+          <button class="pbtn deny">Deny <span class="kbd">esc</span></button>
+          <span class="grow"></span>
+          <button class="pbtn quiet">Always allow Bash here</button>
+        </div>
+        <div class="fuse"><i style="transform:scaleX(.84)"></i></div>
+      </div>
+    </div>
+  </div>`;
+
+const noInput = s => {
+  const orphan = s.access === 'orphaned';
+  return `
+  <div class="noinput">
+    ${glyph(orphan ? SVG.warn : SVG.lock)}
+    <span class="grow">${orphan
+      ? `<b>Orphaned</b> — the steering channel died with the process that owned it. Argo can still read this Session, but cannot type into it.`
+      : `<b>Read-only</b> — Argo did not spawn this Session, so there is nothing to steer.`}</span>
+    ${orphan ? `<button>New Session on this branch</button>` : ''}
+  </div>`;
+};
+
+/* --------------------------- driving it --------------------------- */
+/* `/` opens the picker only at the start of the line, and `@` at any token boundary. A slash
+   inside `src/foo` is a path, and a picker that opens there is a picker you fight. */
+function typed(el) {
+  ui.text = el.value;
+  grow(el);
+  const caret = el.selectionStart;
+  const upto = ui.text.slice(0, caret);
+  const s = session();
+  const slash = /^\/([\w:-]*)$/.exec(upto);
+  const at = /(?:^|\s)@([\w./:-]*)$/.exec(upto);
+  if (slash && s.caps.commands) ui.pick = { scope:'commands', q: slash[1], cur: 0 };
+  else if (at && s.caps.files) ui.pick = { scope:'files', q: at[1], cur: 0 };
+  else ui.pick = null;
+  render(true);
+}
+function grow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 132) + 'px';
+}
+function setQuery(v) { ui.pick.q = v; ui.pick.cur = 0; render(true); }
+function openPick(scope) { ui.plus = false; ui.pick = { scope, q:'', cur:0 }; render(); }
+function closePick() { ui.pick = null; ui.plus = false; render(); }
+function togglePlus() {
+  if (variant === 'A') { ui.plus = !ui.plus; ui.pick = null; }
+  else { ui.plus = false; ui.pick = ui.pick ? null : { scope:'commands', q:'', cur:0 }; }
+  render();
+}
+function hoverRow(i) { if (ui.pick && ui.pick.cur !== i) { ui.pick.cur = i; paintCursor(); } }
+function move(d) {
+  const n = rowCount();
+  if (!n) return;
+  ui.pick.cur = (ui.pick.cur + d + n) % n;
+  paintCursor();
+}
+/* the cursor moves without re-rendering the list, so scrolling it into view is honest */
+function paintCursor() {
+  const rows = [...document.querySelectorAll('#pk-list .pk-row')];
+  rows.forEach((r, i) => {
+    r.classList.toggle('cur', i === ui.pick.cur);
+    r.setAttribute('aria-selected', i === ui.pick.cur);
+  });
+  const cur = rows[ui.pick.cur];
+  if (cur) cur.scrollIntoView({ block:'nearest' });
+}
+/* SELECTING INSERTS TEXT. It does not send: a command with arguments is the common case, and a
+   picker that sends on ⏎ makes the argument impossible to type. */
+function choose(i) {
+  const p = ui.pick;
+  if (p.scope === 'files') {
+    const f = fileMatches(p.q)[i];
+    if (!f) return;
+    const at = ui.text.lastIndexOf('@');
+    const head = at >= 0 ? ui.text.slice(0, at) : (ui.text ? ui.text + ' ' : '');
+    ui.text = head + '@' + f + ' ';
+  } else {
+    const m = matches(p.q);
+    const r = [...m.prefix, ...m.loose][i];
+    if (!r) return;
+    /* A command only works at the head of the line, so an existing draft is pushed behind it
+       rather than the command landing at the caret. In C, where the draft is elsewhere, that
+       reads as the line being rearranged for you — a cost of moving the query off the field. */
+    const rest = ui.text.replace(/^\/[\w:-]*\s?/, '').trim();
+    ui.text = '/' + r.n + ' ' + rest;
+    ui.hint = r.h || null;
+  }
+  ui.pick = null; ui.plus = false;
+  render();
+  const t = document.getElementById('ta');
+  if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+}
+function keys(e) {
+  if (ui.pick) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); move(1); return; }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); move(-1); return; }
+    if (e.key === 'Enter' && rowCount()) { e.preventDefault(); choose(ui.pick.cur); return; }
+    if (e.key === 'Escape')    { e.preventDefault(); closePick(); return; }
+  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+}
+function pickKeys(e) {
+  if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+  if (e.key === 'ArrowUp')   { e.preventDefault(); move(-1); }
+  if (e.key === 'Enter')     { e.preventDefault(); choose(ui.pick.cur); }
+  if (e.key === 'Escape')    { e.preventDefault(); closePick(); }
+}
+function send() {
+  if (!ui.text.trim()) return;
+  const s = session();
+  if (s.state === 'running') { ui.queue = ui.text.trim(); ui.text = ''; ui.pick = null; render(); return; }
+  ui.loaded = /^\/([\w:-]+)/.exec(ui.text.trim());
+  ui.text = ''; ui.pick = null; ui.fresh = true;
+  render();
+}
+function pickSession(id) {
+  const st = STATES.find(x => x.sid === id);
+  if (st) setState(st.k);
+}
+
+/* --------------------------- render --------------------------- */
+const session = () => sessions.find(x => x.id === STATES.find(s => s.k === stateKey).sid);
+
+function applyStatePresets(st) {
+  ui.text = ''; ui.pick = null; ui.plus = false; ui.queue = null; ui.atts = [];
+  ui.builtins = 'ready'; ui.fresh = false; ui.hint = null;
+  const open = (scope, q) => { ui.pick = { scope, q, cur: 0 }; };
+
+  if (st.k === 'slash')        { ui.text = '/'; open('commands', ''); }
+  if (st.k === 'slash-filter') { ui.text = '/impl'; open('commands', 'impl'); }
+  if (st.k === 'slash-args')   { ui.text = '/code-review since main'; }
+  if (st.k === 'slash-builtin'){ ui.text = '/compact '; ui.hint = '<optional custom summarization instructions>'; }
+  if (st.k === 'slash-zero')   { ui.text = '/graphify'; open('commands', 'graphify'); }
+  if (st.k === 'slash-late')   { ui.text = '/'; ui.builtins = 'late'; open('commands', ''); }
+  if (st.k === 'slash-fail')   { ui.text = '/'; ui.builtins = 'failed'; open('commands', ''); }
+  if (st.k === 'slash-edge')   { ui.text = '/writ'; open('commands', 'writ'); }
+  if (st.k === 'at')           { ui.text = 'Have a look at @'; open('files', ''); }
+  if (st.k === 'at-filter')    { ui.text = 'Have a look at @sesdri'; open('files', 'sesdri'); }
+  if (st.k === 'at-inserted')  { ui.text = 'Have a look at @apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionDriver.swift — the send path swallows a CR.'; }
+  if (st.k === 'plus')         { if (variant === 'A') ui.plus = true; else open('commands', ''); }
+  if (st.k === 'plus-files')   { open('files', ''); }
+  if (st.k === 'codex')        { ui.text = 'Fix the /usr/local path in the seed'; }
+  if (st.k === 'running')      { ui.text = '/'; open('commands', ''); }
+  if (st.k === 'queued')       { ui.queue = 'And when that is green, open the PR against main.'; ui.text = '/rec'; open('commands', 'rec'); }
+  if (st.k === 'loaded')       { ui.text = ''; }
+
+  /* Variant C's cost, drawn rather than argued: the palette has its own query field, so the
+     token you typed leaves the draft and the caret is no longer where you were writing. A and B
+     filter in place and never take the caret. */
+  if (variant === 'C' && ui.pick) ui.text = ui.text.replace(/(^|\s)[/@][\w./:-]*$/, '$1').trimEnd();
+}
+
+function render(keepFocus) {
+  const st = STATES.find(s => s.k === stateKey);
+  const s = session();
+  const isPerm = st.k === 'perm';
+  const deck = document.getElementById('deck');
+  deck.classList.add('floating');
+
+  renderScope();
+  renderRoster(s, isPerm);
+  renderHeader(s, isPerm);
+  renderFeed(st);
+
+  const host = document.getElementById('composer');
+  if (s.access !== 'managed') host.innerHTML = noInput(s);
+  else if (isPerm) host.innerHTML = permissionComposer();
+  else host.innerHTML = composerVessel(s, st);
+
+  /* variant C's palette is not inside the vessel — it floats over the deck */
+  document.getElementById('palette').innerHTML =
+    (variant === 'C' && ui.pick && s.access === 'managed' && !isPerm) ? pickerC(s) : '';
+
+  const t = document.getElementById('ta');
+  if (t) {
+    grow(t);
+    if (keepFocus !== true) { /* leave focus alone on a state switch */ }
+  }
+  const q = document.getElementById('pk-q');
+  if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  else if (keepFocus && t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+  if (ui.pick) paintCursor();
+
+  document.getElementById('switch-label').textContent = `${variant} — ${NAMES[variant]}`;
+  document.getElementById('note').textContent = st.note;
+  document.getElementById('state-picker').value = st.k;
+}
+
+/* --------------------------- switcher --------------------------- */
+function buildPicker() {
+  const sel = document.getElementById('state-picker');
+  const groups = [...new Set(STATES.map(s => s.g))];
+  sel.innerHTML = groups.map(g =>
+    `<optgroup label="${g}">${STATES.filter(s => s.g === g)
+      .map(s => `<option value="${s.k}">${s.label}</option>`).join('')}</optgroup>`).join('');
+}
+function url() {
+  history.replaceState(null, '', `?variant=${variant}&state=${stateKey}${bare ? '&bare=1' : ''}`);
+}
+function setState(k) {
+  stateKey = k;
+  applyStatePresets(STATES.find(s => s.k === k));
+  url(); render();
+}
+function cycleVariant(d) {
+  variant = VARIANTS[(VARIANTS.indexOf(variant) + d + VARIANTS.length) % VARIANTS.length];
+  applyStatePresets(STATES.find(s => s.k === stateKey));
+  url(); render();
+}
+function cycleState(d) {
+  const i = STATES.findIndex(s => s.k === stateKey);
+  setState(STATES[(i + d + STATES.length) % STATES.length].k);
+}
+addEventListener('pointerdown', () => {
+  if (ui.plus) { ui.plus = false; render(); }
+});
+addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (e.key === 'ArrowLeft')  cycleVariant(-1);
+  if (e.key === 'ArrowRight') cycleVariant(1);
+  if (e.key === 'ArrowUp')   { e.preventDefault(); cycleState(-1); }
+  if (e.key === 'ArrowDown') { e.preventDefault(); cycleState(1); }
+});
+
+buildPicker();
+applyStatePresets(STATES.find(s => s.k === stateKey));
+render();
+if (bare) {
+  document.querySelector('.switch').style.display = 'none';
+  document.getElementById('note').style.display = 'none';
+  document.querySelector('.window').style.bottom = 'var(--s-section)';
+}
+</script>
+</body>
+</html>

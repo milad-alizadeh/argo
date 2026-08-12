@@ -15,12 +15,13 @@ Each is a single file. No build, no server, no dependencies.
 |---|---|---|---|
 | `roster-header-prototype.html` | [#502](https://github.com/milad-alizadeh/argo/issues/502) | What should the Sessions roster row and the Session deck header show? | [`roster-header-prototype.md`](roster-header-prototype.md) |
 | `composer-permission-prototype.html` | [#536](https://github.com/milad-alizadeh/argo/issues/536) | What do the composer, attachment chips and the Permission prompt look like, and does the Dock survive? | [`composer-permission-prototype.md`](composer-permission-prototype.md) |
+| `composer-picker-prototype.html` | [#590](https://github.com/milad-alizadeh/argo/issues/590) | What do the `/` picker and the `+` menu look like, over the composer #536 froze? | [`composer-picker-prototype.md`](composer-picker-prototype.md) · renders in [`picker/`](picker/) |
 
 ```sh
 open docs/designs/prototypes/<file>.html
 ```
 
-Everything in both is transcribed from
+Everything in all three is transcribed from
 `apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/` — `GraphitePalette`,
 `ArgoGeometry`, `ArgoLayout`, `ArgoTypography`. Nothing is invented, and type is San Francisco
 throughout: the contract carries `interface` and `machine` and no serif.
