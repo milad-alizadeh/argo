@@ -116,13 +116,16 @@ struct SessionModeTests {
         #expect(session.modeDidNotTake == nil)
     }
 
+    /// A spawned row standing on a rung. The set is what the Hub files under the claim at spawn —
+    /// `recordsWhenSet` is zero because nothing had been written yet.
     private static func spawned(on mode: SessionMode) -> HubSession {
-        HubSession(spawn: AgentSpawn(
+        var session = HubSession(spawn: AgentSpawn(
             claim: .init(value: "claim-1"),
             cli: .claude,
             cwd: "/tmp",
             spawnedAtMs: 0,
-            mode: mode,
         ))
+        session.modeSet = SessionModeSet(mode: mode)
+        return session
     }
 }

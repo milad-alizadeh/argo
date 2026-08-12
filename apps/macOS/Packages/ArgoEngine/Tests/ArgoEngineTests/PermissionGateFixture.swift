@@ -12,14 +12,18 @@ enum PermissionGate {
 
     /// The patience is a parameter because one suite needs both ends of it: a day where the clock
     /// must never be what decides, and no time at all for the tests about it running out.
+    ///
+    /// `on` is the rung the Session opens on, and `nil` is what a New Session takes — `Code`, since
+    /// this fixture's preference file is its own and empty (#629).
     @MainActor
     static func withGate(
+        on mode: SessionMode? = nil,
         patience: PermissionPatience = .default,
         _ body: (SpawnFixture, SessionOwnership.ClaimID, CompanionClient) async throws -> Void,
     ) async throws {
         let fixture = try SpawnFixture(permissionPatience: patience)
         defer { fixture.remove() }
-        let claim = try await fixture.hub.spawnSession()
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: mode))
         let client = try #require(CompanionClient(socketPath: path(fixture, claim)))
         defer { client.close() }
         try await body(fixture, claim, client)

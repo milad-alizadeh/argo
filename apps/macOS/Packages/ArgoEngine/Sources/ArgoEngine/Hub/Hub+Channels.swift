@@ -15,7 +15,14 @@ extension Hub {
             root: root,
             patience: spawnServices.permissionPatience,
             ledger: claims,
+            rung: { [weak self] claim in self?.rung(ofClaim: claim) },
         )
+    }
+
+    /// The rung one claim's Session stands on, off the roster the surfaces read (#663). Through
+    /// `rowID`, because the row is re-keyed to the id its CLI picks the moment a record appears.
+    private func rung(ofClaim claim: SessionOwnership.ClaimID) -> SessionMode? {
+        session(id: ownership.rowID(ofClaim: claim.value))?.mode.rung
     }
 
     /// What is known about one claim, in one reading — the accessor the suites assert through, in

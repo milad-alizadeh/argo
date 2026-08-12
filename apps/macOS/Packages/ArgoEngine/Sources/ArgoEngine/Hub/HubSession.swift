@@ -148,8 +148,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.cwd = spawn.cwd
         // DIRECT: Argo chose this program and started it.
         self.cli = spawn.cli
-        // DIRECT for the same reason: the rung went out on argv.
-        self.modeSet = SessionModeSet(mode: spawn.mode)
         self.lastActivityAtMs = spawn.exit?.atMs ?? spawn.spawnedAtMs
         self.startedAtMs = spawn.spawnedAtMs
         self.lastStop = spawn.exit == nil ? .endTurn : .cancelled
