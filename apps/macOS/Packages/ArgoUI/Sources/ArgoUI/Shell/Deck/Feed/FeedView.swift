@@ -23,6 +23,9 @@ struct FeedView: View {
     /// (`FeedTail`), the fade that lets rows run under the vessel, and how far the way-back control
     /// lifts — all three being one fact about the column's bottom edge.
     var isUnderComposer = false
+    /// The table's imperative verbs — see `FeedTableHandle`. Taken rather than owned, because the
+    /// overview lane beside the reading holds the same handle: two surfaces, one scroll authority.
+    let table: FeedTableHandle
 
     /// Which prompts the reader has unfolded. Held here so it survives the row being rebuilt when
     /// the projection hands the feed a newer copy of it.
@@ -39,8 +42,6 @@ struct FeedView: View {
     @State private var leftAt: FeedRow.ID?
     /// The row the user's own words just landed on, while the accent wash stands over it.
     @State var washed: FeedRow.ID?
-    /// The table's imperative verbs — see `FeedTableHandle`.
-    @State private var table = FeedTableHandle()
     /// When the wait this reading is showing began, or `nil` while it is showing none. Held here
     /// and not in the row that draws it, because the table recycles cells: a clock kept in a row
     /// would restart every time the reader scrolled it off and back, and a six-minute wait would
@@ -52,11 +53,13 @@ struct FeedView: View {
         selection: FeedRowSelection,
         held: FeedRow.ID? = nil,
         isUnderComposer: Bool = false,
+        table: FeedTableHandle,
     ) {
         self.rows = rows
         self.selection = selection
         self.held = held
         self.isUnderComposer = isUnderComposer
+        self.table = table
         // Both true before the first frame, which is what lets a screenshot show the detached
         // state: a reading that opens held has already left the end, at the row it opened at.
         _isFollowing = State(initialValue: held == nil)

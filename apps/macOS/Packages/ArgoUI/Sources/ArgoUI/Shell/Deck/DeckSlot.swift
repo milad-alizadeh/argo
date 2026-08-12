@@ -10,24 +10,16 @@ struct DeckSlot: View {
     let zone: DeckZone
 
     var body: some View {
-        mark
-            .rotationEffect(.degrees(zone.marksVertically ? -90 : 0))
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // A rotation reserves no layout space, so a mark longer than its slot is short
-            // would otherwise overdraw the zone next door.
-            .clipped()
-            .accessibilityElement()
-            .accessibilityLabel("\(zone.title), placeholder")
-    }
-
-    /// Laid out at its natural width and then turned, so a narrow lane reads down its length
-    /// instead of wrapping across its neighbour.
-    private var mark: some View {
         Text("\(zone.title) · placeholder")
             .argoText(ArgoTypography.machineCaption)
             .foregroundStyle(argo.color.text.disabled)
             .lineLimit(1)
             .fixedSize()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // A mark longer than its slot is wide would otherwise overdraw the zone next door.
+            .clipped()
+            .accessibilityElement()
+            .accessibilityLabel("\(zone.title), placeholder")
     }
 }
 
@@ -43,8 +35,8 @@ struct DeckSlot: View {
     .argoAppearance()
 }
 
-#Preview("Deck slot — a lane too narrow for its own name") {
-    DeckSlot(zone: .minimap)
+#Preview("Deck slot — a zone too narrow for its own name") {
+    DeckSlot(zone: .rail)
         .frame(width: ArgoLayout.minimapLaneWidth, height: 320)
         .argoDeckSurface()
         .argoAppearance()

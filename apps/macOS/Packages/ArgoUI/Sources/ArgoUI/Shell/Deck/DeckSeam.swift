@@ -78,7 +78,7 @@ extension EnvironmentValues {
         DeckSlot(zone: .rail)
             .frame(width: width)
         DeckSeam(width: $width, limits: ArgoLayout.railWidths, growsRightward: true)
-        DeckSlot(zone: .minimap)
+        DeckSlot(zone: .tabs)
     }
     .frame(width: 720, height: 260)
     .argoDeckSurface()
