@@ -39,7 +39,7 @@ private struct RoomTab: View {
         Button(action: select) {
             ArgoGlyph(room.symbol, .control)
                 .foregroundStyle(isSelected ? argo.color.text.primary : argo.color.text.tertiary)
-                .toolbarSegment(isSelected: isSelected)
+                .toolbarSegment(isSelected: isSelected, fit: .mark)
         }
         .buttonStyle(.plain)
         .help(room.tooltip)
