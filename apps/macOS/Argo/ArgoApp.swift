@@ -24,6 +24,14 @@ struct ArgoApp: App {
             arguments: CommandLine.arguments,
             currentDirectoryURL: currentDirectoryURL,
         )
+        // Answered before anything else is built, and the process ends on it: `specimens.sh` asks
+        // the app what it can render rather than parsing Swift source for a list.
+        if configuration.listsSpecimens {
+            for name in SpecimenRegistry.names {
+                print(name)
+            }
+            exit(0)
+        }
         self.specimenName = configuration.specimenName
         let projects = ProjectRegistryStore()
         _cockpit = State(initialValue: CockpitCoordinator(
@@ -37,7 +45,7 @@ struct ArgoApp: App {
         Window("Argo", id: "cockpit") {
             Group {
                 if let specimen {
-                    SpecimenScreen(specimen: specimen)
+                    SpecimenScreen(entry: specimen)
                 } else {
                     CockpitView(
                         presentation: cockpit.presentation,
@@ -126,8 +134,8 @@ struct ArgoApp: App {
 
     /// An unknown name renders the cockpit rather than failing: the harness names the state, and a
     /// typo there should not look like a launch worth screenshotting.
-    private var specimen: Specimen? {
-        specimenName.flatMap(Specimen.init(rawValue:))
+    private var specimen: SpecimenEntry? {
+        specimenName.flatMap(SpecimenRegistry.entry(named:))
     }
 
     private var actions: CockpitActions {

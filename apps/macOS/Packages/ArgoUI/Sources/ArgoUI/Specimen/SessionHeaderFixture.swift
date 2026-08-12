@@ -45,30 +45,32 @@ enum SessionHeaderFixture {
     /// One header per context tier, plus the record that carried no usage at all.
     ///
     /// The numbers are readings off real Sessions rather than round ones: `67.2k` and `216.8k` are
-    /// what the instrument actually has to fit. Each is keyed by the catalog case that renders it,
-    /// so a tier with no case of its own fails a test.
-    static let contexts: [(specimen: Specimen, header: SessionHeaderProjection.Header)] = [
-        (.contextOk, header(context: 67175)),
-        (.contextWarn, header(context: 216_764)),
-        (.contextCrit, header(context: 472_233)),
-        (.contextUnknown, header(context: nil)),
+    /// what the instrument actually has to fit. Each carries the name it renders under, so the
+    /// registry builds an entry per tier rather than looking one up.
+    static let contexts: [(name: String, header: SessionHeaderProjection.Header)] = [
+        ("contextOk", header(context: 67175)),
+        ("contextWarn", header(context: 216_764)),
+        ("contextCrit", header(context: 472_233)),
+        ("contextUnknown", header(context: nil)),
     ]
 
     /// Just the readings, for the preview that judges the four side by side.
     static let contextReadings = contexts.map(\.header.context)
 
-    /// Every state the handoff offer has, keyed by the case that renders it. The first is the one
+    /// Every state the OFFER has, each carrying the name it renders under. The first is the one
     /// with NOTHING in it; then the same reading on a Session Argo cannot drive — the warning
-    /// without the button (story 49); the last is the remedy already taken, at a reading that
-    /// stays red.
-    static let handoffs: [(specimen: Specimen, header: SessionHeaderProjection.Header)] = [
-        (.handoffWithheld, header(context: 67175)),
-        (.handoffAtWarn, header(context: 216_764)),
-        (.handoffAtCrit, header(context: 472_233)),
-        (.handoffOnReadOnly, header(context: 216_764, access: .external)),
-        (.handoffOnOrphaned, header(context: 472_233, access: .orphaned)),
-        (.handedOffReading, header(context: 472_233, handedOffTo: "fresh-session")),
+    /// without the button (story 49).
+    static let handoffs: [(name: String, header: SessionHeaderProjection.Header)] = [
+        ("handoffWithheld", header(context: 67175)),
+        ("handoffAtWarn", header(context: 216_764)),
+        ("handoffAtCrit", header(context: 472_233)),
+        ("handoffOnReadOnly", header(context: 216_764, access: .external)),
+        ("handoffOnOrphaned", header(context: 472_233, access: .orphaned)),
     ]
+
+    /// The remedy already taken, at a reading that stays red. Apart from the offers above because
+    /// it is not one: the button is gone and what is left is the link to the Session it went to.
+    static let handedOff = header(context: 472_233, handedOffTo: "fresh-session")
 
     /// The button's own states for the preview that judges the three side by side — amber, red, and
     /// the one that is drawn and out of reach.

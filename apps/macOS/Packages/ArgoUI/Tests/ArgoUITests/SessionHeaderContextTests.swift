@@ -118,7 +118,7 @@ struct SessionHeaderContextTests {
     func `every tier, and the unreadable one, has a specimen of its own`() {
         let drawn = SessionHeaderFixture.contexts
 
-        #expect(drawn.map(\.specimen) == [.contextOk, .contextWarn, .contextCrit, .contextUnknown])
+        #expect(drawn.map(\.name) == ["contextOk", "contextWarn", "contextCrit", "contextUnknown"])
         #expect(drawn.map(\.header.context.tier) == [.okay, .warn, .crit, nil])
     }
 
