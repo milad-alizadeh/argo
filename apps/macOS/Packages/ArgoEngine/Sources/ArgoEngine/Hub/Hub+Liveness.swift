@@ -98,6 +98,7 @@ extension Hub {
         published.permission = facts.waiting.first
         published.standingAllows = facts.standing
         published.expiredPermissions = facts.expiries
+        published.driveStatus = facts.driveStatus
         // The rung falls back to the row's own, which is where a spawn's lives until something
         // sets a second one.
         published.modeSet = facts.modeSet ?? session.modeSet

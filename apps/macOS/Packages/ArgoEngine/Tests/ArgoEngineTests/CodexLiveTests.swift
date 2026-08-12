@@ -110,6 +110,31 @@ struct CodexLiveTests {
         #expect(await live.settle(until: { live.hub.sessions.first?.permission == nil }))
     }
 
+    /// The status half of the same round trip (#683). A real server raises `waitingOnApproval`
+    /// while it holds the request and clears it on the answer — which is the only place that
+    /// ordering can be established: the status and the approval are separate lines.
+    @Test(.timeLimit(.minutes(3)))
+    func `a real Codex reports waiting on an approval, and clears it on the answer`() async throws {
+        var live = try LiveCodex()
+        defer { live.remove() }
+        let session = try await live.spawn(mode: .readOnly)
+
+        try live.hub.driver.send(
+            "Create a file named flagged.txt in the working directory. Then stop.",
+            to: session,
+        )
+        #expect(await live.settle(until: {
+            live.thread?.reported == .active([.waitingOnApproval])
+        }))
+        let raised = try #require(live.hub.sessions.first?.permission)
+
+        try live.hub.driver.decide(.deny, answering: raised.id, for: session)
+
+        #expect(await live.settle(until: {
+            live.thread?.reported != .active([.waitingOnApproval])
+        }))
+    }
+
     /// The patch approval's own params carry no diff, so what the prompt names has to come off the
     /// item's notifications, joined on `itemId`. Whether those arrive BEFORE the approval is an
     /// ordering only the real server can settle — the spike recorded `turn/diff/updated`, which

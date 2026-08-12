@@ -16,6 +16,10 @@ struct ClaimFacts: Equatable {
     var expiries: [PermissionExpiry] = []
     /// The rung Argo last put it on (#545).
     var modeSet: SessionModeSet?
+    /// What the CLI's own protocol says this Session is doing, off `codex app-server`'s
+    /// `thread/status/changed` (#683). Absent for a `claude` claim, whose surface is a PTY with
+    /// nothing on it to report.
+    var driveStatus: SessionStatus?
     /// The last Turn typed at it that the CLI never heard, verbatim (#682). Held so the words can
     /// go back where they were typed: the composer cleared on the strength of a keystroke that was
     /// written, and this is the later news that it was never read.
@@ -29,6 +33,7 @@ struct ClaimFacts: Equatable {
             && standing.isEmpty
             && expiries.isEmpty
             && modeSet == nil
+            && driveStatus == nil
             && lostTurn == nil
     }
 }

@@ -33,6 +33,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// The Permissions Argo's own clock refused (#573) — DIRECT, and empty rather than absent for
     /// the reason the grants above are.
     public internal(set) var expiredPermissions: [PermissionExpiry] = []
+    /// What the CLI's own protocol says this Session is doing, where Argo drives one that reports
+    /// it (#683). Absent for every other Session, which is most of them.
+    public internal(set) var driveStatus: SessionStatus?
     /// Set by the Hub from its own record of the handoff, never read from a transcript: neither CLI
     /// knows anything happened.
     public internal(set) var handedOffTo: String?

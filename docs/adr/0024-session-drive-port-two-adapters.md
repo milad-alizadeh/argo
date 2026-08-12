@@ -128,6 +128,21 @@ Both paths are **DIRECT**: Argo owns the channel and the decision at both ends. 
 `CONTEXT.md` already assigns Permission, so no new tier is introduced — only a second source for
 one that exists.
 
+### What says a Codex Session is working
+
+`thread/status/changed` and nothing else. Discovery sweeps no `~/.codex/sessions` (see the last
+consequence below), so there is no transcript on this surface — and a Session with no Turn boundary
+observed reads as `running` for as long as its process lives, which is a Codex Session's whole life.
+So the adapter reads the notification's own `ThreadStatus` union: `active` with `activeFlags`,
+`idle`, `systemError`, `notLoaded`. `waitingOnApproval` is the "needs input" state above, and
+`waitingOnUserInput` is `asking`; `systemError` degrades to `unknown` rather than to `stopped`,
+which is a Turn that hit a wall of its own; `notLoaded` claims nothing, because a handshake that has
+not reached a thread says nothing about the Session yet.
+
+This reading is **DIRECT** for the reason the Permission is: the thread that reported it is one Argo
+started and holds the only pipe to, so the join from the report to the Session is exact rather than
+the working directory and time window a `claude` transcript is matched on.
+
 ## Why
 
 - The port is the only part that survives policy churn. Anthropic's billing rule changed three
@@ -230,6 +245,13 @@ Full JSON-RPC transcripts and reproduction: `docs/research/2026-08-12-codex-app-
   question above — the item's `changes` arrive BEFORE the approval that gates them. All three are
   in `CodexLiveTests`, gated on `ARGO_LIVE_CLI=1`. Every other server→client request is still
   answered with a JSON-RPC error rather than left open.
+- **The thread reports its own status, and that is the roster's reading (#683), against `codex-cli`
+  0.147.0.** A real app-server holding an approval reported
+  `thread/status/changed → {"type":"active","activeFlags":["waitingOnApproval"]}` and cleared the
+  flag on the answer, which is the ordering only a live server can settle — the status and the
+  approval are separate lines. The union's four arms are the server's own
+  `ThreadStatusChangedNotification`, re-derivable with `codex app-server generate-json-schema`,
+  which is where a version that changes them will show it.
 - **A denied agent commonly asks again**, so a Turn does not reliably end on one `decline`. That is
   the agent's business rather than the adapter's, which is why the live deny test asserts the
   prompt cleared and the file is absent instead of waiting for the Turn.

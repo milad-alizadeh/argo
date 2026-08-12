@@ -124,8 +124,42 @@ struct CodexDriveTests {
         #expect(codex.server.turns.count == 1)
     }
 
-    /// Until #549, an approval is declined where it arrives rather than raised — so there is never
-    /// one waiting, and saying so is the honest answer.
+    /// A Codex Session's status comes off the thread and nowhere else (#683): there is no
+    /// transcript on this surface, and a Session with no Turn boundary observed reads as `running`
+    /// for as long as its process lives. DIRECT, because the thread it came from is Argo's own.
+    @Test
+    func `the roster reads a Codex Session's status off its own thread`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let session = try await fixture.openCodexSession()
+
+        session.server.statusChanged("active", flags: ["waitingOnApproval"])
+        let waiting = try #require(fixture.hub.sessions.first)
+        #expect(waiting.statusReading == SessionStatusReading(tier: .direct, status: .permission))
+
+        session.server.statusChanged("idle")
+        #expect(fixture.hub.sessions.first?.status == .idle)
+    }
+
+    /// Nothing answered a Permission, so Argo's own clock declined it — and the Session is still
+    /// there to take the next Turn. The whole point of the deadline: the server keeps no clock, so
+    /// an approval nobody answers would otherwise hold the Turn open for ever.
+    @Test
+    func `a Session survives the Permission its own clock refused`() async throws {
+        let fixture = try SpawnFixture(permissionPatience: .immediate)
+        defer { fixture.remove() }
+        let session = try await fixture.openCodexSession()
+        session.server.askCommand(1, command: "touch denied.txt")
+
+        #expect(await settle { fixture.hub.sessions.first?.expiredPermissions.isEmpty == false })
+        #expect(session.server.decision(1) == "decline")
+
+        try fixture.hub.driver.send("Reply with the single word: alive", to: session.id)
+        #expect(session.server.turns.count == 1)
+    }
+
+    /// An approval is raised for the cockpit to answer (#549), so nothing is pending only while
+    /// nothing has asked.
     @Test
     func `there is no Permission to answer on a Codex Session yet`() async throws {
         let fixture = try SpawnFixture()
