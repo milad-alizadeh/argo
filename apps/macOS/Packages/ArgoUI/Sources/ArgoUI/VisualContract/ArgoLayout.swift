@@ -6,6 +6,9 @@ public enum ArgoLayout {
     public static let windowMinimumHeight: CGFloat = 600
     public static let sidebarMinimumWidth: CGFloat = 280
     public static let sidebarIdealWidth: CGFloat = 320
+    /// The size the window opens at (`ArgoApp`'s `defaultSize`) — the width a specimen renders a
+    /// pane at when it is showing the ordinary case rather than the narrowest one.
+    public static let windowIdealWidth: CGFloat = 1280
     public static let sidebarMaximumWidth: CGFloat = 420
     public static let statusDotSize: CGFloat = 6
     public static let connectionSlotWidth: CGFloat = 180

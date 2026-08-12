@@ -26,11 +26,8 @@ struct DeckCanopy: View {
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            // The strip the bar climbs into, which the window's own controls are drawn over. The
-            // title is centred HERE and not in a `ToolbarItem`: `.principal` is a slot between the
-            // bar's regions rather than a centring, and it parked the title against the scope
-            // vessel and pushed Rooms into the overflow menu. Zero-height wherever there is no
-            // toolbar above the deck, so a specimen of the deck alone draws no title.
+            // Zero-height wherever there is no toolbar above the deck, so a specimen of the deck
+            // alone draws no title.
             TitlebarTitle(header: header, paneWidth: paneWidth)
                 .frame(height: reach)
             SessionHeader(header: header, handOff: handOff)

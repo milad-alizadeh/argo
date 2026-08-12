@@ -15,8 +15,10 @@ struct SessionHeaderTooltipTests {
 
         #expect(lines.count == 6)
         #expect(lines[0] == "Claude Code · Opus 5")
-        #expect(lines[1] == "On argo/#692-titlebar-title, in a worktree of its own")
-        #expect(lines[2] == "Issue #692")
+        // The marks hang off the branch, on the line the fact line drew them on.
+        #expect(lines[1] == "On argo/#692-titlebar-title, in a worktree of its own "
+            + "· 3 uncommitted files")
+        #expect(lines[2] == "Issue #692 — Titlebar title")
         #expect(lines[3] == "Argo never owned this Session's terminal, "
             + "so it cannot be driven from here.")
         // The blank line is what separates identity from telemetry: the facts above it say what
@@ -95,7 +97,7 @@ struct SessionHeaderTooltipTests {
             status: .idle,
             cli: .claude,
             workspace: .init(kind: .worktree, branch: "argo/#692-titlebar-title", dirty: 3),
-            issue: .init(number: 692),
+            issue: .init(number: 692, title: "Titlebar title"),
             lastSeenAtMs: 3_600_000,
             startedAtMs: 0,
             spentTokens: 1_830_000,

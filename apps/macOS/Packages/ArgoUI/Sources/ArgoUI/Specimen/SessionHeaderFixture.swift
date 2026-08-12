@@ -10,25 +10,6 @@ enum SessionHeaderFixture {
     /// A real branch name off this machine, long enough that the line cannot hold it.
     static let longBranchName = "worktree-ticket-375-graphite-ion-blue"
 
-    /// What the PNG settles is that the cut lands on the BRANCH and that the marks, the model and
-    /// the issue after it are all still there.
-    static let longBranch = SessionHeaderProjection.header(from: session(
-        access: .managed,
-        title: "Ship the graphite ion-blue scope vessel",
-        branch: longBranchName,
-    ))
-
-    /// A Session whose record carried almost nothing: no CLI, a model nobody's table knows, no
-    /// git read behind it and no issue. The line has to hold its shape with most of it missing.
-    static let sparse = SessionHeaderProjection.header(from: CockpitPresentation.Session(
-        id: "header-sparse",
-        title: "Watch a Session read off a record that said very little",
-        model: "some-unreleased-model",
-        workspaceLocation: "/Users/milad/Developer/argo",
-        access: .external,
-        status: .unknown,
-    ))
-
     /// The one Session the band spends a word on: an agent blocked on a Permission. Drawn beside
     /// the calm postures on purpose — whether the word carries is a question about the headers
     /// around it.
@@ -38,9 +19,6 @@ enum SessionHeaderFixture {
         branch: "argo/#535-session-drive-port",
         status: .permission,
     ))
-
-    /// Every shape the fact line takes, for the previews that judge them as a group.
-    static let gallery = headers + [longBranch, sparse]
 
     /// One header per context tier, plus the record that carried no usage at all.
     ///

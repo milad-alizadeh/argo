@@ -118,9 +118,24 @@ enum SessionHeaderProjection {
         /// `nil`, never empty: `.help("")` still draws a chip, which reads as a fact that failed to
         /// load rather than as a Session nothing is known about.
         var tooltip: String? {
-            let facts = [agent, checkout?.detail, issue?.label, access?.detail].compactMap(\.self)
+            let facts = [agent, branchLine, issueLine, access?.detail].compactMap(\.self)
             let halves = [facts.joined(separator: "\n"), spend ?? ""].filter { !$0.isEmpty }
             return halves.isEmpty ? nil : halves.joined(separator: "\n\n")
+        }
+
+        /// The branch and what is unsaved on it, on ONE line — the marks hang off the branch on the
+        /// line they used to be drawn on, and nothing else renders them now that the line is gone.
+        private var branchLine: String? {
+            guard let checkout else { return nil }
+            return ([checkout.detail] + marks.map(\.detail)).joined(separator: " · ")
+        }
+
+        /// The issue as the header worded it, carrying the provider's own title where there is one.
+        /// The label alone is what the line SAID; the title was on the label's own hover, and with
+        /// that hover gone this is the only place left for it.
+        private var issueLine: String? {
+            guard let issue else { return nil }
+            return [issue.label, issue.detail].compactMap(\.self).joined(separator: " — ")
         }
     }
 

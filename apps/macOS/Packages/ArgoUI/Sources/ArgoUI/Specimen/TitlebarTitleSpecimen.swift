@@ -10,7 +10,7 @@ import SwiftUI
 /// `SessionHeaderTooltipTests` is what holds that.
 struct TitlebarTitleSpecimen: View {
     /// The detail pane at the window's DEFAULT size — where a real title mostly fits.
-    static let widePane: CGFloat = 1280 - ArgoLayout.sidebarIdealWidth
+    static let widePane: CGFloat = ArgoLayout.windowIdealWidth - ArgoLayout.sidebarIdealWidth
     /// The narrowest detail pane the window allows, which is where the share does its work.
     static let narrowPane: CGFloat = ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth
 

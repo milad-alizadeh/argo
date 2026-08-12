@@ -2,10 +2,8 @@ import SwiftUI
 
 /// The Session's name where macOS puts a document title: the centre of the titlebar (#692).
 ///
-/// Centred on the DETAIL PANE and never on the window, which is why `DeckCanopy` draws it rather
-/// than the toolbar: the canopy IS that pane and already climbs into the bar. `.principal` is a
-/// slot between the bar's regions and not a centring — it parked the title against the scope
-/// vessel and pushed Rooms into the overflow menu.
+/// Centred on the DETAIL PANE and never on the window, so it can never sit over the sidebar's
+/// glass. `DeckCanopy` draws it, because the canopy IS that pane and already climbs into the bar.
 ///
 /// It takes the pane's width rather than reading a geometry of its own, so the cap is a share of
 /// the pane and not of whatever the title itself was given.
@@ -32,25 +30,26 @@ struct TitlebarTitle: View {
                 }
             }
         }
+        // The cap goes on the PAIR, not on the title alone. The pair is what is centred, so a cap
+        // on the title alone would let a posture word push the whole run past the share and carry
+        // the title itself off the pane's midpoint.
+        .frame(maxWidth: cap)
         // No height of its own: the caller gives it the strip's, and a title that set one would
         // fight the reach the canopy climbs by.
-        .help(header?.tooltip ?? "")
+        .argoHelp(header?.tooltip)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(header?.announcement ?? "No Session selected")
     }
 
     /// Cut at the TAIL: a Session's title is written subject first, so its front tells two of them
-    /// apart.
-    ///
-    /// The share is what keeps it clear of the scope vessel and the rooms capsule, pinned to
-    /// opposite edges — it is centred, so the cap is spent on both sides of the pane's midpoint.
+    /// apart. It is the one thing in the run that gives — the posture word is four syllables and
+    /// gating, so a cut there would be the wrong economy.
     private func title(_ header: SessionHeaderProjection.Header) -> some View {
         Text(header.title)
             .argoText(ArgoTypography.windowTitle)
             .foregroundStyle(argo.color.text.primary)
             .lineLimit(1)
             .truncationMode(.tail)
-            .frame(maxWidth: cap)
     }
 
     /// Whether the Session can be driven at all, in the same word the composer's foot uses. Which
@@ -62,10 +61,26 @@ struct TitlebarTitle: View {
             .lineLimit(1)
     }
 
+    /// What keeps the run clear of the scope vessel and the rooms capsule, pinned to opposite
+    /// edges — it is centred, so the share is spent on BOTH sides of the pane's midpoint.
+    ///
     /// `.infinity` before the shell has measured anything: a `maxWidth` of zero would collapse the
     /// title to nothing on the first pass rather than merely leave it uncut.
     private var cap: CGFloat {
         paneWidth > 0 ? paneWidth * ArgoLayout.titlebarTitleMaximumShare : .infinity
+    }
+}
+
+private extension View {
+    /// `.help` only where there is something to say. An empty help string still draws a chip, which
+    /// reads as a fact that failed to load rather than as a Session nothing is known about — which
+    /// is why `Header.tooltip` is optional rather than sometimes empty.
+    @ViewBuilder func argoHelp(_ text: String?) -> some View {
+        if let text {
+            help(text)
+        } else {
+            self
+        }
     }
 }
 
