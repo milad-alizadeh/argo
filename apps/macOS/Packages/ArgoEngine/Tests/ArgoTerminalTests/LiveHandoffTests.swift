@@ -25,7 +25,7 @@ struct LiveHandoffTests {
         let codename = "ARGO-\(UUID().uuidString.prefix(6))"
         let live = try await LiveClaudeFixture.primed(
             saying: "Reply with just OK. The release codename is \(codename).",
-            carryingSkills: ["handoff"],
+            carryingSkills: [.installed("handoff")],
         )
         defer { live.end() }
 
@@ -59,7 +59,7 @@ struct LiveHandoffTests {
     /// picks — so a roster that reloads after the fresh agent's first record still follows it.
     @Test(.timeLimit(.minutes(60)))
     func `the chain edge ends up naming the fresh Session by its CLI's own id`() async throws {
-        let live = try await LiveClaudeFixture.primed(carryingSkills: ["handoff"])
+        let live = try await LiveClaudeFixture.primed(carryingSkills: [.installed("handoff")])
         defer { live.end() }
         let source = live.sessionID
 
@@ -85,7 +85,7 @@ struct LiveHandoffTests {
     /// was first run, and a bound the work can win is not a bound under test.
     @Test(.timeLimit(.minutes(30)))
     func `a brief that does not arrive ends the wait at its stated bound`() async throws {
-        let live = try await LiveClaudeFixture.primed(carryingSkills: ["handoff"])
+        let live = try await LiveClaudeFixture.primed(carryingSkills: [.installed("handoff")])
         defer { live.end() }
 
         await #expect(throws: SessionHandoff.Failure.briefNeverArrived(afterMs: 2000)) {
@@ -99,7 +99,7 @@ struct LiveHandoffTests {
     /// button is offered again on the same row, and a wedged Session would answer nothing.
     @Test(.timeLimit(.minutes(30)))
     func `a Session whose handoff timed out still takes the next Turn`() async throws {
-        let live = try await LiveClaudeFixture.primed(carryingSkills: ["handoff"])
+        let live = try await LiveClaudeFixture.primed(carryingSkills: [.installed("handoff")])
         defer { live.end() }
         _ = try? await live
             .handoff(patience: HandoffPatience(pollMs: 500, limitMs: 2000))

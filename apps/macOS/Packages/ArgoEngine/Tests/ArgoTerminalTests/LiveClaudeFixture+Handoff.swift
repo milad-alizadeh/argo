@@ -24,7 +24,7 @@ extension LiveClaudeFixture {
     /// caller still owns `end()`.
     static func primed(
         saying prompt: String = "Reply with just OK.",
-        carryingSkills skills: [String] = [],
+        carryingSkills skills: [LiveSkill] = [],
     ) async throws
         -> LiveClaudeFixture {
         let live = try await spawned(carryingSkills: skills)
@@ -139,16 +139,27 @@ extension LiveClaudeFixture {
 
     /// This machine's installed skills, copied into the Project's own `.claude/skills`. Copied
     /// rather than symlinked because the CLI resolves the folder it is given.
-    static func install(skills: [String], into root: URL) throws {
+    static func install(skills: [LiveSkill], into root: URL) throws {
         guard !skills.isEmpty else { return }
         let source = installedSkills()
         let destination = root.appending(path: ".claude/skills", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         for skill in skills {
-            try FileManager.default.copyItem(
-                at: source.appending(path: skill, directoryHint: .isDirectory),
-                to: destination.appending(path: skill, directoryHint: .isDirectory),
-            )
+            let skillURL = destination.appending(path: skill.directory, directoryHint: .isDirectory)
+            switch skill {
+            case let .installed(name):
+                try FileManager.default.copyItem(
+                    at: source.appending(path: name, directoryHint: .isDirectory),
+                    to: skillURL,
+                )
+            case .probe:
+                try FileManager.default.createDirectory(
+                    at: skillURL,
+                    withIntermediateDirectories: true,
+                )
+                let markdown = LiveSkill.probeMarkdown(writing: markerPath(in: root))
+                try Data(markdown.utf8).write(to: skillURL.appending(path: "SKILL.md"))
+            }
         }
     }
 

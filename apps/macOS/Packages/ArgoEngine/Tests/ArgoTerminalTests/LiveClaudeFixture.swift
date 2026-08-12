@@ -68,8 +68,14 @@ final class LiveClaudeFixture {
         self.hub = hub
         self.claim = claim
         self.host = host
-        self.markerURL = root.appending(path: "the-agent-was-here")
+        self.markerURL = URL(filePath: Self.markerPath(in: root))
         self.followUpMarkerURL = root.appending(path: "the-agent-came-back")
+    }
+
+    /// Where the marker goes, as a path a skill's body can name. Taken from the root so a skill
+    /// written before the fixture exists names the same file `markerURL` reads.
+    static func markerPath(in root: URL) -> String {
+        root.appending(path: "the-agent-was-here").path
     }
 
     /// A spawned Session with its folder trusted, ready to be asked something. The patience is
@@ -83,7 +89,7 @@ final class LiveClaudeFixture {
     static func spawned(
         on mode: SessionMode? = nil,
         patience: PermissionPatience = .default,
-        carryingSkills skills: [String] = [],
+        carryingSkills skills: [LiveSkill] = [],
     ) async throws
         -> LiveClaudeFixture {
         let token = String(UUID().uuidString.prefix(8))
