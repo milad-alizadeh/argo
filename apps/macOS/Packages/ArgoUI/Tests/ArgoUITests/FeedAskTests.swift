@@ -105,6 +105,14 @@ struct FeedAskTests {
         #expect(ask.offers(in: Self.question).allSatisfy { !$0.isChosen })
     }
 
+    /// An answer names WORDS, and two options may carry the same words. It has named one of them.
+    @Test
+    func `two options with the same words mark only the first`() {
+        let offers = FeedAskOffer.numbered(["Yes", "Yes"], chosen: "Yes")
+
+        #expect(offers.map(\.isChosen) == [true, false])
+    }
+
     @Test
     func `a question that offered nothing offers nothing`() throws {
         let ask = try #require(asked(nil))

@@ -50,9 +50,8 @@ private struct FeedAskQuestion: View {
     let offers: [FeedAskOffer]
     let ink: ArgoColor
 
-    /// The question and its options share one grid: a marker column, then the words. So the ask
-    /// glyph is drawn in the same column the option numbers are, and the options take no indent of
-    /// their own — one step in from the row, not two.
+    /// The ask glyph takes the same marker column the option numbers do, so the block is one grid
+    /// and the options need no indent of their own.
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.stepBeforeProse) {
             HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.markerGap) {
@@ -60,7 +59,7 @@ private struct FeedAskQuestion: View {
                     .foregroundStyle(ink)
                     .frame(width: ArgoFeedRow.markerWidth, alignment: .trailing)
                 Text(question.text)
-                    .argoText(ArgoTypography.body)
+                    .argoText(ArgoFeedRow.proseRung)
                     .foregroundStyle(argo.color.text.primary)
                     .fixedSize(horizontal: false, vertical: true)
             }

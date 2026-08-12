@@ -31,10 +31,7 @@ struct FeedAsk: Equatable, Sendable {
 
     /// The options of one question, numbered, in the order they were offered — what the row draws.
     func offers(in question: Ask.Question) -> [FeedAskOffer] {
-        let taken = chosen(in: question)
-        return question.options.enumerated().map { index, label in
-            FeedAskOffer(ordinal: index + 1, label: label, isChosen: label == taken)
-        }
+        FeedAskOffer.numbered(question.options, chosen: chosen(in: question))
     }
 
     /// Which of the offered options the answer named, or `nil`.
