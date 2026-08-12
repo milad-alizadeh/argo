@@ -37,7 +37,7 @@ state the happy path never renders — a Session mid-Turn with something waiting
 
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
-| `AttachButton` | atom | `ArgoUI/Shell/Deck/Composer/` — the footer's own part | `attach: ([SessionAttachment]) -> Void` | `ArgoGlyph` + stock `.fileImporter` | frozen table, `AttachButton` |
+| `AddButton` | atom | `ArgoUI/Shell/Deck/Composer/` — the footer's own part | `attach: ([SessionAttachment]) -> Void` | `ArgoGlyph` + stock `.fileImporter` | frozen table, `AttachButton` — renamed `AddButton` in #708 |
 | `AttachmentTray` | molecule | same | `attachments: [SessionAttachment]`, `remove: (SessionAttachment.ID) -> Void` | `WrapFlow` over `AttachmentChip` | frozen table, `AttachmentTray` |
 | `AttachmentChip` | molecule | same | `attachment: SessionAttachment`, `remove: () -> Void` | thumbnail or `ArgoGlyph`, name, mono size, an 18pt `×` | frozen table, `AttachmentChip` |
 | `AttachmentDropTarget` | modifier | same | `canAttach: Bool`, `attach: ([SessionAttachment]) -> Void`, `isHeldOpen: Bool` | the dashed rim, the wash, and *Drop to attach* | `dragover.png` |

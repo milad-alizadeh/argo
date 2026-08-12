@@ -30,7 +30,7 @@ struct ComposerFooter: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
             if let attach {
-                AttachButton(attach: attach)
+                AddButton(attach: attach)
             }
             Spacer()
             ModePicker(reading: mode, setMode: setMode)

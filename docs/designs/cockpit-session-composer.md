@@ -51,7 +51,7 @@ These become file names and ticket titles; renaming later is a migration.
 | `SessionComposer` | the glass vessel and everything in it |
 | `ComposerField` | the growing text view |
 | `ComposerFooter` | attach · Mode · run facts · send |
-| `AttachButton` | the leading `+`. **Renamed `AddButton`** by [`cockpit-composer-picker.md`](cockpit-composer-picker.md) (#590): it opens files, skills and commands, and two of those are not attachments. The glyph is unchanged |
+| `AddButton` | the leading `+`. Renamed from `AttachButton` by [`cockpit-composer-picker.md`](cockpit-composer-picker.md) (#590, done in #708): it opens files, skills and commands, and two of those are not attachments. The glyph is unchanged, and its sentence stays *Attach a file* until #689 gives it the menu |
 | `AttachmentTray` / `AttachmentChip` | chips above the field |
 | `ModePicker` | the `Read Only · Plan · Code · Auto` menu. Bespoke, not a `Picker` (#608) |
 | `RunFactsButton` | the `Opus 5 · Medium` fact line that opens the popover |
