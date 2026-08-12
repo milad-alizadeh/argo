@@ -469,6 +469,15 @@ its approved study are authoritative for the replacement look and feel.
 - **Why:** The current density gutter repeats the feed's visual noise at an unreadable scale. A
   semantic overview answers what kinds of evidence exist, where they occur, and where the viewport
   sits without becoming another information surface to decipher.
+- **Amended by [#382](https://github.com/milad-alizadeh/argo/issues/382) — 2026-08-10:** "a small
+  vocabulary of shapes" is now the rows' OWN shapes at the lane's scale — a prompt is its bubble on
+  the trailing edge, a paragraph is one bar per measured line with the last one ragged, a call is a
+  slab as long as its sentence. The encoding above still holds; what changed is that the shapes are
+  derived from each row rather than assigned to a class. "Never readable text" holds for the
+  miniature and no longer for the annotations over it: hovering a Turn draws its prompt as real
+  text, and ⇧⌘ draws every one on screen. **The Ion Blue line spanning a Turn is drawn for the
+  hovered Turn alone** — one per Turn at rest made the lane a near-continuous blue rail, spending
+  the app's loudest colour on saying a session has Turns in it.
 
 ## D26 — Heavy evidence summarizes, then expands inline
 

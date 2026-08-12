@@ -51,6 +51,7 @@ extension SpecimenScreen {
              .feedAbsentShot, .feedLightbox, .planPill, .openPlanPill, .unstartedPlanPill,
              .floatingControls, .flatFloatingControls, .feedLeftBehind, .feedLeftBehindInSilence,
              .minimapLane, .minimapLaneHeld, .minimapLaneShortReading,
+             .minimapLaneNamingTurn, .minimapLaneEveryPrompt, .minimapLaneKinds,
              .twoReadings, .composer, .composerTyping, .composerRefusal, .flatComposer,
              .composerStanding, .composerCeiling, .composerDraftKept, .composerQueued,
              .composerRunning, .composerStopped,

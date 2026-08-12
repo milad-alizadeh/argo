@@ -96,6 +96,9 @@ public enum Specimen: String, CaseIterable, Sendable {
     case minimapLane
     case minimapLaneHeld
     case minimapLaneShortReading
+    case minimapLaneNamingTurn
+    case minimapLaneEveryPrompt
+    case minimapLaneKinds
     case twoReadings
     case composer
     case composerTyping

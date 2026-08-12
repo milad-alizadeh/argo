@@ -9,6 +9,10 @@ import SwiftUI
 struct MinimapLane: NSViewRepresentable {
     let feed: FeedTableHandle
 
+    /// Which Turn a still is naming. `.nothing` in the running app, always — a hover comes from a
+    /// pointer, and this is only how a render reaches the state (#382).
+    var naming: MinimapNaming = .nothing
+
     func makeNSView(context: Context) -> MinimapLaneView {
         let lane = MinimapLaneView()
         lane.setAccessibilityLabel("Minimap lane")
@@ -27,7 +31,23 @@ struct MinimapLane: NSViewRepresentable {
         lane.pace = environment.accessibilityReduceMotion
             ? nil
             : ArgoMotion.selection.duration
+        name(lane)
         lane.attach(to: feed)
+    }
+
+    private func name(_ lane: MinimapLaneView) {
+        switch naming {
+        case .nothing:
+            lane.namedShare = nil
+            lane.namesEveryTurn = false
+        case let .turn(share):
+            lane.namedShare = share
+            lane.namesEveryTurn = false
+        case .everyTurn:
+            lane.namedShare = nil
+            lane.namesEveryTurn = true
+        }
+        lane.settleAnnotations()
     }
 }
 
@@ -44,4 +64,21 @@ struct MinimapLane: NSViewRepresentable {
 #Preview("Minimap lane — a Session that has said nothing") {
     FeedPreview(rows: [], showsOverview: true)
         .frame(width: 820, height: 320)
+}
+
+#Preview("Minimap lane — the pointer naming one Turn") {
+    var preview = FeedPreview(rows: FeedProjection.longRows, showsOverview: true)
+    preview.naming = .turn(atShare: 0.4)
+    return preview.frame(width: 820, height: 560)
+}
+
+#Preview("Minimap lane — ⇧⌘, every Turn named at once") {
+    var preview = FeedPreview(rows: FeedProjection.longRows, showsOverview: true)
+    preview.naming = .everyTurn
+    return preview.frame(width: 820, height: 560)
+}
+
+#Preview("Minimap lane — every kind the feed can draw") {
+    FeedPreview(rows: FeedProjection.previewRows, showsOverview: true)
+        .frame(width: 820, height: 560)
 }

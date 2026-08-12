@@ -76,8 +76,15 @@ extension SpecimenScreen {
 
     /// A reading with its overview lane beside it. The pair alone rather than the whole shell,
     /// because 112 points of a 1440-wide deck is not a width anyone can judge a rhythm at.
-    func overview(_ rows: [FeedRow], held: FeedRow.ID? = nil) -> some View {
-        FeedPreview(rows: rows, showsOverview: true, held: held)
+    func overview(
+        _ rows: [FeedRow],
+        held: FeedRow.ID? = nil,
+        naming: MinimapNaming = .nothing,
+    )
+        -> some View {
+        var preview = FeedPreview(rows: rows, showsOverview: true, held: held)
+        preview.naming = naming
+        return preview
     }
 
     /// The Sessions room with a reading in it — the shell and not `SessionsDeck`, because what is

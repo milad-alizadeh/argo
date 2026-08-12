@@ -51,18 +51,65 @@ extension MinimapLaneView {
         }
         addTrackingArea(NSTrackingArea(
             rect: bounds,
-            options: [.mouseEnteredAndExited, .activeInKeyWindow],
+            // `mouseMoved` as well, because the Turn under the pointer is what an annotation
+            // names, and entering the lane says only that there IS one (#382).
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow],
             owner: self,
         ))
     }
 
-    override func mouseEntered(with _: NSEvent) {
+    override func mouseEntered(with event: NSEvent) {
+        pointedAt = laneY(of: event)
+        read(event.modifierFlags)
+        watchModifiers()
         light(true)
     }
 
-    /// A scrub carried off the lane keeps it lit — the hand is still on the reading.
+    /// A scrub carried off the lane keeps it lit — the hand is still on the reading. The Turn's
+    /// mark goes either way: it names a Turn under the pointer, and the pointer has left.
     override func mouseExited(with _: NSEvent) {
+        pointedAt = nil
+        holdsBothKeys = false
+        stopWatchingModifiers()
         light(grab != nil)
+        settleAnnotations()
+    }
+
+    /// The Turn under the pointer re-read. Only the annotation layer answers, and it does nothing
+    /// at all while the pointer stays inside the Turn it is already naming.
+    override func mouseMoved(with event: NSEvent) {
+        pointedAt = laneY(of: event)
+        settleAnnotations()
+    }
+
+    /// ⇧⌘ asks for every Turn's prompt at once, and only while the pointer is on the lane.
+    ///
+    /// A monitor rather than `flagsChanged`, which reaches the first responder alone — and the lane
+    /// never is one. Taking key focus off the composer to read a modifier would be a far worse
+    /// trade than watching for one while a pointer is actually here to use it.
+    func watchModifiers() {
+        guard modifierWatch == nil else { return }
+        // Weak, because the monitor outlives a view torn down between an enter and an exit — a
+        // deck closed under the pointer is exactly that — and a strong one would keep it alive.
+        modifierWatch = NSEvent
+            .addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+                MainActor.assumeIsolated { self?.read(event.modifierFlags) }
+                return event
+            }
+    }
+
+    func stopWatchingModifiers() {
+        modifierWatch.map(NSEvent.removeMonitor)
+        modifierWatch = nil
+    }
+
+    /// Read off the keys as they are rather than latched, so letting go of either one puts the lane
+    /// back whichever way it was released.
+    private func read(_ flags: NSEvent.ModifierFlags) {
+        let wanted = flags.isSuperset(of: [.shift, .command])
+        guard holdsBothKeys != wanted else { return }
+        holdsBothKeys = wanted
+        settleAnnotations()
     }
 
     /// A wheel over the lane scrolls the reading beside it, rather than nothing at all. The event

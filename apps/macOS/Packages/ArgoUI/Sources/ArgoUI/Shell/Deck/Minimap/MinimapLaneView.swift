@@ -1,13 +1,13 @@
 import AppKit
 
-/// The overview lane itself: two layers over the deck, and only the top one moves while the reader
+/// The overview lane itself: layers over the deck, and only the top ones move while the reader
 /// scrolls.
 ///
 /// The marks are a bitmap of a BAND of the miniature, rasterised when that band's content changes
 /// and at no other time — `MinimapGeometry` holds no scroll offset, so a scroll inside the band
 /// moves the marks layer's frame and repaints nothing. The viewport rectangle is a second layer
-/// moved the same way, inside a `CATransaction` with actions disabled. #382 adds a third layer over
-/// these for D25's annotations without touching either.
+/// moved the same way, inside a `CATransaction` with actions disabled. The annotations are a third
+/// (#382), and the only one a pointer moving over the lane ever touches.
 final class MinimapLaneView: NSView {
     /// The feed this lane maps. Weak, because the handle belongs to the deck above both of them.
     weak var feed: FeedTableHandle?
@@ -33,6 +33,34 @@ final class MinimapLaneView: NSView {
     /// a hand before the hand commits to anything.
     var isLit = false
 
+    /// Where down the lane the pointer is, when it is on it (#382).
+    var pointedAt: CGFloat?
+
+    /// The Turn a still names instead, as a share of the lane — see `MinimapNaming`. Resolved
+    /// against the height rather than stored as a point, because it is set before the lane has one.
+    var namedShare: CGFloat?
+
+    /// Which place down the lane is naming a Turn. The pointer wins: a real hand on the surface is
+    /// never overruled by what a specimen asked for.
+    var hovered: CGFloat? {
+        pointedAt ?? namedShare.map { bounds.height * $0 }
+    }
+
+    /// Whether ⇧⌘ is held, which asks for every Turn at once rather than the one under the pointer.
+    var holdsBothKeys = false
+
+    /// The same asked for by a still — see `MinimapNaming`.
+    var namesEveryTurn = false
+
+    /// Whether every Turn on screen is named. Either source will do: one is a hand on the keyboard,
+    /// the other is a render saying what state it is showing.
+    var showsEveryPrompt: Bool {
+        holdsBothKeys || namesEveryTurn
+    }
+
+    /// The modifier watch, held only while the pointer is on the lane.
+    var modifierWatch: Any?
+
     /// What the lane is currently drawn against. Read by the pointer half, which maps a place in
     /// the lane back onto the reading through the geometry a scrub froze.
     private(set) var geometry = MinimapGeometry(MinimapReading(), lane: .zero)
@@ -41,13 +69,27 @@ final class MinimapLaneView: NSView {
     /// scrolling the feed inside a band repaints no content in the lane.
     var markRedraws = 0
 
+    /// The same instrument for the annotations, which is what shows the two are separate: a hover
+    /// moves this and leaves `markRedraws` alone (#382).
+    var annotationRedraws = 0
+
     let marksLayer = CALayer()
-    /// The slice of the miniature currently held as pixels, and what was drawn into it. Both are
-    /// compared before a rasterise, so a feed append outside the band costs nothing.
+    /// The slice of the miniature currently held as pixels, and what was drawn into it. All three
+    /// are compared before a rasterise, so a feed append outside the band costs nothing.
     var drawnBand: MinimapBand?
     var drawnMarks: [MinimapMark] = []
-    /// The ink the marks bitmap was drawn in, so a palette that did not change does not re-ink it.
-    var inked: ArgoColor?
+    /// Every ink the marks bitmap was drawn in, so a palette that did not change does not re-ink
+    /// it. The whole set rather than one colour: a second appearance can move a diff ink without
+    /// touching the ramp, and the lane draws both.
+    var inked: [ArgoColor] = []
+
+    /// The annotation layer (#382). Over the marks and the lit range both, because an annotation is
+    /// read rather than looked at, and it is the only layer a hover ever touches.
+    let annotationsLayer = CALayer()
+    var drawnAnnotations: [MinimapAnnotation] = []
+    /// The ink the annotations were drawn in, so a palette that did not change does not re-set
+    /// them.
+    var labelled: ArgoColor?
 
     private let viewportLayer = CALayer()
     /// The scroll knob down the lane's outer edge. The feed's own overlay scroller is switched off
@@ -66,6 +108,7 @@ final class MinimapLaneView: NSView {
         layer?.addSublayer(marksLayer)
         layer?.addSublayer(viewportLayer)
         layer?.addSublayer(scrollerLayer)
+        layer?.addSublayer(annotationsLayer)
     }
 
     @available(*, unavailable)
@@ -92,13 +135,6 @@ final class MinimapLaneView: NSView {
         marksLayer.frame
     }
 
-    /// D25's quiet neutral line: the dimmest rung of the ramp, because a lane at a real session's
-    /// length is dense with marks and is read at a glance beside the reading, never instead of it.
-    /// A rung is a loudness here, not a meaning (`rules/design-system.md`).
-    var markInk: ArgoColor? {
-        palette?.text.disabled
-    }
-
     /// The reading re-read and the lane put where it now sits.
     ///
     /// Called when the reading changes shape, when the lane is resized, and when a scrub lets go.
@@ -123,6 +159,7 @@ final class MinimapLaneView: NSView {
             at: geometry.viewportY(at: offset), height: geometry.viewportHeightInLane,
         )
         settleScroller(over: viewportLayer.frame)
+        settleAnnotations()
         CATransaction.commit()
     }
 
@@ -164,6 +201,9 @@ final class MinimapLaneView: NSView {
         super.viewDidMoveToWindow()
         grab = nil
         isLit = false
+        pointedAt = nil
+        holdsBothKeys = false
+        stopWatchingModifiers()
         refresh()
     }
 

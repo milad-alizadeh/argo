@@ -149,6 +149,7 @@ extension SpecimenScreen {
              .feedAbsentShot, .feedLightbox, .planPill, .openPlanPill, .unstartedPlanPill,
              .floatingControls, .flatFloatingControls, .feedLeftBehind, .feedLeftBehindInSilence,
              .minimapLane, .minimapLaneHeld, .minimapLaneShortReading,
+             .minimapLaneNamingTurn, .minimapLaneEveryPrompt, .minimapLaneKinds,
              .twoReadings, .welcome, .connectFresh, .connectFolderOnly, .connectPartly,
              .connectWired, .connectWaiting, .connectRefused, .connectBroken, .projectSettings,
              .connectionStale, .connectionsStale, .connectionNeedsReconnect:
