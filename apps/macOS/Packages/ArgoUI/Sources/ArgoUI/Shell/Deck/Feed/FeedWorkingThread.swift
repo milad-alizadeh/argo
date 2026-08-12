@@ -6,8 +6,9 @@ import SwiftUI
 /// flourish: `FeedMark.turnEnded(.endTurn)` already draws as a full-width hairline with no words,
 /// so a resting track under this would read as the mark meaning the opposite.
 ///
-/// The lane cancels `ArgoFeedRow.inset` and runs the full `ArgoFeedRow.column` — the one row in
-/// the feed that ignores the gutter. It clips, so the ion never spills into the deck beyond it.
+/// The lane is the zone's full width — `FeedTableModel` holds this one row to no gutter and no
+/// measure, so the ion runs edge to edge and exits at the minimap's seam. It clips, so the ion
+/// never spills into the rows above and below it.
 struct FeedWorkingThread: View {
     var body: some View {
         GeometryReader { proxy in
@@ -18,7 +19,6 @@ struct FeedWorkingThread: View {
         }
         .frame(height: ArgoFeedRow.lineHeight)
         .clipped()
-        .padding(.horizontal, -ArgoFeedRow.inset)
         .accessibilityElement()
         .accessibilityLabel(FeedMark.working.spoken)
         // The word left the screen; it must not leave the screen reader. The trait says the row
@@ -81,7 +81,6 @@ private struct Filament: View {
 // out past both edges, with nothing left behind it.
 #Preview("Working — the thread crossing the measure") {
     FeedWorkingThread()
-        .padding(ArgoFeedRow.inset)
         .frame(width: ArgoFeedRow.column)
         .argoDeckSurface()
         .argoAppearance()
@@ -95,7 +94,6 @@ private struct Filament: View {
             FeedWorkingThread().environment(\.argoAgesWait, age)
         }
     }
-    .padding(ArgoFeedRow.inset)
     .frame(width: ArgoFeedRow.column)
     .argoDeckSurface()
     .argoAppearance()
@@ -104,7 +102,6 @@ private struct Filament: View {
 // The whole of Reduce Motion: parked at the centre, dimmer, and still reading as live.
 #Preview("Working — the thread with movement off") {
     FeedWorkingThread()
-        .padding(ArgoFeedRow.inset)
         .frame(width: ArgoFeedRow.column)
         .environment(\.argoStillsMotion, true)
         .argoDeckSurface()

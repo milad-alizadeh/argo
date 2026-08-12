@@ -25,19 +25,26 @@ import SwiftUI
 
     /// One row of the reading, dressed as the column drew it: its step from the row above, the
     /// feed's gutters, and the measure — per cell, since every cell is the column's full width.
+    ///
+    /// The working thread alone takes no gutter and no measure: its ion crosses the whole zone
+    /// and exits at the minimap's seam, not at a hard cut mid-panel.
     func content(at index: Int) -> AnyView {
         let row = rows[index]
-        return AnyView(
-            FeedRowView(row: row, isExpanded: unfolding(row.id), selection: selection)
-                .padding(.top, step(before: index))
-                .background {
-                    if washed == row.id {
-                        RoundedRectangle(cornerRadius: ArgoRadius.control)
-                            .fill(environment.argo.color.state
-                                .muted(environment.argo.color.interaction.accent))
-                    }
+        let dressed = FeedRowView(row: row, isExpanded: unfolding(row.id), selection: selection)
+            .padding(.top, step(before: index))
+            .background {
+                if washed == row.id {
+                    RoundedRectangle(cornerRadius: ArgoRadius.control)
+                        .fill(environment.argo.color.state
+                            .muted(environment.argo.color.interaction.accent))
                 }
-                .argoAnimation(.bloom, value: washed == row.id)
+            }
+            .argoAnimation(.bloom, value: washed == row.id)
+        guard !row.isWorkingThread else {
+            return AnyView(dressed.environment(\.self, environment))
+        }
+        return AnyView(
+            dressed
                 .padding(.horizontal, ArgoFeedRow.inset)
                 .argoFeedMeasure()
                 .environment(\.self, environment),
