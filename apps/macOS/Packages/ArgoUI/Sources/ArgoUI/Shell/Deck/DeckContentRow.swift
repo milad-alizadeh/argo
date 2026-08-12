@@ -19,6 +19,9 @@ struct DeckContentRow: View {
     let seams: DeckSeams
     /// One flag for both seams — only one of them can be dragged at a time.
     @State private var isResizing = false
+    /// The reading's scroll authority, held here because two zones share it: the feed drives it and
+    /// the minimap maps it.
+    @State private var table = FeedTableHandle()
 
     var body: some View {
         GeometryReader { proxy in
@@ -42,11 +45,12 @@ struct DeckContentRow: View {
                     held: held,
                     vessel: vessel,
                     intents: intents,
+                    table: table,
                 )
                 if !zoning.isPanelOpen {
                     DeckSeparator()
                         .transition(.opacity)
-                    DeckSlot(zone: .minimap)
+                    MinimapLane(feed: table)
                         .frame(width: ArgoLayout.minimapLaneWidth)
                         .transition(.opacity)
                 }
@@ -102,72 +106,5 @@ struct DeckContentRow: View {
             }
             .transition(.move(edge: .trailing))
         }
-    }
-}
-
-/// The feed and the composer floating over it, bounded to their own column rather than run across
-/// the deck (C4.1). The deck's bottom edge carries no Dock seam any more — it belongs to the
-/// reading, and the vessel floats over it (#403, closed by #536).
-private struct FeedColumn: View {
-    let feed: [FeedRow]
-    let showing: PlanShowing
-    let selection: FeedRowSelection
-    var held: FeedRow.ID?
-    var vessel = DeckVessel.none
-    var intents = DeckIntents.inert
-
-    var body: some View {
-        FeedView(rows: feed, selection: selection, held: held, isUnderComposer: vessel.isFloating)
-            // Over the feed rather than in the column's stack: a row in the stack would take
-            // height from the reading it is meant to sit above. Bounded to this column so it
-            // moves with the feed when a seam does, never over the panel.
-            .overlay(alignment: .bottom) { pill }
-            .overlay(alignment: .bottom) { floating }
-            // Whatever the two seams leave it; prose inside is held to the measure by the rows.
-            .frame(maxWidth: .infinity)
-    }
-
-    /// A Session that never reported a plan gets no pill — not an empty one, and not a note saying
-    /// there is none. Lifted clear of the vessel when one floats under it.
-    @ViewBuilder private var pill: some View {
-        if let plan = showing.plan {
-            PlanPill(plan: plan, isRevealed: showing.isRevealed)
-                .padding(
-                    .bottom,
-                    vessel.isFloating ? ArgoComposerVessel.feedClearance : ArgoPlanPill.lift,
-                )
-        }
-    }
-
-    /// Which vessel is drawn is `DeckVessel`'s answer, already made — this switch only draws it.
-    /// The undriveable line is a row on the deck rather than a float, so it is not here.
-    @ViewBuilder private var floating: some View {
-        switch vessel {
-        case let .prompt(prompt):
-            PermissionPrompt(prompt: prompt, decide: intents.decide, revoke: intents.revoke)
-                .modifier(FloatingVessel())
-        case let .composer(composer):
-            SessionComposer(
-                composer: composer,
-                send: intents.send,
-                revoke: intents.revoke,
-                stop: intents.stop,
-                setMode: intents.setMode,
-                draft: intents.draft,
-            )
-            .modifier(FloatingVessel())
-        case .unavailable, .none:
-            EmptyView()
-        }
-    }
-}
-
-/// Where a floating vessel sits against the feed's own column — one inset, so the two cannot come
-/// to disagree about where the slot is.
-private struct FloatingVessel: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .padding(.horizontal, ArgoSpacing.section)
-            .padding(.bottom, ArgoSpacing.loose)
     }
 }
