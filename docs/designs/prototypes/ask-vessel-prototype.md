@@ -73,8 +73,17 @@ Four things came out of drawing all three, and would not have come out of prose:
    affordance moves with the scroll, so a long feed can put the question off screen while the
    composer below it waits.
 
+**A click on an option IS the answer**, in all three. A one-of question needs no confirm step,
+so it draws no button — a control that can never be the thing you press is a control that lies.
+The button comes back only for the two branches one click cannot finish: a many-of question,
+and free text. A call carrying two questions sends when the second is picked.
+
 **`esc` is unbound in all three.** An ask has no refusal — there is no answer that means *no*,
 which is exactly what separates it from a Permission.
+
+**The row is carried by its ground alone.** No rule around it and no leading accent bar: an
+amber stroke on four edges reads as an alert banner dropped into the column rather than as a
+row of it.
 
 ## What it is faithful to, and what it is not
 
