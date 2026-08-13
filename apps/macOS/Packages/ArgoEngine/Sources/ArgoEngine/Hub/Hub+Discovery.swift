@@ -44,6 +44,9 @@ extension Hub {
             guard let observation = try? engine.observeTranscript(at: url) else { continue }
             await startTailing(observation)
         }
+        // Every sweep, not only the ones that moved a tail: a fan-out's files appear beside a
+        // transcript that is already in the working set, so nothing above would notice them.
+        refreshSubagents()
     }
 
     /// End the sweep before the tails it feeds are torn down, and await it: a sweep still running

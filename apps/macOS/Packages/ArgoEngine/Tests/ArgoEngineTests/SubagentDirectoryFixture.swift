@@ -19,24 +19,39 @@ struct SubagentDirectoryFixture {
         try Data().write(to: parentURL)
     }
 
-    /// One Subagent's transcript, at the depth the host writes it: directly under `subagents/`, or
-    /// — for an Agent a workflow ran — one directory further down again.
     @discardableResult
     func write(agent agentID: String, lines: [String] = [], workflow: String? = nil) throws -> URL {
-        var directoryURL = parentURL.deletingPathExtension()
-            .appending(path: "subagents", directoryHint: .isDirectory)
-        if let workflow {
-            directoryURL = directoryURL
-                .appending(path: "workflows", directoryHint: .isDirectory)
-                .appending(path: workflow, directoryHint: .isDirectory)
-        }
-        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
-        let url = directoryURL.appending(path: "agent-\(agentID).jsonl")
-        try Data(lines.joined(separator: "\n").utf8).write(to: url)
-        return url
+        try writeSubagent(beside: parentURL, agent: agentID, lines: lines, workflow: workflow)
     }
 
     func remove() {
         try? FileManager.default.removeItem(at: rootURL)
     }
+}
+
+/// The id `delegationAgent.jsonl` reports on its delegating call, and the name every record in
+/// `subagentOwn.jsonl` carries — the two halves of the join, so both fixtures must spell it alike.
+let delegatedAgentID = "a4a7ffa1285ef5be4"
+
+/// One Subagent's transcript beside a parent record, at the depth the host writes it: under
+/// `subagents/`, or — for an Agent a workflow ran — one directory further down again.
+@discardableResult
+func writeSubagent(
+    beside parentURL: URL,
+    agent agentID: String,
+    lines: [String] = [],
+    workflow: String? = nil,
+) throws
+    -> URL {
+    var directoryURL = parentURL.deletingPathExtension()
+        .appending(path: "subagents", directoryHint: .isDirectory)
+    if let workflow {
+        directoryURL = directoryURL
+            .appending(path: "workflows", directoryHint: .isDirectory)
+            .appending(path: workflow, directoryHint: .isDirectory)
+    }
+    try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+    let url = directoryURL.appending(path: "agent-\(agentID).jsonl")
+    try Data(lines.joined(separator: "\n").utf8).write(to: url)
+    return url
 }

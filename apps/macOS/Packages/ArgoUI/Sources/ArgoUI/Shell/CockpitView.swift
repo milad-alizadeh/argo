@@ -64,6 +64,12 @@ public struct CockpitView: View {
         presentation.session(navigation.session)?.events ?? []
     }
 
+    /// The same Session's Subagents, each already read. Recomputed with the feed above and for its
+    /// reason: a fan-out's files grow while the reader is looking at one of them.
+    private var readings: FeedAgentReadings {
+        FeedAgentReadings(events: presentation.session(navigation.session)?.subagentEvents ?? [:])
+    }
+
     /// What is in the deck's one slot for the selected Session — the composer, the Permission
     /// displacing it, the line saying there is nothing to steer, or nothing at all. One decision,
     /// made in `DeckVessel` where a test can reach it.
@@ -120,6 +126,7 @@ public struct CockpitView: View {
                 showing: showing,
                 vessel: vessel,
                 intents: intents(for: vessel),
+                readings: readings,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
             // this is the one view that holds the navigation.

@@ -140,6 +140,10 @@ public extension CockpitPresentation {
         /// Everything the Session's transcript said, in order — the feed's whole input. The
         /// engine's own events, undigested; `FeedProjection` is what draws them.
         public let events: [TranscriptEvent]
+        /// Each Subagent's own reading, keyed by the CLI's id for it (#711) — what the rail scopes
+        /// the one feed onto. Undigested for the reason `events` is, and empty for the Session that
+        /// delegated nothing, which is most of them.
+        public let subagentEvents: [String: [TranscriptEvent]]
 
         public init(
             id: String,
@@ -167,6 +171,7 @@ public extension CockpitPresentation {
             modeDidNotTake: SessionMode? = nil,
             lostTurn: String? = nil,
             events: [TranscriptEvent] = [],
+            subagentEvents: [String: [TranscriptEvent]] = [:],
         ) {
             self.id = id
             self.title = title
@@ -193,6 +198,7 @@ public extension CockpitPresentation {
             self.modeDidNotTake = modeDidNotTake
             self.lostTurn = lostTurn
             self.events = events
+            self.subagentEvents = subagentEvents
         }
     }
 }
