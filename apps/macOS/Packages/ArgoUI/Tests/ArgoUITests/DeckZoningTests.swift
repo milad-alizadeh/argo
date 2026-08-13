@@ -124,6 +124,7 @@ struct DeckZoningTests {
         DeckZoning(
             deck: deck ?? self.deck,
             feed: feed,
+            agents: FeedAgents.all(in: feed),
             open: open,
             seams: DeckSeams(
                 rail: .constant(ArgoLayout.agentsRailWidth),

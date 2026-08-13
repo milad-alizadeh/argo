@@ -29,6 +29,10 @@ extension CockpitPresentation.Session {
                 cacheReadTokens: 100_000,
                 cacheCreationTokens: 0,
             ),
+            // The one delegation here that named its Subagent, because it is the one the record
+            // answered: the id arrives with the result. It is what makes this chip the selectable
+            // one in the rail — see `AgentsRailFixture`.
+            subagentID: AgentsRailFixture.verifierID,
         )),
         .toolCall(ToolCall(
             id: "fan-sweep", name: "Task", kind: .delegate,

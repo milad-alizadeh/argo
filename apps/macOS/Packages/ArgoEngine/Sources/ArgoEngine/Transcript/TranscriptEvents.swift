@@ -9,10 +9,11 @@ import Foundation
 /// and the first batch is what tells it the file has been read at all.
 public func transcriptEvents(
     at url: URL,
+    subject: TranscriptSubject = .session,
     readImage: @escaping ImageReader = noImageReader,
 )
     -> AsyncStream<[TranscriptEvent]> {
-    let reader = TranscriptReader(readImage: readImage)
+    let reader = TranscriptReader(subject: subject, readImage: readImage)
     return AsyncStream { continuation in
         let observation = Task {
             var isBackfill = true

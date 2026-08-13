@@ -21,6 +21,8 @@ struct DeckContentRow: View {
     /// What that vessel's controls do.
     var intents = DeckIntents.inert
     let seams: DeckSeams
+    /// The rail as a control — what the feed is scoped to, and whether the rail is collapsed.
+    var rail = AgentsRailControl.inert
     /// One flag for both seams — only one of them can be dragged at a time.
     @State private var isResizing = false
     /// The reading's scroll authority, held here because two zones share it: the feed drives it and
@@ -36,6 +38,7 @@ struct DeckContentRow: View {
         vessel: DeckVessel = .none,
         intents: DeckIntents = .inert,
         seams: DeckSeams,
+        rail: AgentsRailControl = .inert,
     ) {
         self.feed = feed
         self.showing = showing
@@ -44,7 +47,26 @@ struct DeckContentRow: View {
         self.vessel = vessel
         self.intents = intents
         self.seams = seams
+        self.rail = rail
         _table = State(initialValue: FeedTableHandle(held: held))
+    }
+
+    /// Who else is working, read off the SESSION's rows — never off `reading`, which is what the
+    /// rail may have scoped away.
+    private var agents: [FeedAgent] {
+        FeedAgents.all(in: feed)
+    }
+
+    /// The rows the reading zones actually draw: the Session's own, or the selected Subagent's.
+    ///
+    /// A Subagent whose reading has gone falls back to the Session rather than to nothing. The rail
+    /// only offers a chip it has a reading for, so this is the live-transcript case where one is
+    /// withdrawn under a scope that was already open.
+    private var reading: [FeedRow] {
+        guard let selected = rail.scope.agent,
+              let agent = agents.first(where: { $0.id == selected }),
+              let rows = rail.readings.rows(of: agent) else { return feed }
+        return rows
     }
 
     var body: some View {
@@ -53,18 +75,12 @@ struct DeckContentRow: View {
 
             HStack(spacing: ArgoSpacing.flush) {
                 if zoning.showsRail {
-                    AgentsRail(agents: zoning.agents)
-                        .frame(width: seams.rail.wrappedValue)
-                    DeckSeam(
-                        width: seams.rail,
-                        limits: zoning.railLimits,
-                        growsRightward: true,
-                        isDragging: { isResizing = $0 },
-                    )
-                    .argoUnderCanopy()
+                    AgentsRail(agents: zoning.agents, control: rail)
+                        .frame(width: zoning.railWidth)
+                    railEdge(zoning)
                 }
                 FeedColumn(
-                    feed: feed,
+                    feed: reading,
                     showing: showing,
                     selection: selection,
                     held: held,
@@ -72,6 +88,12 @@ struct DeckContentRow: View {
                     intents: intents,
                     table: table,
                 )
+                // The reading's own state is keyed to WHAT is being read: `FeedRow.ID` is a dense
+                // position, so a scope switch would otherwise leave the scroll and the open panel
+                // pointing at whatever row now sits where they were — the same hazard
+                // `.id(session)`
+                // answers one level up.
+                .id(rail.scope)
                 DeckSeparator()
                     .argoUnderCanopy()
                 MinimapLane(feed: table)
@@ -92,7 +114,31 @@ struct DeckContentRow: View {
     }
 
     private func zoning(in deck: CGFloat) -> DeckZoning {
-        DeckZoning(deck: deck, feed: feed, open: selection.open, seams: seams)
+        DeckZoning(
+            deck: deck,
+            feed: reading,
+            agents: agents,
+            open: selection.open,
+            seams: seams,
+            isRailCollapsed: rail.isCollapsed,
+        )
+    }
+
+    /// The rail's own edge. A plain separator while it is collapsed, because the strip is a fixed
+    /// column: a grab area there would offer to size something that has no size to give.
+    @ViewBuilder private func railEdge(_ zoning: DeckZoning) -> some View {
+        if rail.isCollapsed {
+            DeckSeparator()
+                .argoUnderCanopy()
+        } else {
+            DeckSeam(
+                width: seams.rail,
+                limits: zoning.railLimits,
+                growsRightward: true,
+                isDragging: { isResizing = $0 },
+            )
+            .argoUnderCanopy()
+        }
     }
 
     /// Dismisses whatever is over what the reader was reading, innermost first. Answered here as
@@ -100,7 +146,7 @@ struct DeckContentRow: View {
     /// nothing focuses the lightbox on the way in.
     private func dismissTopmost() {
         if selection.lit != nil {
-            selection.darken(returningInto: feed)
+            selection.darken(returningInto: reading)
         } else {
             selection.close()
         }

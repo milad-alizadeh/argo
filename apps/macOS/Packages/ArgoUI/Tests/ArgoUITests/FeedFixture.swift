@@ -21,8 +21,18 @@ enum FeedFixture {
 
     /// A call that reported what it spent — the delegating call, which is the only one that ever
     /// does. Its result is the subagent's whole sidechain, priced.
-    static func spent(_ id: String, _ usage: Usage) -> ToolCallOutcome {
-        ToolCallOutcome(id: id, status: .completed, result: nil, endedAtMs: nil, usage: usage)
+    ///
+    /// It names the Subagent too where the caller asks. The id and the spend arrive together, on
+    /// the one record that answers a handover.
+    static func spent(_ id: String, _ usage: Usage, subagent: String? = nil) -> ToolCallOutcome {
+        ToolCallOutcome(
+            id: id,
+            status: .completed,
+            result: nil,
+            endedAtMs: nil,
+            usage: usage,
+            subagentID: subagent,
+        )
     }
 
     /// The question tool, carrying a question. The id `ask` is what an outcome answering it quotes.

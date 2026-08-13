@@ -23,6 +23,7 @@ enum FeedCallReading {
             evidence: [kept(outcome?.result)].compactMap(\.self),
             repeats: 1,
             spend: outcome?.usage,
+            subagentID: outcome?.subagentID,
         )
     }
 

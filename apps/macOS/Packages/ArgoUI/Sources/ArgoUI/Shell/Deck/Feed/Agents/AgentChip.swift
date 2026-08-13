@@ -10,8 +10,29 @@ struct AgentChip: View {
     @Environment(\.argo) private var argo
 
     let agent: FeedAgent
+    /// Whether the feed is scoped onto this Agent. The row is drawn by its GROUND alone — no
+    /// leading accent rule, which the study settled: a brand edge beside a wash re-states selection
+    /// a second time, and macOS selection is the wash.
+    var isSelected = false
+    /// Scoping the feed onto this Agent, or `nil` where Argo has no reading of it to scope onto.
+    /// Absent is the ordinary case for a running Agent, and it degrades down: the chip still says
+    /// what is happening and simply does not claim to be a control.
+    var scope: (() -> Void)?
 
     var body: some View {
+        if let scope {
+            Button(action: scope) { line }
+                .buttonStyle(FeedRowButtonStyle(isOpen: isSelected))
+                .accessibilityLabel(spoken)
+                .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        } else {
+            line
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(spoken)
+        }
+    }
+
+    private var line: some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.snug) {
             SessionStateIndicator(state: agent.isRunning ? .running : .idle)
             VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
@@ -24,8 +45,6 @@ struct AgentChip: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, ArgoSpacing.tight)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(spoken)
     }
 
     @ViewBuilder private var spend: some View {
@@ -39,15 +58,32 @@ struct AgentChip: View {
     }
 
     private var spoken: String {
-        [agent.label, agent.isRunning ? "running" : "finished", agent.spend.map(FeedSpend.words)]
-            .compactMap(\.self)
-            .joined(separator: ", ")
+        [
+            agent.label,
+            agent.isRunning ? "running" : "finished",
+            agent.spend.map(FeedSpend.words),
+            scope == nil ? "nothing read" : nil,
+        ]
+        .compactMap(\.self)
+        .joined(separator: ", ")
     }
 }
 
 #Preview("Agent chips — running, and landed with what it spent") {
     VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
         ForEach(FeedAgents.all(in: FeedProjection.previewRows)) { AgentChip(agent: $0) }
+    }
+    .padding(ArgoSpacing.comfortable)
+    .frame(width: ArgoLayout.agentsRailWidth)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Agent chips — the selected one, against the ones beside it") {
+    VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
+        ForEach(FeedAgents.all(in: FeedProjection.previewRows)) { agent in
+            AgentChip(agent: agent, isSelected: agent.id == 1, scope: {})
+        }
     }
     .padding(ArgoSpacing.comfortable)
     .frame(width: ArgoLayout.agentsRailWidth)

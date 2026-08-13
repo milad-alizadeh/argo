@@ -5,13 +5,17 @@
 /// subagents, and a rail holding four never leaves its column.
 enum AgentsFanOutFixture {
     static let agents: [FeedAgent] = briefs.enumerated().map { position, brief in
-        FeedAgent(
+        // The first third are still out. A fan-out mid-flight is what the rail is glanced at
+        // to read, so the fixture is not a list of finished work.
+        let isRunning = position.isMultiple(of: 3)
+        return FeedAgent(
             id: position,
             label: brief,
-            // The first third are still out. A fan-out mid-flight is what the rail is glanced at
-            // to read, so the fixture is not a list of finished work.
-            isRunning: position.isMultiple(of: 3),
+            isRunning: isRunning,
             spend: nil,
+            // Only the ones that came back name a Subagent: the id arrives with the result. So the
+            // running third of this rail is unselectable, which is the shape a live fan-out has.
+            subagentID: isRunning ? nil : "a-\(position)",
         )
     }
 

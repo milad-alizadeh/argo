@@ -33,8 +33,10 @@ file_length:
   ignore_comment_only_lines: true
 
 type_body_length:
-  # RATCHET: 150 is the number. It is 170 because TranscriptReader's actor body spans 165
-  # and splitting it is its own change, not this gate's. Lower it the commit that splits it.
+  # RATCHET: 150 is the number. TranscriptReader was the named blocker and is no longer one —
+  # #401 split its outcome reading into TranscriptReader+Outcome.swift. Dropping to 150 then
+  # showed eight more bodies over it, the widest being HubSession at 170 and Hub at 166, so
+  # the number stays until those are split. Lower it as each one goes, never to fit a file.
   error: 170
   warning: 170
 
