@@ -57,7 +57,7 @@ private struct FeedAskQuestion: View {
             HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.markerGap) {
                 ArgoGlyph(ArgoSymbol.asked, .inline)
                     .foregroundStyle(ink)
-                    .frame(width: ArgoFeedRow.markerWidth, alignment: .trailing)
+                    .feedMarkerColumn()
                 Text(question.text)
                     .argoText(ArgoFeedRow.proseRung)
                     .foregroundStyle(argo.color.text.primary)

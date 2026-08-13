@@ -80,43 +80,76 @@ of it. Answered, the ground goes and nothing moves.
 
 ## Measurements
 
+**`ships` means the value is in the app today; `to build` means #712 puts it there.** Read the
+column — a table that does not say which is which reads as satisfied when half of it is not.
+Nothing here changes a value #534 already shipped: where the two disagreed, this design was
+corrected to the code, not the other way round.
+
+### The card — `FeedAskLine`
+
+| Measurement | Value | | Source |
+|---|---|---|---|
+| Radius | `ArgoRadius.control` 6 | ships | a control-scale surface, not a popover |
+| Padding | `ArgoSpacing.comfortable` 12, all four | ships | |
+| Between two questions in one call | `ArgoFeedRow.blockStep` — `comfortable` 12 | ships | one call, one ground: the step is within a block, not between rows |
+| Waiting ground | `state.muted(attention)` | ships | |
+| Waiting edge | **none** | **to build** | today the row strokes its edge in the attention ink; the waiting row is carried by its ground alone, so #712 **removes** that stroke |
+| Settled ground and edge | none | ships | |
+| Ask glyph | `ArgoSymbol.asked` (`questionmark.bubble`) at `ArgoIconSize.inline` 10 | ships | |
+| Glyph ink | `state.attention` waiting, `text.tertiary` settled | ships | |
+| Glyph column | `ArgoFeedRow.markerWidth` 18 trailing, `markerGap` 6 | ships | the feed's own marker grid, via `feedMarkerColumn()` |
+| Question type | `ArgoFeedRow.proseRung` — body 13, regular, `text.primary` | ships | no weight of its own: the ground and the mark already carry it |
+| Question head → its list | `stepBeforeProse` — `hair` 2 settled | ships | |
+| Question head → its options | `ArgoSpacing.comfortable` 12 waiting | **to build** | pressable cards need the room a bare list does not |
+
+### Waiting — the pressable options
+
+All **to build**. `FeedAskOfferList`, `FeedAskOfferRow`, `FeedAskAnswerRow`.
+
 | Measurement | Value | Source |
 |---|---|---|
-| Card radius | `ArgoRadius.control` 6 | the row is a control-scale surface, not a popover |
-| Card padding | `comfortable` 12 top, `loose` 16 sides and bottom | the extra bottom is the answer row's own breathing space |
-| Between two questions in one call | `ArgoSpacing.loose` 16 | |
-| Question head → its options | `ArgoSpacing.comfortable` 12 | |
-| Ask glyph | `ArgoSymbol.asked` (`questionmark.bubble`) at `ArgoIconSize.inline` 10 | already the feed's mark for an ask |
-| Glyph column | `ArgoFeedRow.markerWidth` 18, trailing-aligned, `markerGap` 6 | the feed's own marker grid |
-| Question type | `ArgoTypography.rowTitle` — body 13, medium | |
-| Options indent | 24 = `markerWidth` + `markerGap` | the options hang off the question's own grid |
+| List indent | 24 = `markerWidth` + `markerGap` | the cards hang under the question's words, not under its mark |
 | Between options | `ArgoSpacing.snug` 6 | |
-| Option ground | `surface.control` | "the ground under a control on a surface which is not the deck" — its own words |
+| Option ground | `surface.control` | "the ground under a control on a surface which is not the deck" — the role's own words |
 | Option hover | `surface.hover` laid over `surface.control`; edge `edge.hairline` → `edge.subtle` | two layers, not a third opacity standing for the pair |
 | Option pressed | **none** | one click answers, so it would be on screen for a few frames |
 | Option border, radius | `edge.hairline`, `ArgoRadius.control` 6 | |
 | Option padding | `base` 8 vertical, `comfortable` 12 horizontal | |
-| Option number | `ArgoTypography.machineCaption` 11, `text.tertiary`, in an 18 column, trailing-aligned | monospaced so a two-digit list keeps one vertical |
-| Number → label | `ArgoSpacing.comfortable` 12 | |
-| Option label / detail | `ArgoTypography.body` `text.primary` / `rowMeta` `text.tertiary` | |
-| Option ticked | ground `state.wash(attention)`, edge `state.rim(attention)`, number `state.attention` | the two rungs below `muted`, which the card itself wears |
-| Checkbox | `ArgoComposerVessel.askBoxSize` **14**, `ArgoRadius.marker` 3, edge `edge.strong` | **promoted for this design** — see below |
+| Option number | **`FeedMarker`** — `proseRung`, monospaced digits, `text.tertiary`, 18 trailing | the settled reading numbers its options with exactly this, so a pressable option and a read one carry the same digit in the same column |
+| Number → label | `ArgoFeedRow.markerGap` 6 | the same grid, so the two states do not shift under each other |
+| Option label / detail | `ArgoFeedRow.proseRung` `text.primary` / `ArgoTypography.rowMeta` `text.tertiary` | |
+| Option ticked | ground `state.wash(attention)`, edge `state.rim(attention)`, number `state.attention` | the two rungs below the `muted` the card itself wears |
+| Checkbox | **14**, `ArgoRadius.marker` 3, edge `edge.strong` | a **proposal**, not yet a token — see below |
 | Checkbox ticked | ground `state.attention`, `ArgoSymbol.chosen` at `.inline`, ink `text.onAccent` | |
-| Answer field and button | both `ArgoComposerVessel.decisionHeight` **27**, `ArgoSpacing.base` 8 apart | one height, so the row has one top and one bottom |
+| Field and button | both `ArgoComposerVessel.decisionHeight` 27, `ArgoSpacing.base` 8 apart | one height, so the row has one top and one bottom |
 | Field | no ground; edge `edge.hairline` → `interaction.accent` focused; radius 6; padding-x 12 | `ComposerField` draws no ground either |
-| Field type | `ArgoTypography.body` on `ArgoFeedRow.lineHeight` 20 | the feed's rhythm, not the font's own 18.85 |
+| Field type | `ArgoFeedRow.proseRung` on `ArgoFeedRow.lineHeight` 20 | the feed's rhythm, not the font's own 18.85 |
 | Answer button | `decisionMinimumWidth` 80 × `decisionHeight` 27, `interaction.accent`, `text.onAccent`, `ArgoTypography.control` | the Permission prompt's Allow, at its own measurements |
 | Answer button, nothing to send | ground `surface.marked`, ink `text.disabled` | |
 | Keycap | `ArgoTypography.machineCaption` on `surface.marked`, radius `marker` 3, padding `hair` 2 × `tight` 4 | `PermissionKeycap`'s own values |
-| Settled options | gap `ArgoSpacing.hair` 2; taken `text.primary` + `ArgoSymbol.chosen` in `state.attention`; untaken `text.disabled` | `FeedAskOptions` already quiets the untaken |
 | Hover motion | `ArgoMotion.selection` — 0.14, easeOut | it is a selection |
 
-### The one promotion
+### Settled — the reading
 
-`ArgoComposerVessel.askBoxSize = 14`, landed with this design. A many-of ask needs a box and the
-contract had no measurement for one. It sits between `ArgoIconSize.inline` (10), too small to
-aim at, and `chipDismissDiameter` (18), which is a control's whole hit area rather than a box
-drawn beside a label. Everything else on this screen snapped to a token that already existed.
+All **ships**, and #712 changes none of it. `FeedAskOptions`, as #534 built it.
+
+| Measurement | Value |
+|---|---|
+| Between options | `ArgoSpacing.tight` 4 |
+| Number | `FeedMarker` — `proseRung`, monospaced digits, `text.tertiary`, 18 trailing, `markerGap` 6 |
+| Taken | label `text.primary`, `ArgoSymbol.chosen` at `.inline` in `text.primary` |
+| Untaken, once one is taken | label `text.secondary` — a step back, not out |
+| Untaken, where the answer named none | unchanged, exactly as offered |
+
+### The one proposal
+
+**The checkbox, 14pt.** A many-of ask needs a box and the contract has no measurement for one.
+It sits between `ArgoIconSize.inline` (10), too small to aim at, and `chipDismissDiameter` (18),
+which is a control's whole hit area rather than a box drawn beside a label.
+
+It is a **proposal** and not yet in `ArgoComposerVessel`, per `rules/designs.md`: the token
+lands with the view that reads it, in #712. Everything else on this screen snapped to a token
+that already existed.
 
 ## Components
 
@@ -124,8 +157,9 @@ Frozen names — they become the view files and the ticket titles.
 
 | Name | What it is | Status |
 |---|---|---|
-| `FeedAskLine` | the card: one call, one ground, its questions | exists (#534) — gains the waiting branch |
+| `FeedAskLine` | the card: one call, one ground, its questions | exists (#534) — gains the waiting branch, and **loses its stroked edge** |
 | `FeedAskOptions` | the settled reading, numbered and quieted | exists (#534) — unchanged |
+| `FeedMarker` | the marker column, for numbers and marks alike | exists (#534) — unchanged |
 | `FeedAskOfferList` | the pressable options while it waits | new |
 | `FeedAskOfferRow` | one option — number, label, detail, box | new |
 | `FeedAskAnswerRow` | the field and its `Answer` button | new |

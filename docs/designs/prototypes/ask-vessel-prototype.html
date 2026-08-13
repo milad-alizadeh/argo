@@ -137,14 +137,19 @@
    * Carried by its GROUND alone while it waits — no rule around it and no leading accent bar.
    * An amber stroke on four edges reads as an alert banner dropped into the column rather than
    * as a row of it. Settled, the ground goes and only the mark stays. */
+  /* FeedAskLine's own inset and step, to the value — the waiting state changes what the row
+     DOES, not how it is measured. */
   .ask {
-    padding: var(--s-comfortable) var(--s-loose) var(--s-loose);
+    padding: var(--s-comfortable);
     border-radius: var(--r-control);
-    display: flex; flex-direction: column; gap: var(--s-loose);
+    display: flex; flex-direction: column; gap: var(--s-comfortable);
   }
   .ask.pending { background: var(--attention-muted); }
 
+  /* Waiting, the option cards need room; settled, the list is `stepBeforeProse` under its
+     question exactly as #534 ships it. */
   .askq { display: flex; flex-direction: column; gap: var(--s-comfortable); }
+  .ask:not(.pending) .askq { gap: var(--s-hair); }
   .askq > .head { display: flex; gap: var(--marker-gap); align-items: flex-start; }
   .askq > .head > .glyph {
     width: var(--marker-w); flex: none; color: var(--attention);
@@ -153,7 +158,7 @@
     margin-top: 2px;
   }
   .ask:not(.pending) .askq > .head > .glyph { color: var(--text-3); }
-  .askq > .head > .q { font-weight: 500; }
+  /* No weight of its own: the question is already carried by the ground and the mark. */
 
   /* The options, as the thing you press. Indented to the marker grid, so the question's mark
      and the options they belong to read as one block. */
@@ -161,7 +166,7 @@
           margin-left: calc(var(--marker-w) + var(--marker-gap)); }
 
   .opt {
-    display: flex; gap: var(--s-comfortable); align-items: flex-start; width: 100%;
+    display: flex; gap: var(--marker-gap); align-items: flex-start; width: 100%;
     text-align: left; font: inherit; color: inherit; cursor: pointer;
     /* `surface.control` is the role by name: the ground under a control on a surface which is
        not the deck, which is exactly what an option row on the ask's ground is. */
@@ -176,9 +181,11 @@
      state: one click answers, so it would be on screen for a few frames at most. */
   .opt:hover { background-image: linear-gradient(var(--hover), var(--hover));
                border-color: var(--subtle); }
+  /* FeedMarker's own values — the settled reading numbers its options with exactly this, so a
+     pressable option and a read one carry the same digit in the same column. */
   .opt .n {
-    font-family: var(--mono); font-size: 11px; color: var(--text-3);
-    flex: none; width: var(--marker-w); text-align: right; margin-top: 1px;
+    font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-3);
+    flex: none; width: var(--marker-w); text-align: right;
   }
   .opt .l { color: var(--text-1); }
   .opt .d { color: var(--text-3); font-size: 11px; margin-top: 1px; }
@@ -196,13 +203,15 @@
   .opt.other:hover .l { color: var(--text-1); }
 
   /* Once it is answered nothing is pressable, and only the option that was taken keeps its ink. */
-  .taken { display: flex; gap: var(--s-comfortable); align-items: flex-start;
-           padding: var(--s-tight) 0; }
-  .taken .n { font-family: var(--mono); font-size: 11px; color: var(--text-3);
-              flex: none; width: var(--marker-w); text-align: right; margin-top: 2px; }
+  .taken { display: flex; gap: var(--marker-gap); align-items: flex-start;
+           padding: var(--s-hair) 0; }
+  .taken .n { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-3);
+              flex: none; width: var(--marker-w); text-align: right; }
+  /* Settled is FeedAskOptions as #534 already ships it, to the value: the untaken step back to
+     secondary rather than going out, and the mark is ordinary ink. */
   .taken .l { color: var(--text-1); }
-  .taken.quiet .l { color: var(--text-off); }
-  .taken .tick { color: var(--attention); margin-left: var(--s-tight); }
+  .taken.quiet .l { color: var(--text-2); }
+  .taken .tick { color: var(--text-1); margin-left: var(--s-tight); }
 
   /* The free-text branch, and the Other answer, inline in the row. */
   /* The field and the button stand at ONE height — ArgoComposerVessel.decisionHeight — so the
@@ -583,7 +592,7 @@ function typedRow(q, i) {
    offered them, with only the taken one keeping its ink. Nothing here is pressable. */
 function settled(q, i) {
   const wrap = el('div', 'opts');
-  wrap.style.gap = 'var(--s-hair)';
+  wrap.style.gap = 'var(--s-tight)';   // FeedAskOptions' own step
   const a = answers[i];
   q.options.forEach(([label], k) => {
     const ordinal = k + 1;
