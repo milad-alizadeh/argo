@@ -195,11 +195,14 @@
   .taken .tick { color: var(--attention); margin-left: var(--s-tight); }
 
   /* The free-text branch, and the Other answer, inline in the row. */
-  .typed { display: flex; gap: var(--s-base); align-items: flex-end;
+  /* The field and the button stand at ONE height — ArgoComposerVessel.decisionHeight — so the
+     row has a single top and a single bottom rather than two of each. */
+  .typed { display: flex; gap: var(--s-base); align-items: stretch;
            margin-left: calc(var(--marker-w) + var(--marker-gap)); }
   .fieldbox {
-    flex: 1; border: 1px solid var(--hairline); border-radius: var(--r-control);
-    padding: var(--s-snug) var(--s-comfortable); background: rgba(0,0,0,.18);
+    flex: 1; display: flex; align-items: center; min-height: 27px;
+    border: 1px solid var(--hairline); border-radius: var(--r-control);
+    padding: 0 var(--s-comfortable); background: rgba(0,0,0,.18);
   }
   .fieldbox:focus-within { border-color: var(--accent); }
   .field {
