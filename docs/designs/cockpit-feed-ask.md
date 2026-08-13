@@ -1,5 +1,5 @@
 <!-- status: approved
-     approved-at: HEAD
+     approved-at: 068e7370
      prototype: worktree-ticket-534-ask-options -->
 
 # Answering an ask, in the feed
