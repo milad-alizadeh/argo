@@ -122,11 +122,19 @@ extension FeedProjection {
         .message(markdown: "Reading the ticket and the design it points at."),
     ])
 
-    /// The one whose panel has something in it.
-    static let previewSkillLoadRowID = previewSkillLoadRows.first(where: \.opensEvidence)?.id
+    /// The one whose panel holds the body Argo read, and the one whose panel states a read failure.
+    /// Both found by the state itself rather than by position, so a fourth marker added above them
+    /// cannot silently re-point either still.
+    static let previewSkillLoadRowID = previewSkillLoadRow { $0.body?.hasFailed == false }
 
-    /// The one whose panel states a read failure — the second of the three.
-    static let previewSkillUnreadableRowID = previewSkillLoadRows.last(where: \.opensEvidence)?.id
+    static let previewSkillUnreadableRowID = previewSkillLoadRow { $0.body?.hasFailed == true }
+
+    private static func previewSkillLoadRow(where match: (SkillLoad) -> Bool) -> FeedRow.ID? {
+        previewSkillLoadRows.first { row in
+            guard case let .skillLoaded(skill) = row.content else { return false }
+            return match(skill.load)
+        }?.id
+    }
 
     /// The punctuation on its own, for the same reason. The interrupt is added rather than found:
     /// the shipping preview transcript carries no stopped Turn (#541).

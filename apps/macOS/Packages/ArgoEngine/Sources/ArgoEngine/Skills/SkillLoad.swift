@@ -17,6 +17,20 @@ public struct SkillLoad: Equatable, Sendable {
         self.directory = directory
         self.body = body
     }
+
+    /// The file Argo read, and the one the panel opens on.
+    public var path: String {
+        Self.path(under: directory)
+    }
+
+    /// The one place the file's name is spelled, so the address a reader is shown cannot come to
+    /// name a different file from the one the bytes were taken out of.
+    static func path(under directory: String) -> String {
+        "\(directory)/\(fileName)"
+    }
+
+    /// What the CLI calls a skill's own file, in `SkillCatalog`'s walk and in this read alike.
+    static let fileName = "SKILL.md"
 }
 
 /// The instructions behind a marker, or the reason there are none.
@@ -25,4 +39,17 @@ public enum SkillBody: Equatable, Sendable {
     case read(String)
     /// Why the file could not be read, in the sentence the panel shows.
     case unreadable(String)
+
+    /// What a reader is shown — the instructions, or the sentence saying why there are none.
+    public var text: String {
+        switch self {
+        case let .read(markdown): markdown
+        case let .unreadable(why): why
+        }
+    }
+
+    public var hasFailed: Bool {
+        guard case .unreadable = self else { return false }
+        return true
+    }
 }

@@ -38,10 +38,7 @@ extension CockpitPresentation.Session {
                 + "step between a label and the prose under it.",
         ),
         .thought(markdown: "A wide window should get more feed, never a longer line."),
-        // A command the user typed, and the skill the CLI handed over because of it (#688). The
-        // line stays theirs, verbatim; the marker below it is the record's own separate note.
-        .prompt(text: "/implement 427 — land the metrics in the contract", atMs: 1_733_000_050_000),
-        .skillLoaded(previewSkillLoad),
+        .prompt(text: "Good. Land the metrics in the contract.", atMs: 1_733_000_050_000),
         .unreadableLine(raw: "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":"),
     ]
         + workedOn
@@ -75,8 +72,11 @@ extension CockpitPresentation.Session {
         ]
         + fannedOut
 
-    /// The skill that reading was handed, with the body Argo read behind it. A real `SKILL.md`
-    /// opens on its own heading, which is what the panel has to set as markdown source.
+    /// The skill the marker's own fixtures are built from (#688). NOT in the transcript above: the
+    /// ticket asks that every existing feed fixture project identically, and a marker let into this
+    /// stream moves the prose sets and the cursor stills that are filtered out of it.
+    ///
+    /// A real `SKILL.md` opens on its own heading, which is what the panel sets as markdown source.
     static let previewSkillLoad = SkillLoad(
         name: "implement",
         directory: "/Users/x/argo/.claude/skills/implement",

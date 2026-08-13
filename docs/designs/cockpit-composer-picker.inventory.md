@@ -102,7 +102,7 @@ at the ceiling — which is what those two derivations are for.
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
 | `SkillLoadedMarker` | molecule | `ArgoUI/Shell/Deck/Feed/` — one caller (`FeedRowView`) | `skill: FeedSkillLoad` · `isOpen: Bool` · `open: () -> Void` | one `ArgoGlyph`, two `Text` runs and an `ArgoDisclosure` on `surface.glassTint` at `ArgoRadius.marker` | frozen table, `SkillLoadedMarker`; [`loaded.png`](composer-picker/loaded.png) |
-| `FeedSkillLoad` | value | same — the derive beside the view | `load: SkillLoad` · `isExternal: Bool` · `spoken` · `opened: FeedEvidence?` | — | Acceptance: the panel shows the `SKILL.md` body, and a read failure states itself |
+| `FeedSkillLoad` | value | same — the derive beside the view | `load: SkillLoad` · `address: String` · `isExternal: Bool` · `spoken` · `ink` · `opened: FeedEvidence?` | — | Acceptance: the panel shows the `SKILL.md` body, and a read failure states itself |
 
 Extraction evidence, in the order it arrived:
 
@@ -129,12 +129,24 @@ Extraction evidence, in the order it arrived:
   still are.
 - **`SkillReader`**, the `SKILL.md`-off-disk port, mirroring `ImageReader`. It is what makes the
   read failure falsifiable without breaking a skill on the machine.
-- **`SkillFrontmatter.body(of:)`** — #685's reader reused rather than a second one grown, which is
-  what #688's own note asked for. A file with no frontmatter is all body.
+- **`SkillFrontmatter.body(of:)`** — #685's PARSER reused rather than a second one grown, which is
+  what #688's own note asked for. A file with no frontmatter is all body. The two callers still
+  reach the bytes by different routes — `SkillCatalog` walks a directory tree, this is handed one
+  path — so what they share is `SkillLoad.fileName` and the parse, not the read.
 
 ## Amended during the build — #688
 
 - **A built-in command gets no marker.** The ticket read as though every `/command` took one, with
-  the built-in's panel simply absent. But `Skill Loaded: clear` is a false sentence, and the
-  transcript says nothing about a built-in beyond the line the user typed — which their own bubble
-  already carries. The marker is emitted from the skill-load record alone. Built-ins are #686's.
+  the built-in's panel simply absent. But `Skill Loaded: clear` is a false sentence: the transcript
+  records **no skill load** for a built-in, so the marker would be Argo's own invention about a
+  thing that did not happen. What the record does carry about one is already drawn — the line the
+  user typed, in their bubble, and the `<local-command-stdout>` beside it as a Tool Call row. The
+  marker is emitted from the skill-load record alone. `cockpit-composer-picker.md` decision 18 says
+  so now; built-ins in the menu are #686's.
+- **`promptEvents` moved out of `TranscriptReader` into `HarnessRecord.swift`.** Not a tidy-up:
+  `metaEvents` pushed the actor past the 170-line `type_body_length` cap, and `promptEvents` reads
+  a user record and touches no actor state, which is exactly what that file is for.
+- **The shipping preview transcript carries no marker.** A marker let into it moves the prose sets
+  and the cursor stills that are filtered out of it, and the ticket asks that every existing feed
+  fixture project identically. The marker's own specimens project from their own stream instead —
+  `feedSkillLoaded` is the design's render, prompt and all.

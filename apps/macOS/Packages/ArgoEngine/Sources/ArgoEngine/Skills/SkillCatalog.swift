@@ -90,7 +90,7 @@ public struct SkillCatalog {
     /// happens to sit there are all not skills. None of them stops the entry beside it being read.
     private func skill(at url: URL, from origin: SkillOrigin) -> Skill? {
         guard let markdown = try? String(
-            contentsOf: url.appending(path: "SKILL.md"),
+            contentsOf: url.appending(path: SkillLoad.fileName),
             encoding: .utf8,
         ),
             let read = SkillFrontmatter(markdown: markdown)
