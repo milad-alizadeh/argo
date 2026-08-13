@@ -59,6 +59,7 @@
 
     /* ArgoComposerVessel.swift */
     --control-d: 26px; --chip-h: 20px; --unavailable-h: 48px; --feed-clearance: 128px;
+    --decision-h: 27px;
 
     /* ArgoLayout.swift */
     --sidebar-w: 320px; --deck-tab-h: 40px;
@@ -197,10 +198,11 @@
   /* The free-text branch, and the Other answer, inline in the row. */
   /* The field and the button stand at ONE height — ArgoComposerVessel.decisionHeight — so the
      row has a single top and a single bottom rather than two of each. */
-  .typed { display: flex; gap: var(--s-base); align-items: stretch;
+  .typed { display: flex; gap: var(--s-base); align-items: center;
            margin-left: calc(var(--marker-w) + var(--marker-gap)); }
   .fieldbox {
-    flex: 1; display: flex; align-items: center; min-height: 27px;
+    flex: 1; display: flex; align-items: center;
+    height: var(--decision-h); flex: 1 1 auto;
     border: 1px solid var(--hairline); border-radius: var(--r-control);
     padding: 0 var(--s-comfortable); background: rgba(0,0,0,.18);
   }
@@ -214,7 +216,7 @@
   /* ArgoComposerVessel.decisionHeight / decisionMinimumWidth */
   .answer {
     display: inline-flex; align-items: center; gap: var(--s-tight); justify-content: center;
-    min-width: 80px; min-height: 27px; padding: 0 var(--s-comfortable);
+    min-width: 80px; height: var(--decision-h); flex: none; padding: 0 var(--s-comfortable);
     border: none; border-radius: var(--r-control); cursor: pointer;
     font: 500 12px var(--sans); background: var(--accent); color: var(--on-accent);
   }
