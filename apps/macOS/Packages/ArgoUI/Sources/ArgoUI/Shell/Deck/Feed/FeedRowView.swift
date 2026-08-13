@@ -29,6 +29,8 @@ struct FeedRowView: View {
         // to the picture.
         case let .gallery(gallery):
             FeedGalleryRow(gallery: gallery, open: selection.light)
+        case let .skillLoaded(skill):
+            SkillLoadedMarker(skill: skill, isOpen: isOpen, open: openEvidence)
         case let .ask(ask): FeedAskLine(ask: ask)
         case let .mark(mark): FeedMarkLine(mark: mark)
         case let .unreadable(unreadable):
@@ -65,7 +67,7 @@ extension FeedRow {
     @discardableResult
     func activate(selection: FeedRowSelection, isExpanded: Binding<Bool>) -> Bool {
         switch content {
-        case .call, .survey:
+        case .call, .survey, .skillLoaded:
             guard selection.open == id || opensEvidence else { return false }
             openEvidence(with: selection)
             return true

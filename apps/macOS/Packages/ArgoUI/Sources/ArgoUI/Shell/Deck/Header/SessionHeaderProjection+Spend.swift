@@ -70,8 +70,10 @@ extension SessionHeaderProjection {
             case let .toolCall(call): call.atMs
             case let .toolCallOutcome(outcome): outcome.endedAtMs
             case let .compaction(atMs): atMs
+            // A skill load carries no moment of its own: the CLI expands a body as part of the
+            // prompt beside it, and that prompt's own timestamp is already counted.
             case .recordIdentity, .headLeaf, .title, .cwd, .model, .branch, .mode, .message,
-                 .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine: nil
+                 .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine, .skillLoaded: nil
             }
         }
         .sorted()

@@ -54,6 +54,8 @@ func describe(_ event: TranscriptEvent) -> String {
         "message     \(oneLine(markdown))"
     case let .thought(markdown):
         "thought     \(oneLine(markdown))"
+    case let .skillLoaded(load):
+        "skill       \(load.name) → \(load.directory)"
     case let .toolCall(call):
         "call        \(call.name) (\(call.kind.rawValue))\(call.target.map { " → \($0)" } ?? "")"
     case let .toolCallOutcome(outcome):

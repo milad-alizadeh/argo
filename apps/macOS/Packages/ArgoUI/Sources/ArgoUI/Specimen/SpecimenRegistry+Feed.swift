@@ -26,6 +26,16 @@ extension SpecimenRegistry {
         SpecimenEntry("feedMarkdown") { MarkdownSpecimen() },
         SpecimenEntry("feedAttention") { SpecimenScene.sessions(FeedProjection.previewAskRows) },
         SpecimenEntry("feedPunctuation") { SpecimenScene.sessions(FeedProjection.previewMarkRows) },
+        // The design's own render (#688): the command the user typed, their line verbatim, and the
+        // marker under it — no expanded prompt anywhere.
+        SpecimenEntry("feedSkillLoaded") {
+            SpecimenScene.sessions(FeedProjection.previewSkillLoadedTurn)
+        },
+        // The three states that marker has, together: the body Argo read, the file it could not,
+        // and the one with nothing behind it — which draws no chevron at all.
+        SpecimenEntry("feedSkillLoadedStates") {
+            SpecimenScene.sessions(FeedProjection.previewSkillLoadRows)
+        },
         // The same marks as `feedPunctuation`, with the refusal nobody made among them (#573).
         SpecimenEntry("feedPermissionExpired") {
             SpecimenScene.sessions(FeedProjection.previewExpiredMarkRows)
@@ -95,6 +105,13 @@ extension SpecimenRegistry {
             SpecimenScene.sessions(
                 FeedProjection.previewCallRows,
                 open: FeedProjection.previewDocumentCallID,
+            )
+        },
+        // The marker's panel: the `SKILL.md` body as text, under the path Argo read it from.
+        SpecimenEntry("feedSkillEvidence") {
+            SpecimenScene.sessions(
+                FeedProjection.previewSkillLoadRows,
+                open: FeedProjection.previewSkillLoadRowID,
             )
         },
         // At the panel's floor: command and path cut at OPPOSITE ends, and a three-line header has

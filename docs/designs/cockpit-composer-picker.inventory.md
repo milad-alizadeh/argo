@@ -4,7 +4,7 @@ What assembling the `/` menu actually forced out of
 [`cockpit-composer-picker.md`](cockpit-composer-picker.md). The names were frozen at approval;
 renaming one is a migration. This ticket builds the `/` half only — the `+` menu (`AddMenu`), the
 `@` file rows (`FileMenuRow`), the built-ins strip (`CommandMenuStatus`) and the feed's
-`MentionSpan` / `SkillLoadedMarker` belong to #686, #687 and #689.
+`MentionSpan` belong to #686, #687 and #689. `SkillLoadedMarker` is #688, appended below.
 
 ## Extracted — #685
 
@@ -96,3 +96,45 @@ at the ceiling — which is what those two derivations are for.
   the same name side by side, on the grounds that Argo had not measured which the CLI runs. The
   design settles it: the nearer origin wins, the shadowed copy is not listed, and the winning row
   says `shadows yours`. Only `project` over `user` can collide — a plugin's commands are namespaced.
+
+## Extracted — #688
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `SkillLoadedMarker` | molecule | `ArgoUI/Shell/Deck/Feed/` — one caller (`FeedRowView`) | `skill: FeedSkillLoad` · `isOpen: Bool` · `open: () -> Void` | one `ArgoGlyph`, two `Text` runs and an `ArgoDisclosure` on `surface.glassTint` at `ArgoRadius.marker` | frozen table, `SkillLoadedMarker`; [`loaded.png`](composer-picker/loaded.png) |
+| `FeedSkillLoad` | value | same — the derive beside the view | `load: SkillLoad` · `isExternal: Bool` · `spoken` · `opened: FeedEvidence?` | — | Acceptance: the panel shows the `SKILL.md` body, and a read failure states itself |
+
+Extraction evidence, in the order it arrived:
+
+- **`SkillLoadedMarker`** — a known cross-screen unit, and three states the happy path does not
+  render: the body Argo read, the file it could not, and the one with nothing behind it. The third
+  draws no chevron, which is a branch a still has to be able to reach.
+- **`FeedSkillLoad`** — the container/View split `ui-components.md` requires. It also carries the
+  one fact the engine's `SkillLoad` cannot answer alone: whether the file read lies outside the
+  Session's tree, which needs the projection's own `FeedPath`.
+
+## What stayed inline — #688
+
+- **The user's own line.** Untouched, and deliberately: a command is just a prompt, so it stays the
+  ordinary bubble `FeedPrompt` already drew. The marker is a row beside it, never a rewriting of it.
+- **The row's place in the feed.** One case in `FeedProjection.content(of:)`, in the sequence the
+  record wrote it. There is no ordering rule to hold anywhere else.
+- **The panel.** `FeedEvidence` already draws one step under one address; the marker builds one and
+  opens the panel every call row opens.
+
+## Engine changes this needed — #688
+
+- **`TranscriptEvent.skillLoaded(SkillLoad)`**, read off the meta record whose first line is
+  `Base directory for this skill: <path>`. Those records were dropped whole before; the rest of them
+  still are.
+- **`SkillReader`**, the `SKILL.md`-off-disk port, mirroring `ImageReader`. It is what makes the
+  read failure falsifiable without breaking a skill on the machine.
+- **`SkillFrontmatter.body(of:)`** — #685's reader reused rather than a second one grown, which is
+  what #688's own note asked for. A file with no frontmatter is all body.
+
+## Amended during the build — #688
+
+- **A built-in command gets no marker.** The ticket read as though every `/command` took one, with
+  the built-in's panel simply absent. But `Skill Loaded: clear` is a false sentence, and the
+  transcript says nothing about a built-in beyond the line the user typed — which their own bubble
+  already carries. The marker is emitted from the skill-load record alone. Built-ins are #686's.

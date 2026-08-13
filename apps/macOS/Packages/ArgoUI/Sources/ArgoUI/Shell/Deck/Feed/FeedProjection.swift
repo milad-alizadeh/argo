@@ -88,7 +88,8 @@ enum FeedProjection {
         case let .usage(usage): usage
         case let .toolCallOutcome(outcome): outcome.usage
         case .prompt, .message, .thought, .toolCall, .recordIdentity, .headLeaf, .title, .cwd,
-             .model, .branch, .mode, .turnEnded, .plan, .compaction, .queued, .unreadableLine: nil
+             .model, .branch, .mode, .turnEnded, .plan, .compaction, .queued, .unreadableLine,
+             .skillLoaded: nil
         }
     }
 
@@ -130,6 +131,9 @@ enum FeedProjection {
             } else {
                 .prompt(text)
             }
+        // In the sequence it happened, beside the user's own line rather than instead of it: a
+        // command is just a prompt, and the feed invents no third way of showing one (#688).
+        case let .skillLoaded(load): .skillLoaded(FeedSkillLoad(load, within: path))
         case let .message(markdown): .message(markdown)
         // A separate case from `.message` on purpose, and it stays separate: the two carry the
         // same words often enough that collapsing them would read a turn's reasoning as its answer.

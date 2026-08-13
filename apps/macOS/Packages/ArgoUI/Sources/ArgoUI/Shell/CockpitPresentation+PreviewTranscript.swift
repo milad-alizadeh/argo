@@ -38,7 +38,10 @@ extension CockpitPresentation.Session {
                 + "step between a label and the prose under it.",
         ),
         .thought(markdown: "A wide window should get more feed, never a longer line."),
-        .prompt(text: "Good. Land the metrics in the contract.", atMs: 1_733_000_050_000),
+        // A command the user typed, and the skill the CLI handed over because of it (#688). The
+        // line stays theirs, verbatim; the marker below it is the record's own separate note.
+        .prompt(text: "/implement 427 — land the metrics in the contract", atMs: 1_733_000_050_000),
+        .skillLoaded(previewSkillLoad),
         .unreadableLine(raw: "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":"),
     ]
         + workedOn
@@ -71,4 +74,18 @@ extension CockpitPresentation.Session {
             ),
         ]
         + fannedOut
+
+    /// The skill that reading was handed, with the body Argo read behind it. A real `SKILL.md`
+    /// opens on its own heading, which is what the panel has to set as markdown source.
+    static let previewSkillLoad = SkillLoad(
+        name: "implement",
+        directory: "/Users/x/argo/.claude/skills/implement",
+        body: .read("""
+        # Implement
+
+        One ticket at a time, test-first at the seams that were agreed.
+
+        Run the gates as you go, and the whole suite once at the end.
+        """),
+    )
 }

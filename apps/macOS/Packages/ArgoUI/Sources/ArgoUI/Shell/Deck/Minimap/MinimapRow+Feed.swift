@@ -48,6 +48,12 @@ private extension FeedRow.Content {
                 parts: [.words(unreadable.label, .unreadable)],
                 ink: .unreadable,
             )
+        // A chip's own words, at the boundary ink the rest of the punctuation takes: it says
+        // something arrived in the reading, not that anybody spoke.
+        case let .skillLoaded(skill): .line(
+                parts: [.words(skill.spoken, .boundary)],
+                ink: .boundary,
+            )
         // Rows the lane draws as a shape rather than as words. Each asks its own type for its ink
         // rather than answering for it here: a question that has been answered goes quiet in the
         // row, and the lane has to go quiet with it.

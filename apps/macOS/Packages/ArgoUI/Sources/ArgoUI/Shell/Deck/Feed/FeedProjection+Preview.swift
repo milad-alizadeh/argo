@@ -93,6 +93,38 @@ extension FeedProjection {
     /// In the full feed the waiting one falls below the fold.
     static let previewAskRows = numbered(previewAsks.map(FeedRow.Content.ask))
 
+    /// The three states a skill marker has (#688): the body Argo read, the file it could not, and
+    /// the one with nothing behind it at all. Only the first is in the shipping transcript — the
+    /// other two need a `SKILL.md` that is missing or empty, which no fixture stream can carry.
+    static let previewSkillLoads: [FeedSkillLoad] = [
+        FeedSkillLoad(CockpitPresentation.Session.previewSkillLoad),
+        FeedSkillLoad(SkillLoad(
+            name: "pixel-review",
+            directory: "~/.claude/skills/pixel-review",
+            body: .unreadable("Argo could not read ~/.claude/skills/pixel-review/SKILL.md."),
+        )),
+        FeedSkillLoad(SkillLoad(
+            name: "grill-me",
+            directory: "~/.claude/skills/grill-me",
+            body: nil,
+        )),
+    ]
+
+    /// Those three as rows, so the states can be judged against each other on one screen.
+    static let previewSkillLoadRows = numbered(previewSkillLoads.map(FeedRow.Content.skillLoaded))
+
+    /// The state the design's own render draws: the command the user typed, their line verbatim,
+    /// and the marker under it. Projected from events rather than assembled from rows, so what the
+    /// still shows is what the shipping projection produces.
+    static let previewSkillLoadedTurn = rows(from: [
+        .prompt(text: "/implement 688 — the feed says a Session loaded a skill", atMs: 1000),
+        .skillLoaded(CockpitPresentation.Session.previewSkillLoad),
+        .message(markdown: "Reading the ticket and the design it points at."),
+    ])
+
+    /// The one whose panel has something in it.
+    static let previewSkillLoadRowID = previewSkillLoadRows.first(where: \.opensEvidence)?.id
+
     /// The punctuation on its own, for the same reason. The interrupt is added rather than found:
     /// the shipping preview transcript carries no stopped Turn (#541).
     static let previewMarkRows = numbered(

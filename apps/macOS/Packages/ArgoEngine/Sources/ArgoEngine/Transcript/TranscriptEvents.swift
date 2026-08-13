@@ -11,9 +11,14 @@ public func transcriptEvents(
     at url: URL,
     subject: TranscriptSubject = .session,
     readImage: @escaping ImageReader = noImageReader,
+    readSkill: @escaping SkillReader = noSkillReader,
 )
     -> AsyncStream<[TranscriptEvent]> {
-    let reader = TranscriptReader(subject: subject, readImage: readImage)
+    let reader = TranscriptReader(
+        subject: subject,
+        readImage: readImage,
+        readSkill: readSkill,
+    )
     return AsyncStream { continuation in
         let observation = Task {
             var isBackfill = true
