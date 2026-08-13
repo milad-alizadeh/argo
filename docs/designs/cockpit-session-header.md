@@ -1,5 +1,6 @@
-<!-- status: approved
+<!-- status: built
      approved-at: ad08d1d
+     built-at: eb92be06
      prototype: worktree-prototype-two-row-header -->
 
 # The two-row Session header
