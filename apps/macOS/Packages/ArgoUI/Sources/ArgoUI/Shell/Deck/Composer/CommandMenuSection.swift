@@ -33,9 +33,14 @@ struct CommandMenuSection: View {
         // line — and a header is a label to be scanned, not a string to be copied.
         .argoText(ArgoTypography.sectionLabel)
         .padding(.horizontal, ArgoSpacing.base)
-        // The whole separation between one origin and the last one's rows, and the only thing
-        // grouping them now that the header draws no ground of its own.
-        .padding(.top, separates ? ArgoSpacing.comfortable : ArgoSpacing.flush)
+        // The separation between one origin and the last one's rows, and the only thing grouping
+        // them now that the header draws no ground of its own.
+        //
+        // The first header takes `snug` instead, which is what a row already holds its own text off
+        // its edges by — so the list's first line and its last stand off the surface by the same
+        // amount. Zero here would make the top gap the container's inset alone and the bottom the
+        // inset plus that `snug`.
+        .padding(.top, separates ? ArgoSpacing.comfortable : ArgoSpacing.snug)
         .padding(.bottom, ArgoSpacing.tight)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)

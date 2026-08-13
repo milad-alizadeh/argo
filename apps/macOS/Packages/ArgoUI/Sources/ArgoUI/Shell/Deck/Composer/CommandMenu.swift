@@ -63,8 +63,10 @@ struct CommandMenu: View {
         let rows = CGFloat(menu.rows.count) * ArgoComposerVessel.commandRowHeight
         let headers = CGFloat(menu.sections.count { $0.label != nil })
             * ArgoComposerVessel.commandSectionHeight
-        // The first header carries no separating gap, so it stands that much shorter than the rest.
-        let unseparated = menu.sections.first?.label == nil ? 0 : ArgoSpacing.comfortable
+        // The first header separates nothing, so it stands shorter than the rest by the difference
+        // between the separating gap and the row inset it takes instead.
+        let shorterBy = ArgoSpacing.comfortable - ArgoSpacing.snug
+        let unseparated = menu.sections.first?.label == nil ? 0 : shorterBy
         return min(rows + headers - unseparated, ArgoComposerVessel.commandListCeiling)
     }
 
