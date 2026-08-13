@@ -30,10 +30,10 @@ struct RememberingDriverTests {
     @Test(arguments: [true, false])
     func `it carries its adapter's own answer about commands`(declared: Bool) {
         let base = InMemorySessionDriver()
-        base.canRunCommands = declared
+        base.declaresCommands = declared
         let driver = RememberingDriver(base: base, records: { _ in 0 }, remember: { _, _ in })
 
-        #expect(driver.canRunCommands == declared)
+        #expect(driver.canRunCommands(for: "s1") == declared)
     }
 
     @Test(arguments: [true, false])

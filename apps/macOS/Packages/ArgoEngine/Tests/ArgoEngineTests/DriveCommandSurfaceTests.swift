@@ -9,12 +9,27 @@ import Testing
 @Suite("Command surface")
 @MainActor
 struct DriveCommandSurfaceTests {
-    /// The port has no Session to read the answer for, so it can only state what BOTH adapters do
-    /// — and `codex` does not (#549). The picker is drawn per Session, so this has to become a
-    /// per-Session reading before #685 can ship. Until then the joint statement is a refusal.
+    /// The reading is per Session because the two adapters disagree. A joint statement would refuse
+    /// every `claude` Session the moment one Codex thread was reachable, which is what #698 left
+    /// this suite standing on until the picker existed to need it.
     @Test
-    func `the driver a Hub hands the cockpit declares the command surface`() {
+    func `the driver a Hub hands the cockpit declares the command surface per Session`() {
         let hub = testHub(projectURL: URL(filePath: "/tmp/argo-command-surface"))
-        #expect(!hub.driver.canRunCommands)
+        #expect(hub.driver.canRunCommands(for: "a-claude-session"))
+    }
+
+    /// Read off the Codex adapter directly, because reaching one through the port needs a live
+    /// thread and this suite starts nothing. It is this refusal that makes the routing worth
+    /// having: stated jointly it would have taken the picker off every `claude` Session too.
+    @Test
+    func `the Codex adapter refuses the command surface`() {
+        let hub = testHub(projectURL: URL(filePath: "/tmp/argo-command-surface"))
+        let codex = CodexSessionDriver(
+            ownership: hub.ownership,
+            threads: hub.codex,
+            attachments: AttachmentStore(root: URL(filePath: "/tmp/argo-command-surface")),
+        )
+
+        #expect(!codex.canRunCommands(for: "a-codex-session"))
     }
 }

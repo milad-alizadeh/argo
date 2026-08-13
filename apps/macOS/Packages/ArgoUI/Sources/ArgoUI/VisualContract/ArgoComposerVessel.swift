@@ -84,6 +84,28 @@ public enum ArgoComposerVessel {
     /// the feed: nothing floats here, because there is nothing under it to look through to.
     public static let unavailableHeight: CGFloat = 48
 
+    /// How tall one row of the `/` menu stands (#685, `cockpit-composer-picker.md`): a line of the
+    /// name's own type with `snug` either side. The study measured 26 and the derivation is 27 —
+    /// the shape `ArgoBadge.height` uses, and the design took the derivation.
+    public static var commandRowHeight: CGFloat {
+        ArgoTypography.machine.lineBox.rounded(.up) + ArgoSpacing.snug * 2
+    }
+
+    /// How tall an origin header in that menu stands. Asymmetric on purpose: it belongs to the rows
+    /// UNDER it, and the gap above is the only thing separating one origin from the last one's
+    /// rows — the header draws no ground of its own.
+    public static var commandSectionHeight: CGFloat {
+        ArgoTypography.sectionLabel.lineBox.rounded(.up)
+            + ArgoSpacing.comfortable
+            + ArgoSpacing.tight
+    }
+
+    /// How far the menu's list may grow before it scrolls inside itself: ten rows and one header.
+    /// A ceiling and not a height — a shorter list is drawn shorter.
+    public static var commandListCeiling: CGFloat {
+        commandRowHeight * 10 + commandSectionHeight
+    }
+
     /// How long the accent wash stands over a row the user just sent. A hold, not a motion — the
     /// fade in and out is `ArgoMotion.bloom`, whose ramp has a half-second ceiling.
     public static let washHold: TimeInterval = 1.4

@@ -71,6 +71,9 @@ public struct CockpitView: View {
         DeckVessel.resolve(
             for: presentation.session(navigation.session),
             canAttach: actions.drive.canAttach,
+            // Per Session, unlike attachments: `claude` declares the command surface and `codex`
+            // does not, so there is no one answer the port could give without an id (#685).
+            canRunCommands: navigation.session.map(actions.drive.canRunCommands(for:)) ?? false,
         )
     }
 
