@@ -1,3 +1,6 @@
+> **This file covers the roster-header study only.** The other prototype here,
+> `ask-vessel-prototype.html`, has its own notes in `ask-vessel-prototype.md`.
+
 # Roster row + Session header — throwaway prototype
 
 **This branch is a primary source, not a starting point.** It exists so the decisions in

@@ -29,6 +29,11 @@ struct FeedAsk: Equatable, Sendable {
         isPending ? .attention : .message
     }
 
+    /// The options of one question, numbered, in the order they were offered — what the row draws.
+    func offers(in question: Ask.Question) -> [FeedAskOffer] {
+        FeedAskOffer.numbered(question.options, chosen: chosen(in: question))
+    }
+
     /// Which of the offered options the answer named, or `nil`.
     ///
     /// DERIVED and deliberately weak: the answer is prose, not a field naming an option, so the

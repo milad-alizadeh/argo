@@ -105,6 +105,7 @@ under `docs/adr/`.
 | `cockpit-session-header.inventory.md` | Two-row header build inventory | What each ticket's build actually extracted from that design — `TabLineInstruments` for #693 so far, plus what stayed inline and what was only reseated |
 | `cockpit-roster-turn-clock.md` + `roster-clock/` | **Approved Turn-clock design** (#618) | How long a Turn has been running, read in the roster row's age slot: a live `4m 12s` in `state.running` for a managed Session, `output 12s ago` for an observed one, the seen reading otherwise. The header and feed stay silent. Three renders in `roster-clock/` are the spec |
 | `cockpit-roster-turn-clock.inventory.md` | Turn-clock build inventory | What #678's build actually extracted from that design — `RosterTurnClock` and the phrase it shares with the projection — and the splits that stayed inline |
+| `cockpit-feed-ask.md` + `feed-ask/` | **Approved ask design** (#712) | How a Session's question gets answered: in the feed row where it was asked, options pressable, one click the whole answer. **There is no vessel** — the composer's slot is not involved and `DeckVessel.resolve` gains no case, which reverses #712's own first proposal. Six renders in `feed-ask/` are the spec; the doc's measurements say per row whether the value ships today or #712 builds it |
 | `cockpit-roster-archive-foot.md` | **The roster's `Archived (n)` foot** | The one disclosure at the foot of the Sessions roster: anatomy, states, motion, keyboard, and the SwiftUI mechanic that stops the sidebar `Section` drawing a second chevron |
 | `cockpit-session-interior-decisions.md` | Session-interior decision log | Roster rows, dot-carries-state, zero-state, panel natures. Behaviour lineage; its master–detail *layout* was superseded by the single feed |
 
@@ -117,6 +118,18 @@ baselines — nothing diffs them (AGENTS.md → *Visual verification*). Regenera
 ```sh
 cd apps/macOS && sh scripts/specimens.sh <dir> [name …]
 ```
+
+## `prototypes/` — throwaway, and deliberately so
+
+Studies written to answer one design question by being *looked at*. They are **not** part of the
+design set: no tests, no abstractions, one file each, and every value transcribed from the Swift
+contract rather than invented. A prototype belongs on a throwaway branch once the design it fed
+is approved — it is a primary source to re-explore from, never a thing to build from.
+
+| File | Question it answered |
+|---|---|
+| `roster-header-prototype.html` | What should the Sessions roster row and the Session deck header show? (#502) |
+| `ask-vessel-prototype.html` + `.md` | How does a Session's question get answered? (#712) — settled by `cockpit-feed-ask.md` |
 
 ## What left, and where it went
 

@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ask in the feed (#712)</title>
+<!--
+  THROWAWAY. The ask is answered IN THE FEED, where it was asked — the shape Claude Code's own
+  desktop client uses. The composer below stays the composer and never repeats the question.
+  Not production code: no tests, no abstractions, one file.
+
+  Every colour, radius, spacing step and type role is transcribed from
+  apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/. Nothing is invented.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift — ground */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --glass-tint: rgba(255,255,255,.06);
+    --hover:      rgba(255,255,255,.045);
+    --control:    rgba(255,255,255,.06);
+    --selected:   rgba(255,255,255,.058);
+    --marked:     rgba(255,255,255,.07);
+
+    /* text */
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #868D94;
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    /* edges */
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+
+    /* accent + state */
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    --running:   #46D3A8;
+    --idle:      #868E96;
+    --attention: #E8B24A;
+    --failure:   #F2555C;
+    /* ArgoPalette.state — muted(role) = .16, rim(role) = .5, wash(role) = .10 */
+    --attention-muted: rgba(232,178,74,.16);
+    --attention-rim:   rgba(232,178,74,.5);
+    --attention-wash:  rgba(232,178,74,.10);
+
+    /* ArgoGeometry.swift */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px; --s-region: 32px;
+    --st-border: 1px; --st-focus: 2px;
+
+    /* ArgoFeedRow.swift */
+    --marker-w: 18px; --marker-gap: 6px; --feed-column: 720px;
+    --feed-inset: 24px; --feed-gap: 16px;
+
+    /* ArgoComposerVessel.swift */
+    --control-d: 26px; --chip-h: 20px; --unavailable-h: 48px; --feed-clearance: 128px;
+    --decision-h: 27px;
+
+    /* ArgoLayout.swift */
+    --sidebar-w: 320px; --deck-tab-h: 40px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0d0e10;
+    color: var(--text-1);
+    font: 13px/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* ---------- window ---------- */
+  .window {
+    position: fixed; inset: var(--s-section) var(--s-section) 96px;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--subtle);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    background: var(--base);
+    min-width: 900px;
+    display: grid; grid-template-columns: var(--sidebar-w) 1fr;
+  }
+
+  /* ---------- sidebar — scenery, so the feed is judged at a real width ---------- */
+  .sidebar { background: var(--sunken); border-right: 1px solid var(--hairline); padding-top: 46px; overflow: hidden; }
+  .rail-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3);
+    padding: var(--s-comfortable) var(--s-comfortable) var(--s-snug);
+  }
+  .srow {
+    display: flex; gap: var(--s-base); align-items: flex-start;
+    padding: var(--s-base) var(--s-comfortable); margin: 0 var(--s-base);
+    border-radius: var(--r-control); cursor: default;
+  }
+  .srow.sel { background: var(--selected); box-shadow: inset 2px 0 0 var(--accent); }
+  .srow .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 6px; flex: none; }
+  .srow .t { font-size: 13px; font-weight: 500; color: var(--text-1); }
+  .srow .m { font-size: 11px; color: var(--text-3); font-family: var(--mono); margin-top: 1px;
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px; }
+
+  /* ---------- deck ---------- */
+  .deck { display: grid; grid-template-rows: var(--deck-tab-h) 1fr auto; min-width: 0; position: relative; }
+  .tabs {
+    display: flex; align-items: center; gap: var(--s-loose); padding: 30px var(--s-loose) 0;
+    border-bottom: 1px solid var(--hairline); font-size: 12px; color: var(--text-3);
+    height: calc(var(--deck-tab-h) + 30px);
+  }
+  .tabs .on { color: var(--text-1); font-weight: 500; box-shadow: inset 0 -2px 0 var(--accent); padding-bottom: 9px; }
+  .tabs .sp { flex: 1; }
+  .tabs .mono { font-family: var(--mono); font-size: 12px; }
+
+  .feed { overflow-y: auto; padding: var(--s-section) 0; }
+  .col { max-width: var(--feed-column); margin: 0 auto; padding: 0 var(--feed-inset) var(--feed-clearance);
+         display: flex; flex-direction: column; gap: var(--feed-gap); }
+
+  .bubble {
+    align-self: flex-end; max-width: 78%; background: var(--raised);
+    border: 1px solid var(--hairline); border-radius: var(--r-popover);
+    padding: var(--s-base) var(--s-comfortable);
+  }
+  .prose { color: var(--text-1); }
+  .call { display: flex; gap: var(--s-snug); align-items: baseline; color: var(--text-2); }
+  .call .sym { width: 15px; text-align: center; color: var(--text-3); flex: none; }
+  .call .mono { font-family: var(--mono); font-size: 12px; color: var(--text-3); }
+
+  /* ---------- the ask, in the feed ---------- *
+   * Carried by its GROUND alone while it waits — no rule around it and no leading accent bar.
+   * An amber stroke on four edges reads as an alert banner dropped into the column rather than
+   * as a row of it. Settled, the ground goes and only the mark stays. */
+  /* FeedAskLine's own inset and step, to the value — the waiting state changes what the row
+     DOES, not how it is measured. */
+  .ask {
+    padding: var(--s-comfortable);
+    border-radius: var(--r-control);
+    display: flex; flex-direction: column; gap: var(--s-comfortable);
+  }
+  .ask.pending { background: var(--attention-muted); }
+
+  /* Waiting, the option cards need room; settled, the list is `stepBeforeProse` under its
+     question exactly as #534 ships it. */
+  .askq { display: flex; flex-direction: column; gap: var(--s-comfortable); }
+  .ask:not(.pending) .askq { gap: var(--s-hair); }
+  .askq > .head { display: flex; gap: var(--marker-gap); align-items: flex-start; }
+  .askq > .head > .glyph {
+    width: var(--marker-w); flex: none; color: var(--attention);
+    display: flex; justify-content: flex-end;
+    /* Seated on the cap height of the 13pt line beside it, not on its box. */
+    margin-top: 2px;
+  }
+  .ask:not(.pending) .askq > .head > .glyph { color: var(--text-3); }
+  /* No weight of its own: the question is already carried by the ground and the mark. */
+
+  /* The options, as the thing you press. Indented to the marker grid, so the question's mark
+     and the options they belong to read as one block. */
+  .opts { display: flex; flex-direction: column; gap: var(--s-snug);
+          margin-left: calc(var(--marker-w) + var(--marker-gap)); }
+
+  .opt {
+    display: flex; gap: var(--marker-gap); align-items: flex-start; width: 100%;
+    text-align: left; font: inherit; color: inherit; cursor: pointer;
+    /* `surface.control` is the role by name: the ground under a control on a surface which is
+       not the deck, which is exactly what an option row on the ask's ground is. */
+    background: var(--control);
+    border: 1px solid var(--hairline); border-radius: var(--r-control);
+    padding: var(--s-base) var(--s-comfortable);
+    /* ArgoMotion.selection — 0.14 easeOut. It is a selection. */
+    transition: background-image 140ms ease-out, border-color 140ms ease-out;
+  }
+  /* Hover is the hover wash LAID OVER the control ground, the way SwiftUI stacks the two —
+     not a third opacity invented to stand for the pair. There is deliberately no pressed
+     state: one click answers, so it would be on screen for a few frames at most. */
+  .opt:hover { background-image: linear-gradient(var(--hover), var(--hover));
+               border-color: var(--subtle); }
+  /* FeedMarker's own values — the settled reading numbers its options with exactly this, so a
+     pressable option and a read one carry the same digit in the same column. */
+  .opt .n {
+    font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-3);
+    flex: none; width: var(--marker-w); text-align: right;
+  }
+  .opt .l { color: var(--text-1); }
+  .opt .d { color: var(--text-3); font-size: 11px; margin-top: 1px; }
+  /* ArgoComposerVessel.askBoxSize — 14. A hit target, not an icon rung: the mark inside it
+     rides the icon scale at `inline`, and this is the box a pointer has to find. */
+  .opt .box {
+    width: 14px; height: 14px; border-radius: var(--r-marker); border: 1px solid var(--strong);
+    flex: none; margin-top: 1px; display: grid; place-items: center;
+    font-size: 10px; color: var(--on-accent);
+  }
+  .opt.on { background: var(--attention-wash); border-color: var(--attention-rim); }
+  .opt.on .n { color: var(--attention); }
+  .opt.on .box { background: var(--attention); border-color: var(--attention); }
+  .opt.other .l { color: var(--text-3); }
+  .opt.other:hover .l { color: var(--text-1); }
+
+  /* Once it is answered nothing is pressable, and only the option that was taken keeps its ink. */
+  .taken { display: flex; gap: var(--marker-gap); align-items: flex-start;
+           padding: var(--s-hair) 0; }
+  .taken .n { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-3);
+              flex: none; width: var(--marker-w); text-align: right; }
+  /* Settled is FeedAskOptions as #534 already ships it, to the value: the untaken step back to
+     secondary rather than going out, and the mark is ordinary ink. */
+  .taken .l { color: var(--text-1); }
+  .taken.quiet .l { color: var(--text-2); }
+  .taken .tick { color: var(--text-1); margin-left: var(--s-tight); }
+
+  /* The free-text branch, and the Other answer, inline in the row. */
+  /* The field and the button stand at ONE height — ArgoComposerVessel.decisionHeight — so the
+     row has a single top and a single bottom rather than two of each. */
+  .typed { display: flex; gap: var(--s-base); align-items: center;
+           margin-left: calc(var(--marker-w) + var(--marker-gap)); }
+  .fieldbox {
+    flex: 1; display: flex; align-items: center;
+    height: var(--decision-h); flex: 1 1 auto;
+    /* No ground of its own: ComposerField draws none either, and a second fill inside the
+       ask's own wash reads as a well cut into it. */
+    border: 1px solid var(--hairline); border-radius: var(--r-control);
+    padding: 0 var(--s-comfortable);
+  }
+  .fieldbox:focus-within { border-color: var(--accent); }
+  /* ArgoTypography.body on ArgoFeedRow.lineHeight — 13 set at 20, the feed's own rhythm. */
+  .field {
+    width: 100%; background: none; border: none; color: var(--text-1);
+    font: 13px/20px var(--sans); outline: none;
+  }
+  .field::placeholder { color: var(--text-off); }
+
+  /* ArgoComposerVessel.decisionHeight / decisionMinimumWidth */
+  .answer {
+    display: inline-flex; align-items: center; gap: var(--s-tight); justify-content: center;
+    min-width: 80px; height: var(--decision-h); flex: none; padding: 0 var(--s-comfortable);
+    border: none; border-radius: var(--r-control); cursor: pointer;
+    font: 500 12px var(--sans); background: var(--accent); color: var(--on-accent);
+  }
+  .answer[disabled] { background: var(--marked); color: var(--text-off); cursor: default; }
+  .keycap {
+    font-family: var(--mono); font-size: 11px; background: var(--marked);
+    padding: var(--s-hair) var(--s-tight); border-radius: var(--r-marker);
+  }
+  .hint { font-size: 11px; color: var(--text-3);
+          margin-left: calc(var(--marker-w) + var(--marker-gap)); }
+
+  /* ---------- the composer, untouched by the ask ---------- */
+  .slot { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 var(--s-section) var(--s-section); }
+  .glass {
+    max-width: var(--feed-column); margin: 0 auto;
+    border-radius: var(--r-popover);
+    background: rgba(46,49,54,.62);
+    backdrop-filter: blur(30px) saturate(1.7);
+    -webkit-backdrop-filter: blur(30px) saturate(1.7);
+    border: 1px solid var(--subtle);
+    box-shadow: 0 8px 28px rgba(0,0,0,.42);
+    /* SessionComposer's own asymmetric inset */
+    padding: var(--s-comfortable) var(--s-base) var(--s-base) var(--s-loose);
+  }
+  .cfoot { display: flex; align-items: center; gap: var(--s-base); margin-top: var(--s-base); }
+  .cfoot .sp { flex: 1; }
+  .mode { font-size: 12px; color: var(--text-2); height: var(--chip-h);
+          display: inline-flex; align-items: center; }
+  .send {
+    width: var(--control-d); height: var(--control-d); border-radius: 50%; border: none;
+    background: rgba(255,255,255,.08); color: var(--text-off);
+    display: grid; place-items: center; flex: none;
+  }
+
+  /* ComposerUnavailable.swift — a row at the deck's foot, not a vessel over the feed */
+  .unavail {
+    border-top: 1px solid var(--hairline); background: var(--sunken);
+    height: var(--unavailable-h); display: flex; align-items: center; gap: var(--s-base);
+    padding: 0 var(--s-section);
+  }
+  .unavail .word { font-weight: 600; color: var(--text-2); }
+  .unavail .detail { color: var(--text-3); }
+
+  /* ---------- the case picker + the state readout ---------- */
+  .bar {
+    position: fixed; left: 50%; bottom: var(--s-loose); transform: translateX(-50%);
+    display: flex; align-items: center; gap: var(--s-base); z-index: 50;
+    background: #fff; color: #111; border-radius: 999px; padding: 5px 6px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.55); font: 12px var(--sans);
+  }
+  .bar button { border: none; background: none; cursor: pointer; font: inherit; color: inherit;
+                border-radius: 999px; padding: 4px 10px; }
+  .bar button:hover { background: rgba(0,0,0,.08); }
+  .bar .name { font-weight: 600; padding: 0 var(--s-base); white-space: nowrap; }
+  .bar select { font: 12px var(--sans); border-radius: 999px; border: 1px solid rgba(0,0,0,.2);
+                padding: 3px 8px; background: #fff; }
+  .readout {
+    position: fixed; left: var(--s-loose); bottom: var(--s-loose); z-index: 50;
+    background: rgba(11,12,14,.94); border: 1px solid var(--subtle); border-radius: var(--r-control);
+    padding: var(--s-base) var(--s-comfortable); font: 11px/1.5 var(--mono); color: var(--text-2);
+    width: 250px; white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <aside class="sidebar">
+    <div class="rail-label">SESSIONS</div>
+    <div class="srow sel">
+      <span class="dot" style="background:var(--attention)"></span>
+      <span>
+        <div class="t">Answer an AskUserQuestion in the cockpit</div>
+        <div class="m">worktree-ticket-534-ask-options</div>
+      </span>
+    </div>
+    <div class="srow">
+      <span class="dot" style="background:var(--running)"></span>
+      <span>
+        <div class="t">The composer's command menu</div>
+        <div class="m">argo/#707-command-menu</div>
+      </span>
+    </div>
+    <div class="srow">
+      <span class="dot" style="background:var(--idle)"></span>
+      <span>
+        <div class="t">Read a Session's subagent transcripts</div>
+        <div class="m">main</div>
+      </span>
+    </div>
+  </aside>
+
+  <main class="deck">
+    <div class="tabs">
+      <span class="on">Feed</span><span>Code</span><span>Terminal</span>
+      <span class="sp"></span>
+      <span class="mono" id="statusline">asking · 41k / 200k</span>
+    </div>
+    <div class="feed"><div class="col" id="col"></div></div>
+    <div class="slot" id="slot"></div>
+  </main>
+</div>
+
+<div class="bar" role="group" aria-label="Case picker">
+  <button id="prev" aria-label="Previous case">←</button>
+  <span class="name" id="cname"></span>
+  <button id="next" aria-label="Next case">→</button>
+  <button id="reset">reset</button>
+</div>
+
+<pre class="readout" id="readout"></pre>
+
+<script>
+/* ------------------------------------------------------------------ *
+ * The cases. Every state #712 names, each reachable by URL.
+ * The first is real — it is the question this session actually put to
+ * the user when issue #721 turned out not to exist.
+ * ------------------------------------------------------------------ */
+const CASES = {
+  pick: {
+    label: 'One question, three options',
+    driveable: true,
+    questions: [{
+      text: "Issue #721 doesn't exist. Which ticket should I implement?",
+      multi: false,
+      options: [
+        ['#712 — Answer an AskUserQuestion in the cockpit', 'Open, closest to this worktree.'],
+        ['#713 — PlanPill shows the system focus ring on a click', 'Open, the other recent one.'],
+        ['#711 — Read a Session’s subagent transcripts', 'Open, unrelated to this worktree.'],
+      ],
+    }],
+  },
+  multi: {
+    label: 'One question, many answers',
+    driveable: true,
+    questions: [{
+      text: 'Which quality gates should run before the PR opens?',
+      multi: true,
+      options: [
+        ['SwiftFormat and SwiftLint', ''],
+        ['Package boundaries', ''],
+        ['The full Swift test suite', ''],
+        ['Duplication', ''],
+      ],
+    }],
+  },
+  many: {
+    label: 'Two questions, one call',
+    driveable: true,
+    questions: [
+      {
+        text: 'Where should the ask take its answer?',
+        multi: false,
+        options: [['In the feed, where it was asked', ''], ['In the composer’s slot', '']],
+      },
+      {
+        text: 'What does esc do on an ask?',
+        multi: false,
+        options: [['Nothing — an ask has no refusal', ''], ['Clears the selection', '']],
+      },
+    ],
+  },
+  free: {
+    label: 'A question with no options',
+    driveable: true,
+    questions: [{ text: 'What should I call the roll-up?', multi: false, options: [] }],
+  },
+  unavailable: {
+    label: 'An ask on a Session nothing can drive (#546)',
+    driveable: false,
+    questions: [{
+      text: "Issue #721 doesn't exist. Which ticket should I implement?",
+      multi: false,
+      options: [
+        ['#712 — Answer an AskUserQuestion in the cockpit', ''],
+        ['#713 — PlanPill shows the system focus ring on a click', ''],
+        ['#711 — Read a Session’s subagent transcripts', ''],
+      ],
+    }],
+  },
+};
+
+/* ArgoSymbol.asked is `questionmark.bubble`, which the browser has no access to — drawn here
+   as the nearest honest shape, filled with the `?` knocked out of it. A stroked outline at
+   this size loses the tail and reads as a circle. */
+const ASKED_GLYPH = `
+<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+  <mask id="askedmask">
+    <rect width="16" height="16" fill="#fff"/>
+    <text x="8.1" y="10" text-anchor="middle" font-size="9.5" font-weight="700" fill="#000"
+          font-family="-apple-system, BlinkMacSystemFont, sans-serif">?</text>
+  </mask>
+  <path d="M3 2 H13 A2 2 0 0 1 15 4 V9.4 A2 2 0 0 1 13 11.4 H6.4 L3.6 14.1
+           A0.45 0.45 0 0 1 2.85 13.77 V11.4 A2 2 0 0 1 1 9.4 V4 A2 2 0 0 1 3 2 Z"
+        fill="currentColor" mask="url(#askedmask)"/>
+</svg>`;
+
+/* ------------------------------------------------------------------ *
+ * State. In memory only. `answers[i]` is null until question i is
+ * answered, then {ordinals, other} — the shape the engine would carry,
+ * which is ORDINALS and never labels (#712).
+ * ------------------------------------------------------------------ */
+let caseKey = 'pick';
+let picked = [];     // per question, while a many-of one is being built
+let typed = [];      // per question, the free text
+let answers = [];    // per question, null until answered
+let othering = [];   // per question, whether the Other field is open
+
+function theCase() { return CASES[caseKey]; }
+
+function reset() {
+  const n = theCase().questions.length;
+  picked = Array.from({ length: n }, () => []);
+  typed = Array.from({ length: n }, () => '');
+  answers = Array.from({ length: n }, () => null);
+  othering = Array.from({ length: n }, () => false);
+}
+
+const isSettled = () => answers.every(Boolean);
+
+/* A click on an option IS the answer. A one-of question needs no confirm step; a many-of one
+   does, because the next click would otherwise be lost. */
+function press(i, ordinal) {
+  const q = theCase().questions[i];
+  if (q.multi) {
+    const at = picked[i].indexOf(ordinal);
+    if (at >= 0) picked[i].splice(at, 1); else picked[i].push(ordinal);
+    picked[i].sort((a, b) => a - b);
+    draw();
+    return;
+  }
+  answers[i] = { ordinals: [ordinal], other: null };
+  draw();
+}
+
+function submit(i) {
+  const text = typed[i].trim();
+  answers[i] = { ordinals: picked[i].slice(), other: text || null };
+  draw();
+}
+
+function canSubmit(i) {
+  return picked[i].length > 0 || typed[i].trim().length > 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Draw
+ * ------------------------------------------------------------------ */
+function draw() {
+  const c = theCase();
+  document.getElementById('statusline').textContent =
+    (isSettled() || !c.driveable ? 'running' : 'asking') + ' · 41k / 200k';
+
+  const col = document.getElementById('col');
+  col.innerHTML = '';
+  col.insertAdjacentHTML('beforeend', `
+    <div class="bubble prose">implement 721</div>
+    <div class="prose">There is no issue #721 in <code>milad-alizadeh/argo</code> — the API returns 404,
+      and the highest number that exists is 713. So I can’t start without knowing which ticket you mean.</div>
+    <div class="call"><span class="sym">⎿</span><span>Read</span><span class="mono">AGENTS.md</span></div>
+    <div class="call"><span class="sym">⎿</span><span>Bash</span><span class="mono">gh api repos/…/issues/721</span></div>
+  `);
+
+  col.appendChild(askCard(c));
+
+  if (isSettled()) {
+    col.insertAdjacentHTML('beforeend', `<div class="prose">Right — starting on that one.</div>`);
+  }
+
+  const slot = document.getElementById('slot');
+  slot.innerHTML = '';
+  slot.appendChild(c.driveable ? composer() : unavailable());
+  slot.style.padding = c.driveable ? '' : '0';
+
+  document.getElementById('cname').textContent = c.label;
+  drawReadout();
+  bindFields();
+}
+
+/* ONE call, ONE ground. Two questions arriving in the same `AskUserQuestion` are one thing
+   the agent is waiting on, so drawing them as two cards puts a seam through a single stop. */
+function askCard(c) {
+  const waiting = c.driveable && !isSettled();
+  const card = el('div', 'ask' + (waiting ? ' pending' : ''));
+
+  c.questions.forEach((q, i) => {
+    const live = c.driveable && !answers[i];
+    const block = el('div', 'askq');
+    block.appendChild(html(
+      `<div class="head"><span class="glyph">${ASKED_GLYPH}</span>` +
+      `<span class="q">${esc(q.text)}</span></div>`));
+
+    if (!live) {
+      block.appendChild(settled(q, i));
+    } else {
+      if (q.options.length) block.appendChild(options(q, i));
+      /* The field is in the ROW, never in the composer — the composer is for talking to the
+         Session, not for answering it. A many-of question keeps it open beside the boxes,
+         because there ticking some and adding a word is ONE answer rather than two. */
+      if (!q.options.length || q.multi || othering[i]) block.appendChild(typedRow(q, i));
+    }
+    card.appendChild(block);
+  });
+
+  return card;
+}
+
+function options(q, i) {
+  const list = el('div', 'opts');
+  q.options.forEach(([label, detail], k) => {
+    const ordinal = k + 1;
+    const on = picked[i].includes(ordinal);
+    const b = el('button', 'opt' + (on ? ' on' : ''));
+    b.innerHTML =
+      (q.multi ? `<span class="box">${on ? '✓' : ''}</span>` : '') +
+      `<span class="n">${ordinal}</span>` +
+      `<span><span class="l">${esc(label)}</span>${detail ? `<div class="d">${esc(detail)}</div>` : ''}</span>`;
+    b.onclick = () => press(i, ordinal);
+    list.appendChild(b);
+  });
+
+  /* `Other` carries NO number. The feed numbers only what was offered, so a numbered Other
+     would put these ordinals one past the ones the answer names.
+     A one-of question opens it as a row, because there the field is a REPLACEMENT for a pick.
+     A many-of one draws the field beside the boxes instead — see `askCard`. */
+  if (!q.multi) {
+    const other = el('button', 'opt other');
+    other.innerHTML = `<span class="n"></span><span class="l">Other…</span>`;
+    other.onclick = () => { othering[i] = true; draw(); };
+    list.appendChild(other);
+  }
+
+  return list;
+}
+
+function typedRow(q, i) {
+  const row = el('div', 'typed');
+  row.appendChild(html(
+    `<span class="fieldbox"><input class="field" data-q="${i}"
+      placeholder="${!q.options.length ? 'Type your answer'
+                    : q.multi ? 'Anything else' : 'Something else'}"
+      value="${esc(typed[i])}"></span>`));
+  const b = el('button', 'answer');
+  b.disabled = !canSubmit(i);
+  b.innerHTML = 'Answer <span class="keycap">⏎</span>';
+  b.onclick = () => submit(i);
+  row.appendChild(b);
+  return row;
+}
+
+/* What the question becomes once it is answered: the options it offered, in the order it
+   offered them, with only the taken one keeping its ink. Nothing here is pressable. */
+function settled(q, i) {
+  const wrap = el('div', 'opts');
+  wrap.style.gap = 'var(--s-tight)';   // FeedAskOptions' own step
+  const a = answers[i];
+  q.options.forEach(([label], k) => {
+    const ordinal = k + 1;
+    const chosen = a.ordinals.includes(ordinal);
+    wrap.appendChild(html(
+      `<div class="taken${chosen ? '' : ' quiet'}"><span class="n">${ordinal}</span>` +
+      `<span class="l">${esc(label)}</span>${chosen ? '<span class="tick">✓</span>' : ''}</div>`));
+  });
+  if (a.other) {
+    wrap.appendChild(html(
+      `<div class="taken"><span class="n"></span><span class="l">${esc(a.other)}</span>` +
+      `<span class="tick">✓</span></div>`));
+  }
+  return wrap;
+}
+
+/* The composer, exactly as it is at rest. The ask never touches it. */
+function composer() {
+  const wrap = el('div', 'glass');
+  wrap.innerHTML =
+    `<input class="field" placeholder="Reply to this Session">` +
+    `<div class="cfoot"><span class="mode">Code</span><span class="sp"></span>` +
+    `<span class="send">↑</span></div>`;
+  return wrap;
+}
+
+function unavailable() {
+  return html(
+    `<div class="unavail"><span style="color:var(--text-3)">⌁</span>` +
+    `<span><span class="word">Orphaned</span><span class="detail"> — the process that ran this ` +
+    `Session is gone, so nothing here can answer its question.</span></span></div>`);
+}
+
+function drawReadout() {
+  const c = theCase();
+  const out = [`case      ${caseKey}`, `driveable ${c.driveable}`,
+               `status    ${isSettled() ? 'answered' : 'asking (needs input)'}`, ''];
+  c.questions.forEach((q, i) => {
+    out.push(`q${i + 1} ${q.multi ? '(many of)' : q.options.length ? '(one of)' : '(free-form)'}`);
+    out.push(answers[i]
+      ? `   sent  ${JSON.stringify(answers[i])}`
+      : `   held  [${picked[i].join(', ')}]${typed[i].trim() ? ' + text' : ''}`);
+  });
+  document.getElementById('readout').textContent = out.join('\n');
+}
+
+/* ------------------------------------------------------------------ *
+ * Plumbing
+ * ------------------------------------------------------------------ */
+function el(tag, cls) { const n = document.createElement(tag); if (cls) n.className = cls; return n; }
+function html(s) { const t = document.createElement('template'); t.innerHTML = s.trim(); return t.content.firstElementChild; }
+function esc(s) { return String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m])); }
+
+/* Bound after the draw, and the button toggled in place — a redraw per keystroke would take
+   the caret back to the start of the field. */
+function bindFields() {
+  document.querySelectorAll('.field[data-q]').forEach(f => {
+    const i = Number(f.dataset.q);
+    f.oninput = () => {
+      typed[i] = f.value;
+      const b = f.closest('.typed').querySelector('.answer');
+      b.disabled = !canSubmit(i);
+      drawReadout();
+    };
+    f.onkeydown = e => { if (e.key === 'Enter' && canSubmit(i)) { e.preventDefault(); submit(i); } };
+  });
+  const open = document.querySelector('.field[data-q]');
+  if (open && othering[Number(open.dataset.q)]) open.focus();
+}
+
+function writeURL() {
+  history.replaceState(null, '', '?case=' + caseKey);
+}
+
+function setCase(k) { caseKey = k; reset(); writeURL(); draw(); }
+
+const keys = Object.keys(CASES);
+document.getElementById('prev').onclick =
+  () => setCase(keys[(keys.indexOf(caseKey) + keys.length - 1) % keys.length]);
+document.getElementById('next').onclick =
+  () => setCase(keys[(keys.indexOf(caseKey) + 1) % keys.length]);
+document.getElementById('reset').onclick = () => setCase(caseKey);
+
+document.addEventListener('keydown', e => {
+  const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+  if (!typing && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    document.getElementById(e.key === 'ArrowLeft' ? 'prev' : 'next').click();
+    return;
+  }
+  if (typing || !theCase().driveable) return;
+
+  /* The digits the rows already draw. They answer the first question still open. */
+  const i = answers.findIndex(a => !a);
+  if (i < 0) return;
+  if (/^[1-9]$/.test(e.key)) {
+    const n = Number(e.key);
+    if (n <= theCase().questions[i].options.length) { e.preventDefault(); press(i, n); }
+  } else if (e.key === 'Enter' && canSubmit(i)) {
+    e.preventDefault();
+    submit(i);
+  }
+  /* esc is deliberately unbound: an ask has no refusal. */
+});
+
+const params = new URLSearchParams(location.search);
+const fromURL = params.get('case');
+if (fromURL && CASES[fromURL]) caseKey = fromURL;
+reset();
+
+/* The settled row needs a link of its own — it is a state `pixel-review` has to judge, and a
+   state you cannot link to is a state nobody re-checks. `&answer=2` answers the first question
+   with option 2; `&answer=2,1` answers a two-question call. */
+(params.get('answer') || '').split(',').forEach((raw, i) => {
+  const n = Number(raw);
+  const q = theCase().questions[i];
+  if (!q || !(n >= 1) || n > q.options.length) return;
+  answers[i] = { ordinals: [n], other: null };
+});
+
+draw();
+</script>
+</body>
+</html>

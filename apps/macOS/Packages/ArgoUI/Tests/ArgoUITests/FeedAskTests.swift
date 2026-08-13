@@ -77,6 +77,49 @@ struct FeedAskTests {
         #expect(ask.chosen(in: Self.question) == nil)
     }
 
+    /// The prompt offers a numbered list and the answer names an option by that number, so the row
+    /// has to spell the same numbers the terminal did.
+    @Test
+    func `the options are numbered from one, in the order they were offered`() throws {
+        let ask = try #require(asked(nil))
+
+        let offers = ask.offers(in: Self.question)
+
+        #expect(offers.map(\.ordinal) == [1, 2])
+        #expect(offers.map(\.label) == Self.question.options)
+        #expect(offers.map(\.marker) == ["1.", "2."])
+    }
+
+    @Test
+    func `the option the answer named is the only one marked chosen`() throws {
+        let ask = try #require(asked("The ordinary ink"))
+
+        #expect(ask.offers(in: Self.question).map(\.isChosen) == [false, true])
+    }
+
+    /// The state that matters: every option still carries its ordinal, and none carries the mark.
+    @Test
+    func `a question nobody has answered marks none of its options`() throws {
+        let ask = try #require(asked(nil))
+
+        #expect(ask.offers(in: Self.question).allSatisfy { !$0.isChosen })
+    }
+
+    /// An answer names WORDS, and two options may carry the same words. It has named one of them.
+    @Test
+    func `two options with the same words mark only the first`() {
+        let offers = FeedAskOffer.numbered(["Yes", "Yes"], chosen: "Yes")
+
+        #expect(offers.map(\.isChosen) == [true, false])
+    }
+
+    @Test
+    func `a question that offered nothing offers nothing`() throws {
+        let ask = try #require(asked(nil))
+
+        #expect(ask.offers(in: Ask.Question(text: "Name it?", options: [])).isEmpty)
+    }
+
     @Test
     func `a question stays where it was asked, never pinned or promoted`() {
         let rows = FeedProjection.rows(from: [
