@@ -29,13 +29,13 @@ import SwiftUI
     /// The working thread alone takes no gutter and no measure: its ion crosses the whole zone
     /// and exits at the minimap's seam, not at a hard cut mid-panel.
     ///
-    /// `cursor` is the keyboard's, and inside the step and the inset: a ring drawn around either
-    /// would outline the gap above the row as well as the row. The ruler measures with it off,
-    /// which costs nothing — the cursor is an overlay and adds no height.
-    func content(at index: Int, cursor: Bool = false) -> AnyView {
+    /// The keyboard cursor goes inside the step and the inset: a ring around either would outline
+    /// the gap above the row as well as the row. The ruler measures with it off, which costs
+    /// nothing — the cursor is an overlay and adds no height.
+    func content(at index: Int, hasCursor: Bool = false) -> AnyView {
         let row = rows[index]
         let dressed = FeedRowView(row: row, isExpanded: unfolding(row.id), selection: selection)
-            .argoFeedCursor(cursor)
+            .argoFeedCursor(hasCursor)
             .padding(.top, step(before: index))
             .background {
                 if washed == row.id {

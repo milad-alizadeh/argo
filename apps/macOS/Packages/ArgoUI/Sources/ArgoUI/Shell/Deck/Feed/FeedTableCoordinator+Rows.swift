@@ -13,7 +13,7 @@ extension FeedTableCoordinator: NSTableViewDataSource, NSTableViewDelegate {
         guard let model, shown.indices.contains(index) else { return nil }
         let cell = table.makeView(withIdentifier: FeedRowCell.reuse, owner: nil) as? FeedRowCell
             ?? FeedRowCell()
-        cell.host.rootView = model.content(at: index, cursor: index == cursorRow)
+        cell.host.rootView = model.content(at: index, hasCursor: index == cursorRow)
         return cell
     }
 
@@ -76,6 +76,10 @@ extension FeedTableCoordinator {
         focusedRow = index
         table.scrollRowToVisible(index)
         table.window?.makeFirstResponder(table)
+        // The hand-back preserves how the reader was working rather than deciding it (#533):
+        // Escape out of the panel arrives on a key, its close button on a click. Stated here and
+        // not left to the responder change, which is silent when the table already held the keys.
+        noteKeyboard(table.reader.isOn)
         reportFollowing()
     }
 }

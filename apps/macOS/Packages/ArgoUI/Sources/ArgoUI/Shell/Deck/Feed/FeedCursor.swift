@@ -2,10 +2,9 @@ import SwiftUI
 
 /// The shape a row's keyboard cursor goes around, when that is not the row.
 ///
-/// Every row but one fills the measure, so the row's own bounds are the honest ring. A prompt is a
-/// bubble on the trailing edge, and a ring around its ROW is the full column — offset well to the
-/// left of the bubble, which is the wrong box #533 was filed about. A row drawn narrower than the
-/// measure claims its shape here and the cursor follows it.
+/// A prompt is a bubble on the trailing edge, and a ring around its ROW is the full column, offset
+/// well to the left of the bubble — the wrong box #533 was filed about. Every other row fills the
+/// measure, so its own bounds are the honest ring and it claims nothing.
 struct FeedCursorShape: Equatable {
     var bounds: Anchor<CGRect>
     var radius: CGFloat
@@ -26,8 +25,6 @@ private struct FeedCursorShapeKey: PreferenceKey {
 /// measures rows without it, and a cursor that changed a height would shift the reading under the
 /// arrow key that moved it.
 private struct FeedCursor: ViewModifier {
-    @Environment(\.argo) private var argo
-
     let isOn: Bool
 
     /// The row without a cursor takes no overlay at all, rather than an empty one. It is the shape
@@ -45,13 +42,10 @@ private struct FeedCursor: ViewModifier {
         }
     }
 
-    /// Around the claimed shape, or the row's own bounds when nothing claimed one. Placed by its
-    /// centre rather than offset from a corner: inside a reader the corner an offset starts from
-    /// is the reader's, and the ring is being put somewhere the row decided.
+    /// Around the claimed shape, or the row's own bounds when nothing claimed one.
     private func ring(_ shape: FeedCursorShape?, in proxy: GeometryProxy) -> some View {
         let bounds = shape.map { proxy[$0.bounds] } ?? CGRect(origin: .zero, size: proxy.size)
-        return RoundedRectangle(cornerRadius: shape?.radius ?? ArgoRadius.control)
-            .strokeBorder(argo.color.interaction.focusRing, lineWidth: ArgoStroke.focus)
+        return ArgoFocusRing(radius: shape?.radius ?? ArgoRadius.control)
             .frame(width: bounds.width, height: bounds.height)
             .position(x: bounds.midX, y: bounds.midY)
     }
@@ -66,11 +60,8 @@ extension View {
         }
     }
 
-    /// The row's keyboard cursor, on while the table's focus is here.
-    ///
-    /// No pointer gate: the feed's focus is `FeedTableCoordinator.focusedRow`, which only an arrow
-    /// key and the deck's own hand-back ever write. A click reaches the row's controls and moves
-    /// nothing (#533).
+    /// The row's keyboard cursor, on while the reading is what the reader has the keyboard in —
+    /// see `FeedTableCoordinator.cursorRow`.
     func argoFeedCursor(_ isOn: Bool) -> some View {
         modifier(FeedCursor(isOn: isOn))
     }

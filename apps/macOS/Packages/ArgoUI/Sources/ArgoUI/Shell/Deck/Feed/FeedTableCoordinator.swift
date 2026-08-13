@@ -29,13 +29,15 @@ import SwiftUI
     /// The row the keyboard is on. The table's own fact, not `FocusState`'s — the rows live in
     /// separate hosting hierarchies now, and a focus value none of them can resolve is noise.
     ///
-    /// Written by an arrow key and by the deck handing the keyboard back, and by nothing else: a
-    /// click moves it nowhere, which is what keeps the cursor below a keyboard cursor (#533).
+    /// Written by an arrow key and by the deck handing the keyboard back, and by no click path.
     var focusedRow: Int? {
         didSet { redrawCursor(oldValue, focusedRow) }
     }
 
-    /// Whether the keyboard is in the reading at all — see `FeedTableView.keyboardMoved`.
+    /// Whether the reading is where the keyboard is AND the keyboard is what the reader is
+    /// working with. Both halves are needed, and the second is the one #533 is about: a click into
+    /// the reading makes the table first responder too, so a ring drawn on the first half alone
+    /// comes back under the pointer, on whichever row the reader last arrowed to.
     private(set) var hasKeyboard = false {
         didSet { redrawCursor(focusedRow) }
     }
@@ -159,7 +161,7 @@ import SwiftUI
         let rows = rows.filteredIndexSet { shown.indices.contains($0) }
         for row in rows {
             let cell = table.view(atColumn: 0, row: row, makeIfNecessary: false) as? FeedRowCell
-            cell?.host.rootView = model.content(at: row, cursor: row == cursorRow)
+            cell?.host.rootView = model.content(at: row, hasCursor: row == cursorRow)
         }
         guard remeasuring, !rows.isEmpty else { return }
         dropMeasuredHeights(rows)

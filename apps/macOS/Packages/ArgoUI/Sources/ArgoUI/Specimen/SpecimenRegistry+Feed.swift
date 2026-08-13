@@ -46,12 +46,18 @@ extension SpecimenRegistry {
         // The keyboard cursor, on the two shapes a row can be: the bubble it has to hug, and the
         // line that fills the measure. Unreachable without an arrow key, so unreachable in a still
         // any other way (#533).
-        SpecimenEntry("feedCursorPrompt") { cursored(on: FeedProjection.previewPromptID) },
-        SpecimenEntry("feedCursorCall") { cursored(on: FeedProjection.previewFailedCallID) },
+        // The prose-only reading for the bubble: short enough that the row is in view with no
+        // scroll at all, which is what makes the still repeatable.
+        SpecimenEntry("feedCursorPrompt") {
+            cursored(on: FeedProjection.previewPromptID, in: FeedProjection.previewProseRows)
+        },
+        SpecimenEntry("feedCursorCall") {
+            cursored(on: FeedProjection.previewLastFailedCallID, in: FeedProjection.previewRows)
+        },
     ]
 
-    private static func cursored(on row: FeedRow.ID?) -> some View {
-        var reading = FeedPreview(rows: FeedProjection.previewRows)
+    private static func cursored(on row: FeedRow.ID?, in rows: [FeedRow]) -> some View {
+        var reading = FeedPreview(rows: rows)
         reading.cursor = row
         return reading
     }
