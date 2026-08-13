@@ -125,6 +125,9 @@ extension FeedProjection {
     /// The one whose panel has something in it.
     static let previewSkillLoadRowID = previewSkillLoadRows.first(where: \.opensEvidence)?.id
 
+    /// The one whose panel states a read failure — the second of the three.
+    static let previewSkillUnreadableRowID = previewSkillLoadRows.last(where: \.opensEvidence)?.id
+
     /// The punctuation on its own, for the same reason. The interrupt is added rather than found:
     /// the shipping preview transcript carries no stopped Turn (#541).
     static let previewMarkRows = numbered(

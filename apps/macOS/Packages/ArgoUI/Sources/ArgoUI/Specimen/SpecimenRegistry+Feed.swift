@@ -114,6 +114,14 @@ extension SpecimenRegistry {
                 open: FeedProjection.previewSkillLoadRowID,
             )
         },
+        // The failure the row's ink announces, said in full: which file, and that Argo could not
+        // read it. The marker is red either way, so the panel is not the only place it is stated.
+        SpecimenEntry("feedSkillUnreadableEvidence") {
+            SpecimenScene.sessions(
+                FeedProjection.previewSkillLoadRows,
+                open: FeedProjection.previewSkillUnreadableRowID,
+            )
+        },
         // At the panel's floor: command and path cut at OPPOSITE ends, and a three-line header has
         // not moved the close control.
         SpecimenEntry("evidenceAddresses") { EvidenceSpecimen() },

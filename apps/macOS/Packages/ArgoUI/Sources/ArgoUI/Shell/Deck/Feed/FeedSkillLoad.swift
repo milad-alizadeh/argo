@@ -23,6 +23,13 @@ struct FeedSkillLoad: Equatable, Sendable {
         "Skill loaded: \(load.name)"
     }
 
+    /// The ink the marker's words take. A file Argo could not read carries the failure ink the
+    /// whole way across, exactly as a failed call line does — otherwise the only place the failure
+    /// is stated is behind a click nobody has a reason to make.
+    var ink: FeedInk {
+        load.body?.hasFailed == true ? .failure : .boundary
+    }
+
     /// What the panel shows, or `nil` where there is nothing to show.
     ///
     /// A read that FAILED still opens: the sentence saying so is the honest thing to put behind the
@@ -34,7 +41,9 @@ struct FeedSkillLoad: Equatable, Sendable {
             // Past tense, as every other row's verb is: a feed is the record of what happened.
             verb: "Loaded",
             symbol: ArgoSymbol.skill,
-            label: nil,
+            // The skill's name in the slot a folded run counts in. `Loaded` alone reads as
+            // truncated copy at the moment the reader is confirming WHICH marker they opened.
+            label: load.name,
             ending: body.hasFailed ? .failed : .succeeded,
             steps: [FeedEvidence.Step(
                 id: 0,
