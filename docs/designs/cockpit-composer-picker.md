@@ -115,7 +115,7 @@ except where it says *measured*.
 | label | `ArgoTypography.sectionLabel`, ink `tertiary`, upper-cased |
 | its count and path | the SAME role as the label, ink `disabled`, **not** upper-cased. **Amended during #685's build**: it was `machineCaption`, and SF Mono beside SF Pro reads as two sizes on one line even though both are 11 |
 | behaviour | scrolls with its own group. **Amended during #685's build**: it was sticky, which needs a ground of its own to stop rows showing through — and the band that ground draws is louder than the grouping is worth. The top margin does the separating instead |
-| order | Project · You · Plugin · Claude Code — nearest origin first |
+| order | Project · Global · Plugin · Claude Code — nearest origin first. **Amended during #685's build**: the user's own origin reads `Global`, not `You` — it is where the skill lives, and every other word on this row names a place |
 
 **The `+` menu** — `AddMenu`
 

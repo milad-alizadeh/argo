@@ -32,7 +32,7 @@ struct CommandMenuProjectionTests {
     func `an unfiltered menu groups by origin, nearest first`() throws {
         let menu = try #require(CommandMenuProjection.menu(for: "/", in: catalog))
 
-        #expect(menu.sections.map(\.label) == ["Project", "You", "Plugin"])
+        #expect(menu.sections.map(\.label) == ["Project", "Global", "Plugin"])
         #expect(menu.sections.map(\.detail) == [
             ".claude/skills · 2", "~/.claude/skills · 1", "figma · 1",
         ])

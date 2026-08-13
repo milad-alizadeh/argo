@@ -65,7 +65,7 @@ enum CommandMenuProjection {
     static func word(for origin: SkillOrigin) -> String {
         switch origin {
         case .project: "Project"
-        case .user: "You"
+        case .user: "Global"
         case .plugin: "Plugin"
         }
     }
