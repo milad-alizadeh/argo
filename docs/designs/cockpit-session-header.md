@@ -148,6 +148,12 @@ own — is a mark on every roster row, so the panel would be its third home. **S
 `nil` on every CLI in use, so its row would be absent from every real Session; the spend line still
 carries it, because a line that composes what is present costs nothing to leave it in.
 
+**The way in is a click, a hover, or ⌘I** (#718). The mark is a real `Button`, so Full Keyboard
+Access reaches it and VoiceOver reaches it whether or not that setting is on — which is the
+cockpit's contract, not a gap in this panel. ⌘I is bound on the mark itself rather than in a menu,
+because the popover is anchored to it, and the key is written into the `.help` since a control
+outside a menu has nowhere else to say it. Escape and a click outside are `.popover`'s own.
+
 ## Contract changes
 
 The five from #691/#692, and **one promotion** with #694 — `ArgoLayout.contextGuideTermWidth`, the
