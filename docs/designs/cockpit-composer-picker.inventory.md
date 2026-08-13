@@ -74,7 +74,8 @@ at the ceiling — which is what those two derivations are for.
 - **The section header draws no ground, and does not stick.** The two go together: a pinned header
   needs a ground of its own or the rows show through it, and that band is louder than the grouping
   is worth. Headers scroll with their group and a `comfortable` gap above does the separating —
-  which took the header from 24 to 30, and the list ceiling with it.
+  which took the header from 24 to 30, and the list ceiling with it. The FIRST header carries no
+  such gap: it has no group above it, so the gap there would only be the surface's inset twice.
 - **Section identity is its own, not its label.** Every plugin's section is labelled `Plugin`, so
   `id = label` collided the moment two plugins carried skills and `ForEach` drew one of them. Found
   by review, not by a render — the fixture had one plugin.

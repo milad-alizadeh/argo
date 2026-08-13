@@ -63,7 +63,9 @@ struct CommandMenu: View {
         let rows = CGFloat(menu.rows.count) * ArgoComposerVessel.commandRowHeight
         let headers = CGFloat(menu.sections.count { $0.label != nil })
             * ArgoComposerVessel.commandSectionHeight
-        return min(rows + headers, ArgoComposerVessel.commandListCeiling)
+        // The first header carries no separating gap, so it stands that much shorter than the rest.
+        let unseparated = menu.sections.first?.label == nil ? 0 : ArgoSpacing.comfortable
+        return min(rows + headers - unseparated, ArgoComposerVessel.commandListCeiling)
     }
 
     private func rows(of section: CommandMenuProjection.Section) -> some View {
@@ -78,7 +80,11 @@ struct CommandMenu: View {
     /// The prefix-match group has no header at all, which is why this can draw nothing.
     @ViewBuilder private func header(of section: CommandMenuProjection.Section) -> some View {
         if let label = section.label {
-            CommandMenuSection(label: label, detail: section.detail)
+            CommandMenuSection(
+                label: label,
+                detail: section.detail,
+                separates: section.id != menu.sections.first?.id,
+            )
         }
     }
 

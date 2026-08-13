@@ -111,7 +111,7 @@ except where it says *measured*.
 
 | what | value |
 |---|---|
-| height | **30** = `sectionLabel.lineBox` (11 × 1.21 → 14) + `ArgoSpacing.comfortable` above + `ArgoSpacing.tight` below. **Amended during #685's build**: the gap above was `snug`, and it grew when the header lost its ground — see *behaviour* |
+| height | **30** = `sectionLabel.lineBox` (11 × 1.21 → 14) + `ArgoSpacing.comfortable` above + `ArgoSpacing.tight` below, and **18** for the first header, which has no group above it to be separated from. **Amended during #685's build**: the gap above was `snug`, and it grew when the header lost its ground — see *behaviour* |
 | label | `ArgoTypography.sectionLabel`, ink `tertiary`, upper-cased |
 | its count and path | the SAME role as the label, ink `disabled`, **not** upper-cased. **Amended during #685's build**: it was `machineCaption`, and SF Mono beside SF Pro reads as two sizes on one line even though both are 11 |
 | behaviour | scrolls with its own group. **Amended during #685's build**: it was sticky, which needs a ground of its own to stop rows showing through — and the band that ground draws is louder than the grouping is worth. The top margin does the separating instead |

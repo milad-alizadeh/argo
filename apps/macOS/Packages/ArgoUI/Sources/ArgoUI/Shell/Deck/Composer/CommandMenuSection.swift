@@ -13,6 +13,9 @@ struct CommandMenuSection: View {
     /// The path and the count, or the characters and the count. Never upper-cased: it is a fact
     /// rather than a label, and a path in caps is a path nobody can check.
     let detail: String?
+    /// Whether there is a group above this one for the gap to separate it FROM. The first header in
+    /// the list has nothing above it, so the gap there would just be the surface's inset twice.
+    let separates: Bool
 
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
@@ -30,10 +33,9 @@ struct CommandMenuSection: View {
         // line — and a header is a label to be scanned, not a string to be copied.
         .argoText(ArgoTypography.sectionLabel)
         .padding(.horizontal, ArgoSpacing.base)
-        // The whole separation between one origin and the last one's rows. Asymmetric by a lot:
-        // the header belongs to the rows UNDER it, and this gap is the only thing grouping them
-        // now that the header draws no ground of its own.
-        .padding(.top, ArgoSpacing.comfortable)
+        // The whole separation between one origin and the last one's rows, and the only thing
+        // grouping them now that the header draws no ground of its own.
+        .padding(.top, separates ? ArgoSpacing.comfortable : ArgoSpacing.flush)
         .padding(.bottom, ArgoSpacing.tight)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
