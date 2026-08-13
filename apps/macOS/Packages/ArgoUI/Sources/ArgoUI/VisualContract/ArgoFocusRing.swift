@@ -4,8 +4,8 @@ import SwiftUI
 /// system's: `focusEffectDisabled()` is the only switch on that one, and it outlines the
 /// FOCUSABLE, which is routinely a larger box than the thing that was focused (#533).
 ///
-/// A shape rather than a view, so a caller that has to PLACE the ring — the feed, whose row
-/// decides where its own cursor goes — strokes the same edge as one that just overlays it.
+/// Reachable as a view, so a caller that has to PLACE the ring — the feed, whose row decides where
+/// its own cursor goes — strokes the same edge as one that just overlays it.
 ///
 /// Generic over that edge, because a ring has to trace the control it is around: a capsule pill
 /// ringed by a rounded rectangle shows daylight at all four corners.
@@ -42,7 +42,8 @@ private struct ArgoFocusRinged<Edge: InsettableShape>: ViewModifier {
 
 extension View {
     /// The keyboard cursor around this view, on only while the keyboard is what the reader is
-    /// working with. Pair it with `focusEffectDisabled()` on the focusable itself.
+    /// working with. `ArgoApp` turns the system effect off for the whole window, so pair this with
+    /// `focusEffectDisabled()` only where a `#Preview` has to draw the same state.
     @MainActor func argoFocusRing(
         _ isFocused: Bool,
         radius: CGFloat = ArgoRadius.control,

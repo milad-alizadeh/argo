@@ -74,6 +74,10 @@ extension View {
     /// The pointer, and the press, over each rectangle a link ended up occupying. The press is here
     /// too: a transparent target taking the pointer swallows the click SwiftUI's own link would
     /// get.
+    ///
+    /// Pointer-only, and allowed to be: `MarkedProse.composed` leaves the run's `.link` attribute
+    /// on, so the keyboard and VoiceOver reach the link through the `Text` itself and this layer
+    /// stays out of their way (`accessibilityHidden`).
     func proseLinks(_ runs: [ProseLinkRun]) -> some View {
         overlay {
             ForEach(Array(runs.enumerated()), id: \.offset) { _, run in

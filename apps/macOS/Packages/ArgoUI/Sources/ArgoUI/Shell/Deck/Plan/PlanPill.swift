@@ -45,9 +45,8 @@ struct PlanPill: View {
     /// same way a click does — and `ESC` gives it back, since the list stands over the reading.
     ///
     /// Focusable for that Escape alone: `onExitCommand` only fires for a view in the responder
-    /// chain, and a `Button` is not in one until something focuses it. The ring is the price of
-    /// being in it — the pill is a control on top of the reading, so what has focus is not
-    /// otherwise evident.
+    /// chain. The ring comes with being in it — the pill floats over the reading, so what has focus
+    /// is not otherwise evident.
     private var pill: some View {
         Button { isOpen.toggle() } label: { line }
             .buttonStyle(.plain)

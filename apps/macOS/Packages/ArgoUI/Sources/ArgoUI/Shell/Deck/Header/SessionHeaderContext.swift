@@ -29,6 +29,10 @@ struct SessionHeaderContext: View {
     /// not close it. Must stay longer than the dwell.
     private static let grace = Duration.milliseconds(420)
 
+    /// One string for the tooltip and the announcement: a key named to only one of them is a key
+    /// half the readers cannot find.
+    private static let aboutLabel = "About the context reading — Command I"
+
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             HStack(spacing: ArgoSpacing.tight) {
@@ -60,12 +64,12 @@ struct SessionHeaderContext: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(argo.color.text.tertiary)
-        // ⌘I is what macOS spells "tell me about this", and it is the one route in that does not
-        // wait on Full Keyboard Access (#718). On the control rather than in a menu because the
-        // panel it opens is anchored HERE, so `.help` is where the reader finds the key.
+        // ⌘I is what macOS spells "tell me about this", and it is the route in that does not wait
+        // on Full Keyboard Access (#718). On the control and not in a menu because the panel is
+        // anchored HERE — so the key has to be said twice, once for each route that can read it.
         .keyboardShortcut("i", modifiers: .command)
-        .help("About the context reading — Command I")
-        .accessibilityLabel("About the context reading")
+        .help(Self.aboutLabel)
+        .accessibilityLabel(Self.aboutLabel)
         .onHover { isInside in pointer(isInside) }
         .popover(isPresented: $isGuideOpen, arrowEdge: .bottom) {
             // The panel counts as the mark for the purpose of staying open: a reader inside it is
