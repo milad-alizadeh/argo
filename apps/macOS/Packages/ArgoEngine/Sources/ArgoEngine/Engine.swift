@@ -51,10 +51,13 @@ public struct Engine: Sendable {
         SubagentObservation(
             agentID: transcript.agentID,
             sourceURL: transcript.url,
+            // The same two disk reads a Session's own observation makes: a Subagent shows pictures
+            // and loads skills like any other Agent, and the only difference is whose file it is.
             events: transcriptEvents(
                 at: transcript.url,
                 subject: .subagent,
                 readImage: diskImageReader,
+                readSkill: diskSkillReader,
             ),
         )
     }
