@@ -54,7 +54,7 @@ struct MinimapBlockTests {
 
         #expect(blocks.count == 2)
         // The block fills its whole extent now — the gap the old per-event ceiling left is gone.
-        #expect(lane.markHeight(row: 1) == lane.reading.rows[1].height * lane.scale)
+        #expect(blocks[1].range.lowerBound == lane.markY(row: 2))
         #expect(blocks[0].range.upperBound == blocks[1].range.lowerBound)
     }
 

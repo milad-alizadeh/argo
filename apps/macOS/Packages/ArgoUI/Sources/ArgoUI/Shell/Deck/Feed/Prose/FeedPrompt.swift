@@ -47,8 +47,8 @@ struct FeedPrompt: View {
                 disclosure
             }
         }
-        .padding(.vertical, ArgoSpacing.comfortable)
-        .padding(.horizontal, ArgoSpacing.loose)
+        .padding(.vertical, ArgoFeedRow.bubbleInsetY)
+        .padding(.horizontal, ArgoFeedRow.bubbleInsetX)
         .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.popover))
         // The one row narrower than the measure, so the one row that has to say where its keyboard
         // cursor goes. INSIDE the ceiling below, which is a frame the bubble is right-aligned in

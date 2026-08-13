@@ -14,7 +14,7 @@ struct FeedAskLine: View {
                 FeedAskQuestion(question: question, offers: ask.offers(in: question), ink: ink)
             }
         }
-        .padding(ArgoSpacing.comfortable)
+        .padding(ArgoFeedRow.askCardInset)
         .background(ground, in: RoundedRectangle(cornerRadius: ArgoRadius.control))
         .overlay {
             RoundedRectangle(cornerRadius: ArgoRadius.control)

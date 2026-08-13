@@ -29,15 +29,6 @@ public enum ArgoMinimapLane {
     /// the lane is designed at the quieter of the two.
     public static let runOpacityRaised: Double = 0.85
 
-    /// How wide one character of the feed's prose is, as a share of its point size. SF Pro's
-    /// average advance is close to half, which is the one number that turns a character count into
-    /// a width. It decides only how RAGGED a bar is drawn, never where the bar sits.
-    public static let characterAdvanceShare: CGFloat = 0.5
-
-    /// How much of a mutation's line the two diff inks take between them, after the sentence in
-    /// front of them — the lane's share of what the row draws as `+n −n`.
-    public static let churnShare: CGFloat = 0.18
-
     /// The Ion Blue line that spans one Turn, down the lane's leading edge — Xcode's per-block
     /// change bar, in the one colour this app spends on nothing but brand, selection and focus.
     /// Two points, because it stands beside the runs rather than among them.

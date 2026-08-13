@@ -9,7 +9,7 @@ struct FeedAskOptions: View {
     let offers: [FeedAskOffer]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
+        VStack(alignment: .leading, spacing: ArgoFeedRow.askOptionGap) {
             ForEach(offers) { offer in
                 FeedAskOption(offer: offer, isQuiet: anyChosen && !offer.isChosen)
             }

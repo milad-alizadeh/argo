@@ -6,7 +6,7 @@ import Foundation
 /// dashes, and its body — one line of pipes on its own is a sentence with pipes in it.
 ///
 /// Every cell keeps its own inline marks for `FeedProseText` to read, exactly as a list item does.
-struct MarkdownTable: Equatable {
+struct MarkdownTable: Equatable, Sendable {
     let header: [String]
     let rows: [[String]]
 

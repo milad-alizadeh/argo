@@ -67,12 +67,30 @@ public enum ArgoFeedRow {
     /// `edge.hairline`.
     public static let ruleWidth: CGFloat = 1
 
+    /// The breathing room inside one cell of a pipe table. Named here because a column's ask is its
+    /// widest cell's words PLUS this, and that arithmetic happens away from the view.
+    public static let tableCellInsetX: CGFloat = ArgoSpacing.base
+    public static let tableCellInsetY: CGFloat = ArgoSpacing.snug
+
+    /// The breathing room inside the card a question is drawn on, and the column its chosen mark
+    /// sits in. Named here for the same reason the bubble's and the table cell's are: the overview
+    /// lane lays the card out again, and two views picking the same step by hand is how they drift.
+    public static let askCardInset: CGFloat = ArgoSpacing.comfortable
+    public static let askOptionGap: CGFloat = ArgoSpacing.tight
+
     /// The widest the feed's content runs — the whole column, not one row. Centred in the zone, so
     /// the deck grows and the line length does not.
     public static let column: CGFloat = 720
 
     /// The share of the COLUMN a prompt's bubble may take, as a ceiling.
     public static let bubbleShare: CGFloat = 0.78
+
+    /// The breathing room inside a bubble, above and below its words. Named here and not in the
+    /// view because the overview lane subtracts it: a bubble's ground is spacing, and a lane that
+    /// divided the whole row height by the line height drew a one-line prompt as two.
+    public static let bubbleInsetY: CGFloat = ArgoSpacing.comfortable
+    /// The same at its leading and trailing edges.
+    public static let bubbleInsetX: CGFloat = ArgoSpacing.loose
 
     /// The share of the COLUMN the working thread's filament runs. A share and not a length, so the
     /// ion tracks `column` the way a bubble does instead of freezing at one window's width.

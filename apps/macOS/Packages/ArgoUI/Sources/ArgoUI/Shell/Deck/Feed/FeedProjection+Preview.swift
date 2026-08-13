@@ -99,6 +99,15 @@ extension FeedProjection {
         (previewMarks + [.interrupted]).map(FeedRow.Content.mark),
     )
 
+    /// A reading whose one message carries every markdown block Argo draws — the table above all —
+    /// between two prompts. What the overview lane is judged on: a table has to read as its cells,
+    /// a paragraph's bars as the widths its lines wrapped to, and a one-line prompt as one line.
+    static let previewMarkdownRows = numbered([
+        .prompt("Take the design PR state and turn it into tickets"),
+        .message(MarkdownSpecimen.message),
+        .prompt("/clear"),
+    ])
+
     /// Contents taken off the shipping feed, given their places back — only the gaps are new.
     private static func numbered(_ contents: [FeedRow.Content]) -> [FeedRow] {
         contents.enumerated().map { position, content in

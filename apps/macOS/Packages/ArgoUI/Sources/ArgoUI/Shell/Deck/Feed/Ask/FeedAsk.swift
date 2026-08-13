@@ -34,6 +34,27 @@ struct FeedAsk: Equatable, Sendable {
         FeedAskOffer.numbered(question.options, chosen: chosen(in: question))
     }
 
+    /// The card as the overview lane draws it: the same words at the same indents, and the ink read
+    /// HERE so the lane cannot disagree with the row about which questions are still waiting.
+    ///
+    /// The offers come from `offers(in:)` rather than the bare labels, because the row sets each
+    /// one behind its NUMBER in the marker column — so the lane needs the same numbers to place
+    /// them.
+    var card: MinimapAskCard {
+        MinimapAskCard(
+            questions: questions.map { question in
+                MinimapAskCard.Question(
+                    text: question.text,
+                    offers: offers(in: question).map {
+                        MinimapAskCard.Offer(marker: $0.marker, label: $0.label)
+                    },
+                )
+            },
+            ink: ink,
+            isRuled: isPending,
+        )
+    }
+
     /// Which of the offered options the answer named, or `nil`.
     ///
     /// DERIVED and deliberately weak: the answer is prose, not a field naming an option, so the

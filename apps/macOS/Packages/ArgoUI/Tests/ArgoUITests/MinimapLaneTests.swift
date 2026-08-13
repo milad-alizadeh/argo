@@ -117,7 +117,7 @@ struct MinimapLaneTests {
 
         // The Turn's head is now at the top of what is on screen, within one drawn line of it.
         let opened = try deck.lane.geometry.viewportY(at: #require(deck.feed.offset()))
-        #expect(abs(opened - named.y) < deck.lane.geometry.lineSlot)
+        #expect(abs(opened - named.y) < deck.lane.geometry.lineInLane)
     }
 
     /// D25's map may not depend on colour, and under Increased Contrast a shape has to clear the
