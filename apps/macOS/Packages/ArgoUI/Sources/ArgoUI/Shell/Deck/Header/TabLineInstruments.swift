@@ -17,7 +17,7 @@ struct TabLineInstruments: View {
                 if let state = header.state {
                     stateWord(state)
                 }
-                SessionHeaderContext(context: header.context)
+                SessionHeaderContext(context: header.context, facts: header.facts)
                 // LAST: the design puts the remedy on the trailing edge, ahead of the instrument.
                 if let handoff = header.handoff {
                     SessionHandoffButton(handoff: handoff, run: handOff)

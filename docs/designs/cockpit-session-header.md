@@ -83,6 +83,13 @@ shipped placement supersedes it.
 | Threshold positions | 15% and 30% of the track | 150k and 300k against a 1M window |
 | ⓘ | `ArgoSymbol.about` at `ArgoIconSize.inline` 10, `text.tertiary` | unchanged from #692 |
 | ⓘ panel | `ArgoLayout.contextGuideWidth` 320, threshold column `contextGuideThresholdWidth` 74 | unchanged from #692 |
+| Panel section heading | `ArgoTypography.badge`, uppercase, `text.tertiary` | the `CONTEXT` label's own role — the panel now has two blocks, so each is named |
+| Panel, heading to its block | `ArgoSpacing.base` 8 | |
+| Panel, between blocks | `ArgoSpacing.comfortable` 12 on each side of the `DeckSeparator` hairline that divides them | |
+| `This Session` term column | `ArgoLayout.contextGuideTermWidth` 96 | wider than the threshold column because it holds words; fixed, so the readings stay on one edge whichever facts a Session has |
+| `This Session` term | `ArgoTypography.caption` in `text.tertiary` | |
+| `This Session` reading | `ArgoTypography.machineCaption` in `text.primary`, wrapping | a branch or an issue title is what the reader opened the panel to read whole |
+| `This Session` row gap | `ArgoSpacing.snug` 6 | the legend's own |
 | State word | `ArgoTypography.rowMeta` in the state's tone, else `text.tertiary` | unchanged from the band |
 | Hand off | `SessionHandoffButton` exactly as shipped | see below |
 | Chrome material | one `argoChromeBar()` from the window's top edge to the tab line's hairline | the material is what makes two rows read as one bar |
@@ -111,9 +118,41 @@ The two are separate facts and either can hold without the other. `external.png`
 both at once — an external Session that also carried no usage — which is why it is easy to read
 the one as causing the other.
 
+## The ⓘ panel explains, and then reports
+
+The panel is two blocks under two headings. **`Context budget`** is the legend #692 shipped: the
+two thresholds each wearing the ink they turn the reading, and what the remedy actually does.
+Nothing in it is per-Session, because the thresholds are Argo's own policy and it is the same panel
+over every header.
+
+**`This Session`** is new with #694, and it is where every fact the two rows demoted becomes
+readable at leisure: the context reading, tokens spent, cached, started, worked, agent, branch,
+issue, and access where the Session is not a plain managed one. It is what makes the title's hover
+a convenience rather than the only route — a tooltip is unreachable by keyboard and invisible to a
+screenshot.
+
+**A fact Argo does not have is absent from the block**, never a zero and never a dash: `0 cached`
+would claim a figure nobody measured. The one permanent row is the context reading, which says
+`unknown` where it cannot be read — the same degrade-down the instrument draws. A Session read off
+an empty record therefore shows a block of exactly one row.
+
+**The block says the same facts as the hover, in the panel's own register.** The hover is prose and
+speaks in sentences; a column speaks in readings. So the row reads `Issue` · `#476 — …`, because
+`Issue #476` under a term saying `Issue` says it twice; `Access` carries the posture's word where
+the hover carries its whole sentence; and the uncommitted and unpushed counts hang off the branch,
+the way the deleted fact line drew them.
+
+Two things the hover has that the block does not. The **checkout kind** — worktree or the Project's
+own — is a mark on every roster row, so the panel would be its third home. **Subagent spend** is
+`nil` on every CLI in use, so its row would be absent from every real Session; the spend line still
+carries it, because a line that composes what is present costs nothing to leave it in.
+
 ## Contract changes
 
-All five already landed with #691/#692. This design adds none.
+The five from #691/#692, and **one promotion** with #694 — `ArgoLayout.contextGuideTermWidth`, the
+96pt term column the `This Session` block needs. It is a second column in a panel that already owns
+one, and it is fixed for the same reason the threshold column is: a column sized to its own rows
+would move the readings as facts came and went.
 
 - `ArgoTypography.windowTitle` — the centred title's role
 - `ArgoLayout.titlebarTitleMaximumShare` — 0.46, spent on both sides of the pane's midpoint
@@ -124,8 +163,7 @@ All five already landed with #691/#692. This design adds none.
 `cockpit-sessions-liquid-glass.png` for the 56. This design supersedes that measurement.
 `deckCanopyHeight` becomes the tab slot alone, so every zone inset by it moves up together.
 
-Every value in the table above is an existing token. Nothing here is a promotion, and nothing in
-the renders is raw.
+Every other value in the table above is an existing token, and nothing in the renders is raw.
 
 ## What the prototype exposed that the renders don't show
 
