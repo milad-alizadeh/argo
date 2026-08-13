@@ -216,8 +216,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         case .queued:
             isQueued = true
         // An unreadable line says a file was written, never who wrote it — which is exactly the
-        // claim `hasAgentActivity` is about, so it deliberately does not count.
-        case .unreadableLine:
+        // claim `hasAgentActivity` is about, so it deliberately does not count. A skill load is the
+        // CLI expanding a body in front of the agent, and the agent has not answered yet, so it
+        // does not count either — the reading below it is where the activity shows up.
+        case .unreadableLine, .skillLoaded:
             break
         }
     }

@@ -53,7 +53,11 @@ public struct Engine: Sendable {
             id: url.path,
             sourceURL: url,
             modifiedAt: modifiedAt(of: url),
-            events: transcriptEvents(at: url, readImage: diskImageReader),
+            events: transcriptEvents(
+                at: url,
+                readImage: diskImageReader,
+                readSkill: diskSkillReader,
+            ),
         )
     }
 

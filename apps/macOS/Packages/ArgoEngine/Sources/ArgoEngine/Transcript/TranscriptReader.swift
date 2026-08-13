@@ -31,15 +31,18 @@ public actor TranscriptReader {
     private var planLedger = PlanLedger()
     private var context = TranscriptContextCursor()
     let readImage: ImageReader
+    private let readSkill: SkillReader
     /// Whose record this is reading. Every guard it decides goes through `attributes(_:)`.
     private let subject: TranscriptSubject
 
     public init(
         subject: TranscriptSubject = .session,
         readImage: @escaping ImageReader = noImageReader,
+        readSkill: @escaping SkillReader = noSkillReader,
     ) {
         self.subject = subject
         self.readImage = readImage
+        self.readSkill = readSkill
     }
 
     /// Whether the Turn, spend and Plan a record reports belong to what this reader is reading.
@@ -114,38 +117,15 @@ public actor TranscriptReader {
             return results
         }
 
-        return message.isMeta ? [] : promptEvents(message)
+        return message.isMeta ? metaEvents(message) : promptEvents(message)
     }
 
-    /// A prompt, or the local command whose output this record IS.
-    ///
-    /// The output comes back as a Tool Call rather than as prose: a command ran and printed
-    /// something, which is exactly what a Tool Call is.
-    private func promptEvents(_ message: MessageRecord) -> [TranscriptEvent] {
-        if let printed = localCommandOutput(message.content) {
-            let id = message.uuid ?? "local-command"
-            return [
-                .toolCall(ToolCall(
-                    id: id,
-                    name: "local command",
-                    kind: .execute,
-                    target: nil,
-                    atMs: message.timestampMs,
-                )),
-                .toolCallOutcome(ToolCallOutcome(
-                    id: id,
-                    status: .completed,
-                    // `derived`: the text is read off an external record rather than owned by Argo.
-                    result: .output(OutputEvidence(tier: .derived, text: printed)),
-                    // A local command prints and is over. There is no second record to learn its
-                    // end from, and the moment it printed is the moment it finished.
-                    endedAtMs: message.timestampMs,
-                    usage: nil,
-                )),
-            ]
-        }
-        guard let prompt = userPrompt(message.content) else { return [] }
-        return [.prompt(text: prompt, atMs: message.timestampMs)]
+    /// The CLI talking to itself. Almost all of it means nothing to a reader — but a skill's
+    /// expanded body is filed here too, and it is the one place the record says a Session was
+    /// handed a skill (#688).
+    private func metaEvents(_ message: MessageRecord) -> [TranscriptEvent] {
+        guard let directory = skillDirectory(message.content) else { return [] }
+        return [.skillLoaded(skillLoad(at: directory, read: readSkill))]
     }
 
     private func assistantEvents(_ message: MessageRecord) -> [TranscriptEvent] {

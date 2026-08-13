@@ -138,7 +138,7 @@ enum FeedFixture {
             case let .survey(survey): survey.calls
             // A gallery keeps its pictures and drops the sentence that carried them; those are
             // asserted through `galleries(in:)`, `asks(in:)`, `marks(in:)` and `unreadable(in:)`.
-            case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable: []
+            case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable, .skillLoaded: []
             }
         }
     }
