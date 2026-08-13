@@ -73,13 +73,14 @@ extension MinimapProseWords {
                 .indented(by: indent)
         }
         return (
-            marker(ink: ink) + lines + links(of: lay, ink: ink),
+            marker(ink: ink) + lines + links(of: lay),
             face.height(ofLines: lay.lines),
         )
     }
 
-    /// The links, drawn after the lines so the accent sits over the words it is part of.
-    @MainActor private func links(of lay: ProseLay, ink _: FeedInk) -> [MinimapRowMark] {
+    /// The links, drawn after the lines so the accent sits over the words it is part of. They take
+    /// no ink from the caller: a link is the accent whatever the prose around it is set in.
+    @MainActor private func links(of lay: ProseLay) -> [MinimapRowMark] {
         lay.links.map { place in
             MinimapRowMark(
                 y: face.y(ofLine: place.line),

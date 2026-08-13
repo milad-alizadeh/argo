@@ -11,10 +11,18 @@ import Foundation
 extension MinimapRow {
     /// One feed row as the lane draws it, at the height the table measured for it and after the
     /// step its cell carries above it.
-    @MainActor init(_ row: FeedRow, height: CGFloat, under previous: FeedRow? = nil) {
+    ///
+    /// `isFolded` is the reader's own state, which only the feed holds — a prompt is the one row it
+    /// changes the shape of.
+    @MainActor init(
+        _ row: FeedRow,
+        height: CGFloat,
+        under previous: FeedRow? = nil,
+        isFolded: Bool = true,
+    ) {
         self.init(
             height: height,
-            shape: row.content.shape,
+            shape: row.content.shape(isFolded: isFolded),
             topStep: FeedRow.step(to: row, from: previous),
         )
         if case let .prompt(text) = row.content {
@@ -25,10 +33,10 @@ extension MinimapRow {
 }
 
 private extension FeedRow.Content {
-    @MainActor var shape: MinimapRowShape {
+    @MainActor func shape(isFolded: Bool) -> MinimapRowShape {
         switch self {
         // The prompt's lines, held against the trailing edge its bubble is drawn on.
-        case let .prompt(text): .bubble(text: text)
+        case let .prompt(text): .bubble(text: text, isFolded: isFolded)
         case let .message(text): MinimapProseBlock.shape(of: text, ink: .message)
         case let .thought(text): MinimapProseBlock.shape(of: text, ink: .thought)
         case let .call(call): call.shape

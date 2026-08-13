@@ -13,8 +13,10 @@ enum MinimapRowShape: Equatable, Sendable {
     /// row is one of these, a bare paragraph included — one path, so a heading cannot be reported
     /// at a paragraph's face by a second one.
     case composed(blocks: [MinimapProseBlock], ink: FeedInk)
-    /// The prompt's words, in a bubble against the trailing edge.
-    case bubble(text: String)
+    /// The prompt's words, in a bubble against the trailing edge. `isFolded` is the reader's own
+    /// state: a folded prompt draws only its first `ArgoFeedRow.collapsedPromptLines`, so a lane
+    /// that assumed either answer misreports every prompt in the other one.
+    case bubble(text: String, isFolded: Bool)
     /// A row the feed says in a single line, as the pieces it says it in — a call's mark, its verb,
     /// what it named, and what it did in lines.
     case line(parts: [MinimapLinePart], ink: FeedInk)

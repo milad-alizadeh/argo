@@ -14,7 +14,7 @@ struct FeedAskOptions: View {
     let ink: ArgoColor
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
+        VStack(alignment: .leading, spacing: ArgoFeedRow.askOptionGap) {
             ForEach(options, id: \.self) { option in
                 FeedAskOption(label: option, isChosen: option == chosen, ink: ink)
             }

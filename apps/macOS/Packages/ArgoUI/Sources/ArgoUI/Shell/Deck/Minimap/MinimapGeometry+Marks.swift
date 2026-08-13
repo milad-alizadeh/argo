@@ -56,11 +56,11 @@ extension MinimapGeometry {
     /// folded — cannot spill into the row below it. And a mark the scale has squeezed under the
     /// floor is dropped where its neighbour already covers it, so a compressed paragraph reads as
     /// texture rather than as one smear of overdrawn ink.
-    @MainActor private func marks(at at: Int) -> [MinimapMark] {
-        let row = reading.rows[at]
+    @MainActor private func marks(at index: Int) -> [MinimapMark] {
+        let row = reading.rows[index]
         // What the row's CONTENT gets, which is its cell less the step drawn above it.
         let extent = max(0, row.height - row.topStep)
-        let top = markY(row: at) + row.topStep * scale
+        let top = markY(row: index) + row.topStep * scale
         let measure = proseMeasure
         guard measure > 0 else { return [] }
         var lastY = -CGFloat.greatestFiniteMagnitude
@@ -82,7 +82,10 @@ extension MinimapGeometry {
     /// list item's marker, a link's accent and every piece of a call's sentence share their line's
     /// own `y`, and a rule that looked at the distance alone dropped all of them.
     private func isCrowded(_ mark: MinimapRowMark, at y: CGFloat, under lastY: CGFloat) -> Bool {
-        guard mark.drawn == .bar, y > lastY else { return false }
+        // A rule is the floor already and has nothing to give up; everything else can be thinned, a
+        // table's cells and a card's border included. Stroking those at the floor is the same smear
+        // as filling them.
+        guard mark.drawn != .rule, y > lastY else { return false }
         return y - lastY < ArgoMinimapLane.markMinimumHeight + ArgoMinimapLane.markGap
     }
 

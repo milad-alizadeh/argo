@@ -30,7 +30,7 @@ extension MinimapRowShape {
     /// changed is that it is a container with content rather than a fill.
     @MainActor static func card(_ card: MinimapAskCard, across measure: CGFloat, height: CGFloat)
         -> [MinimapRowMark] {
-        let inset = ArgoSpacing.comfortable
+        let inset = ArgoFeedRow.askCardInset
         let inside = measure - inset * 2
         guard inside > 0 else { return [] }
         var marks = card.isRuled
@@ -79,7 +79,7 @@ extension MinimapRowShape {
     )
         -> (marks: [MinimapRowMark], height: CGFloat) {
         let face = ProseFace(rung: ArgoTypography.caption.rung)
-        let step = face.lineBox + ArgoSpacing.tight
+        let step = face.lineBox + ArgoFeedRow.askOptionGap
         let indent = ArgoIconSize.inline.rawValue + ArgoSpacing.snug
         let marks = labels.enumerated().map { at, label in
             MinimapRowMark(
@@ -90,6 +90,6 @@ extension MinimapRowShape {
                 ink: ink,
             )
         }
-        return (marks, CGFloat(labels.count) * step - ArgoSpacing.tight)
+        return (marks, CGFloat(labels.count) * step - ArgoFeedRow.askOptionGap)
     }
 }

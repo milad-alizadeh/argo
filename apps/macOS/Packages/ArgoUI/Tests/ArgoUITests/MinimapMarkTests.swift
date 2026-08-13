@@ -43,11 +43,11 @@ struct MinimapMarkTests {
         let folded = ArgoFeedRow.lineHeight * 2 + ArgoFeedRow.bubbleInsetY * 2
         let whole = MinimapRowShape.bubble(
             MinimapText.paragraph,
-            across: 800 - ArgoFeedRow
-                .inset * 2,
+            isFolded: true,
+            across: 800 - ArgoFeedRow.inset * 2,
         )
         let lane = Self.geometry(Self.reading([
-            MinimapRow(height: folded, shape: .bubble(text: MinimapText.paragraph)),
+            MinimapRow(height: folded, shape: .bubble(text: MinimapText.paragraph, isFolded: true)),
             MinimapRow(height: 400, shape: .oneLine),
         ]))
         let drawn = lane.marks(in: 0 ... 600).filter { $0.ink == .prompt }
@@ -138,6 +138,28 @@ struct MinimapMarkTests {
         #expect(marks.filter { $0.ink == .link }.count == 1)
         // Each item's words start past its own marker, and three distinct lines were drawn.
         #expect(Set(words.map(\.y)).count == 3)
+    }
+
+    /// A stroked mark thins under compression exactly as a filled one does. Held to bars alone, a
+    /// table's cells and a question's card kept every row of their grid at the floor — which is the
+    /// same unreadable smear the rule exists to stop, drawn in outline.
+    @Test
+    func `a compressed table thins its cells rather than stroking every one at the floor`() {
+        let table = MinimapProseBlock.shape(
+            of: (0 ..< 20).map { "| a\($0) | b\($0) |" }
+                .joined(separator: "\n")
+                .replacingOccurrences(of: "| a0 | b0 |", with: "| a0 | b0 |\n|---|---|"),
+            ink: .message,
+        )
+        let tall = Self.geometry(Self.reading([MinimapRow(height: 900, shape: table)]))
+        let squeezed = MinimapGeometry(
+            Self.reading([MinimapRow(height: 900, shape: table)], column: 8000),
+            lane: CGSize(width: 100, height: 600),
+        )
+        let cells = tall.marks(in: 0 ... 600).filter { $0.shape == .frame }
+        let thinned = squeezed.marks(in: 0 ... 600).filter { $0.shape == .frame }
+        #expect(!cells.isEmpty)
+        #expect(thinned.count < cells.count)
     }
 
     /// Every span the lane draws is inside `0 ... 1` and ordered. The widths behind them come off a

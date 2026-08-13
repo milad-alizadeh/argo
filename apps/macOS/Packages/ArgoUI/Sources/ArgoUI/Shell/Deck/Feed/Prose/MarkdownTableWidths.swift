@@ -33,23 +33,19 @@ enum MarkdownTableWidths {
         guard floors.reduce(0, +) < room else { return scaled(floors, to: room) }
         // Room to spare: the asks themselves, grown in proportion so the table fills the measure.
         guard ideals.reduce(0, +) > room else { return scaled(ideals, to: room) }
+        // What each column still wants above its floor, which is what the slack is dealt by.
+        let wants = floors.indices.map { max(0, ideals[$0] - floors[$0]) }
+        let slack = room - floors.reduce(0, +)
         return floors.indices.map { column in
-            floors[column] + share(of: room - floors.reduce(0, +), at: column, floors, ideals)
+            floors[column] + share(of: slack, at: column, by: wants)
         }
     }
 
     /// One column's cut of the slack above the floors, in proportion to what it still wants. An
     /// equal cut where no column wants anything more, which is every column already at its ideal.
-    private static func share(
-        of slack: CGFloat,
-        at column: Int,
-        _ floors: [CGFloat],
-        _ ideals: [CGFloat],
-    )
-        -> CGFloat {
-        let wants = floors.indices.map { max(0, ideals[$0] - floors[$0]) }
+    private static func share(of slack: CGFloat, at column: Int, by wants: [CGFloat]) -> CGFloat {
         let total = wants.reduce(0, +)
-        guard total > 0 else { return slack / CGFloat(floors.count) }
+        guard total > 0 else { return slack / CGFloat(wants.count) }
         return slack * wants[column] / total
     }
 

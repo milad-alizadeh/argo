@@ -14,6 +14,9 @@ extension FeedTableCoordinator {
                 shown[$0],
                 height: measuredHeight(at: $0, in: table),
                 under: $0 > 0 ? shown[$0 - 1] : nil,
+                // The reader's own fold, which is the one state that changes a row's SHAPE rather
+                // than only its height. Read off the model the cells are drawn from.
+                isFolded: !(model?.unfolding(shown[$0].id).wrappedValue ?? false),
             ) },
             // What the rows are actually DRAWN across, which stops at the reading measure however
             // wide the zone gets — a miniature of the zone would keep compressing past the point
@@ -49,9 +52,9 @@ extension FeedTableCoordinator {
             clip.scroll(to: landing)
             scroller.reflectScrolledClipView(clip)
         }
-        // The lane is a hand on the reading like any other, so the follow latch is re-read: a
-        // scrub away from the end that left the feed still following would be yanked back by the
-        // next arriving row.
+        // The lane is a hand on the reading like any other, so the follow latch is re-read: a scrub
+        // away from the end that left the feed still following would be yanked back by the next
+        // arriving row.
         reportFollowing()
     }
 }

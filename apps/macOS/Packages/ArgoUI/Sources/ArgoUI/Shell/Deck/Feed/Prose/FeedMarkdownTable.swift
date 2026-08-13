@@ -34,8 +34,7 @@ struct FeedMarkdownTable: View {
     }
 
     private func text(row: Int, column: Int) -> String {
-        let cells = table.grid[row]
-        return cells.indices.contains(column) ? cells[column] : ""
+        table.cell(of: table.grid[row], at: column)
     }
 
     /// One cell, carrying the two rules that stand at its own edges.

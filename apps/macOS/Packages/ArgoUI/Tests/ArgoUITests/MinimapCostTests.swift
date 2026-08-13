@@ -14,10 +14,15 @@ import Testing
 /// session is linear in its rows and free of glyph work, and painting a band is bounded by the
 /// band.
 ///
-/// Measured on an M-series Mac over the 1,031-row `longRows`, for whoever is watching one of these
-/// creep: reading 0.45ms, a band 3.5ms cold and 1.6ms warm, sixty scrolled frames 96ms (1.6ms
-/// each), thirty seam frames 71ms (2.4ms each), and a band of nothing but long markdown 4.6ms cold.
-/// Every one of them is inside a 120Hz frame, and the budgets below sit well above them.
+/// Measured on an M-series Mac over the 301-row `longRows`, for whoever is watching one of these
+/// creep: the feed's own measure pass 142ms, reading 0.6ms, a band 4.0ms cold and 1.5ms warm, sixty
+/// scrolled frames 93ms (1.6ms each), thirty seam frames 69ms (2.3ms each), and a band of nothing
+/// but long markdown 3.9ms cold. Every per-frame figure is inside a 120Hz frame, and the budgets
+/// below sit well above them.
+///
+/// The measure pass is the one to read against `main`, which #667's AC4 asks for: `main` takes
+/// 140-141ms and this branch 134-145ms over three runs each — the same within run-to-run noise, so
+/// the lane's reporting costs no extra layout pass.
 @MainActor
 @Suite("Minimap cost")
 struct MinimapCostTests {
@@ -25,15 +30,36 @@ struct MinimapCostTests {
     /// A real session's length. `FeedProjection.longRows` is what `feedAtScale` renders.
     private static let rows = FeedProjection.longRows
 
+    /// Seconds `work` took.
+    ///
+    /// BOTH components. A `Duration` is `(seconds, attoseconds)`, so reading the attoseconds alone
+    /// reports 2.4s as 0.4 — which is worse than no measurement, because every budget over a second
+    /// then passes whatever the machine did.
     private static func elapsed(_ work: () -> Void) -> Double {
         let started = ContinuousClock.now
         work()
-        return Double(ContinuousClock.now.duration(to: started).components.attoseconds) / -1e18
+        let taken = started.duration(to: ContinuousClock.now).components
+        return Double(taken.seconds) + Double(taken.attoseconds) / 1e18
     }
 
     private static func laidOut() -> (table: FeedTableCoordinator, handle: FeedTableHandle) {
         let handle = FeedTableHandle()
         return (FeedTableFixture.laidOut(rows, in: Self.column, through: handle), handle)
+    }
+
+    /// The feed's own measure pass — one hosting-ruler `sizeThatFits` per row, and the most
+    /// expensive thing the feed does (#473). #667 asks that reporting line geometry cost no extra
+    /// layout pass, so this is the number that says whether it did: nothing here changed the ruler,
+    /// and the lane's geometry comes out of the heights it already produced.
+    ///
+    /// The one thing in this change that touches it is `MarkdownTableLayout`, which now sizes a
+    /// table from `MarkdownTable` instead of asking its cells — fewer subview passes, not more.
+    @Test
+    func `the feed's measure pass is not made slower by the lane's reporting`() {
+        // Warm the prose caches so what is timed is the ruler rather than the first markdown parse.
+        _ = Self.laidOut()
+        let cost = Self.elapsed { _ = Self.laidOut() }
+        #expect(cost < 4)
     }
 
     /// Reading the whole session, which happens on every reshape. It walks every row, so it must

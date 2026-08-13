@@ -67,10 +67,16 @@ public enum ArgoFeedRow {
     /// `edge.hairline`.
     public static let ruleWidth: CGFloat = 1
 
-    /// The breathing room inside one cell of a pipe table. Named here because a column's ask is
-    /// its widest cell's words PLUS this, and that arithmetic happens away from the view.
+    /// The breathing room inside one cell of a pipe table. Named here because a column's ask is its
+    /// widest cell's words PLUS this, and that arithmetic happens away from the view.
     public static let tableCellInsetX: CGFloat = ArgoSpacing.base
     public static let tableCellInsetY: CGFloat = ArgoSpacing.snug
+
+    /// The breathing room inside the card a question is drawn on, and the column its chosen mark
+    /// sits in. Named here for the same reason the bubble's and the table cell's are: the overview
+    /// lane lays the card out again, and two views picking the same step by hand is how they drift.
+    public static let askCardInset: CGFloat = ArgoSpacing.comfortable
+    public static let askOptionGap: CGFloat = ArgoSpacing.tight
 
     /// The widest the feed's content runs — the whole column, not one row. Centred in the zone, so
     /// the deck grows and the line length does not.

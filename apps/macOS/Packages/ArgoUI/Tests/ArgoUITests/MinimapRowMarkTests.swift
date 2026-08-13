@@ -108,7 +108,7 @@ struct MinimapRowMarkTests {
     /// One bar per line, not one block over the row — a prompt reads as its words, like prose does.
     @Test
     func `a prompt is one line per line, against the trailing edge its bubble is drawn on`() {
-        let marks = Self.marks(.bubble(text: MinimapText.paragraph))
+        let marks = Self.marks(.bubble(text: MinimapText.paragraph, isFolded: false))
         #expect(marks.count > 1)
         #expect(marks.allSatisfy { $0.ink == .prompt })
         // The ground is its own longest line back from the trailing edge, plus its padding.
@@ -119,11 +119,25 @@ struct MinimapRowMarkTests {
         #expect(marks[0].y == ArgoFeedRow.bubbleInsetY)
     }
 
+    /// The fold is the reader's, so the lane draws what they left on screen. Capping an unfolded
+    /// prompt is the same mistake as reporting every line of a folded one — the row is measured at
+    /// its whole height either way, and the map has to follow the state rather than assume one.
+    @Test
+    func `a folded prompt draws its first lines and an unfolded one draws them all`() {
+        let long = String(repeating: "Read the whole anatomy study before you start. ", count: 14)
+        let folded = Self.marks(.bubble(text: long, isFolded: true))
+        let whole = Self.marks(.bubble(text: long, isFolded: false))
+        #expect(folded.count == ArgoFeedRow.collapsedPromptLines)
+        #expect(whole.count > folded.count)
+        // The lines they share are the same lines, at the same places.
+        #expect(Array(whole.prefix(folded.count)) == folded)
+    }
+
     /// The bubble hugs a short prompt. Held at its ceiling instead, a three-word prompt read as a
     /// bar most of the way across the lane.
     @Test
     func `a short prompt's bubble is as narrow as its words`() {
-        let marks = Self.marks(.bubble(text: "Fix it"))
+        let marks = Self.marks(.bubble(text: "Fix it", isFolded: true))
         #expect(marks.count == 1)
         #expect(marks[0].from > Self.measure / 2)
     }
@@ -157,7 +171,7 @@ struct MinimapRowMarkTests {
 
     @Test
     func `a column not yet laid out reports nothing to draw`() {
-        #expect(MinimapRowShape.bubble(MinimapText.paragraph, across: 0).isEmpty)
+        #expect(MinimapRowShape.bubble(MinimapText.paragraph, isFolded: true, across: 0).isEmpty)
         #expect(Self.prose(MinimapText.paragraph).marks(across: 0, height: 40).isEmpty)
     }
 }
