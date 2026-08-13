@@ -11,6 +11,8 @@ struct SessionHeaderContext: View {
     @Environment(\.argo) private var argo
 
     let context: SessionHeaderProjection.Context
+    /// What the ⓘ panel reports, forwarded untouched — the instrument draws none of it (#694).
+    let facts: [SessionHeaderProjection.Fact]
 
     /// The panel opens on HOVER, and a click still opens it too, so the keyboard keeps a way in.
     /// Escape and clicking away are `.popover`'s own.
@@ -63,7 +65,7 @@ struct SessionHeaderContext: View {
         .popover(isPresented: $isGuideOpen, arrowEdge: .bottom) {
             // The panel counts as the mark for the purpose of staying open: a reader inside it is
             // reading, and the pointer being off the ⓘ is exactly what that looks like.
-            SessionContextGuide()
+            SessionContextGuide(facts: facts)
                 .onHover { isInside in pointer(isInside) }
         }
     }
@@ -89,8 +91,8 @@ struct SessionHeaderContext: View {
 
 #Preview("Context instrument — every tier, and the one that cannot be read") {
     VStack(alignment: .leading, spacing: ArgoSpacing.section) {
-        ForEach(SessionHeaderFixture.contextReadings, id: \.reading) { context in
-            SessionHeaderContext(context: context)
+        ForEach(SessionHeaderFixture.contexts, id: \.name) { tier in
+            SessionHeaderContext(context: tier.header.context, facts: tier.header.facts)
         }
     }
     .padding(ArgoSpacing.region)

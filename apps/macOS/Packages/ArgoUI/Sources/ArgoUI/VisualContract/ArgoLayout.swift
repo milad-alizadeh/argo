@@ -77,6 +77,9 @@ public enum ArgoLayout {
     public static let contextGuideWidth: CGFloat = 320
     /// The threshold column in that panel, so the two meanings beside it start on one edge.
     public static let contextGuideThresholdWidth: CGFloat = 74
+    /// The term column in the same panel's `This Session` block, so the readings stay on one edge
+    /// whichever facts a Session has. Wider than the threshold column: it holds words.
+    public static let contextGuideTermWidth: CGFloat = 96
     /// Where the rail opens — a starting width, not a fixed one; the seam beside it moves.
     public static let agentsRailWidth: CGFloat = 256
     /// The overview lane's share of the reading it maps. Its compression is

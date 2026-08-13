@@ -17,7 +17,12 @@ import SwiftUI
 extension SpecimenRegistry {
     static let header: [SpecimenEntry] = postures + contexts + handoffs + [
         // A popover is its own window and never lands in a screenshot of this one.
-        SpecimenEntry("contextGuide") { ContextGuideSpecimen() },
+        SpecimenEntry("contextGuide") { ContextGuideSpecimen(header: SessionHeaderFixture.guided) },
+        // The same panel where almost nothing could be read: the block collapses to its one
+        // permanent row rather than drawing a column of dashes (#694).
+        SpecimenEntry("contextGuideUnread") {
+            ContextGuideSpecimen(header: SessionHeaderFixture.unguided)
+        },
         // No button left on the red header, and the reading ends in a link to the next Session.
         SpecimenEntry("handedOffReading") {
             InstrumentDeckShell(

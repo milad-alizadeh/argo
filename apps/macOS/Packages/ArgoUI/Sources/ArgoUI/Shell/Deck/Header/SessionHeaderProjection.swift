@@ -33,6 +33,9 @@ enum SessionHeaderProjection {
         /// The linked Work Item as the header says it: `Issue #400`, never a bare `#400`. The
         /// detail is the issue's own title where the provider gave one, absent where it did not.
         struct IssueLink: Equatable, Sendable {
+            /// Beside the label, so the ⓘ panel can say the bare `#476` under a term that already
+            /// says `Issue` without unpicking the label to get at it.
+            let number: Int
             let label: String
             let detail: String?
         }
@@ -67,6 +70,9 @@ enum SessionHeaderProjection {
         /// The remedy, when it is the right move and Argo is the one who can take it — see
         /// `handoff(from:)` for the two facts that decide it.
         let handoff: Handoff?
+        /// The same facts as rows, for the ⓘ panel — the route to them that a keyboard and a
+        /// screenshot both have, which `tooltip` above is not (#694).
+        let facts: [Fact]
 
         /// `fileprivate`, so `header(from:)` is the only way a header comes into being.
         fileprivate init(
@@ -80,6 +86,7 @@ enum SessionHeaderProjection {
             context: Context,
             spend: String?,
             handoff: Handoff?,
+            facts: [Fact],
         ) {
             self.title = title
             self.state = state
@@ -91,6 +98,7 @@ enum SessionHeaderProjection {
             self.context = context
             self.spend = spend
             self.handoff = handoff
+            self.facts = facts
         }
 
         /// What a screen reader hears of the Session's IDENTITY: the facts on the header's leading
@@ -152,6 +160,7 @@ enum SessionHeaderProjection {
             context: context(tokens: session.contextTokens),
             spend: spend(from: session),
             handoff: handoff(from: session),
+            facts: facts(from: session),
         )
     }
 
@@ -161,7 +170,7 @@ enum SessionHeaderProjection {
     /// The WORD comes from `SessionComposerProjection.Unavailable`, which is the one home for it
     /// (#546); the sentence stays the header's own, because the band names a posture where the
     /// deck's foot answers a reader looking for the field.
-    private static func mark(
+    static func mark(
         for access: CockpitPresentation.Session.Access,
     )
         -> Header.AccessMark? {
