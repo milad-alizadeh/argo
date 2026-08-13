@@ -106,6 +106,16 @@ extension FeedProjection {
         }
     }
 
+    /// The two rows the keyboard cursor is rendered on (#533): the one drawn narrower than the
+    /// measure, and one drawn at it.
+    ///
+    /// Both taken from the END of their reading, which is where a reading opens. A cursor further
+    /// up needs a scroll to be seen, and a scroll over rows whose heights are still estimates
+    /// lands somewhere else once they are measured — a still nobody can repeat.
+    static let previewPromptID = previewProseRows.last(where: \.isPrompt)?.id
+
+    static let previewLastFailedCallID = previewRows.reversed().failedCallID
+
     /// The collapsed run in that feed — three edits of one file, the only row whose panel holds
     /// more than one thing.
     static let previewRunCallID = previewRows.first { row in

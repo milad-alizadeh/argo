@@ -93,6 +93,9 @@ extension View {
                     // responder chain, and until this nothing put the lightbox in one.
                     .focusable()
                     .focused(selection.focus, equals: .lightbox)
+                    // Ringed by nothing: the lightbox covers every zone at once, so a ring around
+                    // it states what the picture already does — see the panel's, #533.
+                    .focusEffectDisabled()
                     // `.identity`, never `.opacity`: a transition here composites the WHOLE
                     // lightbox into one translucent group and the reading burns through it for the
                     // length of the fade. The layers carry their own (see `FeedLightbox.body`).

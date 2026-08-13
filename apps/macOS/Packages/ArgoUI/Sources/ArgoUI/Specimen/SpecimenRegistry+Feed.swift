@@ -43,7 +43,24 @@ extension SpecimenRegistry {
         // A row arriving at the end must not move the row somebody is looking at.
         SpecimenEntry("feedArriving") { ArrivingFeedSpecimen() },
         SpecimenEntry("emptyFeed") { SpecimenScene.sessions([]) },
+        // The keyboard cursor, on the two shapes a row can be: the bubble it has to hug, and the
+        // line that fills the measure. Unreachable without an arrow key, so unreachable in a still
+        // any other way (#533).
+        // The prose-only reading for the bubble: short enough that the row is in view with no
+        // scroll at all, which is what makes the still repeatable.
+        SpecimenEntry("feedCursorPrompt") {
+            cursored(on: FeedProjection.previewPromptID, in: FeedProjection.previewProseRows)
+        },
+        SpecimenEntry("feedCursorCall") {
+            cursored(on: FeedProjection.previewLastFailedCallID, in: FeedProjection.previewRows)
+        },
     ]
+
+    private static func cursored(on row: FeedRow.ID?, in rows: [FeedRow]) -> some View {
+        var reading = FeedPreview(rows: rows)
+        reading.cursor = row
+        return reading
+    }
 
     private static let evidence: [SpecimenEntry] = [
         // Call rows, not the whole feed: against the full transcript this failure is below the
