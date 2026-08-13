@@ -71,6 +71,18 @@ at the ceiling — which is what those two derivations are for.
 - **One type role across a section header.** The design set the label in `sectionLabel` and its
   path in `machineCaption`. Both are 11, but SF Mono beside SF Pro on one line reads as two sizes,
   so the whole line is `sectionLabel` and only the ink separates them.
+- **The section header draws no ground, and does not stick.** The two go together: a pinned header
+  needs a ground of its own or the rows show through it, and that band is louder than the grouping
+  is worth. Headers scroll with their group and a `comfortable` gap above does the separating —
+  which took the header from 24 to 30, and the list ceiling with it.
+- **Section identity is its own, not its label.** Every plugin's section is labelled `Plugin`, so
+  `id = label` collided the moment two plugins carried skills and `ForEach` drew one of them. Found
+  by review, not by a render — the fixture had one plugin.
+- **A prefix match is measured against the name too, not only the command.** A plugin's command is
+  `/plugin:name`, so ranked off the command's own head no plugin skill could ever be a prefix match
+  and typing a skill's exact name filed it under *Also contains*. Also found by review.
+- **A second slash closes the menu.** Decision 2 names `/usr/local` as the line that opens nothing;
+  head-of-line alone let it open the zero state. No command carries a slash in its name.
 
 ## Engine changes this needed
 

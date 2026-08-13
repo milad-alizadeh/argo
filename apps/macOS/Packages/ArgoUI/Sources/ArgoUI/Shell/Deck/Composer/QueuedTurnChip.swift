@@ -35,9 +35,6 @@ struct QueuedTurnChip: View {
         .padding(.horizontal, ArgoSpacing.snug)
         .frame(height: ArgoComposerVessel.queuedTurnHeight)
         .background(argo.color.surface.control, in: .rect(cornerRadius: ArgoRadius.control))
-        // No leading accent rule. It carried nothing the `QUEUED` label on the row does not already
-        // say, and the cockpit draws no leading rules on rows anywhere — one drawn here would be
-        // the only one in the shell.
         .clipShape(.rect(cornerRadius: ArgoRadius.control))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(Self.label): \(turn.text)")

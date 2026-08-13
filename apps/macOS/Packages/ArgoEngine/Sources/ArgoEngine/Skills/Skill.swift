@@ -6,12 +6,9 @@ public struct Skill: Equatable, Sendable {
     /// Absent when the skill states none, and never invented.
     public let description: String?
     public let origin: SkillOrigin
-    /// Whether this row is standing where one of the user's own skills would be — the mark the
-    /// design calls `shadows yours` (`cockpit-composer-picker.md` decision 7).
-    ///
-    /// Only a Project skill can carry it, because a plugin's commands are namespaced and cannot
-    /// collide with a bare `/name` at all. The shadowed copy is not listed: the CLI would never run
-    /// it, and a row the CLI ignores is a lie.
+    /// Whether a global skill of this name was found and left out because this one stands in front
+    /// of it (#685). Only a Project skill can carry it: a plugin's commands are namespaced and
+    /// cannot collide with a bare `/name`.
     public let shadowsUser: Bool
 
     /// Public so the cockpit's own fixtures can build a catalog: the picker is drawn from a value,

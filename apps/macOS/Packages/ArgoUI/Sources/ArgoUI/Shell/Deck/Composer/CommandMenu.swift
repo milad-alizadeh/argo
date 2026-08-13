@@ -3,16 +3,8 @@ import SwiftUI
 /// The surface the composer's `/` opens: every skill installed for this Project, sectioned by where
 /// it came from, filtering as the reader types (#685, `cockpit-composer-picker.md`).
 ///
-/// **A menu, not glass.** No `.glassEffect` and no `GlassEffectContainer`: D14 rations glass away
-/// from a surface that hangs off the field, and the vessel below is already glass — a second layer
-/// over it is the stacking Apple's own guidance asks you to avoid.
-///
-/// **It takes no width.** It gets the vessel's, because the description is the content: at any
-/// stated width two thirds of a real `description:` is an ellipsis.
-///
-/// Not a `.popover` either, though the platform has one. A popover draws an arrow, brings its own
-/// material and takes key focus — and the caret has to stay in the field, because every keystroke
-/// after the `/` is still going into the draft.
+/// Not a `.popover`, though the platform has one: a popover takes key focus, and the caret has to
+/// stay in the field because every keystroke after the `/` is still going into the draft.
 struct CommandMenu: View {
     @Environment(\.argo) private var argo
 
@@ -35,8 +27,7 @@ struct CommandMenu: View {
         RoundedRectangle(cornerRadius: ArgoRadius.popover)
     }
 
-    /// The restrained edge D14 allows a menu, and the only thing separating it from the glass
-    /// vessel it stands over.
+    /// The only thing separating this surface from the glass vessel it stands over.
     private var rim: some View {
         surface.strokeBorder(argo.color.edge.glassRim, lineWidth: ArgoStroke.border)
     }
@@ -48,11 +39,10 @@ struct CommandMenu: View {
             CommandMenuEmpty(query: menu.query)
         } else {
             ScrollView(.vertical) {
-                LazyVStack(
-                    alignment: .leading,
-                    spacing: ArgoSpacing.flush,
-                    pinnedViews: .sectionHeaders,
-                ) {
+                // Headers scroll with their group rather than pinning to the top edge. A pinned one
+                // needs a ground of its own to stop rows showing through it, and that band is
+                // exactly what the design no longer draws.
+                LazyVStack(alignment: .leading, spacing: ArgoSpacing.flush) {
                     ForEach(menu.sections) { section in
                         Section {
                             rows(of: section)
@@ -67,12 +57,8 @@ struct CommandMenu: View {
         }
     }
 
-    /// What the list actually stands at: its own content, up to the ceiling. COUNTED rather than
-    /// left to the scroll view, which is greedy — given a ceiling it takes all of it, and a
-    /// two-row menu came out ten rows tall with eight rows of nothing under it.
-    ///
-    /// Countable because every part of the list has a stated height. That is what those two
-    /// derivations in `ArgoComposerVessel` are for.
+    /// Counted rather than capped: a `ScrollView` given a `maxHeight` takes all of it, so a two-row
+    /// menu would stand ten rows tall with eight rows of nothing under it.
     private var listHeight: CGFloat {
         let rows = CGFloat(menu.rows.count) * ArgoComposerVessel.commandRowHeight
         let headers = CGFloat(menu.sections.count { $0.label != nil })
@@ -89,12 +75,10 @@ struct CommandMenu: View {
         }
     }
 
-    /// Sticky, so the origin the reader is scrolling through stays named. The prefix-match group
-    /// has no header at all, which is why this can draw nothing.
+    /// The prefix-match group has no header at all, which is why this can draw nothing.
     @ViewBuilder private func header(of section: CommandMenuProjection.Section) -> some View {
         if let label = section.label {
             CommandMenuSection(label: label, detail: section.detail)
-                .background(.regularMaterial)
         }
     }
 

@@ -138,6 +138,13 @@ struct ComposerSpecimen: View {
     /// text, and no menu — the space is what closed it (decision 1).
     static let commandArgs = ComposerDraft(text: "/code-review since main")
 
+    /// The menu open over a Turn in flight with a follow-up already waiting (decision 17). The two
+    /// surfaces stack above the field, which is the whole of what this state settles.
+    static let commandQueued = ComposerDraft(
+        text: "/",
+        queued: [QueuedTurn(text: "And when that is green, open the PR against main.")],
+    )
+
     /// A follow-up waiting on the Turn in flight, drawn above an empty field.
     static let queued = ComposerDraft(
         queued: [QueuedTurn(text: "And when that is green, open the PR against main.")],

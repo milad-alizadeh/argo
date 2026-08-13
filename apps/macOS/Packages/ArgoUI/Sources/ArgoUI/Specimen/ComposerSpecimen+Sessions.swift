@@ -129,4 +129,20 @@ extension ComposerSpecimen {
         canAttach: true,
         canRunCommands: true,
     )
+
+    /// The same Session mid-Turn, with the command surface: the menu opens over a running Turn
+    /// exactly as at rest, and coexists with a queued follow-up above the field (design decision
+    /// 17, `running.png` and `queued.png`).
+    static let commandsRunning = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: SessionComposerProjection.queuePlaceholder,
+        facts: composer.facts,
+        standingAllows: [],
+        isRunning: true,
+        mode: composer.mode,
+        modeDidNotTake: nil,
+        lostTurn: nil,
+        canAttach: true,
+        canRunCommands: true,
+    )
 }

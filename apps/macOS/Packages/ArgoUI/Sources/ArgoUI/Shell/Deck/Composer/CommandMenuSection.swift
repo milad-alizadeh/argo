@@ -30,10 +30,10 @@ struct CommandMenuSection: View {
         // line — and a header is a label to be scanned, not a string to be copied.
         .argoText(ArgoTypography.sectionLabel)
         .padding(.horizontal, ArgoSpacing.base)
-        // Spelled as the two insets rather than as the derived height, so the box the text sits in
-        // is the box the arithmetic describes. Asymmetric on purpose: the header belongs to the
-        // rows UNDER it, so it stands further off the group above than off its own first row.
-        .padding(.top, ArgoSpacing.snug)
+        // The whole separation between one origin and the last one's rows. Asymmetric by a lot:
+        // the header belongs to the rows UNDER it, and this gap is the only thing grouping them
+        // now that the header draws no ground of its own.
+        .padding(.top, ArgoSpacing.comfortable)
         .padding(.bottom, ArgoSpacing.tight)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)

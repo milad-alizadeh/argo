@@ -16,7 +16,12 @@ struct CommandMenuProjectionTests {
         #expect(CommandMenuProjection.query(in: text) == query)
     }
 
-    @Test(arguments: ["", "look in src/foo", "hello", "/code-review since main", " /impl"])
+    /// A second slash means a path, which is decision 2's own example: `/usr/local` opens nothing.
+    /// No command carries a slash in its name, so nothing real is lost by the rule.
+    @Test(arguments: [
+        "", "look in src/foo", "hello", "/code-review since main", " /impl",
+        "/usr/local", "/usr/local/bin",
+    ])
     func `nothing else opens it`(text: String) {
         #expect(CommandMenuProjection.query(in: text) == nil)
     }
@@ -64,6 +69,30 @@ struct CommandMenuProjectionTests {
 
         #expect(unfiltered.rows.allSatisfy { $0.origin == nil })
         #expect(filtered.rows.map(\.origin) == ["Project", "Plugin"])
+    }
+
+    /// A plugin's command is `/plugin:name`, so a match on the NAME starts well past the command's
+    /// own head. Ranked off the command alone, no plugin skill could ever be a prefix match, and
+    /// typing a skill's exact name would file it under "Also contains".
+    @Test
+    func `naming a plugin's skill exactly is a prefix match`() throws {
+        let menu = try #require(CommandMenuProjection.menu(for: "/simplify", in: catalog))
+
+        #expect(menu.sections.map(\.label) == [nil])
+        #expect(menu.sections.first?.rows.map(\.command) == ["/figma:simplify"])
+    }
+
+    /// Every plugin's section is labelled `Plugin`, so a section identified BY its label collides
+    /// the moment two plugins carry skills and `ForEach` draws one of them.
+    @Test
+    func `two plugins get two sections with two ids`() throws {
+        let menu = try #require(CommandMenuProjection.menu(for: "/", in: [
+            Skill(name: "sync", description: nil, origin: .plugin("figma")),
+            Skill(name: "trends", description: nil, origin: .plugin("posthog")),
+        ]))
+
+        #expect(menu.sections.map(\.label) == ["Plugin", "Plugin"])
+        #expect(Set(menu.sections.map(\.id)).count == 2)
     }
 
     /// Decision 4. The field is trigger prose for a model and real ones run three sentences, so the

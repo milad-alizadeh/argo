@@ -1,11 +1,7 @@
 /// Where the keyboard cursor is in the `/` menu, and where each key takes it (#685).
 ///
 /// Held by COMMAND rather than by index, because filtering reorders the list under the cursor: an
-/// index would jump to whatever row happened to inherit the number, and the reader would watch
-/// their selection move to something they never chose.
-///
-/// A value rather than view state so the walk is testable without a render — the design's claim
-/// that the menu is navigable by keyboard alone is a behaviour, not a look.
+/// index would jump to whatever row happened to inherit the number.
 struct CommandMenuCursor: Equatable {
     /// The command the cursor is on, or `nil` where there is nothing to be on.
     private(set) var marked: String?

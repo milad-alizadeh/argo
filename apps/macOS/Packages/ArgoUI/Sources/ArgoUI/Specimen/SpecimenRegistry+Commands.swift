@@ -58,6 +58,17 @@ extension SpecimenRegistry {
                 commands: CommandCatalogFixture.machine,
             )
         },
+        // `running.png` and `queued.png`, decision 17: the menu opens over a Turn in flight exactly
+        // as it does at rest, and coexists with a follow-up already waiting. Two surfaces stacked
+        // over the field is the state — whether that reads as one vessel or as three is the
+        // judgement, and only this render settles it.
+        SpecimenEntry("composerSlashRunning") {
+            ComposerSpecimen(
+                composer: ComposerSpecimen.commandsRunning,
+                draft: ComposerSpecimen.commandQueued,
+                commands: CommandCatalogFixture.machine,
+            )
+        },
         // `codex.png`'s claim, at the vessel: an adapter that declares no command surface draws no
         // menu at all for a line that would open one everywhere else. Absent, never disabled.
         SpecimenEntry("composerSlashAbsent") {

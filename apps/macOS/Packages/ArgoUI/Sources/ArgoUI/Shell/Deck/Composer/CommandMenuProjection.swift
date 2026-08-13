@@ -10,7 +10,7 @@ enum CommandMenuProjection {
     /// The surface, or `nil` where none opens. Nothing here is empty-but-drawn: a menu with no
     /// sections is the zero state, which carries its own line instead.
     struct Menu: Equatable {
-        /// In drawing order. Empty exactly while `empty` is set.
+        /// In drawing order.
         let sections: [Section]
         /// What the reader typed after the `/`, for the zero line to name back to them.
         let query: String
@@ -28,10 +28,9 @@ enum CommandMenuProjection {
 
     /// One group of rows under a sticky header, or under nothing.
     struct Section: Equatable, Identifiable {
-        var id: String {
-            label ?? ""
-        }
-
+        /// Its own, never the label: every plugin's section is labelled `Plugin`, so a label
+        /// standing in as identity collides the moment two plugins carry skills.
+        let id: String
         /// Absent on the prefix-match group, which is the reader's own line: a header naming it
         /// would repeat what they just typed back at them.
         let label: String?

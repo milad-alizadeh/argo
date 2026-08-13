@@ -92,9 +92,12 @@ public enum ArgoComposerVessel {
     }
 
     /// How tall an origin header in that menu stands. Asymmetric on purpose: it belongs to the rows
-    /// UNDER it, so it stands further off the group above than off its own first row.
+    /// UNDER it, and the gap above is the only thing separating one origin from the last one's
+    /// rows — the header draws no ground of its own.
     public static var commandSectionHeight: CGFloat {
-        ArgoTypography.sectionLabel.lineBox.rounded(.up) + ArgoSpacing.snug + ArgoSpacing.tight
+        ArgoTypography.sectionLabel.lineBox.rounded(.up)
+            + ArgoSpacing.comfortable
+            + ArgoSpacing.tight
     }
 
     /// How far the menu's list may grow before it scrolls inside itself: ten rows and one header.

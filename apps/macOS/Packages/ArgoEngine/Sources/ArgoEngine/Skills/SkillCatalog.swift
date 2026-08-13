@@ -35,6 +35,7 @@ public struct SkillCatalog {
     /// that is standing there. Nothing else can collide: a plugin's commands carry its name.
     private static func shadowed(_ found: [Skill]) -> [Skill] {
         let ofProject = Set(found.filter { $0.origin == .project }.map(\.name))
+        let ofUser = Set(found.filter { $0.origin == .user }.map(\.name))
         return found.compactMap { skill in
             switch skill.origin {
             case .user where ofProject.contains(skill.name): nil
@@ -42,7 +43,7 @@ public struct SkillCatalog {
                     name: skill.name,
                     description: skill.description,
                     origin: .project,
-                    shadowsUser: found.contains { $0.origin == .user && $0.name == skill.name },
+                    shadowsUser: ofUser.contains(skill.name),
                 )
             default: skill
             }

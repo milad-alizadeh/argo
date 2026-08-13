@@ -10,13 +10,16 @@ extension CommandMenuProjection {
 
     /// What the reader has typed after the `/`, and `nil` where there is no `/` to be after.
     ///
-    /// **Head of the line only**, and closed by the first space (decision 2). A slash inside
-    /// `src/foo` is a path, and the space is what says the command is settled and its arguments
-    /// have begun — which is the whole of what makes `slash-args.png` a sendable line rather than a
-    /// menu standing over one.
+    /// Three rules, all decision 2's. **Head of the line only.** **Closed by the first space** —
+    /// that is what says the command is settled and its arguments have begun, and it is the whole
+    /// of what makes `slash-args.png` a sendable line rather than a menu standing over one.
+    /// **Closed by a second slash**, because a second one means a path: the design names
+    /// `/usr/local` as the line that opens nothing, and no command carries a slash in its name.
     static func query(in text: String) -> String? {
-        guard text.hasPrefix("/"), !text.contains(where: \.isWhitespace) else { return nil }
-        return String(text.dropFirst())
+        guard text.hasPrefix("/") else { return nil }
+        let typed = text.dropFirst()
+        guard !typed.contains(where: \.isWhitespace), !typed.contains("/") else { return nil }
+        return String(typed)
     }
 
     private static func sections(of catalog: [Skill], matching query: String) -> [Section] {
@@ -29,6 +32,7 @@ extension CommandMenuProjection {
     private static func byOrigin(_ catalog: [Skill]) -> [Section] {
         runs(of: catalog).map { origin, skills in
             Section(
+                id: origin.readFrom,
                 label: word(for: origin),
                 detail: "\(origin.readFrom) · \(skills.count)",
                 rows: skills.map { row(for: $0, matched: 0 ..< 0, origin: nil) },
@@ -53,20 +57,29 @@ extension CommandMenuProjection {
         for skill in catalog {
             guard let matched = match(query, in: skill.command) else { continue }
             let row = row(for: skill, matched: matched, origin: word(for: skill.origin))
-            if matched.lowerBound == 1 {
+            if opens(matched, of: skill) {
                 opening.append(row)
             } else {
                 containing.append(row)
             }
         }
         return [
-            Section(label: nil, detail: nil, rows: opening),
+            Section(id: "opening", label: nil, detail: nil, rows: opening),
             Section(
+                id: "containing",
                 label: alsoContains,
                 detail: "\"\(query)\" · \(containing.count)",
                 rows: containing,
             ),
         ].filter { !$0.rows.isEmpty }
+    }
+
+    /// Whether a match is at the head of the thing the reader is naming. TWO heads, because a
+    /// plugin's command is `/plugin:name` and the reader typing `simplify` has named the skill
+    /// exactly — ranked only off the command's own start, every plugin skill would file under
+    /// "Also contains" no matter how well it matched.
+    private static func opens(_ matched: Range<Int>, of skill: Skill) -> Bool {
+        matched.lowerBound == 1 || matched.lowerBound == skill.command.count - skill.name.count
     }
 
     /// The header over the weaker half. It names the characters rather than a kind of match,

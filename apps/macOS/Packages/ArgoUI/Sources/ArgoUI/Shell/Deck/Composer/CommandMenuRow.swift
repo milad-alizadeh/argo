@@ -3,13 +3,8 @@ import SwiftUI
 /// One invocable thing in the composer's `/` menu: the command, what its own frontmatter says about
 /// it, and — while the sections group by match rather than by origin — where it came from.
 ///
-/// The two grounds are DIFFERENT inks on purpose: hover is `surface.hover` and the keyboard cursor
-/// is the louder `surface.marked`. Drawn the same, the list would have two cursors the moment the
-/// pointer crossed it.
-///
-/// **No leading accent edge**, though the approved design specified one — the cockpit does not draw
-/// leading rules on rows at all, so the ground alone carries the cursor. The design was amended to
-/// match rather than left disagreeing with the code.
+/// Hover and the keyboard cursor take DIFFERENT grounds — `surface.hover` and the louder
+/// `surface.marked`. Drawn the same, the list has two cursors the moment the pointer crosses it.
 struct CommandMenuRow: View {
     @Environment(\.argo) private var argo
 
@@ -45,8 +40,7 @@ struct CommandMenuRow: View {
         .accessibilityAddTraits(isMarked ? [.isSelected, .isButton] : .isButton)
     }
 
-    /// The command, with the characters the reader typed inked in the accent. Three runs and not an
-    /// attributed string: the ink is a role off the palette, and `Text` is what carries one.
+    /// The command, with the characters the reader typed inked in the accent.
     private var name: some View {
         (Text(part(before: row.matched))
             + Text(part(in: row.matched))
@@ -74,8 +68,7 @@ struct CommandMenuRow: View {
         return isMarked ? argo.color.text.marked(on: voice) : voice
     }
 
-    /// Absent rather than transparent for a row that is neither marked nor under the pointer: a
-    /// clear fill would still be a shape drawn over the menu's own material.
+    /// Absent rather than transparent: a clear fill is still a shape over the menu's material.
     @ViewBuilder private var ground: some View {
         if let fill {
             RoundedRectangle(cornerRadius: ArgoRadius.control).fill(fill)
@@ -102,11 +95,9 @@ struct CommandMenuRow: View {
         String(Array(row.command)[matched.upperBound...])
     }
 
-    /// What stands where a description would, for a skill whose frontmatter states none (decision
-    /// 5). A statement about the FILE rather than an invented caption, and no slant: the contract
-    /// carries a face and a weight, never a slope.
+    /// A statement about the FILE, for a skill whose frontmatter states no description (#685).
     static let undescribed = "no description in its frontmatter"
 
-    /// The mark on a row standing where one of the user's own skills would be (decision 7).
+    /// The mark on a row standing where one of the user's own skills would be (#685).
     static let shadows = "shadows yours"
 }
