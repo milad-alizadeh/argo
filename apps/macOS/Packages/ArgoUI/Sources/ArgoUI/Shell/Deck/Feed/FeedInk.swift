@@ -5,8 +5,8 @@ import Foundation
 /// Each of the feed's own types answers with its own — `FeedAsk.ink`, `FeedCall.Ending.ink`,
 /// `FeedMark.ink` — and both the row and the lane read that one value.
 ///
-/// Every role must stay opaque: the lane applies its own alpha on top, and a translucent role
-/// would be dimmed twice.
+/// Every role must stay opaque: the lane applies its own alpha on top, and a translucent role would
+/// be dimmed twice.
 enum FeedInk: Equatable, Sendable, CaseIterable {
     /// What someone asked for.
     case prompt
@@ -45,20 +45,19 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
         case bar
         /// Stroked rather than filled: a picture is a container, not content.
         case frame
-        /// A hairline at the floor height, whatever the row is worth. The punctuation between
-        /// Turns is a rule in the feed and stays one here.
+        /// A hairline at the floor height, whatever the row is worth. The punctuation between Turns
+        /// is a rule in the feed and stays one here.
         case rule
-        /// The whole width of the lane, inset and all. Nothing else takes this shape, which is how
-        /// a needs-you row is found without reading a colour.
-        case band
     }
 
+    /// How a mark of this ink is drawn where the row does not say otherwise — see
+    /// `MinimapRowMark.shape`, which a question's card uses to stroke its own border around filled
+    /// words.
     var shape: Shape {
         switch self {
         case .prompt, .message, .thought, .command, .added, .removed, .failure, .unreadable,
-             .link: .bar
+             .link, .attention: .bar
         case .media, .table: .frame
-        case .attention: .band
         case .boundary: .rule
         }
     }

@@ -21,6 +21,8 @@ enum MinimapRowShape: Equatable, Sendable {
     /// A run of pictures. The lane wraps that many frames across itself the way the row wraps that
     /// many thumbnails across the column, so a turn that rendered six shots reads as six shots.
     case shots(count: Int)
+    /// A question, as the bordered card the feed draws it in — see `MinimapAskCard`.
+    case card(MinimapAskCard)
     /// The whole row, at its full width and height — the punctuation between Turns, and the rules
     /// that read the same way.
     case whole(FeedInk)

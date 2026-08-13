@@ -29,6 +29,18 @@ struct FeedAsk: Equatable, Sendable {
         isPending ? .attention : .message
     }
 
+    /// The card as the overview lane draws it: the same words at the same indents, and the ink read
+    /// HERE so the lane cannot disagree with the row about which questions are still waiting.
+    var card: MinimapAskCard {
+        MinimapAskCard(
+            questions: questions.map {
+                MinimapAskCard.Question(text: $0.text, options: $0.options)
+            },
+            ink: ink,
+            isRuled: isPending,
+        )
+    }
+
     /// Which of the offered options the answer named, or `nil`.
     ///
     /// DERIVED and deliberately weak: the answer is prose, not a field naming an option, so the

@@ -117,22 +117,39 @@ struct MinimapRowTests {
         #expect(Self.parts(.call(failed)).allSatisfy { $0.ink == .failure })
     }
 
-    /// D25's map may never depend on colour alone, so the row waiting on somebody is the one thing
-    /// in the lane with a shape of its own: it crosses the whole width where everything else stands
-    /// off both edges.
+    /// D25's map may never depend on colour alone, so the row waiting on somebody is still the one
+    /// thing in the lane with a shape of its own — but that shape is now the card the feed draws: a
+    /// frame across the whole measure with the words inside it, not a slab of the loudest colour
+    /// the app has.
     @Test
-    func `a question waiting on somebody crosses the lane`() {
-        let ask = FeedAsk(ask: Ask(questions: []), isAnswered: false, answer: nil)
-        #expect(Self.shape(.ask(ask)) == .whole(.attention))
-        #expect(FeedInk.attention.shape == .band)
+    func `a question is the card the feed draws it in`() {
+        let asked = Ask(questions: [Ask.Question(text: "Which reading?", options: ["One", "Two"])])
+        let ask = FeedAsk(ask: asked, isAnswered: false, answer: nil)
+        #expect(Self.shape(.ask(ask)) == .card(MinimapAskCard(
+            questions: [MinimapAskCard.Question(text: "Which reading?", options: ["One", "Two"])],
+            ink: .attention,
+            isRuled: true,
+        )))
+        let marks = Self.shape(.ask(ask)).marks(across: 400, height: 90)
+        // The card's own border, stroked across the whole measure, with the words filled inside it.
+        #expect(marks.first == MinimapRowMark(
+            y: 0, height: 90, from: 0, to: 400, ink: .attention, shape: .frame,
+        ))
+        #expect(marks.dropFirst().allSatisfy { $0.drawn == .bar && $0.from > 0 })
+        // The mark the question opens with, its words, and the two options under them.
+        #expect(marks.count == 5)
     }
 
     /// The row goes quiet the moment something answers it, and the lane has to go quiet with it — a
-    /// lane still amber beside a settled question is the map disagreeing with the reading.
+    /// lane still amber beside a settled question is the map disagreeing with the reading. It loses
+    /// its rule with the colour, because the feed's settled card keeps none either.
     @Test
-    func `a question somebody answered stops taking attention ink`() {
+    func `a question somebody answered stops taking attention ink and its rule`() {
         let settled = FeedAsk(ask: Ask(questions: []), isAnswered: true, answer: "Both")
-        #expect(Self.shape(.ask(settled)) == .whole(.message))
+        #expect(Self.shape(.ask(settled)) == .card(MinimapAskCard(
+            questions: [], ink: .message, isRuled: false,
+        )))
+        #expect(Self.shape(.ask(settled)).marks(across: 400, height: 90).isEmpty)
     }
 
     @Test

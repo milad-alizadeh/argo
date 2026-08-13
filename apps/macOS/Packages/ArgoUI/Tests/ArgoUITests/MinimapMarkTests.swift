@@ -121,11 +121,9 @@ struct MinimapMarkTests {
         #expect(squeezed.marks(in: 0 ... 600).first?.y == tall.marks(in: 0 ... 600).first?.y)
     }
 
-    /// Marks that share a line sit BESIDE each other, not under each other, so the floor that thins
-    /// a
-    /// compressed paragraph must leave them alone. It did not: a list drew four markers and no
-    /// words,
-    /// and every link accent in the reading was dropped with them.
+    /// Marks that share a line sit BESIDE each other rather than under each other, so the floor
+    /// that thins a compressed paragraph must leave them alone. It did not: a list drew four
+    /// markers and no words, and every link accent in the reading went with them.
     @Test
     func `marks sharing a line are all drawn`() {
         let lane = Self.geometry(Self.reading([

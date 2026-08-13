@@ -44,7 +44,7 @@ private extension FeedRow.Content {
         // rather than answering for it here: a question that has been answered goes quiet in the
         // row, and the lane has to go quiet with it.
         case let .gallery(gallery): .shots(count: gallery.shots.count)
-        case let .ask(ask): .whole(ask.ink)
+        case let .ask(ask): .card(ask.card)
         case let .mark(mark): .whole(mark.ink)
         }
     }

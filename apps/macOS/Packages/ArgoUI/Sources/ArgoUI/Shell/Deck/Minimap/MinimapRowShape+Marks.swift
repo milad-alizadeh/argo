@@ -20,6 +20,8 @@ extension MinimapRowShape {
             Self.line(parts, ink: ink, across: measure)
         case let .shots(count):
             Self.shots(count, across: measure)
+        case let .card(card):
+            Self.card(card, across: measure, height: height)
         case let .whole(ink):
             [MinimapRowMark(y: 0, height: height, from: 0, to: measure, ink: ink)]
         }
