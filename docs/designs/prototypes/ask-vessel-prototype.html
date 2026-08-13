@@ -20,6 +20,7 @@
     --overlay: #2E3136;
     --glass-tint: rgba(255,255,255,.06);
     --hover:      rgba(255,255,255,.045);
+    --control:    rgba(255,255,255,.06);
     --selected:   rgba(255,255,255,.058);
     --marked:     rgba(255,255,255,.07);
 
@@ -162,23 +163,31 @@
   .opt {
     display: flex; gap: var(--s-comfortable); align-items: flex-start; width: 100%;
     text-align: left; font: inherit; color: inherit; cursor: pointer;
-    background: rgba(255,255,255,.04);
+    /* `surface.control` is the role by name: the ground under a control on a surface which is
+       not the deck, which is exactly what an option row on the ask's ground is. */
+    background: var(--control);
     border: 1px solid var(--hairline); border-radius: var(--r-control);
     padding: var(--s-base) var(--s-comfortable);
-    transition: background 120ms ease, border-color 120ms ease;
+    /* ArgoMotion.selection — 0.14 easeOut. It is a selection. */
+    transition: background-image 140ms ease-out, border-color 140ms ease-out;
   }
-  .opt:hover { background: rgba(255,255,255,.08); border-color: var(--subtle); }
-  .opt:active { background: rgba(255,255,255,.11); }
+  /* Hover is the hover wash LAID OVER the control ground, the way SwiftUI stacks the two —
+     not a third opacity invented to stand for the pair. There is deliberately no pressed
+     state: one click answers, so it would be on screen for a few frames at most. */
+  .opt:hover { background-image: linear-gradient(var(--hover), var(--hover));
+               border-color: var(--subtle); }
   .opt .n {
     font-family: var(--mono); font-size: 11px; color: var(--text-3);
-    flex: none; min-width: 12px; text-align: center; margin-top: 1px;
+    flex: none; width: var(--marker-w); text-align: right; margin-top: 1px;
   }
   .opt .l { color: var(--text-1); }
   .opt .d { color: var(--text-3); font-size: 11px; margin-top: 1px; }
+  /* ArgoComposerVessel.askBoxSize — 14. A hit target, not an icon rung: the mark inside it
+     rides the icon scale at `inline`, and this is the box a pointer has to find. */
   .opt .box {
     width: 14px; height: 14px; border-radius: var(--r-marker); border: 1px solid var(--strong);
     flex: none; margin-top: 1px; display: grid; place-items: center;
-    font-size: 9px; color: var(--on-accent);
+    font-size: 10px; color: var(--on-accent);
   }
   .opt.on { background: var(--attention-wash); border-color: var(--attention-rim); }
   .opt.on .n { color: var(--attention); }
@@ -190,7 +199,7 @@
   .taken { display: flex; gap: var(--s-comfortable); align-items: flex-start;
            padding: var(--s-tight) 0; }
   .taken .n { font-family: var(--mono); font-size: 11px; color: var(--text-3);
-              flex: none; min-width: 12px; text-align: center; margin-top: 2px; }
+              flex: none; width: var(--marker-w); text-align: right; margin-top: 2px; }
   .taken .l { color: var(--text-1); }
   .taken.quiet .l { color: var(--text-off); }
   .taken .tick { color: var(--attention); margin-left: var(--s-tight); }
@@ -203,13 +212,16 @@
   .fieldbox {
     flex: 1; display: flex; align-items: center;
     height: var(--decision-h); flex: 1 1 auto;
+    /* No ground of its own: ComposerField draws none either, and a second fill inside the
+       ask's own wash reads as a well cut into it. */
     border: 1px solid var(--hairline); border-radius: var(--r-control);
-    padding: 0 var(--s-comfortable); background: rgba(0,0,0,.18);
+    padding: 0 var(--s-comfortable);
   }
   .fieldbox:focus-within { border-color: var(--accent); }
+  /* ArgoTypography.body on ArgoFeedRow.lineHeight — 13 set at 20, the feed's own rhythm. */
   .field {
     width: 100%; background: none; border: none; color: var(--text-1);
-    font: 13px/1.45 var(--sans); outline: none;
+    font: 13px/20px var(--sans); outline: none;
   }
   .field::placeholder { color: var(--text-off); }
 
@@ -220,7 +232,7 @@
     border: none; border-radius: var(--r-control); cursor: pointer;
     font: 500 12px var(--sans); background: var(--accent); color: var(--on-accent);
   }
-  .answer[disabled] { background: rgba(255,255,255,.07); color: var(--text-off); cursor: default; }
+  .answer[disabled] { background: var(--marked); color: var(--text-off); cursor: default; }
   .keycap {
     font-family: var(--mono); font-size: 11px; background: var(--marked);
     padding: var(--s-hair) var(--s-tight); border-radius: var(--r-marker);
@@ -676,9 +688,21 @@ document.addEventListener('keydown', e => {
   /* esc is deliberately unbound: an ask has no refusal. */
 });
 
-const fromURL = new URLSearchParams(location.search).get('case');
+const params = new URLSearchParams(location.search);
+const fromURL = params.get('case');
 if (fromURL && CASES[fromURL]) caseKey = fromURL;
 reset();
+
+/* The settled row needs a link of its own — it is a state `pixel-review` has to judge, and a
+   state you cannot link to is a state nobody re-checks. `&answer=2` answers the first question
+   with option 2; `&answer=2,1` answers a two-question call. */
+(params.get('answer') || '').split(',').forEach((raw, i) => {
+  const n = Number(raw);
+  const q = theCase().questions[i];
+  if (!q || !(n >= 1) || n > q.options.length) return;
+  answers[i] = { ordinals: [n], other: null };
+});
+
 draw();
 </script>
 </body>
