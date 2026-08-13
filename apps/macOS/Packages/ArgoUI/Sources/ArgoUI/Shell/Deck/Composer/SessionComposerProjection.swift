@@ -36,6 +36,11 @@ enum SessionComposerProjection {
         /// itself, and the Hub's presentation has never heard of the drive port. `false` draws no
         /// `+` at all and refuses a drop with the reason (design decision 9).
         let canAttach: Bool
+        /// Whether a `/command` sent to this Session fires the CLI's own command handling (#685).
+        /// It comes IN for the reason `canAttach` does, and it is read PER SESSION: `claude`
+        /// declares it and `codex` does not, so a joint answer would take the menu off both.
+        /// `false` draws no menu and no command section anywhere — absent, not disabled.
+        let canRunCommands: Bool
     }
 
     /// A composer only for a Session Argo can put keystrokes to: managed, and not over. Everything
@@ -47,6 +52,7 @@ enum SessionComposerProjection {
     static func composer(
         for session: CockpitPresentation.Session?,
         canAttach: Bool = false,
+        canRunCommands: Bool = false,
     )
         -> Composer? {
         guard let session, unavailable(for: session) == nil else { return nil }
@@ -61,6 +67,7 @@ enum SessionComposerProjection {
             modeDidNotTake: session.modeDidNotTake,
             lostTurn: session.lostTurn,
             canAttach: canAttach,
+            canRunCommands: canRunCommands,
         )
     }
 

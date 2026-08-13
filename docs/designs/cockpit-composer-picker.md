@@ -98,7 +98,7 @@ except where it says *measured*.
 | shadow marker | the same `badge` role in `state.attention` |
 | matched characters | ink `accentBright`, weight `semibold` |
 | hover | `surface.hover` (0.045), no edge |
-| keyboard cursor | `surface.marked` (0.07) **plus a leading Ion Blue edge at `ArgoStroke.indicator` (2)**. On the cursor row the description lifts to `secondary`, which is `TextRoles.marked(on:)`'s own floor |
+| keyboard cursor | `surface.marked` (0.07), the ground alone. On the cursor row the description lifts to `secondary`, which is `TextRoles.marked(on:)`'s own floor. **Amended during #685's build: no leading Ion Blue edge.** The cockpit draws no leading rules on rows, and one here would have been the only one in the shell — the two grounds are still different inks, which is what the rule below actually asks for |
 | file row | name at `machine`, then the directory at `machineCaption` in `tertiary`, **cut from the left** — a nine-segment path is a column of identical prefixes |
 
 **A section header** — `CommandMenuSection`
@@ -200,7 +200,7 @@ more.
 | `285px` list ceiling | **derive** | 10 rows + one header = **294** |
 | `5px` waiting dot | snap | `ArgoLayout.statusDotSize` (6) |
 | `268px` `+` menu width | **dropped** | the menu hugs its rows; a stated width is re-measured every time a word changes |
-| `rgba(62,155,255,.18)` cursor ground + accent inset border | snap | `surface.marked` + Ion Blue edge at `ArgoStroke.indicator` — what `ArgoStroke`'s own doc says selection is |
+| `rgba(62,155,255,.18)` cursor ground + accent inset border | ground snapped, **border dropped** | `surface.marked` alone (amended during #685's build — see the cursor row above) |
 | `rgba(255,255,255,.045)` hover | snap, exact | `surface.hover` |
 | accent on matched characters | snap, exact | `accentBright` |
 | italic on an absent description | **dropped** | the contract has no slant |

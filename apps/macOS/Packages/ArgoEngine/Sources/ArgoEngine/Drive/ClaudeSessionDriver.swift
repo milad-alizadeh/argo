@@ -32,7 +32,7 @@ struct ClaudeSessionDriver: SessionDriver {
     /// Verified against the real CLI, not reasoned about: a `/command` inside the bracketed-paste
     /// burst `send` writes reaches the same input machinery typing reaches, and fires (#589). The
     /// assertion lives in `LiveCommandTests`, because this constant is only as true as that run.
-    var canRunCommands: Bool {
+    func canRunCommands(for _: String) -> Bool {
         true
     }
 

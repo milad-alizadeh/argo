@@ -56,6 +56,12 @@ public struct CockpitActions {
     /// Answers with the fresh Session's id, `nil` where no handoff happened — the app performs
     /// and the shell decides what to point at (`CockpitNavigationModel.session` is not public).
     public let handOffSession: (String, Int?) async -> String?
+    /// Every skill installed for the active Project, read the way the CLI reads them (#685).
+    ///
+    /// Performed by the app layer for the reason the Project intents above are: it walks
+    /// directories, and no view in `ArgoUI` may. Answered fresh on every call and nothing cached —
+    /// that is what puts a skill installed mid-Session in the very next list.
+    public var skills: () -> [Skill] = { [] }
     /// Everything the shell asks a Session to DO, through the engine's port (ADR-0024, #633).
     /// Unlike the Project intents above, none of it is the app layer's to perform — it reaches no
     /// panel and no Finder, so there is nothing here for a closure to stand in front of.
@@ -107,6 +113,7 @@ public struct CockpitActions {
         clearLostTurn: @escaping (String) -> Void = { _ in },
         handOffSession: @escaping (String, Int?) async -> String?,
         drive: any SessionDriver,
+        skills: @escaping () -> [Skill] = { [] },
     ) {
         self.refreshCheckout = refreshCheckout
         self.retryConnection = retryConnection
@@ -124,5 +131,6 @@ public struct CockpitActions {
         self.clearLostTurn = clearLostTurn
         self.handOffSession = handOffSession
         self.drive = drive
+        self.skills = skills
     }
 }

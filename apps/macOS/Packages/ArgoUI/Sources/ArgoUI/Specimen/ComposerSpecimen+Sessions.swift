@@ -17,6 +17,7 @@ extension ComposerSpecimen {
         modeDidNotTake: nil,
         lostTurn: nil,
         canAttach: true,
+        canRunCommands: false,
     )
 
     /// The same Session on an adapter that declares no attachments (#540): no `+` on the footer at
@@ -32,6 +33,7 @@ extension ComposerSpecimen {
         modeDidNotTake: nil,
         lostTurn: nil,
         canAttach: false,
+        canRunCommands: false,
     )
 
     /// The same Session mid-Turn: the field invites a follow-up rather than a message, and what is
@@ -46,6 +48,7 @@ extension ComposerSpecimen {
         modeDidNotTake: nil,
         lostTurn: nil,
         canAttach: true,
+        canRunCommands: false,
     )
 
     /// The same vessel on a Session that has stopped asking about two tools (#572). Its own state
@@ -60,6 +63,7 @@ extension ComposerSpecimen {
         modeDidNotTake: nil,
         lostTurn: nil,
         canAttach: true,
+        canRunCommands: false,
     )
 
     /// The same Session sitting where the ladder has no rung — `claude` in `default`, which
@@ -75,6 +79,7 @@ extension ComposerSpecimen {
         modeDidNotTake: nil,
         lostTurn: nil,
         canAttach: true,
+        canRunCommands: false,
     )
 
     /// The same Session after a rung that did not land (#629): the picker is back on the rung the
@@ -90,6 +95,7 @@ extension ComposerSpecimen {
         modeDidNotTake: .auto,
         lostTurn: nil,
         canAttach: true,
+        canRunCommands: false,
     )
 
     /// The same Session in `dontAsk`, whose boundary is an allowlist Argo cannot see — so no rung
@@ -104,5 +110,23 @@ extension ComposerSpecimen {
         modeDidNotTake: nil,
         lostTurn: nil,
         canAttach: true,
+        canRunCommands: false,
+    )
+
+    /// The same Session on an adapter that DOES declare the command surface, which `claude`'s does
+    /// and `codex`'s does not (#685). Every case above says `false`, so the `/` menu is a thing
+    /// only the cases about it can draw — which is the honest default: a picker whose rows do
+    /// nothing is worse than no picker.
+    static let commands = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: composer.placeholder,
+        facts: composer.facts,
+        standingAllows: [],
+        isRunning: false,
+        mode: composer.mode,
+        modeDidNotTake: nil,
+        lostTurn: nil,
+        canAttach: true,
+        canRunCommands: true,
     )
 }

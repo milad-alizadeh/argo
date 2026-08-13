@@ -61,6 +61,7 @@ struct FeedColumn: View {
                 lostTurnSeen: intents.lostTurnSeen,
                 stop: intents.stop,
                 setMode: intents.setMode,
+                commands: intents.commands,
                 draft: intents.draft,
             )
             .modifier(FloatingVessel())

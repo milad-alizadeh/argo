@@ -35,14 +35,9 @@ struct QueuedTurnChip: View {
         .padding(.horizontal, ArgoSpacing.snug)
         .frame(height: ArgoComposerVessel.queuedTurnHeight)
         .background(argo.color.surface.control, in: .rect(cornerRadius: ArgoRadius.control))
-        // The accent rule on the leading edge, not a tinted fill: a wash at that contrast would
-        // read as the selected thing. A capsule and not a rectangle, because the row's corners are
-        // rounded and a square rule clipped to them loses its ends.
-        .overlay(alignment: .leading) {
-            Capsule()
-                .fill(argo.color.interaction.accent)
-                .frame(width: ArgoStroke.indicator)
-        }
+        // No leading accent rule. It carried nothing the `QUEUED` label on the row does not already
+        // say, and the cockpit draws no leading rules on rows anywhere — one drawn here would be
+        // the only one in the shell.
         .clipShape(.rect(cornerRadius: ArgoRadius.control))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(Self.label): \(turn.text)")

@@ -21,6 +21,7 @@ extension CockpitView {
             stop: stop(driven),
             setMode: setMode(driven),
             spawnBeside: spawnBeside,
+            commands: actions.skills,
             draft: draft(for: driven),
         )
     }

@@ -23,6 +23,11 @@ struct DeckIntents {
     var setMode: (SessionMode) async throws -> Void = { _ in }
     /// The exit the undriveable line offers: a fresh Session in the shown one's folder.
     var spawnBeside: () async -> Void = {}
+    /// Every skill installed for this Project (#685). A closure and not a value, because it is READ
+    /// AFRESH each time the menu opens — that is what puts a skill installed mid-Session in the
+    /// list with no watcher and no restart. The filesystem stays on this side of it: what the view
+    /// holds is whatever value the last call answered.
+    var commands: () -> [Skill] = { [] }
     /// What the composer is holding. A binding handed in from ABOVE the deck's Session identity:
     /// `.id(session)` discards everything under it on a switch, and an unsent draft must survive
     /// one (#539).

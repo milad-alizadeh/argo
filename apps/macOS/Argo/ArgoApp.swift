@@ -168,6 +168,11 @@ struct ArgoApp: App {
             clearLostTurn: { id in cockpit.hub.clearLostTurn(for: id) },
             handOffSession: { id, issue in await cockpit.handOff(sessionID: id, issue: issue) },
             drive: cockpit.hub.driver,
+            // Read on every call, off the Project the window is pointed at — which is what puts a
+            // skill installed while a Session is open in the very next list (#685). The Hub's own
+            // folder rather than the registry's record: an unregistered folder is still a checkout
+            // with `.claude/skills` in it.
+            skills: { SkillCatalog(projectURL: cockpit.hub.project.url).skills() },
         )
     }
 }
