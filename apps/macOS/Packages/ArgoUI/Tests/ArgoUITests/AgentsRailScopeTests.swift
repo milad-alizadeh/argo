@@ -4,57 +4,73 @@ import Foundation
 import Testing
 
 /// The rail as a CONTROL: which chip can be scoped onto, what the one feed reads once it is, and
-/// how
-/// the rail's own column answers being collapsed.
+/// how the rail's own column answers being collapsed.
+///
+/// What a chip SAYS is `FeedAgentsTests` — the projection's claims stay there, so the two suites do
+/// not both own the same fact.
 @Suite("Agents rail scope")
 struct AgentsRailScopeTests {
-    private static let reported = Usage(
-        inputTokens: 1200,
-        outputTokens: 3400,
-        cacheReadTokens: 139_000,
-        cacheCreationTokens: 0,
-    )
-
-    /// The join key, carried from the delegating call's result to the chip. Without it a chip has
-    /// no
-    /// reading to be scoped onto, whatever else Argo holds.
-    @Test
-    func `a landed subagent carries the id its result named`() {
-        #expect(agents(in: handedOver()).map(\.subagentID) == [nil, "a-back"])
-    }
-
-    /// The id arrives WITH the result, so a chip for work still in flight has none — and a rail
-    /// full
-    /// of running Agents is the state the rail exists for.
-    @Test
-    func `a subagent still working names no id`() {
-        #expect(agents(in: handedOver()).first?.subagentID == nil)
-    }
-
     @Test
     func `an agent whose reading Argo holds is scoped onto its own rows`() throws {
-        let landed = try #require(agents(in: handedOver()).last)
+        let landed = try #require(agents(in: FeedFixture.handedOver(subagent: Self.read)).last)
 
-        #expect(readings.rows(of: landed)?.map(\.content) == [.message("The fold holds.")])
+        #expect(readings.rows(of: landed)?.map(\.content) == [.message(Self.said)])
     }
 
     /// Degrade-down: no reading is `nil` and not an empty one, because the two are different claims
-    /// —
-    /// no rows would say the Agent did nothing. It is what keeps the chip a quiet row rather than a
-    /// control that empties the feed.
+    /// — no rows would say the Agent did nothing. It is what keeps the chip a quiet row rather than
+    /// a control that empties the feed.
     @Test
     func `an agent Argo has not read scopes onto nothing rather than onto no rows`() throws {
-        let running = try #require(agents(in: handedOver()).first)
+        let running = try #require(agents(in: FeedFixture.handedOver()).first)
 
         #expect(readings.rows(of: running) == nil)
+    }
+
+    /// The rail is the way back out of a Subagent, and it leaves the deck once nothing is running —
+    /// so a scope that outlived it would strand the reader in a feed with no chip left to click.
+    @Test
+    func `a scope drops back to the session once no agent is still running`() {
+        let landed = FeedProjection.rows(from: settled())
+
+        #expect(readings.rows(
+            under: .subagent(0),
+            of: FeedAgents.all(in: landed),
+            otherwise: landed,
+        ) == landed)
+    }
+
+    /// The same fallback for an Agent that has left the list — a live transcript can be re-read,
+    /// and a scope names a delegation rather than holding one.
+    @Test
+    func `a scope naming an agent the rail no longer lists drops back to the session`() {
+        let session = FeedProjection.rows(from: FeedFixture.handedOver(subagent: Self.read))
+
+        #expect(readings.rows(
+            under: .subagent(99),
+            of: FeedAgents.all(in: session),
+            otherwise: session,
+        ) == session)
+    }
+
+    @Test
+    func `a scope on a read agent draws that agent's rows over the session's`() {
+        let session = FeedProjection.rows(from: FeedFixture.handedOver(subagent: Self.read))
+        let scoped = readings.rows(
+            under: .subagent(1),
+            of: FeedAgents.all(in: session),
+            otherwise: session,
+        )
+
+        #expect(scoped.map(\.content) == [.message(Self.said)])
     }
 
     /// The rail lists the SESSION's Subagents whatever the feed beside it is scoped to. Read off a
     /// scoped feed it would empty itself the moment somebody used it.
     @Test
     func `the rail's agents are the session's, not the scoped reading's`() {
-        let session = FeedProjection.rows(from: handedOver())
-        let scoped = FeedProjection.rows(from: [.message(markdown: "The fold holds.")])
+        let session = FeedProjection.rows(from: FeedFixture.handedOver(subagent: Self.read))
+        let scoped = FeedProjection.rows(from: [.message(markdown: Self.said)])
 
         #expect(zoning(feed: scoped, agents: FeedAgents.all(in: session)).agents.count == 2)
     }
@@ -85,19 +101,23 @@ struct AgentsRailScopeTests {
 
     // MARK: - Fixtures
 
+    /// The one Subagent this suite has a reading of, and the one line that reading holds.
+    private static let read = "a-back"
+    private static let said = "The fold holds."
+
     private let readings = FeedAgentReadings(
-        events: ["a-back": [.message(markdown: "The fold holds.")]],
+        events: [read: [.message(markdown: said)]],
     )
 
     private func agents(in events: [TranscriptEvent]) -> [FeedAgent] {
         FeedAgents.all(in: FeedProjection.rows(from: events))
     }
 
-    private func handedOver() -> [TranscriptEvent] {
+    /// One delegation, answered: nothing is running, so the rail is off the deck.
+    private func settled() -> [TranscriptEvent] {
         [
-            .toolCall(FeedFixture.call("away", tool: "Task", kind: .delegate, naming: "review")),
             .toolCall(FeedFixture.call("back", tool: "Task", kind: .delegate, naming: "verify")),
-            .toolCallOutcome(FeedFixture.spent("back", Self.reported, subagent: "a-back")),
+            .toolCallOutcome(FeedFixture.spent("back", FeedFixture.delegated, subagent: Self.read)),
         ]
     }
 

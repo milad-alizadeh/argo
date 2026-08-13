@@ -65,6 +65,21 @@ struct FeedAgentsTests {
         #expect(running?.startedAtMs == 1_733_000_000_000)
     }
 
+    /// The rail's join key onto a Subagent's own record, carried from the result that named it. A
+    /// chip without one has no reading to be scoped onto, whatever else Argo holds.
+    @Test
+    func `a landed subagent carries the id its result named`() {
+        #expect(agents(in: FeedFixture.handedOver(subagent: "a-back")).map(\.subagentID)
+            == [nil, "a-back"])
+    }
+
+    /// The id arrives WITH the result, so a chip for work still in flight has none — and a rail
+    /// full of running Agents is the state the rail exists for.
+    @Test
+    func `a subagent still working names no id`() {
+        #expect(agents(in: FeedFixture.handedOver(subagent: "a-back")).first?.subagentID == nil)
+    }
+
     private func timed() -> [TranscriptEvent] {
         [
             .toolCall(ToolCall(

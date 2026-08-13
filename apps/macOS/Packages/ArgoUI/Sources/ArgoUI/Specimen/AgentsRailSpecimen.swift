@@ -6,16 +6,14 @@ import SwiftUI
 /// seam, and subordinate to the reading. A rail rendered in its own frame can satisfy both in prose
 /// and neither in pixels, which is how the discarded attempt passed its own review (#378).
 struct AgentsRailSpecimen: View {
-    /// Which state this renders. Each is a state a still can settle; the fan-out under the canopy
-    /// is
+    /// Which state this renders. Each is one a still can settle; the fan-out under the canopy is
     /// `AgentsFanOutSpecimen`, because that one needs a scroll position.
     enum Subject {
         /// One Agent, still out. A list of one, with the count line over it.
         case sole
         /// The feed scoped onto one Agent. Two claims in one still: that the selected chip is
         /// legible beside the ones that are not, and that the SAME feed changed rather than a
-        /// second
-        /// one appearing.
+        /// second one appearing.
         case scoped
         /// The rail as its dot strip, with the feed taking the width back.
         case collapsed

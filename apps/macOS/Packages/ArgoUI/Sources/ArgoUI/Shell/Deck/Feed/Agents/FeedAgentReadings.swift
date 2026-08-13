@@ -24,4 +24,22 @@ struct FeedAgentReadings: Equatable, Sendable {
         guard let id = agent.subagentID, let read = events[id] else { return nil }
         return FeedProjection.rows(from: read)
     }
+
+    /// What the deck's one feed draws under a scope: the Subagent's rows, or the Session's.
+    ///
+    /// A scope is honoured only while the rail is still LISTING — the rail is the only way back out
+    /// of a Subagent, so a scope that outlived it would strand the reader in a feed with no chip to
+    /// click. A fan-out whose last delegation lands takes the rail off screen, and the reading has
+    /// to come back with it.
+    ///
+    /// It also falls back for an Agent that has left the list, and for one whose reading has gone —
+    /// both live-transcript cases, since a chip is only offered where there was a reading to offer.
+    func rows(under scope: FeedScope, of agents: [FeedAgent], otherwise feed: [FeedRow])
+        -> [FeedRow] {
+        guard agents.contains(where: \.isRunning),
+              let selected = scope.agent,
+              let agent = agents.first(where: { $0.id == selected }),
+              let rows = rows(of: agent) else { return feed }
+        return rows
+    }
 }

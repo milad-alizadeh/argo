@@ -15,8 +15,8 @@ struct FeedAgent: Equatable, Sendable, Identifiable {
     /// is reported until the delegating call comes back.
     let spend: Usage?
     /// The CLI's own id for this subagent, which is what its reading is keyed by — see
-    /// `FeedAgentScope`. `nil` while it is still working: the name arrives with the result, so a
-    /// running chip is selectable and has nothing to show yet.
+    /// `FeedAgentReadings`. `nil` while it is still working, because the name arrives with the
+    /// result — so a running chip has nothing to key a reading by and is the UNSELECTABLE one.
     var subagentID: String?
     /// How long it ran, as the host measured it. `nil` while it is still working — nothing reports
     /// a total until the delegating call comes back, which is when `spend` arrives too.

@@ -58,15 +58,9 @@ struct DeckContentRow: View {
     }
 
     /// The rows the reading zones actually draw: the Session's own, or the selected Subagent's.
-    ///
-    /// A Subagent whose reading has gone falls back to the Session rather than to nothing. The rail
-    /// only offers a chip it has a reading for, so this is the live-transcript case where one is
-    /// withdrawn under a scope that was already open.
+    /// Every fallback, and why each one exists, is `FeedAgentReadings.rows(under:of:otherwise:)`.
     private var reading: [FeedRow] {
-        guard let selected = rail.scope.agent,
-              let agent = agents.first(where: { $0.id == selected }),
-              let rows = rail.readings.rows(of: agent) else { return feed }
-        return rows
+        rail.readings.rows(under: rail.scope, of: agents, otherwise: feed)
     }
 
     var body: some View {
@@ -144,11 +138,17 @@ struct DeckContentRow: View {
     /// Dismisses whatever is over what the reader was reading, innermost first. Answered here as
     /// well as on the lightbox: `onExitCommand` only fires for a view in the responder chain, and
     /// nothing focuses the lightbox on the way in.
+    ///
+    /// The SCOPE is the outermost rung, taken only once nothing is over the reading: a Subagent's
+    /// feed is a place the reader navigated to, so Escape leaves it the way it leaves the other two
+    /// — and that makes the rail's chip the second way back rather than the only one.
     private func dismissTopmost() {
         if selection.lit != nil {
             selection.darken(returningInto: reading)
-        } else {
+        } else if selection.open != nil {
             selection.close()
+        } else {
+            rail.scope = .session
         }
     }
 

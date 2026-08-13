@@ -94,6 +94,25 @@ enum FeedFixture {
     static let onePixelPNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z"
         + "8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="
 
+    /// Two handovers, the second answered: one Subagent still working and one landed, which is the
+    /// pair every claim about the rail is made against. Shared, because two suites make claims
+    /// about the same two chips — the projection's, and the rail's own.
+    static func handedOver(subagent: String? = nil) -> [TranscriptEvent] {
+        [
+            .toolCall(call("away", tool: "Task", kind: .delegate, naming: "review")),
+            .toolCall(call("back", tool: "Task", kind: .delegate, naming: "verify")),
+            .toolCallOutcome(spent("back", delegated, subagent: subagent)),
+        ]
+    }
+
+    /// What a landed delegation's result reported spending — the whole child's subtree, priced.
+    static let delegated = Usage(
+        inputTokens: 1200,
+        outputTokens: 3400,
+        cacheReadTokens: 139_000,
+        cacheCreationTokens: 0,
+    )
+
     /// Every gallery a stream produced, in order.
     static func galleries(in rows: [FeedRow]) -> [FeedGallery] {
         rows.compactMap { row in
