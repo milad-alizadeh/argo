@@ -42,10 +42,14 @@ reload.
   never be the thing you press is a control that lies.
 - **Free-form asks** take a field inside the row, with the question above it. Never in the
   composer: the composer talks to the Session, it does not answer it.
-- **Many-of questions** toggle their rows and keep an `Answer` button, because there a second
-  click is a second answer rather than a correction. **Several questions in one call** are one
-  ground with one mark each, answered top to bottom.
-- **`Other`** is the last row, unnumbered, and opens the same field the free-form branch uses.
+- **Many-of questions** are checkboxes with the text field open beside them and an `Answer`
+  button: ticking two and adding a word is ONE answer, so the field is not a separate act
+  behind an `Other…` row. They keep the button because there a second click is a second answer
+  rather than a correction. **Several questions in one call** are one ground with one mark
+  each, answered top to bottom.
+- **`Other`** is the last row on a one-of question, unnumbered, and opens the same field —
+  there the field REPLACES a pick rather than adding to it, which is why it is a row there and
+  always open on a many-of one.
 - **Keyboard**: the digits the rows already draw pick; `⏎` sends where there is something to
   send. **`esc` is unbound** — an ask has no refusal, which is exactly what separates it from
   a Permission.

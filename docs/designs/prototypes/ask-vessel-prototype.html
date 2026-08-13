@@ -508,10 +508,10 @@ function askCard(c) {
       block.appendChild(settled(q, i));
     } else {
       if (q.options.length) block.appendChild(options(q, i));
-      /* The free-form branch, and the Other answer once it is opened, take a field in the row
-         — never in the composer, which is for talking to the Session, not answering it. */
-      if (!q.options.length || othering[i]) block.appendChild(typedRow(q, i));
-      else if (q.multi) block.appendChild(confirmRow(i));
+      /* The field is in the ROW, never in the composer — the composer is for talking to the
+         Session, not for answering it. A many-of question keeps it open beside the boxes,
+         because there ticking some and adding a word is ONE answer rather than two. */
+      if (!q.options.length || q.multi || othering[i]) block.appendChild(typedRow(q, i));
     }
     card.appendChild(block);
   });
@@ -534,11 +534,15 @@ function options(q, i) {
   });
 
   /* `Other` carries NO number. The feed numbers only what was offered, so a numbered Other
-     would put these ordinals one past the ones the answer names. */
-  const other = el('button', 'opt other');
-  other.innerHTML = `<span class="n"></span><span class="l">Other…</span>`;
-  other.onclick = () => { othering[i] = true; draw(); };
-  list.appendChild(other);
+     would put these ordinals one past the ones the answer names.
+     A one-of question opens it as a row, because there the field is a REPLACEMENT for a pick.
+     A many-of one draws the field beside the boxes instead — see `askCard`. */
+  if (!q.multi) {
+    const other = el('button', 'opt other');
+    other.innerHTML = `<span class="n"></span><span class="l">Other…</span>`;
+    other.onclick = () => { othering[i] = true; draw(); };
+    list.appendChild(other);
+  }
 
   return list;
 }
@@ -547,19 +551,9 @@ function typedRow(q, i) {
   const row = el('div', 'typed');
   row.appendChild(html(
     `<span class="fieldbox"><input class="field" data-q="${i}"
-      placeholder="${q.options.length ? 'Something else' : 'Type your answer'}"
+      placeholder="${!q.options.length ? 'Type your answer'
+                    : q.multi ? 'Anything else' : 'Something else'}"
       value="${esc(typed[i])}"></span>`));
-  const b = el('button', 'answer');
-  b.disabled = !canSubmit(i);
-  b.innerHTML = 'Answer <span class="keycap">⏎</span>';
-  b.onclick = () => submit(i);
-  row.appendChild(b);
-  return row;
-}
-
-function confirmRow(i) {
-  const row = el('div', 'typed');
-  row.appendChild(html(`<span class="hint" style="margin:0;flex:1">Pick as many as apply.</span>`));
   const b = el('button', 'answer');
   b.disabled = !canSubmit(i);
   b.innerHTML = 'Answer <span class="keycap">⏎</span>';
