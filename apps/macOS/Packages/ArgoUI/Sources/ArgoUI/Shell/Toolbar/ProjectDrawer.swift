@@ -85,15 +85,7 @@ struct ProjectDrawer: View {
                 .padding(.vertical, ArgoSpacing.base)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(.rect)
-                .overlay {
-                    if isFooterFocused {
-                        RoundedRectangle(cornerRadius: ArgoRadius.control)
-                            .strokeBorder(
-                                argo.color.interaction.focusRing,
-                                lineWidth: ArgoStroke.focus,
-                            )
-                    }
-                }
+                .argoFocusRing(isFooterFocused)
             }
             .buttonStyle(.plain)
             .focused($isFooterFocused)

@@ -127,6 +127,10 @@ struct DeckContentRow: View {
                 .frame(width: zoning.panelWidth.wrappedValue)
                 .focusable()
                 .focused(selection.focus, equals: .panel)
+                // Focusable so the keyboard can reach it, never ringed: the panel covers its own
+                // zone, so what has focus is evident without one — and the system effect draws on
+                // a click too, which is a keyboard cursor shown to a pointer (#533).
+                .focusEffectDisabled()
             }
             .transition(.move(edge: .trailing))
         }

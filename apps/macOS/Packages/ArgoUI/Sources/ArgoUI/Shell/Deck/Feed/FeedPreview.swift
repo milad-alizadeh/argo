@@ -25,6 +25,11 @@ struct FeedPreview: View {
     /// anywhere but at the foot of the lane.
     var held: FeedRow.ID?
 
+    /// Which row the reading opens with the keyboard cursor on. Set after building, for the reason
+    /// `naming` is: the cursor arrives with an arrow key and a still cannot press one, so this is
+    /// the only way to look at the ring #533 asked for.
+    var cursor: FeedRow.ID?
+
     /// Which row's evidence the preview opens on. A settable initial state for the same reason
     /// `SessionsDeck` takes one: the state belongs to the surface, and there is no other way to
     /// reach it without a click.
@@ -69,5 +74,12 @@ struct FeedPreview: View {
         }
         .argoDeckSurface()
         .argoAppearance()
+        // The table's own way in, not a back door: this is the call the deck makes when it hands
+        // the keyboard back to a row, and it puts the reading in the responder chain too.
+        .task {
+            if let cursor {
+                table.focus(onto: cursor)
+            }
+        }
     }
 }

@@ -28,7 +28,18 @@ import SwiftUI
 
     /// The row the keyboard is on. The table's own fact, not `FocusState`'s — the rows live in
     /// separate hosting hierarchies now, and a focus value none of them can resolve is noise.
-    var focusedRow: Int?
+    ///
+    /// Written by an arrow key and by the deck handing the keyboard back, and by nothing else: a
+    /// click moves it nowhere, which is what keeps the cursor below a keyboard cursor (#533).
+    var focusedRow: Int? {
+        didSet { redrawCursor(oldValue, focusedRow) }
+    }
+
+    /// Whether the keyboard is in the reading at all — see `FeedTableView.keyboardMoved`.
+    private(set) var hasKeyboard = false {
+        didSet { redrawCursor(focusedRow) }
+    }
+
     /// The full re-measure waiting for a width burst to go quiet — see `FeedSettle`.
     var settling: Task<Void, Never>?
 
@@ -148,7 +159,7 @@ import SwiftUI
         let rows = rows.filteredIndexSet { shown.indices.contains($0) }
         for row in rows {
             let cell = table.view(atColumn: 0, row: row, makeIfNecessary: false) as? FeedRowCell
-            cell?.host.rootView = model.content(at: row)
+            cell?.host.rootView = model.content(at: row, cursor: row == cursorRow)
         }
         guard remeasuring, !rows.isEmpty else { return }
         dropMeasuredHeights(rows)
@@ -158,6 +169,11 @@ import SwiftUI
             pass.duration = 0
             table.noteHeightOfRows(withIndexesChanged: rows)
         }
+    }
+
+    /// The keyboard arriving at the reading or leaving it — see `FeedTableView.keyboardMoved`.
+    func noteKeyboard(_ isHere: Bool) {
+        hasKeyboard = isHere
     }
 
     func visibleRows() -> IndexSet {

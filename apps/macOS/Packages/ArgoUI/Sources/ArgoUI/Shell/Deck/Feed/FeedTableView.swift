@@ -16,6 +16,26 @@ final class FeedTableView: NSTableView {
     var keyScrolled: (() -> Void)?
     /// The window's live resize ending — the moment the deferred full re-measure runs.
     var liveResizeEnded: (() -> Void)?
+    /// The keyboard arriving at the reading or leaving it. Reported because the row cursor is
+    /// drawn only while it is here: a ring on a row while the composer holds the keys is a cursor
+    /// pointing at the surface the reader is NOT working (#533).
+    var keyboardMoved: ((Bool) -> Void)?
+
+    override func becomeFirstResponder() -> Bool {
+        let arrived = super.becomeFirstResponder()
+        if arrived {
+            keyboardMoved?(true)
+        }
+        return arrived
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let left = super.resignFirstResponder()
+        if left {
+            keyboardMoved?(false)
+        }
+        return left
+    }
 
     override func keyDown(with event: NSEvent) {
         if event.specialKey == .upArrow {

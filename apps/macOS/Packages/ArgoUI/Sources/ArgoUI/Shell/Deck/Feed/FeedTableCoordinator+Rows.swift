@@ -13,7 +13,7 @@ extension FeedTableCoordinator: NSTableViewDataSource, NSTableViewDelegate {
         guard let model, shown.indices.contains(index) else { return nil }
         let cell = table.makeView(withIdentifier: FeedRowCell.reuse, owner: nil) as? FeedRowCell
             ?? FeedRowCell()
-        cell.host.rootView = model.content(at: index)
+        cell.host.rootView = model.content(at: index, cursor: index == cursorRow)
         return cell
     }
 
@@ -29,15 +29,38 @@ extension FeedTableCoordinator: NSTableViewDataSource, NSTableViewDelegate {
 }
 
 extension FeedTableCoordinator {
+    /// The row the cursor is actually drawn on. A focused row the keyboard has since left keeps
+    /// its place, so the reader who clicks back into the reading arrows on from where they were.
+    var cursorRow: Int? {
+        hasKeyboard ? focusedRow : nil
+    }
+
+    /// The rows whose cursor may have changed, re-drawn and never re-measured: the cursor is an
+    /// overlay, so a row is exactly as tall with one as without.
+    func redrawCursor(_ rows: Int?...) {
+        refresh(rows: IndexSet(rows.compactMap(\.self)), remeasuring: false)
+    }
+
     func step(focusBy delta: Int) {
         guard let table, !shown.isEmpty else { return }
-        let standing = focusedRow ?? table.rows(in: table.visibleRect).location
-        let next = min(max(standing + delta, 0), shown.count - 1)
-        focusedRow = next
-        table.scrollRowToVisible(next)
+        let next = focusedRow.map { $0 + delta } ?? landing(delta, in: table)
+        let landed = min(max(next, 0), shown.count - 1)
+        focusedRow = landed
+        table.scrollRowToVisible(landed)
         // A key is a hand too: arrowing up off the end has to break the follow latch, or the
         // next arriving row yanks the reading straight back to the bottom mid-read.
         reportFollowing()
+    }
+
+    /// Where the FIRST arrow key lands, when there is no cursor to step from.
+    ///
+    /// On a row the reader can already see, and not one step past it: the cursor is drawn now
+    /// (#533), so a first press that skipped the row under it would read as the key missing. Down
+    /// takes the top of the view and up the bottom, because that is the end each is reaching for —
+    /// a reading following the newest row is arrowed UP to start reading back through it.
+    private func landing(_ delta: Int, in table: NSTableView) -> Int {
+        let visible = table.rows(in: table.visibleRect)
+        return delta < 0 ? visible.location + max(visible.length - 1, 0) : visible.location
     }
 
     func activateFocusedRow() -> Bool {

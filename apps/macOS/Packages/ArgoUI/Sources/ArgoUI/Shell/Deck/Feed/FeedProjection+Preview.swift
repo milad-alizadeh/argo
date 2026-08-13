@@ -106,6 +106,11 @@ extension FeedProjection {
         }
     }
 
+    /// The prompt in that feed — the one row drawn narrower than the measure, so the one row whose
+    /// keyboard cursor has a shape of its own to claim (#533). The LAST one, because the first is
+    /// row zero and a still of it lands with the row's top edge under the reading's gutter.
+    static let previewPromptID = previewRows.last(where: \.isPrompt)?.id
+
     /// The collapsed run in that feed — three edits of one file, the only row whose panel holds
     /// more than one thing.
     static let previewRunCallID = previewRows.first { row in
