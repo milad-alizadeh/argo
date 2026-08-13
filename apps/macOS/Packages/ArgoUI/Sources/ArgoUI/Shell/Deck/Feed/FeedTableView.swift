@@ -16,8 +16,44 @@ final class FeedTableView: NSTableView {
     var keyScrolled: (() -> Void)?
     /// The window's live resize ending — the moment the deferred full re-measure runs.
     var liveResizeEnded: (() -> Void)?
+    /// Whether the reading is where the keyboard is, in the sense the row cursor is drawn on: the
+    /// keyboard is here AND the keyboard is what the reader is working with (#533).
+    var keyboardMoved: ((Bool) -> Void)?
+
+    /// How the reader is working. The app's one reader by default; a suite hands the table its own
+    /// rather than share a mutable global between cases.
+    var reader = ArgoFocusVisibility.shared
+
+    /// Arriving is not the same as arriving BY keyboard. A click that lands in the reading makes
+    /// this the first responder just as a Tab does, so which it was comes off the last event the
+    /// app saw — the same question every hand-drawn ring in the cockpit asks.
+    override func becomeFirstResponder() -> Bool {
+        let arrived = super.becomeFirstResponder()
+        if arrived {
+            keyboardMoved?(reader.isOn)
+        }
+        return arrived
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let left = super.resignFirstResponder()
+        if left {
+            keyboardMoved?(false)
+        }
+        return left
+    }
+
+    /// A click inside a reading the keyboard was ALREADY in — the one path no responder change
+    /// reports, and the one that left the ring standing under the pointer.
+    override func mouseDown(with event: NSEvent) {
+        super.mouseDown(with: event)
+        keyboardMoved?(false)
+    }
 
     override func keyDown(with event: NSEvent) {
+        // A key in the reading is the reader working it by keyboard, whether or not it moves the
+        // cursor — the counterpart of `mouseDown` below.
+        keyboardMoved?(true)
         if event.specialKey == .upArrow {
             stepFocus?(-1)
         } else if event.specialKey == .downArrow {

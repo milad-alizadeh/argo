@@ -22,6 +22,7 @@ enum DeckVessel: Equatable {
     static func resolve(
         for session: CockpitPresentation.Session?,
         canAttach: Bool,
+        canRunCommands: Bool = false,
     )
         -> DeckVessel {
         guard let session else { return .none }
@@ -32,7 +33,7 @@ enum DeckVessel: Equatable {
             return .prompt(prompt)
         }
         return SessionComposerProjection
-            .composer(for: session, canAttach: canAttach)
+            .composer(for: session, canAttach: canAttach, canRunCommands: canRunCommands)
             .map(DeckVessel.composer) ?? .none
     }
 

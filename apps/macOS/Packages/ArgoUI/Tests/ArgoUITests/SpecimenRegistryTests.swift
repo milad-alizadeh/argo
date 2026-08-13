@@ -42,6 +42,7 @@ struct SpecimenRegistryTests {
             SpecimenRegistry.feed,
             SpecimenRegistry.live,
             SpecimenRegistry.vessel,
+            SpecimenRegistry.commands,
             SpecimenRegistry.connect,
         ]
 

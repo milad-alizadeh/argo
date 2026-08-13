@@ -2,10 +2,11 @@ import SwiftUI
 
 /// The deck with one Session named at the top of it — one case per access posture.
 ///
-/// One posture per launch rather than three headers stacked, because what is being judged is a
-/// header IN a deck: whether a title reads as the largest line on the plane, whether the mark
-/// beside it stays quiet against a feed, and whether the zone still holds its own height when the
-/// mark is not there at all. Three of them on one screen would answer a different question.
+/// One posture per launch rather than three lines stacked, because what is being judged is the
+/// chrome IN a deck: whether the instruments stay quiet against a feed, whether the tab line still
+/// holds its own height when nothing is selected, and whether one material runs unbroken from the
+/// window's top edge to the line's hairline. Three of them on one screen would answer a different
+/// question.
 struct SessionHeaderSpecimen: View {
     let header: SessionHeaderProjection.Header
 

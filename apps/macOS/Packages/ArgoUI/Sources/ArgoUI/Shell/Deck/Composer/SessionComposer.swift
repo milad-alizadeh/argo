@@ -26,6 +26,9 @@ struct SessionComposer: View {
     /// and the seam is where the port's reason goes. Async besides, because the walk along the
     /// ring is (#653).
     var setMode: (SessionMode) async throws -> Void = { _ in }
+    /// Every skill installed for this Project, read afresh each time the `/` menu opens (#685).
+    /// The view holds only what this last answered, so no view reads the filesystem.
+    var commands: () -> [Skill] = { [] }
     @Binding var draft: ComposerDraft
     /// Holds the drag-over state open for a render — see `AttachmentDropTarget.isHeldOpen`.
     var isDropTargeted = false
@@ -35,6 +38,14 @@ struct SessionComposer: View {
     /// stamps later than this and takes the seam away.
     @State private var enteredAtMs = 0
 
+    /// The catalog as the last open read it, and where the keyboard is in the list it produced.
+    /// Both are the menu's own state and neither survives it closing.
+    @State private var catalog: [Skill] = []
+    @State private var cursor = CommandMenuCursor()
+    /// Whether Escape has put the menu away over a line that would still open one. Cleared by the
+    /// next keystroke, because the reader typing again is them asking for it back.
+    @State private var isDismissed = false
+
     init(
         composer: SessionComposerProjection.Composer,
         send: @escaping ComposerSend,
@@ -42,6 +53,7 @@ struct SessionComposer: View {
         lostTurnSeen: @escaping () -> Void = {},
         stop: @escaping () throws -> Void = {},
         setMode: @escaping (SessionMode) async throws -> Void = { _ in },
+        commands: @escaping () -> [Skill] = { [] },
         draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
         isDropTargeted: Bool = false,
     ) {
@@ -51,12 +63,17 @@ struct SessionComposer: View {
         self.lostTurnSeen = lostTurnSeen
         self.stop = stop
         self.setMode = setMode
+        self.commands = commands
         _draft = draft
         self.isDropTargeted = isDropTargeted
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
+            // Above the vessel in the stack rather than in an overlay over it: the whole composer
+            // is anchored to the feed's bottom edge, so a row here grows UPWARD and the menu ends
+            // up over the reading — which is where it belongs — with no offset to keep in step.
+            commandMenu
             if let note = seamNote {
                 ComposerSeam(note: note, retry: retry)
             }
@@ -94,6 +111,8 @@ struct SessionComposer: View {
             }
             queue
             ComposerField(text: $draft.text, placeholder: composer.placeholder, submit: submit)
+                .onKeyPress(.downArrow) { walk { cursor.down(over: $0) } }
+                .onKeyPress(.upArrow) { walk { cursor.up(over: $0) } }
             ComposerFooter(
                 mode: composer.mode,
                 facts: composer.facts,
@@ -117,6 +136,48 @@ struct SessionComposer: View {
             attach: take,
             isHeldOpen: isDropTargeted,
         ))
+        // Escape puts it away and leaves the draft exactly as it was. Not a mode: the next
+        // keystroke asks for it back, because typing on is the reader still looking for a command.
+        .onExitCommand { isDismissed = menu != nil }
+        .onChange(of: draft.text) { _, _ in opened() }
+        .onChange(of: composer.sessionID, initial: true) { _, _ in opened() }
+    }
+
+    /// The menu the line opens, and `nil` where none does — an adapter that declares no command
+    /// surface, a line that is not a command, or an Escape the reader has not typed past.
+    private var menu: CommandMenuProjection.Menu? {
+        guard composer.canRunCommands, !isDismissed else { return nil }
+        return CommandMenuProjection.menu(for: draft.text, in: catalog)
+    }
+
+    /// It takes the vessel's own width, because the description is the content: at any stated width
+    /// two thirds of a real `description:` would be an ellipsis.
+    @ViewBuilder private var commandMenu: some View {
+        if let menu {
+            CommandMenu(menu: menu, marked: cursor.marked) { draft.take($0.command) }
+                // The design's `base` above the vessel, less what the stack around it already
+                // contributes — spelled as the arithmetic so moving either step keeps the gap.
+                .padding(.bottom, ArgoSpacing.base - ArgoSpacing.tight)
+        }
+    }
+
+    /// Re-read the catalog whenever the line becomes one that opens a menu, which is what puts a
+    /// skill installed while the Session was open in the very next list — no watcher, no restart.
+    private func opened() {
+        isDismissed = false
+        guard composer.canRunCommands, CommandMenuProjection.query(in: draft.text) != nil else {
+            return catalog = []
+        }
+        catalog = commands()
+        cursor.settle(over: menu?.rows ?? [])
+    }
+
+    /// An arrow key, and whether the menu took it. Unhandled where there is no menu, so the field's
+    /// own caret movement is untouched on every line that is not a command.
+    private func walk(_ move: ([CommandMenuProjection.Row]) -> Void) -> KeyPress.Result {
+        guard let rows = menu?.rows, !rows.isEmpty else { return .ignored }
+        move(rows)
+        return .handled
     }
 
     /// The footer's `+`, and `nil` where the adapter takes nothing — which is what takes the
@@ -157,7 +218,15 @@ struct SessionComposer: View {
 
     /// Sent now, or queued behind the Turn in flight — `ComposerDraft` owns which, so the field
     /// and the send control ask for the same thing.
+    ///
+    /// With the `/` menu up and a row under the cursor, ⏎ INSERTS instead (design decision 1): a
+    /// command with arguments is the common case, and sending on ⏎ makes the argument impossible to
+    /// type. Answered here rather than by an `onKeyPress` above the field, because a `TextField`
+    /// takes Return itself and there is no intercepting it from outside.
     private func submit() {
+        if let picked = cursor.row(in: menu?.rows ?? []) {
+            return draft.take(picked.command)
+        }
         draft.submit(whileRunning: composer.isRunning, via: send)
     }
 
@@ -191,60 +260,5 @@ struct SessionComposer: View {
     /// whatever the refusal stopped, and after a refused flush that is the queue, not the field.
     private func retry() {
         draft.retry(via: send)
-    }
-}
-
-#Preview("Composer — at rest") {
-    @Previewable @State var draft = ComposerDraft()
-
-    ComposerPreview(composer: ComposerSpecimen.composer, draft: $draft)
-}
-
-#Preview("Composer — holding a draft") {
-    @Previewable @State var draft = ComposerSpecimen.typing
-
-    ComposerPreview(composer: ComposerSpecimen.composer, draft: $draft)
-}
-
-#Preview("Composer — a send the Session refused") {
-    @Previewable @State var draft = ComposerSpecimen.refused
-
-    ComposerPreview(composer: ComposerSpecimen.composer, draft: $draft)
-}
-
-#Preview("Composer — a follow-up queued behind a running Turn") {
-    @Previewable @State var draft = ComposerSpecimen.queued
-
-    ComposerPreview(composer: ComposerSpecimen.running, draft: $draft)
-}
-
-#Preview("Composer — holding standing allows") {
-    @Previewable @State var draft = ComposerDraft()
-
-    ComposerPreview(composer: ComposerSpecimen.standing, draft: $draft)
-}
-
-#Preview("Composer — the Reduce Transparency fallback") {
-    @Previewable @State var draft = ComposerDraft()
-
-    SessionComposer(composer: ComposerSpecimen.composer, send: { _, _ in }, draft: $draft)
-        .padding(ArgoSpacing.section)
-        .frame(width: 760)
-        .argoWithoutTransparency()
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-/// The frame every composer preview draws in.
-private struct ComposerPreview: View {
-    let composer: SessionComposerProjection.Composer
-    @Binding var draft: ComposerDraft
-
-    var body: some View {
-        SessionComposer(composer: composer, send: { _, _ in }, draft: $draft)
-            .padding(ArgoSpacing.section)
-            .frame(width: 760)
-            .argoDeckSurface()
-            .argoAppearance()
     }
 }

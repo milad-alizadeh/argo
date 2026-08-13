@@ -38,12 +38,39 @@ extension SpecimenRegistry {
         // The one state in which the rail scrolls at all, held at the end of its own scroll so
         // two chips pass under the chrome bar — every transcript fixture delegates too few.
         SpecimenEntry("agentsFanOut") { AgentsFanOutSpecimen() },
+        // The same twenty, collapsed. Twenty dots fit a column twenty names overflow, which is the
+        // whole argument for the strip.
+        SpecimenEntry("agentsFanOutCollapsed") { AgentsFanOutSpecimen(isCollapsed: true) },
+        // The three below are rendered BESIDE the feed on the whole deck, because what they have to
+        // settle is the seam and the hierarchy rather than the rail's own insides.
+        SpecimenEntry("agentsRailSole") { AgentsRailSpecimen(subject: .sole) },
+        // The selected chip's legibility and the re-scoped feed in one still — the two claims the
+        // discarded attempt satisfied in prose and failed in pixels (#378).
+        SpecimenEntry("agentsRailScoped") { AgentsRailSpecimen(subject: .scoped) },
+        SpecimenEntry("agentsRailCollapsed") { AgentsRailSpecimen(subject: .collapsed) },
         // A session at the length a real one reaches. Render narrow too (`ARGO_WINDOW_SIZE`).
         SpecimenEntry("feedAtScale") { SpecimenScene.sessions(FeedProjection.longRows) },
         // A row arriving at the end must not move the row somebody is looking at.
         SpecimenEntry("feedArriving") { ArrivingFeedSpecimen() },
         SpecimenEntry("emptyFeed") { SpecimenScene.sessions([]) },
+        // The keyboard cursor, on the two shapes a row can be: the bubble it has to hug, and the
+        // line that fills the measure. Unreachable without an arrow key, so unreachable in a still
+        // any other way (#533).
+        // The prose-only reading for the bubble: short enough that the row is in view with no
+        // scroll at all, which is what makes the still repeatable.
+        SpecimenEntry("feedCursorPrompt") {
+            cursored(on: FeedProjection.previewPromptID, in: FeedProjection.previewProseRows)
+        },
+        SpecimenEntry("feedCursorCall") {
+            cursored(on: FeedProjection.previewLastFailedCallID, in: FeedProjection.previewRows)
+        },
     ]
+
+    private static func cursored(on row: FeedRow.ID?, in rows: [FeedRow]) -> some View {
+        var reading = FeedPreview(rows: rows)
+        reading.cursor = row
+        return reading
+    }
 
     private static let evidence: [SpecimenEntry] = [
         // Call rows, not the whole feed: against the full transcript this failure is below the

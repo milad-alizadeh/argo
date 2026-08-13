@@ -35,14 +35,6 @@ struct QueuedTurnChip: View {
         .padding(.horizontal, ArgoSpacing.snug)
         .frame(height: ArgoComposerVessel.queuedTurnHeight)
         .background(argo.color.surface.control, in: .rect(cornerRadius: ArgoRadius.control))
-        // The accent rule on the leading edge, not a tinted fill: a wash at that contrast would
-        // read as the selected thing. A capsule and not a rectangle, because the row's corners are
-        // rounded and a square rule clipped to them loses its ends.
-        .overlay(alignment: .leading) {
-            Capsule()
-                .fill(argo.color.interaction.accent)
-                .frame(width: ArgoStroke.indicator)
-        }
         .clipShape(.rect(cornerRadius: ArgoRadius.control))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(Self.label): \(turn.text)")

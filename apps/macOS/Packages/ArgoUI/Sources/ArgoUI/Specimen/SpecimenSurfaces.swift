@@ -121,8 +121,10 @@ struct ArrivingFeedSpecimen: View {
 /// The ⓘ panel's content, stood in a glass of its own — the same stand-in `DrawerSpecimen` makes,
 /// because a popover is a window of its own and never lands in a screenshot of this one.
 struct ContextGuideSpecimen: View {
+    let header: SessionHeaderProjection.Header
+
     var body: some View {
-        SessionContextGuide()
+        SessionContextGuide(facts: header.facts)
             .glassEffect(in: .rect(cornerRadius: ArgoRadius.popover))
             .padding(ArgoSpacing.region)
     }

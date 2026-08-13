@@ -7,21 +7,31 @@ import SwiftUI
 struct DeckZoning {
     /// What the row has to divide up.
     let deck: CGFloat
+    /// The rows the reader is looking at — the Session's own reading, or the Subagent's that the
+    /// rail scoped onto. What the panel and the lane are resolved against.
     let feed: [FeedRow]
+    /// Who else is working. A VALUE rather than read off `feed`, because the rail lists the
+    /// SESSION's Subagents whatever the feed beside it is scoped to — read off a scoped feed the
+    /// rail would empty itself the moment somebody used it.
+    let agents: [FeedAgent]
     /// Which row's evidence the reader opened, if any. Resolved against the feed below rather than
     /// trusted: a live transcript grows under an open panel.
     let open: FeedRow.ID?
     /// Where the reader dragged the two movable seams.
     let seams: DeckSeams
-
-    /// Who else is working, read off the same rows the reader is looking at.
-    var agents: [FeedAgent] {
-        FeedAgents.all(in: feed)
-    }
+    /// Whether the rail is showing its dot strip rather than its chips.
+    var isRailCollapsed = false
 
     /// On screen only while subagents are running, and never beside the panel.
     var showsRail: Bool {
         !isPanelOpen && agents.contains(where: \.isRunning)
+    }
+
+    /// How wide the rail's column is: its dot strip when collapsed, otherwise wherever the reader
+    /// left the seam. The strip is narrower than the seam's own floor, which is why collapsing is
+    /// not just a drag to the minimum.
+    var railWidth: CGFloat {
+        isRailCollapsed ? ArgoLayout.agentsRailCollapsedWidth : seams.rail.wrappedValue
     }
 
     /// A `Bool` rather than the evidence itself: the evidence is re-read out of a live feed every
@@ -48,7 +58,7 @@ struct DeckZoning {
     /// reading — and the lane keeps mapping the reading while the panel is open, since a reader who
     /// opened one row's evidence has not stopped needing to know where in the session they are.
     var laneWidth: CGFloat {
-        let rail = showsRail ? seams.rail.wrappedValue + ArgoLayout.seamGrabWidth : 0
+        let rail = showsRail ? railWidth + ArgoLayout.seamGrabWidth : 0
         let panel = isPanelOpen ? panelWidth.wrappedValue + ArgoLayout.seamGrabWidth : 0
         return ArgoLayout.minimapLaneWidth(sharing: deck - rail - panel)
     }

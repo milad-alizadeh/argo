@@ -89,6 +89,20 @@ public struct ToolCallOutcome: Sendable, Equatable {
     /// its own — a DELEGATING call is the case this exists for: its result carries the whole spend
     /// of the subagent it ran, which is the only place that spend is ever visible.
     public let usage: Usage?
+    /// The Subagent this call started, where it started one. `nil` for every ordinary call.
+    ///
+    /// The join key onto that Subagent's own transcript, which the host names for this string —
+    /// see `SubagentTranscripts`. Unlike `usage` it is read whatever the record's own sidechain
+    /// flag says: the spend is nil'd there to stop a nested delegation being billed twice, and an
+    /// id is not summed.
+    public let subagentID: String?
+    /// How long the call itself reported taking, in milliseconds. A DELEGATING call is again the
+    /// case this exists for: the host measures the Subagent's whole run and reports it beside the
+    /// spend, which is the only place that figure is ever stated.
+    ///
+    /// Not `endedAtMs - atMs`: those are the PARENT's two clock readings, and a resumed chain or a
+    /// record with no timestamp leaves that subtraction with nothing to work from.
+    public let reportedDurationMs: Int?
 
     public init(
         id: String,
@@ -96,11 +110,15 @@ public struct ToolCallOutcome: Sendable, Equatable {
         result: ToolResult?,
         endedAtMs: Int?,
         usage: Usage?,
+        subagentID: String? = nil,
+        reportedDurationMs: Int? = nil,
     ) {
         self.id = id
         self.status = status
         self.result = result
         self.endedAtMs = endedAtMs
         self.usage = usage
+        self.subagentID = subagentID
+        self.reportedDurationMs = reportedDurationMs
     }
 }

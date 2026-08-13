@@ -8,6 +8,9 @@ import SwiftUI
 /// feed where nothing opens. This holds the real state instead, so a `#Preview` exercises the same
 /// paths the shell does.
 struct FeedPreview: View {
+    private static let landingTries = 20
+    private static let landingBeat = Duration.milliseconds(25)
+
     let rows: [FeedRow]
 
     /// Whether the overview lane is drawn beside the reading, as the deck draws it. Off by default:
@@ -24,6 +27,11 @@ struct FeedPreview: View {
     /// way to a detached reading in a still, and the only way to put the lane's viewport rectangle
     /// anywhere but at the foot of the lane.
     var held: FeedRow.ID?
+
+    /// Which row the reading opens with the keyboard cursor on. Set after building, for the reason
+    /// `naming` is: the cursor arrives with an arrow key and a still cannot press one, so this is
+    /// the only way to look at the ring #533 asked for.
+    var cursor: FeedRow.ID?
 
     /// Which row's evidence the preview opens on. A settable initial state for the same reason
     /// `SessionsDeck` takes one: the state belongs to the surface, and there is no other way to
@@ -69,5 +77,21 @@ struct FeedPreview: View {
         }
         .argoDeckSurface()
         .argoAppearance()
+        // The table's own way in, not a back door: this is the call the deck makes when it hands
+        // the keyboard back to a row. Both halves of the state have to be stated — the reader
+        // arrived by KEY, which is what the cursor is gated on, and a still cannot press one.
+        .task { await seedCursor() }
+    }
+
+    /// After the reading's opening landing, never before it: that scroll would otherwise overwrite
+    /// the cursor's own and the still would come out at whatever row the feed opens on. Bounded
+    /// rather than a spin, so a reading that never settles yields a wrong still and not a hang.
+    private func seedCursor() async {
+        guard let cursor else { return }
+        ArgoFocusVisibility.shared.note(.keyDown)
+        for _ in 0 ..< Self.landingTries where table.isOpeningOwed {
+            try? await Task.sleep(for: Self.landingBeat)
+        }
+        table.focus(onto: cursor)
     }
 }

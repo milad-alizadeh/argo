@@ -50,6 +50,10 @@ struct FeedPrompt: View {
         .padding(.vertical, ArgoFeedRow.bubbleInsetY)
         .padding(.horizontal, ArgoFeedRow.bubbleInsetX)
         .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.popover))
+        // The one row narrower than the measure, so the one row that has to say where its keyboard
+        // cursor goes. INSIDE the ceiling below, which is a frame the bubble is right-aligned in
+        // rather than the bubble: a ring around that frame is the wrong box #533 was filed about.
+        .argoFeedCursorShape(radius: ArgoRadius.popover)
         // A ceiling, not a width: the bubble sizes to a short prompt and holds a long one here.
         .frame(maxWidth: ceiling, alignment: .trailing)
         .accessibilityElement(children: .combine)

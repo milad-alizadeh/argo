@@ -48,9 +48,12 @@ Every visual implementation session must read, in order:
    pixels; and
 5. for the minimap, [`cockpit-xcode-minimap-reference.png`](cockpit-xcode-minimap-reference.png).
 
-The PNG is load-bearing rather than illustrative: the decision log carries no measurements, so
-for the Instrument Deck's zone heights it is the only source — which is why `ArgoLayout.swift`
-cites it by name.
+The PNG is load-bearing rather than illustrative: the decision log carries no measurements, so it
+was the only source for the Instrument Deck's zone heights, and `ArgoLayout.swift` cited it by
+name. **It no longer sets the deck's chrome.** #693 deleted the 56pt identity band that
+measurement was for, and
+[`cockpit-session-header.md`](cockpit-session-header.md) supersedes it there. The PNG stands for
+everything else it shows.
 
 **The sidebar is native Liquid Glass, not a dark fill.** The project strip and the Sessions
 roster share one continuous system-material column that paints no background of its own (D2,
@@ -94,9 +97,12 @@ under `docs/adr/`.
 | `cockpit-surface-matrix.md` | The surface × state matrix | Every cockpit surface and the states it must render — the testable spec the app is checked against |
 | `cockpit-session-composer.md` + `composer/` | **Approved composer design** (#536, under #535 / ADR-0024) | The composer that replaces the Session terminal, its attachment chips, the run-settings popover and the Permission prompt. Twenty-one state renders in `composer/` are the spec; the doc carries the measurements and the frozen component names |
 | `cockpit-composer-picker.md` + `composer-picker/` | **Approved command-menu design** (#590, under #535) | How a skill, a command or a file is reached from the composer: the menu `/` opens over the vessel, the `@` file menu, and the two-row `AddMenu` behind the footer's `+`. A **menu, not glass** — D14 rations glass away from a surface hanging off the field. Twenty state renders in `composer-picker/` are the spec; the doc carries the measurements, the frozen names and the `AttachButton` → `AddButton` rename |
+| `cockpit-composer-picker.inventory.md` | Command-menu build inventory | What #685's build actually extracted from that design — `CommandMenu` and its three parts, the cursor and the derive — what stayed in `SessionComposer`, and the one thing the renders exposed that the design could not: the list is counted, not capped |
 | `cockpit-session-composer.inventory.md` | Composer build inventory | What each ticket's build actually extracted from the design, one row per component, appended per ticket — #538 (send) so far |
 | `cockpit-feed-working.md` + `working/` | **Approved in-flight design** | What the feed draws while a Session is `running`: the ion across a pending call's type, the thread across the measure while thinking, and the rule that only ever one of them shows. Four renders in `working/` are the spec; the doc carries the measurements and the seven contract changes it needs. **The feed's one loop**, under D12's live-operational-signal bound — and not D13's `Ion Trace` |
 | `cockpit-feed-working.inventory.md` | In-flight build inventory | What each ticket's build actually extracted from that design, one row per component, appended per ticket — #615 (a call in flight) and #616 (thinking) so far, plus the contract values each promoted |
+| `cockpit-session-header.md` + `header/` | **Approved two-row header design** (#696) | The deck's chrome cut from three rows to two: the title in the titlebar's centre, the instruments on the tab line's trailing edge, the identity band deleted. Six renders in `header/` are the spec; the doc carries the measurements and the three places the shipped components supersede the prototype |
+| `cockpit-session-header.inventory.md` | Two-row header build inventory | What each ticket's build actually extracted from that design — `TabLineInstruments` for #693 so far, plus what stayed inline and what was only reseated |
 | `cockpit-roster-turn-clock.md` + `roster-clock/` | **Approved Turn-clock design** (#618) | How long a Turn has been running, read in the roster row's age slot: a live `4m 12s` in `state.running` for a managed Session, `output 12s ago` for an observed one, the seen reading otherwise. The header and feed stay silent. Three renders in `roster-clock/` are the spec |
 | `cockpit-roster-turn-clock.inventory.md` | Turn-clock build inventory | What #678's build actually extracted from that design — `RosterTurnClock` and the phrase it shares with the projection — and the splits that stayed inline |
 | `cockpit-roster-archive-foot.md` | **The roster's `Archived (n)` foot** | The one disclosure at the foot of the Sessions roster: anatomy, states, motion, keyboard, and the SwiftUI mechanic that stops the sidebar `Section` drawing a second chevron |

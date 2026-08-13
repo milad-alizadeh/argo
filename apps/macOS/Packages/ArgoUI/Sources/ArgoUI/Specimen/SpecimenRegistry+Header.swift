@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// The band at the top of the deck, and the window title above it that took the band's identity
-/// (#692): one entry per access posture, and one per reading the band still has to carry.
+/// The deck's chrome: the window title that took the identity band's title (#692), and the tab
+/// line that took its instruments before the band was deleted (#693). One entry per access
+/// posture, and one per reading the tab line has to carry.
 ///
-/// The posture entries render the TITLE rather than the band, because that is where a posture is
-/// drawn now — the band draws the state word, the offer and the instrument, none of which the
-/// posture decides. The band's own entries are the two keyed families below it.
+/// The posture entries render the TITLE rather than the tab line, because that is where a posture
+/// is drawn — the line draws the state word, the offer and the instrument, none of which the
+/// posture decides. The line's own entries are the two keyed families below it.
 ///
 /// Those families are MAPPED from their fixtures rather than listed again here. A tier or an offer
 /// state is added to its fixture list and is renderable from that one edit — there is no second
@@ -16,7 +17,12 @@ import SwiftUI
 extension SpecimenRegistry {
     static let header: [SpecimenEntry] = postures + contexts + handoffs + [
         // A popover is its own window and never lands in a screenshot of this one.
-        SpecimenEntry("contextGuide") { ContextGuideSpecimen() },
+        SpecimenEntry("contextGuide") { ContextGuideSpecimen(header: SessionHeaderFixture.guided) },
+        // The same panel where almost nothing could be read: the block collapses to its one
+        // permanent row rather than drawing a column of dashes (#694).
+        SpecimenEntry("contextGuideUnread") {
+            ContextGuideSpecimen(header: SessionHeaderFixture.unguided)
+        },
         // No button left on the red header, and the reading ends in a link to the next Session.
         SpecimenEntry("handedOffReading") {
             InstrumentDeckShell(
@@ -25,9 +31,12 @@ extension SpecimenRegistry {
                 header: SessionHeaderFixture.handedOff,
             )
         },
-        // The band with no identity left on it — what #693 deletes, and what has to hold its
-        // height until it does.
-        SpecimenEntry("sessionHeader") { SessionHeaderSpecimen(access: .managed) },
+        // The ordinary managed Session, which the two families above vary from.
+        SpecimenEntry("tabLineInstruments") { SessionHeaderSpecimen(access: .managed) },
+        // Only `permission`, `asking` and `stopped` spend a state word, and no family varies it.
+        SpecimenEntry("tabLineStateWord") {
+            SessionHeaderSpecimen(header: SessionHeaderFixture.needsInput)
+        },
     ]
 
     private static let postures: [SpecimenEntry] = [

@@ -16,15 +16,20 @@ struct ComposerSpecimen: View {
 
     /// Holds the drag-over state open, which no render can reach otherwise (#540).
     let isDropTargeted: Bool
+    /// The catalog the `/` menu draws (#685). Empty by default, so a case that is not about the
+    /// menu cannot accidentally open one.
+    let commands: [Skill]
 
     init(
         composer: SessionComposerProjection.Composer = ComposerSpecimen.composer,
         draft: ComposerDraft = ComposerDraft(),
         isDropTargeted: Bool = false,
+        commands: [Skill] = [],
     ) {
         self.composer = composer
         _held = State(initialValue: draft)
         self.isDropTargeted = isDropTargeted
+        self.commands = commands
     }
 
     var body: some View {
@@ -37,6 +42,7 @@ struct ComposerSpecimen: View {
             SessionComposer(
                 composer: composer,
                 send: { _, _ in },
+                commands: { commands },
                 draft: $held,
                 isDropTargeted: isDropTargeted,
             )
@@ -111,6 +117,32 @@ struct ComposerSpecimen: View {
     static let lost = ComposerDraft(
         text: "what is @README.md about?",
         notice: ComposerDraft.lost,
+    )
+
+    /// The bare `/`: the whole catalogue, sectioned by origin (#685).
+    static let commanding = ComposerDraft(text: "/")
+
+    /// Typed far enough to narrow it: the sections stop being origins and become prefix matches
+    /// then the ones that merely contain the characters, with origin moved onto the rows.
+    static let commandFiltered = ComposerDraft(text: "/impl")
+
+    /// The two edges in one line — the collision and the skill that states no description are both
+    /// under `writ`, which is what the study found and not what a fixture would have invented.
+    static let commandEdge = ComposerDraft(text: "/writ")
+
+    /// A perfectly good thing to say to an agent that matches no command. The surface stays and the
+    /// line stays sendable (decision 8).
+    static let commandZero = ComposerDraft(text: "/graphify")
+
+    /// After a pick: the command in the field with the caret behind it, arguments typed as ordinary
+    /// text, and no menu — the space is what closed it (decision 1).
+    static let commandArgs = ComposerDraft(text: "/code-review since main")
+
+    /// The menu open over a Turn in flight with a follow-up already waiting (decision 17). The two
+    /// surfaces stack above the field, which is the whole of what this state settles.
+    static let commandQueued = ComposerDraft(
+        text: "/",
+        queued: [QueuedTurn(text: "And when that is green, open the PR against main.")],
     )
 
     /// A follow-up waiting on the Turn in flight, drawn above an empty field.

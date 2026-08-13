@@ -1,13 +1,18 @@
 import SwiftUI
 
-/// The one instrument on the header: how full the Session's context is, on the trailing edge.
+/// The one instrument on the tab line: how full the Session's context is, on the trailing edge.
 ///
 /// It draws a reading it was handed and judges nothing — which line the Session is past, and
 /// whether it can be said at all, are `SessionHeaderProjection`'s.
+///
+/// Its label and reading sit a rung below the roles the 56pt band set them at (#693): a 40pt line
+/// carrying two stacked rows has no room for the band's sizes.
 struct SessionHeaderContext: View {
     @Environment(\.argo) private var argo
 
     let context: SessionHeaderProjection.Context
+    /// What the ⓘ panel reports, forwarded untouched — the instrument draws none of it (#694).
+    let facts: [SessionHeaderProjection.Fact]
 
     /// The panel opens on HOVER, and a click still opens it too, so the keyboard keeps a way in.
     /// Escape and clicking away are `.popover`'s own.
@@ -28,13 +33,13 @@ struct SessionHeaderContext: View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             HStack(spacing: ArgoSpacing.tight) {
                 Text(context.label)
-                    .argoText(ArgoTypography.caption)
+                    .argoText(ArgoTypography.badge)
                     .textCase(.uppercase)
                     .foregroundStyle(argo.color.text.tertiary)
                 about
                 Spacer(minLength: ArgoSpacing.snug)
                 Text(context.reading)
-                    .argoText(ArgoTypography.machine)
+                    .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(readingInk)
                     .lineLimit(1)
             }
@@ -60,7 +65,7 @@ struct SessionHeaderContext: View {
         .popover(isPresented: $isGuideOpen, arrowEdge: .bottom) {
             // The panel counts as the mark for the purpose of staying open: a reader inside it is
             // reading, and the pointer being off the ⓘ is exactly what that looks like.
-            SessionContextGuide()
+            SessionContextGuide(facts: facts)
                 .onHover { isInside in pointer(isInside) }
         }
     }
@@ -86,8 +91,8 @@ struct SessionHeaderContext: View {
 
 #Preview("Context instrument — every tier, and the one that cannot be read") {
     VStack(alignment: .leading, spacing: ArgoSpacing.section) {
-        ForEach(SessionHeaderFixture.contextReadings, id: \.reading) { context in
-            SessionHeaderContext(context: context)
+        ForEach(SessionHeaderFixture.contexts, id: \.name) { tier in
+            SessionHeaderContext(context: tier.header.context, facts: tier.header.facts)
         }
     }
     .padding(ArgoSpacing.region)

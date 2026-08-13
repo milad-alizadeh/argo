@@ -7,11 +7,11 @@ import Foundation
 ///
 /// The two roots are values the caller supplies, for `TranscriptRecordStore`'s reason — the CLI
 /// owns these directories and Argo only reads them.
-struct SkillCatalog {
+public struct SkillCatalog {
     private let projectURL: URL
     private let homeURL: URL
 
-    init(projectURL: URL, homeURL: URL = FileManager.default.homeDirectoryForCurrentUser) {
+    public init(projectURL: URL, homeURL: URL = FileManager.default.homeDirectoryForCurrentUser) {
         self.projectURL = projectURL.standardizedFileURL
         self.homeURL = homeURL.standardizedFileURL
     }
@@ -23,12 +23,31 @@ struct SkillCatalog {
     }
 
     /// The Project's skills, then the user's, then each enabled plugin's, and each origin's own in
-    /// name order.
+    /// name order — nearest origin first, which is the order the picker's sections are drawn in.
     ///
-    /// A Project skill and a global skill of the same name both get a row. Which one `/name`
-    /// resolves to is a CLI fact Argo has not measured, so neither is hidden on a guess.
-    func skills() -> [Skill] {
-        sources().flatMap(skills(in:))
+    /// A name the Project and the user both carry is listed ONCE, under the Project, marked
+    /// `shadowsUser` (`cockpit-composer-picker.md` decision 7).
+    public func skills() -> [Skill] {
+        Self.shadowed(sources().flatMap(skills(in:)))
+    }
+
+    /// Drop each user skill a Project skill of the same name stands in front of, and mark the row
+    /// that is standing there. Nothing else can collide: a plugin's commands carry its name.
+    private static func shadowed(_ found: [Skill]) -> [Skill] {
+        let ofProject = Set(found.filter { $0.origin == .project }.map(\.name))
+        let ofUser = Set(found.filter { $0.origin == .user }.map(\.name))
+        return found.compactMap { skill in
+            switch skill.origin {
+            case .user where ofProject.contains(skill.name): nil
+            case .project: Skill(
+                    name: skill.name,
+                    description: skill.description,
+                    origin: .project,
+                    shadowsUser: ofUser.contains(skill.name),
+                )
+            default: skill
+            }
+        }
     }
 
     private func sources() -> [Source] {
@@ -48,7 +67,7 @@ struct SkillCatalog {
     }
 
     private func skillsDirectory(under url: URL) -> URL {
-        url.appending(path: ".claude/skills", directoryHint: .isDirectory)
+        url.appending(path: SkillOrigin.directory, directoryHint: .isDirectory)
     }
 
     private func skills(in source: Source) -> [Skill] {
