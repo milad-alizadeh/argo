@@ -60,11 +60,7 @@ private struct FeedMarkdownBlock: View {
     /// own words rather than running back under its marker.
     private func item(marker: String, text: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.markerGap) {
-            Text(marker)
-                .argoText(ArgoFeedRow.proseRung)
-                .monospacedDigit()
-                .foregroundStyle(argo.color.text.tertiary)
-                .frame(width: ArgoFeedRow.markerWidth, alignment: .trailing)
+            FeedMarker(text: marker)
             FeedProseText(text: text, rung: ArgoFeedRow.proseRung)
                 .fixedSize(horizontal: false, vertical: true)
         }

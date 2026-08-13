@@ -128,8 +128,16 @@ struct MinimapRowTests {
     func `a question is the card the feed draws it in`() {
         let asked = Ask(questions: [Ask.Question(text: "Which reading?", options: ["One", "Two"])])
         let ask = FeedAsk(ask: asked, isAnswered: false, answer: nil)
+        // The offers carry the numbers the ROW sets them behind, because the lane places them on
+        // the same marker grid the row does.
         #expect(Self.shape(.ask(ask)) == .card(MinimapAskCard(
-            questions: [MinimapAskCard.Question(text: "Which reading?", options: ["One", "Two"])],
+            questions: [MinimapAskCard.Question(
+                text: "Which reading?",
+                offers: [
+                    MinimapAskCard.Offer(marker: "1.", label: "One"),
+                    MinimapAskCard.Offer(marker: "2.", label: "Two"),
+                ],
+            )],
             ink: .attention,
             isRuled: true,
         )))
@@ -139,8 +147,8 @@ struct MinimapRowTests {
             y: 0, height: 90, from: 0, to: 400, ink: .attention, shape: .frame,
         ))
         #expect(marks.dropFirst().allSatisfy { $0.drawn == .bar && $0.from > 0 })
-        // The mark the question opens with, its words, and the two options under them.
-        #expect(marks.count == 5)
+        // Three lines, each its marker and its words: the question and the two options under it.
+        #expect(marks.count == 7)
     }
 
     /// The row goes quiet the moment something answers it, and the lane has to go quiet with it — a

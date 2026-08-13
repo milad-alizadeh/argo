@@ -6,10 +6,16 @@ import Foundation
 /// draws a bordered card with a wash and words inside it, and a band matched neither its shape nor
 /// its weight — it read as a wall where the reading has a question.
 struct MinimapAskCard: Equatable, Sendable {
-    /// One question and the labels offered under it, in the order they were offered.
+    /// One option, as the row sets it: its number in the marker column, then its words.
+    struct Offer: Equatable, Sendable {
+        var marker: String
+        var label: String
+    }
+
+    /// One question and the options offered under it, in the order they were offered.
     struct Question: Equatable, Sendable {
         var text: String
-        var options: [String]
+        var offers: [Offer]
     }
 
     var questions: [Question]
@@ -47,49 +53,49 @@ extension MinimapRowShape {
         return marks
     }
 
-    /// One question: its mark in the same column a call's opens in, its words beside it, and the
-    /// options stacked under them on the words' own vertical.
+    /// One question and its options on ONE grid, which is what `FeedAskQuestion` draws: the ask
+    /// glyph takes the same marker column the option numbers do, so the options need no indent of
+    /// their own.
     @MainActor private static func asked(
         _ question: MinimapAskCard.Question,
         ink: FeedInk,
         across measure: CGFloat,
     )
         -> (marks: [MinimapRowMark], height: CGFloat) {
-        let indent = ArgoFeedRow.callSymbolWidth + ArgoFeedRow.callGap
-        let asked = MinimapProseWords(text: question.text)
-            .laid(ink: ink, across: measure - indent)
-        var marks = [MinimapRowMark(
-            y: 0, height: ProseFace.body.lineBox, from: 0, to: ArgoFeedRow.callSymbolWidth,
-            ink: ink,
-        )]
-        marks += asked.marks.map { $0.indented(by: indent) }
-        guard !question.options.isEmpty else { return (marks, asked.height) }
-        let offered = options(question.options, ink: ink, across: measure - indent)
-        let y = asked.height + ArgoFeedRow.stepBeforeProse
-        marks += offered.marks.map { $0.lowered(by: y).indented(by: indent) }
-        return (marks, y + offered.height)
+        let asked = line(question.text, marked: nil, ink: ink, across: measure)
+        guard !question.offers.isEmpty else { return (asked.marks, asked.height) }
+        var marks = asked.marks
+        var y = asked.height + ArgoFeedRow.stepBeforeProse
+        for offer in question.offers {
+            let drawn = line(offer.label, marked: offer.marker, ink: ink, across: measure)
+            marks += drawn.marks.map { $0.lowered(by: y) }
+            y += drawn.height + ArgoFeedRow.askOptionGap
+        }
+        return (marks, max(asked.height, y - ArgoFeedRow.askOptionGap))
     }
 
-    /// The options, one line apiece and each as wide as its own label — stacked rather than run
-    /// across, because that is the shape they were offered in.
-    @MainActor private static func options(
-        _ labels: [String],
+    /// One line of the card: its mark in the marker column, and its words on the vertical after it.
+    ///
+    /// `marked` is the option's number, or `nil` for the question — whose glyph fills the column
+    /// rather than measuring, since a glyph is not text the lane can size.
+    @MainActor private static func line(
+        _ text: String,
+        marked: String?,
         ink: FeedInk,
         across measure: CGFloat,
     )
         -> (marks: [MinimapRowMark], height: CGFloat) {
-        let face = ProseFace(rung: ArgoTypography.caption.rung)
-        let step = face.lineBox + ArgoFeedRow.askOptionGap
-        let indent = ArgoIconSize.inline.rawValue + ArgoSpacing.snug
-        let marks = labels.enumerated().map { at, label in
-            MinimapRowMark(
-                y: CGFloat(at) * step,
-                height: face.lineBox,
-                from: indent,
-                to: min(measure, indent + ProseMetrics.width(of: label, in: face)),
-                ink: ink,
-            )
-        }
-        return (marks, CGFloat(labels.count) * step - ArgoFeedRow.askOptionGap)
+        let indent = ArgoFeedRow.markerWidth + ArgoFeedRow.markerGap
+        let width = marked.map { min(ArgoFeedRow.markerWidth, ProseMetrics.width(of: $0)) }
+            ?? ArgoFeedRow.markerWidth
+        let marker = MinimapRowMark(
+            y: 0,
+            height: ProseFace.body.lineBox,
+            from: ArgoFeedRow.markerWidth - width,
+            to: ArgoFeedRow.markerWidth,
+            ink: ink,
+        )
+        let words = MinimapProseWords(text: text).laid(ink: ink, across: measure - indent)
+        return ([marker] + words.marks.map { $0.indented(by: indent) }, words.height)
     }
 }
