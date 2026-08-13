@@ -68,15 +68,22 @@ extension MinimapGeometry {
         for mark in row.shape.marks(across: measure, height: extent) {
             guard marks.isEmpty || fits(mark, inside: extent) else { continue }
             let y = top + mark.y * scale
-            let isCrowded = y - lastY < ArgoMinimapLane.markMinimumHeight
-                + ArgoMinimapLane.markGap
-            if isCrowded, mark.drawn == .bar {
-                continue
-            }
-            lastY = y
+            guard !isCrowded(mark, at: y, under: lastY) else { continue }
+            lastY = max(lastY, y)
             marks.append(scaled(mark, at: y, inside: extent, across: measure))
         }
         return marks
+    }
+
+    /// Whether the scale has squeezed a bar so close under its neighbour that the two would draw as
+    /// one smear. A compressed paragraph then reads as texture rather than as overdrawn ink.
+    ///
+    /// Only what is STACKED counts. A mark at or above the last one is beside it, not under it — a
+    /// list item's marker, a link's accent and every piece of a call's sentence share their line's
+    /// own `y`, and a rule that looked at the distance alone dropped all of them.
+    private func isCrowded(_ mark: MinimapRowMark, at y: CGFloat, under lastY: CGFloat) -> Bool {
+        guard mark.drawn == .bar, y > lastY else { return false }
+        return y - lastY < ArgoMinimapLane.markMinimumHeight + ArgoMinimapLane.markGap
     }
 
     /// Whether the feed really drew this rectangle. A row reports what its words WOULD make, and

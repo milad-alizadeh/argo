@@ -121,6 +121,27 @@ struct MinimapMarkTests {
         #expect(squeezed.marks(in: 0 ... 600).first?.y == tall.marks(in: 0 ... 600).first?.y)
     }
 
+    /// Marks that share a line sit BESIDE each other, not under each other, so the floor that thins
+    /// a
+    /// compressed paragraph must leave them alone. It did not: a list drew four markers and no
+    /// words,
+    /// and every link accent in the reading was dropped with them.
+    @Test
+    func `marks sharing a line are all drawn`() {
+        let lane = Self.geometry(Self.reading([
+            MinimapRow(height: 200, shape: MinimapProseBlock.shape(
+                of: "- one item\n- two, per [ADR-0021](https://a.b)\n- three", ink: .message,
+            )),
+        ]))
+        let marks = lane.marks(in: 0 ... 600)
+        let words = marks.filter { $0.ink == .message }
+        // Three markers and the three runs of words beside them, plus the one link.
+        #expect(words.count == 6)
+        #expect(marks.filter { $0.ink == .link }.count == 1)
+        // Each item's words start past its own marker, and three distinct lines were drawn.
+        #expect(Set(words.map(\.y)).count == 3)
+    }
+
     /// Every span the lane draws is inside `0 ... 1` and ordered. The widths behind them come off a
     /// transcript nothing validated, and a range whose lower bound is above its upper does not
     /// misdraw — it traps.
