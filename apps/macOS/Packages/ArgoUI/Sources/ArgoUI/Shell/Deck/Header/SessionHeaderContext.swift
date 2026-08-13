@@ -1,9 +1,12 @@
 import SwiftUI
 
-/// The one instrument on the header: how full the Session's context is, on the trailing edge.
+/// The one instrument on the tab line: how full the Session's context is, on the trailing edge.
 ///
 /// It draws a reading it was handed and judges nothing — which line the Session is past, and
 /// whether it can be said at all, are `SessionHeaderProjection`'s.
+///
+/// Its label and reading sit a rung below the roles the 56pt band set them at (#693): a 40pt line
+/// carrying two stacked rows has no room for the band's sizes.
 struct SessionHeaderContext: View {
     @Environment(\.argo) private var argo
 
@@ -28,13 +31,13 @@ struct SessionHeaderContext: View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             HStack(spacing: ArgoSpacing.tight) {
                 Text(context.label)
-                    .argoText(ArgoTypography.caption)
+                    .argoText(ArgoTypography.badge)
                     .textCase(.uppercase)
                     .foregroundStyle(argo.color.text.tertiary)
                 about
                 Spacer(minLength: ArgoSpacing.snug)
                 Text(context.reading)
-                    .argoText(ArgoTypography.machine)
+                    .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(readingInk)
                     .lineLimit(1)
             }
