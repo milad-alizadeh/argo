@@ -24,6 +24,8 @@ enum FeedCallReading {
             repeats: 1,
             spend: outcome?.usage,
             subagentID: outcome?.subagentID,
+            durationMs: outcome?.reportedDurationMs,
+            startedAtMs: call.atMs,
         )
     }
 

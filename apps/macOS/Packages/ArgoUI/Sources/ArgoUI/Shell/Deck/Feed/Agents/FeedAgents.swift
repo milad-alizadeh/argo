@@ -20,6 +20,8 @@ enum FeedAgents {
                 isRunning: call.ending == .pending,
                 spend: call.spend,
                 subagentID: call.subagentID,
+                durationMs: call.durationMs,
+                startedAtMs: call.startedAtMs,
             )
         }
     }

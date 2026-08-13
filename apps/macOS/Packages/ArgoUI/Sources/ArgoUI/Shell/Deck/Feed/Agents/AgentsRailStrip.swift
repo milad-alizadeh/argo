@@ -15,17 +15,24 @@ struct AgentsRailStrip: View {
     /// `AgentChip.scope`. A dot with nothing behind it is drawn and does nothing.
     let select: (FeedAgent) -> (() -> Void)?
 
+    /// A ScrollView, exactly as the expanded rail is: thirty dots outgrow the column too, and
+    /// `argoScrollsUnderCanopy` insets SCROLL content — on a plain stack it is a no-op, so the
+    /// first dots end up drawn behind the glass.
     var body: some View {
-        VStack(spacing: ArgoSpacing.snug) {
-            Button(action: expand) { ArgoDisclosure(.beside) }
-                .buttonStyle(QuietButtonStyle())
-                .accessibilityLabel("Show subagents")
-            ForEach(agents) { dot($0) }
-            Spacer(minLength: ArgoSpacing.flush)
+        ScrollView {
+            LazyVStack(spacing: ArgoSpacing.snug) {
+                // `.plain` for the reason the rail's own heading takes it: a filled control ground
+                // here would be a card in a column 28 points wide.
+                Button(action: expand) { ArgoDisclosure(.beside) }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Show subagents")
+                ForEach(agents) { dot($0) }
+            }
+            .frame(maxWidth: .infinity, alignment: .top)
+            .padding(.vertical, ArgoSpacing.base)
         }
-        .padding(.vertical, ArgoSpacing.base)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .argoScrollsUnderCanopy()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Subagents, collapsed")
     }

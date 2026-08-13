@@ -40,27 +40,18 @@ struct AgentChip: View {
                     .argoText(ArgoTypography.rowTitle)
                     .foregroundStyle(argo.color.text.primary)
                     .lineLimit(2)
-                spend
+                AgentMeter(agent: agent)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, ArgoSpacing.tight)
     }
 
-    @ViewBuilder private var spend: some View {
-        if let spend = agent.spend {
-            Text(FeedSpend.words(spend))
-                .argoText(ArgoTypography.machineCaption)
-                .monospacedDigit()
-                .foregroundStyle(argo.color.text.tertiary)
-                .lineLimit(1)
-        }
-    }
-
     private var spoken: String {
         [
             agent.label,
             agent.isRunning ? "running" : "finished",
+            agent.durationMs.map { TurnClockPhrase.spoken(seconds: $0 / 1000) },
             agent.spend.map(FeedSpend.words),
             scope == nil ? "nothing read" : nil,
         ]

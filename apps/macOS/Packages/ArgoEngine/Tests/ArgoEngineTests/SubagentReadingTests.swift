@@ -27,6 +27,14 @@ struct SubagentReadingTests {
         #expect(try await outcomes(in: "commands").allSatisfy { $0.subagentID == nil })
     }
 
+    /// The host measures the child's whole run and states it beside the spend. Read from there and
+    /// not from `endedAtMs - atMs`: those are the parent's own clock readings, and a record with no
+    /// timestamp leaves that subtraction with nothing to work from.
+    @Test
+    func `a delegating call reports how long its Subagent ran`() async throws {
+        #expect(try await outcomes(in: "delegationAgent").map(\.reportedDurationMs) == [223_591])
+    }
+
     /// Read as a Session, every record in a Subagent's file is a sidechain, so the guards that keep
     /// a child's facts off its parent would leave this reading with no Turn boundary at all.
     @Test

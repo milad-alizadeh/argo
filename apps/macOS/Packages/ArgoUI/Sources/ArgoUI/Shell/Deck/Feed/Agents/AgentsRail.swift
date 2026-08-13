@@ -72,7 +72,11 @@ struct AgentsRail: View {
                     .rotationEffect(.degrees(180))
             }
         }
-        .buttonStyle(QuietButtonStyle())
+        // `.plain`, never `QuietButtonStyle`: that style draws a filled control ground, which is a
+        // CARD at the top of a rail the contract keeps flat (D33) — and at `surface.overlay` it
+        // outweighs the selected chip's own wash, so the heading would beat the selection for the
+        // eye. It also overrides the type ramp, which is what makes this line quiet.
+        .buttonStyle(.plain)
         .accessibilityLabel("Hide subagents")
     }
 

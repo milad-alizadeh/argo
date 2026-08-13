@@ -29,6 +29,14 @@ struct FeedCall: Equatable, Sendable {
     /// scopes the feed onto its work rather than onto the line that handed it over. `var` so the
     /// memberwise initialiser defaults it, which leaves every other caller of this type unchanged.
     var subagentID: String?
+    /// How long a delegation reported taking, and when it was handed over. Both for the rail's chip
+    /// and neither drawn on this row, so the sentence above is unaffected — the rule that keeps a
+    /// timestamp out of a call row is about the row's LAYOUT, not about what the reading carries.
+    ///
+    /// `durationMs` is absent while the Subagent is still working; `startedAtMs` is what the chip
+    /// counts up from until then.
+    var durationMs: Int?
+    var startedAtMs: Int?
 
     /// Whether the row could open onto anything. Derived from the evidence and never from the kind.
     var disclosure: Disclosure {
@@ -180,6 +188,8 @@ extension FeedCall {
             repeats: repeats,
             spend: spend,
             subagentID: subagentID,
+            durationMs: durationMs,
+            startedAtMs: startedAtMs,
         )
     }
 }

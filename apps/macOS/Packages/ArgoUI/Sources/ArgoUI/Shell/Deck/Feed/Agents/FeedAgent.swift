@@ -18,4 +18,10 @@ struct FeedAgent: Equatable, Sendable, Identifiable {
     /// `FeedAgentScope`. `nil` while it is still working: the name arrives with the result, so a
     /// running chip is selectable and has nothing to show yet.
     var subagentID: String?
+    /// How long it ran, as the host measured it. `nil` while it is still working — nothing reports
+    /// a total until the delegating call comes back, which is when `spend` arrives too.
+    var durationMs: Int?
+    /// When the work was handed over. What a running chip counts up from, since a total it does not
+    /// have yet cannot be drawn.
+    var startedAtMs: Int?
 }

@@ -96,6 +96,13 @@ public struct ToolCallOutcome: Sendable, Equatable {
     /// flag says: the spend is nil'd there to stop a nested delegation being billed twice, and an
     /// id is not summed.
     public let subagentID: String?
+    /// How long the call itself reported taking, in milliseconds. A DELEGATING call is again the
+    /// case this exists for: the host measures the Subagent's whole run and reports it beside the
+    /// spend, which is the only place that figure is ever stated.
+    ///
+    /// Not `endedAtMs - atMs`: those are the PARENT's two clock readings, and a resumed chain or a
+    /// record with no timestamp leaves that subtraction with nothing to work from.
+    public let reportedDurationMs: Int?
 
     public init(
         id: String,
@@ -104,6 +111,7 @@ public struct ToolCallOutcome: Sendable, Equatable {
         endedAtMs: Int?,
         usage: Usage?,
         subagentID: String? = nil,
+        reportedDurationMs: Int? = nil,
     ) {
         self.id = id
         self.status = status
@@ -111,5 +119,6 @@ public struct ToolCallOutcome: Sendable, Equatable {
         self.endedAtMs = endedAtMs
         self.usage = usage
         self.subagentID = subagentID
+        self.reportedDurationMs = reportedDurationMs
     }
 }

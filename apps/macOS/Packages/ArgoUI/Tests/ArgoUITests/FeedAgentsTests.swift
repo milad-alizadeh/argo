@@ -48,6 +48,41 @@ struct FeedAgentsTests {
         #expect(agents(in: handedOver()).last?.spend == Self.reported)
     }
 
+    /// The host measures the child's whole run and states it on the record that answers the
+    /// handover — the same record the spend arrives on, and the only place either is ever reported.
+    @Test
+    func `a landed subagent carries how long its result reported running`() {
+        #expect(agents(in: timed()).last?.durationMs == 96400)
+    }
+
+    /// It has no total to draw, so the chip counts up from the handover instead. The moment is the
+    /// delegating call's own, which is when the work left.
+    @Test
+    func `a subagent still working reports no duration and keeps the moment it was handed over`() {
+        let running = agents(in: timed()).first
+
+        #expect(running?.durationMs == nil)
+        #expect(running?.startedAtMs == 1_733_000_000_000)
+    }
+
+    private func timed() -> [TranscriptEvent] {
+        [
+            .toolCall(ToolCall(
+                id: "away", name: "Task", kind: .delegate, target: "review",
+                atMs: 1_733_000_000_000,
+            )),
+            .toolCall(FeedFixture.call("back", tool: "Task", kind: .delegate, naming: "verify")),
+            .toolCallOutcome(ToolCallOutcome(
+                id: "back",
+                status: .completed,
+                result: nil,
+                endedAtMs: nil,
+                usage: Self.reported,
+                reportedDurationMs: 96400,
+            )),
+        ]
+    }
+
     /// Two agents handed the same brief are two agents: folding them would report a run as finished
     /// when only the second had, with one child's spend read against both.
     @Test

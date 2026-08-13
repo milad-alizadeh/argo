@@ -28,7 +28,10 @@ struct AgentsFanOutSpecimen: View {
             .frame(width: width)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .defaultScrollAnchor(.bottom)
+        // The bottom anchor is what puts two chips under the glass, and it is only right while the
+        // rail overflows: twenty DOTS fit the column, so anchoring those to the end would pin them
+        // to the foot and leave the top of the strip empty.
+        .defaultScrollAnchor(isCollapsed ? .top : .bottom)
         .environment(\.argoDeckCanopy, ArgoLayout.deckCanopyHeight)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .argoDeckSurface()

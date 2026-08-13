@@ -18,6 +18,7 @@ extension TranscriptReader {
             // Read whatever the record's sidechain flag says, unlike the spend above: an id is not
             // summed, so there is no double-count for a guard to prevent — see `ToolCallOutcome`.
             subagentID: message.toolUseResult?.stringField("agentId"),
+            reportedDurationMs: message.toolUseResult?["totalDurationMs"]?.int,
         )
     }
 

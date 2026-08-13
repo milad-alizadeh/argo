@@ -1,3 +1,6 @@
+import ArgoEngine
+import Foundation
+
 /// A fan-out wide enough to overflow the rail — the state `AgentsRail` says it exists for, and the
 /// only one in which the rail scrolls at all.
 ///
@@ -12,10 +15,23 @@ enum AgentsFanOutFixture {
             id: position,
             label: brief,
             isRunning: isRunning,
-            spend: nil,
-            // Only the ones that came back name a Subagent: the id arrives with the result. So the
-            // running third of this rail is unselectable, which is the shape a live fan-out has.
+            // The three figures arrive TOGETHER, on the record that answers the handover — so a
+            // running chip has none of them and counts up from `startedAtMs` instead. Varied per
+            // position, because a column of twenty identical figures proves nothing about the
+            // column's rhythm.
+            spend: isRunning ? nil : spent(at: position),
             subagentID: isRunning ? nil : "a-\(position)",
+            durationMs: isRunning ? nil : 40000 + position * 23000,
+            startedAtMs: isRunning ? Date().epochMs - (30 + position) * 1000 : nil,
+        )
+    }
+
+    private static func spent(at position: Int) -> Usage {
+        Usage(
+            inputTokens: 1200 + position * 140,
+            outputTokens: 3400 + position * 900,
+            cacheReadTokens: 90000 + position * 4300,
+            cacheCreationTokens: 0,
         )
     }
 
