@@ -182,9 +182,14 @@ more.
 17. **The menu opens over a running Turn exactly as at rest**, and coexists with a queued
     follow-up above the field — `running.png`, `queued.png`.
 18. **The sent line is the user's own bubble, verbatim, mention and all.** A `Skill Loaded: name`
-    marker comes from the transcript beside it, and opens the `SKILL.md` body Argo read; a
-    built-in gets the marker with nothing behind it. No expanded prompt, no third representation
-    Argo invents — `loaded.png`.
+    marker comes from the transcript beside it, and opens the `SKILL.md` body Argo read. No
+    expanded prompt, no third representation Argo invents — `loaded.png`. **Amended during #688's
+    build: a built-in gets NO marker.** It was to get one with nothing behind it, and
+    `Skill Loaded: clear` is a false sentence — the transcript records no skill load for a
+    built-in, so the marker would be Argo's own invention about a thing that did not happen. The
+    built-in's own line is already in the reader's bubble, and its output is already a Tool Call
+    row. The marker with nothing behind it is still drawn, for the case that really has nothing:
+    a `SKILL.md` that is all frontmatter.
 
 ## Token reconciliation
 

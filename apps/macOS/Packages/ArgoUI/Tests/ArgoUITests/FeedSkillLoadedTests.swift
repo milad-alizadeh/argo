@@ -18,6 +18,7 @@ struct FeedSkillLoadedTests {
         )
     }
 
+    /// The same load, as the feed reads it.
     private func read(
         _ name: String = "code-review",
         body: SkillBody? = .read("Two-axis review."),
@@ -98,6 +99,40 @@ struct FeedSkillLoadedTests {
         #expect(read(body: .unreadable("Argo could not read it.")).ink == .failure)
         #expect(read().ink == .boundary)
         #expect(read(body: nil).ink == .boundary)
+    }
+
+    /// Every other filed address in this feed is said relative to where the Session is working, and
+    /// a panel opening on `/Users/…` beside call rows opening on `./` reads as a different machine.
+    @Test
+    func `the panel addresses the file the way every other row addresses one`() throws {
+        let rows = FeedProjection.rows(from: [
+            .cwd("/Users/x/argo"),
+            .skillLoaded(SkillLoad(
+                name: "implement",
+                directory: "/Users/x/argo/.claude/skills/implement",
+                body: .read("One ticket at a time."),
+            )),
+        ])
+        let opened = try #require(rows.last?.content.opened)
+
+        #expect(opened.steps.first?.address == .filed(".claude/skills/implement/SKILL.md"))
+        #expect(opened.steps.first?.isExternal == false)
+    }
+
+    /// A global skill lives outside the Project, and the panel's own marker is where that shows.
+    @Test
+    func `a skill outside the Session's tree is marked as outside it`() throws {
+        let rows = FeedProjection.rows(from: [
+            .cwd("/Users/x/argo"),
+            .skillLoaded(SkillLoad(
+                name: "grilling",
+                directory: "/Users/x/.claude/skills/grilling",
+                body: .read("Interview me relentlessly."),
+            )),
+        ])
+        let opened = try #require(rows.last?.content.opened)
+
+        #expect(opened.steps.first?.isExternal == true)
     }
 
     /// `Loaded` alone reads as truncated copy at the moment the reader is confirming which of

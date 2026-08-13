@@ -3,10 +3,8 @@ import SwiftUI
 
 /// A skill the Session was handed, drawn where it happened (#688).
 ///
-/// A chip rather than a rule across the measure: the marks that run the column say the reading
-/// changed SHAPE, and this one says something arrived inside it. It hugs its own words for the same
-/// reason — the user's line above it is theirs, and a band the width of the column beneath it would
-/// read as a second thing they said.
+/// A chip that hugs its own words, not a rule across the measure: the marks that run the column
+/// say the reading changed SHAPE, and this one says something arrived inside it.
 struct SkillLoadedMarker: View {
     @Environment(\.argo) private var argo
 
@@ -29,7 +27,7 @@ struct SkillLoadedMarker: View {
     private var chip: some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.callGap) {
             ArgoGlyph(ArgoSymbol.skill, .inline)
-                .foregroundStyle(argo.color.text.disabled)
+                .foregroundStyle(verdict ?? argo.color.text.disabled)
             Text(Self.label)
                 .argoText(ArgoTypography.rowMeta)
                 .foregroundStyle(verdict ?? argo.color.text.tertiary)
@@ -42,8 +40,8 @@ struct SkillLoadedMarker: View {
         .padding(.horizontal, ArgoSpacing.base)
         .padding(.vertical, ArgoSpacing.snug)
         .background(ground, in: .rect(cornerRadius: ArgoRadius.marker))
-        // The rim is what makes the chip an object rather than a smudge: its ground stands 14
-        // levels off the deck's, which on its own reads as a soft patch at any real brightness.
+        // The chip's ground stands 14 levels off the deck's, which alone reads as a soft patch
+        // rather than an object at this size.
         .overlay {
             RoundedRectangle(cornerRadius: ArgoRadius.marker)
                 .strokeBorder(argo.color.edge.hairline, lineWidth: ArgoStroke.border)
@@ -51,8 +49,8 @@ struct SkillLoadedMarker: View {
         .contentShape(.rect(cornerRadius: ArgoRadius.marker))
     }
 
-    /// Only where there is something to open. A marker with nothing behind it draws no chevron, so
-    /// the row never offers a click that does nothing.
+    /// Drawn only where there is something to open, so the row never offers a click that does
+    /// nothing.
     @ViewBuilder private var disclosure: some View {
         if skill.opened != nil {
             ArgoDisclosure(.beside)
@@ -60,15 +58,12 @@ struct SkillLoadedMarker: View {
         }
     }
 
-    /// The ink a file Argo could not read takes, and `nil` for the one it did — a failure is the
-    /// only outcome in this feed with a colour. Read off the load, which is also where the minimap
-    /// reads it.
+    /// The failure ink where Argo could not read the file, `nil` everywhere else. Read off the
+    /// load, which is also where the minimap reads it.
     private var verdict: ArgoColor? {
         skill.ink.state(in: argo.color)
     }
 
-    /// The chip's own ground, one step up from the deck. The open row keeps the selected ground
-    /// every other opening row takes, so a panel full of text still says which line it came from.
     private var ground: ArgoColor {
         isOpen ? argo.color.surface.selected : argo.color.surface.glassTint
     }
@@ -81,6 +76,21 @@ struct SkillLoadedMarker: View {
     VStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
         ForEach(Array(FeedProjection.previewSkillLoads.enumerated()), id: \.offset) { _, skill in
             SkillLoadedMarker(skill: skill, isOpen: false, open: {})
+        }
+    }
+    .padding(ArgoFeedRow.inset)
+    .frame(width: 720)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+// The open row beside a closed one: the selected ground and the accent chevron are what say which
+// marker the panel is showing, and neither is reachable without a click.
+#Preview("Skill loaded — the marker whose evidence is open") {
+    VStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
+        let pair = Array(FeedProjection.previewSkillLoads.prefix(2).enumerated())
+        ForEach(pair, id: \.offset) { position, skill in
+            SkillLoadedMarker(skill: skill, isOpen: position == 0, open: {})
         }
     }
     .padding(ArgoFeedRow.inset)

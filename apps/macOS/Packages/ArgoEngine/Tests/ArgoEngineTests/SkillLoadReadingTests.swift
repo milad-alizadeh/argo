@@ -32,13 +32,15 @@ struct SkillLoadReadingTests {
     func `The name is the one the skill states about itself`() async throws {
         let read = try await loads("harnessNoise", readSkill: reading("""
         ---
-        name: implement
+        name: implement-fanout
         ---
 
         One ticket at a time.
         """))
 
-        #expect(read.first?.name == "implement")
+        // A name that is NOT the directory's, so the assertion discriminates: the fixture's
+        // directory is `implement`, and every real skill on this machine agrees with its folder.
+        #expect(read.first?.name == "implement-fanout")
     }
 
     /// A `SKILL.md` states a name almost always, and the directory is what the CLI addressed it by
