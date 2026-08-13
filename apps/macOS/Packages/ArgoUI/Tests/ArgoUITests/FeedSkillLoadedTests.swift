@@ -91,6 +91,25 @@ struct FeedSkillLoadedTests {
         #expect(opened.steps.first?.result == .output(OutputEvidence(tier: .derived, text: why)))
     }
 
+    /// And said on the ROW, not only behind the click: a marker drawn like every other would leave
+    /// the failure stated nowhere a reader has a reason to look.
+    @Test
+    func `a failed read colours the marker, as a failed call colours its line`() {
+        #expect(read(body: .unreadable("Argo could not read it.")).ink == .failure)
+        #expect(read().ink == .boundary)
+        #expect(read(body: nil).ink == .boundary)
+    }
+
+    /// `Loaded` alone reads as truncated copy at the moment the reader is confirming which of
+    /// several markers they opened.
+    @Test
+    func `the panel's header names the skill beside the verb`() throws {
+        let opened = try #require(read().opened)
+
+        #expect(opened.verb == "Loaded")
+        #expect(opened.label == "code-review")
+    }
+
     /// The marker is punctuation, not work and not prose: it must not join a run of looking, and it
     /// must not be counted among what anybody said.
     @Test

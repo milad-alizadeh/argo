@@ -32,16 +32,22 @@ struct SkillLoadedMarker: View {
                 .foregroundStyle(argo.color.text.disabled)
             Text(Self.label)
                 .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.tertiary)
+                .foregroundStyle(verdict ?? argo.color.text.tertiary)
             Text(skill.load.name)
                 .argoText(ArgoTypography.machine)
-                .foregroundStyle(argo.color.text.primary)
+                .foregroundStyle(verdict ?? argo.color.text.primary)
             disclosure
         }
         .lineLimit(1)
         .padding(.horizontal, ArgoSpacing.base)
         .padding(.vertical, ArgoSpacing.snug)
         .background(ground, in: .rect(cornerRadius: ArgoRadius.marker))
+        // The rim is what makes the chip an object rather than a smudge: its ground stands 14
+        // levels off the deck's, which on its own reads as a soft patch at any real brightness.
+        .overlay {
+            RoundedRectangle(cornerRadius: ArgoRadius.marker)
+                .strokeBorder(argo.color.edge.hairline, lineWidth: ArgoStroke.border)
+        }
         .contentShape(.rect(cornerRadius: ArgoRadius.marker))
     }
 
@@ -52,6 +58,13 @@ struct SkillLoadedMarker: View {
             ArgoDisclosure(.beside)
                 .foregroundStyle(isOpen ? argo.color.interaction.accent : argo.color.text.disabled)
         }
+    }
+
+    /// The ink a file Argo could not read takes, and `nil` for the one it did — a failure is the
+    /// only outcome in this feed with a colour. Read off the load, which is also where the minimap
+    /// reads it.
+    private var verdict: ArgoColor? {
+        skill.ink.state(in: argo.color)
     }
 
     /// The chip's own ground, one step up from the deck. The open row keeps the selected ground
