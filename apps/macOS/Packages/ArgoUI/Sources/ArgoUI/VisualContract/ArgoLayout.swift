@@ -98,6 +98,10 @@ public enum ArgoLayout {
 
     /// How far the rail may be dragged. It stops well before nothing.
     public static let railWidths: ClosedRange<CGFloat> = 180 ... 400
+    /// The rail collapsed: one state dot per Agent and the padding either side of it, and no room
+    /// for a name. Below `railWidths.lowerBound` on purpose — collapsing is not dragging, so the
+    /// seam's floor does not bound it.
+    public static let agentsRailCollapsedWidth: CGFloat = 28
     /// The narrowest the feed may be squeezed to by its neighbours. Read against the lane at ITS
     /// narrowest, because the two shrink together — see `minimapLaneWidth(sharing:)`.
     public static let feedMinimumWidth: CGFloat = 320

@@ -36,11 +36,20 @@ struct InstrumentDeckShell: View {
     /// What that vessel's controls do. Inert by default, so a specimen renders the vessel with
     /// nothing behind it.
     var intents = DeckIntents.inert
+    /// Each Subagent's own reading, for the rail to scope the feed onto — see `FeedAgentReadings`.
+    var readings = FeedAgentReadings.none
+    /// Which Agent the deck opens scoped to. A parameter for the reason `open` is one: a screenshot
+    /// cannot click a chip.
+    var scope = FeedScope.session
 
     /// Where the reader dragged the deck's seams. Owned HERE, above the identity below — keyed with
     /// the room it would snap back to its opening width on every Session switch.
     @State private var railWidth = ArgoLayout.agentsRailWidth
     @State private var panelWidth: CGFloat?
+    /// Whether the rail is collapsed. Beside the seam widths and for their reason: a reader who
+    /// collapsed it meant the rail, not this one Session's rail. Seedable for the same reason
+    /// `scope` is a parameter.
+    @State var isRailCollapsed = false
 
     var body: some View {
         content
@@ -67,6 +76,9 @@ struct InstrumentDeckShell: View {
                 vessel: vessel,
                 intents: intents,
                 seams: DeckSeams(rail: $railWidth, panel: $panelWidth),
+                isRailCollapsed: $isRailCollapsed,
+                readings: readings,
+                scope: scope,
             )
             // SwiftUI discards a view's whole state when its id changes. On the DECK and not the
             // feed alone: the panel and the lightbox are keyed to rows too, and an open panel

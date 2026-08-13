@@ -37,6 +37,16 @@ struct SessionsDeck: View {
     /// Where the reader dragged the deck's seams — held above this view, never in it. See
     /// `DeckSeams`.
     var seams = DeckSeams.unheld
+    /// Whether the rail is collapsed. Above this view for the same reason the seams are: it is a
+    /// standing preference, not a fact about the Session on screen.
+    var isRailCollapsed = Binding.constant(false)
+    /// Each Subagent's own reading, for the rail's chips to be scoped onto. Empty until the engine
+    /// reads them (#711). A specimen passes fixtures, so the scoped feed is a state somebody has
+    /// looked at. See `FeedAgentReadings`.
+    var readings = FeedAgentReadings.none
+    /// Which Agent's work the feed is reading. Held HERE, under the deck's per-Session identity,
+    /// because a scope names a delegation of THIS Session's and must not survive a switch.
+    @State var scope = FeedScope.session
     /// Where the keyboard is across the whole reading — the feed, the panel and the lightbox in one
     /// space, so focus can come back out of the two that cover it. See `FeedFocus`.
     @FocusState private var focus: FeedFocus?
@@ -64,6 +74,13 @@ struct SessionsDeck: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .argoLightbox(selection, in: feed)
+        // A panel and a lightbox are opened on a ROW, and a scope switch replaces every row under
+        // them. Left open they would show one reading's evidence over another's feed.
+        .onChange(of: scope) { _, _ in
+            open = nil
+            step = nil
+            lit = nil
+        }
     }
 
     private var zones: some View {
@@ -76,6 +93,11 @@ struct SessionsDeck: View {
                 vessel: vessel,
                 intents: intents,
                 seams: seams,
+                rail: AgentsRailControl(
+                    scope: $scope,
+                    isCollapsed: isRailCollapsed,
+                    readings: readings,
+                ),
             )
             // A ROW and not an overlay, unlike the vessel above: the feed runs under a composer and
             // stays readable through the glass, where this replaces the reading's end. It spans the

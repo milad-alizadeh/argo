@@ -1,4 +1,37 @@
 import ArgoEngine
+import Foundation
+
+extension CockpitPresentation.Session {
+    /// When the two unanswered delegations here were handed over, relative to NOW rather than to
+    /// the rest of this transcript's Dec-2024 clock.
+    ///
+    /// Their chips count UP from this, so a fixed moment in the past would draw a subagent that has
+    /// been running for eight months. The reading either side of it is unaffected: nothing in the
+    /// feed words a delegation's age, and the rail is the one surface that counts.
+    static func handedOver(_ secondsAgo: Int) -> Int {
+        Date().epochMs - secondsAgo * 1000
+    }
+
+    /// A delegation that came back, priced and timed — the two figures the rail draws on a chip.
+    ///
+    /// Here rather than beside its one caller in `+PreviewWork`, which is at the file ceiling. The
+    /// tokens land as cache reads, where a real subagent's spend mostly sits.
+    static func landed(_ id: String, tokens: Int, seconds: Int) -> ToolCallOutcome {
+        ToolCallOutcome(
+            id: id,
+            status: .completed,
+            result: nil,
+            endedAtMs: nil,
+            usage: Usage(
+                inputTokens: 0,
+                outputTokens: 0,
+                cacheReadTokens: tokens,
+                cacheCreationTokens: 0,
+            ),
+            reportedDurationMs: seconds * 1000,
+        )
+    }
+}
 
 extension CockpitPresentation.Session {
     /// The three things a turn does that are not work or prose: it hands work to other agents, it
@@ -8,15 +41,18 @@ extension CockpitPresentation.Session {
     /// child still working — and the third reports what it spent, the only place a sidechain's cost
     /// is ever visible.
     static let fannedOut: [TranscriptEvent] = [
+        // The two unanswered ones carry a handover time, because that is what their chips count up
+        // from: a running Agent has reported no total for the rail to draw instead.
         .toolCall(ToolCall(
             id: "fan-research", name: "Task", kind: .delegate,
             target: "Research: how the study inks an attention row",
-            narration: "Research: how the study inks an attention row", atMs: nil,
+            narration: "Research: how the study inks an attention row",
+            atMs: handedOver(214),
         )),
         .toolCall(ToolCall(
             id: "fan-verify", name: "Task", kind: .delegate,
             target: "Verify: the fold breaks at every mark",
-            narration: "Verify: the fold breaks at every mark", atMs: nil,
+            narration: "Verify: the fold breaks at every mark", atMs: handedOver(186),
         )),
         .toolCallOutcome(ToolCallOutcome(
             id: "fan-verify",
@@ -29,11 +65,19 @@ extension CockpitPresentation.Session {
                 cacheReadTokens: 100_000,
                 cacheCreationTokens: 0,
             ),
+            // The one delegation here that named its Subagent, because it is the one the record
+            // answered: the id arrives with the result. It is what makes this chip the selectable
+            // one in the rail — see `AgentsRailFixture`.
+            subagentID: AgentsRailFixture.verifierID,
+            // Beside the spend, and reported by the same record: the host measures the Subagent's
+            // whole run, which is the only place that figure is ever stated.
+            reportedDurationMs: 223_591,
         )),
         .toolCall(ToolCall(
             id: "fan-sweep", name: "Task", kind: .delegate,
             target: "Sweep: every surface that reads a stop reason",
-            narration: "Sweep: every surface that reads a stop reason", atMs: nil,
+            narration: "Sweep: every surface that reads a stop reason",
+            atMs: handedOver(97),
         )),
         // A question already settled, and the answer that settled it. The answer is prose the host
         // wrote, exactly as one arrives — naming the option rather than being it.

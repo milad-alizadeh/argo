@@ -13,7 +13,11 @@ private let continuingStopReason = "tool_use"
 public actor TranscriptReader {
     /// What a call needs to be remembered by until its result lands: the kind decides which
     /// evidence its result is read as, and the target is the path a disk fallback would re-read.
-    private struct OpenCall {
+    ///
+    /// This and the three members below it are internal rather than `private` only because
+    /// `TranscriptReader+Outcome.swift` reads them, and `private` in Swift is file-scoped. The
+    /// actor's isolation is what protects them; nothing outside this type touches either.
+    struct OpenCall {
         let kind: ToolCallKind
         /// The host's own name, kept because one reading is gated on it rather than on the kind:
         /// a question's answer is worth keeping and this vocabulary has no kind for a question.
@@ -21,15 +25,32 @@ public actor TranscriptReader {
         let target: String?
     }
 
-    private var openCalls: [String: OpenCall] = [:]
+    var openCalls: [String: OpenCall] = [:]
     /// The reader's second memory, and for the same reason as its first: a host that writes its
     /// plan one entry at a time leaves the list itself nowhere in the record.
     private var planLedger = PlanLedger()
     private var context = TranscriptContextCursor()
-    private let readImage: ImageReader
+    let readImage: ImageReader
+    /// Whose record this is reading. Every guard it decides goes through `attributes(_:)`.
+    private let subject: TranscriptSubject
 
-    public init(readImage: @escaping ImageReader = noImageReader) {
+    public init(
+        subject: TranscriptSubject = .session,
+        readImage: @escaping ImageReader = noImageReader,
+    ) {
+        self.subject = subject
         self.readImage = readImage
+    }
+
+    /// Whether the Turn, spend and Plan a record reports belong to what this reader is reading.
+    ///
+    /// A Session's reading disowns a sidechain record's three, for the reasons on
+    /// `TranscriptSubject`. A Subagent's own file is all sidechain, and all of it is its own.
+    func attributes(_ message: MessageRecord) -> Bool {
+        switch subject {
+        case .session: !message.isSidechain
+        case .subagent: true
+        }
     }
 
     /// One line → the events it carried, in the order the record wrote them.
@@ -137,7 +158,7 @@ public actor TranscriptReader {
     /// child's, and the delegating call's result already carries it whole. Counted here as well,
     /// every delegated token would be in the Session's total twice.
     private func spent(in message: MessageRecord) -> [TranscriptEvent] {
-        guard !message.isSidechain, let usage = message.usage else { return [] }
+        guard attributes(message), let usage = message.usage else { return [] }
         return [.usage(usage)]
     }
 
@@ -148,7 +169,7 @@ public actor TranscriptReader {
     /// the same reason one level up: its turn is the child's, and closing the root's on it would
     /// report a Session as quiet while its delegate is still working.
     private func turnEnd(of message: MessageRecord) -> [TranscriptEvent] {
-        guard !message.isSidechain else { return [] }
+        guard attributes(message) else { return [] }
         guard let reported = message.stopReason, reported != continuingStopReason else { return [] }
         return [.turnEnded(StopReason(reported: reported))]
     }
@@ -205,67 +226,8 @@ public actor TranscriptReader {
     /// parent's would put a subagent's steps on the Session's pill — permanently, since an
     /// incremental list is never replaced whole by the next write.
     private func planWritten(by use: ToolUseBlock, in message: MessageRecord) -> Plan? {
-        guard !message.isSidechain else { return nil }
+        guard attributes(message) else { return nil }
         guard use.name != planTool else { return plan(from: use.input) }
         return planLedger.written(by: use)
-    }
-
-    /// The record is passed whole rather than its timestamp and usage separately, because the third
-    /// thing the evidence needs — `toolUseResult` — sits beside `message` at the RECORD level: one
-    /// object shared by every result part the record carried, which is the host's shape.
-    private func outcome(of result: ToolResultBlock, in message: MessageRecord) -> ToolCallOutcome {
-        let status: ToolCallStatus = result.isError ? .failed : .completed
-        return ToolCallOutcome(
-            id: result.toolUseId,
-            status: status,
-            result: evidence(for: result, status: status, reported: message.toolUseResult),
-            endedAtMs: message.timestampMs,
-            usage: spend(reportedIn: message),
-        )
-    }
-
-    /// What the call itself reported spending.
-    ///
-    /// The record answering a call is a USER record, and a user record carries no `usage` of its
-    /// own — so a delegating call's spend, which is the whole reason this field exists, is written
-    /// where the host puts a tool's own result object instead. Read there second rather than
-    /// first: `message.usage` is the host's own field, and it wins wherever one is present.
-    private func spend(reportedIn message: MessageRecord) -> Usage? {
-        // A SIDECHAIN result is the subagent's own call, not a delegation, and the delegating call
-        // above it already reports the whole subtree. Reading both would bill a nested delegation
-        // twice — the same guard, and the same reason, as `.usage` and the turn end have.
-        guard !message.isSidechain else { return nil }
-        return message.usage ?? Usage(reported: message.toolUseResult?["usage"])
-    }
-
-    /// What one resolved call produced, kinded — its patch where it mutated, its image where it
-    /// showed one, otherwise what it printed.
-    ///
-    /// One fixed order over three readings, each of which decides for itself whether the call it is
-    /// handed is one it answers. Media outranks output because the two compete: an image result
-    /// carries a base64 blob that the output reading would happily print to the screen as text.
-    private func evidence(
-        for result: ToolResultBlock,
-        status: ToolCallStatus,
-        reported: JSONValue?,
-    )
-        -> ToolResult? {
-        // A result quoting an id this file never opened belongs to a call in another file (a
-        // resumed chain), not to a call that can be invented.
-        guard let call = openCalls[result.toolUseId] else { return nil }
-        // A delegate's printed work is the subagent's, and the Subagents section owns it.
-        guard call.kind != .delegate else { return nil }
-
-        let resolved = ResolvedCall(
-            kind: call.kind,
-            name: call.name,
-            status: status,
-            target: call.target,
-            content: result.content,
-            toolUseResult: reported,
-        )
-        return diffEvidence(of: resolved).map(ToolResult.diff)
-            ?? mediaEvidence(of: resolved, readImage: readImage).map(ToolResult.media)
-            ?? outputEvidence(of: resolved).map(ToolResult.output)
     }
 }
