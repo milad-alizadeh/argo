@@ -43,11 +43,18 @@ struct PlanPill: View {
 
     /// A Button rather than a tap gesture, so Space and Return open the list for a keyboard the
     /// same way a click does — and `ESC` gives it back, since the list stands over the reading.
+    ///
+    /// Focusable for that Escape alone: `onExitCommand` only fires for a view in the responder
+    /// chain, and a `Button` is not in one until something focuses it. The ring is the price of
+    /// being in it — the pill is a control on top of the reading, so what has focus is not
+    /// otherwise evident.
     private var pill: some View {
         Button { isOpen.toggle() } label: { line }
             .buttonStyle(.plain)
             .focusable()
             .focused($isFocused)
+            .focusEffectDisabled()
+            .argoFocusRing(isFocused, in: Capsule())
             .onExitCommand { isOpen = false }
             // On the PILL and not on the view that also holds the list: an element spanning both
             // puts this label on a frame the pointer cannot land in.

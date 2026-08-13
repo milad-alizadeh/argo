@@ -123,15 +123,18 @@ cannot animate, which is why the built version's state change was a jump.
 **Gestures.** The header is a `Button`, so it is one click anywhere on its row. It never takes list
 selection: it is not a Session, and a highlight on it would claim it was.
 
-**Pointer-only, decided during the build, and the one thing here worth revisiting.** The keyboard
-does not reach the foot. Any route to it — the `Button`'s own Space and Return, or the ⌘→ / ⌘← that
-the older
-[Disclosure Triangles guidance](https://dev.os9.ca/techpubs/mac/HIGOS8Guide/thig-24.html) gives and
-the current HIG is silent on — needs `.focusable()` on the header, because a `.plain` `Button` in a
-sidebar section header takes no key focus under default macOS settings. That makes a section header a
-Tab stop inside `List(selection:)`, which Apple's own sidebar headers are not, and the cost lands on
-every reader who tabs the roster. So the archive is pointer-and-VoiceOver only for now. Adding the
-Tab stop is a deliberate change, not a fix to fold in quietly.
+**Reached the way every other control is, which #718 later made the rule.** Under default macOS
+settings the keyboard does not reach the foot: a `.plain` `Button` in a sidebar section header takes
+no key focus until the reader turns Full Keyboard Access on. The route ruled out during the build was
+`.focusable()` on the header, which would make a section header a Tab stop inside `List(selection:)` —
+which Apple's own sidebar headers are not — and charge that cost to every reader who tabs the roster.
+The older
+[Disclosure Triangles guidance](https://dev.os9.ca/techpubs/mac/HIGOS8Guide/thig-24.html) gives ⌘→ /
+⌘← for a disclosure and the current HIG is silent, so there is no convention to bind either.
+
+That local call is now the cockpit's contract, in `rules/ui-components.md` under **How a control is
+reached from the keyboard**: the foot is a real `Button`, so Full Keyboard Access reaches it and
+VoiceOver reaches it with the setting off. It is not a gap to be patched here.
 
 **Accessibility.** Label `"Archived, n Sessions"`; value `"Expanded"` / `"Collapsed"`; hint
 `"Shows the Sessions you archived"`. The button trait comes from the `Button`. The archived rows

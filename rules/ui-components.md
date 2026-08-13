@@ -50,6 +50,40 @@ Rules that fall out of this:
   control's look is wrong, restyle it through the contract.
 - Views are pure presentation — no I/O, and no state beyond local interaction state.
 
+## How a control is reached from the keyboard
+
+**Full Keyboard Access is the contract, and the app does not build a ring of its own** (#718). On
+macOS a `Button` enters the Tab ring only once the reader turns that setting on, and Apple's own
+apps behave the same way — a sidebar header, a toolbar glyph and an inline ⓘ are not Tab stops in
+Mail or Finder either. VoiceOver is the route that does not depend on it: it reaches every control
+by VO-arrow with the setting off. A parallel ring would make Argo the one Mac app that tabs
+differently, and it would make Tab ambiguous inside the composer's field, which is where the
+reader spends the most keys. So a control reachable only with the setting on is **not a bug**, and
+the four rules below are how that holds up.
+
+- **Every control is a real control.** A `Button`, `Menu`, `Picker`, `TextField` — never a shape
+  with an `onTapGesture`. The control is what carries Space and Return, the button trait, and the
+  focus the setting hands out; a tap gesture carries none of the three. A tap gesture is allowed
+  only as a **pointer-only layer over something the keyboard already reaches another way**, and it
+  says which way in a comment (`SessionRow.clickCatcher` — the `List` selects the row).
+- **`.focusable()` is for a key the control would not otherwise get**, never for a Tab stop. Reach
+  for it when a view must answer Escape on something it opened, or arrows across a zone, because
+  `onExitCommand` and friends only fire for a view in the responder chain. Each use names the key
+  it is there for. Adding one to a control that only needs Space and Return is the drift this rule
+  replaces.
+- **A focusable that can show focus draws `argoFocusRing`**, so the stroke is `ArgoStroke.focus`
+  and the ring appears only when the last event was a key press (`ArgoFocusVisibility`, #533). The
+  system effect is off for the whole window in `ArgoApp`, because it outlines the focusable rather
+  than the control and it draws on a click too. A focusable that **covers its own zone** — the
+  evidence panel, the lightbox — is ringless and says so at the call site: what has focus is
+  already evident.
+- **A command with a platform convention is bound to its key**, in a `Commands` menu where one
+  exists, so the frequent actions do not depend on the ring at all. ⌘N, ⌘R, ⌘⌫, ⌘I, Return, Escape
+  are the platform's spellings and Argo uses them. **Do not invent a key** for a command macOS has
+  no convention for — an unguessable chord in no menu is not a route, and the ring already reaches
+  it. Where the key lives on the control rather than in a menu, `.help` names it, since that is the
+  only place the reader can find it.
+
 ## All rendered text goes through the type ramp
 
 Typography is a primitive like any other, so it obeys the rule above: **every string the user
