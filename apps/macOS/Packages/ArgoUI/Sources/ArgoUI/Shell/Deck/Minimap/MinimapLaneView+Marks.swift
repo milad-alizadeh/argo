@@ -59,13 +59,14 @@ extension MinimapLaneView {
         }
     }
 
-    /// One run, in the shape its ink carries. Band-local: the marks count down from the band's
+    /// One mark, in the shape the ROW said it drew. Band-local: the marks count down from the
+    /// band's
     /// head, and so does the context they are drawn into.
     private func draw(_ mark: MinimapMark, in context: CGContext, of band: MinimapBand) {
         guard let palette else { return }
         // The one shape that crosses the whole lane. Everything else stands off both edges,
         // which is what makes a needs-you row findable with the colour taken away.
-        let inset = mark.ink.shape == .band ? 0 : ArgoMinimapLane.markInset
+        let inset = mark.shape == .band ? 0 : ArgoMinimapLane.markInset
         let drawable = bounds.width - inset * 2
         let rect = CGRect(
             x: inset + mark.span.lowerBound * drawable,
@@ -74,7 +75,7 @@ extension MinimapLaneView {
             height: mark.height,
         )
         let ink = ink(mark.ink, in: palette).cgColor
-        switch mark.ink.shape {
+        switch mark.shape {
         case .bar, .band, .rule:
             context.setFillColor(ink)
             context.fill(rect)

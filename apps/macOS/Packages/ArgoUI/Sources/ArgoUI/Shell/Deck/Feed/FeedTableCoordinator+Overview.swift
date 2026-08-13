@@ -13,6 +13,7 @@ extension FeedTableCoordinator {
             rows: shown.indices.map { MinimapRow(
                 shown[$0],
                 height: measuredHeight(at: $0, in: table),
+                under: $0 > 0 ? shown[$0 - 1] : nil,
             ) },
             // What the rows are actually DRAWN across, which stops at the reading measure however
             // wide the zone gets — a miniature of the zone would keep compressing past the point

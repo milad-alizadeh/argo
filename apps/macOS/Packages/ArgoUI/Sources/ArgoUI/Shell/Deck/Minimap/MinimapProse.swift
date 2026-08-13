@@ -1,114 +1,65 @@
 import Foundation
 
-/// One block of a prose row's markdown, reduced to the few numbers the lane draws it with: a table
-/// reads as its grid, a fence as its slab, a link in the ink the feed gives it. Built once per
+/// One block of a prose row, as the lane needs it to lay the block out again exactly as
+/// `FeedMarkdown` laid it out: the same words, at the same face, at the same indent. Built once per
 /// distinct text and cached — see `ProseReading.structure(of:)`.
-struct MinimapProseBlock: Equatable, Sendable {
-    /// What the block draws as. Prose flows as ragged bars; a table is a stroked grid; a fence is
-    /// one solid slab, the box the feed draws around its code.
-    enum Kind: Equatable, Sendable {
-        case prose
-        case table
-        case fence
-    }
-
-    var kind: Kind
-    /// UTF-8 length of the block's text — what raggedness and the block's share are read from.
-    var length: Int
-    /// The lines the source itself states — a fence's code lines, a table's rows with its header.
-    /// `nil` for prose, which flows at the column's measure.
-    var sourceLines: Int?
-    /// Where the block's links sit, as UTF-8 offsets into its text.
-    var links: [MinimapLinkSpan] = []
-    /// The words themselves, for a block whose lines the lane draws at the widths they really
-    /// wrapped to. Prose only: a fence and a table are drawn as their own shape.
-    var text = ""
-    /// A table's cells as their UTF-8 lengths, header row first. What its columns and its rows are
-    /// dealt by — see `MinimapRuns.cells`. Lengths and not the words, because the lane draws the
-    /// grid and never the text inside it.
-    var cells: [[Int]] = []
+///
+/// It carries the words and never a length. A count of characters is what the lane used to divide
+/// into lines and widths, and that division is where the map and the reading parted company.
+enum MinimapProseBlock: Equatable, Sendable {
+    /// Words that wrap — a paragraph, a heading, one item of a list.
+    case prose(MinimapProseWords)
+    /// A fence: the box the feed draws around its code, filled. Its own lines and whether it
+    /// declared a language, which is a label above the code.
+    case fence(lines: Int, hasInfo: Bool)
+    /// A pipe table, whole. The table itself and not a reduction of it, so the lane deals its
+    /// columns through the very function the feed's own layout deals them with.
+    case table(MarkdownTable)
 }
 
-/// One markdown link's place in its block, `[label](url)` and all. The lane marks the source's own
-/// span — where, never what.
-struct MinimapLinkSpan: Equatable, Sendable {
-    var offset: Int
-    var length: Int
+/// A run of wrapping words and the two things that decide where they start.
+struct MinimapProseWords: Equatable, Sendable {
+    var text: String
+    var face: ProseFace = .body
+    /// The marker a list item is drawn with, trailing-aligned in its own column. `nil` for
+    /// everything that is not one.
+    var marker: String?
+
+    /// How far the words themselves are held off the leading edge — a list item's marker column and
+    /// the gap after it, which is what keeps a wrapped item inside its own words.
+    var indent: CGFloat {
+        marker == nil ? 0 : ArgoFeedRow.markerWidth + ArgoFeedRow.markerGap
+    }
 }
 
 extension MinimapProseBlock {
-    /// Whether the lane draws this block as anything other than plain prose lines.
-    var isStructural: Bool {
-        kind != .prose || !links.isEmpty
-    }
-
-    /// The shape a prose row draws as: its ragged lines, unless the markdown carries structure the
-    /// lane can say — then the blocks themselves.
+    /// The shape a prose row draws as. Always composed, a bare paragraph included: one path through
+    /// the blocks means a heading cannot be reported at a paragraph's face by a second one.
     @MainActor static func shape(of text: String, ink: FeedInk) -> MinimapRowShape {
-        let blocks = ProseReading.structure(of: text)
-        guard blocks.contains(where: \.isStructural) else {
-            return .prose(text: text, ink: ink)
-        }
-        return .composed(blocks: blocks, ink: ink)
+        .composed(blocks: ProseReading.structure(of: text), ink: ink)
     }
 
-    /// The read blocks, reduced. Merged nowhere: two paragraphs lay out the same joined or apart,
-    /// and a block that keeps its own edges keeps its own links.
+    /// The read blocks, as the lane lays them out. Merged nowhere: two paragraphs lay out the same
+    /// joined or apart, and a block that keeps its own edges keeps its own links.
     static func blocks(from markdown: [MarkdownBlock]) -> [MinimapProseBlock] {
         markdown.map { block in
             switch block {
-            case let .heading(_, text), let .paragraph(text), let .bullet(text),
-                 let .numbered(_, text):
-                MinimapProseBlock(
-                    kind: .prose,
-                    length: text.utf8.count,
-                    links: links(in: text),
-                    text: text,
-                )
-            case let .fenced(code, _):
-                MinimapProseBlock(
-                    kind: .fence,
-                    length: code.utf8.count,
-                    sourceLines: max(1, code.components(separatedBy: "\n").count),
+            case let .paragraph(text):
+                .prose(MinimapProseWords(text: text))
+            case let .heading(level, text):
+                .prose(MinimapProseWords(text: text, face: .heading(level: level)))
+            case let .bullet(text):
+                .prose(MinimapProseWords(text: text, marker: "•"))
+            case let .numbered(marker, text):
+                .prose(MinimapProseWords(text: text, marker: marker))
+            case let .fenced(code, info):
+                .fence(
+                    lines: max(1, code.components(separatedBy: "\n").count),
+                    hasInfo: info != nil,
                 )
             case let .table(table):
-                MinimapProseBlock(
-                    kind: .table,
-                    length: (table.header + table.rows.joined())
-                        .reduce(0) { $0 + $1.utf8.count },
-                    sourceLines: table.rows.count + 1,
-                    cells: ([table.header] + table.rows).map { row in
-                        row.map(\.utf8.count)
-                    },
-                )
+                .table(table)
             }
         }
-    }
-
-    /// `[label](url)` spans, by UTF-8 offset. A scan and not a markdown parse: the lane needs
-    /// where a link stands, never what it says.
-    static func links(in text: String) -> [MinimapLinkSpan] {
-        var spans: [MinimapLinkSpan] = []
-        let bytes = Array(text.utf8)
-        var at = 0
-        while at < bytes.count {
-            guard bytes[at] == UInt8(ascii: "["),
-                  let label = bytes.first(UInt8(ascii: "]"), from: at + 1),
-                  bytes.indices.contains(label + 1), bytes[label + 1] == UInt8(ascii: "("),
-                  let close = bytes.first(UInt8(ascii: ")"), from: label + 2)
-            else {
-                at += 1
-                continue
-            }
-            spans.append(MinimapLinkSpan(offset: at, length: close - at + 1))
-            at = close + 1
-        }
-        return spans
-    }
-}
-
-private extension [UInt8] {
-    func first(_ byte: UInt8, from: Int) -> Int? {
-        self[Swift.min(from, count)...].firstIndex(of: byte)
     }
 }

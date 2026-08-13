@@ -8,24 +8,31 @@ import SwiftUI
 /// arrive one frame after the feed had already measured the row and cached its height, so the row
 /// would keep the height of a layout nobody ever saw.
 ///
+/// Both answers come from `MarkdownTable` rather than from the subviews. The overview lane maps
+/// this grid, and it can only do that on the same numbers — a layout that asked its cells and a
+/// lane that worked them out are two answers, which is exactly how the map came to draw a different
+/// table.
+///
 /// Subviews arrive row-major, header row first, `columns` of them per row.
 struct MarkdownTableLayout: Layout {
-    /// What each column asks for, in the order they are drawn.
-    let asks: [MarkdownTableWidths.Ask]
-
-    var columns: Int {
-        asks.count
-    }
+    let table: MarkdownTable
 
     func sizeThatFits(
         proposal: ProposedViewSize,
-        subviews: Subviews,
+        subviews _: Subviews,
         cache _: inout (),
     )
         -> CGSize {
-        let widths = widths(across: proposal.width, subviews: subviews)
-        let heights = heights(subviews, on: widths)
-        return CGSize(width: widths.reduce(0, +), height: heights.reduce(0, +))
+        // SwiftUI runs layout on the main actor, but `Layout` itself makes no such claim — and the
+        // measurements below are the main actor's cache. Asserting it is what lets ONE answer serve
+        // the drawn table and the lane that maps it.
+        MainActor.assumeIsolated {
+            let widths = table.widths(across: proposal.width)
+            return CGSize(
+                width: widths.reduce(0, +),
+                height: table.heights(on: widths).reduce(0, +),
+            )
+        }
     }
 
     func placeSubviews(
@@ -34,51 +41,36 @@ struct MarkdownTableLayout: Layout {
         subviews: Subviews,
         cache _: inout (),
     ) {
-        let widths = widths(across: proposal.width, subviews: subviews)
-        let heights = heights(subviews, on: widths)
-        var y = bounds.minY
-        for (row, height) in heights.enumerated() {
-            var x = bounds.minX
-            for column in 0 ..< columns {
-                guard let cell = at(row: row, column: column, in: subviews) else { continue }
-                cell.place(
-                    at: CGPoint(x: x, y: y),
-                    anchor: .topLeading,
-                    proposal: ProposedViewSize(width: widths[column], height: height),
-                )
-                x += widths[column]
+        MainActor.assumeIsolated {
+            let widths = table.widths(across: proposal.width)
+            var y = bounds.minY
+            for (row, height) in table.heights(on: widths).enumerated() {
+                let band = CGRect(x: bounds.minX, y: y, width: bounds.width, height: height)
+                place(row: row, of: subviews, on: widths, in: band)
+                y += height
             }
-            y += height
         }
     }
 
-    /// The columns' widths at this proposal. An unspecified width — which is what a row is measured
-    /// against before it has one — falls back to what the columns asked for.
-    private func widths(across proposal: CGFloat?, subviews: Subviews) -> [CGFloat] {
-        guard columns > 0, !subviews.isEmpty else { return [] }
-        let measure = proposal ?? asks.map(\.ideal).reduce(0, +)
-        return MarkdownTableWidths.widths(asks, across: measure)
-    }
-
-    /// Every row's height: its tallest cell's, asked at the width that cell will be drawn at.
-    private func heights(_ subviews: Subviews, on widths: [CGFloat]) -> [CGFloat] {
-        guard !widths.isEmpty else { return [] }
-        let rows = (subviews.count + columns - 1) / columns
-        return (0 ..< rows).map { row in
-            (0 ..< columns).reduce(CGFloat.zero) { tallest, column in
-                guard let cell = at(row: row, column: column, in: subviews) else { return tallest }
-                let fits = cell.sizeThatFits(
-                    ProposedViewSize(width: widths[column], height: nil),
-                )
-                return max(tallest, fits.height)
-            }
+    /// One row of cells, placed across the widths its columns were dealt. Every cell takes the
+    /// band's full height, which is what lines the rules up across the table for free.
+    private func place(row: Int, of subviews: Subviews, on widths: [CGFloat], in band: CGRect) {
+        var x = band.minX
+        for column in widths.indices {
+            defer { x += widths[column] }
+            guard let cell = at(row: row, column: column, in: subviews) else { continue }
+            cell.place(
+                at: CGPoint(x: x, y: band.minY),
+                anchor: .topLeading,
+                proposal: ProposedViewSize(width: widths[column], height: band.height),
+            )
         }
     }
 
     /// The cell at a place in the grid, or `nil` where the rows ran out — a table whose last row is
     /// short is the agent's, and the gap is drawn rather than trapped on.
     private func at(row: Int, column: Int, in subviews: Subviews) -> Subviews.Element? {
-        let at = row * columns + column
+        let at = row * table.columns + column
         return subviews.indices.contains(at) ? subviews[at] : nil
     }
 }

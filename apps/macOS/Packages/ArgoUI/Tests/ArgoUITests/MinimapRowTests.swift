@@ -6,8 +6,8 @@ import Testing
 /// What shape each feed row hands the lane (#382).
 ///
 /// The claim under the suite is that the lane is the reading SHRUNK: every ink here is one the row
-/// itself is drawn in, and every alignment is the row's own. Drift turns the lane into a legend,
-/// which is what D25 was written against.
+/// itself is drawn in, and every piece is one the row itself draws. Drift turns the lane into a
+/// legend, which is what D25 was written against.
 @MainActor
 @Suite("Minimap row shapes")
 struct MinimapRowTests {
@@ -19,17 +19,17 @@ struct MinimapRowTests {
         row(content).shape
     }
 
-    /// The ink of a row drawn as one sentence, `nil` where it is drawn as anything else — so an
-    /// ink is one expectation rather than a guard and a recorded issue.
-    private static func sentenceInk(_ content: FeedRow.Content) -> FeedInk? {
-        guard case let .sentence(_, ink) = shape(content) else { return nil }
-        return ink
+    /// The pieces a single-line row is drawn as, empty where it is drawn as anything else — so a
+    /// claim about them is one expectation rather than a guard and a recorded issue.
+    private static func parts(_ content: FeedRow.Content) -> [MinimapLinePart] {
+        guard case let .line(parts, _) = shape(content) else { return [] }
+        return parts
     }
 
-    /// What a row drawn as a mutation says it did, `nil` where it is drawn as anything else.
-    private static func churn(_ content: FeedRow.Content) -> (added: Int, removed: Int)? {
-        guard case let .change(_, added, removed) = shape(content) else { return nil }
-        return (added, removed)
+    /// The ink of a row drawn as one line, `nil` where it is drawn as anything else.
+    private static func lineInk(_ content: FeedRow.Content) -> FeedInk? {
+        guard case let .line(_, ink) = shape(content) else { return nil }
+        return ink
     }
 
     private static func call(churn: FeedCall.Churn?, ending: FeedCall.Ending = .succeeded)
@@ -45,14 +45,20 @@ struct MinimapRowTests {
         )
     }
 
+    /// Prose is always composed, a bare paragraph included: one path through the blocks is what
+    /// keeps a heading from being reported at a paragraph's face by a second one.
     @Test
-    func `what the agent said is prose in the rung the feed says it in`() {
-        #expect(Self.shape(.message("said")) == .prose(text: "said", ink: .message))
-        #expect(Self.shape(.thought("reasoned")) == .prose(text: "reasoned", ink: .thought))
+    func `what the agent said is its blocks in the ink the feed says it in`() {
+        #expect(Self.shape(.message("said")) == .composed(
+            blocks: [.prose(MinimapProseWords(text: "said"))], ink: .message,
+        ))
+        #expect(Self.shape(.thought("reasoned")) == .composed(
+            blocks: [.prose(MinimapProseWords(text: "reasoned"))], ink: .thought,
+        ))
     }
 
-    /// A prompt keeps its own shape, because its lines anchor on the trailing edge where its
-    /// bubble is drawn, not the leading edge prose runs from.
+    /// A prompt keeps its own shape, because its lines anchor on the trailing edge where its bubble
+    /// is drawn, not the leading edge prose runs from.
     @Test
     func `a prompt is a bubble rather than prose`() {
         #expect(Self.shape(.prompt("Fix the seam")) == .bubble(text: "Fix the seam"))
@@ -65,29 +71,50 @@ struct MinimapRowTests {
     }
 
     @Test
-    func `a call is one sentence however tall the row was measured`() {
-        #expect(Self.sentenceInk(.call(Self.call(churn: nil))) == .command)
+    func `a call is the pieces of its sentence, in the order the row sets them`() {
+        let parts = Self.parts(.call(Self.call(churn: nil)))
+        #expect(Self.lineInk(.call(Self.call(churn: nil))) == .command)
+        // The mark's column, the verb, then what it named.
+        #expect(parts.count == 3)
+        #expect(parts[0].width == ArgoFeedRow.callSymbolWidth)
+        #expect(parts[1].text == "Ran")
+        #expect(parts[2].text == "bun run quality")
     }
 
+    /// The counts are drawn where the row draws them and in the inks the row gives them — the two
+    /// diff roles, in the mono, after what the call named. A fixed slab at the trailing edge said
+    /// neither where they were nor how much they were.
     @Test
-    func `a mutation carries what it did in lines`() {
-        let did = Self.churn(.call(Self.call(churn: FeedCall.Churn(added: 30, removed: 10))))
-        #expect(did?.added == 30)
-        #expect(did?.removed == 10)
+    func `a mutation says what it did in the feed's own two inks`() {
+        let parts = Self.parts(.call(Self.call(churn: FeedCall.Churn(added: 30, removed: 10))))
+        #expect(parts.suffix(2).map(\.text) == ["+30", "−10"])
+        #expect(parts.suffix(2).map(\.ink) == [.added, .removed])
+        #expect(parts.suffix(2).map(\.face.isMachine) == [true, true])
+    }
+
+    /// A pure addition draws one count. `−0` is a claim the row never made.
+    @Test
+    func `a half that did nothing is not drawn`() {
+        let parts = Self.parts(.call(Self.call(churn: FeedCall.Churn(added: 4, removed: 0))))
+        #expect(parts.map(\.ink).contains(.added))
+        #expect(!parts.map(\.ink).contains(.removed))
     }
 
     @Test
     func `a patch nothing could count is drawn as the call it was`() {
         let silent = FeedCall.Churn(added: 0, removed: 0)
-        #expect(Self.sentenceInk(.call(Self.call(churn: silent))) != nil)
+        let parts = Self.parts(.call(Self.call(churn: silent)))
+        #expect(!parts.map(\.ink).contains(.added))
+        #expect(!parts.map(\.ink).contains(.removed))
     }
 
-    /// A failed row is red in the feed, so it is red here. An overview that drew a run of failures
-    /// in the same quiet grey as everything else would hide the one thing a reader scans one for.
+    /// A failed row is red in the feed, so it is red here — the counts included. An overview that
+    /// drew diff colours beside a red line would read as a change that landed.
     @Test
     func `a call that failed is drawn in the ink the feed fails in`() {
         let failed = Self.call(churn: FeedCall.Churn(added: 3, removed: 1), ending: .failed)
-        #expect(Self.sentenceInk(.call(failed)) == .failure)
+        #expect(Self.lineInk(.call(failed)) == .failure)
+        #expect(Self.parts(.call(failed)).allSatisfy { $0.ink == .failure })
     }
 
     /// D25's map may never depend on colour alone, so the row waiting on somebody is the one thing
@@ -100,8 +127,8 @@ struct MinimapRowTests {
         #expect(FeedInk.attention.shape == .band)
     }
 
-    /// The row goes quiet the moment something answers it, and the lane has to go quiet with it —
-    /// a lane still amber beside a settled question is the map disagreeing with the reading.
+    /// The row goes quiet the moment something answers it, and the lane has to go quiet with it — a
+    /// lane still amber beside a settled question is the map disagreeing with the reading.
     @Test
     func `a question somebody answered stops taking attention ink`() {
         let settled = FeedAsk(ask: Ask(questions: []), isAnswered: true, answer: "Both")

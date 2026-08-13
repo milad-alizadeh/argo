@@ -2,90 +2,92 @@
 import Foundation
 import Testing
 
-/// A pipe table in the lane, drawn as its cells rather than as one box. A single frame said "a
-/// table
-/// stood here"; the cells say which of the columns the reader is looking for is which.
+/// A pipe table in the lane, drawn as its cells rather than as one box — on the very widths and
+/// heights `MarkdownTableLayout` places the real cells at.
+///
+/// One answer for both, which is the point of the suite. The lane used to work the grid out for
+/// itself from character counts, and a grid worked out twice is two grids.
+@MainActor
 @Suite("Minimap table cells")
 struct MinimapTableTests {
-    private static let measure: CGFloat = 720
+    private static let measure: CGFloat = 720 - ArgoFeedRow.inset * 2
 
-    /// Two rows of three cells: `| a | b | c |` with a header over it.
-    private static func table(_ cells: [[Int]]) -> MinimapProseBlock {
-        MinimapProseBlock(
-            kind: .table, length: cells.joined().reduce(0, +), sourceLines: cells.count,
-            cells: cells,
-        )
+    private static func table(_ header: [String], _ rows: [[String]]) -> MarkdownTable {
+        MarkdownTable(header: header, rows: rows)
     }
 
-    private static func runs(_ cells: [[Int]], over share: Int) -> [MinimapRun] {
-        MinimapRuns.cells(of: table(cells), from: 0, over: share, across: measure)
+    private static func marks(_ header: [String], _ rows: [[String]]) -> [MinimapRowMark] {
+        table(header, rows).laid(across: measure).marks
     }
 
     @Test
     func `every cell is drawn, in the table's own ink`() {
-        let runs = Self.runs([[4, 4, 4], [4, 4, 4]], over: 4)
-        #expect(runs.count == 6)
-        #expect(runs.allSatisfy { $0.ink == .table })
+        let marks = Self.marks(["a", "b", "c"], [["1", "2", "3"]])
+        #expect(marks.count == 6)
+        #expect(marks.allSatisfy { $0.ink == .table })
+        #expect(marks.allSatisfy { $0.drawn == .frame })
     }
 
     /// A column as wide as its words: the same rule `MarkdownTableWidths` gives the feed, so the
     /// grid in the lane and the grid in the reading have the same shape.
     @Test
     func `a column of long cells is drawn wider than a column of short ones`() {
-        let runs = Self.runs([[2, 60], [2, 60]], over: 2)
-        let first = runs[0]
-        let second = runs[1]
-        #expect(Self.width(second) > Self.width(first) * 3)
+        let marks = Self.marks(["a", "b"], [["1", "a much longer cell than its neighbour"]])
+        #expect(Self.width(marks[1]) > Self.width(marks[0]) * 3)
     }
 
-    /// The cells tile the width and stand in the order they are read.
+    /// The cells tile the measure and stand in the order they are read. A gap between two of them
+    /// reads as two tables where the feed draws one.
     @Test
-    func `the cells of one row meet edge to edge across the whole width`() {
-        let runs = Self.runs([[10, 20, 30]], over: 1)
-        #expect(runs[0].span.lowerBound == 0)
-        #expect(runs[2].span.upperBound == 1)
-        #expect(abs(runs[0].span.upperBound - runs[1].span.lowerBound) < 0.0001)
-        #expect(abs(runs[1].span.upperBound - runs[2].span.lowerBound) < 0.0001)
+    func `the cells of one row meet edge to edge across the whole measure`() {
+        let marks = Self.marks(["one", "two", "three"], [])
+        #expect(marks[0].from == 0)
+        #expect(abs(marks[2].to - Self.measure) < 0.0001)
+        #expect(abs(marks[0].to - marks[1].from) < 0.0001)
+        #expect(abs(marks[1].to - marks[2].from) < 0.0001)
     }
 
-    /// A row whose cell wraps stands taller, exactly as it does in the feed.
+    /// A row whose cell wraps stands taller, exactly as it does in the feed — and the row under it
+    /// starts where it ends.
     @Test
-    func `a row holding a long cell is dealt more lines than a short one`() {
-        let runs = Self.runs([[4, 4], [4, 900]], over: 8)
-        let header = runs.filter { $0.line == 0 }
-        #expect(!header.isEmpty)
-        #expect(header[0].lines < runs.last?.lines ?? 0)
+    func `a row holding a cell that wraps stands taller than one that does not`() {
+        let long = String(repeating: "words that will have to wrap somewhere ", count: 4)
+        let marks = Self.marks(["a", "b"], [["1", long], ["2", "3"]])
+        let rows = Dictionary(grouping: marks, by: \.y).sorted { $0.key < $1.key }
+        #expect(rows.count == 3)
+        #expect(rows[1].value[0].height > rows[0].value[0].height)
+        #expect(rows[2].key == rows[1].key + rows[1].value[0].height)
     }
 
-    /// Below one line per row the grid cannot be resolved, and a grid nobody can resolve reads as
-    /// noise where the single box read as a table.
+    /// Every cell of a row is drawn at that row's full height, so the grid lines up across the
+    /// table whatever its neighbour wrapped to.
     @Test
-    func `a table the lane compressed falls back to one frame`() {
-        let runs = Self.runs([[4, 4], [4, 4], [4, 4]], over: 2)
-        #expect(runs.count == 1)
-        #expect(runs[0].span == 0 ... 1)
-        #expect(runs[0].lines == 2)
+    func `every cell of a row stands at the row's own height`() {
+        let long = String(repeating: "wrapping words ", count: 6)
+        let marks = Self.marks(["a", "b"], [["1", long]])
+        let body = marks.filter { $0.y > 0 }
+        #expect(body.count == 2)
+        #expect(body[0].height == body[1].height)
     }
 
-    /// The cells come off the row's markdown, so a table read out of a message carries them.
-    @Test @MainActor
-    func `a table read from markdown carries its cells`() {
+    /// A table with nothing in it draws nothing rather than a box claiming a table stood there.
+    @Test
+    func `a table with no columns draws nothing`() {
+        #expect(Self.marks([], []).isEmpty)
+    }
+
+    /// The block comes off the row's markdown carrying the table itself, so the lane deals its
+    /// columns through the feed's own function rather than through a reduction of it.
+    @Test
+    func `a table read from markdown carries the table itself`() {
         let text = "| a | b |\n|---|---|\n| 1 | 2 |"
         let blocks = MinimapProseBlock.blocks(from: MarkdownBlock.blocks(in: text))
-        #expect(blocks.map(\.kind) == [.table])
-        #expect(blocks[0].cells == [[1, 1], [1, 1]])
-    }
-
-    /// A table nothing could read cells out of still draws the box it always did.
-    @Test
-    func `a table with no cells is one frame`() {
-        let runs = Self.runs([], over: 4)
-        #expect(runs.count == 1)
+        #expect(blocks == [.table(MarkdownTable(header: ["a", "b"], rows: [["1", "2"]]))])
     }
 }
 
 private extension MinimapTableTests {
-    static func width(_ run: MinimapRun) -> CGFloat {
-        run.span.upperBound - run.span.lowerBound
+    static func width(_ mark: MinimapRowMark) -> CGFloat {
+        mark.to - mark.from
     }
 }

@@ -4,14 +4,19 @@ import Foundation
 // vocabulary meets the feed's, and the reason the lane reads as the reading shrunk rather than as a
 // legend beside it: every alignment here is the row's own, and every ink is the row's own.
 //
-// Nothing here builds a run or measures a string. It runs over every row of the reading each time
-// the feed reshapes, so a prose row's markdown structure comes off `ProseReading`'s cache — one
-// parse per distinct text, a lookup after.
+// Nothing here measures a string. It runs over every row of the reading each time the feed
+// reshapes, so a prose row's markdown structure comes off `ProseReading`'s cache — one parse per
+// distinct text, a lookup after — and the glyphs are measured later, for the lane's band alone.
 
 extension MinimapRow {
-    /// One feed row as the lane draws it, at the height the table measured for it.
-    @MainActor init(_ row: FeedRow, height: CGFloat) {
-        self.init(height: height, shape: row.content.shape)
+    /// One feed row as the lane draws it, at the height the table measured for it and after the
+    /// step its cell carries above it.
+    @MainActor init(_ row: FeedRow, height: CGFloat, under previous: FeedRow? = nil) {
+        self.init(
+            height: height,
+            shape: row.content.shape,
+            topStep: FeedRow.step(to: row, from: previous),
+        )
         if case let .prompt(text) = row.content {
             prompt = text
         }
@@ -27,14 +32,17 @@ private extension FeedRow.Content {
         case let .message(text): MinimapProseBlock.shape(of: text, ink: .message)
         case let .thought(text): MinimapProseBlock.shape(of: text, ink: .thought)
         case let .call(call): call.shape
-        case let .survey(survey): .sentence(length: survey.length, ink: survey.ending.ink)
-        case let .unreadable(unreadable):
-            .sentence(length: unreadable.label.utf8.count, ink: .unreadable)
-        // Rows the lane draws as a shape rather than as a length. None is a sentence running out
-        // across the column, so none takes a sentence's width.
-        //
-        // Each asks its own type for its ink rather than answering for it here: a question that has
-        // been answered goes quiet in the row, and the lane has to go quiet with it.
+        case let .survey(survey): .line(
+                parts: [.words(survey.label, survey.ending.ink)],
+                ink: survey.ending.ink,
+            )
+        case let .unreadable(unreadable): .line(
+                parts: [.words(unreadable.label, .unreadable)],
+                ink: .unreadable,
+            )
+        // Rows the lane draws as a shape rather than as words. Each asks its own type for its ink
+        // rather than answering for it here: a question that has been answered goes quiet in the
+        // row, and the lane has to go quiet with it.
         case let .gallery(gallery): .shots(count: gallery.shots.count)
         case let .ask(ask): .whole(ask.ink)
         case let .mark(mark): .whole(mark.ink)
@@ -56,16 +64,42 @@ private extension FeedRow.Content {
 }
 
 private extension FeedCall {
-    /// A call as the lane draws it: one slab for the sentence, and the mutation's two halves at the
-    /// end of it where the record carried a patch to count — which is exactly where the row itself
-    /// draws `+n −n`.
+    /// A call as the lane draws it: the pieces of its sentence, in the order `FeedCallLine` sets
+    /// them and each in its own ink.
+    ///
+    /// A failure keeps its counts but not their inks — the feed puts the whole line in the failure
+    /// ink, and diff colours beside a red line would read as a change that landed.
     var shape: MinimapRowShape {
-        // A failure is drawn as the failure it was, not as the mutation it attempted — the feed
-        // puts the whole line in the failure ink, and the counts beside a red line would read as
-        // a change that landed.
-        guard let churn, !churn.isSilent, !ending.hasFailed else {
-            return .sentence(length: length, ink: ending.ink)
+        .line(parts: parts, ink: ending.ink)
+    }
+
+    private var parts: [MinimapLinePart] {
+        var parts: [MinimapLinePart] = [
+            .column(ArgoFeedRow.callSymbolWidth, ending.ink),
+            .words(kind.verb, ending.ink),
+            .words(subject.captioned, ending.ink),
+        ]
+        if repeats > 1 {
+            parts.append(.words("×\(repeats)", ending.ink, in: .machine))
         }
-        return .change(length: length, added: churn.added, removed: churn.removed)
+        parts += churnParts
+        if let printed = printed?.drawn {
+            parts.append(.words(printed, ending.ink, in: .machine))
+        }
+        return parts
+    }
+
+    /// What the mutation did, exactly as the row draws it: each half only where it did something,
+    /// so a pure addition shows one count rather than a `−0` nobody wrote.
+    private var churnParts: [MinimapLinePart] {
+        guard let churn, !churn.isSilent else { return [] }
+        let ink = ending.hasFailed ? ending.ink : nil
+        return [
+            churn.added > 0 ? MinimapLinePart.words("+\(churn.added)", ink ?? .added, in: .machine)
+                : nil,
+            churn.removed > 0
+                ? MinimapLinePart.words("−\(churn.removed)", ink ?? .removed, in: .machine) : nil,
+        ]
+        .compactMap(\.self)
     }
 }

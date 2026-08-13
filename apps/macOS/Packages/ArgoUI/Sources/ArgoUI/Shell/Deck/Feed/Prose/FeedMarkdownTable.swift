@@ -12,7 +12,7 @@ struct FeedMarkdownTable: View {
     let table: MarkdownTable
 
     var body: some View {
-        MarkdownTableLayout(asks: table.asks) {
+        MarkdownTableLayout(table: table) {
             ForEach(0 ..< places, id: \.self) { place in
                 cell(row: place / columns, column: place % columns)
             }
@@ -25,7 +25,7 @@ struct FeedMarkdownTable: View {
     }
 
     private var columns: Int {
-        max(1, table.header.count)
+        table.columns
     }
 
     /// How many cells there are — the header row and the body, rules excluded.
@@ -34,7 +34,7 @@ struct FeedMarkdownTable: View {
     }
 
     private func text(row: Int, column: Int) -> String {
-        let cells = row == 0 ? table.header : table.rows[row - 1]
+        let cells = table.grid[row]
         return cells.indices.contains(column) ? cells[column] : ""
     }
 
@@ -71,29 +71,6 @@ struct FeedMarkdownTable: View {
     /// here — as an overlay it came out horizontal across a column it had also just made wide.
     private func rule(_ ink: ArgoColor) -> some View {
         Rectangle().fill(ink)
-    }
-}
-
-@MainActor
-extension MarkdownTable {
-    /// What each column asks for: its widest cell's words on one line, and the floor its longest
-    /// word cannot be broken below. Both measured — see `ProseMetrics` — because a column's width
-    /// is a question about glyphs, and a count of characters answers it within a third at best.
-    var asks: [MarkdownTableWidths.Ask] {
-        (0 ..< header.count).map { column in
-            let cells = rows.map { $0.indices.contains(column) ? $0[column] : "" }
-            let padding = ArgoFeedRow.tableCellInsetX * 2
-            return MarkdownTableWidths.Ask(
-                ideal: padding + max(
-                    ProseMetrics.width(of: header[column], header: true),
-                    cells.map { ProseMetrics.width(of: $0) }.max() ?? 0,
-                ),
-                floor: padding + max(
-                    ProseMetrics.word(in: header[column], header: true),
-                    cells.map { ProseMetrics.word(in: $0) }.max() ?? 0,
-                ),
-            )
-        }
     }
 }
 
