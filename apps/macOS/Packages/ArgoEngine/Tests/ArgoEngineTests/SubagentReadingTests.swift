@@ -16,8 +16,7 @@ struct SubagentReadingTests {
     /// and nothing else in the parent's record ties a file to the call that started it.
     @Test
     func `a delegating call names the Subagent it started`() async throws {
-        #expect(try await outcomes(in: "delegationAgent").map(\.subagentID)
-            == ["a4a7ffa1285ef5be4"])
+        #expect(try await outcomes(in: "delegationAgent").map(\.subagentID) == [delegatedAgentID])
     }
 
     /// An ordinary call started no Subagent, so there is nothing to name — and a call that reported

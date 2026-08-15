@@ -10,50 +10,6 @@ public final class Hub {
     public private(set) var project: HubProject
     public private(set) var checkout = CheckoutProjection.Head.unavailable
 
-    /// What is being read, per transcript, in the order the transcripts joined the set. A tail's
-    /// presence in the table IS its liveness, so there is no second number to fall out of step.
-    public var observations: [HubObservation] {
-        join.transcripts.map { transcript in
-            HubObservation(
-                id: transcript.id,
-                sourceURL: transcript.sourceURL,
-                state: tails[transcript.id] == nil ? .stopped : .live,
-            )
-        }
-    }
-
-    /// "Connected" is a claim about a live source, and a Project with no tail running has none.
-    public var connection: HubConnection {
-        if let failureMessage {
-            return .failed(message: failureMessage)
-        }
-        if isConnecting {
-            return .connecting
-        }
-        return tails.isEmpty ? .idle : .connected
-    }
-
-    /// The roster, with what Argo knows from OUTSIDE the transcripts folded in as it is published.
-    /// Spawned Sessions share the list and the sort key: their rows exist before any transcript
-    /// does (#361) and stand down once the record they turned out to be is bound to their claim.
-    public var sessions: [HubSession] {
-        HubSessionChain.ordered(join.sessions.map(observed) + provisionalSessions)
-    }
-
-    /// One Session by id, off that same roster — so a caller reading one row and a caller reading
-    /// the list can never disagree about it.
-    func session(id: String) -> HubSession? {
-        sessions.first { $0.id == id }
-    }
-
-    /// The spawned rows belonging to the Project this Hub is currently on. Spawns outlive a
-    /// Project switch and keep their PTYs, so they need scoping the re-pointed join gives the rest.
-    private var provisionalSessions: [HubSession] {
-        spawns.values
-            .filter { ProjectScope.contains(cwd: $0.cwd, projectURL: project.url) }
-            .map { observed(HubSession(spawn: $0)) }
-    }
-
     /// Everything Argo knows per claim: what the agent said, what its gate is holding, and the
     /// rung Argo put it on (#634). One key and one publish rule, where there were five of each.
     let claims = ClaimLedger()
@@ -115,10 +71,14 @@ public final class Hub {
     /// still re-runs and the tails still re-read on re-entry.
     @ObservationIgnored private var retainedJoins = HubJoinCache()
     /// The running tail per transcript id. Observed rather than ignored, because `observations`
-    /// and `connection` are read off it.
-    private var tails: [String: Task<Void, Never>] = [:]
-    private var failureMessage: String?
-    private var isConnecting = false
+    /// and `connection` are read off it — in `Hub+Roster.swift`, which is why the three fields here
+    /// are internal rather than private.
+    var tails: [String: Task<Void, Never>] = [:]
+    /// The running tail per Subagent file — see `Hub+Subagents.swift`. Beside the tails above and
+    /// not among them: a Subagent is not in the working set and has no row of its own.
+    var subagentTails: [SubagentTail: Task<Void, Never>] = [:]
+    var failureMessage: String?
+    var isConnecting = false
     @ObservationIgnored let discovery: SessionDiscovery
     @ObservationIgnored let engine: Engine
     /// What the Hub was last pointed with, held so a retry needs nothing re-supplied.
@@ -242,6 +202,9 @@ public final class Hub {
         // A connection reading `failed` over a live source is a stale claim.
         failureMessage = nil
         tails[observation.id] = Task { [weak self] in await self?.drain(observation) }
+        // Whatever the fan-out has written SO FAR. The rest arrives with the sweep, which is what
+        // sees the file for a delegation handed over after this moment.
+        refreshSubagents(of: observation.id, beside: observation.sourceURL)
     }
 
     /// Stop one tail and drop its transcript from the join, leaving the rest tailing.
@@ -256,6 +219,7 @@ public final class Hub {
     /// Awaits the cancelled task, so a stopped tail is provably over before this returns — which
     /// keeps a straggling event from landing under an id re-registered in the meantime.
     public func pauseObserving(transcriptID: String) async {
+        await stopTailingSubagents(of: transcriptID)
         guard let task = tails.removeValue(forKey: transcriptID) else { return }
         task.cancel()
         await task.value
@@ -274,6 +238,7 @@ public final class Hub {
     /// tearing down finds no transcript to apply against. Cancelling the whole set before awaiting
     /// any of it keeps a slow teardown from serialising behind the one in front of it.
     private func stopObservingAll() async {
+        await stopTailingAllSubagents()
         let stopped = Array(tails.values)
         tails = [:]
         join = HubJoin()

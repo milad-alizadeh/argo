@@ -73,12 +73,16 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// context once per turn. Falls as well as rises: the reading after a compaction is the
     /// compacted one. Absent until a record carries a `usage` object at all.
     public private(set) var contextTokens: Int?
-    /// Every spend the records reported, added with `Usage`'s own `+`. Both grains, per
-    /// `CONTEXT.md` L3: the assistant records' own usage, plus whatever a delegating call reported
-    /// for the subagent it ran.
-    private var spend: Usage?
-    /// The subagent half of it, kept separately because the header says it separately.
-    private var subagentSpend: Usage?
+    /// Every spend the records reported, at both grains — see `SessionSpend`, which owns the
+    /// arithmetic and the three token readings the header draws from it.
+    private(set) var spend = SessionSpend()
+    /// Each Subagent's own reading, keyed by the CLI's id for it (#711).
+    ///
+    /// Beside `events` rather than in it, and that is the whole point: a child's records are the
+    /// child's, and folding them into the Session's stream would put a delegate's rows in the
+    /// parent's feed. Empty is the ordinary case — most Sessions delegate nothing, and Codex writes
+    /// no such record at all.
+    public private(set) var subagentEvents: [String: [TranscriptEvent]] = [:]
     public private(set) var lastActivityAtMs: Int?
     /// The oldest moment the records report — the fact a claim window is matched against.
     public private(set) var startedAtMs: Int?
@@ -112,24 +116,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// chain to continue.
     var resumeID: String? {
         chainTipURL?.deletingPathExtension().lastPathComponent
-    }
-
-    /// What the Session has SPENT across its whole life, cache excluded (that is `cachedTokens`).
-    /// Absent until a record prices something: a Session nobody priced has not spent nothing.
-    public var spentTokens: Int? {
-        spend?.spentTokens
-    }
-
-    /// The cache half of the same life: read and re-read once per request, so it runs to tens of
-    /// millions on a long Session while the spend stays small. Absent with `spentTokens`.
-    public var cachedTokens: Int? {
-        spend?.cachedTokens
-    }
-
-    /// Read off the DELEGATING call's result — the only place that spend is ever reported, since a
-    /// sidechain's own records carry none. Absent, never zero: a zero would claim no subagent ran.
-    public var subagentTokens: Int? {
-        subagentSpend?.billedTokens
     }
 
     public init(observation: TranscriptObservation) {
@@ -203,14 +189,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             hasAgentActivity = true
             pendingAsks.remove(outcome.id)
             observeActivity(outcome.endedAtMs)
-            observeSubagentSpend(outcome.usage)
+            spend.observe(subagent: outcome.usage)
         case let .compaction(atMs):
             hasAgentActivity = true
             observeActivity(atMs)
         case let .usage(usage):
             hasAgentActivity = true
             contextTokens = usage.contextTokens
-            spend = Self.summed(spend, usage)
+            spend.observe(usage)
         case .message, .thought, .plan:
             hasAgentActivity = true
         case .queued:
@@ -229,14 +215,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     private mutating func observe(mode cli: String) {
         observedMode = cli
         observedModeCount += 1
-    }
-
-    /// A delegating call's result carries the subagent's whole spend, so it counts twice: the
-    /// subagent line, and the Session total. Nothing reported leaves both absent, never zero.
-    private mutating func observeSubagentSpend(_ usage: Usage?) {
-        guard let usage else { return }
-        subagentSpend = Self.summed(subagentSpend, usage)
-        spend = Self.summed(spend, usage)
     }
 
     /// A detached checkout makes the CLI write the literal `HEAD`, which is not a ref anybody can
@@ -261,15 +239,16 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // Appended, not merged: a resume chain is walked root-first, so the continuation's stream
         // is the later half of one reading and belongs behind what came before it.
         events += continuation.events
+        // Unioned by agent id, and appended where both halves read the same one: a Subagent's file
+        // sits beside the link that ran it, so a resumed chain's fan-outs are spread across the
+        // chain rather than gathered under its root.
+        subagentEvents.merge(continuation.subagentEvents) { $0 + $1 }
         cwd = continuation.cwd ?? cwd
         model = continuation.model ?? model
         // The later half of the chain wins where it read one, and says nothing where it did not: a
         // resume file with no `usage` in it yet is not a Session that has emptied its context.
         contextTokens = continuation.contextTokens ?? contextTokens
-        // Spend, unlike the context reading, ADDS across the chain: a resumed file's tokens were
-        // billed on top of the root's, not instead of them.
-        spend = Self.summed(spend, continuation.spend)
-        subagentSpend = Self.summed(subagentSpend, continuation.subagentSpend)
+        spend.merge(continuation.spend)
         branch = continuation.branch ?? branch
         // A resume is a fresh `claude` with its own flag, so the later half's stance is the live
         // one
@@ -292,11 +271,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         }
     }
 
-    /// Two spends added without either of them being able to invent one: an absent half leaves the
-    /// other exactly as it was, and two absences stay absent.
-    private static func summed(_ left: Usage?, _ right: Usage?) -> Usage? {
-        guard let left else { return right }
-        guard let right else { return left }
-        return left + right
+    /// One Subagent's own reading, appended as its tail delivers it. Keyed by the CLI's id and not
+    /// by the delegating call: the file is named for the id, and the call that reports it may not
+    /// have come back yet.
+    mutating func apply(_ read: [TranscriptEvent], ofSubagent agentID: String) {
+        subagentEvents[agentID, default: []] += read
     }
 }
