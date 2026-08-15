@@ -115,7 +115,7 @@ final class AskGate {
 
     private func expire(_ askID: String, for claim: SessionOwnership.ClaimID) {
         guard let gone = take(askID, for: claim) else { return }
-        gone.reply(PermissionReply.expired)
+        gone.reply(AskReply.expired)
         publish(claim)
     }
 

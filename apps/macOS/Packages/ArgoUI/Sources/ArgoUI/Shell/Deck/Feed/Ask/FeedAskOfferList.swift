@@ -79,29 +79,11 @@ private struct FeedAskOtherRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, ArgoSpacing.base)
                 .padding(.trailing, ArgoSpacing.comfortable)
-                .background { ground }
-                .overlay { shape.strokeBorder(edge, lineWidth: ArgoStroke.border) }
+                .feedAskCard(isHovered: isHovered)
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
         .argoAnimation(.selection, value: isHovered)
         .accessibilityLabel("Other, answer in your own words")
-    }
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: ArgoRadius.control)
-    }
-
-    private var ground: some View {
-        ZStack {
-            shape.fill(argo.color.surface.control.color)
-            if isHovered {
-                shape.fill(argo.color.surface.hover.color)
-            }
-        }
-    }
-
-    private var edge: ArgoColor {
-        isHovered ? argo.color.edge.subtle : argo.color.edge.hairline
     }
 }

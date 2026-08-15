@@ -49,7 +49,7 @@ struct FeedAskAnswerRow: View {
         Button(action: submit) {
             HStack(spacing: ArgoSpacing.tight) {
                 Text("Answer")
-                FeedKeycap(key: "⏎")
+                DeckKeycap(key: "⏎")
             }
             .argoText(ArgoTypography.control)
             .foregroundStyle(canSend ? argo.color.text.onAccent : argo.color.text.disabled)

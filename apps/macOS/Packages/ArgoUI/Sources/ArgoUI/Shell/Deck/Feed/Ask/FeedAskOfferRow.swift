@@ -30,8 +30,7 @@ struct FeedAskOfferRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, ArgoSpacing.base)
             .padding(.horizontal, ArgoSpacing.comfortable)
-            .background { ground }
-            .overlay { shape.strokeBorder(edge, lineWidth: ArgoStroke.border) }
+            .feedAskCard(isHovered: isHovered, isTicked: isTicked)
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
@@ -53,33 +52,6 @@ struct FeedAskOfferRow: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-    }
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: ArgoRadius.control)
-    }
-
-    /// The ground under a control on a surface which is not the deck — the role's own words. Hover
-    /// lays a second layer over it rather than standing in for the pair with a third opacity.
-    private var ground: some View {
-        ZStack {
-            shape.fill(argo.color.surface.control.color)
-            if isHovered {
-                shape.fill(argo.color.surface.hover.color)
-            }
-            if isTicked {
-                shape.fill(argo.color.state.wash(argo.color.state.attention).color)
-            }
-        }
-    }
-
-    /// The two rungs below the `muted` the card itself wears, so a ticked option reads as marked
-    /// against a ground that is already attention-coloured.
-    private var edge: ArgoColor {
-        if isTicked {
-            return argo.color.state.rim(argo.color.state.attention)
-        }
-        return isHovered ? argo.color.edge.subtle : argo.color.edge.hairline
     }
 
     private var number: ArgoColor {

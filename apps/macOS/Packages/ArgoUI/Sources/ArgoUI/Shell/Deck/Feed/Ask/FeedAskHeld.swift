@@ -53,7 +53,7 @@ struct FeedAskHeld: Equatable {
     }
 
     /// Whether that button has anything to send — the state its disabled ground draws.
-    func hasSomethingToSend(_: Ask.Question, at index: Int) -> Bool {
+    func hasSomethingToSend(at index: Int) -> Bool {
         let held = self[index]
         return !held.ordinals.isEmpty || !held.other.trimmed.isEmpty
     }
@@ -63,15 +63,24 @@ struct FeedAskHeld: Equatable {
     /// `Other` carries no ordinal, so it travels as the words themselves — the feed numbers only
     /// what was offered, and a numbered `Other` would put the ordinals one past the ones the
     /// answer names.
+    ///
+    /// Words go only where the field is actually OPEN. On a one-of question `Other` swaps the pick
+    /// for a field, so going back and clicking an option shuts it — and the words behind it are
+    /// kept for a second opening rather than sent beside a choice that replaced them.
     func answer(for ask: Ask) -> AskAnswer {
         AskAnswer(replies: ask.questions.indices.map { index in
-            let held = self[index]
-            return AskAnswer.Reply(
+            AskAnswer.Reply(
                 question: index,
-                ordinals: held.ordinals.sorted(),
-                other: held.other.trimmed.isEmpty ? nil : held.other,
+                ordinals: self[index].ordinals.sorted(),
+                other: typed(in: ask.questions[index], at: index),
             )
         })
+    }
+
+    private func typed(in question: Ask.Question, at index: Int) -> String? {
+        let words = self[index].other
+        guard needsClosing(question, at: index), !words.trimmed.isEmpty else { return nil }
+        return words
     }
 }
 

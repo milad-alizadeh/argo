@@ -50,10 +50,10 @@ public struct CockpitView: View {
         )
     }
 
-    /// The question Argo is holding open on the selected Session, and nothing where there is none
-    /// or where the Session cannot be driven (#546).
-    var askingNow: FeedAskProjection.Live? {
-        FeedAskProjection.live(for: presentation.session(navigation.session))
+    /// What the feed's ask rows are told about answering: the question Argo is holding open, and
+    /// whether this Session can be driven at all (#546).
+    var askingNow: FeedAskProjection.Asking {
+        FeedAskProjection.asking(for: presentation.session(navigation.session))
     }
 
     /// The same Session's plan, off the same stream — the standing state a whole transcript
@@ -131,7 +131,7 @@ public struct CockpitView: View {
             // What a waiting ask row's options and its `Answer` do (#712). Injected here for the
             // reason above: the rows are hosted per table cell, and this is where the Session the
             // answer addresses is known.
-            .environment(\.feedAskAnswering, answer(on: askingNow))
+            .environment(\.feedAskAnswering, answer(on: askingNow.live))
             .overlay(alignment: .topLeading) {
                 ConnectionChips(
                     presentation: presentation,

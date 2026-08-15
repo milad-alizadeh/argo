@@ -50,7 +50,7 @@ struct FeedAskHeldTests {
         held[0].other = "The roll-up"
 
         #expect(held.needsClosing(Self.freeForm, at: 0))
-        #expect(held.hasSomethingToSend(Self.freeForm, at: 0))
+        #expect(held.hasSomethingToSend(at: 0))
         #expect(!held.isSettled(Self.freeForm, at: 0))
 
         held[0].isClosed = true
@@ -73,14 +73,14 @@ struct FeedAskHeldTests {
     @Test
     func `a button with nothing picked and nothing typed has nothing to send`() {
         var held = FeedAskHeld()
-        #expect(!held.hasSomethingToSend(Self.manyOf, at: 0))
+        #expect(!held.hasSomethingToSend(at: 0))
 
         // Whitespace is not an answer.
         held[0].other = "   "
-        #expect(!held.hasSomethingToSend(Self.manyOf, at: 0))
+        #expect(!held.hasSomethingToSend(at: 0))
 
         held[0].other = "and one more"
-        #expect(held.hasSomethingToSend(Self.manyOf, at: 0))
+        #expect(held.hasSomethingToSend(at: 0))
     }
 
     /// Two questions put by one call are one stop, so the answer waits for both.
@@ -114,12 +114,42 @@ struct FeedAskHeldTests {
     @Test
     func `what was typed travels beside the ordinals, never as one`() throws {
         var held = FeedAskHeld()
+        held[0].isOtherOpen = true
         held[0].other = "  Neither — ask me later  "
 
         let reply = try #require(held.answer(for: Ask(questions: [Self.oneOf])).replies.first)
 
         #expect(reply.ordinals.isEmpty)
         #expect(reply.other == "  Neither — ask me later  ")
+    }
+
+    /// On a one-of question `Other` SWAPS the pick for a field, so going back and clicking an
+    /// option must be the whole act it was before — not a gesture that silently does nothing.
+    @Test
+    func `picking an option again shuts Other and settles the question`() {
+        var held = FeedAskHeld()
+        held[0].isOtherOpen = true
+        #expect(!held.isSettled(Self.oneOf, at: 0))
+
+        // What `FeedAskLine.pick` does on a one-of question.
+        held[0].ordinals = [2]
+        held[0].isOtherOpen = false
+
+        #expect(held.isSettled(Self.oneOf, at: 0))
+    }
+
+    /// Words behind a shut field are kept for a second opening, and are NOT sent beside the choice
+    /// that replaced them.
+    @Test
+    func `words typed under a shut Other do not travel with the pick`() throws {
+        var held = FeedAskHeld()
+        held[0].other = "something I thought better of"
+        held[0].ordinals = [1]
+
+        let reply = try #require(held.answer(for: Ask(questions: [Self.oneOf])).replies.first)
+
+        #expect(reply.ordinals == [1])
+        #expect(reply.other == nil)
     }
 
     @Test

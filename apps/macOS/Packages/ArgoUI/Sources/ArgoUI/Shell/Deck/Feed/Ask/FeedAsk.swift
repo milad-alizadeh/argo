@@ -18,16 +18,40 @@ struct FeedAsk: Equatable, Sendable {
     /// for one whose live question is a different one — which is what makes the row a READING
     /// again the moment any of those is true.
     let live: FeedAskProjection.Live?
+    /// Whether this Session can be driven at all (#546). Apart from `live`, because their absences
+    /// mean opposite things: a question nothing can reach is not waiting on anybody, while a
+    /// driveable Session whose gate has not raised this one yet is still waiting exactly as #534
+    /// drew it. `true` where nothing said otherwise — a reading of a live cockpit, not of a dead
+    /// Session.
+    let isDriveable: Bool
 
-    init(ask: Ask, isAnswered: Bool, answer: String?, live: FeedAskProjection.Live? = nil) {
+    init(
+        ask: Ask,
+        isAnswered: Bool,
+        answer: String?,
+        offer: FeedAskProjection.Asking = .none,
+    ) {
         self.ask = ask
         self.isAnswered = isAnswered
         self.answer = answer
-        self.live = live
+        self.live = offer.live
+        self.isDriveable = offer.isDriveable
     }
 
     var questions: [Ask.Question] {
         ask.questions
+    }
+
+    /// What makes this the same question across a rebuild — the words asked and the options
+    /// offered, which is the whole of what somebody is answering. The marks a waiting row holds
+    /// are keyed by it, so they cannot survive into a different question (`FeedRowView`).
+    ///
+    /// Not the gate's `askID`: a row on a Session with no live handle still has to be told apart
+    /// from its neighbour, and the id is exactly what those rows lack.
+    var identity: String {
+        questions.map { question in
+            ([question.text] + question.options.map(\.label)).joined(separator: "\u{1F}")
+        }.joined(separator: "\u{1E}")
     }
 
     var isPending: Bool {
@@ -44,12 +68,16 @@ struct FeedAsk: Equatable, Sendable {
     /// cannot disagree about which questions are still waiting. An answered question is history and
     /// takes the same ink as anything else the record has finished with.
     ///
-    /// Off `isWaiting` rather than `isPending`: the attention ink now means *this is waiting on
-    /// YOU*, and on a Session Argo cannot drive it is not — nothing you do here reaches the agent
+    /// Off DRIVEABILITY and not off `isWaiting`: the attention ink means *this is waiting on YOU*,
+    /// and on a Session Argo cannot drive it is not — nothing you do here reaches the agent
     /// (#546). Amber nobody can act on is the affordance that lies, which is the one thing this
     /// screen is designed against.
+    ///
+    /// A driveable Session whose gate has not raised this question keeps the ink, though it draws
+    /// no cards: it IS still waiting, and quieting it there would render a question nobody
+    /// answered as one somebody did.
     var ink: FeedInk {
-        isWaiting ? .attention : .message
+        isPending && isDriveable ? .attention : .message
     }
 
     /// The options of one question, numbered, in the order they were offered — what the row draws.

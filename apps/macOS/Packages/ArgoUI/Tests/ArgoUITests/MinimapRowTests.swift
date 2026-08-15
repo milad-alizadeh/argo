@@ -99,11 +99,6 @@ struct MinimapRowTests {
             ask: Ask(questions: []),
             isAnswered: false,
             answer: nil,
-            live: FeedAskProjection.Live(
-                sessionID: "session",
-                askID: "ask-1",
-                ask: Ask(questions: []),
-            ),
         )
         #expect(Self.shape(.ask(ask)) == .whole(.attention))
         #expect(FeedInk.attention.shape == .band)
@@ -113,7 +108,12 @@ struct MinimapRowTests {
     /// because nothing done here reaches the agent (#546) — so the lane goes quiet with the row.
     @Test
     func `a question nobody here can answer takes no attention ink`() {
-        let unanswerable = FeedAsk(ask: Ask(questions: []), isAnswered: false, answer: nil)
+        let unanswerable = FeedAsk(
+            ask: Ask(questions: []),
+            isAnswered: false,
+            answer: nil,
+            offer: FeedAskProjection.Asking(live: nil, isDriveable: false),
+        )
         #expect(Self.shape(.ask(unanswerable)) == .whole(.message))
     }
 

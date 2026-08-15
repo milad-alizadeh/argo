@@ -88,6 +88,18 @@ struct AskReplyTests {
         #expect(output.stringField("permissionDecisionReason")?.isEmpty == false)
     }
 
+    /// A question is not a Permission, so what Argo's own clock says names the right act — telling
+    /// the agent a *permission* expired would put the wrong word in the one record anybody reads.
+    @Test
+    func `an unanswered question expires in its own words`() throws {
+        let payload = try #require(JSONValue.record(fromLine: AskReply.expired))
+        let reason = try #require(payload["hookSpecificOutput"]?
+            .stringField("permissionDecisionReason"))
+
+        #expect(reason.lowercased().contains("question"))
+        #expect(!reason.lowercased().contains("permission"))
+    }
+
     /// One line, because the socket frames on newlines — an answer spanning two would be read as
     /// two replies, and the second would arrive at whatever asked next.
     @Test

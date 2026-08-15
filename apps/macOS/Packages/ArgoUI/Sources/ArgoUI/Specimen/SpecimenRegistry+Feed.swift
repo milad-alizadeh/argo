@@ -21,6 +21,12 @@ extension SpecimenRegistry {
         SpecimenEntry("feedAskUnavailable") {
             SpecimenScene.sessions(FeedProjection.previewAskUnavailable)
         },
+        // The state between the two: driveable, but the gate is not holding this question — Argo
+        // restarted under a CLI that still is. No cards, and the attention ground STAYS, because
+        // it is genuinely still waiting.
+        SpecimenEntry("feedAskUnreached") {
+            SpecimenScene.sessions(FeedProjection.previewAskUnreached)
+        },
     ]
 
     private static let rows: [SpecimenEntry] = [

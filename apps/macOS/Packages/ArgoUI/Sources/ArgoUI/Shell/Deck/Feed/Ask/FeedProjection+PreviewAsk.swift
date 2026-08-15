@@ -46,9 +46,18 @@ extension FeedProjection {
         ),
     ])
 
-    /// The same question on a Session Argo cannot drive (#546) — nothing is handed in, so the row
-    /// is a READING: no cards, no field, and the reason takes the deck's foot instead.
-    static let previewAskUnavailable = rows(from: askTranscript(previewAskDecision))
+    /// The same question on a Session Argo cannot drive (#546). The row is a READING and says so
+    /// twice over: no cards, no field, and no attention either — nothing done here reaches the
+    /// agent, so nothing is waiting on the user. The reason takes the deck's foot instead.
+    static let previewAskUnavailable = rows(
+        from: askTranscript(previewAskDecision),
+        asking: FeedAskProjection.Asking(live: nil, isDriveable: false),
+    )
+
+    /// A DRIVEABLE Session whose gate has not raised this question — Argo restarted under a CLI
+    /// still holding it. It keeps the attention ground because it is genuinely still waiting, and
+    /// draws no cards because there is nothing to answer through.
+    static let previewAskUnreached = rows(from: askTranscript(previewAskDecision))
 
     /// The Session those renders are drawn for, blocked on the one-of question.
     static let previewAskWaiting = SessionAsk(
@@ -91,10 +100,13 @@ extension FeedProjection {
     private static func askRows(_ questions: [Ask.Question]) -> [FeedRow] {
         rows(
             from: askTranscript(questions),
-            asking: FeedAskProjection.Live(
-                sessionID: "session-preview",
-                askID: previewAskID,
-                ask: Ask(questions: questions),
+            asking: FeedAskProjection.Asking(
+                live: FeedAskProjection.Live(
+                    sessionID: "session-preview",
+                    askID: previewAskID,
+                    ask: Ask(questions: questions),
+                ),
+                isDriveable: true,
             ),
         )
     }

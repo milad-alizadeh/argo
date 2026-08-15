@@ -43,17 +43,22 @@ struct FeedAskLine: View {
         return FeedAskQuestion.Waiting(
             held: Binding(get: { held[index] }, set: { held[index] = $0 }),
             needsClosing: held.needsClosing(question, at: index),
-            hasSomethingToSend: held.hasSomethingToSend(question, at: index),
+            hasSomethingToSend: held.hasSomethingToSend(at: index),
             pick: { pick($0, in: question, at: index) },
-            send: { close(question, at: index) },
+            send: { close(at: index) },
         )
     }
 
     /// Taking an option. On a many-of question it ticks a box and nothing else happens; on a one-of
     /// question the click IS the answer, so it replaces whatever was held and settles the question.
+    ///
+    /// It also SHUTS `Other` again. Opening the field is a way of not picking one of these; going
+    /// back and picking one has to be the whole act it was before, or the same gesture answers the
+    /// question one moment and does nothing the next.
     private func pick(_ ordinal: Int, in question: Ask.Question, at index: Int) {
         guard question.allowsMultiple else {
             held[index].ordinals = [ordinal]
+            held[index].isOtherOpen = false
             return sendIfSettled()
         }
         if held[index].ordinals.contains(ordinal) {
@@ -63,7 +68,7 @@ struct FeedAskLine: View {
         }
     }
 
-    private func close(_: Ask.Question, at index: Int) {
+    private func close(at index: Int) {
         held[index].isClosed = true
         sendIfSettled()
     }
@@ -75,15 +80,15 @@ struct FeedAskLine: View {
         answering(live.askID, held.answer(for: ask.ask))
     }
 
-    /// The attention role while it waits, and the marker rung once it is settled.
+    /// The attention role while it waits, and the marker rung once it is not.
     ///
-    /// The settled half is `text.tertiary` and NOT `FeedAsk.ink`'s `.message`: the glyph sits in
-    /// the marker column, and once the row is a reading it is one of the markers — the numbers
-    /// beside it are tertiary, and a mark one rung brighter than the column it stands in reads as
-    /// still asking for something. `FeedAsk.ink` stays the LANE's reading, where a rung is a
-    /// loudness rather than a role.
+    /// The quiet half is `text.tertiary` and NOT `FeedAsk.ink`'s `.message`: the glyph sits in the
+    /// marker column, and once the row is a reading it is one of the markers — the numbers beside
+    /// it are tertiary, and a mark one rung brighter than the column it stands in reads as still
+    /// asking for something. `FeedAsk.ink` stays the LANE's reading, where a rung is a loudness
+    /// rather than a role.
     private var ink: ArgoColor {
-        ask.isWaiting ? ask.ink.role(in: argo.color) : argo.color.text.tertiary
+        ask.ink == .attention ? ask.ink.role(in: argo.color) : argo.color.text.tertiary
     }
 
     /// A wash rather than a fill: the row still has to read as part of the column it interrupts.
@@ -92,7 +97,7 @@ struct FeedAskLine: View {
     /// amber stroke on four edges reads as an alert banner dropped into the column rather than as a
     /// row of it. Answered, the ground goes and nothing moves.
     private var ground: ArgoColor {
-        ask.isWaiting ? ArgoOperationalState.attention.ground(in: argo.color) : .transparent
+        ask.ink == .attention ? ArgoOperationalState.attention.ground(in: argo.color) : .transparent
     }
 }
 

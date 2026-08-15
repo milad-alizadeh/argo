@@ -12,12 +12,15 @@ extension FeedProjection {
     )
 
     /// The question left waiting in that transcript, as the gate would hold it.
-    private static let previewTranscriptAsking = CockpitPresentation.Session.previewTranscript
-        .compactMap { event -> FeedAskProjection.Live? in
-            guard case let .toolCall(call) = event, let ask = call.ask,
-                  call.id == "ask-waiting" else { return nil }
-            return FeedAskProjection.Live(sessionID: "session", askID: call.id, ask: ask)
-        }.first
+    private static let previewTranscriptAsking = FeedAskProjection.Asking(
+        live: CockpitPresentation.Session.previewTranscript
+            .compactMap { event -> FeedAskProjection.Live? in
+                guard case let .toolCall(call) = event, let ask = call.ask,
+                      call.id == "ask-waiting" else { return nil }
+                return FeedAskProjection.Live(sessionID: "session", askID: call.id, ask: ask)
+            }.first,
+        isDriveable: true,
+    )
 
     /// A session at the length a real one reaches, projected — what every claim about SCALE is
     /// checked against, including the measurement #427 asks for.

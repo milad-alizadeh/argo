@@ -9,6 +9,12 @@ public struct SessionAsk: Sendable, Equatable, Identifiable {
     public let id: String
     public let ask: Ask
 
+    /// The questions it put, in the order it put them — the reading every caller but the row's
+    /// value-match actually wants, so `ask.ask.questions` is not spelled anywhere.
+    public var questions: [Ask.Question] {
+        ask.questions
+    }
+
     public init(id: String, ask: Ask) {
         self.id = id
         self.ask = ask

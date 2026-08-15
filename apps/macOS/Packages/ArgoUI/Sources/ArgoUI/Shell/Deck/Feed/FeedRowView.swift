@@ -29,7 +29,10 @@ struct FeedRowView: View {
         // to the picture.
         case let .gallery(gallery):
             FeedGalleryRow(gallery: gallery, open: selection.light)
-        case let .ask(ask): FeedAskLine(ask: ask)
+        // Identified by the QUESTION and not by the cell: the rows are hosted in a recycled
+        // `NSTableView` cell, so a view whose marks lived on cell identity alone would carry one
+        // question's ticks into the next question that landed there (#712).
+        case let .ask(ask): FeedAskLine(ask: ask).id(ask.identity)
         case let .mark(mark): FeedMarkLine(mark: mark)
         case let .unreadable(unreadable):
             FeedUnreadableLine(unreadable: unreadable, isExpanded: $isExpanded)

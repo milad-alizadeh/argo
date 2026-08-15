@@ -56,7 +56,7 @@ private struct PermissionDecisionButton: View {
         Button(action: act) {
             HStack(spacing: ArgoSpacing.tight) {
                 Text(verb)
-                FeedKeycap(key: key)
+                DeckKeycap(key: key)
             }
             .foregroundStyle(ink)
             .padding(.horizontal, ArgoSpacing.comfortable)

@@ -57,7 +57,7 @@ struct FeedAskProjectionTests {
     func `the live question is the one the matching row draws`() throws {
         let rows = FeedProjection.rows(
             from: [.toolCall(FeedFixture.asking(Self.question))],
-            asking: FeedAskProjection.live(for: session()),
+            asking: FeedAskProjection.asking(for: session()),
         )
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
@@ -72,7 +72,7 @@ struct FeedAskProjectionTests {
         let other = Ask.Question(text: "Something else?", options: [])
         let rows = FeedProjection.rows(
             from: [.toolCall(FeedFixture.asking(other))],
-            asking: FeedAskProjection.live(for: session()),
+            asking: FeedAskProjection.asking(for: session()),
         )
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
@@ -90,7 +90,7 @@ struct FeedAskProjectionTests {
                     OutputEvidence(tier: .direct, text: "#712"),
                 ))),
             ],
-            asking: FeedAskProjection.live(for: session()),
+            asking: FeedAskProjection.asking(for: session()),
         )
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
@@ -109,7 +109,7 @@ struct FeedAskProjectionTests {
                     target: nil, atMs: nil, ask: Ask(questions: [Self.question]),
                 )),
             ],
-            asking: FeedAskProjection.live(for: session()),
+            asking: FeedAskProjection.asking(for: session()),
         )
 
         #expect(FeedFixture.asks(in: rows).map(\.isWaiting) == [false, true])
@@ -121,7 +121,7 @@ struct FeedAskProjectionTests {
     func `a question nobody here can answer is drawn as the reading it is`() throws {
         let rows = FeedProjection.rows(
             from: [.toolCall(FeedFixture.asking(Self.question))],
-            asking: FeedAskProjection.live(for: session(access: .orphaned)),
+            asking: FeedAskProjection.asking(for: session(access: .orphaned)),
         )
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
@@ -130,12 +130,48 @@ struct FeedAskProjectionTests {
         #expect(ask.ink == .message)
     }
 
-    /// Nothing was handed in, so nothing is pressable — the state every specimen and preview is in.
+    /// The distinction the two facts exist for. A DRIVEABLE Session whose gate has not raised this
+    /// question — Argo restarted under a CLI still holding it — is still waiting: no cards, since
+    /// there is nothing to answer through, but the attention ink stays. Quieting it there would
+    /// render a question nobody answered as one somebody did.
     @Test
-    func `a feed with no live question offers none`() throws {
+    func `a driveable Session whose gate holds no question is still waiting`() throws {
+        let rows = FeedProjection.rows(
+            from: [.toolCall(FeedFixture.asking(Self.question))],
+            asking: FeedAskProjection.asking(for: session(ask: nil)),
+        )
+        let ask = try #require(FeedFixture.asks(in: rows).first)
+
+        #expect(!ask.isWaiting)
+        #expect(ask.ink == .attention)
+    }
+
+    /// Nothing was handed in, so nothing is pressable — the state every specimen and preview is in.
+    /// Driveable, because a render is a reading of a live cockpit and not of a dead Session.
+    @Test
+    func `a feed with no live question offers none, and is still waiting`() throws {
         let rows = FeedProjection.rows(from: [.toolCall(FeedFixture.asking(Self.question))])
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
         #expect(!ask.isWaiting)
+        #expect(ask.ink == .attention)
+    }
+
+    /// The marks a waiting row holds are keyed by this, because the rows are hosted in a recycled
+    /// table cell — two different questions must never share one identity.
+    @Test
+    func `a question is identified by what it asked, not by where it was drawn`() {
+        let other = Ask.Question(text: "Something else?", options: [])
+        let asked = FeedAsk(ask: Ask(questions: [Self.question]), isAnswered: false, answer: nil)
+        let another = FeedAsk(ask: Ask(questions: [other]), isAnswered: false, answer: nil)
+
+        #expect(asked.identity != another.identity)
+        // Settling it does not make it a different question, so the marks are not thrown away
+        // underneath the answer that is still going.
+        #expect(asked.identity == FeedAsk(
+            ask: Ask(questions: [Self.question]),
+            isAnswered: true,
+            answer: "#712",
+        ).identity)
     }
 }
