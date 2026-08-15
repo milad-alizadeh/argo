@@ -42,7 +42,7 @@ extension CockpitPresentation.Session {
             target: nil, atMs: nil,
             ask: Ask(questions: [Ask.Question(
                 text: "Where should a subagent's spend be drawn?",
-                options: ["Labelled on the chip", "Moved to hover"],
+                options: Ask.Option.labelled(["Labelled on the chip", "Moved to hover"]),
             )]),
         )),
         .toolCallOutcome(ToolCallOutcome(
@@ -79,11 +79,11 @@ extension CockpitPresentation.Session {
             ask: Ask(questions: [Ask.Question(
                 text: "Which reading should the roll-up sum — the turns, or every call that "
                     + "reported a spend?",
-                options: [
+                options: Ask.Option.labelled([
                     "Every call that reported one",
                     "The turns alone",
                     "Both, side by side",
-                ],
+                ]),
             )]),
         )),
     ]

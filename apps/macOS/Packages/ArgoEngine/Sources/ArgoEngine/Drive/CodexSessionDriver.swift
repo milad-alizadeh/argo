@@ -79,6 +79,18 @@ struct CodexSessionDriver: SessionDriver {
         }
     }
 
+    /// Nothing on this surface can be asking (#712). `AskUserQuestion` is a `claude` tool behind a
+    /// `claude` hook, and `codex app-server` has no request of that shape — so there is never a
+    /// question here to name, and an answer is refused rather than sent somewhere it might fit.
+    func answer(
+        _: AskAnswer,
+        answering _: String,
+        for sessionID: String,
+    ) throws {
+        guard thread(for: sessionID) != nil else { throw SessionDriveError.notDrivable }
+        throw SessionDriveError.nothingPending
+    }
+
     /// The grant is Argo's own, not the server's (#572). `acceptForSession` would make the SERVER
     /// stop asking with no way back, so the standing allow lives on this side of the wire — which
     /// is what leaves a revocation something to take.

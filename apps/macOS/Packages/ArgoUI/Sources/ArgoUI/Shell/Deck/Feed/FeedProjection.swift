@@ -16,6 +16,7 @@ enum FeedProjection {
         working: Bool = false,
         handedOff: FeedHandoff? = nil,
         expired: [PermissionExpiry] = [],
+        asking: FeedAskProjection.Live? = nil,
     )
         -> [FeedRow] {
         let answered = outcomes(in: events)
@@ -27,10 +28,13 @@ enum FeedProjection {
         // its captions need — after the fold its filename is no longer in the feed to compare.
         // The gallery last, over a stream the survey has already left every picture out of: its
         // break rule is the wider of the two, so no call is counted here and drawn there.
-        let work = FeedUnreadableRun.folded(
-            FeedGalleryFold.galleried(
-                FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read))),
+        let work = offering(
+            FeedUnreadableRun.folded(
+                FeedGalleryFold.galleried(
+                    FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read))),
+                ),
             ),
+            asking,
         )
         // The link goes BELOW the roll-up, at the very foot.
         return (work + inFlight(working, over: work) + unanswered(expired) + rolledUp(events) +
@@ -164,6 +168,39 @@ enum FeedProjection {
     )
         -> FeedRow.Content? {
         FeedAskReading.asked(call, answeredBy: outcomes[call.id]).map(FeedRow.Content.ask)
+    }
+
+    /// The one ask row Argo is holding open becomes the thing you press (#712); every other stays a
+    /// reading. Over the WHOLE feed rather than per row, because which row the gate's question
+    /// belongs to is a fact about the feed it sits in.
+    ///
+    /// The LAST match wins. Two identical questions in one Session both match by value — there is
+    /// no id either side shares — and the newest is the one still waiting.
+    private static func offering(
+        _ contents: [FeedRow.Content],
+        _ live: FeedAskProjection.Live?,
+    )
+        -> [FeedRow.Content] {
+        guard let live, let last = contents.lastIndex(where: { waits(for: live, $0) })
+        else { return contents }
+        guard case let .ask(ask) = contents[last] else { return contents }
+        var offering = contents
+        offering[last] = .ask(FeedAsk(
+            ask: ask.ask,
+            isAnswered: ask.isAnswered,
+            answer: ask.answer,
+            live: live,
+        ))
+        return offering
+    }
+
+    private static func waits(
+        for live: FeedAskProjection.Live,
+        _ content: FeedRow.Content,
+    )
+        -> Bool {
+        guard case let .ask(ask) = content else { return false }
+        return ask.isPending && FeedAskProjection.matches(live, ask.ask) != nil
     }
 
     /// Two files of the same name take the shortest parent that tells them apart — the roster's

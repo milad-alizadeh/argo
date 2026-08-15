@@ -51,6 +51,14 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
         try base.decide(decision, answering: requestID, for: sessionID)
     }
 
+    func answer(
+        _ answer: AskAnswer,
+        answering askID: String,
+        for sessionID: String,
+    ) throws {
+        try base.answer(answer, answering: askID, for: sessionID)
+    }
+
     func setMode(_ mode: SessionMode, for sessionID: String) async throws {
         let before = records(sessionID)
         try await base.setMode(mode, for: sessionID)

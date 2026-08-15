@@ -13,6 +13,18 @@ struct FeedAsk: Equatable, Sendable {
     /// What came back, verbatim. `nil` where nothing answered it — and also where what answered it
     /// carried nothing readable, which is why it cannot be what pendingness is read from.
     let answer: String?
+    /// The gate's handle on this question, where Argo is holding it open and can answer it (#712).
+    /// Absent for every row the record has already settled, for a Session Argo cannot drive, and
+    /// for one whose live question is a different one — which is what makes the row a READING
+    /// again the moment any of those is true.
+    let live: FeedAskProjection.Live?
+
+    init(ask: Ask, isAnswered: Bool, answer: String?, live: FeedAskProjection.Live? = nil) {
+        self.ask = ask
+        self.isAnswered = isAnswered
+        self.answer = answer
+        self.live = live
+    }
 
     var questions: [Ask.Question] {
         ask.questions
@@ -22,11 +34,22 @@ struct FeedAsk: Equatable, Sendable {
         !isAnswered
     }
 
+    /// Whether this row is the thing you press rather than the thing you read. Both facts at once:
+    /// the record has not settled it, and Argo is holding the question that raised it.
+    var isWaiting: Bool {
+        isPending && live != nil
+    }
+
     /// The ink this row is drawn in, answered HERE rather than in the view, so the lane and the row
     /// cannot disagree about which questions are still waiting. An answered question is history and
     /// takes the same ink as anything else the record has finished with.
+    ///
+    /// Off `isWaiting` rather than `isPending`: the attention ink now means *this is waiting on
+    /// YOU*, and on a Session Argo cannot drive it is not — nothing you do here reaches the agent
+    /// (#546). Amber nobody can act on is the affordance that lies, which is the one thing this
+    /// screen is designed against.
     var ink: FeedInk {
-        isPending ? .attention : .message
+        isWaiting ? .attention : .message
     }
 
     /// The options of one question, numbered, in the order they were offered — what the row draws.
@@ -43,6 +66,7 @@ struct FeedAsk: Equatable, Sendable {
     func chosen(in question: Ask.Question) -> String? {
         guard let answer else { return nil }
         return question.options
+            .map(\.label)
             .filter(answer.contains)
             .max { $0.count < $1.count }
     }

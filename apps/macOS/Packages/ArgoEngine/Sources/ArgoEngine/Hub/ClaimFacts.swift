@@ -10,6 +10,10 @@ struct ClaimFacts: Equatable {
     var report: CompanionReport?
     /// The Permissions this claim's agent is blocked on, oldest first.
     var waiting: [PermissionRequest] = []
+    /// The questions it is blocked on (#712), oldest first. Apart from `waiting` because the two
+    /// are answered by different acts: a Permission takes one word of two, a question takes
+    /// whatever somebody chose.
+    var asking: [SessionAsk] = []
     /// The tools it has stopped asking about (#572), in the order they were granted.
     var standing: [StandingAllow] = []
     /// The Permissions its gate ran out of patience for and refused itself (#573), oldest first.
@@ -30,6 +34,7 @@ struct ClaimFacts: Equatable {
     var isEmpty: Bool {
         (report?.isEmpty ?? true)
             && waiting.isEmpty
+            && asking.isEmpty
             && standing.isEmpty
             && expiries.isEmpty
             && modeSet == nil

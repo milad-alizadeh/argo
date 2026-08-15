@@ -135,6 +135,7 @@ extension CockpitPresentation.Session {
             // back to (#502, story 20).
             explicitName: annotations.explicitName(session.id),
             permission: session.permission,
+            ask: session.ask,
             standingAllows: session.standingAllows,
             expiredPermissions: session.expiredPermissions,
             // The Hub's own reading, carried whole rather than reduced to a rung: the `≈` and the

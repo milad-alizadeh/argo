@@ -3,7 +3,25 @@ import SwiftUI
 /// The reading itself, at rest: every kind of row, the evidence panel over them, and the lane
 /// beside them. What the feed does while a Turn is RUNNING is `SpecimenRegistry+Live.swift`.
 extension SpecimenRegistry {
-    static let feed: [SpecimenEntry] = rows + evidence + shots + lane
+    static let feed: [SpecimenEntry] = rows + asks + evidence + shots + lane
+
+    /// The question while it WAITS — one render per shape a call can put one in (#712), judged
+    /// against `docs/designs/feed-ask/`. The settled reading is `feedAttention` above; these are
+    /// the states where the row is the thing you press.
+    private static let asks: [SpecimenEntry] = [
+        SpecimenEntry("feedAskOneOf") { SpecimenScene.sessions(FeedProjection.previewAskOneOf) },
+        SpecimenEntry("feedAskManyOf") { SpecimenScene.sessions(FeedProjection.previewAskManyOf) },
+        SpecimenEntry("feedAskFreeForm") {
+            SpecimenScene.sessions(FeedProjection.previewAskFreeForm)
+        },
+        SpecimenEntry("feedAskTwoQuestions") {
+            SpecimenScene.sessions(FeedProjection.previewAskTwoQuestions)
+        },
+        // A Session Argo cannot drive draws no affordance at all (#546) — the same question, read.
+        SpecimenEntry("feedAskUnavailable") {
+            SpecimenScene.sessions(FeedProjection.previewAskUnavailable)
+        },
+    ]
 
     private static let rows: [SpecimenEntry] = [
         SpecimenEntry("feed") {

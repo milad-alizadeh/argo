@@ -26,6 +26,8 @@ public final class InMemorySessionDriver: SessionDriver {
     private var attachments: [String: [SessionAttachment]] = [:]
     /// The answers, each still naming the request it answered.
     private var decisions: [String: [(request: String, decision: PermissionDecision)]] = [:]
+    /// The answers to questions, each still naming the ask it answered.
+    private var answers: [String: [(ask: String, answer: AskAnswer)]] = [:]
     private var revocations: [String: [String]] = [:]
     private var modes: [String: [SessionMode]] = [:]
 
@@ -72,6 +74,17 @@ public final class InMemorySessionDriver: SessionDriver {
         decisions[sessionID, default: []].append((request: requestID, decision: decision))
     }
 
+    public func answer(
+        _ answer: AskAnswer,
+        answering askID: String,
+        for sessionID: String,
+    ) throws {
+        if let refusal {
+            throw refusal
+        }
+        answers[sessionID, default: []].append((ask: askID, answer: answer))
+    }
+
     /// Records the rung it was asked for, which is what a surface has to be able to assert: the
     /// keystrokes that walk there are the `claude` adapter's own claim and are asserted with it.
     public func setMode(_ mode: SessionMode, for sessionID: String) async throws {
@@ -103,6 +116,16 @@ public final class InMemorySessionDriver: SessionDriver {
     /// Which request each of those answers named.
     public func decidedRequests(for sessionID: String) -> [String] {
         (decisions[sessionID] ?? []).map(\.request)
+    }
+
+    /// The answers put to one Session's questions, in the order they were given.
+    public func answered(for sessionID: String) -> [AskAnswer] {
+        (answers[sessionID] ?? []).map(\.answer)
+    }
+
+    /// Which ask each of those answers named.
+    public func answeredAsks(for sessionID: String) -> [String] {
+        (answers[sessionID] ?? []).map(\.ask)
     }
 
     /// What was attached to one Session, in the order it was given.

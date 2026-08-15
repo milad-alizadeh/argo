@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// The options a question offered, one per line, numbered, in the order they were offered.
@@ -56,10 +57,10 @@ private struct FeedAskOption: View {
 }
 
 #Preview("Ask options — offered, and the one that was taken") {
-    let labels = ["The attention ink", "The ordinary ink"]
+    let options = [Ask.Option(label: "The attention ink"), Ask.Option(label: "The ordinary ink")]
     VStack(alignment: .leading, spacing: ArgoSpacing.loose) {
-        FeedAskOptions(offers: FeedAskOffer.numbered(labels, chosen: nil))
-        FeedAskOptions(offers: FeedAskOffer.numbered(labels, chosen: "The ordinary ink"))
+        FeedAskOptions(offers: FeedAskOffer.numbered(options, chosen: nil))
+        FeedAskOptions(offers: FeedAskOffer.numbered(options, chosen: "The ordinary ink"))
     }
     .padding(ArgoFeedRow.inset)
     .frame(width: 420)

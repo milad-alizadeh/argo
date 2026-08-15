@@ -73,6 +73,21 @@ extension CockpitView {
         return { try? actions.drive.decide($0, answering: requestID, for: sessionID) }
     }
 
+    /// Answering the question the feed row is drawing (#712), bound the way `decide` is.
+    ///
+    /// The ask's id comes from the ROW rather than being captured here, because the row is what the
+    /// user is looking at: an id resolved at click time would name whatever the gate is holding by
+    /// then. The Session is captured, since a row cannot address one. Both refusals are dropped for
+    /// the reason `decide`'s are — they mean the question is gone, and the row leaving the screen
+    /// already says so.
+    func answer(on live: FeedAskProjection.Live?) -> @MainActor (String, AskAnswer) -> Void {
+        guard let live else { return { _, _ in } }
+        let sessionID = live.sessionID
+        return { askID, answer in
+            try? actions.drive.answer(answer, answering: askID, for: sessionID)
+        }
+    }
+
     /// Taking a standing allow back. Off the selection, not the vessel: the prompt draws the tray
     /// too, and the composer is absent while it is up. `noSuchGrant` is dropped because the tray is
     /// re-derived from the Session, so the chip goes either way.

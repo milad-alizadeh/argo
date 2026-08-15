@@ -96,6 +96,8 @@ extension Hub {
         // The oldest waiting Permission: prompts are answered one at a time, and the first one
         // raised is the one the agent is blocked on.
         published.permission = facts.waiting.first
+        // The oldest waiting question, for the reason above: questions are answered one at a time.
+        published.ask = facts.asking.first
         published.standingAllows = facts.standing
         published.expiredPermissions = facts.expiries
         published.driveStatus = facts.driveStatus

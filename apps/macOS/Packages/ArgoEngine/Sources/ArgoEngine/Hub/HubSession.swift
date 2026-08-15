@@ -27,6 +27,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// for
     /// every external Session (unobservable there, per ADR-0024).
     public internal(set) var permission: PermissionRequest?
+    /// The question this Session is blocked on (#712) — DIRECT, and absent for every Session whose
+    /// gate is not Argo's own. A live handle with an id, unlike the `Ask` the feed reads out of the
+    /// transcript, which is a reading of a question already put and cannot be answered.
+    public internal(set) var ask: SessionAsk?
     /// The tools this Session has stopped asking about (#572) — DIRECT, and empty rather than
     /// absent because "no standing allow" is a state every Session is honestly in.
     public internal(set) var standingAllows: [StandingAllow] = []
@@ -76,9 +80,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// Every spend the records reported, added with `Usage`'s own `+`. Both grains, per
     /// `CONTEXT.md` L3: the assistant records' own usage, plus whatever a delegating call reported
     /// for the subagent it ran.
-    private var spend: Usage?
+    private(set) var spend: Usage?
     /// The subagent half of it, kept separately because the header says it separately.
-    private var subagentSpend: Usage?
+    private(set) var subagentSpend: Usage?
     public private(set) var lastActivityAtMs: Int?
     /// The oldest moment the records report — the fact a claim window is matched against.
     public private(set) var startedAtMs: Int?
@@ -112,24 +116,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// chain to continue.
     var resumeID: String? {
         chainTipURL?.deletingPathExtension().lastPathComponent
-    }
-
-    /// What the Session has SPENT across its whole life, cache excluded (that is `cachedTokens`).
-    /// Absent until a record prices something: a Session nobody priced has not spent nothing.
-    public var spentTokens: Int? {
-        spend?.spentTokens
-    }
-
-    /// The cache half of the same life: read and re-read once per request, so it runs to tens of
-    /// millions on a long Session while the spend stays small. Absent with `spentTokens`.
-    public var cachedTokens: Int? {
-        spend?.cachedTokens
-    }
-
-    /// Read off the DELEGATING call's result — the only place that spend is ever reported, since a
-    /// sidechain's own records carry none. Absent, never zero: a zero would claim no subagent ran.
-    public var subagentTokens: Int? {
-        subagentSpend?.billedTokens
     }
 
     public init(observation: TranscriptObservation) {

@@ -95,9 +95,26 @@ struct MinimapRowTests {
     /// off both edges.
     @Test
     func `a question waiting on somebody crosses the lane`() {
-        let ask = FeedAsk(ask: Ask(questions: []), isAnswered: false, answer: nil)
+        let ask = FeedAsk(
+            ask: Ask(questions: []),
+            isAnswered: false,
+            answer: nil,
+            live: FeedAskProjection.Live(
+                sessionID: "session",
+                askID: "ask-1",
+                ask: Ask(questions: []),
+            ),
+        )
         #expect(Self.shape(.ask(ask)) == .whole(.attention))
         #expect(FeedInk.attention.shape == .band)
+    }
+
+    /// The attention ink means *this is waiting on YOU*. On a Session Argo cannot drive it is not,
+    /// because nothing done here reaches the agent (#546) — so the lane goes quiet with the row.
+    @Test
+    func `a question nobody here can answer takes no attention ink`() {
+        let unanswerable = FeedAsk(ask: Ask(questions: []), isAnswered: false, answer: nil)
+        #expect(Self.shape(.ask(unanswerable)) == .whole(.message))
     }
 
     /// The row goes quiet the moment something answers it, and the lane has to go quiet with it —

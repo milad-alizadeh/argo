@@ -56,7 +56,7 @@ private struct PermissionDecisionButton: View {
         Button(action: act) {
             HStack(spacing: ArgoSpacing.tight) {
                 Text(verb)
-                PermissionKeycap(key: key)
+                FeedKeycap(key: key)
             }
             .foregroundStyle(ink)
             .padding(.horizontal, ArgoSpacing.comfortable)
@@ -120,24 +120,6 @@ private struct PermissionDecisionButton: View {
         case .allow: .transparent
         case .deny: argo.color.state.rim(argo.color.state.failure)
         }
-    }
-}
-
-/// The key that answers, raised off the control it sits on: a hint ghosted to 60% reads as a
-/// disabled label.
-private struct PermissionKeycap: View {
-    @Environment(\.argo) private var argo
-
-    let key: String
-
-    var body: some View {
-        Text(key)
-            .argoText(ArgoTypography.machineCaption)
-            .padding(.horizontal, ArgoSpacing.tight)
-            .padding(.vertical, ArgoSpacing.hair)
-            // `marked` is the one ground specified to keep its lift on whatever it lands on, here
-            // an accent fill and a translucent pill.
-            .background(argo.color.surface.marked, in: .rect(cornerRadius: ArgoRadius.marker))
     }
 }
 

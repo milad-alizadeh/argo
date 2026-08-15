@@ -20,16 +20,26 @@ struct AskReadingTests {
         let ask = try #require(await calls()["ask-pending"]?.ask)
 
         #expect(ask.questions.map(\.text) == ["Which ink does a prompt still waiting take?"])
-        #expect(ask.questions.first?.options == ["The attention ink", "The ordinary ink"])
+        #expect(ask.questions.first?.options.map(\.label) == [
+            "The attention ink",
+            "The ordinary ink",
+        ])
     }
 
     /// An option carrying a description offers its LABEL — the words on the control somebody
-    /// presses. The description explains the option; it is not the option.
+    /// presses. The description is the line UNDER it: it explains the option, it is not the option.
     @Test
-    func `an option is read as the label it was offered under`() async throws {
+    func `an option is read as the label it was offered under, and the line under it`(
+    ) async throws {
         let ask = try #require(await calls()["ask-answered"]?.ask)
 
-        #expect(ask.questions.first?.options == ["On the option itself", "Beside the question"])
+        #expect(ask.questions.first?.options == [
+            Ask.Option(
+                label: "On the option itself",
+                detail: "A tick beside the one that was taken.",
+            ),
+            Ask.Option(label: "Beside the question", detail: "One line naming what was chosen."),
+        ])
     }
 
     @Test

@@ -115,6 +115,10 @@ public extension CockpitPresentation {
         /// because Argo holds the blocked hook itself. Absent for every Session that is not
         /// waiting on one, which is what returns the composer to its slot.
         public let permission: PermissionRequest?
+        /// The question the Session's agent is blocked on (#712), verbatim from the engine —
+        /// DIRECT, on the same ground the Permission above is. Absent for every Session that is not
+        /// waiting on one, which is what returns the feed's ask row to being a reading.
+        public let ask: SessionAsk?
         /// The tools this Session has stopped asking about (#572), verbatim from the engine and in
         /// the order they were granted. Empty for a Session that has granted none, which is every
         /// Session until somebody says otherwise.
@@ -161,6 +165,7 @@ public extension CockpitPresentation {
             isArchived: Bool = false,
             explicitName: String? = nil,
             permission: PermissionRequest? = nil,
+            ask: SessionAsk? = nil,
             standingAllows: [StandingAllow] = [],
             expiredPermissions: [PermissionExpiry] = [],
             mode: SessionModeReading = .unknown(cli: nil),
@@ -187,6 +192,7 @@ public extension CockpitPresentation {
             self.isArchived = isArchived
             self.explicitName = explicitName
             self.permission = permission
+            self.ask = ask
             self.standingAllows = standingAllows
             self.expiredPermissions = expiredPermissions
             self.mode = mode

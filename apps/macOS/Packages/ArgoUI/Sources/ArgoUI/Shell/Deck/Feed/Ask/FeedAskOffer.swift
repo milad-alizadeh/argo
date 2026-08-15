@@ -1,3 +1,5 @@
+import ArgoEngine
+
 /// One option as the row draws it: what was offered, the number it was offered under, and whether
 /// the answer named it.
 ///
@@ -6,6 +8,8 @@
 struct FeedAskOffer: Equatable, Sendable, Identifiable {
     let ordinal: Int
     let label: String
+    /// The line under the label, where the host offered one.
+    let detail: String?
     let isChosen: Bool
 
     var id: Int {
@@ -17,14 +21,19 @@ struct FeedAskOffer: Equatable, Sendable, Identifiable {
         "\(ordinal)."
     }
 
-    /// The offered labels, numbered from one, in the order they were offered.
+    /// The offered options, numbered from one, in the order they were offered.
     ///
-    /// Only the FIRST label matching `chosen` is marked: two options may carry the same words, and
+    /// Only the FIRST option matching `chosen` is marked: two options may carry the same words, and
     /// an answer that names those words has named one of them, never both.
-    static func numbered(_ labels: [String], chosen: String?) -> [FeedAskOffer] {
-        let taken = chosen.flatMap(labels.firstIndex(of:))
-        return labels.enumerated().map { index, label in
-            FeedAskOffer(ordinal: index + 1, label: label, isChosen: index == taken)
+    static func numbered(_ options: [Ask.Option], chosen: String?) -> [FeedAskOffer] {
+        let taken = chosen.flatMap { label in options.firstIndex { $0.label == label } }
+        return options.enumerated().map { index, option in
+            FeedAskOffer(
+                ordinal: index + 1,
+                label: option.label,
+                detail: option.detail,
+                isChosen: index == taken,
+            )
         }
     }
 }
