@@ -27,6 +27,9 @@ import Testing
 @Suite("Minimap cost")
 struct MinimapCostTests {
     private static let column = CGSize(width: 620, height: 800)
+    /// One frame at 60Hz. A budget for work that runs per frame is stated as a multiple of this
+    /// rather than as flat seconds, which encode the speed of whoever wrote them.
+    private static let frame = 1.0 / 60
     /// A real session's length. `FeedProjection.longRows` is what `feedAtScale` renders.
     private static let rows = FeedProjection.longRows
 
@@ -111,12 +114,15 @@ struct MinimapCostTests {
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: Self.column.height))
         _ = lane.marks(in: 0 ... Self.column.height)
         let cost = Self.elapsed {
-            for frame in 0 ..< 60 {
-                _ = lane.marks(in: CGFloat(frame) ... CGFloat(frame) + Self.column.height)
+            for at in 0 ..< 60 {
+                _ = lane.marks(in: CGFloat(at) ... CGFloat(at) + Self.column.height)
             }
         }
-        // 60 frames well inside a second, so no single one of them is near 16ms.
-        #expect(cost < 0.3)
+        // Sixty frames' worth of budget for sixty frames. It bounds the average rather than the
+        // worst one, which is all an aggregate can say — and at 1.6ms each the machine has 10x of
+        // it spare, so a fail is a repaint that stopped coming off the caches rather than a busy
+        // box.
+        #expect(cost < 60 * Self.frame)
     }
 
     /// The seam under the reader's finger, which is the worst case the design has: the column moves
@@ -130,8 +136,8 @@ struct MinimapCostTests {
             return
         }
         let cost = Self.elapsed {
-            for frame in 0 ..< 30 {
-                reading.columnWidth = 620 - CGFloat(frame)
+            for at in 0 ..< 30 {
+                reading.columnWidth = 620 - CGFloat(at)
                 let lane = MinimapGeometry(
                     reading,
                     lane: CGSize(width: 112, height: Self.column.height),
