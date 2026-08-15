@@ -3,10 +3,8 @@ import Foundation
 /// The CLI's built-in commands as one read found them, kept against the version that produced them
 /// (#686).
 ///
-/// Keyed by the version string and nothing else. A CLI is upgraded in place, so the path it lives
-/// at
-/// says nothing about which commands it has — and the alternative, re-reading on every launch,
-/// spends a hidden session and several seconds of TUI drawing on an answer that had not changed.
+/// Keyed by the version string and nothing else: a CLI is upgraded in place, so the path it lives
+/// at says nothing about which commands it has.
 ///
 /// `fileURL` is optional, and `nil` means REMEMBER NOTHING — `OwnedStateFile`'s rule, and the state
 /// a render harness holds.

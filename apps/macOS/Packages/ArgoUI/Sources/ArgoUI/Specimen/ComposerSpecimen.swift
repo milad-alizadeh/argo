@@ -24,7 +24,7 @@ struct ComposerSpecimen: View {
         composer: SessionComposerProjection.Composer = ComposerSpecimen.composer,
         draft: ComposerDraft = ComposerDraft(),
         isDropTargeted: Bool = false,
-        commands: CommandCatalog = CommandCatalog(commands: [], builtins: .read),
+        commands: CommandCatalog = CommandCatalog.empty,
     ) {
         self.composer = composer
         _held = State(initialValue: draft)

@@ -100,6 +100,17 @@ struct BuiltinCommandReaderTests {
         #expect(machine.host.launches.count == 2)
     }
 
+    /// A TUI that was too slow once is not a CLI without built-ins, so the failure is not held: the
+    /// next ask starts a fresh read rather than repeating what went wrong the first time.
+    @Test
+    func `asks again after a read that failed`() async {
+        let reader = machine.reader(showing: ["nothing that is a help panel"])
+        await machine.finish(reader)
+        await machine.finish(reader)
+
+        #expect(machine.host.launches.count == 2)
+    }
+
     /// One hidden `claude` and not two: a window that asks twice before the first answer lands
     /// must not put a second TUI on the machine.
     @Test

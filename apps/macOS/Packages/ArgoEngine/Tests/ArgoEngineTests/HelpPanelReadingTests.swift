@@ -77,4 +77,22 @@ struct HelpPanelReadingTests {
         ])
         #expect(read.first { $0.name == "terse" }?.description == nil)
     }
+
+    /// The panel closes with two sentences of its own, indented SHALLOWER than a description. A
+    /// last command that printed none must not be given one of them — a row claiming the CLI
+    /// describes `/workflows` as "For more help: …" is the menu lying about someone else's words.
+    @Test
+    func `never lets the panel's closing prose become the last command's description`() throws {
+        let read = try HelpPanel.commands(on: [
+            "   Browse default commands",
+            "     /compact",
+            "       Free up context.",
+            "     /workflows",
+            "",
+            "   For more help: https://code.claude.com/en/overview",
+            "   Something else? Use /feedback to report bugs or request features.",
+        ])
+        #expect(read.map(\.name) == ["compact", "workflows"])
+        #expect(read.last?.description == nil)
+    }
 }

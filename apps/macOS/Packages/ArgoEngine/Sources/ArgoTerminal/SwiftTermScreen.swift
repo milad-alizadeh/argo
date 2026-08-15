@@ -2,14 +2,12 @@ import ArgoEngine
 import Foundation
 import SwiftTerm
 
-/// The engine's `TerminalScreen`, painted by the same emulator the Dock's terminal draws with.
+/// The engine's `TerminalScreen`, painted by the same emulator the Dock's terminal draws with. In
+/// this target for `SwiftTermProcessHost`'s reason: SwiftTerm links AppKit on macOS.
 ///
-/// It lives in this target for `SwiftTermProcessHost`'s reason: SwiftTerm links AppKit on macOS and
-/// `ArgoEngine` must stay runnable with no window.
-///
-/// It is also its own `TerminalDelegate`, and that half answers nothing: the CLI whose bytes these
-/// are is dead by the time anything is painted, so a reply would go to a closed descriptor. It
-/// holds no state of its own, which is what makes one of these safe to paint two screens with.
+/// It is also its own `TerminalDelegate`, and that half answers nothing — the CLI whose bytes these
+/// are is dead by the time anything is painted. It holds no state, so one of these paints any
+/// number of screens.
 public final class SwiftTermScreen: TerminalScreen, TerminalDelegate {
     public init() {}
 

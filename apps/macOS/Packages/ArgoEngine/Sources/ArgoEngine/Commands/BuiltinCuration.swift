@@ -1,9 +1,7 @@
 /// Which of the CLI's built-ins the composer's `/` picker offers (#686).
 ///
 /// The only hand-maintained part of the feature, and it fails SOFT on purpose: what it names is
-/// what to leave out, so a command it has never heard of is shown un-curated. That is noise. The
-/// other way round — a hand-kept list of names to KEEP — fails hard, because a name missing from it
-/// is the picker denying a command the Session really accepts, and nothing here would ever notice.
+/// what to leave OUT, so a command it has never heard of is shown un-curated rather than hidden.
 enum BuiltinCuration {
     /// The read list, minus the vetoes, in the order the panel gave it.
     static func keeps(_ read: [BuiltinCommand]) -> [BuiltinCommand] {

@@ -1,8 +1,5 @@
-/// One of the CLI's own commands, as its Help panel prints it (#686).
-///
-/// Its own type rather than a `Command` straight away, because what the panel says and what the
-/// picker shows are two different questions: everything here was read, and only some of it survives
-/// `BuiltinCuration`.
+/// One of the CLI's own commands, as its Help panel prints it (#686) — everything that was read,
+/// before `BuiltinCuration` decides which of it the picker shows.
 struct BuiltinCommand: Equatable, Sendable, Codable {
     /// Without the leading slash, so it reads the same way a skill's name does.
     let name: String

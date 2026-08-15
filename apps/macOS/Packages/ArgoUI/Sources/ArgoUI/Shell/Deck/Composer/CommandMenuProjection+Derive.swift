@@ -34,20 +34,23 @@ extension CommandMenuProjection {
     /// Nothing typed yet: one section per origin, nearest first, each saying where it read from and
     /// how many it found. The catalog already answers in that order, so the runs are consecutive.
     private static func byOrigin(_ catalog: [Command]) -> [Section] {
-        runs(of: catalog).map { origin, skills in
+        runs(of: catalog).map { origin, commands in
             Section(
                 id: origin.readFrom,
                 label: word(for: origin),
-                detail: "\(origin.readFrom) · \(skills.count)",
-                rows: skills.map { row(for: $0, matched: 0 ..< 0, origin: nil) },
+                detail: "\(origin.readFrom) · \(commands.count)",
+                rows: commands.map { row(for: $0, matched: 0 ..< 0, origin: nil) },
             )
         }
     }
 
     private static func runs(of catalog: [Command]) -> [(CommandOrigin, [Command])] {
-        catalog.reduce(into: []) { runs, skill in
-            guard runs.last?.0 == skill.origin else { return runs.append((skill.origin, [skill])) }
-            runs[runs.count - 1].1.append(skill)
+        catalog.reduce(into: []) { runs, command in
+            guard runs.last?.0 == command.origin else { return runs.append((
+                command.origin,
+                [command],
+            )) }
+            runs[runs.count - 1].1.append(command)
         }
     }
 
@@ -58,10 +61,10 @@ extension CommandMenuProjection {
     private static func byMatch(_ catalog: [Command], on query: String) -> [Section] {
         var opening: [Row] = []
         var containing: [Row] = []
-        for skill in catalog {
-            guard let matched = match(query, in: skill.command) else { continue }
-            let row = row(for: skill, matched: matched, origin: word(for: skill.origin))
-            if opens(matched, of: skill) {
+        for command in catalog {
+            guard let matched = match(query, in: command.command) else { continue }
+            let row = row(for: command, matched: matched, origin: word(for: command.origin))
+            if opens(matched, of: command) {
                 opening.append(row)
             } else {
                 containing.append(row)
@@ -79,11 +82,11 @@ extension CommandMenuProjection {
     }
 
     /// Whether a match is at the head of the thing the reader is naming. TWO heads, because a
-    /// plugin's command is `/plugin:name` and the reader typing `simplify` has named the skill
-    /// exactly — ranked only off the command's own start, every plugin skill would file under
+    /// plugin's command is `/plugin:name` and the reader typing `simplify` has named the command
+    /// exactly — ranked only off the command's own start, every plugin command would file under
     /// "Also contains" no matter how well it matched.
-    private static func opens(_ matched: Range<Int>, of skill: Command) -> Bool {
-        matched.lowerBound == 1 || matched.lowerBound == skill.command.count - skill.name.count
+    private static func opens(_ matched: Range<Int>, of command: Command) -> Bool {
+        matched.lowerBound == 1 || matched.lowerBound == command.command.count - command.name.count
     }
 
     /// The header over the weaker half. It names the characters rather than a kind of match,
@@ -107,19 +110,20 @@ extension CommandMenuProjection {
         return nil
     }
 
-    private static func row(for skill: Command, matched: Range<Int>, origin: String?) -> Row {
+    private static func row(for command: Command, matched: Range<Int>, origin: String?) -> Row {
         Row(
-            command: skill.command,
+            command: command.command,
             matched: matched,
-            description: skill.description.flatMap(firstSentence),
+            description: command.description.flatMap(firstSentence),
             origin: origin,
-            shadowsUser: skill.shadowsUser,
+            shadowsUser: command.shadowsUser,
         )
     }
 
-    /// The first sentence of the frontmatter's own words (decision 4). There is no one-line
-    /// description in a `SKILL.md` — the field is trigger prose for a model and real ones run three
-    /// sentences — so the row takes the head of it verbatim and never a paraphrase.
+    /// The first sentence of the source's own words — a skill's frontmatter, or the CLI's own
+    /// panel line (decision 4). There is no one-line description in a `SKILL.md`: the field is
+    /// trigger prose for a model and real ones run three sentences, so the row takes the head of
+    /// it verbatim and never a paraphrase.
     ///
     /// A sentence ends at `.`, `?` or `!` with whitespace or nothing after it, which is what keeps
     /// `e.g.` and a version number inside the sentence they belong to.

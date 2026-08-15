@@ -1,16 +1,11 @@
 /// The CLI's own built-in commands, read off the Commands tab of its `/help` panel (#686).
 ///
-/// Argo keeps no list of command names, because a list kept here fails HARD: a name it is missing
-/// is the picker lying about what the Session accepts, and nothing on this side would ever notice.
-/// Asking the CLI moves that risk onto the CURATION, which fails soft — see `BuiltinCuration`.
-///
-/// A pure function of the rendered screen. What renders it is a port, so the whole of the shape
-/// this reads is something a captured fixture can hold still.
+/// A pure function of the rendered screen, so a captured fixture holds the whole shape still.
 enum HelpPanel {
     /// The commands the panel lists, in the order it lists them.
     ///
-    /// Throws rather than answering short. Every failure here has the same shape — the reader saw
-    /// only part of the panel — and a part of a catalogue is indistinguishable from a smaller one.
+    /// Throws rather than answering short: a part of a catalogue is indistinguishable from a
+    /// smaller one, and a picker that lists it denies commands the Session accepts.
     static func commands(on screen: [String]) throws -> [BuiltinCommand] {
         let rows = try list(in: screen)
         let read = commands(inList: rows)
@@ -36,33 +31,35 @@ enum HelpPanel {
         return Array(rows)
     }
 
-    /// A name line opens a command and the indented line under it describes it. Anything else —
-    /// the blank rows around the list, the two closing sentences — belongs to neither.
+    /// A name line opens a command and the line indented UNDER it describes it. Anything shallower
+    /// belongs to neither — which is what keeps the panel's own closing sentences out of the last
+    /// command's description, in the case where that command printed none.
+    ///
+    /// The panel indents a name by 5 and its description by 7, and closes with prose at 3. Compared
+    /// rather than matched, because the three numbers are the CLI's and only their ORDER is a rule
+    /// this can hold the CLI to.
     private static func commands(inList rows: [String]) -> [BuiltinCommand] {
-        rows.reduce(into: []) { read, row in
-            guard let name = row.commandName else { return read.append(description: row.trimmed) }
-            read.append(BuiltinCommand(name: name, description: nil))
+        var read: [BuiltinCommand] = []
+        var namedAt = 0
+        for row in rows {
+            if let name = row.commandName {
+                namedAt = row.indent
+                read.append(BuiltinCommand(name: name, description: nil))
+            } else if row.indent > namedAt {
+                read.describeLast(as: row.trimmed)
+            }
         }
+        return read
     }
 
     /// The one line that says the rows below it are the built-in commands.
     private static let heading = "Browse default commands"
 }
 
-/// Why nothing was read. Both cases mean the same thing to a caller — the built-in half is
-/// unavailable — and are kept apart because only one of them says to try a taller terminal.
-enum HelpPanelError: Error, Equatable {
-    /// The panel stopped mid-list, so the rows below the last drawn one were never on screen.
-    case truncated
-    /// No command list was on the screen at all.
-    case noCommandList
-}
-
 private extension [BuiltinCommand] {
-    /// Give the command still being read its description, and ignore a line belonging to no
-    /// command at all. Only the FIRST such line lands: the panel clamps to one line per command,
-    /// so a second would be the closing prose rather than more of the description.
-    mutating func append(description: String) {
+    /// Give the command still being read its description. Only the FIRST such line lands: the
+    /// panel clamps to one line per command, so a second would be something else.
+    mutating func describeLast(as description: String) {
         guard let open = last, open.description == nil, !description.isEmpty else { return }
         self[index(before: endIndex)] = BuiltinCommand(name: open.name, description: description)
     }
@@ -71,6 +68,11 @@ private extension [BuiltinCommand] {
 private extension String {
     var trimmed: String {
         trimmingCharacters(in: .whitespaces)
+    }
+
+    /// How many spaces the panel holds this row off the edge by.
+    var indent: Int {
+        count - drop(while: \.isWhitespace).count
     }
 
     /// The name a row invokes, without its slash, and `nil` where the row names no command. The

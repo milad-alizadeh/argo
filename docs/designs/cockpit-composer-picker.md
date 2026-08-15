@@ -14,11 +14,13 @@ essential; this settles what it looks like.
 1440×860, taken from the study with its switcher hidden. The measurements below are the numbers a
 ticket must carry — prose that omits them cannot be failed for getting them wrong.
 
-> **One place the renders are now stale.** `slash.png` and `slash-edge.png` still draw a leading Ion
-> Blue edge on the cursor row. #685's build removed it — the cockpit draws no leading rules on rows
-> — and the measurement table below is the amended truth. The renders were not re-shot: they come
-> from a prototype branch, not from the app, so re-shooting them would mean re-running a study to
-> change one rule. Everything else in those two PNGs still holds.
+> **One place the renders are now stale.** Every PNG that draws the keyboard cursor — `slash.png`,
+> `slash-edge.png`, `slash-late.png`, `slash-fail.png` — still puts a leading Ion Blue edge on that
+> row. #685's build removed it: the cockpit draws no leading rules on rows, the ground alone carries
+> a marked row, and the measurement table below is the amended truth. The renders were not re-shot:
+> they come from a prototype branch, not from the app, so re-shooting them would mean re-running a
+> study to change one rule. **Judge those four against the table, not against the edge.** Everything
+> else in them still holds.
 
 **The composer is untouched.** [`cockpit-session-composer.md`](cockpit-session-composer.md) froze
 the vessel, its footer and their measurements; this design only adds the surface that opens over

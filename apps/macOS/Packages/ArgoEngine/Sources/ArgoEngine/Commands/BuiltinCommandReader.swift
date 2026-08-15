@@ -77,6 +77,9 @@ public final class BuiltinCommandReader {
             return settle(on: kept)
         }
         guard let read = try? await panel(inProjectAt: projectURL) else {
+            // Let go of the read, so a later ask tries again. A TUI that was too slow once is not
+            // a CLI without built-ins, and holding the failure would mean none until a relaunch.
+            inFlight = nil
             status = .unavailable
             return
         }
@@ -84,9 +87,8 @@ public final class BuiltinCommandReader {
         settle(on: read)
     }
 
-    /// Curated on the way OUT of the store rather than on the way in, so what is kept stays the
-    /// CLI's own answer: changing which commands Argo shows must not need everyone's kept file
-    /// thrown away to take effect.
+    /// Curated on the way OUT of the store, so the kept file stays the CLI's own answer and a
+    /// change to the curation takes effect without everyone's file being thrown away.
     private func settle(on read: [BuiltinCommand]) {
         commands = BuiltinCuration.keeps(read).map {
             Command(name: $0.name, description: $0.description, origin: .claudeCode)
