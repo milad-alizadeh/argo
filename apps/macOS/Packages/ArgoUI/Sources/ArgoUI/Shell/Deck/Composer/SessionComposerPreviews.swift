@@ -59,7 +59,7 @@ import SwiftUI
 private struct ComposerPreview: View {
     let composer: SessionComposerProjection.Composer
     @Binding var draft: ComposerDraft
-    var commands: () -> [Skill] = { [] }
+    var commands: () -> CommandCatalog = { CommandCatalog(commands: [], builtins: .read) }
 
     var body: some View {
         SessionComposer(

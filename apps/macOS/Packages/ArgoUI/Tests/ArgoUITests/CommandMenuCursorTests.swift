@@ -76,10 +76,13 @@ struct CommandMenuCursorTests {
 
     private let rows = CommandMenuProjection.menu(
         for: "/",
-        in: [
-            Skill(name: "ask-argo", description: nil, origin: .project),
-            Skill(name: "code-review", description: nil, origin: .project),
-            Skill(name: "implement", description: nil, origin: .project),
-        ],
+        in: CommandCatalog(
+            commands: [
+                Command(name: "ask-argo", description: nil, origin: .project),
+                Command(name: "code-review", description: nil, origin: .project),
+                Command(name: "implement", description: nil, origin: .project),
+            ],
+            builtins: .read,
+        ),
     )?.rows ?? []
 }

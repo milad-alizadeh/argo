@@ -28,7 +28,7 @@ struct SessionComposer: View {
     var setMode: (SessionMode) async throws -> Void = { _ in }
     /// Every skill installed for this Project, read afresh each time the `/` menu opens (#685).
     /// The view holds only what this last answered, so no view reads the filesystem.
-    var commands: () -> [Skill] = { [] }
+    var commands: () -> CommandCatalog = { CommandCatalog(commands: [], builtins: .read) }
     @Binding var draft: ComposerDraft
     /// Holds the drag-over state open for a render — see `AttachmentDropTarget.isHeldOpen`.
     var isDropTargeted = false
@@ -40,7 +40,7 @@ struct SessionComposer: View {
 
     /// The catalog as the last open read it, and where the keyboard is in the list it produced.
     /// Both are the menu's own state and neither survives it closing.
-    @State private var catalog: [Skill] = []
+    @State private var catalog = CommandCatalog(commands: [], builtins: .read)
     @State private var cursor = CommandMenuCursor()
     /// Whether Escape has put the menu away over a line that would still open one. Cleared by the
     /// next keystroke, because the reader typing again is them asking for it back.
@@ -53,7 +53,8 @@ struct SessionComposer: View {
         lostTurnSeen: @escaping () -> Void = {},
         stop: @escaping () throws -> Void = {},
         setMode: @escaping (SessionMode) async throws -> Void = { _ in },
-        commands: @escaping () -> [Skill] = { [] },
+        commands: @escaping ()
+            -> CommandCatalog = { CommandCatalog(commands: [], builtins: .read) },
         draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
         isDropTargeted: Bool = false,
     ) {
@@ -166,7 +167,7 @@ struct SessionComposer: View {
     private func opened() {
         isDismissed = false
         guard composer.canRunCommands, CommandMenuProjection.query(in: draft.text) != nil else {
-            return catalog = []
+            return catalog = CommandCatalog(commands: [], builtins: .read)
         }
         catalog = commands()
         cursor.settle(over: menu?.rows ?? [])

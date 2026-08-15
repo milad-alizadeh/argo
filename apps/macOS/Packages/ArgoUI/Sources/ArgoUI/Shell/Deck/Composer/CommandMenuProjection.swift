@@ -14,6 +14,9 @@ enum CommandMenuProjection {
         let sections: [Section]
         /// What the reader typed after the `/`, for the zero line to name back to them.
         let query: String
+        /// How the CLI's own half of the catalog is doing, for the strip pinned above the list
+        /// (#686, design decision 9). Read by default, because every other origin answers at once.
+        var builtins: BuiltinStatus = .read
 
         /// Every row, in drawing order — what the keyboard cursor walks, so it cannot fall out of
         /// step with the sections it walks through.
@@ -21,6 +24,9 @@ enum CommandMenuProjection {
             sections.flatMap(\.rows)
         }
 
+        /// Whether the surface has nothing but its own zero line on it. A status strip is not
+        /// content: a menu whose skills all filtered out still says nothing matched, and says the
+        /// built-in half is late above it.
         var isEmpty: Bool {
             sections.isEmpty
         }
@@ -62,11 +68,12 @@ enum CommandMenuProjection {
 
     /// The word an origin goes by. Upper-casing is the row's own, because it is a face and not a
     /// fact.
-    static func word(for origin: SkillOrigin) -> String {
+    static func word(for origin: CommandOrigin) -> String {
         switch origin {
         case .project: "Project"
         case .user: "Global"
         case .plugin: "Plugin"
+        case .claudeCode: "Claude Code"
         }
     }
 }

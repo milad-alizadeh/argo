@@ -19,7 +19,7 @@ public struct SkillCatalog {
     /// One directory of skills, and the origin everything in it has.
     private struct Source {
         let url: URL
-        let origin: SkillOrigin
+        let origin: CommandOrigin
     }
 
     /// The Project's skills, then the user's, then each enabled plugin's, and each origin's own in
@@ -27,19 +27,19 @@ public struct SkillCatalog {
     ///
     /// A name the Project and the user both carry is listed ONCE, under the Project, marked
     /// `shadowsUser` (`cockpit-composer-picker.md` decision 7).
-    public func skills() -> [Skill] {
+    public func skills() -> [Command] {
         Self.shadowed(sources().flatMap(skills(in:)))
     }
 
     /// Drop each user skill a Project skill of the same name stands in front of, and mark the row
     /// that is standing there. Nothing else can collide: a plugin's commands carry its name.
-    private static func shadowed(_ found: [Skill]) -> [Skill] {
+    private static func shadowed(_ found: [Command]) -> [Command] {
         let ofProject = Set(found.filter { $0.origin == .project }.map(\.name))
         let ofUser = Set(found.filter { $0.origin == .user }.map(\.name))
         return found.compactMap { skill in
             switch skill.origin {
             case .user where ofProject.contains(skill.name): nil
-            case .project: Skill(
+            case .project: Command(
                     name: skill.name,
                     description: skill.description,
                     origin: .project,
@@ -67,10 +67,10 @@ public struct SkillCatalog {
     }
 
     private func skillsDirectory(under url: URL) -> URL {
-        url.appending(path: SkillOrigin.directory, directoryHint: .isDirectory)
+        url.appending(path: CommandOrigin.directory, directoryHint: .isDirectory)
     }
 
-    private func skills(in source: Source) -> [Skill] {
+    private func skills(in source: Source) -> [Command] {
         entries(in: source.url).compactMap { skill(at: $0, from: source.origin) }
     }
 
@@ -88,14 +88,14 @@ public struct SkillCatalog {
 
     /// A directory with no `SKILL.md`, a `SKILL.md` with no frontmatter, and a plain file that
     /// happens to sit there are all not skills. None of them stops the entry beside it being read.
-    private func skill(at url: URL, from origin: SkillOrigin) -> Skill? {
+    private func skill(at url: URL, from origin: CommandOrigin) -> Command? {
         guard let markdown = try? String(
             contentsOf: url.appending(path: SkillLoad.fileName),
             encoding: .utf8,
         ),
             let read = SkillFrontmatter(markdown: markdown)
         else { return nil }
-        return Skill(
+        return Command(
             name: read.name ?? url.lastPathComponent,
             description: read.description,
             origin: origin,

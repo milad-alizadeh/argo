@@ -56,7 +56,7 @@ Renaming one of these later is a migration.
 | `AddButton` | the footer's leading `+`. **Renamed from `AttachButton`** — see below |
 | `AddMenu` | the two-row menu `AddButton` opens: files, skills & commands |
 | `CommandMenu` | the surface itself: status strip, sectioned list, keyboard cursor |
-| `CommandMenuRow` | one invocable thing — name, argument hint, description, origin |
+| `CommandMenuRow` | one invocable thing — name, description, origin |
 | `CommandMenuSection` | the sticky origin header, with its count and where it came from |
 | `CommandMenuStatus` | the pinned strip that says the built-in half is late or unavailable |
 | `CommandMenuEmpty` | the one line drawn when nothing matches |
@@ -98,7 +98,7 @@ except where it says *measured*.
 | gap between parts | `ArgoSpacing.base` |
 | radius | `ArgoRadius.control` (6) |
 | name | `ArgoTypography.machine` (mono 12), ink `primary` |
-| argument hint | `ArgoTypography.machineCaption` (mono 11), ink `disabled` |
+| ~~argument hint~~ | **dropped during #686's build — see decision 6.** No CLI surface carries `argumentHint` |
 | description | `ArgoTypography.rowMeta` (11), ink `tertiary`, one line, tail-truncated |
 | origin | `ArgoTypography.badge` (10, semibold, tracking 0.6), ink `disabled`, upper-cased |
 | shadow marker | the same `badge` role in `state.attention` |
@@ -149,9 +149,15 @@ more.
 5. **A skill with no `description:` shows its name and nothing.** The ramp's quietest ink, no
    invented caption, and **no italic** — a role carries a face and a weight, never a slant —
    `slash-edge.png`.
-6. **The argument affordance is the CLI's own `argumentHint`, as ghost text after the name.**
-   Built-ins carry the field and skills do not, so skills show nothing rather than an invention —
-   `slash-builtin.png` against `slash-args.png`.
+6. ~~**The argument affordance is the CLI's own `argumentHint`, as ghost text after the name.**~~
+   **Dropped during #686's build: nothing is drawn after the name, for a built-in or a skill.**
+   The CLI does not expose `argumentHint` through any surface Argo can read. #686 reads the Help
+   panel from a hidden session, and that panel prints a name and a clamped description and nothing
+   else; the CLI's own `/` popup prints the same two. The field exists only inside the binary, in
+   minified records whose descriptions are sometimes getters and whose hints are sometimes
+   template literals — a second source, far more fragile than the panel, for a decoration.
+   `slash-builtin.png` still shows the ghost text and is stale in that one respect. The rest of it
+   holds, and a built-in's row is a skill's row: name, then description.
 7. **A name shadowed by a nearer origin is not listed; the winning row says `shadows yours`.** The
    CLI would never run the shadowed copy, and a row the CLI ignores is a lie. This is why origin
    has to be legible at all — `slash-edge.png`.
@@ -197,7 +203,7 @@ more.
 |---|---|---|
 | `12px` mono name | snap, exact | `ArgoTypography.machine` |
 | `11px` description · `11px` wait and failure lines | snap, exact | `rowMeta` |
-| `11px` mono argument hint | snap, exact | `machineCaption` |
+| `11px` mono argument hint | **dropped** | no CLI surface carries `argumentHint` — decision 6 |
 | `13px/1.5` ghost hint | snap, exact | `body` — the field's own type, which the field already sets |
 | `10px` origin badge, tracking `.4` | snap | `badge` (10, semibold, **tracking 0.6**) |
 | `10px` uppercase section header | snap | `sectionLabel` (**11**) — the role whose job is a group label |
@@ -228,9 +234,18 @@ as the arithmetic rather than as constants.
    feature, and it is real rather than invented.
 2. **Built-in strings came out of the `claude` 2.1.228 binary**, which carries records shaped
    `{type:"local-jsx",name:"autocompact",description:"…",argumentHint:"[auto|<tokens>]"}`. That is
-   where `argumentHint` was found, and it is why decision 6 exists at all. A ticket that instead
+   where `argumentHint` was found, and it is why decision 6 existed. A ticket that instead
    scrapes the `/help` panel gets descriptions clamped to about two panel lines — which is why
-   skill descriptions come from frontmatter.
+   skill descriptions come from frontmatter. **#686 built the panel scrape, and the study's own
+   caveat is what retired decision 6**: the panel carries no `argumentHint`, and neither does the
+   CLI's `/` popup, so the field is reachable only by parsing the binary.
+
+   Two more things #686 measured against 2.1.233, both about the hidden session rather than the
+   drawing. The panel renders its **whole** list when the PTY is tall enough (400 rows holds all
+   99) and marks a truncated one with a `↓`, which is what lets a short read fail loudly instead
+   of answering short. And a `claude` opening a folder it has never seen **swallows the first
+   keystrokes it is sent**, with nothing drawn to wait for — waiting longer does not help, so the
+   reader asks for the panel again rather than asking for it earlier.
 3. **Two names really do collide** on this machine (`find-skills`, `writing-great-skills`), which
    is what forced decision 7. A fixture set would not have had a collision in it.
 4. **One skill in this repo genuinely has no `description:`**, which is what decision 5 is drawn

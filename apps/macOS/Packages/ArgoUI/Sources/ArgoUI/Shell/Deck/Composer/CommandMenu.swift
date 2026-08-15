@@ -14,13 +14,18 @@ struct CommandMenu: View {
     let pick: (CommandMenuProjection.Row) -> Void
 
     var body: some View {
-        list
-            .padding(ArgoSpacing.tight)
-            .background(.regularMaterial, in: surface)
-            .overlay { rim }
-            .argoShadow(.popover)
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel(Self.label)
+        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
+            // Above the list and outside the scroll: the state of the slower half must not scroll
+            // away under ten rows of the faster one (design decision 9).
+            CommandMenuStatus(builtins: menu.builtins)
+            list
+        }
+        .padding(ArgoSpacing.tight)
+        .background(.regularMaterial, in: surface)
+        .overlay { rim }
+        .argoShadow(.popover)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Self.label)
     }
 
     private var surface: RoundedRectangle {

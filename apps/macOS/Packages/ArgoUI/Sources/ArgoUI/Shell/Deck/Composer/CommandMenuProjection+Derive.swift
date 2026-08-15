@@ -3,9 +3,13 @@ import ArgoEngine
 /// Where the menu opens, what is in it, and in what order (design decisions 2, 3 and 4).
 extension CommandMenuProjection {
     /// The menu for a line, or `nil` where the line opens none.
-    static func menu(for text: String, in catalog: [Skill]) -> Menu? {
+    static func menu(for text: String, in catalog: CommandCatalog) -> Menu? {
         guard let query = query(in: text) else { return nil }
-        return Menu(sections: sections(of: catalog, matching: query), query: query)
+        return Menu(
+            sections: sections(of: catalog.commands, matching: query),
+            query: query,
+            builtins: catalog.builtins,
+        )
     }
 
     /// What the reader has typed after the `/`, and `nil` where there is no `/` to be after.
@@ -22,14 +26,14 @@ extension CommandMenuProjection {
         return String(typed)
     }
 
-    private static func sections(of catalog: [Skill], matching query: String) -> [Section] {
+    private static func sections(of catalog: [Command], matching query: String) -> [Section] {
         guard !query.isEmpty else { return byOrigin(catalog) }
         return byMatch(catalog, on: query.lowercased())
     }
 
     /// Nothing typed yet: one section per origin, nearest first, each saying where it read from and
     /// how many it found. The catalog already answers in that order, so the runs are consecutive.
-    private static func byOrigin(_ catalog: [Skill]) -> [Section] {
+    private static func byOrigin(_ catalog: [Command]) -> [Section] {
         runs(of: catalog).map { origin, skills in
             Section(
                 id: origin.readFrom,
@@ -40,7 +44,7 @@ extension CommandMenuProjection {
         }
     }
 
-    private static func runs(of catalog: [Skill]) -> [(SkillOrigin, [Skill])] {
+    private static func runs(of catalog: [Command]) -> [(CommandOrigin, [Command])] {
         catalog.reduce(into: []) { runs, skill in
             guard runs.last?.0 == skill.origin else { return runs.append((skill.origin, [skill])) }
             runs[runs.count - 1].1.append(skill)
@@ -51,7 +55,7 @@ extension CommandMenuProjection {
     /// the ones that merely contain the characters under their own header. A good match therefore
     /// never slides down the list as the reader types. Origin moves onto the rows, because the
     /// sections no longer group by it.
-    private static func byMatch(_ catalog: [Skill], on query: String) -> [Section] {
+    private static func byMatch(_ catalog: [Command], on query: String) -> [Section] {
         var opening: [Row] = []
         var containing: [Row] = []
         for skill in catalog {
@@ -78,7 +82,7 @@ extension CommandMenuProjection {
     /// plugin's command is `/plugin:name` and the reader typing `simplify` has named the skill
     /// exactly — ranked only off the command's own start, every plugin skill would file under
     /// "Also contains" no matter how well it matched.
-    private static func opens(_ matched: Range<Int>, of skill: Skill) -> Bool {
+    private static func opens(_ matched: Range<Int>, of skill: Command) -> Bool {
         matched.lowerBound == 1 || matched.lowerBound == skill.command.count - skill.name.count
     }
 
@@ -103,7 +107,7 @@ extension CommandMenuProjection {
         return nil
     }
 
-    private static func row(for skill: Skill, matched: Range<Int>, origin: String?) -> Row {
+    private static func row(for skill: Command, matched: Range<Int>, origin: String?) -> Row {
         Row(
             command: skill.command,
             matched: matched,

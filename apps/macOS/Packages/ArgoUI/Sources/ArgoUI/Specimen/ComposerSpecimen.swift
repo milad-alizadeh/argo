@@ -18,13 +18,13 @@ struct ComposerSpecimen: View {
     let isDropTargeted: Bool
     /// The catalog the `/` menu draws (#685). Empty by default, so a case that is not about the
     /// menu cannot accidentally open one.
-    let commands: [Skill]
+    let commands: CommandCatalog
 
     init(
         composer: SessionComposerProjection.Composer = ComposerSpecimen.composer,
         draft: ComposerDraft = ComposerDraft(),
         isDropTargeted: Bool = false,
-        commands: [Skill] = [],
+        commands: CommandCatalog = CommandCatalog(commands: [], builtins: .read),
     ) {
         self.composer = composer
         _held = State(initialValue: draft)

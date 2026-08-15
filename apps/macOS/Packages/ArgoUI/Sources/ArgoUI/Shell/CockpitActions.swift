@@ -61,7 +61,7 @@ public struct CockpitActions {
     /// Performed by the app layer for the reason the Project intents above are: it walks
     /// directories, and no view in `ArgoUI` may. Answered fresh on every call and nothing cached —
     /// that is what puts a skill installed mid-Session in the very next list.
-    public var skills: () -> [Skill] = { [] }
+    public var skills: () -> CommandCatalog = { CommandCatalog(commands: [], builtins: .read) }
     /// Everything the shell asks a Session to DO, through the engine's port (ADR-0024, #633).
     /// Unlike the Project intents above, none of it is the app layer's to perform — it reaches no
     /// panel and no Finder, so there is nothing here for a closure to stand in front of.
@@ -113,7 +113,7 @@ public struct CockpitActions {
         clearLostTurn: @escaping (String) -> Void = { _ in },
         handOffSession: @escaping (String, Int?) async -> String?,
         drive: any SessionDriver,
-        skills: @escaping () -> [Skill] = { [] },
+        skills: @escaping () -> CommandCatalog = { CommandCatalog(commands: [], builtins: .read) },
     ) {
         self.refreshCheckout = refreshCheckout
         self.retryConnection = retryConnection
