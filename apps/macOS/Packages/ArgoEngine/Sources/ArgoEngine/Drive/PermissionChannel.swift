@@ -28,6 +28,9 @@ final class PermissionChannel {
     /// Where the Session stands, asked per call: a rung is walked mid-Session (#653), so a reading
     /// taken at the grant would be stale by the next one.
     private let rung: (SessionOwnership.ClaimID) -> SessionMode?
+    /// The questions half of the same gate (#712), over the same socket. Its own table, because a
+    /// Permission and a question are answered by different acts.
+    private let asks: AskGate
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
     private var pending: [SessionOwnership.ClaimID: [Pending]] = [:]
     private var expired: [SessionOwnership.ClaimID: [PermissionExpiry]] = [:]
@@ -44,6 +47,18 @@ final class PermissionChannel {
         self.patience = patience
         self.ledger = ledger
         self.rung = rung
+        self.asks = AskGate(patience: patience, ledger: ledger)
+    }
+
+    /// Answer one waiting question (#712). `false` when it is no longer waiting, exactly as
+    /// `decide` answers for a Permission.
+    func answer(
+        _ answer: AskAnswer,
+        answering askID: String,
+        for claim: SessionOwnership.ClaimID,
+    )
+        -> Bool {
+        asks.answer(answer, answering: askID, for: claim)
     }
 
     /// Open this claim's gate and say where its hook should dial.
@@ -75,6 +90,7 @@ final class PermissionChannel {
     /// a torn-down gate is a leak rather than a bug.
     func withdraw(_ claim: SessionOwnership.ClaimID) {
         sockets.removeValue(forKey: claim)?.close()
+        asks.withdraw(claim)
         _ = standing.withdraw(claim)
         // The expiries go with the claim: they are what happened to THIS Session.
         expired.removeValue(forKey: claim)
@@ -171,6 +187,9 @@ final class PermissionChannel {
         peer: Int,
         reply: @escaping CompanionConnection.Reply,
     ) {
+        // A question goes to its own table, and never through the rung or the standing allows
+        // below: neither of those answers a question, they only wave a boundary through.
+        guard !asks.raise(line, for: claim, peer: peer, reply: reply) else { return }
         issued += 1
         guard let request = PermissionRequest(line: line, id: "permission-\(issued)") else {
             // Fail closed, and fast: a request Argo could not read is not one the user can be
@@ -199,6 +218,7 @@ final class PermissionChannel {
     /// cancelled: Argo's own clock is the shorter of the two, so an expiry can never arrive this
     /// way. The prompt goes without a word (#573).
     private func peerClosed(_ claim: SessionOwnership.ClaimID, peer: Int) {
+        asks.peerClosed(claim, peer: peer)
         guard let waiting = pending[claim], waiting.contains(where: { $0.peer == peer })
         else { return }
         let remaining = waiting.filter { $0.peer != peer }

@@ -36,6 +36,18 @@ public protocol SessionDriver {
         for sessionID: String,
     ) throws
 
+    /// Answer ONE pending question, named (#712). Keyed the way `decide` is, and by the ask's own
+    /// id besides, so the answer reaches the question that was on screen rather than whatever is
+    /// waiting by the time it is clicked.
+    ///
+    /// Its own act rather than a `send`: the composer talks TO a Session, and this answers one.
+    /// A question that is no longer waiting raises `nothingPending`, exactly as a Permission does.
+    func answer(
+        _ answer: AskAnswer,
+        answering askID: String,
+        for sessionID: String,
+    ) throws
+
     /// Put the Session on one rung of the autonomy ladder (#545, ADR-0025). The rung a Session
     /// STARTS on rides in on argv; a CLI reads that flag once, so moving it afterwards is a
     /// different act — see the `claude` adapter for what it takes.
@@ -104,8 +116,8 @@ public enum SessionDriveError: Error, Equatable {
     case notDrivable
     /// The field held nothing but whitespace.
     case nothingToSend
-    /// A decision arrived after the Permission it answered was gone — expired on the hook's own
-    /// clock, or cancelled with its turn.
+    /// An answer arrived after the thing it answered was gone — a Permission or a question (#712),
+    /// expired on the hook's own clock, or cancelled with its turn.
     case nothingPending
     /// A revocation arrived for a standing allow this Session does not hold — revoked twice, or
     /// gone with the Session it was granted on.
@@ -139,7 +151,7 @@ public enum SessionDriveError: Error, Equatable {
         switch self {
         case .notDrivable: "Argo no longer holds this Session — nothing was sent"
         case .nothingToSend: "Nothing to send"
-        case .nothingPending: "No Permission is waiting on this Session"
+        case .nothingPending: "Nothing is waiting on this Session for an answer"
         case .noSuchGrant: "This Session holds no standing allow for that tool"
         case .modeUnreachable: "Argo cannot say which rung this Session is on — Mode is unchanged"
         case .modeBusy: "The Mode stays where it is while a Turn is running — stop it first"

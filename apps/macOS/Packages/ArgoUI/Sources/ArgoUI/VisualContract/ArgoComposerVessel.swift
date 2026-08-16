@@ -51,6 +51,12 @@ public enum ArgoComposerVessel {
     /// heights gives every line a different measure, and a label beside them no baseline to take.
     public static let chipHeight: CGFloat = 20
 
+    /// The box a many-of question ticks (#712), from `docs/designs/cockpit-feed-ask.md`. A many-of
+    /// ask needs a box and no rung of the contract is one: it sits between `ArgoIconSize.inline`
+    /// (10), too small to aim at, and `chipDismissDiameter` (18), which is a control's whole hit
+    /// area rather than a box drawn beside a label.
+    public static let askBoxSize: CGFloat = 14
+
     /// The `×` on an attachment's chip — the study's 18pt (#540). A target and not a mark: the
     /// glyph inside it rides the icon scale, and this is the box a pointer has to find. Larger than
     /// the chip it sits in is impossible and smaller than a finger's worth is useless, which is the

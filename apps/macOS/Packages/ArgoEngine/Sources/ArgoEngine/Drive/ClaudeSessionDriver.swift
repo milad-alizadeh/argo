@@ -116,6 +116,19 @@ struct ClaudeSessionDriver: SessionDriver {
         }
     }
 
+    func answer(
+        _ answer: AskAnswer,
+        answering askID: String,
+        for sessionID: String,
+    ) throws {
+        guard let permissions, let claim = ownership.ownerOf(sessionID: sessionID) else {
+            throw SessionDriveError.notDrivable
+        }
+        guard permissions.answer(answer, answering: askID, for: claim) else {
+            throw SessionDriveError.nothingPending
+        }
+    }
+
     func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
         guard let permissions, let claim = ownership.ownerOf(sessionID: sessionID) else {
             throw SessionDriveError.notDrivable

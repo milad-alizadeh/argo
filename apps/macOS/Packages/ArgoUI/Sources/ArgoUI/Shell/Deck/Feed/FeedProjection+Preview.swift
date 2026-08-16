@@ -3,8 +3,24 @@ import ArgoEngine
 // The one feed every specimen and `#Preview` is drawn from — the fixture, already read.
 
 extension FeedProjection {
-    /// The preview transcript, already projected.
-    static let previewRows = rows(from: CockpitPresentation.Session.previewTranscript)
+    /// The preview transcript, already projected — with its unanswered question handed in as the
+    /// live one, because a waiting ask nobody can answer draws quiet now (#712) and this fixture is
+    /// what the attention state is rendered from.
+    static let previewRows = rows(
+        from: CockpitPresentation.Session.previewTranscript,
+        asking: previewTranscriptAsking,
+    )
+
+    /// The question left waiting in that transcript, as the gate would hold it.
+    private static let previewTranscriptAsking = FeedAskProjection.Asking(
+        live: CockpitPresentation.Session.previewTranscript
+            .compactMap { event -> FeedAskProjection.Live? in
+                guard case let .toolCall(call) = event, let ask = call.ask,
+                      call.id == "ask-waiting" else { return nil }
+                return FeedAskProjection.Live(sessionID: "session", askID: call.id, ask: ask)
+            }.first,
+        isDriveable: true,
+    )
 
     /// A session at the length a real one reaches, projected — what every claim about SCALE is
     /// checked against, including the measurement #427 asks for.

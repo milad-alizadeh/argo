@@ -29,6 +29,10 @@ final class ClaimLedger {
         update(claim) { $0.waiting = waiting }
     }
 
+    func publish(asking: [SessionAsk], for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.asking = asking }
+    }
+
     func publish(standing: [StandingAllow], for claim: SessionOwnership.ClaimID) {
         update(claim) { $0.standing = standing }
     }
@@ -72,6 +76,7 @@ final class ClaimLedger {
         guard byClaim[claim] != nil else { return }
         update(claim) { facts in
             facts.waiting = []
+            facts.asking = []
             facts.standing = []
             facts.expiries = []
         }

@@ -47,6 +47,14 @@ struct SessionAdapters: SessionDriver {
         try adapter(for: sessionID).decide(decision, answering: requestID, for: sessionID)
     }
 
+    func answer(
+        _ answer: AskAnswer,
+        answering askID: String,
+        for sessionID: String,
+    ) throws {
+        try adapter(for: sessionID).answer(answer, answering: askID, for: sessionID)
+    }
+
     func setMode(_ mode: SessionMode, for sessionID: String) async throws {
         try await adapter(for: sessionID).setMode(mode, for: sessionID)
     }

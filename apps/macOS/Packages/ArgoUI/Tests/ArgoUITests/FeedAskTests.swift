@@ -8,7 +8,7 @@ import Testing
 struct FeedAskTests {
     private static let question = Ask.Question(
         text: "Which ink does a prompt still waiting take?",
-        options: ["The attention ink", "The ordinary ink"],
+        options: Ask.Option.labelled(["The attention ink", "The ordinary ink"]),
     )
 
     /// The pair a transcript writes: the question, and — where somebody answered — the result that
@@ -86,7 +86,7 @@ struct FeedAskTests {
         let offers = ask.offers(in: Self.question)
 
         #expect(offers.map(\.ordinal) == [1, 2])
-        #expect(offers.map(\.label) == Self.question.options)
+        #expect(offers.map(\.label) == Self.question.options.map(\.label))
         #expect(offers.map(\.marker) == ["1.", "2."])
     }
 
@@ -108,7 +108,7 @@ struct FeedAskTests {
     /// An answer names WORDS, and two options may carry the same words. It has named one of them.
     @Test
     func `two options with the same words mark only the first`() {
-        let offers = FeedAskOffer.numbered(["Yes", "Yes"], chosen: "Yes")
+        let offers = FeedAskOffer.numbered(Ask.Option.labelled(["Yes", "Yes"]), chosen: "Yes")
 
         #expect(offers.map(\.isChosen) == [true, false])
     }

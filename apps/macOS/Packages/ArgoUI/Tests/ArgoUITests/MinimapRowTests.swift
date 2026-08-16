@@ -126,7 +126,10 @@ struct MinimapRowTests {
     /// the app has.
     @Test
     func `a question is the card the feed draws it in`() {
-        let asked = Ask(questions: [Ask.Question(text: "Which reading?", options: ["One", "Two"])])
+        let asked = Ask(questions: [Ask.Question(
+            text: "Which reading?",
+            options: Ask.Option.labelled(["One", "Two"]),
+        )])
         let ask = FeedAsk(ask: asked, isAnswered: false, answer: nil)
         // The offers carry the numbers the ROW sets them behind, because the lane places them on
         // the same marker grid the row does.
@@ -149,6 +152,22 @@ struct MinimapRowTests {
         #expect(marks.dropFirst().allSatisfy { $0.drawn == .bar && $0.from > 0 })
         // Three lines, each its marker and its words: the question and the two options under it.
         #expect(marks.count == 7)
+    }
+
+    /// The attention ink means *this is waiting on YOU*. On a Session Argo cannot drive it is not,
+    /// because nothing done here reaches the agent (#546) — so the lane goes quiet with the row,
+    /// rule and all, exactly as an answered question does.
+    @Test
+    func `a question nobody here can answer takes no attention ink`() {
+        let unanswerable = FeedAsk(
+            ask: Ask(questions: []),
+            isAnswered: false,
+            answer: nil,
+            offer: FeedAskProjection.Asking(live: nil, isDriveable: false),
+        )
+        #expect(Self.shape(.ask(unanswerable)) == .card(MinimapAskCard(
+            questions: [], ink: .message, isRuled: false,
+        )))
     }
 
     /// The row goes quiet the moment something answers it, and the lane has to go quiet with it — a

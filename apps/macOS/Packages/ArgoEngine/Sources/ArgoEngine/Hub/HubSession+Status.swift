@@ -27,6 +27,12 @@ public extension HubSession {
         if permission != nil {
             return SessionStatusReading(tier: .direct, status: .permission)
         }
+        // A question Argo itself is holding open wins on the same ground and at the same tier
+        // (#712): both ends of that hook are Argo's, so the Session is asking as a fact rather than
+        // as a reading of what the transcript last said.
+        if ask != nil {
+            return SessionStatusReading(tier: .direct, status: .asking)
+        }
         if let driveStatus {
             return SessionStatusReading(tier: .direct, status: driveStatus)
         }

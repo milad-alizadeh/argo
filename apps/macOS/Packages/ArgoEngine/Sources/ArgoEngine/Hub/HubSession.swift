@@ -27,6 +27,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// for
     /// every external Session (unobservable there, per ADR-0024).
     public internal(set) var permission: PermissionRequest?
+    /// The question this Session is blocked on (#712) — DIRECT, and absent for every Session whose
+    /// gate is not Argo's own. A live handle with an id, unlike the `Ask` the feed reads out of the
+    /// transcript, which is a reading of a question already put and cannot be answered.
+    public internal(set) var ask: SessionAsk?
     /// The tools this Session has stopped asking about (#572) — DIRECT, and empty rather than
     /// absent because "no standing allow" is a state every Session is honestly in.
     public internal(set) var standingAllows: [StandingAllow] = []
