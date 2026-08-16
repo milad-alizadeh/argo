@@ -17,6 +17,8 @@ struct FeedRow: Identifiable, Equatable, Sendable {
         case gallery(FeedGallery)
         /// A question put to somebody, waiting or settled. The feed's one attention state.
         case ask(FeedAsk)
+        /// A skill the Session was handed, in the sequence it happened. See `FeedSkillLoad`.
+        case skillLoaded(FeedSkillLoad)
         /// Something that happened to the reading rather than in it. See `FeedMark`.
         case mark(FeedMark)
         /// A stretch of the record nothing could parse. See `FeedUnreadable`.

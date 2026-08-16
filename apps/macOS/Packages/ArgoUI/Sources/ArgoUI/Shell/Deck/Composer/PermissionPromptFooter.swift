@@ -77,11 +77,11 @@ private struct PermissionDecisionButton: View {
     }
 
     /// Drawn on Allow unconditionally: Allow being focused is the state, not something that happens
-    /// once the vessel is clicked, and `⏎` answers from the moment the prompt appears.
+    /// once the vessel is clicked, and `⏎` answers from the moment the prompt appears. Hence the
+    /// ring shape and not `argoFocusRing`, which is off for a reader working the pointer (#533).
     @ViewBuilder private var focusRing: some View {
         if answer == .allow {
-            shape
-                .strokeBorder(argo.color.interaction.focusRing, lineWidth: ArgoStroke.focus)
+            ArgoFocusRing(shape)
                 .padding(-(ArgoSpacing.hair + ArgoStroke.focus))
         }
     }

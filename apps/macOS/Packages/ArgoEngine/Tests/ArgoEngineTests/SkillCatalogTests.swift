@@ -171,10 +171,10 @@ struct SkillCatalogTests {
         #expect(machine.catalog.skills().map(\.description) == ["Elsewhere on disk."])
     }
 
-    /// Both get a row, each naming its origin. Which one `/both` resolves to is a CLI fact Argo has
-    /// not measured, and hiding a row on a guess would be invisible when the guess was wrong.
+    /// The nearer origin wins and the shadowed copy is not listed at all — the CLI would never run
+    /// it, and a row the CLI ignores is a lie (design decision 7). The winning row says so.
     @Test
-    func `lists a Project skill and a global skill that share a name`() throws {
+    func `lists only the Project's copy when a global skill shares its name`() throws {
         try machine.write(
             FixtureSkill(directory: "both", name: "both", description: "The Project's."),
             into: machine.projectSkills,
@@ -183,7 +183,22 @@ struct SkillCatalogTests {
             FixtureSkill(directory: "both", name: "both", description: "The user's."),
             into: machine.userSkills,
         )
-        #expect(machine.catalog.skills().map(\.description) == ["The Project's.", "The user's."])
+        let skill = try #require(machine.catalog.skills().first)
+        #expect(machine.catalog.skills().count == 1)
+        #expect(skill.description == "The Project's.")
+        #expect(skill.shadowsUser)
+    }
+
+    /// The mark is a claim about a collision, so a Project skill standing alone must not carry it.
+    @Test
+    func `marks no shadow on a Project skill nothing collides with`() throws {
+        try machine.write(
+            FixtureSkill(directory: "alone", name: "alone"),
+            into: machine.projectSkills,
+        )
+        try machine.write(FixtureSkill(directory: "other", name: "other"), into: machine.userSkills)
+
+        #expect(machine.catalog.skills().allSatisfy { !$0.shadowsUser })
     }
 
     /// The read happens on every call and nothing is remembered between them, which is what makes a

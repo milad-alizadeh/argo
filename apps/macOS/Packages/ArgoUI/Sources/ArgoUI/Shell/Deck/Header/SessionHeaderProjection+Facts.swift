@@ -62,7 +62,11 @@ extension SessionHeaderProjection {
     static func link(to issue: CockpitPresentation.Session.Issue?) -> Header.IssueLink? {
         guard let issue else { return nil }
         // Named, never bare: `#400` alone is whatever number the reader last saw one of.
-        return Header.IssueLink(label: "Issue #\(issue.number)", detail: issue.title)
+        return Header.IssueLink(
+            number: issue.number,
+            label: "Issue #\(issue.number)",
+            detail: issue.title,
+        )
     }
 
     private static func countMark(

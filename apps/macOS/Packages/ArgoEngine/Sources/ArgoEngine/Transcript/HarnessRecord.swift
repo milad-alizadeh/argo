@@ -50,6 +50,20 @@ func commandPrompt(_ text: String) -> String? {
     return args.isEmpty ? name : "\(name) \(args)"
 }
 
+/// The line the CLI writes in front of a skill's body when it hands one over (#688).
+private let skillPreamble = "Base directory for this skill: "
+
+/// The skill directory a META record names, where it names one — the one place the record says a
+/// Session was handed a skill. `nil` for every other kind of plumbing filed the same way: the
+/// caveat, the pasted-image preamble. Matched at the head, so a prompt QUOTING the sentence is a
+/// prompt.
+func skillDirectory(_ content: [ContentBlock]) -> String? {
+    guard let text = firstText(content), text.hasPrefix(skillPreamble) else { return nil }
+    let named = text.dropFirst(skillPreamble.count).prefix { !$0.isNewline }
+    let directory = named.trimmingCharacters(in: .whitespaces)
+    return directory.isEmpty ? nil : directory
+}
+
 /// What a user record asks for, or `nil` where it asks for nothing. A slash command reads as the
 /// command, a local command's stdout reads as nothing, and anything else reads as itself —
 /// unclamped and untrimmed, the way a verbatim prompt must be.
@@ -57,4 +71,35 @@ func userPrompt(_ content: [ContentBlock]) -> String? {
     guard let text = firstText(content) else { return nil }
     guard localCommandOutput(content) == nil else { return nil }
     return commandPrompt(text) ?? text
+}
+
+/// A prompt, or the local command whose output this record IS.
+///
+/// The output comes back as a Tool Call rather than as prose: a command ran and printed something,
+/// which is exactly what a Tool Call is.
+func promptEvents(_ message: MessageRecord) -> [TranscriptEvent] {
+    if let printed = localCommandOutput(message.content) {
+        let id = message.uuid ?? "local-command"
+        return [
+            .toolCall(ToolCall(
+                id: id,
+                name: "local command",
+                kind: .execute,
+                target: nil,
+                atMs: message.timestampMs,
+            )),
+            .toolCallOutcome(ToolCallOutcome(
+                id: id,
+                status: .completed,
+                // `derived`: the text is read off an external record rather than owned by Argo.
+                result: .output(OutputEvidence(tier: .derived, text: printed)),
+                // A local command prints and is over. There is no second record to learn its end
+                // from, and the moment it printed is the moment it finished.
+                endedAtMs: message.timestampMs,
+                usage: nil,
+            )),
+        ]
+    }
+    guard let prompt = userPrompt(message.content) else { return [] }
+    return [.prompt(text: prompt, atMs: message.timestampMs)]
 }

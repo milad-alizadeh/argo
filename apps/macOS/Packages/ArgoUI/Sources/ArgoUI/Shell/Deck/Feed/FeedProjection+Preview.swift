@@ -109,11 +109,63 @@ extension FeedProjection {
     /// In the full feed the waiting one falls below the fold.
     static let previewAskRows = numbered(previewAsks.map(FeedRow.Content.ask))
 
+    /// The three states a skill marker has (#688): the body Argo read, the file it could not, and
+    /// the one with nothing behind it at all. Only the first is in the shipping transcript — the
+    /// other two need a `SKILL.md` that is missing or empty, which no fixture stream can carry.
+    static let previewSkillLoads: [FeedSkillLoad] = [
+        FeedSkillLoad(CockpitPresentation.Session.previewSkillLoad),
+        FeedSkillLoad(SkillLoad(
+            name: "pixel-review",
+            directory: "~/.claude/skills/pixel-review",
+            body: .unreadable("Argo could not read ~/.claude/skills/pixel-review/SKILL.md."),
+        )),
+        FeedSkillLoad(SkillLoad(
+            name: "grill-me",
+            directory: "~/.claude/skills/grill-me",
+            body: nil,
+        )),
+    ]
+
+    /// Those three as rows, so the states can be judged against each other on one screen.
+    static let previewSkillLoadRows = numbered(previewSkillLoads.map(FeedRow.Content.skillLoaded))
+
+    /// The state the design's own render draws: the command the user typed, their line verbatim,
+    /// and the marker under it. Projected from events rather than assembled from rows, so what the
+    /// still shows is what the shipping projection produces.
+    static let previewSkillLoadedTurn = rows(from: [
+        .prompt(text: "/implement 688 — the feed says a Session loaded a skill", atMs: 1000),
+        .skillLoaded(CockpitPresentation.Session.previewSkillLoad),
+        .message(markdown: "Reading the ticket and the design it points at."),
+    ])
+
+    /// The one whose panel holds the body Argo read, and the one whose panel states a read failure.
+    /// Both found by the state itself rather than by position, so a fourth marker added above them
+    /// cannot silently re-point either still.
+    static let previewSkillLoadRowID = previewSkillLoadRow { $0.body?.hasFailed == false }
+
+    static let previewSkillUnreadableRowID = previewSkillLoadRow { $0.body?.hasFailed == true }
+
+    private static func previewSkillLoadRow(where match: (SkillLoad) -> Bool) -> FeedRow.ID? {
+        previewSkillLoadRows.first { row in
+            guard case let .skillLoaded(skill) = row.content else { return false }
+            return match(skill.load)
+        }?.id
+    }
+
     /// The punctuation on its own, for the same reason. The interrupt is added rather than found:
     /// the shipping preview transcript carries no stopped Turn (#541).
     static let previewMarkRows = numbered(
         (previewMarks + [.interrupted]).map(FeedRow.Content.mark),
     )
+
+    /// A reading whose one message carries every markdown block Argo draws — the table above all —
+    /// between two prompts. What the overview lane is judged on: a table has to read as its cells,
+    /// a paragraph's bars as the widths its lines wrapped to, and a one-line prompt as one line.
+    static let previewMarkdownRows = numbered([
+        .prompt("Take the design PR state and turn it into tickets"),
+        .message(MarkdownSpecimen.message),
+        .prompt("/clear"),
+    ])
 
     /// Contents taken off the shipping feed, given their places back — only the gaps are new.
     private static func numbered(_ contents: [FeedRow.Content]) -> [FeedRow] {
@@ -121,6 +173,16 @@ extension FeedProjection {
             FeedRow(id: position, content: content)
         }
     }
+
+    /// The two rows the keyboard cursor is rendered on (#533): the one drawn narrower than the
+    /// measure, and one drawn at it.
+    ///
+    /// Both taken from the END of their reading, which is where a reading opens. A cursor further
+    /// up needs a scroll to be seen, and a scroll over rows whose heights are still estimates
+    /// lands somewhere else once they are measured — a still nobody can repeat.
+    static let previewPromptID = previewProseRows.last(where: \.isPrompt)?.id
+
+    static let previewLastFailedCallID = previewRows.reversed().failedCallID
 
     /// The collapsed run in that feed — three edits of one file, the only row whose panel holds
     /// more than one thing.

@@ -12,8 +12,9 @@ public final class InMemorySessionDriver: SessionDriver {
     /// is a designed state with a render of its own, and a fake that could only say `true` would
     /// leave the one state the capability exists to produce unreachable from a test.
     public var canAttach = true
-    /// What this fake DECLARES about commands (#685). Settable, like `canAttach`.
-    public var canRunCommands = true
+    /// What this fake DECLARES about commands (#685). Settable, like `canAttach`. One answer for
+    /// every Session: a fake stands in for one adapter, so the id has nothing to choose between.
+    public var declaresCommands = true
     /// Where `attach` says it put things, keyed by attachment id. A test that has to assert what
     /// the Turn NAMED sets these; left empty, a path is invented from the id, which is enough for
     /// the far commoner claim that the paths reached the Turn at all.
@@ -42,6 +43,10 @@ public final class InMemorySessionDriver: SessionDriver {
         if let refusal {
             throw refusal
         }
+    }
+
+    public func canRunCommands(for _: String) -> Bool {
+        declaresCommands
     }
 
     public func send(_ text: String, to sessionID: String) throws {

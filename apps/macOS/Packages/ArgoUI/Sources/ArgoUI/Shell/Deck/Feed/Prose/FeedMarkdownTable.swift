@@ -1,30 +1,20 @@
 import SwiftUI
 
-/// A pipe table, as a table.
+/// A pipe table, as a table — across the whole measure the feed gives it.
 ///
-/// A `Grid` and not a stack of rows: a column is only a column if every cell in it is the same
-/// width, and the width that works is the widest cell's — which nothing knows until all of them
-/// have been measured. The header is told apart by weight and a rule under it, never by a fill.
+/// The columns divide that measure in proportion to what their words ask for, which is
+/// `MarkdownTableWidths` through `MarkdownTableLayout`; a `Grid` sized itself instead, and past the
+/// measure it shrank every column to its longest word and left the table a third of the feed wide.
+/// The header is told apart by weight and a stronger rule under it, never by a fill.
 struct FeedMarkdownTable: View {
     @Environment(\.argo) private var argo
 
     let table: MarkdownTable
 
     var body: some View {
-        // No spacing of its own in either axis: the gap between two cells is their padding, so a
-        // rule drawn between two rows meets the border at both ends instead of stopping short.
-        Grid(
-            alignment: .topLeading,
-            horizontalSpacing: ArgoSpacing.flush,
-            verticalSpacing: ArgoSpacing.flush,
-        ) {
-            row(table.header, weight: .semibold)
-            rule(argo.color.edge.subtle)
-            ForEach(Array(table.rows.enumerated()), id: \.offset) { position, cells in
-                if position > 0 {
-                    rule(argo.color.edge.hairline)
-                }
-                row(cells, weight: nil)
+        MarkdownTableLayout(table: table) {
+            ForEach(0 ..< places, id: \.self) { place in
+                cell(row: place / columns, column: place % columns)
             }
         }
         .clipShape(.rect(cornerRadius: ArgoRadius.control))
@@ -32,70 +22,55 @@ struct FeedMarkdownTable: View {
             RoundedRectangle(cornerRadius: ArgoRadius.control)
                 .strokeBorder(argo.color.edge.hairline)
         }
-        // The border hugs the table and the table sits at the column's leading edge; stretching to
-        // the measure would put the border out past the last column.
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// One row, with a rule standing between every pair of cells.
+    private var columns: Int {
+        table.columns
+    }
+
+    /// How many cells there are — the header row and the body, rules excluded.
+    private var places: Int {
+        (table.rows.count + 1) * columns
+    }
+
+    private func text(row: Int, column: Int) -> String {
+        table.cell(of: table.grid[row], at: column)
+    }
+
+    /// One cell, carrying the two rules that stand at its own edges.
     ///
-    /// The rules are grid CELLS of their own, interleaved into the row, which is what makes them
-    /// line up down the table: a column of rules is a column like any other, so every row's rule
-    /// sits at the same x whatever its cells wrapped to.
-    private func row(_ cells: [String], weight: Font.Weight?) -> some View {
-        GridRow {
-            ForEach(interleaved(cells)) { slot in
-                if let text = slot.text {
-                    cell(text, weight: weight)
-                } else {
-                    // Drawn rather than a `Divider`, which reads its own axis from the stack it is
-                    // in and has no stack here — inside a `GridRow` it came out horizontal, across
-                    // the middle of a column it had also just made wide.
-                    Rectangle()
-                        .fill(argo.color.edge.hairline)
-                        .frame(width: ArgoFeedRow.ruleWidth)
-                        .frame(maxHeight: .infinity)
-                        // The rule stretches to the row, but must never ASK for a height: a
-                        // flexible grid cell takes the whole vertical proposal, and the feed
-                        // measures rows with an unbounded one.
-                        .gridCellUnsizedAxes(.vertical)
-                }
+    /// The rules are drawn ON the cell rather than between cells, so they line up down and across
+    /// the table for free: every cell in a row is placed at that row's full height, so a leading
+    /// rule spans the row whatever its neighbour wrapped to.
+    private func cell(row: Int, column: Int) -> some View {
+        FeedProseText(
+            text: text(row: row, column: column),
+            rung: ArgoFeedRow.proseRung,
+            weight: row == 0 ? .semibold : nil,
+        )
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, ArgoFeedRow.tableCellInsetX)
+        .padding(.vertical, ArgoFeedRow.tableCellInsetY)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .overlay(alignment: .top) {
+            // Under the header the rule is the stronger one; between two body rows a hairline does.
+            if row > 0 {
+                rule(row == 1 ? argo.color.edge.subtle : argo.color.edge.hairline)
+                    .frame(height: ArgoFeedRow.ruleWidth)
+            }
+        }
+        .overlay(alignment: .leading) {
+            if column > 0 {
+                rule(argo.color.edge.hairline).frame(width: ArgoFeedRow.ruleWidth)
             }
         }
     }
 
-    /// The cells with a rule between each pair — `nil` text is a rule, and there is never one at
-    /// either end because the border is already there.
-    private func interleaved(_ cells: [String]) -> [TableSlot] {
-        cells.enumerated().flatMap { position, text in
-            let rule = TableSlot(id: position * 2, text: nil)
-            let cell = TableSlot(id: position * 2 + 1, text: text)
-            return position == 0 ? [cell] : [rule, cell]
-        }
-    }
-
-    /// The header's rule is the stronger one; between two body rows a hairline is enough.
+    /// Drawn rather than a `Divider`, which reads its axis from the stack it is in and has none
+    /// here — as an overlay it came out horizontal across a column it had also just made wide.
     private func rule(_ ink: ArgoColor) -> some View {
-        Divider()
-            .overlay(ink)
-            .gridCellUnsizedAxes(.horizontal)
+        Rectangle().fill(ink)
     }
-
-    /// A cell wraps rather than truncating, and asks for no more width than its words need — a
-    /// `Grid` column is as wide as its widest cell wants to be, and the rest goes to the column
-    /// that can use it.
-    private func cell(_ text: String, weight: Font.Weight?) -> some View {
-        FeedProseText(text: text, rung: ArgoFeedRow.proseRung, weight: weight)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, ArgoSpacing.base)
-            .padding(.vertical, ArgoSpacing.snug)
-    }
-}
-
-/// A place in a row: a cell's words, or the rule that stands between two of them.
-private struct TableSlot: Identifiable {
-    let id: Int
-    let text: String?
 }
 
 #Preview("Feed table — a cell that wraps beside three that do not") {

@@ -30,7 +30,7 @@ struct FeedAskLine: View {
                 )
             }
         }
-        .padding(ArgoSpacing.comfortable)
+        .padding(ArgoFeedRow.askCardInset)
         .background(ground, in: RoundedRectangle(cornerRadius: ArgoRadius.control))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(ask.isPending ? "Question, waiting on you" : "Question, answered")

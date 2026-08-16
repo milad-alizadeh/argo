@@ -500,6 +500,20 @@ its approved study are authoritative for the replacement look and feel.
   the lane a near-continuous blue rail, spending the app's loudest colour on saying a session has
   Turns in it. Asked for directly while the work was being reviewed on screen, so it overrides the
   ticket rather than reinterpreting it.
+- **Amended on the reader's call — 2026-08-13:** **the rows REPORT their own geometry and the lane
+  only scales it.** #382 derived a row's shape from the row, but the lane was still handed the row's
+  measured height alone and worked the rest out for itself — how many lines that was, how wide each
+  ran, where a link sat, where a table's rows fell. Two models of one row drift, and every complaint
+  about the lane traced to that drift rather than to the encoding. A row now reports the rectangles it
+  drew in the feed's own points; the lane counts no lines and divides no characters.
+- **Amended on the reader's call — 2026-08-13:** **a question is drawn as its card, not as a band.**
+  Against "`needs you` a tiny amber marker" and #382's full-width band, a pending question is now the
+  bordered card the feed draws: a frame across the whole measure with the question's own lines and its
+  options inside it. The band matched neither the row's shape nor its weight — a wash with words in it
+  read in the lane as a solid slab of the loudest colour the app has, which is what was asked about.
+  "Shape carries event class so the map never depends on colour alone" is unchanged and now better
+  served: a stroked full-measure container with content inside it is a shape nothing else in the lane
+  takes, and `FeedInk.Shape.band` is gone with the band.
 - **Amended on the reader's call — 2026-08-12:** **the weight cap no longer cuts a block below its
   own scaled extent.** Since the shapes became the rows' own at the lane's scale, a row can never
   outgrow its true share of the scroll — but the old per-event ceiling cut a long message's block at

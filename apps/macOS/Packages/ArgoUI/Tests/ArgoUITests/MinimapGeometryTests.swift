@@ -22,10 +22,10 @@ struct MinimapGeometryTests {
         )
     }
 
-    /// Rows carrying a line of prose apiece. What shape a row makes is `MinimapRowTests`; these are
+    /// Rows carrying one drawn line apiece. What shape a row makes is `MinimapRowTests`; these are
     /// about where it lands and how tall it stands.
     static func rows(_ heights: [CGFloat]) -> [MinimapRow] {
-        heights.map { MinimapRow(height: $0, shape: .sentence(length: 40, ink: .command)) }
+        heights.map { MinimapRow(height: $0, shape: .oneLine) }
     }
 
     private static func geometry(_ reading: MinimapReading) -> MinimapGeometry {
@@ -69,7 +69,7 @@ struct MinimapGeometryTests {
         #expect(lane.laneOffset(at: lane.offsetRange.upperBound) == 0)
     }
 
-    @Test
+    @Test @MainActor
     func `an empty reading maps nothing`() {
         let lane = Self.geometry(MinimapReading(columnWidth: 800))
         #expect(lane.marks(in: 0 ... 600).isEmpty)
@@ -151,7 +151,7 @@ struct MinimapGeometryTests {
         #expect(lane.laneOffset(at: lane.offsetRange.lowerBound) == 0)
     }
 
-    @Test
+    @Test @MainActor
     func `the head of the session is off the top of the lane once the reader is far into it`() {
         let lane = Self.geometry(Self.long())
         let end = lane.laneOffset(at: lane.offsetRange.upperBound)

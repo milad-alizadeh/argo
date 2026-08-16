@@ -11,7 +11,8 @@ struct MarkdownSpecimen: View {
         .argoDeckSurface()
     }
 
-    private static let message = """
+    /// Read by the lane's own specimen too — see `FeedProjection.previewMarkdownRows`.
+    nonisolated static let message = """
     ## What landed
 
     `ArgoFeedRow` holds all four metrics, and no view spells a number. The **ramp** had drifted

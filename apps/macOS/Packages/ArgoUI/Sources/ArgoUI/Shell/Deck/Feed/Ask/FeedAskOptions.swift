@@ -10,7 +10,7 @@ struct FeedAskOptions: View {
     let offers: [FeedAskOffer]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
+        VStack(alignment: .leading, spacing: ArgoFeedRow.askOptionGap) {
             ForEach(offers) { offer in
                 FeedAskOption(offer: offer, isQuiet: anyChosen && !offer.isChosen)
             }
@@ -57,7 +57,7 @@ private struct FeedAskOption: View {
 }
 
 #Preview("Ask options — offered, and the one that was taken") {
-    let options = [Ask.Option(label: "The attention ink"), Ask.Option(label: "The ordinary ink")]
+    let options = Ask.Option.labelled(["The attention ink", "The ordinary ink"])
     VStack(alignment: .leading, spacing: ArgoSpacing.loose) {
         FeedAskOptions(offers: FeedAskOffer.numbered(options, chosen: nil))
         FeedAskOptions(offers: FeedAskOffer.numbered(options, chosen: "The ordinary ink"))

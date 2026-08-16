@@ -55,20 +55,17 @@ public enum ArgoLayout {
     /// (`docs/designs/cockpit-roster-archive-foot.md`).
     public static let rosterFootMinimumHeight: CGFloat = 22
 
-    // The Instrument Deck's zones, measured off the approved study
-    // (`docs/designs/cockpit-sessions-liquid-glass.png`) — the decision log carries no
-    // measurements, so the pixels are the only source for these.
-    public static let deckHeaderHeight: CGFloat = 56
+    /// The Instrument Deck's one chrome zone (`docs/designs/cockpit-session-header.md`).
     public static let deckTabSlotHeight: CGFloat = 40
 
-    /// What the glass canopy covers, and so how far the zones beneath it are inset. Derived rather
-    /// than measured: the canopy IS those two zones, and a third number would let them drift.
+    /// What the glass canopy covers, and so how far the zones beneath it are inset. Derived, so a
+    /// zone added to the canopy cannot miss the inset.
     public static var deckCanopyHeight: CGFloat {
-        deckHeaderHeight + deckTabSlotHeight
+        deckTabSlotHeight
     }
 
-    /// The context instrument on the header's trailing edge. Fixed, not a share of the line: the
-    /// branch beside it is what gives way (#502), and a shrinking instrument would move its two
+    /// The context instrument on the tab line's trailing edge. Fixed, not a share of the line: the
+    /// tabs slot beside it is what gives way, and a shrinking instrument would move its two
     /// threshold ticks on every resize.
     public static let contextInstrumentWidth: CGFloat = 200
     /// Thin enough to read as a gauge rather than as a control — nothing here is draggable.
@@ -80,6 +77,9 @@ public enum ArgoLayout {
     public static let contextGuideWidth: CGFloat = 320
     /// The threshold column in that panel, so the two meanings beside it start on one edge.
     public static let contextGuideThresholdWidth: CGFloat = 74
+    /// The term column in the same panel's `This Session` block, so the readings stay on one edge
+    /// whichever facts a Session has. Wider than the threshold column: it holds words.
+    public static let contextGuideTermWidth: CGFloat = 96
     /// Where the rail opens — a starting width, not a fixed one; the seam beside it moves.
     public static let agentsRailWidth: CGFloat = 256
     /// The overview lane's share of the reading it maps. Its compression is
@@ -98,6 +98,10 @@ public enum ArgoLayout {
 
     /// How far the rail may be dragged. It stops well before nothing.
     public static let railWidths: ClosedRange<CGFloat> = 180 ... 400
+    /// The rail collapsed: one state dot per Agent and the padding either side of it, and no room
+    /// for a name. Below `railWidths.lowerBound` on purpose — collapsing is not dragging, so the
+    /// seam's floor does not bound it.
+    public static let agentsRailCollapsedWidth: CGFloat = 28
     /// The narrowest the feed may be squeezed to by its neighbours. Read against the lane at ITS
     /// narrowest, because the two shrink together — see `minimapLaneWidth(sharing:)`.
     public static let feedMinimumWidth: CGFloat = 320

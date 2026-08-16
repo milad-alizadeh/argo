@@ -21,8 +21,18 @@ enum FeedFixture {
 
     /// A call that reported what it spent — the delegating call, which is the only one that ever
     /// does. Its result is the subagent's whole sidechain, priced.
-    static func spent(_ id: String, _ usage: Usage) -> ToolCallOutcome {
-        ToolCallOutcome(id: id, status: .completed, result: nil, endedAtMs: nil, usage: usage)
+    ///
+    /// It names the Subagent too where the caller asks. The id and the spend arrive together, on
+    /// the one record that answers a handover.
+    static func spent(_ id: String, _ usage: Usage, subagent: String? = nil) -> ToolCallOutcome {
+        ToolCallOutcome(
+            id: id,
+            status: .completed,
+            result: nil,
+            endedAtMs: nil,
+            usage: usage,
+            subagentID: subagent,
+        )
     }
 
     /// The question tool, carrying a question. The id `ask` is what an outcome answering it quotes.
@@ -84,6 +94,25 @@ enum FeedFixture {
     static let onePixelPNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z"
         + "8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="
 
+    /// Two handovers, the second answered: one Subagent still working and one landed, which is the
+    /// pair every claim about the rail is made against. Shared, because two suites make claims
+    /// about the same two chips — the projection's, and the rail's own.
+    static func handedOver(subagent: String? = nil) -> [TranscriptEvent] {
+        [
+            .toolCall(call("away", tool: "Task", kind: .delegate, naming: "review")),
+            .toolCall(call("back", tool: "Task", kind: .delegate, naming: "verify")),
+            .toolCallOutcome(spent("back", delegated, subagent: subagent)),
+        ]
+    }
+
+    /// What a landed delegation's result reported spending — the whole child's subtree, priced.
+    static let delegated = Usage(
+        inputTokens: 1200,
+        outputTokens: 3400,
+        cacheReadTokens: 139_000,
+        cacheCreationTokens: 0,
+    )
+
     /// Every gallery a stream produced, in order.
     static func galleries(in rows: [FeedRow]) -> [FeedGallery] {
         rows.compactMap { row in
@@ -109,7 +138,7 @@ enum FeedFixture {
             case let .survey(survey): survey.calls
             // A gallery keeps its pictures and drops the sentence that carried them; those are
             // asserted through `galleries(in:)`, `asks(in:)`, `marks(in:)` and `unreadable(in:)`.
-            case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable: []
+            case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable, .skillLoaded: []
             }
         }
     }

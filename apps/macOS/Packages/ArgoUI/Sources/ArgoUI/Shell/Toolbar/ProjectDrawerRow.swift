@@ -9,8 +9,9 @@ struct ProjectDrawerRow: View {
     @Environment(\.dismiss) private var dismiss
 
     /// The row draws its own focus: the system's effect boxes the button it is on — here the
-    /// identity alone — which wrapped two thirds of a row in a fill. Pulled once on suspicion of
-    /// causing a crash on open; the crash was the accessibility tree, not this.
+    /// identity alone — which wrapped two thirds of a row in a fill, and drew for a click as
+    /// readily as for a key. Pulled once on suspicion of causing a crash on open; the crash was
+    /// the accessibility tree, not this.
     @FocusState private var isFocused: Bool
 
     let row: ProjectDrawerProjection.Row
@@ -116,14 +117,7 @@ struct ProjectDrawerRow: View {
                     dashedEdge(shape)
                 }
             }
-            .overlay {
-                if isFocused {
-                    shape.strokeBorder(
-                        argo.color.interaction.focusRing,
-                        lineWidth: ArgoStroke.focus,
-                    )
-                }
-            }
+            .argoFocusRing(isFocused)
     }
 
     private func dashedEdge(_ shape: RoundedRectangle) -> some View {

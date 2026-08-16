@@ -24,7 +24,7 @@ contract settled at approval — and two carry unexercised states the happy path
 
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
-| `QueuedTurnChip` | molecule | `ArgoUI/Shell/Deck/Composer/` — the vessel's own part | `turn: QueuedTurn`, `cancel: () -> Void` | `ArgoGlyph` + an accent rule, in the chip shape | frozen table, `QueuedTurnChip` |
+| `QueuedTurnChip` | molecule | `ArgoUI/Shell/Deck/Composer/` — the vessel's own part | `turn: QueuedTurn`, `cancel: () -> Void` | `ArgoGlyph` in the chip shape — the leading accent rule was **dropped during #685's build**, because the cockpit draws no leading rules on rows and one here was the only one left in the shell | frozen table, `QueuedTurnChip` |
 
 One row, because #538 already extracted `ComposerSeam` — this ticket gave it its **second note**
 rather than a second component. A seam that said only *refused* and a seam that said only *kept*

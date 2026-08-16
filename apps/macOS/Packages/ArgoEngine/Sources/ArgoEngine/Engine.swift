@@ -34,6 +34,34 @@ public struct Engine: Sendable {
         return sourceURLs.map(observation)
     }
 
+    /// Which Subagents were written beside one Session's record.
+    ///
+    /// Kept apart from the observation below for the reason discovery's is: observing a file OPENS
+    /// it, and this is asked on every sweep about files that are already being tailed.
+    public func subagents(beside parentURL: URL) -> [SubagentTranscript] {
+        SubagentTranscripts.beside(parentURL.standardizedFileURL)
+    }
+
+    /// One Subagent's record, read as the subject of its own file rather than as the parent's
+    /// sidechain.
+    ///
+    /// Neither validated nor throwing, unlike a transcript: nobody NAMED these, so one that cannot
+    /// be opened is a Subagent Argo has no reading for rather than a failed connection.
+    public func observeSubagent(_ transcript: SubagentTranscript) -> SubagentObservation {
+        SubagentObservation(
+            agentID: transcript.agentID,
+            sourceURL: transcript.url,
+            // The same two disk reads a Session's own observation makes: a Subagent shows pictures
+            // and loads skills like any other Agent, and the only difference is whose file it is.
+            events: transcriptEvents(
+                at: transcript.url,
+                subject: .subagent,
+                readImage: diskImageReader,
+                readSkill: diskSkillReader,
+            ),
+        )
+    }
+
     func normalizedTranscriptURLs(_ urls: [URL]) -> [URL] {
         var seenPaths: Set<String> = []
         return urls.compactMap { url in
@@ -53,7 +81,11 @@ public struct Engine: Sendable {
             id: url.path,
             sourceURL: url,
             modifiedAt: modifiedAt(of: url),
-            events: transcriptEvents(at: url, readImage: diskImageReader),
+            events: transcriptEvents(
+                at: url,
+                readImage: diskImageReader,
+                readSkill: diskSkillReader,
+            ),
         )
     }
 

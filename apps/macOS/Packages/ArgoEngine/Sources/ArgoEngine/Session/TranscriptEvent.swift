@@ -28,6 +28,10 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// What the agent REASONED, verbatim. Never read as a message: a turn's final message
     /// routinely contradicts its own reasoning.
     case thought(markdown: String)
+    /// A skill was handed to the Session, and what Argo can read behind it (#688). The record files
+    /// this as plumbing beside the prompt rather than as something anyone said, which is why it is
+    /// an event of its own and not a second reading of the user's own line.
+    case skillLoaded(SkillLoad)
     /// A call was emitted.
     case toolCall(ToolCall)
     /// A call's result came back. Carries the call's id rather than the call, because the two are

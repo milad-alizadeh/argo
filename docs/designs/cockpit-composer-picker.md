@@ -14,6 +14,12 @@ essential; this settles what it looks like.
 1440×860, taken from the study with its switcher hidden. The measurements below are the numbers a
 ticket must carry — prose that omits them cannot be failed for getting them wrong.
 
+> **One place the renders are now stale.** `slash.png` and `slash-edge.png` still draw a leading Ion
+> Blue edge on the cursor row. #685's build removed it — the cockpit draws no leading rules on rows
+> — and the measurement table below is the amended truth. The renders were not re-shot: they come
+> from a prototype branch, not from the app, so re-shooting them would mean re-running a study to
+> change one rule. Everything else in those two PNGs still holds.
+
 **The composer is untouched.** [`cockpit-session-composer.md`](cockpit-session-composer.md) froze
 the vessel, its footer and their measurements; this design only adds the surface that opens over
 it, and one rename on the footer's leading control. Every render here draws the frozen composer.
@@ -81,7 +87,7 @@ except where it says *measured*.
 | inset | `ArgoSpacing.tight` on all four sides |
 | width | the vessel's own. **No stated width**: the description is the content, and at 560 two thirds of a real one is an ellipsis |
 | anchor | the vessel's leading edge, rising `ArgoSpacing.base` above its top |
-| list ceiling | **294** = 10 rows (27) + one section header (24). Derived, not measured |
+| list ceiling | **300** = 10 rows (27) + one section header (30). Derived, not measured — it moves with the header, which grew to 30 during #685's build |
 
 **A row** — `CommandMenuRow`, `FileMenuRow`
 
@@ -98,18 +104,18 @@ except where it says *measured*.
 | shadow marker | the same `badge` role in `state.attention` |
 | matched characters | ink `accentBright`, weight `semibold` |
 | hover | `surface.hover` (0.045), no edge |
-| keyboard cursor | `surface.marked` (0.07) **plus a leading Ion Blue edge at `ArgoStroke.indicator` (2)**. On the cursor row the description lifts to `secondary`, which is `TextRoles.marked(on:)`'s own floor |
+| keyboard cursor | `surface.marked` (0.07), the ground alone. On the cursor row the description lifts to `secondary`, which is `TextRoles.marked(on:)`'s own floor. **Amended during #685's build: no leading Ion Blue edge.** The cockpit draws no leading rules on rows, and one here would have been the only one in the shell — the two grounds are still different inks, which is what the rule below actually asks for |
 | file row | name at `machine`, then the directory at `machineCaption` in `tertiary`, **cut from the left** — a nine-segment path is a column of identical prefixes |
 
 **A section header** — `CommandMenuSection`
 
 | what | value |
 |---|---|
-| height | **24** = `sectionLabel.lineBox` (11 × 1.21 → 14) + `ArgoSpacing.snug` above + `ArgoSpacing.tight` below |
+| height | **30** = `sectionLabel.lineBox` (11 × 1.21 → 14) + `ArgoSpacing.comfortable` above + `ArgoSpacing.tight` below, and **24** for the first header, which has no group above it to be separated from and takes `ArgoSpacing.snug` instead — the same inset a row holds its own text off its edges by, so the list's first line and its last stand off the surface equally. **Amended during #685's build**: the gap above was `snug`, and it grew when the header lost its ground — see *behaviour* |
 | label | `ArgoTypography.sectionLabel`, ink `tertiary`, upper-cased |
-| its count and path | `ArgoTypography.machineCaption`, ink `disabled`, **not** upper-cased |
-| behaviour | sticky to the list's top edge while its origin scrolls under it |
-| order | Project · You · Plugin · Claude Code — nearest origin first |
+| its count and path | the SAME role as the label, ink `disabled`, **not** upper-cased. **Amended during #685's build**: it was `machineCaption`, and SF Mono beside SF Pro reads as two sizes on one line even though both are 11 |
+| behaviour | scrolls with its own group. **Amended during #685's build**: it was sticky, which needs a ground of its own to stop rows showing through — and the band that ground draws is louder than the grouping is worth. The top margin does the separating instead |
+| order | Project · Global · Plugin · Claude Code — nearest origin first. **Amended during #685's build**: the user's own origin reads `Global`, not `You` — it is where the skill lives, and every other word on this row names a place |
 
 **The `+` menu** — `AddMenu`
 
@@ -176,9 +182,14 @@ more.
 17. **The menu opens over a running Turn exactly as at rest**, and coexists with a queued
     follow-up above the field — `running.png`, `queued.png`.
 18. **The sent line is the user's own bubble, verbatim, mention and all.** A `Skill Loaded: name`
-    marker comes from the transcript beside it, and opens the `SKILL.md` body Argo read; a
-    built-in gets the marker with nothing behind it. No expanded prompt, no third representation
-    Argo invents — `loaded.png`.
+    marker comes from the transcript beside it, and opens the `SKILL.md` body Argo read. No
+    expanded prompt, no third representation Argo invents — `loaded.png`. **Amended during #688's
+    build: a built-in gets NO marker.** It was to get one with nothing behind it, and
+    `Skill Loaded: clear` is a false sentence — the transcript records no skill load for a
+    built-in, so the marker would be Argo's own invention about a thing that did not happen. The
+    built-in's own line is already in the reader's bubble, and its output is already a Tool Call
+    row. The marker with nothing behind it is still drawn, for the case that really has nothing:
+    a `SKILL.md` that is all frontmatter.
 
 ## Token reconciliation
 
@@ -197,10 +208,10 @@ more.
 | `6px` row radius · `12px` surface radius | snap, exact | `ArgoRadius.control` · `popover` |
 | `1px` border | snap, exact | `ArgoStroke.border` |
 | `26px` row height | **derive** | `machine.lineBox.rounded(.up)` + `snug` × 2 = **27**, the shape `ArgoBadge.height` uses |
-| `285px` list ceiling | **derive** | 10 rows + one header = **294** |
+| `285px` list ceiling | **derive** | 10 rows + one header = **300** |
 | `5px` waiting dot | snap | `ArgoLayout.statusDotSize` (6) |
 | `268px` `+` menu width | **dropped** | the menu hugs its rows; a stated width is re-measured every time a word changes |
-| `rgba(62,155,255,.18)` cursor ground + accent inset border | snap | `surface.marked` + Ion Blue edge at `ArgoStroke.indicator` — what `ArgoStroke`'s own doc says selection is |
+| `rgba(62,155,255,.18)` cursor ground + accent inset border | ground snapped, **border dropped** | `surface.marked` alone (amended during #685's build — see the cursor row above) |
 | `rgba(255,255,255,.045)` hover | snap, exact | `surface.hover` |
 | accent on matched characters | snap, exact | `accentBright` |
 | italic on an absent description | **dropped** | the contract has no slant |

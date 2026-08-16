@@ -41,6 +41,9 @@ extension FeedRow.Content {
         // A gallery opens no panel — what a shot produced IS the shot, so the click goes to the
         // picture.
         case .gallery: Traits(isCall: true)
+        // A marker is punctuation too, and it opens onto whatever Argo could read behind it — the
+        // SKILL.md body, or the sentence saying why there is none.
+        case let .skillLoaded(skill): Traits(opensEvidence: skill.opened != nil)
         // Punctuation: a question, a mark and an unreadable line each take the full step prose
         // gets without being any of these things.
         case .ask, .mark, .unreadable: Traits()
@@ -53,6 +56,7 @@ extension FeedRow.Content {
         switch self {
         case let .call(call): call.opened
         case let .survey(survey): survey.opened
+        case let .skillLoaded(skill): skill.opened
         case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable: nil
         }
     }

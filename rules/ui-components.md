@@ -50,6 +50,48 @@ Rules that fall out of this:
   control's look is wrong, restyle it through the contract.
 - Views are pure presentation — no I/O, and no state beyond local interaction state.
 
+## How a control is reached from the keyboard
+
+**Full Keyboard Access is the contract, and the app does not build a ring of its own** (#718). The
+switch is **System Settings › Keyboard › Keyboard navigation** on current macOS — `AppleKeyboardUIMode`
+under it, and not the separate Accessibility item that still carries the older name. On macOS a
+`Button` enters the Tab ring only once the reader turns that setting on, and Apple's own
+apps behave the same way — a sidebar header, a toolbar glyph and an inline ⓘ are not Tab stops in
+Mail or Finder either. VoiceOver is the route that does not depend on it: it reaches every control
+by VO-arrow with the setting off. A parallel ring would make Argo the one Mac app that tabs
+differently, and it would make Tab ambiguous inside the composer's field, which is where the
+reader spends the most keys. So a control reachable only with the setting on is **not a bug**, and
+the four rules below are how that holds up.
+
+- **Every control is a real control.** A `Button`, `Menu`, `Picker`, `TextField` — never a shape
+  with an `onTapGesture`. The control is what carries Space and Return, the button trait, and the
+  focus the setting hands out; a tap gesture carries none of the three. A tap gesture is allowed
+  only as a **pointer-only layer over something the keyboard already reaches another way**, and it
+  says which way in a comment (`SessionRow.clickCatcher` — the `List` selects the row).
+- **`.focusable()` is for a key the control would not otherwise get**, never for a Tab stop. Reach
+  for it when a view must answer Escape on something it opened, or arrows across a zone, because
+  `onExitCommand` and friends only fire for a view in the responder chain. Each use names the key
+  it is there for. Adding one to a control that only needs Space and Return is the drift this rule
+  replaces. It does cost a Tab stop the platform would not have given — `PlanPill` is one, the
+  archive foot refused to be one (`cockpit-roster-archive-foot.md`) — and that price is paid only
+  where a key demands it.
+- **A focusable that can show focus draws `argoFocusRing`**, so the stroke is `ArgoStroke.focus`
+  and the ring appears only when the last event was a key press (`ArgoFocusVisibility`, #533).
+  Never the system effect: it outlines the focusable rather than the control, and it draws on a
+  click too. `ArgoApp` switches it off for the whole window, which settles the app but not a
+  `#Preview`, so a view that previews its own focus carries `focusEffectDisabled()` as well — a
+  state rendered for review has to be the state that ships. A focusable that **covers its own
+  zone** — the evidence panel, the lightbox — is ringless and says so at the call site: what has
+  focus is already evident.
+- **A command with a platform convention is bound to its key**, so the frequent actions do not
+  depend on the ring at all. ⌘N, ⌘R, ⌘⌫, ⌘I, Return, Escape are the platform's spellings and Argo
+  uses them. **Do not invent a key** for a command macOS has no convention for — an unguessable
+  chord in no menu is not a route, and the ring already reaches it. The key goes in a `Commands`
+  menu, which is where a reader looks for one, **unless the command is anchored to a control on
+  screen** — a popover belongs to the mark it points at, and a menu item firing it from elsewhere
+  would open it against nothing. Then it rides the control, and both `.help` and the
+  accessibility label name the key, because neither route can read the other's.
+
 ## All rendered text goes through the type ramp
 
 Typography is a primitive like any other, so it obeys the rule above: **every string the user

@@ -30,9 +30,7 @@ struct DeckCanopy: View {
             // alone draws no title.
             TitlebarTitle(header: header, paneWidth: paneWidth)
                 .frame(height: reach)
-            SessionHeader(header: header, handOff: handOff)
-                .frame(height: ArgoLayout.deckHeaderHeight)
-            SessionTabLine()
+            SessionTabLine(header: header, handOff: handOff)
                 .frame(height: ArgoLayout.deckTabSlotHeight)
         }
         .frame(height: ArgoLayout.deckCanopyHeight + reach)

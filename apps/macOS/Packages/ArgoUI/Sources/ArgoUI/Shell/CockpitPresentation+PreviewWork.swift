@@ -129,7 +129,9 @@ extension CockpitPresentation.Session {
             id: "delegate", name: "Task", kind: .delegate, target: "Review the feed",
             narration: "Review the feed", atMs: nil,
         )),
-        .toolCallOutcome(answered("delegate", nil)),
+        // Not `answered`, which prices nothing: a landed delegation reports both figures, and the
+        // rail draws both.
+        .toolCallOutcome(landed("delegate", tokens: 71600, seconds: 96)),
         .toolCall(ToolCall(
             id: "mcp", name: "mcp__linear__list_issues", kind: .mcp, target: nil, atMs: nil,
         )),

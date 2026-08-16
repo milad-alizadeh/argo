@@ -1,13 +1,18 @@
 import SwiftUI
 
-/// The one instrument on the header: how full the Session's context is, on the trailing edge.
+/// The one instrument on the tab line: how full the Session's context is, on the trailing edge.
 ///
 /// It draws a reading it was handed and judges nothing — which line the Session is past, and
 /// whether it can be said at all, are `SessionHeaderProjection`'s.
+///
+/// Its label and reading sit a rung below the roles the 56pt band set them at (#693): a 40pt line
+/// carrying two stacked rows has no room for the band's sizes.
 struct SessionHeaderContext: View {
     @Environment(\.argo) private var argo
 
     let context: SessionHeaderProjection.Context
+    /// What the ⓘ panel reports, forwarded untouched — the instrument draws none of it (#694).
+    let facts: [SessionHeaderProjection.Fact]
 
     /// The panel opens on HOVER, and a click still opens it too, so the keyboard keeps a way in.
     /// Escape and clicking away are `.popover`'s own.
@@ -24,17 +29,21 @@ struct SessionHeaderContext: View {
     /// not close it. Must stay longer than the dwell.
     private static let grace = Duration.milliseconds(420)
 
+    /// One string for the tooltip and the announcement: a key named to only one of them is a key
+    /// half the readers cannot find.
+    private static let aboutLabel = "About the context reading — Command I"
+
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             HStack(spacing: ArgoSpacing.tight) {
                 Text(context.label)
-                    .argoText(ArgoTypography.caption)
+                    .argoText(ArgoTypography.badge)
                     .textCase(.uppercase)
                     .foregroundStyle(argo.color.text.tertiary)
                 about
                 Spacer(minLength: ArgoSpacing.snug)
                 Text(context.reading)
-                    .argoText(ArgoTypography.machine)
+                    .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(readingInk)
                     .lineLimit(1)
             }
@@ -55,12 +64,17 @@ struct SessionHeaderContext: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(argo.color.text.tertiary)
-        .accessibilityLabel("About the context reading")
+        // ⌘I is what macOS spells "tell me about this", and it is the route in that does not wait
+        // on Full Keyboard Access (#718). On the control and not in a menu because the panel is
+        // anchored HERE — so the key has to be said twice, once for each route that can read it.
+        .keyboardShortcut("i", modifiers: .command)
+        .help(Self.aboutLabel)
+        .accessibilityLabel(Self.aboutLabel)
         .onHover { isInside in pointer(isInside) }
         .popover(isPresented: $isGuideOpen, arrowEdge: .bottom) {
             // The panel counts as the mark for the purpose of staying open: a reader inside it is
             // reading, and the pointer being off the ⓘ is exactly what that looks like.
-            SessionContextGuide()
+            SessionContextGuide(facts: facts)
                 .onHover { isInside in pointer(isInside) }
         }
     }
@@ -86,8 +100,8 @@ struct SessionHeaderContext: View {
 
 #Preview("Context instrument — every tier, and the one that cannot be read") {
     VStack(alignment: .leading, spacing: ArgoSpacing.section) {
-        ForEach(SessionHeaderFixture.contextReadings, id: \.reading) { context in
-            SessionHeaderContext(context: context)
+        ForEach(SessionHeaderFixture.contexts, id: \.name) { tier in
+            SessionHeaderContext(context: tier.header.context, facts: tier.header.facts)
         }
     }
     .padding(ArgoSpacing.region)

@@ -50,6 +50,16 @@ extension SpecimenRegistry {
         SpecimenEntry("feedMarkdown") { MarkdownSpecimen() },
         SpecimenEntry("feedAttention") { SpecimenScene.sessions(FeedProjection.previewAskRows) },
         SpecimenEntry("feedPunctuation") { SpecimenScene.sessions(FeedProjection.previewMarkRows) },
+        // The design's own render (#688): the command the user typed, their line verbatim, and the
+        // marker under it — no expanded prompt anywhere.
+        SpecimenEntry("feedSkillLoaded") {
+            SpecimenScene.sessions(FeedProjection.previewSkillLoadedTurn)
+        },
+        // The three states that marker has, together: the body Argo read, the file it could not,
+        // and the one with nothing behind it — which draws no chevron at all.
+        SpecimenEntry("feedSkillLoadedStates") {
+            SpecimenScene.sessions(FeedProjection.previewSkillLoadRows)
+        },
         // The same marks as `feedPunctuation`, with the refusal nobody made among them (#573).
         SpecimenEntry("feedPermissionExpired") {
             SpecimenScene.sessions(FeedProjection.previewExpiredMarkRows)
@@ -62,12 +72,39 @@ extension SpecimenRegistry {
         // The one state in which the rail scrolls at all, held at the end of its own scroll so
         // two chips pass under the chrome bar — every transcript fixture delegates too few.
         SpecimenEntry("agentsFanOut") { AgentsFanOutSpecimen() },
+        // The same twenty, collapsed. Twenty dots fit a column twenty names overflow, which is the
+        // whole argument for the strip.
+        SpecimenEntry("agentsFanOutCollapsed") { AgentsFanOutSpecimen(isCollapsed: true) },
+        // The three below are rendered BESIDE the feed on the whole deck, because what they have to
+        // settle is the seam and the hierarchy rather than the rail's own insides.
+        SpecimenEntry("agentsRailSole") { AgentsRailSpecimen(subject: .sole) },
+        // The selected chip's legibility and the re-scoped feed in one still — the two claims the
+        // discarded attempt satisfied in prose and failed in pixels (#378).
+        SpecimenEntry("agentsRailScoped") { AgentsRailSpecimen(subject: .scoped) },
+        SpecimenEntry("agentsRailCollapsed") { AgentsRailSpecimen(subject: .collapsed) },
         // A session at the length a real one reaches. Render narrow too (`ARGO_WINDOW_SIZE`).
         SpecimenEntry("feedAtScale") { SpecimenScene.sessions(FeedProjection.longRows) },
         // A row arriving at the end must not move the row somebody is looking at.
         SpecimenEntry("feedArriving") { ArrivingFeedSpecimen() },
         SpecimenEntry("emptyFeed") { SpecimenScene.sessions([]) },
+        // The keyboard cursor, on the two shapes a row can be: the bubble it has to hug, and the
+        // line that fills the measure. Unreachable without an arrow key, so unreachable in a still
+        // any other way (#533).
+        // The prose-only reading for the bubble: short enough that the row is in view with no
+        // scroll at all, which is what makes the still repeatable.
+        SpecimenEntry("feedCursorPrompt") {
+            cursored(on: FeedProjection.previewPromptID, in: FeedProjection.previewProseRows)
+        },
+        SpecimenEntry("feedCursorCall") {
+            cursored(on: FeedProjection.previewLastFailedCallID, in: FeedProjection.previewRows)
+        },
     ]
+
+    private static func cursored(on row: FeedRow.ID?, in rows: [FeedRow]) -> some View {
+        var reading = FeedPreview(rows: rows)
+        reading.cursor = row
+        return reading
+    }
 
     private static let evidence: [SpecimenEntry] = [
         // Call rows, not the whole feed: against the full transcript this failure is below the
@@ -92,6 +129,21 @@ extension SpecimenRegistry {
             SpecimenScene.sessions(
                 FeedProjection.previewCallRows,
                 open: FeedProjection.previewDocumentCallID,
+            )
+        },
+        // The marker's panel: the `SKILL.md` body as text, under the path Argo read it from.
+        SpecimenEntry("feedSkillEvidence") {
+            SpecimenScene.sessions(
+                FeedProjection.previewSkillLoadRows,
+                open: FeedProjection.previewSkillLoadRowID,
+            )
+        },
+        // The failure the row's ink announces, said in full: which file, and that Argo could not
+        // read it. The marker is red either way, so the panel is not the only place it is stated.
+        SpecimenEntry("feedSkillUnreadableEvidence") {
+            SpecimenScene.sessions(
+                FeedProjection.previewSkillLoadRows,
+                open: FeedProjection.previewSkillUnreadableRowID,
             )
         },
         // At the panel's floor: command and path cut at OPPOSITE ends, and a three-line header has
@@ -160,5 +212,10 @@ extension SpecimenRegistry {
         // A reading with every kind in it, so the vocabulary can be judged in one look: prose,
         // commands, a mutation's two inks, a failure, a run of pictures and a question waiting.
         SpecimenEntry("minimapLaneKinds") { SpecimenScene.overview(FeedProjection.previewRows) },
+        // The lane beside markdown: a table drawn as its cells, paragraphs at the widths they
+        // wrapped to, and a one-line prompt worth one line of lane.
+        SpecimenEntry("minimapLaneMarkdown") {
+            SpecimenScene.overview(FeedProjection.previewMarkdownRows)
+        },
     ]
 }

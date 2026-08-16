@@ -144,6 +144,7 @@ extension CockpitPresentation.Session {
             modeDidNotTake: session.modeDidNotTake,
             lostTurn: session.lostTurn,
             events: session.events,
+            subagentEvents: session.subagentEvents,
         )
     }
 }

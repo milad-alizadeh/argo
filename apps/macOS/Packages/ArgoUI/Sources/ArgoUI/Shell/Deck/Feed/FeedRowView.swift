@@ -29,6 +29,8 @@ struct FeedRowView: View {
         // to the picture.
         case let .gallery(gallery):
             FeedGalleryRow(gallery: gallery, open: selection.light)
+        case let .skillLoaded(skill):
+            SkillLoadedMarker(skill: skill, isOpen: isOpen, open: openEvidence)
         // Identified by the QUESTION and not by the cell: the rows are hosted in a recycled
         // `NSTableView` cell, so a view whose marks lived on cell identity alone would carry one
         // question's ticks into the next question that landed there (#712).
@@ -68,7 +70,7 @@ extension FeedRow {
     @discardableResult
     func activate(selection: FeedRowSelection, isExpanded: Binding<Bool>) -> Bool {
         switch content {
-        case .call, .survey:
+        case .call, .survey, .skillLoaded:
             guard selection.open == id || opensEvidence else { return false }
             openEvidence(with: selection)
             return true

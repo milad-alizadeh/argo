@@ -30,11 +30,14 @@ extension SessionHeaderProjection {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    /// A Session every one of whose gaps was too long worked NONE of the time it ran — `worked
-    /// under a minute` would spell that exactly like a Session that has just started.
     private static func worked(for milliseconds: Int) -> String {
-        guard milliseconds > 0 else { return "worked none of it" }
-        return "worked \(ElapsedTime.phrase(milliseconds: milliseconds))"
+        "worked \(workedReading(milliseconds))"
+    }
+
+    /// A Session every one of whose gaps was too long worked NONE of the time it ran — `under a
+    /// minute` would spell that exactly like a Session that has just started.
+    static func workedReading(_ milliseconds: Int) -> String {
+        milliseconds > 0 ? ElapsedTime.phrase(milliseconds: milliseconds) : "none of it"
     }
 
     /// Wall-clock: the transcript's first record to its last. Both ends or nothing — taking the
@@ -67,8 +70,10 @@ extension SessionHeaderProjection {
             case let .toolCall(call): call.atMs
             case let .toolCallOutcome(outcome): outcome.endedAtMs
             case let .compaction(atMs): atMs
+            // A skill load carries no moment of its own: the CLI expands a body as part of the
+            // prompt beside it, and that prompt's own timestamp is already counted.
             case .recordIdentity, .headLeaf, .title, .cwd, .model, .branch, .mode, .message,
-                 .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine: nil
+                 .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine, .skillLoaded: nil
             }
         }
         .sorted()

@@ -25,6 +25,17 @@ extension SpecimenRegistry {
         SpecimenEntry("unstartedPlanPill") {
             PlanSpecimen(plan: PlanFixture.unstarted, isRevealed: true)
         },
+        // Every control #718 names, on screen at once, so one Tab walk can reach all of them. The
+        // context is at the warn line because that is what puts Hand off on the header — at the
+        // ordinary reading the offer is withheld and there is no button to tab to.
+        SpecimenEntry("keyboardDeck") {
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.longRows,
+                header: SessionHeaderFixture.header(context: 216_764),
+                vessel: .composer(ComposerSpecimen.composer),
+            )
+        },
         SpecimenEntry("floatingControls") { FloatingControlsSpecimen() },
         // A shipping gate: the three stay legible and pressable with the optical response gone.
         SpecimenEntry("flatFloatingControls") { FloatingControlsSpecimen(isFlat: true) },

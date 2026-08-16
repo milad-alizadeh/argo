@@ -8,6 +8,10 @@ import Foundation
 struct MinimapRow: Equatable, Sendable {
     var height: CGFloat
     var shape: MinimapRowShape = .whole(.boundary)
+    /// How far down its own cell the row's content starts. The step to the row above is drawn as
+    /// the row's top padding, so it is INSIDE the height the table measured — see
+    /// `FeedRow.step(to:from:)`.
+    var topStep: CGFloat = 0
     /// The words this row asked for, where it is a prompt. `nil` on every other row — and a Turn
     /// that opens on a row with none is a promptless exchange, which the lane breaks at exactly
     /// where the feed does.

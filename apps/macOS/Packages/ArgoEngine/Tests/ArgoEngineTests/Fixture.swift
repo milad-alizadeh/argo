@@ -21,8 +21,10 @@ enum Fixture {
     static func events(
         _ name: String,
         readImage: @escaping ImageReader = noImageReader,
+        readSkill: @escaping SkillReader = noSkillReader,
     ) async throws
         -> [TranscriptEvent] {
-        try await TranscriptReader(readImage: readImage).read(lines: lines(name))
+        try await TranscriptReader(readImage: readImage, readSkill: readSkill)
+            .read(lines: lines(name))
     }
 }

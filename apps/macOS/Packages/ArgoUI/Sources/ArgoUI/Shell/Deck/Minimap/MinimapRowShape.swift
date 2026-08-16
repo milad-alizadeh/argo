@@ -1,27 +1,31 @@
 import Foundation
 
-/// What a row is drawn as, held as the few numbers it takes rather than as the runs themselves
-/// (#382). One of these is built for every row whenever the feed reshapes, so it must stay cheap to
-/// make and cheap to compare; the runs are built later, for the band alone.
+/// What a row is drawn as, held as the little the lane needs to lay it out again exactly as the
+/// feed laid it out (#382). One of these is built for every row whenever the feed reshapes, so it
+/// must stay cheap to make and cheap to compare; the marks are reported later, for the lane's band
+/// alone.
 ///
-/// Lengths are UTF-8 counts, which a `String` answers in constant time where `count` walks
-/// graphemes.
+/// Every case carries the WORDS rather than a count of characters, because every question the lane
+/// asks about a row — how many lines, how wide each one, where a link landed — is a question about
+/// glyphs, and only the words can answer it.
 enum MinimapRowShape: Equatable, Sendable {
-    /// Lines of text against the leading edge, each as full as the words that landed on it.
-    case prose(length: Int, ink: FeedInk)
-    /// Prose with markdown structure in it: the blocks themselves, so a table reads as its grid, a
-    /// fence as its slab, and a link in its own ink. See `MinimapProseBlock`.
+    /// Prose with the shape the agent gave it: its blocks, in the order they are drawn. Every prose
+    /// row is one of these, a bare paragraph included — one path, so a heading cannot be reported
+    /// at a paragraph's face by a second one.
     case composed(blocks: [MinimapProseBlock], ink: FeedInk)
-    /// The prompt's lines, against the trailing edge, each as full as the words that landed on it.
-    case bubble(length: Int)
-    /// One line, as far across as the sentence got.
-    case sentence(length: Int, ink: FeedInk)
-    /// A mutation: the sentence, and then what it did in lines.
-    case change(length: Int, added: Int, removed: Int)
-    /// A run of pictures, as the count of them. The lane wraps that many frames across itself the
-    /// way the row wraps that many thumbnails across the column, so a turn that rendered six shots
-    /// reads as six shots rather than as one grey slab.
+    /// The prompt's words, in a bubble against the trailing edge. `isFolded` is the reader's own
+    /// state: a folded prompt draws only its first `ArgoFeedRow.collapsedPromptLines`, so a lane
+    /// that assumed either answer misreports every prompt in the other one.
+    case bubble(text: String, isFolded: Bool)
+    /// A row the feed says in a single line, as the pieces it says it in — a call's mark, its verb,
+    /// what it named, and what it did in lines.
+    case line(parts: [MinimapLinePart], ink: FeedInk)
+    /// A run of pictures. The lane wraps that many frames across itself the way the row wraps that
+    /// many thumbnails across the column, so a turn that rendered six shots reads as six shots.
     case shots(count: Int)
-    /// A shape rather than a length — a question's band, a Turn's rule.
+    /// A question, as the bordered card the feed draws it in — see `MinimapAskCard`.
+    case card(MinimapAskCard)
+    /// The whole row, at its full width and height — the punctuation between Turns, and the rules
+    /// that read the same way.
     case whole(FeedInk)
 }

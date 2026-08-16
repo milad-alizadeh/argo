@@ -20,7 +20,7 @@ struct CodexSessionDriver: SessionDriver {
 
     /// `codex` parses `/` in a TUI composer Argo never touches, so a `/command` put to this surface
     /// arrives at the model as prose (#685). A Session here draws no picker at all.
-    var canRunCommands: Bool {
+    func canRunCommands(for _: String) -> Bool {
         false
     }
 
