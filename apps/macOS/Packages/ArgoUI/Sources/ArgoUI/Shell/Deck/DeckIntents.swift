@@ -28,6 +28,10 @@ struct DeckIntents {
     /// list with no watcher and no restart. The filesystem stays on this side of it: what the view
     /// holds is whatever value the last call answered.
     var commands: () -> CommandCatalog = { CommandCatalog.empty }
+    /// Every file in the shown Session's Workspace (#687), read afresh the way `commands` is —
+    /// which is what puts a file written mid-Session in the very next list. `async` because the
+    /// tree can be enormous and the composer may not wait on it.
+    var files: () async -> [String] = { [] }
     /// What the composer is holding. A binding handed in from ABOVE the deck's Session identity:
     /// `.id(session)` discards everything under it on a switch, and an unsent draft must survive
     /// one (#539).

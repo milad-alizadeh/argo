@@ -19,17 +19,22 @@ struct ComposerSpecimen: View {
     /// The catalog the `/` menu draws (#685). Empty by default, so a case that is not about the
     /// menu cannot accidentally open one.
     let commands: CommandCatalog
+    /// The Workspace tree the `@` menu draws (#687). Empty by default, for the reason `commands`
+    /// is: a case that is not about the menu cannot accidentally list a file.
+    let files: [String]
 
     init(
         composer: SessionComposerProjection.Composer = ComposerSpecimen.composer,
         draft: ComposerDraft = ComposerDraft(),
         isDropTargeted: Bool = false,
         commands: CommandCatalog = CommandCatalog.empty,
+        files: [String] = [],
     ) {
         self.composer = composer
         _held = State(initialValue: draft)
         self.isDropTargeted = isDropTargeted
         self.commands = commands
+        self.files = files
     }
 
     var body: some View {
@@ -43,6 +48,7 @@ struct ComposerSpecimen: View {
                 composer: composer,
                 send: { _, _ in },
                 commands: { commands },
+                files: { files },
                 draft: $held,
                 isDropTargeted: isDropTargeted,
             )
@@ -144,6 +150,26 @@ struct ComposerSpecimen: View {
         text: "/",
         queued: [QueuedTurn(text: "And when that is green, open the PR against main.")],
     )
+
+    /// The bare `@` mid-sentence: the whole tree, the files this Session has been in first
+    /// (`at.png`). The `@` is the last thing typed, which is what holds the menu open.
+    static let mentioning = ComposerDraft(text: "Have a look at @")
+
+    /// Six keystrokes into a nine-segment path (`at-filter.png`, decision 13). `sesdri` is a
+    /// SUBSEQUENCE over the whole path, so it reaches `…/Session/SessionDriver.swift` — and no
+    /// substring search would find it.
+    static let mentionFiltered = ComposerDraft(text: "Have a look at @sesdri")
+
+    /// After a pick (`at-inserted.png`): the whole path in the line as TEXT and not a chip, the
+    /// sentence carried on after it, and NO menu — the space the insertion left is what closed it.
+    static let mentionInserted = ComposerDraft(
+        text: "Have a look at @apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/"
+            + "SessionDriver.swift — the send path swallows a CR.",
+    )
+
+    /// A path this Workspace does not hold. The surface stays and the line stays sendable, exactly
+    /// as the `/` menu's zero state does — the agent may know where the file went.
+    static let mentionZero = ComposerDraft(text: "Have a look at @qqqqzz")
 
     /// A follow-up waiting on the Turn in flight, drawn above an empty field.
     static let queued = ComposerDraft(

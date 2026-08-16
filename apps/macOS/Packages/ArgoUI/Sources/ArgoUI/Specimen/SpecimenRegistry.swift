@@ -20,6 +20,7 @@ public enum SpecimenRegistry {
         + live
         + vessel
         + commands
+        + mentions
         + connect
 
     /// What `--list-specimens` answers with.

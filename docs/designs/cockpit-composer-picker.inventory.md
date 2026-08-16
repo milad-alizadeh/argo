@@ -97,6 +97,94 @@ at the ceiling — which is what those two derivations are for.
   design settles it: the nearer origin wins, the shadowed copy is not listed, and the winning row
   says `shadows yours`. Only `project` over `user` can collide — a plugin's commands are namespaced.
 
+## Extracted — #687
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `FileMenu` | organism | `ArgoUI/Shell/Deck/Composer/` — one caller (`SessionComposer`) | `menu: WorkspaceFileProjection.Menu` · `marked: String?` · `pick: (Row) -> Void` | `FileMenuRow`, `FileMenuEmpty`, on `ComposerMenuSurface` | [`at.png`](composer-picker/at.png) |
+| `FileMenuRow` | molecule | same — one caller (`FileMenu`) | `row: WorkspaceFileProjection.Row` (`path` · `name` · `directory: String?` · `isTouched`) · `isMarked: Bool` | two `Text` and one badge | frozen table, `FileMenuRow`; [`at.png`](composer-picker/at.png) |
+| `FileMenuEmpty` | molecule | same — one caller (`FileMenu`) | `query: String` | one `Text` in three runs | a state the happy path never renders |
+| `ComposerMenuSurface` | modifier | same — two callers (`CommandMenu`, `FileMenu`) | `label: String` | — | the D14 recipe both menus wear |
+| `WorkspaceFileProjection` | value | same — the derive, plus `+Derive.swift` | `menu(for:in:touched:)` · `mention(in:)` · `rowCeiling` | — | Decisions 2, 12, 13 |
+| `TouchedFiles` | value | same — one caller (`SessionComposerProjection`) | `touched(in:within:)` | — | "Files this Session has touched sort first" |
+| `WorkspaceFileReader` | value | `ArgoEngine/Repository/` — the `gitWorkspaceFileRead` port | `files(at:)`, an `actor` | — | Acceptance: only paths inside the Workspace, and a large tree never blocks |
+
+Extraction evidence, in the order it arrived:
+
+- **`FileMenuRow`** — repetition, immediately: the bare `@` draws seventeen rows. It is not
+  `CommandMenuRow` with different words. That row inks its matched characters and this one must
+  not; that row carries a description and an origin, this one a directory cut from the left and a
+  mark. Two of the four parts differ, which is a different row.
+- **`ComposerMenuSurface`** — repetition of the *plane* rather than of a row. `CommandMenu` held
+  the material, the radius, the rim and the shadow inline because it was the only wearer. It has a
+  second now, and D14's recipe drifting between two menus over one field is exactly the drift a
+  modifier prevents.
+- **`FileMenu`** — it holds the counted list height, and it is the one place that says this list
+  has no sections. Generalising `CommandMenu` to draw either would have meant a menu that branches
+  on which of two shapes it is, in a `body`.
+- **`FileMenuEmpty`** — a state the happy path never renders, and not a row: no cursor, no hover,
+  no pick.
+- **`WorkspaceFileProjection`** — the container/View split, and the home of every rule the design
+  states about where `@` opens and what order files come in.
+- **`TouchedFiles`** — its own value because it reads the TRANSCRIPT, which the composer otherwise
+  never touches. Sitting inside the composer projection it would have been a second, quieter
+  reading of the stream the feed already draws.
+- **`WorkspaceFileReader`** — the engine seam. #685's note says no view reads the filesystem, and
+  this one shells out besides.
+
+## What stayed inline — #687
+
+- **The insertion** — `ComposerDraft.take(mention:replacing:)`, beside `take(_ command:)`. What a
+  pick does to the field is a draft rule, and the two differ in exactly one way worth having them
+  side by side for: a command replaces the LINE, a mention replaces the TOKEN.
+- **Which menu is open** — `SessionComposer+Menus`, an extension on the vessel rather than a value.
+  It reads four pieces of the vessel's own `@State`, and a value taking all four would have been
+  the vessel with a different name.
+- **The zero state's words** — `FileMenuEmpty` carries its own lead and tail rather than sharing
+  `CommandMenuEmpty`'s. "No skill or command matches" and "No file in this Workspace matches" are
+  two sentences, and the shared half is four words.
+- **The Workspace root** — `SessionComposerProjection.Composer.workspaceRoot`, off
+  `session.workspaceLocation`. No new engine fact, so ADR-0027's mapping is untouched.
+
+## Amended during the build — #687
+
+- **No accent inking on a file row's matched characters.** The measurement table's row block covers
+  `FileMenuRow`, and `at-filter.png` draws none. The render is right and the table's silence about
+  the difference was the omission: the match is a SUBSEQUENCE over the whole path, so `sesdri`'s
+  six characters land in six different segments — inking them speckles the row rather than pointing
+  at anything. Over a command name the match is a substring and one contiguous run, which is what
+  makes the same rule work there.
+- **The `@` menu has no sections and no status strip.** One clock reads the tree, where the `/`
+  menu joins two halves with two clocks and has to say so (decision 9). `at.png` shows it: eleven
+  rows and no header. The list ceiling is unchanged and lands exactly there — 300 over a headerless
+  list of 27pt rows is eleven and the top of a twelfth.
+- **`CommandMenuCursor` became `ComposerMenuCursor`, keyed by id.** One cursor for both menus,
+  because only one is ever open. Not a frozen name, so not a migration.
+- **The `@` read is async and the `/` read is not.** `SkillCatalog` walks a handful of directories;
+  this shells out to `git ls-files` over a tree that can hold a hundred thousand paths. It is
+  launched when the token OPENS rather than on every keystroke, and the composer never waits on it.
+- **The derive caps its rows at fifty.** The list draws eleven. The READ is uncapped — every path
+  stays reachable by typing — but building a row per match on a monorepo would stutter the field.
+- **`@` is not gated on `canRunCommands`.** Decision 14 in code: a `codex` Session draws no `/`
+  menu and a full `@` one. Nothing new in the engine is needed for it, because the picker's own job
+  IS the expansion — six keystrokes become a path, and `SessionTurn.text(_:attaching:)` already
+  hands a file over to both adapters as a path their agent reads.
+
+## Engine changes this needed — #687
+
+- **`WorkspaceFileReader`** and the `WorkspaceFileRead` port beside it, mirroring `WorkspaceReader`
+  and `WorkspaceRead`. `git ls-files --cached --others --exclude-standard -z` at the Session's own
+  cwd. Three things at once: it cannot name a path outside the tree, it honours `.gitignore`
+  without Argo reading one, and it costs one process where a walk costs a syscall per directory.
+  `-z` is load-bearing — split on newlines, a filename containing one becomes two paths that do not
+  exist.
+
+## Not claimed by any ticket
+
+**`MentionSpan`** — the frozen table's tenth name, an `@` mention inked inside the user's own
+bubble in the feed. No render draws it and no acceptance criterion asks for it, so #687 left it.
+Decision 18 is still its source when somebody picks it up.
+
 ## Extracted — #688
 
 | name | tier | location | props | composed-of | source |

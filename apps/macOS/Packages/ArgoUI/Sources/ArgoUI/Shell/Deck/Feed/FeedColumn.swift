@@ -62,6 +62,7 @@ struct FeedColumn: View {
                 stop: intents.stop,
                 setMode: intents.setMode,
                 commands: intents.commands,
+                files: intents.files,
                 draft: intents.draft,
             )
             .modifier(FloatingVessel())

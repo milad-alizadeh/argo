@@ -180,6 +180,12 @@ struct ArgoApp: App {
                     joining: SkillCatalog(projectURL: cockpit.hub.project.url).skills(),
                 )
             },
+            // The Session's OWN folder, not the Project's: a Session running in a worktree names
+            // files in that worktree, and nothing outside it (#687). Read on every open, so a file
+            // written while the Session was running is in the very next list.
+            workspaceFiles: { root in
+                await gitWorkspaceFileRead(URL(fileURLWithPath: root))
+            },
         )
     }
 }

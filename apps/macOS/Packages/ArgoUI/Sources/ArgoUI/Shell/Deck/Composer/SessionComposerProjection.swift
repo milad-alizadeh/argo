@@ -41,6 +41,14 @@ enum SessionComposerProjection {
         /// declares it and `codex` does not, so a joint answer would take the menu off both.
         /// `false` draws no menu and no command section anywhere — absent, not disabled.
         let canRunCommands: Bool
+        /// Where the Session is working, which is the tree the `@` picker lists and the only tree
+        /// it may offer a path out of (#687). Absent for a Session whose records have never said,
+        /// which draws no `@` menu at all — there is no Workspace to name a file in.
+        var workspaceRoot: String?
+        /// The files this Session's agent has already read or edited, newest first (#687), stated
+        /// relative to `workspaceRoot`. They sort to the top of the `@` menu, because the file the
+        /// reader means next is nearly always one the agent has just been in.
+        var touchedFiles: [String] = []
     }
 
     /// A composer only for a Session Argo can put keystrokes to: managed, and not over. Everything
@@ -68,6 +76,11 @@ enum SessionComposerProjection {
             lostTurn: session.lostTurn,
             canAttach: canAttach,
             canRunCommands: canRunCommands,
+            workspaceRoot: session.workspaceLocation,
+            touchedFiles: TouchedFiles.touched(
+                in: session.events,
+                within: session.workspaceLocation,
+            ),
         )
     }
 

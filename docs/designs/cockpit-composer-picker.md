@@ -57,6 +57,7 @@ Renaming one of these later is a migration.
 |---|---|
 | `AddButton` | the footer's leading `+`. **Renamed from `AttachButton`** — see below |
 | `AddMenu` | the two-row menu `AddButton` opens: files, skills & commands |
+| `FileMenu` | the `@` surface itself. **Added during #687's build** — the table named its row and not the list it sits in, and the two menus share only their plane (`ComposerMenuSurface`): this one has no sections and no status strip |
 | `CommandMenu` | the surface itself: status strip, sectioned list, keyboard cursor |
 | `CommandMenuRow` | one invocable thing — name, description, origin |
 | `CommandMenuSection` | the sticky origin header, with its count and where it came from |
@@ -104,7 +105,7 @@ except where it says *measured*.
 | description | `ArgoTypography.rowMeta` (11), ink `tertiary`, one line, tail-truncated |
 | origin | `ArgoTypography.badge` (10, semibold, tracking 0.6), ink `disabled`, upper-cased |
 | shadow marker | the same `badge` role in `state.attention` |
-| matched characters | ink `accentBright`, weight `semibold` |
+| matched characters | ink `accentBright`, weight `semibold` — **on `CommandMenuRow` only. Amended during #687's build: a file row inks none.** There the match is a subsequence over the whole path, so six characters land in six different segments and inking them speckles the row; over a command name the match is one contiguous run, which is what makes the rule work there. `at-filter.png` already drew it this way |
 | hover | `surface.hover` (0.045), no edge |
 | keyboard cursor | `surface.marked` (0.07), the ground alone. On the cursor row the description lifts to `secondary`, which is `TextRoles.marked(on:)`'s own floor. **Amended during #685's build: no leading Ion Blue edge.** The cockpit draws no leading rules on rows, and one here would have been the only one in the shell — the two grounds are still different inks, which is what the rule below actually asks for |
 | file row | name at `machine`, then the directory at `machineCaption` in `tertiary`, **cut from the left** — a nine-segment path is a column of identical prefixes |
@@ -256,9 +257,10 @@ as the arithmetic rather than as constants.
    response, not a preference.
 6. **Blind typing already works** — #589 verified a bracketed-pasted `/command` fires the CLI's
    native handler. This surface buys discovery and descriptions, not capability.
-7. **`@` mentions are blocked on [#682](https://github.com/milad-alizadeh/argo/issues/682)** until
-   a pasted burst stops swallowing the carriage return after an `@` token. The `at-*.png` renders
-   are approved; shipping them is gated on that fix.
+7. ~~**`@` mentions are blocked on [#682](https://github.com/milad-alizadeh/argo/issues/682)**~~
+   **Unblocked: #682 is closed.** The fix is three parts — a gap between the paste and the Return,
+   the Return as its own write, and `TurnDelivery`'s watch behind both — and `ClaudeTurnTests`
+   holds the `@`-bearing Turn still. #687 built the picker on top of it.
 
 ## Next
 

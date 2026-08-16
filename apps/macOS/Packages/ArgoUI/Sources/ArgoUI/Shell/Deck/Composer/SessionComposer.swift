@@ -29,6 +29,10 @@ struct SessionComposer: View {
     /// Every skill installed for this Project, read afresh each time the `/` menu opens (#685).
     /// The view holds only what this last answered, so no view reads the filesystem.
     var commands: () -> CommandCatalog = { CommandCatalog.empty }
+    /// Every file in this Session's Workspace, read afresh each time the `@` menu opens (#687).
+    /// ASYNC where `commands` is not: this one shells out to git over a tree that can hold a
+    /// hundred thousand paths, and the composer must not wait on it.
+    var files: () async -> [String] = { [] }
     @Binding var draft: ComposerDraft
     /// Holds the drag-over state open for a render — see `AttachmentDropTarget.isHeldOpen`.
     var isDropTargeted = false
@@ -38,13 +42,19 @@ struct SessionComposer: View {
     /// stamps later than this and takes the seam away.
     @State private var enteredAtMs = 0
 
+    // The four below are the menus' own state and none survives one closing. Internal rather than
+    // private because `SessionComposer+Menus` reads all four, and a SwiftUI extension can hold no
+    // state of its own.
+
     /// The catalog as the last open read it, and where the keyboard is in the list it produced.
-    /// Both are the menu's own state and neither survives it closing.
-    @State private var catalog = CommandCatalog.empty
-    @State private var cursor = CommandMenuCursor()
-    /// Whether Escape has put the menu away over a line that would still open one. Cleared by the
+    @State var catalog = CommandCatalog.empty
+    /// The Workspace tree as the last `@` read answered. One cursor serves both menus, because
+    /// only one is ever open: `/` opens at the head of the line and `@` on a trailing token.
+    @State var workspaceFiles: [String] = []
+    @State var cursor = ComposerMenuCursor()
+    /// Whether Escape has put a menu away over a line that would still open one. Cleared by the
     /// next keystroke, because the reader typing again is them asking for it back.
-    @State private var isDismissed = false
+    @State var isDismissed = false
 
     init(
         composer: SessionComposerProjection.Composer,
@@ -55,6 +65,7 @@ struct SessionComposer: View {
         setMode: @escaping (SessionMode) async throws -> Void = { _ in },
         commands: @escaping ()
             -> CommandCatalog = { CommandCatalog.empty },
+        files: @escaping () async -> [String] = { [] },
         draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
         isDropTargeted: Bool = false,
     ) {
@@ -65,6 +76,7 @@ struct SessionComposer: View {
         self.stop = stop
         self.setMode = setMode
         self.commands = commands
+        self.files = files
         _draft = draft
         self.isDropTargeted = isDropTargeted
     }
@@ -75,6 +87,7 @@ struct SessionComposer: View {
             // is anchored to the feed's bottom edge, so a row here grows UPWARD and the menu ends
             // up over the reading — which is where it belongs — with no offset to keep in step.
             commandMenu
+            fileMenu
             if let note = seamNote {
                 ComposerSeam(note: note, retry: retry)
             }
@@ -139,45 +152,20 @@ struct SessionComposer: View {
         ))
         // Escape puts it away and leaves the draft exactly as it was. Not a mode: the next
         // keystroke asks for it back, because typing on is the reader still looking for a command.
-        .onExitCommand { isDismissed = menu != nil }
-        .onChange(of: draft.text) { _, _ in opened() }
-        .onChange(of: composer.sessionID, initial: true) { _, _ in opened() }
-    }
-
-    /// The menu the line opens, and `nil` where none does — an adapter that declares no command
-    /// surface, a line that is not a command, or an Escape the reader has not typed past.
-    private var menu: CommandMenuProjection.Menu? {
-        guard composer.canRunCommands, !isDismissed else { return nil }
-        return CommandMenuProjection.menu(for: draft.text, in: catalog)
-    }
-
-    /// It takes the vessel's own width, because the description is the content: at any stated width
-    /// two thirds of a real `description:` would be an ellipsis.
-    @ViewBuilder private var commandMenu: some View {
-        if let menu {
-            CommandMenu(menu: menu, marked: cursor.marked) { draft.take($0.command) }
-                // The design's `base` above the vessel, less what the stack around it already
-                // contributes — spelled as the arithmetic so moving either step keeps the gap.
-                .padding(.bottom, ArgoSpacing.base - ArgoSpacing.tight)
+        .onExitCommand { isDismissed = menu != nil || mentionMenu != nil }
+        .onChange(of: draft.text) { was, _ in opened(was) }
+        .onChange(of: composer.sessionID, initial: true) { _, _ in
+            workspaceFiles = []
+            opened()
         }
     }
 
-    /// Re-read the catalog whenever the line becomes one that opens a menu, which is what puts a
-    /// skill installed while the Session was open in the very next list — no watcher, no restart.
-    private func opened() {
-        isDismissed = false
-        guard composer.canRunCommands, CommandMenuProjection.query(in: draft.text) != nil else {
-            return catalog = CommandCatalog.empty
-        }
-        catalog = commands()
-        cursor.settle(over: menu?.rows ?? [])
-    }
-
-    /// An arrow key, and whether the menu took it. Unhandled where there is no menu, so the field's
-    /// own caret movement is untouched on every line that is not a command.
-    private func walk(_ move: ([CommandMenuProjection.Row]) -> Void) -> KeyPress.Result {
-        guard let rows = menu?.rows, !rows.isEmpty else { return .ignored }
-        move(rows)
+    /// An arrow key, and whether a menu took it. Unhandled where there is none, so the field's own
+    /// caret movement is untouched on every line that opens nothing.
+    private func walk(_ move: ([String]) -> Void) -> KeyPress.Result {
+        let ids = markedIDs
+        guard !ids.isEmpty else { return .ignored }
+        move(ids)
         return .handled
     }
 
@@ -227,6 +215,9 @@ struct SessionComposer: View {
     private func submit() {
         if let picked = cursor.row(in: menu?.rows ?? []) {
             return draft.take(picked.command)
+        }
+        if let picked = cursor.row(in: mentionMenu?.rows ?? []) {
+            return take(mention: picked)
         }
         draft.submit(whileRunning: composer.isRunning, via: send)
     }
