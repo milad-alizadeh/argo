@@ -40,6 +40,12 @@ let package = Package(
             // Swift retires the only evidence that both readers answer the same bytes.
             resources: [.copy("Fixtures")],
         ),
-        .testTarget(name: "ArgoTerminalTests", dependencies: ["ArgoTerminal"]),
+        .testTarget(
+            name: "ArgoTerminalTests",
+            dependencies: ["ArgoTerminal"],
+            // A real `claude`'s PTY output, captured byte for byte. It is the only thing that can
+            // show the emulator and the Help-panel parser agree without a live CLI (#686).
+            resources: [.copy("Fixtures")],
+        ),
     ],
 )

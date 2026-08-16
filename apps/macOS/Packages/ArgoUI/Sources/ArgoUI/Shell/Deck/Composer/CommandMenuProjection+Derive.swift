@@ -3,9 +3,13 @@ import ArgoEngine
 /// Where the menu opens, what is in it, and in what order (design decisions 2, 3 and 4).
 extension CommandMenuProjection {
     /// The menu for a line, or `nil` where the line opens none.
-    static func menu(for text: String, in catalog: [Skill]) -> Menu? {
+    static func menu(for text: String, in catalog: CommandCatalog) -> Menu? {
         guard let query = query(in: text) else { return nil }
-        return Menu(sections: sections(of: catalog, matching: query), query: query)
+        return Menu(
+            sections: sections(of: catalog.commands, matching: query),
+            query: query,
+            builtins: catalog.builtins,
+        )
     }
 
     /// What the reader has typed after the `/`, and `nil` where there is no `/` to be after.
@@ -22,28 +26,31 @@ extension CommandMenuProjection {
         return String(typed)
     }
 
-    private static func sections(of catalog: [Skill], matching query: String) -> [Section] {
+    private static func sections(of catalog: [Command], matching query: String) -> [Section] {
         guard !query.isEmpty else { return byOrigin(catalog) }
         return byMatch(catalog, on: query.lowercased())
     }
 
     /// Nothing typed yet: one section per origin, nearest first, each saying where it read from and
     /// how many it found. The catalog already answers in that order, so the runs are consecutive.
-    private static func byOrigin(_ catalog: [Skill]) -> [Section] {
-        runs(of: catalog).map { origin, skills in
+    private static func byOrigin(_ catalog: [Command]) -> [Section] {
+        runs(of: catalog).map { origin, commands in
             Section(
                 id: origin.readFrom,
                 label: word(for: origin),
-                detail: "\(origin.readFrom) · \(skills.count)",
-                rows: skills.map { row(for: $0, matched: 0 ..< 0, origin: nil) },
+                detail: "\(origin.readFrom) · \(commands.count)",
+                rows: commands.map { row(for: $0, matched: 0 ..< 0, origin: nil) },
             )
         }
     }
 
-    private static func runs(of catalog: [Skill]) -> [(SkillOrigin, [Skill])] {
-        catalog.reduce(into: []) { runs, skill in
-            guard runs.last?.0 == skill.origin else { return runs.append((skill.origin, [skill])) }
-            runs[runs.count - 1].1.append(skill)
+    private static func runs(of catalog: [Command]) -> [(CommandOrigin, [Command])] {
+        catalog.reduce(into: []) { runs, command in
+            guard runs.last?.0 == command.origin else { return runs.append((
+                command.origin,
+                [command],
+            )) }
+            runs[runs.count - 1].1.append(command)
         }
     }
 
@@ -51,13 +58,13 @@ extension CommandMenuProjection {
     /// the ones that merely contain the characters under their own header. A good match therefore
     /// never slides down the list as the reader types. Origin moves onto the rows, because the
     /// sections no longer group by it.
-    private static func byMatch(_ catalog: [Skill], on query: String) -> [Section] {
+    private static func byMatch(_ catalog: [Command], on query: String) -> [Section] {
         var opening: [Row] = []
         var containing: [Row] = []
-        for skill in catalog {
-            guard let matched = match(query, in: skill.command) else { continue }
-            let row = row(for: skill, matched: matched, origin: word(for: skill.origin))
-            if opens(matched, of: skill) {
+        for command in catalog {
+            guard let matched = match(query, in: command.command) else { continue }
+            let row = row(for: command, matched: matched, origin: word(for: command.origin))
+            if opens(matched, of: command) {
                 opening.append(row)
             } else {
                 containing.append(row)
@@ -75,11 +82,11 @@ extension CommandMenuProjection {
     }
 
     /// Whether a match is at the head of the thing the reader is naming. TWO heads, because a
-    /// plugin's command is `/plugin:name` and the reader typing `simplify` has named the skill
-    /// exactly — ranked only off the command's own start, every plugin skill would file under
+    /// plugin's command is `/plugin:name` and the reader typing `simplify` has named the command
+    /// exactly — ranked only off the command's own start, every plugin command would file under
     /// "Also contains" no matter how well it matched.
-    private static func opens(_ matched: Range<Int>, of skill: Skill) -> Bool {
-        matched.lowerBound == 1 || matched.lowerBound == skill.command.count - skill.name.count
+    private static func opens(_ matched: Range<Int>, of command: Command) -> Bool {
+        matched.lowerBound == 1 || matched.lowerBound == command.command.count - command.name.count
     }
 
     /// The header over the weaker half. It names the characters rather than a kind of match,
@@ -103,19 +110,20 @@ extension CommandMenuProjection {
         return nil
     }
 
-    private static func row(for skill: Skill, matched: Range<Int>, origin: String?) -> Row {
+    private static func row(for command: Command, matched: Range<Int>, origin: String?) -> Row {
         Row(
-            command: skill.command,
+            command: command.command,
             matched: matched,
-            description: skill.description.flatMap(firstSentence),
+            description: command.description.flatMap(firstSentence),
             origin: origin,
-            shadowsUser: skill.shadowsUser,
+            shadowsUser: command.shadowsUser,
         )
     }
 
-    /// The first sentence of the frontmatter's own words (decision 4). There is no one-line
-    /// description in a `SKILL.md` — the field is trigger prose for a model and real ones run three
-    /// sentences — so the row takes the head of it verbatim and never a paraphrase.
+    /// The first sentence of the source's own words — a skill's frontmatter, or the CLI's own
+    /// panel line (decision 4). There is no one-line description in a `SKILL.md`: the field is
+    /// trigger prose for a model and real ones run three sentences, so the row takes the head of
+    /// it verbatim and never a paraphrase.
     ///
     /// A sentence ends at `.`, `?` or `!` with whitespace or nothing after it, which is what keeps
     /// `e.g.` and a version number inside the sentence they belong to.

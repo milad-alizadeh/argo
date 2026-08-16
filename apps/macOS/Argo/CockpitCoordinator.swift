@@ -22,6 +22,10 @@ final class CockpitCoordinator {
     private(set) var annotations = SessionAnnotations.empty
 
     let hub: Hub
+    /// The CLI's own built-in commands, asked for once per version of it (#686). Held here so the
+    /// answer outlives every open of the picker — the read costs a hidden session, and a menu that
+    /// waited on one would be a menu nobody uses.
+    let builtins: BuiltinCommandReader
     private let store: ProjectRegistryStore
     private let annotationStore: SessionAnnotationStore
     private let configuration: LaunchConfiguration
@@ -58,6 +62,13 @@ final class CockpitCoordinator {
                 modeFileURL: SessionModeStore.defaultFileURL,
             ),
         )
+        // Composed here for the PTY host's reason, and with a terminal to paint on for the same
+        // one: the Help panel exists only once something has rendered it, and the renderer is
+        // SwiftTerm.
+        self.builtins = BuiltinCommandReader(
+            host: SwiftTermProcessHost(),
+            screen: SwiftTermScreen(),
+        )
     }
 
     /// The active Project as a record; `nil` where the window points at an unregistered folder,
@@ -72,6 +83,9 @@ final class CockpitCoordinator {
         let registry = await store.load()
         annotations = await annotationStore.load()
         let resolved = await launchConfiguration()
+        // Started with the window rather than with the first `/`, so the picker never waits on a
+        // hidden `claude` spawning. Its own folder, because that is the one the CLI is trusted in.
+        builtins.read(inProjectAt: resolved.projectURL)
         await apply(.launched(
             LaunchProject.resolve(configuration: resolved, registry: registry),
             reading: registry,

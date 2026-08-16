@@ -30,7 +30,7 @@ struct CommandMenuProjectionTests {
     /// many it found — the design's Project · You · Plugin order.
     @Test
     func `an unfiltered menu groups by origin, nearest first`() throws {
-        let menu = try #require(CommandMenuProjection.menu(for: "/", in: catalog))
+        let menu = try #require(projected(for: "/", over: catalog))
 
         #expect(menu.sections.map(\.label) == ["Project", "Global", "Plugin"])
         #expect(menu.sections.map(\.detail) == [
@@ -42,7 +42,7 @@ struct CommandMenuProjectionTests {
     /// characters under their own header, so a good match never slides down as the reader types.
     @Test
     func `filtering puts prefix matches above the ones that merely contain`() throws {
-        let menu = try #require(CommandMenuProjection.menu(for: "/impl", in: catalog))
+        let menu = try #require(projected(for: "/impl", over: catalog))
 
         #expect(menu.sections.map(\.label) == [nil, CommandMenuProjection.alsoContains])
         #expect(menu.sections.map { $0.rows.map(\.command) } == [
@@ -55,7 +55,7 @@ struct CommandMenuProjectionTests {
     /// reachable by typing too: `/implement` inks 1..<5, `/figma:simplify` inks 8..<12.
     @Test
     func `the matched characters are located in the command`() throws {
-        let menu = try #require(CommandMenuProjection.menu(for: "/impl", in: catalog))
+        let menu = try #require(projected(for: "/impl", over: catalog))
 
         #expect(menu.rows.map(\.matched) == [1 ..< 5, 8 ..< 12])
     }
@@ -64,8 +64,8 @@ struct CommandMenuProjectionTests {
     /// once they group by match instead — never both, or the row says it twice.
     @Test
     func `origin rides on the row only while filtering`() throws {
-        let unfiltered = try #require(CommandMenuProjection.menu(for: "/", in: catalog))
-        let filtered = try #require(CommandMenuProjection.menu(for: "/impl", in: catalog))
+        let unfiltered = try #require(projected(for: "/", over: catalog))
+        let filtered = try #require(projected(for: "/impl", over: catalog))
 
         #expect(unfiltered.rows.allSatisfy { $0.origin == nil })
         #expect(filtered.rows.map(\.origin) == ["Project", "Plugin"])
@@ -76,7 +76,7 @@ struct CommandMenuProjectionTests {
     /// typing a skill's exact name would file it under "Also contains".
     @Test
     func `naming a plugin's skill exactly is a prefix match`() throws {
-        let menu = try #require(CommandMenuProjection.menu(for: "/simplify", in: catalog))
+        let menu = try #require(projected(for: "/simplify", over: catalog))
 
         #expect(menu.sections.map(\.label) == [nil])
         #expect(menu.sections.first?.rows.map(\.command) == ["/figma:simplify"])
@@ -86,9 +86,9 @@ struct CommandMenuProjectionTests {
     /// the moment two plugins carry skills and `ForEach` draws one of them.
     @Test
     func `two plugins get two sections with two ids`() throws {
-        let menu = try #require(CommandMenuProjection.menu(for: "/", in: [
-            Skill(name: "sync", description: nil, origin: .plugin("figma")),
-            Skill(name: "trends", description: nil, origin: .plugin("posthog")),
+        let menu = try #require(projected(for: "/", over: [
+            Command(name: "sync", description: nil, origin: .plugin("figma")),
+            Command(name: "trends", description: nil, origin: .plugin("posthog")),
         ]))
 
         #expect(menu.sections.map(\.label) == ["Plugin", "Plugin"])
@@ -99,12 +99,12 @@ struct CommandMenuProjectionTests {
     /// row takes the head of it verbatim.
     @Test
     func `a description is clamped to its first sentence, verbatim`() throws {
-        let long = Skill(
+        let long = Command(
             name: "review",
             description: "Review the diff. Then open the PR. Use after a build.",
             origin: .project,
         )
-        let menu = try #require(CommandMenuProjection.menu(for: "/", in: [long]))
+        let menu = try #require(projected(for: "/", over: [long]))
 
         #expect(menu.rows.first?.description == "Review the diff.")
     }
@@ -113,12 +113,12 @@ struct CommandMenuProjectionTests {
     /// number where they belong.
     @Test
     func `a full stop with no space after it does not end the sentence`() throws {
-        let versioned = Skill(
+        let versioned = Command(
             name: "pin",
             description: "Pin claude 2.1.228 for this Project. Nothing else changes.",
             origin: .project,
         )
-        let menu = try #require(CommandMenuProjection.menu(for: "/", in: [versioned]))
+        let menu = try #require(projected(for: "/", over: [versioned]))
 
         #expect(menu.rows.first?.description == "Pin claude 2.1.228 for this Project.")
     }
@@ -126,8 +126,8 @@ struct CommandMenuProjectionTests {
     /// Decision 5: a skill that states no description carries none, and the row invents nothing.
     @Test
     func `a skill with no description carries none`() throws {
-        let terse = Skill(name: "terse", description: nil, origin: .project)
-        let menu = try #require(CommandMenuProjection.menu(for: "/", in: [terse]))
+        let terse = Command(name: "terse", description: nil, origin: .project)
+        let menu = try #require(projected(for: "/", over: [terse]))
 
         #expect(menu.rows.first?.description == nil)
     }
@@ -136,7 +136,7 @@ struct CommandMenuProjectionTests {
     /// list is empty rather than absent.
     @Test
     func `a query nothing matches leaves an empty menu naming the query`() throws {
-        let menu = try #require(CommandMenuProjection.menu(for: "/graphify", in: catalog))
+        let menu = try #require(projected(for: "/graphify", over: catalog))
 
         #expect(menu.isEmpty)
         #expect(menu.query == "graphify")
@@ -145,23 +145,40 @@ struct CommandMenuProjectionTests {
     /// Decision 7 reaches the row from the catalog rather than being decided again here.
     @Test
     func `a row carries the shadow mark the catalog gave it`() throws {
-        let shadowing = Skill(
+        let shadowing = Command(
             name: "find-skills",
             description: nil,
             origin: .project,
             shadowsUser: true,
         )
-        let menu = try #require(CommandMenuProjection.menu(for: "/", in: [shadowing]))
+        let menu = try #require(projected(for: "/", over: [shadowing]))
 
         #expect(menu.rows.first?.shadowsUser == true)
+    }
+
+    /// Over a list of commands with both halves of the catalog already read, which is what every
+    /// claim in this suite is about — the built-in half's own state is `CommandMenuBuiltinTests`.
+    private func projected(
+        for text: String,
+        over commands: [Command],
+    )
+        -> CommandMenuProjection.Menu? {
+        CommandMenuProjection.menu(
+            for: text,
+            in: CommandCatalog(commands: commands, builtins: .read),
+        )
     }
 
     /// Two of the Project's, one of the user's, one a plugin carries — in the order the catalog
     /// answers in, which is the order the sections are drawn in.
     private let catalog = [
-        Skill(name: "implement", description: "Implement a piece of work.", origin: .project),
-        Skill(name: "ask-argo", description: "Router for Argo's own skills.", origin: .project),
-        Skill(name: "ux-writing", description: "Write interface copy.", origin: .user),
-        Skill(name: "simplify", description: "Review the changed code.", origin: .plugin("figma")),
+        Command(name: "implement", description: "Implement a piece of work.", origin: .project),
+        Command(name: "ask-argo", description: "Router for Argo's own skills.", origin: .project),
+        Command(name: "ux-writing", description: "Write interface copy.", origin: .user),
+        Command(
+            name: "simplify",
+            description: "Review the changed code.",
+            origin: .plugin("figma"),
+        ),
     ]
 }

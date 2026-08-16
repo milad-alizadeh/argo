@@ -69,6 +69,26 @@ extension SpecimenRegistry {
                 commands: CommandCatalogFixture.machine,
             )
         },
+        // `slash-late.png`, decision 9. The seconds after a window opens: every skill is already
+        // listed and the CLI's own half is still being asked for, said in a strip PINNED above the
+        // list. Drawn in its section's place it would sit below ten rows where nobody sees it.
+        SpecimenEntry("composerSlashLate") {
+            ComposerSpecimen(
+                composer: ComposerSpecimen.commands,
+                draft: ComposerSpecimen.commanding,
+                commands: CommandCatalogFixture.reading,
+            )
+        },
+        // `slash-fail.png`, decision 10. The read failed: the skills stand, the built-in half is
+        // honestly empty, and the line says both that and the way round it. The judgement is
+        // whether it reads as a fact about the list rather than as an error the reader caused.
+        SpecimenEntry("composerSlashFail") {
+            ComposerSpecimen(
+                composer: ComposerSpecimen.commands,
+                draft: ComposerSpecimen.commanding,
+                commands: CommandCatalogFixture.unavailable,
+            )
+        },
         // `codex.png`'s claim, at the vessel: an adapter that declares no command surface draws no
         // menu at all for a line that would open one everywhere else. Absent, never disabled.
         SpecimenEntry("composerSlashAbsent") {

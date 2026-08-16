@@ -46,5 +46,8 @@ struct ComposerCommandTests {
         #expect(draft.text == "/argo:simplify ")
     }
 
-    private let catalog = [Skill(name: "implement", description: nil, origin: .project)]
+    private let catalog = CommandCatalog(
+        commands: [Command(name: "implement", description: nil, origin: .project)],
+        builtins: .read,
+    )
 }
