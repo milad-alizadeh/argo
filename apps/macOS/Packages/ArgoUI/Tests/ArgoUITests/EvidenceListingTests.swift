@@ -51,6 +51,32 @@ struct EvidenceListingTests {
         #expect(!listing.hasGutter)
     }
 
+    /// What may be RENDERED: a gutter that came off cleanly, and characters that never had one.
+    /// Half a gutter is a guess either way it is resolved.
+    @Test(arguments: [
+        // A clean listing, and characters that never carried a gutter.
+        ("     1→# Cockpit\n     2→Done.", true),
+        ("# Cockpit\n\nDone.", true),
+        // A gutter on only some lines.
+        ("     1→# Cockpit\n(Results truncated)", false),
+    ])
+    func `only a text with all of its gutter or none of it can be rendered`(
+        read: (String, Bool),
+    ) {
+        #expect(EvidenceListing.read(read.0).isRenderable == read.1)
+    }
+
+    /// A read of the middle of a file is a slice, and the numbers are the only thing saying so.
+    @Test(arguments: [
+        ("     1→# Cockpit\n     2→Done.", true),
+        // Partway through the file, and a text whose numbers say nothing at all.
+        ("   86→## What I found\n   87→Done.", false),
+        ("# Cockpit", true),
+    ])
+    func `a listing knows whether it opens the file`(read: (String, Bool)) {
+        #expect(EvidenceListing.read(read.0).opensTheFile == read.1)
+    }
+
     @Test(arguments: [
         ("ordinary output", "Building for debugging...\n[1/3] Compiling ArgoUI"),
         ("output that opens on a digit", "3 files changed\n2 insertions"),

@@ -1,11 +1,7 @@
 import SwiftUI
 
-/// A markdown file in the panel, drawn with the shape its markup asked for rather than as a listing
-/// of its characters.
-///
-/// `FeedMarkdown` and nothing of its own: the fences are highlighted by the machinery agent prose
-/// already uses, and a block Argo cannot read is drawn exactly as it arrived. Nothing here adds,
-/// reorders or summarises anything — the notation is the only thing that stops being drawn, and the
+/// A markdown file in the panel, drawn with the shape its markup asked for. `FeedMarkdown` and
+/// nothing of its own, so the notation is the only thing that stops being drawn — and the
 /// characters themselves stay one control away (`EvidenceReading`).
 struct EvidenceDocument: View {
     /// The file's own characters, with any gutter the host wrote already taken off.

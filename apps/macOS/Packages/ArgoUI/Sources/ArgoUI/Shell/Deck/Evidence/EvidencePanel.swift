@@ -89,6 +89,7 @@ private struct EvidenceStep: View {
                 output: output,
                 language: step.language,
                 hasFailed: hasFailed,
+                holdsTheFile: step.holdsTheFile,
                 reading: reading,
             )
         case let .diff(diff):

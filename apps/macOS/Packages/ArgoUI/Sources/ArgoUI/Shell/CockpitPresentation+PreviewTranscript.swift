@@ -77,15 +77,24 @@ extension CockpitPresentation.Session {
     /// stream moves the prose sets and the cursor stills that are filtered out of it.
     ///
     /// A real `SKILL.md` opens on its own heading, which is what the panel sets as markdown source.
+    ///
+    /// A list and a FENCED block as well as prose: the fence is the one shape whose treatment
+    /// couples the panel to the machinery agent prose is drawn with, and with none in the fixture
+    /// that seam is asserted and never looked at (#736).
     static let previewSkillLoad = SkillLoad(
         name: "implement",
         directory: "/Users/x/argo/.claude/skills/implement",
         body: .read("""
         # Implement
 
-        One ticket at a time, test-first at the seams that were agreed.
+        One ticket at a time, **test-first** at the seams that were agreed.
 
-        Run the gates as you go, and the whole suite once at the end.
+        - Run the gates as you go.
+        - Run the whole suite once at the end.
+
+        ```sh
+        bun run quality && swift test --package-path Packages/ArgoUI
+        ```
         """),
     )
 }
