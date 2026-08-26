@@ -5,6 +5,10 @@ struct HubTranscript {
     /// The file, held here rather than read back off the Session: a Session Argo spawned has no
     /// transcript yet, so its own answer is absent.
     let sourceURL: URL
+    /// The chain's own uuid, which is the file's NAME — a different key from `id`, which is its
+    /// PATH. Relocation links on this one: the origin a relocated record names is a bare uuid, and
+    /// a run whose file MOVED keeps its uuid while its path changes (#770).
+    let sessionID: String
     var session: HubSession
     /// Whether the tail has delivered what the file already held. Until it has, this transcript is
     /// in the join — so the records it claims are attributed in tail-start order — but the roster
@@ -14,6 +18,7 @@ struct HubTranscript {
     init(observation: TranscriptObservation) {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
+        self.sessionID = observation.sourceURL.deletingPathExtension().lastPathComponent
         self.session = HubSession(observation: observation)
     }
 }
@@ -27,7 +32,9 @@ enum HubSessionChain {
         let graph = HubChainGraph(transcripts: transcripts, owners: owners)
         var claimed: Set<String> = []
         var sessions: [HubSession] = []
-        for id in graph.roots + transcripts.map(\.id) where !claimed.contains(id) {
+        // Walked in the graph's own key, which is the chain uuid rather than the path: two paths
+        // carrying one uuid are one Session, and the second of them is claimed by the first.
+        for id in graph.roots + transcripts.map(\.sessionID) where !claimed.contains(id) {
             guard var session = graph.session(id) else { continue }
             claimed.insert(id)
             for continuationID in graph.claimContinuations(of: id, into: &claimed) {

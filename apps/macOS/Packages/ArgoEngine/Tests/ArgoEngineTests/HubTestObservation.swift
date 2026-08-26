@@ -6,6 +6,12 @@ func hubFixtureObservation(_ fixture: String) async throws -> TranscriptObservat
     try await hubTestObservation(id: fixture, events: Fixture.events(fixture))
 }
 
+/// The same fixture, keyed by PATH the way the engine keys a real record — so the transcript's key
+/// and the chain's uuid are visibly different values (#770).
+func hubFixtureObservation(_ fixture: String, at url: URL) async throws -> TranscriptObservation {
+    try await hubTestObservation(at: url, events: Fixture.events(fixture))
+}
+
 /// A transcript already fully written: one batch carrying the whole file, which is the shape a tail
 /// hands the Hub when it drains a file nobody is appending to.
 func hubTestObservation(

@@ -7,21 +7,29 @@ struct HubChainGraph {
     private let children: [String: [String]]
     let roots: [String]
 
+    /// Keyed by the transcripts' chain uuids, never their paths: the origin a relocated record
+    /// names is a bare uuid, so a path-keyed table can never match one (#770).
     init(transcripts: [HubTranscript], owners: [String: String]) {
+        // Record ownership is filed against a transcript's PATH. Translated once here rather than
+        // at each lookup, so the whole graph speaks one key.
+        let uuids = Dictionary(transcripts.map { ($0.id, $0.sessionID) }) { first, _ in first }
+        let ownerUUIDs = owners.compactMapValues { uuids[$0] }
         var byID: [String: HubSession] = [:]
-        for transcript in transcripts where byID[transcript.id] == nil {
-            byID[transcript.id] = transcript.session
+        for transcript in transcripts {
+            // Last wins where two paths carry one uuid — a file the CLI MOVED, whose old path is a
+            // frozen prefix of the same reading. The later transcript is the live half.
+            byID[transcript.sessionID] = transcript.session
         }
         var children: [String: [String]] = [:]
         var roots: [String] = []
         for transcript in transcripts {
-            guard let parentID = Self.parentID(of: transcript, owners: owners, known: byID),
-                  parentID != transcript.id
+            guard let parentID = Self.parentID(of: transcript, owners: ownerUUIDs, known: byID),
+                  parentID != transcript.sessionID
             else {
-                roots.append(transcript.id)
+                roots.append(transcript.sessionID)
                 continue
             }
-            children[parentID, default: []].append(transcript.id)
+            children[parentID, default: []].append(transcript.sessionID)
         }
         self.byID = byID
         self.children = children.mapValues { ids in
@@ -80,6 +88,9 @@ struct HubChainGraph {
     ///
     /// A leaf the transcript owns ITSELF counts as a miss, not a link: the relocated file's
     /// `last-prompt` record names its own newest record.
+    ///
+    /// `owners` is record uuid → the CHAIN uuid of the transcript that owns it, translated at the
+    /// init above from the paths ownership is filed under.
     private static func parentID(
         of transcript: HubTranscript,
         owners: [String: String],
@@ -87,7 +98,7 @@ struct HubChainGraph {
     )
         -> String? {
         if let holder = transcript.session.headLeafUUID.flatMap({ owners[$0] }),
-           holder != transcript.id {
+           holder != transcript.sessionID {
             return holder
         }
         // Only against a transcript actually in the set: a worktree directory opened on its own is
