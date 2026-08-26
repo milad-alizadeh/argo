@@ -30,6 +30,27 @@ struct EvidenceListingTests {
         #expect(listing.lines.map(\.number) == [86, 87])
     }
 
+    /// The file without the host's numbers in it. A renderer handed the gutter draws `    12→##` as
+    /// a paragraph opening on a number, so the characters of the FILE have to be recoverable.
+    @Test
+    func `a listing gives back the file with its gutter taken off`() throws {
+        let listing = try #require(EvidenceListing("     1→## What I found\n     2→\n     3→Done."))
+
+        #expect(listing.text == "## What I found\n\nDone.")
+        #expect(listing.hasGutter)
+    }
+
+    /// A file Argo read itself arrives with no gutter at all. It is still the file — it just has no
+    /// numbers, and none are invented for it.
+    @Test
+    func `a file that arrived without a gutter is numbered by nobody`() {
+        let listing = EvidenceListing(file: "## What I found\n\nDone.\n")
+
+        #expect(listing.lines.map(\.number) == [nil, nil, nil])
+        #expect(listing.text == "## What I found\n\nDone.")
+        #expect(!listing.hasGutter)
+    }
+
     @Test(arguments: [
         ("ordinary output", "Building for debugging...\n[1/3] Compiling ArgoUI"),
         ("output that opens on a digit", "3 files changed\n2 insertions"),

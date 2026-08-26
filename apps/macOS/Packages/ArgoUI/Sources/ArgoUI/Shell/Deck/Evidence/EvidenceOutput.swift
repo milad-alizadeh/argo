@@ -19,19 +19,37 @@ struct EvidenceOutput: View {
     var language: EvidenceLanguage?
     /// Whether the call this answered failed. From the outcome, never from the characters.
     var hasFailed = false
+    /// Whether a markdown file is drawn as the document it is or as its own characters. Only
+    /// markdown is ever asked in `prose` — every other language IS its source.
+    var reading: EvidenceReading = .source
 
     var body: some View {
-        if let listing, let language {
-            EvidenceSource(listing: listing, language: language)
+        if let language, !hasFailed, !listing.lines.isEmpty {
+            file(language)
         } else {
             stream
         }
     }
 
-    /// The read's own listing, or `nil` for everything that is not one. A FAILED call is never one,
-    /// whatever its text looks like: what it printed is a message about the call, not the file.
-    private var listing: EvidenceListing? {
-        hasFailed ? nil : EvidenceListing(output.text)
+    /// A file the call printed, drawn as the file. A language is only ever read off a PATH, so a
+    /// step carrying one is a step whose subject is a file — the gutter is not what says so. A file
+    /// Argo read itself has no gutter at all, and gating on one drew a `SKILL.md` as a stream of
+    /// characters with its declared language dropped on the floor (#736).
+    ///
+    /// A FAILED call is never a file, whatever its text looks like: what it printed is a message
+    /// about the call.
+    @ViewBuilder private func file(_ language: EvidenceLanguage) -> some View {
+        if language == .markdown, reading == .prose {
+            EvidenceDocument(text: listing.text)
+        } else {
+            EvidenceSource(listing: listing, language: language)
+        }
+    }
+
+    /// The file behind the text: the host's own numbered listing where it wrote one, and the
+    /// characters exactly as they arrived where it did not.
+    private var listing: EvidenceListing {
+        EvidenceListing(output.text) ?? EvidenceListing(file: output.text)
     }
 
     private var stream: some View {

@@ -69,6 +69,27 @@ struct FeedSkillLoadedTests {
         )))
     }
 
+    /// A `SKILL.md` is prose the reader wants to READ, and Argo read the whole file — so the panel
+    /// opens on the document and the source stays one control away (#736).
+    @Test
+    func `the skill panel opens as the document the SKILL_md is`() throws {
+        let opened = try #require(FeedRow.Content.skillLoaded(read(body: .read("# Grill"))).opened)
+
+        #expect(opened.offersProse)
+        #expect(opened.opening == .prose)
+    }
+
+    /// The failure sentence is not a document, and nothing renders it as one.
+    @Test
+    func `the panel over a failed read offers no document reading`() throws {
+        let opened = try #require(
+            FeedRow.Content.skillLoaded(read(body: .unreadable("Argo could not read it."))).opened,
+        )
+
+        #expect(!opened.offersProse)
+        #expect(opened.opening == .source)
+    }
+
     /// A body Argo could not read is a marker with nothing behind it — no panel, and no claim about
     /// a file it never opened.
     @Test

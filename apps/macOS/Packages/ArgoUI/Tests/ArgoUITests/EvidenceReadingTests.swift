@@ -32,23 +32,52 @@ struct EvidenceReadingTests {
         #expect(evidence.opening == .source)
     }
 
-    /// A `Read`'s output arrives with the host's line numbers written into the text. Drawing
-    /// `    12\t## What I found` through a markdown renderer produces a document that is not the
-    /// file, so the offer is made for patches only.
+    /// A read PRINTS the file, whole, with nothing taken out of it — so the document is all of what
+    /// happened, and the notation is the part the reader mostly does not want. The gutter the host
+    /// wrote into the text is taken off by `EvidenceListing` before anything is rendered (#736),
+    /// which is why it is no longer a reason to refuse the offer.
     @Test
-    func `a markdown file that was only read offers no document reading`() throws {
-        let file = try #require(FeedCall.FileName(path: "docs/spec.md"))
-        let call = FeedCall(
+    func `a markdown file that was read opens as the document`() throws {
+        let evidence = try printed("docs/spec.md", "    1\t## What I found")
+
+        #expect(evidence.offersProse)
+        #expect(evidence.opening == .prose)
+    }
+
+    @Test
+    func `a file read in any other language has only the one reading`() throws {
+        let evidence = try printed("Sources/FeedCall.swift", "    1\tlet a = 1")
+
+        #expect(!evidence.offersProse)
+    }
+
+    /// What a FAILED call printed is a message about the call, never the file — a sentence saying
+    /// Argo could not read a `SKILL.md` is not a document, and a renderer would eat whatever
+    /// punctuation it happens to carry.
+    @Test
+    func `a read that failed offers no document reading`() throws {
+        let evidence = try printed("docs/spec.md", "No such file", ending: .failed)
+
+        #expect(!evidence.offersProse)
+        #expect(evidence.opening == .source)
+    }
+
+    private func printed(
+        _ path: String,
+        _ text: String,
+        ending: FeedCall.Ending = .succeeded,
+    ) throws
+        -> FeedEvidence {
+        let file = try #require(FeedCall.FileName(path: path))
+        return FeedCall(
             kind: .read,
             subject: .file(file),
             churn: nil,
-            ending: .succeeded,
-            evidence: [.output(OutputEvidence(tier: .direct, text: "    1\t## What I found"))],
+            ending: ending,
+            evidence: [.output(OutputEvidence(tier: .direct, text: text))],
             repeats: 1,
             spend: nil,
-        )
-
-        #expect(!call.opened.offersProse)
+        ).opened
     }
 
     private func opened(_ path: String, _ change: FileChange) throws -> FeedEvidence {

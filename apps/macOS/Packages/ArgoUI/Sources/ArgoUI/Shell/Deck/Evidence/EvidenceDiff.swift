@@ -43,10 +43,7 @@ private struct EvidenceHunkProse: View {
     let hunk: DiffHunk
 
     var body: some View {
-        FeedMarkdown(text: document)
-            .textSelection(.enabled)
-            .padding(.horizontal, ArgoSpacing.comfortable)
-            .accessibilityLabel("Document")
+        EvidenceDocument(text: document)
     }
 
     private var document: String {

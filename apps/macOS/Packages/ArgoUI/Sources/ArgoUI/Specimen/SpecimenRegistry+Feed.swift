@@ -131,7 +131,11 @@ extension SpecimenRegistry {
                 open: FeedProjection.previewDocumentCallID,
             )
         },
-        // The marker's panel: the `SKILL.md` body as text, under the path Argo read it from.
+        // The two readings of that body beside each other — the one pair a click is otherwise the
+        // only way to reach.
+        SpecimenEntry("evidenceSkillReadings") { EvidenceSkillSpecimen() },
+        // The marker's panel: the `SKILL.md` body as the document it is, under the path Argo read
+        // it from.
         SpecimenEntry("feedSkillEvidence") {
             SpecimenScene.sessions(
                 FeedProjection.previewSkillLoadRows,

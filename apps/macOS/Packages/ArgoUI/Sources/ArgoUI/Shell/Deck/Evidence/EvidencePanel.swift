@@ -85,7 +85,12 @@ private struct EvidenceStep: View {
     @ViewBuilder private func shown(_ result: ToolResult) -> some View {
         switch result {
         case let .output(output):
-            EvidenceOutput(output: output, language: step.language, hasFailed: hasFailed)
+            EvidenceOutput(
+                output: output,
+                language: step.language,
+                hasFailed: hasFailed,
+                reading: reading,
+            )
         case let .diff(diff):
             EvidenceDiff(diff: diff, language: step.language, reading: reading)
         case let .media(media): EvidenceMedia(media: media)
