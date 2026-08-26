@@ -58,6 +58,34 @@ struct PatienceTableTests {
         #expect(watched.published.last == ["blocked-2"])
     }
 
+    /// What a gate's standing-allow policy reads before it grants: the request by name, still on
+    /// the
+    /// pile, so the grant can cover it along with its siblings.
+    @Test
+    func `a waiting request can be read by name without being lifted`() {
+        let watched = WatchedTable()
+        watched.raise()
+        let publishes = watched.published.count
+
+        #expect(watched.table.waiting("blocked-1", for: "claim")?.toolName == "Bash")
+        #expect(watched.table.waiting("blocked-9", for: "claim") == nil)
+
+        // A read is not a change: reading the pile must not republish it.
+        #expect(watched.waiting == ["blocked-1"])
+        #expect(watched.published.count == publishes)
+    }
+
+    /// A scope that held nothing is not news — `ClaimLedger.withdraw` says the same of a claim with
+    /// nothing filed, and a publish here would file a record for a teardown that cleared nothing.
+    @Test
+    func `withdrawing a key that held nothing publishes nothing`() {
+        let watched = WatchedTable()
+
+        watched.table.withdraw("claim")
+
+        #expect(watched.published.isEmpty)
+    }
+
     /// An answer that raced its own end is reported rather than swallowed, and reaches no other
     /// request in passing.
     @Test

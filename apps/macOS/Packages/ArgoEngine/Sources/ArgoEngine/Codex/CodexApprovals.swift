@@ -100,10 +100,7 @@ final class CodexApprovals {
                 self?.answer($0.rpcID, decision)
             }
         }
-        // The answered call is itself a call to the tool being granted, so the grant below covers
-        // it along with its siblings: one word, one lift, one publish.
-        guard let answered = table.pending(for: .sole).first(where: { $0.request.id == requestID })
-        else { return false }
+        guard let answered = table.waiting(requestID, for: .sole) else { return false }
         stand(answered.request.toolName)
         return true
     }
@@ -117,14 +114,17 @@ final class CodexApprovals {
         return true
     }
 
-    /// The process is gone, so nothing can be waiting and no answer can reach the server. The
-    /// readings are cleared first so the table's own withdraw publishes them empty: this gate owns
-    /// them, so it is the one that has to clear them. Leaving that to the `claude` channel's
-    /// withdraw would make a Codex Session's stale prompt depend on a channel it never spoke over.
+    /// The process is gone, so nothing can be waiting and no answer can reach the server.
+    ///
+    /// Published rather than merely dropped, and by this gate rather than by the table: it owns
+    /// these readings, so it clears them even where nothing was waiting to be cleared alongside
+    /// them. Leaving that to the `claude` channel's withdraw would make a Codex Session's stale
+    /// prompt depend on a channel it never spoke over.
     func close() {
         patches = [:]
         readings = GateReadings()
         table.withdraw(.sole)
+        publish(readings)
     }
 
     private func allows(_ toolName: String) -> Bool {
@@ -136,11 +136,16 @@ final class CodexApprovals {
     /// meaning what its label says.
     private func stand(_ toolName: String) {
         readings.standing.append(StandingAllow(toolName: toolName))
-        _ = table.answerAll(
+        let covered = table.answerAll(
             matching: { $0.request.toolName == toolName },
             for: .sole,
             with: { [weak self] in self?.answer($0.rpcID, .allow) },
         )
+        // The grant is a reading in its own right, so it is published whether or not the lift
+        // covered anything: a table that answered nothing publishes nothing, and a tool that has
+        // stopped asking would then never say so.
+        guard !covered else { return }
+        republish(table.pending(for: .sole))
     }
 
     /// The table's clock ran out: Argo declines the call itself, and the Session says so.

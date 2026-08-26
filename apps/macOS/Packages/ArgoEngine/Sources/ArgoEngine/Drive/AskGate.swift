@@ -32,13 +32,10 @@ final class AskGate {
         table.changed = { claim, waiting in
             ledger.publish(asking: waiting.map(\.ask), for: claim)
         }
-        // No expiry is published. A refused Permission is a decision Argo made about a call
-        // somebody wanted; a question nobody answered is nothing having happened, and a reading of
-        // it would be a fact about the user rather than about the Session. The clock is a day, so
-        // it is
-        // never the thing that decides — it is there only so the hook is always TOLD something
-        // rather than killed holding a question, which the CLI reads as having no opinion and would
-        // then run the picker into a PTY with no reader.
+        // No expiry is published: a question nobody answered is nothing having happened, where a
+        // refused Permission is a decision Argo made. The clock is a day, so it never decides — it
+        // is there only so the hook is TOLD something rather than killed holding a question, which
+        // the CLI reads as having no opinion and would run the picker into a PTY with no reader.
         table.expired = { _, gone in
             gone.reply(AskReply.expired)
         }

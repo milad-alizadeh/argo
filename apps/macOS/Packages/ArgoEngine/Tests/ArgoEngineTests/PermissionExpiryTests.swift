@@ -50,9 +50,6 @@ extension PermissionChannelTests {
             }
         }
 
-        // That an answered prompt never expires behind the answer is the `PatienceTable`'s
-        // invariant now, asserted once over the table itself (#750) rather than twice by hand.
-
         @Test
         func `the hook is told to wait LONGER than the gate does, never the same`() {
             // The ordering is the whole mechanism: Argo's clock has to run out first, or an expiry

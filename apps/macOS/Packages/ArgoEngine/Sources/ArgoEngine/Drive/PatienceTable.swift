@@ -12,33 +12,26 @@ protocol Patient {
     var patiencePeer: Int? { get }
 }
 
-/// The key of a table whose scope is its owner: one pile, and nothing to file it under.
-/// `PatienceTable` is keyed because the `claude` gate serves every claim over one channel, where a
-/// Codex thread has only itself.
+/// The key of a table whose scope is its owner: one pile, nothing to file it under. `PatienceTable`
+/// is keyed because the `claude` gate serves every claim over one channel; a Codex thread has only
+/// itself.
 enum SolePile: Hashable {
     case sole
 }
 
 /// A keyed pile of blocked requests under Argo's own clock, and the ONE place that clock is armed
-/// (#750).
-///
-/// The three gates that hold a blocked request — a Permission, a question, a Codex approval — are
-/// one mechanism over three transports: something asks, it waits, and it ends in exactly one of
-/// four ways. Each gate keeps its own POLICY above this and nothing else: the standing allow and
-/// the rung on `PermissionChannel`, deliberately nothing on `AskGate`, the patch join on
-/// `CodexApprovals`.
+/// (#750). A request ends in exactly one of four ways: answered, refused by the clock, its peer
+/// gone, or its scope withdrawn. Each gate composes its own policy above this.
 ///
 /// Argo's clock is the shorter one wherever there are two, so a request nobody answers is refused
-/// BY ARGO — DIRECT, its own act end to end — rather than read off a peer close whose cause it
-/// would have to guess at.
+/// BY ARGO (DIRECT) rather than read off a peer close whose cause it would have to guess at.
 @MainActor
 final class PatienceTable<Key: Hashable, Item: Patient> {
-    /// The pile under one key changed, so whatever reads it is now out of date. Assigned after
-    /// `init` rather than passed to it: every handler here belongs to the gate that owns the table.
+    /// The pile under one key changed. Assigned after `init`, since every handler needs the gate.
     var changed: @MainActor (Key, [Item]) -> Void = { _, _ in }
 
-    /// Argo's clock ran out on this one. It is already off the pile with its clock stopped; what a
-    /// refusal SAYS is the gate's to send, since only the gate knows the transport and the reading.
+    /// Argo's clock ran out on this one, and it is already off the pile. What a refusal SAYS is the
+    /// gate's to send: only the gate knows the transport.
     var expired: @MainActor (Key, Item) -> Void = { _, _ in }
 
     private struct Entry {
@@ -72,6 +65,12 @@ final class PatienceTable<Key: Hashable, Item: Patient> {
         return item
     }
 
+    /// The named request, still waiting — what a gate's standing-allow policy reads before it
+    /// grants, since the grant covers this call along with every sibling on the same tool.
+    func waiting(_ id: String, for key: Key) -> Item? {
+        pending(for: key).first { $0.patienceID == id }
+    }
+
     /// Answer the named request. `false` where it is no longer waiting — an answer that raced its
     /// own end, which the caller reports rather than swallows.
     func answer(_ id: String, for key: Key, _ reply: (Item) -> Void) -> Bool {
@@ -83,9 +82,8 @@ final class PatienceTable<Key: Hashable, Item: Patient> {
         return true
     }
 
-    /// Answer every request matching, on one word and in one publish — what a standing allow needs,
-    /// where a grant covers the call that made it and every sibling already waiting. `false` where
-    /// nothing matched.
+    /// Answer every request matching, on one word and in one publish. `false` where nothing
+    /// matched, so a caller with a reading of its own knows the publish did not happen.
     func answerAll(matching: (Item) -> Bool, for key: Key, with reply: (Item) -> Void) -> Bool {
         let taken = take(matching: matching, for: key)
         guard !taken.isEmpty else { return false }
@@ -108,9 +106,15 @@ final class PatienceTable<Key: Hashable, Item: Patient> {
     /// are — and the clocks go first, because a day-long `Task` sleeping against a torn-down gate
     /// is a leak rather than a bug.
     func withdraw(_ key: Key) {
-        for one in piles.removeValue(forKey: key) ?? [] {
+        let held = piles.removeValue(forKey: key) ?? []
+        for one in held {
             one.clock.cancel()
         }
+        // A scope that held nothing is not news, and `ClaimLedger.withdraw` says the same of a
+        // claim
+        // with nothing filed: publishing over it would file a record for a teardown that cleared
+        // nothing.
+        guard !held.isEmpty else { return }
         changed(key, [])
     }
 

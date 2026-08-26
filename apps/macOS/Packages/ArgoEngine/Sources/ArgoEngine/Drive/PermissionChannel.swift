@@ -6,13 +6,13 @@ import Foundation
 /// Every answer it sends is `allow` or `deny`, never `ask` — `ask` would fall through to the TUI's
 /// own dialog, which is hidden and has no reader.
 ///
-/// The waiting itself is a `PatienceTable`, shared with the two gates beside it (#750). What is
-/// this gate's own is the POLICY above it: the rung a call is judged by, and the standing allows.
-/// Two
-/// ways a prompt ends unanswered, told apart (#573): the table's clock is shorter than the hook's,
-/// so a call nobody answers is refused **by Argo** and published as a `PermissionExpiry`, where a
-/// peer going before that clock fires went with a cancelled turn and takes its prompt away in
-/// silence.
+/// The waiting itself is a `PatienceTable` (#750). What is this gate's own is the policy above it:
+/// the rung a call is judged by, and the standing allows.
+///
+/// Two ways a prompt ends unanswered, told apart (#573): the table's clock is shorter than the
+/// hook's, so a call nobody answers is refused **by Argo** and published as a `PermissionExpiry`,
+/// where a peer going before that clock fires went with a cancelled turn and takes its prompt away
+/// in silence.
 @MainActor
 final class PermissionChannel {
     private struct Pending: Patient {
@@ -116,10 +116,7 @@ final class PermissionChannel {
                 $0.reply(PermissionReply.line(decision))
             }
         }
-        // The answered call is itself a call to the tool being granted, so the grant below covers
-        // it along with its siblings: one word, one lift, one publish.
-        guard let answered = table.pending(for: claim).first(where: { $0.request.id == requestID })
-        else { return false }
+        guard let answered = table.waiting(requestID, for: claim) else { return false }
         stand(answered.request.toolName, for: claim)
         return true
     }

@@ -195,8 +195,21 @@ struct CodexApprovalTests {
         #expect(peer.readings.waiting.isEmpty)
     }
 
-    // That an answered call's timer never fires behind the answer is the `PatienceTable`'s
-    // invariant now, asserted once over the table itself (#750) rather than a third time here.
+    /// The table proves an answered request's clock stops (`PatienceTableTests`); this proves THIS
+    /// gate is wired to it — the accept reaches the server and no expiry lands on its readings. The
+    /// clock is `immediate`, so it would fire on the very next hop.
+    @Test
+    func `an answered call is accepted on the wire and expires behind nobody`() async throws {
+        let peer = Self.opened(patience: .immediate)
+        peer.server.askCommand(13, command: "touch approved.txt")
+        let waiting = try #require(peer.readings.waiting.first)
+
+        #expect(peer.thread.approvals.decide(.allow, answering: waiting.id))
+        try? await Task.sleep(for: .milliseconds(50))
+
+        #expect(peer.server.decision(13) == "accept")
+        #expect(peer.readings.expiries.isEmpty)
+    }
 
     private static func opened(patience: PermissionPatience = .default) -> CodexPeer {
         let peer = CodexPeer(patience: patience)
