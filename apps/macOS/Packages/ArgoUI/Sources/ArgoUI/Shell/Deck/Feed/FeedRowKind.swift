@@ -4,9 +4,7 @@ extension FeedRow.Content {
     /// punctuation, the lightbox and what a press on the row does each read one of these.
     struct Kind: Equatable, Sendable {
         /// What a press on the row does — Return, Space and a click alike, since the row IS the
-        /// control. Four intents rather than ten kinds, and the payload is resolved here: a row
-        /// whose pictures are all absences arrives `.inert` rather than as a light with nothing
-        /// to light.
+        /// control.
         enum Activation: Equatable, Sendable {
             /// Toggle the row's own fold.
             case fold
@@ -17,6 +15,12 @@ extension FeedRow.Content {
             /// Nothing to open, so the key falls through to the feed, which is where scrolling
             /// lives. Swallowing it on an inert row takes it away from the feed.
             case inert
+
+            /// A press that opens the first picture there is anything behind. A row whose pictures
+            /// are all absences is `.inert`, so the key falls through rather than lighting nothing.
+            static func light(oneOf shots: [FeedShot]) -> Self {
+                shots.first(where: \.isOpenable).map(light) ?? .inert
+            }
         }
 
         /// A piece of work rather than a piece of prose. The feed welds a run of these together
@@ -63,22 +67,13 @@ extension FeedRow.Content {
         /// end, so it keeps the menu alone.
         var copiesInPlace = false
         var activation = Activation.inert
-
-        /// A press that opens the first picture there is anything behind.
-        static func light(oneOf shots: [FeedShot]) -> Activation {
-            shots.first(where: \.isOpenable).map(Activation.light) ?? .inert
-        }
     }
 
-    /// The one exhaustive `switch` over the kinds, and the only place in the tree that answers a
-    /// QUESTION about a row per kind. No `default`, so an eleventh kind fails this build rather
-    /// than quietly inheriting answers written for the ten that exist.
-    ///
-    /// Three switches over `Content` remain and are deliberately not folded in here.
-    /// `FeedRowView.body` and `MinimapRow.shape` each RENDER a kind rather than answer about it —
-    /// a `View` cannot sit on a value, and the lane's shape needs a fold state only the reader
-    /// holds. `opened` resolves a panel that walks every call in a run, which is far too much to
-    /// precompute for every row on every reshape.
+    /// The one exhaustive `switch` over the kinds that answers a FACT about a row. No `default`, so
+    /// an eleventh kind fails this build rather than quietly inheriting answers written for the ten
+    /// that exist. Three switches remain, each resolving a payload per case rather than a fact and
+    /// none of them precomputable per row per reshape: `opened` below, `FeedRowView.body` and
+    /// `MinimapRow.shape`.
     var kind: Kind {
         switch self {
         // A prompt that is ONLY a picture has no fold for the key to work, so it opens the picture
@@ -90,7 +85,7 @@ extension FeedRow.Content {
                 shots: shots,
                 words: text,
                 copyLabel: "Copy Prompt",
-                activation: text.isEmpty ? Kind.light(oneOf: shots) : .fold,
+                activation: text.isEmpty ? .light(oneOf: shots) : .fold,
             )
         case let .message(text):
             Kind(
@@ -118,7 +113,7 @@ extension FeedRow.Content {
         // A gallery opens no panel — what a shot produced IS the shot, so the click goes to the
         // picture. Said once here, for the row and the lane beside it both.
         case let .gallery(gallery):
-            Kind(isCall: true, shots: gallery.shots, activation: Kind.light(oneOf: gallery.shots))
+            Kind(isCall: true, shots: gallery.shots, activation: .light(oneOf: gallery.shots))
         // A marker is punctuation too, and it opens onto whatever Argo could read behind it — the
         // SKILL.md body, or the sentence saying why there is none.
         case let .skillLoaded(skill):

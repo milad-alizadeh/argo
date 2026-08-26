@@ -3,7 +3,8 @@ import ArgoEngine
 
 /// One row of every kind the feed can produce. Hand-listed rather than derived: `FeedRow.Content`
 /// has no case list to walk, and the exhaustive `switch` behind `kind` is what actually fails a
-/// build when a tenth kind arrives.
+/// build when an eleventh kind arrives. Every case must appear here, or every `everyKind` filter
+/// silently stops proving anything about the one that is missing.
 enum RowKindFixture {
     static let everyKind: [FeedRow.Content] = [
         .prompt(text: "Rename the deck", shots: []),
@@ -13,6 +14,7 @@ enum RowKindFixture {
         .call(pendingCall),
         .survey(survey),
         .gallery(gallery),
+        .skillLoaded(skill),
         .ask(ask),
         .mark(.compacted),
         .unreadable(FeedUnreadable(lines: ["{"])),
@@ -30,6 +32,9 @@ enum RowKindFixture {
     static let survey = FeedSurvey(calls: [answeredCall])
 
     static let gallery = FeedGallery(shots: [absentShot])
+
+    /// A row's shots in the order that makes the choice visible: a press must skip the absence.
+    static let anAbsenceThenAPicture = [absentShot, openableShot]
 
     /// A picture whose bytes genuinely decode — the one shot a press can open.
     static let openableShot = shot(bytes: FeedFixture.onePixelPNG)

@@ -16,10 +16,8 @@ struct FeedRowActivationTests {
         #expect(content.kind.activation == .fold)
     }
 
-    /// One rule for pointer and keyboard: the three kinds that draw a disclosure marker are exactly
-    /// the three whose press goes to the panel. Whether there is anything BEHIND it is
-    /// `opensEvidence`, asked separately, so a call the record never answered still means the panel
-    /// rather than meaning nothing.
+    /// Whether there is anything BEHIND the panel is `opensEvidence`, asked separately, so a call
+    /// the record never answered still means the panel rather than meaning nothing.
     @Test(arguments: [
         FeedRow.Content.call(RowKindFixture.pendingCall),
         .survey(RowKindFixture.survey),
@@ -29,16 +27,18 @@ struct FeedRowActivationTests {
         #expect(content.kind.activation == .openEvidence)
     }
 
-    /// A gallery opens the FIRST picture there is anything behind — its shots are each a control of
-    /// their own — and a prompt that is only a picture gives the same answer on the row the picture
-    /// arrived in.
-    @Test
-    func `a row of pictures opens the first one there is anything behind`() {
-        let shots = [RowKindFixture.absentShot, RowKindFixture.openableShot]
+    /// The first picture, not the first shot: a shot the record kept no bytes for opens nothing, so
+    /// a press would land on an empty lightbox.
+    @Test(arguments: [
+        FeedRow.Content.gallery(FeedGallery(shots: RowKindFixture.anAbsenceThenAPicture)),
+        .prompt(text: "", shots: RowKindFixture.anAbsenceThenAPicture),
+    ])
+    func `a row of pictures opens the first one there is anything behind`(
+        content: FeedRow.Content,
+    ) {
         let opened = FeedRow.Content.Kind.Activation.light(RowKindFixture.openableShot)
 
-        #expect(FeedRow.Content.gallery(FeedGallery(shots: shots)).kind.activation == opened)
-        #expect(FeedRow.Content.prompt(text: "", shots: shots).kind.activation == opened)
+        #expect(content.kind.activation == opened)
     }
 
     /// Nothing to fold and nothing to light, so the key falls through to the feed rather than being
@@ -57,18 +57,16 @@ struct FeedRowActivationTests {
         #expect(content.kind.activation == .inert)
     }
 
-    /// A fact about the READING rather than about the row, and answered by the same switch as the
-    /// rest: the overview lane's blocks and the feed's Copy turn are both cut by it.
+    /// A fact about the READING rather than about the row: the overview lane's blocks and the
+    /// feed's Copy turn are both cut by it.
     @Test
-    func `only a stop reason and an interruption end a Turn`() {
+    func `only the two marks that finish a Turn end one`() {
         let marks: [FeedMark] = [.turnEnded(.endTurn), .interrupted, .compacted, .working]
 
         #expect(marks.map { FeedRow.Content.mark($0).kind.endsTurn } == [true, true, false, false])
     }
 
-    /// The one row the reading measure does not hold. Asked of the same switch as its siblings, so
-    /// a second mark wanting the full width says so there rather than in an equality test of its
-    /// own.
+    /// The one row the reading measure does not hold — its ion sweeps the zone's full width.
     @Test
     func `only the working mark is the working thread`() {
         let kinds = RowKindFixture.everyKind + [.mark(.working)]
@@ -76,20 +74,20 @@ struct FeedRowActivationTests {
         #expect(kinds.filter(\.kind.isWorkingThread) == [.mark(.working)])
     }
 
-    /// Two kinds hold pictures — a call's gallery, and the prompt somebody pasted one into (#733) —
-    /// which is how the lightbox finds the row to hand the keyboard back to.
-    @Test
-    func `only a gallery and a prompt hold pictures`() {
-        let shot = RowKindFixture.openableShot
-        let holders: [FeedRow.Content] = [
-            .gallery(FeedGallery(shots: [shot])),
-            .prompt(text: "Look", shots: [shot]),
-        ]
+    /// How the lightbox finds the row to hand the keyboard back to: a call's gallery, and the
+    /// prompt somebody pasted a picture into (#733).
+    @Test(arguments: [
+        FeedRow.Content.gallery(FeedGallery(shots: [RowKindFixture.openableShot])),
+        .prompt(text: "Look", shots: [RowKindFixture.openableShot]),
+    ])
+    func `a row holding pictures answers with them`(content: FeedRow.Content) {
+        #expect(content.kind.shots == [RowKindFixture.openableShot])
+    }
 
-        #expect(holders.allSatisfy { $0.kind.shots == [shot] })
-        #expect(
-            RowKindFixture.everyKind.filter { !$0.kind.shots.isEmpty }
-                == [.gallery(RowKindFixture.gallery)],
-        )
+    @Test
+    func `no other kind holds a picture`() {
+        let holders = RowKindFixture.everyKind.filter { !$0.kind.shots.isEmpty }
+
+        #expect(holders == [.gallery(RowKindFixture.gallery)])
     }
 }

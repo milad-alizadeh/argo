@@ -50,7 +50,7 @@ struct FeedRowKindTests {
     /// A survey and a gallery are counts and pictures rather than lines, but the feed welds all
     /// three into one run.
     @Test
-    func `a call, a folded run of looking and a gallery are all work`() {
+    func `every shape a piece of looking takes is work`() {
         let work = RowKindFixture.everyKind.filter(\.kind.isCall)
 
         #expect(work == [
@@ -115,17 +115,17 @@ struct FeedRowKindTests {
         #expect(!FeedRow.Content.gallery(RowKindFixture.gallery).kind.opensEvidence)
     }
 
-    /// The panel's content comes off the row's own payload. A row that cannot be clicked into the
-    /// panel carries none, which is what keeps a stale `open` id from resolving to somebody
-    /// else's evidence.
+    /// A row that cannot be clicked into the panel carries nothing for it, which is what keeps a
+    /// stale `open` id from resolving to somebody else's evidence.
     @Test
-    func `only a call or a folded run carries anything for the panel`() {
+    func `only the rows the panel stands behind carry anything for it`() {
         let opened = RowKindFixture.everyKind.filter { $0.opened != nil }
 
         #expect(opened == [
             .call(RowKindFixture.answeredCall),
             .call(RowKindFixture.pendingCall),
             .survey(RowKindFixture.survey),
+            .skillLoaded(RowKindFixture.skill),
         ])
     }
 
