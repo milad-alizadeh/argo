@@ -144,6 +144,11 @@ Detail: `cockpit-onboarding-spec.md`; Project Settings in `cockpit-app-shell-spe
   failed/blocked red, external **hollow**. Planes and words stay neutral: one channel says each
   thing once. An external session is ghosted, so read-only awareness looks different from a
   session you can drive.
+- **An external row also carries a padlock, beside the name** — the composer's own mark for the
+  same posture. Ghosting alone reads as *quiet* beside an idle session that is fully drivable, and
+  which rows accept typing is not a thing to infer from ink density. The mark is the **external**
+  row's alone: an orphaned row is ghosted without it, because selecting one resumes the chain
+  (ADR-0026), and a padlock on a row one click from drivable would be a lie.
 - **The single word is chosen by priority** — attention needs-input → attention failure →
   delivery milestone → liveness → kind. A delivery claim **beats** session status, so a session
   mid-delivery reads `CI failed`, not `running`.

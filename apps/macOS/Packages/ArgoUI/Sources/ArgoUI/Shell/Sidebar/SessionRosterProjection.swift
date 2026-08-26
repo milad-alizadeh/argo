@@ -17,9 +17,12 @@ enum SessionRosterProjection {
         /// Never drawn either: the branch belongs to the session header. Kept so the row's copy
         /// action can still hand it over.
         let branch: String?
-        /// True of every Session Argo does not own the terminal of, and always announced. Drawn
-        /// by ghosting the whole row — title, branch, age and dot — not by a mark on one of them.
+        /// True of every Session Argo does not own the terminal of, and always announced. Drawn by
+        /// ghosting the whole row — title, branch, age and dot.
         let isReadOnly: Bool
+        /// The mark on a Session that can never be typed into, and `nil` on every other row —
+        /// narrower than `isReadOnly`, which ghosts an orphaned row too (#743).
+        let lock: String?
         /// The age slot's one reading (`cockpit-roster-turn-clock.md`): a live Turn duration for
         /// a managed running Session, `output … ago` for an observed one mid-turn, and how long
         /// ago the Session was last seen otherwise. Absent only where no record carries a time.
@@ -45,6 +48,7 @@ enum SessionRosterProjection {
             worktree: String?,
             branch: String?,
             isReadOnly: Bool,
+            lock: String?,
             clock: Clock?,
             spokenClock: String?,
             state: ArgoOperationalState?,
@@ -58,6 +62,7 @@ enum SessionRosterProjection {
             self.worktree = worktree
             self.branch = branch
             self.isReadOnly = isReadOnly
+            self.lock = lock
             self.clock = clock
             self.spokenClock = spokenClock
             self.state = state
@@ -140,6 +145,7 @@ enum SessionRosterProjection {
                     worktree: worktree,
                     branch: session.workspace?.branch,
                     isReadOnly: isReadOnly(session.access),
+                    lock: lock(for: session.access),
                     clock: clock,
                     spokenClock: spokenClock(clock, nowMs: nowMs),
                     state: SessionState.role(for: session.status),
@@ -171,6 +177,15 @@ enum SessionRosterProjection {
         switch access {
         case .managed: false
         case .external, .orphaned: true
+        }
+    }
+
+    /// `orphaned` is ghosted without a mark: selecting one resumes the chain (ADR-0026), so a
+    /// padlock on it would be a lie.
+    private static func lock(for access: CockpitPresentation.Session.Access) -> String? {
+        switch access {
+        case .external: ArgoSymbol.readOnlySession
+        case .managed, .orphaned: nil
         }
     }
 }
