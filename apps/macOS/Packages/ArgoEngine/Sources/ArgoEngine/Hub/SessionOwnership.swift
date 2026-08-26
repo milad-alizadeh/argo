@@ -69,8 +69,7 @@ public final class SessionOwnership {
     /// than being matched back by folder and start time. The id is known before the process is, so
     /// there is nothing to guess (#10, and it sidesteps #363/#364 entirely).
     ///
-    /// The id is the one the ROSTER carries — never the chain id `--resume` takes. A claim filed
-    /// under the other key answers nothing grading asks (#731).
+    /// The id is the one the ROSTER carries — never the chain id `--resume` takes (#731).
     func claim(cwd: String, resuming sessionID: String) -> ClaimID {
         open(cwd: cwd, resuming: sessionID)
     }
@@ -114,9 +113,8 @@ public final class SessionOwnership {
         return .orphaned
     }
 
-    /// The claim a Session belongs to, or nothing — the newest one still waiting for a Session:
-    /// spawning twice in one folder opens two claims with overlapping windows, so matching on the
-    /// window alone would hand both Sessions the same agent.
+    /// The claim a Session belongs to, or nothing: the NEWEST that covers it, because spawning
+    /// twice in one folder opens two claims with overlapping windows.
     func claimFor(cwd: String?, startedAtMs: Int?) -> ClaimID? {
         covering(cwd: cwd, startedAtMs: startedAtMs).last
     }

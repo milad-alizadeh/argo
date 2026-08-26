@@ -139,8 +139,9 @@ struct HubResumeTests {
 
         // Somebody's own terminal, in the folder the resume claim covers, writing its first prompt
         // well inside that claim's window.
+        let theirs = URL(fileURLWithPath: "/tmp/somebody-elses.jsonl")
         await hubObserveToEnd(relaunched, hubTestObservation(
-            at: URL(fileURLWithPath: "/tmp/somebody-elses.jsonl"),
+            at: theirs,
             events: [
                 .cwd(fixture.projectURL.path),
                 .prompt(text: "Not Argo's", atMs: Date().epochMs),
@@ -149,7 +150,7 @@ struct HubResumeTests {
         ))
 
         let byID = Dictionary(uniqueKeysWithValues: relaunched.sessions.map { ($0.id, $0) })
-        #expect(byID["/tmp/somebody-elses.jsonl"]?.provenance == .external)
+        #expect(byID[theirs.path]?.provenance == .external)
         #expect(byID[sessionID]?.provenance == .managed)
     }
 
