@@ -103,4 +103,14 @@ extension SessionComposer {
         guard let mention = WorkspaceFileProjection.mention(in: draft.text) else { return }
         draft.take(mention: row, replacing: mention.range)
     }
+
+    /// Escape puts an open menu away and leaves the draft exactly as it was. Not a mode: the next
+    /// keystroke asks for it back, because typing on is the reader still looking for a command.
+    ///
+    /// It answers whether it DID anything, because the field holds the keyboard: an Escape this
+    /// swallowed with no menu open is an Escape the permission footer's `esc denies` never sees.
+    @discardableResult func dismissMenus() -> Bool {
+        isDismissed = menu != nil || mentionMenu != nil
+        return isDismissed
+    }
 }

@@ -22,6 +22,19 @@ public enum ArgoComposerVessel {
     /// squeezed.
     public static let fieldLineCeiling = 6
 
+    /// What one line of the field is set at: the study's own `body` (13) at 1.5, reachable now that
+    /// the control is an `NSTextView` (#734). The study's #539 note records why it was not until
+    /// then — a stock `TextField` is `NSTextField` underneath and ignores leading outright.
+    public static var fieldLineHeight: CGFloat {
+        ArgoTypography.body.size * 1.5
+    }
+
+    /// How tall the field may grow before it scrolls inside itself: the ceiling in lines, in
+    /// points.
+    public static var fieldHeightCeiling: CGFloat {
+        fieldLineHeight * CGFloat(fieldLineCeiling)
+    }
+
     /// How tall a queued follow-up stands — the study's 30pt, and deliberately NOT `chipHeight`.
     /// A chip holds a name and this holds a sentence: at 20pt the row reads as a token that
     /// overflowed rather than as a message waiting to go.

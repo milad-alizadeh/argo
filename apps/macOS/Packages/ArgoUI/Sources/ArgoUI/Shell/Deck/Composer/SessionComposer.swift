@@ -125,9 +125,14 @@ struct SessionComposer: View {
                 AttachmentTray(attachments: draft.attachments) { draft.remove($0) }
             }
             queue
-            ComposerField(text: $draft.text, placeholder: composer.placeholder, submit: submit)
-                .onKeyPress(.downArrow) { walk { cursor.down(over: $0) } }
-                .onKeyPress(.upArrow) { walk { cursor.up(over: $0) } }
+            ComposerField(
+                text: $draft.text,
+                placeholder: composer.placeholder,
+                submit: submit,
+                walk: walk(_:),
+                dismiss: dismissMenus,
+                attach: take,
+            )
             ComposerFooter(
                 mode: composer.mode,
                 facts: composer.facts,
@@ -151,9 +156,9 @@ struct SessionComposer: View {
             attach: take,
             isHeldOpen: isDropTargeted,
         ))
-        // Escape puts it away and leaves the draft exactly as it was. Not a mode: the next
-        // keystroke asks for it back, because typing on is the reader still looking for a command.
-        .onExitCommand { isDismissed = menu != nil || mentionMenu != nil }
+        // Escape from anywhere else in the vessel. The field answers its own — it holds the
+        // keyboard while a menu is open, and a text view takes the key before this ever sees it.
+        .onExitCommand { dismissMenus() }
         .onChange(of: draft.text) { was, _ in opened(was) }
         .onChange(of: composer.sessionID, initial: true) { _, _ in
             workspaceFiles = nil
@@ -166,13 +171,17 @@ struct SessionComposer: View {
         .onChange(of: markedIDs, initial: true) { _, ids in cursor.settle(over: ids) }
     }
 
-    /// An arrow key, and whether a menu took it. Unhandled where there is none, so the field's own
+    /// An arrow key, and whether a menu took it. `false` where there is none, so the field's own
     /// caret movement is untouched on every line that opens nothing.
-    private func walk(_ move: ([String]) -> Void) -> KeyPress.Result {
+    private func walk(_ key: ComposerKeyIntent) -> Bool {
         let ids = markedIDs
-        guard !ids.isEmpty else { return .ignored }
-        move(ids)
-        return .handled
+        guard !ids.isEmpty else { return false }
+        if key == .walkDown {
+            cursor.down(over: ids)
+        } else {
+            cursor.up(over: ids)
+        }
+        return true
     }
 
     /// The footer's `+`, and `nil` where the adapter takes nothing — which is what takes the

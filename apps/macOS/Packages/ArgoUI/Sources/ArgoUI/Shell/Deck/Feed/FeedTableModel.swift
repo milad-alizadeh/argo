@@ -45,6 +45,9 @@ import SwiftUI
                 }
             }
             .argoAnimation(.bloom, value: washed == row.id)
+            // The way text leaves the feed (#734). Here rather than inside the row view, because
+            // the Turn it offers is a stretch of the WHOLE reading and a row cannot see one.
+            .argoFeedCopyMenu(rows: rows, index: index)
         guard !row.isWorkingThread else {
             return AnyView(dressed.environment(\.self, environment))
         }
