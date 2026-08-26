@@ -14,15 +14,15 @@ public struct SessionSeed: Sendable, Equatable {
     /// the user last picked (#629). Optional rather than defaulted to `Code`, because a caller that
     /// names no rung and one that names the baseline are different asks and only the first defers.
     public let mode: SessionMode?
-    /// The chain to CONTINUE rather than start — the CLI's own id for its latest link. Absent is
-    /// the plain New Session; present makes this the third caller of one spawn path (#10).
-    public let resuming: String?
+    /// The chain to CONTINUE rather than start. Absent is the plain New Session; present makes this
+    /// the third caller of one spawn path (#10).
+    public let resuming: SessionResumeTarget?
 
     public init(
         cwd: String? = nil,
         opening: String? = nil,
         mode: SessionMode? = nil,
-        resuming: String? = nil,
+        resuming: SessionResumeTarget? = nil,
     ) {
         self.cwd = cwd
         self.opening = opening
@@ -32,4 +32,22 @@ public struct SessionSeed: Sendable, Equatable {
 
     /// A New Session: the Project's folder, and nothing said yet.
     public static let unseeded = SessionSeed()
+}
+
+/// The chain a resume continues, under BOTH keys it is known by (#731).
+///
+/// A Session has two ids and they are not interchangeable: the roster and the ownership ledger key
+/// it by transcript path, while `--resume` takes the chain's own uuid. Filing a claim under the
+/// second is why a resumed Session was graded `orphaned` forever — grading asked with the first and
+/// nothing matched. Held together so neither caller can name one without the other.
+public struct SessionResumeTarget: Sendable, Equatable {
+    /// What `--resume` is given: the CLI's own id for the chain's latest link.
+    public let chainID: String
+    /// What the roster carries this Session as, and what ownership is keyed by.
+    public let sessionID: String
+
+    public init(chainID: String, sessionID: String) {
+        self.chainID = chainID
+        self.sessionID = sessionID
+    }
 }

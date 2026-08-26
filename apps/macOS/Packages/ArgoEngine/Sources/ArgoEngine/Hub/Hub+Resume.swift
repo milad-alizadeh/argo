@@ -24,7 +24,7 @@ public extension Hub {
             // none (ADR-0025, #629). Nothing is recorded as a set: Argo is matching what it read
             // rather than moving the Session.
             mode: session.mode.rung,
-            resuming: resumeID,
+            resuming: SessionResumeTarget(chainID: resumeID, sessionID: sessionID),
         ))
     }
 }

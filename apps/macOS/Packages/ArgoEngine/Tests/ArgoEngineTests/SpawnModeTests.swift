@@ -151,15 +151,18 @@ struct SpawnModeTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         await hubObserveToEnd(fixture.hub, hubTestObservation(
-            id: "session-from-cli",
+            at: spawnedTranscriptURL,
             events: [.cwd(fixture.projectURL.path), .mode(cli: "acceptEdits")],
         ))
 
         _ = try await fixture.hub.spawnSession(
-            seed: SessionSeed(mode: .auto, resuming: "session-from-cli"),
+            seed: SessionSeed(mode: .auto, resuming: SessionResumeTarget(
+                chainID: spawnedChainID,
+                sessionID: spawnedSessionID,
+            )),
         )
 
-        let session = try #require(fixture.hub.session(id: "session-from-cli"))
+        let session = try #require(fixture.hub.session(id: spawnedSessionID))
         #expect(session.mode == .exactly(.auto, cli: "auto"))
         #expect(session.modeDidNotTake == nil)
     }

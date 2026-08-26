@@ -34,7 +34,7 @@ public extension Hub {
             cwd: cwd,
             mode: seed.mode ?? modeStore.lastPicked(),
             seed: seed,
-            claim: seed.resuming.map { ownership.claim(cwd: cwd, resuming: $0) }
+            claim: seed.resuming.map { ownership.claim(cwd: cwd, resuming: $0.sessionID) }
                 ?? ownership.claim(cwd: cwd),
         )
         do {
@@ -84,7 +84,7 @@ public extension Hub {
         )
         .adding(plan.cli.surfaceArguments)
         .adding(plan.cli.arguments(standingOn: plan.mode))
-        .adding(plan.seed.resuming.map(plan.cli.arguments(resuming:)) ?? [])
+        .adding(plan.seed.resuming.map { plan.cli.arguments(resuming: $0.chainID) } ?? [])
         // A CLI that opens on a Turn instead takes its prompt in `openThread`.
         guard plan.cli.opensOnArgv, let opening = plan.seed.opening else { return launch }
         return launch.opening(opening)
@@ -144,7 +144,7 @@ public extension Hub {
         claims.setMode(
             SessionModeSet(
                 mode: plan.mode,
-                recordsWhenSet: plan.seed.resuming.map(observedModeCount(of:)) ?? 0,
+                recordsWhenSet: plan.seed.resuming.map { observedModeCount(of: $0.sessionID) } ?? 0,
             ),
             for: plan.claim,
         )
