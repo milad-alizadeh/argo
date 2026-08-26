@@ -43,10 +43,52 @@ check('edge 6 does not count commas inside a default value', () => {
   assert.equal(result.status, 0, result.output)
 })
 
+// A `//` inside a string ends no comment. Stripping one anyway truncates the line, the parens never
+// balance again, and every remaining init in the file goes uncounted — a gate passing everything
+// and saying so (docs/agents/quality-gates.md). `://` appears in ~19 Swift files here.
+check('edge 6 does not read a URL in a string as a comment', () => {
+  const trap = `struct CockpitActions {
+    init(
+        url: String = "https://x, y",
+        a: Int, b: Int, c: Int, d: Int, e: Int,
+    ) {}
+}
+
+struct AfterTheTrap {
+    init(
+        f: Int, g: Int, h: Int, i: Int, j: Int, k: Int,
+    ) {}
+}
+`
+  const result = run(tree({ [ACTIONS]: trap }))
+  assert.equal(result.status, 1, `a string swallowed the count: ${result.output}`)
+  assert.match(result.output, /init takes 6 parameters/)
+  // The second one is the real damage: an unbalanced line skips the REST of the file.
+  assert.match(result.output, /CockpitActions\.swift:9/)
+})
+
+// A multi-line string holds prose, and prose may hold anything — including a line that reads as a
+// declaration. Its contents are not code and must not be counted as any.
+check('edge 6 does not count an init written inside a multi-line string', () => {
+  const prose = `struct CockpitActions {
+    static let help = """
+    init(
+        a: Int, b: Int, c: Int, d: Int, e: Int,
+    )
+    """
+    init(a: Int) {}
+}
+`
+  const result = run(tree({ [ACTIONS]: prose }))
+  assert.equal(result.status, 0, result.output)
+})
+
 // A CALL is not a declaration, and the widest lists in this repo are calls. Counting one would fail
 // the build on a line that declares nothing.
 check('edge 6 counts declarations and not calls', () => {
   const call = `struct Caller {
+    static let usage = "init(a: 1, b: 2, c: 3, d: 4, e: 5, f: 6)"
+
     func make() -> CockpitActions {
         self.init(a: 1, b: 2, c: 3, d: 4, e: 5, f: 6)
     }

@@ -149,14 +149,14 @@ public extension CockpitPresentation {
         /// delegated nothing, which is most of them.
         public let subagentEvents: [String: [TranscriptEvent]]
 
-        /// Grouped by the reading each fact comes from, one value per reading (#755): what a
-        /// Session IS, then the chain it belongs to, the work it is on, what it spent, what it may
-        /// do, what Argo marked it, and what its transcript said.
+        /// Grouped by the reading each fact comes from (#755). The four ungrouped parameters are
+        /// the four no default can supply; every value below defaults, so a fixture still names
+        /// only the fact it is about.
         ///
-        /// The four ungrouped parameters are the four every Session has and no default can supply.
-        /// The values below all default, so a fixture still names only the fact it is about — see
-        /// `CockpitPresentation+SessionValues.swift` for why they group the list without changing
-        /// what a Session stores.
+        /// The unpacking under it is edge 5's second subject: each fact lands on the slot of its
+        /// own name unless a `renamed:` line says otherwise.
+        ///
+        /// renamed: workspaceLocation <- location — `location` alone would not say WHICH.
         public init(
             id: String,
             title: String,

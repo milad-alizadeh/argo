@@ -119,10 +119,17 @@ what makes the check below a name comparison rather than a table.
 
 **Edge 5 now proves the slot, and edge 6 counts an `init`'s parameters.** A fact handed straight
 through must land on the slot of its own name, or the projection carries a
-`renamed: <slot> <- <fact> — <why>` line — one today, `location <- cwd`. A derived argument is left
-alone: the name on an expression is the projection's to choose. Edge 6 reads its ratchet off
-`.swiftlint.yml` beside the rule it extends, so one cap is stated in one place; the number is 18
-until `CockpitActions`' every-callback init is grouped the same way.
+`renamed: <slot> <- <fact> — <why>` line. A derived argument is left alone: the name on an
+expression is the projection's to choose. Grouping gave a fact **two** hands to cross — named into
+the init, then unpacked out of a value in its body — so the edge reads both files, and there is one
+marker in each: `location <- cwd` in the mapping, `workspaceLocation <- location` in the unpacking.
+Edge 6 reads its ratchet off `.swiftlint.yml` beside the rule it extends, so one cap is stated in
+one place; the number is 18 until `CockpitActions`' every-callback init is grouped the same way.
+
+Both edges read Swift as text through one reader that drops comments **and string contents**. A
+`//` inside a string ends no comment, and stripping one anyway unbalances the parens for the rest
+of the file — a gate that passes everything and reports success, which is the failure mode
+`docs/agents/quality-gates.md` exists for. `://` appears in roughly 19 Swift files here.
 
 - **Totality and correctness are two checks, and only the second catches a swap.** Both facts stay
   accounted for when two slots trade places, which is exactly why the first one passes.

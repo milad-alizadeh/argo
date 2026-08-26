@@ -3,10 +3,9 @@ import ArgoEngine
 /// The readings a `Session` is assembled from — one value per reading, and the whole shape of
 /// `Session.init` (ADR-0027, amended by #755).
 ///
-/// They group the parameter list; they are NOT what a Session stores. Every fact still lands on
-/// its own property, so no surface reads through one of these — which is why each field keeps the
-/// engine's own name for the fact: a rename with no reader is churn, and the identical names are
-/// what lets `swift-boundaries.sh` edge 5 prove a fact reached the slot it was named for.
+/// They group the parameter list and are NOT what a Session stores; nothing reads through one.
+/// Each field keeps the engine's own name for its fact, which is what `swift-boundaries.sh`
+/// edge 5 compares the init's slots against.
 public extension CockpitPresentation.Session {
     /// The resume chain (`CONTEXT.md` L2): what runs it, when it ran, and what it handed to.
     struct Chain: Equatable, Sendable {

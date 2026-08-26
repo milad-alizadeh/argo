@@ -110,10 +110,8 @@ extension CockpitPresentation.Session {
     ///   Session that fails it never reaches this projection at all.
     /// not-projected: isQueued — the other half of that same admission test.
     ///
-    /// A fact handed straight through must land on the slot of its own name, which is edge 5's
-    /// second half: `spentTokens: session.cachedTokens` is a swap no type can catch and no
-    /// `not-projected:` line would notice. Where the projection deliberately renames one, it says
-    /// so here — and the gate then fails on a marker naming a rename that is no longer made.
+    /// Edge 5 also requires each fact below to land on the slot of its own name, unless a
+    /// `renamed:` line here says otherwise (ADR-0027, amended by #755).
     ///
     /// renamed: location <- cwd — "Names are words, not abbreviations" (rules/code-style.md).
     init(observed session: HubSession, annotations: SessionAnnotations) {

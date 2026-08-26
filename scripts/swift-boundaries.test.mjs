@@ -12,7 +12,9 @@ import {
   ENGINE,
   HUB_MODE,
   HUB_SESSION,
+  PROJECTED,
   PROJECTION,
+  projected,
   projection,
   report,
   run,
@@ -145,6 +147,31 @@ check('edge 5 leaves a derived argument alone', () => {
   const derived = PROJECTION.replace('mode: session.mode', 'mode: Mode(session.mode)')
   const result = run(tree(projection(derived)))
   assert.equal(result.status, 0, result.output)
+})
+
+// A fact crosses two hands: named into the init, then unpacked out of a grouped value in its body.
+// Guarding only the first leaves the second free to drop it on the wrong slot, silently.
+check('edge 5 fails on a fact unpacked onto the wrong slot in the init body', () => {
+  const swapped = PROJECTED.replace('self.mode = chain.mode', 'self.mode = chain.rung')
+  const result = run(tree(projected(swapped)))
+  assert.equal(result.status, 1, `an unpacking swap passed: ${result.output}`)
+  assert.match(result.output, /land on a slot of another name/)
+  assert.match(result.output, /mode <- rung/)
+})
+
+check('edge 5 accepts an unpacking rename the init declares', () => {
+  const renamed = PROJECTED.replace(
+    '        public init(',
+    '        /// renamed: mode <- rung — a rung alone would not say whose.\n        public init(',
+  ).replace('self.mode = chain.mode', 'self.mode = chain.rung')
+  const result = run(tree(projected(renamed)))
+  assert.equal(result.status, 0, result.output)
+})
+
+check('edge 5 fails when the value it projects onto has moved', () => {
+  const result = run(tree(projected(null)))
+  assert.equal(result.status, 1, `a missing subject passed: ${result.output}`)
+  assert.match(result.output, /cannot see its own subjects/)
 })
 
 report('swift boundaries')

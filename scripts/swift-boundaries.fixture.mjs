@@ -53,6 +53,17 @@ export const PROJECTION = `extension CockpitPresentation.Session {
     }
 }
 `
+// The value the mapping assembles. Its init body is the second hand a fact passes through, and the
+// second place it can be dropped on the wrong slot.
+export const PROJECTED = `public extension CockpitPresentation {
+    struct Session {
+        public init(id: String, chain: Chain) {
+            self.id = id
+            self.mode = chain.mode
+        }
+    }
+}
+`
 // Edge 6 reads its ratchet off the SwiftLint config, so the config is one of its subjects.
 export const SWIFTLINT = `function_parameter_count:
   # RATCHET initializer-parameter-count: 4
@@ -66,6 +77,7 @@ export function tree(files = {}) {
     [`${ENGINE}/HubSession.swift`]: HUB_SESSION,
     [`${ENGINE}/HubSession+Mode.swift`]: HUB_MODE,
     [`${SHELL}/CockpitPresentation+Hub.swift`]: PROJECTION,
+    [`${SHELL}/CockpitPresentation+Session.swift`]: PROJECTED,
     'apps/macOS/.swiftlint.yml': SWIFTLINT,
     'apps/macOS/Argo/ArgoApp.swift': '@main struct ArgoApp {}\n',
     ...files,
@@ -89,3 +101,6 @@ export function run(root) {
 // declaration's enclosing scope.
 export const withFact = (source, declaration) => source.replace(/^}/m, `${declaration}\n}`)
 export const projection = (contents) => ({ [`${SHELL}/CockpitPresentation+Hub.swift`]: contents })
+export const projected = (contents) => ({
+  [`${SHELL}/CockpitPresentation+Session.swift`]: contents,
+})
