@@ -15,6 +15,9 @@ public final class InMemorySessionDriver: SessionDriver {
     /// What this fake DECLARES about commands (#685). Settable, like `canAttach`. One answer for
     /// every Session: a fake stands in for one adapter, so the id has nothing to choose between.
     public var declaresCommands = true
+    /// What this fake DECLARES about mentions (#687). Settable for the reason the two above are:
+    /// the `false` side is where Argo names the file itself, and that is the half worth asserting.
+    public var declaresMentions = true
     /// Where `attach` says it put things, keyed by attachment id. A test that has to assert what
     /// the Turn NAMED sets these; left empty, a path is invented from the id, which is enough for
     /// the far commoner claim that the paths reached the Turn at all.
@@ -47,6 +50,10 @@ public final class InMemorySessionDriver: SessionDriver {
 
     public func canRunCommands(for _: String) -> Bool {
         declaresCommands
+    }
+
+    public func resolvesMentions(for _: String) -> Bool {
+        declaresMentions
     }
 
     public func send(_ text: String, to sessionID: String) throws {

@@ -36,6 +36,12 @@ struct ClaudeSessionDriver: SessionDriver {
         true
     }
 
+    /// `claude` has its own mention machinery: an `@path` in the burst `send` writes is expanded by
+    /// the CLI, so Argo naming the file again would hand the same bytes over twice.
+    func resolvesMentions(for _: String) -> Bool {
+        true
+    }
+
     func send(_ text: String, to sessionID: String) throws {
         guard SessionTurn.isSendable(text) else { throw SessionDriveError.nothingToSend }
         // `ownerOf` answers only for a claim whose PTY still lives, so an orphaned Session refuses

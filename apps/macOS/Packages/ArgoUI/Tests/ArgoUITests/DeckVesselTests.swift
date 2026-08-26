@@ -7,7 +7,7 @@ import Testing
 struct DeckVesselTests {
     @Test
     func `a driveable Session with nothing pending gets the composer`() throws {
-        let vessel = DeckVessel.resolve(for: Self.driveable, canAttach: false)
+        let vessel = DeckVessel.resolve(for: Self.driveable)
         let composer = try #require(vessel.composer)
 
         #expect(composer.sessionID == "session")
@@ -18,7 +18,7 @@ struct DeckVesselTests {
     /// deck must not be able to hold.
     @Test
     func `a Permission displaces the composer rather than joining it`() throws {
-        let vessel = DeckVessel.resolve(for: Self.blocked, canAttach: false)
+        let vessel = DeckVessel.resolve(for: Self.blocked)
 
         #expect(try #require(vessel.prompt).requestID == "permission-1")
         #expect(vessel.composer == nil)
@@ -34,7 +34,7 @@ struct DeckVesselTests {
         access: CockpitPresentation.Session.Access,
     ) {
         let blocked = Self.session(access: access, permission: Self.request)
-        let vessel = DeckVessel.resolve(for: blocked, canAttach: false)
+        let vessel = DeckVessel.resolve(for: blocked)
 
         #expect(vessel.unavailable != nil)
         #expect(vessel.prompt == nil)
@@ -45,7 +45,7 @@ struct DeckVesselTests {
     /// send to.
     @Test
     func `a Session that is over gets the line rather than a field`() {
-        let vessel = DeckVessel.resolve(for: Self.over, canAttach: false)
+        let vessel = DeckVessel.resolve(for: Self.over)
 
         #expect(vessel.unavailable == .ended)
         #expect(vessel.composer == nil)
@@ -54,7 +54,7 @@ struct DeckVesselTests {
     /// The empty deck, not a degraded one — nothing is selected, so there is nothing to steer.
     @Test
     func `nothing selected leaves the slot empty`() {
-        let vessel = DeckVessel.resolve(for: nil, canAttach: false)
+        let vessel = DeckVessel.resolve(for: nil)
 
         #expect(vessel == .none)
         #expect(vessel.unavailable == nil)
@@ -63,10 +63,10 @@ struct DeckVesselTests {
     /// The composer and the prompt float over the reading; the line is a ROW that replaces the
     /// reading's end, so the feed's clearance is read off this and not off the slot being filled.
     @Test(arguments: [
-        (vessel: DeckVessel.resolve(for: driveable, canAttach: false), floats: true),
-        (vessel: .resolve(for: blocked, canAttach: false), floats: true),
-        (vessel: .resolve(for: over, canAttach: false), floats: false),
-        (vessel: .resolve(for: nil, canAttach: false), floats: false),
+        (vessel: DeckVessel.resolve(for: driveable), floats: true),
+        (vessel: .resolve(for: blocked), floats: true),
+        (vessel: .resolve(for: over), floats: false),
+        (vessel: .resolve(for: nil), floats: false),
     ])
     func `only the composer and the prompt float over the reading`(
         vessel: DeckVessel,
@@ -79,7 +79,7 @@ struct DeckVesselTests {
     /// heard of — so it comes in rather than being derived.
     @Test
     func `whether the adapter takes attachments reaches the composer`() throws {
-        let vessel = DeckVessel.resolve(for: Self.driveable, canAttach: true)
+        let vessel = DeckVessel.resolve(for: Self.driveable, can: .init(canAttach: true))
 
         #expect(try #require(vessel.composer).canAttach)
     }

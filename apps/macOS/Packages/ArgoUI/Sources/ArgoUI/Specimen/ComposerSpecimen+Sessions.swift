@@ -145,4 +145,41 @@ extension ComposerSpecimen {
         canAttach: true,
         canRunCommands: true,
     )
+
+    /// The same Session with a Workspace to name files in (#687). It declares the command surface
+    /// too, because a `claude` Session has both — what the `@` cases settle is the file menu, not
+    /// whether the two can coexist.
+    static let mentions = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: composer.placeholder,
+        facts: composer.facts,
+        standingAllows: [],
+        isRunning: false,
+        mode: composer.mode,
+        modeDidNotTake: nil,
+        lostTurn: nil,
+        canAttach: true,
+        canRunCommands: true,
+        resolvesMentions: true,
+        workspaceRoot: WorkspaceFileFixture.root,
+        touchedFiles: WorkspaceFileFixture.touched,
+    )
+
+    /// A `codex` Session: no command surface at all, and `@` present anyway (design decision 14).
+    /// The claim is Argo-side — the picker turns six keystrokes into a path, and the CLI is handed
+    /// the same one line either way.
+    static let mentionsNoCommands = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: "Message Codex…",
+        facts: composer.facts,
+        standingAllows: [],
+        isRunning: false,
+        mode: composer.mode,
+        modeDidNotTake: nil,
+        lostTurn: nil,
+        canAttach: true,
+        canRunCommands: false,
+        workspaceRoot: WorkspaceFileFixture.root,
+        touchedFiles: WorkspaceFileFixture.touched,
+    )
 }

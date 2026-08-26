@@ -22,8 +22,16 @@ extension CockpitView {
             setMode: setMode(driven),
             spawnBeside: spawnBeside,
             commands: actions.skills,
+            files: files(in: vessel.composer?.workspaceRoot),
             draft: draft(for: driven),
         )
+    }
+
+    /// The `@` picker's list, bound to the folder the shown Session works in. Inert where the
+    /// records have never said where that is — a tree Argo cannot name is one it must not list.
+    private func files(in root: String?) -> () async -> [String] {
+        guard let root else { return { [] } }
+        return { await actions.workspaceFiles(root) }
     }
 
     /// The composer's one intent, bound to the Session the composer addresses.

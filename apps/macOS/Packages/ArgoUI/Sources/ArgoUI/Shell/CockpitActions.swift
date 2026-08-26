@@ -62,6 +62,12 @@ public struct CockpitActions {
     /// directories, and no view in `ArgoUI` may. Answered fresh on every call and nothing cached —
     /// that is what puts a skill installed mid-Session in the very next list.
     public var skills: () -> CommandCatalog = { CommandCatalog.empty }
+    /// Every file in one folder's Workspace, relative to it (#687) — what the `@` picker lists.
+    ///
+    /// Performed by the app layer for the reason `skills` is, and `async` where that is not: it
+    /// shells out to git over a tree that can hold a hundred thousand paths, and the composer
+    /// must stay typeable while it lists.
+    public var workspaceFiles: (String) async -> [String] = { _ in [] }
     /// Everything the shell asks a Session to DO, through the engine's port (ADR-0024, #633).
     /// Unlike the Project intents above, none of it is the app layer's to perform — it reaches no
     /// panel and no Finder, so there is nothing here for a closure to stand in front of.
@@ -114,6 +120,7 @@ public struct CockpitActions {
         handOffSession: @escaping (String, Int?) async -> String?,
         drive: any SessionDriver,
         skills: @escaping () -> CommandCatalog = { CommandCatalog.empty },
+        workspaceFiles: @escaping (String) async -> [String] = { _ in [] },
     ) {
         self.refreshCheckout = refreshCheckout
         self.retryConnection = retryConnection
@@ -132,5 +139,6 @@ public struct CockpitActions {
         self.handOffSession = handOffSession
         self.drive = drive
         self.skills = skills
+        self.workspaceFiles = workspaceFiles
     }
 }

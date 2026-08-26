@@ -6,8 +6,6 @@ import SwiftUI
 /// Not a `.popover`, though the platform has one: a popover takes key focus, and the caret has to
 /// stay in the field because every keystroke after the `/` is still going into the draft.
 struct CommandMenu: View {
-    @Environment(\.argo) private var argo
-
     let menu: CommandMenuProjection.Menu
     /// Which row the keyboard cursor is on, by command. `nil` while the list is empty.
     let marked: String?
@@ -20,21 +18,7 @@ struct CommandMenu: View {
             CommandMenuStatus(builtins: menu.builtins)
             list
         }
-        .padding(ArgoSpacing.tight)
-        .background(.regularMaterial, in: surface)
-        .overlay { rim }
-        .argoShadow(.popover)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(Self.label)
-    }
-
-    private var surface: RoundedRectangle {
-        RoundedRectangle(cornerRadius: ArgoRadius.popover)
-    }
-
-    /// The only thing separating this surface from the glass vessel it stands over.
-    private var rim: some View {
-        surface.strokeBorder(argo.color.edge.glassRim, lineWidth: ArgoStroke.border)
+        .argoComposerMenu(labelled: Self.label)
     }
 
     /// Scrolls past its ceiling and is drawn at its own height under it, so a two-row list is two
