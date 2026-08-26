@@ -26,8 +26,6 @@ struct FeedRowView: View {
                 look: { look(at: $0, in: survey) },
                 current: isOpen ? selection.step : nil,
             )
-        // A gallery opens no panel — what a shot produced IS the shot, so the click goes straight
-        // to the picture.
         case let .gallery(gallery):
             FeedGalleryRow(gallery: gallery, open: selection.light)
         case let .skillLoaded(skill):
@@ -60,42 +58,27 @@ struct FeedRowView: View {
 }
 
 extension FeedRow {
-    /// What Return or Space does to this row, which is exactly what a click on it does.
-    ///
-    /// A gallery opens the FIRST picture there is anything behind; its shots are each a control of
-    /// their own.
+    /// What Return or Space does to this row, which is exactly what a click on it does. Switched
+    /// over the four intents `FeedRow.Content.kind` resolves rather than over the ten kinds, so
+    /// which row means which intent is decided in one place and not here.
     ///
     /// A row with nothing to open answers `false` rather than swallowing the key — prose, a
-    /// gallery of absences, and a call the record never answered alike. Taking the key on an inert
-    /// row takes it away from the feed, which is where scrolling lives.
+    /// gallery of absences, and a call the record never answered alike.
     @discardableResult
     func activate(selection: FeedRowSelection, isExpanded: Binding<Bool>) -> Bool {
-        switch content {
-        case .call, .survey, .skillLoaded:
-            guard selection.open == id || opensEvidence else { return false }
-            openEvidence(with: selection)
-            return true
-        case let .gallery(gallery):
-            guard let shot = gallery.shots.first(where: \.isOpenable) else { return false }
-            selection.light(shot)
-            return true
-        // A prompt that is ONLY a picture has no fold for the key to work, so it opens the picture
-        // instead — the same answer the gallery gives, on the row the picture arrived in.
-        case let .prompt(text, shots):
-            guard text.isEmpty else {
-                isExpanded.wrappedValue.toggle()
-                return true
-            }
-            // No words and no picture to open: nothing to fold and nothing to light, so the key
-            // falls through to the feed rather than being swallowed by a row that does nothing.
-            guard let shot = shots.first(where: \.isOpenable) else { return false }
-            selection.light(shot)
-            return true
-        case .unreadable:
+        let kind = content.kind
+        switch kind.activation {
+        case .fold:
             isExpanded.wrappedValue.toggle()
             return true
-        // A question and a mark open nothing, so the key falls through to the feed.
-        case .message, .thought, .ask, .mark:
+        case .openEvidence:
+            guard selection.open == id || kind.opensEvidence else { return false }
+            openEvidence(with: selection)
+            return true
+        case let .light(shot):
+            selection.light(shot)
+            return true
+        case .inert:
             return false
         }
     }
@@ -106,7 +89,7 @@ extension FeedRow {
     /// row over a panel that has nothing to show.
     func openEvidence(with selection: FeedRowSelection) {
         guard selection.open != id else { return selection.close() }
-        guard opensEvidence else { return }
+        guard kind.opensEvidence else { return }
         selection.openEvidence(of: id)
     }
 }

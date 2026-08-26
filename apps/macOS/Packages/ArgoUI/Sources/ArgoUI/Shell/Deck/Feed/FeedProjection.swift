@@ -55,7 +55,7 @@ enum FeedProjection {
     /// two surfaces each deciding would both draw at some point in the handover.
     private static func inFlight(_ working: Bool, over rows: [FeedRow.Content])
         -> [FeedRow.Content] {
-        working && !rows.contains(where: \.isCallInFlight) ? [.mark(.working)] : []
+        working && !rows.contains(where: \.kind.isCallInFlight) ? [.mark(.working)] : []
     }
 
     private static func chained(_ handedOff: FeedHandoff?) -> [FeedRow.Content] {

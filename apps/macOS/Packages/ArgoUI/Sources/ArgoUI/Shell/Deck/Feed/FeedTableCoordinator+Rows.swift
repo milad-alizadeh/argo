@@ -69,7 +69,7 @@ extension FeedTableCoordinator {
     /// chip for.
     var focusedWords: String? {
         guard let index = focusedRow, shown.indices.contains(index) else { return nil }
-        return shown[index].copyable
+        return shown[index].kind.words
     }
 
     func activateFocusedRow() -> Bool {

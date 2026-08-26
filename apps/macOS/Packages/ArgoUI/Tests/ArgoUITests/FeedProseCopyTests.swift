@@ -32,12 +32,12 @@ struct FeedProseCopyTests {
     /// It keeps the menu, though: the two offers are deliberately different sets.
     @Test
     func `a prompt keeps its menu`() {
-        #expect(Self.asked.copyable == "Fix the seam")
+        #expect(Self.asked.kind.words == "Fix the seam")
     }
 
     @Test(arguments: [
         FeedRow.Content.mark(.turnEnded(.endTurn)),
-        .call(TraitFixture.answeredCall),
+        .call(RowKindFixture.answeredCall),
     ])
     func `a row that is not prose offers nothing in place`(content: FeedRow.Content) {
         #expect(FeedRow(id: 0, content: content).inPlaceOffer == nil)

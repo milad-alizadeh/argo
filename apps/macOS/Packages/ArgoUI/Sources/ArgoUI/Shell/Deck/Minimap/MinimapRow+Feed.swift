@@ -25,10 +25,9 @@ extension MinimapRow {
             shape: row.content.shape(isFolded: isFolded),
             topStep: FeedRow.step(to: row, from: previous),
         )
-        if case let .prompt(text, _) = row.content {
-            prompt = text
-        }
-        endsTurn = row.content.endsTurn
+        let kind = row.kind
+        prompt = kind.isPrompt ? kind.words : nil
+        endsTurn = kind.endsTurn
     }
 }
 

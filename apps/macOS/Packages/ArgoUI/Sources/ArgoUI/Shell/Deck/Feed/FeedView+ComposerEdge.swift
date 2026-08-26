@@ -25,7 +25,7 @@ extension FeedView {
     /// with the accent wash. Only a prompt among the ARRIVING rows takes it.
     func washArrived(between was: Int, and now: Int) {
         guard now > was else { return }
-        guard let echoed = rows[was ..< now].last(where: \.isPrompt) else { return }
+        guard let echoed = rows[was ..< now].last(where: \.kind.isPrompt) else { return }
         washed = echoed.id
     }
 

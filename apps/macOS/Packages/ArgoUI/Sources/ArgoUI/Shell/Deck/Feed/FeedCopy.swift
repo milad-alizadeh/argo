@@ -23,13 +23,13 @@ enum FeedCopy {
     private static func reading(_ rows: [FeedRow]) -> TurnExtents.Reading {
         TurnExtents.Reading(
             count: rows.count,
-            opensTurn: { rows[$0].isPrompt },
-            endsTurn: { rows[$0].content.endsTurn },
+            opensTurn: { rows[$0].kind.isPrompt },
+            endsTurn: { rows[$0].kind.endsTurn },
         )
     }
 
     private static func said(in rows: ArraySlice<FeedRow>) -> String? {
-        let words = rows.compactMap(\.copyable)
+        let words = rows.compactMap(\.kind.words)
         return words.isEmpty ? nil : words.joined(separator: between)
     }
 }
@@ -42,42 +42,13 @@ extension FeedRow {
         let label: String
     }
 
-    /// This row's own words, as the record holds them. `nil` for every row that is not something
-    /// somebody SAID: a call, a question and a mark each carry a line Argo composed, so there is
-    /// nothing verbatim to hand over.
-    var copyable: String? {
-        switch content {
-        // The pasted images a prompt carries are not words, so the verbatim copy is its text alone.
-        case let .prompt(text, _): text
-        case let .message(text), let .thought(text): text
-        case .call, .survey, .gallery, .ask, .skillLoaded, .mark, .unreadable: nil
-        }
-    }
-
-    /// The offer the ROW ITSELF draws — the words, and what to call taking them.
-    ///
-    /// A message and a thought only. The feed draws each of their markdown blocks as its own
-    /// `Text`, so a drag stops at the first block boundary; a prompt is one `Text` in a bubble and
-    /// drags end to end, so it keeps the menu alone.
+    /// The offer the ROW ITSELF draws — the words, and what to call taking them. Which kinds draw
+    /// one is `FeedRow.Content.Kind.copiesInPlace`, which is also where the reason is.
     var inPlaceOffer: CopyOffer? {
-        switch content {
-        case .message, .thought:
-            guard let words = copyable, let label = copyLabel else { return nil }
-            return CopyOffer(words: words, label: label)
-        case .prompt, .call, .survey, .gallery, .ask, .skillLoaded, .mark, .unreadable:
+        let kind = content.kind
+        guard kind.copiesInPlace, let words = kind.words, let label = kind.copyLabel else {
             return nil
         }
-    }
-
-    /// What the menu calls copying it. Each kind names itself rather than sharing one word: the
-    /// reader right-clicked a specific thing, and `Copy` alone would leave them guessing whether
-    /// they got the row or the whole Turn.
-    var copyLabel: String? {
-        switch content {
-        case .prompt: "Copy Prompt"
-        case .message: "Copy Message"
-        case .thought: "Copy Thought"
-        case .call, .survey, .gallery, .ask, .skillLoaded, .mark, .unreadable: nil
-        }
+        return CopyOffer(words: words, label: label)
     }
 }

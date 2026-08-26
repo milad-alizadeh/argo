@@ -28,6 +28,6 @@ enum FeedTail {
     /// in the record is not a place prose can be counted from.
     nonisolated static func newMessages(in rows: [FeedRow], since: FeedRow.ID) -> Int {
         guard let left = rows.firstIndex(where: { $0.id == since }) else { return 0 }
-        return rows[rows.index(after: left)...].count(where: \.isMessage)
+        return rows[rows.index(after: left)...].count(where: \.kind.isMessage)
     }
 }

@@ -74,7 +74,7 @@ struct FeedUnreadableTests {
         let rows = FeedProjection.rows(from: [.unreadableLine(raw: "{")])
         let row = try #require(rows.first)
 
-        #expect(!row.isCall)
+        #expect(!row.kind.isCall)
     }
 
     /// A row spoken as "unreadable" alone reads as one incident, so the count has to be spoken too.

@@ -12,7 +12,7 @@ enum FeedWait: Equatable {
     /// What this reading is waiting on. A row appended while the wait runs does not change it, so a
     /// think that says something and goes on thinking stays one wait.
     static func showing(in rows: [FeedRow]) -> FeedWait? {
-        if let lit = rows.first(where: { $0.content.isCallInFlight }) {
+        if let lit = rows.first(where: { $0.kind.isCallInFlight }) {
             return .call(lit.id)
         }
         return rows.contains { $0.content == .mark(.working) } ? .thinking : nil

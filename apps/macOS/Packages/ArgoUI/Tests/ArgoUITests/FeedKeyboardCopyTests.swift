@@ -14,7 +14,7 @@ struct FeedKeyboardCopyTests {
     private static let rows = [
         FeedRow(id: 0, content: .prompt(text: "Fix the seam", shots: [])),
         FeedRow(id: 1, content: .message("Done. The wash was sampled from the old study.")),
-        FeedRow(id: 2, content: .call(TraitFixture.answeredCall)),
+        FeedRow(id: 2, content: .call(RowKindFixture.answeredCall)),
     ]
 
     private static func reading() -> FeedTableCoordinator {
