@@ -10,8 +10,10 @@ struct FeedPrompt: View {
     let text: String
     /// What was pasted in with the words, above them. Drawn as the gallery a call's pictures get:
     /// one treatment for a picture in the feed, whoever put it there (#733).
-    var shots: [FeedShot] = []
-    var open: (FeedShot) -> Void = { _ in }
+    let shots: [FeedShot]
+    /// Required, not defaulted: a no-op default would leave a thumbnail drawn as a control and dead
+    /// to the click at any call site that forgot it, with nothing to fail.
+    let open: (FeedShot) -> Void
     /// Held by the feed, not here: the projection hands the feed a fresh copy of every row as the
     /// transcript grows, and a fold that lived in the row would quietly re-close behind the reader.
     @Binding var isExpanded: Bool
@@ -119,6 +121,8 @@ struct FeedPrompt: View {
 
     FeedPrompt(
         text: "Run the visual contract suite and tell me what broke.",
+        shots: [],
+        open: { _ in },
         isExpanded: $isExpanded,
     )
     .padding(ArgoFeedRow.inset)
@@ -132,6 +136,8 @@ struct FeedPrompt: View {
 
     FeedPrompt(
         text: String(repeating: "Read the whole anatomy study before you start. ", count: 14),
+        shots: [],
+        open: { _ in },
         isExpanded: $isExpanded,
     )
     .padding(ArgoFeedRow.inset)
@@ -145,6 +151,8 @@ struct FeedPrompt: View {
 
     FeedPrompt(
         text: String(repeating: "Read the whole anatomy study before you start. ", count: 14),
+        shots: [],
+        open: { _ in },
         isExpanded: $isExpanded,
     )
     .padding(ArgoFeedRow.inset)
@@ -159,6 +167,7 @@ struct FeedPrompt: View {
     FeedPrompt(
         text: "Look at the rule under the header — it sits a point low against the seam.",
         shots: Array(FeedProjection.previewShots.prefix(1)),
+        open: { _ in },
         isExpanded: $isExpanded,
     )
     .padding(ArgoFeedRow.inset)
@@ -173,6 +182,7 @@ struct FeedPrompt: View {
     FeedPrompt(
         text: "",
         shots: Array(FeedProjection.previewShots.prefix(1)),
+        open: { _ in },
         isExpanded: $isExpanded,
     )
     .padding(ArgoFeedRow.inset)
@@ -184,9 +194,14 @@ struct FeedPrompt: View {
 #Preview("Feed prompt — at the narrowest feed column") {
     @Previewable @State var isExpanded = false
 
-    FeedPrompt(text: String(repeating: "Fold me. ", count: 40), isExpanded: $isExpanded)
-        .padding(ArgoFeedRow.inset)
-        .frame(width: 360)
-        .argoDeckSurface()
-        .argoAppearance()
+    FeedPrompt(
+        text: String(repeating: "Fold me. ", count: 40),
+        shots: [],
+        open: { _ in },
+        isExpanded: $isExpanded,
+    )
+    .padding(ArgoFeedRow.inset)
+    .frame(width: 360)
+    .argoDeckSurface()
+    .argoAppearance()
 }

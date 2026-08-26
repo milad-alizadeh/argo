@@ -74,27 +74,27 @@ func userPrompt(_ content: [ContentBlock]) -> String? {
 }
 
 /// The CLI's own placeholder for a picture it moved into a block of its own — `[Image #3]`, written
-/// into the prompt's text where the paste landed.
+/// into the prompt's text where the paste landed. The number counts pastes across the SESSION and
+/// indexes nothing in the record, so a token can only ever be matched to a block by position.
 private let imageToken = "\\[Image #[0-9]+\\]"
 
 /// The prompt with its placeholders taken out, one per picture the record actually carried.
 ///
-/// Bounded by the count on purpose: a placeholder beside its thumbnail says the same thing twice,
-/// but one with no block behind it is the only trace that picture ever existed, so it stays. The
-/// space the CLI left beside a token goes with it — the following one, or the preceding one where
-/// the token ends the line — so removing markup does not leave a gap the user did not type.
+/// Bounded by the count so a placeholder with no block behind it still shows: it is the only trace
+/// left of a picture the reader cannot see.
 func shorn(_ text: String, ofImages count: Int) -> String {
     guard count > 0 else { return text }
     var shorn = text
     for _ in 0 ..< count {
         guard let token = shorn.range(of: imageToken, options: .regularExpression) else { break }
-        shorn.removeSubrange(spacing(around: token, in: shorn))
+        shorn.removeSubrange(withItsSpace(token, in: shorn))
     }
     return shorn
 }
 
-/// The token plus the one space that went with it.
-private func spacing(around token: Range<String.Index>, in text: String) -> Range<String.Index> {
+/// The token plus the ONE space the CLI wrote beside it — the following one, or the preceding one
+/// where the token ends the line. Taking neither leaves a gap the user did not type.
+private func withItsSpace(_ token: Range<String.Index>, in text: String) -> Range<String.Index> {
     if token.upperBound < text.endIndex, text[token.upperBound] == " " {
         return token.lowerBound ..< text.index(after: token.upperBound)
     }

@@ -56,12 +56,9 @@ extension CockpitPresentation.Session {
         ]
     }
 
-    /// The other way a picture reaches the feed: pasted into a prompt (#733). The CLI leaves an
-    /// `[Image #1]` placeholder in the words and moves the pixels into a block of their own, so
-    /// what arrives here is the prompt with the placeholder already taken out.
-    ///
-    /// Two of them, and one prompt with no words left at all: the three shapes a pasted picture
-    /// renders in.
+    /// A picture pasted into a prompt, as the reader ends up with it: the placeholder the CLI wrote
+    /// beside the pixels is already taken out. The three shapes one renders in — beside words, on
+    /// its own, and two side by side.
     static let pasted: [TranscriptEvent] = [
         .prompt(
             text: "Look at the rule under the header — it sits a point low against the seam.",

@@ -16,8 +16,7 @@ enum MinimapRowShape: Equatable, Sendable {
     /// The prompt's words, in a bubble against the trailing edge, under however many pictures were
     /// pasted in with them. `isFolded` is the reader's own state: a folded prompt draws only its
     /// first `ArgoFeedRow.collapsedPromptLines`, so a lane that assumed either answer misreports
-    /// every prompt in the other one. `shots` is here for the same reason — a prompt that is mostly
-    /// a thumbnail misreports its own height without it (#733).
+    /// every prompt in the other one — and one that assumed no pictures misreports every height.
     case bubble(text: String, shots: Int, isFolded: Bool)
     /// A row the feed says in a single line, as the pieces it says it in — a call's mark, its verb,
     /// what it named, and what it did in lines.

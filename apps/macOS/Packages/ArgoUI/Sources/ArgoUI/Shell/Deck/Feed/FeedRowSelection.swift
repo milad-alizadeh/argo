@@ -77,7 +77,7 @@ extension FeedRow {
         switch content {
         case let .gallery(gallery): gallery.shots.contains(shot)
         case let .prompt(_, shots): shots.contains(shot)
-        default: false
+        case .message, .thought, .call, .survey, .ask, .skillLoaded, .mark, .unreadable: false
         }
     }
 }

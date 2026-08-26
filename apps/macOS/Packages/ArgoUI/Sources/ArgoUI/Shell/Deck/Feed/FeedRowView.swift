@@ -82,10 +82,13 @@ extension FeedRow {
         // A prompt that is ONLY a picture has no fold for the key to work, so it opens the picture
         // instead — the same answer the gallery gives, on the row the picture arrived in.
         case let .prompt(text, shots):
-            guard text.isEmpty, let shot = shots.first(where: \.isOpenable) else {
+            guard text.isEmpty else {
                 isExpanded.wrappedValue.toggle()
                 return true
             }
+            // No words and no picture to open: nothing to fold and nothing to light, so the key
+            // falls through to the feed rather than being swallowed by a row that does nothing.
+            guard let shot = shots.first(where: \.isOpenable) else { return false }
             selection.light(shot)
             return true
         case .unreadable:

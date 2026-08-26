@@ -136,6 +136,24 @@ struct FeedPromptImageTests {
         #expect(!pressed.isExpanded)
     }
 
+    /// Nothing to fold and nothing to open. Taking the key here takes it from the feed, which is
+    /// where scrolling lives — so the row lets it through rather than answering with a no-op.
+    @Test
+    func `a wordless prompt whose picture will not open takes no key`() {
+        let pressed = Pressed()
+        let took = FeedRow(id: 0, content: .prompt(
+            text: "",
+            shots: [FeedShot.pasted(Self.media(nil))],
+        )).activate(
+            selection: Self.selection(writing: pressed),
+            isExpanded: Binding(get: { pressed.isExpanded }, set: { pressed.isExpanded = $0 }),
+        )
+
+        #expect(!took)
+        #expect(pressed.lit == nil)
+        #expect(!pressed.isExpanded)
+    }
+
     /// A prompt with words folds, pictures or not: the fold is what the row's control offers.
     @Test
     func `a prompt with words works its fold on Return`() {

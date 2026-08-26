@@ -43,11 +43,8 @@ private func fromToolUseResult(_ raw: JSONValue?) -> MediaEvidence? {
     )
 }
 
-/// Every picture a record's own parts carried, in the order it carried them.
-///
-/// `direct` for all of them: these are the bytes the record embedded, which is what the agent was
-/// actually sent. Shared by the result path below and by the prompt path, so an image reaches the
-/// feed the same way whoever sent it (#733).
+/// Every picture a record's own parts carried, in the order it carried them. `direct` for all of
+/// them: these are the bytes the record embedded, which is what the agent was actually sent.
 func embeddedMedia(_ content: [ContentBlock]) -> [MediaEvidence] {
     content.compactMap { block in
         guard case let .image(image) = block else { return nil }

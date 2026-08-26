@@ -32,8 +32,8 @@ private func describe(_ result: ToolResult) -> String {
     }
 }
 
-/// The pictures a prompt was sent with, as a tail on its own line. Nothing where there are none,
-/// so an ordinary prompt reads exactly as it did.
+/// The pictures a prompt was sent with, counted rather than printed — the bytes are never shown at
+/// this grain, the same as a media result's.
 private func describe(sentWith images: [MediaEvidence]) -> String {
     images.isEmpty ? "" : "  [\(images.count) image(s)]"
 }
