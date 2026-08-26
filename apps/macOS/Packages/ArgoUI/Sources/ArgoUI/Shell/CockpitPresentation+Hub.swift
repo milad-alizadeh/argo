@@ -110,6 +110,9 @@ extension CockpitPresentation.Session {
     ///   Session that fails it never reaches this projection at all.
     /// not-projected: isQueued — the other half of that same admission test.
     init(observed session: HubSession, annotations: SessionAnnotations) {
+        // Read once and handed to both: the Workspace draws the branch and the Work Item link joins
+        // on it, and two readings of one fact would let the two disagree.
+        let workspace = Workspace(observed: session)
         self.init(
             id: session.id,
             title: session.title,
@@ -118,9 +121,12 @@ extension CockpitPresentation.Session {
             access: Access(provenance: session.provenance),
             status: session.status,
             cli: session.cli,
-            workspace: Workspace(observed: session),
-            // No Work Item provider is connected in this build (#414 is the OAuth grant).
-            issue: nil,
+            workspace: workspace,
+            issue: Issue(
+                branch: workspace?.branch,
+                location: session.cwd,
+                ticket: annotations.ticket(session.id),
+            ),
             lastSeenAtMs: session.lastSeenAtMs,
             startedAtMs: session.startedAtMs,
             spentTokens: session.spentTokens,
@@ -146,6 +152,24 @@ extension CockpitPresentation.Session {
             events: session.events,
             subagentEvents: session.subagentEvents,
         )
+    }
+}
+
+extension CockpitPresentation.Session.Issue {
+    /// The Work Item this Session's git context names, and `nil` where it names none (#745).
+    ///
+    /// DERIVED on both halves: the number is read off a branch by the convention
+    /// `docs/agents/worktrees.md` fixes, and the title came from outside Argo.
+    ///
+    /// Three ways to have no link, and all three draw nothing rather than a guess: a branch
+    /// carrying no `#<N>`, and — once the host has been asked — a number it has nothing behind. A
+    /// number nobody has asked about yet keeps its link and carries no title, which `SessionTitle`
+    /// drops back to the derived name.
+    init?(branch: String?, location: String?, ticket: TicketReading?) {
+        guard let number = WorkItemLink.number(branch: branch, workspaceLocation: location),
+              ticket != .absent
+        else { return nil }
+        self.init(number: number, title: ticket?.title)
     }
 }
 

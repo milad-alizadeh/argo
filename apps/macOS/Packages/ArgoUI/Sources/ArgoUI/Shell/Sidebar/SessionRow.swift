@@ -133,12 +133,13 @@ struct SessionRow: View {
         isRenaming.wrappedValue = false
     }
 
-    /// The clock takes the leading edge, the worktree the right under the state word. Absent
-    /// entirely when neither half is there — an empty `Text` would leave a gap of the font's
-    /// height.
+    /// The run kind and the clock take the leading edge, the worktree the right under the state
+    /// word. Absent entirely when none of the three is there — an empty `Text` would leave a gap of
+    /// the font's height.
     @ViewBuilder private var secondaryLine: some View {
-        if row.worktree != nil || row.clock != nil {
+        if row.worktree != nil || row.clock != nil || row.runKind != nil {
             HStack(spacing: ArgoSpacing.snug) {
+                runKindLabel
                 if let clock = row.clock {
                     RosterTurnClock(clock: clock)
                         // A width shortfall lands on the worktree instead, which gives up its
@@ -149,6 +150,17 @@ struct SessionRow: View {
                 worktreeLabel
             }
             .foregroundStyle(argo.color.text.tertiary)
+        }
+    }
+
+    /// Ahead of the clock, because it is the fact that tells two Sessions on one ticket apart
+    /// (#745) and the leading edge is where the eye lands.
+    @ViewBuilder private var runKindLabel: some View {
+        if let runKind = row.runKind {
+            Text(runKind)
+                .argoText(ArgoTypography.rowMeta)
+                .lineLimit(1)
+                .layoutPriority(1)
         }
     }
 

@@ -38,6 +38,13 @@ public actor SessionAnnotationStore {
         persist(load().naming(name, sessionID: sessionID))
     }
 
+    /// Hold what the code host said about this Session's ticket (#745). Argo's own write and never
+    /// a gesture — the rename is `setName`.
+    @discardableResult
+    public func setTicket(_ ticket: TicketReading?, sessionID: String) -> SessionAnnotations {
+        persist(load().reading(ticket, sessionID: sessionID))
+    }
+
     /// A file that cannot be written still holds for this launch and is forgotten by the next
     /// one. Refusing the gesture is a worse answer to a full disk than losing the memory of it.
     private func persist(_ annotations: SessionAnnotations) -> SessionAnnotations {

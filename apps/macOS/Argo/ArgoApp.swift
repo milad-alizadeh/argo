@@ -67,6 +67,12 @@ struct ArgoApp: App {
                     .onChange(of: cockpit.activeRecord?.id, initial: true) { _, _ in
                         Task { await accounts.point(at: cockpit.activeRecord) }
                     }
+                    // A Session opening on a branch nobody has read the ticket for is the one
+                    // event worth a code-host read (#745). Keyed on the unnamed set rather than on
+                    // the roster, so a turn ending on a named ticket asks nothing.
+                    .onChange(of: cockpit.untitledTicketNumbers, initial: true) { _, _ in
+                        Task { await cockpit.nameTickets(through: accounts.workItemBinding()) }
+                    }
                     // Every PTY this window owns dies with the window, and the observer above ends
                     // them on ⌘Q too: nothing can re-adopt an agent Argo started, so one that
                     // outlived Argo would be a process nobody is left to steer or stop.

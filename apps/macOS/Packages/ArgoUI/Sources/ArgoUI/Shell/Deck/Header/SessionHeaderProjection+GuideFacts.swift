@@ -60,6 +60,6 @@ extension SessionHeaderProjection {
     /// `#476 — Anchor the feed on its newest line`. The number is bare here, unlike the line's own
     /// `Issue #476`, because the row's term has already said the word.
     private static func issueReading(_ issue: Header.IssueLink) -> String {
-        ["#\(issue.number)", issue.detail].compactMap(\.self).joined(separator: " — ")
+        IssueReading.words(number: issue.number, title: issue.detail)
     }
 }

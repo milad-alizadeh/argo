@@ -19,6 +19,12 @@ extension SpecimenRegistry {
         // The one entry whose point is the CLICK: driven, so New Session must land a row.
         SpecimenEntry("spawningRoster") { SpawningRosterSpecimen() },
         SpecimenEntry("renamedRoster") { RenamedRosterSpecimen() },
+        SpecimenEntry("ticketRoster") { TicketRosterSpecimen() },
+        // The same rows where the shared title cuts, which is the only render that answers whether
+        // the secondary line is enough to tell three Sessions on one ticket apart.
+        SpecimenEntry("narrowTicketRoster") {
+            TicketRosterSpecimen(width: ArgoLayout.sidebarMinimumWidth)
+        },
         SpecimenEntry("editingRow") { EditingRowSpecimen() },
         // A pane's state must die with its Session, which `FeedRow.ID` being a POSITION otherwise
         // carries across.

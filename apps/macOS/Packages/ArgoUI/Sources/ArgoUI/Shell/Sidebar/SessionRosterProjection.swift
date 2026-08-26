@@ -14,6 +14,10 @@ enum SessionRosterProjection {
         /// Absent for a Session in the Project's own checkout, and absent again where Argo has
         /// not read git — a label is a claim that the folder IS a worktree.
         let worktree: String?
+        /// The slash command this Session opened with, on the same second line (#745). Absent for
+        /// a Session whose title IS that command already — the roster's own defect was every row
+        /// leading with `/implement`, and saying it twice on one row is the same waste.
+        let runKind: String?
         /// Never drawn either: the branch belongs to the session header. Kept so the row's copy
         /// action can still hand it over.
         let branch: String?
@@ -46,6 +50,7 @@ enum SessionRosterProjection {
             title: String,
             location: String?,
             worktree: String?,
+            runKind: String?,
             branch: String?,
             isReadOnly: Bool,
             lock: String?,
@@ -60,6 +65,7 @@ enum SessionRosterProjection {
             self.title = title
             self.location = location
             self.worktree = worktree
+            self.runKind = runKind
             self.branch = branch
             self.isReadOnly = isReadOnly
             self.lock = lock
@@ -78,6 +84,7 @@ enum SessionRosterProjection {
                 title,
                 stateWord,
                 isReadOnly ? "Read-only Session" : nil,
+                runKind,
                 worktree.map { "in \($0)" },
                 spokenClock,
             ]
@@ -143,6 +150,7 @@ enum SessionRosterProjection {
                     title: SessionTitle.resolved(for: session),
                     location: session.workspaceLocation,
                     worktree: worktree,
+                    runKind: runKind(for: session),
                     branch: session.workspace?.branch,
                     isReadOnly: isReadOnly(session.access),
                     lock: lock(for: session.access),
@@ -169,6 +177,14 @@ enum SessionRosterProjection {
         DistinguishingLabel.labels(for: sessions.map {
             $0.workspace?.kind == .worktree ? $0.workspaceLocation : nil
         })
+    }
+
+    /// The verb, on the secondary line and only where the title is not already saying it (#745):
+    /// the ticket freed the title, and a row whose title is still `/implement 745` would otherwise
+    /// read the command twice.
+    private static func runKind(for session: CockpitPresentation.Session) -> String? {
+        guard !SessionTitle.drawsDerivedTitle(for: session) else { return nil }
+        return SessionRunKind.command(inDerivedTitle: session.title)
     }
 
     /// Whether the whole row is drawn as a Session nobody here can drive. A `switch` and not

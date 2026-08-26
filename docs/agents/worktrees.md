@@ -23,8 +23,10 @@ reconstruct them from `<N>` alone:
 The two share the same `<N>-<slug>` stem and differ only in prefix, because `EnterWorktree`'s
 `name` param forbids `#` and `/`: the branch namespaces the stem as `argo/#<N>-<slug>`, the
 directory uses a plain `ticket-<N>-<slug>`. Pick the `<slug>` once from the ticket title; keep it
-identical across both. The `#<N>` in the branch is load-bearing: whatever opens the PR parses it
-to write `Closes #<N>`, so a branch without it breaks the PR→ticket link.
+identical across both. The `#<N>` in the branch is load-bearing twice over: whatever opens the PR
+parses it to write `Closes #<N>`, and the Argo cockpit parses it to name the Session's row after
+the ticket (#745). A branch without it breaks the PR→ticket link and leaves the row reading
+`/implement <N>`.
 
 For work with no ticket, keep the shape but drop the number: worktree `ticket-<slug>`, branch
 `argo/<slug>`.
