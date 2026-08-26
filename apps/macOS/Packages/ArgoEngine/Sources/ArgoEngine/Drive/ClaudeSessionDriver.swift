@@ -22,17 +22,14 @@ struct ClaudeSessionDriver: SessionDriver {
     /// a question the roster already answers.
     let stance: (String) -> SessionStance
 
-    /// Everything, and all three for reasons of their own. Claude reads a path it is handed, which
-    /// is the whole attachment mechanism (#540). A `/command` inside the bracketed-paste burst
-    /// `send` writes reaches the same input machinery typing reaches and fires — verified against
-    /// the real CLI in `LiveCommandTests`, so that half is only as true as that run (#589). And an
-    /// `@path` in the same burst is expanded by the CLI, so Argo naming the file again would hand
-    /// the same bytes over twice (#687).
-    ///
-    /// Declared rather than asked of the CLI at run time: the composer has to know what to draw
-    /// before anything has been typed at it.
+    /// All three, each for a reason of its own. Claude reads a path it is handed, which is the
+    /// whole attachment mechanism (#540). A `/command` in the bracketed-paste burst `send` writes
+    /// reaches the same input machinery typing reaches, and fires — verified against the real CLI
+    /// in `LiveCommandTests`, so that half is only as true as that run (#589). And an `@path` in
+    /// the same burst is expanded by the CLI, so Argo naming the file again would hand the same
+    /// bytes over twice (#687).
     func surface(of _: String) -> DriveSurface {
-        .everything
+        DriveSurface(takesAttachments: true, runsCommands: true, resolvesMentions: true)
     }
 
     func send(_ text: String, to sessionID: String) throws {

@@ -9,12 +9,11 @@ public final class InMemorySessionDriver: SessionDriver {
     /// What every send is answered with while it is set.
     public var refusal: SessionDriveError?
     /// What this fake DECLARES about itself (#761). Settable because each `false` side is a
-    /// designed state with a render of its own — no `+`, no picker, Argo naming the file itself —
-    /// and a fake that could only say `true` would leave them unreachable from a test.
-    ///
-    /// One answer for every Session: a fake stands in for one adapter, so the id has nothing to
-    /// choose between.
-    public var declaredSurface = DriveSurface.everything
+    /// designed state with a render of its own — no `+`, no picker, Argo naming the file itself.
+    /// One answer for every Session: a fake stands in for one adapter, so the id chooses nothing.
+    public var declaredSurface = DriveSurface(
+        takesAttachments: true, runsCommands: true, resolvesMentions: true,
+    )
     /// Where `attach` says it put things, keyed by attachment id. A test that has to assert what
     /// the Turn NAMED sets these; left empty, a path is invented from the id, which is enough for
     /// the far commoner claim that the paths reached the Turn at all.

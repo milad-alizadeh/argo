@@ -14,9 +14,8 @@ struct DriveCommandSurfaceTests {
     /// this suite standing on until the picker existed to need it.
     ///
     /// A Session with no Codex thread behind it routes to `claude`, which is the default this suite
-    /// can reach without starting anything. The refusal on the other side is asserted against a
-    /// really-spawned Codex Session in `SessionDriverConformanceTests`, where the routing is real —
-    /// asking the adapter by name proved only that the adapter agreed with itself (#761).
+    /// can reach without starting anything. The refusal on the other side needs a live thread, so
+    /// it is asserted against a really-spawned Codex Session in `SessionDriverConformanceTests`.
     @Test
     func `the driver a Hub hands the cockpit declares the command surface per Session`() {
         let hub = testHub(projectURL: URL(filePath: "/tmp/argo-command-surface"))

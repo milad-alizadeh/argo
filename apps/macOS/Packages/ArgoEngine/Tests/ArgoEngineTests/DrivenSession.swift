@@ -18,7 +18,8 @@ enum DrivenCLI: CaseIterable, Sendable {
     /// adapter: a surface asked of the router and answered by the wrong adapter agrees with itself.
     var surface: DriveSurface {
         switch self {
-        case .claude: .everything
+        case .claude:
+            DriveSurface(takesAttachments: true, runsCommands: true, resolvesMentions: true)
         case .codex:
             DriveSurface(takesAttachments: true, runsCommands: false, resolvesMentions: false)
         }

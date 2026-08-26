@@ -189,7 +189,7 @@ stance value can only have come from one, and a `codex` Session's `cli` is DIREC
 The extent above is right and stays. What this amends is the **shape**: the ten members were not
 ten of a kind, and separating the two kinds is what settles the question #749 left open.
 
-**Eight of the ten are acts on the port. Three were declarations about an adapter.** `send`,
+**Seven of the ten were acts on the port. Three were declarations about an adapter.** `send`,
 `attach`, `interrupt`, `decide`, `answer`, `setMode` and `revokeStandingAllow` each do something to
 a Session, and each can fail — every one of them throws. `canAttach`, `canRunCommands` and
 `resolvesMentions` did nothing, could not fail, and answered a per-CLI **constant** in both

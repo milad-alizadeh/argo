@@ -99,7 +99,7 @@ public struct CockpitActions {
     @MainActor private static var inertDriver: InMemorySessionDriver {
         let driver = InMemorySessionDriver()
         driver.declaredSurface = DriveSurface(
-            takesAttachments: false, runsCommands: false, resolvesMentions: false,
+            takesAttachments: false, runsCommands: true, resolvesMentions: true,
         )
         return driver
     }

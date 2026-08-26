@@ -62,8 +62,8 @@ public protocol SessionDriver {
     ///
     /// Keyed by Session, though every adapter answers a constant today: a port with no Session to
     /// read it for could only state what both adapters do, which is a refusal for every claude
-    /// Session the moment a codex one is reachable (#698 left that note where the joint answer
-    /// was). The composer draws one Session at a time and always has its id.
+    /// Session the moment a codex one is reachable (#698). The composer draws one Session at a time
+    /// and always has its id.
     func surface(of sessionID: String) -> DriveSurface
 
     /// Put the user's attachments where this Session's agent can read them, and answer their
