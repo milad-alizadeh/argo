@@ -36,6 +36,21 @@ enum WorkspaceFileFixture {
         "docs/designs/cockpit-composer-picker.md",
     ]
 
+    /// Paths long enough to overflow the row, which is the only way to see the directory's left cut
+    /// at all: every path in `machine` fits, so nothing there exercises `.truncationMode(.head)`.
+    /// The filename has to survive the cut whole — it is the one distinguishing word on the row.
+    static let deep = [
+        "SessionComposerProjection.swift",
+        "WorkspaceFileProjection+Derive.swift",
+        "FeedCallLineAttachment.swift",
+        "ArgoTypography.swift",
+    ].map { uiComposer + $0 }
+
+    /// Assembled rather than written out, because a path long enough to overflow the row is also
+    /// longer than the 100-column line the linter allows.
+    private static let uiComposer =
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/Menus/"
+
     /// Where the Session works. Every path above is said relative to it.
     static let root = "/Users/milad/Developer/argo"
 }

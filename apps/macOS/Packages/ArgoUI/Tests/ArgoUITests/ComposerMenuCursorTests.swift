@@ -90,6 +90,20 @@ struct ComposerMenuCursorTests {
         #expect(cursor.row(in: rows)?.path == "docs/adr/ADR-0024.md")
     }
 
+    /// The `@` tree is read asynchronously, so its rows land AFTER the keystroke that opened the
+    /// menu, and the cursor has to settle again when they do. Settled only over the empty list it
+    /// stayed nil, and ⏎ fell past both menus and sent the half-typed line.
+    @Test
+    func `a list that arrives late still gets the cursor on its top row`() {
+        var cursor = ComposerMenuCursor()
+        cursor.settle(over: [])
+        #expect(cursor.marked == nil)
+
+        cursor.settle(over: ids)
+
+        #expect(cursor.marked == "/ask-argo")
+    }
+
     private let ids = CommandMenuProjection.menu(
         for: "/",
         in: CommandCatalog(

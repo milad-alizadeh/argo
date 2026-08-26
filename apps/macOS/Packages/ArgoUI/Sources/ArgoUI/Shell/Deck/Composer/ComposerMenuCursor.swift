@@ -1,9 +1,9 @@
 /// Where the keyboard cursor is in whichever composer menu is open, and where each key takes it
-/// (#685; keyed by id rather than by command since #687, so the `@` menu walks with the same one).
+/// (#685, #687).
 ///
-/// Held by IDENTITY rather than by index, because filtering reorders the list under the cursor: an
-/// index would jump to whatever row happened to inherit the number. One cursor and not two, because
-/// only one menu is ever open — `/` opens at the head of the line and `@` on a trailing token.
+/// Held by row id and not by index, because filtering reorders the list under the cursor. One
+/// cursor serves both menus, since only one is ever open: `/` at the head of the line, `@` on a
+/// trailing token.
 struct ComposerMenuCursor: Equatable {
     /// The id the cursor is on, or `nil` where there is nothing to be on.
     private(set) var marked: String?

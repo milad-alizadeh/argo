@@ -48,9 +48,10 @@ struct SessionComposer: View {
 
     /// The catalog as the last open read it, and where the keyboard is in the list it produced.
     @State var catalog = CommandCatalog.empty
-    /// The Workspace tree as the last `@` read answered. One cursor serves both menus, because
-    /// only one is ever open: `/` opens at the head of the line and `@` on a trailing token.
-    @State var workspaceFiles: [String] = []
+    /// The Workspace tree as the last `@` read answered, and `nil` before it has answered at all.
+    /// The read is asynchronous, so the two must not be one value: `[]` is a tree that was looked
+    /// in and holds nothing, and "no file matches" may only be said about a tree that was read.
+    @State var workspaceFiles: [String]?
     @State var cursor = ComposerMenuCursor()
     /// Whether Escape has put a menu away over a line that would still open one. Cleared by the
     /// next keystroke, because the reader typing again is them asking for it back.
@@ -155,9 +156,14 @@ struct SessionComposer: View {
         .onExitCommand { isDismissed = menu != nil || mentionMenu != nil }
         .onChange(of: draft.text) { was, _ in opened(was) }
         .onChange(of: composer.sessionID, initial: true) { _, _ in
-            workspaceFiles = []
+            workspaceFiles = nil
             opened()
         }
+        // The cursor settles on whatever the list IS, whenever it changes — not once when the line
+        // opened it. The `@` tree is read asynchronously, so its rows arrive after that moment, and
+        // a cursor settled over the empty list stayed nil: ⏎ then fell past both menus and sent the
+        // half-typed line instead of picking the top row.
+        .onChange(of: markedIDs, initial: true) { _, ids in cursor.settle(over: ids) }
     }
 
     /// An arrow key, and whether a menu took it. Unhandled where there is none, so the field's own

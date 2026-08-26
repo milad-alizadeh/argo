@@ -61,12 +61,7 @@ extension WorkspaceFileProjection {
     }
 
     /// A SUBSEQUENCE over the whole path, in order (decision 13): `sesdri` reaches
-    /// `…/Session/SessionDriver.swift` in six keystrokes. A substring would not — the characters
-    /// the reader remembers are spread across the segments they remember them from.
-    ///
-    /// The command menu deliberately does the opposite. Over short command names a subsequence
-    /// puts rows nobody recognises above the one they meant; it earns its keep here, where a path
-    /// is nine segments long and typing it out is the thing being avoided.
+    /// `…/Session/SessionDriver.swift` in six keystrokes, where a substring match would not.
     private static func matches(_ wanted: [Character], in path: String) -> Bool {
         guard !wanted.isEmpty else { return true }
         var next = wanted.startIndex

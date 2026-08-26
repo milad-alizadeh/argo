@@ -3,9 +3,7 @@ import SwiftUI
 
 /// Which menu the composer's line opens, and what it draws — `/` and `@` (#685, #687).
 ///
-/// Beside the vessel rather than inside it: two menus over one field is a subject of its own, and
-/// `SessionComposer` is already the whole vessel. The state both read stays over there, because a
-/// SwiftUI extension can hold none — which is why those four are internal rather than private.
+/// The state both menus read stays on `SessionComposer`, because a SwiftUI extension can hold none.
 extension SessionComposer {
     /// The `/` menu the line opens, and `nil` where none does — an adapter that declares no command
     /// surface, a line that is not a command, or an Escape the reader has not typed past.
@@ -22,8 +20,9 @@ extension SessionComposer {
     /// `/` opens only at the head of the line, `@` only on a token the reader is still typing.
     var mentionMenu: WorkspaceFileProjection.Menu? {
         // No Workspace, no menu — not an empty one. "No file matches" is a statement about a tree,
-        // and there is no tree here to have looked in.
-        guard !isDismissed, composer.workspaceRoot != nil else { return nil }
+        // and there is no tree here to have looked in. A read still in flight is the same case:
+        // `workspaceFiles` is nil until it answers, so the zero line cannot speak for a tree first.
+        guard !isDismissed, composer.workspaceRoot != nil, let workspaceFiles else { return nil }
         return WorkspaceFileProjection.menu(
             for: draft.text,
             in: workspaceFiles,
@@ -36,17 +35,21 @@ extension SessionComposer {
     @ViewBuilder var commandMenu: some View {
         if let menu {
             CommandMenu(menu: menu, marked: cursor.marked) { draft.take($0.command) }
-                // The design's `base` above the vessel, less what the stack around it already
-                // contributes — spelled as the arithmetic so moving either step keeps the gap.
-                .padding(.bottom, ArgoSpacing.base - ArgoSpacing.tight)
+                .padding(.bottom, Self.gapAboveVessel)
         }
     }
 
     @ViewBuilder var fileMenu: some View {
         if let mentionMenu {
             FileMenu(menu: mentionMenu, marked: cursor.marked, pick: take(mention:))
-                .padding(.bottom, ArgoSpacing.base - ArgoSpacing.tight)
+                .padding(.bottom, Self.gapAboveVessel)
         }
+    }
+
+    /// The design's `base` above the vessel, less what the stack around it already contributes —
+    /// spelled as the arithmetic so moving either step keeps the gap.
+    static var gapAboveVessel: CGFloat {
+        ArgoSpacing.base - ArgoSpacing.tight
     }
 
     /// The ids of whichever menu is open, in drawing order — what the cursor walks and what ⏎
@@ -68,7 +71,6 @@ extension SessionComposer {
            WorkspaceFileProjection.mention(in: was) == nil {
             Task { workspaceFiles = await files() }
         }
-        cursor.settle(over: markedIDs)
     }
 
     private func openedCommands() -> CommandCatalog {

@@ -3,12 +3,8 @@ import SwiftUI
 /// One file in the composer's `@` menu: its name, the directory holding it, and whether this
 /// Session has already been in it (#687, `cockpit-composer-picker.md`).
 ///
-/// **The filename LEADS.** Paths here run nine segments deep, so a row that led with the path
-/// would be a column of identical prefixes with the one distinguishing word off the right edge.
-/// The directory follows, dimmed and cut from the LEFT for the same reason — what a reader needs
-/// off a truncated path is its tail.
-///
-/// Hover and the keyboard cursor take different grounds, exactly as `CommandMenuRow` does.
+/// The filename leads, and the directory follows cut from the LEFT: what a reader needs off a
+/// truncated path is its tail, since the segments before it are shared with every other row.
 struct FileMenuRow: View {
     @Environment(\.argo) private var argo
 
@@ -39,10 +35,8 @@ struct FileMenuRow: View {
         .accessibilityAddTraits(isMarked ? [.isSelected, .isButton] : .isButton)
     }
 
-    /// No accent inking on the characters that matched, unlike `CommandMenuRow`. The match is a
-    /// SUBSEQUENCE over the whole path, so the matched characters are scattered across nine
-    /// segments — inking them speckles the row rather than pointing at anything. `at-filter.png`
-    /// draws none, and the render is the spec.
+    /// No accent inking on the matched characters: a subsequence scatters them across the segments,
+    /// which speckles the row rather than pointing at anything. `at-filter.png` draws none.
     private var name: some View {
         Text(row.name)
             .argoText(ArgoTypography.machine)
