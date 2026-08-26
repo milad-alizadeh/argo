@@ -28,14 +28,33 @@ extension SessionAnnotations.Annotation: Codable {
         case archived
         case name
         case ticketTitle
+        case ticketAbsent
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let archived = try container.decodeIfPresent(Bool.self, forKey: .archived)
         let name = try container.decodeIfPresent(String.self, forKey: .name)
-        let ticketTitle = try container.decodeIfPresent(String.self, forKey: .ticketTitle)
-        self.init(isArchived: archived ?? false, explicitName: name, ticketTitle: ticketTitle)
+        try self.init(
+            isArchived: archived ?? false,
+            explicitName: name,
+            ticket: Self.ticket(from: container),
+        )
+    }
+
+    /// The title where there is one, else the flag saying the host was asked and had nothing. Two
+    /// keys rather than one so a file written before the flag existed still reads as a title, and
+    /// one value in memory so nothing can set the pair inconsistently.
+    private static func ticket(
+        from container: KeyedDecodingContainer<CodingKeys>,
+    ) throws
+        -> TicketReading? {
+        if let title = try container.decodeIfPresent(String.self, forKey: .ticketTitle),
+           let named = SessionAnnotations.name(from: title) {
+            return .named(named)
+        }
+        let absent = try container.decodeIfPresent(Bool.self, forKey: .ticketAbsent)
+        return absent == true ? .absent : nil
     }
 
     /// The name is written only when there is one: an explicit `null` beside every archived
@@ -44,6 +63,9 @@ extension SessionAnnotations.Annotation: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(isArchived, forKey: .archived)
         try container.encodeIfPresent(explicitName, forKey: .name)
-        try container.encodeIfPresent(ticketTitle, forKey: .ticketTitle)
+        try container.encodeIfPresent(ticket?.title, forKey: .ticketTitle)
+        if ticket == .absent {
+            try container.encode(true, forKey: .ticketAbsent)
+        }
     }
 }

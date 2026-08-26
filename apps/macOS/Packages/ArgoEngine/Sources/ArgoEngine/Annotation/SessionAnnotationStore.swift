@@ -38,11 +38,11 @@ public actor SessionAnnotationStore {
         persist(load().naming(name, sessionID: sessionID))
     }
 
-    /// Hold the title this Session's branch resolved to on the code host (#745), or let go of one
-    /// that stopped resolving. Argo's own write and never a gesture — the rename is `setName`.
+    /// Hold what the code host said about this Session's ticket (#745). Argo's own write and never
+    /// a gesture — the rename is `setName`.
     @discardableResult
-    public func setTicketTitle(_ title: String?, sessionID: String) -> SessionAnnotations {
-        persist(load().titling(title, sessionID: sessionID))
+    public func setTicket(_ ticket: TicketReading?, sessionID: String) -> SessionAnnotations {
+        persist(load().reading(ticket, sessionID: sessionID))
     }
 
     /// A file that cannot be written still holds for this launch and is forgotten by the next

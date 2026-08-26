@@ -7,9 +7,7 @@ import Foundation
 /// roster by hand, and the name a user gives one (#502). Owned glue, which is the one thing
 /// `CONTEXT.md` says Argo may store.
 ///
-/// The ticket title is the one that is not Argo's own claim but a reading it is holding on to
-/// (#745), and it lives here rather than in a cache because a roster that re-read it every launch
-/// would open on the derived title until the network answered.
+/// The ticket reading (#745) is the exception: not Argo's own claim, but one it is holding on to.
 ///
 /// Held as a value with every transition returning a new set, so the store above it does nothing
 /// but read one and write one.
@@ -20,20 +18,20 @@ public struct SessionAnnotations: Equatable, Sendable {
         /// The name the user gave this Session, `nil` for one they never named. Dropping the name
         /// IS the reset (#502, story 20) — there is no second flag saying whether it is in force.
         public var explicitName: String?
-        /// The linked Work Item's title as the code host last gave it (#745), `nil` for a Session
-        /// whose branch names no ticket or whose ticket did not resolve. DERIVED, and kept apart
-        /// from `explicitName` above because Argo writes this one and the user writes that one:
-        /// merged, a resolve would silently overwrite a rename.
-        public var ticketTitle: String?
+        /// What the code host last said about the Work Item this Session's branch names (#745).
+        /// `nil` for a Session nobody has asked about yet. DERIVED, and kept apart from
+        /// `explicitName` above because Argo writes this one and the user writes that one: merged,
+        /// a resolve would silently overwrite a rename.
+        public var ticket: TicketReading?
 
         public init(
             isArchived: Bool = false,
             explicitName: String? = nil,
-            ticketTitle: String? = nil,
+            ticket: TicketReading? = nil,
         ) {
             self.isArchived = isArchived
             self.explicitName = SessionAnnotations.name(from: explicitName)
-            self.ticketTitle = SessionAnnotations.name(from: ticketTitle)
+            self.ticket = ticket
         }
 
         /// An annotation that asserts nothing, which is what every Session has until somebody
@@ -57,11 +55,10 @@ public struct SessionAnnotations: Equatable, Sendable {
             return next
         }
 
-        /// And for the ticket title, through the same normalisation: a provider that answered
-        /// with blanks has told Argo nothing.
-        func titled(_ title: String?) -> Annotation {
+        /// And for the ticket.
+        func reading(_ ticket: TicketReading?) -> Annotation {
             var next = self
-            next.ticketTitle = SessionAnnotations.name(from: title)
+            next.ticket = ticket
             return next
         }
     }
@@ -102,10 +99,10 @@ public struct SessionAnnotations: Equatable, Sendable {
         annotation(for: sessionID).explicitName
     }
 
-    /// The Work Item title this Session's branch resolved to, and `nil` where nothing resolved.
-    /// Which title the surfaces DRAW is `SessionTitle`'s, on the same ground `explicitName` is.
-    public func ticketTitle(_ sessionID: String) -> String? {
-        annotation(for: sessionID).ticketTitle
+    /// What the code host said about this Session's ticket, and `nil` where nothing has asked.
+    /// Which of the three a surface DRAWS is the projection's, on the ground `explicitName` is.
+    public func ticket(_ sessionID: String) -> TicketReading? {
+        annotation(for: sessionID).ticket
     }
 
     /// Archive a Session, or put one back. Keyed on the chain id and on nothing observed, which
@@ -121,10 +118,10 @@ public struct SessionAnnotations: Equatable, Sendable {
         setting(annotation(for: sessionID).named(name), for: sessionID)
     }
 
-    /// Hold the title a ticket resolved to, or — with `nil` — let go of one that stopped
-    /// resolving. Never the user's gesture: the rename writes `naming` above.
-    func titling(_ title: String?, sessionID: String) -> SessionAnnotations {
-        setting(annotation(for: sessionID).titled(title), for: sessionID)
+    /// Hold what the code host said about a ticket. Never the user's gesture: the rename writes
+    /// `naming` above.
+    func reading(_ ticket: TicketReading?, sessionID: String) -> SessionAnnotations {
+        setting(annotation(for: sessionID).reading(ticket), for: sessionID)
     }
 
     /// The one write path, so an annotation that has fallen back to asserting nothing is dropped

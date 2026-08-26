@@ -115,11 +115,30 @@ struct SessionTicketTitleTests {
         defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
 
         let annotations = await SessionAnnotationStore(fileURL: file)
-            .setTicketTitle("Anchor the feed", sessionID: "linked")
+            .setTicket(.named("Anchor the feed"), sessionID: "linked")
 
         let session = try #require(Self.projection(of: hub, annotations: annotations)
             .sessions.first)
         #expect(SessionTitle.resolved(for: session) == "#741 — Anchor the feed")
+    }
+
+    @Test
+    @MainActor
+    func `a branch naming a ticket the host denies draws no link at all`() async throws {
+        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
+        await Self.observe(hub, id: "linked", branch: "argo/#741-anchor-the-feed")
+        let file = Self.throwaway()
+        defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+
+        let annotations = await SessionAnnotationStore(fileURL: file)
+            .setTicket(.absent, sessionID: "linked")
+
+        // Asked, and there is nothing behind #741. Drawing `Issue #741` anyway would assert a Work
+        // Item that does not exist (`CONTEXT.md`, "Honesty tier").
+        let session = try #require(Self.projection(of: hub, annotations: annotations)
+            .sessions.first)
+        #expect(session.issue == nil)
+        #expect(SessionHeaderProjection.header(from: session).issue == nil)
     }
 
     @Test

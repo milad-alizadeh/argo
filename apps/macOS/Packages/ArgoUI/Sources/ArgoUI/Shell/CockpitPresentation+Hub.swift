@@ -125,9 +125,7 @@ extension CockpitPresentation.Session {
             issue: Issue(
                 branch: workspace?.branch,
                 location: session.cwd,
-                // Held by Argo rather than read through on the spot (#745): the resolve is one
-                // request per ticket per launch, and every read after it is answered off disk.
-                title: annotations.ticketTitle(session.id),
+                ticket: annotations.ticket(session.id),
             ),
             lastSeenAtMs: session.lastSeenAtMs,
             startedAtMs: session.startedAtMs,
@@ -161,13 +159,17 @@ extension CockpitPresentation.Session.Issue {
     /// The Work Item this Session's git context names, and `nil` where it names none (#745).
     ///
     /// DERIVED on both halves: the number is read off a branch by the convention
-    /// `docs/agents/worktrees.md` fixes, and the title came from outside Argo. A branch carrying no
-    /// `#<N>` links to nothing rather than to a placeholder, and a number nothing resolved for
-    /// carries no title — `SessionTitle` drops that back to the derived name.
-    init?(branch: String?, location: String?, title: String?) {
-        guard let number = WorkItemLink.number(branch: branch, workspaceLocation: location)
+    /// `docs/agents/worktrees.md` fixes, and the title came from outside Argo.
+    ///
+    /// Three ways to have no link, and all three draw nothing rather than a guess: a branch
+    /// carrying no `#<N>`, and — once the host has been asked — a number it has nothing behind. A
+    /// number nobody has asked about yet keeps its link and carries no title, which `SessionTitle`
+    /// drops back to the derived name.
+    init?(branch: String?, location: String?, ticket: TicketReading?) {
+        guard let number = WorkItemLink.number(branch: branch, workspaceLocation: location),
+              ticket != .absent
         else { return nil }
-        self.init(number: number, title: title)
+        self.init(number: number, title: ticket?.title)
     }
 }
 

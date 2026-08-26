@@ -11,7 +11,7 @@ struct WorkItemTitleReadTests {
     private static func read(
         body: String = "{}", failure: HTTPTransportError? = nil, number: Int = 745,
     ) async
-        -> (WorkItemTitleRead, StubProviderAPI) {
+        -> (TicketReading?, StubProviderAPI) {
         let api = StubProviderAPI(body: body, failure: failure)
         let read = await GitHubWorkItemTitles(transport: api)
             .read(titleOf: number, in: "milad/argo", grant: grant)
@@ -22,7 +22,7 @@ struct WorkItemTitleReadTests {
     func `a ticket the token can read answers with its own title`() async {
         let (read, api) = await Self.read(body: #"{ "number": 745, "title": "Derive the link" }"#)
 
-        #expect(read == .title("Derive the link"))
+        #expect(read == .named("Derive the link"))
         #expect(await api.urls() == ["https://api.github.com/repos/milad/argo/issues/745"])
         #expect(await api.bearerTokens() == ["ghu_personal"])
     }
@@ -32,7 +32,7 @@ struct WorkItemTitleReadTests {
         // GitHub's 404 body, which `URLSessionTransport` hands through rather than throwing.
         let (read, _) = await Self.read(body: #"{ "message": "Not Found" }"#, number: 999_999)
 
-        // Absent and not unreadable: the host answered, so a title Argo was holding is retired.
+        // Absent and not nothing: the host answered, so the link it denies is retired.
         #expect(read == .absent)
     }
 
@@ -56,17 +56,36 @@ struct WorkItemTitleReadTests {
     }
 
     @Test
+    func `a throttled read establishes nothing`() async {
+        // GitHub's rate-limit body comes back as a 4xx, so it reaches the parse like a 404 does —
+        // and it must NOT be read as one, or one throttled launch empties every row that had a
+        // title. Its message is the only thing separating the two.
+        let (read, _) = await Self.read(
+            body: #"{ "message": "API rate limit exceeded for user ID 1." }"#,
+        )
+
+        #expect(read == nil)
+    }
+
+    @Test
+    func `a reply that is neither an issue nor a refusal establishes nothing`() async {
+        let (read, _) = await Self.read(body: #"{ "unexpected": true }"#)
+
+        #expect(read == nil)
+    }
+
+    @Test
     func `a refused token establishes nothing`() async {
         let (read, _) = await Self.read(failure: .unauthorized(code: 401))
 
-        #expect(read == .unreadable)
+        #expect(read == nil)
     }
 
     @Test
     func `a code host that cannot be reached establishes nothing`() async {
         let (read, _) = await Self.read(failure: .status(code: 503))
 
-        // Unreadable and not absent: an outage must not empty the rows that already had a title.
-        #expect(read == .unreadable)
+        // Nothing rather than absent: an outage must not empty the rows that already had a title.
+        #expect(read == nil)
     }
 }

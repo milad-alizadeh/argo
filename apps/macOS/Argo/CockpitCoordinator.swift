@@ -43,7 +43,7 @@ final class CockpitCoordinator {
         self.store = store
         self.annotationStore = annotationStore
         self.ticketTitles = WorkItemTitleResolver(
-            titles: GitHubWorkItemTitles(), annotations: annotationStore,
+            gitHub: GitHubWorkItemTitles(), annotations: annotationStore,
         )
         self.pointing = CockpitPointing(
             registry: .empty,
@@ -145,9 +145,9 @@ final class CockpitCoordinator {
         annotations = await annotationStore.setName(name, sessionID: sessionID)
     }
 
-    /// The tickets on the roster nothing has named yet. What a resolve is triggered BY, so a
-    /// Session appearing on a new branch is read and every ticket already named is left alone.
-    var unnamedTickets: Set<Int> {
+    /// The ticket NUMBERS on the roster that carry no title yet. What a resolve is triggered BY, so
+    /// a Session appearing on a new branch is read and every ticket already named is left alone.
+    var untitledTicketNumbers: Set<Int> {
         Set(presentation.sessions.compactMap { $0.issue?.title == nil ? $0.issue?.number : nil })
     }
 

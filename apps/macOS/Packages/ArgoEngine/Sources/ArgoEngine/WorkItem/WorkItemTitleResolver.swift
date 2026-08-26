@@ -2,55 +2,56 @@ import Foundation
 
 /// The pass that turns every `#<N>` the roster derived into the words the code host holds, and
 /// leaves each one where the next launch will find it (#745).
-///
-/// One read per ticket per launch, not per refresh: the annotation is a write-through of the
-/// reading, so every read after the first is answered off disk. A ticket renamed while Argo is
-/// running is therefore stale until the next launch — the alternative is a request per refresh, and
-/// a refresh is what every keystroke on the roster amounts to.
 public actor WorkItemTitleResolver {
-    private let titles: GitHubWorkItemTitles
+    private let gitHub: GitHubWorkItemTitles
     private let annotations: SessionAnnotationStore
-    /// What the host said about each number this launch, asked once. Held here rather than derived
-    /// from the annotations, because `.absent` and "never asked" both read as no stored title.
-    private var reads: [Int: WorkItemTitleRead] = [:]
+    /// What each number settled at this launch. Only a SETTLED answer lands here: a read that
+    /// established nothing is left out, so one offline moment at launch does not cost that ticket
+    /// its name until the next one.
+    private var settled: [Int: TicketReading] = [:]
 
-    public init(titles: GitHubWorkItemTitles, annotations: SessionAnnotationStore) {
-        self.titles = titles
+    public init(gitHub: GitHubWorkItemTitles, annotations: SessionAnnotationStore) {
+        self.gitHub = gitHub
         self.annotations = annotations
     }
 
     /// Resolve the Work Item behind each Session, keyed by chain id, and answer the annotations the
     /// roster should now be projected from.
     ///
-    /// `binding` is the Project's Work Item port, already resolved: an unbound or broken one has no
-    /// token to read through, and the caller does not reach here with it.
+    /// One read per ticket per launch rather than per call, so a ticket renamed while Argo runs is
+    /// stale until the next launch.
     @discardableResult
     public func resolve(
         links: [String: Int], through binding: ResolvedBinding,
     ) async
         -> SessionAnnotations {
-        for number in Set(links.values) where reads[number] == nil {
-            reads[number] = await titles.read(
-                titleOf: number, in: binding.binding.scope, grant: binding.grant,
-            )
+        for number in Set(links.values) where settled[number] == nil {
+            if let reading = await read(number, through: binding) {
+                settled[number] = reading
+            }
         }
         var latest = await annotations.load()
         for (sessionID, number) in links {
-            latest = await apply(reads[number], to: sessionID) ?? latest
+            guard let reading = settled[number] else { continue }
+            latest = await annotations.setTicket(reading, sessionID: sessionID)
         }
         return latest
     }
 
-    /// One reading written, and `nil` for the one case that writes nothing: a host that did not
-    /// answer leaves whatever Argo already held in place.
-    private func apply(
-        _ read: WorkItemTitleRead?, to sessionID: String,
-    ) async
-        -> SessionAnnotations? {
-        switch read {
-        case let .title(title): await annotations.setTicketTitle(title, sessionID: sessionID)
-        case .absent: await annotations.setTicketTitle(nil, sessionID: sessionID)
-        case .unreadable, nil: nil
+    /// Which provider's adapter answers, decided here and nowhere else. An exhaustive `switch`, so
+    /// a provider added to the domain has to say what names a Work Item through it.
+    ///
+    /// Linear has no title adapter yet (#371 is its grant): asking establishes nothing rather than
+    /// sending a Linear token to GitHub, which is the one outcome worth ruling out at the type
+    /// level — the Work Item port is one Linear CAN fill (`AccountProvider.ports`).
+    private func read(_ number: Int, through binding: ResolvedBinding) async -> TicketReading? {
+        switch binding.provider {
+        case .github:
+            await gitHub.read(
+                titleOf: number, in: binding.binding.scope, grant: binding.grant,
+            )
+        case .linear:
+            nil
         }
     }
 }
