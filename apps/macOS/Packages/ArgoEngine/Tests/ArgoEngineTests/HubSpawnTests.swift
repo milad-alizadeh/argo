@@ -69,7 +69,7 @@ struct HubSpawnTests {
         let stranger = URL(fileURLWithPath: "/tmp/somebody-elses-agent.jsonl")
         await hubObserveToEnd(fixture.hub, hubTestObservation(at: stranger, events: [
             .cwd(fixture.projectURL.path),
-            .prompt(text: "Not ours", atMs: Date().epochMs),
+            .prompt(text: "Not ours", images: [], atMs: Date().epochMs),
             .turnEnded(.endTurn),
         ]))
 
