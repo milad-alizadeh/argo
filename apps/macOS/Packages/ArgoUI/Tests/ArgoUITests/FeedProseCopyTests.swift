@@ -37,7 +37,7 @@ struct FeedProseCopyTests {
 
     @Test(arguments: [
         FeedRow.Content.mark(.turnEnded(.endTurn)),
-        .call(TraitFixture.answeredCall),
+        .call(RowKindFixture.answeredCall),
     ])
     func `a row that is not prose offers nothing in place`(content: FeedRow.Content) {
         #expect(FeedRow(id: 0, content: content).inPlaceOffer == nil)

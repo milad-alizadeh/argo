@@ -28,7 +28,7 @@ struct FeedRow: Identifiable, Equatable, Sendable {
         /// Whether this row is a call the record has not answered yet — the one the ion crosses.
         /// Asked by the projection, which draws the working thread only where no row is lit.
         var isCallInFlight: Bool {
-            traits.isCallInFlight
+            kind.isCallInFlight
         }
     }
 
@@ -41,34 +41,34 @@ struct FeedRow: Identifiable, Equatable, Sendable {
     /// Whether this row is a piece of work rather than a piece of prose. Asked by the feed's own
     /// spacing and by the render that shows the calls alone.
     var isCall: Bool {
-        content.traits.isCall
+        content.kind.isCall
     }
 
     /// Whether this row is something somebody SAID — neither the work nor the punctuation around
     /// it. Asked by the render that shows the reading with the work taken out.
     var isProse: Bool {
-        content.traits.isProse
+        content.kind.isProse
     }
 
     /// Whether this row is something the AGENT said. Asked by the count on the way-back control.
     var isMessage: Bool {
-        content.traits.isMessage
+        content.kind.isMessage
     }
 
     /// Whether this row is something the USER asked for. Asked by the accent wash that marks a
     /// just-sent Turn's echo.
     var isPrompt: Bool {
-        content.traits.isPrompt
+        content.kind.isPrompt
     }
 
     /// Whether this row has anything for the evidence panel to show.
     var opensEvidence: Bool {
-        content.traits.opensEvidence
+        content.kind.opensEvidence
     }
 
     /// Whether this row is the working thread — the one row the reading measure does not hold, so
     /// its ion sweeps the zone's full width and exits at the minimap's seam.
     var isWorkingThread: Bool {
-        content == .mark(.working)
+        content.kind.isWorkingThread
     }
 }

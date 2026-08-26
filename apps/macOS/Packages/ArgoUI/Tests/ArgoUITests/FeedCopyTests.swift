@@ -88,7 +88,7 @@ struct FeedCopyTests {
     func `the Turn's work is left out, and the punctuation with it`() {
         let rows = Self.feed(
             Self.asked("Ship it"),
-            .call(TraitFixture.answeredCall),
+            .call(RowKindFixture.answeredCall),
             Self.said("Shipped."),
             Self.ended,
         )
@@ -99,7 +99,7 @@ struct FeedCopyTests {
     @Test
     func `a Turn nobody said anything in copies nothing at all`() {
         let rows = Self.feed(
-            .call(TraitFixture.answeredCall),
+            .call(RowKindFixture.answeredCall),
             Self.ended,
         )
 
@@ -133,7 +133,7 @@ struct FeedCopyTests {
         let reading = TurnExtents.Reading(
             count: rows.count,
             opensTurn: { rows[$0].isPrompt },
-            endsTurn: { rows[$0].content.endsTurn },
+            endsTurn: { rows[$0].content.kind.endsTurn },
         )
         let swept = TurnExtents.spans(of: reading)
 

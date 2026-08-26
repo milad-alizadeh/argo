@@ -96,7 +96,7 @@ struct FeedSkillLoadedTests {
     func `a load with nothing readable behind it opens nothing`() {
         let content = FeedRow.Content.skillLoaded(read(body: nil))
 
-        #expect(!content.traits.opensEvidence)
+        #expect(!content.kind.opensEvidence)
         #expect(content.opened == nil)
     }
 
@@ -108,7 +108,7 @@ struct FeedSkillLoadedTests {
         let content = FeedRow.Content.skillLoaded(read(body: .unreadable(why)))
         let opened = try #require(content.opened)
 
-        #expect(content.traits.opensEvidence)
+        #expect(content.kind.opensEvidence)
         #expect(opened.ending == .failed)
         #expect(opened.steps.first?.result == .output(OutputEvidence(tier: .derived, text: why)))
     }
@@ -170,12 +170,12 @@ struct FeedSkillLoadedTests {
     /// must not be counted among what anybody said.
     @Test
     func `the marker is neither work nor prose`() {
-        let traits = FeedRow.Content.skillLoaded(read()).traits
+        let kind = FeedRow.Content.skillLoaded(read()).kind
 
-        #expect(!traits.isCall)
-        #expect(!traits.isProse)
-        #expect(!traits.isPrompt)
-        #expect(!traits.isMessage)
+        #expect(!kind.isCall)
+        #expect(!kind.isProse)
+        #expect(!kind.isPrompt)
+        #expect(!kind.isMessage)
     }
 
     /// A shape does not carry: what the row draws in two runs is one sentence to a listener.

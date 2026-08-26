@@ -70,6 +70,18 @@ extension FeedMark {
         }
     }
 
+    /// Whether a Turn ends at this mark. The feed's own punctuation and nothing else: the stop
+    /// reason the host reported, and the interruption that stands in for one.
+    ///
+    /// Switched with no `default`, so a mark added here has to say whether it closes a Turn rather
+    /// than inheriting an answer written for the ones that exist today.
+    var endsTurn: Bool {
+        switch self {
+        case .turnEnded, .interrupted: true
+        case .compacted, .spent, .handedOff, .permissionExpired, .working: false
+        }
+    }
+
     /// Where this mark leads, for the one kind that leads anywhere. `nil` for the rest: every other
     /// mark is a statement rather than a way out, and making them all pressable would offer a click
     /// that does nothing every turn.
