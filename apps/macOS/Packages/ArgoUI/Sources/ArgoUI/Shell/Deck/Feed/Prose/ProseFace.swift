@@ -40,6 +40,11 @@ extension ProseFace {
         return NSFontManager.shared.convert(base, toHaveTrait: .boldFontMask)
     }
 
+    /// This same face in the mono, which is what a `code` span inside it is set in.
+    var monospaced: ProseFace {
+        ProseFace(rung: rung, isBold: isBold, isMachine: true)
+    }
+
     /// How tall one line's own box is, before any leading is added to it.
     ///
     /// The FONT's own, not the contract's `naturalLineHeightRatio`. That ratio exists so

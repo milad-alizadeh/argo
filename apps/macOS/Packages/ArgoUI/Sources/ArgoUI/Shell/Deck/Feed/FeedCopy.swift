@@ -40,7 +40,9 @@ extension FeedRow {
     /// nothing verbatim to hand over.
     var copyable: String? {
         switch content {
-        case let .prompt(text), let .message(text), let .thought(text): text
+        // The pasted images a prompt carries are not words, so the verbatim copy is its text alone.
+        case let .prompt(text, _): text
+        case let .message(text), let .thought(text): text
         case .call, .survey, .gallery, .ask, .skillLoaded, .mark, .unreadable: nil
         }
     }
