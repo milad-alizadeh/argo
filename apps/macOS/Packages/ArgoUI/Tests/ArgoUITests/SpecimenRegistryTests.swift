@@ -13,6 +13,22 @@ struct SpecimenRegistryTests {
         }
     }
 
+    /// A stale name silently drew the cockpit instead, which reads exactly like the control the
+    /// caller went looking for having gone (#764).
+    @Test
+    func `a name the registry has no entry for is refused`() {
+        #expect(SpecimenRegistry.refusal(for: "sessionHeader")
+            == "No specimen named sessionHeader.\n")
+    }
+
+    @Test
+    func `a name the registry has, and no name at all, are not refused`() throws {
+        let first = try #require(SpecimenRegistry.all.first)
+
+        #expect(SpecimenRegistry.refusal(for: first.name) == nil)
+        #expect(SpecimenRegistry.refusal(for: nil) == nil)
+    }
+
     /// A duplicate would make the second entry unrenderable — `entry(named:)` answers with the
     /// first — and the harness would write one name's PNG twice.
     @Test

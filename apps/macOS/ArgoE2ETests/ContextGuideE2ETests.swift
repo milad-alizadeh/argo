@@ -19,7 +19,7 @@ final class ContextGuideE2ETests: XCTestCase {
         // Onto the specimen, never the machine's own registry: against a real one this asserts
         // whatever Sessions that Mac happens to have, and on a clean machine there is no header at
         // all to find an ⓘ on.
-        app.launchArguments += ["--specimen", "sessionHeader"]
+        app.launchArguments += ["--specimen", "tabLineInstruments"]
         app.launch()
         XCTAssertTrue(
             app.wait(for: .runningForeground, timeout: 30),
@@ -35,7 +35,11 @@ final class ContextGuideE2ETests: XCTestCase {
     /// ONE test walking the whole gesture rather than one per assertion — each case here costs a
     /// launch, and relaunching the same bundle id is the flakiest moment in the run.
     func testTheGuideOpensOnHoverAndCloseOnEscape() {
-        let about = app.descendants(matching: .any)["About the context reading"].firstMatch
+        // On the PREFIX: the mark's label carries its key ("— Command I", #718), and the panel it
+        // opens wears the bare phrase — an exact match here finds the panel and never the mark.
+        let about = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label BEGINSWITH 'About the context reading —'"))
+            .firstMatch
         XCTAssertTrue(
             about.waitForExistence(timeout: 20),
             "The header drew no ⓘ — or the zone combined its children and swallowed it.",

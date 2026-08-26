@@ -38,9 +38,10 @@ final class FeedKeyboardE2ETests: XCTestCase {
     /// re-opens it with nothing clicked in between — only possible if the keyboard came back to
     /// the row the panel was opened from.
     func testARowOpensItsEvidenceAndTakesTheKeyboardBack() {
-        // The failed command in the preview transcript, addressed by the sentence the row speaks.
+        // The failed command in the preview transcript, addressed by the sentence the row speaks —
+        // the NARRATION the record carries, not the command line drawn under it (#764).
         let row = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label BEGINSWITH 'Ran swift build'"))
+            .matching(NSPredicate(format: "label BEGINSWITH 'Ran Build the UI package'"))
             .firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 20), "The feed drew no call row.")
         row.click()
