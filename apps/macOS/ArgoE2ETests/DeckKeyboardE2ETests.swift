@@ -65,7 +65,9 @@ final class DeckKeyboardE2ETests: XCTestCase {
     /// ⌘I, the one binding on this deck that does not wait on that setting at all (#718). Asserted
     /// on its own launch because the popover it opens would stand in the walk's way.
     func testCommandIOpensTheContextGuide() {
-        let guide = element(labelled: "Context budget")
+        // The panel's own label, which is the bare phrase — the mark that opens it wears the same
+        // words plus its key, so an exact match finds the panel and only the panel.
+        let guide = element(labelled: "About the context reading")
         XCTAssertFalse(guide.exists, "The context guide was up before anything asked for it.")
 
         app.typeKey("i", modifierFlags: .command)
@@ -114,9 +116,10 @@ final class DeckKeyboardE2ETests: XCTestCase {
     /// field contains, and the walk is cheap next to the launch it rides on.
     private static let presses = 40
 
-    /// What each stop is called here, and the start of the label it wears on screen.
+    /// What each stop is called here, and the start of the label it wears on screen. The composer's
+    /// focusable field wears its placeholder — "Composer" labels the zone around it.
     private static let named = [
-        ("the composer", "Composer"),
+        ("the composer", "Message Claude Code…"),
         ("the mode picker", "Mode,"),
         ("Send", "Send"),
         ("the feed's tail button", "Newest"),

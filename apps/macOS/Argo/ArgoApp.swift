@@ -13,7 +13,7 @@ struct ArgoApp: App {
     @State private var navigation = CockpitNavigationModel()
     /// What the Session menu acts on, published by the shell — absent when nothing is selected.
     @FocusedValue(\.sessionCommands) private var sessionCommands
-    private let specimenName: String?
+    private let specimen: SpecimenEntry?
 
     init() {
         let currentDirectoryURL = URL(
@@ -32,7 +32,12 @@ struct ArgoApp: App {
             }
             exit(0)
         }
-        self.specimenName = configuration.specimenName
+        // A name nothing answers to ends the launch here, rather than drawing the cockpit under it.
+        if let refusal = SpecimenRegistry.refusal(for: configuration.specimenName) {
+            FileHandle.standardError.write(Data(refusal.utf8))
+            exit(1)
+        }
+        self.specimen = configuration.specimenName.flatMap(SpecimenRegistry.entry(named:))
         let projects = ProjectRegistryStore()
         let cockpit = CockpitCoordinator(configuration: configuration, store: projects)
         let accounts = AccountsCoordinator(projects: projects)
@@ -142,12 +147,6 @@ struct ArgoApp: App {
             stopWaiting: { Task { await accounts.stopWaiting() } },
             finish: { accounts.close() },
         )
-    }
-
-    /// An unknown name renders the cockpit rather than failing: the harness names the state, and a
-    /// typo there should not look like a launch worth screenshotting.
-    private var specimen: SpecimenEntry? {
-        specimenName.flatMap(SpecimenRegistry.entry(named:))
     }
 
     private var actions: CockpitActions {

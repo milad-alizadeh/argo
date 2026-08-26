@@ -28,11 +28,8 @@ class RosterE2ECase: XCTestCase {
         try await super.tearDown()
     }
 
-    /// A row, by the announcement the projection gives it — which opens with the title.
     func row(titled title: String) -> XCUIElement {
-        app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label BEGINSWITH %@", title))
-            .firstMatch
+        app.rosterRow(titled: title)
     }
 
     /// The list cell AROUND that row, which is where selection is reported: the element the row's

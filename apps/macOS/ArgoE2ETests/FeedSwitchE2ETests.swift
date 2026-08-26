@@ -27,7 +27,7 @@ final class FeedSwitchE2ETests: FeedE2ECase {
             "Scrolling up left the first reading still following its Session.",
         )
 
-        let second = rosterRow(titled: "Port the session engine core to Swift")
+        let second = app.rosterRow(titled: "Port the session engine core to Swift")
         XCTAssertTrue(second.waitForExistence(timeout: 10), "The roster drew no second Session.")
         second.click()
 
@@ -38,16 +38,5 @@ final class FeedSwitchE2ETests: FeedE2ECase {
             "The second Session opened holding the place the reader left in the first.",
         )
         XCTAssertEqual(app.state, .runningForeground)
-    }
-
-    /// A Session in the sidebar, addressed by its title.
-    ///
-    /// On `value` and not on `label`: a roster row combines its children into a single element, and
-    /// what SwiftUI hands AppKit for one of those is a cell whose text is its VALUE — the label is
-    /// empty. `FeedE2ECase.row(naming:)` matches on labels and finds nothing here.
-    private func rosterRow(titled title: String) -> XCUIElement {
-        app.staticTexts
-            .matching(NSPredicate(format: "value CONTAINS %@", title))
-            .firstMatch
     }
 }

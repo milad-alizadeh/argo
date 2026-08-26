@@ -33,4 +33,11 @@ public enum SpecimenRegistry {
     public static func entry(named name: String) -> SpecimenEntry? {
         all.first { $0.name == name }
     }
+
+    /// What to say about a name nothing answers to, so the caller can refuse the launch. `nil`
+    /// while there is nothing to refuse — no name given, or one the registry has.
+    public static func refusal(for name: String?) -> String? {
+        guard let name, entry(named: name) == nil else { return nil }
+        return "No specimen named \(name).\n"
+    }
 }
