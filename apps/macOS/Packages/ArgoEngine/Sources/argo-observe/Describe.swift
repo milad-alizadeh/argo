@@ -38,6 +38,8 @@ func describe(_ event: TranscriptEvent) -> String {
         "record      \(uuid)"
     case let .headLeaf(uuid):
         "head-leaf   \(uuid)"
+    case let .originSession(id):
+        "origin      \(id)"
     case let .title(title):
         "title       \(title)"
     case let .cwd(cwd):

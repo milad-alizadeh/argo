@@ -11,12 +11,19 @@ struct TranscriptContextCursor {
     private var lastCwd: String?
     private var lastModel: String?
     private var lastBranch: String?
+    private var lastOriginSessionID: String?
 
     mutating func events(for message: MessageRecord) -> [TranscriptEvent] {
         var events: [TranscriptEvent] = []
         if let cwd = message.cwd, lastCwd == nil {
             lastCwd = cwd
             events.append(.cwd(cwd))
+        }
+        // First reading only, like the cwd and for the same reason: the id a chain STARTED as is
+        // the one fact about a file that cannot change while it is being written.
+        if let originSessionID = message.originSessionID, lastOriginSessionID == nil {
+            lastOriginSessionID = originSessionID
+            events.append(.originSession(id: originSessionID))
         }
         if let branch = message.gitBranch, branch != lastBranch {
             lastBranch = branch

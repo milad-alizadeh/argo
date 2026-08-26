@@ -91,7 +91,8 @@ enum FeedProjection {
         switch event {
         case let .usage(usage): usage
         case let .toolCallOutcome(outcome): outcome.usage
-        case .prompt, .message, .thought, .toolCall, .recordIdentity, .headLeaf, .title, .cwd,
+        case .prompt, .message, .thought, .toolCall, .recordIdentity, .headLeaf, .originSession,
+             .title, .cwd,
              .model, .branch, .mode, .turnEnded, .plan, .compaction, .queued, .unreadableLine,
              .skillLoaded: nil
         }
@@ -159,8 +160,8 @@ enum FeedProjection {
         // The stance is one of these too, and pointedly: Mode is standing rather than something
         // that
         // happened, so it belongs on the composer's footer and not as a row in the reading.
-        case .toolCallOutcome, .usage, .recordIdentity, .headLeaf, .title, .cwd, .model, .branch,
-             .mode, .plan, .queued: nil
+        case .toolCallOutcome, .usage, .recordIdentity, .headLeaf, .originSession, .title, .cwd,
+             .model, .branch, .mode, .plan, .queued: nil
         }
     }
 

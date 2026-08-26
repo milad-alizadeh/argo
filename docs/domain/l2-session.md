@@ -1,7 +1,8 @@
 ## L2 · Session
 
 - **Session** — the observation unit: one **logical resume-chain**, keyed by a stable chain id
-  (one-or-more transcript files stitched by `leafUuid`). The only stored classification is
+  (one-or-more transcript files stitched by `leafUuid`, or — where a relocation left no shared
+  record — by the origin `session_id` they all name, #735). The only stored classification is
   **`managed | external`** — no kinds (ADR-0013). `managed` = Argo spawned it, owns the PTY,
   companion plugin loaded → drivable + carries CONVENTION-tier facts. `external` = discovered
   from transcripts, read-only, no PTY. **All sessions are observed** (transcript-tailing is the
@@ -26,6 +27,13 @@
 
 - **Transcript file** — the *physical* per-file CLI record (owned by the CLI). One Session
   stitches one or more. Never itself called a "Session."
+
+  **A relocation opens one** (#735). `EnterWorktree` closes the file and opens a fresh one under
+  the worktree's own project directory, sharing no `uuid`, `requestId`, `messageId` or `promptId`
+  with what came before. The only shared key is the snake_case `session_id` every message-bearing
+  record carries, which names the chain's **origin** rather than its predecessor — so it groups a
+  chain, and `leafUuid` still owns the immediate link where there is one. The relocated half is the
+  live one, so the merged Session's `cwd` and `branch` are the worktree's.
 
 - **Session status** — a DERIVED rollup on the Session:
   - **running** — a Turn is in progress.
