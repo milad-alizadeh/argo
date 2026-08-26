@@ -50,6 +50,22 @@ extension FeedRow.Content {
         }
     }
 
+    /// Whether a Turn ends at this row. The feed's own punctuation and nothing else: the stop
+    /// reason the host reported, and the interruption that stands in for one.
+    ///
+    /// Not one of the traits above because it is a fact about the READING rather than about the row
+    /// — the overview lane's blocks and the feed's Copy turn are both cut by it (`TurnExtents`).
+    ///
+    /// Switched with no `default`, so a mark added to the feed has to say whether it closes a Turn
+    /// rather than inheriting an answer written for the ones that exist today.
+    var endsTurn: Bool {
+        guard case let .mark(mark) = self else { return false }
+        switch mark {
+        case .turnEnded, .interrupted: return true
+        case .compacted, .spent, .handedOff, .permissionExpired, .working: return false
+        }
+    }
+
     /// What the panel shows for this row, resolved against the row rather than remembered — a live
     /// transcript grows under an open panel.
     var opened: FeedEvidence? {

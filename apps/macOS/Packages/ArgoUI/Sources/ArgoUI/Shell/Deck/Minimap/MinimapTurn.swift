@@ -10,33 +10,14 @@ struct MinimapTurn: Equatable, Sendable {
 }
 
 extension MinimapTurn {
-    /// The Turns in a reading, broken where the feed itself breaks.
-    ///
-    /// Two boundaries and no others: a prompt opens a Turn, and a stop-reason row closes one. So a
-    /// stretch with no prompt at all is still a Turn, and a stop-reason row belongs to the Turn it
-    /// ended rather than to the one after it — which is what makes the lane's blocks and the feed's
-    /// punctuation agree row for row.
+    /// The Turns in a reading, broken where the feed itself breaks — the boundaries are
+    /// `TurnExtents`', shared with the feed's own Copy turn so the two cannot disagree.
     static func extents(of rows: [MinimapRow]) -> [MinimapTurn] {
-        var turns: [MinimapTurn] = []
-        var head = 0
-        for (index, row) in rows.enumerated() {
-            // A prompt after the head opens the next Turn, so what came before it is closed here.
-            if row.prompt != nil, index > head {
-                turns.append(turn(of: rows, head ... index - 1))
-                head = index
-            }
-            if row.endsTurn {
-                turns.append(turn(of: rows, head ... index))
-                head = index + 1
-            }
-        }
-        if head < rows.count {
-            turns.append(turn(of: rows, head ... rows.count - 1))
-        }
-        return turns
-    }
-
-    private static func turn(of rows: [MinimapRow], _ extent: ClosedRange<Int>) -> MinimapTurn {
-        MinimapTurn(rows: extent, prompt: rows[extent.lowerBound].prompt)
+        TurnExtents.spans(of: TurnExtents.Reading(
+            count: rows.count,
+            opensTurn: { rows[$0].prompt != nil },
+            endsTurn: { rows[$0].endsTurn },
+        ))
+        .map { MinimapTurn(rows: $0, prompt: rows[$0.lowerBound].prompt) }
     }
 }

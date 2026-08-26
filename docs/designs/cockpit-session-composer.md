@@ -73,17 +73,21 @@ highlight along the top is the depth cue (`ArgoElevation`'s bounded-glass rung).
 **The feed under it** — 128pt bottom padding and a mask fading from opaque at `100% − 108pt` to
 clear at `100% − 28pt`. The feed runs *under* the vessel; it is never clipped by it.
 
-**The field** — `body` (13). Grows with content to a **six-line ceiling** — the study's 132pt said
-in the unit the field actually grows by — then scrolls inside itself. The feed above is never
-squeezed.
+**The field** — `body` (13) at **1.5 line height** (19.5pt, `ArgoComposerVessel.fieldLineHeight`).
+Grows with content to a **six-line ceiling** — the study's 132pt said in the unit the field actually
+grows by — then scrolls inside itself. The feed above is never squeezed.
 
-> **Corrected in build (#539).** This read *`body` (13) at 1.5 line height* and *a 132pt ceiling*.
-> Both were unbuildable together with the control the table below names: a stock `TextField` is
-> `NSTextField` underneath, draws the face's own leading (≈18pt at 13), and silently ignores
-> `lineSpacing` — so 19.5pt is only reachable by replacing the control this same study says not to
-> replace. The ceiling is therefore held in LINES, which is what the field grows by and what a
+> **Corrected in build (#539), and put back in #734.** #539 struck the 1.5 line height as
+> unbuildable: a stock `TextField` is `NSTextField` underneath, draws the face's own leading (≈18pt
+> at 13), and silently ignores `lineSpacing`. #734 replaced the control, for a reason the table
+> below now records — Shift-Return needs a caret and an `NSTextField` has none — and the line height
+> came back with it. The ceiling stays held in LINES, which is what the field grows by and what a
 > reader counts; 132pt was the same number measured off the study's HTML, where the leading was
 > CSS's to set.
+>
+> One number the build had to find: TextKit adds the face's own leading ON TOP of a line height, so
+> the box is set at `19.5 − leading` and a fragment then measures 19.5 exactly. Without that, six
+> lines measure 121 against a 117pt ceiling and the sixth is drawn cut in half.
 
 **The footer row** — `base` (8) gap, `base` (8) top padding. Controls left to right: `+` (26pt),
 spacer, `ModePicker`, `RunFactsButton`, `SendButton` (26pt circle).
@@ -136,12 +140,21 @@ anything.
 | In the study | In the app |
 |---|---|
 | `.seg` (Effort) | `Picker(…).pickerStyle(.segmented).controlSize(.small)` |
-| `.modemenu` (Mode) | **a bespoke `Menu`** — the one control on this screen that is not stock |
+| `.modemenu` (Mode) | **a bespoke `Menu`** — see the note under this table |
+| the field | **`NSTextView` behind an `NSViewRepresentable`** (#734) — see the note under this table |
 | `.picklist` (Model) | `Picker(…).pickerStyle(.inline)` |
 | `.runpanel` | `.popover(…)` with `.presentationBackground(.regularMaterial)` |
 | the popover's groups | `Form` sections, each with its own header |
 
-**Mode is the exception, and #608 is where it stopped being stock.** It began as
+**Two exceptions now, and each was forced by something the stock control cannot do.**
+
+**The field, in #734.** Return submits a Turn here, so Shift-Return is the only way to a second
+line — and breaking a line needs a caret, which an `NSTextField` does not expose. The same
+replacement is what made the 1.5 line height above reachable. Nothing else about the control
+changed: no ring of its own, plain text only, the platform's own undo, and the substitutions off
+because a draft is a line about to be handed to a CLI.
+
+**Mode, in #608.** It began as
 `Picker(…).pickerStyle(.menu)`, which macOS draws through `NSPopUpButton`. Three things this
 screen wants are things that control cannot do: one chevron instead of the stepper pair, a width
 that follows the selected rung, and a mark in each row. Decision 1 records what each is worth.
