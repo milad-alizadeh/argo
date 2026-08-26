@@ -34,7 +34,7 @@ struct ProjectDrawerProjectionTests {
     }
 
     @Test
-    func `the active Project is the one marked, and only that one`() {
+    func `the active Project is the one ticked, and only that one`() {
         let rows = ProjectDrawerProjection.rows(from: presentation(activeProjectID: "cockpit"))
 
         #expect(rows.map(\.isActive) == [false, true, false])

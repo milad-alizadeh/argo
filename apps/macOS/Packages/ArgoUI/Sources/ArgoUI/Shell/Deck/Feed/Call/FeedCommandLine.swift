@@ -15,7 +15,7 @@ enum FeedCommandLine {
         let ran = beforePipe(work)
             .replacingOccurrences(of: redirection, with: "", options: .regularExpression)
             .trimmingCharacters(in: .whitespaces)
-        return marked(
+        return elided(
             elidingLongPaths(in: ran),
             preambled: work.count != whole.count,
             plumbed: ran.count != work.count,
@@ -86,7 +86,7 @@ enum FeedCommandLine {
 
     /// The ellipses, on whichever ends something was left behind. A command that needed no cut is
     /// drawn whole and carries none, which is what makes one on a drawn command mean anything.
-    private static func marked(_ command: String, preambled: Bool, plumbed: Bool) -> String {
+    private static func elided(_ command: String, preambled: Bool, plumbed: Bool) -> String {
         (preambled ? "… " : "") + command + (plumbed ? " …" : "")
     }
 

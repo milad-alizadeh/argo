@@ -10,10 +10,10 @@ extension MinimapRowShape {
     /// The rectangles this row draws, in the row's own coordinates, across a drawable `measure`
     /// points wide. `height` is what the feed table measured the row at, which is what the shapes
     /// drawn as a whole row take.
-    @MainActor func marks(across measure: CGFloat, height: CGFloat) -> [MinimapRowMark] {
+    @MainActor func rects(across measure: CGFloat, height: CGFloat) -> [MinimapRowRect] {
         switch self {
         case let .composed(blocks, ink):
-            MinimapProseBlock.marks(of: blocks, ink: ink, across: measure)
+            MinimapProseBlock.rects(of: blocks, ink: ink, across: measure)
         case let .bubble(text, shots, isFolded):
             Self.bubble(text, shots: shots, isFolded: isFolded, across: measure)
         case let .line(parts, ink):
@@ -23,7 +23,7 @@ extension MinimapRowShape {
         case let .card(card):
             Self.card(card, across: measure, height: height)
         case let .whole(ink):
-            [MinimapRowMark(y: 0, height: height, from: 0, to: measure, ink: ink)]
+            [MinimapRowRect(y: 0, height: height, from: 0, to: measure, ink: ink)]
         }
     }
 }
@@ -32,12 +32,12 @@ extension MinimapRowShape {
     /// A gallery's thumbnails, wrapped across the measure the way `FeedGalleryRow` wraps them
     /// across the column. Drawn one frame per shot rather than one over the run, because the count
     /// is the whole question a reader has about a turn that rendered something.
-    static func shots(_ count: Int, across measure: CGFloat) -> [MinimapRowMark] {
+    static func shots(_ count: Int, across measure: CGFloat) -> [MinimapRowRect] {
         let step = ArgoFeedRow.shotWidth + ArgoFeedRow.shotGap
         let columns = max(1, Int((max(measure, 1) + ArgoFeedRow.shotGap) / step))
         return (0 ..< max(0, count)).map { shot in
             let x = CGFloat(shot % columns) * step
-            return MinimapRowMark(
+            return MinimapRowRect(
                 y: ArgoFeedRow.shotBreath
                     + CGFloat(shot / columns) * (ArgoFeedRow.shotHeight + ArgoFeedRow.shotGap),
                 height: ArgoFeedRow.shotHeight,

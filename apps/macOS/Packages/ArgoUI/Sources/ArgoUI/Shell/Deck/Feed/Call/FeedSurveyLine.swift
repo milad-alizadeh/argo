@@ -14,7 +14,7 @@ struct FeedSurveyLine: View {
     /// specimen draws the list without a panel to send anybody to.
     var look: (Int) -> Void = { _ in }
     /// Which step of the panel is being shown, where this row is the open one. The name that points
-    /// at it is marked.
+    /// at it is the current one.
     var current: Int?
 
     var body: some View {

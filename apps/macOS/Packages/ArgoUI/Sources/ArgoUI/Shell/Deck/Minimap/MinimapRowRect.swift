@@ -9,7 +9,7 @@ import Foundation
 /// every row that was not plain body prose set on the line grid.
 ///
 /// Points and not shares, so nothing here needs to know what the lane's width stands for.
-struct MinimapRowMark: Equatable, Sendable {
+struct MinimapRowRect: Equatable, Sendable {
     var y: CGFloat
     var height: CGFloat
     var from: CGFloat
@@ -23,16 +23,16 @@ struct MinimapRowMark: Equatable, Sendable {
         shape ?? ink.shape
     }
 
-    /// The same mark, `by` points further down. What a block returns is in the block's coordinates;
+    /// The same rect, `by` points further down. What a block returns is in the block's coordinates;
     /// the row moves it into its own.
-    func lowered(by offset: CGFloat) -> MinimapRowMark {
+    func lowered(by offset: CGFloat) -> MinimapRowRect {
         var moved = self
         moved.y += offset
         return moved
     }
 
-    /// The same mark, `by` points further across.
-    func indented(by offset: CGFloat) -> MinimapRowMark {
+    /// The same rect, `by` points further across.
+    func indented(by offset: CGFloat) -> MinimapRowRect {
         var moved = self
         moved.from += offset
         moved.to += offset
@@ -40,7 +40,7 @@ struct MinimapRowMark: Equatable, Sendable {
     }
 }
 
-extension MinimapRowMark {
+extension MinimapRowRect {
     /// One drawn line of words: its box at the face's own height, running as far as the words got.
     @MainActor static func line(
         _ at: Int,
@@ -48,8 +48,8 @@ extension MinimapRowMark {
         in face: ProseFace,
         ink: FeedInk,
     )
-        -> MinimapRowMark {
-        MinimapRowMark(
+        -> MinimapRowRect {
+        MinimapRowRect(
             y: face.y(ofLine: at),
             height: face.lineBox,
             from: 0,

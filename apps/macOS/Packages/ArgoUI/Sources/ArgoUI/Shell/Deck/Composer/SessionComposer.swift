@@ -168,13 +168,13 @@ struct SessionComposer: View {
         // opened it. The `@` tree is read asynchronously, so its rows arrive after that moment, and
         // a cursor settled over the empty list stayed nil: ⏎ then fell past both menus and sent the
         // half-typed line instead of picking the top row.
-        .onChange(of: markedIDs, initial: true) { _, ids in cursor.settle(over: ids) }
+        .onChange(of: menuIDs, initial: true) { _, ids in cursor.settle(over: ids) }
     }
 
     /// An arrow key, and whether a menu took it. `false` where there is none, so the field's own
     /// caret movement is untouched on every line that opens nothing.
     private func walk(_ key: ComposerKeyIntent) -> Bool {
-        let ids = markedIDs
+        let ids = menuIDs
         guard !ids.isEmpty else { return false }
         if key == .walkDown {
             cursor.down(over: ids)

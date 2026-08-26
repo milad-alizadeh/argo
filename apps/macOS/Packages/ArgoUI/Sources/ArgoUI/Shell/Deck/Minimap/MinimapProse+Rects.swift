@@ -8,29 +8,29 @@ import Foundation
 // which is what `FeedMarkdown`'s own `VStack` does with the same step between them.
 
 extension MinimapProseBlock {
-    /// The marks a row's blocks make, in the row's own coordinates.
-    @MainActor static func marks(
+    /// The rects a row's blocks make, in the row's own coordinates.
+    @MainActor static func rects(
         of blocks: [MinimapProseBlock],
         ink: FeedInk,
         across measure: CGFloat,
     )
-        -> [MinimapRowMark] {
-        var marks: [MinimapRowMark] = []
+        -> [MinimapRowRect] {
+        var rects: [MinimapRowRect] = []
         var y: CGFloat = 0
         for block in blocks {
             let laid = block.laid(ink: ink, across: measure)
-            marks += laid.marks.map { $0.lowered(by: y) }
+            rects += laid.rects.map { $0.lowered(by: y) }
             y += laid.height + ArgoFeedRow.blockStep
         }
-        return marks
+        return rects
     }
 
-    /// One block's marks in its OWN coordinates, and how tall it stands.
+    /// One block's rects in its OWN coordinates, and how tall it stands.
     @MainActor func laid(
         ink: FeedInk,
         across measure: CGFloat,
     )
-        -> (marks: [MinimapRowMark], height: CGFloat) {
+        -> (rects: [MinimapRowRect], height: CGFloat) {
         switch self {
         case let .prose(words):
             words.laid(ink: ink, across: measure)
@@ -50,13 +50,13 @@ extension MinimapProseBlock {
         ink: FeedInk,
         across measure: CGFloat,
     )
-        -> (marks: [MinimapRowMark], height: CGFloat) {
+        -> (rects: [MinimapRowRect], height: CGFloat) {
         let label = hasInfo
             ? ProseFace(rung: ArgoTypography.sectionLabel.rung).lineBox + ArgoSpacing.tight
             : 0
         let height = ArgoSpacing.base * 2 + label + ProseFace.machine.height(ofLines: lines)
         return (
-            [MinimapRowMark(y: 0, height: height, from: 0, to: measure, ink: ink)],
+            [MinimapRowRect(y: 0, height: height, from: 0, to: measure, ink: ink)],
             height,
         )
     }
@@ -65,11 +65,11 @@ extension MinimapProseBlock {
 extension MinimapProseWords {
     /// A run of words at the widths they wrapped to, and the links inside it where they landed.
     @MainActor func laid(ink: FeedInk, across measure: CGFloat)
-        -> (marks: [MinimapRowMark], height: CGFloat) {
+        -> (rects: [MinimapRowRect], height: CGFloat) {
         let column = max(0, measure - indent)
         let lay = ProseMetrics.lay(out: text, across: column, in: face)
         let lines = lay.widths.enumerated().map { at, width in
-            MinimapRowMark.line(at, width: width, in: face, ink: ink)
+            MinimapRowRect.line(at, width: width, in: face, ink: ink)
                 .indented(by: indent)
         }
         return (
@@ -80,9 +80,9 @@ extension MinimapProseWords {
 
     /// The links, drawn after the lines so the accent sits over the words it is part of. They take
     /// no ink from the caller: a link is the accent whatever the prose around it is set in.
-    @MainActor private func links(of lay: ProseLay) -> [MinimapRowMark] {
+    @MainActor private func links(of lay: ProseLay) -> [MinimapRowRect] {
         lay.links.map { place in
-            MinimapRowMark(
+            MinimapRowRect(
                 y: face.y(ofLine: place.line),
                 height: face.lineBox,
                 from: indent + place.from,
@@ -93,10 +93,10 @@ extension MinimapProseWords {
     }
 
     /// A list item's marker, trailing-aligned in its own column exactly as `FeedMarkdown` sets it.
-    @MainActor private func marker(ink: FeedInk) -> [MinimapRowMark] {
+    @MainActor private func marker(ink: FeedInk) -> [MinimapRowRect] {
         guard let marker else { return [] }
         let width = min(ArgoFeedRow.markerWidth, ProseMetrics.width(of: marker, in: face))
-        return [MinimapRowMark(
+        return [MinimapRowRect(
             y: 0,
             height: face.lineBox,
             from: ArgoFeedRow.markerWidth - width,

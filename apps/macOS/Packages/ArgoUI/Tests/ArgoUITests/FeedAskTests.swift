@@ -55,9 +55,9 @@ struct FeedAskTests {
         #expect(ask.chosen(in: Self.question) == "The attention ink")
     }
 
-    /// The reading is that the answer NAMES an option; where it names none, nothing is marked.
+    /// The reading is that the answer NAMES an option; where it names none, nothing is chosen.
     @Test
-    func `an answer naming none of the options marks nothing`() throws {
+    func `an answer naming none of the options chooses nothing`() throws {
         let ask = try #require(asked("neither, ask me again"))
 
         #expect(ask.chosen(in: Self.question) == nil)
@@ -91,7 +91,7 @@ struct FeedAskTests {
     }
 
     @Test
-    func `the option the answer named is the only one marked chosen`() throws {
+    func `the option the answer named is the only one chosen`() throws {
         let ask = try #require(asked("The ordinary ink"))
 
         #expect(ask.offers(in: Self.question).map(\.isChosen) == [false, true])

@@ -9,7 +9,7 @@ import SwiftUI
 struct FileMenu: View {
     let menu: WorkspaceFileProjection.Menu
     /// Which row the keyboard cursor is on, by path. `nil` while the list is empty.
-    let marked: String?
+    let current: String?
     let pick: (WorkspaceFileProjection.Row) -> Void
 
     var body: some View {
@@ -27,7 +27,7 @@ struct FileMenu: View {
                 LazyVStack(alignment: .leading, spacing: ArgoSpacing.flush) {
                     ForEach(menu.rows) { row in
                         Button { pick(row) } label: {
-                            FileMenuRow(row: row, isMarked: row.path == marked)
+                            FileMenuRow(row: row, isCurrent: row.path == current)
                         }
                         .buttonStyle(.plain)
                     }

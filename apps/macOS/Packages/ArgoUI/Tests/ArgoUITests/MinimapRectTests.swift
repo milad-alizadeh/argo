@@ -2,15 +2,15 @@
 import Foundation
 import Testing
 
-/// Where a row's reported marks land in the miniature — the half of the arithmetic that decides
+/// Where a row's reported rects land in the miniature — the half of the arithmetic that decides
 /// what is drawn, as against `MinimapGeometryTests`, which is where the reading sits.
 ///
 /// The lane has one job here and the suite holds it to it: scale what the row reported. The numbers
 /// divide in binary so no expectation is a rounding story — a 100pt lane beside an 800pt column
 /// compresses exactly eight to one.
 @MainActor
-@Suite("Minimap marks")
-struct MinimapMarkTests {
+@Suite("Minimap rects")
+struct MinimapRectTests {
     private static func geometry(_ reading: MinimapReading) -> MinimapGeometry {
         MinimapGeometry(reading, lane: CGSize(width: 100, height: 600))
     }
@@ -20,7 +20,7 @@ struct MinimapMarkTests {
     }
 
     @Test
-    func `each row's mark sits at its own place in the reading`() {
+    func `each row's rect sits at its own place in the reading`() {
         let reading = MinimapReading(
             rows: MinimapGeometryTests.rows([800, 2400, 400]),
             columnWidth: 800,
@@ -31,12 +31,12 @@ struct MinimapMarkTests {
         #expect(lane.documentY(row: 0) == 0)
         #expect(lane.documentY(row: 1) == 800)
         #expect(lane.documentY(row: 2) == 3200)
-        // The top gutter is scrollable too, so the first mark starts below it.
-        #expect(lane.marks(in: 0 ... 600).map(\.y) == [3, 103, 403])
+        // The top gutter is scrollable too, so the first rect starts below it.
+        #expect(lane.rects(in: 0 ... 600).map(\.y) == [3, 103, 403])
     }
 
     /// A row reports what its words would make, and the feed may have drawn fewer: a prompt the
-    /// reader has folded is measured at two lines however long the prompt is. The marks past what
+    /// reader has folded is measured at two lines however long the prompt is. The rects past what
     /// the row was measured at are dropped, so a fold cannot spill a prompt over the row under it.
     @Test
     func `a row that reports more than the feed drew is held inside its own extent`() {
@@ -54,11 +54,11 @@ struct MinimapMarkTests {
             ),
             MinimapRow(height: 400, shape: .oneLine),
         ]))
-        let drawn = lane.marks(in: 0 ... 600).filter { $0.ink == .prompt }
+        let drawn = lane.rects(in: 0 ... 600).filter { $0.ink == .prompt }
         #expect(whole.count > 2)
         #expect(drawn.count == 2)
-        // The last of them ends at the row's own foot, the floor under a mark aside.
-        let foot = lane.markY(row: 1) + ArgoMinimapLane.markMinimumHeight
+        // The last of them ends at the row's own foot, the floor under a rect aside.
+        let foot = lane.rectY(row: 1) + ArgoMinimapLane.rectMinimumHeight
         #expect(drawn.allSatisfy { $0.y + $0.height <= foot })
     }
 
@@ -71,31 +71,31 @@ struct MinimapMarkTests {
                 of: MinimapText.paragraph, ink: .message,
             )),
         ]))
-        let marks = lane.marks(in: 0 ... 600)
-        #expect(!marks.isEmpty)
-        #expect(marks.allSatisfy { $0.y >= 0 && $0.y + $0.height <= 800 * lane.scale })
+        let rects = lane.rects(in: 0 ... 600)
+        #expect(!rects.isEmpty)
+        #expect(rects.allSatisfy { $0.y >= 0 && $0.y + $0.height <= 800 * lane.scale })
     }
 
     @Test
     func `a row compressed below what can be seen is still drawn at the floor`() {
         let lane = Self.geometry(Self.reading(MinimapGeometryTests.rows([4])))
-        #expect(lane.marks(in: 0 ... 600).map(\.height) == [ArgoMinimapLane.markMinimumHeight])
+        #expect(lane.rects(in: 0 ... 600).map(\.height) == [ArgoMinimapLane.rectMinimumHeight])
     }
 
     /// The whole reason #658 exists. At `feedAtScale`'s length the lane squeezed the whole session
-    /// into its own height and every mark fell to the floor. At the feed's own ratio a modest row
+    /// into its own height and every rect fell to the floor. At the feed's own ratio a modest row
     /// is several points tall, whatever the length.
     @Test
-    func `a session at a real length still has marks that can be told apart`() {
+    func `a session at a real length still has rects that can be told apart`() {
         let reading = MinimapReading(
             rows: MinimapGeometryTests.rows(Array(repeating: 40, count: 1031)),
             columnWidth: 620,
             viewportHeight: 600,
         )
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: 600))
-        let head = lane.marks(in: 0 ... 600).map(\.height)
+        let head = lane.rects(in: 0 ... 600).map(\.height)
         #expect(!head.isEmpty)
-        #expect(head.allSatisfy { $0 > ArgoMinimapLane.markMinimumHeight })
+        #expect(head.allSatisfy { $0 > ArgoMinimapLane.rectMinimumHeight })
     }
 
     /// Two rows of one line each read as the same weight, whatever spacing the feed put around
@@ -106,7 +106,7 @@ struct MinimapMarkTests {
             MinimapRow(height: 24, shape: .oneLine),
             MinimapRow(height: 39, shape: .oneLine),
         ]))
-        let heights = lane.marks(in: 0 ... 600).map(\.height)
+        let heights = lane.rects(in: 0 ... 600).map(\.height)
         #expect(heights.count == 2)
         #expect(heights[0] == heights[1])
     }
@@ -121,30 +121,30 @@ struct MinimapMarkTests {
             Self.reading([MinimapRow(height: 800, shape: text)], column: 8000),
             lane: CGSize(width: 100, height: 600),
         )
-        #expect(squeezed.marks(in: 0 ... 600).count < tall.marks(in: 0 ... 600).count)
-        #expect(squeezed.marks(in: 0 ... 600).first?.y == tall.marks(in: 0 ... 600).first?.y)
+        #expect(squeezed.rects(in: 0 ... 600).count < tall.rects(in: 0 ... 600).count)
+        #expect(squeezed.rects(in: 0 ... 600).first?.y == tall.rects(in: 0 ... 600).first?.y)
     }
 
-    /// Marks that share a line sit BESIDE each other rather than under each other, so the floor
+    /// Rects that share a line sit BESIDE each other rather than under each other, so the floor
     /// that thins a compressed paragraph must leave them alone. It did not: a list drew four
     /// markers and no words, and every link accent in the reading went with them.
     @Test
-    func `marks sharing a line are all drawn`() {
+    func `rects sharing a line are all drawn`() {
         let lane = Self.geometry(Self.reading([
             MinimapRow(height: 200, shape: MinimapProseBlock.shape(
                 of: "- one item\n- two, per [ADR-0021](https://a.b)\n- three", ink: .message,
             )),
         ]))
-        let marks = lane.marks(in: 0 ... 600)
-        let words = marks.filter { $0.ink == .message }
+        let rects = lane.rects(in: 0 ... 600)
+        let words = rects.filter { $0.ink == .message }
         // Three markers and the three runs of words beside them, plus the one link.
         #expect(words.count == 6)
-        #expect(marks.filter { $0.ink == .link }.count == 1)
+        #expect(rects.filter { $0.ink == .link }.count == 1)
         // Each item's words start past its own marker, and three distinct lines were drawn.
         #expect(Set(words.map(\.y)).count == 3)
     }
 
-    /// A stroked mark thins under compression exactly as a filled one does. Held to bars alone, a
+    /// A stroked rect thins under compression exactly as a filled one does. Held to bars alone, a
     /// table's cells and a question's card kept every row of their grid at the floor — which is the
     /// same unreadable smear the rule exists to stop, drawn in outline.
     @Test
@@ -160,8 +160,8 @@ struct MinimapMarkTests {
             Self.reading([MinimapRow(height: 900, shape: table)], column: 8000),
             lane: CGSize(width: 100, height: 600),
         )
-        let cells = tall.marks(in: 0 ... 600).filter { $0.shape == .frame }
-        let thinned = squeezed.marks(in: 0 ... 600).filter { $0.shape == .frame }
+        let cells = tall.rects(in: 0 ... 600).filter { $0.shape == .frame }
+        let thinned = squeezed.rects(in: 0 ... 600).filter { $0.shape == .frame }
         #expect(!cells.isEmpty)
         #expect(thinned.count < cells.count)
     }
@@ -178,7 +178,7 @@ struct MinimapMarkTests {
             MinimapRow(height: 40, shape: .oneLine),
             MinimapRow(height: 200, shape: .shots(count: 4)),
         ]))
-        let spans = lane.marks(in: 0 ... 600).map(\.span)
+        let spans = lane.rects(in: 0 ... 600).map(\.span)
         #expect(!spans.isEmpty)
         #expect(spans.allSatisfy { $0.lowerBound >= 0 && $0.upperBound <= 1 })
     }

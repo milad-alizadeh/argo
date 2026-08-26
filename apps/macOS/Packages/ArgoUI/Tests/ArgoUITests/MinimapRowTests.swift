@@ -145,14 +145,14 @@ struct MinimapRowTests {
             ink: .attention,
             isRuled: true,
         )))
-        let marks = Self.shape(.ask(ask)).marks(across: 400, height: 90)
+        let rects = Self.shape(.ask(ask)).rects(across: 400, height: 90)
         // The card's own border, stroked across the whole measure, with the words filled inside it.
-        #expect(marks.first == MinimapRowMark(
+        #expect(rects.first == MinimapRowRect(
             y: 0, height: 90, from: 0, to: 400, ink: .attention, shape: .frame,
         ))
-        #expect(marks.dropFirst().allSatisfy { $0.drawn == .bar && $0.from > 0 })
+        #expect(rects.dropFirst().allSatisfy { $0.drawn == .bar && $0.from > 0 })
         // Three lines, each its marker and its words: the question and the two options under it.
-        #expect(marks.count == 7)
+        #expect(rects.count == 7)
     }
 
     /// The attention ink means *this is waiting on YOU*. On a Session Argo cannot drive it is not,
@@ -180,7 +180,7 @@ struct MinimapRowTests {
         #expect(Self.shape(.ask(settled)) == .card(MinimapAskCard(
             questions: [], ink: .message, isRuled: false,
         )))
-        #expect(Self.shape(.ask(settled)).marks(across: 400, height: 90).isEmpty)
+        #expect(Self.shape(.ask(settled)).rects(across: 400, height: 90).isEmpty)
     }
 
     @Test

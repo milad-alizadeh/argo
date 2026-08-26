@@ -90,19 +90,19 @@ struct MinimapCostTests {
         }
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: Self.column.height))
         let band = 0 ... Self.column.height
-        let cold = Self.elapsed { _ = lane.marks(in: band) }
-        let warm = Self.elapsed { _ = lane.marks(in: band) }
-        #expect(!lane.marks(in: band).isEmpty)
+        let cold = Self.elapsed { _ = lane.rects(in: band) }
+        let warm = Self.elapsed { _ = lane.rects(in: band) }
+        #expect(!lane.rects(in: band).isEmpty)
         // Cold is the Core Text pass; warm comes off the cache and is the repaint the reader feels.
         #expect(cold < 0.2)
         #expect(warm < 0.02)
         // A band twice as far down the session costs the same: nothing above it is touched.
         let below = lane.miniatureHeight / 2 ... lane.miniatureHeight / 2 + Self.column.height
-        _ = lane.marks(in: below)
-        #expect(Self.elapsed { _ = lane.marks(in: below) } < 0.02)
+        _ = lane.rects(in: below)
+        #expect(Self.elapsed { _ = lane.rects(in: below) } < 0.02)
     }
 
-    /// A scroll inside the held band repaints the same marks over and over. Sixty of them is one
+    /// A scroll inside the held band repaints the same rects over and over. Sixty of them is one
     /// second of reading at frame rate, and it has to come off the caches.
     @Test
     func `a second of scrolling inside one band stays inside a frame budget`() {
@@ -112,10 +112,10 @@ struct MinimapCostTests {
             return
         }
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: Self.column.height))
-        _ = lane.marks(in: 0 ... Self.column.height)
+        _ = lane.rects(in: 0 ... Self.column.height)
         let cost = Self.elapsed {
             for at in 0 ..< 60 {
-                _ = lane.marks(in: CGFloat(at) ... CGFloat(at) + Self.column.height)
+                _ = lane.rects(in: CGFloat(at) ... CGFloat(at) + Self.column.height)
             }
         }
         // Sixty frames' worth of budget for sixty frames. It bounds the average rather than the
@@ -142,7 +142,7 @@ struct MinimapCostTests {
                     reading,
                     lane: CGSize(width: 112, height: Self.column.height),
                 )
-                _ = lane.marks(in: 0 ... Self.column.height)
+                _ = lane.rects(in: 0 ... Self.column.height)
             }
         }
         // Thirty frames of a drag. Each one measures the band's rows afresh, so this is the number
@@ -166,9 +166,9 @@ struct MinimapCostTests {
         }
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: Self.column.height))
         let band = 0 ... Self.column.height
-        let cold = Self.elapsed { _ = lane.marks(in: band) }
-        let warm = Self.elapsed { _ = lane.marks(in: band) }
-        #expect(!lane.marks(in: band).isEmpty)
+        let cold = Self.elapsed { _ = lane.rects(in: band) }
+        let warm = Self.elapsed { _ = lane.rects(in: band) }
+        #expect(!lane.rects(in: band).isEmpty)
         #expect(cold < 0.2)
         #expect(warm < 0.05)
     }

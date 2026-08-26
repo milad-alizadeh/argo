@@ -34,7 +34,7 @@ struct FeedCommandLineTests {
 
     /// An assignment is a scratchpad path where the verb should be, and the row opened on it.
     @Test
-    func `a leading assignment is dropped and marked`() {
+    func `a leading assignment is dropped and an ellipsis says so`() {
         #expect(FeedCommandLine.head(of: "ARGO_SPECIMEN=feed sh scripts/screenshot.sh out.png")
             == "… sh scripts/screenshot.sh out.png")
     }

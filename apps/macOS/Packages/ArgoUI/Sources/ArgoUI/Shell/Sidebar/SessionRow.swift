@@ -168,7 +168,7 @@ struct SessionRow: View {
     /// `worktree` only for a checkout git answered `worktree` for.
     @ViewBuilder private var worktreeLabel: some View {
         if let worktree = row.worktree {
-            ArgoMarkedName(
+            ArgoKindedName(
                 symbol: ArgoSymbol.worktree, name: worktree, style: ArgoTypography.rowMeta,
             )
         }

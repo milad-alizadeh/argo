@@ -10,7 +10,7 @@ struct FileMenuRow: View {
 
     let row: WorkspaceFileProjection.Row
     /// Whether the keyboard cursor is on this row. Not the same as being under the pointer.
-    let isMarked: Bool
+    let isCurrent: Bool
 
     @State private var isHovered = false
 
@@ -32,7 +32,7 @@ struct FileMenuRow: View {
         .contentShape(.rect)
         .onHover { isHovered = $0 }
         .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(isMarked ? [.isSelected, .isButton] : .isButton)
+        .accessibilityAddTraits(isCurrent ? [.isSelected, .isButton] : .isButton)
     }
 
     /// No accent inking on the matched characters: a subsequence scatters them across the segments,
@@ -66,7 +66,7 @@ struct FileMenuRow: View {
     }
 
     private var fill: ArgoColor? {
-        switch (isMarked, isHovered) {
+        switch (isCurrent, isHovered) {
         case (true, _): argo.color.surface.marked
         case (false, true): argo.color.surface.hover
         case (false, false): nil

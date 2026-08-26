@@ -60,15 +60,15 @@ struct FeedPromptImageTests {
         #expect(shot.media.tier == .direct)
     }
 
-    private static func marks(_ text: String, shots: Int) -> [MinimapRowMark] {
+    private static func rects(_ text: String, shots: Int) -> [MinimapRowRect] {
         MinimapRowShape.bubble(text: text, shots: shots, isFolded: true)
-            .marks(across: MinimapRowMarkTests.measure, height: 1000)
+            .rects(across: MinimapRowRectTests.measure, height: 1000)
     }
 
     @Test
     func `the lane draws the thumbnails and puts the words under them`() {
-        let bare = Self.marks("Fix the seam", shots: 0)
-        let carried = Self.marks("Fix the seam", shots: 2)
+        let bare = Self.rects("Fix the seam", shots: 0)
+        let carried = Self.rects("Fix the seam", shots: 2)
 
         // Two frames on top of the one line of words, and the words pushed below them: a prompt
         // that is mostly a thumbnail misreports its own height otherwise.
@@ -82,22 +82,22 @@ struct FeedPromptImageTests {
     /// drew off the trailing edge of the lane.
     @Test
     func `the bubble is as wide as its pictures where they are wider than its words`() {
-        let marks = Self.marks("Fix it", shots: 2)
+        let rects = Self.rects("Fix it", shots: 2)
 
-        let edge = MinimapRowMarkTests.measure - ArgoFeedRow.bubbleInsetX
-        #expect(marks.allSatisfy { $0.to <= edge + 1 })
-        #expect(marks.filter { $0.ink == .media }.map(\.from).min() == marks.map(\.from).min())
+        let edge = MinimapRowRectTests.measure - ArgoFeedRow.bubbleInsetX
+        #expect(rects.allSatisfy { $0.to <= edge + 1 })
+        #expect(rects.filter { $0.ink == .media }.map(\.from).min() == rects.map(\.from).min())
     }
 
     /// The pictures ride the bubble's trailing edge, the way the row stacks them. Reported from the
     /// leading edge instead, a long prompt's thumbnail drew on the wrong side of its own bubble.
     @Test
     func `the thumbnails sit against the trailing edge a long prompt's bubble is drawn on`() {
-        let marks = Self.marks(String(repeating: "Fold me. ", count: 20), shots: 1)
+        let rects = Self.rects(String(repeating: "Fold me. ", count: 20), shots: 1)
 
-        let pictures = marks.filter { $0.ink == .media }
-        #expect(pictures.map(\.to).max() == marks.map(\.to).max())
-        #expect((pictures.map(\.from).min() ?? 0) > (marks.map(\.from).min() ?? 0))
+        let pictures = rects.filter { $0.ink == .media }
+        #expect(pictures.map(\.to).max() == rects.map(\.to).max())
+        #expect((pictures.map(\.from).min() ?? 0) > (rects.map(\.from).min() ?? 0))
     }
 
     /// What the two writes a press can make land in, so a case can say which one it was.

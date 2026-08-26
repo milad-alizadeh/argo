@@ -16,7 +16,7 @@ extension MinimapGeometry {
     }
 
     /// Where a row's block sits in the miniature, counted down from its head.
-    func markY(row: Int) -> CGFloat {
+    func rectY(row: Int) -> CGFloat {
         (reading.topInset + documentY(row: row)) * scale
     }
 
@@ -25,7 +25,7 @@ extension MinimapGeometry {
     /// may still reach into it.
     var lineInLane: CGFloat {
         max(
-            ArgoMinimapLane.markMinimumHeight + ArgoMinimapLane.markGap,
+            ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap,
             ArgoFeedRow.lineHeight * scale,
         )
     }
@@ -37,92 +37,92 @@ extension MinimapGeometry {
         max(0, reading.columnWidth - ArgoFeedRow.inset * 2)
     }
 
-    /// The marks inside a band of the miniature. Both ends are found by binary search over the
+    /// The rects inside a band of the miniature. Both ends are found by binary search over the
     /// prefix sums, so the cost is the band's own row count rather than the session's.
     ///
-    /// The low end is widened by one line: the floor under a mark can draw a short row's block a
+    /// The low end is widened by one line: the floor under a rect can draw a short row's block a
     /// touch past its own extent, so a row ending just above the band can still reach it.
-    @MainActor func marks(in band: ClosedRange<CGFloat>) -> [MinimapMark] {
+    @MainActor func rects(in band: ClosedRange<CGFloat>) -> [MinimapRect] {
         guard scale > 0, !reading.rows.isEmpty else { return [] }
         let head = (band.lowerBound - lineInLane) / scale - reading.topInset
         let foot = band.upperBound / scale - reading.topInset
-        return (row(startingAtOrBefore: head) ... row(startingAtOrBefore: foot)).flatMap(marks(at:))
+        return (row(startingAtOrBefore: head) ... row(startingAtOrBefore: foot)).flatMap(rects(at:))
     }
 
-    /// One row's reported marks, scaled into the lane.
+    /// One row's reported rects, scaled into the lane.
     ///
     /// Two things happen to them here and nothing else does. They are held inside the row's own
     /// measured extent, so a row that reports more than the feed drew — a prompt the reader has
-    /// folded — cannot spill into the row below it. And a mark the scale has squeezed under the
+    /// folded — cannot spill into the row below it. And a rect the scale has squeezed under the
     /// floor is dropped where its neighbour already covers it, so a compressed paragraph reads as
     /// texture rather than as one smear of overdrawn ink.
-    @MainActor private func marks(at index: Int) -> [MinimapMark] {
+    @MainActor private func rects(at index: Int) -> [MinimapRect] {
         let row = reading.rows[index]
         // What the row's CONTENT gets, which is its cell less the step drawn above it.
         let extent = max(0, row.height - row.topStep)
-        let top = markY(row: index) + row.topStep * scale
+        let top = rectY(row: index) + row.topStep * scale
         let measure = proseMeasure
         guard measure > 0 else { return [] }
         var lastY = -CGFloat.greatestFiniteMagnitude
-        var marks: [MinimapMark] = []
-        for mark in row.shape.marks(across: measure, height: extent) {
-            guard marks.isEmpty || fits(mark, inside: extent) else { continue }
-            let y = top + mark.y * scale
-            guard !isCrowded(mark, at: y, under: lastY) else { continue }
+        var rects: [MinimapRect] = []
+        for rect in row.shape.rects(across: measure, height: extent) {
+            guard rects.isEmpty || fits(rect, inside: extent) else { continue }
+            let y = top + rect.y * scale
+            guard !isCrowded(rect, at: y, under: lastY) else { continue }
             lastY = max(lastY, y)
-            marks.append(scaled(mark, at: y, inside: extent, across: measure))
+            rects.append(scaled(rect, at: y, inside: extent, across: measure))
         }
-        return marks
+        return rects
     }
 
     /// Whether the scale has squeezed a bar so close under its neighbour that the two would draw as
     /// one smear. A compressed paragraph then reads as texture rather than as overdrawn ink.
     ///
-    /// Only what is STACKED counts. A mark at or above the last one is beside it, not under it — a
+    /// Only what is STACKED counts. A rect at or above the last one is beside it, not under it — a
     /// list item's marker, a link's accent and every piece of a call's sentence share their line's
     /// own `y`, and a rule that looked at the distance alone dropped all of them.
-    private func isCrowded(_ mark: MinimapRowMark, at y: CGFloat, under lastY: CGFloat) -> Bool {
+    private func isCrowded(_ rect: MinimapRowRect, at y: CGFloat, under lastY: CGFloat) -> Bool {
         // A rule is the floor already and has nothing to give up; everything else can be thinned, a
         // table's cells and a card's border included. Stroking those at the floor is the same smear
         // as filling them.
-        guard mark.drawn != .rule, y > lastY else { return false }
-        return y - lastY < ArgoMinimapLane.markMinimumHeight + ArgoMinimapLane.markGap
+        guard rect.drawn != .rule, y > lastY else { return false }
+        return y - lastY < ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap
     }
 
     /// Whether the feed really drew this rectangle. A row reports what its words WOULD make, and
     /// the row may be measured shorter — a prompt the reader has folded is the case that matters.
-    /// The first mark is always kept, because a row too compressed to hold even one line still has
+    /// The first rect is always kept, because a row too compressed to hold even one line still has
     /// to stand for itself.
     ///
     /// The point of slack is the row height's own rounding: the table ceils every height to a whole
     /// point, so a run of lines can end a fraction past what it was measured at.
-    private func fits(_ mark: MinimapRowMark, inside extent: CGFloat) -> Bool {
-        mark.y + mark.height <= extent + 1
+    private func fits(_ rect: MinimapRowRect, inside extent: CGFloat) -> Bool {
+        rect.y + rect.height <= extent + 1
     }
 
     /// One reported rectangle in the lane's own terms: points of reading become points of lane, and
     /// points across the drawable become shares of it.
     private func scaled(
-        _ mark: MinimapRowMark,
+        _ rect: MinimapRowRect,
         at y: CGFloat,
         inside extent: CGFloat,
         across measure: CGFloat,
     )
-        -> MinimapMark {
+        -> MinimapRect {
         // A rule keeps the floor whatever the row is worth: the punctuation between Turns is a
         // hairline in the feed and stays one here.
-        let height = mark.drawn == .rule
-            ? ArgoMinimapLane.markMinimumHeight
+        let height = rect.drawn == .rule
+            ? ArgoMinimapLane.rectMinimumHeight
             : max(
-                ArgoMinimapLane.markMinimumHeight,
-                min(mark.height, extent - mark.y) * scale,
+                ArgoMinimapLane.rectMinimumHeight,
+                min(rect.height, extent - rect.y) * scale,
             )
-        return MinimapMark(
+        return MinimapRect(
             y: y,
             height: height,
-            span: MinimapMark.span(mark.from / measure, mark.to / measure),
-            ink: mark.ink,
-            shape: mark.drawn,
+            span: MinimapRect.span(rect.from / measure, rect.to / measure),
+            ink: rect.ink,
+            shape: rect.drawn,
         )
     }
 

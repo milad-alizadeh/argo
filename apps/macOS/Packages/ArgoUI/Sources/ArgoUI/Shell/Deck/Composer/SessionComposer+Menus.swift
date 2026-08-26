@@ -34,14 +34,14 @@ extension SessionComposer {
     /// two thirds of a real `description:` would be an ellipsis.
     @ViewBuilder var commandMenu: some View {
         if let menu {
-            CommandMenu(menu: menu, marked: cursor.marked) { draft.take($0.command) }
+            CommandMenu(menu: menu, current: cursor.current) { draft.take($0.command) }
                 .padding(.bottom, Self.gapAboveVessel)
         }
     }
 
     @ViewBuilder var fileMenu: some View {
         if let mentionMenu {
-            FileMenu(menu: mentionMenu, marked: cursor.marked, pick: take(mention:))
+            FileMenu(menu: mentionMenu, current: cursor.current, pick: take(mention:))
                 .padding(.bottom, Self.gapAboveVessel)
         }
     }
@@ -54,7 +54,7 @@ extension SessionComposer {
 
     /// The ids of whichever menu is open, in drawing order — what the cursor walks and what ⏎
     /// picks out of, so neither can fall out of step with the list on screen.
-    var markedIDs: [String] {
+    var menuIDs: [String] {
         menu?.rows.map(\.id) ?? mentionMenu?.rows.map(\.id) ?? []
     }
 
