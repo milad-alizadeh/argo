@@ -27,13 +27,15 @@ extension SessionAnnotations.Annotation: Codable {
     private enum CodingKeys: String, CodingKey {
         case archived
         case name
+        case ticketTitle
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let archived = try container.decodeIfPresent(Bool.self, forKey: .archived)
         let name = try container.decodeIfPresent(String.self, forKey: .name)
-        self.init(isArchived: archived ?? false, explicitName: name)
+        let ticketTitle = try container.decodeIfPresent(String.self, forKey: .ticketTitle)
+        self.init(isArchived: archived ?? false, explicitName: name, ticketTitle: ticketTitle)
     }
 
     /// The name is written only when there is one: an explicit `null` beside every archived
@@ -42,5 +44,6 @@ extension SessionAnnotations.Annotation: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(isArchived, forKey: .archived)
         try container.encodeIfPresent(explicitName, forKey: .name)
+        try container.encodeIfPresent(ticketTitle, forKey: .ticketTitle)
     }
 }

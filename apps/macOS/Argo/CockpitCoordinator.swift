@@ -28,6 +28,9 @@ final class CockpitCoordinator {
     let builtins: BuiltinCommandReader
     private let store: ProjectRegistryStore
     private let annotationStore: SessionAnnotationStore
+    /// The pass that names each Session's ticket (#745). It caches its own reads for the launch, so
+    /// asking again as the roster changes costs the code host one request per ticket, not per ask.
+    private let ticketTitles: WorkItemTitleResolver
     private let configuration: LaunchConfiguration
 
     init(
@@ -39,6 +42,9 @@ final class CockpitCoordinator {
         self.configuration = configuration
         self.store = store
         self.annotationStore = annotationStore
+        self.ticketTitles = WorkItemTitleResolver(
+            titles: GitHubWorkItemTitles(), annotations: annotationStore,
+        )
         self.pointing = CockpitPointing(
             registry: .empty,
             launch: .unregistered(configuration.projectURL),
@@ -137,6 +143,27 @@ final class CockpitCoordinator {
     /// Session (#502, story 18).
     func setName(_ name: String?, sessionID: String) async {
         annotations = await annotationStore.setName(name, sessionID: sessionID)
+    }
+
+    /// The tickets on the roster nothing has named yet. What a resolve is triggered BY, so a
+    /// Session appearing on a new branch is read and every ticket already named is left alone.
+    var unnamedTickets: Set<Int> {
+        Set(presentation.sessions.compactMap { $0.issue?.title == nil ? $0.issue?.number : nil })
+    }
+
+    /// Name each Session's ticket through the Project's Work Item port (#745).
+    ///
+    /// A port that is unbound or has come undone resolves nothing and leaves every stored title
+    /// where it is: a roster that emptied its rows the moment a Binding lapsed would read as
+    /// Sessions losing the work they are on.
+    func nameTickets(through resolution: BindingResolution) async {
+        guard case let .ready(binding) = resolution else { return }
+        let links = presentation.sessions.reduce(into: [String: Int]()) { links, session in
+            guard let number = session.issue?.number else { return }
+            links[session.id] = number
+        }
+        guard !links.isEmpty else { return }
+        annotations = await ticketTitles.resolve(links: links, through: binding)
     }
 
     /// Show a Project's folder in Finder. An unreachable one has nothing to show.

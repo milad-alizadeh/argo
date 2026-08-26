@@ -111,6 +111,13 @@ final class AccountsCoordinator {
         await refresh()
     }
 
+    /// How the active Project's Work Item port reads, for a reader that is not the panel (#745).
+    /// The same resolve the panel and the chip make, so no third answer about one Binding exists.
+    func workItemBinding() async -> BindingResolution {
+        guard let project else { return .unbound }
+        return await bindings.resolve(port: .workItem, for: project.id)
+    }
+
     func unbind(_ port: AccountPort) async {
         guard let project else { return }
         await bindings.unbind(port: port, from: project.id)

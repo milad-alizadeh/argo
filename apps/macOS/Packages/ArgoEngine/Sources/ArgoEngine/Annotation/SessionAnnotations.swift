@@ -7,6 +7,10 @@ import Foundation
 /// roster by hand, and the name a user gives one (#502). Owned glue, which is the one thing
 /// `CONTEXT.md` says Argo may store.
 ///
+/// The ticket title is the one that is not Argo's own claim but a reading it is holding on to
+/// (#745), and it lives here rather than in a cache because a roster that re-read it every launch
+/// would open on the derived title until the network answered.
+///
 /// Held as a value with every transition returning a new set, so the store above it does nothing
 /// but read one and write one.
 public struct SessionAnnotations: Equatable, Sendable {
@@ -16,10 +20,20 @@ public struct SessionAnnotations: Equatable, Sendable {
         /// The name the user gave this Session, `nil` for one they never named. Dropping the name
         /// IS the reset (#502, story 20) — there is no second flag saying whether it is in force.
         public var explicitName: String?
+        /// The linked Work Item's title as the code host last gave it (#745), `nil` for a Session
+        /// whose branch names no ticket or whose ticket did not resolve. DERIVED, and kept apart
+        /// from `explicitName` above because Argo writes this one and the user writes that one:
+        /// merged, a resolve would silently overwrite a rename.
+        public var ticketTitle: String?
 
-        public init(isArchived: Bool = false, explicitName: String? = nil) {
+        public init(
+            isArchived: Bool = false,
+            explicitName: String? = nil,
+            ticketTitle: String? = nil,
+        ) {
             self.isArchived = isArchived
             self.explicitName = SessionAnnotations.name(from: explicitName)
+            self.ticketTitle = SessionAnnotations.name(from: ticketTitle)
         }
 
         /// An annotation that asserts nothing, which is what every Session has until somebody
@@ -40,6 +54,14 @@ public struct SessionAnnotations: Equatable, Sendable {
         func named(_ name: String?) -> Annotation {
             var next = self
             next.explicitName = SessionAnnotations.name(from: name)
+            return next
+        }
+
+        /// And for the ticket title, through the same normalisation: a provider that answered
+        /// with blanks has told Argo nothing.
+        func titled(_ title: String?) -> Annotation {
+            var next = self
+            next.ticketTitle = SessionAnnotations.name(from: title)
             return next
         }
     }
@@ -80,6 +102,12 @@ public struct SessionAnnotations: Equatable, Sendable {
         annotation(for: sessionID).explicitName
     }
 
+    /// The Work Item title this Session's branch resolved to, and `nil` where nothing resolved.
+    /// Which title the surfaces DRAW is `SessionTitle`'s, on the same ground `explicitName` is.
+    public func ticketTitle(_ sessionID: String) -> String? {
+        annotation(for: sessionID).ticketTitle
+    }
+
     /// Archive a Session, or put one back. Keyed on the chain id and on nothing observed, which
     /// is why re-reading a transcript cannot disturb it: a record arriving for an archived
     /// Session is new activity, and new activity is not a decision (#502, story 16).
@@ -91,6 +119,12 @@ public struct SessionAnnotations: Equatable, Sendable {
     /// (#502, story 20).
     func naming(_ name: String?, sessionID: String) -> SessionAnnotations {
         setting(annotation(for: sessionID).named(name), for: sessionID)
+    }
+
+    /// Hold the title a ticket resolved to, or — with `nil` — let go of one that stopped
+    /// resolving. Never the user's gesture: the rename writes `naming` above.
+    func titling(_ title: String?, sessionID: String) -> SessionAnnotations {
+        setting(annotation(for: sessionID).titled(title), for: sessionID)
     }
 
     /// The one write path, so an annotation that has fallen back to asserting nothing is dropped
