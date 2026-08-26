@@ -6,7 +6,9 @@ import Testing
 @Suite("Session ownership")
 @MainActor
 struct SessionOwnershipTests {
-    private let cwd = "/tmp/argo-owned"
+    /// The transcript a spawn is told to write, and the id the roster carries for that file.
+    private let uuid = "11111111-2222-3333-4444-555555555555"
+    private let sessionID = "/tmp/argo/11111111-2222-3333-4444-555555555555.jsonl"
 
     /// A clock the test moves by hand, so a claim's window is a fact rather than a race.
     private final class Clock {
@@ -18,116 +20,94 @@ struct SessionOwnershipTests {
         return (SessionOwnership(now: { clock.nowMs }), clock)
     }
 
-    /// The grading of one Session in this suite's folder. Named even where the test is about the
-    /// folder window, because the id is what the durable half is keyed by.
-    private func grading(_ ownership: SessionOwnership, startedAtMs: Int?) -> SessionProvenance {
-        ownership.provenance(sessionID: "session-a", cwd: cwd, startedAtMs: startedAtMs)
-    }
-
     @Test
     func `a Session nothing claimed is external`() {
         let (ownership, _) = registry()
 
-        #expect(grading(ownership, startedAtMs: 2000) == .external)
+        #expect(ownership.provenance(sessionID: sessionID) == .external)
     }
 
     @Test
-    func `a Session started inside a live claim is managed`() {
+    func `a spawn's own transcript is managed once it appears`() {
         let (ownership, clock) = registry()
-        _ = ownership.claim(cwd: cwd)
+        _ = ownership.claim(naming: uuid)
         clock.nowMs = 2000
+        ownership.bind(sessionID: sessionID, uuid: uuid)
 
-        #expect(grading(ownership, startedAtMs: clock.nowMs) == .managed)
+        #expect(ownership.provenance(sessionID: sessionID) == .managed)
     }
 
     @Test
     func `a claim whose PTY has exited leaves the Session orphaned`() {
         let (ownership, clock) = registry()
-        let claim = ownership.claim(cwd: cwd)
+        let claim = ownership.claim(naming: uuid)
+        ownership.bind(sessionID: sessionID, uuid: uuid)
         clock.nowMs = 2000
         ownership.release(claim)
         clock.nowMs = 3000
 
         // Observation survives the PTY; steering does not — until the chain is resumed (#10).
-        #expect(grading(ownership, startedAtMs: 2000) == .orphaned)
+        #expect(ownership.provenance(sessionID: sessionID) == .orphaned)
     }
 
+    /// The whole of #742: Argo shares its folders with agents nobody here started, and a claim open
+    /// in one of them must not adopt whatever appears. Nothing but the named transcript will do.
     @Test
-    func `an agent already running in a folder Argo later spawns into stays external`() {
+    func `an agent Argo did not name is external, however close to a claim it ran`() {
         let (ownership, clock) = registry()
-        clock.nowMs = 5000
-        _ = ownership.claim(cwd: cwd)
+        _ = ownership.claim(naming: uuid)
+        clock.nowMs = 2000
 
-        // Started before the claim opened, so no claim covers it: the folder alone is not a key.
-        #expect(grading(ownership, startedAtMs: 4000) == .external)
+        let stranger = "/tmp/argo/99999999-9999-9999-9999-999999999999.jsonl"
+        #expect(ownership.bind(sessionID: stranger, uuid: "99999999-9999-9999-9999-999999999999")
+            == nil)
+        #expect(ownership.provenance(sessionID: stranger) == .external)
     }
 
+    /// A CLI Argo cannot hand an id to owns a PROCESS and never a Session, so its claim adopts
+    /// nothing at all rather than the nearest unnamed transcript.
     @Test
-    func `a claim covers only the folder it was made in`() {
+    func `a claim that named no transcript binds nothing`() {
         let (ownership, _) = registry()
-        _ = ownership.claim(cwd: cwd)
+        _ = ownership.claim()
 
-        let elsewhere = ownership.provenance(
-            sessionID: "session-a",
-            cwd: "/tmp/argo-elsewhere",
-            startedAtMs: 2000,
-        )
-        #expect(elsewhere == .external)
+        #expect(ownership.bind(sessionID: sessionID, uuid: uuid) == nil)
+        #expect(ownership.provenance(sessionID: sessionID) == .external)
     }
 
     @Test
-    func `a Session Argo cannot place is external rather than claimed`() {
+    func `a Session with no transcript id of its own is external rather than claimed`() {
         let (ownership, _) = registry()
-        _ = ownership.claim(cwd: cwd)
+        _ = ownership.claim(naming: uuid)
 
-        // No working directory read, or no time in its records: an unprovable claim is not a claim.
-        #expect(ownership.provenance(sessionID: "s", cwd: nil, startedAtMs: 2000) == .external)
-        #expect(grading(ownership, startedAtMs: nil) == .external)
+        // A spawn row has no file yet, so there is nothing to match on.
+        #expect(ownership.bind(sessionID: sessionID, uuid: nil) == nil)
+        #expect(ownership.provenance(sessionID: nil) == .external)
     }
 
-    /// A resume knows the Session before the process exists, so it needs neither half of the key a
-    /// cold spawn is matched back by (#10).
+    /// A resume knows the Session before the process exists, so it needs no transcript to appear
+    /// first (#10).
     @Test
-    func `a resume claims the Session it names, whatever the window says`() {
+    func `a resume claims the Session it names from birth`() {
         let (ownership, clock) = registry()
         clock.nowMs = 5000
-        let claim = ownership.claim(cwd: cwd, resuming: "session-a")
+        let claim = ownership.claim(resuming: sessionID)
 
-        // The chain started long before the claim did, and it is managed all the same.
-        #expect(grading(ownership, startedAtMs: 100) == .managed)
-        #expect(ownership.ownerOf(sessionID: "session-a") == claim)
+        #expect(ownership.provenance(sessionID: sessionID) == .managed)
+        #expect(ownership.ownerOf(sessionID: sessionID) == claim)
     }
 
-    /// A resume claim already names its Session, so the window it happens to span is nobody else's
-    /// (#731). Without this an unrelated agent started in the same folder grades `managed`, and the
-    /// cockpit offers it a composer wired to the resumed agent's PTY.
-    @Test
-    func `a claim that already has its Session adopts no other`() {
-        let (ownership, clock) = registry()
-        clock.nowMs = 5000
-        _ = ownership.claim(cwd: cwd, resuming: "session-a")
-        clock.nowMs = 6000
-
-        let elsewhere = ownership.provenance(
-            sessionID: "session-b",
-            cwd: cwd,
-            startedAtMs: clock.nowMs,
-        )
-        #expect(elsewhere == .external)
-    }
-
-    /// The same rule for a cold claim, once the record it was matched back to has appeared: one
-    /// claim is one agent, so the second Session in the window belongs to whoever started it.
+    /// One claim is one agent, so the second Session to answer to a claim's name is not its (#731).
+    /// Reachable only by two spawns minting the same uuid, and the rule holds rather than races.
     @Test
     func `a bound claim adopts no second Session`() {
         let (ownership, clock) = registry()
-        _ = ownership.claim(cwd: cwd)
-        clock.nowMs = 2000
-        ownership.bind(sessionID: "session-a", cwd: cwd, startedAtMs: clock.nowMs)
+        _ = ownership.claim(naming: uuid)
+        ownership.bind(sessionID: sessionID, uuid: uuid)
         clock.nowMs = 3000
 
-        #expect(grading(ownership, startedAtMs: 2000) == .managed)
-        let second = ownership.provenance(sessionID: "session-b", cwd: cwd, startedAtMs: 3000)
-        #expect(second == .external)
+        let second = "/tmp/argo-elsewhere/11111111-2222-3333-4444-555555555555.jsonl"
+        #expect(ownership.bind(sessionID: second, uuid: uuid) == nil)
+        #expect(ownership.provenance(sessionID: second) == .external)
     }
 }

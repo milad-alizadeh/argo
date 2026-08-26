@@ -91,7 +91,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// no such record at all.
     public private(set) var subagentEvents: [String: [TranscriptEvent]] = [:]
     public private(set) var lastActivityAtMs: Int?
-    /// The oldest moment the records report — the fact a claim window is matched against.
+    /// The oldest moment the records report. The roster's sort key, and no longer any part of
+    /// ownership: a claim names its Session rather than matching a window (#742).
     public private(set) var startedAtMs: Int?
     /// The file's own last write — what a transcript whose records carry no time still says about
     /// when it ran.
@@ -123,6 +124,13 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// chain to continue.
     var resumeID: String? {
         chainTipURL?.deletingPathExtension().lastPathComponent
+    }
+
+    /// The id the CLI wrote this chain's ROOT file under: the name a spawn hands it on argv, and
+    /// the exact key ownership binds on (#742). The root and not the tip — what Argo named is the
+    /// file the agent opened with, and a chain that grows must not stop answering for it.
+    var transcriptUUID: String? {
+        sourceURL?.deletingPathExtension().lastPathComponent
     }
 
     public init(observation: TranscriptObservation) {

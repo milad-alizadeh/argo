@@ -26,6 +26,10 @@ public struct SpawnServices {
     /// How long the permission gate waits for a person before refusing the call itself (#573).
     /// Live everywhere but a test that has to reach the far end of a day-long wait.
     public let permissionPatience: PermissionPatience
+    /// The transcript id a fresh spawn tells its CLI to write under (#742). Injected so a test can
+    /// stand in for the CLI's own record under a name it knows: the id is on argv and in the claim,
+    /// and a test that could not predict it would have to read one to assert the other.
+    public let mintTranscriptID: @MainActor () -> String
 
     public init(
         host: AgentProcessHost?,
@@ -36,6 +40,7 @@ public struct SpawnServices {
         ownershipFileURL: URL? = nil,
         modeFileURL: URL? = nil,
         permissionPatience: PermissionPatience = .default,
+        mintTranscriptID: @MainActor @escaping () -> String = { UUID().uuidString.lowercased() },
     ) {
         self.host = host
         self.codexHost = codexHost
@@ -45,6 +50,7 @@ public struct SpawnServices {
         self.ownershipFileURL = ownershipFileURL
         self.modeFileURL = modeFileURL
         self.permissionPatience = permissionPatience
+        self.mintTranscriptID = mintTranscriptID
     }
 
     /// A Hub that observes and never spawns.

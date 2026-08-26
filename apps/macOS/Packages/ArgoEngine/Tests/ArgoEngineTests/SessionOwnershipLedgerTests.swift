@@ -8,7 +8,8 @@ import Testing
 @Suite("Session ownership ledger")
 @MainActor
 struct SessionOwnershipLedgerTests {
-    private let cwd = "/tmp/argo-owned"
+    /// The transcript a spawn is told to write, and the Session the roster keys to that file.
+    private let uuid = "11111111-2222-3333-4444-555555555555"
 
     /// A registry over a file of this test's own — never the machine's. Its clock is held at 1000
     /// so a claim opens before the Sessions below are said to have started.
@@ -25,7 +26,7 @@ struct SessionOwnershipLedgerTests {
     }
 
     private func grading(_ ownership: SessionOwnership) -> SessionProvenance {
-        ownership.provenance(sessionID: "session-a", cwd: cwd, startedAtMs: 2000)
+        ownership.provenance(sessionID: "session-a")
     }
 
     @Test
@@ -33,8 +34,8 @@ struct SessionOwnershipLedgerTests {
         let fileURL = temporaryFileURL()
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let first = registry(at: fileURL)
-        let claim = first.claim(cwd: cwd)
-        first.bind(sessionID: "session-a", cwd: cwd, startedAtMs: 2000)
+        let claim = first.claim(naming: uuid)
+        first.bind(sessionID: "session-a", uuid: uuid)
         first.release(claim)
 
         // Nothing in memory carries over. `external` would claim the Session was never Argo's.
@@ -46,8 +47,8 @@ struct SessionOwnershipLedgerTests {
         let fileURL = temporaryFileURL()
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let first = registry(at: fileURL)
-        _ = first.claim(cwd: cwd)
-        first.bind(sessionID: "somebody-elses", cwd: cwd, startedAtMs: 2000)
+        _ = first.claim(naming: uuid)
+        first.bind(sessionID: "somebody-elses", uuid: "99999999-9999-9999-9999-999999999999")
 
         #expect(grading(registry(at: fileURL)) == .external)
     }
@@ -64,7 +65,7 @@ struct SessionOwnershipLedgerTests {
             ledgerStore: SessionOwnershipLedgerStore(fileURL: fileURL),
         )
 
-        let claim = ownership.claim(cwd: cwd, resuming: "session-a")
+        let claim = ownership.claim(resuming: "session-a")
         clock.nowMs = 9000
         ownership.release(claim)
 
@@ -81,7 +82,7 @@ struct SessionOwnershipLedgerTests {
         let fileURL = temporaryFileURL()
         defer { try? FileManager.default.removeItem(at: fileURL) }
         let other = registry(at: fileURL)
-        _ = other.claim(cwd: cwd, resuming: "session-a")
+        _ = other.claim(resuming: "session-a")
 
         #expect(registry(at: fileURL).isHeldElsewhere(sessionID: "session-a"))
         // And the window that opened it is not held by somebody else.
@@ -101,7 +102,7 @@ struct SessionOwnershipLedgerTests {
             // has since exited.
             owner: .init(pid: .max, registry: "an-argo-that-is-gone"),
         )
-        _ = dead.claim(cwd: cwd, resuming: "session-a")
+        _ = dead.claim(resuming: "session-a")
 
         let relaunched = registry(at: fileURL)
         #expect(!relaunched.isHeldElsewhere(sessionID: "session-a"))
@@ -113,8 +114,8 @@ struct SessionOwnershipLedgerTests {
     @Test
     func `a registry with no file remembers nothing`() {
         let ownership = registry(at: nil)
-        _ = ownership.claim(cwd: cwd)
-        ownership.bind(sessionID: "session-a", cwd: cwd, startedAtMs: 2000)
+        _ = ownership.claim(naming: uuid)
+        ownership.bind(sessionID: "session-a", uuid: uuid)
 
         // Within the launch it still knows; the next one reads nothing at all.
         #expect(ownership.hasEverOwned(sessionID: "session-a"))

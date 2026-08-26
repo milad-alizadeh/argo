@@ -122,6 +122,10 @@ struct SpawnFixture {
             ownershipFileURL: ownershipFileURL,
             modeFileURL: modeFileURL,
             permissionPatience: permissionPatience,
+            // Every spawn in these suites is told to write THIS transcript, which is the one
+            // `spawnedSessionObservation` stands in for (#742). A random uuid would leave the
+            // fixture's record answering to a name no claim is waiting for.
+            mintTranscriptID: { spawnedChainID },
         )
         self.hub = Hub(projectURL: projectURL, engine: engine, spawnServices: services)
     }

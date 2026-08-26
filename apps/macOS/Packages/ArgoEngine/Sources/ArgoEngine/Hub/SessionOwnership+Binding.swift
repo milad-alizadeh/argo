@@ -1,21 +1,21 @@
 import Foundation
 
-/// Where the spawn and the transcript meet: the spawn knew a folder and a moment, the record knows
-/// the id the CLI picked, so the row published at spawn stands down rather than doubling (#361).
+/// Where the spawn and the transcript meet: the spawn named the transcript, the file appears under
+/// that name, so the row published at spawn stands down rather than doubling (#361).
 @MainActor
 extension SessionOwnership {
-    /// Record which claim owns an observed Session, now that it HAS an id.
+    /// Record which claim owns an observed Session, now that its transcript exists.
     ///
     /// Returns the claim this Session JOINED, once and only on the observation that joined it, so
     /// the caller can retire whatever it published under that claim's own id. `nil` otherwise — an
     /// unowned Session, or a re-observation of one already bound.
     ///
-    /// A Session keeps the first agent it was given, so a later sweep cannot tear the PTY out from
-    /// under an open terminal.
+    /// `uuid` is the transcript's own id, and it must EQUAL what the claim named. Nothing weaker is
+    /// enough: a folder and a start time also fit an agent Argo never started (#742).
     @discardableResult
-    func bind(sessionID: String, cwd: String?, startedAtMs: Int?) -> ClaimID? {
+    func bind(sessionID: String, uuid: String?) -> ClaimID? {
         guard boundSessions[sessionID] == nil,
-              let id = claimFor(cwd: cwd, startedAtMs: startedAtMs)
+              let uuid, let id = claimNaming(uuid: uuid)
         else { return nil }
         claims[id]?.sessionID = sessionID
         boundSessions[sessionID] = id

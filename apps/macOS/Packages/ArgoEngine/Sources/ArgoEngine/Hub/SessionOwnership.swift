@@ -6,29 +6,30 @@ import Foundation
 /// restart keeps is the LEDGER beside them: a Session this Argo never claimed but a previous one
 /// did grades `orphaned` rather than `external`, and can be resumed (ADR-0026).
 ///
-/// A claim is keyed by spawn folder AND the window the PTY was alive for, because a CLI picks its
-/// own session id after the spawn returns: on the folder alone, an agent already running there
-/// would read as ours. A RESUME needs neither key — it knows the Session before the process
-/// exists, so its claim is bound to that id from birth.
-///
-/// The folder is held RESOLVED (#363). The two sides spell it differently — Argo claims the path
-/// the user registered, and the CLI records the one it reached through `/var` → `/private/var` —
-/// so an unresolved key grades a Session Argo spawned and holds the PTY for as `external`.
+/// Every claim NAMES its Session, and nothing here is matched back by folder and start time
+/// (#742). A resume knows the roster id before the process exists, and a fresh `claude` is handed
+/// the transcript id to write under (`--session-id`), so that claim knows its Session from birth
+/// too. A guess is the one thing this file must not make: an agent somebody else started in the
+/// same folder answers a guess just as well as ours.
 @MainActor
 public final class SessionOwnership {
     /// Handle on one act of ownership. Its `value` is also the id the roster carries for the row
-    /// published at spawn — until the CLI picks a Session id it is the only shared handle.
+    /// published at spawn — until the transcript appears it is the only shared handle.
     public struct ClaimID: Hashable, Sendable {
         public let value: String
     }
 
     struct Claim {
-        let cwd: String
         let fromMs: Int
         /// `nil` while the PTY lives; the moment it exited otherwise.
         var toMs: Int?
-        /// The Session the CLI turned out to be running under, once its record named one.
+        /// The Session as the ROSTER keys it, which is its transcript's path. Known from birth for
+        /// a resume, and learned at `bind` for a fresh spawn — the file does not exist yet.
         var sessionID: String?
+        /// The transcript id Argo told a fresh CLI to write under, and the exact key `bind` matches
+        /// on. Absent for a resume, which has its roster id already, and for a CLI that cannot be
+        /// told (`AgentCLI.namesFreshSession`).
+        let namedUUID: String?
     }
 
     /// Main-actor isolated like the registry itself, so a test can hand it a clock it moves by hand
@@ -41,8 +42,8 @@ public final class SessionOwnership {
     /// reading the file can tell that Session is already being steered.
     let owner: SessionOwnershipLedger.Owner
     var claims: [ClaimID: Claim] = [:]
-    /// The order claims were issued in — "the newest claim still waiting for a Session" is the
-    /// tie-break, and a dictionary has no order to ask.
+    /// The order claims were issued in, which is the order `claimNaming` reads them in — a
+    /// dictionary has none to ask.
     var issuedOrder: [ClaimID] = []
     var boundSessions: [String: ClaimID] = [:]
     private var issued = 0
@@ -60,18 +61,24 @@ public final class SessionOwnership {
         self.ledger = ledgerStore.load()
     }
 
-    /// Argo spawned an agent in this folder and holds its PTY.
-    func claim(cwd: String) -> ClaimID {
-        open(cwd: cwd, resuming: nil)
+    /// Argo spawned an agent, holds its PTY, and cannot say which Session it will turn out to be.
+    /// It owns a PROCESS and never a Session: nothing observed will ever bind to this claim, which
+    /// is the honest end of a CLI Argo cannot hand an id to.
+    func claim() -> ClaimID {
+        open(sessionID: nil, namedUUID: nil)
     }
 
-    /// Argo started a CLI on an EXISTING chain, so the claim names its Session from birth rather
-    /// than being matched back by folder and start time. The id is known before the process is, so
-    /// there is nothing to guess (#10, and it sidesteps #363/#364 entirely).
+    /// Argo spawned a fresh agent and told it which transcript to write, so this claim waits for
+    /// exactly one file rather than for whatever appears (#742).
+    func claim(naming uuid: String) -> ClaimID {
+        open(sessionID: nil, namedUUID: uuid)
+    }
+
+    /// Argo started a CLI on an EXISTING chain, so the claim names its Session from birth (#10).
     ///
     /// The id is the one the ROSTER carries — never the chain id `--resume` takes (#731).
-    func claim(cwd: String, resuming sessionID: String) -> ClaimID {
-        open(cwd: cwd, resuming: sessionID)
+    func claim(resuming sessionID: String) -> ClaimID {
+        open(sessionID: sessionID, namedUUID: nil)
     }
 
     /// The PTY exited: this claim is over. The ledger keeps the fact that Argo held it, which is
@@ -89,22 +96,13 @@ public final class SessionOwnership {
     }
 
     /// `managed` while the claim's PTY lives, `orphaned` once it has exited or once the Argo that
-    /// held it is gone, `external` for a Session no Argo ever owned — including one already running
-    /// in a folder Argo later spawned into, and one Argo cannot place for want of a cwd or a start
-    /// time.
+    /// held it is gone, `external` for a Session no Argo ever owned.
     ///
-    /// The named Session is tried first, because a resume's claim covers no window a transcript
-    /// could be matched against: the chain started long before the claim did.
-    func provenance(
-        sessionID: String?,
-        cwd: String?,
-        startedAtMs: Int?,
-    )
-        -> SessionProvenance {
-        if let bound = sessionID.flatMap({ boundSessions[$0] }) ?? claimFor(
-            cwd: cwd,
-            startedAtMs: startedAtMs,
-        ) {
+    /// One question only: is this Session one a claim NAMES. A Session that answers no is external
+    /// however close to a claim it ran, which is the whole of #742 — Argo shares its folders with
+    /// agents nobody here started.
+    func provenance(sessionID: String?) -> SessionProvenance {
+        if let bound = sessionID.flatMap({ boundSessions[$0] }) {
             return claims[bound]?.toMs == nil ? .managed : .orphaned
         }
         // No claim in THIS process, so the ledger is the only witness left. `external` means never
@@ -113,38 +111,26 @@ public final class SessionOwnership {
         return .orphaned
     }
 
-    /// The claim a Session belongs to, or nothing: the NEWEST that covers it, because spawning
-    /// twice in one folder opens two claims with overlapping windows.
-    func claimFor(cwd: String?, startedAtMs: Int?) -> ClaimID? {
-        covering(cwd: cwd, startedAtMs: startedAtMs).last
+    /// The claim that named this transcript and is still waiting for it, or nothing. One claim is
+    /// one agent, so a claim that already HAS its Session names nothing further (#731).
+    func claimNaming(uuid: String) -> ClaimID? {
+        issuedOrder.first { id in
+            guard let claim = claims[id] else { return false }
+            return claim.namedUUID == uuid && claim.sessionID == nil
+        }
     }
 
-    private func open(cwd: String, resuming sessionID: String?) -> ClaimID {
+    private func open(sessionID: String?, namedUUID: String?) -> ClaimID {
         issued += 1
         let id = ClaimID(value: "claim-\(issued)")
-        claims[id] = Claim(cwd: resolvedPath(cwd), fromMs: now(), toMs: nil, sessionID: sessionID)
+        claims[id] = Claim(fromMs: now(), toMs: nil, sessionID: sessionID, namedUUID: namedUUID)
         issuedOrder.append(id)
-        // Reachable under its own id from birth: the roster carries a row for this agent before the
-        // CLI has picked a Session id (#361), and that row's terminal is looked up the same way.
+        // Reachable under its own id from birth: the roster carries a row for this agent before its
+        // transcript exists (#361), and that row's terminal is looked up the same way.
         boundSessions[id.value] = id
         guard let sessionID else { return id }
         boundSessions[sessionID] = id
         recordOwnership(of: sessionID)
         return id
-    }
-
-    /// The claims a Session could have started inside — one agent each, so a claim that already HAS
-    /// its Session covers nothing further (#731). That is also what keeps a resume out of window
-    /// matching altogether: its claim names its Session from birth, and the window it happens to
-    /// span belongs to whoever started the agent in it.
-    private func covering(cwd: String?, startedAtMs: Int?) -> [ClaimID] {
-        guard let cwd, let startedAtMs else { return [] }
-        let resolved = resolvedPath(cwd)
-        return issuedOrder.filter { id in
-            guard let claim = claims[id], claim.sessionID == nil else { return false }
-            return claim.cwd == resolved
-                && startedAtMs >= claim.fromMs
-                && startedAtMs <= (claim.toMs ?? .max)
-        }
     }
 }

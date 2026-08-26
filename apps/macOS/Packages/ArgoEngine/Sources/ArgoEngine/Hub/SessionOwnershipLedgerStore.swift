@@ -8,9 +8,14 @@ import Foundation
 @MainActor
 public final class SessionOwnershipLedgerStore {
     /// Beside `sessions.json` and `projects.json`, in the same per-machine folder.
+    ///
+    /// A NEW name, leaving `ownership.json` where it is: every id in that file was written under
+    /// the folder-and-window key, which claimed Sessions Argo never started (#742). Reading it
+    /// would grade those `orphaned` and offer to resume an agent somebody else is running.
+    /// Discarded whole rather than filtered: nothing in it says which entries were honest.
     public static let defaultFileURL = URL.applicationSupportDirectory
         .appending(path: "Argo", directoryHint: .isDirectory)
-        .appending(path: "ownership.json")
+        .appending(path: "ownership-named.json")
 
     private let file: OwnedStateFile<SessionOwnershipLedger>
 
