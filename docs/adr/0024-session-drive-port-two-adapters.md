@@ -1,6 +1,6 @@
 # 0024 · The session-drive port; one adapter per CLI
 
-Status: accepted · 2026-08-12 (proposed 2026-08-10; Codex channel corrected to app-server and verified, #547)
+Status: accepted · 2026-08-12 (proposed 2026-08-10; Codex channel corrected to app-server and verified, #547) · extent amended (#749) · 2026-08-26
 
 ## Context
 
@@ -44,6 +44,9 @@ One **session-drive port**, adapter per `cli`. The port is the only thing the co
 
 Observation is **not** on this port. The transcript parser already serves every `cli` and is
 unchanged by this ADR.
+
+> The four above are the composer's verbs and not the whole seam any more — see **Amendment · the
+> port's extent** below for the six that arrived after this table and the five that open the channel.
 
 Each adapter picks the CLI surface that keeps included tokens **and** can raise a Permission:
 
@@ -142,6 +145,44 @@ not reached a thread says nothing about the Session yet.
 This reading is **DIRECT** for the reason the Permission is: the thread that reported it is one Argo
 started and holds the only pipe to, so the join from the report to the Session is exact rather than
 the working directory and time window a `claude` transcript is matched on.
+
+## Amendment · the port's extent (#749) · 2026-08-26
+
+Two adapters was and stays the decision. What this amends is the **extent** of the seam — what
+belongs on it — because the four operations above turned out to be an incomplete list twice over,
+and both gaps were being filled in the Hub.
+
+**The table said four; the protocol declared ten.** `send`, `attach`, `interrupt` and `decide` are
+the four a composer raises. `answer` (#712), `setMode` (#545), `canAttach` (#540),
+`canRunCommands` (#685), `resolvesMentions` (#687) and `revokeStandingAllow` (#572) each arrived
+with their own ticket and none of them amended this ADR. They are all the same *kind* of thing —
+something the cockpit does to a Session, or a capability it has to know before drawing a control —
+so they belong here, and the record now says so. Whether ten members is the right shape is a
+separate question, taken up on its own.
+
+**Opening the channel belongs here too, and it was in the Hub.** The port covered the write verbs
+but not the fifth act: `Hub+Spawn.swift` switched on `plan.cli`, built `CodexApprovals`,
+`CodexThread` and `CodexChannel` by hand, held the thread table and the app-server host, and decided
+per byte chunk which reader a claim's output belonged to. That is one CLI's own protocol, so the Hub
+was the de-facto third adapter. It is now a second protocol beside the drive verbs —
+`SessionChannel`, with `host`, `open`, `received`, `resubmit` and `close` — conformed by the same two
+adapters. Two Swift protocols rather than one because the subject differs: the cockpit drives a
+Session and never opens one, so nothing above the seam calls any of the five, and `AgentSpawnPlan`
+is internal where `SessionDriver` is public.
+
+**"Observation is not on this port" holds, with one correction.** The transcript parser still serves
+every CLI and is untouched. But the *vocabulary* a stance is stated in is not observation, and
+treating it as if it were is where the leak had already landed: `HubSession.mode` named
+`ClaudePermissionMode` with no `cli` check, so a Codex Session on **Code** reported its `cliValue` as
+`acceptEdits` — a false DIRECT on screen. The words each CLI states a rung in are now
+`AgentStanceVocabulary`, one per CLI, reached through the Session's own `cli`. Codex's states both
+halves of its boundary — `on-request · workspace-write` for Code — because that surface spells a
+stance with an approval policy *and* a sandbox, and quoting either alone reports half a stance as
+the whole of it.
+
+A Session whose `cli` is not established reads in `claude`'s vocabulary rather than refusing. That
+is not a default standing in for a decision: discovery sweeps `claude` records alone, so an observed
+stance value can only have come from one, and a `codex` Session's `cli` is DIRECT off its own spawn.
 
 ## Why
 

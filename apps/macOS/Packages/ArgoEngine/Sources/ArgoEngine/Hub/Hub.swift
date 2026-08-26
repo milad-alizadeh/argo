@@ -29,14 +29,15 @@ public final class Hub {
     /// speaks JSON-RPC where a Turn is a request that was either accepted or refused.
     @ObservationIgnored lazy var delivery = makeDelivery()
 
-    /// The Codex threads behind the claims that have one. Empty on a Hub that has spawned no
-    /// `codex`, which is also what tells the drive port which adapter a Session takes.
-    let codex = CodexThreads()
-
-    /// What starts a `codex app-server`. Pipes rather than a PTY, and engine-owned rather than
-    /// injected, because it links nothing the app has to supply (`CodexProcessHost`). The seam is
-    /// still there for a suite that must not start a real one.
-    @ObservationIgnored let codexHost: AgentProcessHost
+    /// The two session-drive adapters (ADR-0024), and the only ones: the Codex adapter holds its
+    /// own thread table, so a second construction would be a second answer to which Sessions Argo
+    /// can steer. `driver` composes over this, and `SessionChannel` reaches it directly (#749).
+    ///
+    /// Two constraints follow from it being held rather than composed per read. Lazy, because it
+    /// reads this Hub and `delivery`. And it takes `permissions` by VALUE, so the companion channel
+    /// must be open before anything reaches this — `init` opens it, and one opened later would find
+    /// the gate here holding nothing.
+    @ObservationIgnored lazy var adapters = makeAdapters()
 
     /// The rows for agents Argo has started whose CLI has not yet written a record. Observed, so a
     /// spawn reaches the roster in the same update that opened its PTY.
@@ -107,7 +108,6 @@ public final class Hub {
         self.engine = engine
         self.discovery = discovery
         self.spawnServices = spawnServices
-        self.codexHost = spawnServices.codexHost ?? CodexProcessHost()
         self.modeStore = SessionModeStore(fileURL: spawnServices.modeFileURL)
         // Read at construction: the roster is published before anything is swept, and a chain
         // loaded a moment later would blank the link on the first reading of a Session that has

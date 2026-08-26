@@ -20,6 +20,18 @@ struct CodexDriveTests {
         #expect(launch.arguments == ["app-server"])
     }
 
+    /// The asymmetric half of the routing (#749): the Claude adapter takes whatever the Codex one
+    /// did not, so what proves a Codex claim's bytes reached its thread is an empty replay.
+    @Test
+    func `a Codex claim's bytes never reach the terminal replay`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let session = try await fixture.drive(.codex)
+
+        #expect(session.deliverOneChunk())
+        #expect(session.replay().isEmpty)
+    }
+
     @Test
     func `a Turn typed at the composer reaches the Codex thread`() async throws {
         let fixture = try SpawnFixture()
