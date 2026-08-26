@@ -51,7 +51,7 @@ struct SessionComposer: View {
     /// The Workspace tree as the last `@` read answered, and `nil` before it has answered at all.
     /// The read is asynchronous, so the two must not be one value: `[]` is a tree that was looked
     /// in and holds nothing, and "no file matches" may only be said about a tree that was read.
-    @State var workspaceFiles: WorkspaceFileProjection.Tree?
+    @State var workspaceFiles: WorkspaceTree?
     @State var cursor = ComposerMenuCursor()
     /// Whether Escape has put a menu away over a line that would still open one. Cleared by the
     /// next keystroke, because the reader typing again is them asking for it back.
@@ -87,8 +87,7 @@ struct SessionComposer: View {
             // Above the vessel in the stack rather than in an overlay over it: the whole composer
             // is anchored to the feed's bottom edge, so a row here grows UPWARD and the menu ends
             // up over the reading — which is where it belongs — with no offset to keep in step.
-            commandMenu
-            fileMenu
+            menu
             if let note = seamNote {
                 ComposerSeam(note: note, retry: retry)
             }
@@ -223,16 +222,13 @@ struct SessionComposer: View {
     /// Sent now, or queued behind the Turn in flight — `ComposerDraft` owns which, so the field
     /// and the send control ask for the same thing.
     ///
-    /// With the `/` menu up and a row under the cursor, ⏎ INSERTS instead (design decision 1): a
-    /// command with arguments is the common case, and sending on ⏎ makes the argument impossible to
-    /// type. Answered here rather than by an `onKeyPress` above the field, because a `TextField`
-    /// takes Return itself and there is no intercepting it from outside.
+    /// With a menu up and a row under the cursor, ⏎ INSERTS instead (design decision 1): a command
+    /// with arguments is the common case, and sending on ⏎ makes the argument impossible to type.
+    /// Answered here rather than by an `onKeyPress` above the field, because a `TextField` takes
+    /// Return itself and there is no intercepting it from outside.
     private func submit() {
-        if let picked = cursor.row(in: menu?.rows ?? []) {
-            return draft.take(picked.command)
-        }
-        if let picked = cursor.row(in: mentionMenu?.rows ?? []) {
-            return take(mention: picked)
+        if let listing, let picked = cursor.row(in: listing) {
+            return draft.take(listing.pick(picked))
         }
         draft.submit(whileRunning: composer.isRunning, via: sending)
     }

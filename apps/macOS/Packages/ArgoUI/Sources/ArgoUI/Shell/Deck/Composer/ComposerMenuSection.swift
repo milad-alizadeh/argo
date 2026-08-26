@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// The header over one group of the `/` menu: what the group is, and beside it where its rows came
-/// from and how many there are.
+/// The header over one group of a composer menu: what the group is, and beside it where its rows
+/// came from and how many there are.
 ///
 /// Origin lives HERE rather than on every row, because a badge repeated down a list of seventy-odd
 /// things is noise the reader has already read. It goes back onto the rows only when the sections
-/// stop grouping by origin — see `CommandMenuRow.origin`.
-struct CommandMenuSection: View {
+/// stop grouping by origin — see `ComposerMenu.Row.badges`.
+struct ComposerMenuSection: View {
     @Environment(\.argo) private var argo
 
     let label: String

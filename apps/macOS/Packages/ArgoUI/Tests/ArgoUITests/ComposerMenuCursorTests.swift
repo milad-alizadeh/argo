@@ -65,29 +65,34 @@ struct ComposerMenuCursorTests {
     /// An empty list leaves no row current, which is what leaves ⏎ to the field — a line nothing
     /// matched still sends as written (decision 8).
     @Test
-    func `an empty list leaves no row current, so Return stays the field's`() {
+    func `an empty list leaves no row current, so Return stays the field's`() throws {
         var cursor = ComposerMenuCursor()
         cursor.settle(over: ids)
         cursor.settle(over: [])
+        let nothingMatched = try #require(ComposerMenu.files(
+            for: "@zzzz",
+            in: ["README.md"],
+            touched: [],
+        ))
 
         #expect(cursor.current == nil)
-        #expect(cursor.row(in: [] as [CommandMenuProjection.Row]) == nil)
+        #expect(cursor.row(in: nothingMatched) == nil)
     }
 
     /// One cursor serves both menus (#687), so it has to answer over the `@` menu's rows too —
     /// keyed by path there, where the `/` menu keys by command.
     @Test
-    func `the same cursor walks the file menu, keyed by path`() {
-        let rows = WorkspaceFileProjection.menu(
+    func `the same cursor walks the file menu, keyed by path`() throws {
+        let listing = try #require(ComposerMenu.files(
             for: "@",
             in: ["README.md", "docs/adr/ADR-0024.md"],
             touched: [],
-        )?.rows ?? []
+        ))
         var cursor = ComposerMenuCursor()
-        cursor.settle(over: rows.map(\.id))
-        cursor.down(over: rows.map(\.id))
+        cursor.settle(over: listing.rows.map(\.id))
+        cursor.down(over: listing.rows.map(\.id))
 
-        #expect(cursor.row(in: rows)?.path == "docs/adr/ADR-0024.md")
+        #expect(cursor.row(in: listing)?.id == "docs/adr/ADR-0024.md")
     }
 
     /// The `@` tree is read asynchronously, so its rows land AFTER the keystroke that opened the
@@ -104,7 +109,7 @@ struct ComposerMenuCursorTests {
         #expect(cursor.current == "/ask-argo")
     }
 
-    private let ids = CommandMenuProjection.menu(
+    private let ids = ComposerMenu.commands(
         for: "/",
         in: CommandCatalog(
             commands: [

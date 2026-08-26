@@ -3,8 +3,8 @@ import Testing
 
 /// Where the `@` menu opens, what it lists and in what order (#687, `cockpit-composer-picker.md`
 /// decisions 2, 12 and 13).
-@Suite("Workspace file menu")
-struct WorkspaceFileProjectionTests {
+@Suite("Composer menu — files")
+struct ComposerMenuFilesTests {
     private static let tree = [
         "README.md",
         "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionDriver.swift",
@@ -17,7 +17,7 @@ struct WorkspaceFileProjectionTests {
     /// matching a lowercase query.
     @Test(arguments: ["@readme", "@README", "@ReAdMe", "@ADR", "@adr"])
     func `matching ignores case in both the query and the path`(_ line: String) {
-        let rows = WorkspaceFileProjection.menu(for: line, in: Self.tree, touched: [])?.rows ?? []
+        let rows = ComposerMenu.files(for: line, in: Self.tree, touched: [])?.rows ?? []
 
         #expect(!rows.isEmpty)
     }
@@ -26,38 +26,38 @@ struct WorkspaceFileProjectionTests {
 
     @Test
     func `an at sign at the head of the line opens the menu`() {
-        #expect(WorkspaceFileProjection.mention(in: "@")?.query.isEmpty == true)
+        #expect(ComposerMenu.mention(in: "@")?.query.isEmpty == true)
     }
 
     @Test
     func `an at sign after a space opens it too, because a mention is a token`() {
         // Unlike `/`, which decision 2 holds to the head of the line: naming a file is something
         // said in the middle of a sentence.
-        #expect(WorkspaceFileProjection.mention(in: "Have a look at @sesdri")?.query == "sesdri")
+        #expect(ComposerMenu.mention(in: "Have a look at @sesdri")?.query == "sesdri")
     }
 
     @Test
     func `an at sign inside a word opens nothing`() {
         // `milad@example.com` is an address, not a mention — the same shape of rule that keeps
         // `/usr/local` from opening the command menu.
-        #expect(WorkspaceFileProjection.mention(in: "mail milad@example.com") == nil)
+        #expect(ComposerMenu.mention(in: "mail milad@example.com") == nil)
     }
 
     @Test
     func `a space after the token closes it, which is what makes the line sendable`() {
-        #expect(WorkspaceFileProjection.mention(in: "look at @README.md now") == nil)
+        #expect(ComposerMenu.mention(in: "look at @README.md now") == nil)
     }
 
     @Test
     func `only the last token is live, so an earlier mention does not reopen`() {
-        let mention = WorkspaceFileProjection.mention(in: "@README.md and @Session")
+        let mention = ComposerMenu.mention(in: "@README.md and @Session")
 
         #expect(mention?.query == "Session")
     }
 
     @Test
     func `a line with no at sign in it opens nothing`() {
-        #expect(WorkspaceFileProjection.mention(in: "just some prose") == nil)
+        #expect(ComposerMenu.mention(in: "just some prose") == nil)
     }
 
     // MARK: - What it lists
@@ -73,7 +73,7 @@ struct WorkspaceFileProjectionTests {
         // the characters are nowhere near consecutive.
         let rows = menu(for: "@sesdri")?.rows ?? []
 
-        #expect(rows.contains { $0.path.hasSuffix("SessionDriver.swift") })
+        #expect(rows.contains { $0.id.hasSuffix("SessionDriver.swift") })
     }
 
     @Test
@@ -83,20 +83,20 @@ struct WorkspaceFileProjectionTests {
 
     @Test
     func `matching ignores case`() {
-        #expect(menu(for: "@readme")?.rows.first?.path == "README.md")
+        #expect(menu(for: "@readme")?.rows.first?.id == "README.md")
     }
 
     @Test
     func `a row splits the filename off the directory that holds it`() {
         let row = menu(for: "@ADR-0024")?.rows.first
 
-        #expect(row?.name == "ADR-0024-session-drive-port.md")
-        #expect(row?.directory == "docs/adr")
+        #expect(row?.lead == "ADR-0024-session-drive-port.md")
+        #expect(row?.detail?.words == "docs/adr")
     }
 
     @Test
     func `a file at the root of the tree names no directory`() {
-        #expect(menu(for: "@README")?.rows.first?.directory == nil)
+        #expect(menu(for: "@README")?.rows.first?.detail?.words == nil)
     }
 
     // MARK: - Order
@@ -106,15 +106,15 @@ struct WorkspaceFileProjectionTests {
         let touched = ["docs/adr/ADR-0024-session-drive-port.md"]
         let rows = menu(for: "@", touched: touched)?.rows ?? []
 
-        #expect(rows.first?.path == touched[0])
-        #expect(rows.first?.isTouched == true)
+        #expect(rows.first?.id == touched[0])
+        #expect(rows.first?.badges.map(\.words) == [ComposerMenu.touched])
     }
 
     @Test
     func `the untouched rest keeps the order the tree was listed in`() {
         let rows = menu(for: "@", touched: ["README.md"])?.rows ?? []
 
-        #expect(rows.dropFirst().map(\.path) == Array(Self.tree.dropFirst()))
+        #expect(rows.dropFirst().map(\.id) == Array(Self.tree.dropFirst()))
     }
 
     @Test
@@ -122,7 +122,7 @@ struct WorkspaceFileProjectionTests {
         let touched = ["README.md", "docs/adr/ADR-0024-session-drive-port.md"]
         let rows = menu(for: "@", touched: touched)?.rows ?? []
 
-        #expect(rows.prefix(2).map(\.path) == touched)
+        #expect(rows.prefix(2).map(\.id) == touched)
     }
 
     @Test
@@ -130,7 +130,7 @@ struct WorkspaceFileProjectionTests {
         // The agent read something outside the Workspace. It is not a file this picker offers.
         let rows = menu(for: "@", touched: ["/etc/hosts"])?.rows ?? []
 
-        #expect(rows.map(\.path) == Self.tree)
+        #expect(rows.map(\.id) == Self.tree)
     }
 
     // MARK: - Scale
@@ -138,9 +138,9 @@ struct WorkspaceFileProjectionTests {
     @Test
     func `a very large tree yields no more rows than the ceiling`() {
         let huge = (0 ..< 5000).map { "src/file\($0).swift" }
-        let rows = WorkspaceFileProjection.menu(for: "@file", in: huge, touched: [])?.rows ?? []
+        let rows = ComposerMenu.files(for: "@file", in: huge, touched: [])?.rows ?? []
 
-        #expect(rows.count == WorkspaceFileProjection.rowCeiling)
+        #expect(rows.count == ComposerMenu.fileCeiling)
     }
 
     @Test
@@ -151,7 +151,7 @@ struct WorkspaceFileProjectionTests {
         #expect(menu?.query == "zzzz")
     }
 
-    private func menu(for text: String, touched: [String] = []) -> WorkspaceFileProjection.Menu? {
-        WorkspaceFileProjection.menu(for: text, in: Self.tree, touched: touched)
+    private func menu(for text: String, touched: [String] = []) -> ComposerMenu.Listing? {
+        ComposerMenu.files(for: text, in: Self.tree, touched: touched)
     }
 }

@@ -3,8 +3,8 @@ import ArgoEngine
 import Testing
 
 /// Where the `/` menu opens, what it lists, and in what order (#685).
-@Suite("Command menu projection")
-struct CommandMenuProjectionTests {
+@Suite("Composer menu — commands")
+struct ComposerMenuCommandsTests {
     /// Decision 2. A slash inside a path is a path, and the space that starts the arguments is what
     /// puts the menu away — `slash-args.png` is a sendable line with no menu over it.
     @Test(arguments: [
@@ -13,7 +13,7 @@ struct CommandMenuProjectionTests {
         ("/code-review", "code-review"),
     ])
     func `a slash at the head of the line opens the menu`(text: String, query: String) {
-        #expect(CommandMenuProjection.query(in: text) == query)
+        #expect(ComposerMenu.command(in: text) == query)
     }
 
     /// A second slash means a path, which is decision 2's own example: `/usr/local` opens nothing.
@@ -23,7 +23,7 @@ struct CommandMenuProjectionTests {
         "/usr/local", "/usr/local/bin",
     ])
     func `nothing else opens it`(text: String) {
-        #expect(CommandMenuProjection.query(in: text) == nil)
+        #expect(ComposerMenu.command(in: text) == nil)
     }
 
     /// The bare `/`: one section per origin, nearest first, each saying where it read from and how
@@ -44,8 +44,8 @@ struct CommandMenuProjectionTests {
     func `filtering puts prefix matches above the ones that merely contain`() throws {
         let menu = try #require(projected(for: "/impl", over: catalog))
 
-        #expect(menu.sections.map(\.label) == [nil, CommandMenuProjection.alsoContains])
-        #expect(menu.sections.map { $0.rows.map(\.command) } == [
+        #expect(menu.sections.map(\.label) == [nil, ComposerMenu.alsoContains])
+        #expect(menu.sections.map { $0.rows.map(\.id) } == [
             ["/implement"], ["/figma:simplify"],
         ])
         #expect(menu.sections.last?.detail == "\"impl\" · 1")
@@ -67,8 +67,8 @@ struct CommandMenuProjectionTests {
         let unfiltered = try #require(projected(for: "/", over: catalog))
         let filtered = try #require(projected(for: "/impl", over: catalog))
 
-        #expect(unfiltered.rows.allSatisfy { $0.origin == nil })
-        #expect(filtered.rows.map(\.origin) == ["Project", "Plugin"])
+        #expect(unfiltered.rows.flatMap(\.badges).isEmpty)
+        #expect(filtered.rows.map { $0.badges.map(\.words) } == [["Project"], ["Plugin"]])
     }
 
     /// A plugin's command is `/plugin:name`, so a match on the NAME starts well past the command's
@@ -79,7 +79,7 @@ struct CommandMenuProjectionTests {
         let menu = try #require(projected(for: "/simplify", over: catalog))
 
         #expect(menu.sections.map(\.label) == [nil])
-        #expect(menu.sections.first?.rows.map(\.command) == ["/figma:simplify"])
+        #expect(menu.sections.first?.rows.map(\.id) == ["/figma:simplify"])
     }
 
     /// Every plugin's section is labelled `Plugin`, so a section identified BY its label collides
@@ -106,7 +106,7 @@ struct CommandMenuProjectionTests {
         )
         let menu = try #require(projected(for: "/", over: [long]))
 
-        #expect(menu.rows.first?.description == "Review the diff.")
+        #expect(menu.rows.first?.detail?.words == "Review the diff.")
     }
 
     /// A full stop inside a sentence does not end it, which is what keeps `e.g.` and a version
@@ -120,16 +120,18 @@ struct CommandMenuProjectionTests {
         )
         let menu = try #require(projected(for: "/", over: [versioned]))
 
-        #expect(menu.rows.first?.description == "Pin claude 2.1.228 for this Project.")
+        #expect(menu.rows.first?.detail?.words == "Pin claude 2.1.228 for this Project.")
     }
 
-    /// Decision 5: a skill that states no description carries none, and the row invents nothing.
+    /// Decision 5: a skill that states no description says so, and the row invents nothing. The
+    /// statement is about the FILE, which is why it is the `/` derive's word and not a fallback
+    /// the shared row view keeps.
     @Test
-    func `a skill with no description carries none`() throws {
+    func `a skill with no description says so rather than carrying one`() throws {
         let terse = Command(name: "terse", description: nil, origin: .project)
         let menu = try #require(projected(for: "/", over: [terse]))
 
-        #expect(menu.rows.first?.description == nil)
+        #expect(menu.rows.first?.detail?.words == ComposerMenu.undescribed)
     }
 
     /// Decision 8: nothing matched keeps the surface and names what did not match, and the row
@@ -153,7 +155,9 @@ struct CommandMenuProjectionTests {
         )
         let menu = try #require(projected(for: "/", over: [shadowing]))
 
-        #expect(menu.rows.first?.shadowsUser == true)
+        #expect(menu.rows.first?.badges == [
+            ComposerMenu.Badge(words: ComposerMenu.shadows, tone: .attention),
+        ])
     }
 
     /// Over a list of commands with both halves of the catalog already read, which is what every
@@ -162,8 +166,8 @@ struct CommandMenuProjectionTests {
         for text: String,
         over commands: [Command],
     )
-        -> CommandMenuProjection.Menu? {
-        CommandMenuProjection.menu(
+        -> ComposerMenu.Listing? {
+        ComposerMenu.commands(
             for: text,
             in: CommandCatalog(commands: commands, builtins: .read),
         )

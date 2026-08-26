@@ -8,9 +8,9 @@ struct ComposerCommandTests {
     /// It inserts and never sends. The trailing space is the caret's landing place, so an argument
     /// is typed as ordinary text after it.
     @Test
-    func `picking a command leaves it in the draft with room after it`() {
+    func `picking a command leaves it in the draft with room after it`() throws {
         var draft = ComposerDraft(text: "/impl")
-        draft.take("/implement")
+        try pick(into: &draft)
 
         #expect(draft.text == "/implement ")
         #expect(draft.isSendable)
@@ -19,35 +19,46 @@ struct ComposerCommandTests {
     /// That space is also what puts the menu away, so the line the reader goes on typing is one
     /// they can send — `slash-args.png` has no menu over it.
     @Test
-    func `the space it leaves closes the menu`() {
+    func `the space it leaves closes the menu`() throws {
         var draft = ComposerDraft(text: "/impl")
-        draft.take("/implement")
+        try pick(into: &draft)
 
-        #expect(CommandMenuProjection.query(in: draft.text) == nil)
-        #expect(CommandMenuProjection.menu(for: draft.text, in: catalog) == nil)
+        #expect(ComposerMenu.command(in: draft.text) == nil)
+        #expect(ComposerMenu.commands(for: draft.text, in: catalog) == nil)
     }
 
     /// The whole line is replaced, not patched: the menu only opens on a line that is a `/` and a
     /// run of non-space, so the fragment IS the line.
     @Test
-    func `it replaces the fragment rather than appending to it`() {
+    func `it replaces the fragment rather than appending to it`() throws {
         var draft = ComposerDraft(text: "/co")
-        draft.take("/code-review")
+        try pick(into: &draft)
 
         #expect(draft.text == "/code-review ")
     }
 
     /// A plugin's skills are namespaced, and the namespace is part of what the CLI answers to.
     @Test
-    func `a plugin's command carries its plugin`() {
+    func `a plugin's command carries its plugin`() throws {
         var draft = ComposerDraft(text: "/simp")
-        draft.take("/argo:simplify")
+        try pick(into: &draft)
 
         #expect(draft.text == "/argo:simplify ")
     }
 
+    /// The top row of whatever the line opened, taken as the cursor's ⏎ would take it.
+    private func pick(into draft: inout ComposerDraft) throws {
+        let listing = try #require(ComposerMenu.commands(for: draft.text, in: catalog))
+        let row = try #require(listing.rows.first)
+        draft.take(listing.pick(row))
+    }
+
     private let catalog = CommandCatalog(
-        commands: [Command(name: "implement", description: nil, origin: .project)],
+        commands: [
+            Command(name: "implement", description: nil, origin: .project),
+            Command(name: "code-review", description: nil, origin: .project),
+            Command(name: "simplify", description: nil, origin: .plugin("argo")),
+        ],
         builtins: .read,
     )
 }

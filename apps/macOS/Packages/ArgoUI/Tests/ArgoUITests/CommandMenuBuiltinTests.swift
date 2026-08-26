@@ -9,7 +9,7 @@ struct CommandMenuBuiltinTests {
     /// Project — `cockpit-composer-picker.md`, section headers.
     @Test
     func `the CLI's own commands come after every skill origin`() throws {
-        let menu = try #require(CommandMenuProjection.menu(for: "/", in: catalog))
+        let menu = try #require(ComposerMenu.commands(for: "/", in: catalog))
 
         #expect(menu.sections.map(\.label) == ["Project", "Global", "Plugin", "Claude Code"])
     }
@@ -18,30 +18,38 @@ struct CommandMenuBuiltinTests {
     /// addresses all three identically, which is why they share one menu at all.
     @Test
     func `a built-in is invoked by its bare name`() throws {
-        let menu = try #require(CommandMenuProjection.menu(for: "/compact", in: catalog))
+        let menu = try #require(ComposerMenu.commands(for: "/compact", in: catalog))
 
-        #expect(menu.rows.map(\.command) == ["/compact"])
+        #expect(menu.rows.map(\.id) == ["/compact"])
     }
 
     /// The header names the panel the words were read from rather than a path, because there is no
     /// file behind a built-in for anyone to open.
     @Test
     func `the CLI's section says where its rows were read from`() throws {
-        let menu = try #require(CommandMenuProjection.menu(for: "/", in: catalog))
+        let menu = try #require(ComposerMenu.commands(for: "/", in: catalog))
 
         #expect(menu.sections.last?.detail == "/help · 1")
     }
 
     /// Decision 9. The strip is pinned above the list and is NOT content: a menu whose skills all
     /// filtered out is still the zero state, with the strip standing over it.
-    @Test(arguments: [BuiltinStatus.reading, .unavailable, .read])
+    ///
+    /// A read half draws no strip at all — a line saying the list is complete is one the reader
+    /// re-reads to learn nothing — which is why `.read` maps to no status rather than a quiet one.
+    @Test(arguments: [
+        (BuiltinStatus.reading, ComposerMenu.Status.Mark.waiting),
+        (.unavailable, .failed),
+        (.read, nil),
+    ] as [(BuiltinStatus, ComposerMenu.Status.Mark?)])
     func `the state of the CLI's half rides on the menu whatever is in it`(
         state: BuiltinStatus,
+        mark: ComposerMenu.Status.Mark?,
     ) throws {
         let empty = CommandCatalog(commands: [], builtins: state)
-        let menu = try #require(CommandMenuProjection.menu(for: "/nothing", in: empty))
+        let menu = try #require(ComposerMenu.commands(for: "/nothing", in: empty))
 
-        #expect(menu.builtins == state)
+        #expect(menu.status?.mark == mark)
         #expect(menu.isEmpty)
     }
 

@@ -3,27 +3,33 @@ import SwiftUI
 
 /// Which menu the composer's line opens, and what it draws — `/` and `@` (#685, #687).
 ///
-/// The state both menus read stays on `SessionComposer`, because a SwiftUI extension can hold none.
+/// The state both sigils read stays on `SessionComposer`, because an extension can hold none.
 extension SessionComposer {
-    /// The `/` menu the line opens, and `nil` where none does — an adapter that declares no command
-    /// surface, a line that is not a command, or an Escape the reader has not typed past.
-    var menu: CommandMenuProjection.Menu? {
-        guard composer.canRunCommands, !isDismissed else { return nil }
-        return CommandMenuProjection.menu(for: draft.text, in: catalog)
+    /// The menu the line opens, and `nil` where none does.
+    ///
+    /// At most one is ever open, and by construction rather than by a guard: `/` opens only at the
+    /// head of the line, `@` only on a token the reader is still typing. So the `/` derive is
+    /// asked first and the `@` derive answers whatever it declined.
+    var listing: ComposerMenu.Listing? {
+        guard !isDismissed else { return nil }
+        return commandListing ?? fileListing
     }
 
-    /// The `@` menu, on the same conditions less the first: naming a file is Argo's own act, so it
-    /// is offered wherever there is a Workspace to name one in — including a `codex` Session, which
-    /// declares no command surface and gets no `/` menu at all (design decision 14).
-    ///
-    /// Never open at the same time as `menu` above, and by construction rather than by a guard:
-    /// `/` opens only at the head of the line, `@` only on a token the reader is still typing.
-    var mentionMenu: WorkspaceFileProjection.Menu? {
+    /// `nil` for an adapter that declares no command surface, or a line that is not a command.
+    private var commandListing: ComposerMenu.Listing? {
+        guard composer.canRunCommands else { return nil }
+        return ComposerMenu.commands(for: draft.text, in: catalog)
+    }
+
+    /// Offered on one condition less: naming a file is Argo's own act, so it is offered wherever
+    /// there is a Workspace to name one in — including a `codex` Session, which declares no command
+    /// surface and gets no `/` menu at all (design decision 14).
+    private var fileListing: ComposerMenu.Listing? {
         // No Workspace, no menu — not an empty one. "No file matches" is a statement about a tree,
         // and there is no tree here to have looked in. A read still in flight is the same case:
         // `workspaceFiles` is nil until it answers, so the zero line cannot speak for a tree first.
-        guard !isDismissed, composer.workspaceRoot != nil, let workspaceFiles else { return nil }
-        return WorkspaceFileProjection.menu(
+        guard composer.workspaceRoot != nil, let workspaceFiles else { return nil }
+        return ComposerMenu.files(
             for: draft.text,
             in: workspaceFiles,
             touched: composer.touchedFiles,
@@ -32,17 +38,12 @@ extension SessionComposer {
 
     /// It takes the vessel's own width, because the description is the content: at any stated width
     /// two thirds of a real `description:` would be an ellipsis.
-    @ViewBuilder var commandMenu: some View {
-        if let menu {
-            CommandMenu(menu: menu, current: cursor.current) { draft.take($0.command) }
-                .padding(.bottom, Self.gapAboveVessel)
-        }
-    }
-
-    @ViewBuilder var fileMenu: some View {
-        if let mentionMenu {
-            FileMenu(menu: mentionMenu, current: cursor.current, pick: take(mention:))
-                .padding(.bottom, Self.gapAboveVessel)
+    @ViewBuilder var menu: some View {
+        if let listing {
+            ComposerMenuList(listing: listing, current: cursor.current) {
+                draft.take(listing.pick($0))
+            }
+            .padding(.bottom, Self.gapAboveVessel)
         }
     }
 
@@ -55,7 +56,7 @@ extension SessionComposer {
     /// The ids of whichever menu is open, in drawing order — what the cursor walks and what ⏎
     /// picks out of, so neither can fall out of step with the list on screen.
     var menuIDs: [String] {
-        menu?.rows.map(\.id) ?? mentionMenu?.rows.map(\.id) ?? []
+        listing?.rows.map(\.id) ?? []
     }
 
     /// Re-read whatever the line has just opened, which is what puts a skill installed — or a file
@@ -67,14 +68,13 @@ extension SessionComposer {
     func opened(_ was: String = "") {
         isDismissed = false
         catalog = openedCommands()
-        if WorkspaceFileProjection.mention(in: draft.text) != nil,
-           WorkspaceFileProjection.mention(in: was) == nil {
-            Task { workspaceFiles = await WorkspaceFileProjection.Tree(files()) }
+        if ComposerMenu.mention(in: draft.text) != nil, ComposerMenu.mention(in: was) == nil {
+            Task { workspaceFiles = await WorkspaceTree(files()) }
         }
     }
 
     private func openedCommands() -> CommandCatalog {
-        guard composer.canRunCommands, CommandMenuProjection.query(in: draft.text) != nil else {
+        guard composer.canRunCommands, ComposerMenu.command(in: draft.text) != nil else {
             return CommandCatalog.empty
         }
         return commands()
@@ -97,20 +97,13 @@ extension SessionComposer {
         }
     }
 
-    /// A picked file, put where the `@` token was. The range comes off the line rather than off the
-    /// row, because what is being replaced is what the reader typed.
-    func take(mention row: WorkspaceFileProjection.Row) {
-        guard let mention = WorkspaceFileProjection.mention(in: draft.text) else { return }
-        draft.take(mention: row, replacing: mention.range)
-    }
-
     /// Escape puts an open menu away and leaves the draft exactly as it was. Not a mode: the next
     /// keystroke asks for it back, because typing on is the reader still looking for a command.
     ///
     /// It answers whether it DID anything, because the field holds the keyboard: an Escape this
     /// swallowed with no menu open is an Escape the permission footer's `esc denies` never sees.
     @discardableResult func dismissMenus() -> Bool {
-        isDismissed = menu != nil || mentionMenu != nil
+        isDismissed = listing != nil
         return isDismissed
     }
 }
