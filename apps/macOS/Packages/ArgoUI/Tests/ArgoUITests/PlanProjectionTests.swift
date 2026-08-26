@@ -27,7 +27,7 @@ struct PlanProjectionTests {
             plan(("Land the metrics", .inProgress)),
             .message(markdown: "Landed."),
             .turnEnded(.endTurn),
-            .prompt(text: "Now the pill.", atMs: 1000),
+            .prompt(text: "Now the pill.", images: [], atMs: 1000),
             .message(markdown: "Working on it."),
         ])
 
@@ -37,7 +37,7 @@ struct PlanProjectionTests {
     @Test
     func `a Session that never reported a plan has no reading at all`() {
         let reading = PlanProjection.reading(from: [
-            .prompt(text: "Read the study.", atMs: 1000),
+            .prompt(text: "Read the study.", images: [], atMs: 1000),
             .message(markdown: "Read it."),
             .thought(markdown: "The measure is typographic."),
         ])

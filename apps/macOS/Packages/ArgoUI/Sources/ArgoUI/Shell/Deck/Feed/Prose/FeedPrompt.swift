@@ -8,6 +8,12 @@ struct FeedPrompt: View {
     @Environment(\.argo) private var argo
 
     let text: String
+    /// What was pasted in with the words, above them. Drawn as the gallery a call's pictures get:
+    /// one treatment for a picture in the feed, whoever put it there (#733).
+    let shots: [FeedShot]
+    /// Required, not defaulted: a no-op default would leave a thumbnail drawn as a control and dead
+    /// to the click at any call site that forgot it, with nothing to fail.
+    let open: (FeedShot) -> Void
     /// Held by the feed, not here: the projection hands the feed a fresh copy of every row as the
     /// transcript grows, and a fold that lived in the row would quietly re-close behind the reader.
     @Binding var isExpanded: Bool
@@ -40,9 +46,16 @@ struct FeedPrompt: View {
 
     private var bubble: some View {
         VStack(alignment: .trailing, spacing: ArgoSpacing.snug) {
-            prose(lineLimit: isExpanded ? nil : ArgoFeedRow.collapsedPromptLines)
-                .textSelection(.enabled)
-                .background(alignment: .top) { rulers }
+            if !shots.isEmpty {
+                FeedGalleryRow(gallery: FeedGallery(shots: shots), open: open)
+            }
+            // A prompt that was only a picture draws none: an empty block above the thumbnail is a
+            // line of prose the reader never wrote.
+            if !text.isEmpty {
+                prose(lineLimit: isExpanded ? nil : ArgoFeedRow.collapsedPromptLines)
+                    .textSelection(.enabled)
+                    .background(alignment: .top) { rulers }
+            }
             if isFolded {
                 disclosure
             }
@@ -56,8 +69,16 @@ struct FeedPrompt: View {
         .argoFeedCursorShape(radius: ArgoRadius.popover)
         // A ceiling, not a width: the bubble sizes to a short prompt and holds a long one here.
         .frame(maxWidth: ceiling, alignment: .trailing)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Prompt: \(text)")
+        // `contain` where there are pictures, so each thumbnail stays a control of its own; a
+        // combined bubble would fuse them into one label nobody can open.
+        .accessibilityElement(children: shots.isEmpty ? .combine : .contain)
+        .accessibilityLabel(spoken)
+    }
+
+    private var spoken: String {
+        guard !shots.isEmpty else { return "Prompt: \(text)" }
+        let pictures = shots.count == 1 ? "1 image" : "\(shots.count) images"
+        return text.isEmpty ? "Prompt: \(pictures)" : "Prompt: \(text), with \(pictures)"
     }
 
     /// The two copies the fold is decided by, drawn behind the visible one at exactly its width
@@ -100,6 +121,8 @@ struct FeedPrompt: View {
 
     FeedPrompt(
         text: "Run the visual contract suite and tell me what broke.",
+        shots: [],
+        open: { _ in },
         isExpanded: $isExpanded,
     )
     .padding(ArgoFeedRow.inset)
@@ -113,6 +136,8 @@ struct FeedPrompt: View {
 
     FeedPrompt(
         text: String(repeating: "Read the whole anatomy study before you start. ", count: 14),
+        shots: [],
+        open: { _ in },
         isExpanded: $isExpanded,
     )
     .padding(ArgoFeedRow.inset)
@@ -126,6 +151,38 @@ struct FeedPrompt: View {
 
     FeedPrompt(
         text: String(repeating: "Read the whole anatomy study before you start. ", count: 14),
+        shots: [],
+        open: { _ in },
+        isExpanded: $isExpanded,
+    )
+    .padding(ArgoFeedRow.inset)
+    .frame(width: 720)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Feed prompt — a picture pasted in with the words") {
+    @Previewable @State var isExpanded = false
+
+    FeedPrompt(
+        text: "Look at the rule under the header — it sits a point low against the seam.",
+        shots: Array(FeedProjection.previewShots.prefix(1)),
+        open: { _ in },
+        isExpanded: $isExpanded,
+    )
+    .padding(ArgoFeedRow.inset)
+    .frame(width: 720)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Feed prompt — nothing but the picture") {
+    @Previewable @State var isExpanded = false
+
+    FeedPrompt(
+        text: "",
+        shots: Array(FeedProjection.previewShots.prefix(1)),
+        open: { _ in },
         isExpanded: $isExpanded,
     )
     .padding(ArgoFeedRow.inset)
@@ -137,9 +194,14 @@ struct FeedPrompt: View {
 #Preview("Feed prompt — at the narrowest feed column") {
     @Previewable @State var isExpanded = false
 
-    FeedPrompt(text: String(repeating: "Fold me. ", count: 40), isExpanded: $isExpanded)
-        .padding(ArgoFeedRow.inset)
-        .frame(width: 360)
-        .argoDeckSurface()
-        .argoAppearance()
+    FeedPrompt(
+        text: String(repeating: "Fold me. ", count: 40),
+        shots: [],
+        open: { _ in },
+        isExpanded: $isExpanded,
+    )
+    .padding(ArgoFeedRow.inset)
+    .frame(width: 360)
+    .argoDeckSurface()
+    .argoAppearance()
 }

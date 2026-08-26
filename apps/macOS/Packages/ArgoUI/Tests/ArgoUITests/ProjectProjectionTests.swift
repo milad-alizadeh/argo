@@ -138,7 +138,7 @@ struct ProjectProjectionTests {
         let stream = AsyncStream<[TranscriptEvent]> { continuation in
             continuation.yield([
                 .cwd("/tmp/argo"),
-                .prompt(text: "Work on it", atMs: nil),
+                .prompt(text: "Work on it", images: [], atMs: nil),
                 .turnEnded(.endTurn),
             ])
             continuation.finish()

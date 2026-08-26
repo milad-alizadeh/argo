@@ -56,6 +56,28 @@ extension CockpitPresentation.Session {
         ]
     }
 
+    /// A picture pasted into a prompt, as the reader ends up with it: the placeholder the CLI wrote
+    /// beside the pixels is already taken out. The three shapes one renders in — beside words, on
+    /// its own, and two side by side.
+    static let pasted: [TranscriptEvent] = [
+        .prompt(
+            text: "Look at the rule under the header — it sits a point low against the seam.",
+            images: [picture(shellCapture)],
+            atMs: 1_733_000_100_000,
+        ),
+        .prompt(text: "", images: [picture(selectionCapture)], atMs: 1_733_000_110_000),
+        .prompt(
+            text: "And these two side by side.",
+            images: [picture(renderedChart), picture(diskPlate)],
+            atMs: 1_733_000_120_000,
+        ),
+    ]
+
+    /// DIRECT for all of them: a pasted picture is bytes the record carried.
+    private static func picture(_ wrapped: String) -> MediaEvidence {
+        MediaEvidence(tier: .direct, mediaType: "image/png", bytes: unwrapped(wrapped))
+    }
+
     /// A transcript writes base64 as one unbroken run; source cannot hold a 1000-character line.
     /// The wrapping is this file's, so it comes off here rather than in the decoder: production
     /// bytes have no newlines and nothing should tolerate any.

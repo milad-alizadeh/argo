@@ -25,7 +25,7 @@ extension MinimapRow {
             shape: row.content.shape(isFolded: isFolded),
             topStep: FeedRow.step(to: row, from: previous),
         )
-        if case let .prompt(text) = row.content {
+        if case let .prompt(text, _) = row.content {
             prompt = text
         }
         endsTurn = row.content.endsTurn
@@ -35,8 +35,12 @@ extension MinimapRow {
 private extension FeedRow.Content {
     @MainActor func shape(isFolded: Bool) -> MinimapRowShape {
         switch self {
-        // The prompt's lines, held against the trailing edge its bubble is drawn on.
-        case let .prompt(text): .bubble(text: text, isFolded: isFolded)
+        // The prompt's pictures and lines, held against the trailing edge its bubble is drawn on.
+        case let .prompt(text, shots): .bubble(
+                text: text,
+                shots: shots.count,
+                isFolded: isFolded,
+            )
         case let .message(text): MinimapProseBlock.shape(of: text, ink: .message)
         case let .thought(text): MinimapProseBlock.shape(of: text, ink: .thought)
         case let .call(call): call.shape

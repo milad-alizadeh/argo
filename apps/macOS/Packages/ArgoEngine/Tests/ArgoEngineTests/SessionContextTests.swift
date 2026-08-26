@@ -54,7 +54,7 @@ struct SessionContextTests {
     func `a record that priced nothing leaves the context unread, never zero`() async throws {
         let hub = testHub(projectURL: Self.projectURL)
         let observed = hubTestObservation(id: "silent", events: [
-            .prompt(text: "Read the contract", atMs: 1000),
+            .prompt(text: "Read the contract", images: [], atMs: 1000),
             .turnEnded(.endTurn),
         ])
 
@@ -74,7 +74,7 @@ struct SessionContextTests {
         ])
         let child = hubTestObservation(id: "child", events: [
             .headLeaf(uuid: "root-leaf"),
-            .prompt(text: "Carry on", atMs: 2000),
+            .prompt(text: "Carry on", images: [], atMs: 2000),
         ])
 
         await hubObserveToEnd(hub, child)

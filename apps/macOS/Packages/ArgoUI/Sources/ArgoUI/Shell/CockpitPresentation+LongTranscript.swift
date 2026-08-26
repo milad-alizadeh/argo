@@ -16,7 +16,7 @@ extension CockpitPresentation.Session {
     private static let longTurns = 52
 
     private static func turn(_ number: Int) -> [TranscriptEvent] {
-        [.prompt(text: LongProse.prompts[number % LongProse.prompts.count], atMs: nil)]
+        [.prompt(text: LongProse.prompts[number % LongProse.prompts.count], images: [], atMs: nil)]
             + reasoned(number)
             + surveyed(number)
             + worked(number)

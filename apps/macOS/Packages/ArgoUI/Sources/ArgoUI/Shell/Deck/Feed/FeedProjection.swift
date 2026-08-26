@@ -130,11 +130,11 @@ enum FeedProjection {
         // punctuation rather than drawn as something the reader said (#541). The sentence is the
         // CLI's, which is why the engine owns it: this is a READING of the record, and a second
         // spelling of the marker living up here could drift from the keystroke that produces it.
-        case let .prompt(text, _):
+        case let .prompt(text, images, _):
             if ClaudeInterrupt.isMark(text) {
                 .mark(.interrupted)
             } else {
-                .prompt(text)
+                .prompt(text: text, shots: images.map(FeedShot.pasted))
             }
         // In the sequence it happened, beside the user's own line rather than instead of it: a
         // command is just a prompt, and the feed invents no third way of showing one (#688).

@@ -30,6 +30,10 @@ extension FeedProjection {
     /// reading nobody can see.
     static let longFailedCallID = longRows.reversed().failedCallID
 
+    /// Prompts somebody pasted a picture into, projected — the thumbnail row inside a bubble, and
+    /// the wordless prompt that is nothing but one (#733).
+    static let previewPastedRows = rows(from: CockpitPresentation.Session.pasted)
+
     /// The same feed with the prose taken out. A filter over the shipping rows, never a second set.
     static let previewCallRows = previewRows.filter(\.isCall)
 
@@ -133,7 +137,11 @@ extension FeedProjection {
     /// and the marker under it. Projected from events rather than assembled from rows, so what the
     /// still shows is what the shipping projection produces.
     static let previewSkillLoadedTurn = rows(from: [
-        .prompt(text: "/implement 688 — the feed says a Session loaded a skill", atMs: 1000),
+        .prompt(
+            text: "/implement 688 — the feed says a Session loaded a skill",
+            images: [],
+            atMs: 1000,
+        ),
         .skillLoaded(CockpitPresentation.Session.previewSkillLoad),
         .message(markdown: "Reading the ticket and the design it points at."),
     ])
@@ -162,9 +170,9 @@ extension FeedProjection {
     /// between two prompts. What the overview lane is judged on: a table has to read as its cells,
     /// a paragraph's bars as the widths its lines wrapped to, and a one-line prompt as one line.
     static let previewMarkdownRows = numbered([
-        .prompt("Take the design PR state and turn it into tickets"),
+        .prompt(text: "Take the design PR state and turn it into tickets", shots: []),
         .message(MarkdownSpecimen.message),
-        .prompt("/clear"),
+        .prompt(text: "/clear", shots: []),
     ])
 
     /// Contents taken off the shipping feed, given their places back — only the gaps are new.

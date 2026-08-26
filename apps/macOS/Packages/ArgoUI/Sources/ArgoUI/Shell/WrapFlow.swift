@@ -17,7 +17,10 @@ struct WrapFlow: Layout {
         let places = Self.placements(of: sizes(of: subviews), in: width, gap: gap)
         let height = places.map(\.maxY).max() ?? 0
         let widest = places.map(\.maxX).max() ?? 0
-        return CGSize(width: width.isFinite ? width : widest, height: height)
+        // Never wider than the tiles actually ran. Claiming the whole proposal stretched the one
+        // container that HUGS its content — a prompt's bubble, which held a short line of words
+        // out at its ceiling behind a single thumbnail (#733).
+        return CGSize(width: min(width, widest), height: height)
     }
 
     func placeSubviews(

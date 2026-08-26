@@ -61,15 +61,16 @@ struct MinimapRowTests {
     /// is drawn, not the leading edge prose runs from.
     @Test
     func `a prompt is a bubble rather than prose`() {
-        #expect(Self.shape(.prompt("Fix the seam")) == .bubble(
+        #expect(Self.shape(.prompt(text: "Fix the seam", shots: [])) == .bubble(
             text: "Fix the seam",
+            shots: 0,
             isFolded: true,
         ))
     }
 
     @Test
     func `a prompt carries the words it asked for and nothing else does`() {
-        #expect(Self.row(.prompt("Fix the seam")).prompt == "Fix the seam")
+        #expect(Self.row(.prompt(text: "Fix the seam", shots: [])).prompt == "Fix the seam")
         #expect(Self.row(.message("Fixed it")).prompt == nil)
     }
 

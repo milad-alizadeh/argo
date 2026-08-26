@@ -88,17 +88,17 @@ struct WorktreeRelocationTests {
         let hub = testHub(projectURL: Self.projectURL)
         let origin = hubTestObservation(id: "origin", events: [
             .originSession(id: "origin"),
-            .prompt(text: "Start", atMs: 1000),
+            .prompt(text: "Start", images: [], atMs: 1000),
         ])
         let first = hubTestObservation(id: "first", events: [
             .originSession(id: "origin"),
-            .prompt(text: "First", atMs: 2000),
+            .prompt(text: "First", images: [], atMs: 2000),
             .message(markdown: "First worktree"),
             .branch("worktree-one"),
         ])
         let second = hubTestObservation(id: "second", events: [
             .originSession(id: "origin"),
-            .prompt(text: "Second", atMs: 3000),
+            .prompt(text: "Second", images: [], atMs: 3000),
             .message(markdown: "Second worktree"),
             .branch("worktree-two"),
         ])

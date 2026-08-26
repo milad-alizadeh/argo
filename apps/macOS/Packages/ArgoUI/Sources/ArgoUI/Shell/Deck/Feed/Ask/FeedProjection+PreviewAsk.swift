@@ -113,7 +113,7 @@ extension FeedProjection {
 
     private static func askTranscript(_ questions: [Ask.Question]) -> [TranscriptEvent] {
         [
-            .prompt(text: "implement 721", atMs: nil),
+            .prompt(text: "implement 721", images: [], atMs: nil),
             .message(markdown: "There is no issue #721 in `milad-alizadeh/argo` — the API returns "
                 + "404, and the highest number that exists is 713. So I can't start without "
                 + "knowing which ticket you mean."),

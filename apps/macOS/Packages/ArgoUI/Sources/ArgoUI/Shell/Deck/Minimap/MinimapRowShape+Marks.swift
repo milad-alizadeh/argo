@@ -14,8 +14,8 @@ extension MinimapRowShape {
         switch self {
         case let .composed(blocks, ink):
             MinimapProseBlock.marks(of: blocks, ink: ink, across: measure)
-        case let .bubble(text, isFolded):
-            Self.bubble(text, isFolded: isFolded, across: measure)
+        case let .bubble(text, shots, isFolded):
+            Self.bubble(text, shots: shots, isFolded: isFolded, across: measure)
         case let .line(parts, ink):
             Self.line(parts, ink: ink, across: measure)
         case let .shots(count):

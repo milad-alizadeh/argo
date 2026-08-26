@@ -66,7 +66,7 @@ extension SessionHeaderProjection {
     private static func moments(in events: [TranscriptEvent]) -> [Int] {
         events.compactMap { event in
             switch event {
-            case let .prompt(_, atMs): atMs
+            case let .prompt(_, _, atMs): atMs
             case let .toolCall(call): call.atMs
             case let .toolCallOutcome(outcome): outcome.endedAtMs
             case let .compaction(atMs): atMs

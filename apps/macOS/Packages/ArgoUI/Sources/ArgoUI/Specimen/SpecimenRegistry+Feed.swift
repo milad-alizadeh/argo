@@ -166,6 +166,11 @@ extension SpecimenRegistry {
         SpecimenEntry("feedSingleShot") {
             SpecimenScene.sessions(FeedProjection.previewSingleShotRows)
         },
+        // The other way a picture reaches the feed: pasted into a prompt rather than produced by
+        // a call, so it is drawn inside the bubble instead of across the measure.
+        SpecimenEntry("feedPastedShots") {
+            SpecimenScene.sessions(FeedProjection.previewPastedRows)
+        },
         SpecimenEntry("feedAbsentShot") {
             SpecimenScene.sessions(FeedProjection.previewAbsentShotRows)
         },

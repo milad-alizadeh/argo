@@ -3,8 +3,9 @@ struct FeedRow: Identifiable, Equatable, Sendable {
     /// What a row IS, which is what decides how it is drawn. Each kind carries its own payload
     /// rather than sharing one `text` field.
     enum Content: Equatable, Sendable {
-        /// What someone asked for, verbatim. A steer typed mid-run is one of these too.
-        case prompt(String)
+        /// What someone asked for, verbatim, and whatever was pasted in with it. A steer typed
+        /// mid-run is one of these too.
+        case prompt(text: String, shots: [FeedShot])
         /// What the agent said, verbatim.
         case message(String)
         /// What the agent reasoned, verbatim. Never a message — see `FeedProjection`.

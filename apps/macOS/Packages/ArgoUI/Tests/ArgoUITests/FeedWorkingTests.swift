@@ -174,7 +174,7 @@ struct FeedWorkingTests {
     )
 
     private static let transcript: [TranscriptEvent] = [
-        .prompt(text: "Clear the build folder", atMs: 1000),
+        .prompt(text: "Clear the build folder", images: [], atMs: 1000),
         .message(markdown: "Running that now."),
         .usage(spend),
     ]

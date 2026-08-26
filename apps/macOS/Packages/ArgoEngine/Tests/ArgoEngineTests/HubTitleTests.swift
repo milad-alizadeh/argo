@@ -15,8 +15,8 @@ struct HubTitleTests {
 
         // What /clear leaves as the new transcript's first prompt. Verbatim it is the whole
         // title, and locking on it names the Session after the plumbing that opened it.
-        continuation.yield([.prompt(text: "/clear", atMs: nil)])
-        continuation.yield([.prompt(text: "Fix the roster titles", atMs: nil)])
+        continuation.yield([.prompt(text: "/clear", images: [], atMs: nil)])
+        continuation.yield([.prompt(text: "Fix the roster titles", images: [], atMs: nil)])
         continuation.finish()
         await hubTailEnded(hub, transcriptID: "session")
 
@@ -30,7 +30,7 @@ struct HubTitleTests {
         let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
         await hub.startObserving(observation)
 
-        continuation.yield([.prompt(text: "/clear", atMs: nil)])
+        continuation.yield([.prompt(text: "/clear", images: [], atMs: nil)])
         continuation.finish()
         await hubTailEnded(hub, transcriptID: "session")
 
@@ -46,8 +46,8 @@ struct HubTitleTests {
         let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
         await hub.startObserving(observation)
 
-        continuation.yield([.prompt(text: "/implement 433", atMs: nil)])
-        continuation.yield([.prompt(text: "Later steering", atMs: nil)])
+        continuation.yield([.prompt(text: "/implement 433", images: [], atMs: nil)])
+        continuation.yield([.prompt(text: "Later steering", images: [], atMs: nil)])
         continuation.finish()
         await hubTailEnded(hub, transcriptID: "session")
 
@@ -63,7 +63,7 @@ struct HubTitleTests {
         ])
         let child = hubTestObservation(id: "child", events: [
             .headLeaf(uuid: "root-leaf"),
-            .prompt(text: "/clear", atMs: nil),
+            .prompt(text: "/clear", images: [], atMs: nil),
         ])
 
         await hubObserveToEnd(hub, child)
@@ -80,9 +80,9 @@ struct HubTitleTests {
         let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
         await hub.startObserving(observation)
 
-        continuation.yield([.prompt(text: "Fallback title", atMs: nil)])
+        continuation.yield([.prompt(text: "Fallback title", images: [], atMs: nil)])
         continuation.yield([.title("Host-authored title")])
-        continuation.yield([.prompt(text: "Later prompt", atMs: nil)])
+        continuation.yield([.prompt(text: "Later prompt", images: [], atMs: nil)])
         continuation.finish()
         await hubTailEnded(hub, transcriptID: "session")
 

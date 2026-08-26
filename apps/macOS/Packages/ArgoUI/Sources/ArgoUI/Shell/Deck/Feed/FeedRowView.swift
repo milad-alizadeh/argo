@@ -12,7 +12,8 @@ struct FeedRowView: View {
 
     var body: some View {
         switch row.content {
-        case let .prompt(text): FeedPrompt(text: text, isExpanded: $isExpanded)
+        case let .prompt(text, shots):
+            FeedPrompt(text: text, shots: shots, open: selection.light, isExpanded: $isExpanded)
         case let .message(markdown): FeedProse(text: markdown, voice: .message)
         case let .thought(markdown): FeedProse(text: markdown, voice: .thought)
         case let .call(call):
@@ -78,7 +79,19 @@ extension FeedRow {
             guard let shot = gallery.shots.first(where: \.isOpenable) else { return false }
             selection.light(shot)
             return true
-        case .prompt, .unreadable:
+        // A prompt that is ONLY a picture has no fold for the key to work, so it opens the picture
+        // instead — the same answer the gallery gives, on the row the picture arrived in.
+        case let .prompt(text, shots):
+            guard text.isEmpty else {
+                isExpanded.wrappedValue.toggle()
+                return true
+            }
+            // No words and no picture to open: nothing to fold and nothing to light, so the key
+            // falls through to the feed rather than being swallowed by a row that does nothing.
+            guard let shot = shots.first(where: \.isOpenable) else { return false }
+            selection.light(shot)
+            return true
+        case .unreadable:
             isExpanded.wrappedValue.toggle()
             return true
         // A question and a mark open nothing, so the key falls through to the feed.

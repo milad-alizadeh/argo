@@ -71,8 +71,13 @@ struct FeedRowSelection {
 }
 
 extension FeedRow {
+    /// Whether this row is where a picture came from. Two rows can be: a call's gallery, and the
+    /// prompt somebody pasted one into (#733).
     func shows(_ shot: FeedShot) -> Bool {
-        guard case let .gallery(gallery) = content else { return false }
-        return gallery.shots.contains(shot)
+        switch content {
+        case let .gallery(gallery): gallery.shots.contains(shot)
+        case let .prompt(_, shots): shots.contains(shot)
+        case .message, .thought, .call, .survey, .ask, .skillLoaded, .mark, .unreadable: false
+        }
     }
 }

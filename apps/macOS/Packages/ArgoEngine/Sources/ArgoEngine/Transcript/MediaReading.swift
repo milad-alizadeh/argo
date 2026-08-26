@@ -43,14 +43,18 @@ private func fromToolUseResult(_ raw: JSONValue?) -> MediaEvidence? {
     )
 }
 
+/// Every picture a record's own parts carried, in the order it carried them. `direct` for all of
+/// them: these are the bytes the record embedded, which is what the agent was actually sent.
+func embeddedMedia(_ content: [ContentBlock]) -> [MediaEvidence] {
+    content.compactMap { block in
+        guard case let .image(image) = block else { return nil }
+        return MediaEvidence(tier: .direct, mediaType: image.mediaType, bytes: image.base64)
+    }
+}
+
 /// One content block as the agent was sent it.
 private func fromContent(_ content: JSONValue) -> MediaEvidence? {
-    for part in content.array {
-        if case let .image(image) = ContentBlock(part: part) {
-            return MediaEvidence(tier: .direct, mediaType: image.mediaType, bytes: image.base64)
-        }
-    }
-    return nil
+    embeddedMedia(content.array.map(ContentBlock.init(part:))).first
 }
 
 /// The file at that path NOW, at the LOWER tier. Only reached where the record embedded nothing.

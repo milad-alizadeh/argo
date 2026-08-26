@@ -13,7 +13,7 @@ struct HubTests {
 
         continuation.yield([
             .headLeaf(uuid: "leaf"),
-            .prompt(text: "Build the native shell\nwith context", atMs: nil),
+            .prompt(text: "Build the native shell\nwith context", images: [], atMs: nil),
             .cwd("/tmp/argo"),
             .model("claude-opus-5"),
             .branch("argo/#376-native-shell"),

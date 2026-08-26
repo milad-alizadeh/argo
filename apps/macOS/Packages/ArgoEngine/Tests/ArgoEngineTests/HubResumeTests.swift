@@ -144,7 +144,7 @@ struct HubResumeTests {
             at: theirs,
             events: [
                 .cwd(fixture.projectURL.path),
-                .prompt(text: "Not Argo's", atMs: Date().epochMs),
+                .prompt(text: "Not Argo's", images: [], atMs: Date().epochMs),
                 .turnEnded(.endTurn),
             ],
         ))

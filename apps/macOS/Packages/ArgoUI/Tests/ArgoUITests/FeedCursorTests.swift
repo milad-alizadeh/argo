@@ -12,7 +12,7 @@ import Testing
 @MainActor
 struct FeedCursorTests {
     private static let rows = [
-        FeedRow(id: 0, content: .prompt("Run the visual contract suite.")),
+        FeedRow(id: 0, content: .prompt(text: "Run the visual contract suite.", shots: [])),
         FeedRow(id: 1, content: .message("Two rows failed.")),
         FeedRow(id: 2, content: .message("Both are the same wash.")),
     ]

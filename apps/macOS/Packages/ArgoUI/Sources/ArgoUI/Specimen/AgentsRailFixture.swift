@@ -31,7 +31,7 @@ enum AgentsRailFixture {
     static let soleAgentRows = FeedProjection.rows(from: soleAgent, working: true)
 
     private static let soleAgent: [TranscriptEvent] = [
-        .prompt(text: "Check the fold breaks at every mark.", atMs: 1_733_000_000_000),
+        .prompt(text: "Check the fold breaks at every mark.", images: [], atMs: 1_733_000_000_000),
         .message(markdown: "Handing that to one agent — it is a read of one file and a claim."),
         // Unanswered on purpose: a delegation the record has not answered IS a child still working,
         // which is what puts the rail on screen at all. It names no Subagent yet either, so the one
@@ -48,7 +48,7 @@ enum AgentsRailFixture {
     /// One Subagent's own turn: what it was handed, what it did, and how it ended. Short on purpose
     /// — the claim a render of this settles is that the feed re-scopes, not how long a child runs.
     private static let verifier: [TranscriptEvent] = [
-        .prompt(text: "Verify: the fold breaks at every mark", atMs: 1_733_000_200_000),
+        .prompt(text: "Verify: the fold breaks at every mark", images: [], atMs: 1_733_000_200_000),
         .thought(
             markdown: "The break rule is the survey's, so read `FeedSurveyFold` before the marks.",
         ),

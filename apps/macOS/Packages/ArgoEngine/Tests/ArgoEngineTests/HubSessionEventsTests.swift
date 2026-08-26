@@ -13,7 +13,7 @@ struct HubSessionEventsTests {
     func `a Session retains the events it was built from, in the order they arrived`() async throws {
         let hub = testHub(projectURL: Self.projectURL)
         let observed = hubTestObservation(id: "session", events: [
-            .prompt(text: "Read the contract", atMs: 1000),
+            .prompt(text: "Read the contract", images: [], atMs: 1000),
             .thought(markdown: "The palette is where to start."),
             .message(markdown: "Reading `ArgoPalette` first."),
             .turnEnded(.endTurn),
@@ -23,7 +23,7 @@ struct HubSessionEventsTests {
 
         let session = try #require(hub.sessions.first)
         #expect(session.events == [
-            .prompt(text: "Read the contract", atMs: 1000),
+            .prompt(text: "Read the contract", images: [], atMs: 1000),
             .thought(markdown: "The palette is where to start."),
             .message(markdown: "Reading `ArgoPalette` first."),
             .turnEnded(.endTurn),
