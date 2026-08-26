@@ -20,7 +20,7 @@ struct HubHandoffTests {
         _ = try await fixture.hub.spawnSession()
         await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
 
-        #expect(fixture.hub.steer(sessionID: "session-from-cli", typing: "/handoff /tmp/b.md"))
+        #expect(fixture.hub.steer(sessionID: spawnedSessionID, typing: "/handoff /tmp/b.md"))
 
         // The Turn is two writes with a pause between them (#682), so the Return is waited for.
         await settle { fixture.host.started.last?.written.count == 2 }
@@ -39,7 +39,7 @@ struct HubHandoffTests {
         await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
         fixture.host.endLastProcess(exitCode: 0)
 
-        #expect(!fixture.hub.steer(sessionID: "session-from-cli", typing: "/handoff"))
+        #expect(!fixture.hub.steer(sessionID: spawnedSessionID, typing: "/handoff"))
     }
 
     @Test
@@ -123,7 +123,7 @@ struct HubHandoffTests {
         // CLI named. The link has to arrive at the same place.
         await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
 
-        #expect(Self.handedOffTo(in: fixture.hub, from: "full-session") == "session-from-cli")
+        #expect(Self.handedOffTo(in: fixture.hub, from: "full-session") == spawnedSessionID)
         #expect(fixture.hub.sessions.count == 2)
     }
 

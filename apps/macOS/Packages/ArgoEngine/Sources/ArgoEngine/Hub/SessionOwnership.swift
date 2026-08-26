@@ -68,6 +68,8 @@ public final class SessionOwnership {
     /// Argo started a CLI on an EXISTING chain, so the claim names its Session from birth rather
     /// than being matched back by folder and start time. The id is known before the process is, so
     /// there is nothing to guess (#10, and it sidesteps #363/#364 entirely).
+    ///
+    /// The id is the one the ROSTER carries — never the chain id `--resume` takes (#731).
     func claim(cwd: String, resuming sessionID: String) -> ClaimID {
         open(cwd: cwd, resuming: sessionID)
     }
@@ -111,12 +113,10 @@ public final class SessionOwnership {
         return .orphaned
     }
 
-    /// The claim a Session belongs to, or nothing. The claim still WAITING for a Session wins, and
-    /// the newest of those: spawning twice in one folder opens two claims with overlapping windows,
-    /// so matching on the window alone would hand both Sessions the same agent.
+    /// The claim a Session belongs to, or nothing: the NEWEST that covers it, because spawning
+    /// twice in one folder opens two claims with overlapping windows.
     func claimFor(cwd: String?, startedAtMs: Int?) -> ClaimID? {
-        let covering = covering(cwd: cwd, startedAtMs: startedAtMs)
-        return covering.last { claims[$0]?.sessionID == nil } ?? covering.last
+        covering(cwd: cwd, startedAtMs: startedAtMs).last
     }
 
     private func open(cwd: String, resuming sessionID: String?) -> ClaimID {
@@ -133,11 +133,15 @@ public final class SessionOwnership {
         return id
     }
 
+    /// The claims a Session could have started inside — one agent each, so a claim that already HAS
+    /// its Session covers nothing further (#731). That is also what keeps a resume out of window
+    /// matching altogether: its claim names its Session from birth, and the window it happens to
+    /// span belongs to whoever started the agent in it.
     private func covering(cwd: String?, startedAtMs: Int?) -> [ClaimID] {
         guard let cwd, let startedAtMs else { return [] }
         let resolved = resolvedPath(cwd)
         return issuedOrder.filter { id in
-            guard let claim = claims[id] else { return false }
+            guard let claim = claims[id], claim.sessionID == nil else { return false }
             return claim.cwd == resolved
                 && startedAtMs >= claim.fromMs
                 && startedAtMs <= (claim.toMs ?? .max)

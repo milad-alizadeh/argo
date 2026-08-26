@@ -24,13 +24,13 @@ struct HandoffChainTests {
         await hubObserveToEnd(restarted, handedOffSessionObservation(of: fixture))
         await hubObserveToEnd(restarted, spawnedSessionObservation(of: fixture))
 
-        #expect(handedOffTo(in: restarted, from: "full-session") == "session-from-cli")
+        #expect(handedOffTo(in: restarted, from: "full-session") == spawnedSessionID)
         // Nothing about the restart claims a PTY back, and the two rows say WHY differently: Argo
         // spawned the fresh one, so it is `orphaned` and resumable, and it only ever observed the
         // one that handed over (#10).
         let byID = Dictionary(uniqueKeysWithValues: restarted.sessions.map { ($0.id, $0) })
         #expect(byID["full-session"]?.provenance == .external)
-        #expect(byID["session-from-cli"]?.provenance == .orphaned)
+        #expect(byID[spawnedSessionID]?.provenance == .orphaned)
     }
 
     /// A handoff whose fresh agent never wrote a record leaves an ABSENCE. The claim it was

@@ -7,7 +7,7 @@ import Testing
 @Suite("Hub resume")
 @MainActor
 struct HubResumeTests {
-    private let sessionID = "session-from-cli"
+    private let sessionID = spawnedSessionID
 
     @Test
     func `a Session the last Argo owned comes back orphaned, not external`() async throws {
@@ -30,7 +30,7 @@ struct HubResumeTests {
         #expect(relaunched.sessions.map(\.provenance) == [.managed])
         // One row, not two: the resume continues the Session rather than publishing a fresh one.
         #expect(relaunched.sessions.map(\.id) == [sessionID])
-        #expect(Self.resumed(in: fixture) == [sessionID])
+        #expect(Self.resumed(in: fixture) == [spawnedChainID])
     }
 
     /// The click is the intent, so clicking twice must not be two agents on one chain. The first
@@ -125,6 +125,49 @@ struct HubResumeTests {
         }
 
         #expect(relaunched.sessions.map(\.provenance) == [.orphaned])
+    }
+
+    /// A resume claim is open on the Project's folder for as long as the agent runs, and somebody
+    /// else's `claude` in the same folder must not fall into it (#731). Read-only is the whole
+    /// point: a composer on a Session Argo does not own types at the resumed agent's PTY.
+    @Test
+    func `an external Session started under an open resume claim stays external`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let relaunched = try await quitWithOneOwnedSession(fixture)
+        try await relaunched.resumeSession(sessionID: sessionID)
+
+        // Somebody's own terminal, in the folder the resume claim covers, writing its first prompt
+        // well inside that claim's window.
+        let theirs = URL(fileURLWithPath: "/tmp/somebody-elses.jsonl")
+        await hubObserveToEnd(relaunched, hubTestObservation(
+            at: theirs,
+            events: [
+                .cwd(fixture.projectURL.path),
+                .prompt(text: "Not Argo's", atMs: Date().epochMs),
+                .turnEnded(.endTurn),
+            ],
+        ))
+
+        let byID = Dictionary(uniqueKeysWithValues: relaunched.sessions.map { ($0.id, $0) })
+        #expect(byID[theirs.path]?.provenance == .external)
+        #expect(byID[sessionID]?.provenance == .managed)
+    }
+
+    /// One key shape in the ledger: what a resume writes down has to be what the launch after it
+    /// reads back, or a Session Argo has owned twice comes back `external`.
+    @Test
+    func `a relaunch after a resume still reads the Session as Argo's`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let relaunched = try await quitWithOneOwnedSession(fixture)
+        try await relaunched.resumeSession(sessionID: sessionID)
+        relaunched.endOwnedSessions()
+
+        let third = fixture.restarted()
+        await hubObserveToEnd(third, spawnedSessionObservation(of: fixture))
+
+        #expect(third.sessions.map(\.provenance) == [.orphaned])
     }
 
     /// Lazy by construction: the roster is rebuilt at launch and nothing on it costs a process

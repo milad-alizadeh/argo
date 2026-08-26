@@ -14,15 +14,15 @@ public struct SessionSeed: Sendable, Equatable {
     /// the user last picked (#629). Optional rather than defaulted to `Code`, because a caller that
     /// names no rung and one that names the baseline are different asks and only the first defers.
     public let mode: SessionMode?
-    /// The chain to CONTINUE rather than start — the CLI's own id for its latest link. Absent is
-    /// the plain New Session; present makes this the third caller of one spawn path (#10).
-    public let resuming: String?
+    /// The chain to CONTINUE rather than start. Absent is the plain New Session; present makes this
+    /// the third caller of one spawn path (#10).
+    public let resuming: SessionResumeTarget?
 
     public init(
         cwd: String? = nil,
         opening: String? = nil,
         mode: SessionMode? = nil,
-        resuming: String? = nil,
+        resuming: SessionResumeTarget? = nil,
     ) {
         self.cwd = cwd
         self.opening = opening

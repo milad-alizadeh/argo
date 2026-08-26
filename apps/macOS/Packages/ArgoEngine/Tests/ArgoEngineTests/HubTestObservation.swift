@@ -14,16 +14,31 @@ func hubTestObservation(
     modifiedAt: Date? = nil,
 )
     -> TranscriptObservation {
-    let stream = AsyncStream<[TranscriptEvent]> { continuation in
-        continuation.yield(events)
-        continuation.finish()
-    }
-    return TranscriptObservation(
+    TranscriptObservation(
         id: id,
         sourceURL: URL(fileURLWithPath: "/tmp/\(id).jsonl"),
         modifiedAt: modifiedAt,
-        events: stream,
+        events: oneBatch(events),
     )
+}
+
+/// The same, keyed the way the engine keys a real record: by PATH (`Engine.observation(at:)`). The
+/// chain's own uuid is the FILE NAME inside that path, and the two are different keys — a fixture
+/// that conflates them cannot see a claim filed under the wrong one (#731).
+func hubTestObservation(at url: URL, events: [TranscriptEvent]) -> TranscriptObservation {
+    TranscriptObservation(
+        id: url.path,
+        sourceURL: url,
+        modifiedAt: nil,
+        events: oneBatch(events),
+    )
+}
+
+private func oneBatch(_ events: [TranscriptEvent]) -> AsyncStream<[TranscriptEvent]> {
+    AsyncStream { continuation in
+        continuation.yield(events)
+        continuation.finish()
+    }
 }
 
 /// The two records a handoff is read from, in the Project's own folder: the Session being handed
@@ -40,10 +55,18 @@ func handedOffSessionObservation(of fixture: SpawnFixture) -> TranscriptObservat
     )
 }
 
+/// The record the fixture's spawned CLI wrote. Both ids a Session is known by come out of this one
+/// URL: the roster and the ownership ledger key it by `path`, `--resume` takes the file name.
+let spawnedTranscriptURL = URL(fileURLWithPath: "/tmp/session-from-cli.jsonl")
+/// What the roster carries the fixture's spawned Session as.
+let spawnedSessionID = spawnedTranscriptURL.path
+/// What `--resume` is given to continue it.
+let spawnedChainID = "session-from-cli"
+
 @MainActor
 func spawnedSessionObservation(of fixture: SpawnFixture) -> TranscriptObservation {
     hubTestObservation(
-        id: "session-from-cli",
+        at: spawnedTranscriptURL,
         events: [
             .cwd(fixture.projectURL.path),
             .prompt(text: "First prompt", atMs: Date().epochMs),

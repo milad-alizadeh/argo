@@ -97,4 +97,37 @@ struct SessionOwnershipTests {
         #expect(grading(ownership, startedAtMs: 100) == .managed)
         #expect(ownership.ownerOf(sessionID: "session-a") == claim)
     }
+
+    /// A resume claim already names its Session, so the window it happens to span is nobody else's
+    /// (#731). Without this an unrelated agent started in the same folder grades `managed`, and the
+    /// cockpit offers it a composer wired to the resumed agent's PTY.
+    @Test
+    func `a claim that already has its Session adopts no other`() {
+        let (ownership, clock) = registry()
+        clock.nowMs = 5000
+        _ = ownership.claim(cwd: cwd, resuming: "session-a")
+        clock.nowMs = 6000
+
+        let elsewhere = ownership.provenance(
+            sessionID: "session-b",
+            cwd: cwd,
+            startedAtMs: clock.nowMs,
+        )
+        #expect(elsewhere == .external)
+    }
+
+    /// The same rule for a cold claim, once the record it was matched back to has appeared: one
+    /// claim is one agent, so the second Session in the window belongs to whoever started it.
+    @Test
+    func `a bound claim adopts no second Session`() {
+        let (ownership, clock) = registry()
+        _ = ownership.claim(cwd: cwd)
+        clock.nowMs = 2000
+        ownership.bind(sessionID: "session-a", cwd: cwd, startedAtMs: clock.nowMs)
+        clock.nowMs = 3000
+
+        #expect(grading(ownership, startedAtMs: 2000) == .managed)
+        let second = ownership.provenance(sessionID: "session-b", cwd: cwd, startedAtMs: 3000)
+        #expect(second == .external)
+    }
 }

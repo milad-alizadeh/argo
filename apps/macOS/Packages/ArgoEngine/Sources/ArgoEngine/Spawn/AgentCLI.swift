@@ -87,9 +87,9 @@ public enum AgentCLI: String, Sendable, CaseIterable {
     /// Codex resumes over the protocol (`thread/resume`) rather than on argv, and Argo does not yet
     /// observe a Codex record to name a chain from — so nothing here, and `Hub.resumeSession` stays
     /// on `claude`.
-    func arguments(resuming sessionID: String) -> [String] {
+    func arguments(resuming chainID: String) -> [String] {
         switch self {
-        case .claude: ["--resume", sessionID]
+        case .claude: ["--resume", chainID]
         case .codex: []
         }
     }
