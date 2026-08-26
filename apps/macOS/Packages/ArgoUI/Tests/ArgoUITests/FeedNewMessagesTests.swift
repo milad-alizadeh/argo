@@ -26,7 +26,7 @@ struct FeedNewMessagesTests {
         .survey(FeedSurvey(calls: [work])),
         .gallery(FeedGallery(shots: [])),
         .message("First thing said since"),
-        .prompt("A steer typed mid-run"),
+        .prompt(text: "A steer typed mid-run", shots: []),
         .thought("Reasoning, which is not a message"),
         .unreadable(FeedUnreadable(lines: ["{\"partial\":"])),
         .message("Second thing said since"),

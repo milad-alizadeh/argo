@@ -11,14 +11,17 @@ struct FeedProjectionTests {
     func `rows come out in the stream's own order, never sorted or promoted`() {
         let rows = FeedProjection.rows(from: [
             .message(markdown: "Second."),
-            .prompt(text: "Third.", atMs: 9000),
+            .prompt(text: "Third.", images: [], atMs: 9000),
             .thought(markdown: "Fourth."),
-            .prompt(text: "First.", atMs: 1000),
+            .prompt(text: "First.", images: [], atMs: 1000),
         ])
 
         // The prompts' timestamps sort nothing: the record's order IS the reading.
         #expect(rows.map(\.content) == [
-            .message("Second."), .prompt("Third."), .thought("Fourth."), .prompt("First."),
+            .message("Second."), .prompt(text: "Third.", shots: []), .thought("Fourth."), .prompt(
+                text: "First.",
+                shots: [],
+            ),
         ])
     }
 
@@ -28,12 +31,12 @@ struct FeedProjectionTests {
 
         let rows = FeedProjection.rows(from: [
             .message(markdown: markdown),
-            .prompt(text: markdown, atMs: nil),
+            .prompt(text: markdown, images: [], atMs: nil),
             .thought(markdown: markdown),
         ])
 
         #expect(rows.map(\.content) == [
-            .message(markdown), .prompt(markdown), .thought(markdown),
+            .message(markdown), .prompt(text: markdown, shots: []), .thought(markdown),
         ])
     }
 

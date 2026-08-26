@@ -24,9 +24,12 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// what it means on Argo's ladder is `ClaudePermissionMode`'s to say (ADR-0025). Latest reading
     /// wins: the stance can be cycled mid-session, and the file keeps both.
     case mode(cli: String)
-    /// What someone asked for, verbatim and unclamped. Steering text typed mid-run arrives here
-    /// too: a steer is a prompt into the same sequence.
-    case prompt(text: String, atMs: Int?)
+    /// What someone asked for, verbatim and unclamped, and the pictures it was sent with. Steering
+    /// text typed mid-run arrives here too: a steer is a prompt into the same sequence.
+    ///
+    /// The text is verbatim but for the CLI's own `[Image #3]` placeholders, which are taken out
+    /// one per picture actually carried — see `HarnessRecord`.
+    case prompt(text: String, images: [MediaEvidence], atMs: Int?)
     /// What the agent SAID, verbatim.
     case message(markdown: String)
     /// What the agent REASONED, verbatim. Never read as a message: a turn's final message

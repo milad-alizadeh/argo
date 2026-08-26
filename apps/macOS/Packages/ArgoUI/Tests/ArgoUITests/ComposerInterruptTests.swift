@@ -107,12 +107,12 @@ struct ComposerInterruptTests {
     @Test
     func `the interrupt reads as a mark in the feed, never as a prompt`() {
         let rows = FeedProjection.rows(from: [
-            .prompt(text: "Fix the caption.", atMs: 0),
-            .prompt(text: ClaudeInterrupt.mark, atMs: 1),
+            .prompt(text: "Fix the caption.", images: [], atMs: 0),
+            .prompt(text: ClaudeInterrupt.mark, images: [], atMs: 1),
         ])
 
         #expect(rows.map(\.content) == [
-            .prompt("Fix the caption."),
+            .prompt(text: "Fix the caption.", shots: []),
             .mark(.interrupted),
         ])
     }
@@ -124,8 +124,8 @@ struct ComposerInterruptTests {
     func `a prompt that merely quotes the marker stays a prompt`() {
         let quoted = "Why does \(ClaudeInterrupt.mark) show up twice in the log?"
 
-        let rows = FeedProjection.rows(from: [.prompt(text: quoted, atMs: 0)])
+        let rows = FeedProjection.rows(from: [.prompt(text: quoted, images: [], atMs: 0)])
 
-        #expect(rows.map(\.content) == [.prompt(quoted)])
+        #expect(rows.map(\.content) == [.prompt(text: quoted, shots: [])])
     }
 }

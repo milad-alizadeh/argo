@@ -98,7 +98,7 @@ struct DriveModeTests {
             id: "session-from-cli",
             events: [
                 .cwd(fixture.projectURL.path),
-                .prompt(text: "First prompt", atMs: Date().epochMs),
+                .prompt(text: "First prompt", images: [], atMs: Date().epochMs),
                 .mode(cli: "dontAsk"),
             ],
         ))
@@ -129,7 +129,7 @@ struct DriveModeTests {
             events: [
                 .cwd(fixture.projectURL.path),
                 .mode(cli: "acceptEdits"),
-                .prompt(text: "Off you go", atMs: Date().epochMs),
+                .prompt(text: "Off you go", images: [], atMs: Date().epochMs),
             ],
         ))
         #expect(fixture.hub.sessions.map(\.status) == [.running])

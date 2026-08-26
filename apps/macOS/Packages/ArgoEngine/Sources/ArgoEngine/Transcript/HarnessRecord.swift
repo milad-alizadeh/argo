@@ -73,6 +73,45 @@ func userPrompt(_ content: [ContentBlock]) -> String? {
     return commandPrompt(text) ?? text
 }
 
+/// The CLI's own placeholder for a picture it moved into a block of its own — `[Image #3]`, written
+/// into the prompt's text where the paste landed.
+private let imageToken = "\\[Image #[0-9]+\\]"
+
+/// The prompt with its placeholders taken out, one per picture the record actually carried.
+///
+/// Bounded by the count on purpose: a placeholder beside its thumbnail says the same thing twice,
+/// but one with no block behind it is the only trace that picture ever existed, so it stays. The
+/// space the CLI left beside a token goes with it — the following one, or the preceding one where
+/// the token ends the line — so removing markup does not leave a gap the user did not type.
+func shorn(_ text: String, ofImages count: Int) -> String {
+    guard count > 0 else { return text }
+    var shorn = text
+    for _ in 0 ..< count {
+        guard let token = shorn.range(of: imageToken, options: .regularExpression) else { break }
+        shorn.removeSubrange(spacing(around: token, in: shorn))
+    }
+    return shorn
+}
+
+/// The token plus the one space that went with it.
+private func spacing(around token: Range<String.Index>, in text: String) -> Range<String.Index> {
+    if token.upperBound < text.endIndex, text[token.upperBound] == " " {
+        return token.lowerBound ..< text.index(after: token.upperBound)
+    }
+    if token.lowerBound > text.startIndex, text[text.index(before: token.lowerBound)] == " " {
+        return text.index(before: token.lowerBound) ..< token.upperBound
+    }
+    return token
+}
+
+/// What a user record asks for once its pictures are read off it, or `nil` where it asks for
+/// nothing. A record carrying pictures and no words of its own is still a prompt: the whole of what
+/// was asked is the picture.
+private func promptText(_ content: [ContentBlock], carrying images: Int) -> String? {
+    guard let prompt = userPrompt(content) else { return images > 0 ? "" : nil }
+    return shorn(prompt, ofImages: images)
+}
+
 /// A prompt, or the local command whose output this record IS.
 ///
 /// The output comes back as a Tool Call rather than as prose: a command ran and printed something,
@@ -100,6 +139,7 @@ func promptEvents(_ message: MessageRecord) -> [TranscriptEvent] {
             )),
         ]
     }
-    guard let prompt = userPrompt(message.content) else { return [] }
-    return [.prompt(text: prompt, atMs: message.timestampMs)]
+    let images = embeddedMedia(message.content)
+    guard let text = promptText(message.content, carrying: images.count) else { return [] }
+    return [.prompt(text: text, images: images, atMs: message.timestampMs)]
 }

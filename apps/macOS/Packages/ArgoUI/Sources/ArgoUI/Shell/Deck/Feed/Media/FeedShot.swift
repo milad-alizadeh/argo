@@ -27,6 +27,16 @@ struct FeedShot: Equatable, Sendable {
     }
 }
 
+extension FeedShot {
+    /// What a picture pasted into a prompt is called. It has no path to borrow one from — the CLI
+    /// moved the bytes into the record and named no file — so it says what it IS (#733).
+    static let pastedCaption = "Pasted image"
+
+    static func pasted(_ media: MediaEvidence) -> FeedShot {
+        FeedShot(name: pastedCaption, address: pastedCaption, media: media)
+    }
+}
+
 extension FeedCall {
     /// Every picture this line stands for, in the order the calls produced them.
     var shots: [FeedShot] {

@@ -43,11 +43,15 @@ struct MinimapMarkTests {
         let folded = ArgoFeedRow.lineHeight * 2 + ArgoFeedRow.bubbleInsetY * 2
         let whole = MinimapRowShape.bubble(
             MinimapText.paragraph,
+            shots: 0,
             isFolded: true,
             across: 800 - ArgoFeedRow.inset * 2,
         )
         let lane = Self.geometry(Self.reading([
-            MinimapRow(height: folded, shape: .bubble(text: MinimapText.paragraph, isFolded: true)),
+            MinimapRow(
+                height: folded,
+                shape: .bubble(text: MinimapText.paragraph, shots: 0, isFolded: true),
+            ),
             MinimapRow(height: 400, shape: .oneLine),
         ]))
         let drawn = lane.marks(in: 0 ... 600).filter { $0.ink == .prompt }

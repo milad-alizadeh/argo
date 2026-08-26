@@ -17,6 +17,7 @@ extension CockpitPresentation.Session {
                 + "the projection seam. Only the prompt, the message and the thought render — "
                 + "every other kind arrives with its own ticket, so ignore them cleanly rather "
                 + "than drawing a placeholder where a surface has not been decided yet.",
+            images: [],
             atMs: 1_733_000_000_000,
         ),
         .thought(
@@ -38,7 +39,11 @@ extension CockpitPresentation.Session {
                 + "step between a label and the prose under it.",
         ),
         .thought(markdown: "A wide window should get more feed, never a longer line."),
-        .prompt(text: "Good. Land the metrics in the contract.", atMs: 1_733_000_050_000),
+        .prompt(
+            text: "Good. Land the metrics in the contract.",
+            images: [],
+            atMs: 1_733_000_050_000,
+        ),
         .unreadableLine(raw: "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":"),
     ]
         + workedOn

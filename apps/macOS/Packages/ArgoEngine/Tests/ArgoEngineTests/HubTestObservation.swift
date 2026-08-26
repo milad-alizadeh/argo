@@ -49,7 +49,7 @@ func handedOffSessionObservation(of fixture: SpawnFixture) -> TranscriptObservat
         id: "full-session",
         events: [
             .cwd(fixture.projectURL.path),
-            .prompt(text: "A long conversation", atMs: Date().epochMs),
+            .prompt(text: "A long conversation", images: [], atMs: Date().epochMs),
             .turnEnded(.endTurn),
         ],
     )
@@ -69,7 +69,7 @@ func spawnedSessionObservation(of fixture: SpawnFixture) -> TranscriptObservatio
         at: spawnedTranscriptURL,
         events: [
             .cwd(fixture.projectURL.path),
-            .prompt(text: "First prompt", atMs: Date().epochMs),
+            .prompt(text: "First prompt", images: [], atMs: Date().epochMs),
             .turnEnded(.endTurn),
         ],
     )

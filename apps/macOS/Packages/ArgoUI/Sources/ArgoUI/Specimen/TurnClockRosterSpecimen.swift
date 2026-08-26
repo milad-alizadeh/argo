@@ -51,7 +51,7 @@ struct TurnClockRosterSpecimen: View {
             status: .running,
             workspace: .init(kind: .main, branch: "main"),
             lastSeenAtMs: startedAtMs,
-            events: [.prompt(text: "go", atMs: startedAtMs)],
+            events: [.prompt(text: "go", images: [], atMs: startedAtMs)],
         )
     }
 

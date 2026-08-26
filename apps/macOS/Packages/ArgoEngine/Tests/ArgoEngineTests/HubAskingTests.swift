@@ -46,7 +46,7 @@ struct HubAskingTests {
     @Test
     func `an unanswered question in the open turn reads asking`() async {
         let hub = await Self.hub(observing: [
-            .prompt(text: "Which one?", atMs: Self.nowMs),
+            .prompt(text: "Which one?", images: [], atMs: Self.nowMs),
             Self.ask(id: "call-ask"),
         ])
 
@@ -56,7 +56,7 @@ struct HubAskingTests {
     @Test
     func `an answered question stops blocking, and the turn reads as still working`() async {
         let hub = await Self.hub(observing: [
-            .prompt(text: "Which one?", atMs: Self.nowMs),
+            .prompt(text: "Which one?", images: [], atMs: Self.nowMs),
             Self.ask(id: "call-ask"),
             Self.answer(id: "call-ask"),
         ])
@@ -67,7 +67,7 @@ struct HubAskingTests {
     @Test
     func `a question the turn it was asked in has left behind blocks nobody`() async {
         let hub = await Self.hub(observing: [
-            .prompt(text: "Which one?", atMs: Self.nowMs),
+            .prompt(text: "Which one?", images: [], atMs: Self.nowMs),
             Self.ask(id: "call-ask"),
             .turnEnded(.endTurn),
         ])
@@ -78,7 +78,7 @@ struct HubAskingTests {
     @Test
     func `an agent's free-form question is indistinguishable from idle`() async {
         let hub = await Self.hub(observing: [
-            .prompt(text: "Which one?", atMs: Self.nowMs),
+            .prompt(text: "Which one?", images: [], atMs: Self.nowMs),
             .message(markdown: "Which database should I use?"),
             .turnEnded(.endTurn),
         ])

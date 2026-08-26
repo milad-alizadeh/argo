@@ -44,7 +44,7 @@ struct SessionSpendTests {
     func `a Session nothing priced carries no spend at all`() async throws {
         let hub = testHub(projectURL: Self.projectURL)
         let observed = hubTestObservation(id: "silent", events: [
-            .prompt(text: "Read the contract", atMs: 1000),
+            .prompt(text: "Read the contract", images: [], atMs: 1000),
             .turnEnded(.endTurn),
         ])
 

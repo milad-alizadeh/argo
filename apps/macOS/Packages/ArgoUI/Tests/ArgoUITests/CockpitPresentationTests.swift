@@ -44,7 +44,7 @@ struct CockpitPresentationTests {
             .cwd("/Users/milad/Developer/argo"),
             .model("claude-opus-5"),
             .branch("main"),
-            .prompt(text: "Refactor it", atMs: nil),
+            .prompt(text: "Refactor it", images: [], atMs: nil),
             .turnEnded(.endTurn),
         ], until: { $0.status == .idle })
 
@@ -97,7 +97,7 @@ struct CockpitPresentationTests {
     func `the Session's own stream reaches the shell, in order and unedited`() async throws {
         let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
         await observe(hub, id: "spoken", events: [
-            .prompt(text: "  Read it  ", atMs: 1000),
+            .prompt(text: "  Read it  ", images: [], atMs: 1000),
             .thought(markdown: "Start at the contract."),
             .message(markdown: "Reading."),
         ], until: { !$0.events.isEmpty })
@@ -106,7 +106,7 @@ struct CockpitPresentationTests {
 
         // Verbatim to the shell: the prompt's own whitespace survives the crossing.
         #expect(session.events == [
-            .prompt(text: "  Read it  ", atMs: 1000),
+            .prompt(text: "  Read it  ", images: [], atMs: 1000),
             .thought(markdown: "Start at the contract."),
             .message(markdown: "Reading."),
         ])
@@ -128,7 +128,7 @@ struct CockpitPresentationTests {
         await observe(hub, id: "branched", events: [
             .cwd("/Users/milad/Developer/argo"),
             .branch("argo/#510-session-header-facts"),
-            .prompt(text: "Draw the header", atMs: nil),
+            .prompt(text: "Draw the header", images: [], atMs: nil),
             .turnEnded(.endTurn),
         ], until: { $0.status == .idle })
 
@@ -153,7 +153,7 @@ struct CockpitPresentationTests {
         let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
         await observe(hub, id: "full", events: [
             .cwd("/Users/milad/Developer/argo"),
-            .prompt(text: "A long conversation", atMs: nil),
+            .prompt(text: "A long conversation", images: [], atMs: nil),
             .turnEnded(.endTurn),
         ], until: { $0.status == .idle })
 
@@ -170,7 +170,7 @@ struct CockpitPresentationTests {
         let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
         await observe(hub, id: "cleared", events: [
             .cwd("/Users/milad/Developer/argo"),
-            .prompt(text: "Keep going", atMs: nil),
+            .prompt(text: "Keep going", images: [], atMs: nil),
         ], until: { !$0.events.isEmpty })
         // Through the real store, in a throwaway location: the flag the shell reads is the one
         // that was written to disk, not a value assembled beside it.

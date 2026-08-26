@@ -93,7 +93,7 @@ private struct SubagentFixture {
             id: parentURL.path,
             sourceURL: parentURL,
             events: AsyncStream { continuation in
-                continuation.yield([.prompt(text: "Review the diff", atMs: 1)])
+                continuation.yield([.prompt(text: "Review the diff", images: [], atMs: 1)])
                 continuation.finish()
             },
         )

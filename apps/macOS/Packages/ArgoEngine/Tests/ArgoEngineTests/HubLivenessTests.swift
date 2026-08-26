@@ -28,7 +28,7 @@ struct HubLivenessTests {
     private static func working(id: String) -> TranscriptObservation {
         hubTestObservation(id: id, events: [
             .cwd(cwd),
-            .prompt(text: "Refactor it", atMs: nowMs),
+            .prompt(text: "Refactor it", images: [], atMs: nowMs),
         ])
     }
 
@@ -78,7 +78,7 @@ struct HubLivenessTests {
 
         await hubObserveToEnd(hub, hubTestObservation(id: "symlinked", events: [
             .cwd(folder),
-            .prompt(text: "Refactor it", atMs: Self.nowMs),
+            .prompt(text: "Refactor it", images: [], atMs: Self.nowMs),
         ]))
 
         #expect(hub.sessions.first?.status == .running)
@@ -90,7 +90,7 @@ struct HubLivenessTests {
         let stale = Self.nowMs - SessionLiveness.recentActivityWindowMs - 1000
         let quiet = hubTestObservation(id: "stale", events: [
             .cwd(Self.cwd),
-            .prompt(text: "Refactor it", atMs: stale),
+            .prompt(text: "Refactor it", images: [], atMs: stale),
         ])
 
         await hubObserveToEnd(hub, quiet)
@@ -104,7 +104,7 @@ struct HubLivenessTests {
         // Not one record carries a time, so mtime is the only thing left to corroborate a match.
         let untimed = hubTestObservation(
             id: "untimed",
-            events: [.cwd(Self.cwd), .prompt(text: "Refactor it", atMs: nil)],
+            events: [.cwd(Self.cwd), .prompt(text: "Refactor it", images: [], atMs: nil)],
             modifiedAt: Date(),
         )
 
@@ -132,7 +132,7 @@ struct HubLivenessTests {
         let claim = hub.ownership.claim(cwd: Self.cwd)
         await hubObserveToEnd(hub, hubTestObservation(id: "ended", events: [
             .cwd(Self.cwd),
-            .prompt(text: "Refactor it", atMs: Self.nowMs),
+            .prompt(text: "Refactor it", images: [], atMs: Self.nowMs),
             .turnEnded(.endTurn),
         ]))
         hub.ownership.release(claim)

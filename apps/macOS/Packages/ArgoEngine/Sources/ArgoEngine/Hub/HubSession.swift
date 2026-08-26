@@ -178,7 +178,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             branch = Self.branchName(observedBranch)
         case let .mode(cli):
             observe(mode: cli)
-        case let .prompt(text, atMs):
+        case let .prompt(text, _, atMs):
             name.observe(prompt: text)
             turnOpen = true
             observeActivity(atMs)

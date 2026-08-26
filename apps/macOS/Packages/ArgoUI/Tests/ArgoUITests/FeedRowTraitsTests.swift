@@ -21,7 +21,11 @@ struct FeedRowTraitsTests {
     func `only the three spoken kinds are prose`() {
         let prose = TraitFixture.everyKind.filter(\.traits.isProse)
 
-        #expect(prose == [.prompt("Rename the deck"), .message("Renamed."), .thought("Weighing.")])
+        #expect(prose == [
+            .prompt(text: "Rename the deck", shots: []),
+            .message("Renamed."),
+            .thought("Weighing."),
+        ])
     }
 
     /// Narrower than prose on purpose: a Turn's final message routinely contradicts its own
@@ -39,7 +43,7 @@ struct FeedRowTraitsTests {
     func `only what the user asked for is a prompt`() {
         let prompts = TraitFixture.everyKind.filter(\.traits.isPrompt)
 
-        #expect(prompts == [.prompt("Rename the deck")])
+        #expect(prompts == [.prompt(text: "Rename the deck", shots: [])])
     }
 
     /// A survey and a gallery are counts and pictures rather than lines, but the feed welds all
@@ -139,7 +143,7 @@ struct FeedRowTraitsTests {
 /// build when a tenth kind arrives.
 enum TraitFixture {
     static let everyKind: [FeedRow.Content] = [
-        .prompt("Rename the deck"),
+        .prompt(text: "Rename the deck", shots: []),
         .message("Renamed."),
         .thought("Weighing."),
         .call(answeredCall),

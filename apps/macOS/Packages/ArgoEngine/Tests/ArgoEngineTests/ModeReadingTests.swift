@@ -37,7 +37,7 @@ struct ModeReadingTests {
         let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo-mode"))
         let observed = hubTestObservation(id: "session", events: [
             .mode(cli: "acceptEdits"),
-            .prompt(text: "cycle it", atMs: 1000),
+            .prompt(text: "cycle it", images: [], atMs: 1000),
             .mode(cli: "auto"),
         ])
 
@@ -55,7 +55,7 @@ struct ModeReadingTests {
     func `a Session whose records reported no stance is unknown`() async {
         let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo-mode"))
         let observed = hubTestObservation(id: "session", events: [
-            .prompt(text: "say nothing about mode", atMs: 1000),
+            .prompt(text: "say nothing about mode", images: [], atMs: 1000),
         ])
 
         await hubObserveToEnd(hub, observed)

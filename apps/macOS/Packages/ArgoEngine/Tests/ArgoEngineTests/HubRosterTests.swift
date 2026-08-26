@@ -73,8 +73,14 @@ struct HubRosterTests {
     @MainActor
     func `the roster is ordered by last activity, newest first`() async {
         let hub = testHub(projectURL: Self.projectURL)
-        let older = hubTestObservation(id: "older", events: [.prompt(text: "Older", atMs: 1000)])
-        let newer = hubTestObservation(id: "newer", events: [.prompt(text: "Newer", atMs: 9000)])
+        let older = hubTestObservation(
+            id: "older",
+            events: [.prompt(text: "Older", images: [], atMs: 1000)],
+        )
+        let newer = hubTestObservation(
+            id: "newer",
+            events: [.prompt(text: "Newer", images: [], atMs: 9000)],
+        )
 
         // Observed oldest-first, so the answer cannot be the order the tails started in.
         await hubObserveToEnd(hub, older)

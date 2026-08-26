@@ -30,13 +30,13 @@ struct FeedSkillLoadedTests {
     @Test
     func `a skill load is a row of its own, where the record put it`() {
         let rows = FeedProjection.rows(from: [
-            .prompt(text: "/code-review since main", atMs: 1000),
+            .prompt(text: "/code-review since main", images: [], atMs: 1000),
             .skillLoaded(load()),
             .message(markdown: "Reviewing the diff on two axes."),
         ])
 
         #expect(rows.map(\.content) == [
-            .prompt("/code-review since main"),
+            .prompt(text: "/code-review since main", shots: []),
             .skillLoaded(read()),
             .message("Reviewing the diff on two axes."),
         ])
@@ -47,11 +47,11 @@ struct FeedSkillLoadedTests {
     @Test
     func `the user's own line is untouched by the load beside it`() {
         let rows = FeedProjection.rows(from: [
-            .prompt(text: "/code-review since main", atMs: 1000),
+            .prompt(text: "/code-review since main", images: [], atMs: 1000),
             .skillLoaded(load()),
         ])
 
-        #expect(rows.first?.content == .prompt("/code-review since main"))
+        #expect(rows.first?.content == .prompt(text: "/code-review since main", shots: []))
         #expect(rows.count == 2)
         #expect(!rows.contains { $0.content == .message("Two-axis review.") })
     }

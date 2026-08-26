@@ -32,6 +32,12 @@ private func describe(_ result: ToolResult) -> String {
     }
 }
 
+/// The pictures a prompt was sent with, as a tail on its own line. Nothing where there are none,
+/// so an ordinary prompt reads exactly as it did.
+private func describe(sentWith images: [MediaEvidence]) -> String {
+    images.isEmpty ? "" : "  [\(images.count) image(s)]"
+}
+
 func describe(_ event: TranscriptEvent) -> String {
     switch event {
     case let .recordIdentity(uuid):
@@ -50,8 +56,8 @@ func describe(_ event: TranscriptEvent) -> String {
         "branch      \(branch)"
     case let .mode(cli):
         "mode        \(cli)"
-    case let .prompt(text, _):
-        "prompt      \(oneLine(text))"
+    case let .prompt(text, images, _):
+        "prompt      \(oneLine(text))\(describe(sentWith: images))"
     case let .message(markdown):
         "message     \(oneLine(markdown))"
     case let .thought(markdown):

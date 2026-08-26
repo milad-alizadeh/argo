@@ -17,7 +17,7 @@ struct QueuedPromptTests {
         await hubObserveToEnd(hub, hubTestObservation(id: "queued", events: [
             .queued,
             .cwd(Self.projectURL.path),
-            .prompt(text: "implement the roster row ticket", atMs: 1000),
+            .prompt(text: "implement the roster row ticket", images: [], atMs: 1000),
         ]))
 
         #expect(hub.sessions.isEmpty)
@@ -32,7 +32,7 @@ struct QueuedPromptTests {
             await hubObserveToEnd(hub, hubTestObservation(id: "queued-\(index)", events: [
                 .queued,
                 .cwd(Self.projectURL.path),
-                .prompt(text: "implement the roster row ticket", atMs: 1000),
+                .prompt(text: "implement the roster row ticket", images: [], atMs: 1000),
             ]))
         }
 
@@ -49,7 +49,7 @@ struct QueuedPromptTests {
 
         await hubObserveToEnd(hub, hubTestObservation(id: "starting", events: [
             .cwd(Self.projectURL.path),
-            .prompt(text: "implement the roster row ticket", atMs: 1000),
+            .prompt(text: "implement the roster row ticket", images: [], atMs: 1000),
         ]))
 
         #expect(try #require(hub.sessions.first).title == "implement the roster row ticket")
@@ -64,7 +64,7 @@ struct QueuedPromptTests {
         await hubObserveToEnd(hub, hubTestObservation(id: "answered", events: [
             .queued,
             .cwd(Self.projectURL.path),
-            .prompt(text: "implement the roster row ticket", atMs: 1000),
+            .prompt(text: "implement the roster row ticket", images: [], atMs: 1000),
             .message(markdown: "Starting on it."),
         ]))
 
@@ -80,7 +80,10 @@ struct QueuedPromptTests {
         let (observation, continuation) = hubLiveObservation(id: "later")
         await hub.startObserving(observation)
 
-        continuation.yield([.queued, .prompt(text: "implement the roster row", atMs: 1000)])
+        continuation.yield([
+            .queued,
+            .prompt(text: "implement the roster row", images: [], atMs: 1000),
+        ])
         await hubSettle { hub.sessions.isEmpty }
         continuation.yield([.message(markdown: "Picked it up.")])
         continuation.finish()
@@ -102,7 +105,7 @@ struct QueuedPromptTests {
         let child = hubTestObservation(id: "child", events: [
             .headLeaf(uuid: "root-leaf"),
             .queued,
-            .prompt(text: "carry on", atMs: 2000),
+            .prompt(text: "carry on", images: [], atMs: 2000),
         ])
 
         await hubObserveToEnd(hub, root)

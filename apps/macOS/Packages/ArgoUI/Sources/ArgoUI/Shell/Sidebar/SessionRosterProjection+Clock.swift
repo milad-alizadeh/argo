@@ -66,7 +66,7 @@ extension SessionRosterProjection {
         var isOpen = false
         for event in events {
             switch event {
-            case let .prompt(_, atMs):
+            case let .prompt(_, _, atMs):
                 guard !isOpen else { break }
                 isOpen = true
                 start = atMs

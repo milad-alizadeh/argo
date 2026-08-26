@@ -90,7 +90,7 @@ struct SpawnModeTests {
             events: [
                 .cwd(fixture.projectURL.path),
                 .mode(cli: "acceptEdits"),
-                .prompt(text: "Off you go", atMs: Date().epochMs),
+                .prompt(text: "Off you go", images: [], atMs: Date().epochMs),
             ],
         ))
         await #expect(throws: SessionDriveError.modeBusy) {

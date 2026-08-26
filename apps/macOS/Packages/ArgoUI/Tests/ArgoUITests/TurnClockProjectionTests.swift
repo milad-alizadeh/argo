@@ -13,7 +13,7 @@ struct TurnClockProjectionTests {
     func `a managed running Session's slot counts from its open Turn's prompt`() throws {
         let row = try #require(rows(session(
             status: .running,
-            events: [.prompt(text: "go", atMs: msAgo(252))],
+            events: [.prompt(text: "go", images: [], atMs: msAgo(252))],
         )).first)
 
         #expect(row.clock == .turn(startedAtMs: msAgo(252)))
@@ -26,8 +26,8 @@ struct TurnClockProjectionTests {
         let row = try #require(rows(session(
             status: .running,
             events: [
-                .prompt(text: "go", atMs: msAgo(300)),
-                .prompt(text: "also check the tests", atMs: msAgo(30)),
+                .prompt(text: "go", images: [], atMs: msAgo(300)),
+                .prompt(text: "also check the tests", images: [], atMs: msAgo(30)),
             ],
         )).first)
 
@@ -40,9 +40,9 @@ struct TurnClockProjectionTests {
             status: .running,
             lastSeenAtMs: msAgo(120),
             events: [
-                .prompt(text: "go", atMs: msAgo(600)),
+                .prompt(text: "go", images: [], atMs: msAgo(600)),
                 .turnEnded(.endTurn),
-                .prompt(text: "again", atMs: msAgo(45)),
+                .prompt(text: "again", images: [], atMs: msAgo(45)),
             ],
         )).first)
 
@@ -55,7 +55,7 @@ struct TurnClockProjectionTests {
         let row = try #require(rows(session(
             status: .running,
             lastSeenAtMs: msAgo(120),
-            events: [.prompt(text: "go", atMs: nil)],
+            events: [.prompt(text: "go", images: [], atMs: nil)],
         )).first)
 
         #expect(row.clock == .seen("2m ago"))
@@ -68,7 +68,7 @@ struct TurnClockProjectionTests {
             status: .running,
             lastSeenAtMs: msAgo(12),
             // Even a stamped prompt is not Argo's Turn start: the file was only ever observed.
-            events: [.prompt(text: "go", atMs: msAgo(252))],
+            events: [.prompt(text: "go", images: [], atMs: msAgo(252))],
         )).first)
 
         #expect(row.clock == .output(sinceMs: msAgo(12)))
@@ -89,7 +89,7 @@ struct TurnClockProjectionTests {
         let row = try #require(rows(session(
             status: .idle,
             lastSeenAtMs: msAgo(120),
-            events: [.prompt(text: "go", atMs: msAgo(600)), .turnEnded(.endTurn)],
+            events: [.prompt(text: "go", images: [], atMs: msAgo(600)), .turnEnded(.endTurn)],
         )).first)
 
         #expect(row.clock == .seen("2m ago"))
@@ -99,7 +99,7 @@ struct TurnClockProjectionTests {
     func `the live reading is announced as a duration owned`() throws {
         let row = try #require(rows(session(
             status: .running,
-            events: [.prompt(text: "go", atMs: msAgo(252))],
+            events: [.prompt(text: "go", images: [], atMs: msAgo(252))],
         )).first)
 
         #expect(row.announcement.contains("running for 4 minutes 12 seconds"))

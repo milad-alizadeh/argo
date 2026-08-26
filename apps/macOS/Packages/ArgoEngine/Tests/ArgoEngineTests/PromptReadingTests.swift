@@ -9,7 +9,7 @@ import Testing
 struct PromptReadingTests {
     private func prompts(_ fixture: String) async throws -> [String] {
         try await Fixture.events(fixture).compactMap { event -> String? in
-            guard case let .prompt(text, _) = event else { return nil }
+            guard case let .prompt(text, _, _) = event else { return nil }
             return text
         }
     }
@@ -83,7 +83,11 @@ struct PromptReadingTests {
                 false
             }
         })
-        #expect(!events.contains(.prompt(text: "<summary of earlier history>", atMs: nil)))
+        #expect(!events.contains(.prompt(
+            text: "<summary of earlier history>",
+            images: [],
+            atMs: nil,
+        )))
         let read = try await prompts("treeFull")
         #expect(!read.contains("<summary of earlier history>"))
     }

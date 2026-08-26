@@ -178,7 +178,7 @@ struct HubSpawnTests {
             id: "session-from-cli",
             events: [
                 .cwd(cwd ?? fixture.projectURL.path),
-                .prompt(text: "First prompt", atMs: Date().epochMs),
+                .prompt(text: "First prompt", images: [], atMs: Date().epochMs),
                 .turnEnded(.endTurn),
             ],
         )

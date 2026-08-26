@@ -77,7 +77,7 @@ struct FeedHandoffTests {
     /// A reading with something in it and a spend under it, so the link's PLACE is asserted
     /// against the row it has to sit below rather than against an empty list.
     private static let transcript: [TranscriptEvent] = [
-        .prompt(text: "Take this on", atMs: 1000),
+        .prompt(text: "Take this on", images: [], atMs: 1000),
         .message(markdown: "On it."),
         .turnEnded(.endTurn),
         .usage(spend),
