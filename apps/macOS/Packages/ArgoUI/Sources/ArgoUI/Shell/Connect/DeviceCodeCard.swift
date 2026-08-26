@@ -53,8 +53,7 @@ struct DeviceCodeCard: View {
     }
 
     private func copy() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(challenge.userCode, forType: .string)
+        ArgoPasteboard.put(challenge.userCode)
         hasCopied = true
     }
 

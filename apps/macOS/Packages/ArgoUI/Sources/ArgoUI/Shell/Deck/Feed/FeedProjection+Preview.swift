@@ -190,6 +190,9 @@ extension FeedProjection {
     /// lands somewhere else once they are measured — a still nobody can repeat.
     static let previewPromptID = previewProseRows.last(where: \.isPrompt)?.id
 
+    /// The message the copy chip is drawn on (#767). From the same end, for the same reason.
+    static let previewMessageID = previewProseRows.last(where: \.isMessage)?.id
+
     static let previewLastFailedCallID = previewRows.reversed().failedCallID
 
     /// The collapsed run in that feed — three edits of one file, the only row whose panel holds

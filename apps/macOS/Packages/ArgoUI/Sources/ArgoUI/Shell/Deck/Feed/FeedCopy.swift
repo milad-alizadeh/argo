@@ -35,6 +35,13 @@ enum FeedCopy {
 }
 
 extension FeedRow {
+    /// What a row hands over and what a control calls doing it, together — the two travel as one so
+    /// a chip cannot draw a thought and name it a message.
+    struct CopyOffer: Equatable {
+        let words: String
+        let label: String
+    }
+
     /// This row's own words, as the record holds them. `nil` for every row that is not something
     /// somebody SAID: a call, a question and a mark each carry a line Argo composed, so there is
     /// nothing verbatim to hand over.
@@ -44,6 +51,21 @@ extension FeedRow {
         case let .prompt(text, _): text
         case let .message(text), let .thought(text): text
         case .call, .survey, .gallery, .ask, .skillLoaded, .mark, .unreadable: nil
+        }
+    }
+
+    /// The offer the ROW ITSELF draws — the words, and what to call taking them.
+    ///
+    /// A message and a thought only. The feed draws each of their markdown blocks as its own
+    /// `Text`, so a drag stops at the first block boundary; a prompt is one `Text` in a bubble and
+    /// drags end to end, so it keeps the menu alone.
+    var inPlaceOffer: CopyOffer? {
+        switch content {
+        case .message, .thought:
+            guard let words = copyable, let label = copyLabel else { return nil }
+            return CopyOffer(words: words, label: label)
+        case .prompt, .call, .survey, .gallery, .ask, .skillLoaded, .mark, .unreadable:
+            return nil
         }
     }
 

@@ -63,6 +63,15 @@ extension FeedTableCoordinator {
         return delta < 0 ? visible.location + max(visible.length - 1, 0) : visible.location
     }
 
+    /// What Edit ▸ Copy takes: the focused row's own words, or `nil` where there is nothing
+    /// verbatim to hand over. `copyable`, so a focused prompt answers the key that a bubble draws
+    /// no
+    /// chip for.
+    var focusedWords: String? {
+        guard let index = focusedRow, shown.indices.contains(index) else { return nil }
+        return shown[index].copyable
+    }
+
     func activateFocusedRow() -> Bool {
         guard let model, let index = focusedRow, shown.indices.contains(index) else { return false }
         let row = shown[index]
