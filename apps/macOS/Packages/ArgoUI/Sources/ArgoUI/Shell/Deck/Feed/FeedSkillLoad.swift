@@ -44,6 +44,9 @@ struct FeedSkillLoad: Equatable, Sendable {
                 address: .filed(address),
                 language: .markdown,
                 isExternal: isExternal,
+                // Argo read this file itself, so the panel's text IS the file — the reason it needs
+                // no host gutter to be drawn as one (#736).
+                holdsTheFile: true,
                 // DERIVED: the file was read off the machine, not owned by Argo (`CONTEXT.md` L2).
                 result: .output(OutputEvidence(tier: .derived, text: body.text)),
             )],

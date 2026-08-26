@@ -83,6 +83,7 @@ struct FeedSurvey: Equatable, Sendable {
                 address: call.caption,
                 language: call.language,
                 isExternal: call.isExternalSubject,
+                holdsTheFile: call.holdsTheFile,
                 result: result,
             )
         }

@@ -1,25 +1,41 @@
 import ArgoEngine
 
 extension FeedEvidence {
-    /// Whether a prose reading is on the table at all: at least one step is a markdown patch.
-    ///
-    /// A patch and never an output: a `Read`'s output arrives with the host's line numbers written
-    /// into the text, so `    12\t## What I found` through a markdown renderer is not the file.
+    /// Whether a document reading is on the table at all: at least one step is a markdown file.
+    /// Never on a FAILED panel — a sentence saying Argo could not read a `SKILL.md` is not a
+    /// document, and a renderer would eat whatever punctuation it happens to carry.
     var offersProse: Bool {
-        !prosePatches.isEmpty
+        !documents.isEmpty
     }
 
-    /// Which reading the panel opens in. A file the agent WROTE opens as the document — its patch
-    /// is the whole of it, every line an addition. Anything else opens as the patch, since the
-    /// rendered document has nowhere to put the half that was taken out.
+    /// Which reading the panel opens in. The document, where every markdown step in it HAS a whole
+    /// document to draw: a file that was printed, and a file the agent wrote, whose patch is the
+    /// whole of it. A modification opens as the patch instead, since the rendered document has
+    /// nowhere to put the half that was taken out.
     var opening: EvidenceReading {
-        offersProse && prosePatches.allSatisfy { $0.change == .create } ? .prose : .source
+        !documents.isEmpty && !documents.contains(false) ? .prose : .source
     }
 
-    private var prosePatches: [DiffEvidence] {
-        steps.compactMap { step in
-            guard case let .diff(diff) = step.result, step.language == .markdown else { return nil }
-            return diff
+    /// One per markdown step a document reading is about, `true` where the WHOLE of that document
+    /// is there to draw.
+    private var documents: [Bool] {
+        ending.hasFailed ? [] : steps.compactMap(Self.document)
+    }
+
+    /// `nil` for a step no document reading is about: anything but markdown, a picture, and text
+    /// that is not the file itself — a sentence about the call is not a document.
+    private static func document(_ step: Step) -> Bool? {
+        guard step.language == .markdown else { return nil }
+        switch step.result {
+        // Every line an addition: the file as a whole is what the patch is.
+        case let .diff(diff): return diff.change == .create
+        case let .output(output):
+            guard step.holdsTheFile else { return nil }
+            let listing = EvidenceListing.read(output.text)
+            // A read prints the file with nothing taken out — but a read that started partway
+            // through prints a slice, and a slice has to keep the numbers saying which.
+            return listing.isRenderable ? listing.opensTheFile : nil
+        case .media: return nil
         }
     }
 }

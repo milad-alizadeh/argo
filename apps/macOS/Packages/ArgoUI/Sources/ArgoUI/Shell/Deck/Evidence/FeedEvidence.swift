@@ -13,6 +13,11 @@ struct FeedEvidence: Equatable, Sendable {
         let language: EvidenceLanguage?
         /// Whether the address lies outside the Session's tree — see `FeedPath.isExternal`.
         let isExternal: Bool
+        /// Whether this result IS the file at that address: a read printed it, or Argo read it
+        /// itself. Everything else a call prints is a message ABOUT the call, however its path is
+        /// spelled — so only this may be drawn under the file's grammar or rendered as its
+        /// document.
+        var holdsTheFile = false
         let result: ToolResult
 
         /// What this step did in lines, from the patch itself. Absent where it changed nothing:
@@ -98,10 +103,18 @@ extension FeedCall {
                     address: address,
                     language: language,
                     isExternal: isExternalSubject,
+                    holdsTheFile: holdsTheFile,
                     result: result,
                 )
             },
         )
+    }
+
+    /// Whether what this call printed is the file itself. A READ prints the file; an edit answered
+    /// with a sentence rather than a patch prints a sentence, and drawing that under the file's
+    /// grammar would claim the sentence is the file.
+    var holdsTheFile: Bool {
+        kind == .read
     }
 
     /// Whether what the call named lies outside the Session's tree. Only a file can be.

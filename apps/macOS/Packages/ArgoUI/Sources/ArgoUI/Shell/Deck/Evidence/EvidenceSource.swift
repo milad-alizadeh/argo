@@ -20,6 +20,7 @@ struct EvidenceSource: View {
                 EvidenceSourceLine(
                     line: line,
                     coloured: position < coloured.count ? coloured[position] : nil,
+                    hasGutter: listing.hasGutter,
                 )
             }
         }
@@ -49,14 +50,13 @@ private struct EvidenceSourceLine: View {
 
     let line: EvidenceListing.Line
     let coloured: AttributedString?
+    /// Whether the FILE has numbers, not this line — a column that comes and goes down the panel
+    /// would move the words it is meant to be lining up.
+    let hasGutter: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: ArgoSpacing.snug) {
-            Text(String(line.number))
-                .argoMono(.body)
-                .monospacedDigit()
-                .foregroundStyle(argo.color.text.disabled)
-                .frame(width: ArgoFeedRow.diffGutterWidth, alignment: .trailing)
+            gutter
             // Wraps under its own words rather than back under the gutter, so a wrapped line still
             // reads as one line of the file with one number against it.
             words
@@ -66,6 +66,18 @@ private struct EvidenceSourceLine: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, ArgoSpacing.comfortable)
+    }
+
+    /// The host's number for this line, where the host gave one. A file with no gutter is drawn
+    /// without the column rather than with an empty one.
+    @ViewBuilder private var gutter: some View {
+        if hasGutter {
+            Text(line.number.map(String.init) ?? "")
+                .argoMono(.body)
+                .monospacedDigit()
+                .foregroundStyle(argo.color.text.disabled)
+                .frame(width: ArgoFeedRow.diffGutterWidth, alignment: .trailing)
+        }
     }
 
     @ViewBuilder private var words: some View {

@@ -19,19 +19,35 @@ struct EvidenceOutput: View {
     var language: EvidenceLanguage?
     /// Whether the call this answered failed. From the outcome, never from the characters.
     var hasFailed = false
+    /// Whether this text IS the file at the step's address — see `FeedEvidence.Step`.
+    var holdsTheFile = false
+    /// Whether a markdown file is drawn as the document it is or as its own characters. Only
+    /// markdown is ever asked in `prose` — every other language IS its source.
+    var reading: EvidenceReading = .source
 
+    /// Read once per pass, not once per branch: this splits and re-parses the whole text, and a
+    /// panel of a long file draws it on every layout (#474).
     var body: some View {
-        if let listing, let language {
-            EvidenceSource(listing: listing, language: language)
+        let listing = EvidenceListing.read(output.text)
+        // The step says whether these characters ARE the file; the gutter does not, and a file Argo
+        // read itself has none (#736). A FAILED call printed a message about the call, not a file.
+        if holdsTheFile, let language, !hasFailed, !listing.lines.isEmpty {
+            file(listing, in: language)
         } else {
             stream
         }
     }
 
-    /// The read's own listing, or `nil` for everything that is not one. A FAILED call is never one,
-    /// whatever its text looks like: what it printed is a message about the call, not the file.
-    private var listing: EvidenceListing? {
-        hasFailed ? nil : EvidenceListing(output.text)
+    @ViewBuilder private func file(
+        _ listing: EvidenceListing,
+        in language: EvidenceLanguage,
+    )
+        -> some View {
+        if language == .markdown, reading == .prose, listing.isRenderable {
+            EvidenceDocument(text: listing.text)
+        } else {
+            EvidenceSource(listing: listing, language: language)
+        }
     }
 
     private var stream: some View {

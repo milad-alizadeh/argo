@@ -32,9 +32,14 @@ extension CockpitPresentation.Session {
                 "Sources/ArgoUI/Shell/Deck/Feed/FeedProjection.swift",
                 "    13\t    static func rows(from events: [TranscriptEvent]) -> [FeedRow] {",
             ),
+            // A read of MARKDOWN, gutter and all, as a host actually answers one. The one file in
+            // the survey whose grammar carries almost no ink of its own, and so the one that says
+            // whether the panel is drawing the document or the notation.
             (
                 "docs/designs/cockpit-spec.md",
-                "The feed is one column of prose at a fixed measure.",
+                "     1→# Cockpit\n     2→\n     3→The feed is one column of prose at a "
+                    + "**fixed measure**.\n     4→\n     5→- Everything else on the deck is "
+                    + "chrome around it.\n",
             ),
         ]
         .enumerated()
