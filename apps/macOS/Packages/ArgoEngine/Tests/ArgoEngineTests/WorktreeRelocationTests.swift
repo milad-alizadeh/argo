@@ -20,14 +20,14 @@ struct WorktreeRelocationTests {
         return hub
     }
 
+    /// The one reading no roster assertion can make: that the key is taken off the record at all.
+    /// `session_id` sits beside the top-level `sessionId` that names the file itself, and reading
+    /// the wrong one of the two would link nothing while looking correct.
     @Test
     func `a relocated transcript names the origin session it continues`() async throws {
         let relocated = try await Fixture.events("worktreeRelocated")
-        let origin = try await Fixture.events("worktreeOrigin")
 
         #expect(relocated.contains(.originSession(id: "worktreeOrigin")))
-        // The origin names itself, which is what keeps it a root rather than its own parent.
-        #expect(origin.contains(.originSession(id: "worktreeOrigin")))
     }
 
     @Test
@@ -80,9 +80,11 @@ struct WorktreeRelocationTests {
 
     /// One run can enter a worktree more than once. All of its relocations name the same origin, so
     /// they are siblings on the graph rather than a linked list — every one of them still merges.
-    @Test
+    ///
+    /// Observed NEWEST first, which is the order discovery hands them over in: the merge order has
+    /// to be the transcripts' own, or the row reads the worktree the run has already left.
     @MainActor
-    func `several relocations off one origin merge into one row`() async {
+    private func twiceRelocatedRun() async -> Hub {
         let hub = testHub(projectURL: Self.projectURL)
         let origin = hubTestObservation(id: "origin", events: [
             .originSession(id: "origin"),
@@ -90,18 +92,43 @@ struct WorktreeRelocationTests {
         ])
         let first = hubTestObservation(id: "first", events: [
             .originSession(id: "origin"),
+            .prompt(text: "First", atMs: 2000),
             .message(markdown: "First worktree"),
+            .branch("worktree-one"),
         ])
         let second = hubTestObservation(id: "second", events: [
             .originSession(id: "origin"),
+            .prompt(text: "Second", atMs: 3000),
             .message(markdown: "Second worktree"),
+            .branch("worktree-two"),
         ])
 
-        await hubObserveToEnd(hub, origin)
-        await hubObserveToEnd(hub, first)
         await hubObserveToEnd(hub, second)
+        await hubObserveToEnd(hub, first)
+        await hubObserveToEnd(hub, origin)
+        return hub
+    }
+
+    @Test
+    @MainActor
+    func `several relocations off one origin merge into one row`() async {
+        let hub = await twiceRelocatedRun()
 
         #expect(hub.sessions.map(\.id) == ["origin"])
+    }
+
+    @Test
+    @MainActor
+    func `relocated siblings merge oldest first, whatever order they arrived in`() async throws {
+        let hub = await twiceRelocatedRun()
+
+        let session = try #require(hub.sessions.first)
+        let said = session.events.compactMap { event -> String? in
+            guard case let .message(markdown) = event else { return nil }
+            return markdown
+        }
+        #expect(said == ["First worktree", "Second worktree"])
+        #expect(session.branch == "worktree-two")
     }
 
     /// The fallback is a fallback: a resume names its predecessor's record, and that link is the

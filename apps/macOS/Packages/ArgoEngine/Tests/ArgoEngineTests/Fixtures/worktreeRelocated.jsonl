@@ -1,4 +1,4 @@
-{"type":"last-prompt","leafUuid":"r-asst-1","sessionId":"worktreeRelocated","session_id":"worktreeOrigin"}
+{"type":"last-prompt","leafUuid":"r-asst-1","sessionId":"worktreeRelocated"}
 {"type":"worktree-state","worktreeSession":{"originalCwd":"/Users/x/proj","preEnterOriginalCwd":"/Users/x/proj","worktreePath":"/Users/x/proj/.claude/worktrees/argo+735","worktreeName":"argo/735","worktreeBranch":"worktree-argo+735","originalBranch":"main","sessionId":"worktreeRelocated"},"sessionId":"worktreeRelocated"}
 {"type":"relocated","relocatedCwd":"/Users/x/proj/.claude/worktrees/argo+735"}
 {"type":"user","sessionId":"worktreeRelocated","session_id":"worktreeOrigin","cwd":"/Users/x/proj/.claude/worktrees/argo+735","gitBranch":"worktree-argo+735","timestamp":"2026-08-26T09:10:01.000Z","uuid":"r-user-1","parentUuid":null,"message":{"role":"user","content":"Continue in the worktree"}}
