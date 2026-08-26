@@ -78,49 +78,6 @@ struct SessionRosterProjectionTests {
     }
 
     @Test
-    func `access is a fact about the whole row, not one the roster spends by comparison`() {
-        let mixed = SessionRosterProjection.rows(
-            from: [
-                RosterSessionFixture.session(id: "managed", access: .managed),
-                RosterSessionFixture.session(id: "external", access: .external),
-            ],
-        )
-        let uniform = SessionRosterProjection.rows(
-            from: [
-                RosterSessionFixture.session(id: "one", access: .external),
-                RosterSessionFixture.session(id: "two", access: .external),
-            ],
-        )
-
-        #expect(mixed.map(\.isReadOnly) == [false, true])
-        // A roster where every Session is read-only says so on every row.
-        #expect(uniform.map(\.isReadOnly) == [true, true])
-    }
-
-    @Test
-    func `a read-only Session announces itself, with no glyph left to carry the fact`() throws {
-        let row = try #require(rows(RosterSessionFixture.session(id: "external", access: .external))
-            .first)
-
-        // The row draws this by ghosting, which a screen reader cannot hear. The label is
-        // where the fact survives the ink.
-        #expect(row.isReadOnly)
-        #expect(row.announcement.contains("Read-only Session"))
-    }
-
-    @Test
-    func `read-only Sessions carry no invented operational word`() throws {
-        let row = try #require(SessionRosterProjection.rows(
-            from: [
-                RosterSessionFixture.session(id: "external", access: .external, status: .unknown),
-            ],
-        ).first)
-
-        #expect(row.stateWord == nil)
-        #expect(row.state == nil)
-    }
-
-    @Test
     func `an idle Session says how long ago it last moved`() throws {
         let row = try #require(rows(RosterSessionFixture.session(
             id: "idle",

@@ -48,6 +48,7 @@ struct SessionRow: View {
         HStack(spacing: ArgoSpacing.snug) {
             SessionStateIndicator(state: row.state)
             title
+            lock
             Spacer(minLength: ArgoSpacing.tight)
             stateWord
         }
@@ -158,6 +159,16 @@ struct SessionRow: View {
             ArgoMarkedName(
                 symbol: ArgoSymbol.worktree, name: worktree, style: ArgoTypography.rowMeta,
             )
+        }
+    }
+
+    /// Beside the name, because what it says is about the Session and the far column is the
+    /// state's. Hidden from a screen reader, which hears the fact in `row.announcement`.
+    @ViewBuilder private var lock: some View {
+        if let mark = row.lock {
+            ArgoGlyph(mark, .inline)
+                .foregroundStyle(argo.color.text.tertiary)
+                .accessibilityHidden(true)
         }
     }
 
