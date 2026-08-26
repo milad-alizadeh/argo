@@ -23,16 +23,8 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
         self.remember = remember
     }
 
-    var canAttach: Bool {
-        base.canAttach
-    }
-
-    func canRunCommands(for sessionID: String) -> Bool {
-        base.canRunCommands(for: sessionID)
-    }
-
-    func resolvesMentions(for sessionID: String) -> Bool {
-        base.resolvesMentions(for: sessionID)
+    func surface(of sessionID: String) -> DriveSurface {
+        base.surface(of: sessionID)
     }
 
     func send(_ text: String, to sessionID: String) throws {

@@ -57,27 +57,14 @@ public protocol SessionDriver {
     /// answers when the walk is done, so the caller's refusal covers the whole of it.
     func setMode(_ mode: SessionMode, for sessionID: String) async throws
 
-    /// Whether this adapter takes attachments at all (#540) — the composer omits the `+` rather
-    /// than disabling it, and a drop is refused with the reason.
-    var canAttach: Bool { get }
-
-    /// Whether a `/command` sent to this Session fires the CLI's OWN command handling (#685).
+    /// What the adapter behind this Session DECLARES about itself (#761) — the one member that
+    /// states rather than acts, and the only place a new capability is added.
     ///
-    /// Per CLI rather than per command: `claude` parses `/` in the input machinery a pasted Turn
-    /// reaches, while `codex` parses it in a TUI composer Argo never touches, so there `/foo`
-    /// arrives as prose the model reads. A Session whose adapter says no draws no picker at all.
-    ///
-    /// Keyed by Session unlike `canAttach`, because the two adapters DISAGREE: a port with no
-    /// Session to read it for could only state what both do, which is a refusal for every claude
-    /// Session the moment a codex one is reachable (#698 left this note where the joint answer
-    /// was). The composer draws one Session at a time and always has its id.
-    func canRunCommands(for sessionID: String) -> Bool
-
-    /// Whether this Session's CLI resolves an `@path` mention itself (#687), pulling the file in
-    /// off the token alone. Keyed by Session for the reason `canRunCommands` is: the adapters
-    /// disagree. Where it answers `false`, Argo does the work instead and the Turn names the file
-    /// on its own line, exactly as an attachment does — so `@` is offered on both.
-    func resolvesMentions(for sessionID: String) -> Bool
+    /// Keyed by Session, though every adapter answers a constant today: a port with no Session to
+    /// read it for could only state what both adapters do, which is a refusal for every claude
+    /// Session the moment a codex one is reachable (#698). The composer draws one Session at a time
+    /// and always has its id.
+    func surface(of sessionID: String) -> DriveSurface
 
     /// Put the user's attachments where this Session's agent can read them, and answer their
     /// absolute paths, in the order given — the order the Turn names them in. It does not send;

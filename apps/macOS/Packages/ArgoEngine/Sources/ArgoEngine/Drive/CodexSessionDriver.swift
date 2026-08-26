@@ -25,24 +25,13 @@ struct CodexSessionDriver: SessionDriver {
     /// held and built once — is the only table there is.
     let threads = CodexThreads()
 
-    /// Codex takes images as input items of the Turn itself, so there is an affordance to draw
-    /// (#540). Declared rather than asked of the server at the point of use: the composer has to
-    /// know whether to draw the `+` before anything has been dropped on it.
-    var canAttach: Bool {
-        true
-    }
-
-    /// `codex` parses `/` in a TUI composer Argo never touches, so a `/command` put to this surface
-    /// arrives at the model as prose (#685). A Session here draws no picker at all.
-    func canRunCommands(for _: String) -> Bool {
-        false
-    }
-
-    /// `codex` has no mention machinery at all, so an `@path` would arrive as prose. Argo names the
-    /// file on its own line instead, which is why the `@` menu is offered here and the `/` one is
-    /// not.
-    func resolvesMentions(for _: String) -> Bool {
-        false
+    /// Attachments only. Codex takes images as input items of the Turn itself, so there is an
+    /// affordance to draw (#540) — but it parses `/` in a TUI composer Argo never touches, so a
+    /// `/command` put here arrives at the model as prose (#685), and it has no mention machinery at
+    /// all, so an `@path` would arrive the same way (#687). Argo names those files on their own
+    /// line instead, which is why the `@` menu is offered here and the `/` one is not.
+    func surface(of _: String) -> DriveSurface {
+        DriveSurface(takesAttachments: true, runsCommands: false, resolvesMentions: false)
     }
 
     func send(_ text: String, to sessionID: String) throws {

@@ -87,14 +87,16 @@ public struct CockpitView: View {
         )
     }
 
-    /// What the selected Session's adapter declares. The last two are per Session, unlike
-    /// attachments: the adapters DISAGREE about both, so there is no one answer the port could give
-    /// without an id (#685, #687).
+    /// What the selected Session's adapter declares, read as one value off the port (#761). With no
+    /// Session selected there is nothing to ask about and nothing to draw: `DeckVessel` gives that
+    /// case no composer at all, so the defaults below are never rendered.
     private var capabilities: SessionComposerProjection.Capabilities {
-        SessionComposerProjection.Capabilities(
-            canAttach: actions.drive.canAttach,
-            canRunCommands: navigation.session.map(actions.drive.canRunCommands(for:)) ?? false,
-            resolvesMentions: navigation.session.map(actions.drive.resolvesMentions(for:)) ?? false,
+        guard let sessionID = navigation.session else { return .init() }
+        let surface = actions.drive.surface(of: sessionID)
+        return SessionComposerProjection.Capabilities(
+            canAttach: surface.takesAttachments,
+            canRunCommands: surface.runsCommands,
+            resolvesMentions: surface.resolvesMentions,
         )
     }
 

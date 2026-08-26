@@ -8,16 +8,12 @@ import Foundation
 public final class InMemorySessionDriver: SessionDriver {
     /// What every send is answered with while it is set.
     public var refusal: SessionDriveError?
-    /// What this fake DECLARES about attachments (#540). Settable because the absence of the `+`
-    /// is a designed state with a render of its own, and a fake that could only say `true` would
-    /// leave the one state the capability exists to produce unreachable from a test.
-    public var canAttach = true
-    /// What this fake DECLARES about commands (#685). Settable, like `canAttach`. One answer for
-    /// every Session: a fake stands in for one adapter, so the id has nothing to choose between.
-    public var declaresCommands = true
-    /// What this fake DECLARES about mentions (#687). Settable for the reason the two above are:
-    /// the `false` side is where Argo names the file itself, and that is the half worth asserting.
-    public var declaresMentions = true
+    /// What this fake DECLARES about itself (#761). Settable because each `false` side is a
+    /// designed state with a render of its own — no `+`, no picker, Argo naming the file itself.
+    /// One answer for every Session: a fake stands in for one adapter, so the id chooses nothing.
+    public var declaredSurface = DriveSurface(
+        takesAttachments: true, runsCommands: true, resolvesMentions: true,
+    )
     /// Where `attach` says it put things, keyed by attachment id. A test that has to assert what
     /// the Turn NAMED sets these; left empty, a path is invented from the id, which is enough for
     /// the far commoner claim that the paths reached the Turn at all.
@@ -48,12 +44,8 @@ public final class InMemorySessionDriver: SessionDriver {
         }
     }
 
-    public func canRunCommands(for _: String) -> Bool {
-        declaresCommands
-    }
-
-    public func resolvesMentions(for _: String) -> Bool {
-        declaresMentions
+    public func surface(of _: String) -> DriveSurface {
+        declaredSurface
     }
 
     public func send(_ text: String, to sessionID: String) throws {
@@ -67,7 +59,7 @@ public final class InMemorySessionDriver: SessionDriver {
     /// Records what it was given and answers an address for each, without writing anything. A fake
     /// of the PORT: where bytes actually land is `AttachmentStore`'s claim and is asserted there.
     public func attach(_ attachments: [SessionAttachment], to sessionID: String) throws -> [URL] {
-        guard canAttach else { throw SessionDriveError.cannotAttach }
+        guard declaredSurface.takesAttachments else { throw SessionDriveError.cannotAttach }
         if let refusal {
             throw refusal
         }

@@ -25,7 +25,9 @@ struct SessionDriveTurnTests {
     @Test
     func `a refused attach sends nothing at all`() {
         let driver = InMemorySessionDriver()
-        driver.canAttach = false
+        driver.declaredSurface = DriveSurface(
+            takesAttachments: false, runsCommands: true, resolvesMentions: true,
+        )
         let shot = SessionAttachment.pastedImage(Data([0x89]), fileExtension: "png")
 
         #expect(throws: SessionDriveError.cannotAttach) {

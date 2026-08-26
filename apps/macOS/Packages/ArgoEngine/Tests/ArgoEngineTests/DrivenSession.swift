@@ -13,6 +13,17 @@ enum DrivenCLI: CaseIterable, Sendable {
         case .codex: .codex
         }
     }
+
+    /// What the port must declare about this CLI (#761), stated here rather than read back off the
+    /// adapter: a surface asked of the router and answered by the wrong adapter agrees with itself.
+    var surface: DriveSurface {
+        switch self {
+        case .claude:
+            DriveSurface(takesAttachments: true, runsCommands: true, resolvesMentions: true)
+        case .codex:
+            DriveSurface(takesAttachments: true, runsCommands: false, resolvesMentions: false)
+        }
+    }
 }
 
 /// One spawned Session of either CLI, with the one question the port's own claims need answering
