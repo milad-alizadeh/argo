@@ -41,19 +41,6 @@ extension ProseMetrics {
         )
     }
 
-    /// The marked words with one font over all of them. Core Text lays nothing out without a font,
-    /// and the rung a span carries is the block's business rather than the width's — a `code` span
-    /// is measured in the surrounding face here, which is a point or two of a bar nobody reads as
-    /// text.
-    private static func typeset(_ marked: AttributedString, in face: ProseFace)
-        -> NSAttributedString {
-        let string = NSMutableAttributedString(attributedString: NSAttributedString(marked))
-        string.addAttribute(
-            .font, value: face.font, range: NSRange(location: 0, length: string.length),
-        )
-        return string
-    }
-
     /// The lines the words broke into. A frame tall enough to hold any paragraph, because Core Text
     /// drops the lines that fall outside the path it is given.
     private static func broken(_ string: NSAttributedString, across measure: CGFloat) -> [CTLine] {
