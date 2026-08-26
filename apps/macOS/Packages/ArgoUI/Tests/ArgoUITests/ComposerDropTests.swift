@@ -98,12 +98,14 @@ struct ComposerDropTests {
         #expect(drop.attachment.source == .file(url))
     }
 
-    /// A drag can offer a type it cannot actually produce. `DataRepresentation` has no way to
-    /// decline other than by throwing, and the throw must not be read as an attachment.
+    /// A drag can offer a type it cannot actually produce. The refusal has to come back as a
+    /// refusal rather than as an attachment of nothing.
     @Test
-    func `pixels that will not decode are refused rather than attached`() {
-        #expect(throws: (any Error).self) {
-            _ = try ComposerDrop.pixels(Data("not an image".utf8))
+    func `pixels that will not decode are refused rather than attached`() async {
+        let provider = Self.provider(Data("not an image".utf8), as: .jpeg)
+
+        await #expect(throws: (any Error).self) {
+            try await Self.dropped(provider)
         }
     }
 

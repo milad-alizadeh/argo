@@ -46,39 +46,61 @@ struct MinimapAnnotationTests {
         #expect(deck.lane.marking.isEmpty)
     }
 
-    /// #732 read the mark as covering the prompt alone. It does not: the span is the whole Turn's
-    /// block, and it is the SAME span from every point in it — which is the claim the ticket's
-    /// acceptance asks for, and the one nothing here previously made.
+    /// The second Turn on screen, and where the pointer has to be to be over each of its ROWS.
     ///
-    /// Walked at a step finer than a Turn is tall, so a span that collapsed anywhere inside one
-    /// fails rather than being stepped over.
-    @Test
-    func `the mark spans the whole Turn from every point in it`() throws {
-        let deck = Self.mounted()
+    /// Resolved from the Turn's own extents rather than from `blocks(in:)`, so the expectations
+    /// below are the reading's boundaries and not the lane's own answer restated (#732).
+    private static func secondTurn(_ deck: MinimapLaneFixture.Mounted)
+        throws -> (turn: MinimapTurn, laneYs: [CGFloat]) {
         let lane = deck.lane
-        let named = try #require(lane.geometry.blocks(in: 0 ... lane.bounds.height).dropFirst()
-            .first)
+        let turn = try #require(MinimapTurn.extents(of: lane.geometry.reading.rows)
+            .dropFirst().first { $0.rows.count > 1 })
         let slide = lane.geometry.laneOffset(at: deck.feed.offset() ?? 0)
-        let span = (named.y - slide) ... (named.y + named.height - slide)
+        return (turn, turn.rows.map { lane.geometry.markY(row: $0) + 1 - slide })
+    }
 
-        for laneY in stride(from: span.lowerBound + 1, to: span.upperBound, by: 1) {
-            try lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: laneY)))
-            #expect(lane.marking.map(\.span) == [span])
-            #expect(lane.marking.first?.words == named.prompt)
+    /// #732 read the mark as covering the prompt alone. It does not: standing over ANY of the
+    /// Turn's rows — the last as much as the prompt's own — names the same Turn with the same
+    /// words, which is the ticket's acceptance and the claim nothing here previously made.
+    @Test
+    func `the pointer names one Turn from every row of it`() throws {
+        let deck = Self.mounted()
+        let (turn, laneYs) = try Self.secondTurn(deck)
+
+        for laneY in laneYs {
+            try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: laneY)))
+            #expect(deck.lane.marking.map(\.words) == [turn.prompt])
         }
     }
 
-    /// A Turn is more than the prompt that opened it. The mark has to reach past the prompt's own
-    /// row, or the pointer names the Turn from one bubble's worth of the lane and nowhere else.
+    /// And the line under those words spans the whole Turn: from the head of its first row to
+    /// where the row after its last one begins. A mark ending at the prompt's own foot would name
+    /// the Turn from one bubble's worth of the lane and nowhere else.
     @Test
-    func `a Turn's mark reaches past the row its prompt was drawn on`() throws {
-        let lane = Self.mounted().lane
-        let rows = lane.geometry.reading.rows
-        let turn = try #require(MinimapTurn.extents(of: rows).first { $0.rows.count > 1 })
-        let block = try #require(lane.geometry.block(atMiniatureY: lane.geometry
-                .markY(row: turn.rows.lowerBound)))
+    func `the mark spans the Turn from its first row to past its last`() throws {
+        let deck = Self.mounted()
+        let (turn, laneYs) = try Self.secondTurn(deck)
+        let slide = deck.lane.geometry.laneOffset(at: deck.feed.offset() ?? 0)
+        let head = deck.lane.geometry.markY(row: turn.rows.lowerBound) - slide
+        let foot = deck.lane.geometry.markY(row: turn.rows.upperBound + 1) - slide
 
-        #expect(block.height > lane.geometry.markY(row: turn.rows.lowerBound + 1) - block.y)
+        let overTheFirstRow = try #require(laneYs.first)
+        try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: overTheFirstRow)))
+
+        #expect(deck.lane.marking.map(\.span) == [head ... foot])
+    }
+
+    /// The other place #732 could have gone wrong: a zone cut over the prompt's rows alone would
+    /// leave the pointer unheard everywhere else, and the mark would read as covering the prompt
+    /// however right the block underneath it was. One zone, the lane's whole height.
+    @Test
+    func `the pointer is heard over the lane's whole height`() {
+        let lane = Self.mounted().lane
+
+        lane.updateTrackingAreas()
+
+        #expect(lane.trackingAreas.map(\.rect) == [lane.bounds])
+        #expect(lane.trackingAreas.allSatisfy { $0.options.contains(.mouseMoved) })
     }
 
     /// The whole reason the annotations are their own layer. A pointer crossing the lane must not

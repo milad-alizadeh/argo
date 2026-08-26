@@ -71,8 +71,7 @@ public struct SessionAttachment: Identifiable, Equatable, Sendable {
     }
 
     /// The same, off a drag rather than the clipboard — a screenshot let go straight from the macOS
-    /// preview, which offers its pixels because there is no file yet to offer (#732). Named for the
-    /// gesture that produced it: a chip reading `Pasted image` after a drag names the wrong one.
+    /// preview, which offers its pixels because there is no file yet to offer (#732).
     public static func droppedImage(_ data: Data, fileExtension: String) -> SessionAttachment {
         image(data, fileExtension: fileExtension, called: droppedImageName)
     }
