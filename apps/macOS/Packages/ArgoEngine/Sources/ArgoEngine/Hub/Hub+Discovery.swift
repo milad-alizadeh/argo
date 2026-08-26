@@ -34,8 +34,8 @@ extension Hub {
         // meantime means these tails belong to a Project nobody is pointed at any more.
         guard self.sweepProjectURL != nil else { return }
         let wantedIDs = Set(wanted.map(\.path))
-        for transcriptID in observedTranscriptIDs where !wantedIDs.contains(transcriptID) {
-            await pauseObserving(transcriptID: transcriptID)
+        for transcript in join.transcripts where !wantedIDs.contains(transcript.id) {
+            await stopReading(transcript)
         }
         for url in wanted where !isObserving(transcriptID: url.path) {
             // A file the sweep saw a moment ago can be gone by the time it is opened. Skipping it
@@ -47,6 +47,17 @@ extension Hub {
         // Every sweep, not only the ones that moved a tail: a fan-out's files appear beside a
         // transcript that is already in the working set, so nothing above would notice them.
         refreshSubagents()
+    }
+
+    /// Stop reading a transcript the sweep no longer names. Aged out of the window it keeps its
+    /// row; GONE FROM DISK it loses it, because a vanished path can never say anything again — and
+    /// Claude Code MOVES a transcript into the worktree's own record directory (#770).
+    private func stopReading(_ transcript: HubTranscript) async {
+        guard FileManager.default.fileExists(atPath: transcript.sourceURL.path) else {
+            await stopObserving(transcriptID: transcript.id)
+            return
+        }
+        await pauseObserving(transcriptID: transcript.id)
     }
 
     /// End the sweep before the tails it feeds are torn down, and await it: a sweep still running

@@ -5,16 +5,25 @@ import Testing
 /// `EnterWorktree` closes the transcript and opens a fresh one under the worktree's own project
 /// directory. Nothing links the two on any record identifier — the only shared key is the
 /// snake_case `session_id`, which names the chain's ORIGIN (#735).
+///
+/// Every observation here is keyed by PATH, the way `Engine.observation(at:)` keys a real record.
+/// A fixture keyed by uuid cannot see a link filed under the wrong one of the two (#770).
 @Suite("Worktree relocation")
 struct WorktreeRelocationTests {
     private static let projectURL = URL(fileURLWithPath: "/tmp/argo-relocation")
+
+    private static let originURL = recordURL("-tmp-argo-relocation", "worktreeOrigin")
+    private static let relocatedURL = recordURL(
+        "-tmp-argo-relocation--claude-worktrees-argo+735",
+        "worktreeRelocated",
+    )
 
     /// Both halves of one relocated run, read in the order they were written.
     @MainActor
     private func relocatedRun() async throws -> Hub {
         let hub = testHub(projectURL: Self.projectURL)
-        let origin = try await hubFixtureObservation("worktreeOrigin")
-        let relocated = try await hubFixtureObservation("worktreeRelocated")
+        let origin = try await hubFixtureObservation("worktreeOrigin", at: Self.originURL)
+        let relocated = try await hubFixtureObservation("worktreeRelocated", at: Self.relocatedURL)
         await hubObserveToEnd(hub, origin)
         await hubObserveToEnd(hub, relocated)
         return hub
@@ -37,7 +46,7 @@ struct WorktreeRelocationTests {
 
         let session = try #require(hub.sessions.first)
         #expect(hub.sessions.count == 1)
-        #expect(session.id == "worktreeOrigin")
+        #expect(session.id == Self.originURL.path)
         #expect(session.title == "Build the relocation link")
     }
 
@@ -58,12 +67,9 @@ struct WorktreeRelocationTests {
     @MainActor
     func `the merged row's feed is continuous across the relocation`() async throws {
         let hub = try await relocatedRun()
+        let session = try #require(hub.sessions.first)
 
-        let said = try #require(hub.sessions.first).events.compactMap { event -> String? in
-            guard case let .message(markdown) = event else { return nil }
-            return markdown
-        }
-        #expect(said == ["Entering a worktree", "Working in the worktree"])
+        #expect(said(by: session) == ["Entering a worktree", "Working in the worktree"])
     }
 
     /// Opening the worktree directory on its own — the origin file is in another Project, or gone.
@@ -71,11 +77,11 @@ struct WorktreeRelocationTests {
     @MainActor
     func `a relocated transcript whose origin is absent is still a Session`() async throws {
         let hub = testHub(projectURL: Self.projectURL)
-        let relocated = try await hubFixtureObservation("worktreeRelocated")
+        let relocated = try await hubFixtureObservation("worktreeRelocated", at: Self.relocatedURL)
 
         await hubObserveToEnd(hub, relocated)
 
-        #expect(hub.sessions.map(\.id) == ["worktreeRelocated"])
+        #expect(hub.sessions.map(\.id) == [Self.relocatedURL.path])
     }
 
     /// One run can enter a worktree more than once. All of its relocations name the same origin, so
@@ -86,17 +92,17 @@ struct WorktreeRelocationTests {
     @MainActor
     private func twiceRelocatedRun() async -> Hub {
         let hub = testHub(projectURL: Self.projectURL)
-        let origin = hubTestObservation(id: "origin", events: [
+        let origin = hubTestObservation(at: recordURL("-proj", "origin"), events: [
             .originSession(id: "origin"),
             .prompt(text: "Start", images: [], atMs: 1000),
         ])
-        let first = hubTestObservation(id: "first", events: [
+        let first = hubTestObservation(at: recordURL("-proj-one", "first"), events: [
             .originSession(id: "origin"),
             .prompt(text: "First", images: [], atMs: 2000),
             .message(markdown: "First worktree"),
             .branch("worktree-one"),
         ])
-        let second = hubTestObservation(id: "second", events: [
+        let second = hubTestObservation(at: recordURL("-proj-two", "second"), events: [
             .originSession(id: "origin"),
             .prompt(text: "Second", images: [], atMs: 3000),
             .message(markdown: "Second worktree"),
@@ -114,7 +120,7 @@ struct WorktreeRelocationTests {
     func `several relocations off one origin merge into one row`() async {
         let hub = await twiceRelocatedRun()
 
-        #expect(hub.sessions.map(\.id) == ["origin"])
+        #expect(hub.sessions.map(\.id) == [recordURL("-proj", "origin").path])
     }
 
     @Test
@@ -123,11 +129,7 @@ struct WorktreeRelocationTests {
         let hub = await twiceRelocatedRun()
 
         let session = try #require(hub.sessions.first)
-        let said = session.events.compactMap { event -> String? in
-            guard case let .message(markdown) = event else { return nil }
-            return markdown
-        }
-        #expect(said == ["First worktree", "Second worktree"])
+        #expect(said(by: session) == ["First worktree", "Second worktree"])
         #expect(session.branch == "worktree-two")
     }
 
@@ -137,11 +139,11 @@ struct WorktreeRelocationTests {
     @MainActor
     func `a resume still links on its head leaf rather than the origin`() async {
         let hub = testHub(projectURL: Self.projectURL)
-        let root = hubTestObservation(id: "root", events: [
+        let root = hubTestObservation(at: recordURL("-proj", "root"), events: [
             .originSession(id: "root"),
             .recordIdentity(uuid: "root-tip"),
         ])
-        let resumed = hubTestObservation(id: "resumed", events: [
+        let resumed = hubTestObservation(at: recordURL("-proj", "resumed"), events: [
             .headLeaf(uuid: "root-tip"),
             .originSession(id: "root"),
             .branch("feature"),
@@ -150,7 +152,7 @@ struct WorktreeRelocationTests {
         await hubObserveToEnd(hub, root)
         await hubObserveToEnd(hub, resumed)
 
-        #expect(hub.sessions.map(\.id) == ["root"])
+        #expect(hub.sessions.map(\.id) == [recordURL("-proj", "root").path])
         #expect(hub.sessions.first?.branch == "feature")
     }
 }

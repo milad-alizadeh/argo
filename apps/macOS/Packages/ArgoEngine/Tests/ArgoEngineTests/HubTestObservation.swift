@@ -6,6 +6,12 @@ func hubFixtureObservation(_ fixture: String) async throws -> TranscriptObservat
     try await hubTestObservation(id: fixture, events: Fixture.events(fixture))
 }
 
+/// The same fixture, keyed by PATH the way the engine keys a real record — so the transcript's key
+/// and the chain's uuid are visibly different values (#770).
+func hubFixtureObservation(_ fixture: String, at url: URL) async throws -> TranscriptObservation {
+    try await hubTestObservation(at: url, events: Fixture.events(fixture))
+}
+
 /// A transcript already fully written: one batch carrying the whole file, which is the shape a tail
 /// hands the Hub when it drains a file nobody is appending to.
 func hubTestObservation(
@@ -118,6 +124,20 @@ func hubLiveObservation(
 func hubSettle(until condition: () -> Bool) async {
     let settled = await settle(until: condition)
     #expect(settled, "the roster never reached the state the test is waiting for")
+}
+
+/// A transcript's real shape: a uuid-named file inside a per-Project record directory. What a suite
+/// reaches for whenever the PATH and the chain uuid have to be different values (#770).
+func recordURL(_ project: String, _ uuid: String) -> URL {
+    URL(fileURLWithPath: "/tmp/argo-records/\(project)/\(uuid).jsonl")
+}
+
+/// Every message in a Session's feed, in order.
+func said(by session: HubSession) -> [String] {
+    session.events.compactMap { event -> String? in
+        guard case let .message(markdown) = event else { return nil }
+        return markdown
+    }
 }
 
 /// A real transcript on disk, so the tail under test is the file-backed one rather than a stream

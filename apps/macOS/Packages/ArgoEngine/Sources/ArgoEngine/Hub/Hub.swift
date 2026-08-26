@@ -89,10 +89,6 @@ public final class Hub {
     @ObservationIgnored var sweepProjectURL: URL?
     @ObservationIgnored var sweeping: Task<Void, Never>?
 
-    var observedTranscriptIDs: [String] {
-        Array(tails.keys)
-    }
-
     func isObserving(transcriptID: String) -> Bool {
         tails[transcriptID] != nil
     }
