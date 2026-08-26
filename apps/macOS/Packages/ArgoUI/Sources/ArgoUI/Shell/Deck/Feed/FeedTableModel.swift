@@ -35,6 +35,9 @@ import SwiftUI
     func content(at index: Int, hasCursor: Bool = false) -> AnyView {
         let row = rows[index]
         let dressed = FeedRowView(row: row, isExpanded: unfolding(row.id), selection: selection)
+            // Inside the step below, so the chip floats over the row's own words rather than the
+            // gap above them (#767).
+            .argoFeedProseCopy(row.inPlaceOffer, isLit: hasCursor)
             .argoFeedCursor(hasCursor)
             .padding(.top, FeedRow.step(to: row, from: index > 0 ? rows[index - 1] : nil))
             .background {

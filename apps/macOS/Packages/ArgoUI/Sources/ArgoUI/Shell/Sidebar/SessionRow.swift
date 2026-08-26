@@ -203,12 +203,12 @@ struct SessionRow: View {
         Button(SessionRenameProjection.heading) { beginRenaming() }
         resetAction
         Divider()
-        Button("Copy Session title") { copy(row.title) }
+        Button("Copy Session title") { ArgoPasteboard.put(row.title) }
         if let location = row.location {
-            Button("Copy full location") { copy(location) }
+            Button("Copy full location") { ArgoPasteboard.put(location) }
         }
         if let branch = row.branch {
-            Button("Copy branch") { copy(branch) }
+            Button("Copy branch") { ArgoPasteboard.put(branch) }
         }
     }
 
@@ -224,10 +224,5 @@ struct SessionRow: View {
     /// default presentation (#377). The branch is not here: it is the header's.
     private var inspectionText: String {
         [row.title, row.location].compactMap(\.self).joined(separator: "\n")
-    }
-
-    private func copy(_ value: String) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(value, forType: .string)
     }
 }

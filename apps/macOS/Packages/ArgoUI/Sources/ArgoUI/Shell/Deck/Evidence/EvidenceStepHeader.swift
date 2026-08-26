@@ -19,7 +19,7 @@ struct EvidenceStepHeader: View {
             churn
             printed
             Spacer(minLength: ArgoSpacing.snug)
-            EvidenceCopyButton(text: step.address.text)
+            ArgoCopyButton(text: step.address.text, name: "Copy path")
         }
         .padding(.horizontal, ArgoSpacing.comfortable)
         .padding(.vertical, ArgoSpacing.tight)
@@ -113,37 +113,4 @@ struct EvidenceStepHeader: View {
         .compactMap(\.self)
         .joined(separator: ", ")
     }
-}
-
-/// Take this address to the pasteboard. It copies what the header SAYS — the path relative to the
-/// Session's cwd, which is what pastes back into that Session's terminal.
-private struct EvidenceCopyButton: View {
-    @Environment(\.argo) private var argo
-
-    let text: String
-    /// Whether the copy just happened. It reverts on its own.
-    @State private var hasCopied = false
-
-    var body: some View {
-        Button(action: copy) {
-            ArgoGlyph(hasCopied ? ArgoSymbol.chosen : ArgoSymbol.copyAddress, .inline)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(hasCopied ? argo.color.interaction.accent : argo.color.text.tertiary)
-        .help("Copy path")
-        .accessibilityLabel("Copy path")
-    }
-
-    private func copy() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
-        hasCopied = true
-        Task {
-            try? await Task.sleep(for: .seconds(Self.acknowledgement))
-            hasCopied = false
-        }
-    }
-
-    /// Seconds the tick stands before the control goes back to offering the copy.
-    private static let acknowledgement = 1.5
 }

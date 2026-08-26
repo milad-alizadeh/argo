@@ -104,6 +104,10 @@ extension SpecimenRegistry {
         SpecimenEntry("feedCursorCall") {
             cursored(on: FeedProjection.previewLastFailedCallID, in: FeedProjection.previewRows)
         },
+        // The copy chip's lit state (#767). A still cannot hover, so the cursor stands in.
+        SpecimenEntry("feedCursorMessage") {
+            cursored(on: FeedProjection.previewMessageID, in: FeedProjection.previewProseRows)
+        },
     ]
 
     private static func cursored(on row: FeedRow.ID?, in rows: [FeedRow]) -> some View {
