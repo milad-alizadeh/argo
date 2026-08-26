@@ -51,20 +51,6 @@ extension PermissionChannelTests {
         }
 
         @Test
-        func `an answered prompt never expires behind the answer`() async throws {
-            try await PermissionGate.withGate { fixture, claim, client in
-                client.sendLine(PermissionGate.bashCall)
-                await settle { fixture.hub.sessions.first?.permission != nil }
-                let waiting = try #require(fixture.hub.sessions.first?.permission)
-
-                try fixture.hub.driver.decide(.allow, answering: waiting.id, for: claim.value)
-                _ = try await PermissionGate.decision(read: client)
-
-                #expect(fixture.hub.sessions.first?.expiredPermissions.isEmpty == true)
-            }
-        }
-
-        @Test
         func `the hook is told to wait LONGER than the gate does, never the same`() {
             // The ordering is the whole mechanism: Argo's clock has to run out first, or an expiry
             // arrives as a killed hook — a peer close indistinguishable from a cancelled turn.

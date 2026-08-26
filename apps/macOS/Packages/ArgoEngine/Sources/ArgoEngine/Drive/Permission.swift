@@ -27,15 +27,30 @@ public struct PermissionRequest: Sendable, Equatable, Identifiable {
         self.target = target
     }
 
-    /// One hook payload read into the domain, or nothing for a line that names no tool: a prompt
-    /// that cannot say what is asking is not a prompt anyone can answer.
-    init?(line: String, id: String) {
-        guard let payload = JSONValue.record(fromLine: line),
-              let toolName = payload.stringField("tool_name")
-        else { return nil }
-        self.id = id
-        self.toolName = toolName
-        self.target = Target(toolName: toolName, input: payload["tool_input"] ?? .object([:]))
+    /// One hook payload read into the domain BEFORE it has an id. The gate has to know what tool is
+    /// asking to decide whether the call becomes a prompt at all, and only a prompt gets an id —
+    /// which is the table's to mint.
+    struct Draft {
+        let toolName: String
+        private let input: JSONValue
+
+        /// Nothing for a line that names no tool: a prompt that cannot say what is asking is not a
+        /// prompt anyone can answer.
+        init?(line: String) {
+            guard let payload = JSONValue.record(fromLine: line),
+                  let toolName = payload.stringField("tool_name")
+            else { return nil }
+            self.toolName = toolName
+            self.input = payload["tool_input"] ?? .object([:])
+        }
+
+        func minted(as id: String) -> PermissionRequest {
+            PermissionRequest(
+                id: id,
+                toolName: toolName,
+                target: Target(toolName: toolName, input: input),
+            )
+        }
     }
 }
 

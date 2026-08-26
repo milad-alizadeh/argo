@@ -195,12 +195,11 @@ struct CodexApprovalTests {
         #expect(peer.readings.waiting.isEmpty)
     }
 
-    /// An answered call's timer must not still fire: an expiry published over a decision somebody
-    /// made would report Argo refusing what the user allowed. The clock here is `immediate`, so it
-    /// would fire on the very next hop — the decision below is what stops it, rather than the test
-    /// outrunning a long wait.
+    /// The table proves an answered request's clock stops (`PatienceTableTests`); this proves THIS
+    /// gate is wired to it — the accept reaches the server and no expiry lands on its readings. The
+    /// clock is `immediate`, so it would fire on the very next hop.
     @Test
-    func `a call answered before the clock runs out records no expiry`() async throws {
+    func `an answered call is accepted on the wire and expires behind nobody`() async throws {
         let peer = Self.opened(patience: .immediate)
         peer.server.askCommand(13, command: "touch approved.txt")
         let waiting = try #require(peer.readings.waiting.first)

@@ -6,7 +6,7 @@ import Testing
 @Suite("Permission request")
 struct PermissionRequestTests {
     private func read(_ line: String) -> PermissionRequest? {
-        PermissionRequest(line: line, id: "perm-1")
+        PermissionRequest.Draft(line: line)?.minted(as: "perm-1")
     }
 
     @Test
