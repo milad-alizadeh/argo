@@ -31,6 +31,10 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
         base.canRunCommands(for: sessionID)
     }
 
+    func resolvesMentions(for sessionID: String) -> Bool {
+        base.resolvesMentions(for: sessionID)
+    }
+
     func send(_ text: String, to sessionID: String) throws {
         try base.send(text, to: sessionID)
     }

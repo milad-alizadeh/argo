@@ -24,6 +24,13 @@ struct CodexSessionDriver: SessionDriver {
         false
     }
 
+    /// `codex` has no mention machinery at all, so an `@path` would arrive as prose. Argo names the
+    /// file on its own line instead, which is why the `@` menu is offered here and the `/` one is
+    /// not.
+    func resolvesMentions(for _: String) -> Bool {
+        false
+    }
+
     func send(_ text: String, to sessionID: String) throws {
         guard SessionTurn.isSendable(text) else { throw SessionDriveError.nothingToSend }
         guard let thread = thread(for: sessionID), thread.send(text) else {

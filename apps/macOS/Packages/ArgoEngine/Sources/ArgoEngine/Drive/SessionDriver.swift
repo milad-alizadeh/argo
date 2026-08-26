@@ -73,6 +73,12 @@ public protocol SessionDriver {
     /// was). The composer draws one Session at a time and always has its id.
     func canRunCommands(for sessionID: String) -> Bool
 
+    /// Whether this Session's CLI resolves an `@path` mention itself (#687), pulling the file in
+    /// off the token alone. Keyed by Session for the reason `canRunCommands` is: the adapters
+    /// disagree. Where it answers `false`, Argo does the work instead and the Turn names the file
+    /// on its own line, exactly as an attachment does — so `@` is offered on both.
+    func resolvesMentions(for sessionID: String) -> Bool
+
     /// Put the user's attachments where this Session's agent can read them, and answer their
     /// absolute paths, in the order given — the order the Turn names them in. It does not send;
     /// `send` carries the Turn that names these paths, so message and files arrive as one Turn.

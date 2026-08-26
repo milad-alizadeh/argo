@@ -83,10 +83,18 @@ public struct CockpitView: View {
     var vessel: DeckVessel {
         DeckVessel.resolve(
             for: presentation.session(navigation.session),
+            can: capabilities,
+        )
+    }
+
+    /// What the selected Session's adapter declares. The last two are per Session, unlike
+    /// attachments: the adapters DISAGREE about both, so there is no one answer the port could give
+    /// without an id (#685, #687).
+    private var capabilities: SessionComposerProjection.Capabilities {
+        SessionComposerProjection.Capabilities(
             canAttach: actions.drive.canAttach,
-            // Per Session, unlike attachments: `claude` declares the command surface and `codex`
-            // does not, so there is no one answer the port could give without an id (#685).
             canRunCommands: navigation.session.map(actions.drive.canRunCommands(for:)) ?? false,
+            resolvesMentions: navigation.session.map(actions.drive.resolvesMentions(for:)) ?? false,
         )
     }
 

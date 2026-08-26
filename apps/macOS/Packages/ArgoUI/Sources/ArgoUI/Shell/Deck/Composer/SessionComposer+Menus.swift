@@ -69,7 +69,7 @@ extension SessionComposer {
         catalog = openedCommands()
         if WorkspaceFileProjection.mention(in: draft.text) != nil,
            WorkspaceFileProjection.mention(in: was) == nil {
-            Task { workspaceFiles = await files() }
+            Task { workspaceFiles = await WorkspaceFileProjection.Tree(files()) }
         }
     }
 
@@ -78,6 +78,23 @@ extension SessionComposer {
             return CommandCatalog.empty
         }
         return commands()
+    }
+
+    /// `send`, with the mentioned files NAMED where the CLI will not resolve an `@path` itself
+    /// (#687). Wrapped once rather than at the three call sites, so a queued Turn and a retried one
+    /// carry their files exactly as a straight send does.
+    ///
+    /// They ride the attachment path and never `draft.attachments`, which is what keeps a mention
+    /// out of the tray: it stays a word in the line, and only the Turn that goes names the file.
+    var sending: ComposerSend {
+        guard !composer.resolvesMentions else { return send }
+        return { [composer, send] text, attachments in
+            try send(text, ComposerMentions.attaching(
+                attachments,
+                for: text,
+                within: composer.workspaceRoot,
+            ))
+        }
     }
 
     /// A picked file, put where the `@` token was. The range comes off the line rather than off the

@@ -21,8 +21,7 @@ enum DeckVessel: Equatable {
     /// outranks the field, because the vessel holds whichever question is live.
     static func resolve(
         for session: CockpitPresentation.Session?,
-        canAttach: Bool,
-        canRunCommands: Bool = false,
+        can: SessionComposerProjection.Capabilities = .init(),
     )
         -> DeckVessel {
         guard let session else { return .none }
@@ -33,7 +32,7 @@ enum DeckVessel: Equatable {
             return .prompt(prompt)
         }
         return SessionComposerProjection
-            .composer(for: session, canAttach: canAttach, canRunCommands: canRunCommands)
+            .composer(for: session, can: can)
             .map(DeckVessel.composer) ?? .none
     }
 

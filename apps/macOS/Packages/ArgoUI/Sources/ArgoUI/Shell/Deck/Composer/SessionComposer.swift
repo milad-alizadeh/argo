@@ -51,7 +51,7 @@ struct SessionComposer: View {
     /// The Workspace tree as the last `@` read answered, and `nil` before it has answered at all.
     /// The read is asynchronous, so the two must not be one value: `[]` is a tree that was looked
     /// in and holds nothing, and "no file matches" may only be said about a tree that was read.
-    @State var workspaceFiles: [String]?
+    @State var workspaceFiles: WorkspaceFileProjection.Tree?
     @State var cursor = ComposerMenuCursor()
     /// Whether Escape has put a menu away over a line that would still open one. Cleared by the
     /// next keystroke, because the reader typing again is them asking for it back.
@@ -103,7 +103,7 @@ struct SessionComposer: View {
         // nothing here, and flushing on arrival delivers what was waiting.
         .onChange(of: composer.isRunning, initial: true) { _, isRunning in
             guard !isRunning else { return }
-            draft.flush(via: send)
+            draft.flush(via: sending)
         }
         // A Turn the CLI never heard, put back where it was typed (#682). `initial` for the reason
         // the flush above has it: the news lands while the reader may be looking at another
@@ -225,7 +225,7 @@ struct SessionComposer: View {
         if let picked = cursor.row(in: mentionMenu?.rows ?? []) {
             return take(mention: picked)
         }
-        draft.submit(whileRunning: composer.isRunning, via: send)
+        draft.submit(whileRunning: composer.isRunning, via: sending)
     }
 
     /// Stop the Turn, and empty the composer behind it (#541, ADR-0024).
@@ -257,6 +257,6 @@ struct SessionComposer: View {
     /// The seam's remedy, which is not the same act as pressing send: what it puts back is
     /// whatever the refusal stopped, and after a refused flush that is the queue, not the field.
     private func retry() {
-        draft.retry(via: send)
+        draft.retry(via: sending)
     }
 }

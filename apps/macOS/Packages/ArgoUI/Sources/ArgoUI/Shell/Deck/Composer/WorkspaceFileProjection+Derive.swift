@@ -3,12 +3,18 @@ import Foundation
 /// Where the `@` menu opens, what it lists and in what order (design decisions 2, 12 and 13).
 extension WorkspaceFileProjection {
     /// The menu for a line, or `nil` where the line opens none.
-    static func menu(for text: String, in files: [String], touched: [String]) -> Menu? {
+    static func menu(for text: String, in tree: Tree, touched: [String]) -> Menu? {
         guard let mention = mention(in: text) else { return nil }
         return Menu(
-            rows: rows(of: files, touchedBy: touched, matching: mention.query),
+            rows: rows(of: tree, touchedBy: touched, matching: mention.query),
             query: mention.query,
         )
+    }
+
+    /// The same, off a bare listing. For a caller holding paths and no prepared `Tree` — a test, a
+    /// specimen — which is why it builds one rather than matching over the strings.
+    static func menu(for text: String, in files: [String], touched: [String]) -> Menu? {
+        menu(for: text, in: Tree(files), touched: touched)
     }
 
     /// The `@` token being typed, and `nil` where there is none.
@@ -40,21 +46,30 @@ extension WorkspaceFileProjection {
     /// listed it. A touched path the tree does not carry is dropped: the agent reading `/etc/hosts`
     /// is not a file this Workspace offers (acceptance — the picker offers no path outside it).
     private static func rows(
-        of files: [String],
+        of tree: Tree,
         touchedBy touched: [String],
         matching query: String,
     )
         -> [Row] {
-        let inTree = Set(files)
-        let first = touched.filter(inTree.contains)
-        let firstSet = Set(first)
-        let ordered = first + files.filter { !firstSet.contains($0) }
-        let wanted = Array(query.lowercased())
+        let first = touched.compactMap(tree.entry)
+        let firstSet = Set(first.map(\.path))
+        let wanted = Array(query.lowercased().utf8)
         var rows: [Row] = []
-        for path in ordered where matches(wanted, in: path) {
-            rows.append(row(for: path, isTouched: firstSet.contains(path)))
+        rows.reserveCapacity(rowCeiling)
+        // Two passes over the entries rather than one over `first + rest`: concatenating them built
+        // a fresh hundred-thousand-element array on every keystroke, which cost more than the
+        // matching did.
+        for entry in first where matches(wanted, in: entry.folded) {
+            rows.append(row(for: entry.path, isTouched: true))
             if rows.count == rowCeiling {
-                break
+                return rows
+            }
+        }
+        for entry in tree.entries where !firstSet.contains(entry.path) {
+            guard matches(wanted, in: entry.folded) else { continue }
+            rows.append(row(for: entry.path, isTouched: false))
+            if rows.count == rowCeiling {
+                return rows
             }
         }
         return rows
@@ -62,10 +77,13 @@ extension WorkspaceFileProjection {
 
     /// A SUBSEQUENCE over the whole path, in order (decision 13): `sesdri` reaches
     /// `…/Session/SessionDriver.swift` in six keystrokes, where a substring match would not.
-    private static func matches(_ wanted: [Character], in path: String) -> Bool {
+    ///
+    /// Both sides arrive lowercased as UTF-8 bytes, off `Tree.Entry` — folding or re-walking them
+    /// here would put the cost this takes off the open and back onto every keystroke.
+    private static func matches(_ wanted: [UInt8], in folded: [UInt8]) -> Bool {
         guard !wanted.isEmpty else { return true }
         var next = wanted.startIndex
-        for character in path.lowercased() where character == wanted[next] {
+        for byte in folded where byte == wanted[next] {
             next += 1
             if next == wanted.endIndex {
                 return true

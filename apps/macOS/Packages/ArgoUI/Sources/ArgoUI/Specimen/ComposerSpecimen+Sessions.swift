@@ -160,6 +160,7 @@ extension ComposerSpecimen {
         lostTurn: nil,
         canAttach: true,
         canRunCommands: true,
+        resolvesMentions: true,
         workspaceRoot: WorkspaceFileFixture.root,
         touchedFiles: WorkspaceFileFixture.touched,
     )

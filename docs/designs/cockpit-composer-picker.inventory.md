@@ -238,3 +238,49 @@ Extraction evidence, in the order it arrived:
   and the cursor stills that are filtered out of it, and the ticket asks that every existing feed
   fixture project identically. The marker's own specimens project from their own stream instead —
   `feedSkillLoaded` is the design's render, prompt and all.
+
+## What review changed after the build — #687
+
+Three fresh contexts read the diff: a Standards axis, a Spec axis, and a pixel judge that saw only
+the renders and the design. Two of them found the same bug from opposite ends.
+
+- **The cursor never settled on the list it walks.** `settle(over:)` ran inside `opened()`, on the
+  pass that LAUNCHED the tree read, so it settled over the empty list and nothing settled it again
+  when the rows landed. The Spec axis read it in `submit()` — ⏎ falls past both menus to
+  `draft.submit` — and the judge measured it as zero luminance variation across a list whose
+  `at.png` marks row one at +14.6. It now settles on `onChange(of: markedIDs)`, so the cause of the
+  change does not matter. Re-measured after the fix: +14.9 on row one.
+- **The zero line spoke for a tree it had not read.** `workspaceFiles` was `[String]`, so "no file
+  in this Workspace matches" was said while the read was still in flight. It is `Tree?` now — nil
+  until the read answers, and the menu stays shut rather than lying. `mentionMenu`'s own comment
+  already insisted on that distinction for a Session with no Workspace.
+- **`@` reached the agent on `claude` only.** Insertion was the whole of it, so a `codex` Session
+  got a bare path in prose — while the ticket's own argument for offering `@` there is that Argo
+  does the work itself. `resolvesMentions(for:)` is now a port fact keyed by Session, like
+  `canRunCommands`: where it answers false, `ComposerMentions.attaching` names the mentioned files
+  on the Turn through the SAME attachment path a drop takes. Which is also what satisfies "observable
+  in the feed at the point the agent looked" with no new rendering — an attachment is observable
+  because the agent's own `Read` shows, and a mention now rides that.
+- **The mentions never become chips.** They are added at SEND and never to `draft.attachments`, so
+  the tray stays empty and decision 12 holds. A file both dropped and mentioned is named once.
+- **The three adapter facts became one type.** `resolve(for:canAttach:canRunCommands:)` was already
+  at the 3-parameter cap, and `Capabilities` is the type those flags were asking to be — they travel
+  together from `CockpitView` to the vessel and are read off one port for one Session.
+
+## Measured, not reasoned about — #687
+
+- **The derive costs 3ms over 100k paths, down from 23ms.** `Tree` folds each path to lowercased
+  UTF-8 BYTES once per open. Walking a `String` walks graphemes, which was the whole cost; the
+  two-pass `rows` also stopped concatenating a fresh 100k array per keystroke.
+- **Debug reverses the result** — 358ms prepared against 403ms bare, because debug is retain/release
+  and bounds checks rather than the algorithm. Any re-measurement has to be `swift test -c release`.
+  The first version of this fix was tuned against debug numbers and made the release path slower.
+
+## Left undone — #687
+
+- **`composerAtDeep` is not rendered.** No captured state exercises the directory's left cut: every
+  path the design was drawn against fits its row, so `.truncationMode(.head)` is untested, and the
+  judge called it the rule most likely to be built backwards. The case exists and is registered. The
+  capture harness stopped answering mid-session — `composerAt`, rendered forty minutes earlier,
+  began failing identically with `could not create image from window`, which is a slept display
+  rather than the specimen.

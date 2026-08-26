@@ -23,6 +23,10 @@ struct SessionAdapters: SessionDriver {
 
     /// Routed by Session, unlike `canAttach` above, because here the two adapters DISAGREE: a joint
     /// statement would refuse every claude Session the moment a codex one is reachable (#685).
+    func resolvesMentions(for sessionID: String) -> Bool {
+        adapter(for: sessionID).resolvesMentions(for: sessionID)
+    }
+
     func canRunCommands(for sessionID: String) -> Bool {
         adapter(for: sessionID).canRunCommands(for: sessionID)
     }

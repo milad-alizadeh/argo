@@ -12,6 +12,16 @@ struct WorkspaceFileProjectionTests {
         "docs/adr/ADR-0024-session-drive-port.md",
     ]
 
+    /// Case folding happens once when the `Tree` is built, not per keystroke, so the matcher reads
+    /// an already-lowercased path. A regression here is silent: an uppercase path simply stops
+    /// matching a lowercase query.
+    @Test(arguments: ["@readme", "@README", "@ReAdMe", "@ADR", "@adr"])
+    func `matching ignores case in both the query and the path`(_ line: String) {
+        let rows = WorkspaceFileProjection.menu(for: line, in: Self.tree, touched: [])?.rows ?? []
+
+        #expect(!rows.isEmpty)
+    }
+
     // MARK: - Where it opens
 
     @Test

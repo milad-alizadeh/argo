@@ -3,6 +3,19 @@ import ArgoEngine
 /// What the composer states about the Session it drives, derived the way the header's facts are:
 /// off the presentation, in a projection a test can hold still.
 enum SessionComposerProjection {
+    /// What the Session's adapter declares about itself. One type rather than three parallel flags
+    /// because they travel together from `CockpitView` down to the vessel, and each is read off the
+    /// drive port for the same Session at the same moment.
+    struct Capabilities: Equatable {
+        /// Whether this adapter takes attachments at all (#540).
+        var canAttach = false
+        /// Whether a `/command` fires the CLI's own command handling (#685).
+        var canRunCommands = false
+        /// Whether the CLI resolves an `@path` itself (#687). Where it does not, Argo names the
+        /// file on its own line, so `@` is offered on both adapters where `/` is offered on one.
+        var resolvesMentions = false
+    }
+
     struct Composer: Equatable {
         /// The handle `send` is keyed by — the roster's own id for the Session.
         let sessionID: String
@@ -41,6 +54,10 @@ enum SessionComposerProjection {
         /// declares it and `codex` does not, so a joint answer would take the menu off both.
         /// `false` draws no menu and no command section anywhere — absent, not disabled.
         let canRunCommands: Bool
+        /// Whether this Session's CLI resolves an `@path` mention itself (#687). Where it does not,
+        /// the composer names the mentioned files on send, which is what puts their content in
+        /// front of the agent on an adapter with no mention machinery of its own.
+        var resolvesMentions = false
         /// Where the Session is working, which is the tree the `@` picker lists and the only tree
         /// it may offer a path out of (#687). Absent for a Session whose records have never said,
         /// which draws no `@` menu at all — there is no Workspace to name a file in.
@@ -59,8 +76,7 @@ enum SessionComposerProjection {
     /// screen for every Session, and never both.
     static func composer(
         for session: CockpitPresentation.Session?,
-        canAttach: Bool = false,
-        canRunCommands: Bool = false,
+        can: Capabilities = Capabilities(),
     )
         -> Composer? {
         guard let session, unavailable(for: session) == nil else { return nil }
@@ -74,8 +90,9 @@ enum SessionComposerProjection {
             mode: session.mode,
             modeDidNotTake: session.modeDidNotTake,
             lostTurn: session.lostTurn,
-            canAttach: canAttach,
-            canRunCommands: canRunCommands,
+            canAttach: can.canAttach,
+            canRunCommands: can.canRunCommands,
+            resolvesMentions: can.resolvesMentions,
             workspaceRoot: session.workspaceLocation,
             touchedFiles: TouchedFiles.touched(
                 in: session.events,
