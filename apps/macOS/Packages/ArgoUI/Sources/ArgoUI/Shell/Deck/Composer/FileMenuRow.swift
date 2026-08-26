@@ -42,6 +42,10 @@ struct FileMenuRow: View {
             .argoText(ArgoTypography.machine)
             .foregroundStyle(argo.color.text.primary)
             .lineLimit(1)
+            // The directory yields first. An `HStack` shrinks both without this, and a long
+            // filename came back cut beside a directory that still had room — losing the one word
+            // on the row that distinguishes it. Only a name too wide for the row is cut now.
+            .layoutPriority(1)
     }
 
     @ViewBuilder private var directory: some View {

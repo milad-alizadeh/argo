@@ -276,11 +276,21 @@ the renders and the design. Two of them found the same bug from opposite ends.
   and bounds checks rather than the algorithm. Any re-measurement has to be `swift test -c release`.
   The first version of this fix was tuned against debug numbers and made the release path slower.
 
-## Left undone — #687
+## What the missing render was hiding — #687
 
-- **`composerAtDeep` is not rendered.** No captured state exercises the directory's left cut: every
-  path the design was drawn against fits its row, so `.truncationMode(.head)` is untested, and the
-  judge called it the rule most likely to be built backwards. The case exists and is registered. The
-  capture harness stopped answering mid-session — `composerAt`, rendered forty minutes earlier,
-  began failing identically with `could not create image from window`, which is a slept display
-  rather than the specimen.
+`composerAtDeep` exists because no captured state exercised the directory's left cut: every path the
+design was drawn against fits its row, so `.truncationMode(.head)` was never once drawn. The judge
+called it the rule most likely to be built backwards and the one thing the captures did not check.
+
+It was right, and the rule WAS half broken. Rendered at `ARGO_WINDOW_SIZE=620x460`, three rows read
+correctly — filename whole, directory cut from the left — and the fourth came back
+`WorkspaceFileProjection+Derive.swi…`, the FILENAME truncated beside a directory that still had
+room. An `HStack` under pressure shrinks every child, and nothing said which one should yield.
+
+`name` now carries `.layoutPriority(1)`, so the directory absorbs the cut and only a filename too
+wide for the whole row is truncated. Re-rendered: all four filenames whole, all four directories
+carrying a leading ellipsis.
+
+The width matters to the case. The specimen's default window is wide enough that every path fits,
+which is exactly why this survived the first render of the same case — `ARGO_WINDOW_SIZE` is part of
+the state here, the way `rules/designs.md` says it is for anything laid out in columns.
