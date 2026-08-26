@@ -12,19 +12,15 @@ struct DriveCommandSurfaceTests {
     /// The reading is per Session because the two adapters disagree. A joint statement would refuse
     /// every `claude` Session the moment one Codex thread was reachable, which is what #698 left
     /// this suite standing on until the picker existed to need it.
+    ///
+    /// A Session with no Codex thread behind it routes to `claude`, which is the default this suite
+    /// can reach without starting anything. The refusal on the other side is asserted against a
+    /// really-spawned Codex Session in `SessionDriverConformanceTests`, where the routing is real —
+    /// asking the adapter by name proved only that the adapter agreed with itself (#761).
     @Test
     func `the driver a Hub hands the cockpit declares the command surface per Session`() {
         let hub = testHub(projectURL: URL(filePath: "/tmp/argo-command-surface"))
-        #expect(hub.driver.canRunCommands(for: "a-claude-session"))
-    }
 
-    /// Asked of the Codex adapter by name, because routing to it needs a live thread and this suite
-    /// starts nothing. It is this refusal that makes the routing worth
-    /// having: stated jointly it would have taken the picker off every `claude` Session too.
-    @Test
-    func `the Codex adapter refuses the command surface`() {
-        let hub = testHub(projectURL: URL(filePath: "/tmp/argo-command-surface"))
-
-        #expect(!hub.adapters.codex.canRunCommands(for: "a-codex-session"))
+        #expect(hub.driver.surface(of: "a-claude-session").runsCommands)
     }
 }

@@ -146,6 +146,19 @@ struct SessionDriverConformanceTests {
         #expect(!session.deliverOneChunk())
     }
 
+    /// The declarations half of the port (#761). Read through `hub.driver`, which is the routing
+    /// the cockpit gets: an adapter that declared honestly and a router that reached the other one
+    /// is a picker drawn for a Session that does nothing with it, and only a spawned Session of
+    /// each CLI can tell those apart.
+    @Test(arguments: DrivenCLI.allCases)
+    func `the port declares this Session's own surface`(cli: DrivenCLI) async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let session = try await fixture.drive(cli)
+
+        #expect(fixture.hub.driver.surface(of: session.id) == cli.surface)
+    }
+
     /// Both adapters take attachments, by unlike means, and both name every one of them in the
     /// Turn's own words so the record says what the agent was given.
     @Test(arguments: DrivenCLI.allCases)

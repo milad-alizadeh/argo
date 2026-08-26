@@ -98,7 +98,9 @@ public struct CockpitActions {
     /// preview and specimen that renders a composer.
     @MainActor private static var inertDriver: InMemorySessionDriver {
         let driver = InMemorySessionDriver()
-        driver.canAttach = false
+        driver.declaredSurface = DriveSurface(
+            takesAttachments: false, runsCommands: false, resolvesMentions: false,
+        )
         return driver
     }
 

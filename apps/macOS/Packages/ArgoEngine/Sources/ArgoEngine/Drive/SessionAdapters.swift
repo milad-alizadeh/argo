@@ -9,22 +9,12 @@ struct SessionAdapters: SessionDriver {
     let claude: ClaudeSessionDriver
     let codex: CodexSessionDriver
 
-    /// What the composer draws before anything has been dropped on it. Both adapters take
-    /// attachments, by unlike means (ADR-0024), so the answer is the same whichever Session is
-    /// live — which is why it can be one value at all. An adapter that took none would make this a
-    /// per-Session reading, and the port has no Session to read it for.
-    var canAttach: Bool {
-        claude.canAttach && codex.canAttach
-    }
-
-    /// Routed by Session, unlike `canAttach` above, because here the two adapters DISAGREE: a joint
-    /// statement would refuse every claude Session the moment a codex one is reachable (#685).
-    func resolvesMentions(for sessionID: String) -> Bool {
-        adapter(for: sessionID).resolvesMentions(for: sessionID)
-    }
-
-    func canRunCommands(for sessionID: String) -> Bool {
-        adapter(for: sessionID).canRunCommands(for: sessionID)
+    /// Routed by Session like every act, because the two adapters DISAGREE about two of the three:
+    /// a joint statement would refuse every claude Session the moment a codex one is reachable
+    /// (#685). Routing it rather than intersecting it is also what keeps the declarations honest
+    /// when a third adapter arrives.
+    func surface(of sessionID: String) -> DriveSurface {
+        adapter(for: sessionID).surface(of: sessionID)
     }
 
     func send(_ text: String, to sessionID: String) throws {

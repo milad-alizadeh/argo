@@ -158,7 +158,7 @@ the four a composer raises. `answer` (#712), `setMode` (#545), `canAttach` (#540
 with their own ticket and none of them amended this ADR. They are all the same *kind* of thing —
 something the cockpit does to a Session, or a capability it has to know before drawing a control —
 so they belong here, and the record now says so. Whether ten members is the right shape is a
-separate question, taken up on its own.
+separate question, taken up on its own — and answered in the amendment below.
 
 **Opening the channel belongs here too, and it was in the Hub.** The port covered the write verbs
 but not the fifth act: `Hub+Spawn.swift` switched on `plan.cli`, built `CodexApprovals`,
@@ -183,6 +183,38 @@ the whole of it.
 A Session whose `cli` is not established reads in `claude`'s vocabulary rather than refusing. That
 is not a default standing in for a decision: discovery sweeps `claude` records alone, so an observed
 stance value can only have come from one, and a `codex` Session's `cli` is DIRECT off its own spawn.
+
+## Amendment · acts and declarations (#761) · 2026-08-26
+
+The extent above is right and stays. What this amends is the **shape**: the ten members were not
+ten of a kind, and separating the two kinds is what settles the question #749 left open.
+
+**Eight of the ten are acts on the port. Three were declarations about an adapter.** `send`,
+`attach`, `interrupt`, `decide`, `answer`, `setMode` and `revokeStandingAllow` each do something to
+a Session, and each can fail — every one of them throws. `canAttach`, `canRunCommands` and
+`resolvesMentions` did nothing, could not fail, and answered a per-CLI **constant** in both
+adapters: `true/true/true` for `claude`, `true/false/false` for `codex`. A value modelled as
+behaviour, which is precisely what forced all three through both forwarders — `SessionAdapters`
+forwarded nine of ten verbatim and `RememberingDriver` forwarded nine of ten to carry logic on one.
+
+The three are now one value, `DriveSurface`, answered by a single `surface(of:)`. The port declares
+**eight** members, and the count is no longer what a new capability grows: adding one is a field on
+the value and a word in each adapter, and no forwarder changes at all.
+
+**Where the value hangs, and why not on `AgentCLI`.** `AgentCLI` already carries six per-CLI flags
+and would have been the smaller diff. It is wrong for a reason that outranks that: reading a
+capability off `AgentCLI` requires first answering *which CLI is this Session*, and a Session's `cli`
+is read off a record that a fresh Codex Session has not written yet — the same fact that makes
+`SessionAdapters` route on the thread table rather than on `cli`. Off `AgentCLI`, a live Codex
+Session with no record yet answers in `claude`'s capabilities. On the port it routes exactly as every
+act routes, so a declaration and the act it gates cannot reach different adapters.
+
+**Keyed by Session, though every adapter answers a constant today.** Two of the three already took a
+Session id and ignored it, and the key has to stay: a port with no Session to read for could only
+state what *both* adapters do, which takes the `/` picker off every `claude` Session the moment a
+Codex thread is reachable. That was #698's bug, and the key is what fixes it rather than a note about
+it. Whether a per-Session answer is ever needed — a Session whose companion plugin is off — is
+undecided; the key means deciding it costs nothing here.
 
 ## Why
 

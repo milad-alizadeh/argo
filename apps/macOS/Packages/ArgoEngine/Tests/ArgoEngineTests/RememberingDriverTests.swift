@@ -26,23 +26,17 @@ struct RememberingDriverTests {
 
     /// A wrapper that answered for itself would hide an adapter with no command surface behind one
     /// that has it, and the cockpit would draw a picker whose every row does nothing (#685). Both
-    /// answers, because a hard-coded `true` passes a test that only ever asks for `true`.
+    /// answers, because a hard-coded `true` passes a test that only ever asks for `true` — and one
+    /// test for all three, because since #761 they arrive as one value.
     @Test(arguments: [true, false])
-    func `it carries its adapter's own answer about commands`(declared: Bool) {
+    func `it carries its adapter's own declared surface`(declared: Bool) {
         let base = InMemorySessionDriver()
-        base.declaresCommands = declared
+        base.declaredSurface = DriveSurface(
+            takesAttachments: declared, runsCommands: declared, resolvesMentions: declared,
+        )
         let driver = RememberingDriver(base: base, records: { _ in 0 }, remember: { _, _ in })
 
-        #expect(driver.canRunCommands(for: "s1") == declared)
-    }
-
-    @Test(arguments: [true, false])
-    func `it carries its adapter's own answer about attachments`(declared: Bool) {
-        let base = InMemorySessionDriver()
-        base.canAttach = declared
-        let driver = RememberingDriver(base: base, records: { _ in 0 }, remember: { _, _ in })
-
-        #expect(driver.canAttach == declared)
+        #expect(driver.surface(of: "s1") == base.declaredSurface)
     }
 
     @Test
