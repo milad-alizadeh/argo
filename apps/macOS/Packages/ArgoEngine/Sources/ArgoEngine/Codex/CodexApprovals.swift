@@ -4,47 +4,60 @@ import Foundation
 ///
 /// The `codex` counterpart of `PermissionChannel`: a prompt from either CLI is one
 /// `PermissionRequest` under one claim, and only the transport differs — a JSON-RPC response by id
-/// rather than a line down a socket.
+/// rather than a line down a socket. The waiting itself is the same `PatienceTable` both `claude`
+/// gates use (#750), keyed by nothing, because a Codex thread's scope is itself.
 ///
 /// The server keeps no clock of its own, so an approval nobody answers holds the Turn open for ever
 /// (openai/codex#11816, and a 60-second hold sat open in the #547 spike). The deadline is therefore
 /// Argo's: it runs out, Argo answers `decline` itself, and the Session publishes a
 /// `PermissionExpiry`.
 ///
-/// Nothing here auto-allows at the top rung, unlike the `claude` gate: on this surface `Auto` is
+/// What is this gate's OWN, above the table, is the standing allow and the patch join. Nothing here
+/// auto-allows at the top rung, unlike the `claude` gate: on this surface `Auto` is
 /// `approvalPolicy: "never"` on the Turn itself (`CodexStance`), so the server never asks.
 @MainActor
 final class CodexApprovals {
-    private struct Pending {
+    private struct Pending: Patient {
         let request: PermissionRequest
         /// The JSON-RPC id the answer must name. The server matches on it and on nothing else.
         let rpcID: Int
         /// The server's item this asks about, kept so the Turn ending can tell a diff still under a
         /// live prompt from one nothing is reading.
         let itemID: String?
-        /// Argo's own clock for this one call, cancelled by every other way it can end.
-        let clock: Task<Void, Never>
+
+        var patienceID: String {
+            request.id
+        }
+
+        /// The server blocks on an RPC id, not on a connection: there is no peer here to watch go.
+        var patiencePeer: Int? {
+            nil
+        }
     }
 
-    private let patience: PermissionPatience
     private let publish: @MainActor (GateReadings) -> Void
     private let write: @MainActor (String) -> Bool
-    private var pending: [Pending] = []
+    private let table: PatienceTable<SolePile, Pending>
     private var readings = GateReadings()
     /// The diff of each file-change item this Turn, by `itemId`. Held here because the approval
     /// request for one carries no diff at all — the content travels on the item's own
     /// notifications, and this is the only place a patch prompt's target can come from.
     private var patches: [String: [CodexFileChange]] = [:]
-    private var issued = 0
 
     init(
         patience: PermissionPatience,
         publish: @escaping @MainActor (GateReadings) -> Void,
         write: @escaping @MainActor (String) -> Bool,
     ) {
-        self.patience = patience
         self.publish = publish
         self.write = write
+        self.table = PatienceTable(patience: patience, prefix: "codex-permission")
+        table.changed = { [weak self] _, waiting in
+            self?.republish(waiting)
+        }
+        table.expired = { [weak self] _, gone in
+            self?.refuse(gone)
+        }
     }
 
     /// The server asked for one. A tool the user has already ruled on for this Session is accepted
@@ -53,20 +66,15 @@ final class CodexApprovals {
         guard !allows(asked.ask.toolName) else {
             return answer(asked.rpcID, .allow)
         }
-        issued += 1
         let itemID = CodexAsk.itemID(asked.params)
-        let request = asked.ask.permission(
-            id: "codex-permission-\(issued)",
-            params: asked.params,
-            changes: itemID.flatMap { patches[$0] } ?? [],
-        )
-        pending.append(Pending(
-            request: request,
-            rpcID: asked.rpcID,
-            itemID: itemID,
-            clock: arm(request.id),
-        ))
-        republish()
+        let changes = itemID.flatMap { patches[$0] } ?? []
+        table.raise(for: .sole) {
+            Pending(
+                request: asked.ask.permission(id: $0, params: asked.params, changes: changes),
+                rpcID: asked.rpcID,
+                itemID: itemID,
+            )
+        }
     }
 
     /// What one file-change item would write, off a notification that carries it. Recorded whether
@@ -80,19 +88,22 @@ final class CodexApprovals {
     /// Turn is the server's business, and dropping the diff under a live prompt would blank a
     /// target the user is reading.
     func completedTurn() {
-        let live = Set(pending.compactMap(\.itemID))
+        let live = Set(table.pending(for: .sole).compactMap(\.itemID))
         patches = patches.filter { live.contains($0.key) }
     }
 
     /// Answer the named waiting Permission. `false` when that request is no longer waiting — a
     /// decision that raced Argo's own clock, which the caller reports rather than swallows.
     func decide(_ decision: PermissionDecision, answering requestID: String) -> Bool {
-        guard let answered = take(requestID) else { return false }
-        answer(answered.rpcID, decision)
         guard decision == .allowAlways else {
-            republish()
-            return true
+            return table.answer(requestID, for: .sole) { [weak self] in
+                self?.answer($0.rpcID, decision)
+            }
         }
+        // The answered call is itself a call to the tool being granted, so the grant below covers
+        // it along with its siblings: one word, one lift, one publish.
+        guard let answered = table.pending(for: .sole).first(where: { $0.request.id == requestID })
+        else { return false }
         stand(answered.request.toolName)
         return true
     }
@@ -102,71 +113,40 @@ final class CodexApprovals {
     func revoke(_ toolName: String) -> Bool {
         guard allows(toolName) else { return false }
         readings.standing = readings.standing.filter { $0.toolName != toolName }
-        republish()
+        republish(table.pending(for: .sole))
         return true
     }
 
     /// The process is gone, so nothing can be waiting and no answer can reach the server. The
-    /// clocks are cancelled first: a day-long `Task` sleeping against a dead thread is a leak.
-    ///
-    /// The waiting calls go in silence, as the `claude` gate's do — nothing was refused, and there
-    /// is nothing left to read a refusal.
+    /// readings are cleared first so the table's own withdraw publishes them empty: this gate owns
+    /// them, so it is the one that has to clear them. Leaving that to the `claude` channel's
+    /// withdraw would make a Codex Session's stale prompt depend on a channel it never spoke over.
     func close() {
-        cancel(pending)
-        pending = []
         patches = [:]
         readings = GateReadings()
-        // Published rather than merely dropped: this gate owns these readings, so it is the one
-        // that has to clear them. Leaving that to the `claude` channel's own withdraw would make
-        // a Codex Session's stale prompt depend on a channel it never spoke over.
-        publish(readings)
+        table.withdraw(.sole)
     }
 
     private func allows(_ toolName: String) -> Bool {
         readings.standing.contains { $0.toolName == toolName }
     }
 
-    /// Record the grant, and let every OTHER call to that tool already waiting through on the same
-    /// word — a prompt still sitting there for a tool that has stopped asking would be the grant
-    /// not meaning what its label says.
+    /// Record the grant, and let every call to that tool already waiting through on the same word —
+    /// a prompt still sitting there for a tool that has stopped asking would be the grant not
+    /// meaning what its label says.
     private func stand(_ toolName: String) {
         readings.standing.append(StandingAllow(toolName: toolName))
-        let covered = pending.filter { $0.request.toolName == toolName }
-        pending = pending.filter { $0.request.toolName != toolName }
-        cancel(covered)
-        for one in covered {
-            answer(one.rpcID, .allow)
-        }
-        republish()
+        _ = table.answerAll(
+            matching: { $0.request.toolName == toolName },
+            for: .sole,
+            with: { [weak self] in self?.answer($0.rpcID, .allow) },
+        )
     }
 
-    /// Argo's clock for one call: it runs out, Argo refuses the call itself, and the Session says
-    /// so.
-    private func arm(_ requestID: String) -> Task<Void, Never> {
-        Task { [weak self, patience] in
-            try? await Task.sleep(for: .seconds(patience.seconds))
-            guard !Task.isCancelled else { return }
-            self?.expire(requestID)
-        }
-    }
-
-    private func expire(_ requestID: String) {
-        guard let gone = take(requestID) else { return }
+    /// The table's clock ran out: Argo declines the call itself, and the Session says so.
+    private func refuse(_ gone: Pending) {
         reply(gone.rpcID, word: CodexAsk.expired)
         readings.expiries.append(PermissionExpiry(gone.request))
-        republish()
-    }
-
-    /// Lift one call off the pile and stop its clock. Every way a Permission ends that is not its
-    /// clock firing stops that clock first — an answered call whose timer still ran would report an
-    /// expiry over a decision somebody made.
-    private func take(_ requestID: String) -> Pending? {
-        guard let index = pending.firstIndex(where: { $0.request.id == requestID }) else {
-            return nil
-        }
-        let taken = pending.remove(at: index)
-        cancel([taken])
-        return taken
     }
 
     private func answer(_ rpcID: Int, _ decision: PermissionDecision) {
@@ -182,14 +162,8 @@ final class CodexApprovals {
         _ = write(line)
     }
 
-    private func cancel(_ taken: [Pending]) {
-        for one in taken {
-            one.clock.cancel()
-        }
-    }
-
-    private func republish() {
-        readings.waiting = pending.map(\.request)
+    private func republish(_ waiting: [Pending]) {
+        readings.waiting = waiting.map(\.request)
         publish(readings)
     }
 }

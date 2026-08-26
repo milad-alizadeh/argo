@@ -6,22 +6,26 @@ import Foundation
 /// Every answer it sends is `allow` or `deny`, never `ask` — `ask` would fall through to the TUI's
 /// own dialog, which is hidden and has no reader.
 ///
-/// Two ways a prompt ends unanswered, told apart (#573). The gate keeps its OWN clock, shorter
-/// than the hook's, so a call nobody answers is refused **by Argo** and published as a
-/// `PermissionExpiry`. A peer going before that clock fires went with a cancelled turn, and takes
-/// its prompt away in silence.
+/// The waiting itself is a `PatienceTable`, shared with the two gates beside it (#750). What is
+/// this gate's own is the POLICY above it: the rung a call is judged by, and the standing allows.
+/// Two
+/// ways a prompt ends unanswered, told apart (#573): the table's clock is shorter than the hook's,
+/// so a call nobody answers is refused **by Argo** and published as a `PermissionExpiry`, where a
+/// peer going before that clock fires went with a cancelled turn and takes its prompt away in
+/// silence.
 @MainActor
 final class PermissionChannel {
-    private struct Pending {
+    private struct Pending: Patient {
         let request: PermissionRequest
-        let peer: Int
         let reply: CompanionConnection.Reply
-        /// The gate's own clock for this one call, cancelled by every other way it can end.
-        let clock: Task<Void, Never>
+        let patiencePeer: Int?
+
+        var patienceID: String {
+            request.id
+        }
     }
 
     private let root: URL
-    private let patience: PermissionPatience
     /// Written into directly rather than mirrored back through callbacks (#634): all three readings
     /// this channel owns land under one claim key, so there is nothing left for a caller to route.
     private let ledger: ClaimLedger
@@ -31,11 +35,10 @@ final class PermissionChannel {
     /// The questions half of the same gate (#712), over the same socket. Its own table, because a
     /// Permission and a question are answered by different acts.
     private let asks: AskGate
+    private let table: PatienceTable<SessionOwnership.ClaimID, Pending>
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
-    private var pending: [SessionOwnership.ClaimID: [Pending]] = [:]
     private var expired: [SessionOwnership.ClaimID: [PermissionExpiry]] = [:]
     private var standing = StandingAllowTable()
-    private var issued = 0
 
     init(
         root: URL,
@@ -44,10 +47,16 @@ final class PermissionChannel {
         rung: @escaping (SessionOwnership.ClaimID) -> SessionMode?,
     ) {
         self.root = root
-        self.patience = patience
         self.ledger = ledger
         self.rung = rung
         self.asks = AskGate(patience: patience, ledger: ledger)
+        self.table = PatienceTable(patience: patience, prefix: "permission")
+        table.changed = { claim, waiting in
+            ledger.publish(waiting: waiting.map(\.request), for: claim)
+        }
+        table.expired = { [weak self] claim, gone in
+            self?.refuse(gone, for: claim)
+        }
     }
 
     /// Answer one waiting question (#712). `false` when it is no longer waiting, exactly as
@@ -84,42 +93,33 @@ final class PermissionChannel {
 
     /// The PTY is gone: nothing can be waiting, nothing more can ask, no grant holds anything open.
     /// All three go together, in one write to the ledger, which three separate tables could not do.
-    ///
-    /// The waiting calls go in silence, deliberately: nothing was refused and nothing is left to
-    /// read a refusal. Their clocks are cancelled first, because a day-long `Task` sleeping against
-    /// a torn-down gate is a leak rather than a bug.
     func withdraw(_ claim: SessionOwnership.ClaimID) {
         sockets.removeValue(forKey: claim)?.close()
         asks.withdraw(claim)
         _ = standing.withdraw(claim)
         // The expiries go with the claim: they are what happened to THIS Session.
         expired.removeValue(forKey: claim)
-        cancelClocks(of: pending.removeValue(forKey: claim) ?? [])
+        table.withdraw(claim)
         ledger.withdraw(claim)
     }
 
     /// Answer the named waiting Permission. `false` when that request is no longer waiting — a
     /// decision that raced the hook's own expiry, which the caller reports rather than swallows.
-    ///
-    /// By id and never by position: a Session can have several calls waiting at once, and a prompt
-    /// replaced between the reading and the click would spend the Allow on the command underneath.
     func decide(
         _ decision: PermissionDecision,
         answering requestID: String,
         for claim: SessionOwnership.ClaimID,
     )
         -> Bool {
-        guard var waiting = pending[claim],
-              let index = waiting.firstIndex(where: { $0.request.id == requestID })
-        else { return false }
-        let answered = waiting.remove(at: index)
-        pending[claim] = waiting
-        cancelClocks(of: [answered])
-        answered.reply(PermissionReply.line(decision))
         guard decision == .allowAlways else {
-            ledger.publish(waiting: waiting.map(\.request), for: claim)
-            return true
+            return table.answer(requestID, for: claim) {
+                $0.reply(PermissionReply.line(decision))
+            }
         }
+        // The answered call is itself a call to the tool being granted, so the grant below covers
+        // it along with its siblings: one word, one lift, one publish.
+        guard let answered = table.pending(for: claim).first(where: { $0.request.id == requestID })
+        else { return false }
         stand(answered.request.toolName, for: claim)
         return true
     }
@@ -132,53 +132,26 @@ final class PermissionChannel {
         return true
     }
 
-    /// Record the grant, and let every OTHER call to that tool already waiting through on the same
-    /// word. A prompt still sitting there for a tool that has stopped asking would be the grant not
+    /// Record the grant, and let every call to that tool already waiting through on the same word.
+    /// A prompt still sitting there for a tool that has stopped asking would be the grant not
     /// meaning what its label says.
     private func stand(_ toolName: String, for claim: SessionOwnership.ClaimID) {
         if standing.grant(toolName, for: claim) {
             ledger.publish(standing: standing.grants(for: claim), for: claim)
         }
-        let waiting = pending[claim] ?? []
-        let covered = waiting.filter { $0.request.toolName == toolName }
-        let remaining = waiting.filter { $0.request.toolName != toolName }
-        pending[claim] = remaining
-        cancelClocks(of: covered)
-        for one in covered {
-            one.reply(PermissionReply.line(.allow))
-        }
-        ledger.publish(waiting: remaining.map(\.request), for: claim)
+        _ = table.answerAll(
+            matching: { $0.request.toolName == toolName },
+            for: claim,
+            with: { $0.reply(PermissionReply.line(.allow)) },
+        )
     }
 
-    /// The gate's clock for one call: it runs out, Argo refuses the call itself, and the Session
-    /// publishes what happened — DIRECT, Argo's own act from end to end.
-    private func arm(_ request: PermissionRequest, for claim: SessionOwnership.ClaimID)
-        -> Task<Void, Never> {
-        Task { [weak self, patience] in
-            try? await Task.sleep(for: .seconds(patience.seconds))
-            guard !Task.isCancelled else { return }
-            self?.expire(request.id, for: claim)
-        }
-    }
-
-    private func expire(_ requestID: String, for claim: SessionOwnership.ClaimID) {
-        guard var waiting = pending[claim],
-              let index = waiting.firstIndex(where: { $0.request.id == requestID })
-        else { return }
-        let gone = waiting.remove(at: index)
-        pending[claim] = waiting
+    /// The table's clock ran out: Argo refuses the call itself and the Session publishes what
+    /// happened — DIRECT, Argo's own act from end to end.
+    private func refuse(_ gone: Pending, for claim: SessionOwnership.ClaimID) {
         gone.reply(PermissionReply.expired)
         expired[claim, default: []].append(PermissionExpiry(gone.request))
         ledger.publish(expired: expired[claim] ?? [], for: claim)
-        ledger.publish(waiting: waiting.map(\.request), for: claim)
-    }
-
-    /// Every way a Permission can end that is not its clock running out stops that clock first — an
-    /// answered call whose timer still fires would report an expiry over a decision somebody made.
-    private func cancelClocks(of taken: [Pending]) {
-        for one in taken {
-            one.clock.cancel()
-        }
     }
 
     private func asked(
@@ -190,8 +163,7 @@ final class PermissionChannel {
         // A question goes to its own table, and never through the rung or the standing allows
         // below: neither of those answers a question, they only wave a boundary through.
         guard !asks.raise(line, for: claim, peer: peer, reply: reply) else { return }
-        issued += 1
-        guard let request = PermissionRequest(line: line, id: "permission-\(issued)") else {
+        guard let draft = PermissionRequest.Draft(line: line) else {
             // Fail closed, and fast: a request Argo could not read is not one the user can be
             // shown, and leaving the hook to its timeout would freeze the turn for nothing.
             return reply(PermissionReply.line(.deny))
@@ -202,16 +174,12 @@ final class PermissionChannel {
             return reply(PermissionReply.line(.allow))
         }
         // A tool the user has already ruled on for this Session never becomes a prompt at all.
-        guard !standing.allows(request.toolName, for: claim) else {
+        guard !standing.allows(draft.toolName, for: claim) else {
             return reply(PermissionReply.line(.allow))
         }
-        pending[claim, default: []].append(Pending(
-            request: request,
-            peer: peer,
-            reply: reply,
-            clock: arm(request, for: claim),
-        ))
-        ledger.publish(waiting: pending[claim, default: []].map(\.request), for: claim)
+        table.raise(for: claim) {
+            Pending(request: draft.minted(as: $0), reply: reply, patiencePeer: peer)
+        }
     }
 
     /// The hook went while Argo was still willing to wait, which means the turn it belonged to was
@@ -219,11 +187,6 @@ final class PermissionChannel {
     /// way. The prompt goes without a word (#573).
     private func peerClosed(_ claim: SessionOwnership.ClaimID, peer: Int) {
         asks.peerClosed(claim, peer: peer)
-        guard let waiting = pending[claim], waiting.contains(where: { $0.peer == peer })
-        else { return }
-        let remaining = waiting.filter { $0.peer != peer }
-        pending[claim] = remaining
-        cancelClocks(of: waiting.filter { $0.peer == peer })
-        ledger.publish(waiting: remaining.map(\.request), for: claim)
+        table.peerGone(peer, for: claim)
     }
 }

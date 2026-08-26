@@ -90,6 +90,34 @@ extension PermissionChannelTests {
             }
         }
 
+        /// This gate's whole policy, and it is an absence: the same words asked twice are two
+        /// questions, and nothing may answer the second on the strength of the first. Where
+        /// `PermissionChannel` composes a standing allow above its `PatienceTable`, this one
+        /// deliberately composes nothing (#750).
+        @Test
+        func `answering one question does not answer the next one asked in the same words`(
+        ) async throws {
+            try await PermissionGate.withGate { fixture, claim, client in
+                client.sendLine(Self.askCall)
+                await settle { fixture.hub.sessions.first?.ask != nil }
+                let first = try #require(fixture.hub.sessions.first?.ask)
+                try fixture.hub.driver.answer(
+                    AskAnswer(replies: [AskAnswer.Reply(question: 0, ordinals: [1])]),
+                    answering: first.id,
+                    for: claim.value,
+                )
+                _ = try await PermissionGate.decision(read: client)
+
+                let second = try PermissionGate.dial(fixture, claim)
+                defer { second.close() }
+                second.sendLine(Self.askCall)
+                await settle { fixture.hub.sessions.first?.ask != nil }
+
+                let raised = try #require(fixture.hub.sessions.first?.ask)
+                #expect(raised.id != first.id)
+            }
+        }
+
         /// The top rung asks nothing about a Bash call, but an ask is not a boundary being crossed
         /// —
         /// it is the agent wanting to know something, and `Auto` does not answer questions on the
