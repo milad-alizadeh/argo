@@ -19,6 +19,10 @@ final class FeedTableView: NSTableView {
     /// Whether the reading is where the keyboard is, in the sense the row cursor is drawn on: the
     /// keyboard is here AND the keyboard is what the reader is working with (#533).
     var keyboardMoved: ((Bool) -> Void)?
+    /// The focused row's own words, or `nil` when there are none to take. Read twice — to answer
+    /// ⌘C,
+    /// and to grey Edit ▸ Copy out over a reading with nothing selectable in it.
+    var focusedWords: (() -> String?)?
 
     /// How the reader is working. The app's one reader by default; a suite hands the table its own
     /// rather than share a mutable global between cases.
@@ -69,6 +73,19 @@ final class FeedTableView: NSTableView {
         }
     }
 
+    /// Edit ▸ Copy, arriving at the reading: the focused row's words, as the agent wrote them
+    /// (#767).
+    ///
+    /// The responder action rather than a key in `keyDown`, because the menu item claims ⌘C before
+    /// the event reaches a view. Reaching for it is keyboard work, so the cursor comes back onto
+    /// the
+    /// row being taken — a copy off a row with no cursor drawn would be a paste from nowhere.
+    @objc func copy(_: Any?) {
+        guard let words = focusedWords?() else { return }
+        keyboardMoved?(true)
+        ArgoPasteboard.put(words)
+    }
+
     override func viewDidEndLiveResize() {
         super.viewDidEndLiveResize()
         liveResizeEnded?()
@@ -78,5 +95,16 @@ final class FeedTableView: NSTableView {
         event.specialKey == .carriageReturn
             || event.specialKey == .enter
             || event.charactersIgnoringModifiers == " "
+    }
+}
+
+extension FeedTableView {
+    /// Greys Edit ▸ Copy out over a reading with nothing to take. Every other item is left to the
+    /// table's own answer.
+    override func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
+        guard item.action == #selector(copy(_:)) else {
+            return super.validateUserInterfaceItem(item)
+        }
+        return focusedWords?() != nil
     }
 }

@@ -3,13 +3,27 @@ import Foundation
 /// The Codex adapter for the session-drive port: a Turn put to a `codex app-server` Argo already
 /// owns (ADR-0024, #548). Verified against `CodexClient.verifiedAgainst`.
 ///
-/// It starts nothing and owns nothing: the claim registry and the thread table are the ones the
-/// spawn built, which is why this is a value and not an object.
+/// The thread table is its own (#749). Everything else is the spawn's — the claim registry, the
+/// process table, the claim ledger — because a second way to reach an agent is a second answer to
+/// "is this Session steerable", and they would disagree the first time one missed a release.
 @MainActor
 struct CodexSessionDriver: SessionDriver {
     let ownership: SessionOwnership
-    let threads: CodexThreads
+    /// The processes behind the claims. A Codex Session has no PTY to draw, but it has a process,
+    /// and its stdin is where a JSON-RPC line goes.
+    let terminals: AgentTerminals
+    /// Where a gate reading is published, keyed by claim.
+    let claims: ClaimLedger
     let attachments: AttachmentStore
+    /// How long a Codex approval may sit unanswered before the adapter declines it itself — the
+    /// WHOLE mechanism on this surface, because the server keeps no clock (ADR-0024).
+    let patience: PermissionPatience
+    /// What starts a `codex app-server`: pipes rather than a PTY (`CodexProcessHost`). Injected, so
+    /// a suite need not start a real one.
+    let serverHost: AgentProcessHost
+    /// The Codex threads Argo holds, one per claim. Defaulted and never passed, so `Hub.adapters` —
+    /// held and built once — is the only table there is.
+    let threads = CodexThreads()
 
     /// Codex takes images as input items of the Turn itself, so there is an affordance to draw
     /// (#540). Declared rather than asked of the server at the point of use: the composer has to
@@ -108,7 +122,10 @@ struct CodexSessionDriver: SessionDriver {
 
     /// `ownerOf` answers only for a claim whose process still lives, so an orphaned Session refuses
     /// on the same fact its provenance is read from rather than on a second rule.
-    private func thread(for sessionID: String) -> CodexThread? {
+    ///
+    /// Internal rather than private because holding one is also what SAYS a Session is a Codex one,
+    /// which is how `SessionAdapters` routes (#749).
+    func thread(for sessionID: String) -> CodexThread? {
         ownership.ownerOf(sessionID: sessionID).flatMap(threads.thread(for:))
     }
 }

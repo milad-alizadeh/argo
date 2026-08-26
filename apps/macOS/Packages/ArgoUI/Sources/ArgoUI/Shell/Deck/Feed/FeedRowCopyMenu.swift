@@ -18,20 +18,15 @@ struct FeedRowCopyMenu: ViewModifier {
 
     @ViewBuilder private var items: some View {
         if let label = row?.copyLabel, let text = row?.copyable {
-            Button(label) { Self.copy(text) }
+            Button(label) { ArgoPasteboard.put(text) }
         }
         if let turn = FeedCopy.turn(of: rows, holding: index) {
-            Button("Copy Turn") { Self.copy(turn) }
+            Button("Copy Turn") { ArgoPasteboard.put(turn) }
         }
     }
 
     private var row: FeedRow? {
         rows.indices.contains(index) ? rows[index] : nil
-    }
-
-    private static func copy(_ text: String) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
     }
 }
 

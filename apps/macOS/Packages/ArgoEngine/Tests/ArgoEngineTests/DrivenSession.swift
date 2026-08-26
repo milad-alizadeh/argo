@@ -28,6 +28,12 @@ struct DrivenSession {
     let turns: () -> [String]
     /// End the process behind it, the way its host reports one going.
     let end: () -> Void
+    /// Put one chunk down the process's own output, and answer whether THIS Session's channel took
+    /// it (#749) — the terminal's replay for `claude`, the thread's own reading for `codex`.
+    let deliverOneChunk: () -> Bool
+    /// What the terminal's replay buffer holds for this claim. Asymmetric on purpose: for `claude`
+    /// it is the channel, and for `codex` it must stay empty.
+    let replay: () -> String
     /// The Permission half: one gated call raised on the agent's side, and its answer (#549).
     let gate: DrivenGate
 }
@@ -50,6 +56,11 @@ extension SpawnFixture {
             id: claim.value,
             turns: { Self.pastes(in: process.written.joined()) },
             end: { process.end(exitCode: 0) },
+            deliverOneChunk: { [hub] in
+                process.emit(Self.chunk)
+                return hub.replay(of: claim).contains(Self.chunk)
+            },
+            replay: { [hub] in hub.replay(of: claim) },
             gate: DrivenGate(
                 raise: hook.raise,
                 allowed: hook.allowed,
@@ -70,6 +81,16 @@ extension SpawnFixture {
                 }
             },
             end: { process.end(exitCode: 0) },
+            // The thread's own word reaches the roster only by being PARSED, and this is an arm the
+            // handshake could not have produced — so the reading proves THIS chunk landed.
+            deliverOneChunk: { [hub] in
+                session.server.statusChanged("active", flags: ["waitingOnApproval"])
+                return hub.session(id: session.id)?.driveStatus == .permission
+            },
+            replay: { [hub] in
+                guard let claim = hub.ownership.ownerOf(sessionID: session.id) else { return "" }
+                return hub.replay(of: claim)
+            },
             gate: DrivenGate(
                 raise: peer.raise,
                 allowed: peer.allowed,
@@ -78,6 +99,9 @@ extension SpawnFixture {
             ),
         )
     }
+
+    /// One chunk of a Session's own output, distinctive enough to find again.
+    private static let chunk = "argo-heard-this"
 
     /// The Turns inside what was typed at a PTY: the text between each bracketed-paste pair. How
     /// the framing is BUILT is `ClaudeTurn`'s claim and its own suite's; here the markers are only
@@ -93,6 +117,18 @@ extension SpawnFixture {
             throw CodexFixtureFault.nothingStarted
         }
         return process
+    }
+}
+
+@MainActor
+extension Hub {
+    /// What the terminal's replay buffer holds for one claim, read the way a pane attaching later
+    /// reads it — which is the only reader it has.
+    func replay(of claim: SessionOwnership.ClaimID) -> String {
+        var seen: [UInt8] = []
+        let attached = terminals.attach(to: claim) { seen += $0 }
+        attached?.detach()
+        return String(bytes: seen, encoding: .utf8) ?? ""
     }
 }
 

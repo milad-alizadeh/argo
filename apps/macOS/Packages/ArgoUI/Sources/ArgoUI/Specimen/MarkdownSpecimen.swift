@@ -2,9 +2,11 @@ import SwiftUI
 
 /// One message carrying every block, at the measure the feed reads at.
 struct MarkdownSpecimen: View {
+    var text: String = MarkdownSpecimen.message
+
     var body: some View {
         ScrollView {
-            FeedMarkdown(text: MarkdownSpecimen.message)
+            FeedMarkdown(text: text)
                 .padding(ArgoFeedRow.inset)
                 .argoFeedMeasure()
         }
@@ -39,5 +41,16 @@ struct MarkdownSpecimen: View {
     graph TD
       A --> B
     ```
+    """
+
+    /// Cells that are mostly backticked, at a measure where the mono wraps and the sans would not
+    /// — the state a row was placed a line shorter than it drew at (#766). Two rows, so the overlap
+    /// lands on words rather than on the table's own foot.
+    nonisolated static let codeDenseTable = """
+    | claim | check |
+    |---|---|
+    | #757 four spellings | `answered`/`finished`/`looked`, and a fourth in `FeedFixture.swift` |
+    | #750 three gates | `quality:swift`, `quality:duplication`, `test:hooks` — 229/137/195 |
+    | #766 two sites | `ProseMetrics.measured` and `ProseMetrics.typeset`, one premise apiece |
     """
 }

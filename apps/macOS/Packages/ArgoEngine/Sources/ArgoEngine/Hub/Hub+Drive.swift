@@ -13,51 +13,52 @@ public extension Hub {
     /// than at the surface that raised the intent (`SessionAdapters`).
     var driver: some SessionDriver {
         RememberingDriver(
-            base: SessionAdapters(
-                claude: ClaudeSessionDriver(
-                    ownership: ownership,
-                    terminals: terminals,
-                    permissions: permissions,
-                    attachments: AttachmentStore(root: Self.attachmentRoot),
-                    delivery: delivery,
-                    stance: { [weak self] sessionID in self?.stance(of: sessionID) ?? .unknown },
-                ),
-                codex: CodexSessionDriver(
-                    ownership: ownership,
-                    threads: codex,
-                    attachments: AttachmentStore(root: Self.attachmentRoot),
-                ),
-                isCodex: { [weak self] sessionID in self?.isCodex(sessionID) ?? false },
-            ),
+            base: adapters,
             records: { [weak self] sessionID in self?.observedModeCount(of: sessionID) ?? 0 },
             remember: { [weak self] set, sessionID in
                 self?.rememberMode(set, for: sessionID)
             },
         )
     }
+}
 
-    /// Whether this Session is driven over `codex app-server` — true exactly while Argo holds a
-    /// live thread for it, which is the same fact `ownerOf` grades steerability on.
-    internal func isCodex(_ sessionID: String) -> Bool {
-        ownership.ownerOf(sessionID: sessionID).flatMap(codex.thread(for:)) != nil
+extension Hub {
+    /// The two adapters behind `adapters`, built once — see the property for why once.
+    func makeAdapters() -> SessionAdapters {
+        SessionAdapters(
+            claude: ClaudeSessionDriver(
+                ownership: ownership,
+                terminals: terminals,
+                permissions: permissions,
+                attachments: AttachmentStore(root: Self.attachmentRoot),
+                delivery: delivery,
+                stance: { [weak self] sessionID in self?.stance(of: sessionID) ?? .unknown },
+            ),
+            codex: CodexSessionDriver(
+                ownership: ownership,
+                terminals: terminals,
+                claims: claims,
+                attachments: AttachmentStore(root: Self.attachmentRoot),
+                patience: spawnServices.permissionPatience,
+                // `nil` takes the engine's own pipe host, which needs no window.
+                serverHost: spawnServices.codexHost ?? CodexProcessHost(),
+            ),
+        )
     }
 
-    /// What starts one CLI's surface: a PTY for the interactive `claude`, pipes for `codex
-    /// app-server`.
-    ///
-    /// The PTY host is what says this window may start agents AT ALL — a Hub built with none is
-    /// the render harness and every suite about observation, and neither may launch anything. So a
-    /// Codex spawn is refused for want of a host it will not itself use.
-    internal func host(for cli: AgentCLI) throws -> AgentProcessHost {
+    /// The host that says this window may start agents AT ALL — a Hub built with none is the render
+    /// harness and every suite about observation. So a Codex spawn is refused here too, for want of
+    /// a host it will not itself use.
+    func ptyHost() throws -> AgentProcessHost {
         guard let pty = spawnServices.host else {
             throw AgentSpawnError.hostRefused(detail: "This window cannot start agents")
         }
-        switch cli {
-        case .claude: return pty
-        case .codex: return codexHost
-        }
+        return pty
     }
+}
 
+@MainActor
+public extension Hub {
     /// Where a rung that landed is filed (#545), and where the next New Session reads its own
     /// opening rung from (#629).
     ///
@@ -84,18 +85,13 @@ public extension Hub {
     /// exactly the reading that cannot see the Turn arrive.
     ///
     /// Only the Claude adapter ever starts a watch, because only a keystroke can be eaten by a
-    /// popup. `isCodex` is asked anyway: a claim's bytes go to whichever table owns them, so a
-    /// Return typed at a Codex claim would land in the middle of its JSON-RPC and corrupt a
-    /// protocol stream rather than fail.
+    /// popup — but the resubmit goes through the port anyway: a claim's bytes go to whichever
+    /// channel owns them, and a Return typed at a Codex claim would land in the middle of its
+    /// JSON-RPC and corrupt a protocol stream rather than fail.
     internal func makeDelivery() -> TurnDelivery {
         TurnDelivery(TurnDelivery.Watch(
             records: { [weak self] sessionID in self?.session(id: sessionID)?.events.count ?? 0 },
-            retype: { [weak self] sessionID in
-                guard let self, !isCodex(sessionID),
-                      let claim = ownership.ownerOf(sessionID: sessionID)
-                else { return false }
-                return terminals.write(ClaudeTurn.submit, to: claim)
-            },
+            retype: { [weak self] sessionID in self?.adapters.resubmit(sessionID) ?? false },
             lost: { [weak self] text, sessionID in self?.rememberLostTurn(text, for: sessionID) },
         ))
     }

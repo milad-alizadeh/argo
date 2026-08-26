@@ -27,3 +27,11 @@ struct AgentSpawn: Sendable, Equatable {
         return "\(cli.command) exited (code \(code))"
     }
 }
+
+extension AgentSpawn {
+    /// The row for a plan that has just started. In an extension so the memberwise init survives
+    /// for the fixtures that state a spawn with no plan behind it.
+    init(spawning plan: AgentSpawnPlan, atMs: Int) {
+        self.init(claim: plan.claim, cli: plan.cli, cwd: plan.cwd, spawnedAtMs: atMs)
+    }
+}

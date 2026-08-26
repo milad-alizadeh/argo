@@ -24,16 +24,15 @@ enum ProseMetrics {
 
     /// How wide `text` would run on one line, its inline marks read and taken off.
     static func width(of text: String, in face: ProseFace = .body) -> CGFloat {
-        widths.reading(of: keyed(text, in: face)) { _ in measured(rendered(text), in: face) }
+        widths.reading(of: keyed(text, in: face)) { _ in
+            measured(ProseReading.marked(text), in: face)
+        }
     }
 
     /// How wide its widest unbreakable word runs — the floor under a column holding it.
     static func word(in text: String, face: ProseFace = .body) -> CGFloat {
         words.reading(of: keyed(text, in: face)) { _ in
-            let longest = rendered(text)
-                .split(whereSeparator: \.isWhitespace)
-                .max { $0.count < $1.count }
-            return measured(longest.map { String($0) } ?? "", in: face)
+            widestWord(in: ProseReading.marked(text), face: face)
         }
     }
 
@@ -52,21 +51,14 @@ enum ProseMetrics {
         return lay
     }
 
-    /// The words as the feed draws them: the agent's inline marks read, so `**bold**` measures as
-    /// the four letters it renders and not as the eight characters it was written with.
-    static func rendered(_ text: String) -> String {
-        String(ProseReading.marked(text).characters)
-    }
-
     /// One cache key. The face is part of it because the same words measure differently at every
     /// face, and a store keyed on the text alone would answer a heading with a paragraph's width.
     private static func keyed(_ text: String, in face: ProseFace) -> String {
         "\(face.key)\u{0}\(text)"
     }
 
-    private static func measured(_ text: String, in face: ProseFace) -> CGFloat {
-        guard !text.isEmpty else { return 0 }
-        return NSAttributedString(string: text, attributes: [.font: face.font])
-            .size().width
+    private static func measured(_ marked: AttributedString, in face: ProseFace) -> CGFloat {
+        guard !marked.characters.isEmpty else { return 0 }
+        return typeset(marked, in: face).size().width
     }
 }

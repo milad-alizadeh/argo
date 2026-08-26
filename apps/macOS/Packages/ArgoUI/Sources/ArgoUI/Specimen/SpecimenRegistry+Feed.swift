@@ -48,6 +48,12 @@ extension SpecimenRegistry {
         SpecimenEntry("feedCommandFold") { SpecimenScene.sessions(FeedProjection.previewFoldRows) },
         SpecimenEntry("feedProse") { SpecimenScene.sessions(FeedProjection.previewProseRows) },
         SpecimenEntry("feedMarkdown") { MarkdownSpecimen() },
+        // A table whose cells are mostly backticked. Render narrow as well as wide
+        // (`ARGO_WINDOW_SIZE`): what it settles is that a row is placed at the height the mono
+        // draws it at, so the row under it is not drawn over its last line (#766).
+        SpecimenEntry("feedMarkdownCodeTable") {
+            MarkdownSpecimen(text: MarkdownSpecimen.codeDenseTable)
+        },
         SpecimenEntry("feedAttention") { SpecimenScene.sessions(FeedProjection.previewAskRows) },
         SpecimenEntry("feedPunctuation") { SpecimenScene.sessions(FeedProjection.previewMarkRows) },
         // The design's own render (#688): the command the user typed, their line verbatim, and the
@@ -97,6 +103,10 @@ extension SpecimenRegistry {
         },
         SpecimenEntry("feedCursorCall") {
             cursored(on: FeedProjection.previewLastFailedCallID, in: FeedProjection.previewRows)
+        },
+        // The copy chip's lit state (#767). A still cannot hover, so the cursor stands in.
+        SpecimenEntry("feedCursorMessage") {
+            cursored(on: FeedProjection.previewMessageID, in: FeedProjection.previewProseRows)
         },
     ]
 

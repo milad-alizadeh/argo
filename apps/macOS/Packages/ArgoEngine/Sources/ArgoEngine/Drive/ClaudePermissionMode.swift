@@ -5,7 +5,7 @@
 /// ADR's paper table did not have: the flag spells the manual rung `manual`, while the transcript
 /// still writes `default`, so both have to read; and `shift+tab` cycles a FOUR-value ring that
 /// `bypassPermissions` and `dontAsk` are not part of.
-enum ClaudePermissionMode {
+enum ClaudePermissionMode: AgentStanceVocabulary {
     /// What Argo passes to put a Session on this rung. Read Only and Plan answer the same value:
     /// they are one boundary, and no flag carries the intent that separates them.
     static func value(for mode: SessionMode) -> String {
