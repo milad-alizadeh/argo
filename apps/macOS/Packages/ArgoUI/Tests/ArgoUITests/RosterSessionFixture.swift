@@ -27,15 +27,15 @@ enum RosterSessionFixture {
         CockpitPresentation.Session(
             id: id,
             title: "Session \(id)",
-            model: "claude-opus-5",
-            workspaceLocation: workspaceLocation,
             access: access,
             status: status,
-            workspace: kind == nil && branch == nil ? nil : .init(kind: kind, branch: branch),
-            lastSeenAtMs: lastSeenAtMs,
-            isArchived: isArchived,
-            explicitName: explicitName,
-            events: events,
+            chain: .init(model: "claude-opus-5", lastSeenAtMs: lastSeenAtMs),
+            work: .init(
+                location: workspaceLocation,
+                workspace: kind == nil && branch == nil ? nil : .init(kind: kind, branch: branch),
+            ),
+            annotations: .init(isArchived: isArchived, explicitName: explicitName),
+            transcript: .init(events: events),
         )
     }
 }

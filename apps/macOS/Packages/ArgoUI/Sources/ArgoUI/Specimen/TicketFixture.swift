@@ -41,15 +41,16 @@ enum TicketFixture {
         CockpitPresentation.Session(
             id: id,
             title: title,
-            model: nil,
-            workspaceLocation: "/Users/milad/Developer/argo/.claude/worktrees/ticket-\(id)",
             access: .managed,
             status: status,
-            workspace: .init(
-                kind: .worktree, branch: issue.map { "argo/#\($0.number)-\(id)" } ?? "main",
+            chain: .init(lastSeenAtMs: minutesAgo.map(CockpitPresentation.minutesAgo)),
+            work: .init(
+                location: "/Users/milad/Developer/argo/.claude/worktrees/ticket-\(id)",
+                workspace: .init(
+                    kind: .worktree, branch: issue.map { "argo/#\($0.number)-\(id)" } ?? "main",
+                ),
+                issue: issue,
             ),
-            issue: issue,
-            lastSeenAtMs: minutesAgo.map(CockpitPresentation.minutesAgo),
         )
     }
 }

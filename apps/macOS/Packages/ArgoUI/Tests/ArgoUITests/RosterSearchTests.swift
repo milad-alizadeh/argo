@@ -51,31 +51,34 @@ struct RosterSearchTests {
         CockpitPresentation.Session(
             id: "renamed",
             title: "Ship the native shell",
-            model: nil,
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: .managed,
             status: .running,
-            workspace: .init(branch: "argo/#515-rename-session"),
-            explicitName: "Tonight's rename run",
+            work: .init(
+                location: "/Users/milad/Developer/argo",
+                workspace: .init(branch: "argo/#515-rename-session"),
+            ),
+            annotations: .init(explicitName: "Tonight's rename run"),
         ),
         CockpitPresentation.Session(
             id: "untouched",
             title: "Correct the design docs",
-            model: nil,
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: .managed,
             status: .idle,
-            workspace: .init(branch: "argo/#504-correct-design-docs"),
+            work: .init(
+                location: "/Users/milad/Developer/argo",
+                workspace: .init(branch: "argo/#504-correct-design-docs"),
+            ),
         ),
         CockpitPresentation.Session(
             id: "observed",
             title: "Watch an external agent work",
-            model: nil,
-            workspaceLocation: "/Users/milad/Developer/cockpit",
             access: .external,
             status: .idle,
-            workspace: .init(kind: .worktree, branch: "main"),
-            lastSeenAtMs: CockpitPresentation.minutesAgo(4 * 60),
+            chain: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(4 * 60)),
+            work: .init(
+                location: "/Users/milad/Developer/cockpit",
+                workspace: .init(kind: .worktree, branch: "main"),
+            ),
         ),
     ])
 

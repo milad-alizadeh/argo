@@ -126,11 +126,11 @@ struct SessionHeaderContextTests {
         CockpitPresentation.Session(
             id: "session",
             title: "Session",
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: .managed,
             status: .idle,
-            contextTokens: tokens,
+            chain: .init(model: "claude-opus-5"),
+            work: .init(location: "/Users/milad/Developer/argo"),
+            spend: .init(contextTokens: tokens),
         )
     }
 }

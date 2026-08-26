@@ -17,12 +17,11 @@ struct FeedWorkingTests {
         CockpitPresentation.Session(
             id: "session-1",
             title: "New session",
-            model: nil,
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: access,
             status: status,
-            cli: .claude,
-            events: events,
+            chain: .init(cli: .claude),
+            work: .init(location: "/Users/milad/Developer/argo"),
+            transcript: .init(events: events),
         )
     }
 

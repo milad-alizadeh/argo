@@ -11,11 +11,11 @@ struct StandingAllowProjectionTests {
         CockpitPresentation.Session(
             id: "session",
             title: "A Session",
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/someone/repo",
             access: .managed,
             status: .idle,
-            standingAllows: tools.map(StandingAllow.init(toolName:)),
+            chain: .init(model: "claude-opus-5"),
+            work: .init(location: "/Users/someone/repo"),
+            autonomy: .init(standingAllows: tools.map(StandingAllow.init(toolName:))),
         )
     }
 

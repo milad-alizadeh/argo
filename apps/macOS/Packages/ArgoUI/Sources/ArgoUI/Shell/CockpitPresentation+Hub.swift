@@ -109,6 +109,13 @@ extension CockpitPresentation.Session {
     /// not-projected: hasAgentActivity — the roster admission test, already applied upstream: a
     ///   Session that fails it never reaches this projection at all.
     /// not-projected: isQueued — the other half of that same admission test.
+    ///
+    /// A fact handed straight through must land on the slot of its own name, which is edge 5's
+    /// second half: `spentTokens: session.cachedTokens` is a swap no type can catch and no
+    /// `not-projected:` line would notice. Where the projection deliberately renames one, it says
+    /// so here — and the gate then fails on a marker naming a rename that is no longer made.
+    ///
+    /// renamed: location <- cwd — "Names are words, not abbreviations" (rules/code-style.md).
     init(observed session: HubSession, annotations: SessionAnnotations) {
         // Read once and handed to both: the Workspace draws the branch and the Work Item link joins
         // on it, and two readings of one fact would let the two disagree.
@@ -116,41 +123,53 @@ extension CockpitPresentation.Session {
         self.init(
             id: session.id,
             title: session.title,
-            model: session.model,
-            workspaceLocation: session.cwd,
             access: Access(provenance: session.provenance),
             status: session.status,
-            cli: session.cli,
-            workspace: workspace,
-            issue: Issue(
-                branch: workspace?.branch,
-                location: session.cwd,
-                ticket: annotations.ticket(session.id),
+            chain: Chain(
+                cli: session.cli,
+                model: session.model,
+                startedAtMs: session.startedAtMs,
+                lastSeenAtMs: session.lastSeenAtMs,
+                handedOffTo: session.handedOffTo,
             ),
-            lastSeenAtMs: session.lastSeenAtMs,
-            startedAtMs: session.startedAtMs,
-            spentTokens: session.spentTokens,
-            cachedTokens: session.cachedTokens,
-            subagentTokens: session.subagentTokens,
-            contextTokens: session.contextTokens,
-            handedOffTo: session.handedOffTo,
-            // Read off the annotations by chain id and never off the record: the transcript has
-            // no opinion about this, and a Session whose file just grew is still archived.
-            isArchived: annotations.isArchived(session.id),
-            // Beside the observed title rather than over it: the derived one is what Reset goes
-            // back to (#502, story 20).
-            explicitName: annotations.explicitName(session.id),
-            permission: session.permission,
-            ask: session.ask,
-            standingAllows: session.standingAllows,
-            expiredPermissions: session.expiredPermissions,
-            // The Hub's own reading, carried whole rather than reduced to a rung: the `≈` and the
-            // CLI's word are what the composer renders, and a rung alone cannot say either.
-            mode: session.mode,
-            modeDidNotTake: session.modeDidNotTake,
-            lostTurn: session.lostTurn,
-            events: session.events,
-            subagentEvents: session.subagentEvents,
+            work: Work(
+                location: session.cwd,
+                workspace: workspace,
+                issue: Issue(
+                    branch: workspace?.branch,
+                    location: session.cwd,
+                    ticket: annotations.ticket(session.id),
+                ),
+            ),
+            spend: Spend(
+                spentTokens: session.spentTokens,
+                cachedTokens: session.cachedTokens,
+                subagentTokens: session.subagentTokens,
+                contextTokens: session.contextTokens,
+            ),
+            autonomy: Autonomy(
+                // The Hub's own reading, carried whole rather than reduced to a rung: the `≈` and
+                // the CLI's word are what the composer renders, and a rung alone cannot say either.
+                mode: session.mode,
+                modeDidNotTake: session.modeDidNotTake,
+                permission: session.permission,
+                ask: session.ask,
+                standingAllows: session.standingAllows,
+                expiredPermissions: session.expiredPermissions,
+            ),
+            annotations: Annotations(
+                // Read off the annotations by chain id and never off the record: the transcript has
+                // no opinion about this, and a Session whose file just grew is still archived.
+                isArchived: annotations.isArchived(session.id),
+                // Beside the observed title rather than over it: the derived one is what Reset goes
+                // back to (#502, story 20).
+                explicitName: annotations.explicitName(session.id),
+            ),
+            transcript: Transcript(
+                events: session.events,
+                subagentEvents: session.subagentEvents,
+                lostTurn: session.lostTurn,
+            ),
         )
     }
 }

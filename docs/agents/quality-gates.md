@@ -26,6 +26,7 @@ apply to that category) or **RATCHET** (debt; the list may only shrink):
 | `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
 | `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
 | the module map's `placement` block | the folder rules — `allow`/`ratchet`/`exclude`, each value its own reason |
+| `.swiftlint.yml` | the Swift caps, ratchets inline — including the initializer cap that `swift-boundaries.sh` edge 6 reads from there and SwiftLint itself cannot check |
 
 The placement gates fail on a **stale** exemption too: an entry naming no file is deleted, not
 left to re-authorise a future breach.

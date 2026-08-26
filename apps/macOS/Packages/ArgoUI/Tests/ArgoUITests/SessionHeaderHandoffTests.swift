@@ -116,11 +116,10 @@ struct SessionHeaderHandoffTests {
             SessionHeaderProjection.header(from: CockpitPresentation.Session(
                 id: "folderless",
                 title: "Session",
-                model: "claude-opus-5",
-                workspaceLocation: nil,
                 access: .managed,
                 status: .idle,
-                contextTokens: Self.pastWarn,
+                chain: .init(model: "claude-opus-5"),
+                spend: .init(contextTokens: Self.pastWarn),
             )).handoff,
         )
 
@@ -157,14 +156,11 @@ struct SessionHeaderHandoffTests {
         SessionHeaderProjection.header(from: CockpitPresentation.Session(
             id: "session",
             title: "Session",
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: access,
             status: .idle,
-            cli: .claude,
-            workspace: .init(branch: "main"),
-            contextTokens: tokens,
-            handedOffTo: handedOffTo,
+            chain: .init(cli: .claude, model: "claude-opus-5", handedOffTo: handedOffTo),
+            work: .init(location: "/Users/milad/Developer/argo", workspace: .init(branch: "main")),
+            spend: .init(contextTokens: tokens),
         ))
     }
 }

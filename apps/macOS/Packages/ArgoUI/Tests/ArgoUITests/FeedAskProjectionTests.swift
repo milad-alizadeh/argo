@@ -21,12 +21,12 @@ struct FeedAskProjectionTests {
         CockpitPresentation.Session(
             id: "session",
             title: "A Session",
-            model: "claude-opus-5",
-            workspaceLocation: "/repo",
             access: access,
             status: ask == nil ? .idle : .asking,
-            ask: ask,
-            events: [.toolCall(FeedFixture.asking(Self.question))],
+            chain: .init(model: "claude-opus-5"),
+            work: .init(location: "/repo"),
+            autonomy: .init(ask: ask),
+            transcript: .init(events: [.toolCall(FeedFixture.asking(Self.question))]),
         )
     }
 

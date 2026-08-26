@@ -1,6 +1,6 @@
 # 0027 · The cockpit's Session restates HubSession, and the projection is total
 
-Status: accepted · 2026-08-12
+Status: accepted · 2026-08-12 · init shape and gate strength amended (#755) · 2026-08-26
 
 Closes #639. Binding on `CockpitPresentation.Session` and on `CockpitPresentation+Hub.swift`. It
 narrows ADR-0022's "everything else takes a value" from a phrasing that could be read two ways to
@@ -91,3 +91,40 @@ elegance; it was that a missed copy is silent. Edge 5 makes it loud, for a fract
   the narrowing and the fixtures remain. Both still hold, but the case would be worth re-reading.
 - **Do not re-propose the shrink on the "19 verbatim fields" observation alone.** It is true, it was
   weighed, and the ten dropped facts are the answer to it.
+
+## Amendment · the init's shape, and what the gate proves (#755) · 2026-08-26
+
+The restatement above was and stays the decision: the cockpit keeps its own flat `Session`, and the
+"19 verbatim fields" argument is still not a reason to re-propose the shrink. What this amends is
+the **shape of `Session.init`**, and the **strength of edge 5** — a second re-read trigger beside
+the `HubSession`-becomes-immutable one in *Consequences*.
+
+**The interface had grown to 27 interchangeable slots.** Every one an `Int?`, a `String?` or a
+`Bool`, six of them without a default, and 21 of them a verbatim pass-through carrying no
+information a caller did not already have from the field docstring above it. The deletion test
+passes on the projection as a module and fails on that list.
+
+**Both gates were blind to the one error the shape invites.** SwiftLint's `function_parameter_count`
+visits *function* declarations, so the widest parameter list in the module sat under a cap of 4
+without ever being counted. And edge 5 proved a fact was **mentioned**, never that it landed on the
+right field — swapping `spentTokens:` and `cachedTokens:` in the mapping kept it green, and no type
+could catch it either.
+
+**The init now groups by the reading each fact comes from**, four required parameters and six
+defaulted values: `Session(id:title:access:status:chain:work:spend:autonomy:annotations:transcript:)`.
+The values group the *list* and are not what a Session stores — every fact still lands on its own
+`let`, so no surface reads through one and the 39 construction sites gained a defaulted value each
+rather than losing their ergonomics. Each field keeps the engine's own name for its fact, which is
+what makes the check below a name comparison rather than a table.
+
+**Edge 5 now proves the slot, and edge 6 counts an `init`'s parameters.** A fact handed straight
+through must land on the slot of its own name, or the projection carries a
+`renamed: <slot> <- <fact> — <why>` line — one today, `location <- cwd`. A derived argument is left
+alone: the name on an expression is the projection's to choose. Edge 6 reads its ratchet off
+`.swiftlint.yml` beside the rule it extends, so one cap is stated in one place; the number is 18
+until `CockpitActions`' every-callback init is grouped the same way.
+
+- **Totality and correctness are two checks, and only the second catches a swap.** Both facts stay
+  accounted for when two slots trade places, which is exactly why the first one passes.
+- **Six values are a parameter object, not a projection of `HubSession`.** They exist to shape one
+  call. Making them stored would be the shrink this ADR declined, at 170 read sites.

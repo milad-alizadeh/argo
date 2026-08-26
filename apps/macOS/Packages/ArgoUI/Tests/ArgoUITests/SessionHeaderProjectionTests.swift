@@ -163,12 +163,10 @@ struct SessionHeaderProjectionTests {
         CockpitPresentation.Session(
             id: "session",
             title: title,
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: access,
             status: status,
-            cli: .claude,
-            workspace: .init(branch: "main"),
+            chain: .init(cli: .claude, model: "claude-opus-5"),
+            work: .init(location: "/Users/milad/Developer/argo", workspace: .init(branch: "main")),
         )
     }
 }

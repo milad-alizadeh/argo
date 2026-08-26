@@ -153,12 +153,10 @@ struct SessionHeaderFactsTests {
         let header = SessionHeaderProjection.header(from: CockpitPresentation.Session(
             id: "session",
             title: "Session",
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: .orphaned,
             status: .idle,
-            cli: .claude,
-            workspace: .init(branch: "main"),
+            chain: .init(cli: .claude, model: "claude-opus-5"),
+            work: .init(location: "/Users/milad/Developer/argo", workspace: .init(branch: "main")),
         ))
 
         #expect(header.announcement.hasSuffix("On main, Orphaned"))
@@ -174,13 +172,14 @@ struct SessionHeaderFactsTests {
         SessionHeaderProjection.header(from: CockpitPresentation.Session(
             id: "session",
             title: "Session",
-            model: model,
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: .managed,
             status: .idle,
-            cli: cli,
-            workspace: workspace,
-            issue: issue,
+            chain: .init(cli: cli, model: model),
+            work: .init(
+                location: "/Users/milad/Developer/argo",
+                workspace: workspace,
+                issue: issue,
+            ),
         ))
     }
 }

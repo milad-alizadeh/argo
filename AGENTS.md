@@ -52,8 +52,13 @@ than review notes. Four are ADR-0022's layering; the sharpest of those is **exac
 
 The fifth is ADR-0027, on that projection: the cockpit **restates** `HubSession` rather than
 holding one, so every public engine fact must land in the mapping or be named on a
-`not-projected:` line beside it. Adding a public fact to `HubSession` fails the build until you
-say which it is.
+`not-projected:` line beside it, **on the slot of its own name** unless a `renamed:` line says
+why not. Adding a public fact to `HubSession` fails the build until you say which it is; swapping
+two same-typed facts between slots fails it too.
+
+The sixth extends the parameter cap to initializers, which SwiftLint's own rule cannot see. Its
+ratchet is recorded in `.swiftlint.yml` beside the rule it extends, and the script reads it from
+there — one cap, one place.
 
 The JS/TS boundary gates are dormant — no subject since ADR-0023 retired the Electron
 cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-0021, ADR-0023.

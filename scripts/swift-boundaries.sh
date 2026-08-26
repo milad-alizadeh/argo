@@ -5,8 +5,9 @@
 # tree, not of the file you happened to touch.
 #
 # Edges 1-4 are ADR-0022's layering; edge 5 is ADR-0027, on the projection between two of its
-# layers. Each is checkable by looking at imports, declarations and size alone — which is the whole
-# reason they are gates rather than review notes.
+# layers; edge 6 is the parameter cap on the one declaration shape SwiftLint cannot see. Each is
+# checkable by looking at imports, declarations and size alone — which is the whole reason they are
+# gates rather than review notes.
 set -eu
 
 APP_DIR="apps/macOS"
@@ -17,6 +18,7 @@ APP_TARGET="$APP_DIR/Argo"
 PROJECTION_FILE="CockpitPresentation+Hub.swift"
 PROJECTION="$UI_SOURCES/ArgoUI/Shell/$PROJECTION_FILE"
 HUB_SESSION="$ENGINE_SOURCES/Hub/HubSession.swift"
+SWIFTLINT_CONFIG="$APP_DIR/.swiftlint.yml"
 
 if [ ! -d "$APP_DIR" ]; then
   echo "swift-boundaries: $APP_DIR not found — run from the repo root" >&2
@@ -141,6 +143,105 @@ else
   if [ -n "$hits" ]; then
     report "these facts are mapped in $PROJECTION_FILE AND listed \`not-projected:\`" "$hits" \
       "Drop the \`not-projected:\` line: the fact is rendered, so its reason is out of date."
+  fi
+
+  # 5b. And a fact handed straight through lands on the slot of its OWN name. Totality proves a
+  #     fact was mentioned, never that it reached the right field, so `spentTokens:
+  #     session.cachedTokens` was a swap both halves above call accounted for (#755). Only the
+  #     verbatim slots are checked — an argument that is a whole expression is a derivation, and
+  #     the name on it is the projection's to choose.
+  verbatim_pairs=$(
+    awk '
+      { line = $0; sub(/\/\/.*/, "", line) }
+      { while (match(line, /[A-Za-z_][A-Za-z0-9_]*:[ \t]*session\.[A-Za-z_][A-Za-z0-9_]*/)) {
+          hit = substr(line, RSTART, RLENGTH)
+          after = substr(line, RSTART + RLENGTH, 1)
+          line = substr(line, RSTART + RLENGTH)
+          # A terminator, and nothing else, means the fact IS the whole argument.
+          if (after == "" || after == "," || after == ")") {
+            split(hit, part, ":"); label = part[1]
+            sub(/^.*session\./, "", hit)
+            if (label != hit) print label " <- " hit
+          }
+        }
+      }
+    ' "$PROJECTION" | sort -u
+  )
+  # The first two names on a marker line; whatever follows is prose.
+  declared_renames=$(
+    sed -nE 's/^.*renamed:[[:space:]]*([A-Za-z0-9_]+)[[:space:]]*<-[[:space:]]*([A-Za-z0-9_]+).*/\1 <- \2/p' \
+      "$PROJECTION" | sort -u
+  )
+
+  hits=$(printf '%s\n' "$verbatim_pairs" | grep -v '^$' | grep -vxF "$declared_renames" || true)
+  if [ -n "$hits" ]; then
+    report "these facts land on a slot of another name in $PROJECTION_FILE (ADR-0027, #755)" \
+      "$hits" \
+      "A fact passed straight through takes the slot of its own name, or the projection says why" \
+      "not: add a \`renamed: <slot> <- <fact> — <why>\` line beside the mapping. This is the check" \
+      "that catches two same-typed facts swapped, which no type and no totality check can."
+  fi
+
+  hits=$(printf '%s\n' "$declared_renames" | grep -v '^$' | grep -vxF "$verbatim_pairs" || true)
+  if [ -n "$hits" ]; then
+    report "\`renamed:\` in $PROJECTION_FILE names renames the mapping no longer makes" "$hits" \
+      "Drop the line: a marker for a rename that is not made would go on excusing a future one."
+  fi
+fi
+
+# 6. The parameter cap reaches initializers. SwiftLint's `function_parameter_count` visits FUNCTION
+#    declarations only, so an `init` is invisible to it — which is how a 27-parameter init sat under
+#    a cap of 4 for as long as it did (#755). The number is the ratchet recorded in
+#    .swiftlint.yml beside the rule it extends, so one cap is read in one place.
+INIT_CAP=$(
+  sed -nE 's/^[[:space:]]*#[[:space:]]*RATCHET initializer-parameter-count:[[:space:]]*([0-9]+).*/\1/p' \
+    "$SWIFTLINT_CONFIG" 2>/dev/null | head -1
+)
+if [ -z "$INIT_CAP" ]; then
+  report "edge 6 cannot find its cap — no \`RATCHET initializer-parameter-count: <N>\` in $SWIFTLINT_CONFIG" \
+    "The number lives beside \`function_parameter_count\`, which is the rule this edge extends to" \
+    "the shape SwiftLint cannot see. Without it this edge checks nothing and says so."
+else
+  # Depth-counted rather than pattern-matched: a default value may itself hold commas and parens,
+  # and a list wide enough to matter is always wrapped one parameter per line.
+  hits=$(
+    find "$APP_DIR" -name '*.swift' \
+      ! -path '*/.build/*' ! -path '*/build/*' ! -path '*.xcodeproj/*' -print 2>/dev/null \
+      | sort \
+      | while IFS= read -r file; do
+        awk -v file="$file" -v cap="$INIT_CAP" '
+          function close_list(  count) {
+            count = seen ? commas + (trailing ? 0 : 1) : 0
+            if (count > cap) print file ":" declared ": init takes " count " parameters"
+            active = 0
+          }
+          {
+            line = $0; sub(/\/\/.*/, "", line); start = 1
+            if (!active) {
+              if (!match(line, /(^|[^.A-Za-z0-9_])init\??[ \t]*\(/)) next
+              start = RSTART + RLENGTH
+              active = 1; depth = 1; commas = 0; seen = 0; trailing = 0; declared = FNR
+            }
+            for (i = start; i <= length(line); i++) {
+              char = substr(line, i, 1)
+              if (instring) { if (char == "\"") instring = 0; continue }
+              if (char == "\"") { instring = 1; seen = 1; trailing = 0; continue }
+              if (char == ")" || char == "]" || char == "}") {
+                if (--depth == 0) { close_list(); break }
+              } else if (char == "(" || char == "[" || char == "{") depth++
+              else if (char == "," && depth == 1) { commas++; trailing = 1; continue }
+              if (char != " " && char != "\t") { seen = 1; trailing = 0 }
+            }
+          }
+        ' "$file"
+      done
+  )
+  if [ -n "$hits" ]; then
+    report "these initializers are over the $INIT_CAP-parameter ratchet (rules/code-style.md, #755)" \
+      "$hits" \
+      "Group the list by the reading each parameter comes from and pass one value per reading, the" \
+      "way CockpitPresentation.Session does. Lower the ratchet in $SWIFTLINT_CONFIG as each one" \
+      "goes; 4 is the number, and it is never raised to fit an init."
   fi
 fi
 

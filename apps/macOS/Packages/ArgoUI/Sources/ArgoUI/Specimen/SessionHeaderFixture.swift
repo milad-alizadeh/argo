@@ -58,11 +58,10 @@ enum SessionHeaderFixture {
         SessionHeaderProjection.handoff(from: CockpitPresentation.Session(
             id: "header-folderless",
             title: "A Session whose folder Argo never read",
-            model: "claude-opus-5",
-            workspaceLocation: nil,
             access: .managed,
             status: .idle,
-            contextTokens: 216_764,
+            chain: .init(model: "claude-opus-5"),
+            spend: .init(contextTokens: 216_764),
         )),
     ].compactMap(\.self)
 
@@ -72,29 +71,33 @@ enum SessionHeaderFixture {
     static let guided = SessionHeaderProjection.header(from: CockpitPresentation.Session(
         id: "header-guided",
         title: "Anchor the feed on its newest line",
-        model: "claude-opus-5",
-        workspaceLocation: "/Users/milad/Developer/argo",
         access: .managed,
         status: .idle,
-        cli: .claude,
-        workspace: .init(kind: .worktree, branch: "argo/#476-feed-scroll-anchor"),
-        issue: .init(number: 476, title: "Anchor the feed on its newest line"),
-        lastSeenAtMs: 48 * 60000,
-        startedAtMs: 0,
-        spentTokens: 22_470_000,
-        cachedTokens: 20_400_000,
-        contextTokens: 163_912,
-        // A call a minute for 41 of the 48 minutes: every gap under the away cutoff, so the
-        // worked reading is the 41m the render prints beside the 48m it ran.
-        events: (0 ... 41).map { minute in
-            .toolCall(ToolCall(
-                id: "guided-\(minute)",
-                name: "Read",
-                kind: .read,
-                target: "CONTEXT.md",
-                atMs: minute * 60000,
-            ))
-        },
+        chain: .init(
+            cli: .claude,
+            model: "claude-opus-5",
+            startedAtMs: 0,
+            lastSeenAtMs: 48 * 60000,
+        ),
+        work: .init(
+            location: "/Users/milad/Developer/argo",
+            workspace: .init(kind: .worktree, branch: "argo/#476-feed-scroll-anchor"),
+            issue: .init(number: 476, title: "Anchor the feed on its newest line"),
+        ),
+        spend: .init(spentTokens: 22_470_000, cachedTokens: 20_400_000, contextTokens: 163_912),
+        transcript: .init(
+            // A call a minute for 41 of the 48 minutes: every gap under the away cutoff, so the
+            // worked reading is the 41m the render prints beside the 48m it ran.
+            events: (0 ... 41).map { minute in
+                .toolCall(ToolCall(
+                    id: "guided-\(minute)",
+                    name: "Read",
+                    kind: .read,
+                    target: "CONTEXT.md",
+                    atMs: minute * 60000,
+                ))
+            },
+        ),
     ))
 
     /// The same panel over a Session almost nothing was read off — the block collapses to the one
@@ -102,8 +105,6 @@ enum SessionHeaderFixture {
     static let unguided = SessionHeaderProjection.header(from: CockpitPresentation.Session(
         id: "header-unguided",
         title: "A Session read off a record that carried no usage",
-        model: nil,
-        workspaceLocation: nil,
         access: .external,
         status: .idle,
     ))
@@ -157,17 +158,17 @@ enum SessionHeaderFixture {
         CockpitPresentation.Session(
             id: "header-\(access)",
             title: title,
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: access,
             status: status,
-            cli: .claude,
-            workspace: .init(kind: .worktree, branch: branch, dirty: 3, unpushed: 1),
-            // A link with no title read through it, which is every Session in this build: no
-            // provider is connected (#414), so nothing answers with one.
-            issue: .init(number: 510),
-            contextTokens: contextTokens,
-            handedOffTo: handedOffTo,
+            chain: .init(cli: .claude, model: "claude-opus-5", handedOffTo: handedOffTo),
+            work: .init(
+                location: "/Users/milad/Developer/argo",
+                workspace: .init(kind: .worktree, branch: branch, dirty: 3, unpushed: 1),
+                // A link with no title read through it, which is every Session in this build: no
+                // provider is connected (#414), so nothing answers with one.
+                issue: .init(number: 510),
+            ),
+            spend: .init(contextTokens: contextTokens),
         )
     }
 
