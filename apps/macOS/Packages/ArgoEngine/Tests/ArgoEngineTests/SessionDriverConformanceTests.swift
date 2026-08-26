@@ -112,6 +112,47 @@ struct SessionDriverConformanceTests {
         }
     }
 
+    /// The channel half of the seam (#749): a spawn's channel is open before `spawnSession` has
+    /// returned, so the first Turn reaches the agent rather than a channel nobody asked for yet.
+    ///
+    /// One claim on both surfaces, arrived at unlike ways — the PTY is `claude`'s whole channel,
+    /// while `codex` is a thread that has to be asked for over a protocol — which is exactly why
+    /// the Hub must not be the one deciding which.
+    @Test(arguments: DrivenCLI.allCases)
+    func `a spawn's channel is open before the spawn returns`(cli: DrivenCLI) async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let session = try await fixture.drive(cli)
+
+        try fixture.hub.driver.send("The first thing anybody said", to: session.id)
+
+        #expect(session.turns() == ["The first thing anybody said"])
+    }
+
+    /// And the other direction: a claim's output goes to ONE channel, and the port is what says
+    /// which. What the wrong channel would do with it is not harmless — a Codex Session's JSON-RPC
+    /// held in a terminal replay buffer is a protocol stream kept for a viewer that cannot exist.
+    @Test(arguments: DrivenCLI.allCases)
+    func `a Session's own output reaches its own channel`(cli: DrivenCLI) async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let session = try await fixture.drive(cli)
+
+        #expect(session.heard())
+    }
+
+    /// A claim given up closes every channel it spoke over, and the Turn that follows is refused on
+    /// the same fact — which is what keeps a channel from outliving the process behind it.
+    @Test(arguments: DrivenCLI.allCases)
+    func `a Session's output goes nowhere once its claim is given up`(cli: DrivenCLI) async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let session = try await fixture.drive(cli)
+        session.end()
+
+        #expect(!session.heard())
+    }
+
     /// Both adapters take attachments, by unlike means, and both name every one of them in the
     /// Turn's own words so the record says what the agent was given.
     @Test(arguments: DrivenCLI.allCases)

@@ -29,14 +29,15 @@ public final class Hub {
     /// speaks JSON-RPC where a Turn is a request that was either accepted or refused.
     @ObservationIgnored lazy var delivery = makeDelivery()
 
-    /// The Codex threads behind the claims that have one. Empty on a Hub that has spawned no
-    /// `codex`, which is also what tells the drive port which adapter a Session takes.
-    let codex = CodexThreads()
-
-    /// What starts a `codex app-server`. Pipes rather than a PTY, and engine-owned rather than
-    /// injected, because it links nothing the app has to supply (`CodexProcessHost`). The seam is
-    /// still there for a suite that must not start a real one.
-    @ObservationIgnored let codexHost: AgentProcessHost
+    /// The two session-drive adapters, for the half of the seam that OPENS a Session's channel
+    /// rather than driving one (`SessionChannel`, #749). Whatever a CLI needs beyond a running
+    /// process is theirs — a thread table, a server host, a protocol — which is what keeps this
+    /// module CLI-blind.
+    ///
+    /// Held rather than composed per read, unlike `driver`: the Codex adapter owns its thread
+    /// table, and a second copy of that table would be a second answer to which Sessions Argo can
+    /// steer. Lazy for the reason `delivery` is — it reads this Hub, and it reads `delivery`.
+    @ObservationIgnored lazy var channels = makeAdapters()
 
     /// The rows for agents Argo has started whose CLI has not yet written a record. Observed, so a
     /// spawn reaches the roster in the same update that opened its PTY.
@@ -107,7 +108,6 @@ public final class Hub {
         self.engine = engine
         self.discovery = discovery
         self.spawnServices = spawnServices
-        self.codexHost = spawnServices.codexHost ?? CodexProcessHost()
         self.modeStore = SessionModeStore(fileURL: spawnServices.modeFileURL)
         // Read at construction: the roster is published before anything is swept, and a chain
         // loaded a moment later would blank the link on the first reading of a Session that has

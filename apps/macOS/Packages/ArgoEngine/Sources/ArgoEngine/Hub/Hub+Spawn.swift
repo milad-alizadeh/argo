@@ -83,76 +83,24 @@ public extension Hub {
         return ownership.claim(naming: uuid)
     }
 
+    /// The process, then whatever its CLI needs beyond one — both asked of the port, so nothing
+    /// here switches on which CLI it is starting (#749). In that order: a channel that writes to
+    /// the process has nothing to write to until the process is adopted.
     private func start(_ plan: AgentSpawnPlan) async throws {
-        let process = try await host(for: plan.cli).start(
-            launch(for: plan),
+        let process = try await channels.host(for: plan, besides: ptyHost()).start(
+            plan.launch(from: spawnServices.launcher, companion: invitation(for: plan)),
             events: events(for: plan.claim),
         )
         terminals.adopt(plan.claim, process: process)
-        openThread(for: plan)
+        channels.open(plan)
     }
 
-    /// What the CLI is started with — the flags, and the channels only some CLIs take.
-    private func launch(for plan: AgentSpawnPlan) async throws -> AgentLaunch {
-        let invitation = plan.cli.takesCompanionPlugin
-            ? try companion?.invite(plan.claim, gatedBy: permissions?.grant(plan.claim))
-            : nil
-        let launch = try await spawnServices.launcher.launch(
-            cli: plan.cli,
-            cwd: plan.cwd,
-            companion: invitation,
-        )
-        .adding(plan.cli.surfaceArguments)
-        .adding(plan.cli.arguments(standingOn: plan.mode))
-        .adding(plan.seed.resuming.map { plan.cli.arguments(resuming: $0.chainID) } ?? [])
-        // Never beside `--resume`: that continues a chain whose next file the CLI names itself, and
-        // the two flags would be two answers to one question.
-        .adding(plan.namedUUID.map { plan.cli.arguments(namingFreshSession: $0) } ?? [])
-        // A CLI that opens on a Turn instead takes its prompt in `openThread`.
-        guard plan.cli.opensOnArgv, let opening = plan.seed.opening else { return launch }
-        return launch.opening(opening)
-    }
-
-    /// Whatever this CLI needs beyond a running process. A switch and not a capability flag: what
-    /// happens here is one CLI's own protocol, so a third has to say what its channel is rather
-    /// than answer yes or no to Codex's.
-    private func openThread(for plan: AgentSpawnPlan) {
-        switch plan.cli {
-        // The PTY is the whole channel: there is nothing to open on top of it.
-        case .claude: break
-        case .codex: openCodexThread(for: plan)
-        }
-    }
-
-    /// A Codex spawn is a JSON-RPC client as well as a process: the thread is asked for the moment
-    /// the server is up, and the seed's prompt is its first Turn. Queued rather than sent, because
-    /// the thread does not exist until the server says it does.
-    private func openCodexThread(for plan: AgentSpawnPlan) {
-        let claim = plan.claim
-        let write: @MainActor (String) -> Bool = { [weak self] line in
-            self?.terminals.write(line, to: claim) ?? false
-        }
-        // Filed under the CLAIM like every other gate reading, so a Permission raised before the
-        // CLI has written a record survives the re-key to the id it picks.
-        let approvals = CodexApprovals(
-            patience: spawnServices.permissionPatience,
-            publish: { [weak self] readings in self?.claims.publish(readings, for: claim) },
-            write: write,
-        )
-        let thread = CodexThread(
-            cwd: plan.cwd,
-            mode: plan.mode,
-            approvals: approvals,
-            channel: CodexChannel(
-                write: write,
-                report: { [weak self] status in
-                    self?.claims.publish(driveStatus: status, for: claim)
-                },
-            ),
-        )
-        codex.open(claim, thread: thread)
-        guard let opening = plan.seed.opening else { return }
-        _ = thread.send(opening)
+    /// The companion plugin and its permission gate, for a plan whose CLI takes them. The grant is
+    /// minted with the invitation: the hook is what carries it, so a plugin nobody was invited to
+    /// leaves nothing to gate.
+    private func invitation(for plan: AgentSpawnPlan) throws -> CompanionInvitation? {
+        guard plan.takesCompanionPlugin else { return nil }
+        return try companion?.invite(plan.claim, gatedBy: permissions?.grant(plan.claim))
     }
 
     /// Filed under the CLAIM, which is the only key that survives the re-key to the id the CLI
@@ -172,12 +120,7 @@ public extension Hub {
             for: plan.claim,
         )
         guard plan.seed.resuming == nil else { return }
-        spawns[plan.claim] = AgentSpawn(
-            claim: plan.claim,
-            cli: plan.cli,
-            cwd: plan.cwd,
-            spawnedAtMs: Date().epochMs,
-        )
+        spawns[plan.claim] = AgentSpawn(spawning: plan, atMs: Date().epochMs)
     }
 
     /// One claim, given up: Argo's hold on it, the process behind it, and every channel it spoke
@@ -188,21 +131,17 @@ public extension Hub {
         // back through the claim that is about to stop answering.
         delivery.forget(ownership.rowID(ofClaim: claim.value))
         ownership.release(claim)
-        terminals.drop(claim)
-        codex.close(claim)
+        channels.close(claim)
         companion?.withdraw(claim)
         permissions?.withdraw(claim)
     }
 
-    /// A chunk goes to ONE table. A Codex claim's bytes are JSON-RPC and belong to its thread; the
-    /// terminal table would only keep them in a replay buffer for a viewer that cannot exist,
-    /// because there is no PTY behind a Codex Session to draw.
+    /// A chunk goes to ONE channel, and which one is the port's to answer: a Codex claim's bytes
+    /// are JSON-RPC and belong to its thread, and the Hub answering that itself was the third place
+    /// per-CLI knowledge had accreted (#749).
     private func events(for claim: SessionOwnership.ClaimID) -> AgentProcessEvents {
         AgentProcessEvents(
-            onData: { [weak self] chunk in
-                guard let self, !codex.received(chunk, from: claim) else { return }
-                terminals.received(chunk, from: claim)
-            },
+            onData: { [weak self] chunk in self?.channels.received(chunk, from: claim) },
             onExit: { [weak self] code in self?.processEnded(claim, exitCode: code) },
         )
     }

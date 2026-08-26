@@ -3,13 +3,28 @@ import Foundation
 /// The Codex adapter for the session-drive port: a Turn put to a `codex app-server` Argo already
 /// owns (ADR-0024, #548). Verified against `CodexClient.verifiedAgainst`.
 ///
-/// It starts nothing and owns nothing: the claim registry and the thread table are the ones the
-/// spawn built, which is why this is a value and not an object.
+/// The thread table is ITS OWN (#749) — the Hub held one before, and holding it was most of what
+/// made the Hub a third adapter. Everything else is the spawn's: the claim registry, the process
+/// table and the claim ledger are the ones every other reading is taken through, because a second
+/// way to reach an agent is a second answer to "is this Session steerable".
 @MainActor
 struct CodexSessionDriver: SessionDriver {
     let ownership: SessionOwnership
-    let threads: CodexThreads
+    /// The processes behind the claims. A Codex Session has no PTY to draw, but it has a process,
+    /// and its stdin is where a JSON-RPC line goes.
+    let terminals: AgentTerminals
+    /// Where a gate reading is published, keyed by claim.
+    let claims: ClaimLedger
     let attachments: AttachmentStore
+    /// How long a Codex approval may sit unanswered before the adapter declines it itself — the
+    /// WHOLE mechanism on this surface, because the server keeps no clock (ADR-0024).
+    let patience: PermissionPatience
+    /// What starts a `codex app-server`: pipes rather than a PTY (`CodexProcessHost`). The seam is
+    /// still there for a suite that must not start a real one.
+    let serverHost: AgentProcessHost
+    /// The Codex threads Argo holds, one per claim. Empty on an Argo that has spawned no `codex`,
+    /// which is also what tells `SessionAdapters` a Session is a Codex one.
+    let threads = CodexThreads()
 
     /// Codex takes images as input items of the Turn itself, so there is an affordance to draw
     /// (#540). Declared rather than asked of the server at the point of use: the composer has to
@@ -104,6 +119,17 @@ struct CodexSessionDriver: SessionDriver {
     func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
         guard let thread = thread(for: sessionID) else { throw SessionDriveError.notDrivable }
         guard thread.approvals.revoke(toolName) else { throw SessionDriveError.noSuchGrant }
+    }
+
+    /// Whether this Session is one of Argo's Codex threads — true exactly while Argo holds a live
+    /// one for it, which is the fact `SessionAdapters` routes on and the same fact `ownerOf` grades
+    /// steerability on.
+    ///
+    /// The table and not the Session's `cli`: `cli` is read off a record, and a fresh Codex Session
+    /// has none until its CLI writes one — so routing on it would send that Session's first Turn to
+    /// the `claude` adapter, which holds no process of its own for it.
+    func holdsThread(for sessionID: String) -> Bool {
+        thread(for: sessionID) != nil
     }
 
     /// `ownerOf` answers only for a claim whose process still lives, so an orphaned Session refuses

@@ -46,7 +46,7 @@ struct LiveCodex {
     /// The thread behind that Session, for the facts only the protocol carries — whether a Turn is
     /// in flight, above all.
     var thread: CodexThread? {
-        claim.flatMap { hub.codex.thread(for: $0) }
+        claim.flatMap { hub.channels.codex.threads.thread(for: $0) }
     }
 
     /// What `codex --version` says, as the bare version — `codex-cli 0.147.0` answers `0.147.0`.

@@ -18,18 +18,13 @@ struct DriveCommandSurfaceTests {
         #expect(hub.driver.canRunCommands(for: "a-claude-session"))
     }
 
-    /// Read off the Codex adapter directly, because reaching one through the port needs a live
-    /// thread and this suite starts nothing. It is this refusal that makes the routing worth
+    /// Asked of the Codex adapter by name, because routing to it needs a live thread and this suite
+    /// starts nothing. It is this refusal that makes the routing worth
     /// having: stated jointly it would have taken the picker off every `claude` Session too.
     @Test
     func `the Codex adapter refuses the command surface`() {
         let hub = testHub(projectURL: URL(filePath: "/tmp/argo-command-surface"))
-        let codex = CodexSessionDriver(
-            ownership: hub.ownership,
-            threads: hub.codex,
-            attachments: AttachmentStore(root: URL(filePath: "/tmp/argo-command-surface")),
-        )
 
-        #expect(!codex.canRunCommands(for: "a-codex-session"))
+        #expect(!hub.channels.codex.canRunCommands(for: "a-codex-session"))
     }
 }
