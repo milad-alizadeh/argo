@@ -86,7 +86,7 @@ struct ComposerPasteboardTests {
             return true
         }
         guard let tiff = image.tiffRepresentation,
-              let png = ComposerPasteboard.png(fromTIFF: tiff)
+              let png = ComposerPasteboard.png(from: tiff)
         else { return Data() }
         return png
     }

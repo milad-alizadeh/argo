@@ -28,16 +28,17 @@ enum ComposerPasteboard {
         if let png = board.data(forType: .png) {
             return SessionAttachment.pastedImage(png, fileExtension: "png")
         }
-        guard let tiff = board.data(forType: .tiff), let png = Self.png(fromTIFF: tiff) else {
+        guard let tiff = board.data(forType: .tiff), let png = Self.png(from: tiff) else {
             return nil
         }
         return SessionAttachment.pastedImage(png, fileExtension: "png")
     }
 
-    /// TIFF is what the pasteboard offers when nothing else is on it, and what `NSImage` hands back
-    /// when a fixture draws one. Shared so the two paths cannot re-encode differently.
-    static func png(fromTIFF tiff: Data) -> Data? {
-        NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:])
+    /// Pixels in whatever the source offered — TIFF, which is what the pasteboard falls back to and
+    /// what `NSImage` hands back when a fixture draws one, or the JPEG a drag can carry instead.
+    /// Shared so the paste and the drop cannot re-encode differently.
+    static func png(from data: Data) -> Data? {
+        NSBitmapImageRep(data: data)?.representation(using: .png, properties: [:])
     }
 
     /// The types the composer intercepts ⌘V for. Deliberately NOT text: a paste the field should

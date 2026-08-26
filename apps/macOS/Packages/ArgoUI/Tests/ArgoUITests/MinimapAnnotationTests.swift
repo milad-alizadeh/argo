@@ -46,6 +46,41 @@ struct MinimapAnnotationTests {
         #expect(deck.lane.marking.isEmpty)
     }
 
+    /// #732 read the mark as covering the prompt alone. It does not: the span is the whole Turn's
+    /// block, and it is the SAME span from every point in it — which is the claim the ticket's
+    /// acceptance asks for, and the one nothing here previously made.
+    ///
+    /// Walked at a step finer than a Turn is tall, so a span that collapsed anywhere inside one
+    /// fails rather than being stepped over.
+    @Test
+    func `the mark spans the whole Turn from every point in it`() throws {
+        let deck = Self.mounted()
+        let lane = deck.lane
+        let named = try #require(lane.geometry.blocks(in: 0 ... lane.bounds.height).dropFirst()
+            .first)
+        let slide = lane.geometry.laneOffset(at: deck.feed.offset() ?? 0)
+        let span = (named.y - slide) ... (named.y + named.height - slide)
+
+        for laneY in stride(from: span.lowerBound + 1, to: span.upperBound, by: 1) {
+            try lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: laneY)))
+            #expect(lane.marking.map(\.span) == [span])
+            #expect(lane.marking.first?.words == named.prompt)
+        }
+    }
+
+    /// A Turn is more than the prompt that opened it. The mark has to reach past the prompt's own
+    /// row, or the pointer names the Turn from one bubble's worth of the lane and nowhere else.
+    @Test
+    func `a Turn's mark reaches past the row its prompt was drawn on`() throws {
+        let lane = Self.mounted().lane
+        let rows = lane.geometry.reading.rows
+        let turn = try #require(MinimapTurn.extents(of: rows).first { $0.rows.count > 1 })
+        let block = try #require(lane.geometry.block(atMiniatureY: lane.geometry
+                .markY(row: turn.rows.lowerBound)))
+
+        #expect(block.height > lane.geometry.markY(row: turn.rows.lowerBound + 1) - block.y)
+    }
+
     /// The whole reason the annotations are their own layer. A pointer crossing the lane must not
     /// cost the miniature a single rasterise.
     @Test
