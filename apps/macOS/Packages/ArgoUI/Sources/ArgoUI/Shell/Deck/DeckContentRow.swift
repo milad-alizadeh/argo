@@ -51,6 +51,12 @@ struct DeckContentRow: View {
         _table = State(initialValue: FeedTableHandle(held: held))
     }
 
+    /// The deck's selection with the keyboard's way home wired onto the reading's table — the copy
+    /// every surface here closes through. See `FeedRowSelection.homing(onto:)`.
+    private var routed: FeedRowSelection {
+        selection.homing(onto: table)
+    }
+
     /// Who else is working, read off the SESSION's rows — never off `reading`, which is what the
     /// rail may have scoped away.
     private var agents: [FeedAgent] {
@@ -76,7 +82,7 @@ struct DeckContentRow: View {
                 FeedColumn(
                     feed: reading,
                     showing: showing,
-                    selection: selection,
+                    selection: routed,
                     held: held,
                     vessel: vessel,
                     intents: intents,
@@ -143,10 +149,10 @@ struct DeckContentRow: View {
     /// feed is a place the reader navigated to, so Escape leaves it the way it leaves the other two
     /// — and that makes the rail's chip the second way back rather than the only one.
     private func dismissTopmost() {
-        if selection.lit != nil {
-            selection.darken(returningInto: reading)
-        } else if selection.open != nil {
-            selection.close()
+        if routed.lit != nil {
+            routed.darken(returningInto: reading)
+        } else if routed.open != nil {
+            routed.close()
         } else {
             rail.scope = .session
         }
@@ -167,8 +173,8 @@ struct DeckContentRow: View {
                 .argoUnderCanopy()
                 EvidencePanel(
                     evidence: evidence,
-                    current: selection.step,
-                    dismiss: selection.close,
+                    current: routed.step,
+                    dismiss: routed.close,
                 )
                 .frame(width: zoning.panelWidth.wrappedValue)
                 .focusable()

@@ -32,10 +32,16 @@ public extension View {
     /// It deliberately paints NO background: the sidebar's Liquid Glass is the system's to draw,
     /// and a colour laid over the whole window kills it.
     func argoAppearance(_ theme: ArgoTheme = .graphite) -> some View {
+        argoInk(theme)
+            .preferredColorScheme(theme.scheme)
+    }
+
+    /// The appearance without the scheme preference. `preferredColorScheme` travels up to the
+    /// presentation, so a surface hosted inside the window states its scheme as a value instead.
+    func argoInk(_ theme: ArgoTheme) -> some View {
         argoTheme(theme)
             .tint(theme.color.interaction.accent.color)
             .foregroundStyle(theme.color.text.primary)
-            .preferredColorScheme(theme.scheme)
     }
 
     /// The opaque ground an Instrument Deck sits on. Only surfaces that are opaque by

@@ -33,7 +33,6 @@ final class PlanPillE2ETests: XCTestCase {
     }
 
     func testTheKeyboardReachesThePillAndOpensItsList() {
-        let pill = labelled("Plan")
         XCTAssertTrue(pill.waitForExistence(timeout: 20), "The deck drew no plan pill.")
 
         // A step that is NOT the current one: the pill's own line already names the current step,
@@ -41,20 +40,48 @@ final class PlanPillE2ETests: XCTestCase {
         let pending = labelled("Wire the pill above the dock, pending")
         XCTAssertFalse(pending.exists, "The list was open before anything reached the pill.")
 
-        XCTAssertTrue(tabbedToTheList(pending), "The keyboard never reached the pill.")
+        XCTAssertTrue(tabbedToThePill(), "The keyboard never reached the pill.")
+
+        // Space and not Tab: the pill is a Button, and focus alone opens nothing — the list stands
+        // over the middle of the reading, so arriving at the pill must not put it there.
+        app.typeText(" ")
+        XCTAssertTrue(
+            pending.waitForExistence(timeout: 10),
+            "The pill held the keyboard but did not open its list.",
+        )
         XCTAssertEqual(app.state, .runningForeground)
     }
 
-    /// Tab until the list appears. The pill is focusable so the reveal cannot belong to hover
-    /// alone.
-    private func tabbedToTheList(_ pending: XCUIElement) -> Bool {
+    /// Tab until the pill holds the keyboard. A bound rather than a count — see `focusStops`.
+    private func tabbedToThePill() -> Bool {
         for _ in 0 ..< focusStops {
             app.typeKey(.tab, modifierFlags: [])
-            if pending.exists {
+            if focusedPill.exists {
                 return true
             }
         }
         return false
+    }
+
+    /// The label the pill wears, named once: the focused query below is this one plus a conjunct.
+    private static let pillLabel = "Plan"
+
+    /// A fresh query each time: focus is what is being asked about, and a stale snapshot answers
+    /// for whichever pass took it.
+    private var pill: XCUIElement {
+        matching("label == %@", Self.pillLabel)
+    }
+
+    /// The same pill, once the keyboard is on it. In the predicate rather than off the element:
+    /// `hasKeyboardFocus` is a runtime attribute here, with no Swift property on this platform.
+    private var focusedPill: XCUIElement {
+        matching("label == %@ AND hasKeyboardFocus == true", Self.pillLabel)
+    }
+
+    private func matching(_ format: String, _ label: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: format, label))
+            .firstMatch
     }
 
     private func labelled(_ label: String) -> XCUIElement {

@@ -41,23 +41,38 @@ struct PlanPill: View {
         isRevealed || isOpen
     }
 
+    /// The one place the list opens or closes, so the click and the two keys cannot drift apart.
+    private func toggleList() {
+        isOpen.toggle()
+    }
+
+    /// Space and Return, answered exactly as the click is.
+    private func pressed() -> KeyPress.Result {
+        toggleList()
+        return .handled
+    }
+
     /// A Button rather than a tap gesture, so Space and Return open the list for a keyboard the
     /// same way a click does — and `ESC` gives it back, since the list stands over the reading.
     ///
-    /// Focusable for that Escape alone: `onExitCommand` only fires for a view in the responder
-    /// chain. The ring comes with being in it — the pill floats over the reading, so what has focus
-    /// is not otherwise evident.
+    /// Focusable so Escape and those two keys reach it at all: `onExitCommand` and `onKeyPress`
+    /// only fire for a view in the responder chain. The ring comes with being in it — the pill
+    /// floats over the reading, so what has focus is not otherwise evident.
     private var pill: some View {
-        Button { isOpen.toggle() } label: { line }
+        // Collapsing the pill into one accessibility element takes the Button's own element with
+        // it: what publishes is a plain group, which offers a screen reader no press and macOS no
+        // Tab stop (#777). Hiding the line instead leaves the Button standing, wearing this label
+        // on the pill's own frame.
+        Button { toggleList() } label: { line.accessibilityHidden(true) }
             .buttonStyle(.plain)
             .focusable()
             .focused($isFocused)
             .focusEffectDisabled()
             .argoFocusRing(isFocused, in: Capsule())
+            // `.focusable()` above takes the key events a focused Button would answer itself.
+            .onKeyPress(.space) { pressed() }
+            .onKeyPress(.return) { pressed() }
             .onExitCommand { isOpen = false }
-            // On the PILL and not on the view that also holds the list: an element spanning both
-            // puts this label on a frame the pointer cannot land in.
-            .accessibilityElement(children: .ignore)
             .accessibilityLabel("Plan")
             .accessibilityValue(spoken)
             .accessibilityHint(showsList ? "Hides the steps" : "Shows the steps")
