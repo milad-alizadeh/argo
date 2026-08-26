@@ -1,5 +1,5 @@
 {
-  "outputStyle": "Out Loud",
+  "outputStyle": "Concise",
   "hooks": {
     "PreToolUse": [
       {
