@@ -67,8 +67,23 @@ public struct SessionAttachment: Identifiable, Equatable, Sendable {
     /// the same words in every render of this state, because a name that varied would be a fact
     /// about the paste that Argo does not have.
     public static func pastedImage(_ data: Data, fileExtension: String) -> SessionAttachment {
+        image(data, fileExtension: fileExtension, called: pastedImageName)
+    }
+
+    /// The same, off a drag rather than the clipboard — a screenshot let go straight from the macOS
+    /// preview, which offers its pixels because there is no file yet to offer (#732).
+    public static func droppedImage(_ data: Data, fileExtension: String) -> SessionAttachment {
+        image(data, fileExtension: fileExtension, called: droppedImageName)
+    }
+
+    private static func image(
+        _ data: Data,
+        fileExtension: String,
+        called name: String,
+    )
+        -> SessionAttachment {
         SessionAttachment(
-            name: pastedImageName,
+            name: name,
             byteCount: data.count,
             isImage: true,
             source: .bytes(data, fileExtension: fileExtension),
@@ -78,4 +93,5 @@ public struct SessionAttachment: Identifiable, Equatable, Sendable {
     /// What a paste is called. Here rather than at the call site so the chip, the specimen and the
     /// study's `paste.png` cannot drift into three names for one thing.
     public static let pastedImageName = "Pasted image"
+    public static let droppedImageName = "Dropped image"
 }

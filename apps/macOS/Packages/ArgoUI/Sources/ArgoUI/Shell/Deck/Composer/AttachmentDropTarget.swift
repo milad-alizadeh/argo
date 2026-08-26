@@ -1,7 +1,10 @@
 import ArgoEngine
 import SwiftUI
 
-/// The two gestures that are not a control: a file dragged over the vessel, and ⌘V (#540).
+/// The two gestures that are not a control: something dragged over the vessel, and ⌘V (#540).
+///
+/// What a drag may be holding is `ComposerDrop`, which reads the same two things the paste does —
+/// a file's own path, or pixels with nowhere to be read from.
 ///
 /// A modifier on the whole vessel rather than on the field, because the drop target IS the vessel —
 /// the study rejected a 40pt attached seam for exactly this, since a drop wash the height of the
@@ -25,8 +28,8 @@ struct AttachmentDropTarget: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .dropDestination(for: URL.self) { urls, _ in
-                attach(urls.map(SessionAttachment.file(at:)))
+            .dropDestination(for: ComposerDrop.self) { dropped, _ in
+                attach(dropped.map(\.attachment))
                 return canAttach
             } isTargeted: { isTargeted = $0 }
             .onPasteCommand(of: ComposerPasteboard.pastedTypes) { _ in
