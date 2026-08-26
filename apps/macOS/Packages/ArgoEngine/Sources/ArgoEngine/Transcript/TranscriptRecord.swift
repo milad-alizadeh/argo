@@ -2,6 +2,10 @@
 public struct MessageRecord: Sendable, Equatable {
     public let uuid: String?
     public let parentUuid: String?
+    /// The chain's ORIGIN session, in the host's own snake_case field. It stops moving when the
+    /// file does: a relocated transcript's records still name the session the run began as, which
+    /// is the one key `EnterWorktree` leaves behind (#735).
+    public let originSessionID: String?
     public let cwd: String?
     public let gitBranch: String?
     public let timestampMs: Int?
@@ -100,6 +104,7 @@ extension MessageRecord {
         let message = record["message"]
         self.uuid = record.stringField("uuid")
         self.parentUuid = record.stringField("parentUuid")
+        self.originSessionID = record.stringField("session_id")
         self.cwd = record.stringField("cwd")
         self.gitBranch = record.stringField("gitBranch")
         self.timestampMs = ArgoEngine.timestampMs(record)

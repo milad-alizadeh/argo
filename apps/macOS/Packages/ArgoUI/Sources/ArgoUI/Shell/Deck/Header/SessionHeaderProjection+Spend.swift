@@ -72,8 +72,9 @@ extension SessionHeaderProjection {
             case let .compaction(atMs): atMs
             // A skill load carries no moment of its own: the CLI expands a body as part of the
             // prompt beside it, and that prompt's own timestamp is already counted.
-            case .recordIdentity, .headLeaf, .title, .cwd, .model, .branch, .mode, .message,
-                 .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine, .skillLoaded: nil
+            case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .branch, .mode,
+                 .message, .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine,
+                 .skillLoaded: nil
             }
         }
         .sorted()

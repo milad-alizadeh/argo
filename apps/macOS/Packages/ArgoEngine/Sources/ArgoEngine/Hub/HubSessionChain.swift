@@ -24,33 +24,15 @@ enum HubSessionChain {
         owners: [String: String],
     )
         -> [HubSession] {
-        var byID: [String: HubSession] = [:]
-        for transcript in transcripts where byID[transcript.id] == nil {
-            byID[transcript.id] = transcript.session
-        }
-        var children: [String: [String]] = [:]
-        var roots: [String] = []
-        for transcript in transcripts {
-            guard let parentID = parentID(of: transcript, owners: owners), parentID != transcript.id
-            else {
-                roots.append(transcript.id)
-                continue
-            }
-            children[parentID, default: []].append(transcript.id)
-        }
-
+        let graph = HubChainGraph(transcripts: transcripts, owners: owners)
         var claimed: Set<String> = []
         var sessions: [HubSession] = []
-        for id in roots + transcripts.map(\.id) where !claimed.contains(id) {
-            guard var session = byID[id] else { continue }
+        for id in graph.roots + transcripts.map(\.id) where !claimed.contains(id) {
+            guard var session = graph.session(id) else { continue }
             claimed.insert(id)
-            var currentID = id
-            while let childID = children[currentID]?.first,
-                  !claimed.contains(childID),
-                  let continuation = byID[childID] {
+            for continuationID in graph.claimContinuations(of: id, into: &claimed) {
+                guard let continuation = graph.session(continuationID) else { continue }
                 session.mergeContinuation(continuation)
-                claimed.insert(childID)
-                currentID = childID
             }
             sessions.append(session)
         }
@@ -76,14 +58,5 @@ enum HubSessionChain {
             guard let secondKey = second.lastSeenAtMs else { return true }
             return firstKey > secondKey
         }
-    }
-
-    private static func parentID(
-        of transcript: HubTranscript,
-        owners: [String: String],
-    )
-        -> String? {
-        guard let headLeafUUID = transcript.session.headLeafUUID else { return nil }
-        return owners[headLeafUUID]
     }
 }

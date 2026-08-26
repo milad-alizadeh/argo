@@ -7,6 +7,10 @@ public enum TranscriptEvent: Sendable, Equatable {
     case recordIdentity(uuid: String)
     /// The head of the resume chain, off the line-0 `last-prompt` record.
     case headLeaf(uuid: String)
+    /// The id of the session this chain STARTED as, off the snake_case `session_id` every
+    /// message-bearing record carries. Equal to the file's own id for all but a relocated
+    /// transcript, where it is the only key the two halves share (#735).
+    case originSession(id: String)
     /// The host's own title for the session, verbatim.
     case title(String)
     /// The working directory the records report. Emitted on its first reading and again only when

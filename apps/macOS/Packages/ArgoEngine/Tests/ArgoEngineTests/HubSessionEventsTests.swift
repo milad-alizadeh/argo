@@ -81,7 +81,8 @@ private extension TranscriptEvent {
     var spokenMarkdown: String? {
         switch self {
         case let .message(markdown), let .thought(markdown): markdown
-        case .recordIdentity, .headLeaf, .title, .cwd, .model, .branch, .mode, .prompt, .toolCall,
+        case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .branch, .mode,
+             .prompt, .toolCall,
              .toolCallOutcome, .turnEnded, .plan, .usage, .compaction, .queued, .unreadableLine,
              .skillLoaded: nil
         }

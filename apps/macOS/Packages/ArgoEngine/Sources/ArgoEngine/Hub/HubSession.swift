@@ -69,6 +69,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// than compared.
     private(set) var observedModeCount = 0
     public private(set) var headLeafUUID: String?
+    /// The session id this chain started as. Internal, and read by `HubSessionChain` alone: it is a
+    /// join key, not a fact any surface renders.
+    private(set) var originSessionID: String?
     /// Everything the transcript said, in the order it said it. The facts above are a lossy fold
     /// over this stream, which is why it is retained whole for the surfaces that read it.
     public private(set) var events: [TranscriptEvent] = []
@@ -163,6 +166,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             break
         case let .headLeaf(uuid):
             headLeafUUID = uuid
+        case let .originSession(id):
+            originSessionID = id
         case let .title(observedTitle):
             name.state(observedTitle)
         case let .cwd(observedCwd):
@@ -184,11 +189,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             // A question the Turn it was asked in has left behind is not still waiting on anyone.
             pendingAsks = []
         case let .toolCall(call):
-            hasAgentActivity = true
-            if call.name == ToolCall.askUserQuestion {
-                pendingAsks.insert(call.id)
-            }
-            observeActivity(call.atMs)
+            observe(call: call)
         case let .toolCallOutcome(outcome):
             hasAgentActivity = true
             pendingAsks.remove(outcome.id)
@@ -212,6 +213,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         case .unreadableLine, .skillLoaded:
             break
         }
+    }
+
+    private mutating func observe(call: ToolCall) {
+        hasAgentActivity = true
+        if call.name == ToolCall.askUserQuestion {
+            pendingAsks.insert(call.id)
+        }
+        observeActivity(call.atMs)
     }
 
     /// The value and the count move together, always: a rung Argo set stands until the count moves
