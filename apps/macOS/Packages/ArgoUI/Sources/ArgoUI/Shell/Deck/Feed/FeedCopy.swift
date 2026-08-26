@@ -23,13 +23,13 @@ enum FeedCopy {
     private static func reading(_ rows: [FeedRow]) -> TurnExtents.Reading {
         TurnExtents.Reading(
             count: rows.count,
-            opensTurn: { rows[$0].isPrompt },
-            endsTurn: { rows[$0].content.kind.endsTurn },
+            opensTurn: { rows[$0].kind.isPrompt },
+            endsTurn: { rows[$0].kind.endsTurn },
         )
     }
 
     private static func said(in rows: ArraySlice<FeedRow>) -> String? {
-        let words = rows.compactMap(\.copyable)
+        let words = rows.compactMap(\.kind.words)
         return words.isEmpty ? nil : words.joined(separator: between)
     }
 }
@@ -42,13 +42,6 @@ extension FeedRow {
         let label: String
     }
 
-    /// This row's own words, as the record holds them. `nil` for every row that is not something
-    /// somebody SAID: a call, a question and a mark each carry a line Argo composed, so there is
-    /// nothing verbatim to hand over.
-    var copyable: String? {
-        content.kind.words
-    }
-
     /// The offer the ROW ITSELF draws — the words, and what to call taking them. Which kinds draw
     /// one is `FeedRow.Content.Kind.copiesInPlace`, which is also where the reason is.
     var inPlaceOffer: CopyOffer? {
@@ -57,10 +50,5 @@ extension FeedRow {
             return nil
         }
         return CopyOffer(words: words, label: label)
-    }
-
-    /// What the menu calls copying it.
-    var copyLabel: String? {
-        content.kind.copyLabel
     }
 }

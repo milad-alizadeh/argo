@@ -3,8 +3,7 @@ import ArgoEngine
 import Testing
 
 /// What a press on a row does, and the punctuation the reading is cut by. Both come off the same
-/// switch as the row's flags, so a kind that resolves the wrong intent is wrong for Return, for
-/// Space and for the click all at once.
+/// switch as the row's flags, so a wrong intent is wrong for Return, for Space and for the click.
 @Suite("Feed row activation")
 struct FeedRowActivationTests {
     /// A row with something to hide has a fold, and the key that works it is the fold's own.
@@ -42,8 +41,7 @@ struct FeedRowActivationTests {
     }
 
     /// Nothing to fold and nothing to light, so the key falls through to the feed rather than being
-    /// swallowed by a row that does nothing — a gallery of absences and a picture-only prompt whose
-    /// picture never arrived included.
+    /// swallowed by a row that does nothing.
     @Test(arguments: [
         FeedRow.Content.message("Renamed."),
         .thought("Weighing."),

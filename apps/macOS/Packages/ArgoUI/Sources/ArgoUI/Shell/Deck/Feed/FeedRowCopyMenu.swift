@@ -17,7 +17,7 @@ struct FeedRowCopyMenu: ViewModifier {
     }
 
     @ViewBuilder private var items: some View {
-        if let label = row?.copyLabel, let text = row?.copyable {
+        if let label = row?.kind.copyLabel, let text = row?.kind.words {
             Button(label) { ArgoPasteboard.put(text) }
         }
         if let turn = FeedCopy.turn(of: rows, holding: index) {

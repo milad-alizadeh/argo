@@ -35,7 +35,7 @@ extension FeedProjection {
     static let previewPastedRows = rows(from: CockpitPresentation.Session.pasted)
 
     /// The same feed with the prose taken out. A filter over the shipping rows, never a second set.
-    static let previewCallRows = previewRows.filter(\.isCall)
+    static let previewCallRows = previewRows.filter(\.kind.isCall)
 
     /// The rows the agent narrated itself — a Claude Code feed, where a command arrives with the
     /// agent's account of what it was for.
@@ -55,7 +55,7 @@ extension FeedProjection {
     static let previewFoldRows = rows(from: CockpitPresentation.Session.foldedLooking)
 
     /// The same feed with the work taken out — what the agent SAID, at the shape it said it in.
-    static let previewProseRows = previewRows.filter(\.isProse)
+    static let previewProseRows = previewRows.filter(\.kind.isProse)
 
     /// The questions in that feed — the one still waiting and the one already settled.
     static let previewAsks = previewRows.compactMap { row -> FeedAsk? in
@@ -188,10 +188,10 @@ extension FeedProjection {
     /// Both taken from the END of their reading, which is where a reading opens. A cursor further
     /// up needs a scroll to be seen, and a scroll over rows whose heights are still estimates
     /// lands somewhere else once they are measured — a still nobody can repeat.
-    static let previewPromptID = previewProseRows.last(where: \.isPrompt)?.id
+    static let previewPromptID = previewProseRows.last(where: \.kind.isPrompt)?.id
 
     /// The message the copy chip is drawn on (#767). From the same end, for the same reason.
-    static let previewMessageID = previewProseRows.last(where: \.isMessage)?.id
+    static let previewMessageID = previewProseRows.last(where: \.kind.isMessage)?.id
 
     static let previewLastFailedCallID = previewRows.reversed().failedCallID
 
@@ -261,7 +261,7 @@ extension FeedProjection {
     static let longSilentRows: [FeedRow] = {
         guard let at = longRows.firstIndex(where: { $0.id == longHeldRowID }) else { return [] }
         return longRows.prefix(through: at) + longRows[longRows.index(after: at)...]
-            .filter { !$0.isMessage }
+            .filter { !$0.kind.isMessage }
     }()
 }
 
@@ -283,7 +283,7 @@ private extension [FeedRow] {
     /// rather than what includes it — which is the rule `FeedTail.newMessages` reads. `0` asks for
     /// the last row of all, where nothing at all has been said since.
     func leaving(_ count: Int) -> FeedRow.ID? {
-        let messages = filter(\.isMessage)
+        let messages = filter(\.kind.isMessage)
         guard messages.count >= count else { return nil }
         let opening = messages[messages.count - count].id
         guard let at = firstIndex(where: { $0.id == opening }), at > 0 else { return nil }

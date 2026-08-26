@@ -66,12 +66,13 @@ extension FeedRow {
     /// gallery of absences, and a call the record never answered alike.
     @discardableResult
     func activate(selection: FeedRowSelection, isExpanded: Binding<Bool>) -> Bool {
-        switch content.kind.activation {
+        let kind = content.kind
+        switch kind.activation {
         case .fold:
             isExpanded.wrappedValue.toggle()
             return true
         case .openEvidence:
-            guard selection.open == id || opensEvidence else { return false }
+            guard selection.open == id || kind.opensEvidence else { return false }
             openEvidence(with: selection)
             return true
         case let .light(shot):
@@ -88,7 +89,7 @@ extension FeedRow {
     /// row over a panel that has nothing to show.
     func openEvidence(with selection: FeedRowSelection) {
         guard selection.open != id else { return selection.close() }
-        guard opensEvidence else { return }
+        guard kind.opensEvidence else { return }
         selection.openEvidence(of: id)
     }
 }

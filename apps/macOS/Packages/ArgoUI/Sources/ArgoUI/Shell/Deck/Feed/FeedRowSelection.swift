@@ -74,6 +74,6 @@ extension FeedRow {
     /// Whether this row is where a picture came from — which rows hold pictures at all is
     /// `FeedRow.Content.kind`'s answer, not a second reading of the kinds here.
     func shows(_ shot: FeedShot) -> Bool {
-        content.kind.shots.contains(shot)
+        kind.shots.contains(shot)
     }
 }

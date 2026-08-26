@@ -129,6 +129,15 @@ struct FeedRowKindTests {
         ])
     }
 
+    /// The minimap's prompt band reads `words` off `isPrompt` alone, so the two may never disagree.
+    @Test(arguments: RowKindFixture.everyKind
+        + [.prompt(text: "", shots: [RowKindFixture.openableShot])])
+    func `a prompt always carries the words the lane draws`(content: FeedRow.Content) {
+        let kind = content.kind
+
+        #expect(!kind.isPrompt || kind.words != nil)
+    }
+
     /// The reading grows under an open panel, so the evidence is re-resolved every update — it has
     /// to be the CURRENT call's, not a copy taken when the row was clicked.
     @Test

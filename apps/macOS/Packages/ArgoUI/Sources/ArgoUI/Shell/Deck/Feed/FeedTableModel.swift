@@ -51,7 +51,7 @@ import SwiftUI
             // The way text leaves the feed (#734). Here rather than inside the row view, because
             // the Turn it offers is a stretch of the WHOLE reading and a row cannot see one.
             .argoFeedCopyMenu(rows: rows, index: index)
-        guard !row.isWorkingThread else {
+        guard !row.kind.isWorkingThread else {
             return AnyView(dressed.environment(\.self, environment))
         }
         return AnyView(
@@ -89,6 +89,6 @@ extension FeedRow {
     /// the cell's top put every line of the reading a step above the words it stands for.
     static func step(to row: FeedRow, from previous: FeedRow?) -> CGFloat {
         guard let previous else { return 0 }
-        return previous.isCall && row.isCall ? ArgoFeedRow.callStep : ArgoFeedRow.gap
+        return previous.kind.isCall && row.kind.isCall ? ArgoFeedRow.callStep : ArgoFeedRow.gap
     }
 }

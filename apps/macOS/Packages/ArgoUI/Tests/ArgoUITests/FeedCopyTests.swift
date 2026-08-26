@@ -32,26 +32,27 @@ struct FeedCopyTests {
     @Test
     func `a row of prose copies its own source, verbatim`() {
         let fence = "Here it is:\n\n```swift\nlet x = 1\n```"
-        #expect(FeedRow(id: 0, content: .message(fence)).copyable == fence)
+        #expect(FeedRow(id: 0, content: .message(fence)).kind.words == fence)
         #expect(FeedRow(id: 0, content: .prompt(text: "Fix the seam", shots: []))
-            .copyable == "Fix the seam")
-        #expect(FeedRow(id: 0, content: .thought("Not sure yet.")).copyable == "Not sure yet.")
+            .kind.words == "Fix the seam")
+        #expect(FeedRow(id: 0, content: .thought("Not sure yet.")).kind.words == "Not sure yet.")
     }
 
     /// A call, a mark and a question are not something somebody SAID, so there is nothing verbatim
     /// to hand over — and a rendered stand-in for one would be Argo's words, not the record's.
     @Test
     func `a row that is not prose offers nothing of its own`() {
-        #expect(FeedRow(id: 0, content: Self.ended).copyable == nil)
-        #expect(FeedRow(id: 0, content: .mark(.compacted)).copyable == nil)
+        #expect(FeedRow(id: 0, content: Self.ended).kind.words == nil)
+        #expect(FeedRow(id: 0, content: .mark(.compacted)).kind.words == nil)
     }
 
     @Test
     func `each kind of prose names itself in the menu`() {
-        #expect(FeedRow(id: 0, content: .prompt(text: "x", shots: [])).copyLabel == "Copy Prompt")
-        #expect(FeedRow(id: 0, content: .message("x")).copyLabel == "Copy Message")
-        #expect(FeedRow(id: 0, content: .thought("x")).copyLabel == "Copy Thought")
-        #expect(FeedRow(id: 0, content: Self.ended).copyLabel == nil)
+        #expect(FeedRow(id: 0, content: .prompt(text: "x", shots: [])).kind
+            .copyLabel == "Copy Prompt")
+        #expect(FeedRow(id: 0, content: .message("x")).kind.copyLabel == "Copy Message")
+        #expect(FeedRow(id: 0, content: .thought("x")).kind.copyLabel == "Copy Thought")
+        #expect(FeedRow(id: 0, content: Self.ended).kind.copyLabel == nil)
     }
 
     @Test
@@ -132,7 +133,7 @@ struct FeedCopyTests {
         )
         let reading = TurnExtents.Reading(
             count: rows.count,
-            opensTurn: { rows[$0].isPrompt },
+            opensTurn: { rows[$0].kind.isPrompt },
             endsTurn: { rows[$0].content.kind.endsTurn },
         )
         let swept = TurnExtents.spans(of: reading)

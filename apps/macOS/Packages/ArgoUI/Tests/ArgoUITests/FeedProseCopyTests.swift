@@ -32,7 +32,7 @@ struct FeedProseCopyTests {
     /// It keeps the menu, though: the two offers are deliberately different sets.
     @Test
     func `a prompt keeps its menu`() {
-        #expect(Self.asked.copyable == "Fix the seam")
+        #expect(Self.asked.kind.words == "Fix the seam")
     }
 
     @Test(arguments: [

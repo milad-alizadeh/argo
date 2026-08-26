@@ -34,10 +34,10 @@ struct FeedPromptImageTests {
     func `a prompt carrying pictures is still prose the user asked for`() {
         let row = Self.rows("look", [Self.media()]).first
 
-        #expect(row?.isPrompt == true)
-        #expect(row?.isProse == true)
-        #expect(row?.isCall == false)
-        #expect(row?.opensEvidence == false)
+        #expect(row?.kind.isPrompt == true)
+        #expect(row?.kind.isProse == true)
+        #expect(row?.kind.isCall == false)
+        #expect(row?.kind.opensEvidence == false)
     }
 
     /// An interrupt arrives on the user side of the record too, and it is punctuation rather than

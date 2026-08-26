@@ -136,7 +136,7 @@ struct DeckZoningTests {
     /// The first row the panel can actually open on — asked of the feed rather than hardcoded,
     /// because the projection decides which row that is.
     private func openableRow(in feed: [FeedRow]) -> FeedRow.ID? {
-        feed.first(where: \.opensEvidence)?.id
+        feed.first(where: \.kind.opensEvidence)?.id
     }
 
     /// A handover the record has not answered, which is a subagent still running, plus a call
