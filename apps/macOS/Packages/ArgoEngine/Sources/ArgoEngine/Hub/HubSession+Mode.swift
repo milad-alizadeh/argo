@@ -36,9 +36,7 @@ public extension HubSession {
 }
 
 extension HubSession {
-    /// The words THIS Session's CLI states a stance in (#749). Read through `cli` and never fixed:
-    /// naming one CLI's vocabulary here reported a Codex Session on Code as `acceptEdits`, which is
-    /// `claude`'s word for a boundary Codex spells with two of its own.
+    /// The words THIS Session's CLI states a stance in (#749) — never one CLI's for both.
     private var stance: any AgentStanceVocabulary.Type {
         cli.stance
     }

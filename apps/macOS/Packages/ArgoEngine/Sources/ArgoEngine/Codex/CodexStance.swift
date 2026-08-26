@@ -46,25 +46,22 @@ struct CodexStance: Equatable {
         }
     }
 
-    /// Both halves in the server's own spellings, joined. The JOIN is Argo's and the words are not:
-    /// this surface states a boundary with two values and there is no single one to quote, so a
-    /// reading that named either alone would be half a stance reported as the whole of it.
+    /// Both halves in the server's own spellings. The JOIN is Argo's and the words are not: this
+    /// surface has no single value to quote, so naming either alone would report half a stance.
     var value: String {
         "\(approval.rawValue) · \(sandbox.rawValue)"
     }
 }
 
-/// Codex's own words for the ladder (#749). Its `value` is what `thread/start` and every
-/// `turn/start` are sent — so a Codex Session's stance is stated in Codex's vocabulary rather than
-/// in the one `claude` reports, which was the false DIRECT this port exists to end.
+/// Codex's own words for the ladder (#749) — both of the values `thread/start` and every
+/// `turn/start` are sent.
 extension CodexStance: AgentStanceVocabulary {
     static func value(for mode: SessionMode) -> String {
         of(mode).value
     }
 
-    /// Nothing observes a Codex stance: there is no transcript on this surface to state one
-    /// (ADR-0024), so the rung Argo set is the only fact there is and this is reached only if that
-    /// ever changes. An unrecognised word claims no rung rather than guessing at one.
+    /// Reached only if a Codex record is ever observed: there is no transcript on this surface to
+    /// state a stance (ADR-0024), so today the rung Argo set is the only fact there is.
     static func reading(of observed: String) -> SessionModeReading {
         guard let mode = SessionMode.allCases.first(where: { value(for: $0) == observed }) else {
             return .unknown(cli: observed)

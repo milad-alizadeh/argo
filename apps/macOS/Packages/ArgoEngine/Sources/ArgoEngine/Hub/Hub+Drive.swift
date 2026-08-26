@@ -13,7 +13,7 @@ public extension Hub {
     /// than at the surface that raised the intent (`SessionAdapters`).
     var driver: some SessionDriver {
         RememberingDriver(
-            base: channels,
+            base: adapters,
             records: { [weak self] sessionID in self?.observedModeCount(of: sessionID) ?? 0 },
             remember: { [weak self] set, sessionID in
                 self?.rememberMode(set, for: sessionID)
@@ -23,7 +23,7 @@ public extension Hub {
 }
 
 extension Hub {
-    /// The two adapters behind `channels`, built once — see the property for why once.
+    /// The two adapters behind `adapters`, built once — see the property for why once.
     func makeAdapters() -> SessionAdapters {
         SessionAdapters(
             claude: ClaudeSessionDriver(
@@ -40,17 +40,15 @@ extension Hub {
                 claims: claims,
                 attachments: AttachmentStore(root: Self.attachmentRoot),
                 patience: spawnServices.permissionPatience,
-                // `nil` takes the engine's own pipe host, which is what the app wants and what
-                // needs no window. The seam is a suite that must not start a real server.
+                // `nil` takes the engine's own pipe host, which needs no window.
                 serverHost: spawnServices.codexHost ?? CodexProcessHost(),
             ),
         )
     }
 
     /// The host that says this window may start agents AT ALL — a Hub built with none is the render
-    /// harness and every suite about observation, and neither may launch anything. Which surface a
-    /// given CLI is actually started on is the port's answer, not this one's, so a Codex spawn is
-    /// still refused for want of a host it will not itself use.
+    /// harness and every suite about observation. So a Codex spawn is refused here too, for want of
+    /// a host it will not itself use.
     func ptyHost() throws -> AgentProcessHost {
         guard let pty = spawnServices.host else {
             throw AgentSpawnError.hostRefused(detail: "This window cannot start agents")
@@ -93,7 +91,7 @@ public extension Hub {
     internal func makeDelivery() -> TurnDelivery {
         TurnDelivery(TurnDelivery.Watch(
             records: { [weak self] sessionID in self?.session(id: sessionID)?.events.count ?? 0 },
-            retype: { [weak self] sessionID in self?.channels.resubmit(sessionID) ?? false },
+            retype: { [weak self] sessionID in self?.adapters.resubmit(sessionID) ?? false },
             lost: { [weak self] text, sessionID in self?.rememberLostTurn(text, for: sessionID) },
         ))
     }

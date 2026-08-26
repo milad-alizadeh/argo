@@ -29,15 +29,15 @@ public final class Hub {
     /// speaks JSON-RPC where a Turn is a request that was either accepted or refused.
     @ObservationIgnored lazy var delivery = makeDelivery()
 
-    /// The two session-drive adapters, for the half of the seam that OPENS a Session's channel
-    /// rather than driving one (`SessionChannel`, #749). Whatever a CLI needs beyond a running
-    /// process is theirs — a thread table, a server host, a protocol — which is what keeps this
-    /// module CLI-blind.
+    /// The two session-drive adapters (ADR-0024), and the only ones: the Codex adapter holds its
+    /// own thread table, so a second construction would be a second answer to which Sessions Argo
+    /// can steer. `driver` composes over this, and `SessionChannel` reaches it directly (#749).
     ///
-    /// Held rather than composed per read, unlike `driver`: the Codex adapter owns its thread
-    /// table, and a second copy of that table would be a second answer to which Sessions Argo can
-    /// steer. Lazy for the reason `delivery` is — it reads this Hub, and it reads `delivery`.
-    @ObservationIgnored lazy var channels = makeAdapters()
+    /// Two constraints follow from it being held rather than composed per read. Lazy, because it
+    /// reads this Hub and `delivery`. And it takes `permissions` by VALUE, so the companion channel
+    /// must be open before anything reaches this — `init` opens it, and one opened later would find
+    /// the gate here holding nothing.
+    @ObservationIgnored lazy var adapters = makeAdapters()
 
     /// The rows for agents Argo has started whose CLI has not yet written a record. Observed, so a
     /// spawn reaches the roster in the same update that opened its PTY.

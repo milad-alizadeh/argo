@@ -64,12 +64,20 @@ struct SessionAdapters: SessionDriver {
     }
 
     private func adapter(for sessionID: String) -> any SessionDriver {
-        codex.holdsThread(for: sessionID) ? codex : claude
+        isCodex(sessionID) ? codex : claude
+    }
+
+    /// The one routing decision, made once for both halves of the seam. It reads the thread table
+    /// and not the Session's `cli`: `cli` is read off a record, and a fresh Codex Session has none
+    /// until its CLI writes one — so routing on it would send that Session's first Turn to the
+    /// `claude` adapter, which holds no process of its own for it.
+    private func isCodex(_ sessionID: String) -> Bool {
+        codex.thread(for: sessionID) != nil
     }
 }
 
-/// The channel half of the seam, routed the same way — by the plan's `cli` where a spawn is being
-/// opened, which is DIRECT, and by the thread table everywhere the key is a Session or a claim.
+/// The channel half of the seam, routed by the plan's `cli` where a spawn is being opened, which is
+/// DIRECT — and by `isCodex` everywhere the key is a Session or a claim.
 extension SessionAdapters: SessionChannel {
     func host(for plan: AgentSpawnPlan, besides pty: AgentProcessHost) -> AgentProcessHost {
         adapter(for: plan.cli).host(for: plan, besides: pty)
@@ -108,6 +116,6 @@ extension SessionAdapters: SessionChannel {
     }
 
     private func channel(for sessionID: String) -> any SessionChannel {
-        codex.holdsThread(for: sessionID) ? codex : claude
+        isCodex(sessionID) ? codex : claude
     }
 }

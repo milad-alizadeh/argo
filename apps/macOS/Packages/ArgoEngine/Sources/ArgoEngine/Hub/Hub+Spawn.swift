@@ -84,23 +84,21 @@ public extension Hub {
     }
 
     /// The process, then whatever its CLI needs beyond one — both asked of the port, so nothing
-    /// here switches on which CLI it is starting (#749). In that order: a channel that writes to
-    /// the process has nothing to write to until the process is adopted.
+    /// switches on which CLI it is starting (#749). Adopted between the two: a channel that writes
+    /// to the process has nothing to write to before then.
     private func start(_ plan: AgentSpawnPlan) async throws {
-        let process = try await channels.host(for: plan, besides: ptyHost()).start(
-            plan.launch(from: spawnServices.launcher, companion: invitation(for: plan)),
+        let process = try await adapters.host(for: plan, besides: ptyHost()).start(
+            plan.launch(from: spawnServices.launcher, inviting: invite),
             events: events(for: plan.claim),
         )
         terminals.adopt(plan.claim, process: process)
-        channels.open(plan)
+        adapters.open(plan)
     }
 
-    /// The companion plugin and its permission gate, for a plan whose CLI takes them. The grant is
-    /// minted with the invitation: the hook is what carries it, so a plugin nobody was invited to
-    /// leaves nothing to gate.
-    private func invitation(for plan: AgentSpawnPlan) throws -> CompanionInvitation? {
-        guard plan.takesCompanionPlugin else { return nil }
-        return try companion?.invite(plan.claim, gatedBy: permissions?.grant(plan.claim))
+    /// The grant is minted with the invitation: the hook is what carries it, so a plugin nobody was
+    /// invited to leaves nothing to gate.
+    private func invite(_ claim: SessionOwnership.ClaimID) throws -> CompanionInvitation? {
+        try companion?.invite(claim, gatedBy: permissions?.grant(claim))
     }
 
     /// Filed under the CLAIM, which is the only key that survives the re-key to the id the CLI
@@ -131,7 +129,7 @@ public extension Hub {
         // back through the claim that is about to stop answering.
         delivery.forget(ownership.rowID(ofClaim: claim.value))
         ownership.release(claim)
-        channels.close(claim)
+        adapters.close(claim)
         companion?.withdraw(claim)
         permissions?.withdraw(claim)
     }
@@ -141,7 +139,7 @@ public extension Hub {
     /// per-CLI knowledge had accreted (#749).
     private func events(for claim: SessionOwnership.ClaimID) -> AgentProcessEvents {
         AgentProcessEvents(
-            onData: { [weak self] chunk in self?.channels.received(chunk, from: claim) },
+            onData: { [weak self] chunk in self?.adapters.received(chunk, from: claim) },
             onExit: { [weak self] code in self?.processEnded(claim, exitCode: code) },
         )
     }

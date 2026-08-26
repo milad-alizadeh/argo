@@ -2,12 +2,8 @@
 import Foundation
 import Testing
 
-/// A Codex Session's stance, stated in Codex's own words (#749).
-///
-/// The ladder is Argo's vocabulary and each CLI has its own word for the same boundary, so this is
-/// the half of ADR-0025 that cannot be checked by reading `claude`'s table: a Codex Session on Code
-/// reported `acceptEdits` — `claude`'s word for a boundary Codex spells with two of its own — until
-/// the vocabulary was read through the Session's `cli`.
+/// A Codex Session's stance, stated in Codex's own words (#749) — the half of ADR-0025 that reading
+/// `claude`'s table cannot check.
 @Suite("Codex stance")
 @MainActor
 struct CodexStanceTests {
@@ -38,8 +34,7 @@ struct CodexStanceTests {
         #expect(session.mode == .exactly(.code, cli: "on-request · workspace-write"))
     }
 
-    /// And the `claude` reading is unchanged by the port — the two adapters state the same rung in
-    /// unlike words, which is the whole reason the vocabulary is per CLI.
+    /// The same rung, in unlike words — which is the whole reason the vocabulary is per CLI.
     @Test
     func `a spawned claude Session on the same rung reports claude's word`() async throws {
         let fixture = try SpawnFixture()

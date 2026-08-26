@@ -25,6 +25,6 @@ struct DriveCommandSurfaceTests {
     func `the Codex adapter refuses the command surface`() {
         let hub = testHub(projectURL: URL(filePath: "/tmp/argo-command-surface"))
 
-        #expect(!hub.channels.codex.canRunCommands(for: "a-codex-session"))
+        #expect(!hub.adapters.codex.canRunCommands(for: "a-codex-session"))
     }
 }
