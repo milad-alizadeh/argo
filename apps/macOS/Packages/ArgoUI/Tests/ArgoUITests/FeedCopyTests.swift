@@ -12,7 +12,7 @@ import Testing
 @Suite("Feed copy")
 struct FeedCopyTests {
     private static func asked(_ words: String) -> FeedRow.Content {
-        .prompt(words)
+        .prompt(text: words, shots: [])
     }
 
     private static func said(_ words: String) -> FeedRow.Content {
@@ -33,7 +33,8 @@ struct FeedCopyTests {
     func `a row of prose copies its own source, verbatim`() {
         let fence = "Here it is:\n\n```swift\nlet x = 1\n```"
         #expect(FeedRow(id: 0, content: .message(fence)).copyable == fence)
-        #expect(FeedRow(id: 0, content: .prompt("Fix the seam")).copyable == "Fix the seam")
+        #expect(FeedRow(id: 0, content: .prompt(text: "Fix the seam", shots: []))
+            .copyable == "Fix the seam")
         #expect(FeedRow(id: 0, content: .thought("Not sure yet.")).copyable == "Not sure yet.")
     }
 
@@ -47,7 +48,7 @@ struct FeedCopyTests {
 
     @Test
     func `each kind of prose names itself in the menu`() {
-        #expect(FeedRow(id: 0, content: .prompt("x")).copyLabel == "Copy Prompt")
+        #expect(FeedRow(id: 0, content: .prompt(text: "x", shots: [])).copyLabel == "Copy Prompt")
         #expect(FeedRow(id: 0, content: .message("x")).copyLabel == "Copy Message")
         #expect(FeedRow(id: 0, content: .thought("x")).copyLabel == "Copy Thought")
         #expect(FeedRow(id: 0, content: Self.ended).copyLabel == nil)
