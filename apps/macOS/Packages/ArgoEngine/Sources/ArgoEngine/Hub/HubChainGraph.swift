@@ -11,15 +11,11 @@ struct HubChainGraph {
     /// names is a bare uuid, so a path-keyed table can never match one (#770).
     init(transcripts: [HubTranscript], owners: [String: String]) {
         // Record ownership is filed against a transcript's PATH. Translated once here rather than
-        // at each lookup, so the whole graph speaks one key.
+        // at each lookup, so the whole graph speaks one key. A path is in the join once, so the
+        // tie-break never fires.
         let uuids = Dictionary(transcripts.map { ($0.id, $0.sessionID) }) { first, _ in first }
         let ownerUUIDs = owners.compactMapValues { uuids[$0] }
-        var byID: [String: HubSession] = [:]
-        for transcript in transcripts {
-            // Last wins where two paths carry one uuid — a file the CLI MOVED, whose old path is a
-            // frozen prefix of the same reading. The later transcript is the live half.
-            byID[transcript.sessionID] = transcript.session
-        }
+        let byID = Self.sessions(of: transcripts)
         var children: [String: [String]] = [:]
         var roots: [String] = []
         for transcript in transcripts {
@@ -36,6 +32,28 @@ struct HubChainGraph {
             ids.sorted { Self.isEarlier($0, $1, in: byID) }
         }
         self.roots = roots
+    }
+
+    /// One Session per chain uuid.
+    ///
+    /// Two paths carrying one uuid are one file the CLI MOVED, and the path it left holds a frozen
+    /// prefix of the same reading. The half that ran LATEST is the live one — array position cannot
+    /// decide it, because discovery hands transcripts over newest-mtime first (`isEarlier` below
+    /// keeps the same trap). One that can say nothing about when it ran never displaces one that
+    /// can.
+    private static func sessions(of transcripts: [HubTranscript]) -> [String: HubSession] {
+        var byID: [String: HubSession] = [:]
+        for transcript in transcripts {
+            guard let held = byID[transcript.sessionID] else {
+                byID[transcript.sessionID] = transcript.session
+                continue
+            }
+            let seen = transcript.session.lastSeenAtMs ?? Int.min
+            if seen > held.lastSeenAtMs ?? Int.min {
+                byID[transcript.sessionID] = transcript.session
+            }
+        }
+        return byID
     }
 
     /// Siblings are merged oldest first. Discovery hands transcripts over NEWEST first, so taking
@@ -88,9 +106,6 @@ struct HubChainGraph {
     ///
     /// A leaf the transcript owns ITSELF counts as a miss, not a link: the relocated file's
     /// `last-prompt` record names its own newest record.
-    ///
-    /// `owners` is record uuid → the CHAIN uuid of the transcript that owns it, translated at the
-    /// init above from the paths ownership is filed under.
     private static func parentID(
         of transcript: HubTranscript,
         owners: [String: String],

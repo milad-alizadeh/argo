@@ -49,12 +49,9 @@ extension Hub {
         refreshSubagents()
     }
 
-    /// Stop reading a transcript the sweep no longer names, and decide whether its row survives.
-    ///
-    /// Aged out of the window, the row stays: the descriptors are the bounded resource, and a row
-    /// vanishing under the reader would claim the Session never happened. GONE FROM DISK, the row
-    /// goes — a vanished path can never say anything again, and Claude Code MOVES a transcript into
-    /// the worktree's own record directory, leaving the old row frozen beside the live one (#770).
+    /// Stop reading a transcript the sweep no longer names. Aged out of the window it keeps its
+    /// row; GONE FROM DISK it loses it, because a vanished path can never say anything again — and
+    /// Claude Code MOVES a transcript into the worktree's own record directory (#770).
     private func stopReading(_ transcript: HubTranscript) async {
         guard FileManager.default.fileExists(atPath: transcript.sourceURL.path) else {
             await stopObserving(transcriptID: transcript.id)
