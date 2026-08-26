@@ -116,7 +116,9 @@ struct HubLivenessTests {
     @Test
     func `the roster reads its posture off the ownership registry, not off a literal`() async {
         let hub = await Self.hub()
-        let claim = hub.ownership.claim(cwd: Self.cwd)
+        // Named, because that is the only key ownership has now: the claim is waiting for exactly
+        // the transcript this observation is (#742).
+        let claim = hub.ownership.claim(naming: "ours")
 
         await hubObserveToEnd(hub, Self.working(id: "ours"))
         #expect(hub.sessions.first?.provenance == .managed)
@@ -129,7 +131,7 @@ struct HubLivenessTests {
     @Test
     func `a Session Argo owns and can no longer see has ended`() async {
         let hub = await Self.hub()
-        let claim = hub.ownership.claim(cwd: Self.cwd)
+        let claim = hub.ownership.claim(naming: "ended")
         await hubObserveToEnd(hub, hubTestObservation(id: "ended", events: [
             .cwd(Self.cwd),
             .prompt(text: "Refactor it", images: [], atMs: Self.nowMs),

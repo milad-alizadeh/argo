@@ -55,8 +55,32 @@ struct HubSpawnTests {
         #expect(fixture.hub.ownership.ownerOf(sessionID: "session-from-cli") == claim)
     }
 
-    /// #363: the two sides spell the same folder differently, and an unresolved key grades a
-    /// Session Argo spawned and holds the PTY for as `external`.
+    /// The whole of #742: Argo shares its folders with agents nobody here started, and while a
+    /// claim is live in one of them a record can appear that is not the transcript Argo named. It
+    /// is somebody else's — read-only, and the spawn's own row is still waiting for its file.
+    @Test
+    func `a record Argo did not name stays external, claim or no claim`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        // Same folder, started after the claim opened: everything the old folder-and-window key
+        // asked for, and none of what a named transcript asks.
+        let stranger = URL(fileURLWithPath: "/tmp/somebody-elses-agent.jsonl")
+        await hubObserveToEnd(fixture.hub, hubTestObservation(at: stranger, events: [
+            .cwd(fixture.projectURL.path),
+            .prompt(text: "Not ours", atMs: Date().epochMs),
+            .turnEnded(.endTurn),
+        ]))
+
+        #expect(fixture.hub.session(id: stranger.path)?.provenance == .external)
+        #expect(fixture.hub.ownership.ownerOf(sessionID: stranger.path) == nil)
+        // And the spawn's own row is untouched: it is still waiting for the file it named.
+        #expect(fixture.hub.spawns[claim] != nil)
+    }
+
+    /// #363, now moot and kept as a guard: the two sides spell the same folder differently, and the
+    /// grade no longer reads the folder at all.
     @Test
     func `a CLI that records a resolved path still reconciles to one Session`() async throws {
         let fixture = try SpawnFixture()

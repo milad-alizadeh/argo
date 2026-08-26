@@ -10,8 +10,8 @@ public extension Hub {
     /// Session leaves empty (#513): a folder other than the Project's, and a prompt to open on.
     ///
     /// A seed naming a chain to resume takes the same path (#10). Two things differ, and both
-    /// follow from the Session already existing: the claim is bound to its id rather than matched
-    /// back by folder and time, and no provisional row is published because there is one already.
+    /// follow from the Session already existing: the claim carries its roster id rather than a
+    /// transcript to expect, and no provisional row is published because there is one already.
     @discardableResult
     func spawnSession(
         cli: AgentCLI = .claude,
@@ -27,6 +27,11 @@ public extension Hub {
               isDirectory.boolValue
         else { throw AgentSpawnError.unreachableWorkingDirectory(path: cwd) }
 
+        // The transcript a fresh spawn will write, minted here so the claim and the argv name one
+        // file (#742). A resume needs none: it knows its Session already.
+        let namedUUID = seed.resuming == nil && cli.namesFreshSession
+            ? spawnServices.mintTranscriptID()
+            : nil
         // The seed's rung, or the one the user last picked (#629) — resolved once, so what the CLI
         // is started with and the rung the row publishes cannot be two different answers.
         let plan = AgentSpawnPlan(
@@ -34,8 +39,8 @@ public extension Hub {
             cwd: cwd,
             mode: seed.mode ?? modeStore.lastPicked(),
             seed: seed,
-            claim: seed.resuming.map { ownership.claim(cwd: cwd, resuming: $0.sessionID) }
-                ?? ownership.claim(cwd: cwd),
+            claim: claim(for: seed, naming: namedUUID),
+            namedUUID: namedUUID,
         )
         do {
             try await start(plan)
@@ -63,6 +68,21 @@ public extension Hub {
         }
     }
 
+    /// The act of ownership this spawn opens, and the three things a claim can know about its
+    /// Session: its roster id (a resume), the transcript it was told to write (a fresh `claude`),
+    /// or nothing — a CLI that picks its own id, which Argo will never match back to this claim.
+    private func claim(
+        for seed: SessionSeed,
+        naming uuid: String?,
+    )
+        -> SessionOwnership.ClaimID {
+        if let resuming = seed.resuming {
+            return ownership.claim(resuming: resuming.sessionID)
+        }
+        guard let uuid else { return ownership.claim() }
+        return ownership.claim(naming: uuid)
+    }
+
     private func start(_ plan: AgentSpawnPlan) async throws {
         let process = try await host(for: plan.cli).start(
             launch(for: plan),
@@ -85,6 +105,9 @@ public extension Hub {
         .adding(plan.cli.surfaceArguments)
         .adding(plan.cli.arguments(standingOn: plan.mode))
         .adding(plan.seed.resuming.map { plan.cli.arguments(resuming: $0.chainID) } ?? [])
+        // Never beside `--resume`: that continues a chain whose next file the CLI names itself, and
+        // the two flags would be two answers to one question.
+        .adding(plan.namedUUID.map { plan.cli.arguments(namingFreshSession: $0) } ?? [])
         // A CLI that opens on a Turn instead takes its prompt in `openThread`.
         guard plan.cli.opensOnArgv, let opening = plan.seed.opening else { return launch }
         return launch.opening(opening)
@@ -207,8 +230,7 @@ extension Hub {
         for session in join.sessions {
             guard let claim = ownership.bind(
                 sessionID: session.id,
-                cwd: session.cwd,
-                startedAtMs: session.startedAtMs,
+                uuid: session.transcriptUUID,
             ) else { continue }
             spawns.removeValue(forKey: claim)
             // The one moment a written handoff link can stop naming a claim and name a Session

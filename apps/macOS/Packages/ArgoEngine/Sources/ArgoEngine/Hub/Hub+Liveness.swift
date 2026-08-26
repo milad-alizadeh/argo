@@ -80,11 +80,7 @@ extension Hub {
             lastActivityAtMs: session.lastSeenAtMs,
             nowMs: livenessReadAtMs,
         )
-        published.provenance = ownership.provenance(
-            sessionID: session.id,
-            cwd: session.cwd,
-            startedAtMs: session.startedAtMs,
-        )
+        published.provenance = ownership.provenance(sessionID: session.id)
         // A spawn already knows its own program; a swept record's is the store it came out of.
         published.cli = session.cli ?? discovery.cli
         published.workspace = session.cwd.flatMap { workspaces[$0] }

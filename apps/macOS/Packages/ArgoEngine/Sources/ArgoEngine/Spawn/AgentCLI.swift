@@ -80,6 +80,29 @@ public enum AgentCLI: String, Sendable, CaseIterable {
         }
     }
 
+    /// The flags that tell this CLI which transcript to write, so Argo knows the Session a fresh
+    /// spawn will be before the process exists (#742). Empty is not a fallback: a CLI with nothing
+    /// here picks its own id, and the claim then owns a process rather than a Session.
+    ///
+    /// This is what keeps an agent somebody else started in the same folder OUT of Argo's claims —
+    /// the alternative was matching a transcript back by folder and start time, which an unrelated
+    /// agent fits just as well.
+    func arguments(namingFreshSession uuid: String) -> [String] {
+        switch self {
+        case .claude: ["--session-id", uuid]
+        case .codex: []
+        }
+    }
+
+    /// Whether `arguments(namingFreshSession:)` has anything to say. Asked before an id is minted,
+    /// so a claim is never handed a name its CLI will ignore.
+    var namesFreshSession: Bool {
+        switch self {
+        case .claude: true
+        case .codex: false
+        }
+    }
+
     /// The flags that start this CLI on an EXISTING chain rather than a fresh one (#10). `claude`
     /// continues the chain in a new process and writes a new transcript file whose head leaf points
     /// into the old one, which is what stitches the two halves back into one Session.

@@ -60,6 +60,13 @@ Because the Session id is known **before** the spawn, a resume's claim is bound 
 rather than matched back by folder and start time. That is strictly better than a cold spawn's
 binding and sidesteps the guessing #363 and #364 describe.
 
+**Since #742, a cold spawn is bound the same way and folder-and-window matching is gone.** Argo
+mints the transcript id and hands it to the CLI (`claude --session-id <uuid>`), so every claim names
+the one file it is waiting for. The old key graded an agent somebody else started in the same folder
+as Argo's own — and, through this ADR, offered to resume it, putting two agents on one chain. A
+guess is now impossible rather than merely unlikely: a claim that named nothing (a CLI with no such
+flag) adopts nothing at all.
+
 ## Why
 
 - The domain model already said the right thing and the implementation note contradicted it. A
