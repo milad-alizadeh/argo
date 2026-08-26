@@ -11,7 +11,7 @@ struct ComposerMenuCursorTests {
         var cursor = ComposerMenuCursor()
         cursor.settle(over: ids)
 
-        #expect(cursor.marked == "/ask-argo")
+        #expect(cursor.current == "/ask-argo")
     }
 
     @Test
@@ -19,10 +19,10 @@ struct ComposerMenuCursorTests {
         var cursor = ComposerMenuCursor()
         cursor.settle(over: ids)
         cursor.down(over: ids)
-        #expect(cursor.marked == "/code-review")
+        #expect(cursor.current == "/code-review")
 
         cursor.up(over: ids)
-        #expect(cursor.marked == "/ask-argo")
+        #expect(cursor.current == "/ask-argo")
     }
 
     /// It does not wrap. A list of seventy-odd things that jumped back to the top would read as the
@@ -32,12 +32,12 @@ struct ComposerMenuCursorTests {
         var cursor = ComposerMenuCursor()
         cursor.settle(over: ids)
         cursor.up(over: ids)
-        #expect(cursor.marked == "/ask-argo")
+        #expect(cursor.current == "/ask-argo")
 
         cursor.down(over: ids)
         cursor.down(over: ids)
         cursor.down(over: ids)
-        #expect(cursor.marked == "/implement")
+        #expect(cursor.current == "/implement")
     }
 
     /// Held by command and not by index, because filtering reorders the list underneath: a cursor
@@ -49,7 +49,7 @@ struct ComposerMenuCursorTests {
         cursor.down(over: ids)
 
         cursor.settle(over: [ids[1], ids[2]])
-        #expect(cursor.marked == "/code-review")
+        #expect(cursor.current == "/code-review")
     }
 
     @Test
@@ -59,18 +59,18 @@ struct ComposerMenuCursorTests {
         cursor.down(over: ids)
 
         cursor.settle(over: [ids[0]])
-        #expect(cursor.marked == "/ask-argo")
+        #expect(cursor.current == "/ask-argo")
     }
 
-    /// An empty list leaves nothing marked, which is what leaves ⏎ to the field — a line nothing
+    /// An empty list leaves no row current, which is what leaves ⏎ to the field — a line nothing
     /// matched still sends as written (decision 8).
     @Test
-    func `an empty list marks nothing, so Return stays the field's`() {
+    func `an empty list leaves no row current, so Return stays the field's`() {
         var cursor = ComposerMenuCursor()
         cursor.settle(over: ids)
         cursor.settle(over: [])
 
-        #expect(cursor.marked == nil)
+        #expect(cursor.current == nil)
         #expect(cursor.row(in: [] as [CommandMenuProjection.Row]) == nil)
     }
 
@@ -97,11 +97,11 @@ struct ComposerMenuCursorTests {
     func `a list that arrives late still gets the cursor on its top row`() {
         var cursor = ComposerMenuCursor()
         cursor.settle(over: [])
-        #expect(cursor.marked == nil)
+        #expect(cursor.current == nil)
 
         cursor.settle(over: ids)
 
-        #expect(cursor.marked == "/ask-argo")
+        #expect(cursor.current == "/ask-argo")
     }
 
     private let ids = CommandMenuProjection.menu(

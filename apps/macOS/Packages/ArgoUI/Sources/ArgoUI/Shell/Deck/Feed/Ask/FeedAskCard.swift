@@ -11,7 +11,7 @@ struct FeedAskCard: ViewModifier {
     @Environment(\.argo) private var argo
 
     let isHovered: Bool
-    /// Only an option can be ticked; `Other…` passes `false` and never draws the marked state.
+    /// Only an option can be ticked; `Other…` passes `false` and never draws the chosen state.
     var isTicked = false
 
     func body(content: Content) -> some View {

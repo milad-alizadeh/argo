@@ -50,8 +50,8 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
         case rule
     }
 
-    /// How a mark of this ink is drawn where the row does not say otherwise — see
-    /// `MinimapRowMark.shape`, which a question's card uses to stroke its own border around filled
+    /// How a rect of this ink is drawn where the row does not say otherwise — see
+    /// `MinimapRowRect.shape`, which a question's card uses to stroke its own border around filled
     /// words.
     var shape: Shape {
         switch self {

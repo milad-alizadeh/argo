@@ -23,7 +23,8 @@ struct PlanReading: Equatable, Sendable {
         }
     }
 
-    /// The FIRST step marked in progress, not the only one — a plan may carelessly mark two.
+    /// The FIRST step the plan calls in progress, not the only one — a plan may carelessly
+    /// claim two.
     var current: Step? {
         steps.first { $0.status == .inProgress }
     }

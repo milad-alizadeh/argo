@@ -29,9 +29,9 @@ struct MinimapAnnotationTests {
 
         try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: 120)))
 
-        let marked = try #require(deck.lane.marking.first)
+        let annotated = try #require(deck.lane.marking.first)
         #expect(deck.lane.marking.count == 1)
-        #expect(marked.span.contains(120))
+        #expect(annotated.span.contains(120))
     }
 
     @Test
@@ -56,7 +56,7 @@ struct MinimapAnnotationTests {
         let turn = try #require(MinimapTurn.extents(of: lane.geometry.reading.rows)
             .dropFirst().first { $0.rows.count > 1 })
         let slide = lane.geometry.laneOffset(at: deck.feed.offset() ?? 0)
-        return (turn, turn.rows.map { lane.geometry.markY(row: $0) + 1 - slide })
+        return (turn, turn.rows.map { lane.geometry.rectY(row: $0) + 1 - slide })
     }
 
     /// #732 read the mark as covering the prompt alone. It does not: standing over ANY of the
@@ -81,8 +81,8 @@ struct MinimapAnnotationTests {
         let deck = Self.mounted()
         let (turn, laneYs) = try Self.secondTurn(deck)
         let slide = deck.lane.geometry.laneOffset(at: deck.feed.offset() ?? 0)
-        let head = deck.lane.geometry.markY(row: turn.rows.lowerBound) - slide
-        let foot = deck.lane.geometry.markY(row: turn.rows.upperBound + 1) - slide
+        let head = deck.lane.geometry.rectY(row: turn.rows.lowerBound) - slide
+        let foot = deck.lane.geometry.rectY(row: turn.rows.upperBound + 1) - slide
 
         let overTheFirstRow = try #require(laneYs.first)
         try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: overTheFirstRow)))
@@ -108,12 +108,12 @@ struct MinimapAnnotationTests {
     @Test
     func `naming a Turn repaints nothing in the miniature`() throws {
         let deck = Self.mounted()
-        let drawn = deck.lane.markRedraws
+        let drawn = deck.lane.rectRedraws
 
         try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: 60)))
         try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: 300)))
 
-        #expect(deck.lane.markRedraws == drawn)
+        #expect(deck.lane.rectRedraws == drawn)
         #expect(deck.lane.annotationRedraws > 0)
     }
 
@@ -179,12 +179,12 @@ struct MinimapAnnotationTests {
 
     /// Whatever the crowding costs a label, every Turn named at once still has a line to stand on.
     @Test
-    func `every Turn marked at once keeps a line`() {
+    func `every Turn named at once keeps a line`() {
         let deck = Self.mounted()
         deck.lane.readModifiers([.shift, .command])
 
-        let marked = deck.lane.marking
-        #expect(!marked.isEmpty)
-        #expect(marked.allSatisfy { $0.span.upperBound > $0.span.lowerBound })
+        let annotated = deck.lane.marking
+        #expect(!annotated.isEmpty)
+        #expect(annotated.allSatisfy { $0.span.upperBound > $0.span.lowerBound })
     }
 }

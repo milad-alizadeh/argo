@@ -8,7 +8,7 @@ import SwiftUI
 struct CommandMenu: View {
     let menu: CommandMenuProjection.Menu
     /// Which row the keyboard cursor is on, by command. `nil` while the list is empty.
-    let marked: String?
+    let current: String?
     let pick: (CommandMenuProjection.Row) -> Void
 
     var body: some View {
@@ -62,7 +62,7 @@ struct CommandMenu: View {
     private func rows(of section: CommandMenuProjection.Section) -> some View {
         ForEach(section.rows) { row in
             Button { pick(row) } label: {
-                CommandMenuRow(row: row, isMarked: row.command == marked)
+                CommandMenuRow(row: row, isCurrent: row.command == current)
             }
             .buttonStyle(.plain)
         }

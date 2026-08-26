@@ -1,7 +1,7 @@
 import Foundation
 
 // Where each Turn stands in the miniature (#382). Derived from the same rows and the same prefix
-// sums the marks are, so a block can never span a stretch the marks put somewhere else.
+// sums the rects are, so a block can never span a stretch the rects put somewhere else.
 //
 // Everything here is a binary search into `turns`, never a walk over them. A pointer moving across
 // the lane asks this on every event, and a session has as many Turns as it has prompts.
@@ -54,8 +54,8 @@ extension MinimapGeometry {
     /// row was DRAWN to. A row held to the line cap is drawn shorter than the reading gave it, and
     /// that difference would be a stripe the lane named no Turn for.
     private func block(of turn: MinimapTurn) -> MinimapBlock {
-        let head = markY(row: turn.rows.lowerBound)
-        let foot = markY(row: turn.rows.upperBound + 1)
+        let head = rectY(row: turn.rows.lowerBound)
+        let foot = rectY(row: turn.rows.upperBound + 1)
         return MinimapBlock(y: head, height: max(0, foot - head), prompt: turn.prompt)
     }
 }

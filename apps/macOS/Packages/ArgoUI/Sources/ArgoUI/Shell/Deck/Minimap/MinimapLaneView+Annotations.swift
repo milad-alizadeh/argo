@@ -3,7 +3,7 @@ import AppKit
 // The annotation half of the lane (#382): which Turn is named, the Ion Blue line that spans it, and
 // the prompt drawn beside it.
 //
-// Its own layer, and the only one a hover touches — the marks bitmap is never re-rasterised for a
+// Its own layer, and the only one a hover touches — the rects bitmap is never re-rasterised for a
 // pointer moving over the lane.
 //
 // The label hangs to the LEFT of the lane, over the reading, right-aligned so it ends where the
@@ -75,7 +75,7 @@ extension MinimapLaneView {
         }
     }
 
-    /// One Turn marked: the words on a ground beside the lane, and the Ion Blue line spanning the
+    /// One Turn named: the words on a ground beside the lane, and the Ion Blue line spanning the
     /// block. Real text at a real rung, and nothing here is scaled after drawing — which is what
     /// keeps it legible rather than a smear of the right shape.
     private func draw(_ annotation: MinimapAnnotation, in context: CGContext) {

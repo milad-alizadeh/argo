@@ -2,7 +2,7 @@ import Foundation
 
 /// What a row is drawn as, held as the little the lane needs to lay it out again exactly as the
 /// feed laid it out (#382). One of these is built for every row whenever the feed reshapes, so it
-/// must stay cheap to make and cheap to compare; the marks are reported later, for the lane's band
+/// must stay cheap to make and cheap to compare; the rects are reported later, for the lane's band
 /// alone.
 ///
 /// Every case carries the WORDS rather than a count of characters, because every question the lane

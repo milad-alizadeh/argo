@@ -5,7 +5,7 @@ import Testing
 /// Where each Turn's block stands in the miniature, and which one a place on the lane names (#382).
 ///
 /// `MinimapTurnTests` proves where the reading BREAKS; this proves the break lands at the same
-/// points the marks do. The two are separate suites because they fail for different reasons: one
+/// points the rects do. The two are separate suites because they fail for different reasons: one
 /// is a boundary read wrong, the other is a boundary read right and drawn in the wrong place.
 @Suite("Minimap Turn blocks")
 struct MinimapBlockTests {
@@ -39,7 +39,7 @@ struct MinimapBlockTests {
 
     /// A line-floored row can be DRAWN a touch short of the reading's own span. If a block ended
     /// where its last row was drawn to, the lane would have stripes naming no Turn at all — and a
-    /// hover crossing one would drop the mark it had just put up.
+    /// hover crossing one would drop the rect it had just put up.
     @Test
     func `a Turn holding a huge row still reaches the Turn after it`() {
         var rows = MinimapGeometryTests.rows([100, 20000, 100])
@@ -54,12 +54,12 @@ struct MinimapBlockTests {
 
         #expect(blocks.count == 2)
         // The block fills its whole extent now — the gap the old per-event ceiling left is gone.
-        #expect(blocks[1].range.lowerBound == lane.markY(row: 2))
+        #expect(blocks[1].range.lowerBound == lane.rectY(row: 2))
         #expect(blocks[0].range.upperBound == blocks[1].range.lowerBound)
     }
 
     /// Every point over the reading names a Turn, so a pointer travelling down the lane never loses
-    /// the mark it is carrying.
+    /// the rect it is carrying.
     @Test
     func `no place over the reading is left naming no Turn`() {
         let lane = Self.geometry()

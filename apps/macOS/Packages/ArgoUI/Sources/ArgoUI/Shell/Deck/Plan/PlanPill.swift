@@ -78,7 +78,7 @@ struct PlanPill: View {
     }
 
     /// Where the agent is in the list — or, when the list names no step in progress, how much of
-    /// it is behind it. Never a position for a step that was not marked.
+    /// it is behind it. Never a position for a step the plan never claimed.
     ///
     /// Both readings come out together — what it says now, and the longest it can say it for this
     /// plan — because the pair is what lets the pill hold still.

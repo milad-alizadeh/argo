@@ -12,8 +12,8 @@ struct FeedCallLine: View {
     @Environment(\.argo) private var argo
 
     let call: FeedCall
-    /// Whether this row's evidence is what the panel is showing. The opened row stays marked, so a
-    /// panel full of output still says which line it came from.
+    /// Whether this row's evidence is what the panel is showing. The opened row keeps its
+    /// ground, so a panel full of output still says which line it came from.
     let isOpen: Bool
     let open: () -> Void
 

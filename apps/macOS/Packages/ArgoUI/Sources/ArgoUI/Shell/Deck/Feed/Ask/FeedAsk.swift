@@ -111,7 +111,7 @@ struct FeedAsk: Equatable, Sendable {
     /// Which of the offered options the answer named, or `nil`.
     ///
     /// DERIVED and deliberately weak: the answer is prose, not a field naming an option, so the
-    /// reading is that the answer CONTAINS the label. Nothing is marked where no option is named.
+    /// reading is that the answer CONTAINS the label. Nothing is chosen where no option is named.
     /// Where two labels are named, the longer wins — one label containing another is the only way
     /// both can be true of one answer.
     func chosen(in question: Ask.Question) -> String? {

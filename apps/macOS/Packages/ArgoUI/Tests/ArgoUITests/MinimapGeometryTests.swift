@@ -72,7 +72,7 @@ struct MinimapGeometryTests {
     @Test @MainActor
     func `an empty reading maps nothing`() {
         let lane = Self.geometry(MinimapReading(columnWidth: 800))
-        #expect(lane.marks(in: 0 ... 600).isEmpty)
+        #expect(lane.rects(in: 0 ... 600).isEmpty)
         #expect(lane.documentHeight == 0)
         #expect(lane.isScrollable == false)
     }
@@ -156,7 +156,7 @@ struct MinimapGeometryTests {
         let lane = Self.geometry(Self.long())
         let end = lane.laneOffset(at: lane.offsetRange.upperBound)
         #expect(end == 787.5)
-        #expect(lane.marks(in: end ... end + Self.lane.height).allSatisfy { $0.y > 0 })
+        #expect(lane.rects(in: end ... end + Self.lane.height).allSatisfy { $0.y > 0 })
     }
 
     /// Both directions of the one mapping click and drag go through. The inverse is a division, so

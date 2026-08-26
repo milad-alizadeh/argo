@@ -166,3 +166,28 @@ wrong sibling is worse than a longer one, and Claude Code hit the same hazard an
 `Code` are endpoints of how often you are asked, `Plan` is a point on what may be touched — and
 had no rung between gating everything and acting freely, which is where most sessions actually
 sit.
+
+## Experience
+
+**`marked` was rationed to a GROUND, never a state, because the palette had already spent it
+that way** (#760). Five surfaces had reached for the word independently — the menu cursor, the
+chosen ask option, a name with a kind glyph, the minimap's rectangles, and the ground — and
+`mark*` ran to 792 occurrences in `Shell/Deck/` alone, which is the point at which grep stops
+being a navigation tool. Only one of the five had the word written down anywhere: `ArgoPalette`
+and `TextRoles` both document `marked` as a *ground*, and `text.marked(on:)` is a rule about ink
+standing on it. A token the visual contract defines outranks four ad-hoc local usages, so the
+rename went the other way round from the usual "most callers win". The line is ground-versus-state
+rather than machine-text-versus-everything, because `surface.marked` legitimately grounds a keycap
+and a spent send button too — what it must never do is stand in for the fact that a row is current
+or an option chosen, which is where the five senses came from.
+
+**The menu cursor took `current`, not `highlighted`.** `highlighted` names how a row is DRAWN,
+and the row is drawn on a ground the palette already owns a word for — so the pair would have
+read as two names for one fill. `current` names the row's place in the list instead, which is the
+fact the keyboard actually moves, and it stays true for a cursor row that is off screen and
+therefore drawn as nothing at all.
+
+**`MinimapRect` is geometric on purpose.** The lane's rectangle carries no domain fact of its
+own — a row hands it `y`, a span and an ink, and the same type draws a line of prose, a table
+cell and a piece of a call's sentence. A domain word here would claim a meaning the type does not
+hold, and the honest alternative was already taken: what the rectangle MEANS is its `FeedInk`.

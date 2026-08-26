@@ -1,23 +1,23 @@
 import SwiftUI
 
 /// What the overview lane beside the reading is measured at (D25). Per-surface measures rather than
-/// rungs of the rhythm: how tall a mark may stand is a property of the lane's compression, not of
+/// rungs of the rhythm: how tall a rect may stand is a property of the lane's compression, not of
 /// the deck's spacing. The lane's own width is `ArgoLayout.minimapLaneWidth(sharing:)`.
 public enum ArgoMinimapLane {
-    /// How far the marks stand off each edge, so the miniature reads as a column of events rather
+    /// How far the rects stand off each edge, so the miniature reads as a column of events rather
     /// than as ink run to the deck's boundary.
-    public static let markInset: CGFloat = ArgoSpacing.comfortable
+    public static let rectInset: CGFloat = ArgoSpacing.comfortable
 
-    /// The floor under one mark. At a real session's length a row compresses below a point, and a
-    /// mark nobody can see maps nothing. One point and no more, because the floor is also what
+    /// The floor under one rect. At a real session's length a row compresses below a point, and a
+    /// rect nobody can see maps nothing. One point and no more, because the floor is also what
     /// merges neighbours: a thousand rows held at two would fill the lane with solid ink.
     ///
     /// A point rather than a pixel, which is what makes it D25's two: the lane is only ever drawn
     /// on a Retina display, so one point of it is two pixels tall.
-    public static let markMinimumHeight: CGFloat = 1
+    public static let rectMinimumHeight: CGFloat = 1
 
-    /// The gap held between two marks, so a run of rows reads as separate events.
-    public static let markGap: CGFloat = 1
+    /// The gap held between two rects, so a run of rows reads as separate events.
+    public static let rectGap: CGFloat = 1
 
     /// How present one run of the miniature is. The lane is read at a glance BESIDE the reading and
     /// never instead of it, so the shapes sit well under the words they stand for — and at this
@@ -37,7 +37,7 @@ public enum ArgoMinimapLane {
 
     /// How far short of the next Turn one line stops. A block reaches the next block's head so a
     /// hover never falls between two — but two lines drawn end to end are one line, and under ⇧⌘
-    /// every Turn on screen is marked at once.
+    /// every Turn on screen is named at once.
     public static let turnLineGap: CGFloat = ArgoSpacing.tight
 
     /// The rung a Turn's prompt is drawn at when the pointer names it. The smallest rung the HIG

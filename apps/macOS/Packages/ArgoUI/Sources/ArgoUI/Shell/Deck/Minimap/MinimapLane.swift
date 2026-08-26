@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// It takes the feed's handle rather than the rows, because everything it draws is geometry the
 /// table already owns — the measured heights, the gutters and the offset. A lane that summed
-/// anything else would put a mark where the row it stands for is not.
+/// anything else would put a rect where the row it stands for is not.
 struct MinimapLane: NSViewRepresentable {
     let feed: FeedTableHandle
 

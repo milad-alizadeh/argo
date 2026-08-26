@@ -11,7 +11,7 @@ renaming one is a migration. This ticket builds the `/` half only — the `+` me
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
 | `CommandMenu` | organism | `ArgoUI/Shell/Deck/Composer/` — one caller (`SessionComposer`) | `menu: CommandMenuProjection.Menu` · `marked: String?` · `pick: (Row) -> Void` | `CommandMenuSection`, `CommandMenuRow`, `CommandMenuEmpty` on `.regularMaterial` at `ArgoRadius.popover` | frozen table, `CommandMenu`; [`slash.png`](composer-picker/slash.png) |
-| `CommandMenuRow` | molecule | same — one caller (`CommandMenu`) | `row: CommandMenuProjection.Row` (`command` · `matched: Range<Int>` · `description: String?` · `origin: String?` · `shadowsUser: Bool`) · `isMarked: Bool` | three `Text` runs for the name, one for the description, two badges | frozen table, `CommandMenuRow`; [`slash-edge.png`](composer-picker/slash-edge.png) |
+| `CommandMenuRow` | molecule | same — one caller (`CommandMenu`) | `row: CommandMenuProjection.Row` (`command` · `matched: Range<Int>` · `description: String?` · `origin: String?` · `shadowsUser: Bool`) · `isCurrent: Bool` | three `Text` runs for the name, one for the description, two badges | frozen table, `CommandMenuRow`; [`slash-edge.png`](composer-picker/slash-edge.png) |
 | `CommandMenuSection` | molecule | same — one caller (`CommandMenu`) | `label: String` · `detail: String?` | two `Text` at `sectionLabel` and `machineCaption` | frozen table, `CommandMenuSection` |
 | `CommandMenuEmpty` | molecule | same — one caller (`CommandMenu`) | `query: String` | one `Text` in three runs | frozen table, `CommandMenuEmpty`; [`slash-zero.png`](composer-picker/slash-zero.png) |
 | `CommandMenuCursor` | value | same — two callers (`SessionComposer`, its tests) | `settle(over:)` · `up(over:)` · `down(over:)` · `row(in:)` | — | Acceptance: navigable by keyboard alone |
@@ -102,7 +102,7 @@ at the ceiling — which is what those two derivations are for.
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
 | `FileMenu` | organism | `ArgoUI/Shell/Deck/Composer/` — one caller (`SessionComposer`) | `menu: WorkspaceFileProjection.Menu` · `marked: String?` · `pick: (Row) -> Void` | `FileMenuRow`, `FileMenuEmpty`, on `ComposerMenuSurface` | [`at.png`](composer-picker/at.png) |
-| `FileMenuRow` | molecule | same — one caller (`FileMenu`) | `row: WorkspaceFileProjection.Row` (`path` · `name` · `directory: String?` · `isTouched`) · `isMarked: Bool` | two `Text` and one badge | frozen table, `FileMenuRow`; [`at.png`](composer-picker/at.png) |
+| `FileMenuRow` | molecule | same — one caller (`FileMenu`) | `row: WorkspaceFileProjection.Row` (`path` · `name` · `directory: String?` · `isTouched`) · `isCurrent: Bool` | two `Text` and one badge | frozen table, `FileMenuRow`; [`at.png`](composer-picker/at.png) |
 | `FileMenuEmpty` | molecule | same — one caller (`FileMenu`) | `query: String` | one `Text` in three runs | a state the happy path never renders |
 | `ComposerMenuSurface` | modifier | same — two callers (`CommandMenu`, `FileMenu`) | `label: String` | — | the D14 recipe both menus wear |
 | `WorkspaceFileProjection` | value | same — the derive, plus `+Derive.swift` | `menu(for:in:touched:)` · `mention(in:)` · `rowCeiling` | — | Decisions 2, 12, 13 |

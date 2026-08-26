@@ -8,22 +8,22 @@ import Foundation
 
 extension MarkdownTable {
     /// The table's cells as rectangles, and how tall the whole table stands.
-    @MainActor func laid(across measure: CGFloat) -> (marks: [MinimapRowMark], height: CGFloat) {
+    @MainActor func laid(across measure: CGFloat) -> (rects: [MinimapRowRect], height: CGFloat) {
         let widths = widths(across: measure)
         let heights = heights(on: widths)
         guard !widths.isEmpty else { return ([], 0) }
-        var marks: [MinimapRowMark] = []
+        var rects: [MinimapRowRect] = []
         var y: CGFloat = 0
         for height in heights {
             var x: CGFloat = 0
             for width in widths {
-                marks.append(MinimapRowMark(
+                rects.append(MinimapRowRect(
                     y: y, height: height, from: x, to: x + width, ink: .table,
                 ))
                 x += width
             }
             y += height
         }
-        return (marks, y)
+        return (rects, y)
     }
 }

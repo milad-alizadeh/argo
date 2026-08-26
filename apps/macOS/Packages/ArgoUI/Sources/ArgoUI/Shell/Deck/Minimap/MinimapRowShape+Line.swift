@@ -16,12 +16,12 @@ extension MinimapRowShape {
         ink: FeedInk,
         across measure: CGFloat,
     )
-        -> [MinimapRowMark] {
-        var marks: [MinimapRowMark] = []
+        -> [MinimapRowRect] {
+        var rects: [MinimapRowRect] = []
         var x: CGFloat = 0
         for part in parts where x < measure {
             let to = min(measure, x + part.drawnWidth)
-            marks.append(MinimapRowMark(
+            rects.append(MinimapRowRect(
                 y: 0,
                 height: ProseFace.body.lineBox,
                 from: x,
@@ -30,8 +30,8 @@ extension MinimapRowShape {
             ))
             x = to + ArgoFeedRow.callGap
         }
-        return marks.isEmpty
-            ? [MinimapRowMark(y: 0, height: ProseFace.body.lineBox, from: 0, to: 0, ink: ink)]
-            : marks
+        return rects.isEmpty
+            ? [MinimapRowRect(y: 0, height: ProseFace.body.lineBox, from: 0, to: 0, ink: ink)]
+            : rects
     }
 }

@@ -16,7 +16,7 @@ extension MinimapLaneView {
         self.feed = feed
         // Already watching this one. Deliberately no refresh: this runs on every update of the deck
         // above, a seam drag included, and re-reading the whole reading per frame is the cost the
-        // feed's own coordinator learned to avoid. What the marks are drawn against changes only
+        // feed's own coordinator learned to avoid. What the rects are drawn against changes only
         // when the reading reshapes or the lane resizes, and both post their own notification.
         guard watched !== feed.scroller else { return }
         guard let scroller = feed.scroller else {
@@ -66,7 +66,7 @@ extension MinimapLaneView {
     }
 
     /// A scrub carried off the lane keeps it lit — the hand is still on the reading. The Turn's
-    /// mark goes either way: it names a Turn under the pointer, and the pointer has left.
+    /// rect goes either way: it names a Turn under the pointer, and the pointer has left.
     override func mouseExited(with _: NSEvent) {
         pointedAt = nil
         holdsBothKeys = false
@@ -160,7 +160,7 @@ extension MinimapLaneView {
     }
 
     /// The hand off the lane. The geometry was frozen for the length of the scrub, so whatever
-    /// arrived under it reflows the marks now.
+    /// arrived under it reflows the rects now.
     override func mouseUp(with event: NSEvent) {
         grab = nil
         isLit = bounds.contains(convert(event.locationInWindow, from: nil))

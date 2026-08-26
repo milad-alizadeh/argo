@@ -4,7 +4,7 @@ import SwiftUI
 /// The `Read Only · Plan · Code · Auto` ladder, as a bespoke `Menu`.
 ///
 /// It draws a READING rather than a choice (#545): a stance the ladder has no rung for draws the
-/// nearest one marked `≈`, or `unknown` where there is none, and neither ticks a row.
+/// nearest one under a `≈`, or `unknown` where there is none, and neither ticks a row.
 struct ModePicker: View {
     @Environment(\.argo) private var argo
 

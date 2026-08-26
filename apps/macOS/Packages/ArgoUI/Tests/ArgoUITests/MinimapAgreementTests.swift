@@ -26,7 +26,7 @@ struct MinimapAgreementTests {
             // The step above a row is drawn INSIDE its cell, so the content gets what is left.
             let content = row.height - row.topStep
             let reported = row.shape
-                .marks(across: lane.proseMeasure, height: content)
+                .rects(across: lane.proseMeasure, height: content)
                 .map { $0.y + $0.height }
                 .max() ?? 0
             return (content, reported)
@@ -61,7 +61,7 @@ struct MinimapAgreementTests {
     }
 
     /// The guarantee. Whatever a row reports, the lane holds it inside the row's own scaled band —
-    /// so a mark can never stand over the row below the one it belongs to.
+    /// so a rect can never stand over the row below the one it belongs to.
     @Test
     func `everything the lane draws stays inside the row it belongs to`() {
         for rows in [FeedProjection.previewRows, FeedProjection.previewMarkdownRows] {
@@ -70,11 +70,11 @@ struct MinimapAgreementTests {
                 continue
             }
             let bands = lane.reading.rows.indices.map { at in
-                lane.markY(row: at) ... lane.markY(row: at) + lane.reading.rows[at].height
-                    * lane.scale + ArgoMinimapLane.markMinimumHeight
+                lane.rectY(row: at) ... lane.rectY(row: at) + lane.reading.rows[at].height
+                    * lane.scale + ArgoMinimapLane.rectMinimumHeight
             }
-            for mark in lane.marks(in: 0 ... lane.miniatureHeight) {
-                #expect(bands.contains { $0.contains(mark.y) && $0.contains(mark.y + mark.height) })
+            for rect in lane.rects(in: 0 ... lane.miniatureHeight) {
+                #expect(bands.contains { $0.contains(rect.y) && $0.contains(rect.y + rect.height) })
             }
         }
     }
@@ -90,8 +90,8 @@ struct MinimapAgreementTests {
         )
         let measure: CGFloat = 620 - ArgoFeedRow.inset * 2
         let laid = table.laid(across: measure)
-        #expect(laid.marks.count == 4)
-        #expect(abs((laid.marks.map(\.to).max() ?? 0) - measure) < 0.0001)
+        #expect(laid.rects.count == 4)
+        #expect(abs((laid.rects.map(\.to).max() ?? 0) - measure) < 0.0001)
         #expect(laid.height == table.heights(on: table.widths(across: measure)).reduce(0, +))
     }
 }

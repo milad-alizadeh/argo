@@ -10,7 +10,7 @@ struct CommandMenuRow: View {
 
     let row: CommandMenuProjection.Row
     /// Whether the keyboard cursor is on this row. Not the same as being under the pointer.
-    let isMarked: Bool
+    let isCurrent: Bool
 
     @State private var isHovered = false
 
@@ -37,7 +37,7 @@ struct CommandMenuRow: View {
         .contentShape(.rect)
         .onHover { isHovered = $0 }
         .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(isMarked ? [.isSelected, .isButton] : .isButton)
+        .accessibilityAddTraits(isCurrent ? [.isSelected, .isButton] : .isButton)
     }
 
     /// The command, with the characters the reader typed inked in the accent.
@@ -65,7 +65,7 @@ struct CommandMenuRow: View {
 
     private var descriptionInk: ArgoColor {
         let voice = argo.color.text.tertiary
-        return isMarked ? argo.color.text.marked(on: voice) : voice
+        return isCurrent ? argo.color.text.marked(on: voice) : voice
     }
 
     /// Absent rather than transparent: a clear fill is still a shape over the menu's material.
@@ -76,7 +76,7 @@ struct CommandMenuRow: View {
     }
 
     private var fill: ArgoColor? {
-        switch (isMarked, isHovered) {
+        switch (isCurrent, isHovered) {
         case (true, _): argo.color.surface.marked
         case (false, true): argo.color.surface.hover
         case (false, false): nil

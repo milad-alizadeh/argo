@@ -5,7 +5,7 @@ import Testing
 /// The lane over a real feed: what a hand on it does to the reading, what moves when the reading
 /// moves, and what does not.
 ///
-/// The last one is the point. A minimap that repaints its marks on every scroll frame is why this
+/// The last one is the point. A minimap that repaints its rects on every scroll frame is why this
 /// surface is AppKit and not a `Canvas`, and nothing about that is visible — it reads as a feed
 /// gone heavy, three surfaces from the cause.
 @Suite("Minimap lane")
@@ -35,15 +35,15 @@ struct MinimapLaneTests {
     @Test
     func `scrolling inside the rasterised band repaints nothing in the lane`() {
         let deck = Self.mounted(over: FeedProjection.longRows)
-        let drawn = deck.lane.markRedraws
-        let marks = deck.lane.marksFrame
+        let drawn = deck.lane.rectRedraws
+        let rects = deck.lane.rectsFrame
 
         deck.feed.settle(at: 900, over: nil)
 
         #expect(deck.lane.viewportFrame.minY > 0)
-        #expect(deck.lane.markRedraws == drawn)
+        #expect(deck.lane.rectRedraws == drawn)
         // The miniature slid, and it slid by moving the layer rather than by drawing into it.
-        #expect(deck.lane.marksFrame != marks)
+        #expect(deck.lane.rectsFrame != rects)
     }
 
     @Test
@@ -58,7 +58,7 @@ struct MinimapLaneTests {
         #expect(try lane.laneOffset(at: #require(deck.feed.offset())) > 0)
         // The band now hangs off the top of the lane, which is the head of the session below the
         // fold — the whole difference from #402's one lane-sized bitmap.
-        #expect(deck.lane.marksFrame.maxY > Self.column.height)
+        #expect(deck.lane.rectsFrame.maxY > Self.column.height)
     }
 
     /// The band is taller than the lane, so something has to clip it — but not the lane itself,
@@ -67,8 +67,8 @@ struct MinimapLaneTests {
     func `the band is clipped to the lane it hangs out of`() {
         let deck = Self.mounted(over: FeedProjection.longRows)
 
-        #expect(deck.lane.marksFrame.height > Self.column.height)
-        #expect(deck.lane.clipsMarksOnly)
+        #expect(deck.lane.rectsFrame.height > Self.column.height)
+        #expect(deck.lane.clipsRectsOnly)
     }
 
     /// Once, for the whole travel from one end of the session to the other. How big the band that
@@ -76,21 +76,21 @@ struct MinimapLaneTests {
     @Test
     func `leaving the band draws the new one, and only the new one`() {
         let deck = Self.mounted(over: FeedProjection.longRows)
-        let drawn = deck.lane.markRedraws
+        let drawn = deck.lane.rectRedraws
 
         deck.feed.settle(at: .greatestFiniteMagnitude, over: nil)
 
-        #expect(deck.lane.markRedraws == drawn + 1)
+        #expect(deck.lane.rectRedraws == drawn + 1)
     }
 
     @Test
     func `a reading that has not changed shape is not re-rasterised`() {
         let deck = Self.mounted(over: FeedProjection.longRows)
-        let drawn = deck.lane.markRedraws
+        let drawn = deck.lane.rectRedraws
 
         deck.lane.refresh()
 
-        #expect(deck.lane.markRedraws == drawn)
+        #expect(deck.lane.rectRedraws == drawn)
     }
 
     @Test
@@ -125,11 +125,11 @@ struct MinimapLaneTests {
     @Test
     func `the runs are drawn louder under Increased Contrast`() {
         let deck = Self.mounted(over: FeedProjection.longRows)
-        let quiet = deck.lane.markRedraws
+        let quiet = deck.lane.rectRedraws
 
         deck.lane.raisesContrast = true
 
-        #expect(deck.lane.markRedraws > quiet)
+        #expect(deck.lane.rectRedraws > quiet)
     }
 
     @Test
@@ -156,17 +156,17 @@ struct MinimapLaneTests {
     }
 
     /// The lit range is an area, not an outline — and a brighter area under the pointer. Both are a
-    /// ground on one layer, so lighting it repaints no marks.
+    /// ground on one layer, so lighting it repaints no rects.
     @Test
-    func `the lit range brightens under the pointer without repainting the marks`() {
+    func `the lit range brightens under the pointer without repainting the rects`() {
         let deck = Self.mounted(over: FeedProjection.longRows)
         let rest = deck.lane.viewportGround
-        let drawn = deck.lane.markRedraws
+        let drawn = deck.lane.rectRedraws
 
         deck.lane.mouseEntered(with: NSEvent())
 
         #expect(deck.lane.viewportGround != rest)
-        #expect(deck.lane.markRedraws == drawn)
+        #expect(deck.lane.rectRedraws == drawn)
     }
 
     /// One scrollbar, not two. The lit rectangle already stands for the visible range, and the
@@ -211,16 +211,16 @@ struct MinimapLaneTests {
     }
 
     /// A feed append lands below what the lane is showing, so it costs no pixels at all — the band
-    /// is compared on its marks rather than on the reading, and those did not move.
+    /// is compared on its rects rather than on the reading, and those did not move.
     @Test
     func `a row arriving below the band draws nothing`() {
         let deck = Self.mounted(over: Array(FeedProjection.longRows.dropLast(20)))
         deck.feed.settle(at: 0, over: nil)
-        let drawn = deck.lane.markRedraws
+        let drawn = deck.lane.rectRedraws
 
         deck.table.apply(FeedTableFixture.model(showing: FeedProjection.longRows))
         deck.lane.refresh()
 
-        #expect(deck.lane.markRedraws == drawn)
+        #expect(deck.lane.rectRedraws == drawn)
     }
 }

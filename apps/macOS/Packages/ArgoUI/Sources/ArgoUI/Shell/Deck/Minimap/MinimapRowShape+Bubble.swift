@@ -15,7 +15,7 @@ extension MinimapRowShape {
         isFolded: Bool,
         across measure: CGFloat,
     )
-        -> [MinimapRowMark] {
+        -> [MinimapRowRect] {
         let inside = measure * ArgoFeedRow.bubbleShare - ArgoFeedRow.bubbleInsetX * 2
         guard inside > 0 else { return [] }
         let lay = ProseMetrics.lay(out: text, across: inside)
@@ -41,16 +41,16 @@ extension MinimapRowShape {
     @MainActor private static func lines(
         _ lay: ProseLay,
         isFolded: Bool,
-        under pictures: [MinimapRowMark],
+        under pictures: [MinimapRowRect],
     )
-        -> [MinimapRowMark] {
+        -> [MinimapRowRect] {
         // What the gallery took, its own trailing breath included: `FeedGalleryRow` pads both ends.
         let taken = pictures.isEmpty
             ? 0
             : (pictures.map { $0.y + $0.height }.max() ?? 0) + ArgoFeedRow.shotBreath
         let shown = isFolded ? ArgoFeedRow.collapsedPromptLines : lay.widths.count
         return lay.widths.prefix(shown).enumerated().map { at, width in
-            MinimapRowMark.line(at, width: width, in: .body, ink: .prompt).lowered(by: taken)
+            MinimapRowRect.line(at, width: width, in: .body, ink: .prompt).lowered(by: taken)
         }
     }
 }

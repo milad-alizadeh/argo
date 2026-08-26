@@ -6,14 +6,14 @@
 /// trailing token.
 struct ComposerMenuCursor: Equatable {
     /// The id the cursor is on, or `nil` where there is nothing to be on.
-    private(set) var marked: String?
+    private(set) var current: String?
 
     /// Put the cursor back on the top row whenever the row it was on has gone — a filter that
     /// narrowed past it, or a list that emptied. It stays put while its row survives, so typing a
     /// character that does not change the match does not move it.
     mutating func settle(over ids: [String]) {
-        guard let marked, ids.contains(marked) else {
-            marked = ids.first
+        guard let current, ids.contains(current) else {
+            current = ids.first
             return
         }
     }
@@ -29,18 +29,18 @@ struct ComposerMenuCursor: Equatable {
     }
 
     private mutating func step(over ids: [String], by places: Int) {
-        guard let marked, let at = ids.firstIndex(of: marked) else {
-            marked = ids.first
+        guard let current, let at = ids.firstIndex(of: current) else {
+            current = ids.first
             return
         }
         let next = at + places
         guard ids.indices.contains(next) else { return }
-        self.marked = ids[next]
+        self.current = ids[next]
     }
 
     /// The row ⏎ would take, and `nil` where there is none — which is what leaves the empty
     /// state's Return to the field, so a line nothing matched still sends as written (decision 8).
     func row<Row: Identifiable>(in rows: [Row]) -> Row? where Row.ID == String {
-        rows.first { $0.id == marked }
+        rows.first { $0.id == current }
     }
 }

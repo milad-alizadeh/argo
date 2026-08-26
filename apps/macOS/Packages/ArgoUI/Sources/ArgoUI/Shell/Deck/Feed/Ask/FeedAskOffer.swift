@@ -23,7 +23,7 @@ struct FeedAskOffer: Equatable, Sendable, Identifiable {
 
     /// The offered options, numbered from one, in the order they were offered.
     ///
-    /// Only the FIRST option matching `chosen` is marked: two options may carry the same words, and
+    /// Only the FIRST option matching `chosen` is ticked: two options may carry the same words, and
     /// an answer that names those words has named one of them, never both.
     static func numbered(_ options: [Ask.Option], chosen: String?) -> [FeedAskOffer] {
         let taken = chosen.flatMap { label in options.firstIndex { $0.label == label } }

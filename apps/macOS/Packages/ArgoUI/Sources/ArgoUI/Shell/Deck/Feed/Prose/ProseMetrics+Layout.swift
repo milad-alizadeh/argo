@@ -20,7 +20,7 @@ struct ProseLay: Equatable, Sendable {
 
 /// Where a span of words sits once they wrapped: which line, and how far across it runs in POINTS.
 ///
-/// The lane drew a link from its offset in the SOURCE instead, so `[label](url)` marked the width
+/// The lane drew a link from its offset in the SOURCE instead, so `[label](url)` spanned the width
 /// of the whole construct — url and brackets — at a place the words had long since moved past.
 struct ProsePlace: Equatable, Sendable {
     var line: Int

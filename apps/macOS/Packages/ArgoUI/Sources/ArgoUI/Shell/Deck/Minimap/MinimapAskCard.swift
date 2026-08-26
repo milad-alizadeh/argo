@@ -35,22 +35,22 @@ extension MinimapRowShape {
     /// in the lane found by shape alone with the colour taken away, which is D25's rule. What
     /// changed is that it is a container with content rather than a fill.
     @MainActor static func card(_ card: MinimapAskCard, across measure: CGFloat, height: CGFloat)
-        -> [MinimapRowMark] {
+        -> [MinimapRowRect] {
         let inset = ArgoFeedRow.askCardInset
         let inside = measure - inset * 2
         guard inside > 0 else { return [] }
-        var marks = card.isRuled
-            ? [MinimapRowMark(
+        var rects = card.isRuled
+            ? [MinimapRowRect(
                 y: 0, height: height, from: 0, to: measure, ink: card.ink, shape: .frame,
             )]
             : []
         var y = inset
         for question in card.questions {
             let laid = asked(question, ink: card.ink, across: inside)
-            marks += laid.marks.map { $0.lowered(by: y).indented(by: inset) }
+            rects += laid.rects.map { $0.lowered(by: y).indented(by: inset) }
             y += laid.height + ArgoFeedRow.blockStep
         }
-        return marks
+        return rects
     }
 
     /// One question and its options on ONE grid, which is what `FeedAskQuestion` draws: the ask
@@ -61,34 +61,34 @@ extension MinimapRowShape {
         ink: FeedInk,
         across measure: CGFloat,
     )
-        -> (marks: [MinimapRowMark], height: CGFloat) {
-        let asked = line(question.text, marked: nil, ink: ink, across: measure)
-        guard !question.offers.isEmpty else { return (asked.marks, asked.height) }
-        var marks = asked.marks
+        -> (rects: [MinimapRowRect], height: CGFloat) {
+        let asked = line(question.text, marker: nil, ink: ink, across: measure)
+        guard !question.offers.isEmpty else { return (asked.rects, asked.height) }
+        var rects = asked.rects
         var y = asked.height + ArgoFeedRow.stepBeforeProse
         for offer in question.offers {
-            let drawn = line(offer.label, marked: offer.marker, ink: ink, across: measure)
-            marks += drawn.marks.map { $0.lowered(by: y) }
+            let drawn = line(offer.label, marker: offer.marker, ink: ink, across: measure)
+            rects += drawn.rects.map { $0.lowered(by: y) }
             y += drawn.height + ArgoFeedRow.askOptionGap
         }
-        return (marks, max(asked.height, y - ArgoFeedRow.askOptionGap))
+        return (rects, max(asked.height, y - ArgoFeedRow.askOptionGap))
     }
 
-    /// One line of the card: its mark in the marker column, and its words on the vertical after it.
+    /// One line of the card: its rect in the marker column, and its words on the vertical after it.
     ///
-    /// `marked` is the option's number, or `nil` for the question — whose glyph fills the column
+    /// `marker` is the option's number, or `nil` for the question — whose glyph fills the column
     /// rather than measuring, since a glyph is not text the lane can size.
     @MainActor private static func line(
         _ text: String,
-        marked: String?,
+        marker: String?,
         ink: FeedInk,
         across measure: CGFloat,
     )
-        -> (marks: [MinimapRowMark], height: CGFloat) {
+        -> (rects: [MinimapRowRect], height: CGFloat) {
         let indent = ArgoFeedRow.markerWidth + ArgoFeedRow.markerGap
-        let width = marked.map { min(ArgoFeedRow.markerWidth, ProseMetrics.width(of: $0)) }
+        let width = marker.map { min(ArgoFeedRow.markerWidth, ProseMetrics.width(of: $0)) }
             ?? ArgoFeedRow.markerWidth
-        let marker = MinimapRowMark(
+        let markerRect = MinimapRowRect(
             y: 0,
             height: ProseFace.body.lineBox,
             from: ArgoFeedRow.markerWidth - width,
@@ -96,6 +96,6 @@ extension MinimapRowShape {
             ink: ink,
         )
         let words = MinimapProseWords(text: text).laid(ink: ink, across: measure - indent)
-        return ([marker] + words.marks.map { $0.indented(by: indent) }, words.height)
+        return ([markerRect] + words.rects.map { $0.indented(by: indent) }, words.height)
     }
 }

@@ -3,9 +3,9 @@ import AppKit
 /// The overview lane itself: layers over the deck, and only the top ones move while the reader
 /// scrolls.
 ///
-/// The marks are a bitmap of a BAND of the miniature, rasterised when that band's content changes
+/// The rects are a bitmap of a BAND of the miniature, rasterised when that band's content changes
 /// and at no other time — `MinimapGeometry` holds no scroll offset, so a scroll inside the band
-/// moves the marks layer's frame and repaints nothing. The viewport rectangle is a second layer
+/// moves the rects layer's frame and repaints nothing. The viewport rectangle is a second layer
 /// moved the same way, inside a `CATransaction` with actions disabled. The annotations are a third
 /// (#382), and the only one a pointer moving over the lane ever touches.
 final class MinimapLaneView: NSView {
@@ -22,7 +22,7 @@ final class MinimapLaneView: NSView {
         didSet { settleViewport() }
     }
 
-    /// Whether the reader asked for Increased Contrast, which lifts the runs' alpha so the marks
+    /// Whether the reader asked for Increased Contrast, which lifts the runs' alpha so the rects
     /// clear the surface they sit on.
     var raisesContrast = false {
         didSet { settleViewport() }
@@ -70,28 +70,28 @@ final class MinimapLaneView: NSView {
     /// the lane back onto the reading through the geometry a scrub froze.
     private(set) var geometry = MinimapGeometry(MinimapReading(), lane: .zero)
 
-    /// How many times the marks have been rasterised — the instrument #402 asks for, to show that
+    /// How many times the rects have been rasterised — the instrument #402 asks for, to show that
     /// scrolling the feed inside a band repaints no content in the lane.
-    var markRedraws = 0
+    var rectRedraws = 0
 
     /// The same instrument for the annotations, which is what shows the two are separate: a hover
-    /// moves this and leaves `markRedraws` alone (#382).
+    /// moves this and leaves `rectRedraws` alone (#382).
     var annotationRedraws = 0
 
-    let marksLayer = CALayer()
-    /// What holds the marks inside the lane. The band hangs off both ends of it by several lane
+    let rectsLayer = CALayer()
+    /// What holds the rects inside the lane. The band hangs off both ends of it by several lane
     /// heights, and without this it would paint over the deck header above and the row below.
-    private let marksClip = CALayer()
+    private let rectsClip = CALayer()
     /// The slice of the miniature currently held as pixels, and what was drawn into it. All three
     /// are compared before a rasterise, so a feed append outside the band costs nothing.
     var drawnBand: MinimapBand?
-    var drawnMarks: [MinimapMark] = []
-    /// Every ink the marks bitmap was drawn in, so a palette that did not change does not re-ink
+    var drawnRects: [MinimapRect] = []
+    /// Every ink the rects bitmap was drawn in, so a palette that did not change does not re-ink
     /// it. The whole set rather than one colour: a second appearance can move a diff ink without
     /// touching the ramp, and the lane draws both.
     var inked: [ArgoColor] = []
 
-    /// The annotation layer (#382). Over the marks and the lit range both, because an annotation is
+    /// The annotation layer (#382). Over the rects and the lit range both, because an annotation is
     /// read rather than looked at, and it is the only layer a hover ever touches.
     let annotationsLayer = CALayer()
     /// What the lane is marking right now. The lane's rendered output is a bitmap, so this is the
@@ -111,12 +111,12 @@ final class MinimapLaneView: NSView {
         wantsLayer = true
         // The band is several lane-heights tall and hangs off both ends of the lane by design, so
         // something has to clip it — but NOT the host, because a Turn's label is drawn to the left
-        // of the lane where there is room to read it whole. So the marks get a clipping layer of
+        // of the lane where there is room to read it whole. So the rects get a clipping layer of
         // their own and the host lets its sublayers out.
-        marksClip.masksToBounds = true
-        marksLayer.contentsGravity = .resize
-        marksClip.addSublayer(marksLayer)
-        layer?.addSublayer(marksClip)
+        rectsClip.masksToBounds = true
+        rectsLayer.contentsGravity = .resize
+        rectsClip.addSublayer(rectsLayer)
+        layer?.addSublayer(rectsClip)
         layer?.addSublayer(viewportLayer)
         layer?.addSublayer(annotationsLayer)
     }
@@ -135,16 +135,16 @@ final class MinimapLaneView: NSView {
         viewportLayer.frame
     }
 
-    /// Where the marks bitmap currently sits, band and all.
-    var marksFrame: CGRect {
-        marksLayer.frame
+    /// Where the rects bitmap currently sits, band and all.
+    var rectsFrame: CGRect {
+        rectsLayer.frame
     }
 
-    /// Whether the marks are held inside the lane while the annotations are let OUT of it. Both
+    /// Whether the rects are held inside the lane while the annotations are let OUT of it. Both
     /// halves at once, because that is the claim: the band may not paint over the deck around it,
     /// and a Turn's label must still reach the reading beside it.
-    var clipsMarksOnly: Bool {
-        marksClip.masksToBounds && layer?.masksToBounds == false
+    var clipsRectsOnly: Bool {
+        rectsClip.masksToBounds && layer?.masksToBounds == false
     }
 
     /// The reading re-read and the lane put where it now sits.
@@ -164,8 +164,8 @@ final class MinimapLaneView: NSView {
         let offset = feed?.offset() ?? 0
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        marksClip.frame = bounds
-        placeMarks(slidTo: geometry.laneOffset(at: offset))
+        rectsClip.frame = bounds
+        placeRects(slidTo: geometry.laneOffset(at: offset))
         viewportLayer.backgroundColor = viewportGround
         viewportLayer.isHidden = !geometry.isScrollable
         viewportLayer.frame = rect(
@@ -177,7 +177,7 @@ final class MinimapLaneView: NSView {
 
     /// A full-width lane band as AppKit wants it. Lane space counts down from the top, like the
     /// reading it maps, and AppKit counts up; the view is deliberately NOT flipped, because a
-    /// flipped host flips its backing layer's geometry too and turns the marks bitmap over.
+    /// flipped host flips its backing layer's geometry too and turns the rects bitmap over.
     func rect(at laneY: CGFloat, height: CGFloat) -> CGRect {
         CGRect(x: 0, y: bounds.height - laneY - height, width: bounds.width, height: height)
     }
@@ -208,7 +208,7 @@ final class MinimapLaneView: NSView {
 
     /// The visible range as a lit AREA rather than an outline, on two rungs of one family: `wash`
     /// at rest, `muted` under the pointer. Near-white, because a coloured ground would tint the
-    /// marks it covers into reading differently from the ones beside them.
+    /// rects it covers into reading differently from the ones beside them.
     var viewportGround: CGColor? {
         guard let palette else { return nil }
         let lit = palette.text.primary
