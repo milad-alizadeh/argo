@@ -141,7 +141,9 @@ func openDescriptorCount(for url: URL) -> Int {
     var pathBuffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
     return openDescriptors().count { descriptor in
         guard fcntl(descriptor, F_GETPATH, &pathBuffer) != -1 else { return false }
-        return String(cString: pathBuffer) == path
+        // `F_GETPATH` NUL-terminates inside the fixed-size buffer.
+        let name = pathBuffer.prefix { $0 != 0 }
+        return String(validating: name, as: UTF8.self) == path
     }
 }
 

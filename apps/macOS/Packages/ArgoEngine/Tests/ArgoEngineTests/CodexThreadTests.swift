@@ -170,7 +170,8 @@ struct CodexThreadTests {
         let peer = CodexPeer()
         peer.thread.begin()
         #expect(peer.thread.send("First thought"))
-        let hello = try? #require(peer.server.request("initialize"))
+        let hello = peer.server.request("initialize")
+        #expect(hello != nil)
 
         peer.server.refuse(hello?.id ?? 0)
 
