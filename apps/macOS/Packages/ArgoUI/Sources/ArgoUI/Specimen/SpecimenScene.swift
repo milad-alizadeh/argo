@@ -50,7 +50,12 @@ enum SpecimenScene {
     /// reading alone — a chip about the transcript tail beside it would settle nothing about the
     /// one being judged.
     static func connectionChips(_ health: ConnectionHealthReading) -> some View {
-        ConnectionChips(presentation: .preview, health: health, actions: .inert)
+        ConnectionChips(
+            connection: .connected,
+            projectID: CockpitPresentation.preview.activeProjectID,
+            health: health,
+            actions: .inert,
+        )
     }
 
     /// The Sessions room with a reading in it — the shell and not `SessionsDeck`, because what is

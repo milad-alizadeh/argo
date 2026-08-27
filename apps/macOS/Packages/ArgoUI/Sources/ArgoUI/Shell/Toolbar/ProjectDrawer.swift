@@ -9,7 +9,9 @@ struct ProjectDrawer: View {
     /// own bounds, which cuts across the rule above it and the panel's rounded corners below.
     @FocusState private var isFooterFocused: Bool
 
-    let presentation: CockpitPresentation
+    /// Already projected: the drawer's honesty claims are `ProjectDrawerProjection`'s, and this
+    /// file only draws them.
+    let rows: [ProjectDrawerProjection.Row]
     let actions: CockpitActions
 
     var body: some View {
@@ -26,10 +28,6 @@ struct ProjectDrawer: View {
         // NO ground of its own, of any kind. A popover IS the system's glass, so anything drawn
         // behind this content is a second material inside the same panel — and the popover window
         // is wider than this content, so even a `glassEffect` shows as a rim around a second sheet.
-    }
-
-    private var rows: [ProjectDrawerProjection.Row] {
-        ProjectDrawerProjection.rows(from: presentation)
     }
 
     /// The picker opens over the window, so the drawer must not be left hanging in front of it.
@@ -95,19 +93,19 @@ struct ProjectDrawer: View {
 }
 
 #Preview("Project drawer") {
-    ProjectDrawer(presentation: .preview, actions: .inert)
+    ProjectDrawer(rows: ProjectDrawerProjection.rows(from: .preview), actions: .inert)
         .padding(ArgoSpacing.region)
         .argoAppearance()
 }
 
 #Preview("Project drawer — nothing registered") {
-    ProjectDrawer(presentation: .unregisteredPreview, actions: .inert)
+    ProjectDrawer(rows: ProjectDrawerProjection.rows(from: .unregisteredPreview), actions: .inert)
         .padding(ArgoSpacing.region)
         .argoAppearance()
 }
 
 #Preview("Project drawer — the active Project's folder has moved") {
-    ProjectDrawer(presentation: .unreachablePreview, actions: .inert)
+    ProjectDrawer(rows: ProjectDrawerProjection.rows(from: .unreachablePreview), actions: .inert)
         .padding(ArgoSpacing.region)
         .argoAppearance()
 }

@@ -154,7 +154,8 @@ public struct CockpitView: View {
             .environment(\.feedAskAnswering, answer(on: askingNow.live))
             .overlay(alignment: .topLeading) {
                 ConnectionChips(
-                    presentation: presentation,
+                    connection: presentation.connection,
+                    projectID: presentation.activeProjectID,
                     health: health,
                     actions: actions,
                 )
@@ -167,8 +168,7 @@ public struct CockpitView: View {
             .toolbar {
                 ShellToolbar(
                     room: $navigation.room,
-                    presentation: presentation,
-                    actions: actions,
+                    scope: ScopeVessel(presentation: presentation, actions: actions),
                     spawn: CockpitSpawn(
                         presentation: presentation,
                         actions: actions,

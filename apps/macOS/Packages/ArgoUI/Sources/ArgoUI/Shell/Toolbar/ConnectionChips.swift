@@ -6,13 +6,15 @@ import SwiftUI
 /// Both are silent when there is nothing wrong, so the ordinary window carries none of this — a
 /// permanently-lit healthy indicator trains the eye to skip the spot the warning appears in.
 struct ConnectionChips: View {
-    let presentation: CockpitPresentation
+    let connection: CockpitPresentation.Connection
+    /// Which Project the panel opens on. The chip is about the window's active one.
+    let projectID: CockpitPresentation.Project.ID?
     let health: ConnectionHealthReading
     let actions: CockpitActions
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
-            if let observation = ConnectionChipReading(observing: presentation.connection) {
+            if let observation = ConnectionChipReading(observing: connection) {
                 ConnectionChip(reading: observation, act: actions.retryConnection)
             }
             if let providers = ConnectionHealthProjection.chip(from: health) {
@@ -42,6 +44,6 @@ struct ConnectionChips: View {
     /// Project this reading is about. There is one reconnect in this app and this is a way to REACH
     /// it, not a second one.
     private func open() {
-        actions.openProjectPanel(presentation.activeProjectID)
+        actions.openProjectPanel(projectID)
     }
 }

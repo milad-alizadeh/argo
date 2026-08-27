@@ -7,16 +7,19 @@ import SwiftUI
 struct ScopeVessel: View {
     @Environment(\.argo) private var argo
 
-    let presentation: CockpitPresentation
+    let project: ProjectVesselReading
+    /// The drawer hangs off the Project half, so its rows arrive with it.
+    let rows: [ProjectDrawerProjection.Row]
+    let checkout: CheckoutReading
     let actions: CockpitActions
 
     var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
-            ProjectVessel(presentation: presentation, actions: actions)
+            ProjectVessel(reading: project, rows: rows, actions: actions)
             DeckSeparator()
                 .frame(height: ArgoLayout.scopeDividerHeight)
                 .accessibilityHidden(true)
-            GitVessel(checkout: presentation.checkout, refresh: actions.refreshCheckout)
+            GitVessel(reading: checkout, refresh: actions.refreshCheckout)
         }
         // The toolbar draws the glass but not the room inside it. Without this the folder mark sat
         // ~3.5pt off its own rim while the Rooms vessel next to it breathed at 8.5 — two capsules
@@ -28,14 +31,36 @@ struct ScopeVessel: View {
     }
 }
 
+extension ScopeVessel {
+    /// The one place on the bar a presentation is projected.
+    init(presentation: CockpitPresentation, actions: CockpitActions) {
+        self.init(
+            project: ProjectVesselReading(presentation: presentation),
+            rows: ProjectDrawerProjection.rows(from: presentation),
+            checkout: CheckoutReading(presentation: presentation),
+            actions: actions,
+        )
+    }
+}
+
 #Preview("Scope vessel") {
-    ScopeVessel(presentation: .preview, actions: .inert)
-        .padding(ArgoSpacing.region)
-        .argoAppearance()
+    ScopeVessel(
+        project: ProjectVesselReading(presentation: .preview),
+        rows: ProjectDrawerProjection.rows(from: .preview),
+        checkout: CheckoutReading(presentation: .preview),
+        actions: .inert,
+    )
+    .padding(ArgoSpacing.region)
+    .argoAppearance()
 }
 
 #Preview("Scope vessel — nothing registered") {
-    ScopeVessel(presentation: .unregisteredPreview, actions: .inert)
-        .padding(ArgoSpacing.region)
-        .argoAppearance()
+    ScopeVessel(
+        project: ProjectVesselReading(presentation: .unregisteredPreview),
+        rows: ProjectDrawerProjection.rows(from: .unregisteredPreview),
+        checkout: CheckoutReading(presentation: .unregisteredPreview),
+        actions: .inert,
+    )
+    .padding(ArgoSpacing.region)
+    .argoAppearance()
 }

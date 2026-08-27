@@ -45,8 +45,7 @@ struct ToolbarSpecimen: View {
             .toolbar {
                 ShellToolbar(
                     room: $room,
-                    presentation: presentation,
-                    actions: .inert,
+                    scope: ScopeVessel(presentation: presentation, actions: .inert),
                     spawn: CockpitSpawn(
                         presentation: presentation,
                         actions: .inert,
@@ -65,12 +64,19 @@ struct OpenDrawerSpecimen: View {
     @State private var isOpen = false
 
     var body: some View {
-        ProjectVessel(presentation: .preview, actions: .inert)
-            .padding(ArgoSpacing.region)
-            .onAppear { isOpen = true }
-            .popover(isPresented: $isOpen, arrowEdge: .bottom) {
-                ProjectDrawer(presentation: .preview, actions: .inert)
-            }
+        ProjectVessel(
+            reading: ProjectVesselReading(presentation: .preview),
+            rows: ProjectDrawerProjection.rows(from: .preview),
+            actions: .inert,
+        )
+        .padding(ArgoSpacing.region)
+        .onAppear { isOpen = true }
+        .popover(isPresented: $isOpen, arrowEdge: .bottom) {
+            ProjectDrawer(
+                rows: ProjectDrawerProjection.rows(from: .preview),
+                actions: .inert,
+            )
+        }
     }
 }
 
@@ -85,7 +91,7 @@ struct DrawerSpecimen: View {
     var body: some View {
         // In a popover the panel is the system's own material and the drawer must add nothing;
         // this specimen has no popover to sit in, so it stands in for one.
-        ProjectDrawer(presentation: presentation, actions: .inert)
+        ProjectDrawer(rows: ProjectDrawerProjection.rows(from: presentation), actions: .inert)
             .glassEffect(in: .rect(cornerRadius: ArgoRadius.popover))
             .padding(ArgoSpacing.region)
     }

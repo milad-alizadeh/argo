@@ -31,6 +31,11 @@ extension SpecimenRegistry {
         SpecimenEntry("twoReadings") { RosterSpecimen(presentation: .twoReadings) },
         SpecimenEntry("toolbarScope") { ToolbarSpecimen(presentation: .preview) },
         SpecimenEntry("emptyToolbarScope") { ToolbarSpecimen(presentation: .unregisteredPreview) },
+        // The bar's two degrade-down states — `emptyPreview` is the one fixture on a detached HEAD.
+        SpecimenEntry("unreachableToolbarScope") {
+            ToolbarSpecimen(presentation: .unreachablePreview)
+        },
+        SpecimenEntry("detachedToolbarScope") { ToolbarSpecimen(presentation: .emptyPreview) },
         SpecimenEntry("projectDrawer") { DrawerSpecimen(presentation: .preview) },
         SpecimenEntry("unreachableProjectDrawer") {
             DrawerSpecimen(presentation: .unreachablePreview)
