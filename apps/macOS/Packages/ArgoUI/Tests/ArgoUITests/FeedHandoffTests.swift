@@ -92,11 +92,10 @@ struct FeedHandoffTests {
         CockpitPresentation.Session(
             id: id,
             title: title,
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: .managed,
             status: .idle,
-            handedOffTo: handedOffTo,
+            chain: .init(model: "claude-opus-5", handedOffTo: handedOffTo),
+            work: .init(location: "/Users/milad/Developer/argo"),
         )
     }
 

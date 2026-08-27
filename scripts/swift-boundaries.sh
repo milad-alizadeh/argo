@@ -5,8 +5,9 @@
 # tree, not of the file you happened to touch.
 #
 # Edges 1-4 are ADR-0022's layering; edge 5 is ADR-0027, on the projection between two of its
-# layers. Each is checkable by looking at imports, declarations and size alone — which is the whole
-# reason they are gates rather than review notes.
+# layers; edge 6 is the parameter cap on the one declaration shape SwiftLint cannot see. Each is
+# checkable by looking at imports, declarations and size alone — which is the whole reason they are
+# gates rather than review notes.
 set -eu
 
 APP_DIR="apps/macOS"
@@ -16,12 +17,50 @@ APP_TARGET="$APP_DIR/Argo"
 # The one file in ArgoUI allowed to read live Hub state: the Hub → cockpit projection.
 PROJECTION_FILE="CockpitPresentation+Hub.swift"
 PROJECTION="$UI_SOURCES/ArgoUI/Shell/$PROJECTION_FILE"
+# The value the projection assembles. Its init body is the second place a fact can land on the
+# wrong slot, and the edge below reads both files for that reason.
+PROJECTED_FILE="CockpitPresentation+Session.swift"
+PROJECTED="$UI_SOURCES/ArgoUI/Shell/$PROJECTED_FILE"
 HUB_SESSION="$ENGINE_SOURCES/Hub/HubSession.swift"
+SWIFTLINT_CONFIG="$APP_DIR/.swiftlint.yml"
 
 if [ ! -d "$APP_DIR" ]; then
   echo "swift-boundaries: $APP_DIR not found — run from the repo root" >&2
   exit 1
 fi
+
+# Everything below reads Swift as TEXT, so both edges that do arithmetic on it share one reader.
+# `code` is the line with its comments and string CONTENTS removed: a `//` inside a string ends no
+# comment, and a `"` inside one opens no string. Getting that wrong silently unbalances the parens
+# for the rest of the file, which is a gate that passes everything and says so — the exact
+# fail-open docs/agents/quality-gates.md is about. `""" `blocks are tracked across lines because
+# their contents are prose that may hold anything.
+AWK_READER='
+  function code(line,   out, i, char, next2) {
+    out = ""
+    if (inblock) {
+      i = index(line, "\"\"\"")
+      if (!i) return ""
+      inblock = 0
+      line = substr(line, i + 3)
+    }
+    for (i = 1; i <= length(line); i++) {
+      char = substr(line, i, 1)
+      next2 = substr(line, i, 3)
+      if (next2 == "\"\"\"") { inblock = 1; return out }
+      if (char == "/" && substr(line, i, 2) == "//") return out
+      if (char == "\"") {
+        for (i++; i <= length(line); i++) {
+          if (substr(line, i, 1) == "\\") { i++; continue }
+          if (substr(line, i, 1) == "\"") break
+        }
+        continue
+      }
+      out = out char
+    }
+    return out
+  }
+'
 
 failed=0
 
@@ -105,10 +144,10 @@ mapped() {
     | cut -d. -f2 | sort -u
 }
 
-if [ ! -f "$HUB_SESSION" ] || [ ! -f "$PROJECTION" ]; then
-  report "edge 5 cannot see its own subjects — HubSession.swift or $PROJECTION_FILE has moved" \
-    "Point HUB_SESSION and PROJECTION at their new homes. An edge whose input is missing checks" \
-    "nothing, and nothing else in this repo would notice."
+if [ ! -f "$HUB_SESSION" ] || [ ! -f "$PROJECTION" ] || [ ! -f "$PROJECTED" ]; then
+  report "edge 5 cannot see its own subjects — HubSession.swift, $PROJECTION_FILE or $PROJECTED_FILE has moved" \
+    "Point HUB_SESSION, PROJECTION and PROJECTED at their new homes. An edge whose input is" \
+    "missing checks nothing, and nothing else in this repo would notice."
 else
   facts=$(hub_facts)
   dropped=$(not_projected)
@@ -141,6 +180,115 @@ else
   if [ -n "$hits" ]; then
     report "these facts are mapped in $PROJECTION_FILE AND listed \`not-projected:\`" "$hits" \
       "Drop the \`not-projected:\` line: the fact is rendered, so its reason is out of date."
+  fi
+
+  # 5b. And a fact handed straight through lands on the slot of its OWN name. Totality proves a
+  #     fact was mentioned, never that it reached the right field, so `spentTokens:
+  #     session.cachedTokens` is a swap both halves above call accounted for (#755). A fact crosses
+  #     two hands — named into the init, then unpacked out of a value in its body — and either hand
+  #     can drop it on the wrong slot, so both files are read. Only the verbatim slots are checked:
+  #     an argument that is a whole expression is a derivation, and its name is the projection's.
+  verbatim_pairs=$(
+    awk "$AWK_READER"'
+      { line = code($0)
+        while (match(line, /[A-Za-z_][A-Za-z0-9_]*:[ \t]*session\.[A-Za-z_][A-Za-z0-9_]*/)) {
+          hit = substr(line, RSTART, RLENGTH)
+          after = substr(line, RSTART + RLENGTH, 1)
+          line = substr(line, RSTART + RLENGTH)
+          # A terminator, and nothing else, means the fact IS the whole argument.
+          if (after == "" || after == "," || after == ")") {
+            split(hit, part, ":")
+            slot = part[1]
+            sub(/^.*session\./, "", hit)
+            if (slot != hit) print slot " <- " hit
+          }
+        }
+        # The other hand: `self.slot = value.fact`, which is how the init unpacks a grouped value.
+        if (match(line, /^[ \t]*self\.[A-Za-z_][A-Za-z0-9_]* = [a-z][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*[ \t]*$/)) {
+          split(line, part, " ")
+          slot = part[1]
+          fact = part[3]
+          sub(/^self\./, "", slot)
+          sub(/^.*\./, "", fact)
+          if (slot != fact) print slot " <- " fact
+        }
+      }
+    ' "$PROJECTION" "$PROJECTED" | sort -u
+  )
+  # The first two names on a marker line; whatever follows is prose.
+  declared_renames=$(
+    sed -nE 's/^.*renamed:[[:space:]]*([A-Za-z0-9_]+)[[:space:]]*<-[[:space:]]*([A-Za-z0-9_]+).*/\1 <- \2/p' \
+      "$PROJECTION" "$PROJECTED" | sort -u
+  )
+
+  hits=$(printf '%s\n' "$verbatim_pairs" | grep -v '^$' | grep -vxF "$declared_renames" || true)
+  if [ -n "$hits" ]; then
+    report "these facts land on a slot of another name in the projection (ADR-0027, #755)" \
+      "$hits" \
+      "A fact passed straight through takes the slot of its own name, or the projection says why" \
+      "not: add a \`renamed: <slot> <- <fact> — <why>\` line beside it, in $PROJECTION_FILE or" \
+      "$PROJECTED_FILE. This is the check that catches two same-typed facts swapped, which no type" \
+      "and no totality check can."
+  fi
+
+  hits=$(printf '%s\n' "$declared_renames" | grep -v '^$' | grep -vxF "$verbatim_pairs" || true)
+  if [ -n "$hits" ]; then
+    report "\`renamed:\` in the projection names renames it no longer makes" "$hits" \
+      "Drop the line: a marker for a rename that is not made would go on excusing a future one."
+  fi
+fi
+
+# 6. The parameter cap reaches initializers. SwiftLint's `function_parameter_count` visits FUNCTION
+#    declarations only, so an `init` is invisible to it — which is how a 27-parameter init sat under
+#    a cap of 4 for as long as it did (#755). The number is the ratchet recorded in
+#    .swiftlint.yml beside the rule it extends, so one cap is read in one place.
+INIT_CAP=$(
+  sed -nE 's/^[[:space:]]*#[[:space:]]*RATCHET initializer-parameter-count:[[:space:]]*([0-9]+).*/\1/p' \
+    "$SWIFTLINT_CONFIG" 2>/dev/null | head -1
+)
+if [ -z "$INIT_CAP" ]; then
+  report "edge 6 cannot find its cap — no \`RATCHET initializer-parameter-count: <N>\` in $SWIFTLINT_CONFIG" \
+    "The number lives beside \`function_parameter_count\`, which is the rule this edge extends to" \
+    "the shape SwiftLint cannot see. Without it this edge checks nothing and says so."
+else
+  # Depth-counted rather than pattern-matched: a default value may itself hold commas and parens,
+  # and a list wide enough to matter is always wrapped one parameter per line.
+  hits=$(
+    find "$APP_DIR" -name '*.swift' \
+      ! -path '*/.build/*' ! -path '*/build/*' ! -path '*.xcodeproj/*' -print 2>/dev/null \
+      | sort \
+      | while IFS= read -r file; do
+        awk -v file="$file" -v cap="$INIT_CAP" "$AWK_READER"'
+          function close_list(  count) {
+            count = seen ? commas + (trailing ? 0 : 1) : 0
+            if (count > cap) print file ":" declared ": init takes " count " parameters"
+            active = 0
+          }
+          {
+            line = code($0); start = 1
+            if (!active) {
+              if (!match(line, /(^|[^.A-Za-z0-9_])init\??[ \t]*\(/)) next
+              start = RSTART + RLENGTH
+              active = 1; depth = 1; commas = 0; seen = 0; trailing = 0; declared = FNR
+            }
+            for (i = start; i <= length(line); i++) {
+              char = substr(line, i, 1)
+              if (char == ")" || char == "]" || char == "}") {
+                if (--depth == 0) { close_list(); break }
+              } else if (char == "(" || char == "[" || char == "{") depth++
+              else if (char == "," && depth == 1) { commas++; trailing = 1; continue }
+              if (char != " " && char != "\t") { seen = 1; trailing = 0 }
+            }
+          }
+        ' "$file"
+      done
+  )
+  if [ -n "$hits" ]; then
+    report "these initializers are over the $INIT_CAP-parameter ratchet (rules/code-style.md, #755)" \
+      "$hits" \
+      "Group the list by the reading each parameter comes from and pass one value per reading, the" \
+      "way CockpitPresentation.Session does. Lower the ratchet in $SWIFTLINT_CONFIG as each one" \
+      "goes; 4 is the number, and it is never raised to fit an init."
   fi
 fi
 

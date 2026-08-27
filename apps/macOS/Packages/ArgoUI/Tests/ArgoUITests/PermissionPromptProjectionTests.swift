@@ -16,12 +16,14 @@ struct PermissionPromptProjectionTests {
         CockpitPresentation.Session(
             id: "session",
             title: "A Session",
-            model: "claude-opus-5",
-            workspaceLocation: location,
             access: .managed,
             status: permission == nil ? .idle : .permission,
-            permission: permission,
-            standingAllows: standing.map(StandingAllow.init(toolName:)),
+            chain: .init(model: "claude-opus-5"),
+            work: .init(location: location),
+            autonomy: .init(
+                permission: permission,
+                standingAllows: standing.map(StandingAllow.init(toolName:)),
+            ),
         )
     }
 

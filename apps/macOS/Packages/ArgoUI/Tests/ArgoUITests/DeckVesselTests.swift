@@ -110,11 +110,11 @@ struct DeckVesselTests {
         CockpitPresentation.Session(
             id: "session",
             title: "A Session",
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/someone/repo",
             access: access,
             status: status ?? (permission == nil ? .idle : .permission),
-            permission: permission,
+            chain: .init(model: "claude-opus-5"),
+            work: .init(location: "/Users/someone/repo"),
+            autonomy: .init(permission: permission),
         )
     }
 }

@@ -55,11 +55,9 @@ struct SessionHeaderTooltipTests {
         let header = SessionHeaderProjection.header(from: CockpitPresentation.Session(
             id: "tooltip-factsonly",
             title: "A Session nothing was spent on",
-            model: "claude-opus-5",
-            workspaceLocation: nil,
             access: .managed,
             status: .idle,
-            cli: .claude,
+            chain: .init(cli: .claude, model: "claude-opus-5"),
         ))
 
         #expect(header.spend == nil)
@@ -73,8 +71,6 @@ struct SessionHeaderTooltipTests {
         let header = SessionHeaderProjection.header(from: CockpitPresentation.Session(
             id: "tooltip-empty",
             title: "A Session read off an empty record",
-            model: nil,
-            workspaceLocation: nil,
             access: .managed,
             status: .idle,
         ))
@@ -91,18 +87,20 @@ struct SessionHeaderTooltipTests {
         CockpitPresentation.Session(
             id: "tooltip-full",
             title: "The Session title becomes the window's document title",
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: access,
             status: .idle,
-            cli: .claude,
-            workspace: .init(kind: .worktree, branch: "argo/#692-titlebar-title", dirty: 3),
-            issue: .init(number: 692, title: "Titlebar title"),
-            lastSeenAtMs: 3_600_000,
-            startedAtMs: 0,
-            spentTokens: 1_830_000,
-            cachedTokens: 28_100_000,
-            contextTokens: 216_764,
+            chain: .init(
+                cli: .claude,
+                model: "claude-opus-5",
+                startedAtMs: 0,
+                lastSeenAtMs: 3_600_000,
+            ),
+            work: .init(
+                location: "/Users/milad/Developer/argo",
+                workspace: .init(kind: .worktree, branch: "argo/#692-titlebar-title", dirty: 3),
+                issue: .init(number: 692, title: "Titlebar title"),
+            ),
+            spend: .init(spentTokens: 1_830_000, cachedTokens: 28_100_000, contextTokens: 216_764),
         )
     }
 }

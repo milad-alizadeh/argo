@@ -45,8 +45,6 @@ struct SessionHeaderGuideTests {
         let facts = SessionHeaderProjection.header(from: CockpitPresentation.Session(
             id: "guide-bare",
             title: "A Session read off an empty record",
-            model: nil,
-            workspaceLocation: nil,
             access: .managed,
             status: .idle,
         )).facts
@@ -106,23 +104,31 @@ struct SessionHeaderGuideTests {
         CockpitPresentation.Session(
             id: "guide-full",
             title: "The ⓘ panel takes the facts the header demoted",
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: access,
             status: .idle,
-            cli: .claude,
-            workspace: .init(kind: .worktree, branch: "argo/#694-context-guide", dirty: 3),
-            issue: .init(
-                number: 694,
-                title: "The ⓘ panel says what the header stopped saying",
+            chain: .init(
+                cli: .claude,
+                model: "claude-opus-5",
+                startedAtMs: 0,
+                lastSeenAtMs: 120 * minute,
             ),
-            lastSeenAtMs: 120 * minute,
-            startedAtMs: 0,
-            spentTokens: 1_830_000,
-            cachedTokens: 28_100_000,
-            subagentTokens: subagentTokens,
-            contextTokens: 216_764,
-            events: events ?? calls(at: burst(from: 0) + burst(from: 110 * minute)),
+            work: .init(
+                location: "/Users/milad/Developer/argo",
+                workspace: .init(kind: .worktree, branch: "argo/#694-context-guide", dirty: 3),
+                issue: .init(
+                    number: 694,
+                    title: "The ⓘ panel says what the header stopped saying",
+                ),
+            ),
+            spend: .init(
+                spentTokens: 1_830_000,
+                cachedTokens: 28_100_000,
+                subagentTokens: subagentTokens,
+                contextTokens: 216_764,
+            ),
+            transcript: .init(
+                events: events ?? calls(at: burst(from: 0) + burst(from: 110 * minute)),
+            ),
         )
     }
 

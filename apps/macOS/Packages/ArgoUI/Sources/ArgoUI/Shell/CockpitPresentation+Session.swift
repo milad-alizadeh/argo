@@ -149,62 +149,53 @@ public extension CockpitPresentation {
         /// delegated nothing, which is most of them.
         public let subagentEvents: [String: [TranscriptEvent]]
 
+        /// Grouped by the reading each fact comes from (#755). The four ungrouped parameters are
+        /// the four no default can supply; every value below defaults, so a fixture still names
+        /// only the fact it is about.
+        ///
+        /// The unpacking under it is edge 5's second subject: each fact lands on the slot of its
+        /// own name unless a `renamed:` line says otherwise.
+        ///
+        /// renamed: workspaceLocation <- location — `location` alone would not say WHICH.
         public init(
             id: String,
             title: String,
-            model: String?,
-            workspaceLocation: String?,
             access: Access,
             status: SessionStatus,
-            cli: AgentCLI? = nil,
-            workspace: Workspace? = nil,
-            issue: Issue? = nil,
-            lastSeenAtMs: Int? = nil,
-            startedAtMs: Int? = nil,
-            spentTokens: Int? = nil,
-            cachedTokens: Int? = nil,
-            subagentTokens: Int? = nil,
-            contextTokens: Int? = nil,
-            handedOffTo: String? = nil,
-            isArchived: Bool = false,
-            explicitName: String? = nil,
-            permission: PermissionRequest? = nil,
-            ask: SessionAsk? = nil,
-            standingAllows: [StandingAllow] = [],
-            expiredPermissions: [PermissionExpiry] = [],
-            mode: SessionModeReading = .unknown(cli: nil),
-            modeDidNotTake: SessionMode? = nil,
-            lostTurn: String? = nil,
-            events: [TranscriptEvent] = [],
-            subagentEvents: [String: [TranscriptEvent]] = [:],
+            chain: Chain = .init(),
+            work: Work = .init(),
+            spend: Spend = .init(),
+            autonomy: Autonomy = .init(),
+            annotations: Annotations = .init(),
+            transcript: Transcript = .init(),
         ) {
             self.id = id
             self.title = title
-            self.model = model
-            self.workspaceLocation = workspaceLocation
-            self.cli = cli
-            self.workspace = workspace
             self.access = access
             self.status = status
-            self.issue = issue
-            self.lastSeenAtMs = lastSeenAtMs
-            self.startedAtMs = startedAtMs
-            self.spentTokens = spentTokens
-            self.cachedTokens = cachedTokens
-            self.subagentTokens = subagentTokens
-            self.contextTokens = contextTokens
-            self.handedOffTo = handedOffTo
-            self.isArchived = isArchived
-            self.explicitName = explicitName
-            self.permission = permission
-            self.ask = ask
-            self.standingAllows = standingAllows
-            self.expiredPermissions = expiredPermissions
-            self.mode = mode
-            self.modeDidNotTake = modeDidNotTake
-            self.lostTurn = lostTurn
-            self.events = events
-            self.subagentEvents = subagentEvents
+            self.model = chain.model
+            self.cli = chain.cli
+            self.lastSeenAtMs = chain.lastSeenAtMs
+            self.startedAtMs = chain.startedAtMs
+            self.handedOffTo = chain.handedOffTo
+            self.workspaceLocation = work.location
+            self.workspace = work.workspace
+            self.issue = work.issue
+            self.spentTokens = spend.spentTokens
+            self.cachedTokens = spend.cachedTokens
+            self.subagentTokens = spend.subagentTokens
+            self.contextTokens = spend.contextTokens
+            self.permission = autonomy.permission
+            self.ask = autonomy.ask
+            self.standingAllows = autonomy.standingAllows
+            self.expiredPermissions = autonomy.expiredPermissions
+            self.mode = autonomy.mode
+            self.modeDidNotTake = autonomy.modeDidNotTake
+            self.isArchived = annotations.isArchived
+            self.explicitName = annotations.explicitName
+            self.events = transcript.events
+            self.subagentEvents = transcript.subagentEvents
+            self.lostTurn = transcript.lostTurn
         }
     }
 }

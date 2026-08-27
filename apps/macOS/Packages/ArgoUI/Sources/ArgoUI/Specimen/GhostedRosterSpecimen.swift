@@ -30,53 +30,60 @@ struct GhostedRosterSpecimen: View {
         CockpitPresentation.Session(
             id: "managed-running",
             title: "Ship the native Liquid Glass application shell",
-            model: "claude-opus-5",
-            workspaceLocation: "\(checkout)/.claude/worktrees/ticket-508-row-ghosted",
             access: .managed,
             status: .running,
-            workspace: .init(kind: .worktree, branch: "argo/#508-external-row-ghosted"),
+            chain: .init(model: "claude-opus-5"),
+            work: .init(
+                location: "\(checkout)/.claude/worktrees/ticket-508-row-ghosted",
+                workspace: .init(kind: .worktree, branch: "argo/#508-external-row-ghosted"),
+            ),
         ),
         CockpitPresentation.Session(
             id: "observed-asking",
             // Long, located, aged and waiting: everything a row can draw, all of it ghosted.
             title: "Answer a question from a Session nobody here started",
-            model: nil,
-            workspaceLocation: "\(checkout)/.claude/worktrees/ticket-502-session-header",
             access: .external,
             status: .asking,
-            workspace: .init(kind: .worktree, branch: "argo/#502-roster-row-and-session-header"),
-            lastSeenAtMs: CockpitPresentation.minutesAgo(7),
+            chain: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(7)),
+            work: .init(
+                location: "\(checkout)/.claude/worktrees/ticket-502-session-header",
+                workspace: .init(
+                    kind: .worktree,
+                    branch: "argo/#502-roster-row-and-session-header",
+                ),
+            ),
         ),
         CockpitPresentation.Session(
             id: "managed-idle",
             // In the Project's own checkout: a one-line row between two-line ones.
             title: "Wait for the next instruction",
-            model: "claude-sonnet-4",
-            workspaceLocation: checkout,
             access: .managed,
             status: .idle,
-            workspace: .init(kind: .main, branch: "main"),
-            lastSeenAtMs: CockpitPresentation.minutesAgo(3 * 60),
+            chain: .init(
+                model: "claude-sonnet-4",
+                lastSeenAtMs: CockpitPresentation.minutesAgo(3 * 60),
+            ),
+            work: .init(location: checkout, workspace: .init(kind: .main, branch: "main")),
         ),
         CockpitPresentation.Session(
             id: "observed-running",
             // Live and unreachable at once: the dot is the loudest thing on a running row and has
             // to dim with the rest. Detached, so there is no branch to name.
             title: "Watch an externally launched agent work",
-            model: nil,
-            workspaceLocation: "/Users/milad/Experiments/argo/.claude/worktrees/ticket-311-spike",
             access: .external,
             status: .running,
-            workspace: .init(kind: .worktree),
+            work: .init(
+                location: "/Users/milad/Experiments/argo/.claude/worktrees/ticket-311-spike",
+                workspace: .init(kind: .worktree),
+            ),
         ),
         CockpitPresentation.Session(
             id: "observed-unknown",
             // No dot, no age, no git read behind it — the quietest row the roster can draw.
             title: "Read a transcript that says almost nothing",
-            model: nil,
-            workspaceLocation: "/Users/milad/Developer/cockpit",
             access: .external,
             status: .unknown,
+            work: .init(location: "/Users/milad/Developer/cockpit"),
         ),
     ]
 }

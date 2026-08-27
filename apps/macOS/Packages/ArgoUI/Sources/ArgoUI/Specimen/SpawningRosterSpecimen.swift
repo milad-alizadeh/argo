@@ -47,12 +47,10 @@ struct SpawningRosterSpecimen: View {
         let session = CockpitPresentation.Session(
             id: "claim-\(started)",
             title: Self.provisionalTitle,
-            model: nil,
-            workspaceLocation: presentation.activeProject?.location,
             access: .managed,
             status: .idle,
-            cli: .claude,
-            lastSeenAtMs: CockpitPresentation.minutesAgo(0),
+            chain: .init(cli: .claude, lastSeenAtMs: CockpitPresentation.minutesAgo(0)),
+            work: .init(location: presentation.activeProject?.location),
         )
         presentation = CockpitPresentation(
             projects: presentation.projects,

@@ -45,13 +45,14 @@ struct TurnClockRosterSpecimen: View {
         CockpitPresentation.Session(
             id: id,
             title: title,
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: .managed,
             status: .running,
-            workspace: .init(kind: .main, branch: "main"),
-            lastSeenAtMs: startedAtMs,
-            events: [.prompt(text: "go", images: [], atMs: startedAtMs)],
+            chain: .init(model: "claude-opus-5", lastSeenAtMs: startedAtMs),
+            work: .init(
+                location: "/Users/milad/Developer/argo",
+                workspace: .init(kind: .main, branch: "main"),
+            ),
+            transcript: .init(events: [.prompt(text: "go", images: [], atMs: startedAtMs)]),
         )
     }
 
@@ -59,12 +60,13 @@ struct TurnClockRosterSpecimen: View {
         CockpitPresentation.Session(
             id: "observed",
             title: "Native Session roster in Swift",
-            model: nil,
-            workspaceLocation: "/Users/milad/Developer/argo/.claude/worktrees/ticket-377-roster",
             access: .external,
             status: .running,
-            workspace: .init(kind: .worktree, branch: "argo/#377-native-session-roster"),
-            lastSeenAtMs: nowMs - 12000,
+            chain: .init(lastSeenAtMs: nowMs - 12000),
+            work: .init(
+                location: "/Users/milad/Developer/argo/.claude/worktrees/ticket-377-roster",
+                workspace: .init(kind: .worktree, branch: "argo/#377-native-session-roster"),
+            ),
         )
     }
 
@@ -72,12 +74,13 @@ struct TurnClockRosterSpecimen: View {
         CockpitPresentation.Session(
             id: "idle",
             title: "Graphite and Ion Blue across the shell",
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: .managed,
             status: .idle,
-            workspace: .init(kind: .main, branch: "main"),
-            lastSeenAtMs: nowMs - 3 * 60 * 60 * 1000,
+            chain: .init(model: "claude-opus-5", lastSeenAtMs: nowMs - 3 * 60 * 60 * 1000),
+            work: .init(
+                location: "/Users/milad/Developer/argo",
+                workspace: .init(kind: .main, branch: "main"),
+            ),
         )
     }
 

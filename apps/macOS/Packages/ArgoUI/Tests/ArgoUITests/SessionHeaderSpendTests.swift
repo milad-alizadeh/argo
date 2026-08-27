@@ -135,16 +135,20 @@ struct SessionHeaderSpendTests {
         CockpitPresentation.Session(
             id: "session",
             title: "Session",
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: .managed,
             status: .idle,
-            lastSeenAtMs: lastSeenAtMs,
-            startedAtMs: startedAtMs,
-            spentTokens: spentTokens,
-            cachedTokens: cachedTokens,
-            subagentTokens: subagentTokens,
-            events: events,
+            chain: .init(
+                model: "claude-opus-5",
+                startedAtMs: startedAtMs,
+                lastSeenAtMs: lastSeenAtMs,
+            ),
+            work: .init(location: "/Users/milad/Developer/argo"),
+            spend: .init(
+                spentTokens: spentTokens,
+                cachedTokens: cachedTokens,
+                subagentTokens: subagentTokens,
+            ),
+            transcript: .init(events: events),
         )
     }
 }

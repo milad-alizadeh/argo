@@ -144,12 +144,10 @@ struct ComposerUnavailableTests {
         CockpitPresentation.Session(
             id: "session-a",
             title: "Graphite and Ion Blue across the shell",
-            model: "claude-opus-5",
-            workspaceLocation: nil,
             access: access,
             status: status,
-            cli: .claude,
-            permission: permission,
+            chain: .init(cli: .claude, model: "claude-opus-5"),
+            autonomy: .init(permission: permission),
         )
     }
 }

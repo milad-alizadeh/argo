@@ -17,23 +17,25 @@ enum RenameFixture {
     private static let renamedSession = CockpitPresentation.Session(
         id: "renamed",
         title: "Ship the native Liquid Glass application shell with a deliberately long title",
-        model: nil,
-        workspaceLocation: "/Users/milad/Developer/argo",
         access: .managed,
         status: .running,
-        workspace: .init(branch: "argo/#515-rename-session"),
-        explicitName: "Tonight's rename run",
+        work: .init(
+            location: "/Users/milad/Developer/argo",
+            workspace: .init(branch: "argo/#515-rename-session"),
+        ),
+        annotations: .init(explicitName: "Tonight's rename run"),
     )
 
     private static let untouchedSession = CockpitPresentation.Session(
         id: "untouched",
         title: "Correct the design docs the next session would design from",
-        model: nil,
-        workspaceLocation: "/Users/milad/Developer/argo",
         access: .managed,
         status: .idle,
-        workspace: .init(branch: "argo/#504-correct-design-docs"),
-        lastSeenAtMs: CockpitPresentation.minutesAgo(46),
+        chain: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(46)),
+        work: .init(
+            location: "/Users/milad/Developer/argo",
+            workspace: .init(branch: "argo/#504-correct-design-docs"),
+        ),
     )
 
     private static let sessions = [
@@ -42,12 +44,13 @@ enum RenameFixture {
         CockpitPresentation.Session(
             id: "observed",
             title: "Watch an externally launched agent work",
-            model: nil,
-            workspaceLocation: "/Users/milad/Developer/cockpit",
             access: .external,
             status: .idle,
-            workspace: .init(branch: "main"),
-            lastSeenAtMs: CockpitPresentation.minutesAgo(4 * 60),
+            chain: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(4 * 60)),
+            work: .init(
+                location: "/Users/milad/Developer/cockpit",
+                workspace: .init(branch: "main"),
+            ),
         ),
     ]
 }

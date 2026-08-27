@@ -55,6 +55,15 @@ closure_body_length:
 
 function_parameter_count:
   # The fourth positional parameter is forbidden; pass a struct.
+  #
+  # This rule visits FUNCTION declarations only — an initializer is invisible to it, which is how
+  # a 27-parameter init sat under a cap of 4 for as long as it did (#755). `swift-boundaries.sh`
+  # edge 6 applies the same cap to `init` and reads its number off the line below, so both halves
+  # of one cap are stated in one place.
+  #
+  # RATCHET initializer-parameter-count: 18 — CockpitActions' every-callback init is the widest
+  # left, with SessionRosterProjection.Row's 14 behind it. 4 is the number: lower this as each one
+  # is grouped, never raise it to fit an init.
   error: 4
   warning: 4
 

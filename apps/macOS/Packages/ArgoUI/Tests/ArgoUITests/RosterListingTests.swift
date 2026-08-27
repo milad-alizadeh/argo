@@ -136,11 +136,9 @@ struct RosterListingTests {
         CockpitPresentation.Session(
             id: id,
             title: id,
-            model: nil,
-            workspaceLocation: nil,
             access: .managed,
             status: .idle,
-            isArchived: isArchived,
+            annotations: .init(isArchived: isArchived),
         )
     }
 }

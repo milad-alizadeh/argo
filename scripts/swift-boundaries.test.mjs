@@ -1,77 +1,27 @@
 #!/usr/bin/env node
-// Tests for swift-boundaries edge 5 — the Hub → cockpit projection is total (ADR-0027).
+// Tests for swift-boundaries edge 5 — the Hub → cockpit projection is total, and each fact handed
+// straight through lands on the slot of its own name (ADR-0027, amended by #755).
 //
 // Edge 5 matches Swift by TEXT, which is the only way to see a computed `var` and the price of
 // seeing it. Text matching fails silently: a declaration spelled a way the pattern misses reads
 // as "nothing to report". Every case below is a way the projection can fall behind that must
-// still be loud, run against a synthetic tree rather than the real one so the expected failures
-// are failures of the gate and not of the app.
+// still be loud. Edge 6's own cases are in `swift-boundaries.cap.test.mjs`.
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import {
+  check,
+  ENGINE,
+  HUB_MODE,
+  HUB_SESSION,
+  PROJECTED,
+  PROJECTION,
+  projected,
+  projection,
+  report,
+  run,
+  tree,
+  withFact,
+} from './swift-boundaries.fixture.mjs'
 
-let failures = 0
-function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
-
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const SCRIPT = path.join(REPO_ROOT, 'scripts/swift-boundaries.sh')
-const ENGINE = 'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub'
-const SHELL = 'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell'
-
-// `internalOnly` is the trap: keyword-less at struct indentation, and internal to the engine, so
-// ArgoUI cannot see it and the gate must not demand it. `HubSession`'s own `resumeID` is this.
-const HUB_SESSION = `public struct HubSession: Equatable {
-    public let id: String
-    public internal(set) var liveness: Int = 0
-    private var hidden: Int = 0
-    var internalOnly: Int { 0 }
-}
-`
-const HUB_MODE = `public extension HubSession {
-    var mode: Int { 0 }
-}
-`
-const PROJECTION = `extension CockpitPresentation.Session {
-    /// not-projected: liveness — an input to a fold whose result lands instead.
-    init(observed session: HubSession) {
-        self.init(id: session.id, mode: session.mode)
-    }
-}
-`
-
-// A fresh tree per case: the cases mutate it, and a leaked mutation would make the next one lie.
-function tree(files = {}) {
-  const root = mkdtempSync(path.join(tmpdir(), 'argo-boundaries-'))
-  const written = {
-    [`${ENGINE}/HubSession.swift`]: HUB_SESSION,
-    [`${ENGINE}/HubSession+Mode.swift`]: HUB_MODE,
-    [`${SHELL}/CockpitPresentation+Hub.swift`]: PROJECTION,
-    'apps/macOS/Argo/ArgoApp.swift': '@main struct ArgoApp {}\n',
-    ...files,
-  }
-  for (const [relative, contents] of Object.entries(written)) {
-    if (contents === null) continue
-    const file = path.join(root, relative)
-    mkdirSync(path.dirname(file), { recursive: true })
-    writeFileSync(file, contents)
-  }
-  return root
-}
-
-// A declaration added just before a file's closing brace, which in both fixtures is the
-// declaration's enclosing scope.
-const withFact = (source, declaration) => source.replace(/^}/m, `${declaration}\n}`)
 const hubFile = (declaration) => ({
   [`${ENGINE}/HubSession.swift`]: withFact(HUB_SESSION, declaration),
 })
@@ -82,13 +32,6 @@ const modeFile = (declaration) => ({
 const hubExtension = (declaration) => ({
   [`${ENGINE}/HubSession.swift`]: HUB_SESSION + withFact(HUB_MODE, declaration),
 })
-const projection = (contents) => ({ [`${SHELL}/CockpitPresentation+Hub.swift`]: contents })
-
-function run(root) {
-  const result = spawnSync('/bin/sh', [SCRIPT], { cwd: root, encoding: 'utf8' })
-  rmSync(root, { recursive: true, force: true })
-  return { status: result.status, output: `${result.stdout}${result.stderr}` }
-}
 
 check('a projection that accounts for every fact passes', () => {
   const result = run(tree())
@@ -166,8 +109,69 @@ check('edge 5 fails when it matches no declaration at all', () => {
   assert.match(result.output, /read no public facts/)
 })
 
-if (failures) {
-  console.error(`\n${failures} swift-boundaries test(s) failed`)
-  process.exit(1)
-}
-console.log('  swift boundaries: all checks passed')
+// Totality proves a fact was mentioned; only this proves it reached the slot it was named for. The
+// swap below is the failure it exists for, and it leaves both facts accounted for.
+check('edge 5 fails on two same-typed facts swapped between slots', () => {
+  const swapped = PROJECTION.replace(
+    'self.init(id: session.id, mode: session.mode)',
+    'self.init(id: session.mode, mode: session.id)',
+  )
+  const result = run(tree(projection(swapped)))
+  assert.equal(result.status, 1, `a swap passed: ${result.output}`)
+  assert.match(result.output, /land on a slot of another name/)
+  assert.match(result.output, /id <- mode/)
+})
+
+check('edge 5 accepts a rename the projection declares', () => {
+  const renamed = PROJECTION.replace('mode: session.mode', 'rung: session.mode').replace(
+    '/// not-projected:',
+    '/// renamed: rung <- mode — a rung is what it is.\n    /// not-projected:',
+  )
+  const result = run(tree(projection(renamed)))
+  assert.equal(result.status, 0, result.output)
+})
+
+check('edge 5 fails on a renamed entry for a rename no longer made', () => {
+  const stale = PROJECTION.replace(
+    '/// not-projected:',
+    '/// renamed: rung <- mode — a rename that is not made.\n    /// not-projected:',
+  )
+  const result = run(tree(projection(stale)))
+  assert.equal(result.status, 1, `a stale marker passed: ${result.output}`)
+  assert.match(result.output, /no longer makes/)
+})
+
+// A derivation is not a pass-through: the name on an expression is the projection's to choose, so
+// the check must let one through rather than demanding a marker for every one in the mapping.
+check('edge 5 leaves a derived argument alone', () => {
+  const derived = PROJECTION.replace('mode: session.mode', 'mode: Mode(session.mode)')
+  const result = run(tree(projection(derived)))
+  assert.equal(result.status, 0, result.output)
+})
+
+// A fact crosses two hands: named into the init, then unpacked out of a grouped value in its body.
+// Guarding only the first leaves the second free to drop it on the wrong slot, silently.
+check('edge 5 fails on a fact unpacked onto the wrong slot in the init body', () => {
+  const swapped = PROJECTED.replace('self.mode = chain.mode', 'self.mode = chain.rung')
+  const result = run(tree(projected(swapped)))
+  assert.equal(result.status, 1, `an unpacking swap passed: ${result.output}`)
+  assert.match(result.output, /land on a slot of another name/)
+  assert.match(result.output, /mode <- rung/)
+})
+
+check('edge 5 accepts an unpacking rename the init declares', () => {
+  const renamed = PROJECTED.replace(
+    '        public init(',
+    '        /// renamed: mode <- rung — a rung alone would not say whose.\n        public init(',
+  ).replace('self.mode = chain.mode', 'self.mode = chain.rung')
+  const result = run(tree(projected(renamed)))
+  assert.equal(result.status, 0, result.output)
+})
+
+check('edge 5 fails when the value it projects onto has moved', () => {
+  const result = run(tree(projected(null)))
+  assert.equal(result.status, 1, `a missing subject passed: ${result.output}`)
+  assert.match(result.output, /cannot see its own subjects/)
+})
+
+report('swift boundaries')

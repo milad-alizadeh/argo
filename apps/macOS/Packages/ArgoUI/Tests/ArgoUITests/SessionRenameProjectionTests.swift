@@ -141,15 +141,15 @@ struct SessionRenameProjectionTests {
         CockpitPresentation.Session(
             id: "session",
             title: "Ship the native shell",
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: .managed,
             status: .idle,
-            cli: .claude,
-            workspace: .init(branch: "main"),
-            issue: issue,
-            isArchived: isArchived,
-            explicitName: explicitName,
+            chain: .init(cli: .claude, model: "claude-opus-5"),
+            work: .init(
+                location: "/Users/milad/Developer/argo",
+                workspace: .init(branch: "main"),
+                issue: issue,
+            ),
+            annotations: .init(isArchived: isArchived, explicitName: explicitName),
         )
     }
 }

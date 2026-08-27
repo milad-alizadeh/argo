@@ -126,12 +126,10 @@ struct SessionComposerProjectionTests {
         CockpitPresentation.Session(
             id: "session-a",
             title: "Restore the sessions Warp closed",
-            model: model,
-            workspaceLocation: nil,
             access: access,
             status: status,
-            cli: cli,
-            mode: mode,
+            chain: .init(cli: cli, model: model),
+            autonomy: .init(mode: mode),
         )
     }
 }

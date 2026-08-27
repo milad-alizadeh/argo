@@ -214,14 +214,15 @@ struct SessionTicketTitleTests {
         CockpitPresentation.Session(
             id: "session",
             title: title,
-            model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
             access: .managed,
             status: .idle,
-            cli: .claude,
-            workspace: .init(branch: "argo/#741-anchor-the-feed"),
-            issue: issue,
-            explicitName: explicitName,
+            chain: .init(cli: .claude, model: "claude-opus-5"),
+            work: .init(
+                location: "/Users/milad/Developer/argo",
+                workspace: .init(branch: "argo/#741-anchor-the-feed"),
+                issue: issue,
+            ),
+            annotations: .init(explicitName: explicitName),
         )
     }
 }
