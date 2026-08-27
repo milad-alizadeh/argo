@@ -2,9 +2,9 @@
 import Testing
 
 /// What the cockpit claims about SHAPE rather than colour: measures and durations, fixed across
-/// every appearance. The tokens and the surfaces that read them are asserted together, because the
-/// sharpest claims here — a reading measure bounded by the window's own width, a surface step that
-/// has to be a rung of the ladder — belong to neither population alone.
+/// every appearance. Do not split this suite along the token/measure line — three of its tests
+/// bound a surface's measure by a token (`ArgoFeedRow.column` against `ArgoLayout`'s widths), and
+/// neither population can state those alone.
 @Suite("Rhythm, depth and motion — the contract and the surfaces that read it")
 struct RhythmTests {
     // MARK: - The feed's rhythm
@@ -94,18 +94,21 @@ struct RhythmTests {
         #expect(ArgoFeedRow.stepBeforeProse < ArgoFeedRow.inset)
     }
 
-    /// The one test that stops a sheet living beside its surface from inventing its own numbers.
-    /// Every GAP and INSET each sheet names is claimed to be a step of the ladder, so a sheet
-    /// outside `VisualContract/` cannot quietly grow a sixth spacing rhythm of its own.
+    /// Every member each sheet spells as `ArgoSpacing.x` is enumerated here, so a sheet living
+    /// beside its surface rather than in the contract cannot quietly restate one of those as a
+    /// literal. That is the whole guarantee the sheets lost by leaving `VisualContract/`, and it
+    /// is what makes the sets exhaustive rather than a sample: a member added to a sheet and not
+    /// to a set here is a member nothing holds to the ladder.
     ///
-    /// What is deliberately absent is a content MEASURE — a marker column, a shot's width, a
-    /// marked span's asymmetric push past its glyphs — which answers to the content rather than to
-    /// the ladder, and each of which carries its reason on its own declaration.
+    /// A content MEASURE is deliberately absent — a marker column, a shot's width, a marked span's
+    /// asymmetric push past its glyphs answer to the content, not to the ladder, and each carries
+    /// its reason on its own declaration. `ArgoMinimapLane.turnLineInset` is the one that reads
+    /// like a step and is not: it is stated in points against `turnLineWidth`, the stroke it
+    /// insets, and the pair has to move together.
     ///
-    /// `ArgoComposerVessel` is the fourth moved sheet and appears in none of the three sets,
-    /// because it names no step: every value the ladder owns is spelled through the token at the
-    /// composer's own call sites, which the sheet's doc comment states as its rule. A member of it
-    /// that ever becomes a step belongs in a set here.
+    /// `ArgoComposerVessel` appears in none of the three sets because it spells no step at all —
+    /// every value the ladder owns reaches it through the token at the composer's own call sites,
+    /// which the sheet's doc comment states as its rule.
     @Test
     func `every step a surface names is a step the rhythm already carries`() {
         let ladder = Set(ArgoSpacing.all.map(\.value))

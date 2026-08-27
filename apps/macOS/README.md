@@ -19,7 +19,7 @@ Packages/
   ArgoUI/           shared visual components. No engine dependency
     Shell/          production NavigationSplitView, sidebar, deck ground and toolbar vessels
                     — and each surface's own measure sheet, beside the surface it measures (#756)
-    VisualContract/ the palette, type, geometry, elevation and motion roles (#375) — VALUES only
+    VisualContract/ palette, type, spacing, radii, elevation, motion (#375) — TOKENS only
     Atoms/          the shared views and materials built out of those values (#772)
     Focus/          whether a focus ring would be answering the keyboard (#533)
     Specimen/       preview-only views that show the contract's roles together
@@ -101,22 +101,20 @@ than review notes: **ArgoUI** never imports ArgoEngine, **ArgoEngine** never imp
 framework, and the **app target** declares no `View` — everything with logic in it belongs in a
 package, where a test can reach it.
 
-Colours, type, geometry, elevation and motion come from `ArgoUI/VisualContract/` (#375), and the
-guard's only job is to keep every other file naming a role instead of writing a value down.
-`VisualContract/` is exempt because it IS the contract; `Specimen/` is exempt for the opposite
-reason — a specimen exists to show what a role is worth, and it ships in no screen.
+Colours, type, spacing, radii, strokes, elevation and motion come from `ArgoUI/VisualContract/`
+(#375), and the guard's only job is to keep every other file naming a role instead of writing a
+value down. `VisualContract/` is exempt because it IS the contract; `Specimen/` is exempt for the
+opposite reason — a specimen exists to show what a role is worth, and it ships in no screen.
 
-The contract holds **values and nothing else** (#772). The shared views built out of them —
-`ArgoBadge`, `ArgoGlyph`, `ArgoFloatingGlass` and the rest — are `ArgoUI/Atoms/`, and they are
-inside the guard's scope like every other view. `rules/design-system.md` lists all three
-populations by file.
-
-And it holds **tokens** and nothing else (#756): a **measure** — how wide the reading runs, how
-tall a chip stands — is a property of the content, so it lives in the directory of the one
-surface whose layout it describes. `ArgoFeedRow`, `ArgoComposerVessel`, `ArgoMinimapLane` and
-`ArgoPlanPill` sit under `Shell/Deck/{Feed,Composer,Minimap,Plan}/`, which puts them inside the
-guard's scope as well. `ArgoLayout` is the exception that is not one: the splits between panes
-describe the window, which is every surface and so no single one.
+The contract holds **tokens and nothing else**, which took two cuts to get to. #772 took out the
+views: `ArgoBadge`, `ArgoGlyph`, `ArgoFloatingGlass` and the rest are `ArgoUI/Atoms/`, inside the
+guard's scope like every other view. #756 took out the **measures** — how wide the reading runs,
+how tall a chip stands — because that is a property of the content, so each sheet lives in the
+directory of the one surface whose layout it describes: `ArgoFeedRow`, `ArgoComposerVessel`,
+`ArgoMinimapLane` and `ArgoPlanPill`, under `Shell/Deck/{Feed,Composer,Minimap,Plan}/`.
+`ArgoLayout` is the exception that is not one: the splits between panes describe the window,
+which is every surface and so no single one. `rules/design-system.md` lists all three populations
+by file.
 
 ## Screenshots
 

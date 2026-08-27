@@ -76,9 +76,9 @@ reload.
 
 Every colour, radius, spacing step, stroke and measurement is transcribed from the contract
 (`ArgoUI/VisualContract/` — `GraphitePalette`, `ArgoSpacing`, `ArgoRadius`, `ArgoTypography`) and
-from the surfaces' own sheets (`ArgoFeedRow`, `ArgoComposerVessel`). The settled row is `FeedAskLine.swift`
-and `FeedAskOptions.swift`, including the marker grid and the quieting of the options that were
-not taken. The unavailable row is `ComposerUnavailable.swift`. `ArgoSymbol.asked` is
+from the surfaces' own sheets (`ArgoFeedRow`, `ArgoComposerVessel`). The settled row is
+`FeedAskLine.swift` and `FeedAskOptions.swift`, including the marker grid and the quieting of the
+options that were not taken. The unavailable row is `ComposerUnavailable.swift`. `ArgoSymbol.asked` is
 `questionmark.bubble`, drawn here since the browser has no access to SF Symbols.
 
 The first case is **real**: it is the question this session actually put to the user when issue

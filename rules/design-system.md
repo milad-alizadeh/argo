@@ -15,8 +15,13 @@ projects that have a browser. What follows is Argo's own, in SwiftUI.
 ## Where the contract lives (ADR-0022)
 
 `apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/` is the single source of visual
-**values**. It declares no `View`, `ViewModifier` or `LabelStyle` TYPE and holds no observable
-state; the views built out of its values are its neighbour, `ArgoUI/Atoms/`.
+**tokens** — a value the whole app reaches by name. It declares no `View`, `ViewModifier` or
+`LabelStyle` TYPE and holds no observable state; the views built out of its values are its
+neighbour, `ArgoUI/Atoms/`.
+
+A **measure** is a value too, and it is deliberately not here: it answers to one surface's
+content rather than to the whole app, so it lives in that surface's own directory. That is the
+third table below, and it is the one thing "single source" does not mean.
 
 The type is what draws the line, not the `View` extension. A family here may still extend
 `View` with a modifier that applies its own value in one expression — `argoShadow`, `argoIcon`,
@@ -64,14 +69,14 @@ costs nothing inside one Swift module: the minimap re-lays out the feed, so it r
 
 `ArgoLayout` is the one that stays, and not as an exception: pane widths and the splits between
 them describe the window, which is every surface and therefore no single one. It is also why
-`ArgoLayout.minimapLaneWidth(sharing:)` is not a duplicate of anything in `ArgoMinimapLane` —
-the first is the lane's width *against the feed*, wired into `railLimits(in:)`; the second holds
-the lane's internals.
+`ArgoLayout.minimapLane*` is not a duplicate of anything in `ArgoMinimapLane` — those are the
+lane's width *against the feed*, which is what `railLimits(in:)` spends against the deck, while
+the sheet holds the lane's internals.
 
 A sheet outside the contract must not grow a spacing rhythm of its own, and that is mechanical
 rather than a review note: `RhythmTests`' `every step a surface names is a step the rhythm
-already carries` asserts each sheet's gaps and insets against `ArgoSpacing.all`. A step a moved
-sheet invents fails the suite.
+already carries` asserts each sheet's ladder-derived steps against `ArgoSpacing.all`. A step a
+moved sheet spells as a literal off the ladder fails the suite.
 
 ### Atoms — the views built out of those values (`Atoms/`)
 
@@ -125,7 +130,9 @@ Three things are **not** unwired, and telling them apart matters:
 
 ## Rule 1 — Tokens only, never magic numbers
 
-Every visual constant is a named value in `VisualContract/`, and a view reaches it by name.
+Every visual constant is a named value, and a view reaches it by name — a token in
+`VisualContract/`, or a measure on the sheet beside the surface it belongs to. What is banned is
+the number written at the call site, not the number's address.
 
 - **Never** write a colour literal, a font size, a duration, or a spacing number in a view.
 - Need a value that doesn't exist? **Add it to the contract first**, with a comment saying what
@@ -155,8 +162,12 @@ that way — the cost of getting this wrong is not a bug, it is a sweep through 
 the type ladder, and the modifiers that take a rhythm value. `VisualContract/` is exempt
 because it IS the contract, and `Specimen/` because a specimen exists to show what a role is
 worth. **`Atoms/` is not exempt** — an atom draws with the contract like any other view, so it
-answers to the gate like any other view. Neither are the measure sheets: a surface directory is
-not exempt, so a sheet that moved next to its surface now answers to the gate too. A finding is fixed by snapping to a token or promoting
+answers to the gate like any other view. Neither are the measure sheets, now that they live in
+surface directories rather than the exempt one — though in practice a sheet declaring
+`static let shotWidth: CGFloat = 168` matches none of the four patterns, so the gate covering
+them is a loss of an exemption rather than a new guard. `RhythmTests` is the guard.
+
+A finding is fixed by snapping to a token or promoting
 one — **never by allowlisting**, unless it is pre-existing debt tracked in a ticket.
 
 ## Hue is rationed; loudness is not
@@ -219,7 +230,8 @@ hide: judge it, don't assume the gate did.
 
 ## Checklist before you finish visual work
 
-- [ ] No colour literal, font size, duration or spacing number outside `VisualContract/`.
+- [ ] No colour literal, font size, duration or spacing number in a view — every one of them a
+      token in `VisualContract/` or a member of the surface's own measure sheet.
 - [ ] Colour read from `\.argo`, not from a static or a system colour.
 - [ ] Type set with `argoText(_:)` / `argoMono(_:)` or a named `ArgoTypography` role.
 - [ ] Any new visual value added to the contract first, with its reason.

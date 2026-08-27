@@ -15,7 +15,7 @@ extension TranscriptFixtures {
     ]
         + [
             (
-                "Sources/ArgoUI/VisualContract/ArgoFeedRow.swift",
+                "Sources/ArgoUI/Shell/Deck/Feed/ArgoFeedRow.swift",
                 "    10\tpublic enum ArgoFeedRow {\n    11\t    /// The gutter each row is inset "
                     + "from the feed column's edges.\n    12\t    public static let inset: CGFloat "
                     + "= ArgoSpacing.section\n    13\t}",
