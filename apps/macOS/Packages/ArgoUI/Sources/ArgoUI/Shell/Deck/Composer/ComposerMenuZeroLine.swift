@@ -1,19 +1,22 @@
 import SwiftUI
 
-/// The one line the `/` menu draws when nothing matches (design decision 8).
+/// The one line a composer menu draws when nothing matches, whichever sigil opened it (design
+/// decision 8, #685, #687).
 ///
 /// The surface STAYS, and the reader's line stays sendable: `/graphify` is a perfectly good thing
-/// to say to an agent, and a menu that vanished would read as the composer refusing it. So the line
-/// names what did not match and then says the line is still just text.
-struct CommandMenuEmpty: View {
+/// to say to an agent, and a path Argo cannot find is one the agent may know where to find. A menu
+/// that vanished would read as the composer refusing the line. So the line names what did not
+/// match, and then says the line is still just text.
+struct ComposerMenuZeroLine: View {
     @Environment(\.argo) private var argo
 
-    /// What the reader typed after the `/`, said back to them so they can see the typo.
+    /// What the reader typed after the sigil, said back to them so they can see the typo.
     let query: String
+    let sigil: ComposerMenu.Sigil
 
     var body: some View {
-        (Text(Self.lead)
-            + Text("/\(query)")
+        (Text(sigil.nothingMatched)
+            + Text("\(sigil.mark)\(query)")
             .foregroundStyle(argo.color.text.primary.color)
             .fontWeight(.semibold)
             + Text(Self.tail))
@@ -27,7 +30,6 @@ struct CommandMenuEmpty: View {
             .accessibilityElement(children: .combine)
     }
 
-    static let lead = "No skill or command matches "
     /// The reassurance is half the line's job: nothing is broken and nothing is blocked.
     static let tail = ". Your line is still just text — ⏎ sends it as written."
 }

@@ -40,7 +40,7 @@ struct ComposerMenuCursor: Equatable {
 
     /// The row ⏎ would take, and `nil` where there is none — which is what leaves the empty
     /// state's Return to the field, so a line nothing matched still sends as written (decision 8).
-    func row<Row: Identifiable>(in rows: [Row]) -> Row? where Row.ID == String {
-        rows.first { $0.id == current }
+    func row(in listing: ComposerMenu.Listing) -> ComposerMenu.Row? {
+        listing.rows.first { $0.id == current }
     }
 }

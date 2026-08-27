@@ -41,7 +41,7 @@ enum WorkspaceFileFixture {
     /// The filename has to survive the cut whole — it is the one distinguishing word on the row.
     static let deep = [
         "SessionComposerProjection.swift",
-        "WorkspaceFileProjection+Derive.swift",
+        "ComposerMenu+Files.swift",
         "FeedCallLineAttachment.swift",
         "ArgoTypography.swift",
     ].map { uiComposer + $0 }

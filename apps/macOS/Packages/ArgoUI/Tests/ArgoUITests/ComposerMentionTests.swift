@@ -36,7 +36,7 @@ struct ComposerMentionTests {
         var draft = ComposerDraft(text: "Have a look at @sesdri")
         take(into: &draft)
 
-        #expect(WorkspaceFileProjection.mention(in: draft.text) == nil)
+        #expect(ComposerMenu.mention(in: draft.text) == nil)
         #expect(draft.isSendable)
     }
 
@@ -70,19 +70,15 @@ struct ComposerMentionTests {
     /// only at the head of the line, `@` only on a token still being typed.
     @Test(arguments: ["/implement", "/", "Have a look at @ses", "@", "/impl @x"])
     func `at most one composer menu is open on any line`(_ text: String) {
-        let commands = CommandMenuProjection.query(in: text) != nil
-        let files = WorkspaceFileProjection.mention(in: text) != nil
+        let commands = ComposerMenu.command(in: text) != nil
+        let files = ComposerMenu.mention(in: text) != nil
 
         #expect(!(commands && files))
     }
 
     private func take(into draft: inout ComposerDraft) {
-        guard let mention = WorkspaceFileProjection.mention(in: draft.text),
-              let row = WorkspaceFileProjection.menu(
-                  for: draft.text,
-                  in: Self.tree,
-                  touched: [],
-              )?.rows.first else { return }
-        draft.take(mention: row, replacing: mention.range)
+        guard let listing = ComposerMenu.files(for: draft.text, in: Self.tree, touched: []),
+              let row = listing.rows.first else { return }
+        draft.take(listing.pick(row))
     }
 }

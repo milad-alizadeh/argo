@@ -3,7 +3,7 @@ import Foundation
 
 /// The `@` mentions a finished line names, and the files they stand for (#687).
 ///
-/// `WorkspaceFileProjection.mention` finds the ONE token still being typed, to open a menu over it.
+/// `ComposerMenu.mention` finds the ONE token still being typed, to open a menu over it.
 /// This finds every SETTLED one, at send, which is a different question with a different answer.
 enum ComposerMentions {
     /// Every `@` token in the line, as paths relative to the Workspace, in the order said.

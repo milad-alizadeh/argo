@@ -1,14 +1,15 @@
 import ArgoEngine
 
-/// Where the menu opens, what is in it, and in what order (design decisions 2, 3 and 4).
-extension CommandMenuProjection {
-    /// The menu for a line, or `nil` where the line opens none.
-    static func menu(for text: String, in catalog: CommandCatalog) -> Menu? {
-        guard let query = query(in: text) else { return nil }
-        return Menu(
+/// Where the `/` menu opens, what is in it, and in what order (design decisions 2, 3 and 4).
+extension ComposerMenu {
+    /// The listing for a line, or `nil` where the line opens none.
+    static func commands(for text: String, in catalog: CommandCatalog) -> Listing? {
+        guard let query = command(in: text) else { return nil }
+        return Listing(
             sections: sections(of: catalog.commands, matching: query),
             query: query,
-            builtins: catalog.builtins,
+            sigil: .command,
+            status: status(of: catalog.builtins),
         )
     }
 
@@ -19,11 +20,32 @@ extension CommandMenuProjection {
     /// of what makes `slash-args.png` a sendable line rather than a menu standing over one.
     /// **Closed by a second slash**, because a second one means a path: the design names
     /// `/usr/local` as the line that opens nothing, and no command carries a slash in its name.
-    static func query(in text: String) -> String? {
+    static func command(in text: String) -> String? {
         guard text.hasPrefix("/") else { return nil }
         let typed = text.dropFirst()
         guard !typed.contains(where: \.isWhitespace), !typed.contains("/") else { return nil }
         return String(typed)
+    }
+
+    /// The word an origin goes by. Upper-casing is the badge's own, because it is a face and not a
+    /// fact.
+    static func word(for origin: CommandOrigin) -> String {
+        switch origin {
+        case .project: "Project"
+        case .user: "Global"
+        case .plugin: "Plugin"
+        case .claudeCode: "Claude Code"
+        }
+    }
+
+    /// The strip above the list, and `nil` where there is nothing to say — a strip saying the list
+    /// is complete is a line the reader re-reads to learn nothing.
+    private static func status(of builtins: BuiltinStatus) -> Status? {
+        switch builtins {
+        case .read: nil
+        case .reading: Status(words: readingBuiltins, mark: .waiting)
+        case .unavailable: Status(words: builtinsUnavailable, mark: .failed)
+        }
     }
 
     private static func sections(of catalog: [Command], matching query: String) -> [Section] {
@@ -93,6 +115,24 @@ extension CommandMenuProjection {
     /// because "contains" is what the reader can check against their own line.
     static let alsoContains = "Also contains"
 
+    /// Says what is missing AND that nothing is: the skills below are all of them, so the reader
+    /// is not being asked to wait before using the menu.
+    static let readingBuiltins =
+        "Reading Claude Code's own commands — your skills are already here."
+
+    /// Names the failure and then the way round it, because typing a built-in blind has always
+    /// worked and goes on working (decision 10).
+    static let builtinsUnavailable = """
+    Argo could not read this CLI's built-in commands, so only skills are listed. \
+    Typing a built-in by name still works.
+    """
+
+    /// A statement about the FILE, for a skill whose frontmatter states no description (#685).
+    static let undescribed = "no description in its frontmatter"
+
+    /// The mark on a row standing where one of the user's own skills would be (#685).
+    static let shadows = "shadows yours"
+
     /// Where the reader's characters sit in a command, counted over the WHOLE command so the
     /// leading `/` and a plugin's namespace are both reachable by typing.
     ///
@@ -112,12 +152,31 @@ extension CommandMenuProjection {
 
     private static func row(for command: Command, matched: Range<Int>, origin: String?) -> Row {
         Row(
-            command: command.command,
+            id: command.command,
+            // It inserts and never sends, so an argument can be typed before ⏎
+            // (`slash-args.png`). The whole line goes, because the menu only opens on a line that
+            // is a `/` and a run of non-space: the typed fragment IS the line.
+            insert: "\(command.command) ",
+            lead: command.command,
             matched: matched,
-            description: command.description.flatMap(firstSentence),
-            origin: origin,
-            shadowsUser: command.shadowsUser,
+            detail: Detail(
+                words: command.description.flatMap(firstSentence) ?? undescribed,
+                voice: .sentence,
+            ),
+            badges: badges(for: command, origin: origin),
         )
+    }
+
+    /// The shadow mark first, because it is about the row rather than about where it came from.
+    private static func badges(for command: Command, origin: String?) -> [Badge] {
+        var badges: [Badge] = []
+        if command.shadowsUser {
+            badges.append(Badge(words: shadows, tone: .attention))
+        }
+        if let origin {
+            badges.append(Badge(words: origin, tone: .quiet))
+        }
+        return badges
     }
 
     /// The first sentence of the source's own words — a skill's frontmatter, or the CLI's own
