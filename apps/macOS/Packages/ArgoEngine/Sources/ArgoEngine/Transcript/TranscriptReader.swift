@@ -117,7 +117,40 @@ public actor TranscriptReader {
             return results
         }
 
+        // A finished background agent writes its report into its OWN file, so the only trace of it
+        // in this one is this notification. Suppressed without being routed, the report would be
+        // lost rather than tidied.
+        if let report = taskNotification(message.content) {
+            return reported(report, in: message)
+        }
+
         return message.isMeta ? metaEvents(message) : promptEvents(message)
+    }
+
+    /// A delegating call's outcome, arriving late — a SECOND outcome for a call the launch result
+    /// already resolved, and a resumed agent files a third. Every surface reads outcomes by id, so
+    /// the newest one wins without any of them being told a report can arrive twice.
+    private func reported(
+        _ report: TaskNotification,
+        in message: MessageRecord,
+    )
+        -> [TranscriptEvent] {
+        // A report quoting an id this file never opened belongs to a call in another file (a
+        // resumed chain), the same rule `evidence(for:)` follows.
+        guard openCalls[report.callID] != nil else { return [] }
+        return [.toolCallOutcome(ToolCallOutcome(
+            id: report.callID,
+            status: report.status,
+            // `derived`: the text is read off an external record rather than owned by Argo.
+            result: report.text.map { .output(OutputEvidence(tier: .derived, text: $0)) },
+            endedAtMs: message.timestampMs,
+            // The notification states the delegate's spend in a shape of its own — a token TOTAL
+            // rather than the host's four counters — which no reading here can honestly fill.
+            usage: nil,
+            // The join key onto the delegate's own transcript, which this outcome replaces the
+            // launch result's copy of. Dropped, it would orphan the Subagent.
+            subagentID: report.subagentID,
+        ))]
     }
 
     /// The CLI talking to itself. Almost all of it means nothing to a reader — but a skill's

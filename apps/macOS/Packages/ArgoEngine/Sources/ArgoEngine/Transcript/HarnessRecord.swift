@@ -4,7 +4,8 @@ import Foundation
 //
 // A transcript's user records are not all prompts. Claude Code writes several per exchange — the
 // local-command caveat, a skill's expanded body, the `[Image: original 2400x2200…]` preamble in
-// front of a pasted screenshot — and every one of them opens a Turn if taken at face value.
+// front of a pasted screenshot, a finished background agent's report — and every one of them opens
+// a Turn if taken at face value.
 //
 // Nothing here rewords a prompt: the reading stays verbatim, taken from the fields the CLI put the
 // words in rather than from the markup it wrapped them in.
@@ -30,6 +31,40 @@ private func tag(_ text: String, _ name: String) -> String? {
     ) else { return nil }
     let inner = text[match].dropFirst(name.count + 2).dropLast(name.count + 3)
     return inner.trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
+/// A finished background agent's report, filed as a user record because that is where the CLI puts
+/// it. Not a prompt and not a call of its own: it names the call that DELEGATED the work, so it is
+/// that call's outcome arriving late (#825).
+struct TaskNotification {
+    /// The delegating call this report answers.
+    let callID: String
+    /// The Subagent that produced it — the same `agentId` the launch result already reported.
+    let subagentID: String?
+    let status: ToolCallStatus
+    /// The report itself, or `nil` where the agent finished without printing one.
+    let text: String?
+}
+
+/// The head of the envelope the CLI wraps a finished agent's report in.
+private let notificationPreamble = "<task-notification>"
+
+/// The report a user record carries, or `nil` where it carries none.
+///
+/// Matched at the head, the discipline `skillDirectory` uses: a prompt that merely QUOTES the word
+/// is a prompt, and reading it as machinery would swallow what the user asked.
+func taskNotification(_ content: [ContentBlock]) -> TaskNotification? {
+    guard let text = firstText(content), text.hasPrefix(notificationPreamble) else { return nil }
+    guard let callID = tag(text, "tool-use-id"), !callID.isEmpty else { return nil }
+    let report = tag(text, "result")
+    return TaskNotification(
+        callID: callID,
+        subagentID: tag(text, "task-id"),
+        // Anything other than `completed` is the agent stopping short of one, which is a call that
+        // failed rather than a call that answered.
+        status: tag(text, "status") == "completed" ? .completed : .failed,
+        text: report?.isEmpty == true ? nil : report,
+    )
 }
 
 /// A local command's own stdout, stored as a user record because that is where the CLI puts it.
