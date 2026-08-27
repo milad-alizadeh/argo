@@ -18,6 +18,20 @@ public struct DiffLine: Sendable, Equatable {
         self.side = side
         self.text = text
     }
+
+    /// The lines of a file's CONTENT, all on one side — never of a fragment, whose every newline is
+    /// a character in its own right (#798).
+    ///
+    /// A file ending in a newline splits into a final empty element that is not a line of it.
+    static func lines(of content: String, side: DiffLineSide) -> [DiffLine] {
+        var texts = content
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map(String.init)
+        if texts.last?.isEmpty == true {
+            texts.removeLast()
+        }
+        return texts.map { DiffLine(side: side, text: $0) }
+    }
 }
 
 /// One contiguous run of changed lines with its surrounding context. The line numbers are the

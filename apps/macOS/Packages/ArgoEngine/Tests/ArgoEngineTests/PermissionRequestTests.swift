@@ -34,17 +34,28 @@ struct PermissionRequestTests {
         ]]))
     }
 
-    @Test
-    func `a Write call is the path and every line it would create`() throws {
+    /// The content a `Write` carries is a file, so its last newline terminates the file rather than
+    /// opening a line — the Permission prompt must draw what the transcript's Diff draws (#798).
+    @Test(arguments: [
+        ("one\\ntwo", ["one", "two"]),
+        ("one\\ntwo\\n", ["one", "two"]),
+        ("one\\n\\n\\n", ["one", "", ""]),
+        ("\\n", [""]),
+        ("", []),
+    ])
+    func `a Write call is the path and every line the file would have`(
+        content: String,
+        expected: [String],
+    ) throws {
         let line = """
-        {"tool_name":"Write","tool_input":{"file_path":"notes.md","content":"one\\ntwo"}}
+        {"tool_name":"Write","tool_input":{"file_path":"notes.md","content":"\(content)"}}
         """
         let request = try #require(read(line))
 
-        #expect(request.target == .edit(path: "notes.md", hunks: [[
-            DiffLine(side: .add, text: "one"),
-            DiffLine(side: .add, text: "two"),
-        ]]))
+        #expect(request.target == .edit(
+            path: "notes.md",
+            hunks: [expected.map { DiffLine(side: .add, text: $0) }],
+        ))
     }
 
     @Test
@@ -59,6 +70,38 @@ struct PermissionRequestTests {
             [DiffLine(side: .del, text: "first"), DiffLine(side: .add, text: "1st")],
             [DiffLine(side: .del, text: "second"), DiffLine(side: .add, text: "2nd")],
         ]))
+    }
+
+    @Test
+    func `an Edit keeps the newlines in its fragments, which are characters it would replace`(
+    ) throws {
+        let line = """
+        {"tool_name":"Edit","tool_input":{"file_path":"a.swift",\
+        "old_string":"before\\n","new_string":"after\\n"}}
+        """
+        let request = try #require(read(line))
+
+        #expect(request.target == .edit(path: "a.swift", hunks: [[
+            DiffLine(side: .del, text: "before"),
+            DiffLine(side: .del, text: ""),
+            DiffLine(side: .add, text: "after"),
+            DiffLine(side: .add, text: ""),
+        ]]))
+    }
+
+    @Test
+    func `an Edit that strips a trailing newline draws as a change, never as a no-op`() throws {
+        let line = """
+        {"tool_name":"Edit","tool_input":{"file_path":"a.swift",\
+        "old_string":"x\\n","new_string":"x"}}
+        """
+        let request = try #require(read(line))
+
+        #expect(request.target == .edit(path: "a.swift", hunks: [[
+            DiffLine(side: .del, text: "x"),
+            DiffLine(side: .del, text: ""),
+            DiffLine(side: .add, text: "x"),
+        ]]))
     }
 
     @Test
