@@ -16,6 +16,10 @@ struct ShellSidebar: View {
 
     let presentation: CockpitPresentation
     @Binding var selection: CockpitPresentation.Session.ID?
+    /// Which room the window is in. Here because the rooms picker is the sidebar's strip and no
+    /// longer the titlebar's (#816) — the Work room's sidebar draws the same control, so a reader
+    /// leaving Work has a way back to it.
+    var room: Binding<CockpitRoom> = .constant(.sessions)
     /// Clear a Session off the roster, or put one back (#502, story 14). Inert by default, so a
     /// preview draws the gesture without a store.
     var archive: (String, Bool) -> Void = { _, _ in }
@@ -33,9 +37,20 @@ struct ShellSidebar: View {
     @State private var query = ""
 
     var body: some View {
+        VStack(spacing: ArgoSpacing.flush) {
+            RoomStrip(selection: room)
+                .padding(.horizontal, ArgoSpacing.comfortable)
+                .padding(.vertical, ArgoSpacing.base)
+            navigator
+        }
+    }
+
+    /// Split out from `body` so the strip above it stays one line: the roster is the sidebar's
+    /// content, and the strip is the window's control sitting over it.
+    private var navigator: some View {
         let reading = roster.reading(of: presentation.sessions, matching: query)
 
-        SessionNavigator(
+        return SessionNavigator(
             rows: reading.rows,
             archived: reading.archived,
             selection: $selection,

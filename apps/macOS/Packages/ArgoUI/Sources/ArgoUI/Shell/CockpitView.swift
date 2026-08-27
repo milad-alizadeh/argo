@@ -162,7 +162,6 @@ public struct CockpitView: View {
             // parked beside the scope vessel instead of at the trailing edge.
             .toolbar {
                 ShellToolbar(
-                    room: $navigation.room,
                     scope: ScopeVessel(presentation: presentation, actions: actions),
                     spawn: CockpitSpawn(
                         presentation: presentation,
@@ -170,6 +169,7 @@ public struct CockpitView: View {
                         navigation: navigation,
                     ),
                 )
+                roomToolbar(navigation: navigation)
             }
         }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")

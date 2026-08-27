@@ -1,8 +1,13 @@
 import SwiftUI
 
-/// The room switcher at the top of the sidebar's scroll, under the titlebar rather than in it
+/// The room switcher at the top of the sidebar, under the titlebar rather than in it
 /// (`cockpit-work-room.md`, #805). Xcode's navigator selector: a control belongs over the thing it
 /// changes, and the room changes both panes but STARTS in this one.
+///
+/// **The only rooms picker in the window (#816).** The titlebar's `RoomsVessel` is gone: two
+/// pickers for one choice is worse than either placement alone, and this is the placement that
+/// sits over what it changes. It is therefore every room's rather than the Work room's, which is
+/// why it lives beside `ShellSidebar` rather than under `Work/`.
 ///
 /// The stock segmented `Picker`, dressed by nothing. macOS draws it in Liquid Glass already, and it
 /// carries arrow keys, focus and its own VoiceOver announcement — all of which a restyled row of
@@ -13,7 +18,12 @@ struct RoomStrip: View {
     var body: some View {
         Picker("Rooms", selection: $selection) {
             ForEach(CockpitRoom.allCases) { room in
-                Text(room.title).tag(room)
+                Text(room.title)
+                    // The word is on the segment; the shortcut is not, and this is the only place
+                    // a reader meets it outside the Navigate menu.
+                    .help(room.tooltip)
+                    .accessibilityLabel(room.voiceOverLabel)
+                    .tag(room)
             }
         }
         .pickerStyle(.segmented)

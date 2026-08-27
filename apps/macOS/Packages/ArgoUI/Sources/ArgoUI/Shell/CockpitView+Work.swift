@@ -32,9 +32,26 @@ extension CockpitView {
             ShellSidebar(
                 presentation: presentation,
                 selection: $navigation.session,
+                room: $navigation.room,
                 archive: actions.setSessionArchived,
                 rename: actions.setSessionName,
                 renamingSessionID: $renamingSessionID,
+            )
+        }
+    }
+
+    /// The Work room's toolbar row, and nothing in any other room — the rooms with no toolbar of
+    /// their own take `ShellToolbar` alone (#816).
+    @ToolbarContentBuilder func roomToolbar(navigation: CockpitNavigationModel)
+        -> some ToolbarContent {
+        @Bindable var navigation = navigation
+
+        if navigation.room == .work {
+            workRoom.toolbar(
+                held: WorkToolbar.Held(
+                    query: $navigation.workQuery,
+                    mode: $navigation.workMode,
+                ),
             )
         }
     }

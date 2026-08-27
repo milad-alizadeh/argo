@@ -20,6 +20,16 @@ struct WorkRoom {
         WorkSidebar(room: room, cockpitRoom: $cockpitRoom, view: $view)
     }
 
+    /// The room's controls, in the window's one toolbar row. A function and not a property, because
+    /// the two things the row HOLDS are the window's rather than the room's — see `WorkToolbar` for
+    /// why the row settles its columns by claiming the backlog's width.
+    func toolbar(held: WorkToolbar.Held) -> WorkToolbar {
+        WorkToolbar(
+            reading: WorkToolbarProjection.reading(of: room, in: view, showing: ticket),
+            held: held,
+        )
+    }
+
     var deck: some View {
         HStack(spacing: ArgoSpacing.flush) {
             BacklogList(rows: room.backlog, selection: $ticket)

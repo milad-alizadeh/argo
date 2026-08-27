@@ -1,3 +1,4 @@
+import ArgoEngine
 import Observation
 
 /// Where one cockpit window is pointing: the room on screen and the Session it has selected.
@@ -15,6 +16,12 @@ public final class CockpitNavigationModel {
     /// Which of the backlog's views is open. Here rather than in the sidebar, because it decides
     /// what the DECK draws — held inside the sidebar it filtered nothing.
     var workView = WorkView.allOpen
+    /// What the backlog's search field is holding. Beside the view for its reason: the field sits
+    /// over the ticket and narrows the LIST, so neither pane may own it (#816).
+    var workQuery = ""
+    /// The Mode a Session started from this room would start in. A standing choice of the window's,
+    /// not of one ticket — the reader picks the rung they work at, not one per ticket.
+    var workMode = SessionMode.code
 
     /// The Session on screen. Every write but reconciliation's is somebody picking a row, which is
     /// why the setter records one.
