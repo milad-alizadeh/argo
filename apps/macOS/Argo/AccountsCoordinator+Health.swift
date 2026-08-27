@@ -25,37 +25,4 @@ extension AccountsCoordinator {
         self.project = project
         await refresh()
     }
-
-    /// The chip's reading over ports already resolved. Unbound ports are absent rather than
-    /// healthy: a Project with no Work Item provider is a fully-onboarded state, not a connection.
-    func healthReading(over ports: [ConnectPort]) async -> ConnectionHealthReading {
-        let registry = await accounts.load()
-        var connections: [PortConnection] = []
-        for port in ports {
-            guard let connection = await connection(port, in: registry) else { continue }
-            connections.append(connection)
-        }
-        return ConnectionHealthReading(connections: connections)
-    }
-
-    /// What the ledger has recorded about one port, for `PortConnection` to fold with what the
-    /// registries show.
-    ///
-    /// A row whose Account is gone, or whose provider cannot fill the port, produces nothing here:
-    /// it is a decision to remake and the panel's own row says so with a fix. Two voices for one
-    /// repair is the second failure language this refuses to coin.
-    private func connection(
-        _ port: ConnectPort,
-        in registry: AccountRegistry,
-    ) async
-        -> PortConnection? {
-        guard let projectID = project?.id, let accountID = port.accountID, let scope = port.scope,
-              let account = registry.account(id: accountID) else { return nil }
-        let binding = ProjectBinding(port: port.port, accountID: accountID, scope: scope)
-        return await PortConnection(
-            port: port,
-            account: account,
-            observed: health.health(of: binding, in: projectID),
-        )
-    }
 }

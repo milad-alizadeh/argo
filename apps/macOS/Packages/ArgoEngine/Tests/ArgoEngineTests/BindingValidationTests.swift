@@ -127,7 +127,10 @@ struct BindingValidationTests {
         let bindings = ProjectBindings(
             projects: fixture.projects.store(),
             accounts: store,
-            scopeCheck: fixture.scopeCheck,
+            seams: BindingProviderSeams(
+                scopeCheck: fixture.scopeCheck,
+                catalog: fixture.catalog,
+            ),
         )
 
         await #expect(throws: BindingRefusal.noGrant) {

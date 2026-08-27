@@ -1,8 +1,10 @@
 import SwiftUI
 
-/// A Project's management verbs. Rename is deliberately absent: a Project's name IS its folder's,
-/// so renaming one means renaming the folder — which makes it unreachable, and `Locate…` already
-/// covers that.
+/// A Project's management verbs. Two are deliberately absent. **Rename**: a Project's name IS its
+/// folder's, so renaming one means renaming the folder. **Locate…**: Project Settings, one item
+/// below, opens the same folder picker against the same Project — two verbs for one act, one of
+/// them on the menu that offers the other (#821). A row whose folder has actually gone still
+/// carries `Locate…` inline, where it is a recovery rather than a duplicate.
 struct ProjectRowMenu: View {
     @Environment(\.argo) private var argo
 
@@ -18,10 +20,6 @@ struct ProjectRowMenu: View {
                 actions.revealProject(row.id)
             }
             .disabled(!row.isReachable)
-            Button("Locate…", systemImage: ArgoSymbol.locateProject) {
-                actions.locateProject(row.id)
-                dismiss()
-            }
             // The other route to the same panel, `⌘K` being the first.
             Button(ProjectSettingsCommands.label, systemImage: ArgoSymbol.projectSettings) {
                 actions.openProjectPanel(row.id)

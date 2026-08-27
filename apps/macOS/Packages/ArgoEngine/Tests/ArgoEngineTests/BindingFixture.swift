@@ -10,6 +10,7 @@ struct BindingFixture {
     let projects: ProjectFixture
     let accounts: AccountFixture
     let scopeCheck = RecordingScopeCheck()
+    let catalog = RecordingScopeCatalog()
 
     init() throws {
         let projects = try ProjectFixture()
@@ -38,7 +39,10 @@ struct BindingFixture {
         ProjectBindings(
             projects: projects.store(),
             accounts: accountStore(),
-            scopeCheck: scopeCheck ?? self.scopeCheck,
+            seams: BindingProviderSeams(
+                scopeCheck: scopeCheck ?? self.scopeCheck,
+                catalog: catalog,
+            ),
         )
     }
 
@@ -126,6 +130,27 @@ actor RecordingScopeCheck: BindingScopeCheck {
     }
 
     func questions() -> [Question] {
+        asked
+    }
+}
+
+/// The provider's listing, decided in advance and every question it was asked remembered. Beside
+/// the check rather than folded into it: one answers about a scope the user named, the other names
+/// them, and a fixture that conflated the two could not test a picker offering what a bind refuses.
+actor RecordingScopeCatalog: BindingScopeCatalog {
+    private var catalogue: ScopeCatalogue = .listed([], truncated: false)
+    private var asked: [AccountPort] = []
+
+    func answer(_ catalogue: ScopeCatalogue) {
+        self.catalogue = catalogue
+    }
+
+    func scopes(for query: ScopeQuery) -> ScopeCatalogue {
+        asked.append(query.port)
+        return catalogue
+    }
+
+    func questions() -> [AccountPort] {
         asked
     }
 }

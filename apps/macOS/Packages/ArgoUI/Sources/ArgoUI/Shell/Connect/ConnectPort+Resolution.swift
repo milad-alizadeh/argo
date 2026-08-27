@@ -6,6 +6,25 @@ import ArgoEngine
 /// through, and this is the one place that can see it — everything past here is a value that
 /// cannot hold one, so no view can render a token even by accident.
 public extension ConnectPort {
+    /// Every port a Project has, as the panel sees them. In the package rather than on the
+    /// coordinator for ADR-0022's reason: it is a derivation over values, and one in the app
+    /// target is one no test can reach.
+    static func all(
+        of projectID: String?,
+        through bindings: ProjectBindings,
+    ) async
+        -> [ConnectPort] {
+        guard let projectID else { return [] }
+        var resolved: [ConnectPort] = []
+        for port in AccountPort.allCases {
+            await resolved.append(ConnectPort(
+                port: port,
+                resolution: bindings.resolve(port: port, for: projectID),
+            ))
+        }
+        return resolved
+    }
+
     init(port: AccountPort, resolution: BindingResolution) {
         switch resolution {
         case .unbound:

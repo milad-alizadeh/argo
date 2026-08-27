@@ -7,15 +7,7 @@ import SwiftUI
 /// Picking an existing Account is one gesture and no OAuth round-trip (#414), and authorizing is
 /// the second item on the same menu rather than a different screen.
 struct ConnectPortRow: View {
-    /// A choice being filled in. It holds the Account and the scope together because a Binding is
-    /// both.
-    private struct Draft: Equatable {
-        let choice: ConnectPanelProjection.AccountChoice
-        var scope: String
-    }
-
     @Environment(\.argo) private var argo
-    @State private var draft: Draft?
 
     let row: ConnectPanelProjection.PortRow
     let actions: ConnectPanelActions
@@ -26,8 +18,8 @@ struct ConnectPortRow: View {
             if let note = row.note {
                 ConnectNoteView(note: note)
             }
-            if let draft {
-                editor(draft)
+            if let picker = row.picker {
+                ConnectScopePicker(picker: picker, actions: pickerActions(picker))
             }
         }
     }
@@ -46,13 +38,13 @@ struct ConnectPortRow: View {
             // The Account already on the row is in this list: rebinding it at another scope is a
             // move the row has to allow.
             ForEach(row.choices) { choice in
-                Button(choice.title) { open(choice) }
+                Button(choice.title) { actions.chooseAccount(row.id, choice.id) }
             }
             if !row.choices.isEmpty {
                 Divider()
             }
             ForEach(row.offers) { offer in
-                Button(offer.title) { actions.connectAccount(offer.id) }
+                Button(offer.title) { actions.connectAccount(offer.id, row.id) }
             }
             if row.isBound {
                 Divider()
@@ -73,46 +65,24 @@ struct ConnectPortRow: View {
         .accessibilityLabel("Choose what \(row.row.title.lowercased()) reads through")
     }
 
-    /// The scope, asked for in the provider's own word. It opens on whatever the port already
-    /// reads through.
-    private func editor(_ draft: Draft) -> some View {
-        HStack(spacing: ArgoSpacing.base) {
-            Text(draft.choice.scopeNoun)
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.secondary)
-            TextField(draft.choice.scopeHint, text: scope)
-                .argoText(ArgoTypography.machineCaption)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit { bind(draft) }
-            Button("Cancel") { self.draft = nil }
-                .buttonStyle(.quiet)
-            Button("Connect") { bind(draft) }
-                .buttonStyle(.quiet)
-                .disabled(draft.scope.isEmpty)
-        }
-        .padding(.horizontal, ArgoSpacing.comfortable)
-        .accessibilityElement(children: .contain)
-    }
-
-    private var scope: Binding<String> {
-        Binding(
-            get: { draft?.scope ?? "" },
-            set: { draft?.scope = $0 },
+    /// The panel's actions, narrowed to this port and the Account the picker is open on. Retrying
+    /// IS choosing the same Account again — one path asks the provider, so a failed listing and a
+    /// first one cannot answer differently.
+    private func pickerActions(
+        _ picker: ConnectPanelProjection.Picker,
+    )
+        -> ConnectScopePickerActions {
+        ConnectScopePickerActions(
+            bind: { scope in
+                actions.bindPort(ProjectBinding(
+                    port: row.id,
+                    accountID: picker.accountID,
+                    scope: scope,
+                ))
+            },
+            retry: { actions.chooseAccount(row.id, picker.accountID) },
+            cancel: actions.cancelChoice,
         )
-    }
-
-    private func open(_ choice: ConnectPanelProjection.AccountChoice) {
-        draft = Draft(choice: choice, scope: row.scope ?? "")
-    }
-
-    private func bind(_ draft: Draft) {
-        guard !draft.scope.isEmpty else { return }
-        actions.bindPort(ProjectBinding(
-            port: row.id,
-            accountID: draft.choice.id,
-            scope: draft.scope,
-        ))
-        self.draft = nil
     }
 }
 
@@ -129,6 +99,30 @@ struct ConnectPortRow: View {
 #Preview("Port row — nothing connected") {
     ConnectPortRow(
         row: ConnectPanelProjection.panel(from: ConnectFixture.fresh).ports[1],
+        actions: .inert,
+    )
+    .frame(width: ArgoConnectPanel.width)
+    .padding(ArgoSpacing.region)
+    .argoAppearance()
+}
+
+// An identity held and no Binding yet: the row has to say the account is there, or the device-code
+// card simply vanished and nothing happened (#821).
+#Preview("Port row — connected, choosing a repository") {
+    ConnectPortRow(
+        row: ConnectPanelProjection.panel(from: ConnectFixture.choosing).ports[0],
+        actions: .inert,
+    )
+    .frame(width: ArgoConnectPanel.width)
+    .padding(ArgoSpacing.region)
+    .argoAppearance()
+}
+
+// The listing GitHub would not answer. The judgement is that it offers the read again and never a
+// field to guess into.
+#Preview("Port row — the repositories could not be read") {
+    ConnectPortRow(
+        row: ConnectPanelProjection.panel(from: ConnectFixture.scopesUnreadable).ports[0],
         actions: .inert,
     )
     .frame(width: ArgoConnectPanel.width)

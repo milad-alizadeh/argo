@@ -11,9 +11,6 @@ extension ConnectPanelProjection {
         /// Provider first, then the identity: two Accounts on one provider are told apart by the
         /// login, and two providers by the name in front of it. Neither reading needs a token.
         let title: String
-        /// What this provider calls the thing a Binding points at, and the shape it is typed in.
-        let scopeNoun: String
-        let scopeHint: String
     }
 
     /// Authorizing one more identity with a provider. One per provider that both serves this port
@@ -28,6 +25,9 @@ extension ConnectPanelProjection {
         let row: Row
         let choices: [AccountChoice]
         let offers: [Offer]
+        /// The scope picker, present only while it is open ON THIS PORT — the reading holds one for
+        /// the whole panel, and matching it here is what keeps two rows from drawing it at once.
+        let picker: Picker?
         /// What this port currently reads through, carried apart from the detail line so a rebind
         /// can open on it.
         let scope: String?
@@ -35,6 +35,16 @@ extension ConnectPanelProjection {
         /// it is a fact about this port and stays true while the user does something else.
         let note: ConnectNote?
         let isBound: Bool
+    }
+
+    /// An open picker, with the Account it is choosing a scope for already resolved: the row draws
+    /// the provider's own noun ("Repository") and never has to look an Account up itself.
+    struct Picker: Equatable {
+        let accountID: String
+        let scopeNoun: String
+        let state: ConnectScopes.State
+        /// What the port already reads through, so a rebind opens on it rather than on nothing.
+        let current: String?
     }
 
     static func portRows(from reading: ConnectReading) -> [PortRow] {
@@ -54,9 +64,21 @@ extension ConnectPanelProjection {
             // no Project.
             choices: reading.folder == nil ? [] : choices(for: port.port, in: reading),
             offers: offers(for: port.port, in: reading),
+            picker: picker(for: port.port, in: reading),
             scope: port.scope,
             note: fault(of: port).map(ConnectNote.init(fault:)),
             isBound: port.accountID != nil,
+        )
+    }
+
+    private static func picker(for port: AccountPort, in reading: ConnectReading) -> Picker? {
+        guard let scopes = reading.scopes, scopes.port == port else { return nil }
+        let account = reading.account(scopes.accountID)
+        return Picker(
+            accountID: scopes.accountID,
+            scopeNoun: account?.provider.scopeNoun ?? "Scope",
+            state: scopes.state,
+            current: reading.port(port).scope,
         )
     }
 
@@ -64,17 +86,31 @@ extension ConnectPanelProjection {
     /// Binding it had, which is what makes it re-bindable rather than quietly empty.
     private static func detail(of port: ConnectPort, in reading: ConnectReading) -> String {
         guard let accountID = port.accountID, let scope = port.scope else {
-            // The one dependency between the rows, said where it applies: connecting an account
-            // works here, but pointing it at a repository needs a Project to point it FOR.
-            guard reading.folder != nil else {
-                return "\(port.port.benefit) Choose a folder first to say which one."
-            }
-            return port.port.benefit
+            return unbound(port.port, in: reading)
         }
         guard let account = reading.account(accountID) else {
             return scope
         }
         return "\(account.provider.readableName) · \(account.displayName) · \(scope)"
+    }
+
+    /// A port with no Binding on it — which is NOT the same as a port with no Account behind it.
+    /// An identity that has just been authorized has to be visible on the row that asked for it, or
+    /// the device-code card simply vanishes and the screen says what it said before (#821).
+    private static func unbound(_ port: AccountPort, in reading: ConnectReading) -> String {
+        // The one dependency between the rows, said where it applies: connecting an account works
+        // here, but pointing it at a repository needs a Project to point it FOR.
+        guard reading.folder != nil else {
+            return "\(port.benefit) Choose a folder first to say which one."
+        }
+        let held = reading.accounts.filter { $0.provider.serves(port) }
+        guard let only = held.first else { return port.benefit }
+        let noun = only.provider.scopeNoun.lowercased()
+        guard held.count == 1 else {
+            return "\(held.count) accounts connected. Choose one, then a \(noun)."
+        }
+        return "Connected as \(only.provider.readableName) · \(only.displayName)."
+            + " Choose a \(noun)."
     }
 
     private static func fault(of port: ConnectPort) -> BindingFault? {
@@ -97,8 +133,6 @@ extension ConnectPanelProjection {
                 AccountChoice(
                     id: account.id,
                     title: "\(account.provider.readableName) · \(account.displayName)",
-                    scopeNoun: account.provider.scopeNoun,
-                    scopeHint: account.provider.scopeHint,
                 )
             }
     }
