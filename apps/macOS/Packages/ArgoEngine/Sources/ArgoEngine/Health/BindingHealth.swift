@@ -52,20 +52,17 @@ public struct BindingHealth: Equatable, Sendable {
         fault?.level
     }
 
-    /// Whether a provider-port write may be ATTEMPTED through this Binding.
+    /// Whether a provider-port write may be ATTEMPTED through this Binding (failure spec §7).
     ///
-    /// `stale` keeps writes live. A failing read does not prove a write will fail — rate limits
-    /// are per endpoint, and a stale read can mean nothing worse than a slow poll — so greying a
-    /// control out on it asserts a fact Argo does not have, the way a false DIRECT does pointed the
-    /// other way. Let it be attempted; the write's own answer then says why, with the real reason.
-    ///
-    /// `needsReconnect` is the one refusal, and the one place the escalation earns its promotion:
-    /// there is no usable token, so nothing can land no matter how it is worded.
-    ///
-    /// Provider-port writes only. Spawning a Session, the terminal and git against the local
-    /// checkout are folder-sourced and never ask this.
+    /// `stale` admits them: rate limits are per endpoint, so a failing read does not prove a write
+    /// will fail. Only `needsReconnect` refuses, where there is no usable token left to try with.
+    /// Local acts — spawning a Session, the terminal, git against the checkout — never ask this.
     public var admitsWrites: Bool {
-        state != .needsReconnect
+        // Exhaustive, so a fourth state has to say which it is rather than silently admitting.
+        switch state {
+        case .healthy, .stale: true
+        case .needsReconnect: false
+        }
     }
 
     /// How long since a read last landed. `nil` when none ever has, which is a different fact from
