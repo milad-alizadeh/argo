@@ -5,16 +5,16 @@ import SwiftUI
 /// The surface says what to read and draws the answer. It holds no state, builds no identity for
 /// the request and cannot index past the end of the run — the three things each of the three
 /// surfaces that colour code used to do for itself.
-///
-/// A container and not a modifier: state a modifier owns is state its content cannot read, and the
-/// whole point of this one is that the surface never holds it.
 struct SyntaxColoured<Content: View>: View {
     private let request: SyntaxRequest
-    private let content: (SyntaxColouring) -> Content
+    private let content: (SyntaxColouring.Reading) -> Content
 
     @State private var colouring = SyntaxColouring.plain
 
-    init(_ request: SyntaxRequest, @ViewBuilder content: @escaping (SyntaxColouring) -> Content) {
+    init(
+        _ request: SyntaxRequest,
+        @ViewBuilder content: @escaping (SyntaxColouring.Reading) -> Content,
+    ) {
         self.request = request
         self.content = content
     }

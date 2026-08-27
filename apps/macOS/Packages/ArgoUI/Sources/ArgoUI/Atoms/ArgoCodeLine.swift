@@ -2,18 +2,14 @@ import SwiftUI
 
 /// One line of code as its file has it: the host's number in a gutter, the characters beside it
 /// under the grammar where the grammar reached them.
-///
-/// One view because a source panel and a patch's hunk are the same anatomy. The gutter's width and
-/// the way a long line wraps are decided here, once; the ink for uncoloured characters and the
-/// ground under them are the surface's own and stay outside.
 struct ArgoCodeLine: View {
     /// Whether the FILE numbers its lines, and this line's number where it does.
     enum Gutter: Equatable {
-        /// A file carrying no numbers. The column is not drawn at all rather than drawn empty — a
-        /// column that came and went down the panel would move the words it is there to line up.
+        /// A file carrying no numbers. Drawn without the column, because a column that came and
+        /// went down the panel would move the words it is there to line up.
         case unnumbered
-        /// A numbered file. No number is a line the numbering does not reach: a removed line is not
-        /// in the file the gutter counts, and is left blank rather than given its successor's.
+        /// A numbered file. No number is a line the numbering does not reach — a removed line is
+        /// not in the file the gutter counts.
         case number(Int?)
     }
 
@@ -21,11 +17,9 @@ struct ArgoCodeLine: View {
 
     let text: String
     let gutter: Gutter
-    /// This line under the grammar. Nothing is not a failure state to render — it is the line
-    /// before the colours arrive, and after they could not.
+    /// The line before the colours arrive, and after they could not, is nothing here.
     let coloured: AttributedString?
-    /// The ink the characters take where the grammar did not reach them. The colours carry their
-    /// own.
+    /// The ink for the characters the grammar did not reach. The colours carry their own.
     let ink: ArgoColor
 
     var body: some View {
@@ -61,12 +55,21 @@ struct ArgoCodeLine: View {
     }
 }
 
-#Preview("Code line — numbered, unnumbered, and a line the numbering does not reach") {
+/// A run with real inks in it, so the coloured branch is on screen beside the plain one.
+private func previewColoured(_ head: String, _ tail: String) -> AttributedString {
+    var keyword = AttributedString(head)
+    keyword.foregroundColor = ArgoPalette.graphite.diff.added.color
+    var value = AttributedString(tail)
+    value.foregroundColor = ArgoPalette.graphite.interaction.accentBright.color
+    return keyword + value
+}
+
+#Preview("Code line — every state the surfaces draw, including a line long enough to wrap") {
     VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
         ArgoCodeLine(
-            text: "    let colours = await SyntaxColouring(of: request)",
+            text: "    return nil",
             gutter: .number(41),
-            coloured: nil,
+            coloured: previewColoured("    return ", "nil"),
             ink: ArgoPalette.graphite.text.secondary,
         )
         ArgoCodeLine(
@@ -79,6 +82,13 @@ struct ArgoCodeLine: View {
         ArgoCodeLine(
             text: "# A file Argo read, which nothing numbered",
             gutter: .unnumbered,
+            coloured: nil,
+            ink: ArgoPalette.graphite.text.secondary,
+        )
+        ArgoCodeLine(
+            text: "        return await SyntaxHighlight.lines(of: lines, in: language, "
+                + "colors: SyntaxTheme.colors) ?? []",
+            gutter: .number(42),
             coloured: nil,
             ink: ArgoPalette.graphite.text.secondary,
         )

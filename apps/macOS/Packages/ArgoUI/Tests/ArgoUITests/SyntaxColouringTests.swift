@@ -4,12 +4,7 @@ import Foundation
 import SwiftUI
 import Testing
 
-/// The rule three surfaces used to keep as a comment each: colours are drawn over the characters
-/// they were read from, and over no others.
-///
-/// It goes wrong silently and it went wrong twice. A stack recycles a row view by its offset, so
-/// the row that drew one file's line 4 draws the next file's line 4 with the first one's colours
-/// still in hand — and wrongly coloured code looks exactly like code.
+/// `SyntaxRequest`'s rule, asserted where it is enforced. The rule itself is written there.
 @Suite("Syntax colouring identity")
 struct SyntaxColouringIdentityTests {
     /// Two files at the same offsets, same grammar, same line count — everything a request could
@@ -50,8 +45,8 @@ struct SyntaxColouringIdentityTests {
         #expect(await SyntaxColouring(of: swift).over(ruby)[0] == nil)
     }
 
-    /// A patch is the surface the slip was found on: two hunks agreeing on language, start line and
-    /// line count, differing only in what they changed.
+    /// The surface the slip was found on: two hunks agreeing on language, start line and line
+    /// count, differing only in what they changed.
     @Test
     func `two hunks of one file do not share a reading`() async {
         let first = SyntaxRequest.patch(lines: [
@@ -79,7 +74,7 @@ struct SyntaxColouringFallbackTests {
         let request = SyntaxRequest.source(lines: ["let a = 1"], under: .swift)
 
         #expect(SyntaxColouring.plain.over(request)[0] == nil)
-        #expect(SyntaxColouring.plain.whole == nil)
+        #expect(SyntaxColouring.plain.over(request).whole == nil)
     }
 
     /// The read is guarded, not trusted: the run is a request behind the characters for as long as
@@ -88,11 +83,11 @@ struct SyntaxColouringFallbackTests {
     func `a line past the end of the run is plain, not a crash`() async {
         let request = SyntaxRequest.source(lines: ["let a = 1"], under: .swift)
 
-        let colouring = await SyntaxColouring(of: request).over(request)
+        let reading = await SyntaxColouring(of: request).over(request)
 
-        #expect(colouring[0] != nil)
-        #expect(colouring[1] == nil)
-        #expect(colouring[-1] == nil)
+        #expect(reading[0] != nil)
+        #expect(reading[1] == nil)
+        #expect(reading[-1] == nil)
     }
 
     /// A path whose extension Argo does not know, and a fence naming a grammar it cannot read. The
@@ -103,7 +98,7 @@ struct SyntaxColouringFallbackTests {
             lines: [DiffLine(side: .context, text: "let a = 1")],
             under: nil,
         )
-        let block = SyntaxRequest.block("let a = 1", under: nil)
+        let block = SyntaxRequest.block(code: "let a = 1", under: nil)
 
         #expect(await SyntaxColouring(of: patch).over(patch)[0] == nil)
         #expect(await SyntaxColouring(of: block).over(block).whole == nil)
@@ -117,11 +112,21 @@ struct SyntaxColouringBlockTests {
     @Test
     func `a block comes back as one run, its newlines kept`() async throws {
         let code = "struct Hunk {\n    let start: Int\n}"
-        let request = SyntaxRequest.block(code, under: .swift)
+        let request = SyntaxRequest.block(code: code, under: .swift)
 
         let whole = try #require(await SyntaxColouring(of: request).over(request).whole)
 
         #expect(String(whole.characters) == code)
         #expect(whole.runs.contains { $0.foregroundColor != nil })
+    }
+
+    /// A second fence of the same language gets no run at all, rather than the first one's joined
+    /// up over its own characters.
+    @Test
+    func `a block's run is withheld from another block's characters`() async {
+        let mine = SyntaxRequest.block(code: "let a = 1", under: .swift)
+        let theirs = SyntaxRequest.block(code: "let b = 2", under: .swift)
+
+        #expect(await SyntaxColouring(of: mine).over(theirs).whole == nil)
     }
 }

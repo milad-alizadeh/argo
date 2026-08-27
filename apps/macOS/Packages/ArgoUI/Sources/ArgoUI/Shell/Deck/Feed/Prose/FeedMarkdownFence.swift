@@ -13,7 +13,7 @@ struct FeedMarkdownFence: View {
     let info: String?
 
     var body: some View {
-        SyntaxColoured(.block(code, under: language)) { colouring in
+        SyntaxColoured(.block(code: code, under: language)) { colouring in
             VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
                 if let info {
                     Text(info)
