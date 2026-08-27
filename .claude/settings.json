@@ -1,5 +1,5 @@
 {
-  "outputStyle": "Direct",
+  "outputStyle": "Concise",
   "hooks": {
     "PreToolUse": [
       {
