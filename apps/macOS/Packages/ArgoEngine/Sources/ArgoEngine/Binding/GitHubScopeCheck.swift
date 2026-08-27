@@ -21,7 +21,7 @@ struct GitHubScopeCheck: BindingScopeCheck {
     func visibility(of probe: BindingProbe) async -> ScopeVisibility {
         do {
             let data = try await transport.send(HTTPRequest(
-                url: "https://api.github.com/repos/\(probe.scope)",
+                url: "\(GitHubOAuthApp.apiHost)/repos/\(probe.scope)",
                 bearerToken: probe.grant.accessToken,
             ))
             let decoder = JSONDecoder()

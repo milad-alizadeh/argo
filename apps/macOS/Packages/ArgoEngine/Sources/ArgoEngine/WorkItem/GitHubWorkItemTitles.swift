@@ -21,7 +21,7 @@ public struct GitHubWorkItemTitles: Sendable {
     ) async
         -> TicketReading? {
         guard let data = try? await transport.send(HTTPRequest(
-            url: "https://api.github.com/repos/\(scope)/issues/\(number)",
+            url: "\(GitHubOAuthApp.apiHost)/repos/\(scope)/issues/\(number)",
             bearerToken: grant.accessToken,
         )) else { return nil }
         return Self.reading(of: data)
@@ -44,15 +44,10 @@ public struct GitHubWorkItemTitles: Sendable {
             }
             return .named(title)
         }
-        guard let failure = try? decoder.decode(FailureResponse.self, from: body)
+        guard let failure = try? decoder.decode(GitHubFailure.self, from: body)
         else { return nil }
-        return failure.message == notFound ? .absent : nil
+        return failure.isNotFound ? .absent : nil
     }
-
-    /// GitHub's own wording for a number behind which there is nothing this token can see. A
-    /// private issue invisible to this token and one that does not exist are the same answer by
-    /// design, and neither is worth a guess at which it was.
-    private static let notFound = "Not Found"
 
     private static func trimmed(_ title: String) -> String? {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -68,9 +63,5 @@ public struct GitHubWorkItemTitles: Sendable {
         struct PullRequestMark: Decodable {
             let url: String
         }
-    }
-
-    private struct FailureResponse: Decodable {
-        let message: String
     }
 }

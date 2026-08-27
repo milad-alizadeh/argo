@@ -42,6 +42,11 @@ public enum HTTPTransportError: Error, Equatable {
     /// it is the Account-level failure (CONTEXT.md), whose blast radius is every Binding naming
     /// that Account — and because the recovery is authorizing again, not retrying.
     case unauthorized(code: Int)
+    /// The provider answered with a limit rather than data. Its own case because it shares a status
+    /// code with a refused token — GitHub throttles with a 403 — and only the response HEADERS tell
+    /// the two apart, which nothing behind this seam sees. Collapsed into `unauthorized` it sends a
+    /// user who has to wait through an OAuth round-trip that fixes nothing.
+    case rateLimited
     /// The provider answered, but not with a status the caller can read as an answer.
     case status(code: Int)
 }
