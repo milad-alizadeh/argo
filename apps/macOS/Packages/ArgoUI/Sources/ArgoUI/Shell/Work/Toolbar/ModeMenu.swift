@@ -4,13 +4,8 @@ import SwiftUI
 /// The Mode a Session would start in — `Read Only · Plan · Code · Auto`, in ladder order, each rung
 /// named by the boundary it will not cross unasked (ADR-0025, `CONTEXT.md` L2 · Autonomy).
 ///
-/// It is the chevron half of `StartControl` and never a control of its own. The study first drew an
-/// unlabelled `…` here and it was cut: an overflow nobody can name is an overflow nobody opens, so
-/// what hides behind this chevron is one named ladder and nothing else.
-///
-/// A `Picker` rather than four buttons, because a picker is what ticks the current rung — and the
-/// rows carry no MARK, unlike the composer's, because `Auto`'s mark is the bolt this control's own
-/// verb wears. One bolt above another, meaning two different things, is worse than no mark at all.
+/// The rows carry no MARK, unlike the composer's: `Auto`'s mark is `ArgoSymbol.modeAuto`, the same
+/// bolt `StartControl`'s own verb wears directly above it.
 struct ModeMenu: View {
     @Environment(\.argo) private var argo
 

@@ -17,9 +17,9 @@ struct ShellSidebar: View {
     let presentation: CockpitPresentation
     @Binding var selection: CockpitPresentation.Session.ID?
     /// Which room the window is in. Here because the rooms picker is the sidebar's strip and no
-    /// longer the titlebar's (#816) — the Work room's sidebar draws the same control, so a reader
-    /// leaving Work has a way back to it.
-    var room: Binding<CockpitRoom> = .constant(.sessions)
+    /// longer the titlebar's (#816). No default: a strip bound to a constant would draw a selection
+    /// that cannot be true of the window it is in.
+    @Binding var room: CockpitRoom
     /// Clear a Session off the roster, or put one back (#502, story 14). Inert by default, so a
     /// preview draws the gesture without a store.
     var archive: (String, Bool) -> Void = { _, _ in }
@@ -38,7 +38,7 @@ struct ShellSidebar: View {
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            RoomStrip(selection: room)
+            RoomStrip(selection: $room)
                 .padding(.horizontal, ArgoSpacing.comfortable)
                 .padding(.vertical, ArgoSpacing.base)
             navigator
@@ -83,14 +83,17 @@ struct ShellSidebar: View {
 
 #Preview("Continuous sidebar") {
     @Previewable @State var selection = CockpitPresentation.preview.sessions.first?.id
+    @Previewable @State var room = CockpitRoom.sessions
 
-    ShellSidebar(presentation: .preview, selection: $selection)
+    ShellSidebar(presentation: .preview, selection: $selection, room: $room)
         .frame(width: 340, height: 600)
         .argoAppearance()
 }
 
 #Preview("Continuous sidebar — no Sessions") {
-    ShellSidebar(presentation: .emptyPreview, selection: .constant(nil))
+    @Previewable @State var room = CockpitRoom.sessions
+
+    ShellSidebar(presentation: .emptyPreview, selection: .constant(nil), room: $room)
         .frame(width: 340, height: 600)
         .argoAppearance()
 }

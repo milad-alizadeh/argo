@@ -318,7 +318,7 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | `searchWidth` | **210** | wide enough for `Search the backlog`; at 260 the trailing edge clipped at 1280 |
 | Vessel shape | `Capsule()` | a capsule is a shape, not a radius — no `ArgoRadius` rung applies |
 | Vessel material | glass, **no border, no shadow** | `ArgoElevation.vessel` is zero; the specular rim is the cue |
-| Menu offset | **40** below the row | `ArgoRadius.popover` 12, `ArgoElevation.popover` — the one rung here that genuinely floats |
+| Menu offset | **40** below the row | `ArgoRadius.popover` 12, `ArgoElevation.popover` — the one rung here that genuinely floats. **Not implemented, and not implementable**: `ModeMenu` is the stock `Menu` the frozen-names table specifies, and AppKit positions and draws its own popover. The number describes the study's drawing of it |
 
 ### `ArgoTicketDetail` — `ArgoUI/Shell/Work/Detail/`
 

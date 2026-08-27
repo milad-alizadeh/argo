@@ -2,10 +2,9 @@ import SwiftUI
 
 /// A bounded glass capsule on the Work room's toolbar — the row's unit of grouping.
 ///
-/// **No border and no drop shadow.** `ArgoElevation.vessel` is zero on all three axes because the
-/// specular rim IS the depth cue, so a hairline here would stack a second edge on the one the
-/// material already draws (`cockpit-work-room.md` — Liquid Glass, one material, every vessel).
-/// `argoFloatingGlass` is what spells that once; this is only the shape and the inset.
+/// **No border and no drop shadow**, which `argoFloatingGlass` already spells:
+/// `ArgoElevation.vessel` is zero on all three axes because the specular rim IS the depth cue, so
+/// a hairline would stack a second edge on the one the material already draws.
 struct ToolbarVessel<Content: View>: View {
     @ViewBuilder let content: Content
 
@@ -14,17 +13,11 @@ struct ToolbarVessel<Content: View>: View {
             content
         }
         .padding(ArgoWorkToolbar.vesselInset)
-        // A capsule is a SHAPE, not a radius — no rung of `ArgoRadius` applies, and a rounded
-        // rectangle beside the toolbar's own stadiums reads as a different kind of control.
         .argoFloatingGlass(in: .capsule)
     }
 }
 
 /// One glyph in a vessel: the whole of what a toolbar button draws.
-///
-/// A word is never drawn here. Every control in this room is labelled — the mark carries the
-/// tooltip and the VoiceOver label, and `StartControl` is the one that spends a word, because it is
-/// the verb the room is for.
 struct ToolbarIcon: View {
     @Environment(\.argo) private var argo
 

@@ -4,24 +4,17 @@ import SwiftUI
 /// The Work room's controls, in the window's ONE toolbar row, each placed over the thing it acts
 /// on — Mail's rule, transposed (`cockpit-work-room.md`).
 ///
-/// ## Which column each control lands over, and why it is settled this way
+/// ## How each control lands over its own column
 ///
-/// The design is a three-column room, and macOS gives per-column toolbar regions only to a genuine
-/// three-column `NavigationSplitView`. Neither of the two obvious routes to that is open here.
-/// `.principal` is not a centring but a slot between the regions — `ShellToolbar` records what it
-/// did when it was tried, which was to park the Session title against the scope vessel and push
-/// Rooms into the overflow menu. And the shell's split view is unconditional (#812: "a room fills
-/// the shell's slots rather than replacing them"), so forking it per room would rebuild the whole
-/// window on every room switch and drop the deck's per-Session state, both seam drags and the
-/// sidebar's width with it.
+/// Every item here is `.primaryAction`, which is the region the DETAIL pane draws — `.navigation`
+/// is the window's leading region and lands over the sidebar, where the scope vessel is.
+/// `BacklogToolbarLabel` takes `ArgoWorkToolbar.listBlockWidth` at that region's leading edge,
+/// which is `ArgoBacklogList.width` and does not move with the window — so it lands over the list,
+/// and everything after it lands over the ticket column, at every window size.
 ///
-/// **So the row claims the column boundary directly.** Every item here is `.primaryAction`, which
-/// is the region the DETAIL pane draws — `.navigation` is the window's leading region and lands
-/// over the sidebar, where the scope vessel is. `BacklogToolbarLabel` then takes
-/// `ArgoWorkToolbar.listBlockWidth` at that region's leading edge, which is the backlog's own fixed
-/// width — so it lands over the list, and everything after it lands over the ticket column, at
-/// every window size. The boundary is not estimated: `ArgoBacklogList.width` does not move with the
-/// window, which is the property that makes this work where a share or a spacer would not.
+/// Per-column toolbar REGIONS would need a genuine three-column `NavigationSplitView`, which the
+/// shell does not have: its split view is unconditional (#812). Why that stands and `.principal`
+/// does not is in `docs/designs/cockpit-work-room.md`, "The column question, settled".
 struct WorkToolbar: ToolbarContent {
     let reading: WorkToolbarProjection.Reading
     var intents = WorkToolbarIntents.inert

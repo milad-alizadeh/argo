@@ -42,10 +42,10 @@ struct BacklogToolbarLabel: View {
     private var lines: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             Text(reading.heading)
-                .argoText(ArgoTypography.rowTitle)
+                .argoText(ArgoTypography.windowTitle)
                 .foregroundStyle(argo.color.text.primary)
             Text(reading.subtitle)
-                .argoText(ArgoTypography.caption)
+                .argoText(ArgoTypography.rowMeta)
                 .foregroundStyle(argo.color.text.tertiary)
                 .lineLimit(1)
                 .truncationMode(.tail)

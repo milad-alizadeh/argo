@@ -9,11 +9,10 @@ import SwiftUI
 /// Scope is ONE toolbar item, because that is what the toolbar draws one Liquid Glass capsule
 /// around — a `ToolbarItemGroup` gives each control in it a capsule of its own.
 ///
-/// **The rooms picker is gone from this bar (#816).** It is the sidebar's strip now, under the
-/// titlebar rather than in it: a control belongs over the thing it changes, and two pickers for one
-/// choice is worse than either placement alone. `RoomsVessel` went with it, and so did the flexible
-/// spacer that only ever existed to push it to the trailing edge — this bar's items all sit in the
-/// window's `.navigation` region, which needs no spacer to hold them there.
+/// Every item here is `.navigation`, which is the WINDOW's leading region — over the sidebar in a
+/// split view, not over the detail pane. A room's own row takes `.primaryAction` (`WorkToolbar`).
+///
+/// The rooms picker is the sidebar's strip (`RoomStrip`, #816).
 ///
 /// The Session's title is NOT a toolbar item (#692). `.principal` is a slot between the regions,
 /// not a centring: it parked the title against the scope vessel and pushed Rooms into the bar's

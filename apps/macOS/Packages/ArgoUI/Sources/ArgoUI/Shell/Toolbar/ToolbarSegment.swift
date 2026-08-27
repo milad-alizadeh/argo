@@ -1,13 +1,7 @@
 import SwiftUI
 
-/// One segment of a toolbar vessel — the Project half, the checkout half.
-///
-/// It is the same control in two places, so the wash, the paddings and the hit shape live here
-/// once. Spelled out per call site they drift, and AppKit's own menu fill is not this shape.
-///
-/// A segment is measured around a WORD, which needs room at its two ends. The mark-shaped fit that
-/// stood beside it went with `RoomsVessel` (#816): the rooms picker is the sidebar's segmented
-/// `Picker` now, and a `Picker` draws its own segments.
+/// One segment of a toolbar vessel — the Project half, the checkout half. Both are WORDS, which
+/// need room at their two ends; AppKit's own menu fill is not this shape.
 struct ToolbarSegment: ViewModifier {
     @Environment(\.argo) private var argo
 

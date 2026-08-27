@@ -18,22 +18,21 @@ struct WorkToolbarProjectionTests {
         )
     }
 
+    /// Spelled out rather than interpolated from the projection: an expectation built from the
+    /// value under test passes whatever that value is, which is no expectation at all. 12 is the
+    /// fixture's open set, and the design's renders read the same.
     @Test
     func `the heading names the view and counts the rows the list draws`() {
-        let room = WorkRoomProjection.room(from: WorkFixture.reading)
-
         #expect(Self.reading().heading == "Backlog")
-        #expect(Self.reading().subtitle == "All open · \(room.backlog.count) tickets")
+        #expect(Self.reading().subtitle == "All open · 12 tickets")
     }
 
     /// The whole reason the heading is two lines: switching view has to move BOTH halves, or the
     /// count stands under a name it no longer belongs to.
     @Test
     func `the count tracks the filter`() {
-        let blocked = WorkRoomProjection.room(from: WorkFixture.reading, in: .blocked)
-
-        #expect(Self.reading(of: .blocked).subtitle
-            == "Blocked · \(blocked.backlog.count) tickets")
+        #expect(Self.reading(of: .blocked).subtitle == "Blocked · 8 tickets")
+        #expect(Self.reading(of: .unblocked).subtitle == "Unblocked · 4 tickets")
     }
 
     /// One ticket is `1 ticket`, not `1 tickets`. Cheap to get wrong and visible on every render of
@@ -53,7 +52,7 @@ struct WorkToolbarProjectionTests {
         let reading = Self.reading()
 
         #expect(reading.narrows)
-        #expect(reading.creates)
+        #expect(reading.draws)
         #expect(reading.ticket == 272)
     }
 
@@ -64,7 +63,7 @@ struct WorkToolbarProjectionTests {
         let empty = WorkRoomProjection.room(from: WorkFixture.answeredEmpty)
         let reading = WorkToolbarProjection.reading(of: empty, in: .allOpen, showing: 272)
 
-        #expect(reading.creates)
+        #expect(reading.draws)
         #expect(!reading.narrows)
         #expect(reading.ticket == nil)
         #expect(reading.subtitle == "All open · 0 tickets")
@@ -89,6 +88,5 @@ struct WorkToolbarProjectionTests {
     @Test
     func `the ticket verbs go with the ticket`() {
         #expect(Self.reading(showing: nil).ticket == nil)
-        #expect(Self.reading(showing: nil).narrows)
     }
 }

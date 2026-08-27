@@ -4,10 +4,8 @@ import SwiftUI
 /// (`cockpit-work-room.md`, #805). Xcode's navigator selector: a control belongs over the thing it
 /// changes, and the room changes both panes but STARTS in this one.
 ///
-/// **The only rooms picker in the window (#816).** The titlebar's `RoomsVessel` is gone: two
-/// pickers for one choice is worse than either placement alone, and this is the placement that
-/// sits over what it changes. It is therefore every room's rather than the Work room's, which is
-/// why it lives beside `ShellSidebar` rather than under `Work/`.
+/// **The only rooms picker in the window (#816)**, and every room's rather than the Work room's —
+/// which is why it lives beside `ShellSidebar` rather than under `Work/`.
 ///
 /// The stock segmented `Picker`, dressed by nothing. macOS draws it in Liquid Glass already, and it
 /// carries arrow keys, focus and its own VoiceOver announcement — all of which a restyled row of

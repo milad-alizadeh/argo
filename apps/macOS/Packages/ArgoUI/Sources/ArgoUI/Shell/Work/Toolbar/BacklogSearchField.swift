@@ -30,16 +30,10 @@ struct BacklogSearchField: View {
     }
 }
 
+// Empty, which is the state every render of this room shows and the one the 210 was measured
+// against — a typed query is the same field at the same width (`ui-components.md`, coverage).
 #Preview("Backlog search field") {
     @Previewable @State var query = ""
-
-    BacklogSearchField(query: $query)
-        .padding(ArgoSpacing.region)
-        .argoAppearance()
-}
-
-#Preview("Backlog search field — a query typed") {
-    @Previewable @State var query = "work room"
 
     BacklogSearchField(query: $query)
         .padding(ArgoSpacing.region)

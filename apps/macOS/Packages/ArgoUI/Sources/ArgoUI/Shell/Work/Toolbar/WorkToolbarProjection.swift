@@ -12,23 +12,16 @@ enum WorkToolbarProjection {
         /// Whether the list-scoped controls stand: filter, group-by and search. They go together —
         /// each of them narrows the same list, and with no list there is nothing to narrow.
         let narrows: Bool
-        /// Whether New ticket stands. It survives an empty backlog, which is the one moment you
-        /// most want it.
-        let creates: Bool
+        /// Whether the row draws at all, which is also whether New ticket does: the two coincide,
+        /// because New ticket survives an empty backlog and the only thing that empties the row is
+        /// having nothing to create into.
+        let draws: Bool
         /// The ticket the verbs address — the one the deck is OPEN on, not the one at the top of
         /// the list.
         let ticket: Int?
 
-        /// Whether the row draws at all. False only with nothing bound: there is no list, no
-        /// ticket, and nothing to create into.
-        var draws: Bool {
-            creates
-        }
-
-        /// The empty row. Named rather than spelled at each vacancy, so the two of them cannot
-        /// drift apart.
         static let none = Reading(
-            heading: "", subtitle: "", narrows: false, creates: false, ticket: nil,
+            heading: "", subtitle: "", narrows: false, draws: false, ticket: nil,
         )
     }
 
@@ -46,7 +39,7 @@ enum WorkToolbarProjection {
             heading: "Backlog",
             subtitle: "\(view.name) · \(tickets(room.backlog.count))",
             narrows: hasRows,
-            creates: true,
+            draws: true,
             ticket: hasRows ? showing : nil,
         )
     }

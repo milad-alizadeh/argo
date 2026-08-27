@@ -40,13 +40,14 @@ extension CockpitView {
         }
     }
 
-    /// The Work room's toolbar row, and nothing in any other room — the rooms with no toolbar of
-    /// their own take `ShellToolbar` alone (#816).
+    /// What the room adds to `ShellToolbar`. The `if` reads a `switch`'s answer rather than testing
+    /// the room itself: `ToolbarContentBuilder` has no empty content, so the exhaustiveness the
+    /// next room needs has to live in `addsAToolbar` below.
     @ToolbarContentBuilder func roomToolbar(navigation: CockpitNavigationModel)
         -> some ToolbarContent {
         @Bindable var navigation = navigation
 
-        if navigation.room == .work {
+        if navigation.room.addsAToolbar {
             workRoom.toolbar(
                 held: WorkToolbar.Held(
                     query: $navigation.workQuery,
@@ -64,6 +65,17 @@ extension CockpitView {
         switch navigation.room {
         case .work: ArgoLayout.sidebarMinimumWidth
         case .sessions, .code: ArgoLayout.sidebarIdealWidth
+        }
+    }
+}
+
+extension CockpitRoom {
+    /// Whether this room draws a toolbar row of its own beside `ShellToolbar`'s. Work does; the
+    /// other two have nothing to put there yet, and a room added later has to answer here.
+    var addsAToolbar: Bool {
+        switch self {
+        case .work: true
+        case .sessions, .code: false
         }
     }
 }

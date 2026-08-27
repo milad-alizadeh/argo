@@ -129,6 +129,10 @@ rather than over the ticket it opens.
 
 ## Where the design and the code disagree
 
+The heading and its sub-line take the roles the design's own snap table names —
+`ArgoTypography.windowTitle` and `rowMeta`, both marked "exact" there. The first build reached for
+`rowTitle` and `caption` instead, which is a weight too light and a rung too small.
+
 - **`iconSize` 14 is not a rung.** 14 is the SVG box the study drew its icons into.
   `ArgoIconSize.control` 13 is the rung the contract gives "a control's own mark", and a fourth
   rung would be a token change this room has no standing to make. No token moved.
@@ -151,6 +155,23 @@ rather than over the ticket it opens.
 - **New Session stays on the bar in the Work room.** The study's `.tb-lead` is the traffic lights
   and the scope vessel alone. Removing an app-wide verb per room is a decision #816 does not make,
   and the room's own call-to-action is New ticket, over the column it opens.
+- **The menu offset 40 is not implemented, and cannot be.** `ModeMenu` is the stock `Menu` the
+  frozen-names table specifies, and AppKit positions and draws its own popover. Recorded in the
+  measurement table rather than silently dropped.
+
+## What is asserted but not measured
+
+Two claims in this build rest on reading rather than on a render or a test, and both are the
+kind of thing only pixels settle:
+
+- **That `.primaryAction` begins at the detail pane's leading edge.** If the `.navigation` items
+  — the sidebar toggle, New Session and the scope vessel — ever outgrow the 280 sidebar, the 520
+  block slides off the list and every control after it lands one column wrong. Nothing pins it.
+- **That search clears the trailing edge at the 1280 window.** The 210 is in the code; that it
+  does not clip is not.
+
+Both fall to `pixel-review` on `workToolbar` and `workRoom`. They were not rendered in this
+build: the display was asleep (`UserIsActive 0`), so `screencapture` could not reach the window.
 
 ## Not reproduced from `menu.png`
 
