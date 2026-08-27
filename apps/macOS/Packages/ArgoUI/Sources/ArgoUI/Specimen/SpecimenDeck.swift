@@ -32,7 +32,7 @@ struct SpecimenDeck: View {
         VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
             HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.comfortable) {
                 Text(session.title)
-                    .argoText(ArgoTypography.sessionTitle)
+                    .argoText(ArgoTypography.identityHeading)
                 Spacer(minLength: ArgoSpacing.loose)
                 if let branch = session.workspace?.branch {
                     Label(branch, systemImage: "arrow.trianglehead.branch")

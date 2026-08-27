@@ -3,11 +3,8 @@ import SwiftUI
 /// The handful of named roles the shell reuses, each one a rung of `ArgoTypeScale` — Apple's macOS
 /// text styles — plus the weight and tracking that go with it. Nothing here carries a size.
 public enum ArgoTypography {
-    /// The largest line in the cockpit: a Session's own title.
-    public static let sessionTitle = ArgoTextStyle(
-        typeface: .interface, rung: .title2, weight: .semibold,
-    )
-    /// A rare identity heading — a Project name, an empty-state title.
+    /// The largest line in the cockpit — a Project name, a specimen deck's header, an empty-state
+    /// title.
     public static let identityHeading = ArgoTextStyle(
         typeface: .interface, rung: .title3, weight: .semibold,
     )
@@ -58,7 +55,6 @@ public enum ArgoTypography {
 
     /// Every role, for contract assertions and the specimen.
     public static let all: [(name: String, style: ArgoTextStyle)] = [
-        ("sessionTitle", sessionTitle),
         ("identityHeading", identityHeading),
         ("sectionLabel", sectionLabel),
         ("badge", badge),
@@ -76,7 +72,5 @@ public enum ArgoTypography {
     ]
 
     /// Roles nothing sets yet. See `ArgoMotion.unwired` for why they stay and why they say so.
-    public static let unwired: [String: String] = [
-        "identityHeading": "empty states and the Project header",
-    ]
+    public static let unwired: [String: String] = [:]
 }

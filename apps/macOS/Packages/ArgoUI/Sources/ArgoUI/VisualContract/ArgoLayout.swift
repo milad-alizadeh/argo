@@ -12,6 +12,9 @@ public enum ArgoLayout {
     /// The size the window opens at (`ArgoApp`'s `defaultSize`) — the width a specimen renders a
     /// pane at when it is showing the ordinary case rather than the narrowest one.
     public static let windowIdealWidth: CGFloat = 1280
+    /// The other half of that opening size. Here rather than beside a surface for the same reason
+    /// the width is: what the window opens at belongs to no one pane.
+    public static let windowIdealHeight: CGFloat = 800
     public static let sidebarMaximumWidth: CGFloat = 420
 
     /// How much of the detail pane the centred Session title may take before it ellipsizes

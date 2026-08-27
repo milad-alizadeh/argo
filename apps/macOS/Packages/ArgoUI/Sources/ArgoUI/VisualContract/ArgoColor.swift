@@ -63,6 +63,8 @@ extension ArgoColor: ShapeStyle {
     }
 }
 
+/// The measures the contract's colour claims are made of. No surface draws one: they are how a
+/// legibility floor or a separation rule is stated over `ArgoPalette.all` rather than eyeballed.
 public extension ArgoColor {
     /// WCAG relative luminance.
     var relativeLuminance: Double {
