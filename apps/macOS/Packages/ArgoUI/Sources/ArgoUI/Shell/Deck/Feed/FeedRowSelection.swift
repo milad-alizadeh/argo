@@ -70,6 +70,18 @@ struct FeedRowSelection {
     }
 }
 
+extension FeedRowSelection {
+    /// The same selection with the keyboard's way home wired onto a table.
+    ///
+    /// `FeedRowSelection` is a value, so a `homeward` set on one copy is absent from every other:
+    /// each surface that closes something has to close through a routed copy of its own (#777).
+    @MainActor func homing(onto table: FeedTableHandle) -> FeedRowSelection {
+        var routed = self
+        routed.homeward = { [table] id in table.focus(onto: id) }
+        return routed
+    }
+}
+
 extension FeedRow {
     /// Whether this row is where a picture came from — which rows hold pictures at all is
     /// `FeedRow.Content.kind`'s answer, not a second reading of the kinds here.

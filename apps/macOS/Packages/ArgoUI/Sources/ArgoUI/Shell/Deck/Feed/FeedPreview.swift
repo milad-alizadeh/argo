@@ -64,7 +64,10 @@ struct FeedPreview: View {
             HStack(spacing: ArgoSpacing.flush) {
                 FeedView(
                     rows: rows,
-                    selection: FeedRowSelection(open: $open, step: $step, lit: $lit, focus: $focus),
+                    selection: FeedRowSelection(
+                        open: $open, step: $step, lit: $lit, focus: $focus,
+                    )
+                    .homing(onto: table),
                     held: held,
                     table: table,
                 )

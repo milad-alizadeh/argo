@@ -14,7 +14,8 @@ struct FeedView: View {
 
     let rows: [FeedRow]
     /// What the deck has open and where the keyboard is. Owned by the deck: opening a row resizes
-    /// the column this view is drawn in.
+    /// the column this view is drawn in. Already routed through
+    /// `FeedRowSelection.homing(onto:)` by whoever owns it — this view holds no copy to route.
     let selection: FeedRowSelection
     /// Which row the reading opens HELD at, as though the reader had scrolled up to it. A parameter
     /// because a screenshot cannot scroll, and the detached state is otherwise unreachable.
@@ -42,7 +43,7 @@ struct FeedView: View {
     var body: some View {
         FeedTable(
             rows: rows,
-            selection: routed,
+            selection: selection,
             held: held,
             isResizing: isResizing,
             isUnderComposer: isUnderComposer,
@@ -50,8 +51,9 @@ struct FeedView: View {
             unfolded: $unfolded,
             handle: table,
         )
-        // The deck's own surfaces hand the keyboard back by writing a row into the focus space. No
-        // row resolves there any more, so the value is translated into the table's focus on sight.
+        // The backstop for anything that still hands the keyboard back by writing a row into the
+        // focus space: no row resolves there, so the value is translated into the table's focus on
+        // sight. The surfaces that close a panel go through `homing(onto:)` instead (#777).
         .onChange(of: selection.focus.wrappedValue) { _, focus in
             guard case let .row(id) = focus else { return }
             table.focus(onto: id)
@@ -83,14 +85,6 @@ struct FeedView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Feed")
-    }
-
-    /// The deck's selection with the keyboard's way home rewired onto the table. A row closing its
-    /// own panel from inside a cell cannot ride `FocusState` back — nothing binds `.row` any more.
-    private var routed: FeedRowSelection {
-        var routed = selection
-        routed.homeward = { [table] id in table.focus(onto: id) }
-        return routed
     }
 
     /// The way back down, on screen only while the reading has stopped following.

@@ -52,7 +52,7 @@ struct FeedTable: NSViewRepresentable {
             isUnderComposer: isUnderComposer,
             washed: washed,
             unfolded: $unfolded,
-            environment: context.environment,
+            environment: FeedCellEnvironment(context.environment),
         )
     }
 }

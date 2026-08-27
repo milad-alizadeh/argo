@@ -20,8 +20,9 @@ import SwiftUI
     var washed: FeedRow.ID?
     /// Which prompts the reader has unfolded — the feed's copy, written through.
     var unfolded: Binding<Set<FeedRow.ID>>
-    /// The SwiftUI environment at the representable, replayed into every cell.
-    var environment: EnvironmentValues
+    /// The cockpit's environment at the representable, replayed into every cell — by name, never
+    /// as `\.self`. See `FeedCellEnvironment`.
+    var environment: FeedCellEnvironment
 
     /// One row of the reading, dressed as the column drew it: its step from the row above, the
     /// feed's gutters, and the measure — per cell, since every cell is the column's full width.
@@ -43,8 +44,8 @@ import SwiftUI
             .background {
                 if washed == row.id {
                     RoundedRectangle(cornerRadius: ArgoRadius.control)
-                        .fill(environment.argo.color.state
-                            .muted(environment.argo.color.interaction.accent))
+                        .fill(environment.theme.color.state
+                            .muted(environment.theme.color.interaction.accent))
                 }
             }
             .argoAnimation(.bloom, value: washed == row.id)
@@ -52,13 +53,13 @@ import SwiftUI
             // the Turn it offers is a stretch of the WHOLE reading and a row cannot see one.
             .argoFeedCopyMenu(rows: rows, index: index)
         guard !row.kind.isWorkingThread else {
-            return AnyView(dressed.environment(\.self, environment))
+            return AnyView(dressed.argoFeedCell(environment))
         }
         return AnyView(
             dressed
                 .padding(.horizontal, ArgoFeedRow.inset)
                 .argoFeedMeasure()
-                .environment(\.self, environment),
+                .argoFeedCell(environment),
         )
     }
 

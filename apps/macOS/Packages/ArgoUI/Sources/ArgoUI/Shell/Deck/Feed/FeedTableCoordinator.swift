@@ -116,7 +116,7 @@ import SwiftUI
             : ArgoSpacing.section
         // The gutter above it grows by whatever the canopy covers. An inset and not a frame: the
         // rows keep the deck's full height to scroll through, and only START below the glass.
-        scroller?.contentInsets.top = ArgoSpacing.section + fresh.environment.argoDeckCanopy
+        scroller?.contentInsets.top = ArgoSpacing.section + fresh.environment.deckCanopy
         // Never: the overview lane stands beside every reading and its lit rectangle IS this
         // scrollbar, so the platform's own would draw a second one between the reading and its map.
         scroller?.hasVerticalScroller = false
@@ -187,10 +187,12 @@ import SwiftUI
     /// The equal-rows path: nothing structural moved, so only what a cell DRAWS can be stale —
     /// and only the rows whose rendered fact changed are touched, because replacing a rootView
     /// resets whatever in-row state the reader had (a text selection, a hover).
-    private func touchUp(against fresh: FeedTableModel, from staleEnvironment: EnvironmentValues?) {
+    private func touchUp(
+        against fresh: FeedTableModel,
+        from staleEnvironment: FeedCellEnvironment?,
+    ) {
         // A theme or type-size flip re-inks everything and retires every measured height.
-        if staleEnvironment?.colorScheme != fresh.environment.colorScheme
-            || staleEnvironment?.dynamicTypeSize != fresh.environment.dynamicTypeSize {
+        if fresh.environment.reInks(against: staleEnvironment) {
             dropMeasuredHeights()
             refresh(rows: visibleRows(), remeasuring: true)
         }

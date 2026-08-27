@@ -45,7 +45,7 @@ import SwiftUI
             isUnderComposer: false,
             washed: nil,
             unfolded: .constant([]),
-            environment: EnvironmentValues(),
+            environment: FeedCellEnvironment(),
         )
     }
 }
