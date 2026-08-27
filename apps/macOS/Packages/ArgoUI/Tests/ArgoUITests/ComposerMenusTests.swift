@@ -4,63 +4,38 @@ import Testing
 
 /// The composition the two menus share: which one a line opens, where Escape leaves it, what a
 /// Session change drops, and what ⏎ picks (#752).
-///
-/// Every rule here was an `.onChange` on `SessionComposer`'s body until this suite existed, which
-/// is why the one composition with a shipped-bug history had never been asserted.
 @Suite("Composer menus")
 struct ComposerMenusTests {
-    // MARK: - Which menu the line opens
-
-    @Test
-    func `a slash at the head of the line opens the command menu`() {
-        var menus = ComposerMenus()
-        let line = Self.line("/imp")
-        menus.lineChanged(from: "", to: line, commands: { Self.catalog })
-
-        #expect(menus.listing(on: line)?.sigil == ComposerMenu.Sigil.command)
+    /// One line, and which menu it opens once the tree it needs has answered.
+    struct Opening {
+        let line: ComposerMenuLine
+        /// Whether the `@` read has come back. The tree arrives after the keystroke that asked for
+        /// it, so "still being read" is a state of its own and not an empty tree.
+        var answered = false
+        let sigil: ComposerMenu.Sigil?
     }
 
-    /// A `codex` Session declares no command surface, so `/` is a word it is being told rather than
-    /// a menu (design decision 14). The `@` menu is offered on one condition less.
-    @Test
-    func `a Session that runs no commands opens no command menu`() {
-        var line = Self.line("/imp")
-        line.canRunCommands = false
+    private static let openings = [
+        Opening(line: line("/imp"), sigil: .command),
+        // A `codex` Session declares no command surface, so `/` is a word it is being told rather
+        // than a menu (design decision 14).
+        Opening(line: line("/imp", canRunCommands: false), sigil: nil),
+        Opening(line: line("Have a look at @READ"), answered: true, sigil: .file),
+        // "No file matches" is a statement about a tree, and there is none here to have looked in.
+        Opening(line: line("Have a look at @READ"), sigil: nil),
+        Opening(line: line("@READ", workspaceRoot: nil), answered: true, sigil: nil),
+        Opening(line: line("just some prose"), answered: true, sigil: nil),
+    ]
+
+    @Test(arguments: openings)
+    func `a line opens the menu its sigil names, and no other`(_ opening: Opening) {
         var menus = ComposerMenus()
-        menus.lineChanged(from: "", to: line, commands: { Self.catalog })
+        menus.lineChanged(from: "", to: opening.line, commands: { Self.catalog })
+        if opening.answered {
+            menus.workspaceAnswered(Self.tree)
+        }
 
-        #expect(menus.listing(on: line) == nil)
-    }
-
-    @Test
-    func `an at sign opens the file menu once the Workspace tree has answered`() {
-        var menus = ComposerMenus()
-        let line = Self.line("@READ")
-        menus.lineChanged(from: "", to: line, commands: { Self.catalog })
-        menus.read(Self.tree)
-
-        #expect(menus.listing(on: line)?.sigil == ComposerMenu.Sigil.file)
-    }
-
-    /// "No file matches" is a statement about a tree, and there is no tree here to have looked in.
-    @Test
-    func `an at sign over a tree still being read opens nothing at all`() {
-        var menus = ComposerMenus()
-        let line = Self.line("@READ")
-        menus.lineChanged(from: "", to: line, commands: { Self.catalog })
-
-        #expect(menus.listing(on: line) == nil)
-    }
-
-    @Test
-    func `an at sign with no Workspace to name a file in opens nothing`() {
-        var line = Self.line("@READ")
-        line.workspaceRoot = nil
-        var menus = ComposerMenus()
-        menus.lineChanged(from: "", to: line, commands: { Self.catalog })
-        menus.read(Self.tree)
-
-        #expect(menus.listing(on: line) == nil)
+        #expect(menus.listing(on: opening.line)?.sigil == opening.sigil)
     }
 
     /// The tree is read on the token OPENING and not on every keystroke, because the Workspace does
@@ -80,10 +55,8 @@ struct ComposerMenusTests {
 
     // MARK: - Escape
 
-    /// Not a mode: the next keystroke asks for it back, because typing on is the reader still
-    /// looking for a command.
     @Test
-    func `an Escape puts the menu away until the line changes`() {
+    func `an Escape puts the open menu away`() {
         var menus = ComposerMenus()
         let line = Self.line("/imp")
         menus.lineChanged(from: "", to: line, commands: { Self.catalog })
@@ -92,8 +65,17 @@ struct ComposerMenusTests {
 
         #expect(swallowed)
         #expect(menus.listing(on: line) == nil)
+    }
 
-        menus.lineChanged(from: line.text, to: Self.line("/impl"), commands: { Self.catalog })
+    /// Not a mode: typing on is the reader still looking for a command.
+    @Test
+    func `the next keystroke asks the dismissed menu back`() {
+        var menus = ComposerMenus()
+        menus.lineChanged(from: "", to: Self.line("/imp"), commands: { Self.catalog })
+        menus.dismissed(on: Self.line("/imp"))
+
+        menus.lineChanged(from: "/imp", to: Self.line("/impl"), commands: { Self.catalog })
+
         #expect(menus.listing(on: Self.line("/impl")) != nil)
     }
 
@@ -102,9 +84,8 @@ struct ComposerMenusTests {
     @Test
     func `an Escape over a line with no menu is left to the responder chain`() {
         var menus = ComposerMenus()
-        let line = Self.line("just some prose")
 
-        let swallowed = menus.dismissed(on: line)
+        let swallowed = menus.dismissed(on: Self.line("just some prose"))
 
         #expect(swallowed == false)
     }
@@ -116,9 +97,9 @@ struct ComposerMenusTests {
     @Test
     func `a Session change drops the file list`() {
         var menus = ComposerMenus()
-        let line = Self.line("@READ")
+        let line = Self.line("Have a look at @READ")
         menus.lineChanged(from: "", to: line, commands: { Self.catalog })
-        menus.read(Self.tree)
+        menus.workspaceAnswered(Self.tree)
 
         menus.sessionChanged(to: line, commands: { Self.catalog })
 
@@ -136,22 +117,32 @@ struct ComposerMenusTests {
 
     // MARK: - The cursor and what ⏎ picks
 
-    /// The cursor walks the listing that is DRAWN, so the row under it and the row ⏎ takes cannot
-    /// fall out of step with the list on screen.
     @Test
-    func `the cursor walks the drawn listing`() throws {
+    func `the cursor starts on the top row of the drawn listing`() throws {
         var menus = ComposerMenus()
         let line = Self.line("/")
         menus.lineChanged(from: "", to: line, commands: { Self.catalog })
         menus.settle(on: line)
-        let rows = try #require(menus.listing(on: line)?.rows)
 
+        let rows = try #require(menus.listing(on: line)?.rows)
         #expect(menus.current == rows.first?.id)
+    }
+
+    /// The rows the cursor walks are the rows on screen, so what ⏎ takes cannot fall out of step
+    /// with the list the reader is looking at.
+    @Test
+    func `an arrow moves the cursor to the next row of the drawn listing`() throws {
+        var menus = ComposerMenus()
+        let line = Self.line("/")
+        menus.lineChanged(from: "", to: line, commands: { Self.catalog })
+        menus.settle(on: line)
+        let listing = try #require(menus.listing(on: line))
 
         let walked = menus.walk(.walkDown, on: line)
 
         #expect(walked)
-        #expect(menus.current == rows[1].id)
+        #expect(menus.current == listing.rows[1].id)
+        #expect(menus.picked(on: line) == listing.pick(listing.rows[1]))
     }
 
     /// `false` where there is no menu, so the field's own caret movement is untouched on every line
@@ -190,12 +181,12 @@ struct ComposerMenusTests {
     @Test
     func `a tree that arrives late still puts Return on its top row`() throws {
         var menus = ComposerMenus()
-        let line = Self.line("@READ")
+        let line = Self.line("Have a look at @READ")
         menus.lineChanged(from: "", to: line, commands: { Self.catalog })
         menus.settle(on: line)
         #expect(menus.picked(on: line) == nil)
 
-        menus.read(Self.tree)
+        menus.workspaceAnswered(Self.tree)
         menus.settle(on: line)
 
         let picked = try #require(menus.picked(on: line))
@@ -215,7 +206,16 @@ struct ComposerMenusTests {
         builtins: .read,
     )
 
-    private static func line(_ text: String) -> ComposerMenuLine {
-        ComposerMenuLine(text: text, canRunCommands: true, workspaceRoot: "/tmp/argo")
+    private static func line(
+        _ text: String,
+        canRunCommands: Bool = true,
+        workspaceRoot: String? = "/tmp/argo",
+    )
+        -> ComposerMenuLine {
+        ComposerMenuLine(
+            text: text,
+            canRunCommands: canRunCommands,
+            workspaceRoot: workspaceRoot,
+        )
     }
 }

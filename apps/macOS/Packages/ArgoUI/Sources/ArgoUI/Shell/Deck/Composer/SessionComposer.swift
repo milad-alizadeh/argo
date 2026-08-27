@@ -42,8 +42,7 @@ struct SessionComposer: View {
     /// stamps later than this and takes the seam away.
     @State private var enteredAtMs = 0
 
-    /// Which menu the line has open and where the keyboard is in it. None of it survives a close,
-    /// and all of it is private: the rules live in the value, not in this body.
+    /// Which menu the line has open and where the keyboard is in it. None of it survives a close.
     @State private var menus = ComposerMenus()
 
     init(
@@ -151,7 +150,8 @@ struct SessionComposer: View {
         .onExitCommand { menus.dismissed(on: line) }
         .onChange(of: draft.text) { was, _ in lineChanged(from: was) }
         .onChange(of: composer.sessionID, initial: true) { _, _ in
-            guard menus.sessionChanged(to: line, commands: commands) else { return }
+            let mustRead = menus.sessionChanged(to: line, commands: commands)
+            guard mustRead else { return }
             readWorkspace()
         }
         .onChange(of: menus.listing(on: line), initial: true) { _, _ in menus.settle(on: line) }
@@ -213,15 +213,15 @@ struct SessionComposer: View {
         }
     }
 
-    /// The line has changed under the menus, and the `@` tree may need reading again. The read is
-    /// launched and never waited on, so a hundred-thousand-path tree lists behind a composer that
-    /// stayed typeable throughout.
     private func lineChanged(from was: String) {
-        guard menus.lineChanged(from: was, to: line, commands: commands) else { return }
+        let mustRead = menus.lineChanged(from: was, to: line, commands: commands)
+        guard mustRead else { return }
         readWorkspace()
     }
 
+    /// Launched and never waited on, so a hundred-thousand-path tree lists behind a composer that
+    /// stayed typeable throughout.
     private func readWorkspace() {
-        Task { await menus.read(files()) }
+        Task { await menus.workspaceAnswered(files()) }
     }
 }

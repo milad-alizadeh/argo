@@ -3,13 +3,8 @@ import ArgoEngine
 /// Which menu the composer's line has open, where the keyboard is in it, and what each event does
 /// to both — `/` and `@` (#685, #687, #752).
 ///
-/// A VALUE and not an extension on the view: every rule below used to be an `.onChange` on
-/// `SessionComposer`'s body, where the one composition with a shipped-bug history was the one part
-/// no test could reach. The four pieces of state are private here because nothing else has ever
-/// needed them.
-///
-/// The two reads stay the view's — `commands` is passed in per event and the `@` tree is handed
-/// back through `read`, because a value cannot await.
+/// A value holds no `Task`, so both reads stay the view's: `commands` arrives per event, and the
+/// `@` tree comes back through `workspaceAnswered`.
 struct ComposerMenus {
     /// The catalog as the last open read it, so a skill installed while the Session was up lands in
     /// the very next list. No watcher, no restart.
@@ -50,10 +45,10 @@ struct ComposerMenus {
     mutating func walk(_ key: ComposerKeyIntent, on line: ComposerMenuLine) -> Bool {
         let ids = ids(on: line)
         guard !ids.isEmpty else { return false }
-        if key == .walkDown {
-            cursor.down(over: ids)
-        } else {
-            cursor.up(over: ids)
+        switch key {
+        case .walkDown: cursor.down(over: ids)
+        case .walkUp: cursor.up(over: ids)
+        case .submit, .newline, .dismiss, .pass: return false
         }
         return true
     }
@@ -77,7 +72,7 @@ struct ComposerMenus {
     }
 
     /// Re-read whatever the line has just opened, and say whether the Workspace tree must be read
-    /// again — the caller owns that await, and the answer comes back through `read`.
+    /// again — the caller owns that await, and the answer comes back through `workspaceAnswered`.
     ///
     /// The `@` read is asked for on the token OPENING rather than on every keystroke, because the
     /// tree does not change while a word is being typed into it.
@@ -105,7 +100,7 @@ struct ComposerMenus {
 
     /// The `@` read has answered. The tree is prepared here rather than by the caller, so the cost
     /// of folding a hundred thousand paths is paid once per open and nowhere else.
-    mutating func read(_ paths: [String]) {
+    mutating func workspaceAnswered(_ paths: [String]) {
         workspaceFiles = WorkspaceTree(paths)
     }
 
