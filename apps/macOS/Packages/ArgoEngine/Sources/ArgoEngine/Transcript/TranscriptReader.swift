@@ -117,7 +117,41 @@ public actor TranscriptReader {
             return results
         }
 
+        // A finished background agent writes its report into its OWN file, so the only trace of it
+        // in this one is this notification. Suppressed without being routed, the report would be
+        // lost rather than tidied.
+        if let report = taskNotification(message.content) {
+            return reported(report, in: message)
+        }
+
         return message.isMeta ? metaEvents(message) : promptEvents(message)
+    }
+
+    /// A delegating call's outcome, arriving late.
+    ///
+    /// A SECOND outcome for a call the launch result already resolved, which is what a background
+    /// agent's report is — and a resumed agent files a third. The id is what carries that: every
+    /// surface reads outcomes by id, so the newest report replaces the last rather than stacking a
+    /// row beside it.
+    private func reported(
+        _ report: TaskNotification,
+        in message: MessageRecord,
+    )
+        -> [TranscriptEvent] {
+        // A report quoting an id this file never opened belongs to a call in another file (a
+        // resumed chain), the same rule `evidence(for:)` follows.
+        guard openCalls[report.callID] != nil else { return [] }
+        return [.toolCallOutcome(ToolCallOutcome(
+            id: report.callID,
+            status: report.status,
+            // `derived`: the text is read off an external record rather than owned by Argo.
+            result: report.text.map { .output(OutputEvidence(tier: .derived, text: $0)) },
+            endedAtMs: message.timestampMs,
+            // The notification reports the delegate's own spend in a shape of its own, which
+            // nothing reads yet. Claiming nil is the honest degradation; claiming zero is not.
+            usage: nil,
+            subagentID: report.subagentID,
+        ))]
     }
 
     /// The CLI talking to itself. Almost all of it means nothing to a reader — but a skill's
