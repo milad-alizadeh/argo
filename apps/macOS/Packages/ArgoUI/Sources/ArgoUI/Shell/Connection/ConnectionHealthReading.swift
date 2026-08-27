@@ -17,6 +17,26 @@ public struct PortConnection: Equatable, Sendable, Identifiable {
         self.health = health
     }
 
+    /// One port folded from the two sources that know about it: what the registries SHOW, which is
+    /// the row's own state, and what a read RECORDED, which is `observed`.
+    ///
+    /// The derived fault wins where there is one. It is account-level, and an account-level failure
+    /// is the prerequisite of every other: there is no token left to read a scope with, so a
+    /// recorded `stale` under an expired grant would name the wrong repair.
+    public init(port: ConnectPort, account: AccountRecord, observed: BindingHealth) {
+        let derived: ConnectionFault? = if case let .broken(_, _, fault) = port.state {
+            fault.connectionFault
+        } else {
+            nil
+        }
+        self.init(
+            port: port.port,
+            account: account,
+            health: derived.map { BindingHealth(fault: $0, lastSuccess: observed.lastSuccess) }
+                ?? observed,
+        )
+    }
+
     public var id: AccountPort {
         port
     }

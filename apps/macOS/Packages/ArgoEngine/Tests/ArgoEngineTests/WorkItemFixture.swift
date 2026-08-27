@@ -87,8 +87,10 @@ extension AccountGrant {
 
 extension ResolvedBinding {
     /// A Work Item Binding resolved onto one GitHub identity, which is every input a read needs.
+    /// `regranted` is the same identity holding a NEW token, which is what authorizing an Account
+    /// again produces: the Binding either side of it is identical.
     static func stub(
-        accountID: String = "1", scope: String = "acme/api",
+        accountID: String = "1", scope: String = "acme/api", regranted: String? = nil,
     )
         -> ResolvedBinding {
         let account = AccountRecord(
@@ -97,7 +99,7 @@ extension ResolvedBinding {
         return ResolvedBinding(
             binding: ProjectBinding(port: .workItem, accountID: account.id, scope: scope),
             account: account,
-            grant: .listing,
+            grant: regranted.map { AccountGrant(accessToken: $0, scopes: ["repo"]) } ?? .listing,
         )
     }
 }

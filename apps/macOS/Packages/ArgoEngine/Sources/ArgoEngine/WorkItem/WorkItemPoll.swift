@@ -42,6 +42,7 @@ public actor WorkItemPoll {
     private let sleep: Sleeper
     private let now: @Sendable () -> Date
     private var loop: Task<Void, Never>?
+    private var pointedAt: Pointing?
 
     public init(
         port: WorkItemPort,
@@ -73,6 +74,53 @@ public actor WorkItemPoll {
     public func stop() {
         loop?.cancel()
         loop = nil
+    }
+
+    /// A minute. A desktop app receives no webhooks, so a room is only ever as right as its last
+    /// tick — and the provider's hourly budget is what stops the number being smaller.
+    public static let interval = Duration.seconds(60)
+
+    /// Point at whatever a Project reads Work Items through, or stop.
+    ///
+    /// The decision and not the caller's, so the one surface that owns a Binding cannot disagree
+    /// with the poll about what an unbound port means. Both `unbound` and `broken` stop rather than
+    /// fail: a Project with no Work Item provider is a fully-onboarded state (`CONTEXT.md` L1 ·
+    /// Binding), and a Binding that has come undone is the Connect panel's to repair rather than a
+    /// read to keep retrying into the health chip.
+    ///
+    /// Stopping leaves the LISTING where it is — the same rule that keeps a failed tick from
+    /// blanking a room keeps a rebind from blanking it either.
+    /// Re-pointing at what it is already reading does nothing, so a surface may call this on every
+    /// rebuild: `start` reads immediately, and a panel that rebuilds on each keystroke would
+    /// otherwise spend a request per act.
+    public func point(_ resolution: BindingResolution, at projectID: String?) async {
+        guard let projectID, case let .ready(binding) = resolution else {
+            pointedAt = nil
+            return stop()
+        }
+        let target = Pointing(binding: binding, projectID: projectID)
+        guard target != pointedAt else { return }
+        pointedAt = target
+        start(
+            WorkItemPollTarget(binding: binding, projectID: projectID),
+            every: Self.interval,
+        )
+    }
+
+    /// What the loop is currently reading, by the parts of it that can be compared.
+    private struct Pointing: Equatable {
+        let binding: ProjectBinding
+        let projectID: String
+        /// The token, because re-authorizing an Account leaves the Binding identical and replaces
+        /// the grant — and a loop that treated that as unchanged would poll for the rest of the
+        /// launch on a token the provider has stopped taking.
+        let accessToken: String
+
+        init(binding: ResolvedBinding, projectID: String) {
+            self.binding = binding.binding
+            self.projectID = projectID
+            self.accessToken = binding.grant.accessToken
+        }
     }
 
     /// One read. Public because a Work room's Refresh is the same act as a tick, and two paths to

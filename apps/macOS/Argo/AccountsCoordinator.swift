@@ -28,6 +28,14 @@ final class AccountsCoordinator {
     /// What Argo has observed about each Binding's connection. Live and unpersisted, so a launch
     /// opens on what it can see rather than on what yesterday could.
     let health = ConnectionHealthLedger()
+    /// The active Project's Work Items as the last poll that landed read them, and the loop that
+    /// fills it. Here rather than on the cockpit because the poll reads through a Binding and files
+    /// its failures on `health` — both of which are this half's, and neither of which the Hub has
+    /// ever heard of.
+    let workItemLedger = WorkItemLedger()
+    /// Pointed on every `refresh`, which is every act that could have moved a Binding. Re-pointing
+    /// at an unchanged one costs nothing — the loop holds what it is reading.
+    private let workItems: WorkItemPoll
 
     /// Whether the panel is meant to be up. Kept apart from `reading` because every act ends in a
     /// rebuild, and a rebuild that decided for itself would re-open a panel the user just closed.
@@ -47,6 +55,9 @@ final class AccountsCoordinator {
         self.accounts = store
         self.bindings = ProjectBindings(projects: projects, accounts: store)
         self.authorization = GitHubAuthorization(accounts: store)
+        self.workItems = WorkItemPoll(
+            port: GitHubWorkItems(), health: health, items: workItemLedger,
+        )
     }
 
     /// Open the panel on a Project, or on none: onboarding IS creating a Project (ADR-0015), so
@@ -135,6 +146,7 @@ final class AccountsCoordinator {
     func refresh() async {
         let ports = await resolvedPorts()
         connections = await healthReading(over: ports)
+        await workItems.point(workItemBinding(), at: project?.id)
         guard isOpen else { return }
         await show(ports: ports)
     }
