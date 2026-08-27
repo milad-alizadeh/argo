@@ -42,20 +42,8 @@ struct SessionComposer: View {
     /// stamps later than this and takes the seam away.
     @State private var enteredAtMs = 0
 
-    // The four below are the menus' own state and none survives one closing. Internal rather than
-    // private because `SessionComposer+Menus` reads all four, and a SwiftUI extension can hold no
-    // state of its own.
-
-    /// The catalog as the last open read it, and where the keyboard is in the list it produced.
-    @State var catalog = CommandCatalog.empty
-    /// The Workspace tree as the last `@` read answered, and `nil` before it has answered at all.
-    /// The read is asynchronous, so the two must not be one value: `[]` is a tree that was looked
-    /// in and holds nothing, and "no file matches" may only be said about a tree that was read.
-    @State var workspaceFiles: WorkspaceTree?
-    @State var cursor = ComposerMenuCursor()
-    /// Whether Escape has put a menu away over a line that would still open one. Cleared by the
-    /// next keystroke, because the reader typing again is them asking for it back.
-    @State var isDismissed = false
+    /// Which menu the line has open and where the keyboard is in it. None of it survives a close.
+    @State private var menus = ComposerMenus()
 
     init(
         composer: SessionComposerProjection.Composer,
@@ -123,13 +111,15 @@ struct SessionComposer: View {
             if !draft.attachments.isEmpty {
                 AttachmentTray(attachments: draft.attachments) { draft.remove($0) }
             }
-            queue
+            if !draft.queued.isEmpty {
+                QueuedTurnStack(turns: draft.queued) { draft.cancel($0) }
+            }
             ComposerField(
                 text: $draft.text,
                 placeholder: composer.placeholder,
                 submit: submit,
-                walk: walk(_:),
-                dismiss: dismissMenus,
+                walk: { menus.walk($0, on: line) },
+                dismiss: { menus.dismissed(on: line) },
                 attach: take,
             )
             ComposerFooter(
@@ -157,30 +147,14 @@ struct SessionComposer: View {
         ))
         // Escape from anywhere else in the vessel. The field answers its own — it holds the
         // keyboard while a menu is open, and a text view takes the key before this ever sees it.
-        .onExitCommand { dismissMenus() }
-        .onChange(of: draft.text) { was, _ in opened(was) }
+        .onExitCommand { menus.dismissed(on: line) }
+        .onChange(of: draft.text) { was, _ in lineChanged(from: was) }
         .onChange(of: composer.sessionID, initial: true) { _, _ in
-            workspaceFiles = nil
-            opened()
+            let mustRead = menus.sessionChanged(to: line, commands: commands)
+            guard mustRead else { return }
+            readWorkspace()
         }
-        // The cursor settles on whatever the list IS, whenever it changes — not once when the line
-        // opened it. The `@` tree is read asynchronously, so its rows arrive after that moment, and
-        // a cursor settled over the empty list stayed nil: ⏎ then fell past both menus and sent the
-        // half-typed line instead of picking the top row.
-        .onChange(of: menuIDs, initial: true) { _, ids in cursor.settle(over: ids) }
-    }
-
-    /// An arrow key, and whether a menu took it. `false` where there is none, so the field's own
-    /// caret movement is untouched on every line that opens nothing.
-    private func walk(_ key: ComposerKeyIntent) -> Bool {
-        let ids = menuIDs
-        guard !ids.isEmpty else { return false }
-        if key == .walkDown {
-            cursor.down(over: ids)
-        } else {
-            cursor.up(over: ids)
-        }
-        return true
+        .onChange(of: menus.listing(on: line), initial: true) { _, _ in menus.settle(on: line) }
     }
 
     /// The footer's `+`, and `nil` where the adapter takes nothing — which is what takes the
@@ -197,17 +171,18 @@ struct SessionComposer: View {
         draft.attach(incoming, canAttach: composer.canAttach)
     }
 
-    /// What is waiting on the running Turn, oldest at the top — the order they will go in, drawn
-    /// as the order they are read in.
-    @ViewBuilder private var queue: some View {
-        if !draft.queued.isEmpty {
-            VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-                ForEach(draft.queued) { turn in
-                    QueuedTurnChip(turn: turn) { draft.cancel(turn.id) }
-                }
-            }
-            .padding(.bottom, ArgoSpacing.snug)
+    /// Sent now, or queued behind the Turn in flight — `ComposerDraft` owns which, so the field
+    /// and the send control ask for the same thing.
+    ///
+    /// With a menu up and a row under the cursor, ⏎ INSERTS instead (design decision 1): a command
+    /// with arguments is the common case, and sending on ⏎ makes the argument impossible to type.
+    /// Answered here rather than by an `onKeyPress` above the field, because a `TextField` takes
+    /// Return itself and there is no intercepting it from outside.
+    private func submit() {
+        if let picked = menus.picked(on: line) {
+            return draft.take(picked)
         }
+        draft.submit(whileRunning: composer.isRunning, via: sending)
     }
 
     /// Which of the seam's three sentences is up. The order is `ComposerSeamNote`'s.
@@ -219,49 +194,34 @@ struct SessionComposer: View {
         )
     }
 
-    /// Sent now, or queued behind the Turn in flight — `ComposerDraft` owns which, so the field
-    /// and the send control ask for the same thing.
-    ///
-    /// With a menu up and a row under the cursor, ⏎ INSERTS instead (design decision 1): a command
-    /// with arguments is the common case, and sending on ⏎ makes the argument impossible to type.
-    /// Answered here rather than by an `onKeyPress` above the field, because a `TextField` takes
-    /// Return itself and there is no intercepting it from outside.
-    private func submit() {
-        if let listing, let picked = cursor.row(in: listing) {
-            return draft.take(listing.pick(picked))
-        }
-        draft.submit(whileRunning: composer.isRunning, via: sending)
+    /// The line as the menus read it.
+    private var line: ComposerMenuLine {
+        ComposerMenuLine(draft.text, on: composer)
     }
 
-    /// Stop the Turn, and empty the composer behind it (#541, ADR-0024).
+    /// The open menu takes the vessel's own width, because the description is the content: at any
+    /// stated width two thirds of a real `description:` would be an ellipsis.
     ///
-    /// The clearing happens HERE rather than off the Session going idle, and the order is what
-    /// makes it work: the queue is emptied at the click, before the record catches up and the
-    /// flush this view watches for fires. Waiting for the status to turn would be waiting for the
-    /// exact moment the queued follow-ups are released.
-    private func interrupt() {
-        draft.stopped(via: stop)
-    }
-
-    /// Ask the Session for a rung. The control shows nothing of its own, so a refusal needs no
-    /// undoing here.
-    ///
-    /// In a `Task` because the picker's setter cannot wait: the walk takes a keystroke per rung
-    /// with a gap behind each (#653), and the note lands when it resolves.
-    private func ask(for mode: SessionMode) {
-        Task {
-            do {
-                try await setMode(mode)
-                draft.modeAsked(refusedWith: nil)
-            } catch {
-                draft.modeAsked(refusedWith: error)
+    /// The gap above the vessel is the design's `base` less what the stack already contributes,
+    /// spelled as the arithmetic so moving either step keeps the gap.
+    @ViewBuilder private var menu: some View {
+        if let listing = menus.listing(on: line) {
+            ComposerMenuList(listing: listing, current: menus.current) {
+                draft.take(listing.pick($0))
             }
+            .padding(.bottom, ArgoSpacing.base - ArgoSpacing.tight)
         }
     }
 
-    /// The seam's remedy, which is not the same act as pressing send: what it puts back is
-    /// whatever the refusal stopped, and after a refused flush that is the queue, not the field.
-    private func retry() {
-        draft.retry(via: sending)
+    private func lineChanged(from was: String) {
+        let mustRead = menus.lineChanged(from: was, to: line, commands: commands)
+        guard mustRead else { return }
+        readWorkspace()
+    }
+
+    /// Launched and never waited on, so a hundred-thousand-path tree lists behind a composer that
+    /// stayed typeable throughout.
+    private func readWorkspace() {
+        Task { await menus.workspaceAnswered(files()) }
     }
 }
