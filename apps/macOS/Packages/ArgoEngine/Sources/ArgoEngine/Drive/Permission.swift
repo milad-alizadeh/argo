@@ -61,7 +61,7 @@ extension PermissionRequest.Target {
         let target: Self? = switch toolName {
         case "Bash": input.stringField("command").map(Self.command)
         case "Edit": Self.editTarget(input) { [Self.hunk(of: $0)] }
-        case "Write": Self.editTarget(input) { [Self.lines($0.stringField("content"), side: .add)] }
+        case "Write": Self.editTarget(input) { [Self.wholeFile($0.stringField("content"))] }
         case "MultiEdit": Self.editTarget(input) { ($0["edits"]?.array ?? []).map(Self.hunk(of:)) }
         default: nil
         }
@@ -77,11 +77,20 @@ extension PermissionRequest.Target {
     }
 
     private static func hunk(of edit: JSONValue) -> [DiffLine] {
-        lines(edit.stringField("old_string"), side: .del)
-            + lines(edit.stringField("new_string"), side: .add)
+        fragment(edit.stringField("old_string"), side: .del)
+            + fragment(edit.stringField("new_string"), side: .add)
     }
 
-    private static func lines(_ text: String?, side: DiffLineSide) -> [DiffLine] {
+    /// What a `Write` would put in the file, which is file content: its last newline terminates the
+    /// file rather than opening a line, so `DiffLine.lines(of:side:)` owns that rule.
+    private static func wholeFile(_ text: String?) -> [DiffLine] {
+        guard let text else { return [] }
+        return DiffLine.lines(of: text, side: .add)
+    }
+
+    /// One side of a replacement. A fragment is not a file, so every newline in it is a character
+    /// being replaced — an `Edit` that strips a trailing one must draw as a change, not a no-op.
+    private static func fragment(_ text: String?, side: DiffLineSide) -> [DiffLine] {
         guard let text, !text.isEmpty else { return [] }
         return text.split(separator: "\n", omittingEmptySubsequences: false)
             .map { DiffLine(side: side, text: String($0)) }

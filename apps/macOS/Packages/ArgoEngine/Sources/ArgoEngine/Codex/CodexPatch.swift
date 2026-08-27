@@ -63,15 +63,9 @@ enum CodexPatch {
     /// A whole file's content as one hunk, every line the same side — how `add` and `delete` carry
     /// theirs. Nothing for an empty file, which has no lines to draw.
     static func whole(_ content: String, side: DiffLineSide) -> [[DiffLine]]? {
-        var lines = content
-            .split(separator: "\n", omittingEmptySubsequences: false)
-            .map(String.init)
-        // A trailing newline splits into a final empty element that is not a line of the file.
-        if lines.last?.isEmpty == true {
-            lines.removeLast()
-        }
+        let lines = DiffLine.lines(of: content, side: side)
         guard !lines.isEmpty else { return nil }
-        return [lines.map { DiffLine(side: side, text: $0) }]
+        return [lines]
     }
 
     /// The hunks of one file's unified diff, in order, or nothing where it holds none.

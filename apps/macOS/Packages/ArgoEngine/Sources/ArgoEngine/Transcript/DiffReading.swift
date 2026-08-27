@@ -26,17 +26,9 @@ private func hunk(_ raw: JSONValue) -> DiffHunk? {
 /// The whole content of a file as one all-added hunk. A `Write` that creates reports an EMPTY patch
 /// with the content beside it, and rendering nothing would hide a whole new file.
 private func wholeFileHunk(_ content: String) -> DiffHunk? {
-    var lines = content.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-    // A trailing newline splits into a final empty element that is not a line of the file.
-    if lines.last?.isEmpty == true {
-        lines.removeLast()
-    }
+    let lines = DiffLine.lines(of: content, side: .add)
     guard !lines.isEmpty else { return nil }
-    return DiffHunk(
-        oldStart: 0,
-        newStart: 1,
-        lines: lines.map { DiffLine(side: .add, text: $0) },
-    )
+    return DiffHunk(oldStart: 0, newStart: 1, lines: lines)
 }
 
 private func count(_ hunks: [DiffHunk], _ side: DiffLineSide) -> Int {
