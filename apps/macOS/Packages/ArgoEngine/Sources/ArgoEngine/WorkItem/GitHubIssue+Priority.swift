@@ -5,9 +5,12 @@ import Foundation
 /// It is in the read contract every provider owes (`docs/domain/ports.md`), and GitHub Issues
 /// carries no priority of its own — a Projects board does, and a board is not the Binding's scope.
 /// So this adapter reads the one place a GitHub repository can state one: a **scoped label**, the
-/// same `<scope><separator><word>` shape this repo already spells `wayfinder:map` with. That makes
-/// it CONVENTION rather than DIRECT (ADR-0014), which is exactly why it degrades to absent instead
-/// of to a middle rung.
+/// same `<scope><separator><word>` shape this repo already spells `wayfinder:map` with.
+///
+/// DERIVED, and never CONVENTION: the tier word for a fact read out of a provider's own data is
+/// the observed one, and CONVENTION is reserved for what arrives over the companion channel
+/// (`CONTEXT.md` L2 · Honesty tier). Read off a naming habit rather than off a field, which is
+/// why an unreadable answer degrades to absent instead of to a middle rung nobody named.
 extension GitHubIssue {
     /// The scope a label has to open with to be read as one, folded for case: a tracker spelling it
     /// `Priority: High` means the same thing as `priority/high`.
