@@ -6,15 +6,13 @@ import Testing
 /// user is told to do about it, and only one of the four is fixed by authorizing again.
 @Suite("Work Item listing failure")
 struct WorkItemListingFailureTests {
-    private static let grant = AccountGrant(accessToken: "ghu_listing", scopes: ["repo"])
-
     private static func failure(
         body: String = "[]", raising: Error? = nil,
     ) async
         -> WorkItemFetchError? {
         let api = RecordedIssues(replies: ["&page=1": body], failure: raising)
         do {
-            _ = try await GitHubWorkItems(transport: api).list(in: "acme/api", grant: Self.grant)
+            _ = try await GitHubWorkItems(transport: api).list(in: "acme/api", grant: .listing)
             return nil
         } catch {
             return error as? WorkItemFetchError
@@ -42,12 +40,9 @@ struct WorkItemListingFailureTests {
 
     @Test
     func `a throttled read reads as rate limited`() async {
-        // GitHub hands its throttle back as a 4xx BODY, which the transport passes through like
-        // any other answer. Read as an unparseable reply it would surface as `unreachable`, and
-        // the one cause whose remedy is waiting would be the one nothing can see.
-        let body = #"{ "message": "API rate limit exceeded for user ID 1." }"#
-
-        #expect(await Self.failure(body: body) == .rateLimited)
+        // Binding-level and never `grantRefused`, even though GitHub throttles with the same 403 it
+        // refuses a token with — the remedy is waiting, not another OAuth round-trip.
+        #expect(await Self.failure(raising: HTTPTransportError.rateLimited) == .rateLimited)
     }
 
     @Test

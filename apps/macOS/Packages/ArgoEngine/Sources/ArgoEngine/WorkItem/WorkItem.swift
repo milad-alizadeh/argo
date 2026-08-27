@@ -17,9 +17,6 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
     public let closure: WorkItemClosure
     public let assignees: [String]
     public let labels: [String]
-    /// `nil` where the ticket has none — and always `nil` where the port carries no priority at
-    /// all, which is what `WorkItemPort.carriesPriority` tells apart.
-    public let priority: String?
     /// Children in the provider's own author order, which every provider serves natively.
     public let children: [Int]
     public let blockedBy: [WorkItemBlocker]
@@ -31,7 +28,6 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
         closure: WorkItemClosure,
         assignees: [String] = [],
         labels: [String] = [],
-        priority: String? = nil,
         children: [Int] = [],
         blockedBy: [WorkItemBlocker] = [],
     ) {
@@ -41,7 +37,6 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
         self.closure = closure
         self.assignees = assignees
         self.labels = labels
-        self.priority = priority
         self.children = children
         self.blockedBy = blockedBy
     }

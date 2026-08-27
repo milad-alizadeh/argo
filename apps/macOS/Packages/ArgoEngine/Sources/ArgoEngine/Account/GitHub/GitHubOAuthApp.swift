@@ -21,5 +21,9 @@ public enum GitHubOAuthApp {
     /// transport.
     static let deviceCodeEndpoint = "https://github.com/login/device/code"
     static let accessTokenEndpoint = "https://github.com/login/oauth/access_token"
-    static let userEndpoint = "https://api.github.com/user"
+
+    /// The API's host, which the OAuth endpoints above are deliberately NOT on — GitHub serves the
+    /// device flow from the web host and everything else from this one.
+    static let apiHost = "https://api.github.com"
+    static let userEndpoint = "\(apiHost)/user"
 }

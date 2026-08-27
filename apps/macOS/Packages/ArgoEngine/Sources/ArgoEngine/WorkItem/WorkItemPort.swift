@@ -5,12 +5,8 @@ import Foundation
 /// One method, because a listing is what a poll needs and Argo performs no provider mutations
 /// yet. A second provider is a second file conforming here, not a branch in the poll.
 public protocol WorkItemPort: Sendable {
-    /// Whether this provider carries a priority at all — a capability, known before any read, and
-    /// therefore not something a `nil` on one ticket could ever say. It decides whether a priority
-    /// affordance EXISTS; `WorkItem.priority` decides what a present one shows.
-    var carriesPriority: Bool { get }
-
-    /// Every Work Item the grant can see in the scope, children and verified blockers included.
+    /// Every open Work Item the grant can see in the scope, children and verified blockers
+    /// included.
     func list(in scope: String, grant: AccountGrant) async throws -> [WorkItem]
 }
 

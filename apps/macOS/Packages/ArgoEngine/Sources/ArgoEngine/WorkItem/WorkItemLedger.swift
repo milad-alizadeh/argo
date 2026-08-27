@@ -2,13 +2,9 @@ import Foundation
 
 /// What each Project's Work Item port last answered with, and the only place a listing lives.
 ///
-/// **Nothing here is persisted** (ADR-0008). A Work Item's content is the provider's, read through
-/// and cached for as long as the app runs; a launch that opened on yesterday's listing would be
-/// rendering a DIRECT-looking claim about a read it has not made.
-///
-/// A listing is REPLACED whole or left alone, never merged. That is what makes the failure rule
-/// true by construction rather than by care: the poll records only what it read, so a refused or
-/// throttled read cannot empty a room that was full a second ago.
+/// **Nothing here is persisted** (ADR-0008): a launch that opened on yesterday's listing would be
+/// a DIRECT-looking claim about a read it has not made. A listing is replaced whole or left alone,
+/// never merged, which is what stops a failed poll emptying a room that was full a second ago.
 public actor WorkItemLedger {
     private var listings: [String: [WorkItem]] = [:]
 

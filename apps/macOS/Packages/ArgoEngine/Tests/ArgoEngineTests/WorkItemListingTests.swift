@@ -6,14 +6,12 @@ import Testing
 /// poll are both built on (`CONTEXT.md` → Ports).
 @Suite("Work Item listing")
 struct WorkItemListingTests {
-    private static let grant = AccountGrant(accessToken: "ghu_listing", scopes: ["repo"])
-
     private static func list(
         _ replies: [String: String],
     ) async throws
         -> ([WorkItem], RecordedIssues) {
         let api = RecordedIssues(replies: replies)
-        let items = try await GitHubWorkItems(transport: api).list(in: "acme/api", grant: grant)
+        let items = try await GitHubWorkItems(transport: api).list(in: "acme/api", grant: .listing)
         return (items, api)
     }
 
@@ -120,12 +118,11 @@ struct WorkItemListingTests {
     }
 
     @Test
-    func `GitHub Issues carries no priority`() async throws {
-        // A capability, known before any read — which is what a `nil` on one ticket could never
-        // say. Projects carries a priority, on a board rather than on the issue.
-        let (items, _) = try await Self.list(["&page=1": IssueJSON.list([IssueJSON(number: 1)])])
+    func `only open Work Items are listed`() async throws {
+        // A closed ticket has left the room, and asking for every issue a repository ever had
+        // costs a poll two extra requests per issue on edges nobody is waiting on.
+        let (_, api) = try await Self.list(["&page=1": IssueJSON.list([IssueJSON(number: 1)])])
 
-        #expect(GitHubWorkItems().carriesPriority == false)
-        #expect(items.first?.priority == nil)
+        #expect(await api.urls().allSatisfy { $0.contains("state=open") })
     }
 }

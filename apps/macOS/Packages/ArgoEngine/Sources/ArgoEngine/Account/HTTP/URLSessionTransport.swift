@@ -16,6 +16,13 @@ public struct URLSessionTransport: HTTPTransport {
     public func send(_ request: HTTPRequest) async throws -> Data {
         let (data, response) = try await session.data(for: urlRequest(request))
         guard let http = response as? HTTPURLResponse else { return data }
+        // Asked BEFORE the refusal, because GitHub throttles with the same 403 it refuses a token
+        // with: `x-ratelimit-remaining: 0` on a primary limit, `retry-after` on a secondary one,
+        // and 429 for either. Nothing behind this seam sees a header, so this is the only place the
+        // two can still be told apart.
+        if Self.isThrottled(http) {
+            throw HTTPTransportError.rateLimited
+        }
         // A refused token is its own answer and never a body worth parsing — read as data it would
         // surface as an undocumented reply rather than as the revoked grant it is.
         if http.statusCode == 401 || http.statusCode == 403 {
@@ -28,6 +35,17 @@ public struct URLSessionTransport: HTTPTransport {
             throw HTTPTransportError.status(code: http.statusCode)
         }
         return data
+    }
+
+    /// A 429 is always a limit. A 403 is one only where the headers say so, and a 403 with a budget
+    /// still on it is a genuine refusal.
+    private static func isThrottled(_ response: HTTPURLResponse) -> Bool {
+        if response.statusCode == 429 {
+            return true
+        }
+        guard response.statusCode == 403 else { return false }
+        let header = response.value(forHTTPHeaderField:)
+        return header("x-ratelimit-remaining") == "0" || header("retry-after") != nil
     }
 
     private func urlRequest(_ request: HTTPRequest) throws -> URLRequest {

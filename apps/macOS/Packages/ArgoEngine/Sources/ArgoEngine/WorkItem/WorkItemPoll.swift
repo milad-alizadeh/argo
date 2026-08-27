@@ -12,6 +12,20 @@ public struct WorkItemPollTarget: Sendable {
         self.binding = binding
         self.projectID = projectID
     }
+
+    /// The three facts a read and a health record need, named here so the poll asks the target
+    /// rather than walking `binding.binding` at every site.
+    var scope: String {
+        binding.binding.scope
+    }
+
+    var accountID: String {
+        binding.binding.accountID
+    }
+
+    var projectBinding: ProjectBinding {
+        binding.binding
+    }
 }
 
 /// The repeating read of one Project's Work Items — a desktop app receives no webhooks, so polling
@@ -51,7 +65,7 @@ public actor WorkItemPoll {
             while !Task.isCancelled {
                 guard let self else { return }
                 await poll(target)
-                guard await waited(interval) else { return }
+                guard await sleptWithoutCancelling(interval) else { return }
             }
         }
     }
@@ -65,11 +79,9 @@ public actor WorkItemPoll {
     /// it would be two chances to record health differently.
     public func poll(_ target: WorkItemPollTarget) async {
         do {
-            let listed = try await port.list(
-                in: target.binding.binding.scope, grant: target.binding.grant,
-            )
+            let listed = try await port.list(in: target.scope, grant: target.binding.grant)
             await items.record(listed, for: target.projectID)
-            await health.succeeded(target.binding.binding, in: target.projectID, at: now())
+            await health.succeeded(target.projectBinding, in: target.projectID, at: now())
         } catch {
             await record(error as? WorkItemFetchError ?? .unreachable, of: target)
         }
@@ -79,14 +91,14 @@ public actor WorkItemPoll {
     /// what was fetched where it was, old and still accurately DERIVED.
     private func record(_ error: WorkItemFetchError, of target: WorkItemPollTarget) async {
         guard let cause = error.cause else {
-            await health.grantRefused(target.binding.binding.accountID)
+            await health.grantRefused(target.accountID)
             return
         }
-        await health.failed(target.binding.binding, in: target.projectID, cause: cause)
+        await health.failed(target.projectBinding, in: target.projectID, cause: cause)
     }
 
     /// `false` once the wait was cancelled, which is the loop's only exit besides `stop()`.
-    private func waited(_ interval: Duration) async -> Bool {
+    private func sleptWithoutCancelling(_ interval: Duration) async -> Bool {
         await (try? sleep(interval)) != nil
     }
 }

@@ -2,10 +2,9 @@ import Foundation
 
 /// One issue as GitHub's REST API serves it, parsed at the boundary and nowhere else.
 ///
-/// The two summaries carry counts and no numbers, so they cannot BE the edges — what they are is
-/// the cheap answer to "is there an edge here at all", which is what keeps a hundred-issue listing
-/// from costing two hundred extra requests. `totalBlockedBy` rather than `blockedBy`: the latter
-/// counts open blockers only, and a cancelled blocker is exactly the edge Argo must still see.
+/// The two summaries carry counts and no numbers, so they answer "is there an edge here at all"
+/// and never which. `totalBlockedBy` rather than `blockedBy`: the latter counts OPEN blockers
+/// only, and a cancelled blocker is exactly the edge Argo must still see.
 struct GitHubIssue: Decodable {
     let number: Int
     let title: String

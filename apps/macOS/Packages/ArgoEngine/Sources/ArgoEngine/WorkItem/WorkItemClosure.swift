@@ -18,10 +18,9 @@ public enum WorkItemClosure: Equatable, Sendable, CaseIterable {
 
     /// Whether a blocker in this closure lets its dependent proceed.
     ///
-    /// A ruled-out blocker satisfies nothing: Argo disagrees with the GitHub and Linear UIs here,
-    /// because silently unblocking work whose premise was cancelled hides a decision a human still
-    /// owes. An UNREADABLE closure satisfies, so a port that cannot read closure kinds degrades to
-    /// a chrome notice rather than stranding every map it touches.
+    /// A ruled-out blocker satisfies nothing — Argo disagrees with the GitHub and Linear UIs here.
+    /// An UNREADABLE closure satisfies, so a port that cannot read closure kinds costs a notice
+    /// rather than stranding every map it touches.
     public var satisfiesBlocker: Bool {
         switch self {
         case .open, .ruledOut: false

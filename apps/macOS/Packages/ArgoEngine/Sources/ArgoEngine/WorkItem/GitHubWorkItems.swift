@@ -11,24 +11,21 @@ public struct GitHubWorkItems: WorkItemPort {
         self.transport = transport
     }
 
-    /// GitHub Issues has no priority field. Projects carries one, on a board rather than on the
-    /// issue, and reading it is a different scope through a different API.
-    public var carriesPriority: Bool {
-        false
-    }
-
     /// A hundred is GitHub's own ceiling for `per_page`; a short page is the last page.
     static let pageSize = 100
-    /// Ten pages, so a repository with tens of thousands of issues cannot turn one poll into an
-    /// unbounded walk. A truncated listing is the honest failure here — a poll that never returns
-    /// leaves the health chip claiming a read is still in flight forever.
-    static let pageLimit = 10
+    /// A runaway backstop and not a working limit: `state=open` keeps a real repository inside one
+    /// or two pages, and a poll that walked forever would leave the health chip claiming a read
+    /// still in flight.
+    static let pageLimit = 20
 
     public func list(in scope: String, grant: AccountGrant) async throws -> [WorkItem] {
         var items: [WorkItem] = []
         for page in 1 ... Self.pageLimit {
+            // Open only. A closed ticket has left the room, and asking for every issue a repository
+            // ever had costs a poll two extra requests per issue on edges nobody is waiting on. The
+            // closures that DO matter travel on the blocker edges, which carry their own.
             let issues: [GitHubIssue] = try await get(
-                "/repos/\(scope)/issues?state=all&per_page=\(Self.pageSize)&page=\(page)",
+                "/repos/\(scope)/issues?state=open&per_page=\(Self.pageSize)&page=\(page)",
                 grant: grant,
             )
             for issue in issues where issue.pullRequest == nil {

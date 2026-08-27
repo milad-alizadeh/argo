@@ -79,6 +79,12 @@ actor PollWait {
     }
 }
 
+extension AccountGrant {
+    /// The grant every Work Item read in these suites carries, so what a request presents is one
+    /// fact in one place.
+    static let listing = AccountGrant(accessToken: "ghu_listing", scopes: ["repo"])
+}
+
 extension ResolvedBinding {
     /// A Work Item Binding resolved onto one GitHub identity, which is every input a read needs.
     static func stub(
@@ -91,7 +97,7 @@ extension ResolvedBinding {
         return ResolvedBinding(
             binding: ProjectBinding(port: .workItem, accountID: account.id, scope: scope),
             account: account,
-            grant: AccountGrant(accessToken: "ghu_listing", scopes: ["repo"]),
+            grant: .listing,
         )
     }
 }
