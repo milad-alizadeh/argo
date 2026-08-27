@@ -76,6 +76,16 @@ extension WorkFixture {
     action appears anywhere on one: work happens at leaves.
     """
 
+    /// #607's own body, so the render of a PARENT is a parent's page rather than a leaf's prose
+    /// under a parent's title. Prose only, for the same reason `body` is.
+    static let parentBody = """
+    The Work room, end to end: the views sidebar, the backlog in the deck, the ticket beside it, \
+    and the Route the charts open onto.
+
+    Nine children carry it. Two are closed and two the poll has not reached, which is why the \
+    roll-up beside this ticket counts more than the rows nested under it.
+    """
+
     /// The provider's own word for a ticket somebody is on. Verbatim, and deliberately not
     /// `WorkItemState.claimed`'s spelling — the two are different facts (#272).
     private static let working = "In progress"

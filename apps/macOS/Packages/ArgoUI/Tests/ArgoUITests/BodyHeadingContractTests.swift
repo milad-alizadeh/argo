@@ -30,9 +30,10 @@ struct BodyHeadingContractTests {
         #expect(ArgoTypography.bodyHeading.weight == ArgoTypography.windowTitle.weight)
     }
 
-    /// The specimen draws an unwired role as unjudged; without the note it reads as shipped.
+    /// The specimen draws an unwired role as unjudged. The ticket's Children section sets this one
+    /// now (#814), so the disclaimer would be the lie instead.
     @Test
-    func `a body heading is disclaimed until a surface draws it`() {
-        #expect(ArgoTypography.unwired["bodyHeading"] != nil)
+    func `a body heading is no longer disclaimed, because a surface draws it`() {
+        #expect(ArgoTypography.unwired["bodyHeading"] == nil)
     }
 }

@@ -23,6 +23,12 @@ extension SpecimenRegistry {
         SpecimenEntry("nothingUnblocked") { WorkPanesSpecimen(reading: WorkFixture.poolBlocked) },
         SpecimenEntry("everythingRunning") { WorkPanesSpecimen(reading: WorkFixture.poolRunning) },
         SpecimenEntry("oneEarnedChip") { WorkPanesSpecimen(reading: WorkFixture.oneChip) },
+        // A parent FOLDED, open in the pane beside it (#814): the twist shut, its roll-up standing
+        // in for the five rows it is holding, and the Children section naming them anyway. It is
+        // seeded rather than clicked because everything opens open.
+        SpecimenEntry("collapsedWorkBacklog") {
+            WorkPanesSpecimen(reading: WorkFixture.reading(showing: 607), folded: [607])
+        },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
         // A parent, deep: two Deliveries stacked, nine children rolled up over the five that are
         // open, and six blockers of which four are already closed and still named.

@@ -123,6 +123,39 @@ struct SurfaceMeasureTests {
         #expect(ArgoWorkSidebar.glyphWidth > ArgoIconSize.inline.rawValue)
     }
 
+    /// The twist's slot holds the mark drawn in it, the same way the sidebar's glyph column does —
+    /// a leaf keeps the slot, so a slot narrower than its mark would put every dot on a different
+    /// vertical the moment a parent appeared.
+    @Test
+    func `the twist's slot holds the chevron drawn in it`() {
+        #expect(ArgoBacklogList.twistWidth > ArgoIconSize.chevron.rawValue)
+    }
+
+    /// A step that did not clear the twist would put a child's dot under its parent's twist rather
+    /// than under its id, which is the one thing the design says the step is sized for.
+    @Test
+    func `one indent step carries a child's dot past its parent's twist`() {
+        #expect(ArgoBacklogList.indentStep > ArgoBacklogList.twistWidth)
+    }
+
+    /// The cap is an inset cap, not a depth cap: level three shares level two's, and the two below
+    /// it still differ, or the nesting would read as one flat band.
+    @Test
+    func `the indent caps at two steps and moves for every step under it`() {
+        let step = ArgoBacklogList.indentStep
+        // Compared OUTSIDE the macro, deliberately: `#expect` reports a `CGFloat` against a
+        // locally SUMMED `CGFloat` as unequal where the two are bit-identical, so the second step
+        // is settled here and the macro is handed the answer.
+        let secondStepMatchesTheFirst = ArgoBacklogList.indent(atDepth: 2)
+            == ArgoBacklogList.indent(atDepth: 1) + step
+
+        #expect(ArgoBacklogList.indent(atDepth: 0) == .zero)
+        #expect(ArgoBacklogList.indent(atDepth: 1) == step)
+        #expect(secondStepMatchesTheFirst)
+        #expect(ArgoBacklogList.indent(atDepth: 3) == ArgoBacklogList.indent(atDepth: 2))
+        #expect(ArgoBacklogList.indent(atDepth: 9) == ArgoBacklogList.indent(atDepth: 2))
+    }
+
     /// A rule between two facts on one line, not a divider under the line: it has to stand shorter
     /// than the taller of the two words it separates, or it reads as a break in the column.
     @Test
