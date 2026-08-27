@@ -58,7 +58,7 @@ public extension CockpitPresentation {
                 ),
                 // A real reading off this machine, past the first line.
                 spend: .init(contextTokens: 216_764),
-                transcript: .init(events: CockpitPresentation.Session.previewTranscript),
+                transcript: .init(events: TranscriptFixtures.previewTranscript),
             ),
             Session(
                 id: "engine",
@@ -148,7 +148,7 @@ public extension CockpitPresentation {
                     workspace: .init(kind: .worktree, branch: "argo/#376-native-shell"),
                 ),
                 spend: .init(contextTokens: 216_764),
-                transcript: .init(events: CockpitPresentation.Session.longTranscript),
+                transcript: .init(events: TranscriptFixtures.longTranscript),
             ),
             Session(
                 id: "engine",
@@ -161,7 +161,7 @@ public extension CockpitPresentation {
                     workspace: .init(kind: .main, branch: "main"),
                 ),
                 spend: .init(contextTokens: 67175),
-                transcript: .init(events: CockpitPresentation.Session.longTranscript),
+                transcript: .init(events: TranscriptFixtures.longTranscript),
             ),
         ],
         checkout: .branch("main"),

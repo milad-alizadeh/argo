@@ -17,7 +17,7 @@ struct FeedScaleTests {
     /// quadratic pass produces at tenfold the events.
     @Test
     func `ten times the events costs nothing like a hundred times the work`() {
-        let once = CockpitPresentation.Session.longTranscript
+        let once = TranscriptFixtures.longTranscript
         let tenfold = (0 ..< 10).flatMap { _ in once }
 
         let short = elapsed { _ = FeedProjection.rows(from: once) }
@@ -31,9 +31,9 @@ struct FeedScaleTests {
     func `hundreds of events become hundreds of rows, folds and all`() {
         let rows = FeedProjection.longRows
 
-        #expect(CockpitPresentation.Session.longTranscript.count > 400)
+        #expect(TranscriptFixtures.longTranscript.count > 400)
         #expect(rows.count > 200)
-        #expect(rows.count < CockpitPresentation.Session.longTranscript.count)
+        #expect(rows.count < TranscriptFixtures.longTranscript.count)
     }
 
     /// The rules the feed is made of are all about where a run BREAKS, so a scale fixture in which

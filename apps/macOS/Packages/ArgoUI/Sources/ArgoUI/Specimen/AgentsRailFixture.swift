@@ -40,8 +40,9 @@ enum AgentsRailFixture {
             id: "sole-verify", name: "Task", kind: .delegate,
             target: "Verify: the fold breaks at every mark",
             narration: "Verify: the fold breaks at every mark",
-            // Relative to now, because the chip counts up from it — see `Session.handedOver(_:)`.
-            atMs: CockpitPresentation.Session.handedOver(133),
+            // Relative to now, because the chip counts up from it — see
+            // `TranscriptFixtures.handedOver(_:)`.
+            atMs: TranscriptFixtures.handedOver(133),
         )),
     ]
 

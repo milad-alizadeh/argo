@@ -144,10 +144,7 @@ struct DeckZoningTests {
     private let working = FeedProjection.rows(from: [
         .toolCall(FeedFixture.call("hand", tool: "Task", kind: .delegate, naming: "review")),
         .toolCall(FeedFixture.call("look", tool: "Read", kind: .read, naming: "a.swift")),
-        .toolCallOutcome(FeedFixture.answered(
-            "look",
-            .output(OutputEvidence(tier: .direct, text: "ok")),
-        )),
+        .toolCallOutcome(TranscriptFixtures.printed("look", "ok")),
     ])
 
     /// The same reading with nothing delegated.

@@ -1,6 +1,6 @@
 import ArgoEngine
 
-extension CockpitPresentation.Session {
+extension TranscriptFixtures {
     /// A stretch of a Codex Session: shell calls, and nothing narrating them.
     ///
     /// A different HOST, so its own fixture: across 20 Codex Sessions and 495 shell calls the
@@ -80,18 +80,16 @@ extension CockpitPresentation.Session {
         let id = "ran-\(position)"
         return [
             .toolCall(ToolCall(id: id, name: "shell", kind: .execute, target: call.ran, atMs: nil)),
-            .toolCallOutcome(ToolCallOutcome(
-                id: id,
-                status: .completed,
-                result: .output(OutputEvidence(tier: .direct, text: call.said)),
-                endedAtMs: nil,
-                usage: nil,
-            )),
+            .toolCallOutcome(printed(id, call.said)),
         ]
     }
 
     /// The one command here printing more than a reader takes in at a glance — the length a
     /// collapsed row is judged at.
+    ///
+    /// The filenames in it are verbatim from when it was captured, and stay that way through any
+    /// rename in this tree: what is judged here is how a wall of output collapses, and editing the
+    /// text moves the pixels the specimen is compared against.
     private static let linted = """
     Linting Swift files in Packages/ArgoUI/Sources
     Linting 'CockpitPresentation+PreviewShell.swift' (1/214)

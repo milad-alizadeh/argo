@@ -30,10 +30,16 @@ struct FeedCallRunTests {
     func `two edits with other work between them stay two rows`() {
         let interrupted: [TranscriptEvent] = [
             .toolCall(FeedFixture.call("a", tool: "Edit", kind: .edit, naming: "Feed.swift")),
-            .toolCallOutcome(FeedFixture.answered("a", FeedFixture.patch(.modify, added: 1))),
+            .toolCallOutcome(TranscriptFixtures.finished(
+                "a",
+                FeedFixture.patch(.modify, added: 1),
+            )),
             .toolCall(FeedFixture.call("run", tool: "Bash", kind: .execute, naming: "swift build")),
             .toolCall(FeedFixture.call("b", tool: "Edit", kind: .edit, naming: "Feed.swift")),
-            .toolCallOutcome(FeedFixture.answered("b", FeedFixture.patch(.modify, added: 1))),
+            .toolCallOutcome(TranscriptFixtures.finished(
+                "b",
+                FeedFixture.patch(.modify, added: 1),
+            )),
         ]
 
         #expect(FeedFixture.calls(in: interrupted).map(\.repeats) == [1, 1, 1])
@@ -44,9 +50,15 @@ struct FeedCallRunTests {
     func `a create and an edit of one file are not the same work`() {
         let mixed: [TranscriptEvent] = [
             .toolCall(FeedFixture.call("a", tool: "Write", kind: .edit, naming: "Feed.swift")),
-            .toolCallOutcome(FeedFixture.answered("a", FeedFixture.patch(.create, added: 9))),
+            .toolCallOutcome(TranscriptFixtures.finished(
+                "a",
+                FeedFixture.patch(.create, added: 9),
+            )),
             .toolCall(FeedFixture.call("b", tool: "Edit", kind: .edit, naming: "Feed.swift")),
-            .toolCallOutcome(FeedFixture.answered("b", FeedFixture.patch(.modify, added: 1))),
+            .toolCallOutcome(TranscriptFixtures.finished(
+                "b",
+                FeedFixture.patch(.modify, added: 1),
+            )),
         ]
 
         let calls = FeedFixture.calls(in: mixed)
@@ -63,10 +75,7 @@ struct FeedCallRunTests {
             .toolCall(FeedFixture.call("a", tool: "Bash", kind: .execute, naming: "swift test")),
             .toolCallOutcome(FeedFixture.failed("a", printing: "Exit code 1")),
             .toolCall(FeedFixture.call("b", tool: "Bash", kind: .execute, naming: "swift test")),
-            .toolCallOutcome(FeedFixture.answered(
-                "b",
-                .output(OutputEvidence(tier: .direct, text: "ok")),
-            )),
+            .toolCallOutcome(TranscriptFixtures.printed("b", "ok")),
         ]
         let call = try #require(FeedFixture.calls(in: run).first)
 
@@ -79,10 +88,7 @@ struct FeedCallRunTests {
     func `a run with a call the record has not answered is still pending`() throws {
         let run: [TranscriptEvent] = [
             .toolCall(FeedFixture.call("a", tool: "Read", kind: .read, naming: "Feed.swift")),
-            .toolCallOutcome(FeedFixture.answered(
-                "a",
-                .output(OutputEvidence(tier: .direct, text: "1\tlet a = 1")),
-            )),
+            .toolCallOutcome(TranscriptFixtures.printed("a", "1\tlet a = 1")),
             .toolCall(FeedFixture.call("b", tool: "Read", kind: .read, naming: "Feed.swift")),
         ]
         let call = try #require(FeedFixture.calls(in: run).first)
@@ -101,7 +107,7 @@ struct FeedCallRunTests {
                     kind: .edit,
                     naming: path,
                 )),
-                .toolCallOutcome(FeedFixture.answered(
+                .toolCallOutcome(TranscriptFixtures.finished(
                     "edit-\(position)",
                     FeedFixture.patch(.modify, added: 1, removed: 1),
                 )),

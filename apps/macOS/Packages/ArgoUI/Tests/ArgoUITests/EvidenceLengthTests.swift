@@ -49,15 +49,9 @@ struct EvidenceLengthTests {
     func `a folded run of commands is counted across everything it printed`() {
         let calls = FeedFixture.calls(in: [
             .toolCall(FeedFixture.call("one", tool: "Bash", kind: .execute, naming: "swift build")),
-            .toolCallOutcome(FeedFixture.answered("one", .output(OutputEvidence(
-                tier: .direct,
-                text: "compiling\nlinking\n",
-            )))),
+            .toolCallOutcome(TranscriptFixtures.printed("one", "compiling\nlinking\n")),
             .toolCall(FeedFixture.call("two", tool: "Bash", kind: .execute, naming: "swift build")),
-            .toolCallOutcome(FeedFixture.answered("two", .output(OutputEvidence(
-                tier: .direct,
-                text: "done\n",
-            )))),
+            .toolCallOutcome(TranscriptFixtures.printed("two", "done\n")),
         ])
 
         #expect(calls.map(\.repeats) == [2])
@@ -70,10 +64,7 @@ struct EvidenceLengthTests {
     func `only a command's output is counted on the row`() {
         let calls = FeedFixture.calls(in: [
             .toolCall(FeedFixture.call("read", tool: "Read", kind: .read, naming: "Token.swift")),
-            .toolCallOutcome(FeedFixture.answered("read", .output(OutputEvidence(
-                tier: .direct,
-                text: "let token = 1\nlet other = 2\n",
-            )))),
+            .toolCallOutcome(TranscriptFixtures.printed("read", "let token = 1\nlet other = 2\n")),
         ])
 
         #expect(calls.first?.evidence.isEmpty == false)
@@ -125,15 +116,9 @@ struct EvidenceLengthTests {
     func `a panel step counts the command it came from and not the file`() {
         let calls = FeedFixture.calls(in: [
             .toolCall(FeedFixture.call("run", tool: "Bash", kind: .execute, naming: "swift build")),
-            .toolCallOutcome(FeedFixture.answered("run", .output(OutputEvidence(
-                tier: .direct,
-                text: "compiling\nlinking\n",
-            )))),
+            .toolCallOutcome(TranscriptFixtures.printed("run", "compiling\nlinking\n")),
             .toolCall(FeedFixture.call("read", tool: "Read", kind: .read, naming: "Token.swift")),
-            .toolCallOutcome(FeedFixture.answered("read", .output(OutputEvidence(
-                tier: .direct,
-                text: "let token = 1\n",
-            )))),
+            .toolCallOutcome(TranscriptFixtures.printed("read", "let token = 1\n")),
         ])
 
         #expect(calls.map { $0.opened.steps.compactMap { $0.printed?.lines } } == [[2], []])

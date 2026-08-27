@@ -27,7 +27,7 @@ struct FeedSurveyTests {
                     kind: .edit,
                     naming: "Feed.swift",
                 )),
-                .toolCallOutcome(FeedFixture.answered(
+                .toolCallOutcome(TranscriptFixtures.finished(
                     "edit",
                     FeedFixture.patch(.modify, added: 1),
                 )),
@@ -105,10 +105,7 @@ struct FeedSurveyTests {
     func `a single read keeps its filename rather than folding to a count of one`() throws {
         let alone: [TranscriptEvent] = [
             .toolCall(FeedFixture.call("read", tool: "Read", kind: .read, naming: "Token.swift")),
-            .toolCallOutcome(FeedFixture.answered(
-                "read",
-                .output(OutputEvidence(tier: .direct, text: "let token = 1")),
-            )),
+            .toolCallOutcome(TranscriptFixtures.printed("read", "let token = 1")),
         ]
         let call = try #require(FeedFixture.calls(in: alone).first)
 
@@ -177,10 +174,7 @@ struct FeedSurveyTests {
         let search = "grep-\(paths.joined())"
         return [
             .toolCall(FeedFixture.call(search, tool: "Grep", kind: .search, naming: "*Row")),
-            .toolCallOutcome(FeedFixture.answered(
-                search,
-                .output(OutputEvidence(tier: .direct, text: "4 matches")),
-            )),
+            .toolCallOutcome(TranscriptFixtures.printed(search, "4 matches")),
         ] + paths.flatMap { path -> [TranscriptEvent] in
             [
                 .toolCall(FeedFixture.call(
@@ -189,9 +183,9 @@ struct FeedSurveyTests {
                     kind: .read,
                     naming: path,
                 )),
-                .toolCallOutcome(FeedFixture.answered(
+                .toolCallOutcome(TranscriptFixtures.printed(
                     "read-\(path)",
-                    .output(OutputEvidence(tier: .direct, text: "the contents of \(path)")),
+                    "the contents of \(path)",
                 )),
             ]
         }

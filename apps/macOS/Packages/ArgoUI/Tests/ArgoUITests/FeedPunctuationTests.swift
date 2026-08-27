@@ -102,7 +102,7 @@ struct FeedPunctuationTests {
     func `a session that reported no spend gets no roll-up`() {
         let rows = FeedProjection.rows(from: [
             .toolCall(FeedFixture.call("one", tool: "Read", kind: .read, naming: "src/token.ts")),
-            .toolCallOutcome(FeedFixture.answered("one", nil)),
+            .toolCallOutcome(TranscriptFixtures.finished("one", nil)),
         ])
 
         #expect(FeedFixture.marks(in: rows).isEmpty)
@@ -138,14 +138,14 @@ struct FeedPunctuationTests {
     private func delegations() -> [TranscriptEvent] {
         [
             .toolCall(FeedFixture.call("one", tool: "Task", kind: .delegate, naming: "research")),
-            .toolCallOutcome(FeedFixture.spent("one", Usage(
+            .toolCallOutcome(TranscriptFixtures.spent("one", Usage(
                 inputTokens: 100,
                 outputTokens: 20,
                 cacheReadTokens: 0,
                 cacheCreationTokens: 0,
             ))),
             .toolCall(FeedFixture.call("two", tool: "Task", kind: .delegate, naming: "verify")),
-            .toolCallOutcome(FeedFixture.spent("two", Usage(
+            .toolCallOutcome(TranscriptFixtures.spent("two", Usage(
                 inputTokens: 200,
                 outputTokens: 50,
                 cacheReadTokens: 0,

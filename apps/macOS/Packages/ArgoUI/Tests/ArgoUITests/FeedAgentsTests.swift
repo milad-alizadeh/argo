@@ -30,7 +30,7 @@ struct FeedAgentsTests {
     func `a session that delegated nothing has no subagents`() {
         let looking: [TranscriptEvent] = [
             .toolCall(FeedFixture.call("look", tool: "Read", kind: .read, naming: "a.swift")),
-            .toolCallOutcome(FeedFixture.answered("look", nil)),
+            .toolCallOutcome(TranscriptFixtures.finished("look", nil)),
         ]
 
         #expect(agents(in: looking).isEmpty)
@@ -126,7 +126,7 @@ struct FeedAgentsTests {
         [
             .toolCall(FeedFixture.call("one", tool: "Task", kind: .delegate, naming: "verify")),
             .toolCall(FeedFixture.call("two", tool: "Task", kind: .delegate, naming: "verify")),
-            .toolCallOutcome(FeedFixture.spent("two", Self.reported)),
+            .toolCallOutcome(TranscriptFixtures.spent("two", Self.reported)),
         ]
     }
 
@@ -141,7 +141,7 @@ struct FeedAgentsTests {
         [
             .toolCall(FeedFixture.call("away", tool: "Task", kind: .delegate, naming: "review")),
             .toolCall(FeedFixture.call("back", tool: "Task", kind: .delegate, naming: "verify")),
-            .toolCallOutcome(FeedFixture.spent("back", Self.reported)),
+            .toolCallOutcome(TranscriptFixtures.spent("back", Self.reported)),
         ]
     }
 }

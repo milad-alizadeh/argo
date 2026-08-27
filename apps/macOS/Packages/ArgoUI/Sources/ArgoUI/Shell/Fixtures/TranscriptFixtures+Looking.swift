@@ -1,6 +1,6 @@
 import ArgoEngine
 
-extension CockpitPresentation.Session {
+extension TranscriptFixtures {
     /// The reconnaissance a turn opens with: a grep and five reads, back to back.
     ///
     /// Six calls rather than two, deliberately. A fixture with one read in it renders a fold that
@@ -11,7 +11,7 @@ extension CockpitPresentation.Session {
         .toolCall(ToolCall(
             id: "search", name: "Grep", kind: .search, target: "ArgoFeedRow", atMs: nil,
         )),
-        .toolCallOutcome(looked("search", "41 matches across 12 files")),
+        .toolCallOutcome(printed("search", "41 matches across 12 files")),
     ]
         + [
             (
@@ -49,17 +49,7 @@ extension CockpitPresentation.Session {
                     id: "look-\(position)", name: "Read", kind: .read,
                     target: file.0, atMs: nil,
                 )),
-                .toolCallOutcome(looked("look-\(position)", file.1)),
+                .toolCallOutcome(printed("look-\(position)", file.1)),
             ]
         }
-
-    private static func looked(_ id: String, _ text: String) -> ToolCallOutcome {
-        ToolCallOutcome(
-            id: id,
-            status: .completed,
-            result: .output(OutputEvidence(tier: .direct, text: text)),
-            endedAtMs: nil,
-            usage: nil,
-        )
-    }
 }

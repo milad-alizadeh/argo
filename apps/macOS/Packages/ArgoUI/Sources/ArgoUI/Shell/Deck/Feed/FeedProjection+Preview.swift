@@ -7,13 +7,13 @@ extension FeedProjection {
     /// live one, because a waiting ask nobody can answer draws quiet now (#712) and this fixture is
     /// what the attention state is rendered from.
     static let previewRows = rows(
-        from: CockpitPresentation.Session.previewTranscript,
+        from: TranscriptFixtures.previewTranscript,
         asking: previewTranscriptAsking,
     )
 
     /// The question left waiting in that transcript, as the gate would hold it.
     private static let previewTranscriptAsking = FeedAskProjection.Asking(
-        live: CockpitPresentation.Session.previewTranscript
+        live: TranscriptFixtures.previewTranscript
             .compactMap { event -> FeedAskProjection.Live? in
                 guard case let .toolCall(call) = event, let ask = call.ask,
                       call.id == "ask-waiting" else { return nil }
@@ -24,7 +24,7 @@ extension FeedProjection {
 
     /// A session at the length a real one reaches, projected — what every claim about SCALE is
     /// checked against, including the measurement #427 asks for.
-    static let longRows = rows(from: CockpitPresentation.Session.longTranscript)
+    static let longRows = rows(from: TranscriptFixtures.longTranscript)
 
     /// The LAST failed call in that long feed: one opened above the fold renders a pane beside
     /// reading nobody can see.
@@ -32,7 +32,7 @@ extension FeedProjection {
 
     /// Prompts somebody pasted a picture into, projected — the thumbnail row inside a bubble, and
     /// the wordless prompt that is nothing but one (#733).
-    static let previewPastedRows = rows(from: CockpitPresentation.Session.pasted)
+    static let previewPastedRows = rows(from: TranscriptFixtures.pasted)
 
     /// The same feed with the prose taken out. A filter over the shipping rows, never a second set.
     static let previewCallRows = previewRows.filter(\.kind.isCall)
@@ -47,12 +47,12 @@ extension FeedProjection {
     /// A Codex Session's commands, projected — the feed a CLI that narrates nothing produces. Not
     /// a filter over the preview rows: those are a Claude Code record, whose commands arrive
     /// narrated.
-    static let previewCommandRows = rows(from: CockpitPresentation.Session.ranCommands)
+    static let previewCommandRows = rows(from: TranscriptFixtures.ranCommands)
 
     /// A turn that looked around through a shell and then changed something, projected. Its own
     /// fixture: it is a render of the boundary between a folded stretch and the loud rows either
     /// side of it, which no filter over another feed has.
-    static let previewFoldRows = rows(from: CockpitPresentation.Session.foldedLooking)
+    static let previewFoldRows = rows(from: TranscriptFixtures.foldedLooking)
 
     /// The same feed with the work taken out — what the agent SAID, at the shape it said it in.
     static let previewProseRows = previewRows.filter(\.kind.isProse)
@@ -72,7 +72,7 @@ extension FeedProjection {
     /// The same reading, handed over. The whole feed and not a filter: the render has to settle
     /// the row's place, last under the Session's whole transcript and its spend.
     static let previewHandedOffRows = rows(
-        from: CockpitPresentation.Session.previewTranscript,
+        from: TranscriptFixtures.previewTranscript,
         handedOff: previewHandoff,
     )
 
@@ -80,7 +80,7 @@ extension FeedProjection {
     /// the row's place. The commands rather than the shipping transcript: the full reading renders
     /// as an empty column today (the lazy-height estimates of #473 and #476).
     static let previewWorkingRows = rows(
-        from: CockpitPresentation.Session.ranCommands,
+        from: TranscriptFixtures.ranCommands,
         working: true,
     )
 
@@ -88,7 +88,7 @@ extension FeedProjection {
     /// one fact: a call is pending only while the Turn that made it is running. The failed row sits
     /// four above it on purpose — the ion and the one outcome with a colour are judged together.
     static let previewPendingCallRows = rows(
-        from: CockpitPresentation.Session.runningCommand,
+        from: TranscriptFixtures.runningCommand,
         working: true,
     )
 
@@ -117,7 +117,7 @@ extension FeedProjection {
     /// the one with nothing behind it at all. Only the first is in the shipping transcript — the
     /// other two need a `SKILL.md` that is missing or empty, which no fixture stream can carry.
     static let previewSkillLoads: [FeedSkillLoad] = [
-        FeedSkillLoad(CockpitPresentation.Session.previewSkillLoad),
+        FeedSkillLoad(TranscriptFixtures.previewSkillLoad),
         FeedSkillLoad(SkillLoad(
             name: "pixel-review",
             directory: "~/.claude/skills/pixel-review",
@@ -142,7 +142,7 @@ extension FeedProjection {
             images: [],
             atMs: 1000,
         ),
-        .skillLoaded(CockpitPresentation.Session.previewSkillLoad),
+        .skillLoaded(TranscriptFixtures.previewSkillLoad),
         .message(markdown: "Reading the ticket and the design it points at."),
     ])
 

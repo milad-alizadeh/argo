@@ -67,10 +67,7 @@ struct EvidenceStepTests {
                     )),
                 ]
                 if at == 1 {
-                    events.append(.toolCallOutcome(FeedFixture.answered(
-                        "read-\(at)",
-                        .output(OutputEvidence(tier: .direct, text: "…")),
-                    )))
+                    events.append(.toolCallOutcome(TranscriptFixtures.printed("read-\(at)", "…")))
                 }
                 return events
             }
@@ -88,10 +85,7 @@ struct EvidenceStepTests {
         ["a.swift", "b.swift", "c.swift"].enumerated().flatMap { at, path -> [TranscriptEvent] in
             [
                 .toolCall(FeedFixture.call("read-\(at)", tool: "Read", kind: .read, naming: path)),
-                .toolCallOutcome(FeedFixture.answered(
-                    "read-\(at)",
-                    .output(OutputEvidence(tier: .direct, text: "…")),
-                )),
+                .toolCallOutcome(TranscriptFixtures.printed("read-\(at)", "…")),
             ]
         }
     }

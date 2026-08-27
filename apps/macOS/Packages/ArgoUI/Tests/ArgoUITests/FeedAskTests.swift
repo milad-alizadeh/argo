@@ -16,9 +16,7 @@ struct FeedAskTests {
     private func asked(_ answer: String?) -> FeedAsk? {
         var events: [TranscriptEvent] = [.toolCall(FeedFixture.asking(Self.question))]
         if let answer {
-            events.append(.toolCallOutcome(FeedFixture.answered("ask", .output(
-                OutputEvidence(tier: .direct, text: answer),
-            ))))
+            events.append(.toolCallOutcome(TranscriptFixtures.printed("ask", answer)))
         }
         return FeedFixture.asks(in: FeedProjection.rows(from: events)).first
     }
@@ -69,7 +67,7 @@ struct FeedAskTests {
     func `a question answered with nothing readable has still stopped waiting`() throws {
         let rows = FeedProjection.rows(from: [
             .toolCall(FeedFixture.asking(Self.question)),
-            .toolCallOutcome(FeedFixture.answered("ask", nil)),
+            .toolCallOutcome(TranscriptFixtures.finished("ask", nil)),
         ])
         let ask = try #require(FeedFixture.asks(in: rows).first)
 

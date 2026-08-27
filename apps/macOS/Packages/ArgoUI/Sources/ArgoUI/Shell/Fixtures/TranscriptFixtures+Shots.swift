@@ -10,7 +10,7 @@ private struct PreviewShot {
     let bytes: String?
 }
 
-extension CockpitPresentation.Session {
+extension TranscriptFixtures {
     /// What a turn that rendered something produced: four pictures back to back, and one call the
     /// record answered with no bytes at all. Every provenance the cockpit can tell apart is in
     /// here, because they are told apart by how they are DRAWN.
@@ -76,13 +76,6 @@ extension CockpitPresentation.Session {
     /// DIRECT for all of them: a pasted picture is bytes the record carried.
     private static func picture(_ wrapped: String) -> MediaEvidence {
         MediaEvidence(tier: .direct, mediaType: "image/png", bytes: unwrapped(wrapped))
-    }
-
-    /// A transcript writes base64 as one unbroken run; source cannot hold a 1000-character line.
-    /// The wrapping is this file's, so it comes off here rather than in the decoder: production
-    /// bytes have no newlines and nothing should tolerate any.
-    private static func unwrapped(_ wrapped: String) -> String {
-        wrapped.replacingOccurrences(of: "\n", with: "")
     }
 
     /// The cockpit at rest, as the agent captured it.

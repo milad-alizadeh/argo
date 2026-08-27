@@ -87,7 +87,7 @@ struct FeedProjectionTests {
     func `a call and the outcome that answered it are one row, not two`() {
         let rows = FeedProjection.rows(from: [
             .toolCall(FeedFixture.call("one", tool: "Read", kind: .read, naming: "src/token.ts")),
-            .toolCallOutcome(FeedFixture.answered("one", nil)),
+            .toolCallOutcome(TranscriptFixtures.finished("one", nil)),
         ])
 
         #expect(rows.count == 1)

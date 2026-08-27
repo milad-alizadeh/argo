@@ -94,10 +94,7 @@ struct FeedUnreadableTests {
             let id = "read-\(path)-\(position)"
             return [
                 .toolCall(FeedFixture.call(id, tool: "Read", kind: .read, naming: path)),
-                .toolCallOutcome(FeedFixture.answered(
-                    id,
-                    .output(OutputEvidence(tier: .direct, text: "let token = 1")),
-                )),
+                .toolCallOutcome(TranscriptFixtures.printed(id, "let token = 1")),
             ]
         }
     }
