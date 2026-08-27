@@ -30,12 +30,12 @@ extension WorkReading {
     /// so the cut drops the weakest claim rather than an arbitrary one.
     private func reasons(for pick: WorkItem) -> [NextUp.Reason] {
         var earned: [NextUp.Reason] = []
-        if priorities[pick.number] == Self.urgentPriority {
+        if pick.priority?.lowercased() == Self.urgentPriority {
             earned.append(.highPriority)
         }
         // Only where THIS ticket's edges were read. Inferring it from the backlog carrying edges
         // somewhere would assert `unblocked` for a pick nobody asked about.
-        if edgesRead.contains(pick.number) {
+        if pick.blockersRead {
             earned.append(.unblocked)
         }
         if let chart = chart(holding: pick.number) {
@@ -44,11 +44,10 @@ extension WorkReading {
         return Array(earned.prefix(NextUp.chipLimit))
     }
 
+    /// The chart this pick hangs under, by the same type word the `CHARTS` group is built from.
     private func chart(holding number: Int) -> String? {
-        charts
-            .first { parent in
-                items.first { $0.number == parent }?.children.contains(number) ?? false
-            }
-            .map { "#\($0)" }
+        items
+            .first { $0.isChartShaped && $0.children.contains(number) }
+            .map { "#\($0.number)" }
     }
 }

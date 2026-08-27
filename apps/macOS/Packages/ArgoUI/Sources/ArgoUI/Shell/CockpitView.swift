@@ -15,7 +15,11 @@ public struct CockpitView: View {
     /// How the active Project's provider Bindings are reading. Beside the presentation rather than
     /// inside it because it is not a Hub fact: the cockpit is a projection of the Hub, and Accounts
     /// and Bindings are registry facts the Hub has never heard of.
-    private let health: ConnectionHealthReading
+    let health: ConnectionHealthReading
+    /// The active Project's Work Items as the last poll that finished read them (#820). Beside the
+    /// presentation for the same reason `health` is: a listing is read through a Binding, and the
+    /// Hub has never heard of one.
+    let workItems: [WorkItem]
     @Environment(CockpitNavigationModel.self) var navigation
     /// Which roster row has its name field open. Held here rather than in the sidebar because the
     /// menu bar reaches it (`sessionCommands`), and the menu bar is outside the sidebar.
@@ -33,11 +37,13 @@ public struct CockpitView: View {
         actions: CockpitActions,
         connect: ConnectSurface = .closed,
         health: ConnectionHealthReading = .quiet,
+        workItems: [WorkItem] = [],
     ) {
         self.presentation = presentation
         self.actions = actions
         self.connect = connect
         self.health = health
+        self.workItems = workItems
     }
 
     /// The selected Session's reading. Recomputed on every update rather than cached: the

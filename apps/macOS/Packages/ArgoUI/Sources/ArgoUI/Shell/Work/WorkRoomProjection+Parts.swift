@@ -14,18 +14,18 @@ extension WorkRoomProjection {
         open.filter { view.admits($0, claimed: claimed.contains($0.number)) }
     }
 
+    /// The `CHARTS` group, in the order the provider served its items (`WorkItem.isChartShaped`).
     static func charts(of reading: WorkReading, open: [WorkItem]) -> [ChartReading] {
         let openNumbers = Set(open.map(\.number))
-        return reading.charts.compactMap { number in
-            guard let parent = reading.items.first(where: { $0.number == number }) else {
-                return nil
+        return reading.items
+            .filter(\.isChartShaped)
+            .map { parent in
+                ChartReading(
+                    id: parent.number,
+                    name: "#\(parent.number) \(shortName(of: parent.title))",
+                    count: parent.children.filter(openNumbers.contains).count,
+                )
             }
-            return ChartReading(
-                id: number,
-                name: "#\(number) \(shortName(of: parent.title))",
-                count: parent.children.filter(openNumbers.contains).count,
-            )
-        }
     }
 
     /// The parent's `n/m`, over the TRACKER's children rather than the rows drawn under it.

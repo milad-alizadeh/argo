@@ -29,7 +29,6 @@ enum WorkFixture {
     /// the same page but loses the charts, and `empty.png` draws them reading zero.
     static let answeredEmpty = WorkReading(
         items: items.map(resolved),
-        charts: [607, 334],
         provider: bound,
         project: project,
     )
@@ -60,7 +59,9 @@ enum WorkFixture {
     /// The fact strip's floor: `Bucket` is Argo's own and survives, and every absent fact is left
     /// out rather than defaulted.
     static let unread = WorkReading(
-        items: [WorkItem(number: 272, title: nodeTreeTitle, status: "Todo", closure: .open)],
+        items: [WorkItem(
+            number: 272, title: nodeTreeTitle, status: "Todo", closure: .open, blockersRead: true,
+        )],
         provider: bound,
         project: project,
         showing: 272,
@@ -70,13 +71,8 @@ enum WorkFixture {
         WorkReading(
             items: items,
             claimed: [388, 609, 763],
-            edgesRead: Set(items.map(\.number)),
             deliveries: [388: .open, 609: .merged, 275: .failing, 763: .draft],
             deliveryFacts: deliveryFacts,
-            priorities: priorities,
-            types: types,
-            bodies: [272: body, 607: parentBody],
-            charts: [607, 334],
             provider: bound,
             project: project,
             showing: showing,
@@ -95,7 +91,6 @@ enum WorkFixture {
     static let poolRunning = WorkReading(
         items: [item(272, blockedBy: []), item(273, blockedBy: [])],
         claimed: [272, 273],
-        edgesRead: [272, 273],
         provider: bound,
     )
 
@@ -112,9 +107,9 @@ enum WorkFixture {
                 title: "Work Item read path: listing, status, labels, dependency edges",
                 status: "Todo",
                 closure: .open,
+                priority: "high",
             ),
         ],
-        priorities: [388: "high"],
         provider: bound,
     )
 
@@ -132,14 +127,17 @@ enum WorkFixture {
     static func item(_ number: Int, blockedBy: [WorkItemBlocker]) -> WorkItem {
         WorkItem(
             number: number, title: "A ticket behind an edge", status: "Todo", closure: .open,
-            blockedBy: blockedBy,
+            blockedBy: blockedBy, blockersRead: true,
         )
     }
 
+    /// The same ticket from a provider that serves no dependency summary: the edges are not empty,
+    /// they are UNREAD, and every claim built on them is suppressed above this.
     private static func unedged(_ item: WorkItem) -> WorkItem {
         WorkItem(
             number: item.number, title: item.title, status: item.status, closure: item.closure,
-            labels: item.labels, children: item.children,
+            labels: item.labels, priority: item.priority, type: item.type,
+            children: item.children, body: item.body,
         )
     }
 }

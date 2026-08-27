@@ -22,6 +22,7 @@ enum RosterSessionFixture {
         isArchived: Bool = false,
         explicitName: String? = nil,
         events: [TranscriptEvent] = [],
+        issue: Int? = nil,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -33,6 +34,7 @@ enum RosterSessionFixture {
             work: .init(
                 location: workspaceLocation,
                 workspace: kind == nil && branch == nil ? nil : .init(kind: kind, branch: branch),
+                issue: issue.map { .init(number: $0) },
             ),
             annotations: .init(isArchived: isArchived, explicitName: explicitName),
             transcript: .init(events: events),

@@ -17,7 +17,9 @@ extension WorkFixture {
     /// #607 carries nine children: five open and read, two closed and read, and two the poll has
     /// not reached — the three states a roll-up has to survive. Its six blockers are the other
     /// worst honest case: two still open, four already closed and named from the tracker.
-    static let items: [WorkItem] = [
+    static let items: [WorkItem] = listed.map(carrying)
+
+    private static let listed: [WorkItem] = [
         open(
             607,
             "Wayfinder: the Work room, end to end",
@@ -102,11 +104,18 @@ extension WorkFixture {
             blockedBy: shape.blockedBy.map {
                 WorkItemBlocker(number: $0, closure: closedNumbers.contains($0) ? .resolved : .open)
             },
+            blockersRead: true,
         )
     }
 
     private static func closed(_ number: Int, _ title: String) -> WorkItem {
-        WorkItem(number: number, title: title, status: "Done", closure: .resolved)
+        WorkItem(
+            number: number,
+            title: title,
+            status: "Done",
+            closure: .resolved,
+            blockersRead: true,
+        )
     }
 
     /// The same ticket, finished. Everything but the status word survives: a closed parent still
@@ -114,7 +123,21 @@ extension WorkFixture {
     static func resolved(_ item: WorkItem) -> WorkItem {
         WorkItem(
             number: item.number, title: item.title, status: "Done", closure: .resolved,
-            labels: item.labels, children: item.children, blockedBy: item.blockedBy,
+            labels: item.labels, priority: item.priority, type: item.type,
+            children: item.children, blockedBy: item.blockedBy, blockersRead: item.blockersRead,
+            body: item.body,
+        )
+    }
+
+    /// The same ticket carrying the facts one listing request answers alongside it — the provider's
+    /// own priority and type words, and the body of the two tickets a render opens on.
+    private static func carrying(_ item: WorkItem) -> WorkItem {
+        WorkItem(
+            number: item.number, title: item.title, status: item.status, closure: item.closure,
+            labels: item.labels,
+            priority: priorities[item.number], type: types[item.number],
+            children: item.children, blockedBy: item.blockedBy, blockersRead: item.blockersRead,
+            body: bodies[item.number],
         )
     }
 }
