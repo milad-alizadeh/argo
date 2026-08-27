@@ -87,6 +87,10 @@ children indented one step under their parent, the trailing fact right-aligned. 
 own hit target, so opening a parent does not change what the ticket pane shows. **Everything
 opens open** — a tree that opens shut hides the thing it was added for.
 
+The twist is **drawn**, not `DisclosureGroup`'s and not `OutlineGroup`'s: only a twist the row owns
+can carry a hit target of its own, and only a drawn one lets a leaf keep the slot every dot lands
+on. That is what `BacklogOutline` stands in for, amended in the table below (#814).
+
 ### The one conflict, and how it resolves
 
 Nesting and priority grouping cannot both be the list's structure: a child's priority is its
@@ -320,7 +324,7 @@ for; anything not listed is stock used directly.
 | `NextUpCard` | molecule | a `VStack` on `surface.raised` | the hero; carries the ticket or an empty-tier sentence |
 | `NextUpChip` | atom | `Text` in a rounded rect | at most two, each earned |
 | `BacklogList` | organism | `List(selection:)` with one `Section` per priority | the deck's leading pane |
-| `BacklogOutline` | molecule | `OutlineGroup(children:)` inside that `List` | the tree; children come from the child edge, not a nested array literal |
+| `BacklogOutline` | molecule | a `ForEach` over the flattened tree inside that `List` | the tree; children come from the child edge, not a nested array literal. **Amended #814**: it stood in for `OutlineGroup(children:)`, which cannot give the twist its own hit target, cannot let a leaf keep the slot, and hands a subtree to a control that counts rows. The projection flattens; the reasoning is in the inventory |
 | `BacklogRow` | molecule | an `HStack` in a `List` row | `twist · dot · id · title · trailing` |
 | `BacklogTwist` | atom | `DisclosureGroup`'s chevron, drawn | drawn rather than inherited so it can carry its own hit target |
 | `DeliveryDot` | atom | `Circle` at `ArgoLayout.statusDotSize` | the five-state table above |

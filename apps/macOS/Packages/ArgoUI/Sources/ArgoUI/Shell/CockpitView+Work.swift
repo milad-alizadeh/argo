@@ -18,6 +18,7 @@ extension CockpitView {
             cockpitRoom: $navigation.room,
             ticket: $navigation.ticket,
             view: $navigation.workView,
+            shut: $navigation.shutParents,
             connect: { actions.openProjectPanel(presentation.activeProjectID) },
         )
     }

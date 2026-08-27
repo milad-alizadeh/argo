@@ -7,11 +7,13 @@ import Testing
 /// defect a render cannot show.
 @Suite("Work room projection")
 struct WorkRoomProjectionTests {
+    /// Drawn, not rooted: the backlog nests (#814), so what the list puts on screen is the tree
+    /// flattened rather than the roots alone.
     @Test
     func `the backlog draws every open item and no closed one`() {
         let room = WorkRoomProjection.room(from: WorkFixture.reading)
 
-        #expect(room.backlog.map(\.id)
+        #expect(drawnIds(room)
             == [607, 609, 388, 272, 273, 334, 335, 336, 763, 275, 160, 185])
     }
 
@@ -19,7 +21,7 @@ struct WorkRoomProjectionTests {
     func `all open counts the rows the list draws`() {
         let room = WorkRoomProjection.room(from: WorkFixture.reading)
 
-        #expect(room.view(.allOpen)?.count == room.backlog.count)
+        #expect(room.view(.allOpen)?.count == drawnIds(room).count)
     }
 
     /// Unblocked and Blocked partition the open set: an item is one or the other, never both and
@@ -30,7 +32,7 @@ struct WorkRoomProjectionTests {
 
         let unblocked = room.view(.unblocked)?.count ?? 0
         let blocked = room.view(.blocked)?.count ?? 0
-        #expect(unblocked + blocked == room.backlog.count)
+        #expect(unblocked + blocked == drawnIds(room).count)
     }
 
     /// Stranded is blocked, not clear: its blocker was ruled out, so the edge never satisfies.
@@ -118,8 +120,9 @@ struct WorkRoomProjectionTests {
     func `opening a view filters the backlog to it`() {
         let blocked = WorkRoomProjection.room(from: WorkFixture.reading, in: .blocked)
 
-        #expect(blocked.backlog.count == 8)
-        #expect(blocked.backlog.map(\.id) == [607, 272, 334, 335, 336, 275, 160, 185])
+        #expect(drawnIds(blocked).count == 8)
+        #expect(drawnIds(blocked)
+            == [607, 272, 334, 335, 336, 275, 160, 185])
     }
 
     @Test
@@ -135,7 +138,7 @@ struct WorkRoomProjectionTests {
     func `every view's count is the number of rows it draws`() {
         for view in WorkView.allCases {
             let room = WorkRoomProjection.room(from: WorkFixture.reading, in: view)
-            #expect(room.view(view)?.count == room.backlog.count)
+            #expect(room.view(view)?.count == drawnIds(room).count)
         }
     }
 
@@ -170,5 +173,11 @@ struct WorkRoomProjectionTests {
         #expect(room.provider != nil)
         #expect(room.views.map(\.count) == [0, 0, 0, 0])
         #expect(room.backlog.isEmpty)
+    }
+
+    /// What the list actually PUTS ON SCREEN with nothing folded — the tree flattened. A view's
+    /// count is measured against this rather than `backlog.count`, which counts roots alone.
+    private func drawnIds(_ room: WorkRoomProjection.Room) -> [Int] {
+        WorkRoomProjection.drawn(room.backlog, shut: []).map(\.id)
     }
 }

@@ -15,6 +15,9 @@ public final class CockpitNavigationModel {
     /// Which of the backlog's views is open. Here rather than in the sidebar, because it decides
     /// what the DECK draws — held inside the sidebar it filtered nothing.
     var workView = WorkView.allOpen
+    /// Which parents the backlog has folded. Beside the view for the same reason: a fold survives
+    /// the reader leaving the room. Empty, because everything opens open (#814).
+    var shutParents: Set<Int> = []
 
     /// The Session on screen. Every write but reconciliation's is somebody picking a row, which is
     /// why the setter records one.

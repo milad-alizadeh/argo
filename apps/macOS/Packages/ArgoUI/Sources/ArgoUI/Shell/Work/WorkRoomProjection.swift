@@ -68,14 +68,17 @@ enum WorkRoomProjection {
         let count: Int
     }
 
-    /// One flat row of the backlog: `dot · id · title`, plus one trailing fact.
+    /// One row of the backlog: `twist · dot · id · title`, plus one trailing fact.
     struct Row: Sendable, Equatable, Identifiable {
         let id: Int
         let title: String
         let delivery: DeliveryReading
-        /// The parent's `n/m` roll-up, and `nil` on a leaf. It counts the tracker's children, not
-        /// the rows beside it, so `2/9` over five visible rows is correct.
+        /// The parent's `n/m` roll-up, and `nil` on a leaf. It counts the TRACKER's children rather
+        /// than the rows beside it, so `2/9` over five visible rows is correct.
         let trailing: String?
+        /// The rows nested under this one, from the child edge (`WorkRoomProjection+Tree.swift`).
+        /// Empty on a leaf, and empty on a parent whose every child the view filtered out.
+        let children: [Row]
     }
 
     /// With no provider bound the room is VACANT rather than empty — no views, no list, no ticket
@@ -90,8 +93,7 @@ enum WorkRoomProjection {
             views: views(of: open, claimed: reading.claimed),
             charts: charts(of: reading, open: open),
             provider: reading.provider,
-            backlog: shown
-                .map { row(for: $0, delivery: reading.deliveries[$0.number], closed: closed) },
+            backlog: tree(of: shown, reading: reading, closed: closed),
             ticket: ticket(in: reading),
             project: reading.project,
             hasOpenWork: !open.isEmpty,

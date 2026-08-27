@@ -88,7 +88,6 @@ public enum ArgoTypography {
     ]
 
     /// Roles nothing sets yet. See `ArgoMotion.unwired` for why they stay and why they say so.
-    public static let unwired: [String: String] = [
-        "bodyHeading": "the Work room's ticket body (#272)",
-    ]
+    /// `bodyHeading` left this list when the ticket's Children section began setting it (#814).
+    public static let unwired: [String: String] = [:]
 }

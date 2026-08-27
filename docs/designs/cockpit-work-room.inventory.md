@@ -3,13 +3,14 @@
 What `design-to-code` extracted while building [`cockpit-work-room.md`](cockpit-work-room.md), and
 what it deliberately left inline. One row per component the assembled screen forced out.
 
-**Scope: #812, #815, #817 and #818** — the views sidebar, the flat backlog list and the ticket
-(#812), the ticket's fact strip and its three sections (#815), the Next-up hero and its four tiers
-(#817), and the room's two vacancy pages (#818). The design freezes 31 names across the whole room;
-the names below are the ones these tickets built. The rest (the toolbar, the tree, the Route)
-belong to their own tickets and are absent rather than stubbed.
+**Scope: #812, #815, #817, #818 and #814** — the views sidebar, the flat backlog list and the
+ticket (#812), the ticket's fact strip and its three sections (#815), the Next-up hero and its four
+tiers (#817), the room's two vacancy pages (#818), and the nesting that turned the list into a tree
+(#814). The design freezes 31 names across the whole room; the names below are the ones these
+tickets built. The rest (the toolbar, the priority headers, the Route) belong to their own tickets
+and are absent rather than stubbed.
 
-The tables below cover #812, #815 and #818; #817's own section is at the foot.
+The tables below cover #812, #815, #818 and #814; #817's own section is at the foot.
 
 ## Extracted
 
@@ -20,8 +21,10 @@ The tables below cover #812, #815 and #818; #817's own section is at the foot.
 | `RoomStrip` | atom | `ArgoUI/Shell/Work/Sidebar/` | `selection: Binding<CockpitRoom>` | stock `Picker(.segmented)` | `RoomStrip` |
 | `ViewRow` | molecule | `ArgoUI/Shell/Work/Sidebar/` | `symbol: String`, `name: String`, `count: Int` | `ArgoGlyph` | `ViewRow` |
 | `ProviderFoot` | atom | `ArgoUI/Shell/Work/Sidebar/` | `provider: WorkProvider` | `SessionStateIndicator` | `ProviderFoot` |
-| `BacklogList` | organism | `ArgoUI/Shell/Work/Backlog/` | `rows: [Row]`, `selection: Binding<Int?>` | `BacklogRow` | `BacklogList` |
-| `BacklogRow` | molecule | `ArgoUI/Shell/Work/Backlog/` | `row: Row` | `DeliveryDot` | `BacklogRow` |
+| `BacklogList` | organism | `ArgoUI/Shell/Work/Backlog/` | `rows: [Row]`, `selection: Binding<Int?>`, `shut: Binding<Set<Int>>` | `BacklogOutline` | `BacklogList` |
+| `BacklogOutline` | molecule | `ArgoUI/Shell/Work/Backlog/` | `rows: [Row]`, `shut: Binding<Set<Int>>` | `BacklogRow` | `BacklogOutline` |
+| `BacklogRow` | molecule | `ArgoUI/Shell/Work/Backlog/` | `drawn: Drawn`, `isOpen: Bool`, `toggle: (() -> Void)?` | `BacklogTwist`, `DeliveryDot` | `BacklogRow` |
+| `BacklogTwist` | atom | `ArgoUI/Shell/Work/Backlog/` | `toggle: (() -> Void)?` (nil = leaf), `isOpen: Bool` | `ArgoDisclosure` | `BacklogTwist` |
 | `DeliveryDot` | atom | `ArgoUI/Shell/Work/Backlog/` | `reading: DeliveryReading` (5 states) | — | `DeliveryDot` |
 | `TicketDetail` | organism | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket?`, `open: (Int) -> Void` (#815) | `TicketHead`, `TicketFactStrip`, `TicketBody` | `TicketDetail` |
 | `TicketHead` | molecule | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket` | `StatusPair` | `TicketHead` |
@@ -166,11 +169,45 @@ Charts are deliberately **untagged**: a chart opens the Route (#334), which is n
 list's selection is a `WorkView`. A tag would make the row look selectable and then filter the
 backlog to something nobody asked for.
 
+## How the tree is actually drawn (#814)
+
+The design freezes `BacklogOutline` as `OutlineGroup(children:)`. It is built as a **flattening**
+instead: `WorkRoomProjection.tree` derives the nesting from the child edge, `WorkRoomProjection.drawn`
+flattens it to `[Drawn]` in draw order with a depth, and the outline is a `ForEach` over that inside
+the list's own `List`. Three things the stock control cannot give forced it:
+
+- **A `List` counts rows.** Selection and the 30pt row floor are both answers about rows, and
+  nesting the views hands a subtree to a control that counts them.
+- **The twist's hit target has to be its own.** `OutlineGroup` owns its chevron, and a chevron the
+  list owns cannot be pressed without pressing the row under it.
+- **A leaf keeps the slot.** `OutlineGroup` gives a leaf no chevron at all, so every dot would land
+  on a different vertical.
+
+The nesting itself is unchanged by this: `Row.children` comes from `WorkItem.children`, never from a
+literal, and `Drawn.depth` is what the row is inset by.
+
+Two ways a provider's edges can lie are resolved rather than trusted, because a tree that loses a row
+to a bad edge is worse than one that flattens it: a child claimed by two parents hangs under the
+first, and an edge that would make an item its own ancestor is refused.
+
+### What #814 left inline
+
+- **The fold itself.** `BacklogOutline` owns the toggle and `BacklogList` holds the seed; there is no
+  disclosure *model* between them, because a `Set<Int>` of folded ids is the whole state.
+- **A link row's `dot · id · title`.** `TicketLinkRow` (#815) reads like `BacklogRow`'s middle and is
+  deliberately NOT shared with it: the two diverge at the twist, the indent and the roll-up's hover,
+  and the duplication gate holds across both.
+
+`ArgoTypography.unwired` is now **empty**. `bodyHeading` was disclaimed as unset; #815's `TicketBody`
+draws it on the Children and Blocked-by headings, so the disclaimer became the lie and went, and
+`BodyHeadingContractTests` asserts the role is wired rather than excused.
+
 ## Not reproduced from `rest.png`
 
-The render carries the whole room. This ticket's specimen reproduces its sidebar, its backlog list
-and its ticket pane. The priority headers, the twists, the Next-up hero and the room's toolbar are
-absent because they are other tickets — not because they drifted.
+The render carries the whole room. These tickets' specimens reproduce its sidebar, its backlog list
+(nested, and folded in `collapsedWorkBacklog`) and its ticket pane. The priority headers, the
+Next-up hero and the room's toolbar are absent because they are other tickets — not because they
+drifted.
 
 ## The two vacancies (#818)
 
