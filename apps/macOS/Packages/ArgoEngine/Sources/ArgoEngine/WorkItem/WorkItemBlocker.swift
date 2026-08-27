@@ -18,6 +18,9 @@ public struct WorkItemBlocker: Equatable, Sendable {
 /// What a Work Item's blockers say about whether it can be picked up.
 public enum WorkItemBlockage: Equatable, Sendable {
     case clear
+    /// The provider served no dependency edges for this ticket, so nothing is known either way.
+    /// Distinct from `clear`, which is a provider SAYING there is nothing in the way.
+    case unread
     case blocked
     /// A blocker was ruled out, so the edge is neither satisfied nor waiting on anything: the
     /// premise was cancelled and a human has to re-scope one of the two.

@@ -53,9 +53,15 @@ struct WorkItemFactsTests {
         let item = try await Self.first(IssueJSON(number: 1, labels: example.labels))
 
         #expect(item.priority == example.priority)
-        // The labels themselves are untouched: the strip draws all of them, the one that was read
-        // as a priority included.
-        #expect(item.labels == example.labels)
+    }
+
+    /// Reading one as a priority does not consume it: the fact strip draws every label the provider
+    /// served, the one the word came off included (`cockpit-work-room.md`).
+    @Test
+    func `a label read as a priority is still a label`() async throws {
+        let item = try await Self.first(IssueJSON(number: 1, labels: ["bug", "priority: high"]))
+
+        #expect(item.labels == ["bug", "priority: high"])
     }
 
     @Test
@@ -73,12 +79,17 @@ struct WorkItemFactsTests {
     }
 
     @Test
-    func `the body arrives with the listing, and a blank one is no body`() async throws {
-        let written = try await Self.first(IssueJSON(number: 1, body: "What to build."))
-        let blank = try await Self.first(IssueJSON(number: 2, body: "   "))
+    func `the body arrives with the listing`() async throws {
+        let item = try await Self.first(IssueJSON(number: 1, body: "What to build."))
 
-        #expect(written.body == "What to build.")
-        #expect(blank.body == nil)
+        #expect(item.body == "What to build.")
+    }
+
+    @Test
+    func `a blank body is no body`() async throws {
+        let item = try await Self.first(IssueJSON(number: 2, body: "   "))
+
+        #expect(item.body == nil)
     }
 
     @Test
@@ -86,8 +97,7 @@ struct WorkItemFactsTests {
         let none = try await Self.first(IssueJSON(number: 1))
 
         // Zero blockers is an ANSWER: the host was asked and said there are none.
-        #expect(none.blockersRead)
-        #expect(none.blockedBy.isEmpty)
+        #expect(none.blockedBy == [])
     }
 
     @Test
@@ -95,7 +105,6 @@ struct WorkItemFactsTests {
         let item = try await Self.first(IssueJSON(number: 1, dependencies: false))
 
         // Absent, not empty — and every claim built on the edges is suppressed above this.
-        #expect(!item.blockersRead)
-        #expect(item.blockedBy.isEmpty)
+        #expect(item.blockedBy == nil)
     }
 }

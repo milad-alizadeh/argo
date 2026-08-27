@@ -11,6 +11,10 @@ struct WorkProvider: Sendable, Equatable {
     /// How the Binding is reading. `nil` is the honest unknown the tier rules owe, drawn as the
     /// same outlined dot a roster row uses for it.
     let state: ArgoOperationalState?
+    /// Whether a read through this Binding has ever LANDED. It is what separates "the provider
+    /// answered, and the answer was nothing" from "nobody has answered yet" — an empty listing
+    /// looks identical either way, and only one of the two may be said out loud.
+    let hasAnswered: Bool
 
     /// The Work Item port's own connection, and `nil` where nothing is bound to it — which is what
     /// makes the whole room vacant rather than an empty foot under a full one.
@@ -24,13 +28,15 @@ struct WorkProvider: Sendable, Equatable {
             name: connection.account.provider.readableName,
             account: connection.account.displayName,
             state: Self.state(of: connection.health),
+            hasAnswered: connection.health.lastSuccess != nil,
         )
     }
 
-    init(name: String, account: String, state: ArgoOperationalState?) {
+    init(name: String, account: String, state: ArgoOperationalState?, hasAnswered: Bool) {
         self.name = name
         self.account = account
         self.state = state
+        self.hasAnswered = hasAnswered
     }
 
     /// How a Binding's health reads as a dot. A Binding nothing has ever read through is `nil` and

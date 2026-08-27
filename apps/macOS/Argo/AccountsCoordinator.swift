@@ -20,8 +20,8 @@ final class AccountsCoordinator {
     /// the failure exactly while the user is not looking at the place that reports it.
     private(set) var connections = ConnectionHealthReading.quiet
     /// The active Project's listing as the last read left it, for the Work room to draw (#820).
-    /// Published beside `connections` and for its reason: the room is on screen whether or not the
-    /// Connect panel is, so it is refreshed by every finished read rather than by every panel act.
+    /// Refreshed by every finished read, not by every panel act: the room is on screen whether or
+    /// not the Connect panel is.
     private(set) var workItems: [WorkItem] = []
 
     /// Reached from `AccountsCoordinator+Grant` and `+Scopes`, which is why these are not
@@ -170,18 +170,16 @@ final class AccountsCoordinator {
         connections = await ConnectionHealthReading.over(ports, from: .init(
             registry: accounts.load(), ledger: health, projectID: project?.id,
         ))
-        // Reported before pointed, always: `point` is the only thing that starts a loop, so the
-        // reader is in place before any tick it would have to hear about.
+        // Reported before pointed, always: `point` is the only thing that starts a loop, and it
+        // raises the landing itself — so this one call both settles the read and refreshes it.
         await poll.report(to: { [weak self] in await self?.readListing() })
         await poll.point(workItemBinding(), at: project?.id)
-        await readListing()
         guard isOpen else { return }
         await show(ports: ports)
     }
 
-    /// Take what the ledger holds for the active Project. Raised by every finished read and by
-    /// every `refresh`, because a rebind moves the listing without a tick having happened.
-    ///
+    /// Take what the ledger holds for the active Project. A Project with nothing bound reads EMPTY
+    /// rather than keeping the last one's backlog.
     private func readListing() async {
         workItems = await workItemLedger.items(of: project?.id)
     }

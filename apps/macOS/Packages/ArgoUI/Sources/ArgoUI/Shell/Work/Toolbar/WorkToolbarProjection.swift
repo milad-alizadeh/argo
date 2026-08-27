@@ -44,7 +44,7 @@ enum WorkToolbarProjection {
             // level is the roots, so counting it would report five where the view holds twelve —
             // and would drop by one every time a reader folded a parent. This is the same number
             // the sidebar's row for this view shows, which is what stops the two disagreeing.
-            subtitle: "\(view.name) · \(Self.grouping) · \(tickets(room.view(view)?.count ?? 0))",
+            subtitle: subtitle(of: view, in: room),
             narrows: hasRows,
             draws: true,
             ticket: hasRows ? showing : nil,
@@ -57,6 +57,13 @@ enum WorkToolbarProjection {
     /// prevent. One grouping today, so it is a constant rather than a parameter — the group-by
     /// control that would make it vary does not choose anything yet.
     private static let grouping = "by priority"
+
+    /// `<view> · by priority · <n> tickets`, and the last term DROPS where the view has no count to
+    /// state — the same absence the sidebar's row draws, since the two read one number (#820).
+    private static func subtitle(of view: WorkView, in room: WorkRoomProjection.Room) -> String {
+        let counted = room.view(view)?.count.map { [tickets($0)] } ?? []
+        return ([view.name, grouping] + counted).joined(separator: " · ")
+    }
 
     private static func tickets(_ count: Int) -> String {
         "\(count) ticket\(count == 1 ? "" : "s")"

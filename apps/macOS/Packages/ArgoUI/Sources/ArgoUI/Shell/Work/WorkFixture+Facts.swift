@@ -29,21 +29,16 @@ extension WorkFixture {
     /// The standard reading with the priority words edited. Priority lives ON a `WorkItem` now
     /// (#820), so a case that wants a different word rebuilds the items rather than patching a
     /// dictionary beside them — which is also what stops one from drifting from the other.
-    static func reading(pricing edit: (inout [Int: String]) -> Void) -> WorkReading {
+    static func reading(priorities edit: (inout [Int: String]) -> Void) -> WorkReading {
         var words = priorities
         edit(&words)
         var reading = reading(showing: 272)
-        reading.items = items.map { repriced($0, to: words[$0.number]) }
+        reading.items = items.map { priced($0, words[$0.number]) }
         return reading
     }
 
-    private static func repriced(_ item: WorkItem, to word: String?) -> WorkItem {
-        WorkItem(
-            number: item.number, title: item.title, status: item.status, closure: item.closure,
-            labels: item.labels, priority: word, type: item.type,
-            children: item.children, blockedBy: item.blockedBy, blockersRead: item.blockersRead,
-            body: item.body,
-        )
+    private static func priced(_ item: WorkItem, _ word: String?) -> WorkItem {
+        WorkItem(copying: item, priority: word)
     }
 
     /// The bodies, on the two tickets a render opens on. Every other ticket carries none, which is

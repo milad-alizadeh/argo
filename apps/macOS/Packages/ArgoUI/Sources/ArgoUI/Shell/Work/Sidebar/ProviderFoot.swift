@@ -29,13 +29,23 @@ struct ProviderFoot: View {
 }
 
 #Preview("Provider foot") {
-    ProviderFoot(provider: WorkProvider(name: "GitHub", account: "milad-alizadeh", state: .idle))
-        .frame(width: ArgoLayout.sidebarMinimumWidth)
-        .argoAppearance()
+    ProviderFoot(provider: WorkProvider(
+        name: "GitHub",
+        account: "milad-alizadeh",
+        state: .idle,
+        hasAnswered: true,
+    ))
+    .frame(width: ArgoLayout.sidebarMinimumWidth)
+    .argoAppearance()
 }
 
 #Preview("Provider foot — a Binding Argo cannot establish") {
-    ProviderFoot(provider: WorkProvider(name: "GitHub", account: "milad-alizadeh", state: nil))
-        .frame(width: ArgoLayout.sidebarMinimumWidth)
-        .argoAppearance()
+    ProviderFoot(provider: WorkProvider(
+        name: "GitHub",
+        account: "milad-alizadeh",
+        state: nil,
+        hasAnswered: false,
+    ))
+    .frame(width: ArgoLayout.sidebarMinimumWidth)
+    .argoAppearance()
 }

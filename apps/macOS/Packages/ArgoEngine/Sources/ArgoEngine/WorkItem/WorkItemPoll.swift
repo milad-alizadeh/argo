@@ -64,9 +64,8 @@ public actor WorkItemPoll {
         self.now = now
     }
 
-    /// Tell the poll who to raise on. Separate from `init` because the reader is a surface the loop
-    /// is built long before, and replacing it costs nothing: `point` is the only thing that starts
-    /// a loop, and every caller of it reports here first.
+    /// Tell the poll who to raise on. Called before the first `point`, which is the only thing that
+    /// starts a loop.
     public func report(to landed: @escaping Landing) {
         self.landed = landed
     }
@@ -106,7 +105,16 @@ public actor WorkItemPoll {
     /// Re-pointing at what it is already reading does nothing, so a surface may call this on every
     /// rebuild: `start` reads immediately, and a panel that rebuilds on each keystroke would
     /// otherwise spend a request per act.
+    /// It raises the landing on every path, the two that change nothing included: a rebind moves
+    /// which listing the reader should be holding without a tick having happened.
     public func point(_ resolution: BindingResolution, at projectID: String?) async {
+        settle(resolution, at: projectID)
+        await landed()
+    }
+
+    /// Where the loop is aimed, settled synchronously so `point` above can raise on every path
+    /// through it without a `defer` that would outlive the call.
+    private func settle(_ resolution: BindingResolution, at projectID: String?) {
         guard let projectID, case let .ready(binding) = resolution else {
             pointedAt = nil
             return stop()

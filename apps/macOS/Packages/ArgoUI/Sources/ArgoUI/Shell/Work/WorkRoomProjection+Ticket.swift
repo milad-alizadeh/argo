@@ -65,7 +65,7 @@ extension WorkRoomProjection {
             labels: item.labels,
             deliveries: reading.deliveryFacts[number] ?? [],
             children: children(of: item, in: reading),
-            blockedBy: item.blockedBy.map { blocker($0.number, in: reading) },
+            blockedBy: item.blockedBy?.map { blocker($0.number, in: reading) } ?? [],
             body: item.body,
         )
     }

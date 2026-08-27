@@ -60,7 +60,7 @@ enum WorkFixture {
     /// out rather than defaulted.
     static let unread = WorkReading(
         items: [WorkItem(
-            number: 272, title: nodeTreeTitle, status: "Todo", closure: .open, blockersRead: true,
+            number: 272, title: nodeTreeTitle, status: "Todo", closure: .open, blockedBy: [],
         )],
         provider: bound,
         project: project,
@@ -119,7 +119,12 @@ enum WorkFixture {
         WorkReading(items: items, provider: bound, project: project)
     }
 
-    static let bound = WorkProvider(name: "GitHub", account: "milad-alizadeh", state: .idle)
+    static let bound = WorkProvider(
+        name: "GitHub",
+        account: "milad-alizadeh",
+        state: .idle,
+        hasAnswered: true,
+    )
 
     /// The Project the design's renders are shot in — this repo, by the name the window carries.
     static let project = "argo"
@@ -127,17 +132,13 @@ enum WorkFixture {
     static func item(_ number: Int, blockedBy: [WorkItemBlocker]) -> WorkItem {
         WorkItem(
             number: number, title: "A ticket behind an edge", status: "Todo", closure: .open,
-            blockedBy: blockedBy, blockersRead: true,
+            blockedBy: blockedBy,
         )
     }
 
     /// The same ticket from a provider that serves no dependency summary: the edges are not empty,
     /// they are UNREAD, and every claim built on them is suppressed above this.
     private static func unedged(_ item: WorkItem) -> WorkItem {
-        WorkItem(
-            number: item.number, title: item.title, status: item.status, closure: item.closure,
-            labels: item.labels, priority: item.priority, type: item.type,
-            children: item.children, body: item.body,
-        )
+        WorkItem(copying: item, blockedBy: .some(nil))
     }
 }

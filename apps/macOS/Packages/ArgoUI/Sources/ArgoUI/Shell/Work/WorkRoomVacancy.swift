@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The room's two nothings, told apart (#818). ONE view for both: the pair's contrast is the
-/// thing being built, and two views would let the two sentences drift apart.
+/// The room's three nothings, told apart (#818, #820). ONE view for all of them: the contrast IS
+/// the thing being built, and three views would let the sentences drift apart.
 struct WorkRoomVacancy: View {
     @Environment(\.argo) private var argo
 
@@ -55,19 +55,27 @@ struct WorkRoomVacancy: View {
         case .unbound:
             project.map { "No Work Item provider is connected to \($0)" }
                 ?? "No Work Item provider is connected"
+        case let .unread(provider):
+            "Nothing has been read from \(provider) yet"
         case .nothingOpen:
             project.map { "Nothing open in \($0)" } ?? "Nothing open"
         }
     }
 
-    /// The sentence that separates the two: the unbound one says in as many words that this is not
-    /// an empty backlog, because the two pages are one glance apart.
+    /// The sentence that separates them: the two that have read nothing say so in as many words,
+    /// because all three pages are one glance apart.
     private var message: String {
         switch vacancy {
         case .unbound:
             """
             Argo reads tickets through a provider you connect per Project. Nothing here has been \
             read yet — this is not an empty backlog.
+            """
+        case let .unread(provider):
+            """
+            Argo is connected to \(provider) and has had no answer back for this Project. This is \
+            not an empty backlog — the connection at the foot of the sidebar says how the read is \
+            going.
             """
         case let .nothingOpen(provider):
             """

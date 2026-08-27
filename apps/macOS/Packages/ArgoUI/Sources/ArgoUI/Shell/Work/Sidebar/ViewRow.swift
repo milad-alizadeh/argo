@@ -11,7 +11,9 @@ struct ViewRow: View {
 
     let symbol: String
     let name: String
-    let count: Int
+    /// What the row holds, and `nil` where nothing has said enough to arrive at a number. The slot
+    /// is then EMPTY rather than a zero, which is the same rule the rest of the room reads by.
+    let count: Int?
 
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
@@ -22,14 +24,16 @@ struct ViewRow: View {
                 .argoText(ArgoTypography.rowMeta)
                 .lineLimit(1)
             Spacer(minLength: ArgoSpacing.base)
-            Text("\(count)")
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
+            if let count {
+                Text("\(count)")
+                    .argoText(ArgoTypography.machineCaption)
+                    .foregroundStyle(argo.color.text.tertiary)
+            }
         }
         .padding(.leading, ArgoWorkSidebar.gutter)
         .frame(minHeight: ArgoWorkSidebar.viewRowHeight)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(name), \(count)")
+        .accessibilityLabel(count.map { "\(name), \($0)" } ?? name)
     }
 }
 

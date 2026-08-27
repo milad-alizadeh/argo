@@ -3,9 +3,18 @@ import ArgoEngine
 extension WorkRoomProjection {
     /// The four views, counted over the whole open set — never over the view on screen, or opening
     /// `Blocked` would leave every other count reading its own filter back.
+    ///
+    /// `Unblocked` and `Blocked` partition the open set and always sum to `All open`
+    /// (`cockpit-work-room.md`), so the pair can only be counted where EVERY open ticket's edges
+    /// were read. Where one was not, both counts are absent rather than short: a number that has
+    /// silently dropped the tickets nobody asked about is worse than no number.
     static func views(of open: [WorkItem], claimed: Set<Int>) -> [ViewReading] {
-        WorkView.allCases.map { view in
-            ViewReading(id: view, count: items(of: open, in: view, claimed: claimed).count)
+        let edged = open.allSatisfy { $0.blockage != .unread }
+        return WorkView.allCases.map { view in
+            guard edged || !view.restsOnEdges else {
+                return ViewReading(id: view, count: nil)
+            }
+            return ViewReading(id: view, count: items(of: open, in: view, claimed: claimed).count)
         }
     }
 

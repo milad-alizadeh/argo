@@ -104,7 +104,6 @@ extension WorkFixture {
             blockedBy: shape.blockedBy.map {
                 WorkItemBlocker(number: $0, closure: closedNumbers.contains($0) ? .resolved : .open)
             },
-            blockersRead: true,
         )
     }
 
@@ -114,29 +113,23 @@ extension WorkFixture {
             title: title,
             status: "Done",
             closure: .resolved,
-            blockersRead: true,
+            blockedBy: [],
         )
     }
 
     /// The same ticket, finished. Everything but the status word survives: a closed parent still
     /// has the children a chart counts, and closing a ticket does not strip its labels.
     static func resolved(_ item: WorkItem) -> WorkItem {
-        WorkItem(
-            number: item.number, title: item.title, status: "Done", closure: .resolved,
-            labels: item.labels, priority: item.priority, type: item.type,
-            children: item.children, blockedBy: item.blockedBy, blockersRead: item.blockersRead,
-            body: item.body,
-        )
+        WorkItem(copying: item, status: "Done", closure: .resolved)
     }
 
     /// The same ticket carrying the facts one listing request answers alongside it — the provider's
     /// own priority and type words, and the body of the two tickets a render opens on.
     private static func carrying(_ item: WorkItem) -> WorkItem {
         WorkItem(
-            number: item.number, title: item.title, status: item.status, closure: item.closure,
-            labels: item.labels,
-            priority: priorities[item.number], type: types[item.number],
-            children: item.children, blockedBy: item.blockedBy, blockersRead: item.blockersRead,
+            copying: item,
+            priority: priorities[item.number],
+            type: types[item.number],
             body: bodies[item.number],
         )
     }

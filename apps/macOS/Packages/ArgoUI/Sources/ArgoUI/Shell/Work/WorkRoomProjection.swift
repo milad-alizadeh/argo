@@ -31,6 +31,11 @@ enum WorkRoomProjection {
         var vacancy: Vacancy? {
             guard let provider else { return .unbound }
             guard !hasOpenWork else { return nil }
+            // An empty listing is not an answer until one has landed. Saying "everything is closed"
+            // over a read that never arrived — a launch mid-flight, or a Binding that has been
+            // failing all session — is the false DIRECT the tier rules exist to refuse
+            // (`CONTEXT.md` L2 · degrade-down).
+            guard provider.hasAnswered else { return .unread(provider: provider.name) }
             return .nothingOpen(provider: provider.name)
         }
 
@@ -44,18 +49,24 @@ enum WorkRoomProjection {
         }
     }
 
-    /// The room with nothing to draw, and which nothing it is (#818). `unbound` names no count
-    /// anywhere — nothing was read, so every number would be invented; `nothingOpen` names the
-    /// provider that answered.
+    /// The room with nothing to draw, and which nothing it is (#818, #820). `unbound` and `unread`
+    /// name no count anywhere — nothing was read, so every number would be invented; `nothingOpen`
+    /// names the provider that answered.
     enum Vacancy: Sendable, Equatable {
         case unbound
+        /// Bound, and nothing has come back yet. Neither of the other two: there IS a provider, so
+        /// `Connect a provider…` would be the wrong act, and nobody has answered, so an empty
+        /// backlog is not a thing anyone may claim.
+        case unread(provider: String)
         case nothingOpen(provider: String)
     }
 
-    /// One sidebar view and what it holds.
+    /// One sidebar view and what it holds. The count is ABSENT where the provider has not said
+    /// enough to arrive at one — a view reading zero is a claim, and `Blocked` reading zero over a
+    /// backlog whose edges nobody served is the loudest false one there is (#820).
     struct ViewReading: Sendable, Equatable, Identifiable {
         let id: WorkView
-        let count: Int
+        let count: Int?
     }
 
     /// One PRD-shaped parent in the `CHARTS` group — the entry point to its Route.

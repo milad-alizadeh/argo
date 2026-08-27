@@ -57,7 +57,7 @@ struct NextUpTests {
             title: "Read",
             status: "Todo",
             closure: .open,
-            blockersRead: true,
+            blockedBy: [],
         )
         let reading = WorkFixture.reading(of: [Self.priced("high"), read])
 

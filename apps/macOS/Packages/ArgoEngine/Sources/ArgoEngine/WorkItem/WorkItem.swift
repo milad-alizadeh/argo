@@ -26,12 +26,11 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
     public let type: String?
     /// Children in the provider's own author order, which every provider serves natively.
     public let children: [Int]
-    public let blockedBy: [WorkItemBlocker]
-    /// Whether the provider served dependency edges for this ticket AT ALL. `false` is UNKNOWN and
-    /// not "no blockers": an empty `blockedBy` cannot tell a provider that answered none from one
-    /// that was never asked, and every claim built on the edges is suppressed rather than asserted
-    /// where this is false (`CONTEXT.md` L2 · degrade-down).
-    public let blockersRead: Bool
+    /// The dependency edges, and `nil` where the provider served none AT ALL — which is UNKNOWN and
+    /// not "no blockers". Absent rather than empty, so the two can never be told apart wrongly by a
+    /// caller that forgot to ask: every claim resting on the edges is suppressed rather than
+    /// asserted where this is `nil` (`CONTEXT.md` L2 · degrade-down).
+    public let blockedBy: [WorkItemBlocker]?
     /// The ticket's body, verbatim, and `nil` where nothing was read. Held for as long as the
     /// listing is and never persisted, on the same terms as every other fact here.
     public let body: String?
@@ -46,8 +45,7 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
         priority: String? = nil,
         type: String? = nil,
         children: [Int] = [],
-        blockedBy: [WorkItemBlocker] = [],
-        blockersRead: Bool = false,
+        blockedBy: [WorkItemBlocker]? = nil,
         body: String? = nil,
     ) {
         self.number = number
@@ -60,7 +58,6 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
         self.type = type
         self.children = children
         self.blockedBy = blockedBy
-        self.blockersRead = blockersRead
         self.body = body
     }
 
@@ -69,7 +66,7 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
     }
 
     public var blockage: WorkItemBlockage {
-        WorkItemBlockage(blockers: blockedBy)
+        blockedBy.map(WorkItemBlockage.init(blockers:)) ?? .unread
     }
 
     public func state(claimed: Bool) -> WorkItemState {

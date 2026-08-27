@@ -56,7 +56,11 @@ public struct GitHubWorkItems: WorkItemPort {
             : []
         return issue.workItem(
             children: children.map(\.number),
-            blockedBy: blockers.map { WorkItemBlocker(number: $0.number, closure: $0.closure) },
+            // A host that served no summary served no edges either, and that is `nil` rather than
+            // the empty list a host with none of them answers with.
+            blockedBy: issue.issueDependenciesSummary == nil
+                ? nil
+                : blockers.map { WorkItemBlocker(number: $0.number, closure: $0.closure) },
         )
     }
 }
