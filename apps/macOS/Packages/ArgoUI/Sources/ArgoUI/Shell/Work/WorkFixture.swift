@@ -17,13 +17,30 @@ enum WorkFixture {
         WorkRoomProjection.room(from: reading(showing: number))
     }
 
-    /// Nothing bound: no provider to name, and no items anybody could have read.
-    static let unbound = WorkReading()
+    /// Nothing bound: no provider to name, and no items anybody could have read. The Project is
+    /// still named — a window is scoped to one whether or not anything is bound to it.
+    static let unbound = WorkReading(project: project)
 
     /// A provider that ANSWERED, and the answer was nothing. Its views stay and read zero, which is
     /// a different page from the one above: conflating the two would tell a reader their backlog is
     /// empty when in fact nobody asked.
-    static let answeredEmpty = WorkReading(provider: bound)
+    ///
+    /// The same twelve tickets, every one of them closed. A reading with no items at all reaches
+    /// the same page but loses the charts, and `empty.png` draws them reading zero.
+    static let answeredEmpty = WorkReading(
+        items: items.map(resolved),
+        charts: [607, 334],
+        provider: bound,
+        project: project,
+    )
+
+    /// The same reading scoped to a real Project. The one fact a fixture cannot invent: the window
+    /// is opened on a Project of the reader's, and both vacancy pages name it.
+    static func reading(in project: String?) -> WorkReading {
+        var reading = reading
+        reading.project = project
+        return reading
+    }
 
     /// A provider that exposes NO dependency edges (`edgeless.png`). Every other fact is read; the
     /// blockers are the one thing nobody was told about, and no `Blocked by` section is drawn
@@ -45,6 +62,7 @@ enum WorkFixture {
     static let unread = WorkReading(
         items: [WorkItem(number: 272, title: nodeTreeTitle, status: "Todo", closure: .open)],
         provider: bound,
+        project: project,
         showing: 272,
     )
 
@@ -59,6 +77,7 @@ enum WorkFixture {
             bodies: [272: body, 607: body],
             charts: [607, 334],
             provider: bound,
+            project: project,
             showing: showing,
         )
     }
@@ -66,10 +85,13 @@ enum WorkFixture {
     /// One item's own reading, for a test that needs a single edge rather than the whole backlog.
     /// Bound, because an unbound room is vacant whatever is in it.
     static func reading(of items: [WorkItem]) -> WorkReading {
-        WorkReading(items: items, provider: bound)
+        WorkReading(items: items, provider: bound, project: project)
     }
 
     static let bound = WorkProvider(name: "GitHub", account: "milad-alizadeh", state: .idle)
+
+    /// The Project the design's renders are shot in — this repo, by the name the window carries.
+    static let project = "argo"
 
     static func item(_ number: Int, blockedBy: [WorkItemBlocker]) -> WorkItem {
         WorkItem(

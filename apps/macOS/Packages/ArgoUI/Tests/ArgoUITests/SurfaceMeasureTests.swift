@@ -130,4 +130,21 @@ struct SurfaceMeasureTests {
         #expect(ArgoTicketDetail.statusDividerHeight < ArgoTypography.control.lineBox * 2)
         #expect(ArgoTicketDetail.statusDividerHeight > 0)
     }
+
+    /// The vacancy panel is two centred sentences, not prose, so it is set narrower than the
+    /// measure a paragraph of Argo's own reading runs to.
+    @Test
+    func `the vacancy panel is narrower than a body of prose`() {
+        #expect(ArgoWorkRoomVacancy.panelWidth < ArgoFeedRow.column)
+    }
+
+    /// It is a frame rather than a ceiling, so it has to fit the tightest deck the shell allows —
+    /// the minimum window with the sidebar dragged to its widest.
+    @Test
+    func `the vacancy panel fits the narrowest deck the shell allows`() {
+        #expect(
+            ArgoWorkRoomVacancy.panelWidth
+                < ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMaximumWidth,
+        )
+    }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The shell's room-awareness (#812): which sidebar the split view's leading slot takes, how wide
-/// it opens, and where the Work room's value comes from.
+/// The shell's room-awareness (#812, #818): which sidebar the split view's leading slot takes, how
+/// wide it opens, whether it opens at all, and where the Work room's value comes from.
 extension CockpitView {
     /// The room, assembled once. Both slots ask for it, so neither can be handed a different
     /// projection or a stale selection — the backlog is already filtered to the open view here.
@@ -11,13 +11,34 @@ extension CockpitView {
     /// `WorkFixture.reading` below is the single place that changes when the read path lands.
     var workRoom: WorkRoom {
         @Bindable var navigation = navigation
+        let reading = WorkFixture.reading(in: presentation.activeProject?.name)
 
         return WorkRoom(
-            room: WorkRoomProjection.room(from: WorkFixture.reading, in: navigation.workView),
+            room: WorkRoomProjection.room(from: reading, in: navigation.workView),
             cockpitRoom: $navigation.room,
             ticket: $navigation.ticket,
             view: $navigation.workView,
+            connect: { actions.openProjectPanel(presentation.activeProjectID) },
         )
+    }
+
+    /// The Work room with nothing bound hides WHOLE, which includes its half of the split view
+    /// (#818). Hidden here and not by an empty sidebar view: a `NavigationSplitView` draws its
+    /// column, its divider and its toggle around an `EmptyView` all the same.
+    ///
+    /// The room is still reachable — Rooms is in the toolbar, not in the rail that just went. The
+    /// fixture above is always bound, so today only the specimen reaches this.
+    var roomHidesSidebar: Bool {
+        navigation.room == .work && workRoom.room.vacancy == .unbound
+    }
+
+    /// The column the split view opens with — the room's answer where it has one, and the reader's
+    /// own otherwise. The setter always writes the reader's, so a rail they closed in one room is
+    /// still closed after a room that hid it.
+    var sidebarColumn: Binding<NavigationSplitViewVisibility> {
+        let reader = $sidebarVisibility
+        guard roomHidesSidebar else { return reader }
+        return Binding(get: { .detailOnly }, set: { reader.wrappedValue = $0 })
     }
 
     /// The sidebar is the ROOM's, not the app's. Sessions and Code are unchanged; Work replaces the
