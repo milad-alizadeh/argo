@@ -24,8 +24,7 @@ struct NextUpTests {
     /// provider calls `medium` earns nothing here however urgent it looks from elsewhere.
     @Test
     func `only the provider's own high word earns the priority chip`() throws {
-        var reading = WorkFixture.oneChip
-        reading.priorities = [388: "medium"]
+        let reading = WorkFixture.reading(of: [Self.priced("medium")])
 
         try #expect(pick(in: WorkRoomProjection.room(from: reading)).reasons.isEmpty)
     }
@@ -53,8 +52,14 @@ struct NextUpTests {
     /// nothing about this one, and inferring from the neighbours is the failure the tier guards.
     @Test
     func `edges read for another ticket earn this one nothing`() throws {
-        var reading = WorkFixture.oneChip
-        reading.edgesRead = [999]
+        let read = WorkItem(
+            number: 999,
+            title: "Read",
+            status: "Todo",
+            closure: .open,
+            blockersRead: true,
+        )
+        let reading = WorkFixture.reading(of: [Self.priced("high"), read])
 
         try #expect(pick(in: WorkRoomProjection.room(from: reading)).reasons == [.highPriority])
     }
@@ -62,10 +67,7 @@ struct NextUpTests {
     /// The chip names the chart the pick belongs to, which is the only place a `<PRD>` comes from.
     @Test
     func `a pick inside a chart earns the next-in chip`() throws {
-        var reading = WorkFixture.reading(of: [chart, leaf])
-        reading.charts = [607]
-
-        let room = WorkRoomProjection.room(from: reading)
+        let room = WorkRoomProjection.room(from: WorkFixture.reading(of: [chart, leaf]))
 
         try #expect(pick(in: room).reasons == [.next(chart: "#607")])
     }
@@ -136,8 +138,21 @@ struct NextUpTests {
         return pick
     }
 
+    /// #388 as an edgeless provider serves it: one priority word, no type, and no dependency
+    /// summary — which is exactly what earns or refuses each chip above.
+    private static func priced(_ priority: String) -> WorkItem {
+        WorkItem(
+            number: 388, title: "Work Item read path", status: "Todo", closure: .open,
+            priority: priority,
+        )
+    }
+
+    /// A chart is one by its TYPE word, which is what the `CHARTS` group and this chip both read.
     private var chart: WorkItem {
-        WorkItem(number: 607, title: "Wayfinder", status: "Todo", closure: .open, children: [273])
+        WorkItem(
+            number: 607, title: "Wayfinder", status: "Todo", closure: .open, type: "PRD",
+            children: [273],
+        )
     }
 
     private var leaf: WorkItem {

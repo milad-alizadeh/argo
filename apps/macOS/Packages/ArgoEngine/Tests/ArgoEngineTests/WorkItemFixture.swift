@@ -39,10 +39,6 @@ actor ScriptedWorkItems: WorkItemPort {
         self.script = script
     }
 
-    nonisolated var carriesPriority: Bool {
-        false
-    }
-
     func list(in _: String, grant _: AccountGrant) async throws -> [WorkItem] {
         reads += 1
         guard let answer = script.count > 1 ? script.removeFirst() : script.first else { return [] }
@@ -51,6 +47,24 @@ actor ScriptedWorkItems: WorkItemPort {
 
     func readCount() -> Int {
         reads
+    }
+}
+
+/// How many times a poll said it had finished a read. Counted rather than flagged, so a test can
+/// tell "raised once per read" from "raised at all".
+actor Landings {
+    private var count = 0
+
+    nonisolated var raise: WorkItemPoll.Landing {
+        { await self.record() }
+    }
+
+    func raised() -> Int {
+        count
+    }
+
+    private func record() {
+        count += 1
     }
 }
 

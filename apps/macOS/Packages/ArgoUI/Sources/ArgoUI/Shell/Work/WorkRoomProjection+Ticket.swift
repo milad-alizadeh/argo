@@ -60,13 +60,13 @@ extension WorkRoomProjection {
             title: item.title,
             status: item.status,
             bucket: item.state(claimed: reading.claimed.contains(number)),
-            priority: reading.priorities[number],
-            type: reading.types[number],
+            priority: item.priority,
+            type: item.type,
             labels: item.labels,
             deliveries: reading.deliveryFacts[number] ?? [],
             children: children(of: item, in: reading),
             blockedBy: item.blockedBy.map { blocker($0.number, in: reading) },
-            body: reading.bodies[number],
+            body: item.body,
         )
     }
 

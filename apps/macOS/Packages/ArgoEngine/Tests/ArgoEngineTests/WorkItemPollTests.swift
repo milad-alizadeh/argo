@@ -86,6 +86,23 @@ struct WorkItemPollTests {
     }
 
     @Test
+    func `every read raises the landing, whether or not it landed`() async {
+        // The failing one too: the listing did not move, but the health behind the provider's own
+        // dot did, and a room that only heard about successes would go on drawing it idle.
+        let landings = Landings()
+        let port = ScriptedWorkItems([.success([ticket]), .failure(.offline)])
+        let poll = WorkItemPoll(
+            port: port, health: ConnectionHealthLedger(), items: WorkItemLedger(),
+        )
+
+        await poll.report(to: landings.raise)
+        await poll.poll(target)
+        await poll.poll(target)
+
+        #expect(await landings.raised() == 2)
+    }
+
+    @Test
     func `a started poll reads again on every tick`() async {
         let wait = PollWait()
         let port = ScriptedWorkItems([.success([ticket])])

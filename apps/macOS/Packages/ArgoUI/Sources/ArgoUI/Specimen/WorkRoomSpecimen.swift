@@ -1,13 +1,28 @@
+import ArgoEngine
 import SwiftUI
 
 /// The Work room in the shipping shell — the titlebar, the sidebar at its own ideal, and the deck's
 /// two panes. This is the state `docs/designs/work-room/rest.png` is shot from.
+///
+/// The shell reads its room from three inputs now, not one fixture (#820): the listing, the Binding
+/// behind the foot, and the roster the claims come off. All three are handed in here, so this draws
+/// the room rather than the unbound page a Mac with nothing connected would.
+///
+/// Its dots are all `absent`, and `rest.png`'s are not. That is the shell being honest: nothing
+/// reads a code host yet (#258), so the shipping room has no Delivery to mark. The dot's five
+/// states are shot from `deliveryDots` and from the `WorkPanesSpecimen` renders, which take a
+/// reading directly.
 struct WorkRoomSpecimen: View {
     @State private var navigation = CockpitNavigationModel.pointedAtWork
 
     var body: some View {
-        CockpitView(presentation: .preview, actions: .inert)
-            .environment(navigation)
+        CockpitView(
+            presentation: .workingTheBacklog,
+            actions: .inert,
+            health: .previewBound,
+            workItems: WorkFixture.items,
+        )
+        .environment(navigation)
     }
 }
 

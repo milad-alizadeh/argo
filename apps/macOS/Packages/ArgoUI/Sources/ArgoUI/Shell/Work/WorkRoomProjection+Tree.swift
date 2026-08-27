@@ -60,7 +60,7 @@ extension WorkRoomProjection {
                 title: item.title,
                 delivery: reading.deliveries[item.number] ?? .absent,
                 trailing: rollUp(of: item, closed: closed),
-                priority: reading.priorities[item.number],
+                priority: item.priority,
                 children: item.children
                     .filter { parents[$0] == item.number }
                     .compactMap { byNumber[$0] }

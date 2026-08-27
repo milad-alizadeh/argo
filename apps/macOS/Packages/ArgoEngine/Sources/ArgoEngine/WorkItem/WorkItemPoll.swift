@@ -41,8 +41,14 @@ public actor WorkItemPoll {
     private let items: WorkItemLedger
     private let sleep: Sleeper
     private let now: @Sendable () -> Date
+    private var landed: Landing = {}
     private var loop: Task<Void, Never>?
     private var pointedAt: Pointing?
+
+    /// Raised once a read has finished. A tick is the only thing that moves the listing, and
+    /// nothing above an actor can observe one — a room wired to the ledger alone would draw the
+    /// backlog as it was when the reader last clicked something.
+    public typealias Landing = @Sendable () async -> Void
 
     public init(
         port: WorkItemPort,
@@ -56,6 +62,13 @@ public actor WorkItemPoll {
         self.items = items
         self.sleep = sleep
         self.now = now
+    }
+
+    /// Tell the poll who to raise on. Separate from `init` because the reader is a surface the loop
+    /// is built long before, and replacing it costs nothing: `point` is the only thing that starts
+    /// a loop, and every caller of it reports here first.
+    public func report(to landed: @escaping Landing) {
+        self.landed = landed
     }
 
     /// Read now, then every `interval` until stopped. Starting again replaces the loop rather than
@@ -133,6 +146,9 @@ public actor WorkItemPoll {
         } catch {
             await record(error as? WorkItemFetchError ?? .unreachable, of: target)
         }
+        // On the failing path too: the listing did not move, but the health behind the provider's
+        // own dot did, and that is drawn from the same read.
+        await landed()
     }
 
     /// The listing is deliberately untouched on every path through here — a failed read leaves

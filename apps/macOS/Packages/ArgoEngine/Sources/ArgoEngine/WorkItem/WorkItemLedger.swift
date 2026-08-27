@@ -17,7 +17,10 @@ public actor WorkItemLedger {
     /// The listing, and an empty one for a Project nothing has read yet — which reads the same as
     /// a repository with no issues, because from a surface's side they are the same: no Work Items
     /// to show, and the health chip is what says whether that is an answer or a silence.
-    public func items(of projectID: String) -> [WorkItem] {
-        listings[projectID] ?? []
+    ///
+    /// No Project at all reads empty on the same terms, and never the last one's listing: a window
+    /// pointed away from a Project must not go on drawing its backlog.
+    public func items(of projectID: String?) -> [WorkItem] {
+        projectID.flatMap { listings[$0] } ?? []
     }
 }

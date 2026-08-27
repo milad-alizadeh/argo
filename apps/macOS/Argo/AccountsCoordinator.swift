@@ -19,6 +19,10 @@ final class AccountsCoordinator {
     /// chrome on the window and the panel is a sheet over it, so tying this to the panel would hide
     /// the failure exactly while the user is not looking at the place that reports it.
     private(set) var connections = ConnectionHealthReading.quiet
+    /// The active Project's listing as the last read left it, for the Work room to draw (#820).
+    /// Published beside `connections` and for its reason: the room is on screen whether or not the
+    /// Connect panel is, so it is refreshed by every finished read rather than by every panel act.
+    private(set) var workItems: [WorkItem] = []
 
     /// Reached from `AccountsCoordinator+Grant` and `+Scopes`, which is why these are not
     /// `private`: `private` in Swift is file-scoped.
@@ -28,14 +32,14 @@ final class AccountsCoordinator {
     /// What Argo has observed about each Binding's connection. Live and unpersisted, so a launch
     /// opens on what it can see rather than on what yesterday could.
     let health = ConnectionHealthLedger()
-    /// The active Project's Work Items as the last poll that landed read them, and the loop that
-    /// fills it. Here rather than on the cockpit because the poll reads through a Binding and files
-    /// its failures on `health` — both of which are this half's, and neither of which the Hub has
-    /// ever heard of.
+    /// Where every Project's listing lands, keyed by Project. Here rather than on the cockpit
+    /// because the poll reads through a Binding and files its failures on `health` — both of which
+    /// are this half's, and neither of which the Hub has ever heard of.
     let workItemLedger = WorkItemLedger()
-    /// Pointed on every `refresh`, which is every act that could have moved a Binding. Re-pointing
-    /// at an unchanged one costs nothing — the loop holds what it is reading.
-    private let workItems: WorkItemPoll
+    /// The loop that fills it. Pointed on every `refresh`, which is every act that could have
+    /// moved a Binding. Re-pointing at an unchanged one costs nothing — the loop holds what it is
+    /// already reading.
+    private let poll: WorkItemPoll
 
     /// Whether the panel is meant to be up. Kept apart from `reading` because every act ends in a
     /// rebuild, and a rebuild that decided for itself would re-open a panel the user just closed.
@@ -60,7 +64,7 @@ final class AccountsCoordinator {
         self.accounts = store
         self.bindings = ProjectBindings(projects: projects, accounts: store)
         self.authorization = GitHubAuthorization(accounts: store)
-        self.workItems = WorkItemPoll(
+        self.poll = WorkItemPoll(
             port: GitHubWorkItems(), health: health, items: workItemLedger,
         )
     }
@@ -166,9 +170,20 @@ final class AccountsCoordinator {
         connections = await ConnectionHealthReading.over(ports, from: .init(
             registry: accounts.load(), ledger: health, projectID: project?.id,
         ))
-        await workItems.point(workItemBinding(), at: project?.id)
+        // Reported before pointed, always: `point` is the only thing that starts a loop, so the
+        // reader is in place before any tick it would have to hear about.
+        await poll.report(to: { [weak self] in await self?.readListing() })
+        await poll.point(workItemBinding(), at: project?.id)
+        await readListing()
         guard isOpen else { return }
         await show(ports: ports)
+    }
+
+    /// Take what the ledger holds for the active Project. Raised by every finished read and by
+    /// every `refresh`, because a rebind moves the listing without a tick having happened.
+    ///
+    private func readListing() async {
+        workItems = await workItemLedger.items(of: project?.id)
     }
 
     private func show(ports: [ConnectPort]) async {

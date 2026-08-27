@@ -58,6 +58,7 @@ struct ArgoApp: App {
                         actions: actions,
                         connect: connectSurface,
                         health: accounts.connections,
+                        workItems: accounts.workItems,
                     )
                     .environment(navigation)
                     .task {
@@ -75,7 +76,10 @@ struct ArgoApp: App {
                     // A Session opening on a branch nobody has read the ticket for is the one
                     // event worth a code-host read (#745). Keyed on the unnamed set rather than on
                     // the roster, so a turn ending on a named ticket asks nothing.
-                    .onChange(of: cockpit.untitledTicketNumbers, initial: true) { _, _ in
+                    .onChange(
+                        of: cockpit.presentation.untitledTicketNumbers,
+                        initial: true,
+                    ) { _, _ in
                         Task { await cockpit.nameTickets(through: accounts.workItemBinding()) }
                     }
                     // Every PTY this window owns dies with the window, and the observer above ends

@@ -1,8 +1,13 @@
+import ArgoEngine
 import Foundation
 
-/// The facts the ticket detail draws that no port reads yet (#388, #160) — the provider's own
-/// priority and type words, and the Deliveries in flight. Held beside the items rather than on
-/// them: they arrive from the provider alongside a `WorkItem`, never inside one.
+/// What the fixture's tickets carry beyond a listing's bare fields — the provider's own priority
+/// and type words, the two bodies a render opens on, and the Deliveries in flight.
+///
+/// The first three land ON the items (`carrying`), because that is where the port now reads them
+/// (#820). They are held as maps here only so the twelve-item list beside this one stays a list of
+/// tickets rather than a wall of fields. The Deliveries stay beside the items for the reason they
+/// always did: nothing reads a code host yet (#258).
 extension WorkFixture {
     /// The provider's own priority word per ticket, verbatim and lowercase — which is how this
     /// tracker spells one. Argo neither ranks these nor recases them.
@@ -20,6 +25,30 @@ extension WorkFixture {
         388: "task", 272: "task", 273: "task", 335: "task", 336: "task", 763: "task", 275: "task",
         160: "decision", 185: "decision",
     ]
+
+    /// The standard reading with the priority words edited. Priority lives ON a `WorkItem` now
+    /// (#820), so a case that wants a different word rebuilds the items rather than patching a
+    /// dictionary beside them — which is also what stops one from drifting from the other.
+    static func reading(pricing edit: (inout [Int: String]) -> Void) -> WorkReading {
+        var words = priorities
+        edit(&words)
+        var reading = reading(showing: 272)
+        reading.items = items.map { repriced($0, to: words[$0.number]) }
+        return reading
+    }
+
+    private static func repriced(_ item: WorkItem, to word: String?) -> WorkItem {
+        WorkItem(
+            number: item.number, title: item.title, status: item.status, closure: item.closure,
+            labels: item.labels, priority: word, type: item.type,
+            children: item.children, blockedBy: item.blockedBy, blockersRead: item.blockersRead,
+            body: item.body,
+        )
+    }
+
+    /// The bodies, on the two tickets a render opens on. Every other ticket carries none, which is
+    /// the ordinary case: a listing answers with what the provider filed, and most of it is empty.
+    static let bodies: [Int: String] = [272: body, 607: parentBody]
 
     /// Two Deliveries on one ticket, and one on each of two others — the counts the chips have to
     /// survive, and the two check readings side by side.

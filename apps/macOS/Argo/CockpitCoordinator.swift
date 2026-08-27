@@ -145,23 +145,15 @@ final class CockpitCoordinator {
         annotations = await annotationStore.setName(name, sessionID: sessionID)
     }
 
-    /// The ticket NUMBERS on the roster that carry no title yet. What a resolve is triggered BY, so
-    /// a Session appearing on a new branch is read and every ticket already named is left alone.
-    var untitledTicketNumbers: Set<Int> {
-        Set(presentation.sessions.compactMap { $0.issue?.title == nil ? $0.issue?.number : nil })
-    }
-
-    /// Name each Session's ticket through the Project's Work Item port (#745).
+    /// Name each Session's ticket through the Project's Work Item port (#745). What is resolved and
+    /// what triggers a resolve are both `CockpitPresentation`'s (`+Tickets`).
     ///
     /// A port that is unbound or has come undone resolves nothing and leaves every stored title
     /// where it is: a roster that emptied its rows the moment a Binding lapsed would read as
     /// Sessions losing the work they are on.
     func nameTickets(through resolution: BindingResolution) async {
         guard case let .ready(binding) = resolution else { return }
-        let links = presentation.sessions.reduce(into: [String: Int]()) { links, session in
-            guard let number = session.issue?.number else { return }
-            links[session.id] = number
-        }
+        let links = presentation.ticketLinks
         guard !links.isEmpty else { return }
         annotations = await ticketTitles.resolve(links: links, through: binding)
     }

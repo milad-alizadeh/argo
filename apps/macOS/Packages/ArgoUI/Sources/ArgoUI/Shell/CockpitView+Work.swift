@@ -6,12 +6,20 @@ extension CockpitView {
     /// The room, assembled once. Both slots ask for it, so neither can be handed a different
     /// projection or a stale selection — the backlog is already filtered to the open view here.
     ///
-    /// Fixture-fed, deliberately and only for now: the Work Item port lists (#388) but nothing
-    /// projects it onto the Hub, so a room wired to live state would draw an empty one. The
-    /// `WorkFixture.reading` below is the single place that changes when the read path lands.
+    /// Read from the provider (#820): the poll's own listing, the roster that says which of it is
+    /// claimed, and the Work Item Binding's health behind the foot. Nothing here is a fixture, and
+    /// nothing missing from the read is filled in — the room degrades to the quieter page instead.
     var workRoom: WorkRoom {
         @Bindable var navigation = navigation
-        let reading = WorkFixture.reading(in: presentation.activeProject?.name)
+        let reading = WorkReading.live(
+            WorkReading.Sources(
+                items: workItems,
+                sessions: presentation.sessions,
+                health: health,
+                project: presentation.activeProject?.name,
+            ),
+            showing: navigation.ticket,
+        )
 
         return WorkRoom(
             room: WorkRoomProjection.room(from: reading, in: navigation.workView),
@@ -27,8 +35,9 @@ extension CockpitView {
     /// (#818). Hidden here and not by an empty sidebar view: a `NavigationSplitView` draws its
     /// column, its divider and its toggle around an `EmptyView` all the same.
     ///
-    /// The room is still reachable — Rooms is in the toolbar, not in the rail that just went. The
-    /// fixture above is always bound, so today only the specimen reaches this.
+    /// The room is still reachable — Rooms is in the toolbar, not in the rail that just went. This
+    /// is where a machine with no Work Item Binding lands, which is every machine before onboarding
+    /// and every Project bound to nothing after it.
     var roomHidesSidebar: Bool {
         navigation.room == .work && workRoom.room.vacancy == .unbound
     }
