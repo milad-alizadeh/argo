@@ -33,7 +33,10 @@ enum WorkToolbarProjection {
         showing: Int?,
     )
         -> Reading {
-        guard room.provider != nil else { return .none }
+        // `room.vacancy` and not a second reading of `provider` and `backlog`: #818 made it the one
+        // answer to which of the room's two nothings this is, and a row that decided that for
+        // itself could keep New ticket over a provider nobody had asked.
+        guard room.vacancy != .unbound else { return .none }
         let hasRows = !room.backlog.isEmpty
         return Reading(
             heading: "Backlog",

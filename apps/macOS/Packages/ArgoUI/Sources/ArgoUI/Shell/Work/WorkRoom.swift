@@ -15,6 +15,9 @@ struct WorkRoom {
     /// Which view is open. Above the room too, and for a sharper reason: `room.backlog` is already
     /// filtered to it, so the selection has to be settled before the room is derived.
     @Binding var view: WorkView
+    /// What the unbound page's `Connect a provider…` does. Inert by default, so a preview and a
+    /// specimen draw the button without opening a panel behind the render.
+    var connect: @MainActor () -> Void = {}
 
     var sidebar: some View {
         WorkSidebar(room: room, cockpitRoom: $cockpitRoom, view: $view)
@@ -30,11 +33,16 @@ struct WorkRoom {
         )
     }
 
-    var deck: some View {
-        HStack(spacing: ArgoSpacing.flush) {
-            BacklogList(rows: room.backlog, selection: $ticket)
-            DeckSeparator()
-            TicketDetail(ticket: room.ticket) { ticket = $0 }
+    /// The two panes, OR one of the room's two vacancies — never both.
+    @ViewBuilder var deck: some View {
+        if let vacancy = room.vacancy {
+            WorkRoomVacancy(vacancy: vacancy, project: room.project, connect: connect)
+        } else {
+            HStack(spacing: ArgoSpacing.flush) {
+                BacklogList(rows: room.backlog, selection: $ticket)
+                DeckSeparator()
+                TicketDetail(ticket: room.ticket) { ticket = $0 }
+            }
         }
     }
 }

@@ -1,0 +1,96 @@
+import SwiftUI
+
+/// The room's two nothings, told apart (#818). ONE view for both: the pair's contrast is the
+/// thing being built, and two views would let the two sentences drift apart.
+struct WorkRoomVacancy: View {
+    @Environment(\.argo) private var argo
+
+    let vacancy: WorkRoomProjection.Vacancy
+    /// The Project the room is scoped to, named in both sentences. Absent where the window has no
+    /// active Project, and the sentences drop the clause rather than saying "this Project" twice.
+    let project: String?
+    let connect: @MainActor () -> Void
+
+    var body: some View {
+        ContentUnavailableView {
+            Text(title)
+                .argoText(ArgoTypography.identityHeading)
+                .foregroundStyle(argo.color.text.primary)
+                .frame(maxWidth: ArgoWorkRoomVacancy.panelWidth)
+        } description: {
+            Text(message)
+                .argoText(ArgoTypography.body)
+                .foregroundStyle(argo.color.text.tertiary)
+                // On the Text: `ContentUnavailableView` sizes its description to a measure of its
+                // own, and a frame outside it never reaches the line breaks.
+                .frame(width: ArgoWorkRoomVacancy.panelWidth)
+        } actions: {
+            if case .unbound = vacancy {
+                connectButton
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// A `Button` restyled through the contract, which is the shape every accent-filled control in
+    /// this app takes. `.borderedProminent` composites its tint through the system's own material,
+    /// so it draws a paler blue under a white label — neither is the contract's accent pair.
+    private var connectButton: some View {
+        Button(action: connect) {
+            Text("Connect a provider…")
+                .argoText(ArgoTypography.control)
+                .foregroundStyle(argo.color.text.onAccent)
+                .padding(.horizontal, ArgoSpacing.comfortable)
+                .padding(.vertical, ArgoSpacing.snug)
+                .background(
+                    argo.color.interaction.accent,
+                    in: RoundedRectangle(cornerRadius: ArgoRadius.control),
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var title: String {
+        switch vacancy {
+        case .unbound:
+            project.map { "No Work Item provider is connected to \($0)" }
+                ?? "No Work Item provider is connected"
+        case .nothingOpen:
+            project.map { "Nothing open in \($0)" } ?? "Nothing open"
+        }
+    }
+
+    /// The sentence that separates the two: the unbound one says in as many words that this is not
+    /// an empty backlog, because the two pages are one glance apart.
+    private var message: String {
+        switch vacancy {
+        case .unbound:
+            """
+            Argo reads tickets through a provider you connect per Project. Nothing here has been \
+            read yet — this is not an empty backlog.
+            """
+        case let .nothingOpen(provider):
+            """
+            \(provider) answered: every Work Item it exposes for this Project is closed. Nothing \
+            is waiting to be picked up.
+            """
+        }
+    }
+}
+
+#Preview("Work room vacancy — the two nothings, side by side") {
+    HStack(spacing: ArgoSpacing.flush) {
+        WorkRoomVacancy(vacancy: .unbound, project: "argo", connect: {})
+        WorkRoomVacancy(vacancy: .nothingOpen(provider: "GitHub"), project: "argo", connect: {})
+    }
+    .frame(width: 1080, height: 420)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Work room vacancy — no active Project to name") {
+    WorkRoomVacancy(vacancy: .unbound, project: nil, connect: {})
+        .frame(width: 540, height: 420)
+        .argoDeckSurface()
+        .argoAppearance()
+}

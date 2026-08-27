@@ -38,9 +38,13 @@ struct WorkPanesSpecimen: View {
         )
 
         HStack(spacing: ArgoSpacing.flush) {
-            work.sidebar
-                .frame(width: ArgoLayout.sidebarMinimumWidth)
-            DeckSeparator()
+            // Absent, not empty: with nothing bound the room hides WHOLE, and the shell hides its
+            // half of the split view for the same reason (`CockpitView.roomHidesSidebar`).
+            if work.room.vacancy != .unbound {
+                work.sidebar
+                    .frame(width: ArgoLayout.sidebarMinimumWidth)
+                DeckSeparator()
+            }
             work.deck
         }
         .argoDeckSurface()
