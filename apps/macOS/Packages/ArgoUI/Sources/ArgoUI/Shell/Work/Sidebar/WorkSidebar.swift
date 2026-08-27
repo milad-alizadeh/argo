@@ -9,14 +9,13 @@ struct WorkSidebar: View {
     /// Which room the strip is on. A binding, because the strip switches the whole window and this
     /// sidebar is only the pane it starts in.
     @Binding var cockpitRoom: CockpitRoom
-
-    /// Which view is open. Held here because it is this pane's own interaction state: nothing
-    /// outside the sidebar opens a view, and it is not a fact the deck reads.
-    @State private var selection = WorkView.allOpen
+    /// Which view is open. A binding and not this pane's own state: it decides which rows the DECK
+    /// draws, so the room is derived from it before either half is built.
+    @Binding var view: WorkView
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            List(selection: $selection) {
+            List(selection: $view) {
                 RoomStrip(selection: $cockpitRoom)
                     .previewSafeListRow()
                 backlogGroup
@@ -31,9 +30,9 @@ struct WorkSidebar: View {
 
     private var backlogGroup: some View {
         Section {
-            ForEach(room.views) { view in
-                ViewRow(symbol: view.id.symbol, name: view.id.name, count: view.count)
-                    .tag(view.id)
+            ForEach(room.views) { reading in
+                ViewRow(symbol: reading.id.symbol, name: reading.id.name, count: reading.count)
+                    .tag(reading.id)
             }
         } header: {
             GroupLabel("Backlog")
@@ -42,6 +41,10 @@ struct WorkSidebar: View {
 
     /// One row per PRD-shaped parent — the entry point to its Route. Absent rather than empty: a
     /// group heading over nothing says a chart is missing.
+    ///
+    /// Deliberately UNTAGGED: a chart opens the Route (#334), which is not built, and the list's
+    /// selection is a `WorkView`. A tag here would make a row look selectable and then filter the
+    /// backlog to something nobody asked for.
     @ViewBuilder private var chartsGroup: some View {
         if !room.charts.isEmpty {
             Section {
@@ -57,18 +60,21 @@ struct WorkSidebar: View {
 
 #Preview("Work sidebar") {
     @Previewable @State var room = CockpitRoom.work
+    @Previewable @State var view = WorkView.allOpen
 
-    WorkSidebar(room: WorkFixture.room, cockpitRoom: $room)
+    WorkSidebar(room: WorkFixture.room, cockpitRoom: $room, view: $view)
         .frame(width: ArgoLayout.sidebarMinimumWidth, height: 520)
         .argoAppearance()
 }
 
 #Preview("Work sidebar — nothing bound") {
     @Previewable @State var room = CockpitRoom.work
+    @Previewable @State var view = WorkView.allOpen
 
     WorkSidebar(
         room: WorkRoomProjection.room(from: WorkFixture.unbound),
         cockpitRoom: $room,
+        view: $view,
     )
     .frame(width: ArgoLayout.sidebarMinimumWidth, height: 520)
     .argoAppearance()

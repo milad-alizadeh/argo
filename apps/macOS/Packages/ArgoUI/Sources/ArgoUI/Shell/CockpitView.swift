@@ -138,9 +138,7 @@ public struct CockpitView: View {
                 vessel: vessel,
                 intents: intents(for: vessel),
                 readings: readings,
-                work: work,
-                ticket: $navigation.ticket,
-                cockpitRoom: $navigation.room,
+                work: navigation.room == .work ? workRoom : nil,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
             // this is the one view that holds the navigation.

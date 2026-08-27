@@ -41,14 +41,10 @@ struct InstrumentDeckShell: View {
     /// Which Agent the deck opens scoped to. A parameter for the reason `open` is one: a screenshot
     /// cannot click a chip.
     var scope = FeedScope.session
-    /// The Work room, already projected. A VALUE for the reason the feed is one — a specimen builds
-    /// it from a fixture, and this view never reads a store.
-    var work = WorkRoomProjection.Room.vacant
-    /// Which ticket the Work room's deck is open on.
-    var ticket: Binding<Int?> = .constant(nil)
-    /// Which room the strip in the Work sidebar's head is on. Unused by the deck itself — the deck
-    /// takes it so `WorkRoom` can be assembled in one place rather than two.
-    var cockpitRoom: Binding<CockpitRoom> = .constant(.work)
+    /// The Work room, already assembled — one value rather than the projection and its two
+    /// selections apart, so the sidebar and this deck cannot be handed different ones. `nil` in
+    /// every other room, and the case below draws nothing for it.
+    var work: WorkRoom?
 
     /// Where the reader dragged the deck's seams. Owned HERE, above the identity below — keyed with
     /// the room it would snap back to its opening width on every Session switch.
@@ -94,7 +90,7 @@ struct InstrumentDeckShell: View {
             // this has to be per-Session, which is why the seams above are held outside it.
             .id(session)
         case .work:
-            WorkRoom(room: work, cockpitRoom: cockpitRoom, ticket: ticket).deck
+            work?.deck
         case .code:
             Color.clear
         }
@@ -119,9 +115,18 @@ struct InstrumentDeckShell: View {
 }
 
 #Preview("Instrument Deck — the Work room") {
-    InstrumentDeckShell(room: .work, work: WorkFixture.room, ticket: .constant(272))
-        .frame(width: ArgoBacklogList.width + ArgoTicketDetail.idealWidth, height: 620)
-        .argoAppearance()
+    @Previewable @State var ticket: Int? = 272
+    @Previewable @State var cockpitRoom = CockpitRoom.work
+    @Previewable @State var view = WorkView.allOpen
+
+    InstrumentDeckShell(
+        room: .work,
+        work: WorkRoom(
+            room: WorkFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket, view: $view,
+        ),
+    )
+    .frame(width: ArgoBacklogList.width + ArgoTicketDetail.idealWidth, height: 620)
+    .argoAppearance()
 }
 
 #Preview("Instrument Deck — a room with no zones yet") {

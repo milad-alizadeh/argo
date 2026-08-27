@@ -132,6 +132,13 @@ struct RhythmTests {
             ArgoPlanPill.listGap, ArgoPlanPill.listInsetX, ArgoPlanPill.listInsetY,
             ArgoPlanPill.betweenSteps,
         ]))
+        #expect(ladder.isSuperset(of: [
+            ArgoWorkSidebar.gutter, ArgoWorkSidebar.footPaddingX, ArgoWorkSidebar.footPaddingY,
+        ]))
+        #expect(ladder.isSuperset(of: [ArgoBacklogList.gutter, ArgoBacklogList.gap]))
+        #expect(ladder.isSuperset(of: [
+            ArgoTicketDetail.inset, ArgoTicketDetail.headStep, ArgoTicketDetail.bodyStep,
+        ]))
     }
 
     // MARK: - Depth

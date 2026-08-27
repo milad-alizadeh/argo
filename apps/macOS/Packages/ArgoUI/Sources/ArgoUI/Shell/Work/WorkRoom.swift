@@ -12,9 +12,12 @@ struct WorkRoom {
     @Binding var cockpitRoom: CockpitRoom
     /// Which ticket the deck is open on. Held above the room, because the ticket outlives the pane.
     @Binding var ticket: Int?
+    /// Which view is open. Above the room too, and for a sharper reason: `room.backlog` is already
+    /// filtered to it, so the selection has to be settled before the room is derived.
+    @Binding var view: WorkView
 
     var sidebar: some View {
-        WorkSidebar(room: room, cockpitRoom: $cockpitRoom)
+        WorkSidebar(room: room, cockpitRoom: $cockpitRoom, view: $view)
     }
 
     var deck: some View {
@@ -29,10 +32,13 @@ struct WorkRoom {
 #Preview("Work room — the deck's two panes") {
     @Previewable @State var ticket: Int? = 272
     @Previewable @State var cockpitRoom = CockpitRoom.work
+    @Previewable @State var view = WorkView.allOpen
 
-    WorkRoom(room: WorkFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket)
-        .deck
-        .frame(width: ArgoBacklogList.width + ArgoTicketDetail.idealWidth, height: 620)
-        .argoDeckSurface()
-        .argoAppearance()
+    WorkRoom(
+        room: WorkFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket, view: $view,
+    )
+    .deck
+    .frame(width: ArgoBacklogList.width + ArgoTicketDetail.idealWidth, height: 620)
+    .argoDeckSurface()
+    .argoAppearance()
 }

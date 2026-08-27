@@ -11,6 +11,11 @@ extension SpecimenRegistry {
         SpecimenEntry("unboundWorkRoom") { WorkPanesSpecimen(reading: WorkFixture.unbound) },
         // The provider answered, and the answer was nothing: the views stay, all reading zero.
         SpecimenEntry("emptyWorkBacklog") { WorkPanesSpecimen(reading: WorkFixture.answeredEmpty) },
+        // The view is what the DECK draws, not just a number in the rail — the one render that
+        // shows the sidebar's selection reaching the pane beside it.
+        SpecimenEntry("blockedWorkView") {
+            WorkPanesSpecimen(reading: WorkFixture.reading, opening: .blocked)
+        },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
     ]
 }

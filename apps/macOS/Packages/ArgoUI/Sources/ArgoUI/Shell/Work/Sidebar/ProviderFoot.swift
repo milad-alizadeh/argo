@@ -10,9 +10,7 @@ struct ProviderFoot: View {
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            Divider()
-                .hidden()
-                .overlay(argo.color.edge.hairline)
+            ArgoRule(ink: argo.color.edge.hairline)
             HStack(spacing: ArgoSpacing.snug) {
                 SessionStateIndicator(state: provider.state)
                 Text("\(provider.name) · \(provider.account)")

@@ -6,13 +6,8 @@ import SwiftUI
 struct DeckSeparator: View {
     @Environment(\.argo) private var argo
 
-    /// The divider is HIDDEN and drawn over, not tinted: it keeps the platform's thickness and its
-    /// orientation from the stack, but a translucent ink over its own grey composites brighter than
-    /// `edge.hairline`.
     var body: some View {
-        Divider()
-            .hidden()
-            .overlay(argo.color.edge.hairline)
+        ArgoRule(ink: argo.color.edge.hairline)
     }
 }
 

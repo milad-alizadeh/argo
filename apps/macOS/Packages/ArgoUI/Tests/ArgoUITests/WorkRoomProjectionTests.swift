@@ -111,6 +111,44 @@ struct WorkRoomProjectionTests {
         #expect(room.charts.first?.count == 5)
     }
 
+    /// The view is what the deck DRAWS, not just a number in the rail: opening one filters the
+    /// backlog to it. Before this the selection was written and never read, so every view drew the
+    /// same twelve rows.
+    @Test
+    func `opening a view filters the backlog to it`() {
+        let blocked = WorkRoomProjection.room(from: WorkFixture.reading, in: .blocked)
+
+        #expect(blocked.backlog.count == 8)
+        #expect(blocked.backlog.map(\.id) == [607, 272, 334, 335, 336, 275, 160, 185])
+    }
+
+    @Test
+    func `in progress draws only the tickets a Session holds`() {
+        let running = WorkRoomProjection.room(from: WorkFixture.reading, in: .inProgress)
+
+        #expect(running.backlog.map(\.id) == [609, 388, 763])
+    }
+
+    /// Each view's own count is what it draws, or the rail is telling the reader a number the pane
+    /// beside it disagrees with.
+    @Test
+    func `every view's count is the number of rows it draws`() {
+        for view in WorkView.allCases {
+            let room = WorkRoomProjection.room(from: WorkFixture.reading, in: view)
+            #expect(room.view(view)?.count == room.backlog.count)
+        }
+    }
+
+    /// The counts are over the WHOLE open set, whichever view is open — a rail that recounted
+    /// itself against its own filter would read `Blocked 8` and every other view zero.
+    @Test
+    func `the counts do not move when a view is opened`() {
+        let atRest = WorkRoomProjection.room(from: WorkFixture.reading, in: .allOpen)
+        let filtered = WorkRoomProjection.room(from: WorkFixture.reading, in: .blocked)
+
+        #expect(atRest.views == filtered.views)
+    }
+
     /// With nothing bound the room hides WHOLE (#272): no provider, and no views either. Four
     /// views reading zero would say the backlog is clear, which nobody has the standing to claim
     /// when nobody was asked.

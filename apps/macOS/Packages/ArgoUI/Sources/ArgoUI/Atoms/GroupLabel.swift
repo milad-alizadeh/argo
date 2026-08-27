@@ -3,7 +3,7 @@ import SwiftUI
 /// A sidebar or rail group's own label, on `sectionLabel` — the role whose documented job this is.
 ///
 /// A `Section("…")` header takes the platform's sidebar style instead, which is title-case at the
-/// body rung; the contract froze uppercase at 10 with tracking, and the two do not meet.
+/// body rung; `sectionLabel` is uppercase at `subheadline` with tracking, and the two do not meet.
 struct GroupLabel: View {
     @Environment(\.argo) private var argo
 

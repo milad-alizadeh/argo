@@ -1,17 +1,17 @@
 import ArgoEngine
 
 extension WorkRoomProjection {
-    /// The four views, over the open set the deck draws. Unblocked and Blocked PARTITION it —
-    /// `WorkItemBlockage` has three cases and only `.clear` is unblocked, so a stranded item is
-    /// counted as blocked rather than falling between the two.
+    /// The four views, counted over the whole open set — never over the view on screen, or opening
+    /// `Blocked` would leave every other count reading its own filter back.
     static func views(of open: [WorkItem], claimed: Set<Int>) -> [ViewReading] {
-        let blocked = open.filter { $0.blockage != .clear }.count
-        return [
-            ViewReading(id: .allOpen, count: open.count),
-            ViewReading(id: .unblocked, count: open.count - blocked),
-            ViewReading(id: .inProgress, count: open.filter { claimed.contains($0.number) }.count),
-            ViewReading(id: .blocked, count: blocked),
-        ]
+        WorkView.allCases.map { view in
+            ViewReading(id: view, count: items(of: open, in: view, claimed: claimed).count)
+        }
+    }
+
+    /// The open items one view holds. The list and the count beside it both come through here.
+    static func items(of open: [WorkItem], in view: WorkView, claimed: Set<Int>) -> [WorkItem] {
+        open.filter { view.admits($0, claimed: claimed.contains($0.number)) }
     }
 
     static func charts(of reading: WorkReading, open: [WorkItem]) -> [ChartReading] {

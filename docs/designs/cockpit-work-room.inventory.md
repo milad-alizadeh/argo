@@ -12,8 +12,8 @@ vacancy panel, the Route) belong to their own tickets and are absent rather than
 
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
-| `WorkRoom` | organism | `ArgoUI/Shell/Work/` | `room: Room`, `cockpitRoom: Binding<CockpitRoom>`, `ticket: Binding<Int?>` | `WorkSidebar`, `BacklogList`, `TicketDetail`, `DeckSeparator` | `WorkRoom` |
-| `WorkSidebar` | organism | `ArgoUI/Shell/Work/Sidebar/` | `room: Room`, `cockpitRoom: Binding<CockpitRoom>` | `RoomStrip`, `GroupLabel`, `ViewRow`, `ProviderFoot` | `WorkSidebar` |
+| `WorkRoom` | organism | `ArgoUI/Shell/Work/` | `room: Room`, `cockpitRoom: Binding<CockpitRoom>`, `ticket: Binding<Int?>`, `view: Binding<WorkView>` | `WorkSidebar`, `BacklogList`, `TicketDetail`, `DeckSeparator` | `WorkRoom` |
+| `WorkSidebar` | organism | `ArgoUI/Shell/Work/Sidebar/` | `room: Room`, `cockpitRoom: Binding<CockpitRoom>`, `view: Binding<WorkView>` | `RoomStrip`, `GroupLabel`, `ViewRow`, `ProviderFoot` | `WorkSidebar` |
 | `RoomStrip` | atom | `ArgoUI/Shell/Work/Sidebar/` | `selection: Binding<CockpitRoom>` | stock `Picker(.segmented)` | `RoomStrip` |
 | `ViewRow` | molecule | `ArgoUI/Shell/Work/Sidebar/` | `symbol: String`, `name: String`, `count: Int` | `ArgoGlyph` | `ViewRow` |
 | `ProviderFoot` | atom | `ArgoUI/Shell/Work/Sidebar/` | `provider: WorkProvider` | `SessionStateIndicator` | `ProviderFoot` |
@@ -24,11 +24,12 @@ vacancy panel, the Route) belong to their own tickets and are absent rather than
 | `TicketHead` | molecule | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket` | `StatusPair` | `TicketHead` |
 | `StatusPair` | atom | `ArgoUI/Shell/Work/Detail/` | `word: String`, `bucket: WorkItemState` (4 states) | — | `StatusPair` |
 
-One name the design does not freeze was extracted anyway:
+Two names the design does not freeze were extracted anyway:
 
 | name | tier | location | why |
 |---|---|---|---|
-| `GroupLabel` | atom | `ArgoUI/Atoms/` | `Section("…")` takes the platform's sidebar header — title case at the body rung — and the contract froze `sectionLabel`, uppercase at 11 with tracking. Both groups need it, which is the repetition that forced it out. In `Atoms/` rather than under `Work/`: a group label is not the Work room's. |
+| `ArgoRule` | atom | `ArgoUI/Atoms/` | The hidden-`Divider`-drawn-over trick, which `DeckSeparator` already owned and both `ProviderFoot` and `StatusPair` then needed. Three copies of one shape, so all three now call it and `DeckSeparator` keeps its name as the deck's own caller. |
+| `GroupLabel` | atom | `ArgoUI/Atoms/` | `Section("…")` takes the platform's sidebar header — title case at the body rung — and the contract froze `sectionLabel`, uppercase at `subheadline` with tracking. Both groups need it, which is the repetition that forced it out. In `Atoms/` rather than under `Work/`: a group label is not the Work room's. |
 
 ## Stayed inline
 
@@ -55,6 +56,17 @@ in the design itself; the first two stand.
   them in both views. Fixed at the source: `unblocked` now excludes them, the design records the
   partition rule, and the nine renders that draw a non-zero `Unblocked` were re-shot. Both the
   render and the code now read 12 / 4 / 3 / 8.
+
+## What the views actually do
+
+Opening a view **filters the deck**, and one predicate does it: `WorkView.admits(_:claimed:)` both
+counts a view in the rail and fills the list beside it, so the two cannot answer the same question
+differently. The counts are always over the whole open set — a rail recounted against its own filter
+would read `Blocked 8` and every other view zero. `blockedWorkView` is the render of it.
+
+Charts are deliberately **untagged**: a chart opens the Route (#334), which is not built, and the
+list's selection is a `WorkView`. A tag would make the row look selectable and then filter the
+backlog to something nobody asked for.
 
 ## Not reproduced from `rest.png`
 

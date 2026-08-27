@@ -65,15 +65,16 @@ enum WorkRoomProjection {
     /// With no provider bound the room is VACANT rather than empty — no views, no list, no ticket
     /// (#272). Four views all reading zero would say the backlog is clear, which is a claim nobody
     /// has the standing to make when nobody was asked.
-    static func room(from reading: WorkReading) -> Room {
+    static func room(from reading: WorkReading, in view: WorkView = .allOpen) -> Room {
         guard reading.provider != nil else { return .vacant }
         let open = reading.items.filter { $0.closure == .open }
         let closed = Set(reading.items.filter { $0.closure != .open }.map(\.number))
+        let shown = items(of: open, in: view, claimed: reading.claimed)
         return Room(
             views: views(of: open, claimed: reading.claimed),
             charts: charts(of: reading, open: open),
             provider: reading.provider,
-            backlog: open
+            backlog: shown
                 .map { row(for: $0, delivery: reading.deliveries[$0.number], closed: closed) },
             ticket: ticket(in: reading),
         )

@@ -16,14 +16,26 @@ struct WorkRoomSpecimen: View {
 ///
 /// The titlebar is what it gives up, which is chrome the room does not decide.
 struct WorkPanesSpecimen: View {
-    let reading: WorkReading
+    private let reading: WorkReading
 
     @State private var cockpitRoom = CockpitRoom.work
     @State private var ticket: Int?
+    /// Seeded from `opening` rather than parameterised, so the room still switches views when a
+    /// person drives it — a specimen names a starting state, it does not freeze one.
+    @State private var view: WorkView
+
+    init(reading: WorkReading, opening: WorkView = .allOpen) {
+        self.reading = reading
+        _view = State(initialValue: opening)
+    }
 
     var body: some View {
-        let room = WorkRoomProjection.room(from: reading)
-        let work = WorkRoom(room: room, cockpitRoom: $cockpitRoom, ticket: $ticket)
+        let work = WorkRoom(
+            room: WorkRoomProjection.room(from: reading, in: view),
+            cockpitRoom: $cockpitRoom,
+            ticket: $ticket,
+            view: $view,
+        )
 
         HStack(spacing: ArgoSpacing.flush) {
             work.sidebar

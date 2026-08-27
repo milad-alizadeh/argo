@@ -12,6 +12,9 @@ public final class CockpitNavigationModel {
     /// The ticket the Work room is open on. Beside the Session and not inside it: a room keeps
     /// where it was pointing while the reader is in another one.
     var ticket: Int?
+    /// Which of the backlog's views is open. Here rather than in the sidebar, because it decides
+    /// what the DECK draws — held inside the sidebar it filtered nothing.
+    var workView = WorkView.allOpen
 
     /// The Session on screen. Every write but reconciliation's is somebody picking a row, which is
     /// why the setter records one.
