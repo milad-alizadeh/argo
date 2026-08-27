@@ -5,11 +5,11 @@ public extension HubSession {
         SessionSignals(
             provenance: provenance,
             liveness: liveness,
-            turnOpen: turnOpen,
-            lastStop: lastStop,
-            // A question in a Turn that has since ended blocks nobody, and `apply` has already
-            // dropped it — so a pending ask outside an open Turn is not representable here.
-            pendingAsk: !pendingAsks.isEmpty,
+            turnOpen: turn.isOpen,
+            lastStop: turn.lastStop,
+            // A question in a Turn that has since ended blocks nobody, and `SessionTurnState.ended`
+            // has already dropped it — so a pending ask outside an open Turn cannot be represented.
+            pendingAsk: turn.hasPendingAsk,
         )
     }
 

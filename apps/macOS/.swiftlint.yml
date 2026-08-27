@@ -33,11 +33,11 @@ file_length:
   ignore_comment_only_lines: true
 
 type_body_length:
-  # RATCHET: 150 is the number. Hub was a named blocker at 166 and is no longer one — #759 gave
-  # its state two owners, TranscriptWatch and WorldReadings, taking the body to 98. Two production
-  # bodies still block 150: HubSession at 164, and SessionComposer at 163. Ten test suites sit
-  # between 151 and 169 behind them, the widest ConnectPanelProjectionTests and VisualContractTests
-  # at 169 — which is what the number tracks. Lower it as each goes, never raise it to fit a file.
+  # RATCHET: 150 is the number, and no PRODUCTION body blocks it any more — #759 gave Hub's state
+  # two owners (98), #788 took the composer's menus out of SessionComposer (146), and #790 gave
+  # HubSession's Turn its own owner (145). What is left is ten TEST suites between 151 and 169, the
+  # widest ConnectPanelProjectionTests and VisualContractTests at 169 — which is what the number
+  # tracks, and what #793 sweeps. Lower it as each goes, never raise it to fit a file.
   error: 169
   warning: 169
 
