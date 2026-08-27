@@ -1,0 +1,1146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Work room — approved design (#609)</title>
+<!--
+  The APPROVED Work room (#609, under #607) — the study that produced it explored five rooms
+  and this is the one that was chosen. Every state #609 names is reachable from the selector
+  at the top, or by ?state=<key>; ?render=1 strips the chrome for the PNGs.
+
+  Every colour, radius, spacing step and type role below is transcribed from
+  apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ — GraphitePalette.swift,
+  ArgoRadius.swift, ArgoSpacing.swift, ArgoLayout.swift, ArgoStroke.swift, ArgoTypeScale.swift.
+  Nothing here is invented. Type is San Francisco throughout — SF Pro and SF Mono; the
+  contract has no serif.
+
+  THE ROOM. The sidebar is NOT the backlog. At 320 a rail spends its width on a twist, a dot,
+  an id and a roll-up and leaves the title ~190pt — nine of twelve real titles truncated, while
+  the deck beside them sat empty. So the sidebar holds VIEWS, whose names are short because a
+  view name is written rather than inherited, and the backlog moves into the deck at 520 where
+  a title reads whole at depth three. The sidebar takes `sidebarMinimumWidth` 280, not the 320
+  ideal: at 320 the list drops to 480 and three of twelve titles truncate again.
+
+  THE TOOLBAR is Mail's, transposed: one row, and each control over the thing it acts on —
+  the list's own heading and its filter/group beside it, the New ticket call-to-action opening
+  the ticket column, that ticket's verbs next, and search on the trailing edge.
+
+  The Route (#334) is a RE-SKIN here, not a re-decision: the progress axis, the NOW line, the
+  remaining-depth column rule and the fog are #334's and are drawn unchanged. Only its colour
+  and material move onto graphite/Ion.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift — surface */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --glass-tint: rgba(255,255,255,.06);
+    --hover:      rgba(255,255,255,.045);
+    --control:    rgba(255,255,255,.06);
+    --selected:   rgba(255,255,255,.058);
+    --marked:     rgba(255,255,255,.07);
+    --scrim:      rgba(11,12,14,.90);
+
+    /* text */
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #868D94;
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    /* edge */
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+    --glass-rim: rgba(255,255,255,.30);
+
+    /* interaction + state */
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    --accent-deep: #1E6FD4;
+    --running:   #46D3A8;
+    --idle:      #868E96;
+    --attention: #E8B24A;
+    --failure:   #F2555C;
+    --added:     #A9D18E;
+    --removed:   #D98C93;
+
+    /* ArgoRadius.swift */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+    /* ArgoSpacing.swift */
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px; --s-region: 32px;
+    /* ArgoStroke.swift */
+    --st-hairline: 0.5px; --st-border: 1px; --st-indicator: 2px;
+
+    /* ArgoLayout.swift */
+    --sidebar-w: 320px;
+    --dot: 6px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0d0e10; color: var(--text-1);
+    font: 13px/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* ---------- the window ---------- */
+  .window {
+    position: fixed; inset: 60px var(--s-section) 76px;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--subtle);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    background: var(--base);
+    min-width: 960px;
+    display: flex; flex-direction: column;
+  }
+
+  /* The sidebar runs the full window height and the titlebar paints no ground over it —
+     the split view's own geometry on macOS (#376). */
+  .panes { display: grid; height: 100%; min-height: 0; }
+  .panes.rail-0   { grid-template-columns: 1fr; }
+
+  /* ---------- titlebar (#376, shipped — not under evaluation) ---------- */
+  .titlebar {
+    position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 20;
+    display: grid; pointer-events: none;
+  }
+  .titlebar.rail-0   { grid-template-columns: 1fr; }
+  .titlebar > * { pointer-events: auto; }
+  .tb-lead { display: flex; align-items: center; gap: var(--s-base); padding-left: var(--s-base); }
+  .lights { display: flex; gap: var(--s-base); padding: 0 var(--s-tight); }
+  .tb-trail { display: flex; align-items: center; gap: var(--s-comfortable);
+              padding: 0 var(--s-comfortable) 0 var(--s-loose); }
+  .grow { flex: 1; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+
+  .vessel { display: inline-flex; align-items: center; border-radius: 999px;
+            padding: 3px; height: 30px; }
+  .vessel > button { display: inline-flex; align-items: center; gap: var(--s-snug);
+            border: none; background: none; cursor: pointer; color: var(--text-2);
+            padding: 0 10px; height: 24px; border-radius: 999px; font: 13px var(--sans); }
+  .vessel .project { font-weight: 500; color: var(--text-1); }
+  .vessel .checkout { font-family: var(--mono); font-size: 12px; }
+  .vessel .divider { width: 1px; height: 16px; background: var(--subtle); flex: none; }
+
+  /* The connection chip is #275's business, not this study's: a graphite transient. */
+  .conn { display: inline-flex; align-items: center; gap: var(--s-snug); flex: none;
+          white-space: nowrap; font-size: 11px; color: var(--text-3); }
+  .conn i { width: 6px; height: 6px; border-radius: 50%; background: var(--running); display: block; }
+
+  /* ---------- the sidebar ---------- */
+  .rail {
+    display: flex; flex-direction: column; min-height: 0;
+    border-right: 1px solid var(--hairline);
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    backdrop-filter: blur(34px) saturate(140%);
+  }
+  .rail-head { height: 46px; flex: none; display: flex; align-items: center;
+               padding: 0 var(--s-base) 0 var(--s-comfortable); gap: var(--s-snug); }
+  .rail-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: var(--s-comfortable); }
+
+  .cap {
+    font: 600 10px/1 var(--sans); letter-spacing: .7px; text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  /* BACKLOG · BY PRIORITY — the counters that were once in the brow live here (#272). */
+  .backlog-cap {
+    display: flex; align-items: baseline; gap: var(--s-snug);
+    padding: var(--s-comfortable) var(--s-comfortable) var(--s-snug);
+  }
+
+  /* A priority header. Variant A only — B and C separate by air and a rule instead. */
+  .pri-head {
+    position: sticky; top: 0; z-index: 2;
+    display: flex; align-items: center; gap: var(--s-snug);
+    padding: var(--s-comfortable) var(--s-comfortable) var(--s-tight);
+    background: linear-gradient(180deg, rgba(30,32,36,.92), rgba(30,32,36,.72));
+    backdrop-filter: blur(12px);
+  }
+  .pri-head .n { font: 10px var(--mono); color: var(--text-off); margin-left: auto; }
+
+  /* The row. dot · id · title · priority — lean, no PR chips (#272). */
+  .row {
+    display: flex; align-items: center; gap: var(--s-base);
+    height: 30px; padding: 0 var(--s-comfortable); cursor: pointer;
+    /* The selected row is carried by its ground alone — no leading accent rule. */
+  }
+  .row:hover { background: var(--hover); }
+  .row.on { background: var(--selected); }
+  .row .id { font: 11px var(--mono); color: var(--text-3); flex: none; }
+  .row.on .id { color: var(--text-2); }
+  .row .t { font-size: 13px; color: var(--text-2); overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .row.on .t { color: var(--text-1); }
+  .row .rollup { font: 10px var(--mono); color: var(--text-off); flex: none; }
+  .row .pri { font: 10px var(--mono); color: var(--text-off); flex: none; letter-spacing: .3px; }
+  /* The disclosure twist, Mail-style: it sits OUTSIDE the row's own leading edge, and a leaf
+     keeps the slot so every dot in the rail lands on one column. */
+  .row .twist { width: 12px; flex: none; display: grid; place-items: center;
+                color: var(--text-off); border-radius: var(--r-marker); }
+  .row .twist:hover { color: var(--text-2); background: rgba(255,255,255,.07); }
+  .row .twist svg { width: 8px; height: 8px; display: block;
+                    transition: transform 120ms cubic-bezier(.2,.8,.2,1); }
+  .row.shut .twist svg { transform: rotate(-90deg); }
+  .row .twist.leaf { visibility: hidden; pointer-events: none; }
+  /* One step per level. A child's dot lands under its parent's id, which is what makes the
+     nesting readable without a connecting rule. */
+  .row.d1 { padding-left: 28px; }
+  .row.d2 { padding-left: 44px; }
+
+  /* The delivery signal, carried by the dot alone. */
+  .dot { display: block; width: var(--dot); height: var(--dot); border-radius: 50%; flex: none; }
+  .dot.none    { background: none; box-shadow: inset 0 0 0 1px var(--text-off); }
+  .dot.draft   { background: var(--idle); }
+  .dot.open    { background: var(--accent); }
+  .dot.checks  { background: var(--failure); }
+  .dot.merged  { background: var(--running); }
+
+  /* ---------- the Next-up hero ---------- */
+  /* A — a card inside the rail. It is inset from the rail's own edges and carries a border,
+     so it reads as an object sitting on the rail rather than as the rail's first row. */
+  .hero-card {
+    margin: var(--s-base) var(--s-base) var(--s-comfortable);
+    padding: var(--s-comfortable);
+    background: var(--raised); border: 1px solid var(--subtle);
+    border-radius: var(--r-control);
+  }
+  .hero-card .cap { display: block; margin-bottom: var(--s-base); }
+  .hero-card .hid { font: 11px var(--mono); color: var(--text-3); }
+  .hero-card .ht { font: 500 13px var(--sans); color: var(--text-1); margin: var(--s-tight) 0 var(--s-base); }
+
+
+
+  /* At most two earned chips, and never a score (#273). */
+  .chips { display: flex; gap: var(--s-snug); flex-wrap: wrap; }
+  .chip {
+    font: 10px var(--sans); color: var(--text-2);
+    background: var(--control); border: 1px solid var(--hairline);
+    border-radius: var(--r-marker); padding: 2px var(--s-snug); white-space: nowrap;
+  }
+  .chip.pri { color: var(--attention); border-color: rgba(232,178,74,.28); }
+
+  .start {
+    flex: none; border: 1px solid var(--hairline); background: var(--control);
+    color: var(--text-1); font: 500 11px var(--sans); cursor: pointer;
+    border-radius: var(--r-control); padding: var(--s-snug) var(--s-comfortable);
+  }
+  .start:hover { background: rgba(255,255,255,.1); }
+  .start.pri { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+  /* An empty pool degrades in tiers — an honest sentence, not a blank card. */
+  .hero-empty { color: var(--text-3); font-size: 12px; }
+  .hero-empty b { color: var(--text-2); font-weight: 500; }
+
+  /* ---------- the deck ---------- */
+  .deck { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--base); }
+  .deck-head { flex: none; height: 46px; }         /* the titlebar's own strip */
+
+  .detail { flex: 1; min-height: 0; min-width: 0; display: grid; }
+
+  .col { min-width: 0; overflow-y: auto; padding: 0 var(--s-section) var(--s-region); }
+  /* ArgoFeedRow.column — cap the content, then centre the cap. One rule, two lines. */
+  .col > .measure { max-width: 720px; margin: 0 auto; }
+
+  .t-head { padding: var(--s-base) 0 var(--s-comfortable); }
+  .t-head .tid { font: 12px var(--mono); color: var(--text-3); }
+  .t-head h1 { font: 600 17px/1.3 var(--sans); color: var(--text-1); margin: var(--s-snug) 0 var(--s-base); }
+
+  /* The provider's own word, verbatim, beside Argo's canonical bucket. The bucket is set as
+     chrome — smaller, tertiary, in the mono — so the two read as a label and its filing, not
+     as two competing claims. */
+  .status { display: inline-flex; align-items: center; gap: var(--s-snug); }
+  .status .word { font: 500 12px var(--sans); color: var(--text-1); }
+  .status .bucket { font: 10px var(--mono); color: var(--text-off); letter-spacing: .4px;
+                    text-transform: uppercase; }
+  .status .sep { width: 1px; height: 10px; background: var(--subtle); }
+
+  .body p { color: var(--text-2); font-size: 13px; margin-bottom: var(--s-comfortable); }
+  .body h2 { font: 600 13px var(--sans); color: var(--text-1);
+             margin: var(--s-section) 0 var(--s-base); }
+
+  /* Deliveries — first-class chips, deep-linking. Never a list: two on one ticket read as two
+     objects side by side, each carrying its own signal. */
+  .deliveries { display: flex; flex-wrap: wrap; gap: var(--s-base); }
+  .dchip {
+    display: inline-flex; align-items: center; gap: var(--s-base);
+    background: var(--raised); border: 1px solid var(--subtle); border-radius: var(--r-control);
+    padding: var(--s-snug) var(--s-comfortable); cursor: pointer; min-width: 0;
+  }
+  .dchip:hover { border-color: var(--strong); }
+  .dchip .num { font: 11px var(--mono); color: var(--text-1); }
+  .dchip .br { font: 11px var(--mono); color: var(--text-3); overflow: hidden;
+               text-overflow: ellipsis; white-space: nowrap; }
+  .dchip .diff { font: 11px var(--mono); }
+  .dchip .add { color: var(--added); } .dchip .rem { color: var(--removed); }
+  .dchip .checks { font: 10px var(--sans); }
+  .dchip .ok { color: var(--running); } .dchip .bad { color: var(--failure); }
+  .dchip.stack { flex-direction: column; align-items: flex-start; gap: var(--s-tight); }
+
+  /* The sticky sidebar (A) */
+  .side {
+    border-left: 1px solid var(--hairline); background: var(--sunken);
+    overflow-y: auto; padding: var(--s-base) var(--s-loose) var(--s-region);
+  }
+  .side section { padding: var(--s-comfortable) 0; border-bottom: 1px solid var(--hairline); }
+  .side section:last-child { border-bottom: none; }
+  .side .cap { display: block; margin-bottom: var(--s-base); }
+
+  .labels { display: flex; flex-wrap: wrap; gap: var(--s-tight); }
+  .label {
+    font: 10px var(--sans); color: var(--text-2); background: var(--control);
+    border: 1px solid var(--hairline); border-radius: var(--r-marker); padding: 1px var(--s-snug);
+  }
+
+  /* blockedBy — one blocker and six blockers are the same shape; the six just run on. */
+  .blockers { display: flex; flex-direction: column; gap: var(--s-tight); }
+  .blk { display: flex; align-items: center; gap: var(--s-snug); cursor: pointer; min-width: 0; }
+  .blk .id { font: 11px var(--mono); color: var(--text-2); flex: none; }
+  .blk .t { font-size: 11px; color: var(--text-3); overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap; }
+  .blk-count { font: 10px var(--mono); color: var(--text-off); margin-left: auto;
+               flex: none; white-space: nowrap; padding-left: var(--s-base); }
+
+
+  .blockband {
+    display: flex; align-items: flex-start; gap: var(--s-comfortable);
+    background: var(--raised); border: 1px solid var(--hairline); border-radius: var(--r-control);
+    padding: var(--s-comfortable); margin-bottom: var(--s-loose);
+  }
+  .blockband .cap { flex: none; padding-top: 2px; width: 84px; }
+
+  /* The tree is drawn INSIDE the title cell, so the columns beside it stay a table. */
+  .ledger .cell-tree { display: flex; align-items: center; gap: var(--s-base); min-width: 0; }
+
+  /* ---------- room-level states ---------- */
+  .vacant { flex: 1; display: grid; place-items: center; padding: var(--s-region); }
+  .vacant .panel { max-width: 460px; text-align: center; }
+  .vacant h2 { font: 600 15px var(--sans); color: var(--text-1); margin-bottom: var(--s-base); }
+  .vacant p { font-size: 13px; color: var(--text-3); margin-bottom: var(--s-loose); }
+  .rail-empty { padding: var(--s-section) var(--s-comfortable); font-size: 12px; color: var(--text-off); }
+
+  /* ---------- the Route (#334, re-skinned only) ---------- */
+  .route { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+  .route-head { flex: none; display: flex; align-items: center; gap: var(--s-comfortable);
+                padding: var(--s-base) var(--s-section) var(--s-comfortable); }
+  .route-head .crumb { font: 11px var(--mono); color: var(--text-3); }
+  .route-head h1 { font: 600 15px var(--sans); color: var(--text-1); }
+  .present { display: inline-flex; gap: 2px; background: var(--control);
+             border: 1px solid var(--hairline); border-radius: 999px; padding: 2px; margin-left: auto; }
+  .present button { border: none; background: none; cursor: pointer; color: var(--text-3);
+             font: 500 11px var(--sans); padding: 0 var(--s-comfortable); height: 22px; border-radius: 999px; }
+  .present button.on { background: var(--overlay); color: var(--text-1); }
+  .route-canvas { flex: 1; min-height: 0; min-width: 0; overflow: auto; padding: 0 var(--s-section) var(--s-loose); }
+  .legend { flex: none; display: flex; gap: var(--s-section); padding: var(--s-comfortable) var(--s-section);
+            border-top: 1px solid var(--hairline); font-size: 11px; color: var(--text-3); }
+  .legend b { color: var(--text-2); font-weight: 500; }
+
+  /* ---------- prototype chrome (NOT part of the design under evaluation) ---------- */
+  .banner {
+    position: fixed; top: 0; left: 0; right: 0; height: 44px; z-index: 60;
+    display: flex; align-items: center; gap: var(--s-comfortable);
+    padding: 0 var(--s-section); background: #f6f7f8; color: #14161a;
+    font: 12px var(--sans);
+  }
+  .banner b { font-weight: 600; }
+  .banner select { font: 12px var(--sans); padding: 3px var(--s-snug); border-radius: var(--r-control);
+                   border: 1px solid rgba(0,0,0,.2); background: #fff; color: #14161a; }
+  .banner .q { color: rgba(20,22,26,.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .switch span { padding: 0 var(--s-base); white-space: nowrap; }
+
+  /* ?render=1 — the window alone, edge to edge, for the design's committed PNGs. */
+  body.render .banner, body.render .switch { display: none; }
+  body.render .window { inset: 0; border: none; border-radius: 0; box-shadow: none; }
+
+  /* ==========================================================================
+     D and E — the sidebar stops being the backlog.
+
+     A's rail loses the argument on arithmetic: at 320 the title slot is ~190pt at a root and
+     ~158 at depth two, so nine of twelve real titles truncate while the deck sits empty. Both
+     rooms below keep the sidebar (the split view is unconditional, and #805 would put the room
+     strip in its head) and give it what fits in 200pt: view names, written short on purpose.
+     ========================================================================= */
+  .panes.rail-work { grid-template-columns: 280px 1fr; }
+  .titlebar.rail-work { grid-template-columns: 280px 1fr; }
+
+  .nav-group { padding: var(--s-comfortable) 0 var(--s-tight); }
+  .nav-group > .cap { display: block; padding: 0 var(--s-comfortable) var(--s-snug); }
+  .nav-row {
+    display: flex; align-items: center; gap: var(--s-base);
+    height: 26px; padding: 0 var(--s-comfortable); cursor: pointer; color: var(--text-2);
+    font-size: 13px;
+  }
+  .nav-row:hover { background: var(--hover); }
+  .nav-row.on { background: var(--selected); color: var(--text-1); }
+  .nav-row .n { margin-left: auto; font: 10px var(--mono); color: var(--text-off); }
+  .nav-row .gl { width: 14px; flex: none; text-align: center; color: var(--text-3); font-size: 11px; }
+  .nav-row.on .gl { color: var(--text-2); }
+  .nav-foot { flex: none; padding: var(--s-base) var(--s-comfortable);
+              border-top: 1px solid var(--hairline); }
+  .nav-rule { height: 1px; background: var(--hairline); margin: var(--s-base) var(--s-comfortable); }
+
+  /* The room strip, Xcode-style, in the sidebar's head (#805 asks the same question). It is
+     drawn here only so D and E are honest about what the sidebar would then hold. */
+  .rooms-strip { display: flex; gap: 2px; width: 100%;
+                 border-radius: var(--r-control); padding: 2px; }
+  .rooms-strip button { flex: 1; border: none; background: none; cursor: pointer;
+                 color: var(--text-3); font: 500 11px var(--sans); height: 22px;
+                 border-radius: var(--r-marker); }
+  .rooms-strip button.on { background: var(--overlay); color: var(--text-1); }
+
+  /* ---------- D — the backlog as the deck's leading pane ---------- */
+  .work { flex: 1; min-height: 0; min-width: 0; display: grid; grid-template-columns: 520px 1fr; }
+  .work-list { min-width: 0; min-height: 0; overflow-y: auto;
+               border-right: 1px solid var(--hairline); }
+  .work-list .row { height: 30px; }
+
+  /* D's detail has no 240pt facts column — there is no room for one beside a 520pt list at
+     1280. The facts move into a strip under the head, which is the cost D pays. */
+  .fact-strip { display: flex; flex-wrap: wrap; align-items: center;
+                column-gap: var(--s-section); row-gap: var(--s-base);
+                padding: var(--s-base) 0 var(--s-comfortable);
+                border-bottom: 1px solid var(--hairline); margin-bottom: var(--s-comfortable); }
+  .fact-strip .kv { display: inline-flex; align-items: baseline; gap: var(--s-snug); }
+  .fact-strip .k { font: 600 10px var(--sans); letter-spacing: .7px; text-transform: uppercase;
+                   color: var(--text-3); }
+  .fact-strip .v { font-size: 12px; color: var(--text-2); }
+  .fact-strip .v.mono { font: 11px var(--mono); }
+
+
+
+  /* ==========================================================================
+     D's toolbar, transposed from Mail.
+
+     Mail puts EVERY control in the window's one toolbar row and places each by what it acts on:
+     list-scoped controls sit over the list, the compose call-to-action starts the next column,
+     and search holds the trailing edge. Argo's rooms capsule left this row for the sidebar
+     (#805), which is what makes the space available.
+     ========================================================================= */
+  .titlebar.rail-work.three { grid-template-columns: 280px 520px 1fr; }
+
+  /* Over the list: what you are looking at, and how many. Mail's "Searching / Inbox — …,
+     11 results" — a title and the count that qualifies it, never the title alone. */
+  .tb-list { display: flex; align-items: center; gap: var(--s-base);
+             padding: 0 var(--s-base) 0 var(--s-section);
+             border-right: 1px solid var(--hairline); }
+  .tb-list .lines { min-width: 0; flex: 1; }
+  .tb-list .h { font: 600 13px var(--sans); color: var(--text-1); display: block; }
+  .tb-list .sub { font: 11px var(--sans); color: var(--text-3); display: block;
+                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .tb-deck { position: relative; display: flex; align-items: center; gap: var(--s-comfortable);
+             /* the compose capsule's leading edge lands on the ticket's own inset */
+             padding: 0 var(--s-comfortable) 0 calc(var(--s-section) - 3px); }
+
+  /* A bounded glass vessel, the toolbar's unit of grouping (D14 rations these — the two the
+     rooms capsule and the scope capsule used to spend are the two spent here). */
+  .icap { display: inline-flex; align-items: center; gap: 2px;
+          border-radius: 999px; padding: 3px; }
+  .ibtn { width: 26px; height: 24px; display: grid; place-items: center; cursor: pointer;
+          border: none; background: none; color: var(--text-3); border-radius: 999px; }
+  .ibtn:hover { background: var(--hover); color: var(--text-1); }
+  .ibtn svg { width: 14px; height: 14px; display: block; }
+  .ibtn.wide { width: auto; padding: 0 10px; gap: var(--s-snug);
+               display: inline-flex; align-items: center;
+               font: 500 12px var(--sans); color: var(--text-2); }
+  .ibtn.wide:hover { color: var(--text-1); }
+
+  /* Search takes the trailing edge and a real width, as Mail's does — a field, not an icon
+     that becomes one. It searches the list, though it sits over the ticket: the same split
+     Mail makes, and for the same reason (the toolbar is one row, not three). */
+  .search { display: flex; align-items: center; gap: var(--s-snug);
+            height: 28px; width: 210px; flex: none; padding: 0 var(--s-base);
+            border-radius: 999px; color: var(--text-off); font-size: 13px; }
+  .search svg { width: 12px; height: 12px; flex: none; }
+
+  /* ==========================================================================
+     Liquid Glass, one class, every bounded vessel.
+
+     `ArgoFloatingGlass` is `glassEffect(.regular.tint(surface.glassTint))` and `argoShadow(.vessel)`
+     — and `ArgoElevation.vessel` is ZERO on all three axes, because the specular rim IS the depth
+     cue. So a glass vessel takes no drop shadow and no hairline border; a border here would stack a
+     second edge on the one the material already draws. The inset highlight below stands in for the
+     rim that SwiftUI draws for real.
+     ========================================================================= */
+  .glass {
+    background: var(--glass-tint);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16),
+                inset 0 0 0 1px rgba(255,255,255,.05),
+                inset 0 -1px 0 rgba(0,0,0,.16);
+  }
+
+  /* A menu is the one rung that genuinely floats — ArgoElevation.popover, which does draw. */
+  .menu {
+    position: absolute; top: 40px; z-index: 40; min-width: 208px;
+    padding: var(--s-snug); border-radius: var(--r-popover);
+    background: var(--overlay); border: 1px solid var(--hairline);
+    box-shadow: 0 8px 18px rgba(0,0,0,.34);
+  }
+  .menu .cap { display: block; padding: var(--s-snug) var(--s-base) var(--s-tight); }
+  .menu-row { display: flex; align-items: center; gap: var(--s-base);
+              height: 26px; padding: 0 var(--s-base); border-radius: var(--r-marker);
+              color: var(--text-2); font-size: 13px; cursor: pointer; }
+  .menu-row:hover { background: var(--hover); color: var(--text-1); }
+  .menu-row.on { background: var(--selected); color: var(--text-1); }
+  .menu-row .tick { width: 12px; flex: none; color: var(--accent); }
+  .menu-row .note { margin-left: auto; font: 10px var(--mono); color: var(--text-off); }
+  .menu-rule { height: 1px; background: var(--hairline); margin: var(--s-snug) var(--s-base); }
+
+  /* The Start verb is a SPLIT control: the button starts a Session, the chevron chooses the Mode
+     it starts in. Mode is a real rung ladder (Read Only · Plan · Code · Auto), which is why this
+     replaced an unlabelled ellipsis — an overflow nobody can name is an overflow nobody opens. */
+  .split { display: inline-flex; align-items: center; }
+  .split .sep { width: 1px; height: 15px; background: rgba(255,255,255,.12); flex: none; }
+  .ibtn.chev svg { width: 9px; height: 9px; }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <b>PROTOTYPE · #609</b>
+  <span>State</span>
+  <select id="state-select" onchange="setState(this.value)"></select>
+  <span class="q" id="state-note"></span>
+</div>
+
+<div class="window">
+  <header class="titlebar" id="titlebar"></header>
+  <div class="panes" id="panes"></div>
+</div>
+
+
+<script>
+/* ============================================================================
+   The room's data. Real tickets off this repo, 2026-08-27. Every status word is
+   the provider's own; `bucket` is Argo's canonical filing of it and is never
+   shown in place of the word. `d` is the DELIVERY SIGNAL, which the rail carries
+   on the dot alone: null = no Delivery, then draft · open · checks · merged.
+   ========================================================================= */
+/* `parent` is the child edge. `kids` is the roll-up the tracker states — closed of total —
+   and it counts CLOSED children too, which is why it does not match the rows beneath it: the
+   backlog lists what is open. */
+const TICKETS = [
+  { id:'#607', t:'Wayfinder: the Work room, end to end', pri:'HIGH', type:'PRD',
+    word:'In Progress', bucket:'in progress', d:null, kids:[2,9], by:[] },
+  { id:'#609', t:'Prototype: what the Work room looks like in the Liquid Glass shell',
+    parent:'#607', pri:'HIGH', type:'design', word:'In Progress', bucket:'in progress',
+    d:'draft', by:[] },
+  { id:'#388', t:'Work Item read path: listing, status, labels, dependency edges',
+    parent:'#607', pri:'HIGH', type:'task', word:'Todo', bucket:'todo', d:null, by:['#609'] },
+  { id:'#272', t:'The generic node tree and ticket detail', parent:'#607',
+    pri:'HIGH', type:'task', word:'Todo', bucket:'todo', d:null, by:['#609','#388'] },
+  { id:'#273', t:'The Next-up cold-start planner', parent:'#607',
+    pri:'MEDIUM', type:'task', word:'Backlog', bucket:'todo', d:null, by:['#272'] },
+  { id:'#334', t:'The Route — a progress-axis view of a ticket and its children',
+    parent:'#607', pri:'MEDIUM', type:'PRD', word:'Backlog', bucket:'todo', d:null,
+    kids:[0,6], by:['#272'] },
+  { id:'#335', t:'Placement: zones, columns and the cycle guard', parent:'#334',
+    pri:'MEDIUM', type:'task', word:'Backlog', bucket:'todo', d:null, by:['#334'] },
+  { id:'#336', t:'The canvas: derived spacing and the edge rule', parent:'#334',
+    pri:'LOW', type:'task', word:'Backlog', bucket:'todo', d:null, by:['#335'] },
+  { id:'#763', t:'WorkItem transport and grant plumbing', pri:'MEDIUM', type:'task',
+    word:'In Review', bucket:'in progress', d:'open', by:[] },
+  { id:'#275', t:'The provider connection chip as a graphite transient', pri:'LOW',
+    type:'task', word:'Needs triage', bucket:'todo', d:'checks', by:[] },
+  { id:'#160', t:'Ticket vocabulary: type is a property, not a ladder', pri:'LOW',
+    type:'decision', word:'Awaiting answer', bucket:'blocked', d:null, by:[] },
+  { id:'#185', t:'Work room interior: what a leaf carries', pri:'LOW', type:'decision',
+    word:'Awaiting answer', bucket:'blocked', d:null, by:[] },
+];
+
+const PRIORITIES = ['HIGH','MEDIUM','LOW'];
+
+const childrenOf = id => visibleTickets().filter(t => t.parent === id);
+const isParent = t => childrenOf(t.id).length > 0;
+
+/* Which parents are shut. A tree that opens shut hides the very thing it was added for, so
+   everything starts open and collapsing is the deliberate act. */
+let shut = new Set();
+function toggle(id) { shut.has(id) ? shut.delete(id) : shut.add(id); render(); }
+
+/* Two Deliveries on one ticket, and one on another. A Delivery is a chip, never a row in a
+   list: the lifecycle arc stays in the Session (#272). */
+const DELIVERIES = {
+  '#607': [
+    { num:'argo#812', br:'argo/#607-work-room-rail', add:412, rem:96, checks:'ok',  word:'Open' },
+    { num:'argo#829', br:'argo/#607-ticket-detail',  add:188, rem:12, checks:'bad', word:'Draft' },
+  ],
+  '#763': [
+    { num:'argo#791', br:'argo/#763-workitem-port', add:640, rem:210, checks:'ok', word:'Open' },
+  ],
+  '#609': [
+    { num:'argo#834', br:'worktree-prototype-609-work-room', add:1180, rem:0, checks:'ok', word:'Draft' },
+  ],
+};
+
+const LABELS = {
+  '#607':['wayfinder','work-room','prd'],
+  '#272':['work-room','ui','blocked'],
+  '#609':['design','work-room'],
+};
+
+/* Six blockers on one ticket, to see the sidebar's worst honest case. */
+const SIX = ['#609','#388','#264','#256','#375','#376'];
+
+/* Blockers that are already closed are not in the backlog, so the rail has no row for them.
+   The tracker still names them, and the view renders the tracker's name. */
+const CLOSED = {
+  '#264':'App shell: project strip, top bar, room tabs',
+  '#256':'Work Item provider port over OAuth (Electron)',
+  '#375':'The graphite/Ion visual foundation',
+  '#376':'The native Liquid Glass shell',
+};
+const titleOf = id => (TICKETS.find(x => x.id === id) || {}).t || CLOSED[id] || 'Closed elsewhere';
+
+/* ============================================================================
+   The states #609 names. Each one is a real configuration of the room, not a
+   screenshot of the same room with a note under it.
+   ========================================================================= */
+const STATES = {
+  'rest':        { n:'Rest — hero, rail and ticket detail in one frame',
+                   q:'Rail plus detail plus hero at the window’s real width.' },
+  'deep':        { n:'A ticket with two Deliveries and six blockers',
+                   q:'How do two Deliveries render as first-class chips, and how does blockedBy read at six?',
+                   sel:'#607' },
+  'edgeless':    { n:'Provider exposes no dependency edges',
+                   q:'The blocked filter no-ops, blockedBy is absent rather than empty, and the unblocked chip is suppressed rather than asserted.' },
+  'one-chip':    { n:'Hero with only one earned chip',
+                   q:'What the hero looks like when only one reason is earned.' },
+  'pool-blocked':{ n:'Empty pool — nothing unblocked',
+                   q:'Every open leaf has an open blocker.' },
+  'pool-running':{ n:'Empty pool — all in progress',
+                   q:'Every candidate already has a Session.' },
+  'empty':       { n:'Empty backlog — the pool is clear',
+                   q:'An empty backlog, and the backlog-clear hero tier that goes with it.' },
+  'unbound':     { n:'No Work Item provider bound — the room hides whole',
+                   q:'What the user sees instead, and how it differs from an empty backlog (#272).' },
+  'collapsed':   { n:'A parent shut — its roll-up standing in for its children',
+                   q:'What a shut parent says on its own, and where the n/m roll-up sits against the title.',
+                   sel:'#607', shut:['#334','#607'] },
+  'menu':        { n:'The Start verb’s Mode menu, open',
+                   q:'What the split control’s chevron opens, and why it is not an ellipsis.' },
+  'route':       { n:'The Route, re-skinned onto graphite/Ion',
+                   q:'#334’s geometry unchanged: progress axis, NOW line, remaining-depth columns, fog.' },
+};
+
+
+
+let state = 'rest';
+let selected = '#272';
+
+/* ============================================================================
+   The Next-up projection. Ranking is priority desc → PRD sequence → age, and it
+   is reproducible by hand from the fields above. At most two chips, each earned,
+   and never a score (#273).
+   ========================================================================= */
+function nextUp() {
+  if (state === 'empty')        return { tier:'clear' };
+  if (state === 'pool-blocked') return { tier:'blocked' };
+  if (state === 'pool-running') return { tier:'running' };
+
+  const pick = TICKETS.find(x => x.id === '#388');
+  const chips = [];
+  if (pick.pri === 'HIGH') chips.push({ t:'high priority', pri:true });
+  /* Suppressed, not asserted, when the provider exposes no edges. */
+  if (state !== 'edgeless' && state !== 'one-chip') chips.push({ t:'unblocked' });
+  if (chips.length < 2 && state !== 'one-chip') chips.push({ t:'next in #607' });
+  return { tier:'pick', item:pick, chips: chips.slice(0, 2) };
+}
+
+const heroChips = h => h.chips.map(c =>
+  `<span class="chip${c.pri ? ' pri' : ''}">${c.t}</span>`).join('');
+
+const EMPTY_LINE = {
+  blocked: 'Nothing is unblocked. Every open leaf is waiting on something still open.',
+  running: 'Everything takeable already has a Session running.',
+  clear:   'The backlog is clear. Nothing is waiting to be picked up.',
+};
+
+/* ============================================================================
+   Pieces the room shares.
+   ========================================================================= */
+const dot = t => `<span class="dot ${t.d || 'none'}"></span>`;
+
+const CHEVRON = `<svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.4"
+  stroke-linecap="round" stroke-linejoin="round"><path d="M1.4 2.6L4 5.4l2.6-2.8"/></svg>`;
+
+/* The twist is its own hit target: pressing it opens the parent without selecting it, which is
+   what lets you scan a tree without changing what the detail pane is showing. */
+const twist = t => isParent(t)
+  ? `<span class="twist" onclick="event.stopPropagation();toggle('${t.id}')">${CHEVRON}</span>`
+  : `<span class="twist leaf">${CHEVRON}</span>`;
+
+const statusPair = t => `
+  <span class="status">
+    <span class="word">${t.word}</span>
+    <span class="sep"></span>
+    <span class="bucket">${t.bucket}</span>
+  </span>`;
+
+function deliveryChips(id, stacked) {
+  const ds = DELIVERIES[id] || [];
+  if (!ds.length) return `<span style="font-size:12px;color:var(--text-off)">No Delivery yet</span>`;
+  return `<div class="deliveries">` + ds.map(d => `
+    <div class="dchip${stacked ? ' stack' : ''}">
+      <span class="num">${d.num}</span>
+      <span class="br">${d.br}</span>
+      <span class="diff"><span class="add">+${d.add}</span> <span class="rem">−${d.rem}</span></span>
+      <span class="checks ${d.checks}">${d.checks === 'ok' ? 'checks passing' : 'checks failing'}</span>
+    </div>`).join('') + `</div>`;
+}
+
+function blockersOf(id) {
+  if (state === 'edgeless') return null;              /* absent, not empty */
+  if (state === 'deep' && id === '#607') return SIX;
+  const t = TICKETS.find(x => x.id === id);
+  return t && t.by.length ? t.by : [];
+}
+
+/* A parent's open children, in the detail. The rail nests them; this names them where the
+   reader already is, so drilling in does not mean going back out to the rail. */
+const childList = id => {
+  const ks = childrenOf(id);
+  if (!ks.length) return `<p style="color:var(--text-off)">Every child is closed.</p>`;
+  return `<div class="blockers">` + ks.map(c => `
+    <div class="blk" onclick="select('${c.id}')">${dot(c)}<span class="id">${c.id}</span>
+      <span class="t">${c.t}</span>
+      <span class="blk-count">${c.word}</span></div>`).join('') + `</div>`;
+};
+
+const blockerList = ids => `<div class="blockers">` + ids.map(b => `
+  <div class="blk"><span class="dot none"></span><span class="id">${b}</span>
+    <span class="t">${titleOf(b)}</span></div>`).join('') + `</div>`;
+
+function visibleTickets() {
+  if (state === 'empty' || state === 'unbound') return [];
+  return TICKETS;
+}
+
+const drawnCount = id => shut.has(id)
+  ? 0
+  : childrenOf(id).reduce((a, c) => a + 1 + drawnCount(c.id), 0);
+
+function subtreeA(t, depth, group) {
+  const open = !shut.has(t.id);
+  const odd = t.pri !== group ? `<span class="pri">${t.pri.toLowerCase()}</span>` : '';
+  const row = `
+    <div class="row d${Math.min(depth, 2)}${t.id === selected ? ' on' : ''}${open ? '' : ' shut'}"
+         onclick="select('${t.id}')">
+      ${twist(t)}
+      ${dot(t)}
+      <span class="id">${t.id}</span>
+      <span class="t">${t.t}</span>
+      ${t.kids ? `<span class="rollup">${t.kids[0]}/${t.kids[1]}</span>` : odd}
+    </div>`;
+  if (!open) return row;
+  return row + childrenOf(t.id).map(c => subtreeA(c, depth + 1, group)).join('');
+}
+/* ============================================================================
+   The room with no Work Item provider bound. #272 says the room hides whole
+   rather than rendering an empty backlog — so there is no rail, no ledger and
+   no hero, and the difference from an empty backlog is that nothing has been
+   read at all rather than read and found empty.
+   ========================================================================= */
+/* An empty backlog is a DIFFERENT state: the provider answered, and the answer was nothing.
+   The room is still here, its chrome is still here, and the sentence says who answered. */
+const cleared = () => `
+  <div class="vacant">
+    <div class="panel">
+      <h2>Nothing open in argo</h2>
+      <p>GitHub answered: every Work Item it exposes for this Project is closed. Nothing is
+      waiting to be picked up.</p>
+    </div>
+  </div>`;
+
+const unbound = () => `
+  <div class="vacant">
+    <div class="panel">
+      <h2>No Work Item provider is connected to argo</h2>
+      <p>Argo reads tickets through a provider you connect per Project. Nothing here has been
+      read yet — this is not an empty backlog.</p>
+      <button class="start pri">Connect a provider…</button>
+    </div>
+  </div>`;
+
+/* ============================================================================
+   The Route (#334). GEOMETRY UNCHANGED — this only moves its colour and material
+   onto the graphite/Ion foundation. Waiting is a quiet neutral, the NOW line is
+   Ion Blue as current-position interaction (its gold clause is superseded), and
+   red is reserved for a ticket that can never unblock.
+   ========================================================================= */
+const NODES = [
+  { x:0, y:1, id:'#264', t:'App shell', w:'Closed',  z:'behind' },
+  { x:0, y:2, id:'#375', t:'Foundation', w:'Closed', z:'behind' },
+  { x:0, y:3, id:'#376', t:'Native shell', w:'Closed', z:'behind' },
+  { x:1, y:1, id:'#609', t:'This prototype', w:'In Progress', z:'now' },
+  { x:1, y:3, id:'#160', t:'Vocabulary', w:'Awaiting answer', z:'ahead-wait' },
+  { x:2, y:1, id:'#388', t:'Read path', w:'Todo', z:'ahead' },
+  { x:3, y:1, id:'#272', t:'Node tree', w:'Todo', z:'ahead' },
+  { x:4, y:0, id:'#273', t:'Next-up', w:'Backlog', z:'ahead' },
+  { x:4, y:2, id:'#334', t:'The Route', w:'Backlog', z:'ahead' },
+  { x:4, y:3, id:'#256', t:'Electron path', w:'Cancelled', z:'dead' },
+];
+const EDGES = [['#609','#388'],['#388','#272'],['#272','#273'],['#272','#334'],['#256','#334']];
+
+function routeView() {
+  const COLW = 166, ROWH = 62, PADX = 64, PADY = 44;
+  const px = n => PADX + n.x * COLW, py = n => PADY + n.y * ROWH;
+  const at = id => NODES.find(n => n.id === id);
+  const ink = z => z === 'behind' ? 'var(--text-off)'
+                 : z === 'now'    ? 'var(--text-1)'
+                 : z === 'dead'   ? 'var(--failure)'
+                 : 'var(--text-2)';
+  const fill = z => z === 'behind' ? 'var(--text-off)'
+                  : z === 'now'    ? 'var(--accent)'
+                  : z === 'dead'   ? 'var(--failure)'
+                  : 'var(--idle)';
+
+  const edges = EDGES.map(([a, b]) => {
+    const A = at(a), B = at(b);
+    /* An edge leaves its blocker after that blocker's label block and enters its dependent
+       before the dot, as a cubic with flat tangents — #334's rule, unchanged. */
+    const x1 = px(A) + 132, y1 = py(A), x2 = px(B) - 12, y2 = py(B), m = (x1 + x2) / 2;
+    const dead = A.z === 'dead';
+    return `<path d="M${x1},${y1} C${m},${y1} ${m},${y2} ${x2},${y2}" fill="none"
+      stroke="${dead ? 'var(--failure)' : 'var(--subtle)'}" stroke-width="1"
+      ${dead ? 'stroke-dasharray="3 3"' : ''}/>`;
+  }).join('');
+
+  const nodes = NODES.map(n => `
+    <g>
+      <circle cx="${px(n)}" cy="${py(n)}" r="4" fill="${fill(n.z)}"/>
+      <text x="${px(n) + 12}" y="${py(n) - 1}" fill="${ink(n.z)}" font-size="12"
+            font-family="-apple-system, sans-serif">${n.t}</text>
+      <text x="${px(n) + 12}" y="${py(n) + 13}" fill="var(--text-off)" font-size="10"
+            font-family="ui-monospace, monospace">${n.id} · ${n.w}</text>
+    </g>`).join('');
+
+  const nowX = PADX + COLW - 44;
+  const fogX = PADX + 4 * COLW + 148;
+
+  return `
+  <div class="route">
+    <div class="route-head">
+      <span class="crumb">Work · #607</span>
+      <h1>Wayfinder: the Work room, end to end</h1>
+      <div class="present"><button>Tree</button><button class="on">Map</button></div>
+    </div>
+    <div class="route-canvas">
+      <svg width="${fogX + 168}" height="${PADY + 4 * ROWH + 20}">
+        <defs>
+          <linearGradient id="fog" x1="0" x2="1">
+            <stop offset="0" stop-color="#1E2024" stop-opacity="0"/>
+            <stop offset="1" stop-color="#1E2024" stop-opacity=".92"/>
+          </linearGradient>
+        </defs>
+        <!-- the NOW line: Ion Blue as current position, not gold -->
+        <line x1="${nowX}" y1="16" x2="${nowX}" y2="${PADY + 4 * ROWH}"
+              stroke="var(--accent)" stroke-width="2"/>
+        <text x="${nowX + 8}" y="26" fill="var(--accent-bright)" font-size="10"
+              font-family="ui-monospace, monospace" letter-spacing="1">NOW · 1 TAKEABLE</text>
+        <text x="${PADX - 40}" y="26" fill="var(--text-off)" font-size="10"
+              font-family="ui-monospace, monospace" letter-spacing="1">3 DONE</text>
+        <text x="${PADX + 2 * COLW + 30}" y="26" fill="var(--text-off)" font-size="10"
+              font-family="ui-monospace, monospace" letter-spacing="1">6 REMAINING</text>
+        ${edges}
+        ${nodes}
+        <rect x="${fogX - 120}" y="8" width="168" height="${PADY + 4 * ROWH}" fill="url(#fog)"/>
+        <circle cx="${fogX + 52}" cy="${PADY + 1.5 * ROWH}" r="5" fill="none"
+                stroke="var(--text-off)" stroke-width="1.5"/>
+        <text x="${fogX + 66}" y="${PADY + 1.5 * ROWH + 4}" fill="var(--text-off)" font-size="11"
+              font-family="-apple-system, sans-serif">Work room, shipped</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><b>Behind the line</b> closed, no edges</span>
+      <span><b>On the line</b> open with every blocker closed</span>
+      <span><b>Ahead</b> column = blockers still to close</span>
+      <span><b>Red</b> can never unblock</span>
+    </div>
+  </div>`;
+}
+
+
+/* ============================================================================
+   D and E — a views sidebar, shared.
+
+   Every label here is written to fit 200pt because it names a VIEW, not a ticket. That is the
+   whole claim: mailbox-shaped things belong in a sidebar, and a ticket title is not one.
+   ========================================================================= */
+const VIEWS = [
+  { g:'Backlog', rows:[
+    { gl:'\u25CF', n:'All open',    k:'all' },
+    { gl:'\u25CB', n:'Unblocked',   k:'unblocked' },
+    { gl:'\u25C6', n:'In progress', k:'wip' },
+    { gl:'\u25B3', n:'Blocked',     k:'blocked' },
+  ]},
+  { g:'Charts', rows:[
+    { gl:'\u25A6', n:'#607 Wayfinder', k:'c607' },
+    { gl:'\u25A6', n:'#334 The Route', k:'c334' },
+  ]},
+];
+
+function viewCount(k) {
+  const t = visibleTickets();
+  if (k === 'all')       return t.length;
+  if (k === 'unblocked') return t.filter(x => !x.by.length).length;
+  if (k === 'wip')       return t.filter(x => x.bucket === 'in progress').length;
+  if (k === 'blocked')   return t.filter(x => x.bucket === 'blocked' || x.by.length).length;
+  if (k === 'c607')      return t.filter(x => x.parent === '#607').length;
+  if (k === 'c334')      return t.filter(x => x.parent === '#334').length;
+  return 0;
+}
+
+function navSidebar() {
+  const groups = VIEWS.map(v => `
+    <div class="nav-group">
+      <span class="cap">${v.g}</span>
+      ${v.rows.map(r => `<div class="nav-row${r.k === 'all' ? ' on' : ''}">
+        <span class="gl">${r.gl}</span><span>${r.n}</span>
+        <span class="n">${viewCount(r.k)}</span></div>`).join('')}
+    </div>`).join('<div class="nav-rule"></div>');
+
+  /* The Next-up hero keeps its card, and it fits: the hero states ONE ticket, so its title has
+     the sidebar's whole width and three lines to wrap into. A list of twelve does not. */
+  const h = nextUp();
+  const hero = h.tier === 'pick' ? `
+    <div class="hero-card">
+      <span class="cap">Next up</span>
+      <span class="hid">${h.item.id}</span>
+      <div class="ht">${h.item.t}</div>
+      <div class="chips">${heroChips(h)}</div>
+    </div>` : `
+    <div class="hero-card">
+      <span class="cap">Next up</span>
+      <div class="hero-empty">${EMPTY_LINE[h.tier]}</div>
+    </div>`;
+
+  return `
+  <aside class="rail">
+    <div class="rail-head"></div>
+    <div class="rail-scroll">
+      <div style="padding:0 var(--s-base) var(--s-base)">
+        <div class="rooms-strip glass">
+          <button>Sessions</button><button class="on">Work</button><button>Code</button>
+        </div>
+      </div>
+      ${groups}
+      <div class="nav-rule"></div>
+      ${hero}
+    </div>
+    <div class="nav-foot">${CONN}</div>
+  </aside>`;
+}
+
+/* ---------- D ---------- */
+function listD() {
+  const items = visibleTickets();
+  const groups = PRIORITIES.map(p => {
+    const roots = items.filter(t => !t.parent && t.pri === p);
+    if (!roots.length) return '';
+    const n = roots.reduce((a, r) => a + 1 + drawnCount(r.id), 0);
+    return `<div class="pri-head"><span class="cap">${p}</span><span class="n">${n}</span></div>`
+      + roots.map(r => subtreeA(r, 0, p)).join('');
+  }).join('');
+  return `<div class="work-list">
+    ${items.length ? groups : `<div class="rail-empty">Nothing in the backlog.</div>`}
+  </div>`;
+}
+
+function detailD() {
+  const t = TICKETS.find(x => x.id === selected);
+  const blk = blockersOf(t.id);
+  return `<div class="col">
+    <div class="measure">
+      <div class="t-head">
+        <span class="tid">${t.id}</span>
+        <h1>${t.t}</h1>
+        ${statusPair(t)}
+      </div>
+      <div class="fact-strip">
+        <span class="kv"><span class="k">Priority</span><span class="v">${t.pri.toLowerCase()}</span></span>
+        <span class="kv"><span class="k">Type</span><span class="v">${t.type}</span></span>
+        <span class="kv"><span class="k">Bucket</span><span class="v mono">${t.bucket}</span></span>
+        <span class="kv"><span class="k">Labels</span>
+          <span class="labels">${(LABELS[t.id] || ['work-room']).map(l => `<span class="label">${l}</span>`).join('')}</span></span>
+      </div>
+      <div class="body">
+        <span class="cap" style="display:block;margin-bottom:var(--s-snug)">Deliveries</span>
+        ${deliveryChips(t.id, false)}
+        <p>The backlog’s home, with the sidebar freed: views at 280, the backlog at 520 where
+        a title reads whole at depth three, and the ticket beside it.</p>
+        <h2>Acceptance criteria</h2>
+        <p>Any node — parent or leaf — opens in detail through the same view; type is a
+        property. Parents show a Children section and an <code>n/m</code> roll-up.</p>
+        ${t.kids ? `<h2>Children · ${t.kids[0]} of ${t.kids[1]} closed</h2>${childList(t.id)}` : ''}
+        ${blk === null ? '' : `<h2>Blocked by${blk.length ? ` · ${blk.length}` : ''}</h2>
+          ${blk.length ? blockerList(blk) : `<p>Nothing.</p>`}`}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================================
+   The toolbar. Icons are drawn rather than named, so the study says what shape it means.
+   ========================================================================= */
+const IC = {
+  filter:  '<path d="M2 3h12l-4.6 5.4v4.2L6.6 14V8.4z"/>',
+  group:   '<path d="M2 4h12M5 8h9M5 12h9"/><circle cx="2.5" cy="8" r=".9" fill="currentColor" stroke="none"/><circle cx="2.5" cy="12" r=".9" fill="currentColor" stroke="none"/>',
+  compose: '<path d="M13 2.6 8 7.6l-.6 2 2-.6 5-5z"/><path d="M13.5 9.5v3.2a1 1 0 0 1-1 1H3.3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h3.2"/>',
+  search:  '<circle cx="6.6" cy="6.6" r="4.2"/><path d="M9.8 9.8 14 14"/>',
+  bolt:    '<path d="M8.8 1.8 3.6 9h3.4l-.8 5.2L12.4 7H9z"/>',
+  ext:     '<path d="M9.5 2.5H13.5v4"/><path d="M13.5 2.5 8 8"/><path d="M12.5 9.6v3a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h3"/>',
+  chev:    '<path d="M4 6.5 8 10.5l4-4"/>',
+  link:    '<path d="M6.6 9.4a2.6 2.6 0 0 0 3.8 0l2-2a2.7 2.7 0 0 0-3.8-3.8l-1 1"/><path d="M9.4 6.6a2.6 2.6 0 0 0-3.8 0l-2 2a2.7 2.7 0 0 0 3.8 3.8l1-1"/>',
+  tick:    '<path d="M3 8.4 6.2 11.6 13 4.8"/>',
+};
+const svg = k => `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"
+  stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
+const ibtn = (k, label) => `<button class="ibtn" title="${label}">${svg(k)}</button>`;
+
+const LIGHTS = `<div class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></div>`;
+const VESSEL = `<div class="vessel glass"><button class="project">argo</button>
+  <div class="divider"></div><button class="checkout">main</button></div>`;
+const CONN = `<span class="conn" id="conn"><i></i>GitHub · milad-alizadeh</span>`;
+const SEARCH = `<div class="search glass">${svg('search')}<span>Search the backlog</span></div>`;
+
+
+
+/* The four rungs, in order, each named by the boundary it will not cross unasked. */
+const MODES = [
+  { n:'Read Only', d:'reads, never writes' },
+  { n:'Plan',      d:'writes a plan, not the code' },
+  { n:'Code',      d:'edits the worktree' },
+  { n:'Auto',      d:'runs the gates too' },
+];
+const MODE_MENU = `<div class="menu" style="left:120px">
+  <span class="cap">Start in</span>
+  ${MODES.map((m, i) => `<div class="menu-row${i === 2 ? ' on' : ''}">
+    <span class="tick">${i === 2 ? svg('tick') : ''}</span>
+    <span>${m.n}</span><span class="note">${m.d}</span></div>`).join('')}
+</div>`;
+
+function titlebarHTML() {
+  const lead = `<div class="tb-lead">${LIGHTS}${VESSEL}</div>`;
+
+  if (state !== 'unbound' && state !== 'route' && visibleTickets().length) {
+    const n = visibleTickets().length;
+    /* Mail's own order, kept: what-you-are-looking-at, then the controls that narrow it, then
+       the compose call-to-action starting the next column, then the ticket's own verbs, then
+       search on the trailing edge. */
+    return lead + `
+      <div class="tb-list">
+        <div class="lines">
+          <span class="h">Backlog</span>
+          <span class="sub">All open · by priority · ${n} tickets</span>
+        </div>
+        <div class="icap glass">${ibtn('filter', 'Filter')}${ibtn('group', 'Group by')}</div>
+      </div>
+      <div class="tb-deck">
+        <div class="icap glass">${ibtn('compose', 'New ticket')}</div>
+        <div class="icap glass split">
+          <button class="ibtn wide" title="Start a Session on this ticket">${svg('bolt')}Start</button>
+          <button class="ibtn chev" title="Choose the Mode to start in">${svg('chev')}</button>
+          <span class="sep"></span>
+          ${ibtn('ext', 'Open on GitHub')}${ibtn('link', 'Copy link')}
+        </div>
+        ${state === 'menu' ? MODE_MENU : ''}
+        <span class="grow"></span>${SEARCH}
+      </div>`;
+  }
+
+  /* An empty backlog is the moment you MOST want New ticket, so the call-to-action survives
+     the vacancy — the list's controls and the ticket's verbs do not, because there is no list
+     to narrow and no ticket to act on. Search goes too: nothing to search. */
+  if (state !== 'unbound' && state !== 'route') {
+    return lead + `
+      <div class="tb-list">
+        <div class="lines">
+          <span class="h">Backlog</span><span class="sub">All open · 0 tickets</span>
+        </div>
+      </div>
+      <div class="tb-deck"><div class="icap glass">${ibtn('compose', 'New ticket')}</div></div>`;
+  }
+  /* No provider is bound, so there is nothing to create INTO — and the Route carries its own
+     head. Nothing else claims this edge: the rooms picker lives in the sidebar now, and the
+     connection chip sits at the sidebar's foot beside the views it qualifies. */
+  return lead + `<div class="tb-trail"></div>`;
+}
+
+/* ============================================================================
+   Assembly.
+   ========================================================================= */
+function render() {
+  const panes = document.getElementById('panes');
+  const tb = document.getElementById('titlebar');
+  const railClass = state === 'unbound' ? 'rail-0' : 'rail-work';
+  panes.className = 'panes ' + railClass;
+  const three = state !== 'unbound' && state !== 'route';
+  tb.className = 'titlebar ' + railClass + (three ? ' three' : '');
+  tb.innerHTML = titlebarHTML();
+  const conn = document.getElementById('conn');
+  if (conn) conn.style.visibility = state === 'unbound' ? 'hidden' : 'visible';
+
+  if (state === 'unbound') { panes.innerHTML = `<section class="deck"><div class="deck-head"></div>${unbound()}</section>`; return; }
+
+  const empty = !visibleTickets().length;
+  const body = state === 'route' ? routeView() : empty ? cleared() : '';
+
+  panes.innerHTML = navSidebar() + `<section class="deck"><div class="deck-head"></div>
+    ${state === 'route' || empty ? body : `<div class="work">${listD()}${detailD()}</div>`}</section>`;
+}
+
+function select(id) { selected = id; render(); }
+
+function setState(k) {
+  state = k;
+  shut = new Set(STATES[k].shut || []);
+  selected = STATES[k].sel || (state === 'deep' ? '#607' : '#272');
+  const u = new URLSearchParams(location.search);
+  u.set('state', state);
+  history.replaceState(null, '', '?' + u);
+  paintChrome();
+  render();
+}
+function paintChrome() {
+  document.getElementById('state-note').textContent = STATES[state].q;
+  const sel = document.getElementById('state-select');
+  sel.innerHTML = Object.entries(STATES)
+    .map(([k, v]) => `<option value="${k}"${k === state ? ' selected' : ''}>${v.n}</option>`).join('');
+}
+
+addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  const ks = Object.keys(STATES);
+  const i = ks.indexOf(state);
+  if (e.key === 'ArrowLeft')  setState(ks[(i - 1 + ks.length) % ks.length]);
+  if (e.key === 'ArrowRight') setState(ks[(i + 1) % ks.length]);
+});
+
+(function boot() {
+  const q = new URLSearchParams(location.search);
+  if (q.get('render')) document.body.classList.add('render');
+  const s = q.get('state');
+  if (s && STATES[s]) state = s;
+  shut = new Set(STATES[state].shut || []);
+  selected = STATES[state].sel || (state === 'deep' ? '#607' : '#272');
+  paintChrome();
+  render();
+})();
+</script>
+</body>
+</html>
