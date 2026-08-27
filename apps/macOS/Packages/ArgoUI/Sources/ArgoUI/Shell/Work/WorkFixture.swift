@@ -70,7 +70,6 @@ enum WorkFixture {
         WorkReading(
             items: items,
             claimed: [388, 609, 763],
-            highPriority: [273],
             edgesRead: Set(items.map(\.number)),
             deliveries: [388: .open, 609: .merged, 275: .failing, 763: .draft],
             deliveryFacts: deliveryFacts,
@@ -115,7 +114,7 @@ enum WorkFixture {
                 closure: .open,
             ),
         ],
-        highPriority: [388],
+        priorities: [388: "high"],
         provider: bound,
     )
 

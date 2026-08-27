@@ -11,9 +11,6 @@ struct WorkReading: Sendable {
     var items: [WorkItem] = []
     /// Which items a Session has taken. DIRECT and Argo's alone — no provider carries a claim.
     var claimed: Set<Int> = []
-    /// Which items the provider marks urgent. A set and not a ladder: #160 has yet to settle how
-    /// priority is spelled, and the hero reads one bit.
-    var highPriority: Set<Int> = []
     /// Which items the provider actually served dependency edges for. Absent is UNKNOWN, not
     /// "no blockers" — an empty `blockedBy` cannot tell the two apart, and the hero suppresses
     /// its `unblocked` claim for anything missing here (`CONTEXT.md` L2 · degrade-down).

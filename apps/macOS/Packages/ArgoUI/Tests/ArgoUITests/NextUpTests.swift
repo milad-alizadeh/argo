@@ -7,6 +7,8 @@ import Testing
 /// one.
 @Suite("Next-up hero")
 struct NextUpTests {
+    /// #273 is `medium` in the fixture, so the hero does NOT claim high priority for it — the same
+    /// word the ticket detail draws beside it (#815). One fact, one answer, both surfaces.
     @Test
     func `the hero picks a takeable leaf out of the backlog`() {
         let room = WorkRoomProjection.room(from: WorkFixture.reading)
@@ -14,8 +16,18 @@ struct NextUpTests {
         #expect(room.nextUp == .pick(.init(
             number: 273,
             title: "The Next-up cold-start planner",
-            reasons: [.highPriority, .unblocked],
+            reasons: [.unblocked, .next(chart: "#607")],
         )))
+    }
+
+    /// The chip echoes the provider's own word back; it does not rank the ladder. A ticket the
+    /// provider calls `medium` earns nothing here however urgent it looks from elsewhere.
+    @Test
+    func `only the provider's own high word earns the priority chip`() throws {
+        var reading = WorkFixture.oneChip
+        reading.priorities = [388: "medium"]
+
+        try #expect(pick(in: WorkRoomProjection.room(from: reading)).reasons.isEmpty)
     }
 
     /// Never more than two, whatever is earned — the third reason is read after the question has

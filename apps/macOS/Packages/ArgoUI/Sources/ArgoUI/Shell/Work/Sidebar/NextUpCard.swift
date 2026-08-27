@@ -64,16 +64,12 @@ struct NextUpCard: View {
         }
     }
 
-    /// One row while the chips fit, two while the reader's text size means they do not.
+    /// The design's `flex-wrap`, which the room already spells as a `Layout` (#815). Two chips fit
+    /// one line at the default text size and break onto a second where the reader has scaled up.
     private func chips(_ reasons: [NextUp.Reason]) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: ArgoSpacing.snug) { chipRun(reasons) }
-            VStack(alignment: .leading, spacing: ArgoSpacing.snug) { chipRun(reasons) }
+        WrapFlow(gap: ArgoSpacing.snug) {
+            ForEach(reasons, id: \.words) { NextUpChip(reason: $0) }
         }
-    }
-
-    private func chipRun(_ reasons: [NextUp.Reason]) -> some View {
-        ForEach(reasons, id: \.words) { NextUpChip(reason: $0) }
     }
 
     private func sentence(_ words: String) -> some View {

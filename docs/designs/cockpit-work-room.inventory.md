@@ -212,8 +212,8 @@ an edge rather than as an ink.
   single-state.
 - **The three tier sentences** — a `switch` in the card's own body, which is what makes "every
   tier owns a sentence" a compile error to break rather than a review note.
-- **The chip run's `ViewThatFits`** — two chips at 280 fit on one line at the default text size,
-  and the second layout exists only for the reader who has scaled type up.
+- **The chip run** — `WrapFlow`, the design's `flex-wrap` which #815 had already spelled as a
+  `Layout`. The first cut hand-rolled a `ViewThatFits` fallback; merging with #815 replaced it.
 
 ## What the hero refuses to say
 
@@ -228,9 +228,10 @@ Three suppressions, and they are the substance of the ticket rather than caveats
   that picks by age (#273), and nothing reads an age. A card can honestly carry zero chips — the
   chips are the reasons, and having none is a true rendering. Inventing the claim to avoid a bare
   card is the one thing the hero must never do.
-- **`high priority` reads `WorkReading.highPriority`, a set and not a ladder.** #160 has yet to
-  settle how priority is spelled, and the hero needs one bit. Beside `WorkItem` rather than on it
-  while #388's read path is the thing that would fill it.
+- **`high priority` matches the provider's own word; it does not rank the ladder.** The chip is
+  earned when `WorkReading.priorities` — #815's verbatim word, which Argo "neither ranks nor
+  recases" — spells this ticket `high`, and echoes that word back. Which words a provider actually
+  spells is #388's; which of them outrank the rest is #273's.
 
 ## Where the design and the code disagree
 
