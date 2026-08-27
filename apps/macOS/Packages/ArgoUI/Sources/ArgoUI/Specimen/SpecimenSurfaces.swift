@@ -37,14 +37,12 @@ struct RosterSpecimen: View {
 struct ToolbarSpecimen: View {
     let presentation: CockpitPresentation
 
-    @State private var room = CockpitRoom.sessions
     @State private var navigation = CockpitNavigationModel()
 
     var body: some View {
         Color.clear
             .toolbar {
                 ShellToolbar(
-                    room: $room,
                     scope: ScopeVessel(presentation: presentation, actions: .inert),
                     spawn: CockpitSpawn(
                         presentation: presentation,

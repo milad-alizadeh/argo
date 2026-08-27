@@ -36,6 +36,21 @@ public enum ArgoSymbol {
     public static let inProgressView = "diamond.fill"
     public static let blockedView = "triangle"
 
+    /// The Work room's toolbar (`cockpit-work-room.md`). Each is the mark the study drew, named by
+    /// what the control does rather than by the shape.
+    public static let newTicket = newSession
+    /// Narrowing the backlog to a subset, and re-ordering what is left into groups. Two different
+    /// acts, so two marks — a funnel takes rows away, an indented list keeps them all.
+    public static let filterBacklog = "line.3.horizontal.decrease"
+    public static let groupBacklog = "list.bullet.indent"
+    public static let searchBacklog = "magnifyingglass"
+    /// Starting a Session on the open ticket — the verb the room is for.
+    public static let startSession = "bolt"
+    /// Opening the ticket where its provider holds it, and taking that address to the pasteboard.
+    /// The arrow leaves the app; the chain is the address itself.
+    public static let openOnHost = "arrow.up.forward.square"
+    public static let copyLink = "link"
+
     /// One mark per room, and since #690 the whole of what a room tab draws.
     ///
     /// `apple.terminal` is a terminal WINDOW. Bare `terminal` is `ran` below, the feed's mark for a

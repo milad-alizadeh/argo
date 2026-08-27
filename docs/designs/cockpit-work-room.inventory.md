@@ -3,14 +3,14 @@
 What `design-to-code` extracted while building [`cockpit-work-room.md`](cockpit-work-room.md), and
 what it deliberately left inline. One row per component the assembled screen forced out.
 
-**Scope: #812, #815, #817, #818 and #814** — the views sidebar, the flat backlog list and the
-ticket (#812), the ticket's fact strip and its three sections (#815), the Next-up hero and its four
-tiers (#817), the room's two vacancy pages (#818), and the nesting that turned the list into a tree
-(#814). The design freezes 31 names across the whole room; the names below are the ones these
-tickets built. The rest (the toolbar, the priority headers, the Route) belong to their own tickets
-and are absent rather than stubbed.
+**Scope: #812, #814, #815, #816, #817 and #818** — the views sidebar, the flat backlog list and the
+ticket (#812), the nesting that turned the list into a tree (#814), the ticket's fact strip and its
+three sections (#815), the room's toolbar row (#816), the Next-up hero and its four tiers (#817),
+and the room's two vacancy pages (#818). The design freezes 31 names across the whole room; the
+names below are the ones these tickets built. The rest (the priority headers, the Route) belong to
+their own tickets and are absent rather than stubbed.
 
-The tables below cover #812, #815, #818 and #814; #817's own section is at the foot.
+The tables below cover #812, #814, #815 and #818; #817's and #816's own sections are at the foot.
 
 ## Extracted
 
@@ -213,7 +213,7 @@ drifted.
 
 `unboundWorkRoom` and `emptyWorkBacklog` are the renders, and both reproduce their design PNG's own
 line breaks at a 1280×800 window. What is absent from `empty.png` is the Next-up hero's
-backlog-clear tier and the toolbar's surviving `New ticket` — both other tickets.
+backlog-clear tier; the toolbar's surviving `New ticket` is #816's, below.
 
 Three things this ticket had to settle that the renders do not state:
 
@@ -302,3 +302,110 @@ Two claims the first build got wrong, both caught before the PR:
   empty leaf set, and the card said "every open leaf is waiting on something still open" about a
   set with no members. It now degrades to `backlogClear`.
 - **The edges probe was global.** See above — it is now per-pick, off an explicit `edgesRead`.
+
+---
+
+# #816 — the room's toolbar
+
+The eight names the design freezes for the toolbar row, plus the two values the row is built from.
+`RoomStrip` above moved out of `Work/Sidebar/` and into `Shell/Sidebar/`: it is every room's
+picker now, not this room's.
+
+## Extracted
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `WorkToolbar` | organism | `ArgoUI/Shell/Work/Toolbar/` | `reading: Reading`, `intents: WorkToolbarIntents`, `held: Held` | `BacklogToolbarLabel`, `NewTicketButton`, `StartControl`, `BacklogSearchField` | the `.titlebar.three` grid |
+| `BacklogToolbarLabel` | molecule | `ArgoUI/Shell/Work/Toolbar/` | `reading: Reading`, `narrowing: () -> Void`, `grouping: () -> Void` | `ToolbarVessel`, `ToolbarIcon` | `.tb-list` |
+| `ToolbarVessel` | atom | `ArgoUI/Shell/Work/Toolbar/` | `content: Content` | `argoFloatingGlass(in: .capsule)` | `.icap.glass` |
+| `ToolbarIcon` | atom | `ArgoUI/Shell/Work/Toolbar/` | `symbol: String`, `label: String`, `act: () -> Void` | `ArgoGlyph` | `.ibtn` |
+| `NewTicketButton` | atom | `ArgoUI/Shell/Work/Toolbar/` | `act: () -> Void` | `ToolbarVessel`, `ToolbarIcon` | `ibtn('compose')` |
+| `StartControl` | molecule | `ArgoUI/Shell/Work/Toolbar/` | `verbs: Verbs`, `mode: Binding<SessionMode>` | `ToolbarVessel`, `ModeMenu`, `DeckSeparator`, `ToolbarIcon` | `.icap.split` |
+| `ModeMenu` | molecule | `ArgoUI/Shell/Work/Toolbar/` | `mode: Binding<SessionMode>` (4 rungs) | stock `Menu` + `Picker(.inline)` | `.menu` / `MODE_MENU` |
+| `BacklogSearchField` | atom | `ArgoUI/Shell/Work/Toolbar/` | `query: Binding<String>` | stock `TextField`, `argoFloatingGlass` | `.search.glass` |
+| `WorkToolbarProjection` | value | `ArgoUI/Shell/Work/Toolbar/` | `reading(of:in:showing:) -> Reading` | — | the `titlebarHTML()` branches |
+| `WorkToolbarIntents` | value | `ArgoUI/Shell/Work/Toolbar/` | four closures plus a `Verbs` triple, all inert by default | — | the buttons' `title=` strings |
+
+`ArgoWorkToolbar` beside them is the surface sheet, not a component: the block width, the icon
+button's slot, the vessel inset, the split rule and the search field's measure.
+
+## What stayed inline
+
+- **The two link verbs.** `ToolbarIcon` twice inside `StartControl`, single-use each.
+- **The `Start` verb itself.** A `Button` with a glyph and a word, in the one control that spends
+  a word. Extracted it would be a `ToolbarIcon` with a label bolted on.
+- **The row's flexible spacer.** `ToolbarSpacer(.flexible, placement: .primaryAction)`, stock.
+
+## The column-placement question — answered wrongly, and what the render showed
+
+**This build's answer does not hold, and the branch ships it anyway so the evidence is on the
+record.** What was tried: every item at `.primaryAction`, with the list block claiming
+`ArgoBacklogList.width` 520 at that region's leading edge, on the premise that `.primaryAction` is
+the region the detail pane draws.
+
+**The premise is false.** macOS lays `.navigation` and `.primaryAction` out as ONE continuous band,
+so `ShellToolbar`'s sidebar toggle, New Session and the scope vessel are drawn first and eat about
+270pt before the block starts. Measured off `ARGO_SPECIMEN=workRoom` at the 1280 window:
+
+| | design (`menu.png`) | this build |
+|---|---|---|
+| `Backlog` heading | ~306, just past the sidebar | ~700, onto the ticket column |
+| filter / group-by | trailing edge of the 520 block | pushed to the window's trailing edge |
+| New ticket · Start · links · search | over the ticket column | behind an unlabelled `»` overflow |
+
+That last row breaks the design's own rule — nothing in this room is behind an unlabelled control.
+`ARGO_SPECIMEN=workToolbar` renders the same row in isolation and it IS the design, so the
+components are sound and only the mounting is wrong.
+
+**The two routes left are the ticket's own, and the render is evidence for the one it preferred.**
+A three-column `NavigationSplitView` gives real per-column regions at every width, and costs a
+shell fork plus a per-room state reset — the objection that produced this build in the first place.
+A sticky header inside the list pane removes the 520 arithmetic and the overflow together, and
+costs the room a second chrome band and New ticket's placement over the column it opens.
+`.principal` stays closed for the reason `ShellToolbar` records.
+
+## Where the design and the code disagree
+
+The heading and its sub-line take the roles the design's own snap table names —
+`ArgoTypography.windowTitle` and `rowMeta`, both marked "exact" there. The first build reached for
+`rowTitle` and `caption` instead, which is a weight too light and a rung too small.
+
+- **`iconSize` 14 is not a rung.** 14 is the SVG box the study drew its icons into.
+  `ArgoIconSize.control` 13 is the rung the contract gives "a control's own mark", and a fourth
+  rung would be a token change this room has no standing to make. No token moved.
+- **The Mode rows carry the composer's boundary words, not the study's.** The study writes
+  `reads, never writes` / `writes a plan, not the code` / `edits the worktree` /
+  `runs the gates too`; `SessionMode.boundary` writes `no writes` / `no writes, proposes` /
+  `the Workspace` / `no boundary`, and `SessionModeReading.help` already puts them on the
+  composer's control. One fact said two ways is one of them waiting to go stale, so the menu reuses
+  the contract's. A native `Menu` row is also one line of text, so the study's two-column layout —
+  the word, its boundary set right in the machine caption — is not reachable through the `Picker`
+  the frozen-names table itself specifies; the em dash carries the same pair.
+- **The subtitle drops `by priority` until #819.** The middle term names the GROUPING in force and
+  the list has none: #814 nested it into a tree, which is not a grouping, and #819 is the ticket
+  that adds the priority headers. A heading reading `by priority` over an ungrouped list is the
+  exact lie the second line exists to prevent.
+- **`RoomsVessel` is deleted, not merely unused.** The AC asks for one rooms picker; `RoomStrip` is
+  it, so the titlebar's vessel and the flexible spacer that only ever pushed it to the trailing
+  edge are gone, and `ShellSidebar` draws the strip so Sessions and Code keep a way back to Work.
+  `ToolbarSegment` lost its mark-shaped fit and the two slot measures with it — a `Picker` draws
+  its own segments — and `ToolbarSegmentTests`, which asserted only that arithmetic, went too.
+- **New Session stays on the bar in the Work room.** The study's `.tb-lead` is the traffic lights
+  and the scope vessel alone. Removing an app-wide verb per room is a decision #816 does not make,
+  and the room's own call-to-action is New ticket, over the column it opens.
+- **The menu offset 40 is not implemented, and cannot be.** `ModeMenu` is the stock `Menu` the
+  frozen-names table specifies, and AppKit positions and draws its own popover. Recorded in the
+  measurement table rather than silently dropped.
+
+## Still not measured
+
+**That search clears the trailing edge at the 1280 window.** The 210 is in the code, but in the
+shell the field is inside the overflow above, so nothing yet shows it uncollapsed. It settles with
+the placement, not before.
+
+## Not reproduced from `menu.png`
+
+`ModeMenu` is a native `Menu`. AppKit owns the open popover, so it cannot be put on screen by a
+specimen and the open state has no headless render — `menu.png` stays the study's drawing of it.
+The row it hangs from is `workToolbar`, and the two vacancies are `emptyWorkToolbar` and
+`unboundWorkToolbar`.

@@ -139,6 +139,25 @@ The Work room does the same, in the same order:
 **A title without its count can lie about what you are filtered to**, which is why the heading is
 two lines and Mail's is too (`Searching / Inbox — …, 11 results`).
 
+**The middle term names the grouping in force, so it is absent until there is one.** The list is
+still flat (#812), and a subtitle reading `by priority` over an ungrouped list is the exact lie the
+second line exists to prevent; #814 adds the term with the grouping it describes. Until then the
+line reads `All open · 12 tickets`.
+
+### The column question, settled (#816)
+
+The room's three columns are real, but macOS gives per-column toolbar regions only to a genuine
+three-column `NavigationSplitView`, and the shell's split view is unconditional — a room fills its
+slots rather than replacing them (#812). Forking it per room would rebuild the whole window on
+every room switch and drop the deck's per-Session state, both seam drags and the sidebar's width.
+`.principal` is closed for the reason `ShellToolbar` already records.
+
+**So the row claims the boundary directly.** Every item is `.primaryAction`, which is the region
+the detail pane draws; `.navigation` is the window's leading region, where the scope vessel sits
+over the sidebar. The list block then takes `ArgoBacklogList.width` 520 at that region's leading
+edge, so it lands over the list and everything after it lands over the ticket column, at any window
+size — because 520 does not move with the window.
+
 **Search sits over the ticket but searches the list.** That is Mail's own split, and for the
 same reason: the toolbar is one row, not three.
 
@@ -147,8 +166,14 @@ same reason: the toolbar is one row, not three.
 The study first drew an unlabelled `…`. **An overflow nobody can name is an overflow nobody
 opens**, so it is gone. In its place `Start` is a split control: the button starts a Session,
 the chevron opens the **Mode** it starts in — `Read Only · Plan · Code · Auto`, Argo's own
-ladder, each rung named by the boundary it will not cross unasked (`reads, never writes`;
-`writes a plan, not the code`; `edits the worktree`; `runs the gates too`). See `menu.png`.
+ladder, each rung named by the boundary it will not cross unasked. See `menu.png`.
+
+**The rungs' boundaries are `SessionMode.boundary`'s words** — `no writes`, `no writes, proposes`,
+`the Workspace`, `no boundary` — not the longer sentences `menu.png` draws. The composer's own Mode
+control already says these four boundaries (#608, ADR-0025), and one fact said two ways is one of
+them waiting to go stale. `ModeMenu` is a native `Menu` with a `Picker`, as the names table below
+specifies, so a row is one line of text and the study's two-column layout is not reachable through
+it — the em dash carries the same pair.
 
 The two link verbs that would otherwise have hidden in that ellipsis — open on the code host,
 copy link — are icons beside it, past a hairline. Nothing in this room is behind an unlabelled
@@ -290,13 +315,14 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 
 | Measurement | Value | Reason |
 |---|---|---|
-| Row height | **46** | the shell's existing titlebar strip, unchanged |
+| Row height | **46** | the shell's existing titlebar strip, unchanged — not restated in code, where `ArgoToolbarVessel` already names the band |
+| `listBlockWidth` | `ArgoBacklogList.width` **520** | what places every control over its own column: the block claims the backlog's own width at the leading edge of the region the detail pane draws, and 520 does not move with the window — see **the column question**, settled below |
 | `iconButton` | **26 × 24** inside a 3pt vessel inset | the capsule's own padding is the vessel's, not the button's |
-| `iconSize` | **14** | one size for every toolbar glyph |
+| `iconSize` | `ArgoIconSize.control` **13** | 14 was the SVG box the study drew into; `control` is the rung the contract gives "a control's own mark", and a fourth rung is a token change this room has no standing to make |
 | `searchWidth` | **210** | wide enough for `Search the backlog`; at 260 the trailing edge clipped at 1280 |
 | Vessel shape | `Capsule()` | a capsule is a shape, not a radius — no `ArgoRadius` rung applies |
 | Vessel material | glass, **no border, no shadow** | `ArgoElevation.vessel` is zero; the specular rim is the cue |
-| Menu offset | **40** below the row | `ArgoRadius.popover` 12, `ArgoElevation.popover` — the one rung here that genuinely floats |
+| Menu offset | **40** below the row | `ArgoRadius.popover` 12, `ArgoElevation.popover` — the one rung here that genuinely floats. **Not implemented, and not implementable**: `ModeMenu` is the stock `Menu` the frozen-names table specifies, and AppKit positions and draws its own popover. The number describes the study's drawing of it |
 
 ### `ArgoTicketDetail` — `ArgoUI/Shell/Work/Detail/`
 
@@ -318,7 +344,7 @@ for; anything not listed is stock used directly.
 |---|---|---|---|
 | `WorkRoom` | organism | the shell's existing `NavigationSplitView` slots | supplies sidebar and detail; it does not own a split of its own |
 | `WorkSidebar` | organism | `List(selection:)` with two `Section`s | views, not tickets |
-| `RoomStrip` | atom | `Picker(.segmented)` | `Sessions \| Work \| Code`, in the sidebar's scroll head (#805) |
+| `RoomStrip` | atom | `Picker(.segmented)` | `Sessions \| Work \| Code`, at the head of EVERY room's sidebar (#805). #816 deleted the titlebar's `RoomsVessel`, so this is the window's only rooms picker and it lives in `Shell/Sidebar/` rather than under `Work/` |
 | `ViewRow` | molecule | an `HStack` in a `List` row | glyph · name · count, at `viewRowHeight` as a floor |
 | `ProviderFoot` | atom | an `HStack` above a `Divider` | the bound provider, at the sidebar's foot |
 | `NextUpCard` | molecule | a `VStack` on `surface.raised` | the hero; carries the ticket or an empty-tier sentence |
