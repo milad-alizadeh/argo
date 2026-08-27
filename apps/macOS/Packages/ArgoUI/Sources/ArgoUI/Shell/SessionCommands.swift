@@ -12,31 +12,24 @@ public struct SessionCommands: Equatable, Sendable {
     public let rename: @MainActor () -> Void
     /// Clear the selected Session off the roster, or put it back if it is already behind the foot.
     public let archive: @MainActor () -> Void
-    /// What the two items are CALLED. Carried here because the Archive's word depends on which way
-    /// it goes for this Session, and the Rename's is already spelled in the row's context menu.
-    public let renameTitle: String
-    public let archiveTitle: String
-
-    /// What the Archive item reads with nothing selected — the item is disabled then, but it is
-    /// still on screen, and a menu with a blank line in it reads as broken rather than as inactive.
-    public static let archiveFallbackTitle = "Archive Session"
+    /// Which way the Archive item goes. The state and not the word — the words are
+    /// `SessionArchiveProjection`'s (#800).
+    public let isArchived: Bool
 
     public init(
         rename: @escaping @MainActor () -> Void,
         archive: @escaping @MainActor () -> Void,
-        renameTitle: String,
-        archiveTitle: String,
+        isArchived: Bool,
     ) {
         self.rename = rename
         self.archive = archive
-        self.renameTitle = renameTitle
-        self.archiveTitle = archiveTitle
+        self.isArchived = isArchived
     }
 
-    /// Closures are not `Equatable`; the titles are the only part that ever changes what is DRAWN,
-    /// so they are the only part compared. Two commands for the same Session are the same menu.
+    /// Closures are not `Equatable`; which way the Archive goes is the only part that changes what
+    /// is DRAWN, so it is the only part compared. Two commands for one Session are the same menu.
     public static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.renameTitle == rhs.renameTitle && lhs.archiveTitle == rhs.archiveTitle
+        lhs.isArchived == rhs.isArchived
     }
 }
 

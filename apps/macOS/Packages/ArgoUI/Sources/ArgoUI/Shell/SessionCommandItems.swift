@@ -15,14 +15,17 @@ public struct SessionCommandItems: View {
     public var body: some View {
         // ⌘R rather than Return: Return belongs to the row that has focus, and a menu item claiming
         // it would fire while somebody was typing in the field it opens.
-        Button(commands?.renameTitle ?? SessionRenameProjection.heading) { commands?.rename() }
+        Button(SessionRenameProjection.heading) { commands?.rename() }
             .keyboardShortcut("r", modifiers: .command)
             .disabled(commands == nil)
         // ⌘⌫, which is what every macOS list spells "take this out of here" with.
-        Button(commands?.archiveTitle ?? SessionCommands.archiveFallbackTitle) {
-            commands?.archive()
-        }
-        .keyboardShortcut(.delete, modifiers: .command)
-        .disabled(commands == nil)
+        Button(archiveTitle) { commands?.archive() }
+            .keyboardShortcut(.delete, modifiers: .command)
+            .disabled(commands == nil)
+    }
+
+    private var archiveTitle: String {
+        guard let commands else { return SessionArchiveProjection.fallbackTitle }
+        return SessionArchiveProjection.title(isArchived: commands.isArchived)
     }
 }
