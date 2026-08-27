@@ -43,7 +43,7 @@ Three populations, one table each: **tokens** and **atoms** are the two director
 | `ArgoTypeScale` · `ArgoTypeScale+AppKit` | the type ladder, which is **Apple's**: the macOS HIG text styles, named as the HIG names them, plus the `NSFont` each rung resolves to for the AppKit side of the feed |
 | `ArgoTextStyle` · `ArgoTypography` | named roles over that ladder (face + rung + weight + tracking) |
 | `ArgoSpacing` · `ArgoRadius` · `ArgoStroke` | the rhythm, the four radius rungs, the stroke widths |
-| `ArgoElevation` · `ArgoMotion` · `ArgoIconSize` · `ArgoSymbol` | depth, durations and curves, glyph sizes, and the SF Symbol each meaning is drawn with |
+| `ArgoElevation` · `ArgoMotion` · `ArgoIconSize` · `ArgoSymbol` | depth, durations and curves, glyph sizes plus the one drawn mark that is not a symbol (`ArgoIconSize.statusDot`), and the SF Symbol each meaning is drawn with |
 | `ArgoOpacity` | how present a whole surface is — the rung a row nobody can drive is ghosted at |
 | `ArgoOperationalState` | the four states colour is owed, and the tint each takes from a palette |
 | `ArgoWaitAge` | the ladder `ArgoMotion.working` cools down as the wait it reports gets older |
@@ -65,18 +65,34 @@ costs nothing inside one Swift module: the minimap re-lays out the feed, so it r
 | `ArgoComposerVessel` | `Shell/Deck/Composer/` | the composer's measurements, from its approved study |
 | `ArgoMinimapLane` | `Shell/Deck/Minimap/` | what the overview lane beside the reading is measured at (D25) |
 | `ArgoPlanPill` | `Shell/Deck/Plan/` | the pill's measurements and the list it reveals |
-| `ArgoLayout` | `VisualContract/` | the deck's structural proportions — pane widths, minimums, the splits |
+| `ArgoToolbarVessel` | `Shell/Toolbar/` | how tall a toolbar container is, and the slots in it and its drawers |
+| `ArgoContextBar` | `Shell/Deck/Header/` | the context gauge on the tab line and the ⓘ panel it opens |
+| `ArgoConnectPanel` | `Shell/Connect/` | the Connect panel's width and the device code's slot in it |
+| `ArgoAgentsRail` | `Shell/Deck/Feed/Agents/` | where the rail opens, and where it collapses to |
+| `ArgoRosterFoot` | `Shell/Sidebar/` | the floor under the roster's archive header |
+| `ArgoLayout` | `VisualContract/` | the window's structural proportions — pane widths, minimums, the splits |
 
 `ArgoLayout` is the one that stays, and not as an exception: pane widths and the splits between
-them describe the window, which is every surface and therefore no single one. It is also why
-`ArgoLayout.minimapLane*` is not a duplicate of anything in `ArgoMinimapLane` — those are the
-lane's width *against the feed*, which is what `railLimits(in:)` spends against the deck, while
-the sheet holds the lane's internals.
+them describe the window, which is every surface and therefore no single one. One reading
+directory is a strong SIGNAL that a member is a measure filed in the wrong place — #773 read that
+signal and moved nineteen, the five sheets above — but it is not the criterion, because what a
+value describes is. `titlebarTitleMaximumShare` and `seamGrabWidth` each have one reader today
+and stay: a share of the detail pane and a seam's hit area are the window's arithmetic, and the
+one surface reading them is the one that happens to draw the window's furniture. It is also why
+`ArgoLayout.minimapLane*` is not a
+duplicate of anything in `ArgoMinimapLane`: those are the lane's width *against the feed*, which
+is what `railLimits(in:)` spends against the deck, while the sheet holds the lane's internals.
 
 A sheet outside the contract must not grow a spacing rhythm of its own, and that is mechanical
 rather than a review note: `RhythmTests`' `every step a surface names is a step the rhythm
 already carries` asserts each sheet's ladder-derived steps against `ArgoSpacing.all`. A step a
 moved sheet spells as a literal off the ladder fails the suite.
+
+A sheet that names **no** step gets held a different way. The five added by #773 are slots sized
+to the sentences they hold, so the ladder has nothing to say about any of them;
+`SurfaceMeasureTests` asserts the claim each declaration makes instead — a rail that collapses
+below where its seam may be dragged, a guide column wider than the thresholds beside it. A measure
+whose reason nothing can check is a number waiting to drift.
 
 ### Atoms — the views built out of those values (`Atoms/`)
 

@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Every size a symbol is drawn at. Two rungs, and adding a third is a decision, not a reflex.
+/// Every size a mark is drawn at. Two rungs, and adding a third is a decision, not a reflex. The
+/// one mark that is not a symbol keeps its size beside them as `statusDot`, off the ladder.
 ///
 /// The rungs are absolute rather than relative to the label beside them, so a mark is the same size
 /// wherever it appears. The contract asserts the ceiling that keeps one from standing proud of its
@@ -24,6 +25,13 @@ public enum ArgoIconSize: CGFloat, Sendable, CaseIterable {
     public static let ladder: [(name: String, size: ArgoIconSize)] = [
         ("chevron", .chevron), ("inline", .inline), ("control", .control),
     ]
+
+    /// The state dot — a Session's, an Account's, a queued send's. Not a rung, because it is not a
+    /// symbol: a filled disc puts every point of its size on the page where a glyph spends most of
+    /// its box on counters and stems, so it reads at a size no rung of the ladder may go to. Here
+    /// rather than beside a surface because three unrelated surfaces draw it, which is what makes
+    /// a value a token.
+    public static let statusDot: CGFloat = 6
 }
 
 public extension View {

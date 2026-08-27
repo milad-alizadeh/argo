@@ -12,7 +12,7 @@ struct DeckSeams {
 
     /// Seams nothing remembers, for a `#Preview` with no shell above it to hold them.
     static let unheld = DeckSeams(
-        rail: .constant(ArgoLayout.agentsRailWidth),
+        rail: .constant(ArgoAgentsRail.width),
         panel: .constant(nil),
     )
 }

@@ -32,7 +32,7 @@ struct ComposerMenuStatusLine: View {
         case .waiting:
             Circle()
                 .fill(ink.color)
-                .frame(width: ArgoLayout.statusDotSize, height: ArgoLayout.statusDotSize)
+                .frame(width: ArgoIconSize.statusDot, height: ArgoIconSize.statusDot)
         case .failed:
             Image(systemName: ArgoSymbol.refused)
                 .argoText(ArgoTypography.rowMeta)

@@ -44,7 +44,7 @@ struct InstrumentDeckShell: View {
 
     /// Where the reader dragged the deck's seams. Owned HERE, above the identity below — keyed with
     /// the room it would snap back to its opening width on every Session switch.
-    @State private var railWidth = ArgoLayout.agentsRailWidth
+    @State private var railWidth = ArgoAgentsRail.width
     @State private var panelWidth: CGFloat?
     /// Whether the rail is collapsed. Beside the seam widths and for their reason: a reader who
     /// collapsed it meant the rail, not this one Session's rail. Seedable for the same reason

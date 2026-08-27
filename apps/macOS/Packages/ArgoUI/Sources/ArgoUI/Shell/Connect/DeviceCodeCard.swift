@@ -46,7 +46,7 @@ struct DeviceCodeCard: View {
                 .argoText(ArgoTypography.machineDisplay)
                 .foregroundStyle(argo.color.text.primary)
                 .textSelection(.enabled)
-                .frame(width: ArgoLayout.deviceCodeWidth, alignment: .leading)
+                .frame(width: ArgoConnectPanel.deviceCodeWidth, alignment: .leading)
             Button(hasCopied ? DeviceCodeCopy.copied : DeviceCodeCopy.copy, action: copy)
                 .buttonStyle(.quiet)
         }
@@ -74,6 +74,6 @@ struct DeviceCodeCard: View {
         }
     }
     .formStyle(.grouped)
-    .frame(width: ArgoLayout.connectPanelWidth)
+    .frame(width: ArgoConnectPanel.width)
     .argoAppearance()
 }

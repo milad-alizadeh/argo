@@ -72,7 +72,7 @@ extension SpecimenRegistry {
         },
         SpecimenEntry("feedAgents") {
             AgentsRail(agents: FeedAgents.all(in: FeedProjection.previewRows))
-                .frame(width: ArgoLayout.agentsRailWidth)
+                .frame(width: ArgoAgentsRail.width)
                 .argoDeckSurface()
         },
         // The one state in which the rail scrolls at all, held at the end of its own scroll so

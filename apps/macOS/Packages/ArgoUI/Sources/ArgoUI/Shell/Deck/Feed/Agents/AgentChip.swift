@@ -65,7 +65,7 @@ struct AgentChip: View {
         ForEach(FeedAgents.all(in: FeedProjection.previewRows)) { AgentChip(agent: $0) }
     }
     .padding(ArgoSpacing.comfortable)
-    .frame(width: ArgoLayout.agentsRailWidth)
+    .frame(width: ArgoAgentsRail.width)
     .argoDeckSurface()
     .argoAppearance()
 }
@@ -77,7 +77,7 @@ struct AgentChip: View {
         }
     }
     .padding(ArgoSpacing.comfortable)
-    .frame(width: ArgoLayout.agentsRailWidth)
+    .frame(width: ArgoAgentsRail.width)
     .argoDeckSurface()
     .argoAppearance()
 }

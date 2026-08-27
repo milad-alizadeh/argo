@@ -48,7 +48,7 @@ struct ConnectRow<Trailing: View>: View {
         }
     }
     .formStyle(.grouped)
-    .frame(width: ArgoLayout.connectPanelWidth)
+    .frame(width: ArgoConnectPanel.width)
     .argoAppearance()
 }
 
@@ -64,6 +64,6 @@ struct ConnectRow<Trailing: View>: View {
         }
     }
     .formStyle(.grouped)
-    .frame(width: ArgoLayout.connectPanelWidth)
+    .frame(width: ArgoConnectPanel.width)
     .argoAppearance()
 }

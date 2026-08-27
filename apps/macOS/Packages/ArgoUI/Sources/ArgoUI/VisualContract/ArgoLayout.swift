@@ -1,6 +1,9 @@
 import SwiftUI
 
-/// Fixed measures that define the shell's structural proportions.
+/// Fixed measures that define the shell's structural proportions — the panes the window is divided
+/// into and the splits between them. A measure read by ONE surface belongs beside that surface
+/// instead (`rules/design-system.md`); what is here describes the window, which is every surface
+/// and therefore no single one.
 public enum ArgoLayout {
     public static let windowMinimumWidth: CGFloat = 960
     public static let windowMinimumHeight: CGFloat = 600
@@ -10,19 +13,6 @@ public enum ArgoLayout {
     /// pane at when it is showing the ordinary case rather than the narrowest one.
     public static let windowIdealWidth: CGFloat = 1280
     public static let sidebarMaximumWidth: CGFloat = 420
-    public static let statusDotSize: CGFloat = 6
-    public static let connectionSlotWidth: CGFloat = 180
-    /// A floor and a ceiling rather than one width. The chip's longest reading names a provider,
-    /// an identity and a state — and an account-level failure truncated to `GitHub · wor…` names
-    /// neither the identity that broke nor the one to reconnect, which is the whole thing the
-    /// account level exists to say. The ceiling keeps a provider's own long sentence from taking
-    /// the deck's whole leading edge.
-    public static let connectionSlotMaximumWidth: CGFloat = 320
-    public static let gitVesselMaximumWidth: CGFloat = 280
-
-    /// How tall a container on the toolbar is, measured off a render. A control drawing a
-    /// container of its OWN cannot inherit it from the toolbar, which sizes its own glass.
-    public static let toolbarVesselHeight: CGFloat = 36
 
     /// How much of the detail pane the centred Session title may take before it ellipsizes
     /// (#691, `docs/designs/cockpit-session-header.md`). It protects the title from colliding with
@@ -32,30 +22,8 @@ public enum ArgoLayout {
     /// midpoint.
     public static let titlebarTitleMaximumShare: CGFloat = 0.46
 
-    // The Project half of the toolbar's scope capsule: wider than the checkout half, which
-    // carries only a branch.
-    public static let projectVesselMaximumWidth: CGFloat = 220
-    public static let scopeDividerHeight: CGFloat = 16
-    /// The Project drawer. Wide enough for a full name over a home-relative path, and no wider.
-    public static let projectDrawerWidth: CGFloat = 340
-    /// The Connect panel. Wide enough for a row naming a provider, an identity and a scope on one
-    /// line, and no wider.
-    public static let connectPanelWidth: CGFloat = 560
-    /// The device code's own line. A fixed slot rather than the code's intrinsic width: a slot
-    /// that resized with the code would move the button under it.
-    public static let deviceCodeWidth: CGFloat = 200
-
-    /// The ⋯ menu's slot in a drawer row. Explicit, because a borderless menu sizes to its own
-    /// chrome rather than to its glyph, and that chrome is wider on the trailing side — which put
-    /// the mark 4pt further from the panel edge than the icon column is on the other side.
-    public static let rowMenuWidth: CGFloat = 16
-
-    /// The roster's archive header. A FLOOR, not a height: macOS scales sidebar row height with the
-    /// reader's own sidebar size setting, and a frame here would refuse it
-    /// (`docs/designs/cockpit-roster-archive-foot.md`).
-    public static let rosterFootMinimumHeight: CGFloat = 22
-
-    /// The Instrument Deck's one chrome zone (`docs/designs/cockpit-session-header.md`).
+    /// The Instrument Deck's one chrome zone (`docs/designs/cockpit-session-header.md`). Not the
+    /// header's alone: the canopy below is derived from it, and the deck insets its zones by that.
     public static let deckTabSlotHeight: CGFloat = 40
 
     /// What the glass canopy covers, and so how far the zones beneath it are inset. Derived, so a
@@ -64,28 +32,11 @@ public enum ArgoLayout {
         deckTabSlotHeight
     }
 
-    /// The context instrument on the tab line's trailing edge. Fixed, not a share of the line: the
-    /// tabs slot beside it is what gives way, and a shrinking instrument would move its two
-    /// threshold ticks on every resize.
-    public static let contextInstrumentWidth: CGFloat = 200
-    /// Thin enough to read as a gauge rather than as a control — nothing here is draggable.
-    public static let contextBarHeight: CGFloat = 3
-    /// How far a threshold tick stands proud of the bar on each side. Without the overshoot a
-    /// hairline inside a 3pt bar is indistinguishable from the fill's own edge.
-    public static let contextBarTickOvershoot: CGFloat = 2
-    /// The ⓘ panel. Wide enough for a sentence at the caption size and no wider.
-    public static let contextGuideWidth: CGFloat = 320
-    /// The threshold column in that panel, so the two meanings beside it start on one edge.
-    public static let contextGuideThresholdWidth: CGFloat = 74
-    /// The term column in the same panel's `This Session` block, so the readings stay on one edge
-    /// whichever facts a Session has. Wider than the threshold column: it holds words.
-    public static let contextGuideTermWidth: CGFloat = 96
-    /// Where the rail opens — a starting width, not a fixed one; the seam beside it moves.
-    public static let agentsRailWidth: CGFloat = 256
     /// The overview lane's share of the reading it maps. Its compression is
     /// `laneWidth / feedColumnWidth`, so a share holds that ratio steady where a fixed slot would
-    /// move it with every seam.
-    public static let minimapLaneShare: CGFloat = 0.15
+    /// move it with every seam. Private because the share is not the answer any caller wants —
+    /// `minimapLaneWidth(sharing:)` is, and it is the only thing that may spend it.
+    private static let minimapLaneShare: CGFloat = 0.15
     /// Where that share stops. Under the floor the lane is no longer a map of anything; over the
     /// ceiling it takes reading width to say nothing more.
     public static let minimapLaneWidths: ClosedRange<CGFloat> = 72 ... 120
@@ -98,10 +49,6 @@ public enum ArgoLayout {
 
     /// How far the rail may be dragged. It stops well before nothing.
     public static let railWidths: ClosedRange<CGFloat> = 180 ... 400
-    /// The rail collapsed: one state dot per Agent and the padding either side of it, and no room
-    /// for a name. Below `railWidths.lowerBound` on purpose — collapsing is not dragging, so the
-    /// seam's floor does not bound it.
-    public static let agentsRailCollapsedWidth: CGFloat = 28
     /// The narrowest the feed may be squeezed to by its neighbours. Read against the lane at ITS
     /// narrowest, because the two shrink together — see `minimapLaneWidth(sharing:)`.
     public static let feedMinimumWidth: CGFloat = 320

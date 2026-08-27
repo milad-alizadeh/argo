@@ -16,7 +16,7 @@ struct SessionStateIndicator: View {
                 Circle().strokeBorder(argo.color.text.tertiary, lineWidth: ArgoStroke.hairline)
             }
         }
-        .frame(width: ArgoLayout.statusDotSize, height: ArgoLayout.statusDotSize)
+        .frame(width: ArgoIconSize.statusDot, height: ArgoIconSize.statusDot)
         .accessibilityHidden(true)
     }
 }

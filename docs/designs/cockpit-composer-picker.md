@@ -218,7 +218,7 @@ more.
 | `1px` border | snap, exact | `ArgoStroke.border` |
 | `26px` row height | **derive** | `machine.lineBox.rounded(.up)` + `snug` × 2 = **27**, the shape `ArgoBadge.height` uses |
 | `285px` list ceiling | **derive** | 10 rows + one header = **300** |
-| `5px` waiting dot | snap | `ArgoLayout.statusDotSize` (6) |
+| `5px` waiting dot | snap | `ArgoIconSize.statusDot` (6) |
 | `268px` `+` menu width | **dropped** | the menu hugs its rows; a stated width is re-measured every time a word changes |
 | `rgba(62,155,255,.18)` cursor ground + accent inset border | ground snapped, **border dropped** | `surface.marked` alone (amended during #685's build — see the cursor row above) |
 | `rgba(255,255,255,.045)` hover | snap, exact | `surface.hover` |

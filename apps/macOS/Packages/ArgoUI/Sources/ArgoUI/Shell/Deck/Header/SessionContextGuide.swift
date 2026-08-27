@@ -28,7 +28,7 @@ struct SessionContextGuide: View {
             }
         }
         .padding(ArgoSpacing.loose)
-        .frame(width: ArgoLayout.contextGuideWidth, alignment: .leading)
+        .frame(width: ArgoContextBar.guideWidth, alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("About the context reading")
     }
@@ -53,7 +53,7 @@ struct SessionContextGuide: View {
             Text(line.threshold)
                 .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(line.tier.tint(in: argo.color))
-                .frame(width: ArgoLayout.contextGuideThresholdWidth, alignment: .leading)
+                .frame(width: ArgoContextBar.guideThresholdWidth, alignment: .leading)
             Text(line.meaning)
                 .argoText(ArgoTypography.caption)
                 .foregroundStyle(argo.color.text.secondary)
@@ -67,7 +67,7 @@ struct SessionContextGuide: View {
             Text(fact.term)
                 .argoText(ArgoTypography.caption)
                 .foregroundStyle(argo.color.text.tertiary)
-                .frame(width: ArgoLayout.contextGuideTermWidth, alignment: .leading)
+                .frame(width: ArgoContextBar.guideTermWidth, alignment: .leading)
             Text(fact.value)
                 .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(argo.color.text.primary)

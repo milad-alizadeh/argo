@@ -17,7 +17,7 @@ struct ScopeVessel: View {
         HStack(spacing: ArgoSpacing.snug) {
             ProjectVessel(reading: project, rows: rows, actions: actions)
             DeckSeparator()
-                .frame(height: ArgoLayout.scopeDividerHeight)
+                .frame(height: ArgoToolbarVessel.scopeDividerHeight)
                 .accessibilityHidden(true)
             GitVessel(reading: checkout, refresh: actions.refreshCheckout)
         }

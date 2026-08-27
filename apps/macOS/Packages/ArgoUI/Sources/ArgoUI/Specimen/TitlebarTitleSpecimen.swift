@@ -20,7 +20,7 @@ struct TitlebarTitleSpecimen: View {
 
     var body: some View {
         TitlebarTitle(header: header, paneWidth: paneWidth)
-            .frame(width: paneWidth, height: ArgoLayout.toolbarVesselHeight)
+            .frame(width: paneWidth, height: ArgoToolbarVessel.height)
             .argoChromeBar()
             .argoAppearance()
     }

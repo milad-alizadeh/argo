@@ -133,7 +133,7 @@ struct ProjectDrawerRow: View {
         row: ProjectDrawerProjection.rows(from: .preview)[0],
         actions: .inert,
     )
-    .frame(width: ArgoLayout.projectDrawerWidth)
+    .frame(width: ArgoToolbarVessel.projectDrawerWidth)
     .padding(ArgoSpacing.region)
     .argoAppearance()
 }
@@ -145,7 +145,7 @@ struct ProjectDrawerRow: View {
         row: ProjectDrawerProjection.rows(from: .preview)[1],
         actions: .inert,
     )
-    .frame(width: ArgoLayout.projectDrawerWidth)
+    .frame(width: ArgoToolbarVessel.projectDrawerWidth)
     .padding(ArgoSpacing.region)
     .argoAppearance()
 }
@@ -155,7 +155,7 @@ struct ProjectDrawerRow: View {
         row: ProjectDrawerProjection.rows(from: .preview)[2],
         actions: .inert,
     )
-    .frame(width: ArgoLayout.projectDrawerWidth)
+    .frame(width: ArgoToolbarVessel.projectDrawerWidth)
     .padding(ArgoSpacing.region)
     .argoAppearance()
 }

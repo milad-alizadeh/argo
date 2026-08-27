@@ -108,7 +108,11 @@ struct RhythmTests {
     ///
     /// `ArgoComposerVessel` appears in none of the three sets because it spells no step at all —
     /// every value the ladder owns reaches it through the token at the composer's own call sites,
-    /// which the sheet's doc comment states as its rule.
+    /// which the sheet's doc comment states as its rule. `ArgoToolbarVessel`, `ArgoContextBar`,
+    /// `ArgoConnectPanel`, `ArgoAgentsRail` and `ArgoRosterFoot` are absent for the same reason:
+    /// each member is a slot sized to the sentence it holds, and two of them landing on a rung by
+    /// arithmetic is not the same as naming one. `SurfaceMeasureTests` holds those instead, by
+    /// asserting the claim each declaration makes.
     @Test
     func `every step a surface names is a step the rhythm already carries`() {
         let ladder = Set(ArgoSpacing.all.map(\.value))

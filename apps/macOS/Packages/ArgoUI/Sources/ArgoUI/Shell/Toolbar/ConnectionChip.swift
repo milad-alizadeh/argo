@@ -17,7 +17,7 @@ struct ConnectionChip: View {
         HStack(spacing: ArgoSpacing.base) {
             Circle()
                 .fill(reading.state.tint(in: argo.color))
-                .frame(width: ArgoLayout.statusDotSize, height: ArgoLayout.statusDotSize)
+                .frame(width: ArgoIconSize.statusDot, height: ArgoIconSize.statusDot)
                 .accessibilityHidden(true)
             Text(reading.label)
                 .argoText(ArgoTypography.caption)
@@ -25,7 +25,7 @@ struct ConnectionChip: View {
                 // The ceiling sits on the LABEL, not on the chip. A provider's own sentence can run
                 // to any length, and it is the only part of this that may be cut — a truncated
                 // Reconnect is a control nobody can read.
-                .frame(maxWidth: ArgoLayout.connectionSlotMaximumWidth, alignment: .leading)
+                .frame(maxWidth: ArgoToolbarVessel.connectionSlotMaximumWidth, alignment: .leading)
             if let action = reading.action {
                 Button(action, action: act)
                     .buttonStyle(.plain)
@@ -43,7 +43,7 @@ struct ConnectionChip: View {
             RoundedRectangle(cornerRadius: ArgoRadius.control)
                 .strokeBorder(edge, lineWidth: ArgoStroke.border)
         }
-        .frame(minWidth: ArgoLayout.connectionSlotWidth, alignment: .leading)
+        .frame(minWidth: ArgoToolbarVessel.connectionSlotWidth, alignment: .leading)
         .fixedSize(horizontal: true, vertical: false)
         .accessibilityElement(children: .combine)
     }

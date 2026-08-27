@@ -40,7 +40,7 @@ struct RosterArchiveFoot: View {
         // so a wash here would read as a selection.
         .foregroundStyle(isLit ? argo.color.text.secondary : argo.color.text.tertiary)
         .padding(.vertical, ArgoSpacing.tight)
-        .frame(minHeight: ArgoLayout.rosterFootMinimumHeight)
+        .frame(minHeight: ArgoRosterFoot.minimumHeight)
         .contentShape(.rect)
         .argoAnimation(.stateChange, value: isLit)
     }

@@ -121,7 +121,7 @@ struct ConnectPortRow: View {
         row: ConnectPanelProjection.panel(from: ConnectFixture.wired).ports[0],
         actions: .inert,
     )
-    .frame(width: ArgoLayout.connectPanelWidth)
+    .frame(width: ArgoConnectPanel.width)
     .padding(ArgoSpacing.region)
     .argoAppearance()
 }
@@ -131,7 +131,7 @@ struct ConnectPortRow: View {
         row: ConnectPanelProjection.panel(from: ConnectFixture.fresh).ports[1],
         actions: .inert,
     )
-    .frame(width: ArgoLayout.connectPanelWidth)
+    .frame(width: ArgoConnectPanel.width)
     .padding(ArgoSpacing.region)
     .argoAppearance()
 }
@@ -142,7 +142,7 @@ struct ConnectPortRow: View {
         row: ConnectPanelProjection.panel(from: ConnectFixture.broken).ports[0],
         actions: .inert,
     )
-    .frame(width: ArgoLayout.connectPanelWidth)
+    .frame(width: ArgoConnectPanel.width)
     .padding(ArgoSpacing.region)
     .argoAppearance()
 }

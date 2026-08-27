@@ -106,15 +106,19 @@ Colours, type, spacing, radii, strokes, elevation and motion come from `ArgoUI/V
 value down. `VisualContract/` is exempt because it IS the contract; `Specimen/` is exempt for the
 opposite reason — a specimen exists to show what a role is worth, and it ships in no screen.
 
-The contract holds **tokens and nothing else**, which took two cuts to get to. #772 took out the
+The contract holds **tokens and nothing else**, which took three cuts to get to. #772 took out the
 views: `ArgoBadge`, `ArgoGlyph`, `ArgoFloatingGlass` and the rest are `ArgoUI/Atoms/`, inside the
 guard's scope like every other view. #756 took out the **measures** — how wide the reading runs,
 how tall a chip stands — because that is a property of the content, so each sheet lives in the
 directory of the one surface whose layout it describes: `ArgoFeedRow`, `ArgoComposerVessel`,
-`ArgoMinimapLane` and `ArgoPlanPill`, under `Shell/Deck/{Feed,Composer,Minimap,Plan}/`.
-`ArgoLayout` is the exception that is not one: the splits between panes describe the window,
-which is every surface and so no single one. `rules/design-system.md` lists all three populations
-by file.
+`ArgoMinimapLane` and `ArgoPlanPill`, under `Shell/Deck/{Feed,Composer,Minimap,Plan}/`. #773
+finished the job inside `ArgoLayout` itself: nineteen of its forty members were read from exactly
+one surface directory, and they left as `ArgoToolbarVessel`, `ArgoContextBar`, `ArgoConnectPanel`,
+`ArgoAgentsRail` and `ArgoRosterFoot`.
+
+What is left of `ArgoLayout` is the exception that is not one: the splits between panes describe
+the window, which is every surface and so no single one. `rules/design-system.md` lists all three
+populations by file.
 
 ## Screenshots
 

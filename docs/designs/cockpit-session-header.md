@@ -72,22 +72,22 @@ shipped placement supersedes it.
 | Gap between trailing members | `ArgoSpacing.loose` 16 | the prototype's `.tabslot` gap |
 | Tab label | `ArgoTypography.control` — interface · callout 12 · medium | the prototype's 12px |
 | Selected tab underline | `ArgoStroke.indicator` 2, `interaction.selectionIndicator` | the deck's existing vocabulary; the prototype's 1.5px snaps up |
-| Instrument width | `ArgoLayout.contextInstrumentWidth` 200 | fixed, never a share — a shrinking instrument would move its ticks on every resize |
+| Instrument width | `ArgoContextBar.instrumentWidth` 200 | fixed, never a share — a shrinking instrument would move its ticks on every resize |
 | Instrument, label row to bar | `ArgoSpacing.tight` 4 | |
 | Instrument, `CONTEXT` to ⓘ | `ArgoSpacing.tight` 4 | the label row's own spacing |
 | Instrument, ⓘ to reading | a spacer, `ArgoSpacing.snug` 6 as its FLOOR | not the gap: the reading is pinned to the instrument's trailing edge and the spacer takes whatever is left, so 6 is only what a reading long enough to close the gap would keep |
 | `CONTEXT` label | `ArgoTypography.badge` — interface · caption1 10 · semibold · tracking 0.6, uppercase, `text.tertiary` | **changed from `caption`**: a 40pt line has no room for the band's size |
 | Reading | `ArgoTypography.machineCaption` — machine · subheadline 11, in `ContextTierInk.readingInk` | **changed from `machine`**, same reason. The ink is amber past 150k and red past 300k, but `text.secondary` under the first line — a reading that celebrates is one the eye stops sorting from the facts beside it. The BAR keeps the tint at every tier |
 | Unreadable reading | the word `unknown` in `text.tertiary` | absence is the one thing here that is not a claim |
-| Bar | `ArgoLayout.contextBarHeight` 3, radius half its height | thin enough to read as a gauge, not a control |
-| Threshold ticks | 1pt in `edge.strong`, standing `ArgoLayout.contextBarTickOvershoot` 2 proud each side | without the overshoot a hairline inside a 3pt bar is the fill's own edge |
+| Bar | `ArgoContextBar.height` 3, radius half its height | thin enough to read as a gauge, not a control |
+| Threshold ticks | 1pt in `edge.strong`, standing `ArgoContextBar.tickOvershoot` 2 proud each side | without the overshoot a hairline inside a 3pt bar is the fill's own edge |
 | Threshold positions | 15% and 30% of the track | 150k and 300k against a 1M window |
 | ⓘ | `ArgoSymbol.about` at `ArgoIconSize.inline` 10, `text.tertiary` | unchanged from #692 |
-| ⓘ panel | `ArgoLayout.contextGuideWidth` 320, threshold column `contextGuideThresholdWidth` 74 | unchanged from #692 |
+| ⓘ panel | `ArgoContextBar.guideWidth` 320, threshold column `guideThresholdWidth` 74 | unchanged from #692 |
 | Panel section heading | `ArgoTypography.badge`, uppercase, `text.tertiary` | the `CONTEXT` label's own role — the panel now has two blocks, so each is named |
 | Panel, heading to its block | `ArgoSpacing.base` 8 | |
 | Panel, between blocks | `ArgoSpacing.comfortable` 12 on each side of the `DeckSeparator` hairline that divides them | |
-| `This Session` term column | `ArgoLayout.contextGuideTermWidth` 96 | wider than the threshold column because it holds words; fixed, so the readings stay on one edge whichever facts a Session has |
+| `This Session` term column | `ArgoContextBar.guideTermWidth` 96 | wider than the threshold column because it holds words; fixed, so the readings stay on one edge whichever facts a Session has |
 | `This Session` term | `ArgoTypography.caption` in `text.tertiary` | |
 | `This Session` reading | `ArgoTypography.machineCaption` in `text.primary`, wrapping | a branch or an issue title is what the reader opened the panel to read whole |
 | `This Session` row gap | `ArgoSpacing.snug` 6 | the legend's own |
@@ -156,14 +156,14 @@ outside a menu has nowhere else to say it. Escape and a click outside are `.popo
 
 ## Contract changes
 
-The five from #691/#692, and **one promotion** with #694 — `ArgoLayout.contextGuideTermWidth`, the
+The five from #691/#692, and **one promotion** with #694 — `ArgoContextBar.guideTermWidth`, the
 96pt term column the `This Session` block needs. It is a second column in a panel that already owns
 one, and it is fixed for the same reason the threshold column is: a column sized to its own rows
 would move the readings as facts came and went.
 
 - `ArgoTypography.windowTitle` — the centred title's role
 - `ArgoLayout.titlebarTitleMaximumShare` — 0.46, spent on both sides of the pane's midpoint
-- `ArgoLayout.contextInstrumentWidth`, `contextBarHeight`, `contextBarTickOvershoot`
+- `ArgoContextBar.instrumentWidth`, `height`, `tickOvershoot`
 - `CockpitRoom.sessions` symbol: `waveform` → `apple.terminal`
 
 **One retirement:** `ArgoLayout.deckHeaderHeight` goes, and with it the comment citing

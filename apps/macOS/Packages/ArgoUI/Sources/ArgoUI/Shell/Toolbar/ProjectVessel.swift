@@ -37,7 +37,7 @@ struct ProjectVessel: View {
             ArgoDisclosure(.below)
         }
         .foregroundStyle(argo.color.text.primary)
-        .frame(maxWidth: ArgoLayout.projectVesselMaximumWidth)
+        .frame(maxWidth: ArgoToolbarVessel.projectVesselMaximumWidth)
         .toolbarSegment()
     }
 }

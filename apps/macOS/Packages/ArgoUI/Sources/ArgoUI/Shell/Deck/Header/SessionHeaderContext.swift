@@ -49,7 +49,7 @@ struct SessionHeaderContext: View {
             }
             ContextBar(context: context)
         }
-        .frame(width: ArgoLayout.contextInstrumentWidth)
+        .frame(width: ArgoContextBar.instrumentWidth)
         // `contain`, not `combine`: the ⓘ is a control inside this zone, and a combined element
         // swallows it — which is how a popover that renders correctly becomes one nothing can open.
         .accessibilityElement(children: .contain)

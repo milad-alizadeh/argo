@@ -19,7 +19,7 @@ struct ContextBar: View {
                 ticks(in: proxy.size.width)
             }
         }
-        .frame(height: ArgoLayout.contextBarHeight)
+        .frame(height: ArgoContextBar.height)
         // The bar is a second reading of what the text above it already says, so a screen reader
         // hears it once rather than twice.
         .accessibilityHidden(true)
@@ -40,7 +40,7 @@ struct ContextBar: View {
             Rectangle()
                 .fill(argo.color.edge.strong)
                 .frame(width: ArgoStroke.border)
-                .padding(.vertical, -ArgoLayout.contextBarTickOvershoot)
+                .padding(.vertical, -ArgoContextBar.tickOvershoot)
                 .offset(x: width * mark)
         }
     }
