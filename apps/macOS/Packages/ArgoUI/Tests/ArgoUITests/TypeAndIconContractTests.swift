@@ -9,7 +9,7 @@ struct TypeAndIconContractTests {
     /// One sans for everything the interface says, one mono for machine facts.
     @Test
     func `identity lines are set in the interface sans, not a face of their own`() {
-        let identityRoles = [ArgoTypography.sessionTitle, ArgoTypography.identityHeading]
+        let identityRoles = [ArgoTypography.identityHeading, ArgoTypography.windowTitle]
 
         #expect(identityRoles.allSatisfy { $0.typeface == .interface })
     }

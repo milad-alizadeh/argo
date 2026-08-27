@@ -145,6 +145,10 @@ Three things are **not** unwired, and telling them apart matters:
   absence.
 - **A value nothing needs.** Delete it. Not every gap is a plan.
 
+Which of the three a member is takes a sweep that follows extension-method reach, not a grep over
+type names: `bun run contract:sweep`, with the method and the last sweep's judgements in
+`docs/agents/contract-sweep.md`.
+
 ## Rule 1 — Tokens only, never magic numbers
 
 Every visual constant is a named value, and a view reaches it by name — a token in
