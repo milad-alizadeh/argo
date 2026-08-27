@@ -1,41 +1,14 @@
 @testable import ArgoEngine
 import Foundation
 
-/// GitHub's issue endpoints, recorded. Each reply is keyed by the part of the path that names it,
-/// so a test says which endpoint answered what rather than which request number did — a listing
-/// makes a different number of requests depending on what the issues carry.
-actor RecordedIssues: HTTPTransport {
-    private let replies: [String: String]
-    private let failure: Error?
-    private var asked: [String] = []
-
-    init(replies: [String: String], failure: Error? = nil) {
-        self.replies = replies
-        self.failure = failure
-    }
-
-    func send(_ request: HTTPRequest) throws -> Data {
-        asked.append(request.url)
-        if let failure {
-            throw failure
-        }
-        let reply = replies.first { request.url.contains($0.key) }?.value
-        return Data((reply ?? "[]").utf8)
-    }
-
-    func urls() -> [String] {
-        asked
-    }
-}
-
 /// A Work Item port that answers from a script, for the suites about polling rather than about
 /// GitHub. Each `list` takes the next answer and the last one repeats, so a test says "this read
 /// fails, every later one succeeds" without counting ticks.
 actor ScriptedWorkItems: WorkItemPort {
-    private var script: [Result<[WorkItem], WorkItemFetchError>]
+    private var script: [Result<[WorkItem], ProviderFetchError>]
     private var reads = 0
 
-    init(_ script: [Result<[WorkItem], WorkItemFetchError>]) {
+    init(_ script: [Result<[WorkItem], ProviderFetchError>]) {
         self.script = script
     }
 

@@ -1,0 +1,41 @@
+import Foundation
+
+/// The Work Item a pull request body says it closes, read the way the code host reads it.
+///
+/// This is the native half of the join (ADR-0014): `/implement` writes `Closes #<N>` because that
+/// is the industry's own mechanism, and Argo reads back exactly what GitHub itself acts on — the
+/// nine keywords it documents, a `#`, and a number.
+enum ClosingReference {
+    /// GitHub's own closing keywords, verbatim from its linking documentation. Matched
+    /// case-insensitively, which is how GitHub matches them.
+    private static let keywords = [
+        "close", "closes", "closed",
+        "fix", "fixes", "fixed",
+        "resolve", "resolves", "resolved",
+    ]
+
+    /// The first Work Item number the body closes, and `nil` for a body that closes none.
+    ///
+    /// First rather than all: a Delivery serves one intent in the model, and a body listing two is
+    /// a case the join has no rule for — taking the first is the host's own reading order.
+    static func number(in body: String) -> Int? {
+        let words = body.split(whereSeparator: { $0.isWhitespace || $0 == "," })
+        for (index, word) in words.enumerated()
+            where keywords.contains(word.lowercased()) {
+            guard let next = words.dropFirst(index + 1).first,
+                  let number = self.number(marked: next)
+            else { continue }
+            return number
+        }
+        return nil
+    }
+
+    /// The digits behind a `#`, and `nil` for anything else — including `#0`, which providers
+    /// never issue and which is therefore a misread rather than a link.
+    private static func number(marked word: Substring) -> Int? {
+        guard word.hasPrefix("#"),
+              let number = Int(word.dropFirst().prefix(while: \.isNumber)), number > 0
+        else { return nil }
+        return number
+    }
+}

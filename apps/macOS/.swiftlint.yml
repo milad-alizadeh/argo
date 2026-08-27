@@ -98,7 +98,11 @@ identifier_name:
   max_length:
     error: 50
   allowed_symbols: ["_"]
-  excluded: [id, x, y, to, at, on, up]
+  # `pr` and `ci` are two of the five lifecycle strip nodes, and `CONTEXT.md` L4 spells them
+  # exactly this way — the domain's own words, which AGENTS.md forbids taking a synonym for.
+  # Both are the acronym exception code-style.md names, not the `ctx`-shaped abbreviation the
+  # cap is here to block.
+  excluded: [id, x, y, to, at, on, up, pr, ci]
 
 type_name:
   min_length:

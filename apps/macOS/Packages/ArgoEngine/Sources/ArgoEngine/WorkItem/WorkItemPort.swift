@@ -9,24 +9,3 @@ public protocol WorkItemPort: Sendable {
     /// included.
     func list(in scope: String, grant: AccountGrant) async throws -> [WorkItem]
 }
-
-/// Why a listing did not land, in the vocabulary the health ledger records.
-///
-/// A refused grant is its own case for the reason `HTTPTransportError.unauthorized` is: its blast
-/// radius is the Account rather than the Binding, and its remedy is authorizing again.
-public enum WorkItemFetchError: Error, Equatable {
-    case grantRefused
-    case offline
-    case unreachable
-    case rateLimited
-
-    /// The binding-level cause, and `nil` for the refusal that is not one.
-    public var cause: ConnectionCause? {
-        switch self {
-        case .grantRefused: nil
-        case .offline: .offline
-        case .unreachable: .unreachable
-        case .rateLimited: .rateLimited
-        }
-    }
-}

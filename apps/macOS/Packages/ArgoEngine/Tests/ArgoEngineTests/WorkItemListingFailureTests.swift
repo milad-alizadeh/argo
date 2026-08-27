@@ -9,13 +9,13 @@ struct WorkItemListingFailureTests {
     private static func failure(
         body: String = "[]", raising: Error? = nil,
     ) async
-        -> WorkItemFetchError? {
-        let api = RecordedIssues(replies: ["&page=1": body], failure: raising)
+        -> ProviderFetchError? {
+        let api = RecordedGitHub(replies: ["&page=1": body], failure: raising)
         do {
             _ = try await GitHubWorkItems(transport: api).list(in: "acme/api", grant: .listing)
             return nil
         } catch {
-            return error as? WorkItemFetchError
+            return error as? ProviderFetchError
         }
     }
 
@@ -61,9 +61,9 @@ struct WorkItemListingFailureTests {
     func `only a refused grant is an account-level cause`() {
         // The ledger keys the other three on the Binding, so they take one port of one Project
         // with them and leave every other Binding on that Account reading.
-        #expect(WorkItemFetchError.grantRefused.cause == nil)
-        #expect(WorkItemFetchError.offline.cause == .offline)
-        #expect(WorkItemFetchError.unreachable.cause == .unreachable)
-        #expect(WorkItemFetchError.rateLimited.cause == .rateLimited)
+        #expect(ProviderFetchError.grantRefused.cause == nil)
+        #expect(ProviderFetchError.offline.cause == .offline)
+        #expect(ProviderFetchError.unreachable.cause == .unreachable)
+        #expect(ProviderFetchError.rateLimited.cause == .rateLimited)
     }
 }

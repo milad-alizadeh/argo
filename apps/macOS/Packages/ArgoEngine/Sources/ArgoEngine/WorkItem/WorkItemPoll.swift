@@ -1,33 +1,5 @@
 import Foundation
 
-/// Which Binding a poll reads through, and which Project it answers for.
-///
-/// The Project id travels with the Binding because health is keyed on both (#260): the same
-/// Account bound by two Projects is two connections, and one of them can be failing.
-public struct WorkItemPollTarget: Sendable {
-    public let binding: ResolvedBinding
-    public let projectID: String
-
-    public init(binding: ResolvedBinding, projectID: String) {
-        self.binding = binding
-        self.projectID = projectID
-    }
-
-    /// The three facts a read and a health record need, named here so the poll asks the target
-    /// rather than walking `binding.binding` at every site.
-    var scope: String {
-        binding.binding.scope
-    }
-
-    var accountID: String {
-        binding.binding.accountID
-    }
-
-    var projectBinding: ProjectBinding {
-        binding.binding
-    }
-}
-
 /// The repeating read of one Project's Work Items — a desktop app receives no webhooks, so polling
 /// is the only way the room is ever right (`CONTEXT.md` → Ports).
 ///
@@ -72,7 +44,7 @@ public actor WorkItemPoll {
 
     /// Read now, then every `interval` until stopped. Starting again replaces the loop rather than
     /// adding one, so a Project rebound mid-run polls through its new Binding and not both.
-    public func start(_ target: WorkItemPollTarget, every interval: Duration) {
+    public func start(_ target: PortReadTarget, every interval: Duration) {
         loop?.cancel()
         loop = Task { [weak self] in
             while !Task.isCancelled {
@@ -123,7 +95,7 @@ public actor WorkItemPoll {
         guard target != pointedAt else { return }
         pointedAt = target
         start(
-            WorkItemPollTarget(binding: binding, projectID: projectID),
+            PortReadTarget(binding: binding, projectID: projectID),
             every: Self.interval,
         )
     }
@@ -146,27 +118,17 @@ public actor WorkItemPoll {
 
     /// One read. Public because a Work room's Refresh is the same act as a tick, and two paths to
     /// it would be two chances to record health differently.
-    public func poll(_ target: WorkItemPollTarget) async {
+    public func poll(_ target: PortReadTarget) async {
         do {
             let listed = try await port.list(in: target.scope, grant: target.binding.grant)
             await items.record(listed, for: target.projectID)
             await health.succeeded(target.projectBinding, in: target.projectID, at: now())
         } catch {
-            await record(error as? WorkItemFetchError ?? .unreachable, of: target)
+            await health.record(error as? ProviderFetchError ?? .unreachable, of: target)
         }
         // On the failing path too: the listing did not move, but the health behind the provider's
         // own dot did, and that is drawn from the same read.
         await landed()
-    }
-
-    /// The listing is deliberately untouched on every path through here — a failed read leaves
-    /// what was fetched where it was, old and still accurately DERIVED.
-    private func record(_ error: WorkItemFetchError, of target: WorkItemPollTarget) async {
-        guard let cause = error.cause else {
-            await health.grantRefused(target.accountID)
-            return
-        }
-        await health.failed(target.projectBinding, in: target.projectID, cause: cause)
     }
 
     /// `false` once the wait was cancelled, which is the loop's only exit besides `stop()`.
