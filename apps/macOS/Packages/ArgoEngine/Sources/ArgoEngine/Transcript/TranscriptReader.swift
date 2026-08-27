@@ -127,12 +127,9 @@ public actor TranscriptReader {
         return message.isMeta ? metaEvents(message) : promptEvents(message)
     }
 
-    /// A delegating call's outcome, arriving late.
-    ///
-    /// A SECOND outcome for a call the launch result already resolved, which is what a background
-    /// agent's report is — and a resumed agent files a third. The id is what carries that: every
-    /// surface reads outcomes by id, so the newest report replaces the last rather than stacking a
-    /// row beside it.
+    /// A delegating call's outcome, arriving late — a SECOND outcome for a call the launch result
+    /// already resolved, and a resumed agent files a third. Every surface reads outcomes by id, so
+    /// the newest one wins without any of them being told a report can arrive twice.
     private func reported(
         _ report: TaskNotification,
         in message: MessageRecord,
@@ -147,9 +144,11 @@ public actor TranscriptReader {
             // `derived`: the text is read off an external record rather than owned by Argo.
             result: report.text.map { .output(OutputEvidence(tier: .derived, text: $0)) },
             endedAtMs: message.timestampMs,
-            // The notification reports the delegate's own spend in a shape of its own, which
-            // nothing reads yet. Claiming nil is the honest degradation; claiming zero is not.
+            // The notification states the delegate's spend in a shape of its own — a token TOTAL
+            // rather than the host's four counters — which no reading here can honestly fill.
             usage: nil,
+            // The join key onto the delegate's own transcript, which this outcome replaces the
+            // launch result's copy of. Dropped, it would orphan the Subagent.
             subagentID: report.subagentID,
         ))]
     }

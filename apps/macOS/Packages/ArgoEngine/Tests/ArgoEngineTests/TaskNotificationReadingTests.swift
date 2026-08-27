@@ -4,6 +4,9 @@ import Testing
 // A finished background agent's report is filed as an ordinary user record, so the reader that
 // takes a user record at face value titles a Turn with an XML envelope (#825). The report is not a
 // prompt and not a call of its own: it is the DELEGATING call's outcome, arriving late.
+//
+// The fixture keeps the real record's `origin` field, which no reading here touches: the envelope
+// itself is what the reader is held to, so the fixture must not become the reason it passes.
 
 @Suite("Task notification reading")
 struct TaskNotificationReadingTests {
@@ -18,13 +21,24 @@ struct TaskNotificationReadingTests {
         }
     }
 
-    private func printed(_ outcome: ToolCallOutcome) throws -> String {
-        guard case let .output(output) = try #require(outcome.result) else {
-            Issue.record("a finished agent's report is what its call printed")
-            return ""
+    /// Every outcome one call was given, in the order the records wrote them.
+    private func outcomes(of callID: String) async throws -> [ToolCallOutcome] {
+        try await events().compactMap { event -> ToolCallOutcome? in
+            guard case let .toolCallOutcome(outcome) = event, outcome.id == callID else {
+                return nil
+            }
+            return outcome
         }
-        return output.text
     }
+
+    private func report(of outcome: ToolCallOutcome) throws -> OutputEvidence {
+        guard case let .output(output) = try #require(outcome.result) else {
+            throw NotPrinted()
+        }
+        return output
+    }
+
+    private struct NotPrinted: Error {}
 
     @Test
     func `A notification opens no Turn and renders no prompt`() async throws {
@@ -39,10 +53,16 @@ struct TaskNotificationReadingTests {
         let outcome = try await #require(events().outcomes()["n-call-agent"])
 
         #expect(outcome.status == .completed)
-        #expect(try printed(outcome).hasPrefix("## Xcode-fidelity minimap"))
-        // DERIVED: the words are read off an external record rather than owned by Argo.
-        guard case let .output(output) = try #require(outcome.result) else { return }
-        #expect(output.tier == .derived)
+        #expect(try report(of: outcome).text.hasPrefix("## Xcode-fidelity minimap"))
+    }
+
+    @Test
+    func `The report reads DERIVED, as an external record's words must`() async throws {
+        let outcome = try await #require(events().outcomes()["n-call-agent"])
+
+        // The words are read off a record Argo does not own, so the tier degrades down from the
+        // DIRECT a tool result printed into this file would carry.
+        #expect(try report(of: outcome).tier == .derived)
     }
 
     @Test
@@ -50,24 +70,26 @@ struct TaskNotificationReadingTests {
         let outcome = try await #require(events().outcomes()["n-call-task"])
 
         #expect(outcome.status == .failed)
-        #expect(try printed(outcome) == "The agent stopped before it could report.")
+        #expect(try report(of: outcome).text == "The agent stopped before it could report.")
     }
 
     @Test
-    func `A second notification replaces the first rather than adding a row`() async throws {
-        let read = try await events()
-        let forCall = read.filter {
-            guard case let .toolCallOutcome(outcome) = $0 else { return false }
-            return outcome.id == "n-call-agent"
-        }
+    func `The last of several notifications for one call is the one that stands`() async throws {
+        // Three records answer this call — the launch result and two notifications — and the LAST
+        // is what every surface reads, because they all key an outcome by its call's id.
+        let given = try await outcomes(of: "n-call-agent")
+        #expect(given.count == 3)
 
-        // Three records name this call — the launch result and two notifications — and the LAST
-        // report wins, because a resumed agent notifies again with more to say.
-        #expect(forCall.count == 3)
-        let outcome = try #require(read.outcomes()["n-call-agent"])
-        #expect(try printed(outcome).contains("The resumed agent answered the follow-up."))
-        // The Subagent join key survives the replacement: the notification names the same
-        // `agentId` the launch result reported, and dropping it would orphan the delegate.
+        let standing = try await #require(events().outcomes()["n-call-agent"])
+        #expect(try report(of: standing).text.contains("The resumed agent answered the follow-up."))
+    }
+
+    @Test
+    func `The Subagent's id survives a report replacing the one before it`() async throws {
+        let outcome = try await #require(events().outcomes()["n-call-agent"])
+
+        // The notification names the same `agentId` the launch result reported. Dropped here, the
+        // join key onto the delegate's own transcript would go with the outcome it replaced.
         #expect(outcome.subagentID == "a6198311a6979b60e")
     }
 
@@ -91,12 +113,7 @@ struct TaskNotificationReadingTests {
 
     @Test
     func `The launch result stays suppressed`() async throws {
-        let read = try await events()
-        let launch = try #require(read.compactMap { event -> ToolCallOutcome? in
-            guard case let .toolCallOutcome(outcome) = event,
-                  outcome.id == "n-call-agent" else { return nil }
-            return outcome
-        }.first)
+        let launch = try await #require(outcomes(of: "n-call-agent").first)
 
         // Internal metadata that says in its own text never to quote it, already refused by the
         // `delegate` guard in `evidence(for:)` and refused still.

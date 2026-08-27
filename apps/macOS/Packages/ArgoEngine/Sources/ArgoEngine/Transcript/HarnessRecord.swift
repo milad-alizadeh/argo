@@ -37,11 +37,9 @@ private func tag(_ text: String, _ name: String) -> String? {
 /// it. Not a prompt and not a call of its own: it names the call that DELEGATED the work, so it is
 /// that call's outcome arriving late (#825).
 struct TaskNotification {
-    /// The delegating call this report answers, and the only reason it can be attached to
-    /// anything.
+    /// The delegating call this report answers.
     let callID: String
     /// The Subagent that produced it — the same `agentId` the launch result already reported.
-    /// Carried so a second report replacing the first does not orphan the delegate.
     let subagentID: String?
     let status: ToolCallStatus
     /// The report itself, or `nil` where the agent finished without printing one.
