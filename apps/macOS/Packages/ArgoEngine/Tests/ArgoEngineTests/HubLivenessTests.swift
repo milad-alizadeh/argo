@@ -146,11 +146,11 @@ struct HubLivenessTests {
     @Test
     func `dropping a Project drops what it knew about the machine's processes`() async {
         let hub = await Self.hub(runningIn: Self.cwd)
-        #expect(!hub.liveCwds.isEmpty)
+        let read = Self.nowMs
+        #expect(hub.readings.liveness(inCwd: Self.cwd, lastActivityAtMs: read) == .live)
 
         await hub.disconnect()
 
-        #expect(hub.liveCwds.isEmpty)
-        #expect(hub.livenessReadAtMs == nil)
+        #expect(hub.readings.liveness(inCwd: Self.cwd, lastActivityAtMs: read) == .quiet)
     }
 }

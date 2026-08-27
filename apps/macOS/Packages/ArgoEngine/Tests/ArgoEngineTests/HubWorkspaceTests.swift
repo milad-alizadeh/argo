@@ -49,7 +49,7 @@ struct HubWorkspaceTests {
         await hub.disconnect()
 
         // A branch belonging to a repository nobody is pointed at is a fact Argo does not have.
-        #expect(hub.workspaces.isEmpty)
+        #expect(hub.readings.workspace(inCwd: Self.cwd) == nil)
     }
 
     private static func hub() -> Hub {
