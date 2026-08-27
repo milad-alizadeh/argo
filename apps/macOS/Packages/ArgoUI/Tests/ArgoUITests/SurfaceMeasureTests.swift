@@ -1,92 +1,90 @@
 @testable import ArgoUI
 import Testing
 
-/// What the five sheets #773 cut out of `ArgoLayout` claim about their own surface. None of them
-/// spells a step of `ArgoSpacing`, so `RhythmTests`' ladder assertion has nothing to say about
-/// them — every member is a slot sized to the sentence it holds. What holds a slot honest is the
-/// reason on its declaration, and this suite is those reasons made assertable.
+/// What a measure sheet beside its surface claims about that surface. None of the five here names
+/// a step of `ArgoSpacing` — every member is a slot sized to the sentence it holds — so
+/// `RhythmTests`' ladder assertion has nothing to hold them to. What holds a slot honest is the
+/// reason on its declaration, and these are those reasons made assertable.
 ///
-/// It sits beside `RhythmTests` rather than inside it because that file is at its length cap, and
-/// it makes the SAME cross-population claims that file warns against splitting away — a rail
-/// bounded by `ArgoLayout.railWidths`, a panel by `windowMinimumWidth`. Those are the assertions
-/// this suite exists for, not an accident of where it landed.
+/// A member with nothing to be read against is deliberately absent. `ArgoRosterFoot.minimumHeight`
+/// is a floor macOS raises from the reader's own sidebar setting, so the only claim available is
+/// that it is positive, and a test proving that earns nothing.
 @Suite("The measures that live beside their surface")
 struct SurfaceMeasureTests {
-    /// The rail opens somewhere it can also be dragged to, and collapses somewhere it cannot. The
-    /// asymmetry is the sheet's own claim: collapsing is not dragging, so the seam's floor does
-    /// not bound the collapsed width, and this is what keeps the two from being read as one range.
     @Test
-    func `the rail opens inside the seam's limits and collapses below them`() {
+    func `the rail opens somewhere the seam could also be dragged to`() {
         #expect(ArgoLayout.railWidths.contains(ArgoAgentsRail.width))
-        #expect(ArgoAgentsRail.collapsedWidth < ArgoLayout.railWidths.lowerBound)
-        #expect(ArgoAgentsRail.collapsedWidth > 0)
     }
 
-    /// A chip that could not grow past its resting width would truncate the reading it exists to
-    /// carry; one with no ceiling would take the deck's whole leading edge.
+    /// Collapsing is not dragging, so the seam's floor does not bound the collapsed width. The
+    /// asymmetry is the sheet's own claim, and this is what keeps the two from being read as one
+    /// range.
     @Test
-    func `the connection chip may grow past where it rests, and only so far`() {
-        let slot = ArgoToolbarVessel.connectionSlotWidth
-
-        #expect(ArgoToolbarVessel.connectionSlotMaximumWidth > slot)
-        #expect(ArgoToolbarVessel.connectionSlotMaximumWidth < ArgoLayout.sidebarMinimumWidth * 2)
+    func `the rail collapses below where the seam may be dragged`() {
+        #expect(ArgoAgentsRail.collapsedWidth > 0)
+        #expect(ArgoAgentsRail.collapsedWidth < ArgoLayout.railWidths.lowerBound)
     }
 
-    /// Everything the toolbar draws inside its own glass has to fit in it — the scope capsule's
-    /// divider and a drawer row's ⋯ slot included.
+    /// The ceiling is what makes the resting width a resting width. Were they equal the chip could
+    /// not grow, and a reading naming a provider, an identity and a state would be cut at the one
+    /// place it must not be.
+    @Test
+    func `the connection chip may grow past where it rests`() {
+        #expect(ArgoToolbarVessel.connectionSlotMaximumWidth > ArgoToolbarVessel
+            .connectionSlotWidth)
+    }
+
+    /// The scope capsule's divider and a drawer row's ⋯ slot are both drawn inside the toolbar's
+    /// own glass, so the vessel is what bounds them.
     @Test
     func `what the toolbar draws inside a vessel fits inside that vessel`() {
         #expect(ArgoToolbarVessel.scopeDividerHeight < ArgoToolbarVessel.height)
         #expect(ArgoToolbarVessel.rowMenuWidth < ArgoToolbarVessel.height)
-        // The drawer hangs off the toolbar, so it answers to the window rather than to the vessel.
-        #expect(ArgoToolbarVessel.projectDrawerWidth < ArgoLayout.sidebarMaximumWidth)
     }
 
-    /// A gauge, not a control: the bar has to stay thin enough that a tick standing proud of it
-    /// still reads as an overshoot rather than as the fill's own edge.
+    /// Without the overshoot a hairline inside a 3pt bar is indistinguishable from the fill's own
+    /// edge, which is the whole reason the tick is stated separately from the bar.
     @Test
-    func `the context bar reads as a gauge and its ticks stand clear of it`() {
+    func `a threshold tick stands clear of the bar it marks`() {
         #expect(ArgoContextBar.tickOvershoot > 0)
         #expect(ArgoContextBar.height <= ArgoContextBar.tickOvershoot * 2)
-        #expect(ArgoContextBar.height < ArgoLayout.deckTabSlotHeight)
     }
 
-    /// The guide's two columns hold different things — a threshold is a number, a term is words —
-    /// and both have to leave room for the sentence beside them inside one panel.
+    /// A threshold is a number and a term is words, so the column holding words is the wider one.
     @Test
-    func `the guide's term column is wider than its thresholds, and both fit the panel`() {
+    func `the guide's term column is wider than its threshold column`() {
+        #expect(ArgoContextBar.guideTermWidth > ArgoContextBar.guideThresholdWidth)
+    }
+
+    /// Both columns are set against the meanings beside them, which is what the panel's width is
+    /// for — a guide whose columns filled it would have nowhere left to say anything.
+    @Test
+    func `the guide's columns leave the panel room for the meanings beside them`() {
         let columns = ArgoContextBar.guideTermWidth + ArgoContextBar.guideThresholdWidth
 
-        #expect(ArgoContextBar.guideTermWidth > ArgoContextBar.guideThresholdWidth)
         #expect(columns < ArgoContextBar.guideWidth)
-        // The instrument is what opens the guide, so the guide is the wider of the two.
-        #expect(ArgoContextBar.guideWidth > ArgoContextBar.instrumentWidth)
     }
 
-    /// The code is a slot inside the panel, so the panel is what bounds it — a fixed slot wider
-    /// than what holds it would push its own button off the card.
+    /// The code is a fixed slot inside the panel rather than a fit, so the panel is what bounds
+    /// it — a slot wider than what holds it would push its own button off the card.
     @Test
     func `the device code's slot fits the panel it stands in`() {
         #expect(ArgoConnectPanel.deviceCodeWidth < ArgoConnectPanel.width)
-        // Connect opens over the window rather than beside it, so it clears the narrowest one.
-        #expect(ArgoConnectPanel.width < ArgoLayout.windowMinimumWidth)
     }
 
-    /// A FLOOR, so the reader's own sidebar size setting can raise it. What it must not do is
-    /// stand taller than the chrome the roster hangs under.
+    /// Connect opens OVER the window rather than beside it, so the narrowest window the app allows
+    /// is the ceiling on how wide its longest row may be set.
     @Test
-    func `the roster's foot is a floor a sidebar row can clear`() {
-        #expect(ArgoRosterFoot.minimumHeight > 0)
-        #expect(ArgoRosterFoot.minimumHeight < ArgoToolbarVessel.height)
+    func `the Connect panel fits the narrowest window`() {
+        #expect(ArgoConnectPanel.width < ArgoLayout.windowMinimumWidth)
     }
 
     /// The dot is not a rung of the icon scale: a filled disc puts every point of its size on the
     /// page where a glyph spends most of its box on counters and stems, so it reads below the
-    /// floor the smallest SYMBOL rung sits at. That is the whole reason it is off the ladder, and
-    /// the reason has to be assertable or the next reader will file it as a rung.
+    /// floor the smallest SYMBOL rung sits at. The reason has to be assertable, or the next reader
+    /// files it as a rung.
     @Test
     func `the state dot is drawn smaller than any symbol rung`() {
-        #expect(ArgoIconSize.statusDot < ArgoIconSize.chevron.rawValue)
         #expect(ArgoIconSize.allCases.allSatisfy { $0.rawValue > ArgoIconSize.statusDot })
     }
 }

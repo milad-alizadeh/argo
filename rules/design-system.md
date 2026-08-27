@@ -73,9 +73,13 @@ costs nothing inside one Swift module: the minimap re-lays out the feed, so it r
 | `ArgoLayout` | `VisualContract/` | the window's structural proportions — pane widths, minimums, the splits |
 
 `ArgoLayout` is the one that stays, and not as an exception: pane widths and the splits between
-them describe the window, which is every surface and therefore no single one. A member of it read
-from exactly one surface directory is a measure filed in the wrong place, and #773 moved the
-nineteen that were — the five sheets above. It is also why `ArgoLayout.minimapLane*` is not a
+them describe the window, which is every surface and therefore no single one. One reading
+directory is a strong SIGNAL that a member is a measure filed in the wrong place — #773 read that
+signal and moved nineteen, the five sheets above — but it is not the criterion, because what a
+value describes is. `titlebarTitleMaximumShare` and `seamGrabWidth` each have one reader today
+and stay: a share of the detail pane and a seam's hit area are the window's arithmetic, and the
+one surface reading them is the one that happens to draw the window's furniture. It is also why
+`ArgoLayout.minimapLane*` is not a
 duplicate of anything in `ArgoMinimapLane`: those are the lane's width *against the feed*, which
 is what `railLimits(in:)` spends against the deck, while the sheet holds the lane's internals.
 
@@ -84,11 +88,11 @@ rather than a review note: `RhythmTests`' `every step a surface names is a step 
 already carries` asserts each sheet's ladder-derived steps against `ArgoSpacing.all`. A step a
 moved sheet spells as a literal off the ladder fails the suite.
 
-A sheet that spells **no** step gets held a different way. The five above are slots sized to the
-sentences they hold, so the ladder has nothing to say about any of them; `SurfaceMeasureTests`
-asserts the claim each declaration makes instead — a rail that opens inside the seam's limits and
-collapses below them, a guide column wider than the thresholds beside it. A measure with a reason
-nothing can check is a number waiting to drift.
+A sheet that names **no** step gets held a different way. The five added by #773 are slots sized
+to the sentences they hold, so the ladder has nothing to say about any of them;
+`SurfaceMeasureTests` asserts the claim each declaration makes instead — a rail that collapses
+below where its seam may be dragged, a guide column wider than the thresholds beside it. A measure
+whose reason nothing can check is a number waiting to drift.
 
 ### Atoms — the views built out of those values (`Atoms/`)
 
