@@ -12,32 +12,27 @@ struct FeedMarkdownFence: View {
     let code: String
     let info: String?
 
-    /// The block under the grammar. `nil` until the highlighter answers and `nil` again if it
-    /// cannot — the characters are on screen from the first frame either way.
-    @State private var coloured: AttributedString?
-
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-            if let info {
-                Text(info)
-                    .argoText(ArgoTypography.sectionLabel)
-                    .foregroundStyle(argo.color.text.tertiary)
+        SyntaxColoured(.block(code, under: language)) { colouring in
+            VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
+                if let info {
+                    Text(info)
+                        .argoText(ArgoTypography.sectionLabel)
+                        .foregroundStyle(argo.color.text.tertiary)
+                }
+                words(colouring.whole)
+                    .argoMono(.body)
+                    .textSelection(.enabled)
+                    .lineSpacing(ArgoFeedRow.machineLineSpacing)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            words
-                .argoMono(.body)
-                .textSelection(.enabled)
-                .lineSpacing(ArgoFeedRow.machineLineSpacing)
-                .fixedSize(horizontal: false, vertical: true)
+            .padding(ArgoSpacing.base)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.control))
         }
-        .padding(ArgoSpacing.base)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.control))
-        // Keyed on the characters, not on the language: SwiftUI matches a block view by its
-        // position, and two fences of one language would otherwise share the first one's colours.
-        .task(id: code) { await colour() }
     }
 
-    @ViewBuilder private var words: some View {
+    @ViewBuilder private func words(_ coloured: AttributedString?) -> some View {
         if let coloured {
             Text(coloured)
         } else {
@@ -47,14 +42,6 @@ struct FeedMarkdownFence: View {
 
     private var language: EvidenceLanguage? {
         info.flatMap(EvidenceLanguage.init(declared:))
-    }
-
-    private func colour() async {
-        guard let language else {
-            coloured = nil
-            return
-        }
-        coloured = await SyntaxHighlight.block(code, in: language, colors: SyntaxTheme.colors)
     }
 }
 

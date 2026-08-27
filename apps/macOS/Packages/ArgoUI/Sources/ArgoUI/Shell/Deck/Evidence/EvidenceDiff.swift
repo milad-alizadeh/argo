@@ -7,8 +7,6 @@ import SwiftUI
 /// to the same file does not touch it and the line numbers are the host's own — unlike a
 /// branch-vs-base Diff, which is current by definition (CONTEXT.md, L3).
 struct EvidenceDiff: View {
-    @Environment(\.argo) private var argo
-
     let diff: DiffEvidence
     /// What the file is written in, or `nil` for a path whose extension Argo does not know — the
     /// patch is then drawn in one ink.
@@ -56,42 +54,18 @@ private struct EvidenceHunk: View {
     let hunk: DiffHunk
     let language: EvidenceLanguage?
 
-    /// The hunk's lines, coloured. Empty until the highlighter answers and empty again if it
-    /// cannot: the patch draws PLAIN in both cases rather than waiting on a colour.
-    @State private var coloured: [AttributedString?] = []
-
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
-            ForEach(Array(numbered.enumerated()), id: \.offset) { position, line in
-                EvidenceDiffLine(
-                    line: line.line,
-                    number: line.number,
-                    coloured: position < coloured.count ? coloured[position] : nil,
-                )
+        SyntaxColoured(.patch(lines: hunk.lines, under: language)) { colouring in
+            VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
+                ForEach(Array(numbered.enumerated()), id: \.offset) { position, line in
+                    EvidenceDiffLine(
+                        line: line.line,
+                        number: line.number,
+                        coloured: colouring[position],
+                    )
+                }
             }
         }
-        .task(id: highlightRequest) { await colour() }
-    }
-
-    /// What a highlight would be OF: the grammar, and the characters themselves.
-    ///
-    /// The TEXT and not the hunk's position: a lazy stack recycles a row view by its offset, so a
-    /// second hunk matching on language, start line and line count inherited the first one's
-    /// `coloured` array — colours drawn over different characters.
-    private var highlightRequest: String {
-        "\(language?.alias ?? "")\n\(hunk.lines.map(\.text).joined(separator: "\n"))"
-    }
-
-    private func colour() async {
-        guard let language else {
-            coloured = []
-            return
-        }
-        coloured = await SyntaxPatch.lines(
-            of: hunk.lines,
-            in: language,
-            colors: SyntaxTheme.colors,
-        )
     }
 
     /// A line's number in the file it ended up in. A removed line has none, and the gutter is left
@@ -111,40 +85,11 @@ private struct EvidenceDiffLine: View {
 
     let line: DiffLine
     let number: Int?
-    /// This line under the grammar. `nil` is not a failure state to render — it is the line before
-    /// the colours arrive, and after they could not.
     let coloured: AttributedString?
 
     var body: some View {
-        HStack(alignment: .top, spacing: ArgoSpacing.snug) {
-            Text(number.map(String.init) ?? "")
-                .argoMono(.body)
-                .monospacedDigit()
-                .foregroundStyle(argo.color.text.disabled)
-                .frame(width: ArgoFeedRow.diffGutterWidth, alignment: .trailing)
-            // Wraps under its own words rather than back under the gutter, so a wrapped line still
-            // reads as one line of the file with one number against it.
-            words
-                .argoMono(.body)
-                .textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.horizontal, ArgoSpacing.comfortable)
-        .background(ground)
-    }
-
-    /// The grammar's inks where it read the line, and the patch's own where it did not.
-    ///
-    /// EVERY line once the colours arrive, context included: which side a line is on is said by
-    /// the wash under it, and colouring only the changed lines left the context around them
-    /// reading as a different file.
-    @ViewBuilder private var words: some View {
-        if let coloured {
-            Text(coloured)
-        } else {
-            Text(line.text).foregroundStyle(ink)
-        }
+        ArgoCodeLine(text: line.text, gutter: .number(number), coloured: coloured, ink: ink)
+            .background(ground)
     }
 
     /// A wash for the changed sides and nothing for context, at the same strength a status chip
@@ -157,6 +102,8 @@ private struct EvidenceDiffLine: View {
         }
     }
 
+    /// The patch's own ink, for the characters the grammar did not reach. Dimmer for context: which
+    /// side a line is on is said by the wash under it, and a changed line reads at full strength.
     private var ink: ArgoColor {
         switch line.side {
         case .add, .del: argo.color.text.primary

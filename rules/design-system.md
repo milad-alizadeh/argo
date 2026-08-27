@@ -66,6 +66,7 @@ An atom holds no state of its own and reads every value it draws from the contra
 | `ArgoKindedName` | a name with the glyph for its kind, cut in the middle |
 | `ArgoGlyph` | a symbol at exactly one rung of the icon scale |
 | `ArgoDisclosure` | the one disclosure chevron, its direction taken by rotation |
+| `ArgoCodeLine` | one line of code: the host's number in a gutter, the characters beside it (#754) |
 | `ArgoLabelStyle` | symbol beside title at the contract's rhythm (`.labelStyle(.argo(_:icon:))`) |
 | `ArgoFocusRing` | the one keyboard cursor, as a view and as `argoFocusRing(_:in:)` |
 | `ArgoFloatingGlass` | the material a surface takes when it floats over the deck (`argoFloatingGlass(in:rim:)`) |
