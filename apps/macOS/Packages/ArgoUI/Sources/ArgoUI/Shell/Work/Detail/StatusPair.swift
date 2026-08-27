@@ -17,7 +17,7 @@ struct StatusPair: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
             Text(word)
-                .argoText(ArgoTypography.control)
+                .argoText(ArgoTypography.rowMeta)
             ArgoRule(ink: argo.color.edge.subtle)
                 .frame(height: ArgoTicketDetail.statusDividerHeight)
             Text(bucket.filing)

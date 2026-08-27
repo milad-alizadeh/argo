@@ -49,10 +49,10 @@ struct TicketFactStrip: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// A provider's word, at the role the ramp sets at the 12 the design measured.
+    /// A provider's word, at the pane's one value role.
     private func value(_ word: String) -> some View {
         Text(word)
-            .argoText(ArgoTypography.control)
+            .argoText(ArgoTypography.rowMeta)
             .foregroundStyle(argo.color.text.secondary)
     }
 }

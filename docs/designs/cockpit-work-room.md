@@ -131,9 +131,9 @@ The Work room does the same, in the same order:
 | position | control | scope |
 |---|---|---|
 | over the list | `Backlog` and, under it, `All open · by priority · 12 tickets` | says what you are looking at, and how many |
-| trailing the list block | filter, group-by | list-scoped, so they sit over the list |
-| leading the ticket column | **New ticket** | the compose call-to-action, its own vessel, opening the next column |
-| next | `⚡ Start ⌄`, open-on-host, copy link | the ticket's own verbs |
+| trailing the list block | filter, group-by, **past a rule** | list-scoped, so they sit over the list |
+| leading the ticket column | **New ticket** | the call-to-action, its own vessel, opening the next column |
+| next | `▶ Start ⌄`, open-on-host, copy link | the ticket's own verbs |
 | trailing edge | search | a real field at 210, not an icon that becomes one |
 
 **A title without its count can lie about what you are filtered to**, which is why the heading is
@@ -178,6 +178,24 @@ it — the em dash carries the same pair.
 The two link verbs that would otherwise have hidden in that ellipsis — open on the code host,
 copy link — are icons beside it, past a hairline. Nothing in this room is behind an unlabelled
 control.
+
+### The marks, re-cut
+
+The study's glyphs were read back and three of them named nothing a reader recognised, so they
+were replaced. **A toolbar mark is not a place to be inventive**: the row is chrome, and chrome
+that has to be learned costs more than the space a familiar mark saves.
+
+| control | was | is | why |
+|---|---|---|---|
+| Start | `bolt` | `play.fill` | a bolt reads as speed or as power; neither is the act. Play is the one mark every transport control in the OS uses for *begin* |
+| New ticket | `square.and.pencil` | `plus` | the compose mark is the ROSTER's, for a Session you write into. A ticket is filed, and one glyph on two rooms' toolbars reads as one act |
+| Group by | `list.bullet.indent` | `rectangle.grid.1x2` | an indented list is nesting, which this list already does on its own; banded rows are the grouping |
+
+Filter keeps `line.3.horizontal.decrease` — a funnel is the one glyph here nobody had to learn.
+
+**The filter/group capsule takes a rule between its two marks.** Sharing a vessel with no divider
+made a pair of unrelated acts read as one unfamiliar control — the same failure the `Start` split
+already avoids, and it takes the same hairline to fix.
 
 ### Liquid Glass, one material, every vessel
 
@@ -393,11 +411,34 @@ prototype's numbers survive.
 | chips and label chips, 10.5 | `ArgoTypography.badge` | exact |
 | hero empty-tier sentence, 12 | `ArgoTypography.rowMeta` | snapped DOWN to 11, the same direction as the view name above it: the sentence is why there is no ticket, not a ticket (#817) |
 | urgent chip border, amber at .28 | `state.rim(attention)` | snapped UP to .5 — the named role for a state hue drawn as an edge rather than an ink (#817) |
-| ticket id, mono 12 | `ArgoTypography.machine` | exact |
+| ticket id, mono 12 | `ArgoTypography.machineCaption` | snapped DOWN to 11 — see the ramp note below |
 | ticket title, 17 semibold | `ArgoTypography.sessionTitle` | exact tuple; the role's doc-comment says "a Session's own title" and needs its scope widened to the deck's largest line |
-| provider status word, 12 | `ArgoTypography.control` | exact |
+| provider status word, 12 | `ArgoTypography.rowMeta` | snapped DOWN to 11 — see the ramp note below |
 | Argo bucket, mono 10 uppercase | `ArgoTypography.machineCaption`, lowercase | the uppercase is dropped: uppercase machine at 11 reads as loud as the word it is filing |
 | Delivery number, mono 11.5 medium | `ArgoTypography.machineEmphasis` | exact |
+| fact values (`high`, `task`), 12 | `ArgoTypography.rowMeta` | snapped DOWN to 11 — see the ramp note below |
+| `No Delivery yet`, `Every child is closed.`, 12 | `ArgoTypography.rowMeta` | the same |
+
+### The ticket pane's ramp
+
+Every row above snapped to a legal role, and nobody counted how many landed on ONE pane. The
+answer was nine roles at five sizes, and it read as jitter rather than as hierarchy: 11 and 12 and
+13 are not three levels of anything, they are one level drawn three ways.
+
+**The pane sets four sizes, and `control` is not one of them.** `control` is "toolbar and vessel
+controls" — the pane holds none, so every use of it here was a role borrowed for its size.
+
+| what | role | size |
+|---|---|---|
+| the title | `sessionTitle` | 17 semibold |
+| prose, and the headings over it | `body` / `bodyHeading` | 13, weight is the whole difference |
+| every uppercase key | `sectionLabel` | 11 semibold, tracked |
+| every value, and every link title | `rowMeta` | 11 |
+| every machine string — the id, the bucket | `machineCaption` | mono 11 |
+| label chips | `badge` | 10 semibold |
+
+11 carries the most because most of the pane IS metadata. What separates a key from a value at
+that size is the uppercase and the tracking, not a point of size nobody can see.
 | menu row, 12.5 / its note, mono 10 | `ArgoTypography.rowMeta` / `machineCaption` | exact |
 | body prose, 13 | `ArgoTypography.body` | exact |
 | menu radius, 10 | `ArgoRadius.popover` 12 | snapped |

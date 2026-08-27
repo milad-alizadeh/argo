@@ -28,6 +28,11 @@ struct BacklogToolbarLabel: View {
                     ToolbarIcon(
                         symbol: ArgoSymbol.filterBacklog, label: "Filter", act: narrowing,
                     )
+                    // Two acts, one capsule: without the rule between them the pair reads as a
+                    // single control nobody recognises. `StartControl` splits its own the same way.
+                    DeckSeparator()
+                        .frame(height: ArgoWorkToolbar.splitDividerHeight)
+                        .accessibilityHidden(true)
                     ToolbarIcon(
                         symbol: ArgoSymbol.groupBacklog, label: "Group by", act: grouping,
                     )

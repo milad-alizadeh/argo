@@ -38,14 +38,17 @@ public enum ArgoSymbol {
 
     /// The Work room's toolbar (`cockpit-work-room.md`). Each is the mark the study drew, named by
     /// what the control does rather than by the shape.
-    public static let newTicket = newSession
+    /// A plus, and NOT the roster's compose mark: a ticket is filed rather than written, and the
+    /// same square-and-pencil on two rooms' toolbars reads as the same act in both.
+    public static let newTicket = addProject
     /// Narrowing the backlog to a subset, and re-ordering what is left into groups. Two different
-    /// acts, so two marks — a funnel takes rows away, an indented list keeps them all.
+    /// acts, so two marks — a funnel takes rows away, banded rows keep them all.
     public static let filterBacklog = "line.3.horizontal.decrease"
-    public static let groupBacklog = "list.bullet.indent"
+    public static let groupBacklog = "rectangle.grid.1x2"
     public static let searchBacklog = "magnifyingglass"
-    /// Starting a Session on the open ticket — the verb the room is for.
-    public static let startSession = "bolt"
+    /// Starting a Session on the open ticket — the verb the room is for. A play triangle rather
+    /// than a bolt: the bolt was read as speed or as power, and neither is the act.
+    public static let startSession = "play.fill"
     /// Opening the ticket where its provider holds it, and taking that address to the pasteboard.
     /// The arrow leaves the app; the chain is the address itself.
     public static let openOnHost = "arrow.up.forward.square"

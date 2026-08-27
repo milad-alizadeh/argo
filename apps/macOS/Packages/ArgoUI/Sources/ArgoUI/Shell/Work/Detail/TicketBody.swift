@@ -28,7 +28,7 @@ struct TicketBody: View {
         GroupLabel("Deliveries")
         if ticket.deliveries.isEmpty {
             Text("No Delivery yet")
-                .argoText(ArgoTypography.control)
+                .argoText(ArgoTypography.rowMeta)
                 .foregroundStyle(argo.color.text.disabled)
         } else {
             // Stacked, never wrapped: at 480 a chip sets on one line.
@@ -57,7 +57,7 @@ struct TicketBody: View {
             heading("Children · \(children.closed) of \(children.total) closed")
             if children.open.isEmpty {
                 Text("Every child is closed.")
-                    .argoText(ArgoTypography.control)
+                    .argoText(ArgoTypography.rowMeta)
                     .foregroundStyle(argo.color.text.disabled)
             } else {
                 TicketLinkList(links: children.open, open: open)
