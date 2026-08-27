@@ -26,6 +26,14 @@ public enum ArgoTypography {
     public static let windowTitle = ArgoTextStyle(
         typeface: .interface, rung: .headline, weight: .semibold,
     )
+    /// A heading inside a body of prose — the Work room's `Acceptance criteria` (#813). It is
+    /// `body`'s own 13, so weight is the whole of what lifts it off the paragraph under it.
+    ///
+    /// `windowTitle` carries this tuple too, and neither may be folded into the other: a retune of
+    /// the chrome's title must not reach a ticket's headings.
+    public static let bodyHeading = ArgoTextStyle(
+        typeface: .interface, rung: .headline, weight: .semibold,
+    )
     /// A Session row's primary line.
     public static let rowTitle = ArgoTextStyle(typeface: .interface, rung: .body, weight: .medium)
     /// The one quiet metadata line under it.
@@ -59,6 +67,7 @@ public enum ArgoTypography {
         ("sectionLabel", sectionLabel),
         ("badge", badge),
         ("windowTitle", windowTitle),
+        ("bodyHeading", bodyHeading),
         ("rowTitle", rowTitle),
         ("rowMeta", rowMeta),
         ("body", body),
@@ -72,5 +81,7 @@ public enum ArgoTypography {
     ]
 
     /// Roles nothing sets yet. See `ArgoMotion.unwired` for why they stay and why they say so.
-    public static let unwired: [String: String] = [:]
+    public static let unwired: [String: String] = [
+        "bodyHeading": "the Work room's ticket body (#272)",
+    ]
 }
