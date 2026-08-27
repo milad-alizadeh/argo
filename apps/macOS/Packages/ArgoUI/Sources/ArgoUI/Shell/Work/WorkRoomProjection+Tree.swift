@@ -17,6 +17,11 @@ extension WorkRoomProjection {
         /// so a reader asking how deep a ticket sits gets the truth.
         let depth: Int
 
+        /// The row's own priority word where the band's header DISAGREES with it, and `nil` where
+        /// the header already said it (#819). A relation to the header rather than a fact of the
+        /// row, which is why it is set when the band is flattened and not when the tree is built.
+        var odd: String?
+
         var id: Int {
             row.id
         }
@@ -24,6 +29,13 @@ extension WorkRoomProjection {
         /// A leaf keeps the twist's slot but never its mark, so every dot lands on one vertical.
         var isParent: Bool {
             !row.children.isEmpty
+        }
+
+        /// The one trailing fact. A parent's roll-up WINS the slot: two numbers in one place is
+        /// worse than an odd priority left unsaid, and the header over it is already the louder
+        /// claim about a row that has children of its own.
+        var trailing: String? {
+            row.trailing ?? odd
         }
     }
 
@@ -50,6 +62,7 @@ extension WorkRoomProjection {
                 title: item.title,
                 delivery: reading.deliveries[item.number] ?? .absent,
                 trailing: rollUp(of: item, closed: closed),
+                priority: reading.priorities[item.number],
                 children: item.children
                     .filter { parents[$0] == item.number }
                     .compactMap { byNumber[$0] }

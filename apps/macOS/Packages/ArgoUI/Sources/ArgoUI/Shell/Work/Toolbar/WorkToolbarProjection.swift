@@ -44,18 +44,20 @@ enum WorkToolbarProjection {
             // level is the roots, so counting it would report five where the view holds twelve —
             // and would drop by one every time a reader folded a parent. This is the same number
             // the sidebar's row for this view shows, which is what stops the two disagreeing.
-            subtitle: "\(view.name) · \(tickets(room.view(view)?.count ?? 0))",
+            subtitle: "\(view.name) · \(Self.grouping) · \(tickets(room.view(view)?.count ?? 0))",
             narrows: hasRows,
             draws: true,
             ticket: hasRows ? showing : nil,
         )
     }
 
-    /// The design's subtitle reads `All open · by priority · 12 tickets`, and the middle term is
-    /// missing here on purpose: it names the GROUPING in force, and the list has none. #814 nested
-    /// it into a tree, which is not a grouping; #819 adds the priority headers, and adds this term
-    /// with them. A heading that said `by priority` over an ungrouped list would be the exact lie
-    /// the second line exists to prevent.
+    /// The middle term names the GROUPING in force, and it is here because #819 put the priority
+    /// headers over the list. It was absent through #812 and #814 for the same reason: a heading
+    /// reading `by priority` over an ungrouped list is the exact lie the second line exists to
+    /// prevent. One grouping today, so it is a constant rather than a parameter — the group-by
+    /// control that would make it vary does not choose anything yet.
+    private static let grouping = "by priority"
+
     private static func tickets(_ count: Int) -> String {
         "\(count) ticket\(count == 1 ? "" : "s")"
     }

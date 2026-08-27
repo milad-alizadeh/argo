@@ -24,7 +24,7 @@ struct WorkToolbarProjectionTests {
     @Test
     func `the heading names the view and counts every ticket in it`() {
         #expect(Self.reading().heading == "Backlog")
-        #expect(Self.reading().subtitle == "All open · 12 tickets")
+        #expect(Self.reading().subtitle == "All open · by priority · 12 tickets")
     }
 
     /// The count is the VIEW's, not the tree's top level (#814). Counting rows would report the
@@ -35,15 +35,24 @@ struct WorkToolbarProjectionTests {
         let room = WorkRoomProjection.room(from: WorkFixture.reading)
 
         #expect(room.backlog.count < 12)
-        #expect(Self.reading().subtitle == "All open · 12 tickets")
+        #expect(Self.reading().subtitle == "All open · by priority · 12 tickets")
+    }
+
+    /// The middle term names the grouping in force, and it arrived WITH the grouping (#819). It
+    /// was absent through #812 and #814 because a heading reading `by priority` over an ungrouped
+    /// list is the exact lie the second line exists to prevent.
+    @Test
+    func `the subtitle names the grouping the list is under`() {
+        #expect(Self.reading().subtitle.contains("by priority"))
+        #expect(Self.reading(of: .blocked).subtitle.contains("by priority"))
     }
 
     /// The whole reason the heading is two lines: switching view has to move BOTH halves, or the
     /// count stands under a name it no longer belongs to.
     @Test
     func `the count tracks the filter`() {
-        #expect(Self.reading(of: .blocked).subtitle == "Blocked · 8 tickets")
-        #expect(Self.reading(of: .unblocked).subtitle == "Unblocked · 4 tickets")
+        #expect(Self.reading(of: .blocked).subtitle == "Blocked · by priority · 8 tickets")
+        #expect(Self.reading(of: .unblocked).subtitle == "Unblocked · by priority · 4 tickets")
     }
 
     /// One ticket is `1 ticket`, not `1 tickets`. Cheap to get wrong and visible on every render of
@@ -55,7 +64,7 @@ struct WorkToolbarProjectionTests {
         ]))
 
         #expect(WorkToolbarProjection.reading(of: one, in: .allOpen, showing: nil).subtitle
-            == "All open · 1 ticket")
+            == "All open · by priority · 1 ticket")
     }
 
     @Test
@@ -77,7 +86,7 @@ struct WorkToolbarProjectionTests {
         #expect(reading.draws)
         #expect(!reading.narrows)
         #expect(reading.ticket == nil)
-        #expect(reading.subtitle == "All open · 0 tickets")
+        #expect(reading.subtitle == "All open · by priority · 0 tickets")
     }
 
     /// Nothing is bound, so there is nothing to create INTO — a different page from the one above,
