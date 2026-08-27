@@ -4,9 +4,7 @@ import Foundation
 /// its own connection. Every one of those is derived on READ, so no second copy can fall out of
 /// step with the state it came from.
 ///
-/// The sweep that moves the working set and the Subagent files tailed beside it are held HERE
-/// rather than beside it. Neither exists except to serve these tails, and a caller able to start
-/// one without the other could leave a sweep re-registering transcripts of a Project nobody is on.
+/// The sweep that moves the working set and the Subagent files tailed beside it are held here.
 @MainActor
 @Observable
 final class TranscriptWatch {
@@ -100,9 +98,9 @@ final class TranscriptWatch {
     }
 
     func beginSweeping(in projectURL: URL) async {
-        await sweep.begin(in: projectURL) { [weak self] wanted in
+        await sweep.begin(in: projectURL, onSwept: { [weak self] wanted in
             await self?.move(onto: wanted)
-        }
+        })
     }
 
     func stopSweeping() async {
@@ -208,8 +206,8 @@ final class TranscriptWatch {
     }
 
     private func makeSubagentTails() -> SubagentTails {
-        SubagentTails(engine: engine) { [weak self] read, agentID, transcriptID in
-            self?.join.apply(read, ofSubagent: agentID, to: transcriptID)
+        SubagentTails(engine: engine) { [weak self] read in
+            self?.join.apply(read.events, ofSubagent: read.agentID, to: read.transcriptID)
         }
     }
 

@@ -7,6 +7,14 @@ struct SubagentTail: Hashable {
     let path: String
 }
 
+/// One read from a Subagent's file: what it said, whose file it was, and which Session delegated
+/// it. A value, because two adjacent `String` arguments transpose without the compiler noticing.
+struct SubagentRead {
+    let events: [TranscriptEvent]
+    let agentID: String
+    let transcriptID: String
+}
+
 /// A Session's Subagents, tailed beside its own record (#711).
 ///
 /// Tailed rather than read once, and re-discovered rather than found once: a fan-out's files appear
@@ -14,20 +22,19 @@ struct SubagentTail: Hashable {
 /// go on growing after the parent has fallen quiet. Discovery rides the sweep that moves the
 /// working set, so it runs whenever the CLI's record root changes.
 ///
-/// A table of its own rather than a second entry in the watch's: a Subagent is not in the working
-/// set and has no row.
+/// A table of its own: a Subagent is not in the working set and has no row.
 @MainActor
 final class SubagentTails {
     private let engine: Engine
     /// Where a batch goes once read. The join is the watch's, and a Subagent's events land in it
     /// under the id of the Session that delegated them.
-    private let apply: @MainActor ([TranscriptEvent], String, String) -> Void
+    private let apply: @MainActor (SubagentRead) -> Void
 
     private var tails: [SubagentTail: Task<Void, Never>] = [:]
 
     init(
         engine: Engine,
-        apply: @escaping @MainActor ([TranscriptEvent], String, String) -> Void,
+        apply: @escaping @MainActor (SubagentRead) -> Void,
     ) {
         self.engine = engine
         self.apply = apply
@@ -77,7 +84,11 @@ final class SubagentTails {
 
     private func drain(_ observation: SubagentObservation, of transcriptID: String) async {
         for await events in observation.events {
-            apply(events, observation.agentID, transcriptID)
+            apply(SubagentRead(
+                events: events,
+                agentID: observation.agentID,
+                transcriptID: transcriptID,
+            ))
         }
     }
 }

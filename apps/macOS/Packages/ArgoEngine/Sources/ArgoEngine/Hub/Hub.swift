@@ -3,10 +3,7 @@ import Observation
 
 /// The process-lifetime, rebuildable join consumed by the app's views.
 ///
-/// Its mutable state has two owners rather than a dozen extension files (#759): the watch below
-/// holds everything about what is being READ, and the readings hold everything Argo established
-/// about the world outside the transcripts. Both keep their own fields private, so the Hub cannot
-/// reach past their answers into the tables behind them.
+/// Its mutable state has two owners (#759): the watch below, and the readings beside it.
 @MainActor
 @Observable
 public final class Hub {

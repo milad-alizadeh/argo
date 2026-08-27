@@ -51,7 +51,6 @@ struct WorldReadingsTests {
 
         #expect(readings.liveness(inCwd: Self.cwd, lastActivityAtMs: Self.nowMs) == .quiet)
         #expect(readings.workspace(inCwd: Self.cwd) == nil)
-        #expect(readings.isEmpty)
     }
 
     @Test
@@ -94,11 +93,11 @@ struct WorldReadingsTests {
         let readings = Self.readings(runningIn: [Self.cwd], cwds: [Self.cwd])
         await readings.refreshLiveness()
         await readings.refreshWorkspaces()
-        #expect(!readings.isEmpty)
+        #expect(readings.liveness(inCwd: Self.cwd, lastActivityAtMs: Self.nowMs) == .live)
+        #expect(readings.workspace(inCwd: Self.cwd) != nil)
 
         await readings.stop()
 
-        #expect(readings.isEmpty)
         #expect(readings.liveness(inCwd: Self.cwd, lastActivityAtMs: Self.nowMs) == .quiet)
         #expect(readings.workspace(inCwd: Self.cwd) == nil)
     }

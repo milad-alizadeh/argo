@@ -6,10 +6,6 @@ import Foundation
 ///
 /// Polled rather than watched — a process exiting writes nothing anywhere Argo could be listening
 /// for it. Both reads are on the same beat because both go stale the same way.
-///
-/// The tables are private and the answers are about one folder: nothing outside needs to see them
-/// as tables, and a caller holding the set could compare a launch path against a resolved one and
-/// never match.
 @MainActor
 @Observable
 final class WorldReadings {
@@ -32,11 +28,6 @@ final class WorldReadings {
     init(engine: Engine, sessionCwds: @escaping @MainActor () -> [String]) {
         self.engine = engine
         self.sessionCwds = sessionCwds
-    }
-
-    /// Nothing has been read, or everything read has been dropped with the Project it belonged to.
-    var isEmpty: Bool {
-        liveCwds.isEmpty && readAtMs == nil && workspaces.isEmpty
     }
 
     /// Whether a Session running in `cwd` and last writing at `lastActivityAtMs` is live, judged

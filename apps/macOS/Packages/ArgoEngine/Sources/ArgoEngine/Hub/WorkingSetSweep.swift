@@ -1,8 +1,7 @@
 import Foundation
 
 /// Which transcripts belong to the Project right now. Discovery moves the working set while the app
-/// runs, and this is the half that finds it: a poller that hands its answer on, where what happens
-/// to the tails is the watch's to decide.
+/// runs, and this is the half that finds it.
 ///
 /// The Project is captured at `begin` rather than re-read on every sweep — the Hub's Project
 /// follows the checkout, and a sweep is for the Project it was begun for until it is ended.
@@ -13,7 +12,7 @@ final class WorkingSetSweep {
     /// await.
     private var projectURL: URL?
     private var sweeping: Task<Void, Never>?
-    private var hand: (@MainActor ([URL]) async -> Void)?
+    private var onSwept: (@MainActor ([URL]) async -> Void)?
 
     init(discovery: SessionDiscovery) {
         self.discovery = discovery
@@ -27,11 +26,11 @@ final class WorkingSetSweep {
     /// loop sweeping for the process's lifetime, against a Project nobody is looking at.
     func begin(
         in projectURL: URL,
-        handingTo hand: @escaping @MainActor ([URL]) async -> Void,
+        onSwept: @escaping @MainActor ([URL]) async -> Void,
     ) async {
         await stop()
         self.projectURL = projectURL
-        self.hand = hand
+        self.onSwept = onSwept
         await refresh()
         sweeping = Task { [weak self] in
             guard let changes = self?.discovery.changes() else { return }
@@ -46,10 +45,10 @@ final class WorkingSetSweep {
     /// Re-read after the await: the sweep runs off the main actor, and a `stop` in the meantime
     /// means this answer is about a Project nobody is pointed at any more.
     func refresh() async {
-        guard let projectURL, let hand else { return }
+        guard let projectURL, let onSwept else { return }
         let wanted = await discovery.workingSet(for: projectURL)
         guard self.projectURL != nil else { return }
-        await hand(wanted)
+        await onSwept(wanted)
     }
 
     /// End the sweep before the tails it feeds are torn down, and await it: a sweep still running
@@ -59,6 +58,6 @@ final class WorkingSetSweep {
         sweeping?.cancel()
         await sweeping?.value
         sweeping = nil
-        hand = nil
+        onSwept = nil
     }
 }
