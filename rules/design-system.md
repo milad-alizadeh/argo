@@ -24,7 +24,8 @@ The type is what draws the line, not the `View` extension. A family here may sti
 The moment the modifier needs a `ViewModifier` of its own to hold what it draws, the type is an
 atom and both halves move: that is why `argoAnimation` left `ArgoMotion` for `Atoms/`.
 
-Three populations, one table each. Every file in either directory is in one of them.
+Three populations, one table each: **tokens** and **atoms** are the two directories above, and
+**measures** are the third population precisely because they live in neither.
 
 ### Tokens — a value the whole app reaches by name (`VisualContract/`)
 
@@ -36,23 +37,41 @@ Three populations, one table each. Every file in either directory is in one of t
 | `ArgoTheme` | the appearance in force, carried in the environment (`\.argo`) — colour is the only family an appearance changes |
 | `ArgoTypeScale` · `ArgoTypeScale+AppKit` | the type ladder, which is **Apple's**: the macOS HIG text styles, named as the HIG names them, plus the `NSFont` each rung resolves to for the AppKit side of the feed |
 | `ArgoTextStyle` · `ArgoTypography` | named roles over that ladder (face + rung + weight + tracking) |
-| `ArgoGeometry` (`ArgoSpacing` · `ArgoRadius` · `ArgoStroke`) | the rhythm, the four radius rungs, the stroke widths |
+| `ArgoSpacing` · `ArgoRadius` · `ArgoStroke` | the rhythm, the four radius rungs, the stroke widths |
 | `ArgoElevation` · `ArgoMotion` · `ArgoIconSize` · `ArgoSymbol` | depth, durations and curves, glyph sizes, and the SF Symbol each meaning is drawn with |
 | `ArgoOpacity` | how present a whole surface is — the rung a row nobody can drive is ghosted at |
 | `ArgoOperationalState` | the four states colour is owed, and the tint each takes from a palette |
-
-### Measures — a property of the content, not a rung of the rhythm (`VisualContract/`)
-
-A measure lives beside the surface it belongs to, with its reason at the value. It is in this
-directory because it is still a value; it is in its own table because promoting one to a token
-is a mistake (see **Roles, not values** below).
-
-| File | Holds |
-|---|---|
-| `ArgoLayout` | the deck's structural proportions — pane widths, minimums, the splits |
-| `ArgoFeedRow` · `ArgoMinimapLane` | the reading's own measures, and the overview lane beside it (D25) |
-| `ArgoComposerVessel` · `ArgoPlanPill` | the composer's and the plan pill's measurements, from their approved studies |
 | `ArgoWaitAge` | the ladder `ArgoMotion.working` cools down as the wait it reports gets older |
+
+### Measures — a property of the content, so it lives beside the surface (not `VisualContract/`)
+
+A measure is not a token, and it is not in the contract's directory. It sits in the directory of
+the **one surface whose layout it describes**, with its reason at the value — because how wide a
+thumbnail is or how long a line of prose may run answers to the content, not to the rhythm
+(see **Roles, not values** below).
+
+One owning surface is the whole criterion. A sibling directory reading a sheet is expected and
+costs nothing inside one Swift module: the minimap re-lays out the feed, so it reads
+`ArgoFeedRow` by name, and the feed owns that geometry either way.
+
+| File | Lives in | Holds |
+|---|---|---|
+| `ArgoFeedRow` | `Shell/Deck/Feed/` | the reading's own measures — the column, a row's steps, a bubble's ground |
+| `ArgoComposerVessel` | `Shell/Deck/Composer/` | the composer's measurements, from its approved study |
+| `ArgoMinimapLane` | `Shell/Deck/Minimap/` | what the overview lane beside the reading is measured at (D25) |
+| `ArgoPlanPill` | `Shell/Deck/Plan/` | the pill's measurements and the list it reveals |
+| `ArgoLayout` | `VisualContract/` | the deck's structural proportions — pane widths, minimums, the splits |
+
+`ArgoLayout` is the one that stays, and not as an exception: pane widths and the splits between
+them describe the window, which is every surface and therefore no single one. It is also why
+`ArgoLayout.minimapLaneWidth(sharing:)` is not a duplicate of anything in `ArgoMinimapLane` —
+the first is the lane's width *against the feed*, wired into `railLimits(in:)`; the second holds
+the lane's internals.
+
+A sheet outside the contract must not grow a spacing rhythm of its own, and that is mechanical
+rather than a review note: `RhythmTests`' `every step a surface names is a step the rhythm
+already carries` asserts each sheet's gaps and insets against `ArgoSpacing.all`. A step a moved
+sheet invents fails the suite.
 
 ### Atoms — the views built out of those values (`Atoms/`)
 
@@ -136,7 +155,8 @@ that way — the cost of getting this wrong is not a bug, it is a sweep through 
 the type ladder, and the modifiers that take a rhythm value. `VisualContract/` is exempt
 because it IS the contract, and `Specimen/` because a specimen exists to show what a role is
 worth. **`Atoms/` is not exempt** — an atom draws with the contract like any other view, so it
-answers to the gate like any other view. A finding is fixed by snapping to a token or promoting
+answers to the gate like any other view. Neither are the measure sheets: a surface directory is
+not exempt, so a sheet that moved next to its surface now answers to the gate too. A finding is fixed by snapping to a token or promoting
 one — **never by allowlisting**, unless it is pre-existing debt tracked in a ticket.
 
 ## Hue is rationed; loudness is not

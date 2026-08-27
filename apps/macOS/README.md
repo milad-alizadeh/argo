@@ -18,6 +18,7 @@ Packages/
     argo-observe/   the CLI that tails a transcript and prints what it reads
   ArgoUI/           shared visual components. No engine dependency
     Shell/          production NavigationSplitView, sidebar, deck ground and toolbar vessels
+                    — and each surface's own measure sheet, beside the surface it measures (#756)
     VisualContract/ the palette, type, geometry, elevation and motion roles (#375) — VALUES only
     Atoms/          the shared views and materials built out of those values (#772)
     Focus/          whether a focus ring would be answering the keyboard (#533)
@@ -109,6 +110,13 @@ The contract holds **values and nothing else** (#772). The shared views built ou
 `ArgoBadge`, `ArgoGlyph`, `ArgoFloatingGlass` and the rest — are `ArgoUI/Atoms/`, and they are
 inside the guard's scope like every other view. `rules/design-system.md` lists all three
 populations by file.
+
+And it holds **tokens** and nothing else (#756): a **measure** — how wide the reading runs, how
+tall a chip stands — is a property of the content, so it lives in the directory of the one
+surface whose layout it describes. `ArgoFeedRow`, `ArgoComposerVessel`, `ArgoMinimapLane` and
+`ArgoPlanPill` sit under `Shell/Deck/{Feed,Composer,Minimap,Plan}/`, which puts them inside the
+guard's scope as well. `ArgoLayout` is the exception that is not one: the splits between panes
+describe the window, which is every surface and so no single one.
 
 ## Screenshots
 
