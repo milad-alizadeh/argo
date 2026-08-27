@@ -87,4 +87,47 @@ struct SurfaceMeasureTests {
     func `the state dot is drawn smaller than any symbol rung`() {
         #expect(ArgoIconSize.allCases.allSatisfy { $0.rawValue > ArgoIconSize.statusDot })
     }
+
+    // MARK: - The Work room
+
+    /// The room's three panes tile the ideal window by construction, so the assertable claim is
+    /// that 520 leaves the third of them something to be: the design calls the ticket's 480 its
+    /// tightest number, and a wider list is what would take it below readable.
+    @Test
+    func `the backlog leaves the ticket beside it a pane`() {
+        #expect(ArgoTicketDetail.idealWidth > ArgoLayout.feedMinimumWidth)
+        #expect(ArgoTicketDetail.idealWidth < ArgoBacklogList.width)
+    }
+
+    /// The list is the wider pane, which is the whole reason the backlog left the rail: the design
+    /// rejected four rooms that put provider-owned text in a narrow column.
+    @Test
+    func `the backlog is wider than the rail it moved out of`() {
+        #expect(ArgoBacklogList.width > ArgoLayout.sidebarMaximumWidth)
+    }
+
+    /// Both are FLOORS macOS raises from the reader's own sidebar setting, so the assertable claim
+    /// is the relation: a backlog row carries a title at `body` and a view row a name at `rowMeta`,
+    /// so the row holding the larger type is the taller of the two.
+    @Test
+    func `a backlog row is floored taller than a sidebar view row`() {
+        #expect(ArgoBacklogList.rowHeight > ArgoWorkSidebar.viewRowHeight)
+        #expect(ArgoBacklogList.rowHeight > ArgoTypography.body.lineBox)
+        #expect(ArgoWorkSidebar.viewRowHeight > ArgoTypography.rowMeta.lineBox)
+    }
+
+    /// The glyph column exists so every view name starts on one vertical, which it can only do if
+    /// it is wider than the marks it holds.
+    @Test
+    func `the sidebar's glyph column holds the mark it is drawn for`() {
+        #expect(ArgoWorkSidebar.glyphWidth > ArgoIconSize.inline.rawValue)
+    }
+
+    /// A rule between two facts on one line, not a divider under the line: it has to stand shorter
+    /// than the taller of the two words it separates, or it reads as a break in the column.
+    @Test
+    func `the status pair's rule is shorter than the words it parts`() {
+        #expect(ArgoTicketDetail.statusDividerHeight < ArgoTypography.control.lineBox * 2)
+        #expect(ArgoTicketDetail.statusDividerHeight > 0)
+    }
 }
