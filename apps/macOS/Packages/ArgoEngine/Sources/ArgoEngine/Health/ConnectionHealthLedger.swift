@@ -44,6 +44,19 @@ public actor ConnectionHealthLedger {
         refused.insert(accountID)
     }
 
+    /// A read through one port failed, filed at whichever level the error names. Both ports record
+    /// through here, so a Work Item listing and a Delivery derivation that fail the same way cannot
+    /// reach this ledger as two different states.
+    ///
+    /// What was already fetched is deliberately untouched on every path — a failed read leaves it
+    /// where it was, old and still accurately DERIVED.
+    public func record(_ error: ProviderFetchError, of target: PortReadTarget) {
+        guard let cause = error.cause else {
+            return grantRefused(target.accountID)
+        }
+        failed(target.projectBinding, in: target.projectID, cause: cause)
+    }
+
     /// The user obtained a grant for this Account again. One act, and every Binding that named it
     /// reads again — there is one record to clear because there was one to write.
     ///

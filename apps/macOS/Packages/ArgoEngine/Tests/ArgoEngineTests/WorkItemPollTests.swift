@@ -6,7 +6,7 @@ import Testing
 /// receives no webhooks, so this loop is the only reason a Work room is ever right.
 @Suite("Work Item poll")
 struct WorkItemPollTests {
-    private let target = WorkItemPollTarget(binding: .stub(), projectID: "P1")
+    private let target = PortReadTarget(binding: .stub(), projectID: "P1")
     private let ticket = WorkItem(
         number: 12,
         title: "Port the Work room",

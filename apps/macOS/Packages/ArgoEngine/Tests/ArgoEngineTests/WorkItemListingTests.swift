@@ -9,8 +9,8 @@ struct WorkItemListingTests {
     private static func list(
         _ replies: [String: String],
     ) async throws
-        -> ([WorkItem], RecordedIssues) {
-        let api = RecordedIssues(replies: replies)
+        -> ([WorkItem], RecordedGitHub) {
+        let api = RecordedGitHub(replies: replies)
         let items = try await GitHubWorkItems(transport: api).list(in: "acme/api", grant: .listing)
         return (items, api)
     }
