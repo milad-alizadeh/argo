@@ -31,7 +31,7 @@ struct DeckZoning {
     /// left the seam. The strip is narrower than the seam's own floor, which is why collapsing is
     /// not just a drag to the minimum.
     var railWidth: CGFloat {
-        isRailCollapsed ? ArgoLayout.agentsRailCollapsedWidth : seams.rail.wrappedValue
+        isRailCollapsed ? ArgoAgentsRail.collapsedWidth : seams.rail.wrappedValue
     }
 
     /// A `Bool` rather than the evidence itself: the evidence is re-read out of a live feed every

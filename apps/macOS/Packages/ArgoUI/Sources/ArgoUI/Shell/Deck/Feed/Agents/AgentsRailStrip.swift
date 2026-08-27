@@ -64,7 +64,7 @@ struct AgentsRailStrip: View {
         expand: {},
         select: { _ in {} },
     )
-    .frame(width: ArgoLayout.agentsRailCollapsedWidth, height: 420)
+    .frame(width: ArgoAgentsRail.collapsedWidth, height: 420)
     .argoDeckSurface()
     .argoAppearance()
 }
@@ -76,7 +76,7 @@ struct AgentsRailStrip: View {
         expand: {},
         select: { _ in {} },
     )
-    .frame(width: ArgoLayout.agentsRailCollapsedWidth, height: 420)
+    .frame(width: ArgoAgentsRail.collapsedWidth, height: 420)
     .argoDeckSurface()
     .argoAppearance()
 }

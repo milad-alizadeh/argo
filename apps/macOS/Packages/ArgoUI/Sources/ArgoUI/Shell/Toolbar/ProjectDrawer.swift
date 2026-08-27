@@ -24,7 +24,7 @@ struct ProjectDrawer: View {
         // all start at the same edge.
         .padding(.horizontal, ArgoSpacing.snug)
         .padding(.bottom, ArgoSpacing.snug)
-        .frame(width: ArgoLayout.projectDrawerWidth)
+        .frame(width: ArgoToolbarVessel.projectDrawerWidth)
         // NO ground of its own, of any kind. A popover IS the system's glass, so anything drawn
         // behind this content is a second material inside the same panel — and the popover window
         // is wider than this content, so even a `glassEffect` shows as a rim around a second sheet.

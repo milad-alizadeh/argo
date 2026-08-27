@@ -44,7 +44,7 @@ public struct ConnectPanel: View {
                 .padding(.horizontal, ArgoSpacing.section)
                 .padding(.bottom, ArgoSpacing.section)
         }
-        .frame(width: ArgoLayout.connectPanelWidth, alignment: .leading)
+        .frame(width: ArgoConnectPanel.width, alignment: .leading)
     }
 
     @ViewBuilder private var rows: some View {

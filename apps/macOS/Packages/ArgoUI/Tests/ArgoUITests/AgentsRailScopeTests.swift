@@ -81,7 +81,7 @@ struct AgentsRailScopeTests {
     func `a collapsed rail takes its strip's width rather than the seam's`() {
         let collapsed = zoning(feed: working, agents: FeedAgents.all(in: working), collapsed: true)
 
-        #expect(collapsed.railWidth == ArgoLayout.agentsRailCollapsedWidth)
+        #expect(collapsed.railWidth == ArgoAgentsRail.collapsedWidth)
         #expect(collapsed.railWidth < ArgoLayout.railWidths.lowerBound)
     }
 
@@ -148,7 +148,7 @@ struct AgentsRailScopeTests {
             agents: agents,
             open: nil,
             seams: DeckSeams(
-                rail: .constant(ArgoLayout.agentsRailWidth),
+                rail: .constant(ArgoAgentsRail.width),
                 panel: .constant(nil),
             ),
             isRailCollapsed: collapsed,

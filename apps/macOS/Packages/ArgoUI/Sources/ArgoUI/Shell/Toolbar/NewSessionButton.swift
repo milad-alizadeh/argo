@@ -33,8 +33,8 @@ struct NewSessionButton: View {
                 //
                 // On the CONTAINER and not on either mark, so the swap below cannot move the bar.
                 .frame(
-                    width: ArgoLayout.toolbarVesselHeight,
-                    height: ArgoLayout.toolbarVesselHeight,
+                    width: ArgoToolbarVessel.height,
+                    height: ArgoToolbarVessel.height,
                 )
                 .contentShape(.circle)
                 .glassEffect(in: .circle)

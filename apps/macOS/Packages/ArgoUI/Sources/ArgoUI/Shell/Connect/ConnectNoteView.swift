@@ -46,7 +46,7 @@ struct ConnectNoteView: View {
         }
     }
     .formStyle(.grouped)
-    .frame(width: ArgoLayout.connectPanelWidth)
+    .frame(width: ArgoConnectPanel.width)
     .argoAppearance()
 }
 
@@ -60,7 +60,7 @@ struct ConnectNoteView: View {
         ),
         provider: .github,
     ))
-    .frame(width: ArgoLayout.connectPanelWidth)
+    .frame(width: ArgoConnectPanel.width)
     .padding(ArgoSpacing.region)
     .argoAppearance()
 }

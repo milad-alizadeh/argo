@@ -14,7 +14,7 @@ struct ToolbarSegmentTests {
     @Test
     func `a mark's wash nests concentrically inside the vessel`() {
         let capRadius = ToolbarSegment.markSlotHeight / 2
-        let vesselRadius = ArgoLayout.toolbarVesselHeight / 2
+        let vesselRadius = ArgoToolbarVessel.height / 2
 
         #expect(capRadius + ArgoSpacing.snug == vesselRadius)
     }
@@ -23,7 +23,7 @@ struct ToolbarSegmentTests {
     /// off the vertical, which the slot's height decides, against the horizontal the vessel sets.
     @Test
     func `a mark's wash is held off the rim by the same inset on every side`() {
-        let verticalInset = (ArgoLayout.toolbarVesselHeight - ToolbarSegment.markSlotHeight) / 2
+        let verticalInset = (ArgoToolbarVessel.height - ToolbarSegment.markSlotHeight) / 2
 
         #expect(verticalInset == ArgoSpacing.snug)
     }

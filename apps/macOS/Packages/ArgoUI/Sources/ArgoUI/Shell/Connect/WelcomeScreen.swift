@@ -42,7 +42,7 @@ struct WelcomeScreen: View {
             }
         }
         .padding(ArgoSpacing.region)
-        .frame(width: ArgoLayout.connectPanelWidth, alignment: .leading)
+        .frame(width: ArgoConnectPanel.width, alignment: .leading)
     }
 }
 

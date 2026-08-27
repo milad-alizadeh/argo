@@ -59,5 +59,5 @@ guided`, the fixture `header/guide.png` is drawn from. `contextGuideUnread` rend
 over a Session nothing could be read off, where the block collapses to its one permanent row — the
 state the happy path cannot show.
 
-**Contract:** one promotion, `ArgoLayout.contextGuideTermWidth` 96. See the design's *Contract
+**Contract:** one promotion, `ArgoContextBar.guideTermWidth` 96. See the design's *Contract
 changes*.

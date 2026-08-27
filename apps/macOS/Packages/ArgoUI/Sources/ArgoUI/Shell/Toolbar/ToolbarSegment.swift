@@ -17,7 +17,7 @@ struct ToolbarSegment: ViewModifier {
     /// That is what makes the wash's end caps concentric with the vessel's own — the cap radius is
     /// half this, and half this plus the inset is the vessel's radius. Any other height and the two
     /// curves disagree, which is what a reader sees as a mismatched corner radius (#690).
-    static let markSlotHeight = ArgoLayout.toolbarVesselHeight - 2 * ArgoSpacing.snug
+    static let markSlotHeight = ArgoToolbarVessel.height - 2 * ArgoSpacing.snug
 
     /// Wider than it is tall, by that same inset. A square pinched the widest mark against its own
     /// wash: `ArgoGlyph` fixes HEIGHT and lets width follow, and `apple.terminal` is a broad mark.

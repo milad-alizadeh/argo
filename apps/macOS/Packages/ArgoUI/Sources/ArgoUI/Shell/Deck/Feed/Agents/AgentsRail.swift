@@ -109,7 +109,7 @@ struct AgentsRail: View {
             readings: AgentsRailFixture.readings,
         ),
     )
-    .frame(width: ArgoLayout.agentsRailWidth, height: 420)
+    .frame(width: ArgoAgentsRail.width, height: 420)
     .argoDeckSurface()
     .argoAppearance()
 }
@@ -122,7 +122,7 @@ struct AgentsRail: View {
         agents: Array(FeedAgents.all(in: FeedProjection.previewRows).prefix(1)),
         control: AgentsRailControl(scope: $scope, isCollapsed: $isCollapsed),
     )
-    .frame(width: ArgoLayout.agentsRailWidth, height: 420)
+    .frame(width: ArgoAgentsRail.width, height: 420)
     .argoDeckSurface()
     .argoAppearance()
 }
@@ -141,7 +141,7 @@ struct AgentsRail: View {
             readings: AgentsRailFixture.readings,
         ),
     )
-    .frame(width: ArgoLayout.agentsRailWidth, height: 420)
+    .frame(width: ArgoAgentsRail.width, height: 420)
     .argoDeckSurface()
     .argoAppearance()
 }
@@ -158,7 +158,7 @@ struct AgentsRail: View {
             readings: AgentsRailFixture.readings,
         ),
     )
-    .frame(width: ArgoLayout.agentsRailCollapsedWidth, height: 420)
+    .frame(width: ArgoAgentsRail.collapsedWidth, height: 420)
     .argoDeckSurface()
     .argoAppearance()
 }

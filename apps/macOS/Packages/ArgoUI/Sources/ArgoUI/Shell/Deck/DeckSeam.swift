@@ -72,7 +72,7 @@ extension EnvironmentValues {
 }
 
 #Preview("Deck seam — a rail the reader can widen") {
-    @Previewable @State var width: CGFloat = ArgoLayout.agentsRailWidth
+    @Previewable @State var width: CGFloat = ArgoAgentsRail.width
 
     HStack(spacing: ArgoSpacing.flush) {
         DeckSlot(zone: .rail)

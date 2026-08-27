@@ -35,9 +35,9 @@ struct SessionsDeckTests {
 
     @Test
     func `the feed keeps the widest share of the row at the narrowest deck`() {
-        let beside = narrowestDeckWidth - ArgoLayout.agentsRailWidth - ArgoLayout.seamGrabWidth
+        let beside = narrowestDeckWidth - ArgoAgentsRail.width - ArgoLayout.seamGrabWidth
         let lane = ArgoLayout.minimapLaneWidth(sharing: beside)
-        #expect(beside - lane > ArgoLayout.agentsRailWidth)
+        #expect(beside - lane > ArgoAgentsRail.width)
         #expect(beside - lane > lane)
     }
 
@@ -112,7 +112,7 @@ struct SessionsDeckTests {
 
     @Test
     func `the lane stays a lane rather than becoming a second rail`() {
-        #expect(ArgoLayout.minimapLaneWidths.upperBound < ArgoLayout.agentsRailWidth / 2)
+        #expect(ArgoLayout.minimapLaneWidths.upperBound < ArgoAgentsRail.width / 2)
     }
 
     /// The lane is a share of the reading it maps, so its compression holds steady across the whole

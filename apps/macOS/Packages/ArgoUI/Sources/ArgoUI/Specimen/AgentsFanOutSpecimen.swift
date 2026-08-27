@@ -38,7 +38,7 @@ struct AgentsFanOutSpecimen: View {
     }
 
     private var width: CGFloat {
-        isCollapsed ? ArgoLayout.agentsRailCollapsedWidth : ArgoLayout.agentsRailWidth
+        isCollapsed ? ArgoAgentsRail.collapsedWidth : ArgoAgentsRail.width
     }
 }
 
