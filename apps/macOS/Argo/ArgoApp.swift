@@ -141,7 +141,9 @@ struct ArgoApp: App {
                     await accounts.pointed(at: cockpit.activeRecord)
                 }
             },
-            connectAccount: { provider in accounts.connect(provider) },
+            connectAccount: { provider, port in accounts.connect(provider, for: port) },
+            chooseAccount: { port, account in accounts.choose(port: port, account: account) },
+            cancelChoice: { Task { await accounts.cancelChoice() } },
             bindPort: { binding in Task { await accounts.bind(binding) } },
             unbindPort: { port in Task { await accounts.unbind(port) } },
             stopWaiting: { Task { await accounts.stopWaiting() } },

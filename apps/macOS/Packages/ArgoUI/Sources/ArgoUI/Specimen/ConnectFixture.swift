@@ -110,6 +110,52 @@ enum ConnectFixture {
         mode: .settings(agent: .claude),
     )
 
+    /// An identity just authorized, its repositories on the way. The state the device-code card
+    /// hands over to (#821).
+    static let connecting = ConnectReading(
+        folder: folder,
+        accounts: [personal],
+        scopes: ConnectScopes(port: .workItem, accountID: personal.id, state: .loading),
+    )
+
+    /// The repositories, listed. The row underneath still has to say which identity they came from.
+    static let choosing = ConnectReading(
+        folder: folder,
+        accounts: [personal],
+        scopes: ConnectScopes(
+            port: .workItem,
+            accountID: personal.id,
+            state: .listed(
+                ["milad-alizadeh/argo", "milad-alizadeh/dotfiles", "trili/cockpit"],
+                truncated: false,
+            ),
+        ),
+    )
+
+    /// The listing GitHub would not answer. No field to type into: a scope typed past a failed read
+    /// is a guess with a button on it.
+    static let scopesUnreadable = ConnectReading(
+        folder: folder,
+        accounts: [personal],
+        scopes: ConnectScopes(
+            port: .workItem,
+            accountID: personal.id,
+            state: .unreadable("GitHub could not be reached."),
+        ),
+    )
+
+    /// The grant itself refused. Retrying reuses the same token, so the picker offers the one
+    /// repair that can work.
+    static let scopesUnauthorized = ConnectReading(
+        folder: folder,
+        accounts: [personal],
+        scopes: ConnectScopes(
+            port: .workItem,
+            accountID: personal.id,
+            state: .unauthorized,
+        ),
+    )
+
     /// One panel per state it can be in, each carrying the name it renders under.
     static let states: [(name: String, reading: ConnectReading)] = [
         ("connectFresh", fresh),
@@ -117,6 +163,10 @@ enum ConnectFixture {
         ("connectPartly", partly),
         ("connectWired", wired),
         ("connectWaiting", waiting),
+        ("connectConnecting", connecting),
+        ("connectChoosing", choosing),
+        ("connectScopesUnreadable", scopesUnreadable),
+        ("connectScopesUnauthorized", scopesUnauthorized),
         ("connectRefused", refused),
         ("connectBroken", broken),
         ("connectPluginMissing", pluginMissing),

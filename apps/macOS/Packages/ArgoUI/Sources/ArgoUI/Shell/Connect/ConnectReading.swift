@@ -15,6 +15,9 @@ public struct ConnectReading: Equatable, Sendable {
     public let companion: ConnectCompanion
     /// A grant waiting on the browser, absent the rest of the time.
     public let challenge: ConnectChallenge?
+    /// The one port whose scope picker is open, and absent while none is. One at a time by
+    /// construction: two open pickers would be two half-made Bindings on one panel.
+    public let scopes: ConnectScopes?
     /// The last thing that did not work. Cleared by the app the moment the user acts again, so a
     /// note never outlives the attempt it belongs to.
     public let note: ConnectNote?
@@ -33,6 +36,7 @@ public struct ConnectReading: Equatable, Sendable {
         ports: [ConnectPort] = [],
         companion: ConnectCompanion = .includedWithSpawns,
         challenge: ConnectChallenge? = nil,
+        scopes: ConnectScopes? = nil,
         note: ConnectNote? = nil,
         authorizable: [AccountProvider] = ConnectReading.authorizableToday,
         mode: ConnectPanelMode = .creating,
@@ -42,6 +46,7 @@ public struct ConnectReading: Equatable, Sendable {
         self.ports = ports
         self.companion = companion
         self.challenge = challenge
+        self.scopes = scopes
         self.note = note
         self.authorizable = authorizable
         self.mode = mode

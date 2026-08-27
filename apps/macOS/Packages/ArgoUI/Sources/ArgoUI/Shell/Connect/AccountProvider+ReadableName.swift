@@ -22,13 +22,4 @@ extension AccountProvider {
         case .linear: "Team"
         }
     }
-
-    /// The shape the scope is typed in, shown as a hint rather than validated here: what a scope
-    /// means is the adapter's, and checking it is the provider's at bind time.
-    var scopeHint: String {
-        switch self {
-        case .github: "owner/repository"
-        case .linear: "team key"
-        }
-    }
 }

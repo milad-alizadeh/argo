@@ -7,7 +7,6 @@ public enum ArgoSymbol {
     public static let addProject = "plus"
     public static let projectMenu = "ellipsis"
     public static let revealInFinder = "arrow.up.forward.app"
-    public static let locateProject = "questionmark.folder"
     public static let removeProject = "minus.circle"
     public static let projectSettings = "gearshape"
     public static let newSession = "square.and.pencil"

@@ -76,8 +76,8 @@ struct ConnectPanelProjectionTests {
     }
 
     @Test
-    func `an unbound port says what connecting one would show`() throws {
-        let panel = ConnectPanelProjection.panel(from: ConnectFixture.partly)
+    func `a port with no account behind it says what connecting one would show`() throws {
+        let panel = ConnectPanelProjection.panel(from: ConnectFixture.folderOnly)
         let pulls = try #require(panel.ports.last)
 
         #expect(pulls.row.detail.contains("pull requests"))

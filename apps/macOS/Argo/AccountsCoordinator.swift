@@ -20,7 +20,7 @@ final class AccountsCoordinator {
     /// the failure exactly while the user is not looking at the place that reports it.
     private(set) var connections = ConnectionHealthReading.quiet
 
-    /// Reached from `AccountsCoordinator+Grant` and `+Health`, which is why these are not
+    /// Reached from `AccountsCoordinator+Grant` and `+Scopes`, which is why these are not
     /// `private`: `private` in Swift is file-scoped.
     let accounts: AccountRegistryStore
     let bindings: ProjectBindings
@@ -43,6 +43,11 @@ final class AccountsCoordinator {
     var project: ProjectRecord?
     private var mode: ConnectPanelMode = .creating
     var challenge: ConnectChallenge?
+    /// The one open scope picker, reached from `AccountsCoordinator+Scopes`.
+    var scopes: ConnectScopes?
+    /// The provider read filling it, held so a second choice cannot leave two answers racing for
+    /// one picker.
+    var listing: Task<Void, Never>?
     private var note: ConnectNote?
     /// The wait on a grant, held so it can be stopped and so a second `Connect` cannot leave two
     /// polls running against one panel.
@@ -83,6 +88,7 @@ final class AccountsCoordinator {
 
     func close() {
         cancelWait()
+        closePicker()
         isOpen = false
         reading = nil
         startsAtWelcome = false
@@ -114,6 +120,9 @@ final class AccountsCoordinator {
         do {
             try await bindings.bind(binding, to: project.id)
             note = nil
+            // The choice was taken. Leaving the picker open would offer the act again under a row
+            // that already says it happened.
+            closePicker()
         } catch let refusal as BindingRefusal {
             note = ConnectNote(refusal: refusal)
         } catch {
@@ -122,11 +131,18 @@ final class AccountsCoordinator {
         await refresh()
     }
 
+    /// Point the panel and the chip at a Project, or at none. Raised on every change of active
+    /// Project, because connection health is per-project truth surfaced for the active Project
+    /// only: a background Project whose provider died stays silent, and you learn on switch.
+    func point(at project: ProjectRecord?) async {
+        self.project = project
+        await refresh()
+    }
+
     /// How the active Project's Work Item port reads, for a reader that is not the panel (#745).
     /// The same resolve the panel and the chip make, so no third answer about one Binding exists.
     func workItemBinding() async -> BindingResolution {
-        guard let project else { return .unbound }
-        return await bindings.resolve(port: .workItem, for: project.id)
+        await bindings.resolve(port: .workItem, forProject: project?.id)
     }
 
     func unbind(_ port: AccountPort) async {
@@ -144,23 +160,15 @@ final class AccountsCoordinator {
     /// it, so the chip is rebuilt whether or not the panel is up — and the two can never disagree
     /// about which Account a port reads through, because they are the same read.
     func refresh() async {
-        let ports = await resolvedPorts()
-        connections = await healthReading(over: ports)
+        let ports = await ConnectPort.all(of: project?.id, through: bindings)
+        // The fold is `ArgoUI`'s, where a test can reach it (ADR-0022). Only the registry read is
+        // the coordinator's.
+        connections = await ConnectionHealthReading.over(ports, from: .init(
+            registry: accounts.load(), ledger: health, projectID: project?.id,
+        ))
         await workItems.point(workItemBinding(), at: project?.id)
         guard isOpen else { return }
         await show(ports: ports)
-    }
-
-    private func resolvedPorts() async -> [ConnectPort] {
-        guard let project else { return [] }
-        var resolved: [ConnectPort] = []
-        for port in AccountPort.allCases {
-            await resolved.append(ConnectPort(
-                port: port,
-                resolution: bindings.resolve(port: port, for: project.id),
-            ))
-        }
-        return resolved
     }
 
     private func show(ports: [ConnectPort]) async {
@@ -170,6 +178,7 @@ final class AccountsCoordinator {
             ports: ports,
             companion: companionStanding(),
             challenge: challenge,
+            scopes: scopes,
             note: note,
             authorizable: ConnectReading.authorizableToday,
             mode: mode,
