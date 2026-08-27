@@ -13,14 +13,40 @@ enum WorkRoomProjection {
         let provider: WorkProvider?
         let backlog: [Row]
         let ticket: Ticket?
+        /// The Project the window is scoped to. Carried for the vacancy pages, which name it.
+        let project: String?
+        /// Whether the provider served anything open AT ALL. A fact about the whole open set, which
+        /// no other field here can answer: `backlog` is already filtered to the view on screen.
+        let hasOpenWork: Bool
 
         func view(_ kind: WorkView) -> ViewReading? {
             views.first { $0.id == kind }
         }
 
+        /// Which of the room's two nothings this room is, and `nil` where it has something to draw
+        /// (#818). Both halves read this one, so the sidebar and the deck cannot disagree.
+        var vacancy: Vacancy? {
+            guard let provider else { return .unbound }
+            guard !hasOpenWork else { return nil }
+            return .nothingOpen(provider: provider.name)
+        }
+
         /// Nothing read, and nothing bound. The room a deck draws before anything has answered —
         /// distinct from a provider that answered with an empty backlog, which keeps its views.
-        static let vacant = Room(views: [], charts: [], provider: nil, backlog: [], ticket: nil)
+        static func vacant(in project: String? = nil) -> Room {
+            Room(
+                views: [], charts: [], provider: nil, backlog: [], ticket: nil, project: project,
+                hasOpenWork: false,
+            )
+        }
+    }
+
+    /// The room with nothing to draw, and which nothing it is (#818). `unbound` names no count
+    /// anywhere — nothing was read, so every number would be invented; `nothingOpen` names the
+    /// provider that answered.
+    enum Vacancy: Sendable, Equatable {
+        case unbound
+        case nothingOpen(provider: String)
     }
 
     /// One sidebar view and what it holds.
@@ -53,7 +79,7 @@ enum WorkRoomProjection {
     /// (#272). Four views all reading zero would say the backlog is clear, which is a claim nobody
     /// has the standing to make when nobody was asked.
     static func room(from reading: WorkReading, in view: WorkView = .allOpen) -> Room {
-        guard reading.provider != nil else { return .vacant }
+        guard reading.provider != nil else { return .vacant(in: reading.project) }
         let open = reading.items.filter { $0.closure == .open }
         let closed = Set(reading.items.filter { $0.closure != .open }.map(\.number))
         let shown = items(of: open, in: view, claimed: reading.claimed)
@@ -64,6 +90,8 @@ enum WorkRoomProjection {
             backlog: shown
                 .map { row(for: $0, delivery: reading.deliveries[$0.number], closed: closed) },
             ticket: ticket(in: reading),
+            project: reading.project,
+            hasOpenWork: !open.isEmpty,
         )
     }
 }

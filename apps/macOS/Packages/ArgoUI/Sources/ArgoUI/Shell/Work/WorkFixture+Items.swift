@@ -98,4 +98,13 @@ extension WorkFixture {
     private static func closed(_ number: Int, _ title: String) -> WorkItem {
         WorkItem(number: number, title: title, status: "Done", closure: .resolved)
     }
+
+    /// The same ticket, finished. Everything but the status word survives: a closed parent still
+    /// has the children a chart counts, and closing a ticket does not strip its labels.
+    static func resolved(_ item: WorkItem) -> WorkItem {
+        WorkItem(
+            number: item.number, title: item.title, status: "Done", closure: .resolved,
+            labels: item.labels, children: item.children, blockedBy: item.blockedBy,
+        )
+    }
 }

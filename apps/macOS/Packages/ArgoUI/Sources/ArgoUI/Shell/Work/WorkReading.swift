@@ -33,6 +33,10 @@ struct WorkReading: Sendable {
     /// The bound provider the sidebar's foot names. Absent while nothing is bound, and the foot
     /// goes with it rather than drawing an empty one.
     var provider: WorkProvider?
+    /// The Project the window is scoped to, by its own name. Read only by the room's vacancy pages,
+    /// which name it — every other surface here is already inside one Project's window and would be
+    /// repeating itself.
+    var project: String?
     /// Which ticket the deck opens on.
     var showing: Int?
 

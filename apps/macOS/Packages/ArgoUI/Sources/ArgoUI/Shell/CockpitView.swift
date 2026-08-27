@@ -24,6 +24,9 @@ public struct CockpitView: View {
     /// above the deck's per-Session identity: the deck is rebuilt whole on a switch, so a draft
     /// kept any lower would leave with the selection rather than be waiting on the way back (#539).
     @State var drafts = ComposerDrafts()
+    /// Where the reader left the split view's leading column. Held rather than left to the platform
+    /// because one room takes it away: see `sidebarColumn`.
+    @State var sidebarVisibility = NavigationSplitViewVisibility.automatic
 
     public init(
         presentation: CockpitPresentation,
@@ -116,7 +119,7 @@ public struct CockpitView: View {
     public var body: some View {
         @Bindable var navigation = navigation
 
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: sidebarColumn) {
             sidebar(navigation: navigation)
                 .navigationSplitViewColumnWidth(
                     min: ArgoLayout.sidebarMinimumWidth,

@@ -3,11 +3,11 @@
 What `design-to-code` extracted while building [`cockpit-work-room.md`](cockpit-work-room.md), and
 what it deliberately left inline. One row per component the assembled screen forced out.
 
-**Scope: #812 and #815** — the views sidebar, the flat backlog list and the ticket (#812), then the
-ticket's fact strip and its three sections (#815). The design freezes 31 names across the whole
-room; the fifteen below are the ones these tickets built. The rest (the hero, the toolbar, the
-tree, the vacancy panel, the Route) belong to their own tickets and are absent rather than
-stubbed.
+**Scope: #812, #815 and #818** — the views sidebar, the flat backlog list and the ticket (#812),
+then the ticket's fact strip and its three sections (#815), then the room's two vacancy pages
+(#818). The design freezes 31 names across the whole room; the sixteen below are the ones these
+tickets built. The rest (the hero, the toolbar, the tree, the Route) belong to their own tickets
+and are absent rather than stubbed.
 
 ## Extracted
 
@@ -24,6 +24,7 @@ stubbed.
 | `TicketDetail` | organism | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket?`, `open: (Int) -> Void` (#815) | `TicketHead`, `TicketFactStrip`, `TicketBody` | `TicketDetail` |
 | `TicketHead` | molecule | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket` | `StatusPair` | `TicketHead` |
 | `StatusPair` | atom | `ArgoUI/Shell/Work/Detail/` | `word: String`, `bucket: WorkItemState` (4 states) | — | `StatusPair` |
+| `WorkRoomVacancy` | molecule | `ArgoUI/Shell/Work/` | `vacancy: WorkRoomProjection.Vacancy` (`unbound` \| `nothingOpen(provider:)`), `project: String?`, `connect: () -> Void` | stock `ContentUnavailableView` | `.vacant` |
 
 ### #815 — the fact strip and the sections
 
@@ -72,6 +73,14 @@ Two names the design does not freeze were extracted anyway:
   this is its fourth caller.
 - **`TicketLinkRow`.** Private to `TicketLinkList`, its only owner. Same tier, one caller: it is
   that molecule's part, not its peer (`ui-components.md` — naming follows the tree).
+- **Both vacancy pages, as separate views.** ONE `WorkRoomVacancy` serves them, because the point of
+  the pair is the contrast: two views would let the two sentences drift until only one of them still
+  said which nothing it was. The design freezes one name for both, and this is why. Which of the two
+  it is is decided in `WorkRoomProjection.Vacancy`, beside the counts it is judged against, and not
+  in the view.
+- **The unbound room's missing sidebar.** A `NavigationSplitViewVisibility` in `CockpitView`, not a
+  view — the column, its divider and its toggle are the split view's, and an `EmptyView` in the slot
+  leaves all three drawn.
 
 ## Where the design and the code disagree
 
@@ -89,6 +98,17 @@ in the design itself; the first two stand.
   them in both views. Fixed at the source: `unblocked` now excludes them, the design records the
   partition rule, and the nine renders that draw a non-zero `Unblocked` were re-shot. Both the
   render and the code now read 12 / 4 / 3 / 8.
+
+A fourth, found by `pixel-review` on #818's pair and left standing:
+
+- **The provider chip's dot is grey in the build and mint in `empty.png`.** The dot is the Binding's
+  `ArgoOperationalState`, and the contract defines mint — `state.running` — as *a turn is in
+  progress*. A Binding sitting there having answered is `idle`, "the quiet end of the vocabulary",
+  and painting it mint would assert a poll nobody is running. The design's green is the web's
+  connected-light convention, which this palette deliberately does not carry: `nil` is already the
+  Binding Argo cannot establish, and `idle` is the one it can. #818's own criterion — the chip is
+  quiet when unbound and present when bound — is about the chip's presence, which is what the
+  design's prose says too ("the connection chip goes quiet with it"), and it holds.
 
 ## What #815 decided that the design left open
 
@@ -149,3 +169,23 @@ backlog to something nobody asked for.
 The render carries the whole room. This ticket's specimen reproduces its sidebar, its backlog list
 and its ticket pane. The priority headers, the twists, the Next-up hero and the room's toolbar are
 absent because they are other tickets — not because they drifted.
+
+## The two vacancies (#818)
+
+`unboundWorkRoom` and `emptyWorkBacklog` are the renders, and both reproduce their design PNG's own
+line breaks at a 1280×800 window. What is absent from `empty.png` is the Next-up hero's
+backlog-clear tier and the toolbar's surviving `New ticket` — both other tickets.
+
+Three things this ticket had to settle that the renders do not state:
+
+- **Where the vacancy is judged.** Over the whole open set, never over `backlog` — which is already
+  filtered to the open view, so opening `Blocked` with nothing blocked would otherwise announce that
+  the backlog is clear. `Room.hasOpenWork` is that fact, and it is the one thing the room's other
+  fields cannot answer.
+- **What a finished backlog IS.** Every item closed, not an absence of items. `WorkFixture
+  .answeredEmpty` is now the same twelve tickets resolved, which is what makes `empty.png`'s charts
+  read `0` rather than vanish. A reading with no items at all reaches the same page — the two are
+  one state, not two — but it cannot draw the charts the design's render carries.
+- **Who the sentences name.** The provider that answered, and the Project the window is scoped to.
+  `WorkReading.project` carries the second, and the shell overrides the fixture's copy of it with
+  the window's real active Project — the one fact a fixture does not get to invent.

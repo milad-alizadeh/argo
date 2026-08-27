@@ -1,15 +1,16 @@
 import SwiftUI
 
-/// The Work room (#812): the room at rest, its two room-level degradations, and the one mark it
-/// spends on a Delivery.
+/// The Work room (#812, #815, #818): the room at rest, its two vacancies, the ticket's own states,
+/// and the marks it spends on a Delivery.
 extension SpecimenRegistry {
     static let work: [SpecimenEntry] = [
         SpecimenEntry("workRoom") { WorkRoomSpecimen() },
-        // Nothing bound: no views, no list, no ticket. Distinct from the entry below, and
-        // deliberately so — conflating the two tells a reader their backlog is empty when in fact
-        // nobody asked.
+        // Nothing bound: the room hides WHOLE — no sidebar, no list, no ticket, and a panel saying
+        // nothing has been read rather than that there is nothing. `unbound.png`.
         SpecimenEntry("unboundWorkRoom") { WorkPanesSpecimen(reading: WorkFixture.unbound) },
-        // The provider answered, and the answer was nothing: the views stay, all reading zero.
+        // The provider answered, and the answer was nothing: the sidebar and its views stay, all
+        // reading zero, and the deck says WHO answered. `empty.png`. The pair is the point — either
+        // page alone lets a reader read "empty backlog" off a room nobody asked (#818).
         SpecimenEntry("emptyWorkBacklog") { WorkPanesSpecimen(reading: WorkFixture.answeredEmpty) },
         // The view is what the DECK draws, not just a number in the rail — the one render that
         // shows the sidebar's selection reaching the pane beside it.
