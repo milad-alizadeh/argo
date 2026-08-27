@@ -4,9 +4,6 @@ import Foundation
 import Testing
 
 /// What a write control asks the reading, and the three answers it can get.
-///
-/// A caller needs more than a Bool: a refusal has to name the identity to reconnect, because a
-/// provider has N grants on a machine and "reconnect GitHub" points at none of them.
 @Suite("Write admission")
 struct WriteAdmissionTests {
     private let work = AccountRecord(
@@ -21,8 +18,6 @@ struct WriteAdmissionTests {
         #expect(reading(.healthy).writes(through: .workItem) == .admitted)
     }
 
-    /// §7 of the failure spec: a failing read does not prove a write will fail, so the control
-    /// stays live and the attempt reports the real reason.
     @Test
     func `a stale port is still written through`() {
         let stale = BindingHealth(fault: .read(.rateLimited), lastSuccess: now)
@@ -37,15 +32,14 @@ struct WriteAdmissionTests {
         #expect(reading(refused).writes(through: .workItem) == .refused(work))
     }
 
-    /// A port with nothing bound to it is a fully-onboarded state, not a refusal. There is no
-    /// provider to write through, so there is no control to grey out either.
+    /// A port the reading has no connection for is a fully-onboarded state, not a refusal — and
+    /// the same answer covers a Binding that has come undone, which the fold drops for the same
+    /// reason: there is no control to grey out because there is no control.
     @Test
-    func `an unbound port has no write to admit`() {
-        #expect(ConnectionHealthReading.quiet.writes(through: .workItem) == .unbound)
+    func `a port with no binding has no write to admit`() {
+        #expect(ConnectionHealthReading.quiet.writes(through: .workItem) == .noBinding)
     }
 
-    /// The ports fail independently, which is what keeping health per Binding is for: a dead Work
-    /// Item grant leaves the code host writable.
     @Test
     func `one refused port leaves the other writable`() {
         let reading = ConnectionHealthReading(connections: [
