@@ -18,6 +18,9 @@ enum WorkRoomProjection {
         /// Whether the provider served anything open AT ALL. A fact about the whole open set, which
         /// no other field here can answer: `backlog` is already filtered to the view on screen.
         let hasOpenWork: Bool
+        /// What the sidebar's hero states. Absent with nothing bound, where the room hides whole —
+        /// a backlog-clear sentence under an unbound provider would answer a question nobody asked.
+        let nextUp: NextUp?
 
         func view(_ kind: WorkView) -> ViewReading? {
             views.first { $0.id == kind }
@@ -36,7 +39,7 @@ enum WorkRoomProjection {
         static func vacant(in project: String? = nil) -> Room {
             Room(
                 views: [], charts: [], provider: nil, backlog: [], ticket: nil, project: project,
-                hasOpenWork: false,
+                hasOpenWork: false, nextUp: nil,
             )
         }
     }
@@ -92,6 +95,9 @@ enum WorkRoomProjection {
             ticket: ticket(in: reading),
             project: reading.project,
             hasOpenWork: !open.isEmpty,
+            // Over the whole open set, never the view on screen: the hero answers "what should I
+            // pick up", and opening `Blocked` must not turn that into "nothing is unblocked".
+            nextUp: reading.nextUp(of: open),
         )
     }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The Work room (#812, #815, #816, #818): the room at rest, its two vacancies, the ticket's own
-/// states, the marks it spends on a Delivery, and the toolbar row's three.
+/// The Work room (#812, #815, #816, #817, #818): the room at rest, its two vacancies, the ticket's
+/// own states, the hero's tiers, the marks it spends on a Delivery, and the toolbar row's three.
 extension SpecimenRegistry {
     static let work: [SpecimenEntry] = [
         SpecimenEntry("workRoom") { WorkRoomSpecimen() },
@@ -17,6 +17,12 @@ extension SpecimenRegistry {
         SpecimenEntry("blockedWorkView") {
             WorkPanesSpecimen(reading: WorkFixture.reading, opening: .blocked)
         },
+        // The hero's three degraded tiers and its one-chip state (#817). Each is its own reading
+        // rather than its own card: the tier is arithmetic over the backlog, so a specimen that
+        // handed the card a literal would prove the card and not the room.
+        SpecimenEntry("nothingUnblocked") { WorkPanesSpecimen(reading: WorkFixture.poolBlocked) },
+        SpecimenEntry("everythingRunning") { WorkPanesSpecimen(reading: WorkFixture.poolRunning) },
+        SpecimenEntry("oneEarnedChip") { WorkPanesSpecimen(reading: WorkFixture.oneChip) },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
         // A parent, deep: two Deliveries stacked, nine children rolled up over the five that are
         // open, and six blockers of which four are already closed and still named.

@@ -5,6 +5,8 @@ import SwiftUI
 /// it fits a 280pt rail where nine of twelve real ticket titles truncated
 /// (`cockpit-work-room.md`).
 struct WorkSidebar: View {
+    @Environment(\.argo) private var argo
+
     let room: WorkRoomProjection.Room
     /// Which room the strip is on. A binding, because the strip switches the whole window and this
     /// sidebar is only the pane it starts in.
@@ -20,6 +22,7 @@ struct WorkSidebar: View {
                     .previewSafeListRow()
                 backlogGroup
                 chartsGroup
+                hero
             }
             .listStyle(.sidebar)
             if let provider = room.provider {
@@ -36,6 +39,20 @@ struct WorkSidebar: View {
             }
         } header: {
             GroupLabel("Backlog")
+        }
+    }
+
+    /// The hero, below the views and inside the same scroll. UNTAGGED, like a chart row: it is a
+    /// card sitting on the rail rather than a fifth view, and a tag would let the arrow keys land
+    /// on it and filter the deck to nothing.
+    @ViewBuilder private var hero: some View {
+        if let nextUp = room.nextUp {
+            VStack(spacing: ArgoSpacing.flush) {
+                ArgoRule(ink: argo.color.edge.hairline)
+                NextUpCard(nextUp: nextUp)
+            }
+            .previewSafeListRow()
+            .listRowInsets(EdgeInsets())
         }
     }
 
