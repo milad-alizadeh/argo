@@ -9,6 +9,12 @@ public enum ArgoTypography {
         typeface: .interface, rung: .title3, weight: .semibold,
     )
 
+    /// The largest line the deck's CONTENT sets — a ticket's title (`cockpit-work-room.md`). One
+    /// rung over `identityHeading`, which is the largest line the window's chrome sets.
+    public static let sessionTitle = ArgoTextStyle(
+        typeface: .interface, rung: .title2, weight: .semibold,
+    )
+
     /// Sidebar and rail group labels.
     public static let sectionLabel = ArgoTextStyle(
         typeface: .interface, rung: .subheadline, weight: .semibold, tracking: 0.6,
@@ -56,6 +62,7 @@ public enum ArgoTypography {
     /// Every role, for contract assertions and the specimen.
     public static let all: [(name: String, style: ArgoTextStyle)] = [
         ("identityHeading", identityHeading),
+        ("sessionTitle", sessionTitle),
         ("sectionLabel", sectionLabel),
         ("badge", badge),
         ("windowTitle", windowTitle),

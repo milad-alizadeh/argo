@@ -29,6 +29,14 @@ public enum ArgoSymbol {
     /// rung.
     public static let disclosure = "chevron.right"
 
+    /// One mark per view in the Work room's sidebar (`cockpit-work-room.md`). Filled against
+    /// outlined tells the two halves of the open set apart at a glance; the shapes tell the four
+    /// views apart at any fill.
+    public static let allOpenView = "circle.fill"
+    public static let unblockedView = "circle"
+    public static let inProgressView = "diamond.fill"
+    public static let blockedView = "triangle"
+
     /// One mark per room, and since #690 the whole of what a room tab draws.
     ///
     /// `apple.terminal` is a terminal WINDOW. Bare `terminal` is `ran` below, the feed's mark for a

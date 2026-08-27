@@ -117,18 +117,12 @@ public struct CockpitView: View {
         @Bindable var navigation = navigation
 
         NavigationSplitView {
-            ShellSidebar(
-                presentation: presentation,
-                selection: $navigation.session,
-                archive: actions.setSessionArchived,
-                rename: actions.setSessionName,
-                renamingSessionID: $renamingSessionID,
-            )
-            .navigationSplitViewColumnWidth(
-                min: ArgoLayout.sidebarMinimumWidth,
-                ideal: ArgoLayout.sidebarIdealWidth,
-                max: ArgoLayout.sidebarMaximumWidth,
-            )
+            sidebar(navigation: navigation)
+                .navigationSplitViewColumnWidth(
+                    min: ArgoLayout.sidebarMinimumWidth,
+                    ideal: sidebarIdealWidth,
+                    max: ArgoLayout.sidebarMaximumWidth,
+                )
         } detail: {
             // Resolved once and handed to both: reading it a second time re-runs the selection
             // lookup and every projection behind it.
@@ -144,6 +138,9 @@ public struct CockpitView: View {
                 vessel: vessel,
                 intents: intents(for: vessel),
                 readings: readings,
+                work: work,
+                ticket: $navigation.ticket,
+                cockpitRoom: $navigation.room,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
             // this is the one view that holds the navigation.

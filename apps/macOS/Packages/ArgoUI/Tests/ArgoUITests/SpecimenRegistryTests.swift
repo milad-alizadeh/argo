@@ -61,6 +61,7 @@ struct SpecimenRegistryTests {
             SpecimenRegistry.commands,
             SpecimenRegistry.mentions,
             SpecimenRegistry.connect,
+            SpecimenRegistry.work,
         ]
 
         #expect(SpecimenRegistry.all.count == subjects.map(\.count).reduce(0, +))

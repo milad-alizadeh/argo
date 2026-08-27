@@ -9,6 +9,10 @@ public final class CockpitNavigationModel {
     /// The one field the app target touches: its Navigate menu sets the room.
     public var room: CockpitRoom = .sessions
 
+    /// The ticket the Work room is open on. Beside the Session and not inside it: a room keeps
+    /// where it was pointing while the reader is in another one.
+    var ticket: Int?
+
     /// The Session on screen. Every write but reconciliation's is somebody picking a row, which is
     /// why the setter records one.
     var session: CockpitPresentation.Session.ID? {
