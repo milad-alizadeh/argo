@@ -132,15 +132,15 @@ extension FeedTableCoordinator {
         }
     }
 
-    /// The rows the fresh reading added, and the one it rewrote. Appends are the live case and stay
-    /// appends — a reload would tear down every visible cell once per arriving row.
+    /// The rows the fresh reading added, and the ones it invalidated. Appends are the live case
+    /// and stay appends — a reload would tear down every visible cell once per arriving row.
     private func insert(_ delta: FeedTableDelta?) {
         guard let table, case let .append(arrived, rewritten) = delta else { return }
         if !arrived.isEmpty {
             table.insertRows(at: IndexSet(integersIn: arrived), withAnimation: [])
         }
-        if let rewritten {
-            refresh(rows: IndexSet(integer: rewritten), remeasuring: true)
+        if !rewritten.isEmpty {
+            refresh(rows: rewritten, remeasuring: true)
         }
     }
 

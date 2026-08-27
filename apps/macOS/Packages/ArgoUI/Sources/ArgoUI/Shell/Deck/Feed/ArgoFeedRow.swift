@@ -42,9 +42,12 @@ public enum ArgoFeedRow {
     /// The margin the lightbox leaves around a picture shown full size.
     public static let lightboxInset: CGFloat = ArgoSpacing.region
 
-    /// The square a prose row's copy chip is drawn in (#767) — a hit target that still fits the
-    /// corner of a paragraph.
+    /// The square a Turn's copy chip is drawn in (#767) — a hit target a glyph this quiet still
+    /// answers to.
     public static let copyChipSide: CGFloat = 24
+
+    /// Between the last line of a Turn's messages and the chip under it. Tighter than `gap`.
+    public static let copyChipStep: CGFloat = ArgoSpacing.tight
 
     /// The rung the feed's BODY is set on — prose and call lines alike. Markup keeps its own steps.
     public static let proseRung: ArgoTypeScale = .body
