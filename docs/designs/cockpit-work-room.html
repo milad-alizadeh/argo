@@ -897,7 +897,10 @@ const VIEWS = [
 function viewCount(k) {
   const t = visibleTickets();
   if (k === 'all')       return t.length;
-  if (k === 'unblocked') return t.filter(x => !x.by.length).length;
+  // NOT just "no edges": #160 and #185 are decisions awaiting an answer, which holds them up
+  // with no dependency edge to show for it. On edges alone they counted as unblocked AND as
+  // blocked, and the rail read 6 + 8 over 12 (#812).
+  if (k === 'unblocked') return t.filter(x => !x.by.length && x.bucket !== 'blocked').length;
   if (k === 'wip')       return t.filter(x => x.bucket === 'in progress').length;
   if (k === 'blocked')   return t.filter(x => x.bucket === 'blocked' || x.by.length).length;
   if (k === 'c607')      return t.filter(x => x.parent === '#607').length;

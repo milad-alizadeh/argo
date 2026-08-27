@@ -41,7 +41,8 @@ One name the design does not freeze was extracted anyway:
 
 ## Where the design and the code disagree
 
-Three, each a defect in the design rather than a decision made here:
+Three, each a defect in the design rather than a decision made here. The third was fixed
+in the design itself; the first two stand.
 
 - **`ArgoLayout.statusDotSize` does not exist.** The dot is `ArgoIconSize.statusDot`, same value
   (6), and the design names the wrong enum. No token moved.
@@ -49,9 +50,11 @@ Three, each a defect in the design rather than a decision made here:
   17-semibold an "exact tuple" of a role the contract never had; `identityHeading` is 15. Added as
   `interface · title2 · semibold` — a second contract promotion beside #813's `bodyHeading`, which
   the design *did* flag.
-- **The sidebar's counts do not add up in `rest.png`.** It shows 12 open, 6 unblocked, 8 blocked.
-  Unblocked and Blocked partition the open set, so the three cannot all hold. The code keeps the
-  partition and the fixture reads 12 / 4 / 3 / 8.
+- **The sidebar's counts did not add up.** `rest.png` read 12 open, 6 unblocked, 8 blocked —
+  #160 and #185 are `bucket:'blocked'` with no edges, so the design's own `viewCount` counted
+  them in both views. Fixed at the source: `unblocked` now excludes them, the design records the
+  partition rule, and the nine renders that draw a non-zero `Unblocked` were re-shot. Both the
+  render and the code now read 12 / 4 / 3 / 8.
 
 ## Not reproduced from `rest.png`
 

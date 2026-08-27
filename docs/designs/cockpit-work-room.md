@@ -58,6 +58,11 @@ Two groups of short names, a rule between them, the Next-up hero below, and the 
 at the foot.
 
 - **Backlog** — `All open`, `Unblocked`, `In progress`, `Blocked`, each with its count.
+  **`Unblocked` and `Blocked` partition the open set**, so the two always sum to `All open`.
+  Being held up is not the same as having an edge: #160 and #185 are decisions awaiting an
+  answer, with nothing in `blockedBy` to show for it. The first renders counted on edges
+  alone, so those two were counted twice and the rail read 6 + 8 over 12 — corrected in
+  `viewCount` and re-shot (#812). `In progress` cuts across both and is not part of the split.
 - **Charts** — one row per PRD-shaped parent (`#607 Wayfinder`, `#334 The Route`), the entry
   point to the Route.
 - **The room strip** sits at the top of the sidebar's scroll, under the titlebar rather than in
