@@ -5,6 +5,8 @@ import Testing
 struct ClaimLedgerTests {
     private let claim = SessionOwnership.ClaimID(value: "claim-1")
 
+    private let landed = CompanionOutcome(target: .code, reference: "abc123", summary: "landed")
+
     private func asking(_ toolName: String) -> PermissionRequest {
         PermissionRequest(id: "p-\(toolName)", toolName: toolName, target: .command(toolName))
     }
@@ -44,17 +46,53 @@ struct ClaimLedgerTests {
         #expect(ledger.facts(for: claim) == ClaimFacts())
     }
 
-    /// The gate is what died with the PTY. What the agent SAID happened, so an orphaned Session
-    /// keeps its CONVENTION reading.
+    /// What the agent PRODUCED happened, so an orphaned Session keeps saying so.
     @Test
-    func `withdrawing a claim keeps what its agent said`() {
+    func `withdrawing a claim keeps what its agent said it produced`() {
         let ledger = ClaimLedger()
-        ledger.record(.status(.running), for: claim)
+        ledger.record(.outcome(landed), for: claim)
         ledger.publish(waiting: [asking("Bash")], for: claim)
 
         ledger.withdraw(claim)
 
-        #expect(ledger.facts(for: claim).report?.status == .running)
+        #expect(ledger.facts(for: claim).report?.outcomes.count == 1)
+    }
+
+    /// A reported status is a standing claim about NOW, and the channel that stood behind it is
+    /// gone — so it goes with the channel and the transcript's DERIVED reading answers instead.
+    /// Kept, it renders a Session as `running` long after its PTY exited (#799).
+    @Test
+    func `withdrawing a claim retires the status its agent reported`() {
+        let ledger = ClaimLedger()
+        ledger.record(.status(.running), for: claim)
+        // An outcome so the report outlives the withdraw: without one the claim leaves the ledger
+        // entirely and a `nil` report would pass this whether or not the status was retired.
+        ledger.record(.outcome(landed), for: claim)
+        ledger.publish(waiting: [asking("Bash")], for: claim)
+
+        ledger.withdraw(claim)
+
+        let report = ledger.facts(for: claim).report
+        #expect(report != nil)
+        #expect(report?.status == nil)
+    }
+
+    /// A question nobody can answer any more is not still waiting on anyone.
+    @Test
+    func `withdrawing a claim retires the question its agent asked`() {
+        let ledger = ClaimLedger()
+        ledger.record(.ask(CompanionAsk(
+            id: "ask-1",
+            question: "Which branch?",
+            options: ["main", "next"],
+        )), for: claim)
+        ledger.record(.outcome(landed), for: claim)
+
+        ledger.withdraw(claim)
+
+        let report = ledger.facts(for: claim).report
+        #expect(report != nil)
+        #expect(report?.pendingAsk == nil)
     }
 
     @Test
@@ -73,11 +111,7 @@ struct ClaimLedgerTests {
     func `a second reported fact joins the first rather than replacing it`() {
         let ledger = ClaimLedger()
         ledger.record(.status(.running), for: claim)
-        ledger.record(.outcome(CompanionOutcome(
-            target: .code,
-            reference: "abc123",
-            summary: "landed",
-        )), for: claim)
+        ledger.record(.outcome(landed), for: claim)
 
         #expect(ledger.facts(for: claim).report?.status == .running)
         #expect(ledger.facts(for: claim).report?.outcomes.count == 1)

@@ -32,4 +32,12 @@ extension CompanionReport {
             outcomes.append(outcome)
         }
     }
+
+    /// The channel is gone, so the claims that stood on it go: the roster falls back to the DERIVED
+    /// reading of the transcript rather than to a `running` nothing is behind any more (#799). The
+    /// other half of `apply`'s rule — outcomes are cumulative, so they stay.
+    mutating func channelClosed() {
+        status = nil
+        pendingAsk = nil
+    }
 }

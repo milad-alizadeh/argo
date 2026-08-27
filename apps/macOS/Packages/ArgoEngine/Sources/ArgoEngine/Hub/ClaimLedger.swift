@@ -67,9 +67,10 @@ final class ClaimLedger {
         update(claim) { $0.lostTurn = text }
     }
 
-    /// The gate behind this claim is gone, so its three readings go — but the record stays. What
-    /// the agent said and the rung Argo set are things that HAPPENED, so an orphaned Session keeps
-    /// reading as what it was rather than blanking when its PTY exits.
+    /// The gate behind this claim is gone, so its three readings go, and so does everything that
+    /// stood on the companion channel. What the agent PRODUCED and the rung Argo set are things
+    /// that HAPPENED, so an orphaned Session keeps those rather than blanking. Which of the
+    /// report's facts are which is `CompanionReport`'s to say, not the ledger's (#799).
     func withdraw(_ claim: SessionOwnership.ClaimID) {
         // A claim with nothing filed is not news: publishing over it would move the roster for a
         // teardown that changed nothing.
@@ -79,6 +80,7 @@ final class ClaimLedger {
             facts.asking = []
             facts.standing = []
             facts.expiries = []
+            facts.report?.channelClosed()
         }
     }
 
