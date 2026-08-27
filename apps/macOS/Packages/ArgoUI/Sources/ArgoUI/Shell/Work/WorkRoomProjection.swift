@@ -76,6 +76,9 @@ enum WorkRoomProjection {
         /// The parent's `n/m` roll-up, and `nil` on a leaf. It counts the TRACKER's children rather
         /// than the rows beside it, so `2/9` over five visible rows is correct.
         let trailing: String?
+        /// The provider's own priority word, absent where nothing was read. It BANDS a root and
+        /// it is what a child states when the band's header disagrees with it (#819).
+        let priority: String?
         /// The rows nested under this one, from the child edge (`WorkRoomProjection+Tree.swift`).
         /// Empty on a leaf, and empty on a parent whose every child the view filtered out.
         let children: [Row]

@@ -139,10 +139,10 @@ The Work room does the same, in the same order:
 **A title without its count can lie about what you are filtered to**, which is why the heading is
 two lines and Mail's is too (`Searching / Inbox — …, 11 results`).
 
-**The middle term names the grouping in force, so it is absent until there is one.** The list is
-still flat (#812), and a subtitle reading `by priority` over an ungrouped list is the exact lie the
-second line exists to prevent; #814 adds the term with the grouping it describes. Until then the
-line reads `All open · 12 tickets`.
+**The middle term names the grouping in force, so it is absent until there is one.** A subtitle
+reading `by priority` over an ungrouped list is the exact lie the second line exists to prevent, so
+the term arrived with the headers that justify it (#819). Through #812 and #814 — nesting is not a
+grouping — the line read `All open · 12 tickets`.
 
 ### The column question, settled (#816)
 
@@ -354,7 +354,7 @@ for; anything not listed is stock used directly.
 | `BacklogRow` | molecule | an `HStack` in a `List` row | `twist · dot · id · title · trailing` |
 | `BacklogTwist` | atom | `DisclosureGroup`'s chevron, drawn | drawn rather than inherited so it can carry its own hit target |
 | `DeliveryDot` | atom | `Circle` at `ArgoLayout.statusDotSize` | the five-state table above |
-| `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption` |
+| `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
 | `WorkToolbar` | organism | `.toolbar { ToolbarItemGroup }` | the whole row; its placement per control is the table above |
 | `BacklogToolbarLabel` | molecule | a `VStack` of two `Text` | the heading and its count |
 | `ToolbarVessel` | atom | `GlassEffectContainer` + `Capsule` | groups icon buttons; no border, no shadow |

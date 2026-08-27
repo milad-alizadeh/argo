@@ -1,18 +1,20 @@
 import SwiftUI
 
-/// The backlog's tree, inside the list's own `List` (`cockpit-work-room.md` — the backlog list).
+/// One priority band's tree, inside the list's own `List` (`cockpit-work-room.md` — the backlog
+/// list).
 ///
 /// It draws the projection's FLATTENED order (`WorkRoomProjection.drawn`) rather than nesting
 /// `View`s. Why, and what that trades away: `cockpit-work-room.inventory.md`.
 struct BacklogOutline: View {
-    /// The roots. Each carries its own children, so this is the tree rather than a slice of it.
-    let rows: [WorkRoomProjection.Row]
+    /// The band's rows in draw order, already flattened. Handed in rather than derived, because
+    /// the header above them counts this same array (#819).
+    let drawn: [WorkRoomProjection.Drawn]
     /// Which parents the reader has folded. **Everything opens open** — a tree that opens shut
     /// hides what it was added for, so this starts empty and folding is the deliberate act.
     @Binding var shut: Set<Int>
 
     var body: some View {
-        ForEach(WorkRoomProjection.drawn(rows, shut: shut)) { drawn in
+        ForEach(drawn) { drawn in
             BacklogRow(
                 drawn: drawn,
                 isOpen: !shut.contains(drawn.id),
@@ -37,10 +39,11 @@ struct BacklogOutline: View {
 #Preview("Backlog outline — open, and with one parent folded") {
     @Previewable @State var open = Set<Int>()
     @Previewable @State var folded: Set = [607]
+    let high = WorkRoomProjection.bands(of: WorkFixture.room.backlog)[0]
 
     HStack(spacing: ArgoSpacing.flush) {
-        List { BacklogOutline(rows: WorkFixture.room.backlog, shut: $open) }
-        List { BacklogOutline(rows: WorkFixture.room.backlog, shut: $folded) }
+        List { BacklogOutline(drawn: WorkRoomProjection.drawn(high, shut: open), shut: $open) }
+        List { BacklogOutline(drawn: WorkRoomProjection.drawn(high, shut: folded), shut: $folded) }
     }
     .listStyle(.inset)
     .frame(width: ArgoBacklogList.width * 2, height: 420)
@@ -49,7 +52,7 @@ struct BacklogOutline: View {
 }
 
 #Preview("Backlog outline — the provider answered with nothing") {
-    List { BacklogOutline(rows: [], shut: .constant([])) }
+    List { BacklogOutline(drawn: [], shut: .constant([])) }
         .listStyle(.inset)
         .frame(width: ArgoBacklogList.width, height: 240)
         .argoDeckSurface()

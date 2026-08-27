@@ -3,12 +3,12 @@
 What `design-to-code` extracted while building [`cockpit-work-room.md`](cockpit-work-room.md), and
 what it deliberately left inline. One row per component the assembled screen forced out.
 
-**Scope: #812, #814, #815, #816, #817 and #818** — the views sidebar, the flat backlog list and the
-ticket (#812), the nesting that turned the list into a tree (#814), the ticket's fact strip and its
-three sections (#815), the room's toolbar row (#816), the Next-up hero and its four tiers (#817),
-and the room's two vacancy pages (#818). The design freezes 31 names across the whole room; the
-names below are the ones these tickets built. The rest (the priority headers, the Route) belong to
-their own tickets and are absent rather than stubbed.
+**Scope: #812, #814, #815, #816, #817, #818 and #819** — the views sidebar, the flat backlog list
+and the ticket (#812), the nesting that turned the list into a tree (#814), the ticket's fact strip
+and its three sections (#815), the room's toolbar row (#816), the Next-up hero and its four tiers
+(#817), the room's two vacancy pages (#818), and the priority bands over the backlog's roots
+(#819). The design freezes 31 names across the whole room; the names below are the ones these
+tickets built. The rest (the Route) belongs to its own ticket and is absent rather than stubbed.
 
 The tables below cover #812, #814, #815 and #818; #817's and #816's own sections are at the foot.
 
@@ -204,10 +204,9 @@ draws it on the Children and Blocked-by headings, so the disclaimer became the l
 
 ## Not reproduced from `rest.png`
 
-The render carries the whole room. These tickets' specimens reproduce its sidebar, its backlog list
-(nested, and folded in `collapsedWorkBacklog`) and its ticket pane. The priority headers, the
-Next-up hero and the room's toolbar are absent because they are other tickets — not because they
-drifted.
+The render carries the whole room, and `workRoom` now reproduces all of it: the sidebar, the
+backlog banded and nested (folded in `collapsedWorkBacklog`), the toolbar row, the hero and the
+ticket pane. The Route is the one thing still absent, because it is #334's.
 
 ## The two vacancies (#818)
 
@@ -381,10 +380,10 @@ The heading and its sub-line take the roles the design's own snap table names �
   the contract's. A native `Menu` row is also one line of text, so the study's two-column layout —
   the word, its boundary set right in the machine caption — is not reachable through the `Picker`
   the frozen-names table itself specifies; the em dash carries the same pair.
-- **The subtitle drops `by priority` until #819.** The middle term names the GROUPING in force and
-  the list has none: #814 nested it into a tree, which is not a grouping, and #819 is the ticket
-  that adds the priority headers. A heading reading `by priority` over an ungrouped list is the
-  exact lie the second line exists to prevent.
+- **The subtitle dropped `by priority` until #819.** The middle term names the GROUPING in force
+  and until #819 the list had none: #814 nested it into a tree, which is not a grouping. A heading
+  reading `by priority` over an ungrouped list is the exact lie the second line exists to prevent,
+  so the term arrived with the headers it describes.
 - **`RoomsVessel` is deleted, not merely unused.** The AC asks for one rooms picker; `RoomStrip` is
   it, so the titlebar's vessel and the flexible spacer that only ever pushed it to the trailing
   edge are gone, and `ShellSidebar` draws the strip so Sessions and Code keep a way back to Work.
@@ -409,3 +408,80 @@ the placement, not before.
 specimen and the open state has no headless render — `menu.png` stays the study's drawing of it.
 The row it hangs from is `workToolbar`, and the two vacancies are `emptyWorkToolbar` and
 `unboundWorkToolbar`.
+
+# #819 — priority groups the backlog roots
+
+## Extracted
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `PriorityHeader` | atom | `ArgoUI/Shell/Work/Backlog/` | `band: Band`, `count: Int` | `GroupLabel` | `.pri-head` |
+
+One name, and the design froze it. Nothing else came out: the odd priority a child states is a
+`Text` in the slot `BacklogRow` already had, and the banding is arithmetic rather than a view.
+
+## Stayed inline
+
+- **The odd-priority caption.** It is `BacklogRow`'s existing trailing slot with a second thing
+  that can fill it, not a second component. `BacklogRow` now picks between the roll-up and the odd
+  word in one place, which is the only place either can be drawn.
+- **The band itself.** `WorkRoomProjection.Band` is a value on the projection, not a view.
+  `BacklogList` iterates it directly; a `BacklogBand` view between the list and the outline would
+  have one caller and no state.
+
+## What this ticket had to settle that the render does not state
+
+- **Priority is a relation between a row and its header, not a fact of the row.** `Row.priority`
+  is the provider's word; `Drawn.odd` is that word only where the band's header disagrees with it,
+  and it is set when the band is flattened rather than when the tree is built — a row's `odd`
+  depends on which header it ended up under, which the tree does not know.
+- **The header counts the array the list drew.** `BacklogList` flattens the band ONCE and hands the
+  same array to `PriorityHeader` and `BacklogOutline`. Two calls to `drawn` could come to disagree
+  about what is under the fold, which is exactly the lie the drawn-count rule exists to prevent.
+- **A parent's roll-up wins the trailing slot.** #334 is a `medium` under `HIGH` and also a parent,
+  and it draws `0/2`. The design's own explorable does the same (`t.kids ? rollup : odd`): two
+  numbers in one slot is worse than an odd priority left unsaid, and the roll-up is the fact the
+  reader cannot reconstruct from anything else on the row.
+- **Roots with no priority read band under a header that says so.** No port reads a priority yet
+  (#388), so a reading with none is the state that ships — and the three headers the design draws
+  would have dropped every one of those rows. They band last, under `NO PRIORITY READ`, which
+  names the TIER rather than claiming the tracker set none (`CONTEXT.md` L2 · degrade-down). A
+  child under that header whose own priority is also unread states nothing: it has nothing honest
+  to say, and the quieter reading is the one degrade-down picks.
+- **The three words are MATCHED, not ranked.** `WorkReading+NextUp` already matches `high` this
+  way. A word Argo has no band for keeps a header of its own, in the order the provider served it,
+  rather than being sorted into one of the three — Argo does not own this ladder.
+- **The match folds case; the word does not.** A tracker spelling one of its own words `Low` would
+  otherwise open a second band beside `low`, headed with the same word, and a child under it would
+  be told it disagrees with a header it agrees with. `Band.priority` is still the provider's word
+  verbatim — `GroupLabel` is what uppercases the header, and Argo recases nothing.
+- **A band's key is not its word.** `Band.id` distinguishes the unread band from one whose word is
+  empty. Two bands sharing a `ForEach` key draws one and drops the other, which is a row lost to an
+  id rather than to an edge — the same failure `WorkRoomProjection+Tree` refuses.
+
+## Not a `Section`, and why
+
+The frozen-names table says `PriorityHeader` stands in for a `Section` header. It is drawn as an
+ordinary row instead, with `selectionDisabled()`.
+
+`List(.inset)` spends about **52** between one section and the next section's word, where the
+design draws `comfortable` 12 — and macOS exposes no lever on it: `listSectionSpacing` is
+unavailable there, and zeroing the header's `listRowInsets` moves nothing. Two things the `Section`
+was buying, and only one comes back:
+
+- **A header outside the selection and outside keyboard traversal** — `selectionDisabled()` gives
+  this back exactly.
+- **Pinning.** The explorable draws `position: sticky`, and a row does not pin. At twelve tickets
+  the list does not scroll and it costs nothing; on a real backlog the band a reader is inside
+  stops being named. That is the price paid for the measurement, and it is the thing to revisit if
+  the backlog ever gets long enough to scroll past a whole band.
+
+This is the same amendment #814 made to `BacklogOutline`, for the same reason: the stock control
+could not hold something the design had already settled.
+
+## The renders
+
+`workRoom` reproduces `rest.png` and `collapsedWorkBacklog` reproduces `collapsed.png`, both at a
+1280×800 window — the band counts `8 · 1 · 3`, falling to `1 · 1 · 3` with #607 folded, and the
+odd priorities on #273, #335 and #336. The unread band has no design render of its own; it is
+visible in `nothingUnblocked` and `everythingRunning`, whose readings carry no priorities at all.

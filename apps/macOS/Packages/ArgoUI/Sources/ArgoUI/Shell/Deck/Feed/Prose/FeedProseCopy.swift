@@ -20,7 +20,7 @@ struct FeedProseCopy: ViewModifier {
     func body(content: Content) -> some View {
         // The chip carries the step rather than the stack: an absent chip is still a child, and a
         // stack's spacing would open the gap under every row that draws none.
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             content
             chip
         }
