@@ -5,50 +5,68 @@ extension WorkFixture {
     /// parameters: the cap is four, and a defaulted parameter still spends one.
     struct Shape {
         var status = "Todo"
-        var blocked = false
+        var blockedBy: [Int] = []
         var children: [Int] = []
+        var labels: [String] = []
     }
 
-    /// Twelve open tickets in the provider's own order, and the two closed children that make
-    /// #607's roll-up read `2/9` without either of them being drawn.
+    /// Twelve open tickets in the provider's own order, the two closed children that make #607's
+    /// roll-up read `2/9` without either of them being drawn, and the four closed tickets its
+    /// `blockedBy` list names.
     ///
     /// #607 carries nine children: five open and read, two closed and read, and two the poll has
-    /// not reached — the three states a roll-up has to survive.
+    /// not reached — the three states a roll-up has to survive. Its six blockers are the other
+    /// worst honest case: two still open, four already closed and named from the tracker.
     static let items: [WorkItem] = [
         open(
             607,
             "Wayfinder: the Work room, end to end",
-            .init(blocked: true, children: [609, 388, 272, 273, 334, 690, 745, 805, 813]),
+            .init(
+                blockedBy: [609, 388, 264, 256, 375, 376],
+                children: [609, 388, 272, 273, 334, 690, 745, 805, 813],
+                labels: ["wayfinder", "work-room", "prd"],
+            ),
         ),
         open(
             609,
             "Prototype: what the Work room looks like in the Liquid Glass shell",
-            .init(status: working),
+            .init(status: working, labels: ["design", "work-room"]),
         ),
         open(
             388,
             "Work Item read path: listing, status, labels, dependency edges",
             .init(status: working),
         ),
-        open(272, "The generic node tree and ticket detail", .init(blocked: true)),
+        open(
+            272, nodeTreeTitle,
+            .init(blockedBy: [609, 388], labels: ["work-room", "ui", "blocked"]),
+        ),
         open(273, "The Next-up cold-start planner"),
         open(
             334,
             "The Route — a progress-axis view of a ticket and its children",
-            .init(blocked: true, children: [335, 336]),
+            .init(blockedBy: [272], children: [335, 336]),
         ),
-        open(335, "Placement: zones, columns and the cycle guard", .init(blocked: true)),
-        open(336, "The canvas: derived spacing and the edge rule", .init(blocked: true)),
+        open(335, "Placement: zones, columns and the cycle guard", .init(blockedBy: [334])),
+        open(336, "The canvas: derived spacing and the edge rule", .init(blockedBy: [335])),
         open(763, "WorkItem transport and grant plumbing", .init(status: working)),
-        open(275, "The provider connection chip as a graphite transient", .init(blocked: true)),
-        open(160, "Ticket vocabulary: type is a property, not a ladder", .init(blocked: true)),
-        open(185, "Work room interior: what a leaf carries", .init(blocked: true)),
+        open(275, "The provider connection chip as a graphite transient", .init(blockedBy: [272])),
+        open(160, "Ticket vocabulary: type is a property, not a ladder", .init(blockedBy: [272])),
+        open(185, "Work room interior: what a leaf carries", .init(blockedBy: [272])),
         closed(690, "A room tab is its mark alone"),
         closed(745, "Name a roster row by the ticket it is working"),
+        closed(264, "App shell: project strip, top bar, room tabs"),
+        closed(256, "Work Item provider port over OAuth (Electron)"),
+        closed(375, "The graphite/Ion visual foundation"),
+        closed(376, "The native Liquid Glass shell"),
     ]
 
-    /// The body #272 opens on. Prose only: the body's own section headings are #813's, and a
-    /// fixture that set them here would render a role the contract does not have yet.
+    /// #272's title, which two fixtures name it by.
+    static let nodeTreeTitle = "The generic node tree and ticket detail"
+
+    /// The body #272 opens on. Prose only: `deep.png` draws an `Acceptance criteria` heading in
+    /// it, but that is the provider's own Markdown and nothing renders one yet — the sections
+    /// below the body are what `bodyHeading` (#813) has a caller for.
     static let body = """
     The backlog's home, with the sidebar freed: views at 280, the backlog at 520 where a title \
     reads whole at depth three, and the ticket beside it.
@@ -62,11 +80,18 @@ extension WorkFixture {
     /// `WorkItemState.claimed`'s spelling — the two are different facts (#272).
     private static let working = "In progress"
 
+    /// Which fixture numbers are closed. A blocker's closure is read from here rather than written
+    /// beside each edge, so an item cannot be closed in one list and open in the other.
+    private static let closedNumbers: Set<Int> = [690, 745, 264, 256, 375, 376]
+
     private static func open(_ number: Int, _ title: String, _ shape: Shape = Shape()) -> WorkItem {
         WorkItem(
             number: number, title: title, status: shape.status, closure: .open,
+            labels: shape.labels,
             children: shape.children,
-            blockedBy: shape.blocked ? [WorkItemBlocker(number: 999, closure: .open)] : [],
+            blockedBy: shape.blockedBy.map {
+                WorkItemBlocker(number: $0, closure: closedNumbers.contains($0) ? .resolved : .open)
+            },
         )
     }
 

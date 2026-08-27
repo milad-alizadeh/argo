@@ -3,12 +3,11 @@
 What `design-to-code` extracted while building [`cockpit-work-room.md`](cockpit-work-room.md), and
 what it deliberately left inline. One row per component the assembled screen forced out.
 
-**Scope: #812 and #816**, one section each and appended per ticket. The design freezes 31 names
-across the whole room; #812's eleven and #816's eight are the ones built. The rest (the hero, the
-tree, the fact strip, the Delivery chips, the link lists, the vacancy panel, the Route) belong to
-their own tickets and are absent rather than stubbed.
-
-# #812 — the views sidebar, the flat backlog and the ticket
+**Scope: #812, #815 and #816** — the views sidebar, the flat backlog list and the ticket (#812),
+then the ticket's fact strip and its three sections (#815), then the room's toolbar row (#816,
+its own section at the foot). The design freezes 31 names across the whole room; the twenty-three
+below are the ones these tickets built. The rest (the hero, the tree, the vacancy panel, the
+Route) belong to their own tickets and are absent rather than stubbed.
 
 ## Extracted
 
@@ -22,9 +21,35 @@ their own tickets and are absent rather than stubbed.
 | `BacklogList` | organism | `ArgoUI/Shell/Work/Backlog/` | `rows: [Row]`, `selection: Binding<Int?>` | `BacklogRow` | `BacklogList` |
 | `BacklogRow` | molecule | `ArgoUI/Shell/Work/Backlog/` | `row: Row` | `DeliveryDot` | `BacklogRow` |
 | `DeliveryDot` | atom | `ArgoUI/Shell/Work/Backlog/` | `reading: DeliveryReading` (5 states) | — | `DeliveryDot` |
-| `TicketDetail` | organism | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket?` | `TicketHead` | `TicketDetail` |
+| `TicketDetail` | organism | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket?`, `open: (Int) -> Void` (#815) | `TicketHead`, `TicketFactStrip`, `TicketBody` | `TicketDetail` |
 | `TicketHead` | molecule | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket` | `StatusPair` | `TicketHead` |
 | `StatusPair` | atom | `ArgoUI/Shell/Work/Detail/` | `word: String`, `bucket: WorkItemState` (4 states) | — | `StatusPair` |
+
+### #815 — the fact strip and the sections
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `TicketFactStrip` | molecule | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket` (reads `priority`, `type`, `bucket`, `labels`) | `GroupLabel`, `LabelChip`, `WrapFlow`, `ArgoRule` | `TicketFactStrip` |
+| `LabelChip` | atom | `ArgoUI/Shell/Work/Detail/` | `label: String` | — | `LabelChip` |
+| `DeliveryChip` | molecule | `ArgoUI/Shell/Work/Detail/` | `delivery: DeliveryFacts` (`checks` 3 states; `url` optional) | stock `Button(.plain)` + `openURL` | `DeliveryChip` |
+| `TicketLinkList` | molecule | `ArgoUI/Shell/Work/Detail/` | `links: [Link]`, `open: ((Int) -> Void)?` | `TicketLinkRow` → `DeliveryDot` | `TicketLinkList` |
+| `TicketBody` | molecule | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket`, `open: (Int) -> Void` | `GroupLabel`, `DeliveryChip`, `TicketLinkList` | not frozen — see below |
+
+`TicketLinkList` is **one** component, per the ticket: `blockedBy` and Children are two callers of
+it. What separates them is the trailing fact each `Link` carries — the provider's status word on a
+child, nothing on a blocker — and whether the caller passes an `open`. A blocker may be closed and
+out of the backlog, so its row is text rather than a control that would lead somewhere empty.
+
+`WrapFlow` grew a second gap for this. `.fact-strip` is one flex with `column-gap: 24` and
+`row-gap: 8`, and the layout carried a single `gap` for both axes; it now takes a `Gaps` pair, with
+`init(gap:)` kept for the three callers that want one step on both. Without it the strip would have
+been two stacked runs, which reads the same at 480 and breaks a line the design would keep whole on
+a ticket with one short label.
+
+`TicketBody` is the one name here the design does not freeze. It was forced out by the file
+ceiling, not by taste: `TicketDetail` with the three sections inline is over 150 code lines, and
+the design's own table says anything unlisted is "stock used directly" — a `ScrollView`'s content
+is exactly that.
 
 Two names the design does not freeze were extracted anyway:
 
@@ -41,6 +66,12 @@ Two names the design does not freeze were extracted anyway:
   `argoFeedMeasure()`. Its section headings are #813's role, so there is no markup to render yet
   and nothing an extracted view would hold.
 - **The room strip's row in the sidebar's scroll.** One `previewSafeListRow()` call.
+- **A section heading.** `Text` at `ArgoTypography.bodyHeading` with one lift above it, three
+  callers in one file. A view whose whole body is a primitive with a role is not a component.
+- **The Deliveries heading.** `GroupLabel("Deliveries")` — #812 already extracted that atom, and
+  this is its fourth caller.
+- **`TicketLinkRow`.** Private to `TicketLinkList`, its only owner. Same tier, one caller: it is
+  that molecule's part, not its peer (`ui-components.md` — naming follows the tree).
 
 ## Where the design and the code disagree
 
@@ -58,6 +89,49 @@ in the design itself; the first two stand.
   them in both views. Fixed at the source: `unblocked` now excludes them, the design records the
   partition rule, and the nine renders that draw a non-zero `Unblocked` were re-shot. Both the
   render and the code now read 12 / 4 / 3 / 8.
+
+## What #815 decided that the design left open
+
+- **An empty `blockedBy` is the section ABSENT, not an empty section.** The design's explorable
+  distinguishes `null` (no edges) from `[]` (edges read, none found) and draws `Nothing.` for the
+  second. Swift cannot tell them apart — `WorkItem.blockedBy` is one array either way, and no port
+  carries a "this provider has dependency edges" capability — so degrade-down resolves it to the
+  quieter reading and the section is drawn only when there is a blocker to name. If a port ever
+  learns to say which it is, that becomes a real tri-state and the rule changes with it.
+- **A blocker with no title renders its number alone.** The design's `titleOf` falls back to
+  `'Closed elsewhere'`; a stand-in a reader cannot tell from a real title is worse than a short
+  row. Closed blockers the poll DID reach keep the tracker's name, which is the ticket's own
+  acceptance criterion and what the four closed rows in `deep.png` are testing.
+- **Priority and type are reading-side facts, not `WorkItem` fields.** No port reads either
+  (#388), and #160 has not settled the type vocabulary, so they arrive beside the item the way a
+  body does and are ABSENT rather than defaulted. `unreadTicket` is the render of the floor.
+- **`checks` has three readings, not two.** The design draws `checks passing` or `checks failing`;
+  a chip that has not heard from the checks now leaves the slot empty rather than claiming a pass.
+- **A Delivery's deep link is optional.** `URL(string:)` is failable and `force_unwrapping` is a
+  build error here, so a chip with no page is a fact that stays put rather than a control that
+  opens nothing.
+- **A truncated link title keeps its whole self behind a hover**, which is the design's own lesson
+  about narrow columns — "the fix there is the id plus a hover, not a wider column".
+- **`edgeless` strips every edge, so the sidebar's counts move with it.** `edgeless.png` shows
+  `Unblocked 4 / Blocked 8` unchanged, because the explorable's state flag only reached the detail
+  pane. A provider that cannot say what blocks what cannot fill those two views either. The
+  divergence is the prototype's seam, not a number invented here.
+
+### Two numbers this build did not take from the design
+
+- **`labelInsetY` is `ArgoSpacing.hair` 2, where `.label` sets `padding: 1px`.** The rhythm has no
+  1, and `rules/design-system.md` says snap rather than promote a rung for one call site.
+  `ArgoBadge` spends the same step for the same reason. Not in the measurement table.
+- **The head-to-strip gap is `ArgoSpacing.section` 24.** The design reaches ~20 there as two
+  stacked CSS paddings rather than as a step, and 24 is the rung under the measurement off
+  `deep.png`. Also not in the table.
+
+### Still not drawn
+
+`deep.png` and `edgeless.png` both show an `Acceptance criteria` heading inside the ticket's prose.
+That is the provider's own Markdown, and nothing renders a body's markup yet — the three sections
+BELOW the body are what `bodyHeading` (#813) has a caller for. Rendering the body's own headings is
+its own ticket.
 
 ## What the views actually do
 
@@ -109,23 +183,33 @@ button's slot, the vessel inset, the split rule and the search field's measure.
   a word. Extracted it would be a `ToolbarIcon` with a label bolted on.
 - **The row's flexible spacer.** `ToolbarSpacer(.flexible, placement: .primaryAction)`, stock.
 
-## The column-placement question, settled
+## The column-placement question — answered wrongly, and what the render showed
 
-The ticket asked for this first, and the answer is neither of the two it offered.
+**This build's answer does not hold, and the branch ships it anyway so the evidence is on the
+record.** What was tried: every item at `.primaryAction`, with the list block claiming
+`ArgoBacklogList.width` 520 at that region's leading edge, on the premise that `.primaryAction` is
+the region the detail pane draws.
 
-**Every item is `.primaryAction`, and the list block claims `ArgoBacklogList.width` 520.** That
-region is the one the detail pane draws — `.navigation` is the window's leading region, where the
-scope vessel already sits over the sidebar. With the list block taking the backlog's own width at
-that region's leading edge, it lands over the list and everything after it lands over the ticket
-column, at any window size, because 520 does not move with the window.
+**The premise is false.** macOS lays `.navigation` and `.primaryAction` out as ONE continuous band,
+so `ShellToolbar`'s sidebar toggle, New Session and the scope vessel are drawn first and eat about
+270pt before the block starts. Measured off `ARGO_SPECIMEN=workRoom` at the 1280 window:
 
-The preferred route — a genuine three-column `NavigationSplitView` — is closed: the shell's split
-view is unconditional (#812 froze "a room fills the shell's slots rather than replacing them"), so
-forking it per room rebuilds the whole window on every room switch and drops the deck's per-Session
-state, both seam drags and the sidebar's width with it. `.principal` is closed for the reason
-`ShellToolbar` already records. The fallback — a sticky header inside the list pane — would give
-the room a second chrome band no render shows, and would still leave New ticket over the list
-rather than over the ticket it opens.
+| | design (`menu.png`) | this build |
+|---|---|---|
+| `Backlog` heading | ~306, just past the sidebar | ~700, onto the ticket column |
+| filter / group-by | trailing edge of the 520 block | pushed to the window's trailing edge |
+| New ticket · Start · links · search | over the ticket column | behind an unlabelled `»` overflow |
+
+That last row breaks the design's own rule — nothing in this room is behind an unlabelled control.
+`ARGO_SPECIMEN=workToolbar` renders the same row in isolation and it IS the design, so the
+components are sound and only the mounting is wrong.
+
+**The two routes left are the ticket's own, and the render is evidence for the one it preferred.**
+A three-column `NavigationSplitView` gives real per-column regions at every width, and costs a
+shell fork plus a per-room state reset — the objection that produced this build in the first place.
+A sticky header inside the list pane removes the 520 arithmetic and the overflow together, and
+costs the room a second chrome band and New ticket's placement over the column it opens.
+`.principal` stays closed for the reason `ShellToolbar` records.
 
 ## Where the design and the code disagree
 
@@ -159,19 +243,11 @@ The heading and its sub-line take the roles the design's own snap table names �
   frozen-names table specifies, and AppKit positions and draws its own popover. Recorded in the
   measurement table rather than silently dropped.
 
-## What is asserted but not measured
+## Still not measured
 
-Two claims in this build rest on reading rather than on a render or a test, and both are the
-kind of thing only pixels settle:
-
-- **That `.primaryAction` begins at the detail pane's leading edge.** If the `.navigation` items
-  — the sidebar toggle, New Session and the scope vessel — ever outgrow the 280 sidebar, the 520
-  block slides off the list and every control after it lands one column wrong. Nothing pins it.
-- **That search clears the trailing edge at the 1280 window.** The 210 is in the code; that it
-  does not clip is not.
-
-Both fall to `pixel-review` on `workToolbar` and `workRoom`. They were not rendered in this
-build: the display was asleep (`UserIsActive 0`), so `screencapture` could not reach the window.
+**That search clears the trailing edge at the 1280 window.** The 210 is in the code, but in the
+shell the field is inside the overflow above, so nothing yet shows it uncollapsed. It settles with
+the placement, not before.
 
 ## Not reproduced from `menu.png`
 

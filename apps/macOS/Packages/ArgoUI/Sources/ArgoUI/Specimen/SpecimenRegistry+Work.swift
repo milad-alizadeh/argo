@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The Work room (#812): the room at rest, its two room-level degradations, and the one mark it
-/// spends on a Delivery.
+/// The Work room: the room at rest, its two room-level degradations, the one mark it spends on a
+/// Delivery (#812), the ticket pane's own states (#815) and the toolbar row's three (#816).
 extension SpecimenRegistry {
     static let work: [SpecimenEntry] = [
         SpecimenEntry("workRoom") { WorkRoomSpecimen() },
@@ -17,6 +17,23 @@ extension SpecimenRegistry {
             WorkPanesSpecimen(reading: WorkFixture.reading, opening: .blocked)
         },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
+        // A parent, deep: two Deliveries stacked, nine children rolled up over the five that are
+        // open, and six blockers of which four are already closed and still named.
+        SpecimenEntry("deepTicket") {
+            TicketDetailSpecimen(reading: WorkFixture.reading(showing: 607))
+        },
+        // `deep.png` is a WHOLE-room shot, so the pane above is not the whole of it: this opens
+        // the room on the same parent.
+        SpecimenEntry("deepWorkRoom") {
+            WorkPanesSpecimen(reading: WorkFixture.reading(showing: 607))
+        },
+        // A provider that exposes no dependency edges. The `Blocked by` section is ABSENT, not
+        // empty — nobody has told us there are no blockers.
+        SpecimenEntry("edgelessTicket") { TicketDetailSpecimen(reading: WorkFixture.edgeless) },
+        SpecimenEntry("deliveryChips") { DeliveryChipsSpecimen() },
+        // The fact strip's floor: a ticket the provider named and said nothing else about. Every
+        // absent fact is left out, and Argo's own bucket is the one that survives.
+        SpecimenEntry("unreadTicket") { TicketDetailSpecimen(reading: WorkFixture.unread) },
         // The toolbar row alone, in its three states (#816). At rest it is read off `workRoom`
         // above, over the panes it places its controls against; these two are the vacancies, which
         // differ in nothing BUT the row.

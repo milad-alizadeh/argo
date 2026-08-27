@@ -37,19 +37,6 @@ extension WorkRoomProjection {
         )
     }
 
-    static func ticket(in reading: WorkReading) -> Ticket? {
-        guard let number = reading.showing,
-              let item = reading.items.first(where: { $0.number == number })
-        else { return nil }
-        return Ticket(
-            id: number,
-            title: item.title,
-            status: item.status,
-            bucket: item.state(claimed: reading.claimed.contains(number)),
-            body: reading.bodies[number],
-        )
-    }
-
     private static func rollUp(of item: WorkItem, closed: Set<Int>) -> String? {
         guard !item.children.isEmpty else { return nil }
         return "\(item.children.filter(closed.contains).count)/\(item.children.count)"
