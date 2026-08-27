@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict'
 // Enforcing test for the visual contract's zero-reader sweep, run via `bun run test:hooks`.
-// Every case here is a way the last sweep got the answer wrong: a type-name grep could not see an
-// extension method, and a name-anywhere grep counted a local, a comment and the family's own
-// catalog as readers. Soften the script and this test together, never one alone.
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+// Every case here is a way a sweep has already got the answer wrong. Soften the script and this
+// test together, never one alone.
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { sweep } from './contract-readers.mjs'
@@ -20,37 +19,34 @@ function check(name, fn) {
   }
 }
 
-/// One throwaway tree shaped like the real one: a contract directory inside a search root, so the
-/// sweep reads its own declarations out of the same corpus it searches.
+// One throwaway tree shaped like the real one: a contract directory inside a search root, so the
+// sweep reads its declarations out of the same corpus it searches. Removed however the case ends.
 function tree(files) {
   const root = mkdtempSync(path.join(tmpdir(), 'contract-sweep-'))
-  const contract = path.join(root, 'VisualContract')
-  mkdirSync(contract, { recursive: true })
-  for (const [name, body] of Object.entries(files)) {
-    const file = path.join(name.includes('/') ? root : contract, name)
-    mkdirSync(path.dirname(file), { recursive: true })
-    writeFileSync(file, body)
+  try {
+    const contract = path.join(root, 'VisualContract')
+    mkdirSync(contract, { recursive: true })
+    for (const [name, body] of Object.entries(files)) {
+      const file = path.join(name.includes('/') ? root : contract, name)
+      mkdirSync(path.dirname(file), { recursive: true })
+      writeFileSync(file, body)
+    }
+    return sweep({ contractDir: contract, searchRoot: root })
+  } finally {
+    rmSync(root, { recursive: true, force: true })
   }
-  return sweep({ contractDir: contract, searchRoot: root })
 }
 
 const names = (group) => group.map((member) => `${member.owner}.${member.name}`)
 
 // The finding that made this a ticket: `ArgoFloatingGlass`, `ArgoLabelStyle` and `ArgoRamp` all had
-// zero reads of their type name and were used constantly, because a surface reaches them through an
-// extension method. A sweep that cannot see `argoInk(theme)` reports a live modifier as dead.
+// zero reads of their type name and were drawn on every surface, through an extension method.
 check('an extension method reached bare in a modifier chain is a reader', () => {
   const swept = tree({
-    'ArgoTheme.swift': [
-      'public extension View {',
-      '    func argoInk(_ theme: ArgoTheme) -> some View {',
-      '        tint(theme.color)',
-      '    }',
-      '}',
-    ].join('\n'),
-    'Shell/FeedCell.swift': ['struct FeedCell: View {', '    argoInk(environment.theme)', '}'].join(
-      '\n',
-    ),
+    'ArgoTheme.swift': `public extension View {
+    func argoInk(_ theme: ArgoTheme) -> some View { tint(theme.color) }
+}`,
+    'Shell/FeedCell.swift': 'argoInk(environment.theme)',
   })
   assert.deepEqual(names(swept.unread), [])
   assert.deepEqual(names(swept.undrawn), [])
@@ -58,11 +54,9 @@ check('an extension method reached bare in a modifier chain is a reader', () => 
 
 check('a member reached on its type is a reader', () => {
   const swept = tree({
-    'ArgoRadius.swift': [
-      'public enum ArgoRadius {',
-      '    public static let control: CGFloat = 6',
-      '}',
-    ].join('\n'),
+    'ArgoRadius.swift': `public enum ArgoRadius {
+    public static let control: CGFloat = 6
+}`,
     'Shell/Chip.swift': '.cornerRadius(ArgoRadius.control)',
   })
   assert.deepEqual(names(swept.unread), [])
@@ -70,33 +64,30 @@ check('a member reached on its type is a reader', () => {
 
 check('a member reached through inference is a reader', () => {
   const swept = tree({
-    'ArgoIconSize.swift': ['public enum ArgoIconSize {', '    case inline', '}'].join('\n'),
+    'ArgoIconSize.swift': `public enum ArgoIconSize {
+    case inline
+}`,
     'Shell/Glyph.swift': 'argoIcon(.inline)',
   })
   assert.deepEqual(names(swept.unread), [])
 })
 
-// The other half of the last sweep's error, in the opposite direction: a name-anywhere grep counts
-// the family's own catalog, so nothing ever looks dead.
+// The same error in the opposite direction: count the family's own catalog and nothing is ever dead.
 check("a member named only by its family's own catalog is unread", () => {
   const swept = tree({
-    'ArgoElevation.swift': [
-      'public enum ArgoElevation {',
-      '    public static let flat = 0',
-      '    public static let all = [("flat", flat)]',
-      '}',
-    ].join('\n'),
+    'ArgoElevation.swift': `public enum ArgoElevation {
+    public static let flat = 0
+    public static let all = [("flat", flat)]
+}`,
   })
   assert.deepEqual(names(swept.unread), ['ArgoElevation.flat', 'ArgoElevation.all'])
 })
 
 check('a member read only by the specimen and a test is undrawn, not unread', () => {
   const swept = tree({
-    'ArgoWaitAge.swift': [
-      'public enum ArgoWaitAge {',
-      '    public static let coldest = 4',
-      '}',
-    ].join('\n'),
+    'ArgoWaitAge.swift': `public enum ArgoWaitAge {
+    public static let coldest = 4
+}`,
     'Specimen/ContractSpecimen.swift': 'Text(ArgoWaitAge.coldest)',
     'Tests/WaitAgeTests.swift': '#expect(ArgoWaitAge.coldest == 4)',
   })
@@ -104,47 +95,41 @@ check('a member read only by the specimen and a test is undrawn, not unread', ()
   assert.deepEqual(names(swept.undrawn), ['ArgoWaitAge.coldest'])
 })
 
-// `contrastRatio` reads a local named `lighter`; `ArgoLayout` reads a local named `taken`. Counting
-// either as a member puts a name on the dead list that was never a member at all.
+// `contrastRatio` reads a local named `lighter`. Counting it puts a name on the dead list that was
+// never a member at all.
 check('a local inside a function body is not a member', () => {
   const swept = tree({
-    'ArgoColor.swift': [
-      'public struct ArgoColor {',
-      '    func contrastRatio(on backdrop: ArgoColor) -> Double {',
-      '        let lighter = max(1, 2)',
-      '        return lighter',
-      '    }',
-      '}',
-    ].join('\n'),
+    'ArgoColor.swift': `public struct ArgoColor {
+    func contrastRatio(on backdrop: ArgoColor) -> Double {
+        let lighter = max(1, 2)
+        return lighter
+    }
+}`,
   })
-  assert.equal(swept.total, 1)
+  assert.equal(swept.members.length, 1)
   assert.deepEqual(names(swept.unread), ['ArgoColor.contrastRatio'])
 })
 
 check('a nested type owns its own cases', () => {
   const swept = tree({
-    'ArgoMotion.swift': [
-      'public struct ArgoMotion {',
-      '    public enum Curve {',
-      '        case linear',
-      '    }',
-      '    public let curve: Curve',
-      '}',
-    ].join('\n'),
+    'ArgoMotion.swift': `public struct ArgoMotion {
+    public enum Curve {
+        case linear
+    }
+    public let curve: Curve
+}`,
   })
   assert.deepEqual(names(swept.unread).sort(), ['ArgoMotion.Curve.linear', 'ArgoMotion.curve'])
 })
 
-// Prose names roles constantly without reading one. A sweep whose dead list is diluted by comments
-// is a sweep nobody reads to the end.
+// Prose names roles constantly without reading one. A dead list diluted by comments is one nobody
+// reads to the end.
 check('a member named only in a comment or a string is unread', () => {
   const swept = tree({
-    'ArgoRadius.swift': [
-      'public enum ArgoRadius {',
-      '    public static let deck: CGFloat = 0',
-      '}',
-    ].join('\n'),
-    'Shell/Deck.swift': ['// The deck is flush.', 'label("deck")'].join('\n'),
+    'ArgoRadius.swift': `public enum ArgoRadius {
+    public static let deck: CGFloat = 0
+}`,
+    'Shell/Deck.swift': '// The deck is flush.\nlabel("deck")',
   })
   assert.deepEqual(names(swept.unread), ['ArgoRadius.deck'])
 })
@@ -153,23 +138,22 @@ check('a member named only in a comment or a string is unread', () => {
 // alive too — sharing can only ever keep a member — so both are marked for a human to read.
 check('a name a second family also spells is marked', () => {
   const swept = tree({
-    'ArgoRadius.swift': [
-      'public enum ArgoRadius {',
-      '    public static let deck: CGFloat = 0',
-      '}',
-    ].join('\n'),
-    'ArgoElevation.swift': [
-      'public enum ArgoElevation {',
-      '    public static let deck = 1',
-      '}',
-    ].join('\n'),
+    'ArgoRadius.swift': 'public enum ArgoRadius {\n    public static let deck: CGFloat = 0\n}',
+    'ArgoElevation.swift': 'public enum ArgoElevation {\n    public static let deck = 1\n}',
     'Shell/Deck.swift': 'background(ArgoElevation.deck)',
   })
   assert.deepEqual(names(swept.unread), [])
   assert.equal(
-    swept.members.every((member) => swept.shared(member)),
+    swept.members.every((member) => member.shared),
     true,
   )
+})
+
+// A member with no type around it is the sweep's quietest failure: skipping it reports nothing, and
+// nothing is what a clean sweep looks like too.
+check('a declaration with no type around it is still a member', () => {
+  const swept = tree({ 'ArgoMotion.swift': 'public let passReentry = 1.0 / 60' })
+  assert.deepEqual(names(swept.unread), ['ArgoMotion.passReentry'])
 })
 
 console.log(failures === 0 ? '\ncontract-readers: all checks passed' : `\n${failures} failed`)

@@ -53,8 +53,8 @@ public extension ArgoWaitAge {
     }
 
     /// Where a wait ends up and stays. The ladder has a floor on purpose: a pass slow enough to
-    /// stop reading as travel would say the Turn had stopped. No surface reads it — the ladder's
-    /// two ends are what `ContractSpecimen` states the cooling as, and what the suite holds.
+    /// stop reading as travel would say the Turn had stopped. No surface reads it: the ladder's
+    /// two ends are what `ContractSpecimen` states the cooling as.
     static var coldest: ArgoWaitAge {
         rung(at: .infinity)
     }

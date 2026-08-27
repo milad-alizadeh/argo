@@ -16,8 +16,8 @@ public struct ArgoElevation: Sendable {
         self.opacity = opacity
     }
 
-    /// Drawn by nothing and spent by `RhythmTests`: the two predicates are how "flat by default"
-    /// is stated as a claim over `all` rather than checked rung by rung.
+    /// Spent by `RhythmTests`, never by a surface: the two predicates state "flat by default" as
+    /// one claim over `all`.
     public var castsShadow: Bool {
         opacity > 0 && yOffset > 0
     }
@@ -30,9 +30,8 @@ public struct ArgoElevation: Sendable {
 }
 
 public extension ArgoElevation {
-    /// In the plane. Rows, rails, the feed. Worth zero and named by nothing: a view honours it by
-    /// drawing no shadow at all, which is what makes it the control group for `only genuinely
-    /// floating surfaces cast a shadow`.
+    /// In the plane. Rows, rails, the feed. Worth zero and named by nothing: you honour it by
+    /// drawing no shadow at all.
     static let flat = ArgoElevation(blur: 0, yOffset: 0, opacity: 0)
     /// The Instrument Deck: separated by tone and a hairline, never by a shadow.
     static let deck = ArgoElevation(blur: 0, yOffset: 0, opacity: 0)

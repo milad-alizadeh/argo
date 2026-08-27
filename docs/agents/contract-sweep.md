@@ -38,6 +38,11 @@ Readers are counted in four populations, and the report turns on them:
 Two groups come out: **no call site anywhere**, and **read only by the specimen and its
 assertions**. Everything else is alive.
 
+The member count will not match a hand count taken off the type names. #756 counted 246; this
+counts **294**, because it enumerates what a type-name pass never reaches: every `func` and `case`,
+every `private` member, and every member of a nested type. A sweep is compared against the previous
+sweep's JSON, never against a remembered number.
+
 ### The one thing it cannot do
 
 Two families spell some names — `deck` is an `ArgoRadius` rung and an `ArgoElevation` rung — and
@@ -64,6 +69,12 @@ Two readings are neither, and the sweep's populations are how you tell:
   `ArgoElevation.castsShadow`, `ArgoMotion.durationCeiling` — is read by the suites and by nothing
   else, on purpose. It is a survivor a reader would otherwise mistake for dead, so it says at the
   value that the assertions are what spend it.
+
+A role the **specimen alone draws** is the one case where the group is not the answer. The specimen
+draws every role, including the dead ones — it is where a role is looked at, never why it is kept.
+So ask what the role is FOR, and whether a shipping surface still answers to that: a role waiting
+on a surface is `unwired`, and a role whose surface another role has taken over is *nothing needs
+it*, whatever the specimen still does with it.
 
 Finally, check the `unwired` maps in the other direction. `VisualContractCoverageTests` fails an
 entry naming a role that does not exist; nothing fails an entry naming a role that has since

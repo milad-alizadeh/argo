@@ -121,8 +121,8 @@ public extension ArgoMotion {
     /// draws a kept role as unjudged.
     static let unwired: [String: String] = [:]
 
-    /// The cap every role is held under, spent by `RhythmTests` rather than by a surface — a
-    /// ceiling a call site could reach for would be a duration, which is the thing it forbids.
+    /// Spent by `RhythmTests`, never by a surface: a ceiling a call site reached for would be a
+    /// duration, which is the thing it forbids.
     ///
     /// No NON-REPEATING role may run longer than this. Past it a transition stops reading as
     /// feedback and starts reading as latency. A repeating role is outside the cap because the
