@@ -18,7 +18,9 @@ Packages/
     argo-observe/   the CLI that tails a transcript and prints what it reads
   ArgoUI/           shared visual components. No engine dependency
     Shell/          production NavigationSplitView, sidebar, deck ground and toolbar vessels
-    VisualContract/ the palette, type, geometry, elevation and motion roles (#375)
+    VisualContract/ the palette, type, geometry, elevation and motion roles (#375) — VALUES only
+    Atoms/          the shared views and materials built out of those values (#772)
+    Focus/          whether a focus ring would be answering the keyboard (#533)
     Specimen/       preview-only views that show the contract's roles together
 ```
 
@@ -102,6 +104,11 @@ Colours, type, geometry, elevation and motion come from `ArgoUI/VisualContract/`
 guard's only job is to keep every other file naming a role instead of writing a value down.
 `VisualContract/` is exempt because it IS the contract; `Specimen/` is exempt for the opposite
 reason — a specimen exists to show what a role is worth, and it ships in no screen.
+
+The contract holds **values and nothing else** (#772). The shared views built out of them —
+`ArgoBadge`, `ArgoGlyph`, `ArgoFloatingGlass` and the rest — are `ArgoUI/Atoms/`, and they are
+inside the guard's scope like every other view. `rules/design-system.md` lists all three
+populations by file.
 
 ## Screenshots
 

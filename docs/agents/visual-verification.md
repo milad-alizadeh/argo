@@ -49,7 +49,8 @@ is the only source for rhythm, density and type size. Prose in the decision log 
 satisfied while the approved pixels are not.
 
 The rhythm itself lives in `ArgoUI/VisualContract/`, rendered by the `foundations` specimen.
-That, not an HTML page, is the living token contract (`rules/design-system.md`).
+That, not an HTML page, is the living token contract (`rules/design-system.md`). The directory
+holds values only; the shared views drawn with them are `ArgoUI/Atoms/`.
 
 ## A render is not a click
 
