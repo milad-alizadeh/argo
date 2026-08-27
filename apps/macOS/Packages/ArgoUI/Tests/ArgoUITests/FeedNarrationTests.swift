@@ -117,7 +117,7 @@ struct FeedNarrationTests {
                 "run", tool: "Bash", kind: .execute,
                 naming: "git push", saying: "Push the ticket branch",
             )),
-            .toolCallOutcome(FeedFixture.answered("run", nil)),
+            .toolCallOutcome(TranscriptFixtures.finished("run", nil)),
         ]).first)
 
         #expect(call.disclosure == .none)

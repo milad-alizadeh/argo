@@ -10,10 +10,7 @@ struct FeedSpokenTests {
     func `a row says what the agent did and what it did it to`() throws {
         let call = try #require(FeedFixture.calls(in: [
             .toolCall(FeedFixture.call("read", tool: "Read", kind: .read, naming: "src/token.ts")),
-            .toolCallOutcome(FeedFixture.answered(
-                "read",
-                .output(OutputEvidence(tier: .direct, text: "let token = 1")),
-            )),
+            .toolCallOutcome(TranscriptFixtures.printed("read", "let token = 1")),
         ]).first)
 
         #expect(call.spoken == "Read token.ts")
@@ -58,7 +55,10 @@ struct FeedSpokenTests {
             let id = "edit-\(position)"
             return [
                 .toolCall(FeedFixture.call(id, tool: "Edit", kind: .edit, naming: "Feed.swift")),
-                .toolCallOutcome(FeedFixture.answered(id, FeedFixture.patch(.modify, added: 1))),
+                .toolCallOutcome(TranscriptFixtures.finished(
+                    id,
+                    FeedFixture.patch(.modify, added: 1),
+                )),
             ]
         }
         let call = try #require(FeedFixture.calls(in: edits).first)
@@ -78,10 +78,7 @@ struct FeedSpokenTests {
                     kind: .read,
                     naming: "file\(position).swift",
                 )),
-                .toolCallOutcome(FeedFixture.answered(
-                    id,
-                    .output(OutputEvidence(tier: .direct, text: "let token = 1")),
-                )),
+                .toolCallOutcome(TranscriptFixtures.printed(id, "let token = 1")),
             ]
         })
         let survey = try #require(FeedFixture.surveys(in: rows).first)

@@ -1,6 +1,6 @@
 import ArgoEngine
 
-extension CockpitPresentation.Session {
+extension TranscriptFixtures {
     /// A session at the length a real one reaches: a run of turns, each the shape a turn actually
     /// has — something asked, sometimes some reasoning, a stretch of looking, the work that came
     /// out of it, and usually an answer.
@@ -20,7 +20,7 @@ extension CockpitPresentation.Session {
             + reasoned(number)
             + surveyed(number)
             + worked(number)
-            + answered(number)
+            + spoke(number)
     }
 
     /// Not every turn reasons out loud.
@@ -56,8 +56,9 @@ extension CockpitPresentation.Session {
         }
     }
 
-    /// Some turns end without a word — an agent that hands back silently is a real state.
-    private static func answered(_ number: Int) -> [TranscriptEvent] {
+    /// What the turn said at the end of it, if anything — an agent that hands back silently is a
+    /// real state.
+    private static func spoke(_ number: Int) -> [TranscriptEvent] {
         guard number % 7 != 5 else { return [.turnEnded(.endTurn)] }
         return [
             .message(markdown: LongProse.messages[number % LongProse.messages.count]),
@@ -75,24 +76,18 @@ extension CockpitPresentation.Session {
                 target: "Sources/ArgoUI/Shell/Deck/Feed/FeedView\(number).swift",
                 atMs: nil,
             )),
-            .toolCallOutcome(ToolCallOutcome(
-                id: id,
-                status: .completed,
-                result: .diff(DiffEvidence(
-                    tier: .direct,
-                    change: .modify,
-                    destination: nil,
-                    added: number % 9 + 1,
-                    removed: number % 4,
-                    hunks: [DiffHunk(
-                        oldStart: 1,
-                        newStart: 1,
-                        lines: [DiffLine(side: .add, text: "    .argoFeedMeasure()")],
-                    )],
-                )),
-                endedAtMs: nil,
-                usage: nil,
-            )),
+            .toolCallOutcome(finished(id, .diff(DiffEvidence(
+                tier: .direct,
+                change: .modify,
+                destination: nil,
+                added: number % 9 + 1,
+                removed: number % 4,
+                hunks: [DiffHunk(
+                    oldStart: 1,
+                    newStart: 1,
+                    lines: [DiffLine(side: .add, text: "    .argoFeedMeasure()")],
+                )],
+            )))),
         ]
     }
 
@@ -132,13 +127,7 @@ extension CockpitPresentation.Session {
         -> [TranscriptEvent] {
         [
             .toolCall(ToolCall(id: id, name: tool, kind: kind, target: target, atMs: nil)),
-            .toolCallOutcome(ToolCallOutcome(
-                id: id,
-                status: .completed,
-                result: .output(OutputEvidence(tier: .direct, text: "public static let column")),
-                endedAtMs: nil,
-                usage: nil,
-            )),
+            .toolCallOutcome(printed(id, "public static let column")),
         ]
     }
 }

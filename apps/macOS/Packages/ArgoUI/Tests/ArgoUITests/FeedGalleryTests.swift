@@ -160,7 +160,7 @@ struct FeedGalleryTests {
                     kind: .read,
                     naming: "chart.png",
                 )),
-                .toolCallOutcome(FeedFixture.answered(
+                .toolCallOutcome(TranscriptFixtures.finished(
                     "render-\(position)",
                     FeedFixture.shot(.direct),
                 )),
@@ -182,10 +182,7 @@ struct FeedGalleryTests {
             FeedFixture.shot(.direct),
         ) + [
             .toolCall(FeedFixture.call("again", tool: "Read", kind: .read, naming: "chart.png")),
-            .toolCallOutcome(FeedFixture.answered(
-                "again",
-                .output(OutputEvidence(tier: .direct, text: "not an image this time")),
-            )),
+            .toolCallOutcome(TranscriptFixtures.printed("again", "not an image this time")),
         ]
 
         let call = try #require(FeedFixture.calls(in: mixed).first)
@@ -204,9 +201,9 @@ struct FeedGalleryTests {
                 .toolCall(FeedFixture.call(
                     "text-\(position)", tool: "Read", kind: .read, naming: path,
                 )),
-                .toolCallOutcome(FeedFixture.answered(
+                .toolCallOutcome(TranscriptFixtures.printed(
                     "text-\(position)",
-                    .output(OutputEvidence(tier: .direct, text: "and a page of it")),
+                    "and a page of it",
                 )),
             ]
         }

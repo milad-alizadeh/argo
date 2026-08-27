@@ -49,13 +49,10 @@ struct FeedCallEndingTests {
     func `a command that came back good is a success, and keeps what it printed`() {
         let calls = FeedFixture.calls(in: [
             .toolCall(FeedFixture.call("run", tool: "Bash", kind: .execute, naming: "swift test")),
-            .toolCallOutcome(FeedFixture.answered(
+            .toolCallOutcome(TranscriptFixtures.printed(
                 "run",
-                .output(OutputEvidence(
-                    tier: .direct,
-                    text: "Test Suite 'All tests' started\n✔ oneTest\n"
-                        + "Executed 151 tests, with 0 failures\n\n",
-                )),
+                "Test Suite 'All tests' started\n✔ oneTest\n"
+                    + "Executed 151 tests, with 0 failures\n\n",
             )),
         ])
 
@@ -97,17 +94,14 @@ struct FeedCallEndingTests {
     func `the disclosure marker and what opens behind it are one fact`() {
         let calls = FeedFixture.calls(in: [
             .toolCall(FeedFixture.call("kept", tool: "Read", kind: .read, naming: "Token.swift")),
-            .toolCallOutcome(FeedFixture.answered(
-                "kept",
-                .output(OutputEvidence(tier: .direct, text: "1\texport const token = 1")),
-            )),
+            .toolCallOutcome(TranscriptFixtures.printed("kept", "1\texport const token = 1")),
             .toolCall(FeedFixture.call(
                 "dropped",
                 tool: "Read",
                 kind: .read,
                 naming: "Other.swift",
             )),
-            .toolCallOutcome(FeedFixture.answered("dropped", nil)),
+            .toolCallOutcome(TranscriptFixtures.finished("dropped", nil)),
             // Never answered at all — a third way to have nothing behind the row.
             .toolCall(FeedFixture.call("open", tool: "Read", kind: .read, naming: "Third.swift")),
         ])
@@ -122,7 +116,7 @@ struct FeedCallEndingTests {
         let calls = FeedFixture.calls(in: [
             .toolCall(FeedFixture.call("edit", tool: "Edit", kind: .edit, naming: "Feed.swift")),
             // A mutation whose patch nothing could read — a binary file, an unparsed shape.
-            .toolCallOutcome(FeedFixture.answered("edit", FeedFixture.patch(
+            .toolCallOutcome(TranscriptFixtures.finished("edit", FeedFixture.patch(
                 .modify,
                 added: 0,
                 removed: 0,
@@ -140,7 +134,7 @@ struct FeedCallEndingTests {
         let patch = FeedFixture.patch(.modify, added: 1, removed: 1)
         let call = try #require(FeedFixture.calls(in: [
             .toolCall(FeedFixture.call("edit", tool: "Edit", kind: .edit, naming: "Feed.swift")),
-            .toolCallOutcome(FeedFixture.answered("edit", patch)),
+            .toolCallOutcome(TranscriptFixtures.finished("edit", patch)),
         ]).first)
 
         #expect(call.churn == FeedCall.Churn(added: 1, removed: 1))

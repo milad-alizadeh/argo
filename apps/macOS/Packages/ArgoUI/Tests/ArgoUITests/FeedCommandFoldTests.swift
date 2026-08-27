@@ -108,10 +108,7 @@ struct FeedCommandFoldTests {
                     naming: command,
                     saying: said,
                 )),
-                .toolCallOutcome(FeedFixture.answered(
-                    command,
-                    .output(OutputEvidence(tier: .direct, text: "…")),
-                )),
+                .toolCallOutcome(TranscriptFixtures.printed(command, "…")),
             ]
         }
         let survey = try #require(
@@ -170,7 +167,7 @@ struct FeedCommandFoldTests {
                     kind: .edit,
                     naming: "Feed.swift",
                 )),
-                .toolCallOutcome(FeedFixture.answered(
+                .toolCallOutcome(TranscriptFixtures.finished(
                     "edit",
                     FeedFixture.patch(.modify, added: 1),
                 )),
@@ -188,10 +185,7 @@ struct FeedCommandFoldTests {
                     kind: .execute,
                     naming: command,
                 )),
-                .toolCallOutcome(FeedFixture.answered(
-                    command,
-                    .output(OutputEvidence(tier: .direct, text: "what \(command) printed")),
-                )),
+                .toolCallOutcome(TranscriptFixtures.printed(command, "what \(command) printed")),
             ]
         }
     }
@@ -201,10 +195,7 @@ struct FeedCommandFoldTests {
     private func opened(_ path: String) -> [TranscriptEvent] {
         [
             .toolCall(FeedFixture.call("read-\(path)", tool: "Read", kind: .read, naming: path)),
-            .toolCallOutcome(FeedFixture.answered(
-                "read-\(path)",
-                .output(OutputEvidence(tier: .direct, text: "the contents of \(path)")),
-            )),
+            .toolCallOutcome(TranscriptFixtures.printed("read-\(path)", "the contents of \(path)")),
         ]
     }
 }

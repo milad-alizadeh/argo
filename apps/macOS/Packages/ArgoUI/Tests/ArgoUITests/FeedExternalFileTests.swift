@@ -72,9 +72,7 @@ struct FeedExternalFileTests {
         [
             .cwd(cwd),
             .toolCall(FeedFixture.call("read-0", tool: "Read", kind: .read, naming: path)),
-            .toolCallOutcome(FeedFixture.answered(
-                "read-0", .output(OutputEvidence(tier: .direct, text: text)),
-            )),
+            .toolCallOutcome(TranscriptFixtures.printed("read-0", text)),
         ]
     }
 }

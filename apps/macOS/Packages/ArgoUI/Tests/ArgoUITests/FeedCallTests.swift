@@ -44,11 +44,17 @@ struct FeedCallTests {
     func `a mutation says which mutation it was, rather than leaving it to the diffstat`() {
         let calls = FeedFixture.calls(in: [
             .toolCall(FeedFixture.call("edit", tool: "Edit", kind: .edit, naming: "Feed.swift")),
-            .toolCallOutcome(FeedFixture.answered("edit", FeedFixture.patch(.modify, added: 8))),
+            .toolCallOutcome(TranscriptFixtures.finished(
+                "edit",
+                FeedFixture.patch(.modify, added: 8),
+            )),
             .toolCall(FeedFixture.call("create", tool: "Write", kind: .edit, naming: "New.swift")),
-            .toolCallOutcome(FeedFixture.answered("create", FeedFixture.patch(.create, added: 39))),
+            .toolCallOutcome(TranscriptFixtures.finished(
+                "create",
+                FeedFixture.patch(.create, added: 39),
+            )),
             .toolCall(FeedFixture.call("delete", tool: "Write", kind: .edit, naming: "Old.swift")),
-            .toolCallOutcome(FeedFixture.answered(
+            .toolCallOutcome(TranscriptFixtures.finished(
                 "delete",
                 FeedFixture.patch(.delete, removed: 61),
             )),
@@ -68,7 +74,7 @@ struct FeedCallTests {
                 kind: .edit,
                 naming: "Shell/Tint.swift",
             )),
-            .toolCallOutcome(FeedFixture.answered("move", FeedFixture.patch(
+            .toolCallOutcome(TranscriptFixtures.finished("move", FeedFixture.patch(
                 .move,
                 destination: "VisualContract/Tint.swift",
             ))),

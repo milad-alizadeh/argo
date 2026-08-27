@@ -8,7 +8,7 @@ private struct ShellCall {
     let printed: String
 }
 
-extension CockpitPresentation.Session {
+extension TranscriptFixtures {
     /// A turn that looked around — at files and through a shell — then changed something, then said
     /// so: seven quiet calls, a mutation, and two loud commands after it.
     ///
@@ -99,9 +99,7 @@ extension CockpitPresentation.Session {
         let id = "fold-read-\(position)"
         return [
             .toolCall(ToolCall(id: id, name: "Read", kind: .read, target: file.path, atMs: nil)),
-            .toolCallOutcome(finished(id, .output(OutputEvidence(
-                tier: .direct, text: file.text,
-            )))),
+            .toolCallOutcome(printed(id, file.text)),
         ]
     }
 
@@ -119,14 +117,8 @@ extension CockpitPresentation.Session {
                     id: id, name: call.said == nil ? "shell" : "Bash", kind: .execute,
                     target: call.ran, narration: call.said, atMs: nil,
                 )),
-                .toolCallOutcome(finished(id, .output(OutputEvidence(
-                    tier: .direct, text: call.printed,
-                )))),
+                .toolCallOutcome(printed(id, call.printed)),
             ]
         }
-    }
-
-    private static func finished(_ id: String, _ result: ToolResult?) -> ToolCallOutcome {
-        ToolCallOutcome(id: id, status: .completed, result: result, endedAtMs: nil, usage: nil)
     }
 }

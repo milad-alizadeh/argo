@@ -33,7 +33,7 @@ struct EvidenceSkillSpecimen: View {
     /// was read off the machine rather than owned by Argo (`CONTEXT.md` L2).
     private static let skill = OutputEvidence(
         tier: .derived,
-        text: CockpitPresentation.Session.previewSkillLoad.body?.text ?? "",
+        text: TranscriptFixtures.previewSkillLoad.body?.text ?? "",
     )
 }
 

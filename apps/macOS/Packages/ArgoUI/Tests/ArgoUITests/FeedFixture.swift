@@ -3,6 +3,9 @@ import ArgoEngine
 
 /// Calls as a transcript writes them — an emitted call, and the outcome that answers it some
 /// records later. Every fixture here is a pair, so the reading still has to find its result.
+///
+/// The outcome builders themselves are `TranscriptFixtures`' — `finished`, `looked` and `spent`
+/// are declared once, beside the previews that read the same shapes (#757).
 enum FeedFixture {
     static func call(
         _ id: String,
@@ -13,26 +16,6 @@ enum FeedFixture {
     )
         -> ToolCall {
         ToolCall(id: id, name: tool, kind: kind, target: target, narration: narration, atMs: nil)
-    }
-
-    static func answered(_ id: String, _ result: ToolResult?) -> ToolCallOutcome {
-        ToolCallOutcome(id: id, status: .completed, result: result, endedAtMs: nil, usage: nil)
-    }
-
-    /// A call that reported what it spent — the delegating call, which is the only one that ever
-    /// does. Its result is the subagent's whole sidechain, priced.
-    ///
-    /// It names the Subagent too where the caller asks. The id and the spend arrive together, on
-    /// the one record that answers a handover.
-    static func spent(_ id: String, _ usage: Usage, subagent: String? = nil) -> ToolCallOutcome {
-        ToolCallOutcome(
-            id: id,
-            status: .completed,
-            result: nil,
-            endedAtMs: nil,
-            usage: usage,
-            subagentID: subagent,
-        )
     }
 
     /// The question tool, carrying a question. The id `ask` is what an outcome answering it quotes.
@@ -101,7 +84,7 @@ enum FeedFixture {
         [
             .toolCall(call("away", tool: "Task", kind: .delegate, naming: "review")),
             .toolCall(call("back", tool: "Task", kind: .delegate, naming: "verify")),
-            .toolCallOutcome(spent("back", delegated, subagent: subagent)),
+            .toolCallOutcome(TranscriptFixtures.spent("back", delegated, subagent: subagent)),
         ]
     }
 
@@ -125,7 +108,7 @@ enum FeedFixture {
     static func looked(at path: String, _ result: ToolResult) -> [TranscriptEvent] {
         [
             .toolCall(call("shot-\(path)", tool: "Read", kind: .read, naming: path)),
-            .toolCallOutcome(answered("shot-\(path)", result)),
+            .toolCallOutcome(TranscriptFixtures.finished("shot-\(path)", result)),
         ]
     }
 

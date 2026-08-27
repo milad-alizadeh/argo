@@ -24,5 +24,5 @@ enum PlanProjection {
 extension PlanProjection {
     /// The preview transcript's plan — the one place every specimen and `#Preview` takes the pill's
     /// reading from, so none of them can be looking at a different list.
-    static let previewReading = reading(from: CockpitPresentation.Session.previewTranscript)
+    static let previewReading = reading(from: TranscriptFixtures.previewTranscript)
 }

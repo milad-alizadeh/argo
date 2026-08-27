@@ -1,39 +1,6 @@
 import ArgoEngine
-import Foundation
 
-extension CockpitPresentation.Session {
-    /// When the two unanswered delegations here were handed over, relative to NOW rather than to
-    /// the rest of this transcript's Dec-2024 clock.
-    ///
-    /// Their chips count UP from this, so a fixed moment in the past would draw a subagent that has
-    /// been running for eight months. The reading either side of it is unaffected: nothing in the
-    /// feed words a delegation's age, and the rail is the one surface that counts.
-    static func handedOver(_ secondsAgo: Int) -> Int {
-        Date().epochMs - secondsAgo * 1000
-    }
-
-    /// A delegation that came back, priced and timed — the two figures the rail draws on a chip.
-    ///
-    /// Here rather than beside its one caller in `+PreviewWork`, which is at the file ceiling. The
-    /// tokens land as cache reads, where a real subagent's spend mostly sits.
-    static func landed(_ id: String, tokens: Int, seconds: Int) -> ToolCallOutcome {
-        ToolCallOutcome(
-            id: id,
-            status: .completed,
-            result: nil,
-            endedAtMs: nil,
-            usage: Usage(
-                inputTokens: 0,
-                outputTokens: 0,
-                cacheReadTokens: tokens,
-                cacheCreationTokens: 0,
-            ),
-            reportedDurationMs: seconds * 1000,
-        )
-    }
-}
-
-extension CockpitPresentation.Session {
+extension TranscriptFixtures {
     /// The three things a turn does that are not work or prose: it hands work to other agents, it
     /// asks somebody a question, and it gets punctuated.
     ///
@@ -54,24 +21,19 @@ extension CockpitPresentation.Session {
             target: "Verify: the fold breaks at every mark",
             narration: "Verify: the fold breaks at every mark", atMs: handedOver(186),
         )),
-        .toolCallOutcome(ToolCallOutcome(
-            id: "fan-verify",
-            status: .completed,
-            result: nil,
-            endedAtMs: nil,
-            usage: Usage(
+        // The one delegation here that named its Subagent, because it is the one the record
+        // answered: the id arrives with the result. It is what makes this chip the selectable one
+        // in the rail — see `AgentsRailFixture`.
+        .toolCallOutcome(spent(
+            "fan-verify",
+            Usage(
                 inputTokens: 3600,
                 outputTokens: 40000,
                 cacheReadTokens: 100_000,
                 cacheCreationTokens: 0,
             ),
-            // The one delegation here that named its Subagent, because it is the one the record
-            // answered: the id arrives with the result. It is what makes this chip the selectable
-            // one in the rail — see `AgentsRailFixture`.
-            subagentID: AgentsRailFixture.verifierID,
-            // Beside the spend, and reported by the same record: the host measures the Subagent's
-            // whole run, which is the only place that figure is ever stated.
-            reportedDurationMs: 223_591,
+            subagent: AgentsRailFixture.verifierID,
+            reportedMs: 223_591,
         )),
         .toolCall(ToolCall(
             id: "fan-sweep", name: "Task", kind: .delegate,
@@ -89,16 +51,10 @@ extension CockpitPresentation.Session {
                 options: Ask.Option.labelled(["Labelled on the chip", "Moved to hover"]),
             )]),
         )),
-        .toolCallOutcome(ToolCallOutcome(
-            id: "ask-settled",
-            status: .completed,
-            result: .output(OutputEvidence(
-                tier: .direct,
-                text: "Your questions have been answered: \"Where should a subagent's spend be "
-                    + "drawn?\"=\"Labelled on the chip\"",
-            )),
-            endedAtMs: nil,
-            usage: nil,
+        .toolCallOutcome(printed(
+            "ask-settled",
+            "Your questions have been answered: \"Where should a subagent's spend be "
+                + "drawn?\"=\"Labelled on the chip\"",
         )),
         // What the turn itself cost, beside what it paid other agents to work. Both grains are in
         // the fixture because the roll-up at the foot of the reading claims to be their total.

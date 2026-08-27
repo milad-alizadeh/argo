@@ -1,4 +1,4 @@
-extension CockpitPresentation.Session {
+extension TranscriptFixtures {
     /// What gets said across a long session, as the prose a real one is made of.
     ///
     /// A table rather than a template, and that is the whole point of it. A generated fixture

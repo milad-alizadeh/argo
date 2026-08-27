@@ -1,6 +1,6 @@
 import ArgoEngine
 
-extension CockpitPresentation.Session {
+extension TranscriptFixtures {
     /// The work itself: one call of every kind the feed can name, the two same-named files that
     /// make the qualifier appear, the run of three edits the feed collapses, and a failure.
     ///
@@ -11,44 +11,44 @@ extension CockpitPresentation.Session {
             id: "edit", name: "Edit", kind: .edit,
             target: "Sources/ArgoUI/Shell/Deck/Feed/FeedView.swift", atMs: nil,
         )),
-        .toolCallOutcome(answered("edit", .diff(patch(.modify, added: 8, removed: 3)))),
+        .toolCallOutcome(finished("edit", .diff(patch(.modify, added: 8, removed: 3)))),
         .toolCall(ToolCall(
             id: "edit-twin", name: "Edit", kind: .edit,
             target: "Sources/ArgoUI/Specimen/FeedView.swift", atMs: nil,
         )),
-        .toolCallOutcome(answered("edit-twin", .diff(patch(.modify, added: 2, removed: 0)))),
+        .toolCallOutcome(finished("edit-twin", .diff(patch(.modify, added: 2, removed: 0)))),
         .toolCall(ToolCall(
             id: "create", name: "Write", kind: .edit,
             target: "Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCall.swift", atMs: nil,
         )),
-        .toolCallOutcome(answered("create", .diff(patch(.create, added: 39, removed: 0)))),
+        .toolCallOutcome(finished("create", .diff(patch(.create, added: 39, removed: 0)))),
         // Three edits of one file, back to back: the run the feed collapses to a single line with
         // a count, and three separate patches in the panel behind it.
         .toolCall(ToolCall(
             id: "rework-1", name: "Edit", kind: .edit,
             target: "Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCallLine.swift", atMs: nil,
         )),
-        .toolCallOutcome(answered("rework-1", .diff(patch(.modify, added: 4, removed: 1)))),
+        .toolCallOutcome(finished("rework-1", .diff(patch(.modify, added: 4, removed: 1)))),
         .toolCall(ToolCall(
             id: "rework-2", name: "Edit", kind: .edit,
             target: "Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCallLine.swift", atMs: nil,
         )),
-        .toolCallOutcome(answered("rework-2", .diff(patch(.modify, added: 2, removed: 2)))),
+        .toolCallOutcome(finished("rework-2", .diff(patch(.modify, added: 2, removed: 2)))),
         .toolCall(ToolCall(
             id: "rework-3", name: "Edit", kind: .edit,
             target: "Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCallLine.swift", atMs: nil,
         )),
-        .toolCallOutcome(answered("rework-3", .diff(patch(.modify, added: 1, removed: 6)))),
+        .toolCallOutcome(finished("rework-3", .diff(patch(.modify, added: 1, removed: 6)))),
         .toolCall(ToolCall(
             id: "delete", name: "Write", kind: .edit,
             target: "Sources/ArgoUI/Shell/Deck/LegacyCallRow.swift", atMs: nil,
         )),
-        .toolCallOutcome(answered("delete", .diff(patch(.delete, added: 0, removed: 61)))),
+        .toolCallOutcome(finished("delete", .diff(patch(.delete, added: 0, removed: 61)))),
         .toolCall(ToolCall(
             id: "move", name: "Edit", kind: .edit,
             target: "Sources/ArgoUI/Shell/ConnectionTint.swift", atMs: nil,
         )),
-        .toolCallOutcome(answered("move", .diff(moved(
+        .toolCallOutcome(finished("move", .diff(moved(
             to: "Sources/ArgoUI/VisualContract/ConnectionTint.swift",
         )))),
         // Narrated, as a Claude Code record writes a command: the sentence is what the row draws
@@ -75,10 +75,10 @@ extension CockpitPresentation.Session {
             id: "reread", name: "Read", kind: .read,
             target: "Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCallLine.swift", atMs: nil,
         )),
-        .toolCallOutcome(answered("reread", .output(OutputEvidence(
-            tier: .direct,
-            text: "    88\t        .foregroundStyle(argo.color.diff.added)",
-        )))),
+        .toolCallOutcome(printed(
+            "reread",
+            "    88\t        .foregroundStyle(argo.color.diff.added)",
+        )),
         .toolCall(ToolCall(
             // With a pipeline and NO description, deliberately: the row that still draws the
             // command, as every CLI that narrates nothing produces.
@@ -86,18 +86,18 @@ extension CockpitPresentation.Session {
             target: "swift test --package-path Packages/ArgoUI 2>&1 | grep -E 'Test run with'",
             atMs: nil,
         )),
-        .toolCallOutcome(answered("test", .output(OutputEvidence(
-            tier: .direct,
-            text: "Test Suite 'All tests' started\n✔ FeedCallTests.everyKindHasItsOwnVerb\n"
+        .toolCallOutcome(printed(
+            "test",
+            "Test Suite 'All tests' started\n✔ FeedCallTests.everyKindHasItsOwnVerb\n"
                 + "Executed 151 tests, with 0 failures in 24.113 seconds\n",
-        )))),
+        )),
         // A document the agent wrote. Its patch is the whole file with nothing removed, which is
         // the one shape the panel opens as prose rather than as a patch.
         .toolCall(ToolCall(
             id: "spec", name: "Write", kind: .edit,
             target: "docs/designs/feed-command-legibility-spec.md", atMs: nil,
         )),
-        .toolCallOutcome(answered("spec", .diff(DiffEvidence(
+        .toolCallOutcome(finished("spec", .diff(DiffEvidence(
             tier: .direct,
             change: .create,
             destination: nil,
@@ -110,40 +110,36 @@ extension CockpitPresentation.Session {
         .toolCall(ToolCall(
             id: "skill", name: "Skill", kind: .skill, target: "grill", atMs: nil,
         )),
-        .toolCallOutcome(answered("skill", .output(OutputEvidence(
-            tier: .direct,
-            text: "# Grill\n\nInterrogate a claim until it stands or falls.\n\n"
+        .toolCallOutcome(printed(
+            "skill",
+            "# Grill\n\nInterrogate a claim until it stands or falls.\n\n"
                 + "## Process\n\n1. State the claim in one sentence.\n"
                 + "2. Name what would have to be true for it to hold.\n"
                 + "3. Go and check each one, in the repo and not in your head.\n",
-        )))),
+        )),
         .toolCall(ToolCall(
             id: "fetch", name: "WebFetch", kind: .fetch, target: "developer.apple.com", atMs: nil,
         )),
-        .toolCallOutcome(answered("fetch", .output(OutputEvidence(
-            tier: .direct, text: "Adopting Liquid Glass",
-        )))),
+        .toolCallOutcome(printed("fetch", "Adopting Liquid Glass")),
         .toolCall(ToolCall(
             // A delegation narrates itself in the same key a command does, so the row shows the
             // short account and never the brief actually handed over.
             id: "delegate", name: "Task", kind: .delegate, target: "Review the feed",
             narration: "Review the feed", atMs: nil,
         )),
-        // Not `answered`, which prices nothing: a landed delegation reports both figures, and the
+        // Not `finished`, which prices nothing: a landed delegation reports both figures, and the
         // rail draws both.
         .toolCallOutcome(landed("delegate", tokens: 71600, seconds: 96)),
         .toolCall(ToolCall(
             id: "mcp", name: "mcp__linear__list_issues", kind: .mcp, target: nil, atMs: nil,
         )),
-        .toolCallOutcome(answered("mcp", .output(OutputEvidence(
-            tier: .direct, text: "12 issues",
-        )))),
+        .toolCallOutcome(printed("mcp", "12 issues")),
         .toolCall(ToolCall(
             // With an argument, deliberately: a kind nobody classified is named by its TOOL.
             id: "strange", name: "custom_tool_v2", kind: .other,
             target: "whatever it does", atMs: nil,
         )),
-        .toolCallOutcome(answered("strange", nil)),
+        .toolCallOutcome(finished("strange", nil)),
     ]
 
     /// Real markdown: the render has to answer whether an outline still reads as one once the
@@ -163,10 +159,6 @@ extension CockpitPresentation.Session {
         "Read 2 files · Ran 5",
         "```",
     ].map { DiffLine(side: .add, text: $0) }
-
-    private static func answered(_ id: String, _ result: ToolResult?) -> ToolCallOutcome {
-        ToolCallOutcome(id: id, status: .completed, result: result, endedAtMs: nil, usage: nil)
-    }
 
     /// A patch with a hunk in it: a mutation whose patch nothing could read is a row that does not
     /// open.

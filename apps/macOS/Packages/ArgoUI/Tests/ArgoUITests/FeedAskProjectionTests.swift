@@ -86,9 +86,7 @@ struct FeedAskProjectionTests {
         let rows = FeedProjection.rows(
             from: [
                 .toolCall(FeedFixture.asking(Self.question)),
-                .toolCallOutcome(FeedFixture.answered("ask", .output(
-                    OutputEvidence(tier: .direct, text: "#712"),
-                ))),
+                .toolCallOutcome(TranscriptFixtures.printed("ask", "#712")),
             ],
             asking: FeedAskProjection.asking(for: session()),
         )

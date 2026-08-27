@@ -117,7 +117,11 @@ struct AgentsRailScopeTests {
     private func settled() -> [TranscriptEvent] {
         [
             .toolCall(FeedFixture.call("back", tool: "Task", kind: .delegate, naming: "verify")),
-            .toolCallOutcome(FeedFixture.spent("back", FeedFixture.delegated, subagent: Self.read)),
+            .toolCallOutcome(TranscriptFixtures.spent(
+                "back",
+                FeedFixture.delegated,
+                subagent: Self.read,
+            )),
         ]
     }
 
