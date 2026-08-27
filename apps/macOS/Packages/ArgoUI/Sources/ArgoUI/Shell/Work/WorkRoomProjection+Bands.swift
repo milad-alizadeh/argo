@@ -1,51 +1,44 @@
-/// The backlog's top-level structure: priority over the ROOTS (#819).
-///
-/// Nesting and priority grouping cannot both be the structure — a child's priority is its own, and
-/// one parent's children scatter across all three bands. The design resolves it by banding the
-/// roots alone and letting a child hang under its parent whatever its own priority is. So a header
-/// can stand over rows that disagree with it, and where one does the ROW says so — the header never
-/// speaks for it (`cockpit-work-room.md` — the one conflict, and how it resolves).
+/// The backlog's top-level structure: priority over the ROOTS, a child staying under its parent
+/// whatever its own priority is (`cockpit-work-room.md` — the one conflict, and how it resolves).
 extension WorkRoomProjection {
     /// One priority band and the roots under it.
     struct Band: Sendable, Equatable, Identifiable {
-        /// The provider's own word, verbatim, and absent where nothing was read. Argo neither
-        /// ranks these nor recases them.
+        /// The provider's own word, verbatim and in its own case, and absent where nothing was
+        /// read. Argo neither ranks these nor recases them.
         let priority: String?
         let roots: [Row]
 
-        /// Stable across a re-derive, and distinct from every word a provider could serve: the
-        /// unread band's key is the one string a priority word cannot be.
+        /// A band nobody read a priority for and one whose word is empty are DIFFERENT bands, so
+        /// the two cannot share a key — `ForEach` would draw one of them and drop the other.
         var id: String {
-            priority ?? ""
+            priority.map { "priority:\($0.lowercased())" } ?? "unread"
         }
 
-        /// What the header reads. `GroupLabel` uppercases, so this is spelled in the provider's own
-        /// case — and the unread band names the TIER rather than claiming the tracker set none.
+        /// What the header reads; `GroupLabel` uppercases it. The unread band names the TIER rather
+        /// than claiming the tracker set none (`CONTEXT.md` L2 · degrade-down).
         var label: String {
             priority ?? "no priority read"
         }
     }
 
-    /// The three words the design draws headers for, in the order they stand. MATCHED, never
-    /// ranked (`WorkReading+NextUp` matches `high` the same way): Argo has no ladder, so a word it
-    /// has no band for keeps a header of its own rather than being sorted into one of these.
+    /// The words the design draws headers for, in the order they stand. Matched, never ranked.
     private static let bandOrder = ["high", "medium", "low"]
 
-    /// The roots banded. The three known words first, then any other word in the order the provider
-    /// served it, and the roots nobody read a priority for LAST — a row lost to a missing fact
-    /// would be the worse failure, so the unread ones keep a header rather than a band.
+    /// The roots banded: the three known words first, then any other word in the order the provider
+    /// served it, and the roots nobody read a priority for last.
     static func bands(of roots: [Row]) -> [Band] {
         var order: [String?] = bandOrder.filter { word in
-            roots.contains { $0.priority == word }
+            roots.contains { key($0.priority) == word }
         }
-        for root in roots where root.priority != nil && !order.contains(root.priority) {
-            order.append(root.priority)
+        for root in roots where root.priority != nil && !order.contains(key(root.priority)) {
+            order.append(key(root.priority))
         }
         if roots.contains(where: { $0.priority == nil }) {
             order.append(nil)
         }
         return order.map { word in
-            Band(priority: word, roots: roots.filter { $0.priority == word })
+            let banded = roots.filter { key($0.priority) == word }
+            return Band(priority: banded.first?.priority ?? word, roots: banded)
         }
     }
 
@@ -55,8 +48,15 @@ extension WorkRoomProjection {
     static func drawn(_ band: Band, shut: Set<Int>) -> [Drawn] {
         drawn(band.roots, shut: shut).map { drawn in
             var stated = drawn
-            stated.odd = drawn.row.priority == band.priority ? nil : drawn.row.priority
+            let agrees = key(drawn.row.priority) == key(band.priority)
+            stated.odd = agrees ? nil : drawn.row.priority
             return stated
         }
+    }
+
+    /// What two priority words are compared by. A tracker spelling one `High` must not open a
+    /// second band beside the `high` one, headed with the same word.
+    private static func key(_ word: String?) -> String? {
+        word?.lowercased()
     }
 }

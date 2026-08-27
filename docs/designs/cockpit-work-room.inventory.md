@@ -451,6 +451,13 @@ One name, and the design froze it. Nothing else came out: the odd priority a chi
 - **The three words are MATCHED, not ranked.** `WorkReading+NextUp` already matches `high` this
   way. A word Argo has no band for keeps a header of its own, in the order the provider served it,
   rather than being sorted into one of the three — Argo does not own this ladder.
+- **The match folds case; the word does not.** A tracker spelling one of its own words `Low` would
+  otherwise open a second band beside `low`, headed with the same word, and a child under it would
+  be told it disagrees with a header it agrees with. `Band.priority` is still the provider's word
+  verbatim — `GroupLabel` is what uppercases the header, and Argo recases nothing.
+- **A band's key is not its word.** `Band.id` distinguishes the unread band from one whose word is
+  empty. Two bands sharing a `ForEach` key draws one and drops the other, which is a row lost to an
+  id rather than to an edge — the same failure `WorkRoomProjection+Tree` refuses.
 
 ## Not a `Section`, and why
 
@@ -459,11 +466,18 @@ ordinary row instead, with `selectionDisabled()`.
 
 `List(.inset)` spends about **52** between one section and the next section's word, where the
 design draws `comfortable` 12 — and macOS exposes no lever on it: `listSectionSpacing` is
-unavailable there, and zeroing the header's `listRowInsets` moves nothing. The one thing the
-`Section` was buying is a header outside the selection and outside keyboard traversal, and
-`selectionDisabled()` gives that back exactly. This is the same amendment #814 made to
-`BacklogOutline`, for the same reason: the stock control could not hold a measurement the design
-had already settled.
+unavailable there, and zeroing the header's `listRowInsets` moves nothing. Two things the `Section`
+was buying, and only one comes back:
+
+- **A header outside the selection and outside keyboard traversal** — `selectionDisabled()` gives
+  this back exactly.
+- **Pinning.** The explorable draws `position: sticky`, and a row does not pin. At twelve tickets
+  the list does not scroll and it costs nothing; on a real backlog the band a reader is inside
+  stops being named. That is the price paid for the measurement, and it is the thing to revisit if
+  the backlog ever gets long enough to scroll past a whole band.
+
+This is the same amendment #814 made to `BacklogOutline`, for the same reason: the stock control
+could not hold something the design had already settled.
 
 ## The renders
 

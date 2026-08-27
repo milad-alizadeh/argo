@@ -1,8 +1,7 @@
 import SwiftUI
 
 /// One row of the backlog: `twist · dot · id · title`, and one trailing fact — a parent's roll-up,
-/// or the priority a child does not share with the header over it (#819). One slot, and the roll-up
-/// wins it, so the two can never collide.
+/// or the priority a child does not share with the header over it (#819).
 ///
 /// The INDENT is the row's, not the list's: `List` insets a whole section, and what moves here is
 /// one row against its siblings.
@@ -41,17 +40,17 @@ struct BacklogRow: View {
         .accessibilityLabel(announcement)
     }
 
-    /// One fact, in the same caption either way — neither outranks the other. The roll-up's hover
-    /// keeps it from being reported as a bug: a number nobody can reconcile against the rows under
-    /// it has to say why on the spot. An odd priority needs none — it is the provider's own word,
-    /// and the header it disagrees with is a few rows up.
+    /// Which fact wins the slot is `Drawn.trailing`'s, told once. Only the roll-up carries a hover:
+    /// a number nobody can reconcile against the rows under it has to say why on the spot.
     @ViewBuilder private var trailing: some View {
-        if let rollUp = row.trailing {
-            caption(rollUp)
-                .help("\(rollUp) — the tracker's own count of closed children, including children "
-                    + "the backlog does not draw.")
-        } else if let odd = drawn.odd {
-            caption(odd)
+        if let fact = drawn.trailing {
+            if let rollUp = row.trailing {
+                caption(fact)
+                    .help("\(rollUp) — the tracker's own count of closed children, including "
+                        + "children the backlog does not draw.")
+            } else {
+                caption(fact)
+            }
         }
     }
 

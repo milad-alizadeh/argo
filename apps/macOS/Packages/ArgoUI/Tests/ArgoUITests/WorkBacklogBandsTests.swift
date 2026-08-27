@@ -30,20 +30,14 @@ struct WorkBacklogBandsTests {
         #expect(bands[1].roots.map(\.id) == [763])
     }
 
-    /// A header counts the rows it DRAWS. Eight under `HIGH` is one root and its seven descendants.
+    /// A header counts the rows it DRAWS — eight under `HIGH` is one root and its seven
+    /// descendants — so folding lowers it and unfolding restores it. A subtree count would stand
+    /// over one visible row and read as a lie.
     @Test
-    func `a band counts every row it draws, not its roots`() {
+    func `a band counts the rows it draws, and the fold moves the number`() {
         let bands = WorkRoomProjection.bands(of: Self.roots)
 
         #expect(bands.map { WorkRoomProjection.drawn($0, shut: []).count } == [8, 1, 3])
-    }
-
-    /// Folding a parent lowers its header, and unfolding restores it — a subtree count would stand
-    /// over one visible row and read as a lie.
-    @Test
-    func `folding a parent lowers its header's count`() {
-        let bands = WorkRoomProjection.bands(of: Self.roots)
-
         #expect(bands.map { WorkRoomProjection.drawn($0, shut: [607]).count } == [1, 1, 3])
         #expect(bands.map { WorkRoomProjection.drawn($0, shut: []).count } == [8, 1, 3])
     }
@@ -128,5 +122,46 @@ struct WorkBacklogBandsTests {
 
         #expect(WorkRoomProjection.bands(of: room.backlog).map(\.priority)
             == ["high", "medium", "low", "critical"])
+    }
+
+    /// A tracker that spells one of its own words `Low` must not open a second band beside the
+    /// `low` one, headed with the same word. The match folds case; the WORD is still the
+    /// provider's, verbatim, and `GroupLabel` is what uppercases it.
+    @Test
+    func `two spellings of one word are one band`() {
+        var reading = WorkFixture.reading
+        reading.priorities[275] = "Low"
+        let room = WorkRoomProjection.room(from: reading)
+
+        let bands = WorkRoomProjection.bands(of: room.backlog)
+        #expect(bands.count == 3)
+        #expect(bands[2].roots.map(\.id) == [275, 160, 185])
+        #expect(bands[2].priority == "Low")
+    }
+
+    /// A child agrees with its header on the same terms, or #275's siblings would each be told
+    /// they disagree with a header spelled differently from them.
+    @Test
+    func `a child agrees with a header spelled in another case`() {
+        var reading = WorkFixture.reading
+        reading.priorities[607] = "HIGH"
+        let room = WorkRoomProjection.room(from: reading)
+
+        let high = WorkRoomProjection.bands(of: room.backlog)[0]
+        let drawn = WorkRoomProjection.drawn(high, shut: [])
+        #expect(drawn.first { $0.id == 609 }?.odd == nil)
+    }
+
+    /// A band nobody read a priority for and one whose word is empty are different bands. Sharing a
+    /// `ForEach` key would draw one and drop the other, which is a row lost to a bad id.
+    @Test
+    func `the unread band and an empty word do not share a key`() {
+        var reading = WorkFixture.reading
+        reading.priorities = [275: ""]
+        let room = WorkRoomProjection.room(from: reading)
+
+        let bands = WorkRoomProjection.bands(of: room.backlog)
+        #expect(Set(bands.map(\.id)).count == bands.count)
+        #expect(bands.map(\.priority) == ["", nil])
     }
 }

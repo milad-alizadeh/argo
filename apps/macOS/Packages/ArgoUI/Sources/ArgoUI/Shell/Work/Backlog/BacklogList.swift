@@ -5,8 +5,8 @@ import SwiftUI
 /// against, and a pane that shrinks with the window would put them back where the rail had them
 /// (`cockpit-work-room.md`).
 struct BacklogList: View {
-    /// The tree's roots. Banded here rather than in the room, because which rows a band DRAWS
-    /// depends on the fold — which is the pane's state, not the room's.
+    /// The tree's roots, banded here: which rows a band draws depends on the fold, which is the
+    /// pane's state rather than the room's.
     let rows: [WorkRoomProjection.Row]
     @Binding var selection: Int?
     /// Which parents are folded. Held above the pane for the same reason the ticket is: a fold the
@@ -16,15 +16,14 @@ struct BacklogList: View {
     var body: some View {
         List(selection: $selection) {
             ForEach(WorkRoomProjection.bands(of: rows)) { band in
-                // Flattened ONCE and handed to both: the header counts the rows the outline draws,
-                // and two callers of `drawn` could come to disagree about what is under the fold.
+                // Flattened ONCE and handed to both, so the header counts the rows the outline
+                // draws rather than a second answer to the same question.
                 let drawn = WorkRoomProjection.drawn(band, shut: shut)
-                // A ROW rather than a `Section` header, which is what the frozen name stands in
-                // for. `.inset` spends about 52 between one section and the next word where the
-                // design draws 12, and macOS exposes no lever on it — `listSectionSpacing` is
-                // iOS-only. The one thing a `Section` was buying, a header outside the selection,
-                // `selectionDisabled` gives back: the header is not selectable and the keyboard
-                // steps over it.
+                // `.inset` spends about 52 between one section and the next section's word where
+                // the design draws 12, and `listSectionSpacing` is unavailable on macOS — so this
+                // is a row rather than the `Section` header the frozen name stands in for, and
+                // `selectionDisabled` returns the selection behaviour that cost. What it does not
+                // return is pinning: `cockpit-work-room.inventory.md`.
                 PriorityHeader(band: band, count: drawn.count)
                     .previewSafeListRow()
                     .listRowSeparator(.hidden)
@@ -55,6 +54,18 @@ struct BacklogList: View {
 
     BacklogList(rows: WorkFixture.room.backlog, selection: $selection, shut: $shut)
         .frame(height: 520)
+        .argoDeckSurface()
+        .argoAppearance()
+}
+
+// The state that SHIPS: no port reads a priority yet (#388), so every root bands under the one
+// header that says nothing was read rather than being dropped by three that cannot hold it.
+#Preview("Backlog list — nobody read a priority") {
+    @Previewable @State var shut: Set<Int> = []
+    let unread = WorkRoomProjection.room(from: WorkFixture.reading(of: WorkFixture.items)).backlog
+
+    BacklogList(rows: unread, selection: .constant(nil), shut: $shut)
+        .frame(height: 420)
         .argoDeckSurface()
         .argoAppearance()
 }

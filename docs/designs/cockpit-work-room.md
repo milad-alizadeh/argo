@@ -354,7 +354,7 @@ for; anything not listed is stock used directly.
 | `BacklogRow` | molecule | an `HStack` in a `List` row | `twist · dot · id · title · trailing` |
 | `BacklogTwist` | atom | `DisclosureGroup`'s chevron, drawn | drawn rather than inherited so it can carry its own hit target |
 | `DeliveryDot` | atom | `Circle` at `ArgoLayout.statusDotSize` | the five-state table above |
-| `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header. `.inset` spends about 52 between one section and the next section's word where this design draws 12, and macOS offers no lever on it; `selectionDisabled()` returns the one thing the `Section` was buying. The reasoning is in the inventory |
+| `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
 | `WorkToolbar` | organism | `.toolbar { ToolbarItemGroup }` | the whole row; its placement per control is the table above |
 | `BacklogToolbarLabel` | molecule | a `VStack` of two `Text` | the heading and its count |
 | `ToolbarVessel` | atom | `GlassEffectContainer` + `Capsule` | groups icon buttons; no border, no shadow |
