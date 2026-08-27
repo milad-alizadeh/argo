@@ -3,17 +3,13 @@ import SwiftUI
 /// The hero at the foot of the sidebar's scroll, answering "what should I pick up"
 /// (`cockpit-work-room.md` — the Next-up hero).
 ///
-/// Inset from the sidebar's edges, on `surface.raised`, behind an `edge.subtle` border at
-/// `ArgoRadius.control` — three things a `ViewRow` has none of, which is the whole of what stops it
-/// reading as another view.
-///
-/// It states ONE ticket, so its title takes the rail's full width and wraps rather than truncating.
-/// The rail was the wrong home for twelve titles; it was never the wrong home for one.
+/// Inset, on `surface.raised`, behind an `edge.subtle` border — three things a `ViewRow` has none
+/// of, which is what stops it reading as another view.
 struct NextUpCard: View {
     @Environment(\.argo) private var argo
 
-    /// How many lines the title may take before it gives up and truncates. Three: at 280 the
-    /// longest real title in the fixture sets in three.
+    /// The card states one ticket, so its title wraps to the rail's width rather than truncating.
+    /// Three is where the longest real title in the backlog sets at 280.
     static let titleLines = 3
 
     let nextUp: NextUp
@@ -36,8 +32,6 @@ struct NextUpCard: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// Exhaustive on purpose: every tier owns a sentence, and a case added without one would not
-    /// compile rather than rendering an empty card.
     @ViewBuilder private var content: some View {
         switch nextUp {
         case let .pick(pick): picked(pick)
@@ -53,14 +47,16 @@ struct NextUpCard: View {
     private func picked(_ pick: NextUp.Pick) -> some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-                Text("#\(pick.id)")
+                Text("#\(pick.number)")
                     .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(argo.color.text.tertiary)
                 Text(pick.title)
                     .argoText(ArgoTypography.rowTitle)
                     .foregroundStyle(argo.color.text.primary)
+                    // A `List` row gives its content one line's height without the `fixedSize`.
                     .lineLimit(Self.titleLines)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             if !pick.reasons.isEmpty {
                 chips(pick.reasons)
@@ -68,8 +64,7 @@ struct NextUpCard: View {
         }
     }
 
-    /// One row while the chips fit, two while they do not — the reader's own text size is what
-    /// decides, and a clipped reason is a reason nobody can read.
+    /// One row while the chips fit, two while the reader's text size means they do not.
     private func chips(_ reasons: [NextUp.Reason]) -> some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: ArgoSpacing.snug) { chipRun(reasons) }
@@ -85,7 +80,10 @@ struct NextUpCard: View {
         Text(words)
             .argoText(ArgoTypography.rowMeta)
             .foregroundStyle(argo.color.text.tertiary)
+            // A `List` row truncates its content to one line without both.
+            .lineLimit(nil)
             .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -102,7 +100,7 @@ struct NextUpCard: View {
 
 #Preview("Next-up hero — one earned chip, and a title that wraps") {
     NextUpCard(nextUp: .pick(.init(
-        id: 334,
+        number: 334,
         title: "The Route — a progress-axis view of a ticket and its children",
         reasons: [.highPriority],
     )))

@@ -12,75 +12,73 @@ struct NextUpTests {
         let room = WorkRoomProjection.room(from: WorkFixture.reading)
 
         #expect(room.nextUp == .pick(.init(
-            id: 273,
+            number: 273,
             title: "The Next-up cold-start planner",
             reasons: [.highPriority, .unblocked],
         )))
     }
 
     /// Never more than two, whatever is earned — the third reason is read after the question has
-    /// already been answered.
+    /// already been answered. Against the literal, not against the constant production reads.
     @Test
-    func `at most two chips are carried`() {
+    func `at most two chips are carried`() throws {
         let room = WorkRoomProjection.room(from: WorkFixture.reading)
 
-        guard case let .pick(pick) = room.nextUp else { return #expect(Bool(false)) }
-        #expect(pick.reasons.count == NextUp.chipLimit)
+        try #expect(pick(in: room).reasons.count == 2)
     }
 
-    /// The tier the room ships in: a provider that served no dependency edge has not said this
-    /// ticket is unblocked, so the chip is suppressed rather than asserted.
+    /// One earned reason is one chip, and the card does not pad itself out to two. This is also the
+    /// tier the room ships in: a provider that served no dependency edge has not said this ticket
+    /// is unblocked, so the chip is suppressed rather than asserted.
     @Test
-    func `with no dependency edges the unblocked chip is suppressed`() {
+    func `with no dependency edges read the unblocked chip is suppressed`() throws {
         let room = WorkRoomProjection.room(from: WorkFixture.oneChip)
 
-        guard case let .pick(pick) = room.nextUp else { return #expect(Bool(false)) }
-        #expect(pick.reasons == [.highPriority])
+        try #expect(pick(in: room).reasons == [.highPriority])
     }
 
-    /// One earned reason is one chip. The card does not pad itself out to two.
+    /// Per PICK, not per backlog. A provider that served edges for other tickets has still said
+    /// nothing about this one, and inferring from the neighbours is the failure the tier guards.
     @Test
-    func `one earned reason carries one chip`() {
-        let room = WorkRoomProjection.room(from: WorkFixture.oneChip)
+    func `edges read for another ticket earn this one nothing`() throws {
+        var reading = WorkFixture.oneChip
+        reading.edgesRead = [999]
 
-        guard case let .pick(pick) = room.nextUp else { return #expect(Bool(false)) }
-        #expect(pick.reasons.count == 1)
+        try #expect(pick(in: WorkRoomProjection.room(from: reading)).reasons == [.highPriority])
     }
 
     /// The chip names the chart the pick belongs to, which is the only place a `<PRD>` comes from.
     @Test
-    func `a pick inside a chart earns the next-in chip`() {
-        let parent = WorkItem(
-            number: 607, title: "Wayfinder", status: "Todo", closure: .open, children: [273],
-        )
-        let child = WorkItem(number: 273, title: "The planner", status: "Todo", closure: .open)
-        var reading = WorkFixture.reading(of: [parent, child])
+    func `a pick inside a chart earns the next-in chip`() throws {
+        var reading = WorkFixture.reading(of: [chart, leaf])
         reading.charts = [607]
 
-        guard case let .pick(pick) = WorkRoomProjection.room(from: reading).nextUp else {
-            return #expect(Bool(false))
-        }
-        #expect(pick.reasons == [.next(chart: "#607")])
+        let room = WorkRoomProjection.room(from: reading)
+
+        try #expect(pick(in: room).reasons == [.next(chart: "#607")])
     }
 
     /// Work happens at leaves, so a parent is never what the hero offers — even when it is the
     /// first unblocked thing the provider served.
     @Test
-    func `a parent is never picked`() {
-        let parent = WorkItem(
-            number: 607, title: "Wayfinder", status: "Todo", closure: .open, children: [273],
-        )
-        let child = WorkItem(number: 273, title: "The planner", status: "Todo", closure: .open)
+    func `a parent is never picked`() throws {
+        let room = WorkRoomProjection.room(from: WorkFixture.reading(of: [chart, leaf]))
 
-        guard case let .pick(pick) = WorkRoomProjection.room(
-            from: WorkFixture.reading(of: [parent, child]),
-        ).nextUp else { return #expect(Bool(false)) }
-        #expect(pick.id == 273)
+        try #expect(pick(in: room).number == 273)
     }
 
     @Test
     func `every open leaf blocked reads as the blocked tier`() {
         #expect(WorkRoomProjection.room(from: WorkFixture.poolBlocked).nextUp == .nothingUnblocked)
+    }
+
+    /// A backlog of parents alone holds no open leaf, so nothing is WAITING — saying every open
+    /// leaf is blocked would be a sentence about a set with no members in it.
+    @Test
+    func `a backlog with no open leaf reads as clear rather than blocked`() {
+        let room = WorkRoomProjection.room(from: WorkFixture.reading(of: [chart]))
+
+        #expect(room.nextUp == .backlogClear)
     }
 
     @Test
@@ -91,15 +89,6 @@ struct NextUpTests {
     @Test
     func `a provider that answered with nothing reads as the clear tier`() {
         #expect(WorkRoomProjection.room(from: WorkFixture.answeredEmpty).nextUp == .backlogClear)
-    }
-
-    /// The three tiers are three sentences. Sharing one would tell a reader whose backlog is
-    /// deadlocked the same thing it tells one whose backlog is finished.
-    @Test
-    func `the three empty tiers are distinct`() {
-        let tiers: [NextUp] = [.nothingUnblocked, .allRunning, .backlogClear]
-
-        #expect(Set(tiers.map(String.init(describing:))).count == 3)
     }
 
     /// With nothing bound the room hides whole — a backlog-clear sentence would answer a question
@@ -127,4 +116,23 @@ struct NextUpTests {
         #expect(!NextUp.Reason.unblocked.isUrgent)
         #expect(!NextUp.Reason.next(chart: "#607").isUrgent)
     }
+
+    private func pick(in room: WorkRoomProjection.Room) throws -> NextUp.Pick {
+        guard case let .pick(pick) = try #require(room.nextUp) else {
+            throw NextUpTestFailure.notAPick
+        }
+        return pick
+    }
+
+    private var chart: WorkItem {
+        WorkItem(number: 607, title: "Wayfinder", status: "Todo", closure: .open, children: [273])
+    }
+
+    private var leaf: WorkItem {
+        WorkItem(number: 273, title: "The planner", status: "Todo", closure: .open)
+    }
+}
+
+private enum NextUpTestFailure: Error {
+    case notAPick
 }

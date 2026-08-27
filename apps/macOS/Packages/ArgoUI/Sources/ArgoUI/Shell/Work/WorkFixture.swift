@@ -71,6 +71,7 @@ enum WorkFixture {
             items: items,
             claimed: [388, 609, 763],
             highPriority: [273],
+            edgesRead: Set(items.map(\.number)),
             deliveries: [388: .open, 609: .merged, 275: .failing, 763: .draft],
             deliveryFacts: deliveryFacts,
             priorities: priorities,
@@ -95,19 +96,26 @@ enum WorkFixture {
     static let poolRunning = WorkReading(
         items: [item(272, blockedBy: []), item(273, blockedBy: [])],
         claimed: [272, 273],
+        edgesRead: [272, 273],
         provider: bound,
     )
 
     /// One earned chip: urgent, in no chart, and from a provider that exposed no dependency edge —
     /// so `unblocked` is suppressed rather than asserted. This is the state the room ships in.
+    ///
+    /// #388's title, which is the one the design's own `one-chip.png` picks and the longest in the
+    /// backlog. The hero states ONE ticket, so a fixture whose title fits on one line would render
+    /// a card that has never been asked to wrap.
     static let oneChip = WorkReading(
         items: [
             WorkItem(
-                number: 273, title: "The Next-up cold-start planner", status: "Todo",
+                number: 388,
+                title: "Work Item read path: listing, status, labels, dependency edges",
+                status: "Todo",
                 closure: .open,
             ),
         ],
-        highPriority: [273],
+        highPriority: [388],
         provider: bound,
     )
 

@@ -219,11 +219,11 @@ an edge rather than as an ink.
 
 Three suppressions, and they are the substance of the ticket rather than caveats on it.
 
-- **`unblocked` is suppressed where the provider served no dependency edge at all.** Unknown is
-  not the same as true. The test that pins it is the one this room ships under: `#388` has not
-  landed, so `edgeless` is the *first* state, not an edge case. Derived rather than flagged — an
-  empty `blockedBy` across every item served is indistinguishable from a provider that does not
-  carry edges, and the domain says ambiguity resolves down (`CONTEXT.md` L2 · degrade-down).
+- **`unblocked` is suppressed unless THIS ticket's edges were read.** Unknown is not the same as
+  true, and `#388` has not landed, so `edgeless` is the *first* state rather than an edge case. The
+  input is `WorkReading.edgesRead`, an explicit set: the first build inferred it from the backlog
+  carrying edges anywhere, and review caught that a provider serving edges for other tickets would
+  then assert `unblocked` for a pick nobody had asked about (`CONTEXT.md` L2 · degrade-down).
 - **`oldest untouched` has no case at all.** The design lists it fourth; it is earned by a ranking
   that picks by age (#273), and nothing reads an age. A card can honestly carry zero chips — the
   chips are the reasons, and having none is a true rendering. Inventing the claim to avoid a bare
@@ -243,9 +243,24 @@ Two values the design's reconciliation table did not carry, snapped here and rec
   `state.rim(attention)` (.5), the contract's named role for a state hue drawn as an edge. It is
   the louder of the two and pixel-review is where it is judged.
 
-## Not reproduced from the design's renders
+## Which specimen reproduces which render
 
-The hero's tiers are shot from `WorkPanesSpecimen`, which gives up the titlebar the room does not
-decide — the same trade `#812`'s `unbound` and `empty` specimens make. The `edgeless` render is not
-its own specimen: `oneEarnedChip` is edgeless by construction, so the suppression it exists to show
-is already the state being shot.
+| design render | specimen | note |
+|---|---|---|
+| `one-chip.png` | `oneEarnedChip` | #388's title, the longest in the backlog, so the render also proves the three-line wrap |
+| `pool-blocked.png` | `nothingUnblocked` | |
+| `pool-running.png` | `everythingRunning` | |
+| `empty.png` | `emptyWorkBacklog` | #812's specimen, which now draws the backlog-clear tier |
+| `edgeless.png` | `oneEarnedChip` | edgeless by construction — the suppression it exists to show is already the state being shot, so it earns no second entry |
+
+The tiers are shot from `WorkPanesSpecimen`, which gives up the titlebar the room does not decide —
+the same trade `#812`'s `unbound` and `empty` specimens make.
+
+## What review changed
+
+Two claims the first build got wrong, both caught before the PR:
+
+- **`nothingUnblocked` fired with no open leaf at all.** A backlog of parents alone yielded an
+  empty leaf set, and the card said "every open leaf is waiting on something still open" about a
+  set with no members. It now degrades to `backlogClear`.
+- **The edges probe was global.** See above — it is now per-pick, off an explicit `edgesRead`.

@@ -97,7 +97,7 @@ enum WorkRoomProjection {
             hasOpenWork: !open.isEmpty,
             // Over the whole open set, never the view on screen: the hero answers "what should I
             // pick up", and opening `Blocked` must not turn that into "nothing is unblocked".
-            nextUp: nextUp(of: open, reading: reading),
+            nextUp: reading.nextUp(of: open),
         )
     }
 }
