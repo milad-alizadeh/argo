@@ -24,12 +24,11 @@ public final class DeliveryAssertionStore {
         file.load(orEmpty: DeliveryAssertions())
     }
 
-    /// Fold a change into whatever is on disk NOW, and answer what the caller should hold. The
-    /// caller's copy was loaded at launch, and another window may have asserted since.
+    /// Fold a change into whatever is on disk NOW, and answer what the caller should hold —
+    /// another window may have asserted since the caller loaded its copy.
     ///
     /// `held` is that copy, and it is the base only where there is no file: a store that remembers
-    /// nothing across launches must still remember within one, or the second assertion erases the
-    /// first.
+    /// nothing across launches must still remember within one.
     @discardableResult
     public func update(
         folding held: DeliveryAssertions,

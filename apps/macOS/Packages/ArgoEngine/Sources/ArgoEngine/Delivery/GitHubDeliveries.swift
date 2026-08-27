@@ -11,14 +11,33 @@ public struct GitHubDeliveries: CodeHostPort {
         self.reads = GitHubReads(transport: transport)
     }
 
-    /// `state=all`, because merge is a Delivery's terminal state and a listing of open pull
-    /// requests alone could never reach it. Most-recently-updated first, so the page backstop in
-    /// `GitHubReads` truncates the long-settled rather than what is in flight.
-    public func deliveries(in scope: String, grant: AccountGrant) async throws -> [Delivery] {
-        let pulls: [GitHubPullRequest] = try await reads.pages(
-            of: "/repos/\(scope)/pulls?state=all&sort=updated&direction=desc"
-                + "&per_page=\(GitHubReads.pageSize)",
+    public func inFlight(in scope: String, grant: AccountGrant) async throws -> [Delivery] {
+        try await deliveries(
+            listedBy: "/repos/\(scope)/pulls?state=open", in: scope, grant: grant,
+        )
+    }
+
+    /// `head` takes an `owner:branch`, and the owner is the half of the Binding's scope before the
+    /// slash. Most-recently-updated first, so the branch's current life is the first answer.
+    public func delivery(
+        ofBranch branch: String, in scope: String, grant: AccountGrant,
+    ) async throws
+        -> Delivery? {
+        let owner = scope.prefix { $0 != "/" }
+        return try await deliveries(
+            listedBy: "/repos/\(scope)/pulls?state=all&sort=updated&direction=desc"
+                + "&head=\(owner):\(branch)",
+            in: scope,
             grant: grant,
+        ).first
+    }
+
+    private func deliveries(
+        listedBy path: String, in scope: String, grant: AccountGrant,
+    ) async throws
+        -> [Delivery] {
+        let pulls: [GitHubPullRequest] = try await reads.pages(
+            [GitHubPullRequest].self, of: path, grant: grant,
         )
         var deliveries: [Delivery] = []
         for pull in pulls {
@@ -31,20 +50,21 @@ public struct GitHubDeliveries: CodeHostPort {
         _ pull: GitHubPullRequest, in scope: String, grant: AccountGrant,
     ) async throws
         -> Delivery {
-        let runs: GitHubCheckRuns = try await reads.get(
-            "/repos/\(scope)/commits/\(pull.head.sha)/check-runs"
-                + "?per_page=\(GitHubReads.pageSize)",
+        let runs: [GitHubCheckRuns.Run] = try await reads.pages(
+            GitHubCheckRuns.self,
+            of: "/repos/\(scope)/commits/\(pull.head.sha)/check-runs",
             grant: grant,
         )
-        let rounds: [GitHubReviewRound] = try await reads.get(
-            "/repos/\(scope)/pulls/\(pull.number)/reviews?per_page=\(GitHubReads.pageSize)",
+        let rounds: [GitHubReviewRound] = try await reads.pages(
+            [GitHubReviewRound].self,
+            of: "/repos/\(scope)/pulls/\(pull.number)/reviews",
             grant: grant,
         )
         return Delivery(
             branch: pull.head.ref,
             pullRequest: pull.pullRequest,
             observed: Delivery.Observed(
-                checks: runs.checkRuns.map(\.check),
+                checks: runs.map(\.check),
                 reviews: rounds.map(\.review),
             ),
         )

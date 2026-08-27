@@ -15,11 +15,8 @@ enum ClosingReference {
     ]
 
     /// The first Work Item number the body closes, and `nil` for a body that closes none.
-    ///
-    /// First rather than all: a Delivery serves one intent in the model, and a body listing two is
-    /// a case the join has no rule for — taking the first is the host's own reading order.
     static func number(in body: String) -> Int? {
-        let words = body.split(whereSeparator: { $0.isWhitespace || $0 == "," })
+        let words = body.split(whereSeparator: \.isWhitespace).map(Self.bare)
         for (index, word) in words.enumerated()
             where keywords.contains(word.lowercased()) {
             guard let next = words.dropFirst(index + 1).first,
@@ -30,9 +27,16 @@ enum ClosingReference {
         return nil
     }
 
+    /// The word without the punctuation people wrap it in — GitHub links `(closes #12)` and
+    /// `Closes: #12` the same as the bare form, so reading only the bare form under-reads the
+    /// native tier and falls through to a lower-authority one.
+    private static func bare(_ word: Substring) -> String {
+        String(word.trimmingCharacters(in: CharacterSet(charactersIn: "(),.:;[]{}<>\"'")))
+    }
+
     /// The digits behind a `#`, and `nil` for anything else — including `#0`, which providers
     /// never issue and which is therefore a misread rather than a link.
-    private static func number(marked word: Substring) -> Int? {
+    private static func number(marked word: String) -> Int? {
         guard word.hasPrefix("#"),
               let number = Int(word.dropFirst().prefix(while: \.isNumber)), number > 0
         else { return nil }

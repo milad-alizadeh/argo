@@ -3,10 +3,8 @@ import Foundation
 /// What each Project's code host last answered with, keyed by branch, and the only place a Delivery
 /// lives.
 ///
-/// **Nothing here is persisted** (ADR-0008, ADR-0017): a Delivery is derived whole from local git ∪
-/// code host, and a launch that opened on yesterday's derivation would claim a PR state it has not
-/// observed since. Replaced whole or left alone, never merged, which is what stops a failed read
-/// emptying a strip that was full a second ago.
+/// Nothing here is persisted (ADR-0008, ADR-0017), and a derivation is replaced whole or left
+/// alone — never merged, which is what stops a failed read emptying a strip that was full.
 public actor DeliveryLedger {
     private var derived: [String: [Delivery]] = [:]
 
@@ -16,12 +14,9 @@ public actor DeliveryLedger {
         derived[projectID] = deliveries
     }
 
-    /// Every Delivery derived for a Project, and none for a Project nothing has read yet — which
-    /// reads the same as a repository with no branches in flight, because from a surface's side
-    /// they are the same. The health chip is what says whether that is an answer or a silence.
-    ///
-    /// No Project at all reads empty on the same terms, and never the last one's: a window pointed
-    /// away from a Project must not go on drawing its Deliveries.
+    /// Every Delivery derived for a Project, and none for a Project nothing has read yet — the
+    /// health chip is what says whether that is an answer or a silence. No Project at all reads
+    /// empty too, and never the last one's.
     public func deliveries(of projectID: String?) -> [Delivery] {
         projectID.flatMap { derived[$0] } ?? []
     }

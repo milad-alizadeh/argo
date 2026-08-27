@@ -6,14 +6,25 @@ import Foundation
 /// later one succeeds" without counting ticks.
 actor ScriptedCodeHost: CodeHostPort {
     private var script: [Result<[Delivery], ProviderFetchError>]
+    /// What the host holds for a branch nothing in flight covers, keyed by branch. A branch with no
+    /// entry is one the host holds nothing for.
+    private let byBranch: [String: Delivery]
 
-    init(_ script: [Result<[Delivery], ProviderFetchError>]) {
+    init(_ script: [Result<[Delivery], ProviderFetchError>], byBranch: [String: Delivery] = [:]) {
         self.script = script
+        self.byBranch = byBranch
     }
 
-    func deliveries(in _: String, grant _: AccountGrant) async throws -> [Delivery] {
+    func inFlight(in _: String, grant _: AccountGrant) async throws -> [Delivery] {
         guard let answer = script.count > 1 ? script.removeFirst() : script.first else { return [] }
         return try answer.get()
+    }
+
+    func delivery(
+        ofBranch branch: String, in _: String, grant _: AccountGrant,
+    ) async throws
+        -> Delivery? {
+        byBranch[branch]
     }
 }
 
@@ -41,14 +52,30 @@ extension DeliveryPullRequest {
     /// An open pull request with nothing observed on it, which is every input a derivation needs
     /// that is not the branch itself.
     static func stub(number: Int, body: String? = nil) -> DeliveryPullRequest {
-        DeliveryPullRequest(
-            number: number,
-            title: "A change",
-            state: "open",
-            facts: Facts(isDraft: false, isMerged: false, baseBranch: "main", headSHA: "c0ffee"),
-            body: body,
-            url: nil,
-        )
+        PullRequestJSON(number: number, body: body).read
+    }
+
+    /// The same, landed — a Delivery's terminal state.
+    static func merged(number: Int) -> DeliveryPullRequest {
+        PullRequestJSON(number: number, state: "closed", mergedAt: "2026-08-01T00:00:00Z").read
+    }
+}
+
+/// How many times a derivation said it had finished. Counted rather than flagged, so a test can
+/// tell "raised once per read" from "raised at all".
+actor DeliveryLandings {
+    private var count = 0
+
+    nonisolated var raise: DeliveryDerivation.Landing {
+        { await self.record() }
+    }
+
+    func raised() -> Int {
+        count
+    }
+
+    private func record() {
+        count += 1
     }
 }
 

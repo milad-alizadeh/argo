@@ -2,9 +2,8 @@ import Foundation
 
 /// What intent a branch serves, and on whose authority (`CONTEXT.md` L1 · the triangle).
 ///
-/// The three positive cases are kept apart rather than folded into one number because the tier
-/// differs: a closing reference is the host's own (DIRECT-tier read of a native mechanism), a
-/// number in a branch name is a convention read back (DERIVED), and an assertion is the user's.
+/// The three positive cases stay apart because the tier differs: a closing reference is the host's
+/// own, a number in a branch name is a convention read back, and an assertion is the user's.
 public enum DeliveryWorkItemLink: Equatable, Sendable {
     /// The code host's own closing reference, which is the signal `/implement` writes and this
     /// reads back (ADR-0014).
@@ -24,10 +23,7 @@ public enum DeliveryWorkItemLink: Equatable, Sendable {
     }
 
     /// The join, in the precedence ADR-0014 fixed: native reference → id-in-branch → unlinked.
-    ///
-    /// `asserted` wins over a derived `unlinked` and NEVER over a positive derivation (ADR-0017):
-    /// a branch whose pull request closes one ticket cannot be re-pointed at another by hand, or
-    /// the cockpit would render a link the host itself contradicts.
+    /// `asserted` wins over a derived `unlinked` and never over a positive derivation (ADR-0017).
     public static func derived(
         branch: String, pullRequestBody: String?, asserted: Int?,
     )
