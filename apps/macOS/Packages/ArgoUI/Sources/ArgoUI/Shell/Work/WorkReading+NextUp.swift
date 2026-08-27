@@ -16,7 +16,10 @@ extension WorkReading {
         // something still open" is false when there is no open leaf to wait.
         let leaves = open.filter(\.children.isEmpty)
         guard !leaves.isEmpty else { return .backlogClear }
-        let unblocked = leaves.filter { $0.blockage == .clear }
+        // `unread` counts as takeable: a provider that served no edges has not said this ticket is
+        // waiting on anything, and refusing to offer it would make an edgeless provider look like a
+        // backlog where everything is blocked. The CHIP is what gets suppressed, not the pick.
+        let unblocked = leaves.filter { $0.blockage != .blocked && $0.blockage != .stranded }
         guard !unblocked.isEmpty else { return .nothingUnblocked }
         guard let pick = unblocked.first(where: { !claimed.contains($0.number) }) else {
             return .allRunning
@@ -35,7 +38,7 @@ extension WorkReading {
         }
         // Only where THIS ticket's edges were read. Inferring it from the backlog carrying edges
         // somewhere would assert `unblocked` for a pick nobody asked about.
-        if pick.blockersRead {
+        if pick.blockage != .unread {
             earned.append(.unblocked)
         }
         if let chart = chart(holding: pick.number) {

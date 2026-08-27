@@ -18,6 +18,12 @@ struct WorkReadingLiveTests {
         ])
     }
 
+    /// A Binding a read has LANDED through, which is what lets the room say anything about an empty
+    /// listing at all. Most cases below want this rather than bare health.
+    private static let answered = health(
+        BindingHealth(fault: nil, lastSuccess: Date(timeIntervalSince1970: 1)),
+    )
+
     private static func room(
         items: [WorkItem] = [],
         sessions: [CockpitPresentation.Session] = [],
@@ -35,7 +41,7 @@ struct WorkReadingLiveTests {
     }
 
     private static let read = WorkItem(
-        number: 812, title: "The views sidebar", status: "open", closure: .open, blockersRead: true,
+        number: 812, title: "The views sidebar", status: "open", closure: .open, blockedBy: [],
     )
 
     /// The tier the room ships in: a provider that exposes no dependency edges. The room draws —
@@ -57,6 +63,23 @@ struct WorkReadingLiveTests {
         #expect(room.provider?.name == "GitHub")
         #expect(room.provider?.account == "octocat")
         #expect(room.provider?.state == nil)
+    }
+
+    /// The sharpest of the three nothings: bound, nobody has answered, and the listing is empty
+    /// because of it. Saying "every Work Item is closed" here is the false DIRECT — and a Binding
+    /// failing all session sits in this state for the whole launch, not for an instant.
+    @Test
+    func `a Binding that has not answered is not an empty backlog`() {
+        let room = Self.room(health: Self.health(.healthy))
+
+        #expect(room.vacancy == .unread(provider: "GitHub"))
+    }
+
+    @Test
+    func `a provider that answered with nothing says so in its own name`() {
+        let room = Self.room(health: Self.answered)
+
+        #expect(room.vacancy == .nothingOpen(provider: "GitHub"))
     }
 
     struct HealthCase: Sendable {
@@ -91,33 +114,39 @@ struct WorkReadingLiveTests {
     }
 
     @Test
-    func `a live Session on a ticket claims it, and an ended one does not`() {
+    func `a live Session on a ticket claims it`() {
         let running = RosterSessionFixture.session(id: "A", issue: 812)
-        let over = RosterSessionFixture.session(id: "B", status: .ended, issue: 812)
+        let room = Self.room(items: [Self.read], sessions: [running], health: Self.answered)
 
-        #expect(Self.room(items: [Self.read], sessions: [running], health: Self.health(.healthy))
-            .view(.inProgress)?.count == 1)
-        #expect(Self.room(items: [Self.read], sessions: [over], health: Self.health(.healthy))
-            .view(.inProgress)?.count == .zero)
+        #expect(room.view(.inProgress)?.count == 1)
     }
 
-    /// The two views partition the open set only where the edges were READ. A provider that cannot
-    /// say what blocks what cannot fill either, so both go quiet rather than one of them asserting
-    /// the whole backlog is clear.
+    /// An ended Session's branch still names the ticket it was cut for, and counting that as a
+    /// claim would leave `In progress` filling up for the life of the machine.
     @Test
-    func `a provider with no dependency edges fills neither view`() {
-        let room = Self.room(items: [Self.unedged], health: Self.health(.healthy))
+    func `an ended Session claims nothing`() {
+        let over = RosterSessionFixture.session(id: "B", status: .ended, issue: 812)
+        let room = Self.room(items: [Self.read], sessions: [over], health: Self.answered)
+
+        #expect(room.view(.inProgress)?.count == .zero)
+    }
+
+    /// The two views partition the open set, so neither can be counted where a ticket's edges were
+    /// not served. Absent rather than zero: zero is a claim that nothing is blocked.
+    @Test
+    func `a provider with no dependency edges counts neither view`() {
+        let room = Self.room(items: [Self.unedged], health: Self.answered)
 
         #expect(room.view(.allOpen)?.count == 1)
-        #expect(room.view(.unblocked)?.count == .zero)
-        #expect(room.view(.blocked)?.count == .zero)
+        #expect(room.view(.unblocked)?.count == nil)
+        #expect(room.view(.blocked)?.count == nil)
     }
 
     /// Opening `Blocked` against such a provider is a no-op rather than a page reading zero of
     /// nothing: the room still has open work, so it draws the view empty and not a vacancy.
     @Test
     func `the Blocked view over unread edges no-ops`() {
-        let room = Self.room(items: [Self.unedged], health: Self.health(.healthy), view: .blocked)
+        let room = Self.room(items: [Self.unedged], health: Self.answered, view: .blocked)
 
         #expect(room.vacancy == nil)
         #expect(room.backlog.isEmpty)
@@ -125,44 +154,67 @@ struct WorkReadingLiveTests {
 
     @Test
     func `a ticket whose edges were never read draws no Blocked by section`() {
-        let room = Self.room(items: [Self.unedged], health: Self.health(.healthy))
+        let room = Self.room(items: [Self.unedged], health: Self.answered)
 
         #expect(room.ticket?.blockedBy.isEmpty == true)
     }
 
-    /// The provider's word renders verbatim and Argo's bucket sits beside it — neither in place of
-    /// the other (#272).
+    /// The provider's word renders verbatim (#272) — Argo's own bucket never stands in for it.
     @Test
-    func `the status word is the provider's and the bucket is Argo's`() {
-        let claimed = RosterSessionFixture.session(id: "A", issue: 812)
-        let room = Self.room(items: [Self.read], sessions: [claimed], health: Self.health(.healthy))
+    func `the status word is the provider's own`() {
+        let room = Self.room(items: [Self.read], health: Self.answered)
 
         #expect(room.ticket?.status == "open")
+    }
+
+    /// And the bucket sits beside that word rather than over it: a claim is Argo's alone, and no
+    /// provider word could have said it.
+    @Test
+    func `the bucket is Argo's, beside that word`() {
+        let claimed = RosterSessionFixture.session(id: "A", issue: 812)
+        let room = Self.room(items: [Self.read], sessions: [claimed], health: Self.answered)
+
         #expect(room.ticket?.bucket == .claimed)
     }
 
-    /// A provider carrying no type words has no charts — a group ABSENT rather than one reading
-    /// zero, which is where this room starts on a repository with issue types switched off.
+    /// A chart is a PRD-shaped PARENT (`cockpit-work-room.md`), so a typed ticket with no children
+    /// is not one — its row would open onto a Route with nothing on it.
     @Test
-    func `charts are the provider's own PRD-typed parents`() {
-        let chart = WorkItem(
-            number: 607, title: "Wayfinder: the Work room", status: "open", closure: .open,
-            type: "PRD", children: [812], blockersRead: true,
+    func `a chart is a PRD-typed parent`() {
+        let leaf = WorkItem(
+            number: 606, title: "A typed leaf", status: "open", closure: .open, type: "PRD",
+            blockedBy: [],
         )
-        let untyped = Self.room(items: [chart.untyped, Self.read], health: Self.health(.healthy))
-        let typed = Self.room(items: [chart, Self.read], health: Self.health(.healthy))
+        let room = Self.room(items: [Self.chart, leaf, Self.read], health: Self.answered)
 
-        #expect(untyped.charts.isEmpty)
-        #expect(typed.charts.map(\.id) == [607])
-        #expect(typed.charts.map(\.count) == [1])
+        #expect(room.charts.map(\.id) == [607])
+        #expect(room.charts.map(\.count) == [1])
     }
+
+    /// Where the provider carries no type at all the role falls back to hierarchy
+    /// (`CONTEXT.md` L1 · Work Item), which is the only reading a repository with issue types
+    /// switched off can have. A ticket the provider DID type does not fall back.
+    @Test
+    func `an untyped parent is chart-shaped, and a typed non-PRD one is not`() {
+        let untyped = Self.room(items: [Self.chart.untyped, Self.read], health: Self.answered)
+        let tasked = Self.room(items: [Self.chart.typed("task"), Self.read], health: Self.answered)
+
+        #expect(untyped.charts.map(\.id) == [607])
+        #expect(tasked.charts.isEmpty)
+    }
+
+    private static let chart = WorkItem(
+        number: 607, title: "Wayfinder: the Work room", status: "open", closure: .open,
+        type: "PRD", children: [812], blockedBy: [],
+    )
 }
 
 private extension WorkItem {
     var untyped: WorkItem {
-        WorkItem(
-            number: number, title: title, status: status, closure: closure,
-            children: children, blockersRead: blockersRead,
-        )
+        WorkItem(copying: self, type: .some(nil))
+    }
+
+    func typed(_ word: String) -> WorkItem {
+        WorkItem(copying: self, type: word)
     }
 }

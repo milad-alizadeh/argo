@@ -39,13 +39,6 @@ struct GitHubIssue: Decodable {
         (issueDependenciesSummary?.totalBlockedBy ?? 0) > 0
     }
 
-    /// Whether this issue was served a dependency summary at all. Its ABSENCE is what says the host
-    /// does not expose dependency edges: a zero count is an answer, and no field is a silence
-    /// (`CONTEXT.md` L2 · degrade-down).
-    var blockersRead: Bool {
-        issueDependenciesSummary != nil
-    }
-
     /// GitHub's closure kinds, verbatim. `duplicate` and `not_planned` are both cancellations;
     /// `completed` is the only one that says the work was done. A closed issue with no reason at
     /// all predates the field and cannot be told apart, which is what `closedUnreadably` is for.
@@ -59,7 +52,10 @@ struct GitHubIssue: Decodable {
     }
 
     /// The ticket without its edges — everything one listing request already answered.
-    func workItem(children: [Int], blockedBy: [WorkItemBlocker]) -> WorkItem {
+    /// `blockedBy` is `nil` where the host served no dependency summary at all: its ABSENCE is what
+    /// says the host does not expose dependency edges, since a zero count is an answer and no field
+    /// is a silence (`CONTEXT.md` L2 · degrade-down).
+    func workItem(children: [Int], blockedBy: [WorkItemBlocker]?) -> WorkItem {
         let prose = body?.trimmingCharacters(in: .whitespacesAndNewlines)
         return WorkItem(
             number: number,
@@ -72,7 +68,6 @@ struct GitHubIssue: Decodable {
             type: type?.name,
             children: children,
             blockedBy: blockedBy,
-            blockersRead: blockersRead,
             body: prose?.isEmpty == true ? nil : prose,
         )
     }

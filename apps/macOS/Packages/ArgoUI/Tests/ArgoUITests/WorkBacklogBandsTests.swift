@@ -105,7 +105,8 @@ struct WorkBacklogBandsTests {
     /// The unread band sits at the FOOT, under every band a word was read for.
     @Test
     func `the unread band comes last`() {
-        let room = WorkRoomProjection.room(from: WorkFixture.reading { $0 = [607: "high"] })
+        let reading = WorkFixture.reading { priorities in priorities = [607: "high"] }
+        let room = WorkRoomProjection.room(from: reading)
 
         #expect(WorkRoomProjection.bands(of: room.backlog).map(\.priority) == ["high", nil])
     }
@@ -114,7 +115,8 @@ struct WorkBacklogBandsTests {
     /// band for keeps its own header rather than being folded into one of the three.
     @Test
     func `a word Argo has no band for keeps its own header`() {
-        let room = WorkRoomProjection.room(from: WorkFixture.reading { $0[275] = "critical" })
+        let reading = WorkFixture.reading { priorities in priorities[275] = "critical" }
+        let room = WorkRoomProjection.room(from: reading)
 
         #expect(WorkRoomProjection.bands(of: room.backlog).map(\.priority)
             == ["high", "medium", "low", "critical"])
@@ -125,7 +127,8 @@ struct WorkBacklogBandsTests {
     /// provider's, verbatim, and `GroupLabel` is what uppercases it.
     @Test
     func `two spellings of one word are one band`() {
-        let room = WorkRoomProjection.room(from: WorkFixture.reading { $0[275] = "Low" })
+        let reading = WorkFixture.reading { priorities in priorities[275] = "Low" }
+        let room = WorkRoomProjection.room(from: reading)
 
         let bands = WorkRoomProjection.bands(of: room.backlog)
         #expect(bands.count == 3)
@@ -137,7 +140,8 @@ struct WorkBacklogBandsTests {
     /// they disagree with a header spelled differently from them.
     @Test
     func `a child agrees with a header spelled in another case`() {
-        let room = WorkRoomProjection.room(from: WorkFixture.reading { $0[607] = "HIGH" })
+        let reading = WorkFixture.reading { priorities in priorities[607] = "HIGH" }
+        let room = WorkRoomProjection.room(from: reading)
 
         let high = WorkRoomProjection.bands(of: room.backlog)[0]
         let drawn = WorkRoomProjection.drawn(high, shut: [])
@@ -148,7 +152,8 @@ struct WorkBacklogBandsTests {
     /// `ForEach` key would draw one and drop the other, which is a row lost to a bad id.
     @Test
     func `the unread band and an empty word do not share a key`() {
-        let room = WorkRoomProjection.room(from: WorkFixture.reading { $0 = [275: ""] })
+        let reading = WorkFixture.reading { priorities in priorities = [275: ""] }
+        let room = WorkRoomProjection.room(from: reading)
 
         let bands = WorkRoomProjection.bands(of: room.backlog)
         #expect(Set(bands.map(\.id)).count == bands.count)
