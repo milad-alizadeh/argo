@@ -129,6 +129,24 @@ struct CompanionChannelTests {
         #expect(CompanionClient(socketPath: socketPath) == nil)
     }
 
+    /// The whole point of retiring the reported status: a Session whose agent said `running` and
+    /// whose PTY then exited must fall back to what the transcript says, not go on claiming at a
+    /// tier whose channel has gone (#799).
+    @Test
+    func `a status reported before the PTY exited stops being read at CONVENTION`() async throws {
+        try await Self.withChannel { fixture, client in
+            try await Self.report(client, "report_status", ["status": "running"])
+            // Required, not settled-and-forgotten: a status that never arrives would otherwise fail
+            // below as "never degraded", sending the reader after the wrong bug.
+            try #require(await settle { fixture.hub.sessions.first?.convention?.status != nil })
+
+            fixture.host.endLastProcess(exitCode: 0)
+
+            await settle { fixture.hub.sessions.first?.statusReading.tier == .derived }
+            #expect(fixture.hub.sessions.first?.statusReading.tier == .derived)
+        }
+    }
+
     /// A spawned Session with a client on its channel, torn down after. A closure because `defer`
     /// cannot be lifted into a helper that returns.
     private static func withChannel(

@@ -40,8 +40,9 @@ extension SessionOwnership {
         claims[ClaimID(value: value)]?.sessionID ?? value
     }
 
-    /// The claim a Session is bound to, live or not. Unlike `ownerOf`, what a claim SAID outlives
-    /// its PTY, so an orphaned Session keeps the CONVENTION facts it reported while it ran.
+    /// The claim a Session is bound to, live or not. Unlike `ownerOf`, what a claim PRODUCED
+    /// outlives its PTY, so an orphaned Session keeps the Outcomes it reported while it ran — but
+    /// not the status it reported, which went with the channel it stood on (#799).
     func boundClaim(ofSessionID sessionID: String) -> ClaimID? {
         boundSessions[sessionID]
     }
