@@ -103,19 +103,14 @@ struct SessionNavigator: View {
         .previewSafeListRow()
         .tag(row.id)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(archiveLabel(row), systemImage: archiveSymbol(row)) {
+            Button(
+                SessionArchiveProjection.title(isArchived: row.isArchived),
+                systemImage: SessionArchiveProjection.symbol(isArchived: row.isArchived),
+            ) {
                 archive(row.id, !row.isArchived)
             }
             .tint(argo.color.interaction.destructive)
         }
-    }
-
-    private func archiveSymbol(_ row: SessionRosterProjection.Row) -> String {
-        row.isArchived ? ArgoSymbol.unarchive : ArgoSymbol.archive
-    }
-
-    private func archiveLabel(_ row: SessionRosterProjection.Row) -> String {
-        row.isArchived ? "Put back on the roster" : "Archive Session"
     }
 
     private var emptyState: some View {

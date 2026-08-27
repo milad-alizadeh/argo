@@ -149,8 +149,7 @@ extension CockpitView {
         return SessionCommands(
             rename: { renamingSessionID = session.id },
             archive: { actions.setSessionArchived(session.id, !session.isArchived) },
-            renameTitle: SessionRenameProjection.heading,
-            archiveTitle: session.isArchived ? "Put Back on the Roster" : "Archive Session",
+            isArchived: session.isArchived,
         )
     }
 }
