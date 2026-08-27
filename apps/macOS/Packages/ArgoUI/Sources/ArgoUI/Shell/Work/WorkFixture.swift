@@ -70,6 +70,7 @@ enum WorkFixture {
         WorkReading(
             items: items,
             claimed: [388, 609, 763],
+            highPriority: [273],
             deliveries: [388: .open, 609: .merged, 275: .failing, 763: .draft],
             deliveryFacts: deliveryFacts,
             priorities: priorities,
@@ -81,6 +82,34 @@ enum WorkFixture {
             showing: showing,
         )
     }
+
+    /// Every open leaf waiting on something still open, so the hero has nothing to offer and says
+    /// which of the three reasons it is.
+    static let poolBlocked = reading(of: [
+        item(272, blockedBy: [WorkItemBlocker(number: 999, closure: .open)]),
+        item(273, blockedBy: [WorkItemBlocker(number: 999, closure: .open)]),
+    ])
+
+    /// The pool is takeable and every one of it is already somebody's. A different sentence from
+    /// the one above, and a different day.
+    static let poolRunning = WorkReading(
+        items: [item(272, blockedBy: []), item(273, blockedBy: [])],
+        claimed: [272, 273],
+        provider: bound,
+    )
+
+    /// One earned chip: urgent, in no chart, and from a provider that exposed no dependency edge —
+    /// so `unblocked` is suppressed rather than asserted. This is the state the room ships in.
+    static let oneChip = WorkReading(
+        items: [
+            WorkItem(
+                number: 273, title: "The Next-up cold-start planner", status: "Todo",
+                closure: .open,
+            ),
+        ],
+        highPriority: [273],
+        provider: bound,
+    )
 
     /// One item's own reading, for a test that needs a single edge rather than the whole backlog.
     /// Bound, because an unbound room is vacant whatever is in it.

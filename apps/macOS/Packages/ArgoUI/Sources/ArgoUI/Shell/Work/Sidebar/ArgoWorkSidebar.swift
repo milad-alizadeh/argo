@@ -11,6 +11,13 @@ enum ArgoWorkSidebar {
     static let glyphWidth: CGFloat = 14
     /// The row's leading inset, before the mark.
     static let gutter: CGFloat = ArgoSpacing.comfortable
+    /// The Next-up card off the sidebar's edges, which is half of what stops it reading as a row.
+    static let heroInset: CGFloat = ArgoSpacing.base
+    /// The card's own inner padding.
+    static let heroPadding: CGFloat = ArgoSpacing.comfortable
+    /// Under the card, where the scroll ends. A step over `heroInset` so the card sits clear of the
+    /// hairline the provider foot draws rather than centred between two edges it does not share.
+    static let heroFootInset: CGFloat = ArgoSpacing.comfortable
     /// Above and below the provider chip at the foot, and at its two ends.
     static let footPaddingY: CGFloat = ArgoSpacing.base
     static let footPaddingX: CGFloat = ArgoSpacing.comfortable

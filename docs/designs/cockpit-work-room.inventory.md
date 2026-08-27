@@ -3,11 +3,13 @@
 What `design-to-code` extracted while building [`cockpit-work-room.md`](cockpit-work-room.md), and
 what it deliberately left inline. One row per component the assembled screen forced out.
 
-**Scope: #812, #815 and #818** — the views sidebar, the flat backlog list and the ticket (#812),
-then the ticket's fact strip and its three sections (#815), then the room's two vacancy pages
-(#818). The design freezes 31 names across the whole room; the sixteen below are the ones these
-tickets built. The rest (the hero, the toolbar, the tree, the Route) belong to their own tickets
-and are absent rather than stubbed.
+**Scope: #812, #815, #817 and #818** — the views sidebar, the flat backlog list and the ticket
+(#812), the ticket's fact strip and its three sections (#815), the Next-up hero and its four tiers
+(#817), and the room's two vacancy pages (#818). The design freezes 31 names across the whole room;
+the names below are the ones these tickets built. The rest (the toolbar, the tree, the Route)
+belong to their own tickets and are absent rather than stubbed.
+
+The tables below cover #812, #815 and #818; #817's own section is at the foot.
 
 ## Extracted
 
@@ -189,3 +191,61 @@ Three things this ticket had to settle that the renders do not state:
 - **Who the sentences name.** The provider that answered, and the Project the window is scoped to.
   `WorkReading.project` carries the second, and the shell overrides the fixture's copy of it with
   the window's real active Project — the one fact a fixture does not get to invent.
+
+# #817 — the Next-up hero and its four tiers
+
+## Extracted
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `NextUpCard` | molecule | `ArgoUI/Shell/Work/Sidebar/` — one caller, so it is `WorkSidebar`'s part rather than its peer | `nextUp: NextUp` (`.pick(Pick)` · `.nothingUnblocked` · `.allRunning` · `.backlogClear`) | `GroupLabel`, `NextUpChip` | `.hero-card` |
+| `NextUpChip` | atom | `ArgoUI/Shell/Work/Sidebar/` | `reason: NextUp.Reason` (`.highPriority` · `.unblocked` · `.next(chart:)`) | — | `.chip` / `.chip.pri` |
+
+`NextUpCard` came out on two of the three triggers at once: it is the design system's
+empty-state-card shape, and it carries three states the happy path never draws. `NextUpChip` came
+out on repetition inside its one caller, and is the only place in the room a state hue is drawn as
+an edge rather than as an ink.
+
+## Stayed inline
+
+- **The id-and-title stack** inside the card — one `VStack` of two `Text`, single-use and
+  single-state.
+- **The three tier sentences** — a `switch` in the card's own body, which is what makes "every
+  tier owns a sentence" a compile error to break rather than a review note.
+- **The chip run's `ViewThatFits`** — two chips at 280 fit on one line at the default text size,
+  and the second layout exists only for the reader who has scaled type up.
+
+## What the hero refuses to say
+
+Three suppressions, and they are the substance of the ticket rather than caveats on it.
+
+- **`unblocked` is suppressed where the provider served no dependency edge at all.** Unknown is
+  not the same as true. The test that pins it is the one this room ships under: `#388` has not
+  landed, so `edgeless` is the *first* state, not an edge case. Derived rather than flagged — an
+  empty `blockedBy` across every item served is indistinguishable from a provider that does not
+  carry edges, and the domain says ambiguity resolves down (`CONTEXT.md` L2 · degrade-down).
+- **`oldest untouched` has no case at all.** The design lists it fourth; it is earned by a ranking
+  that picks by age (#273), and nothing reads an age. A card can honestly carry zero chips — the
+  chips are the reasons, and having none is a true rendering. Inventing the claim to avoid a bare
+  card is the one thing the hero must never do.
+- **`high priority` reads `WorkReading.highPriority`, a set and not a ladder.** #160 has yet to
+  settle how priority is spelled, and the hero needs one bit. Beside `WorkItem` rather than on it
+  while #388's read path is the thing that would fill it.
+
+## Where the design and the code disagree
+
+Two values the design's reconciliation table did not carry, snapped here and recorded there:
+
+- **The empty-tier sentence, 12 regular** — no role sits at 12 regular. Snapped DOWN to `rowMeta`
+  (11), the same direction the view name above it took, because the sentence is *why there is no
+  ticket* rather than a ticket.
+- **The urgent chip's border, amber at .28** — no role at .28. Snapped UP to
+  `state.rim(attention)` (.5), the contract's named role for a state hue drawn as an edge. It is
+  the louder of the two and pixel-review is where it is judged.
+
+## Not reproduced from the design's renders
+
+The hero's tiers are shot from `WorkPanesSpecimen`, which gives up the titlebar the room does not
+decide — the same trade `#812`'s `unbound` and `empty` specimens make. The `edgeless` render is not
+its own specimen: `oneEarnedChip` is edgeless by construction, so the suppression it exists to show
+is already the state being shot.

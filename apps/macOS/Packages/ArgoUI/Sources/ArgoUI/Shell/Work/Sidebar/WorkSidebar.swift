@@ -20,6 +20,7 @@ struct WorkSidebar: View {
                     .previewSafeListRow()
                 backlogGroup
                 chartsGroup
+                hero
             }
             .listStyle(.sidebar)
             if let provider = room.provider {
@@ -36,6 +37,17 @@ struct WorkSidebar: View {
             }
         } header: {
             GroupLabel("Backlog")
+        }
+    }
+
+    /// The hero, below the views and inside the same scroll. UNTAGGED, like a chart row: it is a
+    /// card sitting on the rail rather than a fifth view, and a tag would let the arrow keys land
+    /// on it and filter the deck to nothing.
+    @ViewBuilder private var hero: some View {
+        if let nextUp = room.nextUp {
+            NextUpCard(nextUp: nextUp)
+                .previewSafeListRow()
+                .listRowInsets(EdgeInsets())
         }
     }
 
