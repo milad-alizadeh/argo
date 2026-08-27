@@ -138,6 +138,11 @@ struct RhythmTests {
         #expect(ladder.isSuperset(of: [ArgoBacklogList.gutter, ArgoBacklogList.gap]))
         #expect(ladder.isSuperset(of: [
             ArgoTicketDetail.inset, ArgoTicketDetail.headStep, ArgoTicketDetail.bodyStep,
+            ArgoTicketDetail.factGap, ArgoTicketDetail.factLineGap, ArgoTicketDetail.factPairGap,
+            ArgoTicketDetail.stripStep, ArgoTicketDetail.labelGap, ArgoTicketDetail.labelInsetX,
+            ArgoTicketDetail.labelInsetY, ArgoTicketDetail.chipInsetX, ArgoTicketDetail.chipInsetY,
+            ArgoTicketDetail.chipGap, ArgoTicketDetail.sectionLift, ArgoTicketDetail.headingStep,
+            ArgoTicketDetail.linkGap, ArgoTicketDetail.linkFieldGap,
         ]))
     }
 

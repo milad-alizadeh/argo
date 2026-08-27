@@ -17,5 +17,17 @@ extension SpecimenRegistry {
             WorkPanesSpecimen(reading: WorkFixture.reading, opening: .blocked)
         },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
+        // A parent, deep: two Deliveries stacked, nine children rolled up over the five that are
+        // open, and six blockers of which four are already closed and still named.
+        SpecimenEntry("deepTicket") {
+            TicketDetailSpecimen(reading: WorkFixture.reading(showing: 607))
+        },
+        // A provider that exposes no dependency edges. The `Blocked by` section is ABSENT, not
+        // empty — nobody has told us there are no blockers.
+        SpecimenEntry("edgelessTicket") { TicketDetailSpecimen(reading: WorkFixture.edgeless) },
+        SpecimenEntry("deliveryChips") { DeliveryChipsSpecimen() },
+        // The fact strip's floor: a ticket the provider named and said nothing else about. Every
+        // absent fact is left out, and Argo's own bucket is the one that survives.
+        SpecimenEntry("unreadTicket") { TicketDetailSpecimen(reading: WorkFixture.unread) },
     ]
 }

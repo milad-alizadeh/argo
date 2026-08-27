@@ -24,7 +24,7 @@ struct WorkRoom {
         HStack(spacing: ArgoSpacing.flush) {
             BacklogList(rows: room.backlog, selection: $ticket)
             DeckSeparator()
-            TicketDetail(ticket: room.ticket)
+            TicketDetail(ticket: room.ticket, selection: $ticket)
         }
     }
 }
