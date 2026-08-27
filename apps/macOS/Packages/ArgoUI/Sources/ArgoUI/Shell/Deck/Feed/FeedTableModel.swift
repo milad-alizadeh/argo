@@ -36,9 +36,10 @@ import SwiftUI
     func content(at index: Int, hasCursor: Bool = false) -> AnyView {
         let row = rows[index]
         let dressed = FeedRowView(row: row, isExpanded: unfolding(row.id), selection: selection)
-            // Inside the step below, so the chip floats over the row's own words rather than the
-            // gap above them (#767).
-            .argoFeedProseCopy(row.inPlaceOffer, isLit: hasCursor)
+            // Inside the step below, so the chip stands under the row's own words rather than in
+            // the gap above the next one (#767). Which row draws one is a fact about the whole
+            // Turn, so it is asked here, where the reading is in hand.
+            .argoFeedProseCopy(FeedCopy.chipOffer(of: rows, at: index), isLit: hasCursor)
             .argoFeedCursor(hasCursor)
             .padding(.top, FeedRow.step(to: row, from: index > 0 ? rows[index - 1] : nil))
             .background {

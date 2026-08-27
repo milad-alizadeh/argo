@@ -61,11 +61,6 @@ extension FeedRow.Content {
         /// the reader right-clicked a specific thing, and `Copy` alone would leave them guessing
         /// whether they got the row or the whole Turn.
         var copyLabel: String?
-        /// Whether the ROW draws its own copy chip rather than leaving the taking to the menu. The
-        /// feed draws a message's and a thought's markdown blocks as one `Text` each, so a drag
-        /// stops at the first block boundary; a prompt is one `Text` in a bubble and drags end to
-        /// end, so it keeps the menu alone.
-        var copiesInPlace = false
         var activation = Activation.inert
     }
 
@@ -93,10 +88,9 @@ extension FeedRow.Content {
                 isMessage: true,
                 words: text,
                 copyLabel: "Copy Message",
-                copiesInPlace: true,
             )
         case let .thought(text):
-            Kind(isProse: true, words: text, copyLabel: "Copy Thought", copiesInPlace: true)
+            Kind(isProse: true, words: text, copyLabel: "Copy Thought")
         case let .call(call):
             Kind(
                 isCall: true,

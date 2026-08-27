@@ -1,4 +1,5 @@
 @testable import ArgoUI
+import Foundation
 import Testing
 
 /// Where the reading lands and what is re-measured to put it there — one test per row of the
@@ -8,7 +9,7 @@ struct FeedScrollPolicyTests {
     private static let anchor = FeedAnchor(row: 2, into: 12)
 
     @Test
-    func `a row arriving while the reader is following carries them to the end`() {
+    func `a row arriving while the reader is following carries them to the end`() throws {
         var policy = FeedScrollFixture.showing()
         let arriving = FeedScrollFixture.oneMoreRow()
         let decision = policy.resolve(
@@ -16,9 +17,11 @@ struct FeedScrollPolicyTests {
         )
         #expect(decision.landing == .end)
         #expect(decision.remeasure == .none)
+        // The arriving row is a message, so it also takes the chip off the message that had it.
+        let hadChip = try #require(FeedScrollFixture.reading.lastIndex { $0.kind.isMessage })
         #expect(decision.delta == .append(
             arrived: arriving.count - 1 ..< arriving.count,
-            rewritten: arriving.count - 2,
+            rewritten: IndexSet([arriving.count - 2, hadChip]),
         ))
     }
 
