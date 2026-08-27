@@ -5,6 +5,12 @@ import Foundation
 /// otherwise bind to a silently truncated path.
 let unixSocketPathLimit = 103
 
+/// How many dials may wait to be accepted. An `AF_UNIX` connection has no handshake to retry, so
+/// the kernel REFUSES the dial past this rather than making the peer wait (#785) — and a refused
+/// hook denies the call it was asking about. One agent Turn can raise a tool call per hook all at
+/// once, so the depth has to cover a burst, not a caller.
+private let listenBacklog = Int32(SOMAXCONN)
+
 /// The companion channel's listening end: one Unix domain socket per claim.
 ///
 /// The file IS the capability. It lives in a directory that is the user's alone (0700) and is
@@ -88,7 +94,7 @@ final class CompanionSocket {
         let didBind = withUnsafePointer(to: &address) { pointer in
             pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(descriptor, $0, size) }
         }
-        guard didBind == 0, listen(descriptor, 4) == 0 else {
+        guard didBind == 0, listen(descriptor, listenBacklog) == 0 else {
             Darwin.close(descriptor)
             self.descriptor = -1
             // A successful `bind` creates the file even when `listen` then fails, and a socket file
@@ -102,7 +108,7 @@ final class CompanionSocket {
         _ = fcntl(descriptor, F_SETFL, O_NONBLOCK)
         let source = DispatchSource.makeReadSource(fileDescriptor: descriptor, queue: .main)
         source.setEventHandler { [weak self] in
-            MainActor.assumeIsolated { self?.acceptOne(descriptor) }
+            MainActor.assumeIsolated { self?.acceptWaiting(descriptor) }
         }
         // Closed by the cancel handler and nowhere else: `cancel` is asynchronous, so closing
         // alongside it frees a number GCD is still watching — which the next socket then gets.
@@ -111,9 +117,21 @@ final class CompanionSocket {
         self.source = source
     }
 
-    private func acceptOne(_ listening: Int32) {
-        let client = Darwin.accept(listening, nil, nil)
-        guard client >= 0 else { return }
+    /// EVERY dial waiting, not one per turn. The descriptor is non-blocking, so the drain ends on
+    /// the first `accept` that finds nothing left.
+    ///
+    /// The backlog above is what makes a burst safe; this is why a burst costs ONE main-queue turn
+    /// rather than one per dial, which is the resource the gate was starved of when #785 fired. No
+    /// test proves this half — the read source re-fires, so one-per-turn drains eventually.
+    private func acceptWaiting(_ listening: Int32) {
+        while true {
+            let client = Darwin.accept(listening, nil, nil)
+            guard client >= 0 else { return }
+            accept(client)
+        }
+    }
+
+    private func accept(_ client: Int32) {
         accepted += 1
         let key = accepted
         let connection = CompanionConnection(
