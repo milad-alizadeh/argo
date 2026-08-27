@@ -31,8 +31,7 @@ extension SpecimenRegistry {
         SpecimenEntry("twoReadings") { RosterSpecimen(presentation: .twoReadings) },
         SpecimenEntry("toolbarScope") { ToolbarSpecimen(presentation: .preview) },
         SpecimenEntry("emptyToolbarScope") { ToolbarSpecimen(presentation: .unregisteredPreview) },
-        // The bar's two degrade-down states. The mark and the branch word are the only places on
-        // screen either fact is drawn, and no test renders a view.
+        // The bar's two degrade-down states — `emptyPreview` is the one fixture on a detached HEAD.
         SpecimenEntry("unreachableToolbarScope") {
             ToolbarSpecimen(presentation: .unreachablePreview)
         },

@@ -2,10 +2,8 @@ import SwiftUI
 
 /// This Project, on this checkout — the two halves and the rule between them, as one control.
 ///
-/// Two readings and not one: the halves are drawn together but answer about different entities, a
-/// Project and a Workspace. No glass of its own: the single toolbar item hosting it supplies that,
-/// and one capsule around both is the whole claim. It tints the pair, so the merged vessel speaks
-/// in one colour.
+/// No glass of its own: the single toolbar item hosting it supplies that, and one capsule around
+/// both is the whole claim. It tints the pair, so the merged vessel speaks in one colour.
 struct ScopeVessel: View {
     @Environment(\.argo) private var argo
 
@@ -34,8 +32,7 @@ struct ScopeVessel: View {
 }
 
 extension ScopeVessel {
-    /// The one place on the bar a presentation is projected. Everything below this line takes
-    /// values, so every claim the toolbar makes is asserted without rendering anything.
+    /// The one place on the bar a presentation is projected.
     init(presentation: CockpitPresentation, actions: CockpitActions) {
         self.init(
             project: ProjectVesselReading(presentation: presentation),
@@ -60,7 +57,7 @@ extension ScopeVessel {
 #Preview("Scope vessel — nothing registered") {
     ScopeVessel(
         project: ProjectVesselReading(presentation: .unregisteredPreview),
-        rows: [],
+        rows: ProjectDrawerProjection.rows(from: .unregisteredPreview),
         checkout: CheckoutReading(presentation: .unregisteredPreview),
         actions: .inert,
     )

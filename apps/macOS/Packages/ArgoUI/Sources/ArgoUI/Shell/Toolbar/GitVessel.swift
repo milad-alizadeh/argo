@@ -2,9 +2,8 @@ import SwiftUI
 
 /// The global primary checkout, kept separate from the selected Session's branch fact.
 ///
-/// Every word it says is `CheckoutReading`'s. It applies no glass of its own: the toolbar supplies
-/// Liquid Glass, and a hand-rolled capsule here would defeat the group that merges this half with
-/// the Project into one vessel.
+/// It applies no glass of its own: the toolbar supplies Liquid Glass, and a hand-rolled capsule
+/// here would defeat the group that merges this half with the Project into one vessel.
 struct GitVessel: View {
     @Environment(\.argo) private var argo
 

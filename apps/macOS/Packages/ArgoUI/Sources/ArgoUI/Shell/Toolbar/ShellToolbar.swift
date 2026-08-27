@@ -19,9 +19,7 @@ import SwiftUI
 /// reaches up into this band.
 struct ShellToolbar: ToolbarContent {
     @Binding var room: CockpitRoom
-    /// Assembled by the caller, because this file is about PLACEMENT — which region an item is
-    /// in, which spacer sits where, which capsule is shared. Nothing on the bar reads a
-    /// presentation; the window projects once and hands down values.
+    /// Assembled by the caller: nothing below the bar reads a presentation.
     let scope: ScopeVessel
     let spawn: CockpitSpawn
 

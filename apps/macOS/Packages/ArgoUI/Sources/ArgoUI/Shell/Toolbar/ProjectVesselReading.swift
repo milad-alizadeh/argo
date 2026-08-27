@@ -1,16 +1,14 @@
 /// What the toolbar's Project half draws: its mark, the name it spells out, and the two sentences
 /// it says about the active Project.
-///
-/// A reading rather than derivations on the `View`, for the reason `ProjectDrawerProjection` gives
-/// one control over — nothing renders a view on CI, so an accessibility claim held in a `private
-/// var` on a `View` is a claim nothing can ever check. The unreachable words are the drawer's, not
-/// a second copy of them.
 struct ProjectVesselReading: Equatable {
+    /// What the press does. One sentence for the one gesture, whatever the Project's state.
+    static let hint = "Opens the Project drawer"
+
     let mark: String
     /// Spelled out rather than initialled, and named even when there is none to name.
     let name: String
     let help: String
-    /// State is spoken, never left to the mark: unreachability is a word here and in the drawer.
+    /// State is spoken, never left to the mark.
     let announcement: String
 }
 
@@ -24,25 +22,27 @@ extension ProjectVesselReading {
             self.init(
                 mark: ArgoSymbol.project,
                 name: "No Project",
-                // What the VESSEL is for — the window's scope. `NewSessionOffer` refuses the same
-                // machine in its own words, because a disabled spawn is a different question.
+                // What the VESSEL is for. `NewSessionOffer` refuses the same machine in its own
+                // words, because a disabled spawn is a different question.
                 help: "No Project registered — add one to scope this window",
                 announcement: "Project, none registered",
             )
             return
         }
+        guard project.isReachable else {
+            self.init(
+                mark: ArgoSymbol.unreachableProject,
+                name: project.name,
+                help: "Project — \(project.name) · \(ProjectDrawerProjection.unreachable)",
+                announcement: "Project, \(project.name), \(ProjectDrawerProjection.unreachable)",
+            )
+            return
+        }
         self.init(
-            // A Project whose folder is gone says so with its mark as well as in words.
-            mark: project.isReachable ? ArgoSymbol.project : ArgoSymbol.unreachableProject,
+            mark: ArgoSymbol.project,
             name: project.name,
-            help: "Project — \(project.name) · \(Self.place(project))",
-            announcement: project.isReachable
-                ? "Project, \(project.name)"
-                : "Project, \(project.name), \(ProjectDrawerProjection.unreachable)",
+            help: "Project — \(project.name) · \(project.location)",
+            announcement: "Project, \(project.name)",
         )
-    }
-
-    private static func place(_ project: CockpitPresentation.Project) -> String {
-        project.isReachable ? project.location : ProjectDrawerProjection.unreachable
     }
 }

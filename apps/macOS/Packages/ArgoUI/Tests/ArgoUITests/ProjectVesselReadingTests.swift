@@ -1,9 +1,8 @@
 @testable import ArgoUI
 import Testing
 
-/// What the toolbar's Project half says. Every claim here is one the vessel makes in WORDS — the
-/// mark is the second reading of unreachability, never the first — and nothing renders a view on
-/// CI, so a claim left on the `View` is a claim nothing can check.
+/// What the toolbar's Project half says. Every claim here is one the vessel makes in WORDS: the
+/// mark is the second reading of unreachability, never the first.
 @Suite("Project vessel reading")
 struct ProjectVesselReadingTests {
     @Test
@@ -16,7 +15,6 @@ struct ProjectVesselReadingTests {
         #expect(reading.announcement == "Project, argo")
     }
 
-    /// State is spoken, never left to the mark: the same sentence the drawer's row carries.
     @Test
     func `an unreachable Project states folder not found in words, twice over`() {
         let reading = ProjectVesselReading(project: Self.moved)
@@ -25,7 +23,6 @@ struct ProjectVesselReadingTests {
         #expect(reading.announcement == "Project, penumbra, folder not found")
     }
 
-    /// The words are the drawer's, not a second copy of them — one sentence, one owner.
     @Test
     func `the unreachable sentence is the drawer projection's own`() {
         let reading = ProjectVesselReading(project: Self.moved)
@@ -49,9 +46,6 @@ struct ProjectVesselReadingTests {
         #expect(reading.announcement == "Project, none registered")
     }
 
-    /// Two sentences, deliberately: this one is about what the window is SCOPED to, the Session
-    /// offer's about why a spawn cannot start. Both asserted, so neither drifts into the other's
-    /// job unnoticed.
     @Test
     func `the vessel's refusal is not the New Session offer's`() {
         let vessel = ProjectVesselReading(project: nil)
@@ -59,6 +53,12 @@ struct ProjectVesselReadingTests {
 
         #expect(vessel.help == "No Project registered — add one to scope this window")
         #expect(offer.blocked == "No Project registered — add one to start a Session here")
+    }
+
+    /// The one gesture the vessel carries, whatever state the Project is in.
+    @Test
+    func `the press is described the same way in every state`() {
+        #expect(ProjectVesselReading.hint == "Opens the Project drawer")
     }
 
     @Test

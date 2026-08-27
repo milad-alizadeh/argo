@@ -1,9 +1,5 @@
 /// What the toolbar's checkout half draws: one word for the global primary checkout, plus the
 /// tooltip and the spoken value built from it.
-///
-/// A reading rather than two `switch`es on the `View`, which is what let the drawn word and the
-/// spoken one answer the same `Checkout` separately. The tooltip is the label, so a checkout that
-/// degrades down degrades down in all three at once.
 struct CheckoutReading: Equatable {
     let label: String
     let help: String

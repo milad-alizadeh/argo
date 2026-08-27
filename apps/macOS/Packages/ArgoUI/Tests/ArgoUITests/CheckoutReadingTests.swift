@@ -1,9 +1,7 @@
 @testable import ArgoUI
 import Testing
 
-/// What the toolbar's checkout half says about the global primary checkout. The label and the
-/// spoken value answered the same `Checkout` from two switches on a `View`; here they are one
-/// value, so the quiet state cannot be quiet in one of them and not the other.
+/// What the toolbar's checkout half says about the global primary checkout.
 @Suite("Checkout reading")
 struct CheckoutReadingTests {
     @Test
@@ -24,8 +22,6 @@ struct CheckoutReadingTests {
         #expect(reading.announcement == "Global checkout, detached HEAD 9011669")
     }
 
-    /// Degrade-down: with nothing registered there is no checkout to name, and a git internal
-    /// standing in for a branch is the nearest guess the rule forbids.
     @Test
     func `no HEAD reads as unknown rather than as a branch called HEAD`() {
         let reading = CheckoutReading(checkout: .unavailable)
@@ -34,13 +30,13 @@ struct CheckoutReadingTests {
         #expect(reading.announcement == "Global checkout, HEAD unavailable")
     }
 
-    @Test
-    func `the tooltip never says more than the label it hovers`() {
-        for checkout in Self.every {
-            let reading = CheckoutReading(checkout: checkout)
+    @Test(arguments: everyCheckout)
+    func `the tooltip never says more than the label it hovers`(
+        checkout: CockpitPresentation.Checkout,
+    ) {
+        let reading = CheckoutReading(checkout: checkout)
 
-            #expect(reading.help == "Global checkout — \(reading.label)")
-        }
+        #expect(reading.help == "Global checkout — \(reading.label)")
     }
 
     @Test
@@ -49,10 +45,10 @@ struct CheckoutReadingTests {
         #expect(CheckoutReading(presentation: .unregisteredPreview).label == "unknown")
         #expect(CheckoutReading(presentation: .emptyPreview).label == "HEAD · 9011669")
     }
-
-    private static let every: [CockpitPresentation.Checkout] = [
-        .branch("main"),
-        .detached(shortSHA: "9011669"),
-        .unavailable,
-    ]
 }
+
+private let everyCheckout: [CockpitPresentation.Checkout] = [
+    .branch("main"),
+    .detached(shortSHA: "9011669"),
+    .unavailable,
+]

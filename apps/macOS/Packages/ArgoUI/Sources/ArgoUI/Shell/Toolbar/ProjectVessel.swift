@@ -3,9 +3,7 @@ import SwiftUI
 /// The active Project as the leading half of the scope vessel: its symbol, its full name and a
 /// disclosure. Clicking it opens the Project drawer.
 ///
-/// Everything it claims is `ProjectVesselReading`'s, and the drawer's rows arrive already
-/// projected — this file draws them and holds nothing else. No state dot: nothing derives the
-/// per-Project worst-state rollup yet (#164).
+/// No state dot: nothing derives the per-Project worst-state rollup yet (#164).
 struct ProjectVessel: View {
     @Environment(\.argo) private var argo
     @State private var isDrawerOpen = false
@@ -24,7 +22,7 @@ struct ProjectVessel: View {
         }
         .help(reading.help)
         .accessibilityLabel(reading.announcement)
-        .accessibilityHint("Opens the Project drawer")
+        .accessibilityHint(ProjectVesselReading.hint)
     }
 
     private var label: some View {
@@ -67,7 +65,7 @@ struct ProjectVessel: View {
 #Preview("Project vessel — nothing registered") {
     ProjectVessel(
         reading: ProjectVesselReading(presentation: .unregisteredPreview),
-        rows: [],
+        rows: ProjectDrawerProjection.rows(from: .unregisteredPreview),
         actions: .inert,
     )
     .padding(ArgoSpacing.region)
