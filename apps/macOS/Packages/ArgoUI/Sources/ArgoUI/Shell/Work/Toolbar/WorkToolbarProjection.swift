@@ -40,7 +40,11 @@ enum WorkToolbarProjection {
         let hasRows = !room.backlog.isEmpty
         return Reading(
             heading: "Backlog",
-            subtitle: "\(view.name) · \(tickets(room.backlog.count))",
+            // The VIEW's count, not `backlog.count`: since #814 the backlog is a tree and its top
+            // level is the roots, so counting it would report five where the view holds twelve —
+            // and would drop by one every time a reader folded a parent. This is the same number
+            // the sidebar's row for this view shows, which is what stops the two disagreeing.
+            subtitle: "\(view.name) · \(tickets(room.view(view)?.count ?? 0))",
             narrows: hasRows,
             draws: true,
             ticket: hasRows ? showing : nil,
@@ -48,9 +52,10 @@ enum WorkToolbarProjection {
     }
 
     /// The design's subtitle reads `All open · by priority · 12 tickets`, and the middle term is
-    /// missing here on purpose: it names the grouping in force, and the list is still flat (#812).
-    /// A heading that said `by priority` over an ungrouped list would be the exact lie the second
-    /// line exists to prevent — #814 adds the term with the grouping it describes.
+    /// missing here on purpose: it names the GROUPING in force, and the list has none. #814 nested
+    /// it into a tree, which is not a grouping; #819 adds the priority headers, and adds this term
+    /// with them. A heading that said `by priority` over an ungrouped list would be the exact lie
+    /// the second line exists to prevent.
     private static func tickets(_ count: Int) -> String {
         "\(count) ticket\(count == 1 ? "" : "s")"
     }

@@ -28,16 +28,8 @@ extension WorkRoomProjection {
         }
     }
 
-    static func row(for item: WorkItem, delivery: DeliveryReading?, closed: Set<Int>) -> Row {
-        Row(
-            id: item.number,
-            title: item.title,
-            delivery: delivery ?? .absent,
-            trailing: rollUp(of: item, closed: closed),
-        )
-    }
-
-    private static func rollUp(of item: WorkItem, closed: Set<Int>) -> String? {
+    /// The parent's `n/m`, over the TRACKER's children rather than the rows drawn under it.
+    static func rollUp(of item: WorkItem, closed: Set<Int>) -> String? {
         guard !item.children.isEmpty else { return nil }
         return "\(item.children.filter(closed.contains).count)/\(item.children.count)"
     }

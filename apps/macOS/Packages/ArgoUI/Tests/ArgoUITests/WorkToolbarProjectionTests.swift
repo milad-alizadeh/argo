@@ -22,8 +22,19 @@ struct WorkToolbarProjectionTests {
     /// value under test passes whatever that value is, which is no expectation at all. 12 is the
     /// fixture's open set, and the design's renders read the same.
     @Test
-    func `the heading names the view and counts the rows the list draws`() {
+    func `the heading names the view and counts every ticket in it`() {
         #expect(Self.reading().heading == "Backlog")
+        #expect(Self.reading().subtitle == "All open · 12 tickets")
+    }
+
+    /// The count is the VIEW's, not the tree's top level (#814). Counting rows would report the
+    /// roots — five, where the view holds twelve — and would fall every time a reader folded a
+    /// parent, which changes what is on screen and not what the filter holds.
+    @Test
+    func `the count is of tickets, not of the rows the tree happens to draw`() {
+        let room = WorkRoomProjection.room(from: WorkFixture.reading)
+
+        #expect(room.backlog.count < 12)
         #expect(Self.reading().subtitle == "All open · 12 tickets")
     }
 

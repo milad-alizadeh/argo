@@ -16,6 +16,9 @@ public final class CockpitNavigationModel {
     /// Which of the backlog's views is open. Here rather than in the sidebar, because it decides
     /// what the DECK draws — held inside the sidebar it filtered nothing.
     var workView = WorkView.allOpen
+    /// Which parents the backlog has folded. Beside the view for the same reason: a fold survives
+    /// the reader leaving the room. Empty, because everything opens open (#814).
+    var shutParents: Set<Int> = []
     /// What the backlog's search field is holding. Beside the view for its reason: the field sits
     /// over the ticket and narrows the LIST, so neither pane may own it (#816).
     var workQuery = ""

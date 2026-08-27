@@ -19,14 +19,21 @@ struct WorkPanesSpecimen: View {
     private let reading: WorkReading
 
     @State private var cockpitRoom = CockpitRoom.work
+    /// Seeded from the reading, so a specimen opens with the list's selection on the ticket the
+    /// pane beside it is drawing — the two are one act in the app and must not part in a render.
     @State private var ticket: Int?
     /// Seeded from `opening` rather than parameterised, so the room still switches views when a
     /// person drives it — a specimen names a starting state, it does not freeze one.
     @State private var view: WorkView
+    /// Seeded the same way, and the reason a folded parent can be SHOT: everything opens open, so
+    /// `collapsed.png` is a state nobody could reach without clicking (#814).
+    @State private var shut: Set<Int>
 
-    init(reading: WorkReading, opening: WorkView = .allOpen) {
+    init(reading: WorkReading, opening: WorkView = .allOpen, folded: Set<Int> = []) {
         self.reading = reading
         _view = State(initialValue: opening)
+        _shut = State(initialValue: folded)
+        _ticket = State(initialValue: reading.showing)
     }
 
     var body: some View {
@@ -35,6 +42,7 @@ struct WorkPanesSpecimen: View {
             cockpitRoom: $cockpitRoom,
             ticket: $ticket,
             view: $view,
+            shut: $shut,
         )
 
         HStack(spacing: ArgoSpacing.flush) {

@@ -75,7 +75,7 @@ enum WorkFixture {
             deliveryFacts: deliveryFacts,
             priorities: priorities,
             types: types,
-            bodies: [272: body, 607: body],
+            bodies: [272: body, 607: parentBody],
             charts: [607, 334],
             provider: bound,
             project: project,

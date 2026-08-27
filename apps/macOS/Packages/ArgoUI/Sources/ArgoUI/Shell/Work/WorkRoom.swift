@@ -15,6 +15,10 @@ struct WorkRoom {
     /// Which view is open. Above the room too, and for a sharper reason: `room.backlog` is already
     /// filtered to it, so the selection has to be settled before the room is derived.
     @Binding var view: WorkView
+    /// Which parents the reader has folded. Above the room for the same reason the ticket is: a
+    /// fold outlives the pane. **Everything opens open**, so it is empty until somebody folds
+    /// something — a tree that opens shut hides what it was added for (#814).
+    @Binding var shut: Set<Int>
     /// What the unbound page's `Connect a provider…` does. Inert by default, so a preview and a
     /// specimen draw the button without opening a panel behind the render.
     var connect: @MainActor () -> Void = {}
@@ -39,7 +43,7 @@ struct WorkRoom {
             WorkRoomVacancy(vacancy: vacancy, project: room.project, connect: connect)
         } else {
             HStack(spacing: ArgoSpacing.flush) {
-                BacklogList(rows: room.backlog, selection: $ticket)
+                BacklogList(rows: room.backlog, selection: $ticket, shut: $shut)
                 DeckSeparator()
                 TicketDetail(ticket: room.ticket) { ticket = $0 }
             }
@@ -51,9 +55,11 @@ struct WorkRoom {
     @Previewable @State var ticket: Int? = 272
     @Previewable @State var cockpitRoom = CockpitRoom.work
     @Previewable @State var view = WorkView.allOpen
+    @Previewable @State var shut: Set<Int> = []
 
     WorkRoom(
         room: WorkFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket, view: $view,
+        shut: $shut,
     )
     .deck
     .frame(width: ArgoBacklogList.width + ArgoTicketDetail.idealWidth, height: 620)

@@ -6,15 +6,13 @@ import SwiftUI
 struct BacklogList: View {
     let rows: [WorkRoomProjection.Row]
     @Binding var selection: Int?
+    /// Which parents are folded. Held above the pane for the same reason the ticket is: a fold the
+    /// reader made outlives the pane, and it is what a specimen seeds to shoot `collapsed.png`.
+    @Binding var shut: Set<Int>
 
     var body: some View {
-        List(rows, selection: $selection) { row in
-            BacklogRow(row: row)
-                .previewSafeListRow()
-                // On the ROW, not the list: declared on the `List` the modifier reaches nothing,
-                // and the rules stayed. The row is `dot · id · title` and nothing else — a rule
-                // under every one of them turns a list into a table.
-                .listRowSeparator(.hidden)
+        List(selection: $selection) {
+            BacklogOutline(rows: rows, shut: $shut)
         }
         .listStyle(.inset)
         .scrollContentBackground(.hidden)
@@ -23,20 +21,28 @@ struct BacklogList: View {
     }
 }
 
-#Preview("Backlog list") {
+#Preview("Backlog list — everything open") {
     @Previewable @State var selection: Int? = 272
+    @Previewable @State var shut: Set<Int> = []
 
-    BacklogList(
-        rows: WorkRoomProjection.room(from: WorkFixture.reading).backlog,
-        selection: $selection,
-    )
-    .frame(height: 520)
-    .argoDeckSurface()
-    .argoAppearance()
+    BacklogList(rows: WorkFixture.room.backlog, selection: $selection, shut: $shut)
+        .frame(height: 520)
+        .argoDeckSurface()
+        .argoAppearance()
+}
+
+#Preview("Backlog list — a parent folded, its roll-up standing for its children") {
+    @Previewable @State var selection: Int? = 607
+    @Previewable @State var shut: Set = [607]
+
+    BacklogList(rows: WorkFixture.room.backlog, selection: $selection, shut: $shut)
+        .frame(height: 520)
+        .argoDeckSurface()
+        .argoAppearance()
 }
 
 #Preview("Backlog list — the provider answered with nothing") {
-    BacklogList(rows: [], selection: .constant(nil))
+    BacklogList(rows: [], selection: .constant(nil), shut: .constant([]))
         .frame(height: 320)
         .argoDeckSurface()
         .argoAppearance()
