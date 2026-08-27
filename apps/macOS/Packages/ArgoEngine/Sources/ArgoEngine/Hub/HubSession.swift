@@ -7,7 +7,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public let sourceURL: URL?
     /// The file of the chain's LATEST link. `sourceURL` is the root's and stays the root's, because
     /// the id everything links against must not move when the chain grows.
-    private var chainTipURL: URL?
+    private(set) var chainTipURL: URL?
     /// Set by the Hub off the ownership registry, never asserted here: a transcript file says
     /// nothing about who spawned the CLI that wrote it.
     public internal(set) var provenance: SessionProvenance = .external
@@ -96,7 +96,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public private(set) var startedAtMs: Int?
     /// The file's own last write — what a transcript whose records carry no time still says about
     /// when it ran.
-    private var recordedAtMs: Int?
+    private(set) var recordedAtMs: Int?
     /// Whether an AGENT has ever spoken here — said something, thought, called a tool, ended a
     /// turn, or been priced. A prompt does not count: it is what was ASKED. DIRECT for a Session
     /// Argo spawned (`init(spawn:)` sets it).
@@ -105,33 +105,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// The CLI opens a transcript per queued prompt, each holding one copy of the same words, so
     /// queued with no agent output beside it is not its own Session. Queued AND answered is.
     public private(set) var isQueued = false
-    private(set) var turnOpen = false
-    private(set) var lastStop: StopReason?
-    /// The `AskUserQuestion` calls in the open Turn that no result has answered.
-    private(set) var pendingAsks: Set<String> = []
-
-    /// `nil` where neither source could say — the roster sorts such a Session last rather than
-    /// giving it a guessed time, and liveness reads it as uncorroborated rather than recent.
-    public var lastSeenAtMs: Int? {
-        lastActivityAtMs ?? recordedAtMs
-    }
-
-    /// What `--resume` is given to continue this Session (#10): the CLI's own id for the chain's
-    /// latest link, which `claude` writes the transcript file under. Resuming the ROOT instead
-    /// would fork the chain at the point its first continuation left it.
-    ///
-    /// Absent for a Session with no record on disk — a spawn whose CLI has written nothing has no
-    /// chain to continue.
-    var resumeID: String? {
-        chainTipURL?.deletingPathExtension().lastPathComponent
-    }
-
-    /// The id the CLI wrote this chain's ROOT file under: the name a spawn hands it on argv, and
-    /// the exact key ownership binds on (#742). The root and not the tip — what Argo named is the
-    /// file the agent opened with, and a chain that grows must not stop answering for it.
-    var transcriptUUID: String? {
-        sourceURL?.deletingPathExtension().lastPathComponent
-    }
+    /// The Turn in flight and what the last one ended as — see `SessionTurnState`.
+    private(set) var turn = SessionTurnState()
 
     public init(observation: TranscriptObservation) {
         self.id = observation.id
@@ -161,7 +136,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.cli = spawn.cli
         self.lastActivityAtMs = spawn.exit?.atMs ?? spawn.spawnedAtMs
         self.startedAtMs = spawn.spawnedAtMs
-        self.lastStop = spawn.exit == nil ? .endTurn : .cancelled
+        self.turn = SessionTurnState(lastStop: spawn.exit == nil ? .endTurn : .cancelled)
         // DIRECT: Argo started this process, so the row belongs on the roster from the moment it
         // exists.
         self.hasAgentActivity = true
@@ -188,19 +163,16 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             observe(mode: cli)
         case let .prompt(text, _, atMs):
             name.observe(prompt: text)
-            turnOpen = true
+            turn.opened()
             observeActivity(atMs)
         case let .turnEnded(reason):
             hasAgentActivity = true
-            turnOpen = false
-            lastStop = reason
-            // A question the Turn it was asked in has left behind is not still waiting on anyone.
-            pendingAsks = []
+            turn.ended(reason)
         case let .toolCall(call):
             observe(call: call)
         case let .toolCallOutcome(outcome):
             hasAgentActivity = true
-            pendingAsks.remove(outcome.id)
+            turn.answered(outcome.id)
             observeActivity(outcome.endedAtMs)
             spend.observe(subagent: outcome.usage)
         case let .compaction(atMs):
@@ -225,9 +197,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
 
     private mutating func observe(call: ToolCall) {
         hasAgentActivity = true
-        if call.name == ToolCall.askUserQuestion {
-            pendingAsks.insert(call.id)
-        }
+        turn.observe(call)
         observeActivity(call.atMs)
     }
 
@@ -283,13 +253,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         observeActivity(continuation.lastActivityAtMs)
         observeActivity(continuation.startedAtMs)
         recordedAtMs = continuation.recordedAtMs.map { max(recordedAtMs ?? $0, $0) } ?? recordedAtMs
-        // A resume file with no Turn in it yet says nothing about the chain, and taking its
-        // silence would close the root's open Turn.
-        if continuation.turnOpen || continuation.lastStop != nil {
-            turnOpen = continuation.turnOpen
-            lastStop = continuation.lastStop
-            pendingAsks = continuation.pendingAsks
-        }
+        turn.merge(continuation.turn)
     }
 
     /// One Subagent's own reading, appended as its tail delivers it. Keyed by the CLI's id and not
