@@ -19,8 +19,10 @@ import SwiftUI
 /// reaches up into this band.
 struct ShellToolbar: ToolbarContent {
     @Binding var room: CockpitRoom
-    let presentation: CockpitPresentation
-    let actions: CockpitActions
+    /// Assembled by the caller, because this file is about PLACEMENT — which region an item is
+    /// in, which spacer sits where, which capsule is shared. Nothing on the bar reads a
+    /// presentation; the window projects once and hands down values.
+    let scope: ScopeVessel
     let spawn: CockpitSpawn
 
     @ToolbarContentBuilder var body: some ToolbarContent {
@@ -32,7 +34,7 @@ struct ShellToolbar: ToolbarContent {
         // shared background and draws its own; this spacer keeps it off the folder mark beside it.
         ToolbarSpacer(.fixed, placement: .navigation)
         ToolbarItem(placement: .navigation) {
-            ScopeVessel(presentation: presentation, actions: actions)
+            scope
         }
         ToolbarSpacer(.flexible)
         ToolbarItem(placement: .primaryAction) {

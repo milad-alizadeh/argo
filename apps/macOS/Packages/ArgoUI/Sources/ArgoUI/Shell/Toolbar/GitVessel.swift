@@ -2,12 +2,13 @@ import SwiftUI
 
 /// The global primary checkout, kept separate from the selected Session's branch fact.
 ///
-/// It applies no glass of its own: the toolbar supplies Liquid Glass, and a hand-rolled capsule
-/// here would defeat the group that merges this half with the Project into one vessel.
+/// Every word it says is `CheckoutReading`'s. It applies no glass of its own: the toolbar supplies
+/// Liquid Glass, and a hand-rolled capsule here would defeat the group that merges this half with
+/// the Project into one vessel.
 struct GitVessel: View {
     @Environment(\.argo) private var argo
 
-    let checkout: CockpitPresentation.Checkout
+    let reading: CheckoutReading
     let refresh: () -> Void
 
     var body: some View {
@@ -17,7 +18,7 @@ struct GitVessel: View {
                     .keyboardShortcut("r", modifiers: [.command, .shift])
             } label: {
                 Label {
-                    Text(label)
+                    Text(reading.label)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 } icon: {
@@ -38,31 +39,13 @@ struct GitVessel: View {
         }
         .foregroundStyle(argo.color.text.secondary)
         .toolbarSegment()
-        .help("Global checkout — \(label)")
-        .accessibilityLabel("Global checkout, \(accessibilityValue)")
-    }
-
-    private var label: String {
-        switch checkout {
-        case let .branch(branch): branch
-        case let .detached(shortSHA): "HEAD · \(shortSHA)"
-        // Not "HEAD": with nothing registered there is no checkout to name, and a git internal
-        // standing in for a branch is the nearest guess the degrade-down rule forbids.
-        case .unavailable: "unknown"
-        }
-    }
-
-    private var accessibilityValue: String {
-        switch checkout {
-        case let .branch(branch): "branch \(branch)"
-        case let .detached(shortSHA): "detached HEAD \(shortSHA)"
-        case .unavailable: "HEAD unavailable"
-        }
+        .help(reading.help)
+        .accessibilityLabel(reading.announcement)
     }
 }
 
 #Preview("Git vessel") {
-    GitVessel(checkout: .branch("main"), refresh: {})
+    GitVessel(reading: CheckoutReading(checkout: .branch("main")), refresh: {})
         .padding(ArgoSpacing.region)
         .argoAppearance()
 }
