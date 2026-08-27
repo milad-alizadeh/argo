@@ -4,8 +4,12 @@ import Foundation
 ///
 /// Read at their top level and no deeper: GitHub nests steps inside a run, and `CONTEXT.md` L4
 /// fixes Checks at one level.
-struct GitHubCheckRuns: Decodable {
+struct GitHubCheckRuns: GitHubPage {
     let checkRuns: [Run]
+
+    var items: [Run] {
+        checkRuns
+    }
 
     struct Run: Decodable {
         let name: String

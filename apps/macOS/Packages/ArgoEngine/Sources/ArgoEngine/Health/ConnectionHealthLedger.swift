@@ -45,11 +45,7 @@ public actor ConnectionHealthLedger {
     }
 
     /// A read through one port failed, filed at whichever level the error names. Both ports record
-    /// through here, so a Work Item listing and a Delivery derivation that fail the same way cannot
-    /// reach this ledger as two different states.
-    ///
-    /// What was already fetched is deliberately untouched on every path — a failed read leaves it
-    /// where it was, old and still accurately DERIVED.
+    /// through here, so two failing the same way cannot reach this ledger as two states.
     public func record(_ error: ProviderFetchError, of target: PortReadTarget) {
         guard let cause = error.cause else {
             return grantRefused(target.accountID)

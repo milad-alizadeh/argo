@@ -1,8 +1,6 @@
 import Foundation
 
 /// One submitted review round against a Delivery (`CONTEXT.md` L4 · Review).
-///
-/// The entity is a Review — never "code review", which is the name of one SOURCE of one.
 public struct DeliveryReview: Equatable, Sendable {
     /// Who submitted it, as the host spells their login, and `nil` where the host named nobody —
     /// a review whose author's account is gone is still a review it serves.

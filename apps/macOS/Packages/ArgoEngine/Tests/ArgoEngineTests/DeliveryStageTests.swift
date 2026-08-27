@@ -62,8 +62,12 @@ struct DeliveryStageTests {
     }
 
     @Test
-    func `deploy and release are reserved, and nothing else is`() {
+    func `the reserved nodes are deploy and release`() {
         #expect(DeliveryStage.allCases.filter(\.isReserved) == [.deploy, .release])
+    }
+
+    @Test
+    func `the wired nodes are the five the strip draws`() {
         #expect(DeliveryStage.wired == [.commits, .pr, .ci, .review, .merge])
     }
 

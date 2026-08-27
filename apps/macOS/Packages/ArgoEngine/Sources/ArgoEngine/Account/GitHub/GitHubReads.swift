@@ -2,17 +2,14 @@ import Foundation
 
 /// Asking GitHub for one path, and turning every way an ask can fail into the one vocabulary the
 /// health ledger records.
-///
-/// Both GitHub adapters read through this — Issues for the Work Item port, pulls and checks for the
-/// code host — so the two cannot disagree about what a refused token or an unparseable body means.
 struct GitHubReads: Sendable {
     let transport: HTTPTransport
 
     /// A hundred is GitHub's own ceiling for `per_page`; a short page is the last page.
-    static let pageSize = 100
+    private static let pageSize = 100
     /// A runaway backstop and not a working limit: a read that walked forever would leave the
     /// health chip claiming a read still in flight.
-    static let pageLimit = 20
+    private static let pageLimit = 20
 
     func get<Reply: Decodable>(_ path: String, grant: AccountGrant) async throws -> Reply {
         let data = try await send(path, grant: grant)
@@ -30,17 +27,20 @@ struct GitHubReads: Sendable {
         return reply
     }
 
-    /// Walk the pages of one listing until a short one ends it or the backstop does. `page` is
-    /// appended, so the caller's path carries every other query parameter including `per_page`.
-    func pages<Item: Decodable>(
-        of path: String, grant: AccountGrant,
+    /// Every item of one listing, walked until a short page ends it or the backstop does. The
+    /// paging parameters are appended here, so nothing else in the module spells `per_page`.
+    func pages<Page: GitHubPage>(
+        _: Page.Type, of path: String, grant: AccountGrant,
     ) async throws
-        -> [Item] {
-        var items: [Item] = []
+        -> [Page.Item] {
+        var items: [Page.Item] = []
+        let separator = path.contains("?") ? "&" : "?"
         for page in 1 ... Self.pageLimit {
-            let listed: [Item] = try await get("\(path)&page=\(page)", grant: grant)
-            items.append(contentsOf: listed)
-            if listed.count < Self.pageSize {
+            let read: Page = try await get(
+                "\(path)\(separator)per_page=\(Self.pageSize)&page=\(page)", grant: grant,
+            )
+            items.append(contentsOf: read.items)
+            if read.items.count < Self.pageSize {
                 break
             }
         }

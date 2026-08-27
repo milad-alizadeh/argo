@@ -2,9 +2,8 @@ import Foundation
 
 /// Why a read through a Binding did not land, in the vocabulary the health ledger records.
 ///
-/// One vocabulary for both ports (`CONTEXT.md` → Ports), because health is keyed on the Binding and
-/// not on what was being read: a Work Item listing and a Delivery derivation that fail the same way
-/// must reach `ConnectionHealthLedger` as the same word, or one Binding renders two states.
+/// One vocabulary for both ports (`CONTEXT.md` → Ports): health is keyed on the Binding rather than
+/// on what was being read, so two ports failing the same way must reach the ledger as one word.
 ///
 /// A refused grant is its own case for the reason `HTTPTransportError.unauthorized` is: its blast
 /// radius is the Account rather than the Binding, and its remedy is authorizing again.

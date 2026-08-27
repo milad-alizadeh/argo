@@ -1,9 +1,7 @@
 import Foundation
 
-/// The code host's pull request for one branch, as it holds it.
-///
-/// Absent from a Delivery until one is opened: a branch with commits and no pull request is a
-/// Delivery at `commits`, which is a state and not a gap.
+// The code host's pull request for one branch, as it holds it.
+
 public struct DeliveryPullRequest: Equatable, Sendable {
     public let number: Int
     public let title: String
@@ -43,7 +41,7 @@ public struct DeliveryPullRequest: Equatable, Sendable {
         self.url = url
     }
 
-    /// The four git-side facts, grouped so the initializer stays inside the parameter cap.
+    /// The four git-side facts.
     public struct Facts: Equatable, Sendable {
         public let isDraft: Bool
         public let isMerged: Bool

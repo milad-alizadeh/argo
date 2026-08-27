@@ -16,8 +16,7 @@ public struct GitHubWorkItems: WorkItemPort {
         // ever had costs a poll two extra requests per issue on edges nobody is waiting on. The
         // closures that DO matter travel on the blocker edges, which carry their own.
         let issues: [GitHubIssue] = try await reads.pages(
-            of: "/repos/\(scope)/issues?state=open&per_page=\(GitHubReads.pageSize)",
-            grant: grant,
+            [GitHubIssue].self, of: "/repos/\(scope)/issues?state=open", grant: grant,
         )
         var items: [WorkItem] = []
         for issue in issues where issue.pullRequest == nil {
@@ -34,15 +33,11 @@ public struct GitHubWorkItems: WorkItemPort {
         -> WorkItem {
         let path = "/repos/\(scope)/issues/\(issue.number)"
         let children: [GitHubIssue] = issue.hasChildren
-            ? try await reads.get(
-                "\(path)/sub_issues?per_page=\(GitHubReads.pageSize)",
-                grant: grant,
-            )
+            ? try await reads.pages([GitHubIssue].self, of: "\(path)/sub_issues", grant: grant)
             : []
         let blockers: [GitHubIssue] = issue.hasBlockers
-            ? try await reads.get(
-                "\(path)/dependencies/blocked_by?per_page=\(GitHubReads.pageSize)",
-                grant: grant,
+            ? try await reads.pages(
+                [GitHubIssue].self, of: "\(path)/dependencies/blocked_by", grant: grant,
             )
             : []
         return issue.workItem(

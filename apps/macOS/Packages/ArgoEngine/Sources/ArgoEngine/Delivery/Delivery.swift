@@ -3,13 +3,8 @@ import Foundation
 /// The product in flight, assembled per branch from local git ∪ code host (`CONTEXT.md` L1 ·
 /// Delivery).
 ///
-/// **Branch-keyed and derived, never persisted** (ADR-0017): the whole of it is re-read, so nothing
-/// here can drift against the host it mirrors. It comes into existence at branch creation, which is
-/// why a chat or planning Session with no branch has no Delivery at all.
-///
-/// **It holds no Sessions.** Sessions join to it by `branch` like everything else does, so a
-/// teammate's pull request with no local Session is a Delivery with zero of them by construction
-/// rather than by a stub.
+/// Branch-keyed and derived, never persisted (ADR-0017). It holds no Sessions: they join to it by
+/// `branch`, so a teammate's pull request has zero of them by construction.
 public struct Delivery: Equatable, Sendable, Identifiable {
     /// The head branch, and the join key every other layer addresses this by (`CONTEXT.md` L3 ·
     /// Workspace).
@@ -36,8 +31,7 @@ public struct Delivery: Equatable, Sendable, Identifiable {
         self.workItem = workItem
     }
 
-    /// What the host was observed to hold beyond the pull request itself, grouped so the
-    /// initializer stays inside the parameter cap.
+    /// What the host was observed to hold beyond the pull request itself.
     public struct Observed: Equatable, Sendable {
         public let checks: [DeliveryCheck]
         public let reviews: [DeliveryReview]
@@ -52,8 +46,20 @@ public struct Delivery: Equatable, Sendable, Identifiable {
         branch
     }
 
-    /// The furthest lifecycle node this has reached, and never a reserved one — nothing observes a
-    /// deployment, so nothing may claim to be at `deploy` or `release`.
+    /// The same Delivery with its Work Item joined, `asserted` being what a human said this branch
+    /// serves — consulted only where the derivation itself found nothing.
+    public func linking(to asserted: Int?) -> Delivery {
+        Delivery(
+            branch: branch,
+            pullRequest: pullRequest,
+            observed: Observed(checks: checks, reviews: reviews),
+            workItem: .derived(
+                branch: branch, pullRequestBody: pullRequest?.body, asserted: asserted,
+            ),
+        )
+    }
+
+    /// The furthest lifecycle node this has reached, and never a reserved one.
     ///
     /// Read downward from the terminal state, because the nodes are cumulative: a merged Delivery
     /// also has checks and reviews, and it is at `merge`.

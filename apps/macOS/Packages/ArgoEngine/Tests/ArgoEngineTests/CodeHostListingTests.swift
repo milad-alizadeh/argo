@@ -11,13 +11,13 @@ struct CodeHostListingTests {
     ) async throws
         -> [Delivery] {
         try await GitHubDeliveries(transport: RecordedGitHub(replies: replies))
-            .deliveries(in: "acme/api", grant: .listing)
+            .inFlight(in: "acme/api", grant: .listing)
     }
 
     private static func replies(
         pulls: [PullRequestJSON],
-        checks: String = CheckJSON.runs([]),
-        reviews: String = CheckJSON.reviews([]),
+        checks: String = CheckRunJSON.page([]),
+        reviews: String = ReviewRoundJSON.list([]),
     )
         -> [String: String] {
         ["/pulls?": PullRequestJSON.list(pulls), "check-runs": checks, "reviews": reviews]
@@ -30,47 +30,62 @@ struct CodeHostListingTests {
         ))
 
         #expect(listed.map(\.branch) == ["argo/#258-code-host"])
-        #expect(listed.first?.pullRequest?.number == 8)
     }
 
-    @Test
-    func `a pull request state is the word the host uses for it`() async throws {
+    /// Everything one listing already answers about a pull request, verbatim.
+    private static let pulls = [
+        PullRequestJSON(number: 8),
+        PullRequestJSON(number: 8, state: "closed", draft: true),
+        PullRequestJSON(number: 8, state: "closed", mergedAt: "2026-08-01T00:00:00Z"),
+        PullRequestJSON(number: 8, base: "develop", headSHA: "abc123"),
+    ]
+
+    @Test(arguments: pulls)
+    func `a pull request crosses the boundary in the host's own words`(
+        _ example: PullRequestJSON,
+    ) async throws {
+        let listed = try await Self.list(Self.replies(pulls: [example]))
+
+        #expect(listed.first?.pullRequest == example.read)
+    }
+
+    struct CheckCase: Sendable {
+        let run: CheckRunJSON
+        let status: String
+    }
+
+    /// A finished run's word is how it went; an unfinished one's is where it is. Both are the
+    /// host's.
+    private static let checks = [
+        CheckCase(run: CheckRunJSON(name: "macos", conclusion: "failure"), status: "failure"),
+        CheckCase(run: CheckRunJSON(name: "macos", status: "in_progress"), status: "in_progress"),
+    ]
+
+    @Test(arguments: checks)
+    func `a check carries the word the host gave it`(_ example: CheckCase) async throws {
         let listed = try await Self.list(Self.replies(
-            pulls: [PullRequestJSON(number: 8, state: "closed", draft: true)],
+            pulls: [PullRequestJSON(number: 8)], checks: CheckRunJSON.page([example.run]),
         ))
 
-        // Verbatim, and never folded together with `draft` into a state GitHub has no name for.
-        #expect(listed.first?.pullRequest?.state == "closed")
-        #expect(listed.first?.pullRequest?.isDraft == true)
+        #expect(listed.first?.checks == [DeliveryCheck(name: "macos", status: example.status)])
     }
 
     @Test
-    func `a check keeps the name and the conclusion the host gave it`() async throws {
+    func `a check keeps the name the host gave it`() async throws {
         let listed = try await Self.list(Self.replies(
             pulls: [PullRequestJSON(number: 8)],
-            checks: CheckJSON.runs([.init(name: "quality / swift", conclusion: "failure")]),
+            checks: CheckRunJSON.page([CheckRunJSON(name: "quality / swift")]),
         ))
 
-        #expect(listed.first?.checks == [DeliveryCheck(name: "quality / swift", status: "failure")])
+        #expect(listed.first?.checks.map(\.name) == ["quality / swift"])
     }
 
     @Test
-    func `a check still running reads the word for where it is`() async throws {
+    func `the steps inside a check run are not read as checks of their own`() async throws {
+        // GitHub nests steps inside a run; `CONTEXT.md` L4 fixes Checks at one level.
         let listed = try await Self.list(Self.replies(
             pulls: [PullRequestJSON(number: 8)],
-            checks: CheckJSON.runs([.init(name: "macos", status: "in_progress")]),
-        ))
-
-        #expect(listed.first?.checks.map(\.status) == ["in_progress"])
-    }
-
-    @Test
-    func `checks are flat, and the steps inside a run are not read`() async throws {
-        // GitHub nests steps inside a check run; `CONTEXT.md` L4 fixes Checks at one level, so a
-        // run with steps is one Check and never a tree of them.
-        let listed = try await Self.list(Self.replies(
-            pulls: [PullRequestJSON(number: 8)],
-            checks: CheckJSON.runs([.init(name: "macos", conclusion: "success")]),
+            checks: CheckRunJSON.page([CheckRunJSON(name: "macos", conclusion: "success")]),
         ))
 
         #expect(listed.first?.checks.count == 1)
@@ -80,39 +95,30 @@ struct CodeHostListingTests {
     func `a review verdict keeps the host's own case`() async throws {
         let listed = try await Self.list(Self.replies(
             pulls: [PullRequestJSON(number: 8)],
-            reviews: CheckJSON.reviews([.init(author: "octocat", state: "CHANGES_REQUESTED")]),
+            reviews: ReviewRoundJSON.list([
+                ReviewRoundJSON(author: "octocat", state: "CHANGES_REQUESTED"),
+            ]),
         ))
 
-        #expect(listed.first?.reviews.map(\.verdict) == ["CHANGES_REQUESTED"])
-        #expect(listed.first?.reviews.first?.author == "octocat")
-        #expect(listed.first?.reviews.first?.reviewedSHA == "c0ffee")
+        #expect(listed.first?.reviews == [DeliveryReview(
+            author: "octocat", verdict: "CHANGES_REQUESTED", reviewedSHA: "c0ffee",
+        )])
     }
 
     @Test
-    func `a merged pull request is read from the moment the host stamped it`() async throws {
-        let listed = try await Self.list(Self.replies(
-            pulls: [PullRequestJSON(number: 8, state: "closed", mergedAt: "2026-08-01T00:00:00Z")],
-        ))
+    func `a branch the host holds nothing for reads as no Delivery`() async throws {
+        let found = try await GitHubDeliveries(transport: RecordedGitHub(replies: [:]))
+            .delivery(ofBranch: "spike/idea", in: "acme/api", grant: .listing)
 
-        #expect(listed.first?.pullRequest?.isMerged == true)
+        #expect(found == nil)
     }
 
     @Test
-    func `a closed pull request that never merged is not read as merged`() async throws {
-        let listed = try await Self.list(Self.replies(
-            pulls: [PullRequestJSON(number: 8, state: "closed")],
-        ))
+    func `a branch is asked about by the name the host files it under`() async throws {
+        let api = RecordedGitHub(replies: Self.replies(pulls: [PullRequestJSON(number: 8)]))
+        _ = try await GitHubDeliveries(transport: api)
+            .delivery(ofBranch: "spike/idea", in: "acme/api", grant: .listing)
 
-        #expect(listed.first?.pullRequest?.isMerged == false)
-    }
-
-    @Test
-    func `the Diff is addressed by the commit the host named`() async throws {
-        let listed = try await Self.list(Self.replies(
-            pulls: [PullRequestJSON(number: 8, base: "develop", headSHA: "abc123")],
-        ))
-
-        #expect(listed.first?.pullRequest?.headSHA == "abc123")
-        #expect(listed.first?.pullRequest?.baseBranch == "develop")
+        #expect(await api.urls().contains { $0.contains("head=acme:spike/idea") })
     }
 }
