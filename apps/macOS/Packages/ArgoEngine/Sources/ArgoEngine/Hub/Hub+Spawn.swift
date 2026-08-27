@@ -164,7 +164,7 @@ extension Hub {
     /// nothing and the row cannot be retired twice. The observed Session is never re-keyed to the
     /// claim's id — that would break every link made against the id the CLI chose.
     func reconcileSpawns() {
-        for session in join.sessions {
+        for session in watch.sessions {
             guard let claim = ownership.bind(
                 sessionID: session.id,
                 uuid: session.transcriptUUID,

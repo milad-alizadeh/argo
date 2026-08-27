@@ -33,12 +33,13 @@ file_length:
   ignore_comment_only_lines: true
 
 type_body_length:
-  # RATCHET: 150 is the number. TranscriptReader was the named blocker and is no longer one —
-  # #401 split its outcome reading into TranscriptReader+Outcome.swift. Dropping to 150 then
-  # showed eight more bodies over it, the widest being HubSession at 170 and Hub at 166, so
-  # the number stays until those are split. Lower it as each one goes, never to fit a file.
-  error: 170
-  warning: 170
+  # RATCHET: 150 is the number. Hub was a named blocker at 166 and is no longer one — #759 gave
+  # its state two owners, TranscriptWatch and WorldReadings, taking the body to 98. HubSession at
+  # 164 is the other named one and still stands, with eleven suites between 151 and 169 behind it;
+  # the widest are VisualContractTests and ConnectPanelProjectionTests. The number tracks the
+  # widest body left, so it drops to 169 here. Lower it as each one goes, never to fit a file.
+  error: 169
+  warning: 169
 
 function_body_length:
   # Counts neither comments nor blank lines, so this is biome's 50 exactly.
