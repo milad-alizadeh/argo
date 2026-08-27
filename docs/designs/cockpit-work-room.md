@@ -361,6 +361,8 @@ prototype's numbers survive.
 | toolbar control label (`Start`), 12 medium | `ArgoTypography.control` | exact |
 | hero title, 13 medium | `ArgoTypography.rowTitle` | exact |
 | chips and label chips, 10.5 | `ArgoTypography.badge` | exact |
+| hero empty-tier sentence, 12 | `ArgoTypography.rowMeta` | snapped DOWN to 11, the same direction as the view name above it: the sentence is why there is no ticket, not a ticket (#817) |
+| urgent chip border, amber at .28 | `state.rim(attention)` | snapped UP to .5 — the named role for a state hue drawn as an edge rather than an ink (#817) |
 | ticket id, mono 12 | `ArgoTypography.machine` | exact |
 | ticket title, 17 semibold | `ArgoTypography.sessionTitle` | exact tuple; the role's doc-comment says "a Session's own title" and needs its scope widened to the deck's largest line |
 | provider status word, 12 | `ArgoTypography.control` | exact |
