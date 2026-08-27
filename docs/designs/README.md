@@ -108,6 +108,7 @@ under `docs/adr/`.
 | `cockpit-roster-turn-clock.md` + `roster-clock/` | **Approved Turn-clock design** (#618) | How long a Turn has been running, read in the roster row's age slot: a live `4m 12s` in `state.running` for a managed Session, `output 12s ago` for an observed one, the seen reading otherwise. The header and feed stay silent. Three renders in `roster-clock/` are the spec |
 | `cockpit-roster-turn-clock.inventory.md` | Turn-clock build inventory | What #678's build actually extracted from that design — `RosterTurnClock` and the phrase it shares with the projection — and the splits that stayed inline |
 | `cockpit-feed-ask.md` + `feed-ask/` | **Built ask design** (#712) | How a Session's question gets answered: in the feed row where it was asked, options pressable, one click the whole answer. **There is no vessel** — the composer's slot is not involved and `DeckVessel.resolve` gains no case, which reverses #712's own first proposal. Six renders in `feed-ask/` are the spec; built in `8188bad7`, so the code and its specimens are now truth for what shipped |
+| `cockpit-work-room.md` + `.html` + `work-room/` | **Approved Work-room design** (#609, under #607) | The room #376's shell had a tab for and nothing behind. The sidebar is NOT the backlog: it holds views at 280 plus the Next-up hero, and the backlog moves into the deck as a 520pt disclosure tree with priority over its roots, the ticket beside it. Mail's toolbar placement, one Liquid Glass material on every vessel, `Start` as a split control opening the Mode ladder, both room-level vacancies, and the Route re-skinned onto graphite/Ion with #334's geometry untouched. Eleven state renders in `work-room/` are the spec; the `.html` is the same room explorable by `?state=`; the doc carries the measurements, the frozen names and the one proposed role |
 | `cockpit-feed-ask.inventory.md` | Ask build inventory | What #712's build actually extracted from that design — the four frozen names, the held-answer value the settle rule forced out, and the keycap a second caller promoted — plus what stayed inline |
 | `cockpit-roster-archive-foot.md` | **The roster's `Archived (n)` foot** | The one disclosure at the foot of the Sessions roster: anatomy, states, motion, keyboard, and the SwiftUI mechanic that stops the sidebar `Section` drawing a second chevron |
 | `cockpit-session-interior-decisions.md` | Session-interior decision log | Roster rows, dot-carries-state, zero-state, panel natures. Behaviour lineage; its master–detail *layout* was superseded by the single feed |
@@ -133,6 +134,7 @@ is approved — it is a primary source to re-explore from, never a thing to buil
 |---|---|
 | `roster-header-prototype.html` | What should the Sessions roster row and the Session deck header show? (#502) |
 | `ask-vessel-prototype.html` + `.md` | How does a Session's question get answered? (#712) — settled by `cockpit-feed-ask.md` |
+| `work-room-prototype.html` + `.md` | What does the Work room look like in the Liquid Glass shell? (#609) — settled by `cockpit-work-room.md`; the four rejected rooms stay switchable on the branch (`?variant=A|B|C|E`) |
 
 ## What left, and where it went
 
