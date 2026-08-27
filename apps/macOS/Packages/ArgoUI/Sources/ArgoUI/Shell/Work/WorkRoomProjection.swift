@@ -49,19 +49,6 @@ enum WorkRoomProjection {
         let trailing: String?
     }
 
-    /// The ticket the trailing pane is open on.
-    struct Ticket: Sendable, Equatable, Identifiable {
-        let id: Int
-        let title: String
-        /// The provider's own status word, rendered verbatim (#272).
-        let status: String
-        /// What Argo files that word under. Beside it rather than instead of it: neither does the
-        /// other's job.
-        let bucket: WorkItemState
-        /// The body, absent where nothing was read for it.
-        let body: String?
-    }
-
     /// With no provider bound the room is VACANT rather than empty — no views, no list, no ticket
     /// (#272). Four views all reading zero would say the backlog is clear, which is a claim nobody
     /// has the standing to make when nobody was asked.

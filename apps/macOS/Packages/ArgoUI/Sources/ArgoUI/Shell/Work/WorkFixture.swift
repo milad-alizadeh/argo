@@ -1,7 +1,8 @@
 import ArgoEngine
 
-/// The backlog the Work room renders from (#812) — twelve open tickets and the two closed children
-/// that make a parent's roll-up say `2/9`.
+/// The backlog the Work room renders from (#812) — twelve open tickets, the two closed children
+/// that make a parent's roll-up say `2/9`, and the four closed blockers that let a `blockedBy` list
+/// name work already finished.
 ///
 /// Twelve, and with the repo's own real titles: the room was chosen over four others by MEASURING
 /// titles, and a fixture of short invented ones would render a room that has never been tested.
@@ -12,6 +13,10 @@ enum WorkFixture {
     /// the same reading the whole room does, rather than from a literal beside it that can drift.
     static let room = WorkRoomProjection.room(from: reading)
 
+    static func room(showing number: Int) -> WorkRoomProjection.Room {
+        WorkRoomProjection.room(from: reading(showing: number))
+    }
+
     /// Nothing bound: no provider to name, and no items anybody could have read.
     static let unbound = WorkReading()
 
@@ -20,12 +25,38 @@ enum WorkFixture {
     /// empty when in fact nobody asked.
     static let answeredEmpty = WorkReading(provider: bound)
 
+    /// A provider that exposes NO dependency edges (`edgeless.png`). Every other fact is read; the
+    /// blockers are the one thing nobody was told about, and no `Blocked by` section is drawn
+    /// anywhere as a result.
+    ///
+    /// The sidebar's `Unblocked` and `Blocked` counts move with it — a provider that cannot say
+    /// what blocks what cannot fill those two views either. The design's own explorable stubbed the
+    /// edges out for the detail pane alone, so its render shows the counts unchanged; that is the
+    /// prototype's seam rather than a number this build is allowed to invent.
+    static let edgeless: WorkReading = {
+        var stripped = reading(showing: 272)
+        stripped.items = stripped.items.map(unedged)
+        return stripped
+    }()
+
+    /// A ticket the provider named and said nothing else about — no priority, no type, no labels.
+    /// The fact strip's floor: `Bucket` is Argo's own and survives, and every absent fact is left
+    /// out rather than defaulted.
+    static let unread = WorkReading(
+        items: [WorkItem(number: 272, title: nodeTreeTitle, status: "Todo", closure: .open)],
+        provider: bound,
+        showing: 272,
+    )
+
     static func reading(showing: Int) -> WorkReading {
         WorkReading(
             items: items,
             claimed: [388, 609, 763],
             deliveries: [388: .open, 609: .merged, 275: .failing, 763: .draft],
-            bodies: [272: body],
+            deliveryFacts: deliveryFacts,
+            priorities: priorities,
+            types: types,
+            bodies: [272: body, 607: body],
             charts: [607, 334],
             provider: bound,
             showing: showing,
@@ -44,6 +75,13 @@ enum WorkFixture {
         WorkItem(
             number: number, title: "A ticket behind an edge", status: "Todo", closure: .open,
             blockedBy: blockedBy,
+        )
+    }
+
+    private static func unedged(_ item: WorkItem) -> WorkItem {
+        WorkItem(
+            number: item.number, title: item.title, status: item.status, closure: item.closure,
+            labels: item.labels, children: item.children,
         )
     }
 }

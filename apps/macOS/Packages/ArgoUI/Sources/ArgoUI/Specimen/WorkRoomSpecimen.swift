@@ -47,6 +47,42 @@ struct WorkPanesSpecimen: View {
     }
 }
 
+/// The ticket detail on its own, at the width the deck leaves it. The harness for the two states
+/// `deep.png` and `edgeless.png` are shot from: the shipping shell opens on one fixture ticket, so
+/// a parent with nine children and a provider with no edges cannot be reached by clicking.
+struct TicketDetailSpecimen: View {
+    private let reading: WorkReading
+
+    @State private var ticket: Int?
+
+    init(reading: WorkReading) {
+        self.reading = reading
+        _ticket = State(initialValue: reading.showing)
+    }
+
+    var body: some View {
+        TicketDetail(
+            ticket: WorkRoomProjection.room(from: reading.opened(at: ticket)).ticket,
+            open: { ticket = $0 },
+        )
+        .frame(width: ArgoTicketDetail.idealWidth)
+        .argoDeckSurface()
+    }
+}
+
+/// Every reading of a Delivery's checks, and the chip with no page to open — the chip's whole
+/// union, on the one surface that reads it.
+struct DeliveryChipsSpecimen: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: ArgoTicketDetail.chipGap) {
+            ForEach(WorkFixture.everyChip) { DeliveryChip(delivery: $0) }
+        }
+        .padding(ArgoSpacing.region)
+        .frame(width: ArgoTicketDetail.idealWidth, alignment: .leading)
+        .argoDeckSurface()
+    }
+}
+
 /// The five states of the room's one Delivery signal, side by side — a discrete union told once,
 /// which is the whole of what the backlog spends on a Delivery.
 struct DeliveryDotsSpecimen: View {

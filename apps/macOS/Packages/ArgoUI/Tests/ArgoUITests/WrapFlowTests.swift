@@ -11,11 +11,12 @@ import Testing
 struct WrapFlowTests {
     private static let tile = CGSize(width: 168, height: 112)
     private static let gap: CGFloat = 8
+    private static let gaps = WrapFlow.Gaps(along: gap, between: gap)
 
     @Test
     func `a run that fits stays on one line, one gap apart`() {
         let places = WrapFlow.placements(
-            of: Array(repeating: Self.tile, count: 3), in: 600, gap: Self.gap,
+            of: Array(repeating: Self.tile, count: 3), in: 600, gaps: Self.gaps,
         )
         #expect(places.map(\.minY) == [0, 0, 0])
         #expect(places.map(\.minX) == [0, 176, 352])
@@ -25,7 +26,7 @@ struct WrapFlowTests {
     func `the tile that would cross the measure starts the next line`() {
         // Three tiles and two gaps stand at 520; the fourth would end at 696, past 672.
         let places = WrapFlow.placements(
-            of: Array(repeating: Self.tile, count: 4), in: 672, gap: Self.gap,
+            of: Array(repeating: Self.tile, count: 4), in: 672, gaps: Self.gaps,
         )
         #expect(places[2].minY == 0)
         #expect(places[3].minX == 0)
@@ -35,7 +36,7 @@ struct WrapFlowTests {
     @Test
     func `a tile wider than the whole measure still gets a line`() {
         let wide = CGSize(width: 900, height: 100)
-        let places = WrapFlow.placements(of: [wide, Self.tile], in: 672, gap: Self.gap)
+        let places = WrapFlow.placements(of: [wide, Self.tile], in: 672, gaps: Self.gaps)
         #expect(places[0].origin == .zero)
         #expect(places[1].minX == 0)
         #expect(places[1].minY == wide.height + Self.gap)
@@ -45,13 +46,13 @@ struct WrapFlowTests {
     func `the next line clears the tallest tile of the one before`() {
         let tall = CGSize(width: 168, height: 200)
         let places = WrapFlow.placements(
-            of: [Self.tile, tall, Self.tile], in: 360, gap: Self.gap,
+            of: [Self.tile, tall, Self.tile], in: 360, gaps: Self.gaps,
         )
         #expect(places[2].minY == tall.height + Self.gap)
     }
 
     @Test
     func `no tiles, no frames`() {
-        #expect(WrapFlow.placements(of: [], in: 672, gap: Self.gap).isEmpty)
+        #expect(WrapFlow.placements(of: [], in: 672, gaps: Self.gaps).isEmpty)
     }
 }
