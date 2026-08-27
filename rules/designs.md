@@ -42,6 +42,7 @@ value the contract lacks marks it a **proposal**, and promoting one is a contrac
 comes back through `setup-design-foundations`' bless step — never a raw constant left in a view.
 `scripts/check-design-tokens-swift.sh` is the gate; `VisualContract/` and `Specimen/` are
 exempt from it because they are, respectively, the contract and the thing that shows it.
+`Atoms/` — the shared views built out of the contract — is not exempt (#772).
 
 ## A state is settled by rendering it
 

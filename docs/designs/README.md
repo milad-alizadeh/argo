@@ -11,8 +11,9 @@ the renders the app itself produces.
 
 `apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/` **is** the contract: the colour
 roles, Apple's macOS type scale, spacing, radii, elevation and motion, each a value with a
-documented reason. `ArgoUI/Specimen/ContractSpecimen.swift` is its living specimen — every role
-enumerated on the surfaces it is read against:
+documented reason. Values only — the shared views drawn with them are `ArgoUI/Atoms/`, and
+`rules/design-system.md` lists both by file. `ArgoUI/Specimen/ContractSpecimen.swift` is the
+contract's living specimen — every role enumerated on the surfaces it is read against:
 
 ```sh
 cd apps/macOS && ARGO_SPECIMEN=contract sh scripts/screenshot.sh out.png

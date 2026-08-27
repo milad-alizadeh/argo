@@ -15,18 +15,66 @@ projects that have a browser. What follows is Argo's own, in SwiftUI.
 ## Where the contract lives (ADR-0022)
 
 `apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/` is the single source of visual
-values. One file per family, each value named for the **question it answers**:
+**values**. It declares no `View`, `ViewModifier` or `LabelStyle` TYPE and holds no observable
+state; the views built out of its values are its neighbour, `ArgoUI/Atoms/`.
+
+The type is what draws the line, not the `View` extension. A family here may still extend
+`View` with a modifier that applies its own value in one expression — `argoShadow`, `argoIcon`,
+`argoText`, `argoTheme` — because that is the value being reached by name, which is Rule 1.
+The moment the modifier needs a `ViewModifier` of its own to hold what it draws, the type is an
+atom and both halves move: that is why `argoAnimation` left `ArgoMotion` for `Atoms/`.
+
+Three populations, one table each. Every file in either directory is in one of them.
+
+### Tokens — a value the whole app reaches by name (`VisualContract/`)
 
 | File | Holds |
 |---|---|
 | `ArgoPalette` · `ArgoColor` · `GraphitePalette` | colour ROLES — `surface`, `text`, `edge`, `interaction`, `state`, `diff` — and the one appearance that fills them |
+| `TextRoles` | the ink ramp, every rung neutral, plus `marked(on:)` — the one role that is a function of the others |
+| `ArgoRamp` | an ordered ramp of roles, held as roles and fractions rather than as a `Gradient` |
 | `ArgoTheme` | the appearance in force, carried in the environment (`\.argo`) — colour is the only family an appearance changes |
-| `ArgoTypeScale` | the type ladder, which is **Apple's**: the macOS HIG text styles, named as the HIG names them |
+| `ArgoTypeScale` · `ArgoTypeScale+AppKit` | the type ladder, which is **Apple's**: the macOS HIG text styles, named as the HIG names them, plus the `NSFont` each rung resolves to for the AppKit side of the feed |
 | `ArgoTextStyle` · `ArgoTypography` | named roles over that ladder (face + rung + weight + tracking) |
-| `ArgoSpacing` · `ArgoRadius` · `ArgoStroke` | the rhythm, the four radius rungs, the stroke widths |
-| `ArgoElevation` · `ArgoMotion` · `ArgoIconSize` · `ArgoSymbol` | depth, durations and curves, glyph sizes |
+| `ArgoGeometry` (`ArgoSpacing` · `ArgoRadius` · `ArgoStroke`) | the rhythm, the four radius rungs, the stroke widths |
+| `ArgoElevation` · `ArgoMotion` · `ArgoIconSize` · `ArgoSymbol` | depth, durations and curves, glyph sizes, and the SF Symbol each meaning is drawn with |
 | `ArgoOpacity` | how present a whole surface is — the rung a row nobody can drive is ghosted at |
-| `ArgoLayout` · `ArgoFeedRow` · `ArgoPlanPill` | structural proportions and per-surface measures |
+| `ArgoOperationalState` | the four states colour is owed, and the tint each takes from a palette |
+
+### Measures — a property of the content, not a rung of the rhythm (`VisualContract/`)
+
+A measure lives beside the surface it belongs to, with its reason at the value. It is in this
+directory because it is still a value; it is in its own table because promoting one to a token
+is a mistake (see **Roles, not values** below).
+
+| File | Holds |
+|---|---|
+| `ArgoLayout` | the deck's structural proportions — pane widths, minimums, the splits |
+| `ArgoFeedRow` · `ArgoMinimapLane` | the reading's own measures, and the overview lane beside it (D25) |
+| `ArgoComposerVessel` · `ArgoPlanPill` | the composer's and the plan pill's measurements, from their approved studies |
+| `ArgoWaitAge` | the ladder `ArgoMotion.working` cools down as the wait it reports gets older |
+
+### Atoms — the views built out of those values (`Atoms/`)
+
+One shared control or material per file, reached by type name or by the modifier beside it.
+An atom holds no state of its own and reads every value it draws from the contract.
+
+| File | Draws |
+|---|---|
+| `ArgoBadge` | a count carried on a control — a ground off the neutral ramp, no hue |
+| `ArgoStateLabel` | a state said as a mark rather than as prose, coloured by the state it names |
+| `ArgoKindedName` | a name with the glyph for its kind, cut in the middle |
+| `ArgoGlyph` | a symbol at exactly one rung of the icon scale |
+| `ArgoDisclosure` | the one disclosure chevron, its direction taken by rotation |
+| `ArgoLabelStyle` | symbol beside title at the contract's rhythm (`.labelStyle(.argo(_:icon:))`) |
+| `ArgoFocusRing` | the one keyboard cursor, as a view and as `argoFocusRing(_:in:)` |
+| `ArgoFloatingGlass` | the material a surface takes when it floats over the deck (`argoFloatingGlass(in:rim:)`) |
+| `ArgoChromeBar` | the window's fixed chrome: one tinted blur to the hairline where it stops |
+| `ArgoAnimation` | `argoAnimation(_:value:)` — applies an `ArgoMotion` role, resolving Reduce Motion |
+
+`Focus/ArgoFocusVisibility.swift` is in neither: it is runtime state, answering "would a focus
+ring drawn right now be answering the keyboard?" from the last `NSEvent` the app saw (#533). A
+service is not a visual value, so it does not live in the contract.
 
 `Specimen/ContractSpecimen.swift` enumerates every role on the surfaces it is read against. It
 is the living proof and the one non-disposable design artifact (`rules/designs.md`);
@@ -87,8 +135,9 @@ that way — the cost of getting this wrong is not a bug, it is a sweep through 
 `scripts/check-design-tokens-swift.sh` is the mechanical half: it reads colour construction,
 the type ladder, and the modifiers that take a rhythm value. `VisualContract/` is exempt
 because it IS the contract, and `Specimen/` because a specimen exists to show what a role is
-worth. A finding is fixed by snapping to a token or promoting one — **never by allowlisting**,
-unless it is pre-existing debt tracked in a ticket.
+worth. **`Atoms/` is not exempt** — an atom draws with the contract like any other view, so it
+answers to the gate like any other view. A finding is fixed by snapping to a token or promoting
+one — **never by allowlisting**, unless it is pre-existing debt tracked in a ticket.
 
 ## Hue is rationed; loudness is not
 
