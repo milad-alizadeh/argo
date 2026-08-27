@@ -1,10 +1,12 @@
 @testable import ArgoUI
 import Testing
 
-/// What the contract claims about SHAPE rather than colour: measures and durations, fixed across
-/// every appearance.
-@Suite("Visual contract — rhythm, depth and motion")
-struct VisualContractRhythmTests {
+/// What the cockpit claims about SHAPE rather than colour: measures and durations, fixed across
+/// every appearance. Do not split this suite along the token/measure line — three of its tests
+/// bound a surface's measure by a token (`ArgoFeedRow.column` against `ArgoLayout`'s widths), and
+/// neither population can state those alone.
+@Suite("Rhythm, depth and motion — the contract and the surfaces that read it")
+struct RhythmTests {
     // MARK: - The feed's rhythm
 
     @Test
@@ -92,14 +94,39 @@ struct VisualContractRhythmTests {
         #expect(ArgoFeedRow.stepBeforeProse < ArgoFeedRow.inset)
     }
 
+    /// Every member each sheet spells as `ArgoSpacing.x` is enumerated here, so a sheet living
+    /// beside its surface rather than in the contract cannot quietly restate one of those as a
+    /// literal. That is the whole guarantee the sheets lost by leaving `VisualContract/`, and it
+    /// is what makes the sets exhaustive rather than a sample: a member added to a sheet and not
+    /// to a set here is a member nothing holds to the ladder.
+    ///
+    /// A content MEASURE is deliberately absent — a marker column, a shot's width, a marked span's
+    /// asymmetric push past its glyphs answer to the content, not to the ladder, and each carries
+    /// its reason on its own declaration. `ArgoMinimapLane.turnLineInset` is the one that reads
+    /// like a step and is not: it is stated in points against `turnLineWidth`, the stroke it
+    /// insets, and the pair has to move together.
+    ///
+    /// `ArgoComposerVessel` appears in none of the three sets because it spells no step at all —
+    /// every value the ladder owns reaches it through the token at the composer's own call sites,
+    /// which the sheet's doc comment states as its rule.
     @Test
-    func `every feed metric is a step the rhythm already carries`() {
-        // Except the two that are typographic rather than spatial: a line height and a reading
-        // measure answer to the type ramp, not the spacing ladder.
+    func `every step a surface names is a step the rhythm already carries`() {
         let ladder = Set(ArgoSpacing.all.map(\.value))
         #expect(ladder.isSuperset(of: [
             ArgoFeedRow.inset, ArgoFeedRow.gap, ArgoFeedRow.stepBeforeProse,
-            ArgoFeedRow.callStep, ArgoFeedRow.callGap,
+            ArgoFeedRow.callStep, ArgoFeedRow.callGap, ArgoFeedRow.blockStep,
+            ArgoFeedRow.markerGap, ArgoFeedRow.shotGap, ArgoFeedRow.shotBreath,
+            ArgoFeedRow.shotMount, ArgoFeedRow.lightboxInset, ArgoFeedRow.bubbleInsetX,
+            ArgoFeedRow.bubbleInsetY, ArgoFeedRow.tableCellInsetX, ArgoFeedRow.tableCellInsetY,
+            ArgoFeedRow.askCardInset, ArgoFeedRow.askOptionGap,
+        ]))
+        #expect(ladder.isSuperset(of: [
+            ArgoMinimapLane.rectInset, ArgoMinimapLane.turnLineGap, ArgoMinimapLane.labelPadding,
+        ]))
+        #expect(ladder.isSuperset(of: [
+            ArgoPlanPill.lift, ArgoPlanPill.gap, ArgoPlanPill.insetX, ArgoPlanPill.insetY,
+            ArgoPlanPill.listGap, ArgoPlanPill.listInsetX, ArgoPlanPill.listInsetY,
+            ArgoPlanPill.betweenSteps,
         ]))
     }
 

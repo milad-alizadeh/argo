@@ -86,7 +86,7 @@ if [ -n "$findings" ]; then
   count=$(printf '%s\n' "$findings" | wc -l | tr -d ' ')
   echo "check:design-tokens-swift — $count design constant(s) outside the token contract."
   echo "Fix: snap to an existing token or promote a named one (rules/design-system.md)."
-  echo "Colours come from ArgoColor, type from ArgoTypography, the rest from ArgoGeometry/Motion."
+  echo "Colours come from ArgoColor, type from ArgoTypography, the rest from ArgoSpacing/Radius/Stroke/Motion."
   exit 1
 fi
 

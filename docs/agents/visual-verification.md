@@ -50,7 +50,9 @@ satisfied while the approved pixels are not.
 
 The rhythm itself lives in `ArgoUI/VisualContract/`, rendered by the `foundations` specimen.
 That, not an HTML page, is the living token contract (`rules/design-system.md`). The directory
-holds values only; the shared views drawn with them are `ArgoUI/Atoms/`.
+holds tokens only: the shared views drawn with them are `ArgoUI/Atoms/`, and one surface's own
+measures — the feed's column, the composer's vessel, the minimap's lane, the plan pill — sit in
+that surface's directory under `Shell/`, not in the contract.
 
 ## A render is not a click
 

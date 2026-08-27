@@ -102,10 +102,10 @@ Recorded in full in #502. In brief:
 ## What it is faithful to, and what it is not
 
 Every colour, radius, spacing step and type role is transcribed from
-`apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/` — `GraphitePalette`, `ArgoGeometry`,
-`ArgoLayout`, `ArgoTypography`. Nothing is invented. The shell around it (full-height sidebar,
-transparent titlebar, scope vessel, Rooms) was corrected against a screenshot of the running app,
-not against the design docs.
+`apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/` — `GraphitePalette`, `ArgoSpacing`,
+`ArgoRadius`, `ArgoLayout`, `ArgoTypography`. Nothing is invented. The shell around it
+(full-height sidebar, transparent titlebar, scope vessel, Rooms) was corrected against a
+screenshot of the running app, not against the design docs.
 
 **Type is San Francisco throughout**, which D24 and D31 now say too — `ArgoTypeface` has only
 `interface` and `machine`, and the app draws SF everywhere. Their New York prose was corrected
