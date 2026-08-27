@@ -6,6 +6,9 @@ extension SpecimenRegistry {
     static let roster: [SpecimenEntry] = [
         SpecimenEntry("foundations") { FoundationSpecimen() },
         SpecimenEntry("contract") { ContractSpecimen() },
+        // The same coverage with the optical response gone: a role judged on glass alone is a role
+        // nobody has looked at on the ground half the readers will see it on.
+        SpecimenEntry("flatContract") { ContractSpecimen().argoWithoutTransparency() },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
         SpecimenEntry("turnClock") { TurnClockRosterSpecimen() },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
