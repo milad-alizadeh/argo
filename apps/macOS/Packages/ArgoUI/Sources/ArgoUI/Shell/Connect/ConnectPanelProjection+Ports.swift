@@ -41,6 +41,8 @@ extension ConnectPanelProjection {
     /// the provider's own noun ("Repository") and never has to look an Account up itself.
     struct Picker: Equatable {
         let accountID: String
+        /// Whose grant this is, so a refused one can be authorized again from the picker itself.
+        let provider: AccountProvider
         let scopeNoun: String
         let state: ConnectScopes.State
         /// What the port already reads through, so a rebind opens on it rather than on nothing.
@@ -71,12 +73,16 @@ extension ConnectPanelProjection {
         )
     }
 
+    /// An open picker resolves to nothing when its Account has gone: there is no provider left to
+    /// name the scope in, and a picker over an identity the Mac no longer holds offers a bind that
+    /// `ProjectBindings` refuses anyway.
     private static func picker(for port: AccountPort, in reading: ConnectReading) -> Picker? {
-        guard let scopes = reading.scopes, scopes.port == port else { return nil }
-        let account = reading.account(scopes.accountID)
+        guard let scopes = reading.scopes, scopes.port == port,
+              let account = reading.account(scopes.accountID) else { return nil }
         return Picker(
-            accountID: scopes.accountID,
-            scopeNoun: account?.provider.scopeNoun ?? "Scope",
+            accountID: account.id,
+            provider: account.provider,
+            scopeNoun: account.provider.scopeNoun,
             state: scopes.state,
             current: reading.port(port).scope,
         )
@@ -104,13 +110,26 @@ extension ConnectPanelProjection {
             return "\(port.benefit) Choose a folder first to say which one."
         }
         let held = reading.accounts.filter { $0.provider.serves(port) }
-        guard let only = held.first else { return port.benefit }
-        let noun = only.provider.scopeNoun.lowercased()
-        guard held.count == 1 else {
+        // The identity the row is mid-choice on wins over the count, and a grant that has just
+        // landed opens its own picker — so the account #821 asked to see named is named even on a
+        // Mac that already held three.
+        guard let named = chosen(for: port, in: reading) ?? (held.count == 1 ? held.first : nil)
+        else {
+            guard let any = held.first else { return port.benefit }
+            let noun = any.provider.scopeNoun.lowercased()
             return "\(held.count) accounts connected. Choose one, then a \(noun)."
         }
-        return "Connected as \(only.provider.readableName) · \(only.displayName)."
-            + " Choose a \(noun)."
+        return "Connected as \(named.provider.readableName) · \(named.displayName)."
+            + " Choose a \(named.provider.scopeNoun.lowercased())."
+    }
+
+    private static func chosen(
+        for port: AccountPort,
+        in reading: ConnectReading,
+    )
+        -> AccountRecord? {
+        guard let scopes = reading.scopes, scopes.port == port else { return nil }
+        return reading.account(scopes.accountID)
     }
 
     private static func fault(of port: ConnectPort) -> BindingFault? {

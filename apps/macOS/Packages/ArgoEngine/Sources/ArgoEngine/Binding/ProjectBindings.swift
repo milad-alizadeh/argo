@@ -61,6 +61,18 @@ public actor ProjectBindings {
         ))
     }
 
+    /// The same resolve for a window that may be on no Project at all. `unbound` rather than a
+    /// refusal: with no Project there is nothing this port reads through, which is what unbound
+    /// says.
+    public func resolve(
+        port: AccountPort,
+        forProject projectID: String?,
+    ) async
+        -> BindingResolution {
+        guard let projectID else { return .unbound }
+        return await resolve(port: port, for: projectID)
+    }
+
     /// Give one port back to unbound, leaving the other where it is.
     public func unbind(port: AccountPort, from projectID: String) async {
         await projects.unbind(port: port, from: projectID)

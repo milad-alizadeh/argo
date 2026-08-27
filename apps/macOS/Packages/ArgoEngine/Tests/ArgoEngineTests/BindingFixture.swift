@@ -134,9 +134,8 @@ actor RecordingScopeCheck: BindingScopeCheck {
     }
 }
 
-/// The provider's listing, decided in advance and every question it was asked remembered. Beside
-/// the check rather than folded into it: one answers about a scope the user named, the other names
-/// them, and a fixture that conflated the two could not test a picker offering what a bind refuses.
+/// The provider's listing, decided in advance and every question it was asked remembered. The
+/// port is what is recorded, because the port is part of the question.
 actor RecordingScopeCatalog: BindingScopeCatalog {
     private var catalogue: ScopeCatalogue = .listed([], truncated: false)
     private var asked: [AccountPort] = []

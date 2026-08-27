@@ -20,7 +20,7 @@ final class AccountsCoordinator {
     /// the failure exactly while the user is not looking at the place that reports it.
     private(set) var connections = ConnectionHealthReading.quiet
 
-    /// Reached from `AccountsCoordinator+Grant` and `+Health`, which is why these are not
+    /// Reached from `AccountsCoordinator+Grant` and `+Scopes`, which is why these are not
     /// `private`: `private` in Swift is file-scoped.
     let accounts: AccountRegistryStore
     let bindings: ProjectBindings
@@ -131,11 +131,18 @@ final class AccountsCoordinator {
         await refresh()
     }
 
+    /// Point the panel and the chip at a Project, or at none. Raised on every change of active
+    /// Project, because connection health is per-project truth surfaced for the active Project
+    /// only: a background Project whose provider died stays silent, and you learn on switch.
+    func point(at project: ProjectRecord?) async {
+        self.project = project
+        await refresh()
+    }
+
     /// How the active Project's Work Item port reads, for a reader that is not the panel (#745).
     /// The same resolve the panel and the chip make, so no third answer about one Binding exists.
     func workItemBinding() async -> BindingResolution {
-        guard let project else { return .unbound }
-        return await bindings.resolve(port: .workItem, for: project.id)
+        await bindings.resolve(port: .workItem, forProject: project?.id)
     }
 
     func unbind(_ port: AccountPort) async {

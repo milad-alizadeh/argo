@@ -61,7 +61,7 @@ struct BindingScopeCatalogTests {
     /// An empty list is a real answer — this account can see nothing — and is deliberately NOT the
     /// shape a failed read takes.
     @Test
-    func `an account that can see nothing lists nothing, and says so as a listing`() async {
+    func `an account that can see nothing answers with an empty listing`() async {
         let api = StubProviderAPI(body: "[]")
 
         let catalogue = await ProviderScopeCatalog(transport: api).scopes(for: Self.query())

@@ -6,9 +6,8 @@ import ArgoEngine
 /// In the package rather than on the coordinator, for the reason ADR-0022 gives: it is a derivation
 /// over values, and a derivation in the app target is one no test can reach.
 public extension ConnectionHealthReading {
-    /// Everything one reading is folded from. A value rather than three parameters because it is
-    /// one subject — the machine's Accounts, what its reads have reported, and which Project the
-    /// window is on.
+    /// Everything one reading is folded from: the machine's Accounts, what its reads have
+    /// reported, and which Project the window is on.
     struct Sources: Sendable {
         public let registry: AccountRegistry
         public let ledger: ConnectionHealthLedger

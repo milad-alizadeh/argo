@@ -1,10 +1,8 @@
 import SwiftUI
 
-/// A Project's management verbs. Two are deliberately absent. **Rename**: a Project's name IS its
-/// folder's, so renaming one means renaming the folder. **Locate…**: Project Settings, one item
-/// below, opens the same folder picker against the same Project — two verbs for one act, one of
-/// them on the menu that offers the other (#821). A row whose folder has actually gone still
-/// carries `Locate…` inline, where it is a recovery rather than a duplicate.
+/// A Project's management verbs. Rename is absent because a Project's name IS its folder's, and
+/// `Locate…` because Project Settings, one item below, opens the same folder picker. A row whose
+/// folder has actually gone still carries `Locate…` inline, where it is a recovery.
 struct ProjectRowMenu: View {
     @Environment(\.argo) private var argo
 

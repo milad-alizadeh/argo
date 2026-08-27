@@ -8,9 +8,8 @@ public struct ConnectPanelActions {
     /// Choose the Project's folder. The act that makes a Project, so it is the app's to run.
     public let chooseFolder: () -> Void
     /// Authorize one more identity with a provider, for the port that asked. Repeatable by
-    /// construction: a machine may hold a personal and a work GitHub, and neither replaces the
-    /// other. The port travels with it so the identity, once held, opens ITS picker rather than
-    /// landing somewhere the user has to go looking for (#821).
+    /// construction: a machine may hold a personal and a work GitHub. The port travels with it so
+    /// the identity, once held, opens ITS picker (#821).
     public let connectAccount: (AccountProvider, AccountPort) -> Void
     /// Read this port through this Account, and ask the provider what it could be pointed at. The
     /// step before `bindPort`, and the one that opens the scope picker.

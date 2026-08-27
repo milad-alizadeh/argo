@@ -3,20 +3,26 @@ import ArgoUI
 import Foundation
 
 /// The step between holding an identity and binding a port: asking the provider what this Account
-/// could be pointed at, so the panel offers repositories rather than a field to spell one into.
-///
-/// It is on the coordinator and not on the row for the reason every other act here is: a row that
-/// held its own pending choice would be drawing what it hoped had happened, and the grant flow —
-/// which opens a picker nobody clicked — would have no way to reach it (#821).
+/// could be pointed at, so the panel offers repositories rather than a field to spell one into
+/// (#821).
 extension AccountsCoordinator {
     /// Open the picker on an Account and read the provider. Re-entrant on purpose: `Try again` is
     /// this same call, so a failed listing and a first one cannot answer differently.
+    ///
+    /// A Binding is a fact about a Project, so with no folder there is nothing to bind and no
+    /// picker is opened — the row's own line already says to choose one first, and a live dropdown
+    /// under it would offer a bind that `bind` then refuses.
     func choose(port: AccountPort, account accountID: String) {
         listing?.cancel()
         clearNote()
-        scopes = ConnectScopes(port: port, accountID: accountID, state: .loading)
+        scopes = project == nil
+            ? nil
+            : ConnectScopes(port: port, accountID: accountID, state: .loading)
         listing = Task {
+            // Unconditional: with no folder there is still an Account to show on the row, and the
+            // device-code card it replaces has to come down either way.
             await refresh()
+            guard scopes != nil else { return }
             let catalogue = await bindings.scopes(on: port, through: accountID)
             // The picker may have been closed, or re-opened somewhere else, while the provider was
             // being read. Landing an answer on whatever is open now would put one port's

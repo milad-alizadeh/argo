@@ -20,6 +20,9 @@ struct ConnectPortRow: View {
             }
             if let picker = row.picker {
                 ConnectScopePicker(picker: picker, actions: pickerActions(picker))
+                    // Identity by Account: switching the picker to another one must start its
+                    // choice from that Account's own scopes, not keep the last one's.
+                    .id(picker.accountID)
             }
         }
     }
@@ -81,6 +84,7 @@ struct ConnectPortRow: View {
                 ))
             },
             retry: { actions.chooseAccount(row.id, picker.accountID) },
+            reconnect: { actions.connectAccount(picker.provider, row.id) },
             cancel: actions.cancelChoice,
         )
     }

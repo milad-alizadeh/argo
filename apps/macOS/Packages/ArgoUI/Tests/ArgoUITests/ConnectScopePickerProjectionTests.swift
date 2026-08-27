@@ -76,4 +76,52 @@ struct ConnectScopePickerProjectionTests {
 
         #expect(panel.ports.first?.picker?.current == "milad-alizadeh/argo")
     }
+
+    /// The count is the fallback, not the answer. The identity the row is mid-choice on — which is
+    /// the one a grant just produced — is named however many the Mac holds.
+    @Test
+    func `the account the picker is open on is named even beside others`() throws {
+        let reading = ConnectReading(
+            folder: ConnectFixture.folder,
+            accounts: [ConnectFixture.personal, ConnectFixture.work],
+            scopes: ConnectScopes(
+                port: .workItem,
+                accountID: ConnectFixture.work.id,
+                state: .loading,
+            ),
+        )
+        let panel = ConnectPanelProjection.panel(from: reading)
+        let issues = try #require(panel.ports.first)
+
+        #expect(issues.row.detail.contains(ConnectFixture.work.displayName))
+        #expect(!issues.row.detail.contains("2 accounts connected"))
+    }
+
+    /// A picker over an identity the Mac no longer holds has no provider to name the scope in, and
+    /// offers a bind `ProjectBindings` refuses anyway.
+    @Test
+    func `a picker whose account has gone is not drawn`() {
+        let reading = ConnectReading(
+            folder: ConnectFixture.folder,
+            accounts: [],
+            scopes: ConnectScopes(
+                port: .workItem,
+                accountID: ConnectFixture.personal.id,
+                state: .loading,
+            ),
+        )
+        let panel = ConnectPanelProjection.panel(from: reading)
+
+        #expect(panel.ports.first?.picker == nil)
+    }
+
+    /// A refused grant is its own state: the picker offers authorizing again, and the retry that
+    /// would reuse the same token is never the repair on offer.
+    @Test
+    func `a refused grant reaches the picker as unauthorized`() {
+        let panel = ConnectPanelProjection.panel(from: ConnectFixture.scopesUnauthorized)
+
+        #expect(panel.ports.first?.picker?.state == .unauthorized)
+        #expect(panel.ports.first?.picker?.provider == .github)
+    }
 }

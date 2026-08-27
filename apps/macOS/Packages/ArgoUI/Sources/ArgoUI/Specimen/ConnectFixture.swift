@@ -144,6 +144,18 @@ enum ConnectFixture {
         ),
     )
 
+    /// The grant itself refused. Retrying reuses the same token, so the picker offers the one
+    /// repair that can work.
+    static let scopesUnauthorized = ConnectReading(
+        folder: folder,
+        accounts: [personal],
+        scopes: ConnectScopes(
+            port: .workItem,
+            accountID: personal.id,
+            state: .unauthorized,
+        ),
+    )
+
     /// One panel per state it can be in, each carrying the name it renders under.
     static let states: [(name: String, reading: ConnectReading)] = [
         ("connectFresh", fresh),
@@ -154,6 +166,7 @@ enum ConnectFixture {
         ("connectConnecting", connecting),
         ("connectChoosing", choosing),
         ("connectScopesUnreadable", scopesUnreadable),
+        ("connectScopesUnauthorized", scopesUnauthorized),
         ("connectRefused", refused),
         ("connectBroken", broken),
         ("connectPluginMissing", pluginMissing),
