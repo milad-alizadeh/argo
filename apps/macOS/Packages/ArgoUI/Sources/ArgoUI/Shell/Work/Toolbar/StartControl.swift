@@ -29,7 +29,7 @@ struct StartControl: View {
     }
 
     /// The one control on this row that spends a word. It is the verb the room exists for, and a
-    /// bolt on its own would be the unlabelled mark the study cut.
+    /// glyph on its own would be the unlabelled mark the study cut.
     private var start: some View {
         Button(action: verbs.start) {
             HStack(spacing: ArgoSpacing.snug) {

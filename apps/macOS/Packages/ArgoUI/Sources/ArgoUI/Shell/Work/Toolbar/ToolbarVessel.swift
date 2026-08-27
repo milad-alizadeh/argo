@@ -46,7 +46,7 @@ struct ToolbarIcon: View {
 #Preview("Toolbar vessels — one mark, and two sharing a capsule") {
     HStack(spacing: ArgoSpacing.comfortable) {
         ToolbarVessel {
-            ToolbarIcon(symbol: ArgoSymbol.newSession, label: "New ticket")
+            ToolbarIcon(symbol: ArgoSymbol.newTicket, label: "New ticket")
         }
         ToolbarVessel {
             ToolbarIcon(symbol: ArgoSymbol.filterBacklog, label: "Filter")

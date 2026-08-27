@@ -11,7 +11,7 @@ struct TicketHead: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoTicketDetail.headStep) {
             Text("#\(ticket.id)")
-                .argoText(ArgoTypography.machine)
+                .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(argo.color.text.tertiary)
             Text(ticket.title)
                 .argoText(ArgoTypography.sessionTitle)
