@@ -22,6 +22,11 @@ extension SpecimenRegistry {
         SpecimenEntry("deepTicket") {
             TicketDetailSpecimen(reading: WorkFixture.reading(showing: 607))
         },
+        // `deep.png` is a WHOLE-room shot, so the pane above is not the whole of it: this opens
+        // the room on the same parent.
+        SpecimenEntry("deepWorkRoom") {
+            WorkPanesSpecimen(reading: WorkFixture.reading(showing: 607))
+        },
         // A provider that exposes no dependency edges. The `Blocked by` section is ABSENT, not
         // empty — nobody has told us there are no blockers.
         SpecimenEntry("edgelessTicket") { TicketDetailSpecimen(reading: WorkFixture.edgeless) },

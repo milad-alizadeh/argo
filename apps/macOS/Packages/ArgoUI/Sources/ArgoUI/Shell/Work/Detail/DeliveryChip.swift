@@ -1,12 +1,7 @@
 import SwiftUI
 
-/// One Delivery, as a bordered OBJECT rather than a row in a list (`cockpit-work-room.md` — the
-/// ticket detail). It carries its number, its branch, its diff and what the checks said, and it
-/// deep-links to the code host.
-///
-/// A chip and not a row because two Deliveries on one ticket are two things in flight, each with
-/// its own signal — a list would read as one lifecycle with steps, which is the Session's story and
-/// not this one (#272).
+/// One Delivery as a bordered object, deep-linking to the code host (`cockpit-work-room.md` — the
+/// ticket detail).
 struct DeliveryChip: View {
     @Environment(\.argo) private var argo
     @Environment(\.openURL) private var openURL
@@ -46,8 +41,8 @@ struct DeliveryChip: View {
         }
     }
 
-    /// The two diff inks, which are held off every other hue in the palette — a change's size is
-    /// not one of the four operational states and never borrows their colour.
+    /// `diff.added` and `diff.removed`, which are held off the four operational states by
+    /// construction: a change's size is not one of them.
     private var diff: some View {
         HStack(spacing: ArgoSpacing.tight) {
             Text("+\(delivery.added)")
@@ -58,8 +53,7 @@ struct DeliveryChip: View {
         .argoText(ArgoTypography.machineCaption)
     }
 
-    /// Nothing where nothing was read: a chip that has not heard from the checks says so by
-    /// leaving the slot empty rather than by drawing the quiet end of a two-state vocabulary.
+    /// Empty where nothing was read, rather than the quiet end of a two-state vocabulary.
     @ViewBuilder private var checks: some View {
         if let reading = checksReading {
             Text(reading.word)
@@ -83,12 +77,6 @@ struct DeliveryChip: View {
     }
 }
 
-#Preview("Delivery chips — passing, failing, and nothing read") {
-    VStack(alignment: .leading, spacing: ArgoTicketDetail.chipGap) {
-        ForEach(WorkFixture.everyChecksReading) { DeliveryChip(delivery: $0) }
-    }
-    .padding(ArgoSpacing.region)
-    .frame(width: ArgoTicketDetail.idealWidth, alignment: .leading)
-    .argoDeckSurface()
-    .argoAppearance()
+#Preview("Delivery chips — every checks reading, and one with no page to open") {
+    DeliveryChipsSpecimen().argoAppearance()
 }

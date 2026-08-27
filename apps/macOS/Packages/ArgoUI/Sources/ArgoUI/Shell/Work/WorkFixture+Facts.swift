@@ -25,44 +25,37 @@ extension WorkFixture {
     /// survive, and the two check readings side by side.
     static let deliveryFacts: [Int: [DeliveryFacts]] = [
         607: [
-            delivery("argo#812", "argo/#607-work-room-rail", diff: (412, 96), checks: .passing),
-            delivery("argo#829", "argo/#607-ticket-detail", diff: (188, 12), checks: .failing),
+            delivery(812, "argo/#607-work-room-rail", diff: (412, 96), checks: .passing),
+            delivery(829, "argo/#607-ticket-detail", diff: (188, 12), checks: .failing),
         ],
-        763: [delivery("argo#791", "argo/#763-workitem-port", diff: (640, 210), checks: .passing)],
-        609: [
-            delivery(
-                "argo#834", "worktree-prototype-609-work-room", diff: (1180, 0), checks: .passing,
-            ),
-        ],
+        763: [delivery(791, "argo/#763-workitem-port", diff: (640, 210), checks: .passing)],
+        609: [delivery(834, "worktree-prototype-609-work-room", diff: (1180, 0), checks: .passing)],
     ]
 
-    /// The chip's own discrete union, told once: what the checks said, including not having said
-    /// anything.
-    static let everyChecksReading: [DeliveryFacts] = ChecksReading.allCases.enumerated().map {
-        delivery(
-            "argo#\(812 + $0.offset)", "argo/#607-work-room-rail",
-            diff: (412, 96), checks: $0.element,
-        )
-    }
+    /// The chip's own discrete union, told once, plus the one boolean that changes its layout: a
+    /// Delivery with no page to open draws as a fact rather than as a control.
+    static let everyChip: [DeliveryFacts] = ChecksReading.allCases.enumerated().map {
+        delivery(812 + $0.offset, "argo/#607-work-room-rail", diff: (412, 96), checks: $0.element)
+    } + [unlinked]
 
+    private static let unlinked = DeliveryFacts(
+        name: "argo#815", branch: "argo/#815-ticket-fact-strip", added: 640, removed: 71,
+        checks: .passing, url: nil,
+    )
+
+    /// The name and the page are built from ONE number, so a chip and what it opens can never be
+    /// two different Deliveries.
     private static func delivery(
-        _ name: String, _ branch: String, diff: (added: Int, removed: Int), checks: ChecksReading,
+        _ number: Int, _ branch: String, diff: (added: Int, removed: Int), checks: ChecksReading,
     )
         -> DeliveryFacts {
         DeliveryFacts(
-            name: name,
+            name: "argo#\(number)",
             branch: branch,
             added: diff.added,
             removed: diff.removed,
             checks: checks,
-            url: url(of: name),
+            url: URL(string: "https://github.com/milad-alizadeh/argo/pull/\(number)"),
         )
-    }
-
-    /// Where a chip deep-links. Derived from the code host's own name for the Delivery, so a chip
-    /// and the page it opens can never be two different Deliveries.
-    private static func url(of name: String) -> URL? {
-        let number = name.split(separator: "#").last.map(String.init) ?? name
-        return URL(string: "https://github.com/milad-alizadeh/argo/pull/\(number)")
     }
 }

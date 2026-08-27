@@ -14,46 +14,37 @@ extension WorkRoomProjection {
         let priority: String?
         /// The provider's own type word, absent on the same terms.
         let type: String?
-        /// The provider's labels, verbatim and COMPLETE — the ones the two facts above restate
-        /// included, because a list that quietly drops its own members is not the provider's list.
+        /// The provider's labels, verbatim and complete — the ones `priority` and `type` restate
+        /// included.
         let labels: [String]
         /// The Deliveries in flight, one chip each.
         let deliveries: [DeliveryFacts]
-        /// The Children section, and `nil` on a ticket the tracker gives no children — which is
-        /// the section being ABSENT rather than empty.
+        /// `nil` on a ticket the tracker gives no children: the section is then absent.
         let children: Children?
-        /// The blockers, in the provider's own edge order.
-        ///
-        /// EMPTY is the section absent, never an empty section: a provider that exposes no
-        /// dependency information has not told us there are no blockers, and Argo cannot tell the
-        /// two apart from an empty list. Degrade-down (`CONTEXT.md` L2 · Honesty tier) resolves
-        /// that ambiguity to the quieter reading — say nothing rather than assert `Nothing`.
+        /// The blockers, in the provider's own edge order. EMPTY draws no section at all: nothing
+        /// tells "no edges read" from "edges read, none found", so degrade-down takes the quieter
+        /// reading (`CONTEXT.md` L2 · Honesty tier).
         let blockedBy: [Link]
         /// The body, absent where nothing was read for it.
         let body: String?
     }
 
-    /// One ticket NAMED from inside another ticket — a child, or a blocker. One shape, because the
-    /// two differ only in the trailing fact they carry (#815).
+    /// One ticket named from inside another — a child, or a blocker. One shape: the two differ
+    /// only in the trailing fact they carry (#815).
     struct Link: Sendable, Equatable, Identifiable {
         let id: Int
-        /// The tracker's own name for it, and `nil` only where nothing was read. A blocker that is
-        /// already CLOSED still has one, so the list names it rather than falling back on a
-        /// placeholder that would read as the ticket's actual title.
+        /// The tracker's own name, and `nil` only where nothing was read — a blocker already
+        /// CLOSED still has one.
         let title: String?
-        /// A child carries its own Delivery mark. A blocker does not — nothing reads a Delivery for
-        /// a ticket that is not in the backlog — so it takes `absent`, which says exactly that.
+        /// `absent` on a blocker: nothing reads a Delivery for a ticket outside the backlog.
         let delivery: DeliveryReading
-        /// The provider's status word on a child; absent on a blocker, whose section heading
-        /// already carries the only figure there is.
+        /// The provider's status word on a child; absent on a blocker.
         let trailing: String?
     }
 
-    /// A parent's Children section: the open children it lists, and the tracker's own figure over
-    /// all of them.
-    ///
-    /// The figure counts children the section does not draw, which is why `2 of 9 closed` can stand
-    /// over five rows and be right.
+    /// A parent's Children section. `closed` and `total` are the TRACKER's figures over children
+    /// the section does not draw, which is why `2 of 9 closed` can stand over five rows and be
+    /// right; children the poll never reached count in `total` alone.
     struct Children: Sendable, Equatable {
         let open: [Link]
         let closed: Int
@@ -79,9 +70,8 @@ extension WorkRoomProjection {
         )
     }
 
-    /// The open children in the PARENT's own order, and the closed-of-total figure over every child
-    /// the tracker holds. A parent whose children are all closed still gets the section: the figure
-    /// is the news there.
+    /// The open children in the PARENT's own order. A parent whose children are all closed keeps
+    /// the section.
     private static func children(of item: WorkItem, in reading: WorkReading) -> Children? {
         guard !item.children.isEmpty else { return nil }
         let known = item.children.compactMap { number in
@@ -95,14 +85,12 @@ extension WorkRoomProjection {
         )
     }
 
-    /// A child, with the provider's own status word trailing it and its own Delivery mark.
+    /// A child, with the provider's own status word trailing it.
     private static func child(_ item: WorkItem, delivery: DeliveryReading) -> Link {
         Link(id: item.number, title: item.title, delivery: delivery, trailing: item.status)
     }
 
-    /// A blocker, named from whatever the poll reached — the tracker's own title or nothing, never
-    /// a stand-in a reader cannot tell from a real one. It carries no mark: nothing reads a
-    /// Delivery for a ticket that is not in the backlog, and `absent` says exactly that.
+    /// A blocker, named from whatever the poll reached — never a stand-in.
     private static func blocker(_ number: Int, in reading: WorkReading) -> Link {
         Link(
             id: number,

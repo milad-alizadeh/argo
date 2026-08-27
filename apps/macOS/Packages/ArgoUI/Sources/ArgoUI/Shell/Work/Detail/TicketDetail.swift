@@ -6,9 +6,9 @@ import SwiftUI
 /// at once, and why the facts are a strip under the title instead.
 struct TicketDetail: View {
     let ticket: WorkRoomProjection.Ticket?
-    /// Which ticket the deck is open on. The Children section writes to it, so a parent's child
-    /// opens where the reader already is rather than sending them back out to the list.
-    @Binding var selection: Int?
+    /// What opening a child does — the pane never reads back what it opened, so this is a closure
+    /// and not a binding that could disagree with `ticket`.
+    let open: (Int) -> Void
 
     var body: some View {
         ScrollView {
@@ -20,12 +20,14 @@ struct TicketDetail: View {
     }
 
     private func column(for ticket: WorkRoomProjection.Ticket) -> some View {
-        VStack(alignment: .leading, spacing: ArgoTicketDetail.bodyStep) {
-            VStack(alignment: .leading, spacing: ArgoTicketDetail.headStep) {
+        // `stripStep` twice over: the strip pads its own hairline off the labels above it, and
+        // this spends the same step again under it.
+        VStack(alignment: .leading, spacing: ArgoTicketDetail.stripStep) {
+            VStack(alignment: .leading, spacing: ArgoTicketDetail.stripLift) {
                 TicketHead(ticket: ticket)
                 TicketFactStrip(ticket: ticket)
             }
-            TicketBody(ticket: ticket) { selection = $0 }
+            TicketBody(ticket: ticket, open: open)
         }
         .padding(ArgoTicketDetail.inset)
         // The feed's measure, REUSED: the feed already settled what a line of Argo's prose runs to,
@@ -35,21 +37,21 @@ struct TicketDetail: View {
 }
 
 #Preview("Ticket detail") {
-    TicketDetail(ticket: WorkFixture.room.ticket, selection: .constant(272))
+    TicketDetail(ticket: WorkFixture.room.ticket, open: { _ in })
         .frame(width: ArgoTicketDetail.idealWidth, height: 520)
         .argoDeckSurface()
         .argoAppearance()
 }
 
 #Preview("Ticket detail — a parent, deep") {
-    TicketDetail(ticket: WorkFixture.room(showing: 607).ticket, selection: .constant(607))
+    TicketDetail(ticket: WorkFixture.room(showing: 607).ticket, open: { _ in })
         .frame(width: ArgoTicketDetail.idealWidth, height: 720)
         .argoDeckSurface()
         .argoAppearance()
 }
 
 #Preview("Ticket detail — nothing selected") {
-    TicketDetail(ticket: nil, selection: .constant(nil))
+    TicketDetail(ticket: nil, open: { _ in })
         .frame(width: ArgoTicketDetail.idealWidth, height: 320)
         .argoDeckSurface()
         .argoAppearance()

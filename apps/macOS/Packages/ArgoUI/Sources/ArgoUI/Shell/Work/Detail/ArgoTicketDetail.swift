@@ -12,8 +12,10 @@ enum ArgoTicketDetail {
     static let statusDividerHeight: CGFloat = 10
     /// Between the id, the title and the status pair.
     static let headStep: CGFloat = ArgoSpacing.base
-    /// Between the head and the body under it.
-    static let bodyStep: CGFloat = ArgoSpacing.section
+    /// Between the head and the strip under it. Measured off `deep.png` at ~22 baseline to
+    /// baseline less the two line boxes, which is this rung; the design's CSS reaches it as two
+    /// stacked paddings rather than as a step of its own.
+    static let stripLift: CGFloat = ArgoSpacing.section
 
     // MARK: - The fact strip
 
@@ -23,7 +25,7 @@ enum ArgoTicketDetail {
     static let factLineGap: CGFloat = ArgoSpacing.base
     /// Inside one pair, between its key and its value.
     static let factPairGap: CGFloat = ArgoSpacing.snug
-    /// Under the strip's hairline, before the body starts.
+    /// Over the strip's hairline, and under it again — the design spends the same step twice.
     static let stripStep: CGFloat = ArgoSpacing.comfortable
     /// Between two label chips.
     static let labelGap: CGFloat = ArgoSpacing.tight

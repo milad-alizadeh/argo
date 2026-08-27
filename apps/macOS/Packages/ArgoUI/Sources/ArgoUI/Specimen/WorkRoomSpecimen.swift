@@ -63,19 +63,19 @@ struct TicketDetailSpecimen: View {
     var body: some View {
         TicketDetail(
             ticket: WorkRoomProjection.room(from: reading.opened(at: ticket)).ticket,
-            selection: $ticket,
+            open: { ticket = $0 },
         )
         .frame(width: ArgoTicketDetail.idealWidth)
         .argoDeckSurface()
     }
 }
 
-/// Every reading of a Delivery's checks, side by side — a discrete union told once, on the chip
-/// that is the only surface reading it.
+/// Every reading of a Delivery's checks, and the chip with no page to open — the chip's whole
+/// union, on the one surface that reads it.
 struct DeliveryChipsSpecimen: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoTicketDetail.chipGap) {
-            ForEach(WorkFixture.everyChecksReading) { DeliveryChip(delivery: $0) }
+            ForEach(WorkFixture.everyChip) { DeliveryChip(delivery: $0) }
         }
         .padding(ArgoSpacing.region)
         .frame(width: ArgoTicketDetail.idealWidth, alignment: .leading)

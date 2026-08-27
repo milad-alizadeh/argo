@@ -34,16 +34,16 @@ enum WorkFixture {
     /// edges out for the detail pane alone, so its render shows the counts unchanged; that is the
     /// prototype's seam rather than a number this build is allowed to invent.
     static let edgeless: WorkReading = {
-        var edged = reading(showing: 272)
-        edged.items = edged.items.map(unedged)
-        return edged
+        var stripped = reading(showing: 272)
+        stripped.items = stripped.items.map(unedged)
+        return stripped
     }()
 
     /// A ticket the provider named and said nothing else about — no priority, no type, no labels.
     /// The fact strip's floor: `Bucket` is Argo's own and survives, and every absent fact is left
     /// out rather than defaulted.
     static let unread = WorkReading(
-        items: [WorkItem(number: 272, title: title272, status: "Todo", closure: .open)],
+        items: [WorkItem(number: 272, title: nodeTreeTitle, status: "Todo", closure: .open)],
         provider: bound,
         showing: 272,
     )

@@ -1,16 +1,11 @@
 import SwiftUI
 
-/// Tickets named from inside a ticket — the Children section and the `blockedBy` section, which are
-/// ONE component with two callers (#815).
-///
-/// `blockedBy` at one and at six is the same shape, so nothing here changes with the count: the
-/// figure lives in the section heading, and six rows are six rows. What the two callers differ in
-/// is the trailing fact — a child carries the provider's word for it, a blocker carries nothing.
+/// Tickets named from inside a ticket — the Children and `blockedBy` sections, which are ONE
+/// component with two callers (#815). The count changes nothing: it lives in the section heading.
 struct TicketLinkList: View {
     let links: [WorkRoomProjection.Link]
-    /// What opening a row does, and `nil` where a row opens nothing. A blocker may be closed and
-    /// out of the backlog entirely, so its row is text rather than a control that would lead
-    /// somewhere empty.
+    /// `nil` where a row opens nothing: a blocker may be closed and out of the backlog, so its row
+    /// is text rather than a control that would lead somewhere empty.
     var open: ((Int) -> Void)?
 
     var body: some View {
@@ -48,10 +43,7 @@ private struct TicketLinkRow: View {
         .accessibilityLabel(announcement)
     }
 
-    /// The tracker's own name, and NOTHING where the poll never reached it. A stand-in a reader
-    /// cannot tell from a real title is worse than a row that plainly says only its number — and a
-    /// blocker that is already closed still has its name here, because a closed ticket was read
-    /// like any other.
+    /// Nothing where the poll never reached it — a stand-in reads as the ticket's actual title.
     @ViewBuilder private var title: some View {
         if let title = link.title {
             Text(title)
@@ -59,6 +51,9 @@ private struct TicketLinkRow: View {
                 .foregroundStyle(argo.color.text.tertiary)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                // The design's own lesson about narrow columns: the fix for a clipped title is
+                // the id plus a hover, never a wider column.
+                .help(title)
         }
     }
 

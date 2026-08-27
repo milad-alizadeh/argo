@@ -37,7 +37,10 @@ extension WorkFixture {
             "Work Item read path: listing, status, labels, dependency edges",
             .init(status: working),
         ),
-        open(272, title272, .init(blockedBy: [609, 388], labels: ["work-room", "ui", "blocked"])),
+        open(
+            272, nodeTreeTitle,
+            .init(blockedBy: [609, 388], labels: ["work-room", "ui", "blocked"]),
+        ),
         open(273, "The Next-up cold-start planner"),
         open(
             334,
@@ -58,10 +61,12 @@ extension WorkFixture {
         closed(376, "The native Liquid Glass shell"),
     ]
 
-    static let title272 = "The generic node tree and ticket detail"
+    /// #272's title, which two fixtures name it by.
+    static let nodeTreeTitle = "The generic node tree and ticket detail"
 
-    /// The body #272 opens on. Prose only: the body's own section headings are the provider's
-    /// markup, and rendering that is not this room's job.
+    /// The body #272 opens on. Prose only: `deep.png` draws an `Acceptance criteria` heading in
+    /// it, but that is the provider's own Markdown and nothing renders one yet — the sections
+    /// below the body are what `bodyHeading` (#813) has a caller for.
     static let body = """
     The backlog's home, with the sidebar freed: views at 280, the backlog at 520 where a title \
     reads whole at depth three, and the ticket beside it.

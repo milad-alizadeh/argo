@@ -21,7 +21,7 @@ stubbed.
 | `BacklogList` | organism | `ArgoUI/Shell/Work/Backlog/` | `rows: [Row]`, `selection: Binding<Int?>` | `BacklogRow` | `BacklogList` |
 | `BacklogRow` | molecule | `ArgoUI/Shell/Work/Backlog/` | `row: Row` | `DeliveryDot` | `BacklogRow` |
 | `DeliveryDot` | atom | `ArgoUI/Shell/Work/Backlog/` | `reading: DeliveryReading` (5 states) | — | `DeliveryDot` |
-| `TicketDetail` | organism | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket?` | `TicketHead` | `TicketDetail` |
+| `TicketDetail` | organism | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket?`, `open: (Int) -> Void` (#815) | `TicketHead`, `TicketFactStrip`, `TicketBody` | `TicketDetail` |
 | `TicketHead` | molecule | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket` | `StatusPair` | `TicketHead` |
 | `StatusPair` | atom | `ArgoUI/Shell/Work/Detail/` | `word: String`, `bucket: WorkItemState` (4 states) | — | `StatusPair` |
 
@@ -39,6 +39,12 @@ stubbed.
 it. What separates them is the trailing fact each `Link` carries — the provider's status word on a
 child, nothing on a blocker — and whether the caller passes an `open`. A blocker may be closed and
 out of the backlog, so its row is text rather than a control that would lead somewhere empty.
+
+`WrapFlow` grew a second gap for this. `.fact-strip` is one flex with `column-gap: 24` and
+`row-gap: 8`, and the layout carried a single `gap` for both axes; it now takes a `Gaps` pair, with
+`init(gap:)` kept for the three callers that want one step on both. Without it the strip would have
+been two stacked runs, which reads the same at 480 and breaks a line the design would keep whole on
+a ticket with one short label.
 
 `TicketBody` is the one name here the design does not freeze. It was forced out by the file
 ceiling, not by taste: `TicketDetail` with the three sections inline is over 150 code lines, and
@@ -104,10 +110,28 @@ in the design itself; the first two stand.
 - **A Delivery's deep link is optional.** `URL(string:)` is failable and `force_unwrapping` is a
   build error here, so a chip with no page is a fact that stays put rather than a control that
   opens nothing.
+- **A truncated link title keeps its whole self behind a hover**, which is the design's own lesson
+  about narrow columns — "the fix there is the id plus a hover, not a wider column".
 - **`edgeless` strips every edge, so the sidebar's counts move with it.** `edgeless.png` shows
   `Unblocked 4 / Blocked 8` unchanged, because the explorable's state flag only reached the detail
   pane. A provider that cannot say what blocks what cannot fill those two views either. The
   divergence is the prototype's seam, not a number invented here.
+
+### Two numbers this build did not take from the design
+
+- **`labelInsetY` is `ArgoSpacing.hair` 2, where `.label` sets `padding: 1px`.** The rhythm has no
+  1, and `rules/design-system.md` says snap rather than promote a rung for one call site.
+  `ArgoBadge` spends the same step for the same reason. Not in the measurement table.
+- **The head-to-strip gap is `ArgoSpacing.section` 24.** The design reaches ~20 there as two
+  stacked CSS paddings rather than as a step, and 24 is the rung under the measurement off
+  `deep.png`. Also not in the table.
+
+### Still not drawn
+
+`deep.png` and `edgeless.png` both show an `Acceptance criteria` heading inside the ticket's prose.
+That is the provider's own Markdown, and nothing renders a body's markup yet — the three sections
+BELOW the body are what `bodyHeading` (#813) has a caller for. Rendering the body's own headings is
+its own ticket.
 
 ## What the views actually do
 

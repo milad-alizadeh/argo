@@ -7,14 +7,31 @@ import SwiftUI
 /// wheel gesture with the reading behind it, and an adaptive grid re-spaces its columns to justify
 /// the measure.
 struct WrapFlow: Layout {
-    var gap: CGFloat
+    /// The two gaps a wrapped run spends. They travel together through every pass, and CSS names
+    /// them separately for the same reason: a strip can want its columns further apart than its
+    /// lines.
+    struct Gaps: Equatable {
+        var along: CGFloat
+        var between: CGFloat
+    }
+
+    var gaps: Gaps
+
+    /// One step on both axes, which is what three of the four callers want.
+    init(gap: CGFloat) {
+        self.gaps = Gaps(along: gap, between: gap)
+    }
+
+    init(along: CGFloat, between: CGFloat) {
+        self.gaps = Gaps(along: along, between: between)
+    }
 
     func sizeThatFits(
         proposal: ProposedViewSize, subviews: Subviews, cache _: inout (),
     )
         -> CGSize {
         let width = proposal.width ?? .infinity
-        let places = Self.placements(of: sizes(of: subviews), in: width, gap: gap)
+        let places = Self.placements(of: sizes(of: subviews), in: width, gaps: gaps)
         let height = places.map(\.maxY).max() ?? 0
         let widest = places.map(\.maxX).max() ?? 0
         // Never wider than the tiles actually ran. Claiming the whole proposal stretched the one
@@ -26,7 +43,7 @@ struct WrapFlow: Layout {
     func placeSubviews(
         in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout (),
     ) {
-        let places = Self.placements(of: sizes(of: subviews), in: bounds.width, gap: gap)
+        let places = Self.placements(of: sizes(of: subviews), in: bounds.width, gaps: gaps)
         for (place, view) in zip(places, subviews) {
             view.place(
                 at: CGPoint(x: bounds.minX + place.minX, y: bounds.minY + place.minY),
@@ -44,7 +61,7 @@ struct WrapFlow: Layout {
     /// the layout a test can hold without a view. A line breaks before any tile that would cross
     /// the measure, never after the first: a tile wider than the whole measure still gets a line.
     nonisolated static func placements(
-        of sizes: [CGSize], in width: CGFloat, gap: CGFloat,
+        of sizes: [CGSize], in width: CGFloat, gaps: Gaps,
     )
         -> [CGRect] {
         var places: [CGRect] = []
@@ -54,11 +71,11 @@ struct WrapFlow: Layout {
         for size in sizes {
             if x > 0, x + size.width > width {
                 x = 0
-                y += line + gap
+                y += line + gaps.between
                 line = 0
             }
             places.append(CGRect(origin: CGPoint(x: x, y: y), size: size))
-            x += size.width + gap
+            x += size.width + gaps.along
             line = max(line, size.height)
         }
         return places

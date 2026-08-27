@@ -1,16 +1,12 @@
 import SwiftUI
 
-/// What the ticket says, and the three sections under it: Deliveries, Children, Blocked by, in that
-/// order (`cockpit-work-room.md` — the ticket detail).
-///
-/// Deliveries lead because they are what is happening NOW; the prose is what was asked for, and the
-/// two link sections are the ticket's place in the graph around it.
+/// What the ticket says, and the three sections under it: Deliveries, Children, Blocked by, in
+/// that order (`cockpit-work-room.md` — the ticket detail).
 struct TicketBody: View {
     @Environment(\.argo) private var argo
 
     let ticket: WorkRoomProjection.Ticket
-    /// What opening a child does. The Children section names a ticket where the reader already is,
-    /// so drilling in does not mean going back out to the list.
+    /// What opening a child does.
     let open: (Int) -> Void
 
     var body: some View {
@@ -23,8 +19,11 @@ struct TicketBody: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Always drawn, empty included: whether anything is in flight is the first thing a reader of
-    /// this pane is asking, and silence would answer it wrongly.
+    /// Always drawn, empty included — the section is a DIRECT reading either way, so silence would
+    /// be the one state it cannot mean.
+    ///
+    /// Headed by `GroupLabel` where Children and Blocked by take `bodyHeading`: the design sets
+    /// this one as a caption and those two as headings (`cockpit-work-room.html`, `.cap` vs `h2`).
     @ViewBuilder private var deliveries: some View {
         GroupLabel("Deliveries")
         if ticket.deliveries.isEmpty {
@@ -32,8 +31,7 @@ struct TicketBody: View {
                 .argoText(ArgoTypography.control)
                 .foregroundStyle(argo.color.text.disabled)
         } else {
-            // Stacked, never wrapped: at this pane's width a chip sets on one line, so two
-            // Deliveries are two chips one above the other rather than a wrapped mess.
+            // Stacked, never wrapped: at 480 a chip sets on one line.
             VStack(alignment: .leading, spacing: ArgoTicketDetail.chipGap) {
                 ForEach(ticket.deliveries) { DeliveryChip(delivery: $0) }
             }
@@ -53,8 +51,7 @@ struct TicketBody: View {
         }
     }
 
-    /// A parent adds this to the same view a leaf uses — type is a property, not a rung of a ladder
-    /// (#272). No Implement action anywhere on it: work happens at leaves.
+    /// A parent adds this to the same view a leaf uses (#272). No Implement action on one.
     @ViewBuilder private var children: some View {
         if let children = ticket.children {
             heading("Children · \(children.closed) of \(children.total) closed")
@@ -68,9 +65,7 @@ struct TicketBody: View {
         }
     }
 
-    /// Absent when there are no edges, never an empty section — a provider that exposes no
-    /// dependency information has not told us there are no blockers
-    /// (`WorkRoomProjection.Ticket.blockedBy`).
+    /// Absent when empty, never an empty section (`WorkRoomProjection.Ticket.blockedBy`).
     @ViewBuilder private var blockedBy: some View {
         if !ticket.blockedBy.isEmpty {
             heading("Blocked by · \(ticket.blockedBy.count)")
@@ -78,8 +73,7 @@ struct TicketBody: View {
         }
     }
 
-    /// A section's own heading, which is `body`'s 13 at semibold: weight is the whole of what lifts
-    /// it off the paragraph under it (`ArgoTypography.bodyHeading`).
+    /// A section's own heading.
     private func heading(_ words: String) -> some View {
         Text(words)
             .argoText(ArgoTypography.bodyHeading)

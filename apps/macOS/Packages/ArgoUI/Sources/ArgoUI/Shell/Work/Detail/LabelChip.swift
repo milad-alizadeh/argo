@@ -1,11 +1,7 @@
 import SwiftUI
 
-/// One of the provider's own labels, set verbatim. Argo neither translates a label nor files it
-/// under a vocabulary of its own: a label is the tracker's word, and a reader matching what they
-/// see here against what they see in the tracker is the whole point of showing it.
-///
-/// It takes no hue for the same reason `ArgoBadge` takes none — a label marks a KIND of thing, and
-/// hue in this palette is rationed to the four operational states (`rules/design-system.md`).
+/// One of the provider's own labels, set verbatim and without a hue — a label marks a kind, and
+/// hue is rationed to the four operational states (`rules/design-system.md`).
 struct LabelChip: View {
     @Environment(\.argo) private var argo
 

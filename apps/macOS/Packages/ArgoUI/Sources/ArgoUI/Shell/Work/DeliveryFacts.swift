@@ -1,22 +1,16 @@
 import Foundation
 
-/// One Delivery as the ticket carries it — a bordered object, never a row in a list
-/// (`cockpit-work-room.md` — the ticket detail). Two Deliveries on one ticket are two of these.
-///
-/// The backlog's own signal is `DeliveryReading`, one mark over the whole ticket. This is the other
-/// grain: what a reader gets once they have opened the thing the mark was standing for.
+/// One Delivery as the ticket carries it. `DeliveryReading` is the other grain — one mark over the
+/// whole ticket, which is all the backlog spends.
 struct DeliveryFacts: Sendable, Equatable, Identifiable {
-    /// The code host's own name for it — `argo#812`, repository included. Verbatim, so a Delivery
-    /// raised against a fork reads as itself rather than as a bare number that could be anyone's.
+    /// The code host's own name for it — `argo#812`, repository included, verbatim.
     let name: String
     let branch: String
     let added: Int
     let removed: Int
     let checks: ChecksReading
-    /// Where the chip deep-links: the code host's own page for this Delivery, and `nil` where the
-    /// host gave none. A Delivery Argo has no page for is still a Delivery, so the chip goes quiet
-    /// rather than absent — and it stops being a control, because a control that opens nothing is
-    /// worse than a fact that stays put.
+    /// The code host's page for it, and `nil` where the host gave none — the chip then draws as a
+    /// fact rather than as a control that would open nothing.
     let url: URL?
 
     var id: String {
@@ -28,7 +22,7 @@ struct DeliveryFacts: Sendable, Equatable, Identifiable {
 enum ChecksReading: Sendable, Equatable, CaseIterable {
     case passing
     case failing
-    /// Nothing was read. The chip says nothing rather than claiming a pass — degrade-down
-    /// (`CONTEXT.md` L2 · Honesty tier), and a silent green is the one reading worth ruling out.
+    /// Nothing was read: the chip leaves the slot empty rather than claiming a pass
+    /// (`CONTEXT.md` L2 · Honesty tier).
     case unread
 }
