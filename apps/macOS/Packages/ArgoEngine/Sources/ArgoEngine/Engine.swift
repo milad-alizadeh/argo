@@ -4,6 +4,7 @@ import Foundation
 /// liveness reads.
 public struct Engine: Sendable {
     private let readCheckout: CheckoutRead
+    private let readWorktrees: WorktreeEnumerationRead
     private let readWorkspace: WorkspaceRead
     private let readLiveness: LivenessRead
 
@@ -11,10 +12,12 @@ public struct Engine: Sendable {
     /// process table to read supplies its own.
     public init(
         readCheckout: @escaping CheckoutRead = gitCheckoutRead,
+        readWorktrees: @escaping WorktreeEnumerationRead = gitWorktreeEnumerationRead,
         readWorkspace: @escaping WorkspaceRead = gitWorkspaceRead,
         readLiveness: @escaping LivenessRead = processLivenessRead,
     ) {
         self.readCheckout = readCheckout
+        self.readWorktrees = readWorktrees
         self.readWorkspace = readWorkspace
         self.readLiveness = readLiveness
     }
@@ -100,9 +103,15 @@ public struct Engine: Sendable {
         await readCheckout(url)
     }
 
-    /// The git working context of one folder, or nothing where git could not answer for it.
-    public func workspace(at url: URL) async -> WorkspaceProjection? {
-        await readWorkspace(url)
+    /// Every working tree the repository holding this folder has, in git's own order — and none for
+    /// a folder that is in no repository.
+    public func worktrees(in url: URL) async -> [WorktreeEntry] {
+        await readWorktrees(url)
+    }
+
+    /// The git working context of one working tree, or nothing where git could not answer for it.
+    public func workspace(of entry: WorktreeEntry) async -> WorkspaceProjection? {
+        await readWorkspace(entry)
     }
 
     /// The working directories a live CLI is running in, right now.
