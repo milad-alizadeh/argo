@@ -7,7 +7,7 @@ import Foundation
 /// spelling a `started` column "In Review" and "Doing" mean the same category, and reading the
 /// canonical state off the word would make Argo's grouping depend on a team's typography. The
 /// word itself still renders, verbatim, as the ticket's status (#272).
-enum LinearWorkflowCategory: String, Equatable, Sendable, CaseIterable {
+enum LinearWorkflowCategory: String, Equatable, Sendable {
     case triage
     case backlog
     case unstarted

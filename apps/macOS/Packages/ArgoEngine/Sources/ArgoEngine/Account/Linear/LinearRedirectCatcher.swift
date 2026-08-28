@@ -3,13 +3,17 @@ import Foundation
 
 /// The loopback the browser is redirected back to, listened on for exactly one request.
 ///
-/// Bound to `127.0.0.1` and never to `0.0.0.0`: the authorization code arrives in a URL, and a
-/// listener on every interface would put it on the network. One request and then closed, because a
-/// second redirect belongs to a second authorization.
+/// `127.0.0.1` and never `0.0.0.0`: the authorization code arrives in a URL (ADR-0018).
 ///
-/// A protocol, so `LinearAuthorization` can be tested without a socket at all.
+/// **Claimed before the browser opens, never after** — a bind deferred to the wait would refuse
+/// only once the user had already granted access.
 protocol LinearRedirectListening: Sendable {
-    /// The query of the one redirect that arrives, or the reason none did.
+    /// Take the port. Raised before anything sends the user anywhere.
+    func claim() throws(LinearAuthorizationError) -> LinearRedirectWait
+}
+
+/// A port already held, waiting for the one redirect it will answer.
+protocol LinearRedirectWait: Sendable {
     func awaitRedirect() async throws(LinearAuthorizationError) -> [String: String]
 }
 
@@ -19,13 +23,29 @@ struct LinearRedirectCatcher: LinearRedirectListening {
     /// a user who closed the tab is the common case, and nothing else says so.
     static let patience = Duration.seconds(300)
 
-    func awaitRedirect() async throws(LinearAuthorizationError) -> [String: String] {
-        let listening = try Self.listening()
-        defer { Darwin.close(listening) }
-        guard let line = await Self.request(on: listening) else {
-            throw LinearAuthorizationError.abandoned
+    func claim() throws(LinearAuthorizationError) -> LinearRedirectWait {
+        try Held(descriptor: Self.listening())
+    }
+
+    /// The bound port, held across the browser round-trip and closed once it has answered.
+    ///
+    /// A `final class` rather than a value, because the descriptor is a resource with a lifetime:
+    /// `deinit` is what closes it on the path where the wait is cancelled and nothing else runs.
+    final class Held: LinearRedirectWait {
+        private let descriptor: Int32
+
+        init(descriptor: Int32) {
+            self.descriptor = descriptor
         }
-        return Self.query(of: line)
+
+        deinit { Darwin.close(descriptor) }
+
+        func awaitRedirect() async throws(LinearAuthorizationError) -> [String: String] {
+            guard let line = await LinearRedirectCatcher.request(on: descriptor) else {
+                throw LinearAuthorizationError.abandoned
+            }
+            return LinearRedirectCatcher.query(of: line)
+        }
     }
 
     /// A bound, listening socket on the loopback, or the reason there is not one.
@@ -54,7 +74,7 @@ struct LinearRedirectCatcher: LinearRedirectListening {
     /// The request line of the one redirect, and `nil` where the patience ran out or the wait was
     /// cancelled. The accept runs off the main queue, so a browser that never comes back blocks a
     /// thread of the pool rather than the app.
-    private static func request(on listening: Int32) async -> String? {
+    static func request(on listening: Int32) async -> String? {
         await withTaskGroup(of: String?.self) { group in
             group.addTask { await accept(on: listening) }
             group.addTask {

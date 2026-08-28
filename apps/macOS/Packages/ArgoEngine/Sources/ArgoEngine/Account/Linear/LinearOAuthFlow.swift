@@ -18,11 +18,15 @@ public struct LinearOAuthFlow: Sendable {
         self.redirects = redirects
     }
 
+    /// The port is claimed HERE, before the caller sends anyone anywhere. A second Argo already
+    /// holding it refuses now, with nothing granted — where claiming it at the wait would refuse
+    /// only after the user had approved, and there would be nothing left to do about it.
     public func requestAuthorization() throws(LinearAuthorizationError)
         -> LinearAuthorizationRequest {
-        guard let request = LinearAuthorizationRequest() else {
+        guard var request = LinearAuthorizationRequest() else {
             throw LinearAuthorizationError.notRegistered
         }
+        request.wait = try redirects.claim()
         return request
     }
 
@@ -34,7 +38,8 @@ public struct LinearOAuthFlow: Sendable {
         for request: LinearAuthorizationRequest,
     ) async throws(LinearAuthorizationError)
         -> AccountGrant {
-        let redirect = try await redirects.awaitRedirect()
+        guard let wait = request.wait else { throw LinearAuthorizationError.redirectUnavailable }
+        let redirect = try await wait.awaitRedirect()
         if let refusal = redirect["error"] {
             throw LinearAuthorizationError.refused(redirect["error_description"] ?? refusal)
         }
@@ -114,22 +119,30 @@ public struct LinearOAuthFlow: Sendable {
         }
     }
 
-    /// Linear's token reply. Snake-cased on the wire, and named here as it arrives — the OAuth
-    /// exchange does not go through `LinearAPI.decoder`, which is GraphQL's.
+    /// Linear's token reply. The OAuth exchange is snake-cased on the wire and does not go through
+    /// `LinearAPI.decoder`, which is GraphQL's — so the keys are named here, as `TokenRefusal`
+    /// below names its own.
     private struct TokenReply: Decodable {
-        let access_token: String
-        let refresh_token: String?
+        let accessToken: String
+        let refreshToken: String?
         /// Seconds, and absent on a token that does not expire — which Linear's do not answer
         /// with, but a shape read as required is a shape one field's absence breaks entirely.
-        let expires_in: Double?
+        let expiresIn: Double?
         let scope: String?
+
+        enum CodingKeys: String, CodingKey {
+            case accessToken = "access_token"
+            case refreshToken = "refresh_token"
+            case expiresIn = "expires_in"
+            case scope
+        }
 
         func grant(now: Date = Date()) -> AccountGrant {
             AccountGrant(
-                accessToken: access_token,
+                accessToken: accessToken,
                 scopes: scope?.split(separator: ",").map(String.init) ?? LinearOAuthApp.scopes,
-                lifetime: expires_in.map {
-                    .expiring(at: now.addingTimeInterval($0), refreshToken: refresh_token)
+                lifetime: expiresIn.map {
+                    .expiring(at: now.addingTimeInterval($0), refreshToken: refreshToken)
                 } ?? .nonExpiring,
             )
         }

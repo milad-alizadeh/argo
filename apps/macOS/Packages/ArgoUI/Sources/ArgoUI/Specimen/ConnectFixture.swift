@@ -26,19 +26,28 @@ enum ConnectFixture {
     static let deviceURL = URL(string: "https://github.com/login/device")
         ?? URL(fileURLWithPath: "/")
 
-    static let challenge = ConnectChallenge(
-        provider: .github,
-        userCode: "WDJB-MJHT",
-        verificationURL: deviceURL,
-    )
+    static let challenge = typed(.github)
 
     /// Linear's grant, which is a redirect: the browser carries the whole exchange, so there is no
     /// code to type and the card draws one row fewer.
-    static let redirect = ConnectChallenge(
-        provider: .linear,
-        verificationURL: URL(string: "https://linear.app/oauth/authorize")
-            ?? URL(fileURLWithPath: "/"),
-    )
+    static let redirect = redirected(.linear)
+
+    /// The two shapes the waiting card draws, per provider — the copy sweep walks both for every
+    /// one, since half of each is behind a flow only that provider takes.
+    static func typed(_ provider: AccountProvider) -> ConnectChallenge {
+        ConnectChallenge(
+            provider: provider, kind: .typed(code: "WDJB-MJHT"), verificationURL: deviceURL,
+        )
+    }
+
+    static func redirected(_ provider: AccountProvider) -> ConnectChallenge {
+        ConnectChallenge(
+            provider: provider,
+            kind: .redirect,
+            verificationURL: URL(string: "https://linear.app/oauth/authorize")
+                ?? URL(fileURLWithPath: "/"),
+        )
+    }
 
     /// Nothing chosen and nothing connected: what a first launch opens on.
     static let fresh = ConnectReading()

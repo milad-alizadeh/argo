@@ -32,12 +32,7 @@ public struct LinearWorkItemTitles: Sendable {
         // A null team is Linear saying this identity cannot see it, which establishes nothing
         // about the ticket — unlike a team that answered with no matching number.
         guard let team = payload.team else { return nil }
-        guard let title = Self.trimmed(team.issues.nodes.first?.title) else { return .absent }
+        guard let title = LinearAPI.text(team.issues.nodes.first?.title) else { return .absent }
         return .named(title)
-    }
-
-    private static func trimmed(_ title: String?) -> String? {
-        let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed?.isEmpty == true ? nil : trimmed
     }
 }

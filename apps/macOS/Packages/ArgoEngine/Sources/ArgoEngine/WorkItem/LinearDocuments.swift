@@ -24,10 +24,10 @@ enum LinearDocuments {
     /// Open only, on the same reasoning `GitHubWorkItems.list` gives: a closed ticket has left the
     /// room. Linear says "not closed" as two null timestamps rather than as a state word.
     static let teamIssues = """
-    query TeamIssues($team: String!, $after: String) {
+    query TeamIssues($team: String!, $first: Int!, $after: String) {
       team(id: $team) {
         issues(
-          first: 100
+          first: $first
           after: $after
           filter: { completedAt: { null: true }, canceledAt: { null: true } }
         ) {

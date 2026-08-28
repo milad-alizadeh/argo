@@ -21,6 +21,37 @@ struct LinearBindingTests {
     }
 
     @Test
+    func `a Linear Work Item port and a GitHub code host fail independently`() async {
+        // AC2. Health is keyed on the Binding, so a Linear workspace that has gone down must leave
+        // the GitHub code host reading healthy — and a reconnect on one Account must not clear a
+        // refusal recorded against the other (#569).
+        let ledger = ConnectionHealthLedger()
+        let workItem = PortReadTarget(binding: .linear(), projectID: "P1")
+        let codeHost = PortReadTarget(binding: .stub(), projectID: "P1")
+
+        await ledger.succeeded(codeHost.projectBinding, in: "P1", at: Date())
+        await ledger.record(.unreachable, of: workItem)
+
+        #expect(await ledger.health(of: workItem.projectBinding, in: "P1").state != .healthy)
+        #expect(await ledger.health(of: codeHost.projectBinding, in: "P1").state == .healthy)
+    }
+
+    @Test
+    func `reconnecting one account leaves the other's refusal standing`() async {
+        let ledger = ConnectionHealthLedger()
+        let workItem = PortReadTarget(binding: .linear(), projectID: "P1")
+        let codeHost = PortReadTarget(binding: .stub(), projectID: "P1")
+
+        await ledger.record(.grantRefused, of: workItem)
+        await ledger.record(.grantRefused, of: codeHost)
+        // The Linear identity is authorized again. GitHub's refusal is a different Account's.
+        await ledger.reconnected(workItem.projectBinding.accountID)
+
+        #expect(await ledger.health(of: workItem.projectBinding, in: "P1").state != .needsReconnect)
+        #expect(await ledger.health(of: codeHost.projectBinding, in: "P1").state == .needsReconnect)
+    }
+
+    @Test
     func `the picker offers the team ids a Linear account can see`() async {
         let teams = """
         { "data": { "teams": { "nodes": [

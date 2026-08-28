@@ -9,8 +9,8 @@ extension LinearIssue {
     func workItem() -> WorkItem {
         WorkItem(
             number: number,
-            // The team's own word for the column, verbatim — never the category behind it (#272).
             title: title,
+            // The team's own word for the column, verbatim — never the category behind it (#272).
             status: state.name,
             closure: state.category.closure,
             assignees: assignee.map { [$0.displayName] } ?? [],
@@ -21,7 +21,7 @@ extension LinearIssue {
             type: nil,
             children: children.nodes.map(\.number),
             blockedBy: blockers,
-            body: prose,
+            body: LinearAPI.text(description),
             updatedAt: LinearAPI.timestamp(updatedAt),
         )
     }
@@ -36,14 +36,9 @@ extension LinearIssue {
     /// (`CONTEXT.md` L2 · degrade-down).
     private var blockers: [WorkItemBlocker] {
         inverseRelations.nodes
-            .filter { $0.type == "blocks" }
+            .filter { $0.type == LinearWorkItems.blocks }
             .map {
                 WorkItemBlocker(number: $0.issue.number, closure: $0.issue.state.category.closure)
             }
-    }
-
-    private var prose: String? {
-        let trimmed = description?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed?.isEmpty == true ? nil : trimmed
     }
 }

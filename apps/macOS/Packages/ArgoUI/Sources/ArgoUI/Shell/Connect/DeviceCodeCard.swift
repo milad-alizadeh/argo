@@ -21,7 +21,7 @@ struct DeviceCodeCard: View {
             Text(DeviceCodeCopy.heading(for: challenge))
                 .argoText(ArgoTypography.rowTitle)
                 .foregroundStyle(argo.color.text.primary)
-            if let userCode = challenge.userCode {
+            if case let .typed(userCode) = challenge.kind {
                 code(userCode)
             }
             HStack(spacing: ArgoSpacing.base) {

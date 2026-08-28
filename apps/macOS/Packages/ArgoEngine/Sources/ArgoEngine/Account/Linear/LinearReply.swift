@@ -21,20 +21,3 @@ struct LinearReply<Payload: Decodable>: Decodable {
         return errors.map(\.message).joined(separator: " ")
     }
 }
-
-/// A GraphQL connection, which is how Linear serves every list.
-struct LinearNodes<Node: Decodable>: Decodable {
-    let nodes: [Node]
-
-    /// A connection whose page was not asked for reads as empty rather than as absent: every list
-    /// here is requested explicitly, so an absent one is a query bug and not a provider silence.
-    init(nodes: [Node] = []) {
-        self.nodes = nodes
-    }
-}
-
-/// Where a paged connection got to.
-struct LinearPageInfo: Decodable {
-    let hasNextPage: Bool
-    let endCursor: String?
-}

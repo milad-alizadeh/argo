@@ -13,6 +13,13 @@ enum LinearAPI {
         JSONDecoder()
     }
 
+    /// Prose Linear served, and `nil` where what it served was nothing to render. Absent and blank
+    /// are one state for every string this adapter reads: neither is a body, and neither is a name.
+    static func text(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed?.isEmpty == true ? nil : trimmed
+    }
+
     /// Linear serves timestamps with fractional seconds, which the bare `.iso8601` strategy will
     /// not parse, and older ones without, which the fractional strategy will not. Both are tried,
     /// and `nil` is what neither reads: an invented age would put a ticket at the head of a

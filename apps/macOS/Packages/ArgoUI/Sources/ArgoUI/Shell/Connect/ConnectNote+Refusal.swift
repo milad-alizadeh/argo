@@ -90,55 +90,24 @@ public extension ConnectNote {
 /// Whichever flow the provider took, said in one place: the panel has one grant path and so has
 /// one place a grant's failure becomes words.
 public extension ConnectNote {
+    /// Exhaustive over the PROVIDER rather than over the error, which Swift cannot switch on: each
+    /// arm knows the one failure type its own flow raises, so a third provider fails the build here
+    /// the way it does at every other seam — instead of falling through to "could not be reached"
+    /// and losing the provider's own sentence.
     init(grant: Error, provider: AccountProvider) {
-        switch grant {
-        case let deviceFlow as GitHubDeviceFlowError:
-            self.init(deviceFlow: deviceFlow, provider: provider)
-        case let authorization as LinearAuthorizationError:
-            self.init(authorization: authorization, provider: provider)
-        default:
-            self.init(refusal: .unreadable(grant.localizedDescription))
-        }
+        self = Self.said(grant, by: provider)
+            // A failure that is not the flow's own: the transport, or the registry write behind it.
+            ?? ConnectNote(refusal: .unreadable(grant.localizedDescription))
     }
-}
 
-/// Every way a redirect grant can fail — Linear's shape, where GitHub's is a device code (#371).
-public extension ConnectNote {
-    init(authorization: LinearAuthorizationError, provider: AccountProvider) {
-        let name = provider.readableName
-        switch authorization {
-        case .notRegistered:
-            self = .notYetAuthorizable(provider)
-        case .redirectUnavailable:
-            self.init(
-                what: "Argo could not listen for \(name)'s answer.",
-                why: "Another app on this Mac is already using the port it comes back on.",
-                fix: "Close any other copy of Argo, then try again.",
-            )
-        case .abandoned:
-            self.init(
-                what: "\(name) did not come back.",
-                why: "The page was closed, or it was left too long.",
-                fix: "Start again when you are ready.",
-            )
-        case .stateMismatch:
-            self.init(
-                what: "Argo refused the answer that came back.",
-                why: "It did not match the request Argo sent, so it was not this sign-in.",
-                fix: "Start again, and finish in the page Argo opens.",
-            )
-        case let .refused(reason):
-            self.init(
-                what: "\(name) refused the sign-in.",
-                why: reason,
-                fix: "Read \(name)'s reason above, then try again.",
-            )
-        case .malformedResponse:
-            self.init(
-                what: "Argo could not read \(name)'s answer.",
-                why: "The response was not in a shape Argo knows.",
-                fix: "Try again. If it keeps happening, \(name) may be having trouble.",
-            )
+    private static func said(_ grant: Error, by provider: AccountProvider) -> ConnectNote? {
+        switch provider {
+        case .github:
+            (grant as? GitHubDeviceFlowError)
+                .map { ConnectNote(deviceFlow: $0, provider: provider) }
+        case .linear:
+            (grant as? LinearAuthorizationError)
+                .map { ConnectNote(authorization: $0, provider: provider) }
         }
     }
 }

@@ -1,8 +1,7 @@
 import ArgoEngine
 import Foundation
 
-/// A grant part-way through: where the user has to finish it, and the code to type where there is
-/// one.
+/// A grant part-way through: where the user has to finish it, and how.
 ///
 /// It is on screen for exactly as long as the grant is waiting, which is why both flows hand their
 /// challenge back before they start waiting. A panel that spun on something it was holding would
@@ -12,16 +11,18 @@ import Foundation
 /// construction: a value that cannot carry it cannot show it.
 public struct ConnectChallenge: Equatable, Sendable {
     public let provider: AccountProvider
-    /// The provider's own formatting, rendered verbatim: what is shown has to match what is typed.
-    ///
-    /// `nil` for a REDIRECT flow, which is Linear's — the browser carries the whole exchange, so
-    /// there is nothing to type and a card offering a code to copy would be inventing a step.
-    public let userCode: String?
+    /// A code to type, or a page to approve. The engine's own distinction, carried rather than
+    /// re-derived from an optional at every place the card asks.
+    public let kind: ProviderChallengeKind
     public let verificationURL: URL
 
-    public init(provider: AccountProvider, userCode: String? = nil, verificationURL: URL) {
+    public init(
+        provider: AccountProvider,
+        kind: ProviderChallengeKind = .redirect,
+        verificationURL: URL,
+    ) {
         self.provider = provider
-        self.userCode = userCode
+        self.kind = kind
         self.verificationURL = verificationURL
     }
 
@@ -29,9 +30,13 @@ public struct ConnectChallenge: Equatable, Sendable {
     /// on and never something a card draws.
     public init(_ challenge: ProviderChallenge) {
         self.init(
-            provider: challenge.provider,
-            userCode: challenge.userCode,
-            verificationURL: challenge.url,
+            provider: challenge.provider, kind: challenge.kind, verificationURL: challenge.url,
         )
+    }
+
+    /// The provider's own formatting, rendered verbatim: what is shown has to match what is typed.
+    public var userCode: String? {
+        guard case let .typed(code) = kind else { return nil }
+        return code
     }
 }

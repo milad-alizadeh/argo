@@ -38,7 +38,8 @@ public struct LinearWorkItems: WorkItemPort {
         do {
             let payload: LinearTeamPayload<LinearIssuePage> = try await call.payload(
                 LinearOperation(
-                    LinearDocuments.teamIssues, ["team": .string(scope), "after": after],
+                    LinearDocuments.teamIssues,
+                    ["team": .string(scope), "first": .int(Self.pageSize), "after": after],
                 ),
                 grant: grant,
             )

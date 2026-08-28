@@ -5,8 +5,9 @@ import Foundation
 /// exchange afterwards belongs to this request.
 ///
 /// The counterpart of `GitHubDeviceChallenge`, and handed back before anything waits for the same
-/// reason: the browser has to be open before the loopback is listened on.
-public struct LinearAuthorizationRequest: Equatable, Sendable {
+/// reason. The loopback is claimed as this is made, so the port is already Argo's by the time the
+/// browser opens on it.
+public struct LinearAuthorizationRequest: Sendable {
     /// Where the user authorizes. Opened in their browser, never rendered as a code to type —
     /// Linear has no device flow, so there is nothing to type.
     public let authorizationURL: URL
@@ -16,6 +17,9 @@ public struct LinearAuthorizationRequest: Equatable, Sendable {
     /// The one-time value the callback must echo. What makes a redirect arriving from anywhere
     /// else a refusal rather than a grant.
     let state: String
+    /// The loopback port, ALREADY TAKEN — claimed while this request was made rather than when the
+    /// wait begins, so a port a second Argo holds refuses before the user has granted anything.
+    var wait: LinearRedirectWait?
 
     /// `nil` where the app is not registered, which is the one input this cannot invent.
     public init?() {
@@ -66,23 +70,4 @@ public struct LinearAuthorizationRequest: Equatable, Sendable {
             .replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: "=", with: "")
     }
-}
-
-/// Why an authorization did not produce an Account.
-public enum LinearAuthorizationError: Error, Equatable {
-    /// No OAuth App is registered in this build, so there is nothing to authorize as.
-    case notRegistered
-    /// The loopback could not be listened on — another process holds the port, most often Argo
-    /// itself in another window.
-    case redirectUnavailable
-    /// The user closed the browser, or the wait was stopped.
-    case abandoned
-    /// A redirect arrived whose `state` is not the one that was sent. Refused rather than
-    /// exchanged: it is a request Argo did not make.
-    case stateMismatch
-    /// Linear refused, in its own words — `access_denied` when the user declines, and whatever
-    /// else its error body carries.
-    case refused(String)
-    /// Linear answered with something that is not the documented shape. Never guessed past.
-    case malformedResponse
 }

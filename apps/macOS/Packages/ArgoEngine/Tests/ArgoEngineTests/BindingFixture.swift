@@ -188,4 +188,13 @@ actor StubProviderAPI: HTTPTransport {
             return data
         }
     }
+
+    /// The form-encoded bodies, which is what an OAuth exchange carries where every other request
+    /// here carries JSON.
+    func formBodies() -> [[String: String]] {
+        requests.compactMap {
+            guard case let .form(fields) = $0.body else { return nil }
+            return fields
+        }
+    }
 }

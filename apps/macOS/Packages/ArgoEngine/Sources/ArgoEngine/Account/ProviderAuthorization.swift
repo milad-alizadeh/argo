@@ -1,21 +1,5 @@
 import Foundation
 
-/// What the user has to do to finish a grant, whichever provider issues it.
-///
-/// The two flows differ in exactly one fact, and it is this one: GitHub hands back a code to TYPE
-/// at a fixed address, Linear hands back a page to APPROVE. Both are "open this and come back", so
-/// the panel draws one card and reads the code as absent rather than switching on the provider.
-public struct ProviderChallenge: Equatable, Sendable {
-    public let provider: AccountProvider
-    /// The provider's own formatting, rendered verbatim, and `nil` for a redirect flow — where the
-    /// browser carries the whole exchange and a code to copy would be an invented step.
-    public let userCode: String?
-    public let url: URL
-    /// Whether Argo should open the page itself. True for a redirect: the user pressed Connect,
-    /// and a second control to reach the page they just asked for is a step nobody needs.
-    public let opensItself: Bool
-}
-
 /// Authorizing one identity with whichever provider was chosen — the act "Connect…" performs.
 ///
 /// The fourth place a new provider has to appear, beside `ProviderScopeCheck`,
@@ -64,20 +48,11 @@ public enum ProviderGrantInFlight: Sendable {
         case let .github(asked):
             ProviderChallenge(
                 provider: .github,
-                userCode: asked.userCode,
+                kind: .typed(code: asked.userCode),
                 url: asked.verificationURL,
-                // GitHub's address is short, fixed and part of the instruction, so the user reads
-                // it and goes there. Opening it for them would take the window while they are
-                // still reading the code they have to bring.
-                opensItself: false,
             )
         case let .linear(asked):
-            ProviderChallenge(
-                provider: .linear,
-                userCode: nil,
-                url: asked.authorizationURL,
-                opensItself: true,
-            )
+            ProviderChallenge(provider: .linear, kind: .redirect, url: asked.authorizationURL)
         }
     }
 }

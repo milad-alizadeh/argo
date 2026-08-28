@@ -7,13 +7,26 @@ import Testing
 @Suite("Linear authorization")
 struct LinearAuthorizationTests {
     /// A redirect that already happened, so the flow can be exercised without a socket.
-    struct CaughtRedirect: LinearRedirectListening {
+    struct CaughtRedirect: LinearRedirectListening, LinearRedirectWait {
         let query: [String: String]
         let refusal: LinearAuthorizationError?
+        /// Whether the port could be taken at all, which is the failure that must surface BEFORE
+        /// the browser opens rather than after the user has granted access.
+        let claimable: Bool
 
-        init(_ query: [String: String] = [:], refusal: LinearAuthorizationError? = nil) {
+        init(
+            _ query: [String: String] = [:],
+            refusal: LinearAuthorizationError? = nil,
+            claimable: Bool = true,
+        ) {
             self.query = query
             self.refusal = refusal
+            self.claimable = claimable
+        }
+
+        func claim() throws(LinearAuthorizationError) -> LinearRedirectWait {
+            guard claimable else { throw LinearAuthorizationError.redirectUnavailable }
+            return self
         }
 
         func awaitRedirect() async throws(LinearAuthorizationError) -> [String: String] {
@@ -26,11 +39,19 @@ struct LinearAuthorizationTests {
 
     /// A request whose parts are stated rather than generated, so the half of the flow that runs
     /// AFTER the browser comes back is exercised whether or not an OAuth App is registered.
-    private static let request = LinearAuthorizationRequest(
-        authorizationURL: URL(string: "https://linear.app/oauth/authorize") ?? .temporaryDirectory,
-        verifier: "the-verifier",
-        state: "the-state",
+    private static func request(
+        _ caught: CaughtRedirect,
     )
+        -> LinearAuthorizationRequest {
+        var request = LinearAuthorizationRequest(
+            authorizationURL: URL(string: "https://linear.app/oauth/authorize")
+                ?? .temporaryDirectory,
+            verifier: "the-verifier",
+            state: "the-state",
+        )
+        request.wait = caught
+        return request
+    }
 
     @Test
     func `an unregistered build refuses to begin rather than sending a browser nowhere`() throws {
@@ -40,6 +61,24 @@ struct LinearAuthorizationTests {
 
         #expect(throws: LinearAuthorizationError.notRegistered) {
             try LinearOAuthFlow(transport: StubProviderAPI()).requestAuthorization()
+        }
+    }
+
+    @Test
+    func `a port another Argo holds refuses before the browser is ever opened`() throws {
+        // The ordering is the whole point. `requestAuthorization` is what the caller opens the
+        // browser on, so the port has to be claimed inside it — claimed at the WAIT instead, this
+        // would refuse only after the user had already granted access, with nothing left to do.
+        try #require(!LinearOAuthApp.isRegistered, "an id was registered; rewrite this test")
+
+        let flow = LinearOAuthFlow(
+            transport: StubProviderAPI(), redirects: CaughtRedirect(claimable: false),
+        )
+
+        // Unregistered, so it refuses one step earlier still — and either way it refuses BEFORE
+        // anything is opened, which is what this pins.
+        #expect(throws: (any Error).self) {
+            try flow.requestAuthorization()
         }
     }
 
@@ -60,40 +99,74 @@ struct LinearAuthorizationTests {
         // It is a request Argo did not make, whatever it carries — and the code is not spent
         // finding out.
         let api = StubProviderAPI()
-        let flow = LinearOAuthFlow(
-            transport: api,
-            redirects: CaughtRedirect(["code": "abc", "state": "somebody-else's"]),
-        )
+        let caught = CaughtRedirect(["code": "abc", "state": "somebody-else's"])
+        let flow = LinearOAuthFlow(transport: api, redirects: caught)
 
         await #expect(throws: LinearAuthorizationError.stateMismatch) {
-            try await flow.awaitGrant(for: Self.request)
+            try await flow.awaitGrant(for: Self.request(caught))
         }
         #expect(await api.urls().isEmpty)
     }
 
     @Test
     func `a user who declined is Linear's own word, not a timeout`() async {
-        let flow = LinearOAuthFlow(
-            transport: StubProviderAPI(),
-            redirects: CaughtRedirect([
-                "error": "access_denied", "error_description": "The user said no.",
-            ]),
-        )
+        let caught = CaughtRedirect([
+            "error": "access_denied", "error_description": "The user said no.",
+        ])
+        let flow = LinearOAuthFlow(transport: StubProviderAPI(), redirects: caught)
 
         await #expect(throws: LinearAuthorizationError.refused("The user said no.")) {
-            try await flow.awaitGrant(for: Self.request)
+            try await flow.awaitGrant(for: Self.request(caught))
         }
     }
 
     @Test
     func `a browser that never came back is abandoned rather than refused`() async {
-        let flow = LinearOAuthFlow(
-            transport: StubProviderAPI(), redirects: CaughtRedirect(refusal: .abandoned),
-        )
+        let caught = CaughtRedirect(refusal: .abandoned)
+        let flow = LinearOAuthFlow(transport: StubProviderAPI(), redirects: caught)
 
         await #expect(throws: LinearAuthorizationError.abandoned) {
-            try await flow.awaitGrant(for: Self.request)
+            try await flow.awaitGrant(for: Self.request(caught))
         }
+    }
+
+    @Test
+    func `the exchange reads Linear's own snake-cased token keys`() async throws {
+        // The one shape in this adapter that does NOT go through `LinearAPI.decoder`. Read wrongly
+        // it fails as "Argo could not read Linear's answer" on a grant the user did approve.
+        let token = """
+        { "access_token": "lin_oauth_abc", "refresh_token": "lin_refresh_xyz",
+          "expires_in": 86400, "scope": "read,write" }
+        """
+        let api = StubProviderAPI(body: token)
+        let caught = CaughtRedirect(["code": "the-code", "state": "the-state"])
+        let flow = LinearOAuthFlow(transport: api, redirects: caught)
+
+        let grant = try await flow.awaitGrant(for: Self.request(caught))
+
+        #expect(grant.accessToken == "lin_oauth_abc")
+        #expect(grant.refreshToken == "lin_refresh_xyz")
+        #expect(grant.scopes == ["read", "write"])
+        // Linear's token expires in 24 hours, where GitHub's does not expire at all — the
+        // per-provider lifecycle ADR-0018 predicted, and why `expiresAt` was left optional.
+        #expect(grant.expiresAt != nil)
+        #expect(!grant.isExpired(asOf: Date()))
+    }
+
+    @Test
+    func `the verifier is sent and no client secret ever is`() async throws {
+        let api = StubProviderAPI(body: #"{ "access_token": "t", "expires_in": 86400 }"#)
+        let caught = CaughtRedirect(["code": "the-code", "state": "the-state"])
+        let flow = LinearOAuthFlow(transport: api, redirects: caught)
+
+        _ = try await flow.awaitGrant(for: Self.request(caught))
+        let sent = try #require(await api.formBodies().first)
+
+        // PKCE's whole point: the verifier proves this exchange belongs to the request that was
+        // authorized, so a distributed binary needs no secret it cannot keep (ADR-0018).
+        #expect(sent["code_verifier"] == "the-verifier")
+        #expect(sent["code"] == "the-code")
+        #expect(sent["client_secret"] == nil)
     }
 
     @Test

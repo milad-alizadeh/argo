@@ -1,5 +1,16 @@
 import Foundation
 
+/// A GraphQL connection, which is how Linear serves every list.
+struct LinearNodes<Node: Decodable>: Decodable {
+    let nodes: [Node]
+}
+
+/// Where a paged connection got to.
+struct LinearPageInfo: Decodable {
+    let hasNextPage: Bool
+    let endCursor: String?
+}
+
 /// The shapes Linear's answers are decoded into.
 ///
 /// `team` is optional on every one of them and that is the distinction being read: a null team is
