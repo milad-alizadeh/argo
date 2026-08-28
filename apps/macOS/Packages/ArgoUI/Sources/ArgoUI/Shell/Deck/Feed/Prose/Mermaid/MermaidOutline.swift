@@ -28,4 +28,16 @@ enum MermaidOutline: Equatable, Hashable, Sendable {
     case cloud
     /// The frame a `subgraph` is drawn as, at its own softer corner.
     case enclosure
+    /// A disc filled in its own ink: a state machine's start, and the centre of its end.
+    case dot
+    /// A bar filled in its own ink: a fork or a join.
+    case bar
+
+    /// Whether the outline is FILLED in its own line ink rather than stroked in it.
+    ///
+    /// A mark this small is a solid or it is a smudge — the same reason a connector's head is
+    /// filled. Its own property and not a role, because what a dot MEANS is still a node.
+    var isSolid: Bool {
+        self == .dot || self == .bar
+    }
 }

@@ -2,22 +2,24 @@ import Foundation
 
 /// How far a rank reaches on each axis, and the gaps it keeps. A value rather than four parameters
 /// threaded through the pass that uses them.
-@MainActor
 struct MermaidRanks {
-    let sizes: [String: CGSize]
+    /// Every node's measured box, by name. A dictionary and not a scan of the graph: this is asked
+    /// once per node per rank, on every rank, and a linear lookup makes that quadratic.
+    private let sizes: [String: CGSize]
     /// An axis with no depth, used only to ask which way a size is measured — the real one is not
     /// known until every rank has been measured with this.
     let flat: MermaidAxis
     /// The extra room every gap gives an enclosure to close around its members without shutting
-    /// over the node next door. Zero for a chart with no `subgraph` in it.
+    /// over the node next door. Zero for a graph with no enclosure in it.
     let inset: CGFloat
 
-    init(chart: MermaidFlowchart) {
-        self.sizes = chart.nodes.reduce(into: [String: CGSize]()) {
-            $0[$1.name] = MermaidPlacement.box(of: $1)
-        }
-        self.flat = MermaidAxis(direction: chart.direction, depth: 0)
-        self.inset = chart.groups.isEmpty ? 0 : MermaidMeasure.groupInset * 2
+    init(graph: MermaidGraph) {
+        self.sizes = Dictionary(
+            graph.nodes.map { ($0.name, $0.size) },
+            uniquingKeysWith: { first, _ in first },
+        )
+        self.flat = MermaidAxis(direction: graph.direction, depth: 0)
+        self.inset = graph.groups.isEmpty ? 0 : MermaidMeasure.groupInset * 2
     }
 
     var rankStep: CGFloat {

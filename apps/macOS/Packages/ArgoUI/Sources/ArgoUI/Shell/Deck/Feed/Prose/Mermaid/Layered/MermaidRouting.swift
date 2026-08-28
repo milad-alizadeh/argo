@@ -6,7 +6,6 @@ import Foundation
 /// one's. Routing that also avoids passing through an UNRELATED box is deliberately not here: it is
 /// a change behind this same seam, and a diagram that reads badly for it reads badly rather than
 /// wrongly (#861).
-@MainActor
 struct MermaidRouting {
     let placement: MermaidPlacement
     /// The edges the ranking had to turn around, which run back against the ranks and so cannot be
@@ -17,7 +16,7 @@ struct MermaidRouting {
 extension MermaidRouting {
     /// The figures one edge draws, and the point its word is written at. Nothing at all for an edge
     /// naming a node that was never placed, which is a state the reader does not produce.
-    func drawn(_ edge: MermaidFlowchart.Edge, at index: Int) -> MermaidRoute? {
+    func drawn(_ edge: MermaidGraph.Edge, at index: Int) -> MermaidRoute? {
         guard let from = placement.boxes[edge.from], let to = placement.boxes[edge.to] else {
             return nil
         }
@@ -74,8 +73,8 @@ extension MermaidRouting {
 
     /// The connector and, where the link has one, its head — the line stopped short of its own tip
     /// so the head reads as a point rather than a blot.
-    private func marks(along points: [CGPoint], of edge: MermaidFlowchart.Edge) -> [MermaidFigure] {
-        let line = MermaidFigure.Line(edge.stroke)
+    private func marks(along points: [CGPoint], of edge: MermaidGraph.Edge) -> [MermaidFigure] {
+        let line = edge.line
         guard edge.hasHead, points.count > 1 else {
             return [MermaidFigure(form: .path(points), role: .edge, line: line)]
         }
@@ -118,16 +117,5 @@ extension MermaidRouting {
             left -= length
         }
         return (first, CGPoint(x: 0, y: 1))
-    }
-}
-
-extension MermaidFigure.Line {
-    /// How a link is drawn, from what it was written as.
-    init(_ stroke: MermaidFlowchart.Stroke) {
-        switch stroke {
-        case .solid: self = .solid
-        case .dotted: self = .dotted
-        case .thick: self = .thick
-        }
     }
 }

@@ -2,10 +2,11 @@ import SwiftUI
 
 /// The room a node's own words take, and what the figure drawn round them adds to it.
 ///
-/// Shared by every diagram type that puts a label in a box. The inset, the floor under a
-/// one-letter node and the point a hexagon cuts off its ends are one decision each, and a second
-/// reader spelling them itself would be one edit away from a flowchart and a mindmap measuring the
-/// same words two ways.
+/// Shared by every diagram type that puts a label in a box — a flowchart's nodes, a mindmap's, a
+/// state machine's states and notes. The inset, the floor under a one-letter node and what each
+/// figure adds to the words are one decision each, spelled HERE and nowhere else: a second reader
+/// spelling any of them itself would be one edit away from two diagram types measuring the same
+/// words two ways.
 @MainActor
 enum MermaidWords {
     /// The label at the feed's own prose metrics, plus the breathing room around it. Whole points,
@@ -34,5 +35,15 @@ enum MermaidWords {
     static func squared(_ words: CGSize) -> CGSize {
         let side = max(words.width, words.height)
         return CGSize(width: side, height: side)
+    }
+
+    /// The same box grown to what a diamond needs. A label inscribed in a rhombus clears the
+    /// sloping sides only where the box round it is half again as big, because the shape is at its
+    /// full width on ONE line and narrows from there.
+    static func inscribed(_ words: CGSize) -> CGSize {
+        CGSize(
+            width: ceil(words.width * MermaidMeasure.diamondScale),
+            height: ceil(words.height * MermaidMeasure.diamondScale),
+        )
     }
 }

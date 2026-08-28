@@ -44,20 +44,14 @@ extension MermaidFlowchart {
 
     /// Which way `graph TD` and `flowchart LR` run. A header with no direction runs top-down, which
     /// is mermaid's own default.
-    private static func direction(ofHeader line: String) -> Direction? {
+    private static func direction(ofHeader line: String) -> MermaidDirection? {
         let words = line.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
         guard let first = words.first, ["graph", "flowchart"].contains(first.lowercased()) else {
             return nil
         }
         guard words.count > 1 else { return .down }
         guard words.count == 2 else { return nil }
-        switch words[1].uppercased() {
-        case "TD", "TB": return .down
-        case "BT": return .up
-        case "LR": return .right
-        case "RL": return .left
-        default: return nil
-        }
+        return MermaidDirection.named(words[1])
     }
 
     /// The title a `subgraph` was opened with — `subgraph Reading`, or `subgraph read [Reading]`,

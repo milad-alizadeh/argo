@@ -1,12 +1,12 @@
 import Foundation
 
-/// Which way a flowchart's ranks grow, and how a rank's own line runs across them.
+/// Which way a layered diagram's ranks grow, and how a rank's own line runs across them.
 ///
 /// The direction changes the AXIS the layout works on, never the algorithm. Everything downstream
 /// speaks in `along` — how deep into the ranks — and `across` — where in its own rank — and this is
 /// the one type that turns that pair into a point on the screen.
 struct MermaidAxis: Equatable, Sendable {
-    let direction: MermaidFlowchart.Direction
+    let direction: MermaidDirection
     /// How far the ranks reach altogether, which is what a reversed direction counts back from.
     let depth: CGFloat
 
