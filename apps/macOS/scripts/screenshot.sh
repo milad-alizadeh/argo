@@ -58,16 +58,18 @@ set -- --project "$PROJECT_ROOT"
 [ -n "${ARGO_SPECIMEN:-}" ] && set -- "$@" --specimen "$ARGO_SPECIMEN"
 
 # The binary, not `open` on the bundle: `open` on a bundle id that is already running ACTIVATES
-# that instance instead of launching this build, so it could only be made honest by quitting
-# every other Argo first — including the dev build somebody is looking at. A direct launch
-# starts this one regardless, and its pid is what everything below addresses, so a copy left
-# up by another worktree can neither be captured by mistake nor be closed.
+# that instance rather than launching this build. This pid is what everything below addresses.
 #
 # Its output goes to /dev/null, which `open` did too: as a child of this shell it would otherwise
-# inherit the caller's stdout, and under ARGO_KEEP_RUNNING an app left up on purpose would hold
-# that pipe open — the render finishes and the terminal hangs anyway.
+# hold the caller's stdout, and under ARGO_KEEP_RUNNING the terminal would hang after the render.
 "$APP/Contents/MacOS/Argo" "$@" >/dev/null 2>&1 &
 app_pid=$!
+
+# Nothing quits by name any more, so an instance leaked here is invisible and stays up forever.
+# Under `set -e` every step below can exit — the resize needs Accessibility permission, the
+# capture needs Screen Recording — and a specimen set is dozens of renders to interrupt.
+trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+trap 'exit 130' INT TERM
 
 # The window is not on screen the instant the process starts, and the first frame it does put
 # up is unpainted. Poll for the id, then let one more beat pass so the capture is of a settled
@@ -83,7 +85,6 @@ done
 
 if [ -z "$window_id" ]; then
   echo "screenshot: Argo put up no window within 10s" >&2
-  kill "$app_pid" 2>/dev/null || true
   exit 1
 fi
 
@@ -105,8 +106,9 @@ fi
 sleep 0.5
 screencapture -o -x -l"$window_id" "$OUT"
 
-if [ -z "${ARGO_KEEP_RUNNING:-}" ]; then
-  kill "$app_pid" 2>/dev/null || true
+# The app is meant to outlive this script here, so the sweeper is disarmed rather than fired.
+if [ -n "${ARGO_KEEP_RUNNING:-}" ]; then
+  trap - EXIT
 fi
 
 echo "screenshot: $OUT"

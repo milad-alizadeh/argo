@@ -2,9 +2,8 @@
 // Prints the CoreGraphics window id of the frontmost on-screen window belonging to the process
 // whose pid is argv[1]. `screencapture -l <id>` needs that number and has no way to look it up.
 //
-// By pid rather than by owner name, because more than one Argo can be up: a developer's own
-// build, and the one `screenshot.sh` just launched. A name match would return whichever the
-// window list put first, and a screenshot of the wrong tree looks entirely plausible.
+// By pid, not owner name: more than one Argo can be up, and a name match would return whichever
+// the window list put first — a screenshot of the wrong tree, and it looks entirely plausible.
 //
 // Run as a script (`swift WindowID.swift 4213`) rather than built into a target: it is a
 // screenshot utility, and nothing that ships in the app should be able to enumerate windows.
