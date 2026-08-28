@@ -11,6 +11,9 @@ struct IssueJSON {
     var state = "open"
     var reason: String?
     var labels: [String] = []
+    /// The `color` GitHub serves beside a label name, per label. A name missing from here has its
+    /// key DROPPED rather than nulled, which is how a label carrying no colour looks on the wire.
+    var labelColours: [String: String] = [:]
     var assignees: [String] = []
     /// GitHub's own issue type, and `nil` for the repository that has not turned them on — where
     /// the key is ABSENT rather than null, which is what `dependencies` below is for too.
@@ -33,7 +36,7 @@ struct IssueJSON {
         { "id": \(identifier ?? Self.identifier(of: number)),
           "number": \(number), "title": "\(title)", "state": "\(state)",
           "state_reason": \(reason.map { "\"\($0)\"" } ?? "null"),
-          "labels": [\(Self.objects(labels, named: "name"))],
+          "labels": [\(labelObjects)],
           "assignees": [\(Self.objects(assignees, named: "login"))],
           \(type.map { #""type": { "name": "\#($0)" },"# } ?? "")
           \(body.map { #""body": "\#($0)","# } ?? "")
@@ -60,6 +63,16 @@ struct IssueJSON {
         "issue_dependencies_summary": { "blocked_by": \(blockers), "blocking": 0,
           "total_blocked_by": \(blockers), "total_blocking": 0 },
         """
+    }
+
+    /// A label object each, carrying `color` only where one was stated — the two shapes GitHub
+    /// actually serves.
+    private var labelObjects: String {
+        labels.map { name in
+            let colour = labelColours[name].map { #", "color": "\#($0)""# } ?? ""
+            return #"{ "name": "\#(name)"\#(colour) }"#
+        }
+        .joined(separator: ",")
     }
 
     private static func objects(_ values: [String], named key: String) -> String {

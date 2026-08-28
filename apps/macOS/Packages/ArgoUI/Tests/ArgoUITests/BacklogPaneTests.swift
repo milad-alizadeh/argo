@@ -1,3 +1,4 @@
+import ArgoEngine
 @testable import ArgoUI
 import Testing
 
@@ -57,11 +58,17 @@ struct BacklogPaneTests {
 
     // MARK: - A row's labels
 
+    /// The cut is about names and widths, so these cases state names and let the colour be the
+    /// silence it is on a provider that served none.
+    private func named(_ names: String...) -> [WorkItemLabel] {
+        names.map { WorkItemLabel(name: $0) }
+    }
+
     @Test
     func `a row draws its labels in the provider's own order`() {
-        let reading = BacklogRowLabels(["ui", "work-room"], limit: 2)
+        let reading = BacklogRowLabels(named("ui", "work-room"), limit: 2)
 
-        #expect(reading.shown == ["ui", "work-room"])
+        #expect(reading.shown.map(\.name) == ["ui", "work-room"])
         #expect(reading.overflow == 0)
         #expect(reading.marker == nil)
     }
@@ -70,9 +77,9 @@ struct BacklogPaneTests {
     /// label is third looking like one with two labels.
     @Test
     func `labels past the limit are counted rather than dropped silently`() {
-        let reading = BacklogRowLabels(["ui", "work-room", "blocked", "prd"], limit: 2)
+        let reading = BacklogRowLabels(named("ui", "work-room", "blocked", "prd"), limit: 2)
 
-        #expect(reading.shown == ["ui", "work-room"])
+        #expect(reading.shown.map(\.name) == ["ui", "work-room"])
         #expect(reading.marker == "+2")
     }
 
@@ -80,7 +87,7 @@ struct BacklogPaneTests {
     /// announcement named marks the row was not drawing.
     @Test
     func `what is spoken is what is drawn, plus the count of what is not`() {
-        let reading = BacklogRowLabels(["ui", "work-room", "blocked"], limit: 2)
+        let reading = BacklogRowLabels(named("ui", "work-room", "blocked"), limit: 2)
 
         #expect(reading.spoken == ["ui", "work-room", "1 more"])
     }
@@ -100,6 +107,6 @@ struct BacklogPaneTests {
         let room = WorkRoomProjection.room(from: WorkFixture.reading)
         let wayfinder = room.backlog.first { $0.id == 607 }
 
-        #expect(wayfinder?.labels == ["wayfinder", "work-room", "prd"])
+        #expect(wayfinder?.labels.map(\.name) == ["wayfinder", "work-room", "prd"])
     }
 }

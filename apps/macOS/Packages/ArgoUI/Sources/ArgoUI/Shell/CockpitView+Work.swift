@@ -6,6 +6,11 @@ extension CockpitView {
     /// The room, assembled once. Both slots ask for it, so neither can be handed a different
     /// projection or a stale selection — the backlog is already filtered to the open view here.
     ///
+    /// **Read exactly once per body pass, by `body`, and passed down.** It is a whole projection
+    /// over the poll's listing — the tree, the views' counts, the open ticket and the hero's
+    /// ranking — and four callers each reading this property ran all of that four times on every
+    /// pass, which is what the room switch was waiting for.
+    ///
     /// Read from the provider (#820): the poll's own listing, the roster that says which of it is
     /// claimed, and the Work Item Binding's health behind the foot. Nothing here is a fixture, and
     /// nothing missing from the read is filled in — the room degrades to the quieter page instead.
@@ -33,35 +38,37 @@ extension CockpitView {
         )
     }
 
-    /// The Work room with nothing bound hides WHOLE, which includes its half of the split view
-    /// (#818). Hidden here and not by an empty sidebar view: a `NavigationSplitView` draws its
-    /// column, its divider and its toggle around an `EmptyView` all the same.
+    /// The Work room with nothing bound hides its half of the split view WHOLE (#818). Hidden here
+    /// and not by an empty sidebar view: a `NavigationSplitView` draws its column, its divider and
+    /// its toggle around an `EmptyView` all the same.
     ///
-    /// The room is still reachable — Rooms is in the toolbar, not in the rail that just went. This
-    /// is where a machine with no Work Item Binding lands, which is every machine before onboarding
-    /// and every Project bound to nothing after it.
-    var roomHidesSidebar: Bool {
-        navigation.room == .work && workRoom.room.vacancy == .unbound
+    /// The room is still reachable — Rooms is the sidebar's strip, not the rail that just went.
+    /// This is where a machine with no Work Item Binding lands, which is every machine before
+    /// onboarding and every Project bound to nothing after it.
+    ///
+    /// Takes the room already assembled rather than reading `workRoom` again — see the note there.
+    /// `nil` is every other room, where nothing hides anything.
+    func roomHidesSidebar(_ work: WorkRoom?) -> Bool {
+        work?.room.vacancy == .unbound
     }
 
     /// The column the split view opens with — the room's answer where it has one, and the reader's
     /// own otherwise. The setter always writes the reader's, so a rail they closed in one room is
     /// still closed after a room that hid it.
-    var sidebarColumn: Binding<NavigationSplitViewVisibility> {
+    func sidebarColumn(for work: WorkRoom?) -> Binding<NavigationSplitViewVisibility> {
         let reader = $sidebarVisibility
-        guard roomHidesSidebar else { return reader }
+        guard roomHidesSidebar(work) else { return reader }
         return Binding(get: { .detailOnly }, set: { reader.wrappedValue = $0 })
     }
 
     /// The sidebar is the ROOM's, not the app's. Sessions and Code are unchanged; Work replaces the
     /// roster with its views, because a rail of ticket titles was the thing the design rejected.
-    @ViewBuilder func sidebar(navigation: CockpitNavigationModel) -> some View {
+    @ViewBuilder func sidebar(work: WorkRoom?) -> some View {
         @Bindable var navigation = navigation
 
-        switch navigation.room {
-        case .work:
-            workRoom.sidebar
-        case .sessions, .code:
+        if let work {
+            work.sidebar
+        } else {
             ShellSidebar(
                 presentation: presentation,
                 selection: $navigation.session,
@@ -81,15 +88,12 @@ extension CockpitView {
         return CockpitSpawn(presentation: presentation, actions: actions, navigation: navigation)
     }
 
-    /// What the room adds to `ShellToolbar`. The `if` reads a `switch`'s answer rather than testing
-    /// the room itself: `ToolbarContentBuilder` has no empty content, so the exhaustiveness the
-    /// next room needs has to live in `addsAToolbar` below.
-    @ToolbarContentBuilder func roomToolbar(navigation: CockpitNavigationModel)
-        -> some ToolbarContent {
-        @Bindable var navigation = navigation
-
-        if navigation.room.addsAToolbar {
-            workRoom.toolbar
+    /// What the room adds to `ShellToolbar` — the Work room's whole row of controls, and nothing in
+    /// the other two. `ToolbarContentBuilder` has no empty content, so the absence is an `if` over
+    /// the room the caller already assembled rather than a `switch` arm returning nothing.
+    @ToolbarContentBuilder func roomToolbar(work: WorkRoom?) -> some ToolbarContent {
+        if let work {
+            work.toolbar
         }
     }
 
@@ -106,15 +110,6 @@ extension CockpitView {
 }
 
 extension CockpitRoom {
-    /// Whether this room draws a toolbar row of its own beside `ShellToolbar`'s. Work does; the
-    /// other two have nothing to put there yet, and a room added later has to answer here.
-    var addsAToolbar: Bool {
-        switch self {
-        case .work: true
-        case .sessions, .code: false
-        }
-    }
-
     /// Whether the bar spends its one compose verb on New Session here (#836). Work does not: the
     /// thing that room creates is a ticket, and its own row already carries the compose mark for
     /// it. `⌘N` and the menu bar are unaffected in every room.

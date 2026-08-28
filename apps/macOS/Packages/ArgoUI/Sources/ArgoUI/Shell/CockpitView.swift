@@ -138,9 +138,13 @@ public struct CockpitView: View {
 
     public var body: some View {
         @Bindable var navigation = navigation
+        // Assembled ONCE for the whole pass and handed to all four readers — the column's
+        // visibility, the sidebar, the toolbar row and the deck. `nil` outside the Work room, which
+        // is also what keeps the projection from running at all in the other two.
+        let work = navigation.room == .work ? workRoom : nil
 
-        NavigationSplitView(columnVisibility: sidebarColumn) {
-            sidebar(navigation: navigation)
+        NavigationSplitView(columnVisibility: sidebarColumn(for: work)) {
+            sidebar(work: work)
                 .navigationSplitViewColumnWidth(
                     min: ArgoLayout.sidebarMinimumWidth,
                     ideal: sidebarIdealWidth,
@@ -161,7 +165,7 @@ public struct CockpitView: View {
                 vessel: vessel,
                 intents: intents(for: vessel),
                 readings: readings,
-                work: navigation.room == .work ? workRoom : nil,
+                work: work,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
             // this is the one view that holds the navigation.
@@ -188,7 +192,7 @@ public struct CockpitView: View {
                     scope: ScopeVessel(presentation: presentation, actions: actions),
                     spawn: spawn(in: navigation),
                 )
-                roomToolbar(navigation: navigation)
+                roomToolbar(work: work)
             }
         }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")

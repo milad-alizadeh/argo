@@ -147,7 +147,8 @@ struct NextUpTests {
     func `spec readiness is never inferred from a ticket's prose`() throws {
         let reading = WorkFixture.reading(of: [WorkItem(
             number: 1, title: "A ticket", status: "Todo", closure: .open,
-            labels: ["spec ready"], blockedBy: [], body: "Spec ready — pick this up.",
+            labels: [WorkItemLabel(name: "spec ready")], blockedBy: [],
+            body: "Spec ready — pick this up.",
         )])
 
         try #expect(pick(in: WorkRoomProjection.room(from: reading)).reasons == [.unblocked])

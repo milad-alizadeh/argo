@@ -7,6 +7,10 @@ import SwiftUI
 /// replacing them — which is what `cockpit-work-room.md` means by "it does not own a split of its
 /// own". Both halves read the same `Room` value, so the sidebar's counts and the deck's rows can
 /// never be two different answers.
+///
+/// `@MainActor` because it holds what its controls DO: the intents are closures that touch the
+/// window, and a room assembled off the main actor could hand them to a view that runs them on it.
+@MainActor
 struct WorkRoom {
     let room: WorkRoomProjection.Room
     /// Which room the strip in the sidebar's head is on — the whole window's, not this room's.
@@ -26,6 +30,9 @@ struct WorkRoom {
     /// What the unbound page's `Connect a provider…` does. Inert by default, so a preview and a
     /// specimen draw the button without opening a panel behind the render.
     var connect: @MainActor () -> Void = {}
+    /// What the row's controls DO. Inert by default, so a preview and a specimen draw the row
+    /// without anything behind it.
+    var intents = WorkToolbarIntents()
     /// The two things the room's chrome HOLDS rather than reads — the query in the window's row and
     /// the Mode in the ticket's band. Both outlive the pane, so both are held above the room; one
     /// value rather than two members, because a binding pair travels together (the `DeckSeams`
@@ -44,14 +51,15 @@ struct WorkRoom {
         WorkSidebar(room: room, cockpitRoom: $cockpitRoom, view: $view)
     }
 
-    /// What the room puts in the WINDOW's row: search, and nothing else. Everything that acts on a
-    /// column is in that column's band, for the reason `WorkToolbar` records.
+    /// What the room puts in the WINDOW's row: every control the room has, on one line — the reason
+    /// is `WorkToolbar`'s.
     var toolbar: WorkToolbar {
-        WorkToolbar(reading: chrome, query: held.query)
+        WorkToolbar(reading: chrome, intents: intents, held: held)
     }
 
-    /// Read ONCE and handed to both the band and the row above the ticket, so the count under the
-    /// title and the controls that narrow it can never be two answers about one list.
+    /// Read ONCE and handed to both the list's heading and the row of controls above it, so the
+    /// count under the title and the controls that narrow it can never be two answers about one
+    /// list.
     private var chrome: WorkChromeProjection.Reading {
         WorkChromeProjection.reading(of: room, in: view, showing: ticket)
     }
@@ -69,8 +77,9 @@ struct WorkRoom {
         }
     }
 
-    /// The backlog, the seam the reader moves, and the ticket. Each pane carries its own band at
-    /// its head (#836); the seam between them is the reader's (#844).
+    /// The backlog, the seam the reader moves, and the ticket. The list keeps its heading; the
+    /// controls are in the window's row above both (`WorkToolbar`), and the seam between them is
+    /// the reader's (#844).
     ///
     /// The stored width is the reader's INTENT and is never written back — it is seated for the
     /// draw and left alone. Seating it in place looks like tidiness and is data loss: a window
@@ -93,10 +102,7 @@ struct WorkRoom {
             // chips — see `ArgoBacklogList.labelsAppearAt`.
             .environment(\.backlogPaneWidth, seated)
             DeckSeam(width: $backlogWidth, limits: limits, growsRightward: true)
-            TicketDetail(
-                ticket: room.ticket,
-                band: TicketBand(reading: chrome, mode: held.mode),
-            ) { ticket = $0 }
+            TicketDetail(ticket: room.ticket) { ticket = $0 }
         }
     }
 }

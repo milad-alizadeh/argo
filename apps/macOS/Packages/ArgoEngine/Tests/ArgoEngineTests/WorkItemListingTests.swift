@@ -37,7 +37,7 @@ struct WorkItemListingTests {
         #expect(items.map(\.status) == ["open"])
         #expect(items.map(\.closure) == [.open])
         #expect(items.first?.title == "Port the Work room")
-        #expect(items.first?.labels == ["engine", "swift"])
+        #expect(items.first?.labels.map(\.name) == ["engine", "swift"])
         #expect(items.first?.assignees == ["octocat"])
     }
 
