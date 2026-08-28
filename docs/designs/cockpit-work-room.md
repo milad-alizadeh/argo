@@ -415,6 +415,12 @@ pair. No scope badge, no produced-by field (#272).
 `control`; the bucket follows it behind a 10pt hairline divider, in lowercase machine caption on
 `text.disabled`. The two read as a label and its filing, not as two competing claims.
 
+**Amended #893: the pair degrades to the word alone where the bucket only repeats it.** On GitHub
+the word IS the filing — the head read `open | open`, spending a divider on one bit. The bucket is
+drawn beside the word only where it says something the word cannot, which on a two-state provider
+is `claimed`, the filing no provider carries. `Bucket` keeps its labelled home in the fact strip;
+what the head drops is the restatement, not the fact.
+
 **Deliveries are chips, not a list.** Each is a bordered object on `surface.raised` carrying its
 number, its branch, its diff and its checks reading. At 480 a chip sets on one line, so two
 Deliveries are two stacked chips rather than a wrapped mess (`deep.png`).
@@ -523,7 +529,7 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | `inset` | `ArgoSpacing.section` 24 | the column off the deck's edges |
 | `factStripGap` | `ArgoSpacing.section` 24 column / `ArgoSpacing.base` 8 row | between fact pairs; the pair's own key-to-value gap is `snug` 6 |
 | `chipPaddingX` / `chipPaddingY` | `ArgoSpacing.comfortable` 12 / `ArgoSpacing.snug` 6 | inside a Delivery chip |
-| Status divider | 10 tall, `edge.subtle` | between the provider's word and Argo's bucket |
+| Status divider | 10 tall, `edge.subtle` | between the provider's word and Argo's bucket, where both are drawn (#893) |
 | Body line height | `ArgoFeedRow.lineHeight` 20 | reused |
 
 ## Component names — frozen
@@ -559,7 +565,7 @@ for; anything not listed is stock used directly.
 | `BacklogSearchField` | atom | `.searchable` field | searches the list; sits at the trailing edge |
 | `TicketDetail` | organism | a `ScrollView` | one column; no inner split |
 | `TicketHead` | molecule | a `VStack` of `Text` | id, title, status pair |
-| `StatusPair` | atom | `HStack` + `Divider` | the provider's word and Argo's bucket |
+| `StatusPair` | atom | `HStack` + `Divider` | the provider's word, and Argo's bucket only where it is not the same word (#893) |
 | `TicketFactStrip` | molecule | a wrapping `HStack` above a `Divider` | priority · type · bucket · labels |
 | `DeliveryChip` | molecule | `Button(.plain)` opening a URL | deep-links; two on one ticket are two of these |
 | `LabelChip` | atom | `Text` in a rounded rect | a provider label, verbatim |

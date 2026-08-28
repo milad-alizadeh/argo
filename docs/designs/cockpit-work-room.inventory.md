@@ -35,7 +35,7 @@ foot.
 | `DeliveryDot` | atom | `ArgoUI/Shell/Tickets/Backlog/` | `reading: DeliveryReading` (5 states) | — | `DeliveryDot` |
 | `TicketDetail` | organism | `ArgoUI/Shell/Tickets/Detail/` | `ticket: Ticket?`, `open: (Int) -> Void` (#815) | `TicketHead`, `TicketFactStrip`, `TicketBody` | `TicketDetail` |
 | `TicketHead` | molecule | `ArgoUI/Shell/Tickets/Detail/` | `ticket: Ticket` | `StatusPair` | `TicketHead` |
-| `StatusPair` | atom | `ArgoUI/Shell/Tickets/Detail/` | `word: String`, `bucket: TicketState` (4 states) | — | `StatusPair` |
+| `StatusPair` | atom | `ArgoUI/Shell/Tickets/Detail/` | `word: String`, `bucket: TicketState` (4 states, the bucket drawn only where it is not the word — #893) | `ArgoRule` | `StatusPair` |
 | `TicketsRoomVacancy` | molecule | `ArgoUI/Shell/Tickets/` | `vacancy: TicketsRoomProjection.Vacancy` (`unbound` \| `nothingOpen(provider:)`), `project: String?`, `connect: () -> Void` | stock `ContentUnavailableView` | `.vacant` |
 
 ### #836 — the room's chrome, mounted per column — **reversed by #855**

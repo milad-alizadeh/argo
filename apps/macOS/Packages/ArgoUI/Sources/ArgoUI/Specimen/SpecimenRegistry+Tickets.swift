@@ -52,6 +52,9 @@ extension SpecimenRegistry {
             TicketsPanesSpecimen(reading: TicketsFixture.reading, seed: .init(query: "kubernetes"))
         },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
+        // The head's status pair, over a provider whose word IS the filing and one with words of
+        // its own (#893). Every fixture spells "In progress", so no room render reaches the first.
+        SpecimenEntry("statusPair") { SpecimenScene.centred { StatusPairSpecimen() } },
         // A parent, deep: two Deliveries stacked, nine children rolled up over the five that are
         // open, and six blockers of which four are already closed and still named.
         SpecimenEntry("deepTicket") {
