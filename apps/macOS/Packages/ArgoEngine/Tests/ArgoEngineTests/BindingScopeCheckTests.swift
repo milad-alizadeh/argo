@@ -72,7 +72,7 @@ struct BindingScopeCheckTests {
 
     @Test
     func `a refused token is an Account-level answer, not a scope one`() async {
-        let api = StubProviderAPI(failure: .unauthorized(code: 401))
+        let api = StubProviderAPI(failure: .unauthorized(code: 401, reason: nil))
 
         let visibility = await ProviderScopeCheck(transport: api).visibility(of: Self.probe())
 

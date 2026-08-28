@@ -8,7 +8,9 @@ public extension WorkItem {
     /// tellable apart: `.some(nil)` clears, and passing nothing keeps.
     init(
         copying item: WorkItem,
+        title: String? = nil,
         status: String? = nil,
+        labels: [String]? = nil,
         closure: WorkItemClosure? = nil,
         priority: String?? = nil,
         type: String?? = nil,
@@ -17,11 +19,11 @@ public extension WorkItem {
     ) {
         self.init(
             number: item.number,
-            title: item.title,
+            title: title ?? item.title,
             status: status ?? item.status,
             closure: closure ?? item.closure,
             assignees: item.assignees,
-            labels: item.labels,
+            labels: labels ?? item.labels,
             priority: priority ?? item.priority,
             type: type ?? item.type,
             children: item.children,

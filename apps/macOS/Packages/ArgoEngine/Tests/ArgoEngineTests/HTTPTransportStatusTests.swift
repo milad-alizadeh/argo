@@ -23,7 +23,7 @@ struct HTTPTransportStatusTests {
     func `a token the provider refused is unauthorized`() async {
         let refused = await Self.send(status: 403, headers: ["x-ratelimit-remaining": "4988"])
 
-        #expect(refused as? HTTPTransportError == .unauthorized(code: 403))
+        #expect(refused as? HTTPTransportError == .unauthorized(code: 403, reason: nil))
     }
 
     @Test
@@ -49,7 +49,10 @@ struct HTTPTransportStatusTests {
 
     @Test
     func `an expired grant is unauthorized`() async {
-        #expect(await Self.send(status: 401) as? HTTPTransportError == .unauthorized(code: 401))
+        #expect(await Self.send(status: 401) as? HTTPTransportError == .unauthorized(
+            code: 401,
+            reason: nil,
+        ))
     }
 
     @Test

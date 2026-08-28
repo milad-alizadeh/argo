@@ -30,9 +30,16 @@ extension GitHubIssue {
         return words.count == 1 ? words.first : nil
     }
 
+    /// The label a priority word is written back as. The first separator, because a repository
+    /// that already spells it the other way keeps its own spelling: the write clears the label it
+    /// read before it adds this one.
+    static func priorityLabel(for word: String) -> String {
+        "\(scope):\(word)"
+    }
+
     /// The word after the scope, verbatim and in the tracker's own case — Argo neither ranks these
     /// nor recases them. A label that is the bare scope carries no word and is not one.
-    private static func priorityWord(in label: String) -> String? {
+    static func priorityWord(in label: String) -> String? {
         let name = label.trimmingCharacters(in: .whitespaces)
         guard name.lowercased().hasPrefix(scope) else { return nil }
         var rest = name.dropFirst(scope.count)

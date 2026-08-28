@@ -76,7 +76,7 @@ struct WorkItemTitleReadTests {
 
     @Test
     func `a refused token establishes nothing`() async {
-        let (read, _) = await Self.read(failure: .unauthorized(code: 401))
+        let (read, _) = await Self.read(failure: .unauthorized(code: 401, reason: nil))
 
         #expect(read == nil)
     }

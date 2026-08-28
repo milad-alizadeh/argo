@@ -23,7 +23,7 @@ struct WorkItemListingFailureTests {
     func `a refused token is a refused grant`() async {
         // Account-level: every Binding naming that identity is down together, and one act of
         // authorizing again clears all of them.
-        #expect(await Self.failure(raising: HTTPTransportError.unauthorized(code: 401))
+        #expect(await Self.failure(raising: HTTPTransportError.unauthorized(code: 401, reason: nil))
             == .grantRefused)
     }
 

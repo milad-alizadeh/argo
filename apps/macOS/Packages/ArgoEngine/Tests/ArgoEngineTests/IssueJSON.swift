@@ -4,6 +4,9 @@ import Foundation
 /// the decoder rather than a convenient subset of it.
 struct IssueJSON {
     var number: Int
+    /// GitHub's database id, which is deliberately NOT the number: a write that sent one where the
+    /// other belongs would pass every assertion if the two were the same.
+    var identifier: Int?
     var title = "A ticket"
     var state = "open"
     var reason: String?
@@ -24,7 +27,8 @@ struct IssueJSON {
 
     var json: String {
         """
-        { "number": \(number), "title": "\(title)", "state": "\(state)",
+        { "id": \(identifier ?? Self.identifier(of: number)),
+          "number": \(number), "title": "\(title)", "state": "\(state)",
           "state_reason": \(reason.map { "\"\($0)\"" } ?? "null"),
           "labels": [\(Self.objects(labels, named: "name"))],
           "assignees": [\(Self.objects(assignees, named: "login"))],
@@ -34,6 +38,12 @@ struct IssueJSON {
           \(Self.dependencySummary(blockers, served: dependencies))
           "sub_issues_summary": { "total": \(children), "completed": 0, "percent_completed": 0 } }
         """
+    }
+
+    /// The id GitHub would have given this number, derived so a suite never has to state one and a
+    /// write test can still say which id it expected to travel.
+    static func identifier(of number: Int) -> Int {
+        1_000_000 + number
     }
 
     static func list(_ issues: [IssueJSON]) -> String {

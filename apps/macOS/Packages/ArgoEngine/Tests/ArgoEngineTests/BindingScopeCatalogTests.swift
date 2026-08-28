@@ -74,7 +74,7 @@ struct BindingScopeCatalogTests {
     /// repository that is there.
     @Test
     func `a refused token is unauthorized rather than an empty list`() async {
-        let api = StubProviderAPI(failure: .unauthorized(code: 401))
+        let api = StubProviderAPI(failure: .unauthorized(code: 401, reason: nil))
 
         let catalogue = await ProviderScopeCatalog(transport: api).scopes(for: Self.query())
 

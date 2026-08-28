@@ -6,9 +6,11 @@ import Foundation
 /// read a Work room and a poll are built on.
 public struct GitHubWorkItems: WorkItemPort {
     let reads: GitHubReads
+    let writes: GitHubWrites
 
     public init(transport: HTTPTransport = URLSessionTransport()) {
         self.reads = GitHubReads(transport: transport)
+        self.writes = GitHubWrites(transport: transport)
     }
 
     public func list(in scope: String, grant: AccountGrant) async throws -> [WorkItem] {
@@ -27,7 +29,7 @@ public struct GitHubWorkItems: WorkItemPort {
 
     /// The edges, asked for only where the issue's own summary says there is one. The summaries
     /// carry counts and never numbers, so they answer "is there an edge" and never "which".
-    private func workItem(
+    func workItem(
         _ issue: GitHubIssue, in scope: String, grant: AccountGrant,
     ) async throws
         -> WorkItem {

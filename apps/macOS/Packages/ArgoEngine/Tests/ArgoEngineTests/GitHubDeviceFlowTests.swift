@@ -135,7 +135,7 @@ struct GitHubDeviceFlowTests {
         let github = StubGitHub(responses: [.revoked])
         let flow = GitHubDeviceFlow(transport: github, sleep: github.sleep)
 
-        await #expect(throws: HTTPTransportError.unauthorized(code: 401)) {
+        await #expect(throws: HTTPTransportError.unauthorized(code: 401, reason: nil)) {
             try await flow.identity(with: AccountGrant(accessToken: "ghu_revoked", scopes: []))
         }
     }

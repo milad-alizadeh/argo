@@ -9,16 +9,35 @@ public enum HTTPBody: Sendable {
     case json(Data)
 }
 
-/// One provider request, described rather than performed.
+/// Which verb a request is sent with.
 ///
-/// A body means POST and its absence GET — the only two verbs anything behind this seam uses.
+/// Reads and OAuth exchanges only ever needed the first two; the other two are what a Work Item
+/// write resolves to (#257) — GitHub edits an issue with `PATCH` and drops a label, a dependency or
+/// a sub-issue with `DELETE`. No `PUT`, because nothing asks for one.
+public enum HTTPMethod: String, Sendable {
+    case get = "GET"
+    case post = "POST"
+    case patch = "PATCH"
+    case delete = "DELETE"
+}
+
+/// One provider request, described rather than performed.
 public struct HTTPRequest: Sendable {
     public let url: String
+    public let method: HTTPMethod
     public let body: HTTPBody?
     public let bearerToken: String?
 
-    public init(url: String, body: HTTPBody? = nil, bearerToken: String? = nil) {
+    /// An unnamed verb is read off the body — POST where there is one, GET where there is not,
+    /// which is what every read and every OAuth exchange already assumed.
+    public init(
+        url: String,
+        method: HTTPMethod? = nil,
+        body: HTTPBody? = nil,
+        bearerToken: String? = nil,
+    ) {
         self.url = url
+        self.method = method ?? (body == nil ? .get : .post)
         self.body = body
         self.bearerToken = bearerToken
     }
@@ -41,7 +60,10 @@ public enum HTTPTransportError: Error, Equatable {
     /// The token was refused: revoked, expired, or never good for this read. Its own case because
     /// it is the Account-level failure (CONTEXT.md), whose blast radius is every Binding naming
     /// that Account — and because the recovery is authorizing again, not retrying.
-    case unauthorized(code: Int)
+    /// Carries the provider's own sentence where it wrote one: GitHub answers a write it will not
+    /// perform with the same 403 it refuses a token with, and only the body tells "this token lacks
+    /// the scope" from "this token is finished".
+    case unauthorized(code: Int, reason: String?)
     /// The provider answered with a limit rather than data. Its own case because it shares a status
     /// code with a refused token — GitHub throttles with a 403 — and only the response HEADERS tell
     /// the two apart, which nothing behind this seam sees. Collapsed into `unauthorized` it sends a

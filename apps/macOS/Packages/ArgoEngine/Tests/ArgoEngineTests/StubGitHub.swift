@@ -32,7 +32,10 @@ actor StubGitHub: HTTPTransport {
         requests.append(request)
         guard !queue.isEmpty else { return Data(Response.nonsense.body.utf8) }
         let response = queue.removeFirst()
-        guard response != .revoked else { throw HTTPTransportError.unauthorized(code: 401) }
+        guard response != .revoked else { throw HTTPTransportError.unauthorized(
+            code: 401,
+            reason: nil,
+        ) }
         return Data(response.body.utf8)
     }
 
