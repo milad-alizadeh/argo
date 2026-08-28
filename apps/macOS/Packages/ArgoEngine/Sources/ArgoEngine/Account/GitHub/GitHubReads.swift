@@ -1,9 +1,12 @@
 import Foundation
 
-/// Asking GitHub for one path, and turning every way an ask can fail into the one vocabulary the
-/// health ledger records.
+/// Reading one path from GitHub, and walking a listing to its end.
 struct GitHubReads: Sendable {
-    let transport: HTTPTransport
+    let call: GitHubCall
+
+    init(transport: HTTPTransport) {
+        self.call = GitHubCall(transport: transport)
+    }
 
     /// A hundred is GitHub's own ceiling for `per_page`; a short page is the last page.
     private static let pageSize = 100
@@ -12,9 +15,8 @@ struct GitHubReads: Sendable {
     private static let pageLimit = 20
 
     func get<Reply: Decodable>(_ path: String, grant: AccountGrant) async throws -> Reply {
-        let data = try await send(path, grant: grant)
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let data = try await call.send(path, grant: grant)
+        let decoder = GitHubCall.decoder
         // Checked before the reply, not after it fails to parse: a 4xx GitHub hands back as a BODY
         // passes through the transport like any other answer, and read as an unparseable reply it
         // would surface as a provider that did not respond.
@@ -46,32 +48,4 @@ struct GitHubReads: Sendable {
         }
         return items
     }
-
-    private func send(_ path: String, grant: AccountGrant) async throws -> Data {
-        do {
-            return try await transport.send(HTTPRequest(
-                url: GitHubOAuthApp.apiHost + path, bearerToken: grant.accessToken,
-            ))
-        } catch let error as HTTPTransportError {
-            throw Self.fetchError(error)
-        } catch let error as URLError {
-            throw Self.offline.contains(error.code)
-                ? ProviderFetchError.offline
-                : ProviderFetchError.unreachable
-        }
-    }
-
-    private static func fetchError(_ error: HTTPTransportError) -> ProviderFetchError {
-        switch error {
-        case .unauthorized: .grantRefused
-        case .rateLimited: .rateLimited
-        case .malformedURL, .status: .unreachable
-        }
-    }
-
-    /// The `URLError` codes that mean this Mac has no network — nothing was asked, so nothing was
-    /// refused. Every other code reached the wire and failed there, which is `unreachable`.
-    private static let offline: Set<URLError.Code> = [
-        .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed,
-    ]
 }

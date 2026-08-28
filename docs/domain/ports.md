@@ -19,6 +19,25 @@ Project on an already-authorized provider **binds without a second OAuth round-t
   `closureKind: native | configured | none`), and **per-fact `unknown`** for a value it reads
   but cannot establish. Capabilities decide whether an affordance **exists**; `unknown` decides
   what a present affordance **shows**.
+
+  The port is **read-write**. The write half speaks **canonical intents**, never provider-shaped
+  setters (#167, #257): `create` · `updateFields` · `transitionTo` · `addBlockedBy` /
+  `removeBlockedBy` · `setParent` / `removeParent` · labels · `setPriority` · `close(reason)` /
+  `reopen`. `transitionTo` names a **canonical state** — `todo · in-progress · in-review · done
+  · closed` — and the adapter resolves it to the provider's own mechanism; a state the provider
+  cannot express is **declared unavailable and refused**, never written as the nearest one it
+  holds. Status stays **purely provider-sourced**: a running Session does not make a ticket
+  in-progress and an open PR does not make it in-review.
+
+  Writes are **pessimistic at the seam** — the provider's own answer becomes the new truth
+  without waiting for the next poll — and **never retried**, because auto-retrying a transition
+  risks double-applying against a workflow whose legality is per-provider. A refusal carries the
+  provider's **verbatim reason**; only a failure that never reached the provider is a connection
+  fault. **Every fact the adapter reads it must also be able to write**, by whatever mechanism it
+  read it — a control offered against a fact it cannot change lies about which of the two is
+  authoritative.
+
+  Out of scope: comments, assignee, hard-delete, and any mapping-editor UI.
 - **Code host** — sources Delivery truth (PR/CI/review/merge). GitHub for v1. One GitHub
   Account can feed **both** ports **and fails as one** — but only within that Account; a second
   GitHub Account is a separate grant with its own failure. Linear is Work-Item-only.

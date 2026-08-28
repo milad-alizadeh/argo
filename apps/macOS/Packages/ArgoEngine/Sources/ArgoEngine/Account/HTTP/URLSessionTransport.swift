@@ -23,10 +23,13 @@ public struct URLSessionTransport: HTTPTransport {
         if Self.isThrottled(http) {
             throw HTTPTransportError.rateLimited
         }
-        // A refused token is its own answer and never a body worth parsing — read as data it would
-        // surface as an undocumented reply rather than as the revoked grant it is.
+        // Raised rather than handed on: read as data a refusal would surface as an undocumented
+        // reply rather than as the refusal it is. Its sentence travels with it, because a 403 is
+        // also how GitHub declines a write the token may not make.
         if http.statusCode == 401 || http.statusCode == 403 {
-            throw HTTPTransportError.unauthorized(code: http.statusCode)
+            throw HTTPTransportError.unauthorized(
+                code: http.statusCode, reason: Self.reason(in: data),
+            )
         }
         // Every other 4xx carries the provider's own error body, which says more than the code
         // does — the device flow's "authorization_pending" arrives as one and is not a failure at
@@ -35,6 +38,12 @@ public struct URLSessionTransport: HTTPTransport {
             throw HTTPTransportError.status(code: http.statusCode)
         }
         return data
+    }
+
+    /// The provider's own sentence about the refusal, and `nil` where it wrote none.
+    private static func reason(in data: Data) -> String? {
+        struct Refusal: Decodable { let message: String }
+        return (try? JSONDecoder().decode(Refusal.self, from: data))?.message
     }
 
     /// A 429 is always a limit. A 403 is one only where the headers say so, and a 403 with a budget
@@ -53,13 +62,13 @@ public struct URLSessionTransport: HTTPTransport {
             throw HTTPTransportError.malformedURL(request.url)
         }
         var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = request.method.rawValue
         urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
         urlRequest.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         if let token = request.bearerToken {
             urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         guard let body = request.body else { return urlRequest }
-        urlRequest.httpMethod = "POST"
         switch body {
         case let .form(fields):
             urlRequest.setValue(

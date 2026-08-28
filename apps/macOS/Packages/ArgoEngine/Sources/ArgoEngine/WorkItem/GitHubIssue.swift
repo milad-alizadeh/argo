@@ -6,6 +6,10 @@ import Foundation
 /// and never which. `totalBlockedBy` rather than `blockedBy`: the latter counts OPEN blockers
 /// only, and a cancelled blocker is exactly the edge Argo must still see.
 struct GitHubIssue: Decodable {
+    /// GitHub's database id, which is NOT the issue number a human reads. Carried because every
+    /// dependency and sub-issue endpoint names the ticket at the far end of an edge by this and
+    /// never by the number (#257).
+    let id: Int
     let number: Int
     let title: String
     let state: String
