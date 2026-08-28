@@ -62,7 +62,7 @@ extension MermaidQuadrant {
     /// slide every later caption one place along.
     var labels: [MermaidLabel] {
         let quiet = MermaidMeasure.edgeFace
-        var labels = [MermaidLabel(text: title, face: .header)]
+        var labels = [MermaidLabel(text: title, face: MermaidMeasure.titleFace, role: .note)]
         labels += [xAxis.start, xAxis.end, yAxis.start, yAxis.end]
             .map { MermaidLabel(text: $0, face: quiet, role: .axis) }
         labels += corners.map { MermaidLabel(text: $0, face: quiet, role: .note) }

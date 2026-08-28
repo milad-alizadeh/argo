@@ -88,8 +88,9 @@ struct MinimapMermaidTests {
         #expect(laid?.rects.isEmpty == false)
         #expect(laid?.rects.allSatisfy { $0.ink == .diagram } == true)
         #expect(laid?.rects.allSatisfy { $0.y + $0.height <= (laid?.height ?? 0) } == true)
-    /// The same claim again with a third type: a quadrant chart is mapped and measured by this
-    /// lane, which learned nothing about it (#868).
+    }
+
+    /// And by a chart whose marks are a plotted field rather than a graph at all (#868).
     @Test
     func `a quadrant chart maps through the same lane`() {
         let diagram = MermaidDiagram.read("quadrantChart\nx-axis Low --> High\nA: [0.2, 0.8]")

@@ -87,7 +87,7 @@ struct MermaidQuadrantWordsTests {
             $0.label.text == "Reach and engagement"
         }
 
-        #expect(title?.rect.height ?? 0 >= ceil(ProseFace.header.lineBox))
+        #expect(title?.rect.height ?? 0 >= ceil(MermaidMeasure.titleFace.lineBox))
     }
 
     /// Every word the chart sets is given a fixed share of the field, so the field is as wide as
@@ -98,8 +98,8 @@ struct MermaidQuadrantWordsTests {
         let plan = Self.plan("title \(title)\nA: [0.5, 0.5]")
         let caption = plan.captions.first { $0.label.text == title }?.rect ?? .zero
 
-        #expect(caption.width >= ceil(ProseMetrics.width(of: title, in: .header)))
-        #expect(caption.height >= ceil(ProseFace.header.lineBox))
+        #expect(caption.width >= ceil(ProseMetrics.width(of: title, in: MermaidMeasure.titleFace)))
+        #expect(caption.height >= ceil(MermaidMeasure.titleFace.lineBox))
         #expect(plan.size.width >= caption.width)
     }
 

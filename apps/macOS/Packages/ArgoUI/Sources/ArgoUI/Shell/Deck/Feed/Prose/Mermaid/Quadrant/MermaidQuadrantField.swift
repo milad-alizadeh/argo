@@ -61,7 +61,7 @@ struct MermaidQuadrantField {
 
     /// The room the title takes above the field, and nothing at all where there is none.
     private static func band(of title: String) -> CGFloat {
-        title.isEmpty ? 0 : ceil(ProseFace.header.lineBox) + MermaidMeasure.wordGap
+        title.isEmpty ? 0 : ceil(MermaidMeasure.titleFace.lineBox) + MermaidMeasure.wordGap
     }
 
     /// How wide the field is drawn. Every word measured against it asks for room, because each is
@@ -72,11 +72,15 @@ struct MermaidQuadrantField {
             MermaidMeasure.fieldSide,
             (width(of: chart.corners) + MermaidMeasure.groupInset * 2) * 2,
             width(of: [chart.xAxis.start, chart.xAxis.end]) * 2,
-            ceil(ProseMetrics.width(of: chart.title, in: .header)),
+            ceil(ProseMetrics.width(of: chart.title, in: MermaidMeasure.titleFace)),
         ].max() ?? MermaidMeasure.fieldSide
     }
 
     /// How wide one of the chart's quiet words runs, and how wide the widest of several does.
+    ///
+    /// Bare metrics rather than `MermaidWords`, which measures a label IN A BOX: nothing a quadrant
+    /// chart sets stands in one, so the node inset and the floor under a one-letter node would both
+    /// be wrong here.
     static func width(of word: String) -> CGFloat {
         ceil(ProseMetrics.width(of: word, in: MermaidMeasure.edgeFace))
     }
