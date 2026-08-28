@@ -144,6 +144,28 @@ struct MermaidSequenceFramingTests {
         #expect(frames.first.map { outer in frames.dropFirst().allSatisfy(outer.contains) } == true)
     }
 
+    /// A frame's inset is measured against the deepest the WHOLE diagram nests, so two blocks at
+    /// the same depth are drawn the same width — reordering them in the source cannot change one.
+    @Test
+    func `two blocks at the same depth are inset the same, whatever order they were written in`() {
+        let shallowFirst = Self.frames(of: Self.plan("""
+        loop once
+        A->>B: one
+        end
+        alt found
+        loop twice
+        A->>B: two
+        end
+        end
+        """))
+        let outers = shallowFirst.filter { frame in
+            !shallowFirst.contains { $0 != frame && $0.contains(frame) }
+        }
+
+        #expect(outers.count == 2)
+        #expect(Set(outers.map(\.minX)).count == 1)
+    }
+
     /// An `else` divides its frame with a rule, and writes its own word under it.
     @Test
     func `a divider rules across the frame it divides`() {

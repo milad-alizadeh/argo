@@ -128,7 +128,9 @@ extension MermaidColumns {
         let columns = note.over.compactMap { diagram.column(of: $0) }
         guard let first = columns.min(), let last = columns.max() else { return [] }
         let width = box(of: note)
-        let clear = width + MermaidMeasure.nodeGap
+        // Room on BOTH sides: the note stands one gap off its own lifeline, and the same again
+        // clear of the one on its far side rather than up against it.
+        let clear = width + MermaidMeasure.nodeGap * 2
         switch note.placement {
         case .left: return [(first - 1, clear)]
         case .right: return [(first, clear)]

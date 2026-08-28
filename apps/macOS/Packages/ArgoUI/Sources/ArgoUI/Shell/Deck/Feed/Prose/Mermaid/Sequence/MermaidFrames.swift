@@ -16,12 +16,30 @@ enum MermaidFrames {
         }
         walk.closeRest()
         let frames = walk.frames.sorted { $0.opened < $1.opened }
-        return (
-            frames.flatMap(\.figures),
-            // In the order the events opened and divided them, which is the order `frameTitles`
-            // lists them and the pairing the view rests on.
-            frames.flatMap(\.captions).sorted { $0.at < $1.at }.map(\.caption),
+        return (frames.flatMap(\.figures), captions(of: stage.diagram, on: frames))
+    }
+
+    /// One caption per event that writes a frame word, in event order — which is exactly what
+    /// `frameTitles` lists, asked of the SAME source rather than of the frames that happened to be
+    /// placed. A stray divider no frame claimed still takes its caption at no rect: dropping one
+    /// would slide every frame label after it onto the wrong rect.
+    private static func captions(
+        of diagram: MermaidSequence,
+        on frames: [MermaidFrame],
+    )
+        -> [MermaidCaption] {
+        let placed = Dictionary(
+            frames.flatMap(\.captions).map { ($0.at, $0.caption) },
+            uniquingKeysWith: { first, _ in first },
         )
+        return diagram.events.indices.compactMap { at in
+            guard let title = diagram.frameTitle(at: at) else { return nil }
+            return placed[at] ?? MermaidCaption(
+                label: MermaidLabel(text: title, face: MermaidMeasure.groupFace, role: .note),
+                rect: .zero,
+                alignment: .leading,
+            )
+        }
     }
 }
 

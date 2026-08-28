@@ -77,7 +77,7 @@ private extension MermaidActivations {
         /// touches: the sender's before it closes, the receiver's after it opens.
         mutating func record(_ message: MermaidSequence.Message, at index: Int) {
             let y = stage.timeline.line(at: index, under: stage.words(of: message.text).height)
-            let rightwards = travelsRight(message)
+            let sides = sides(of: message)
             let sender = depth(of: message.from)
             if message.deactivates {
                 turnOff(message.from, at: y)
@@ -86,21 +86,22 @@ private extension MermaidActivations {
                 turnOn(message.to, at: y)
             }
             offsets[index] = (
-                from: MermaidActivations.offset(depth: sender, rightwards: rightwards),
+                from: MermaidActivations.offset(depth: sender, rightwards: sides.from),
                 to: MermaidActivations.offset(
                     depth: depth(of: message.to),
-                    rightwards: !rightwards,
+                    rightwards: sides.to,
                 ),
             )
         }
 
-        /// Which way the arrow leaves its sender. A self-message loops out to the right, so both of
-        /// its ends are measured against the right-hand edge.
-        func travelsRight(_ message: MermaidSequence.Message) -> Bool {
+        /// Which side of each lifeline the arrow's two ends stand on. Not one answer reversed: a
+        /// self-message loops out to the RIGHT and comes back to the right, so both of its ends are
+        /// the right-hand edge rather than one of each.
+        func sides(of message: MermaidSequence.Message) -> (from: Bool, to: Bool) {
             guard let from = stage.diagram.column(of: message.from),
                   let to = stage.diagram.column(of: message.to), from != to
-            else { return true }
-            return to > from
+            else { return (from: true, to: true) }
+            return (from: to > from, to: to < from)
         }
 
         func depth(of name: String) -> Int {
@@ -111,10 +112,13 @@ private extension MermaidActivations {
             open[name, default: []].append(y)
         }
 
+        /// The run is popped BEFORE the lifeline is looked up, so a name with no column loses its
+        /// run rather than keeping it — `closeRest` loops until the stack empties, and a `turnOff`
+        /// that could fail without shrinking it would never return.
         mutating func turnOff(_ name: String, at y: CGFloat) {
-            guard var runs = open[name], let start = runs.popLast(), let x = stage.x(of: name)
-            else { return }
+            guard var runs = open[name], let start = runs.popLast() else { return }
             open[name] = runs
+            guard let x = stage.x(of: name) else { return }
             bars.append(MermaidActivations.bar(
                 x: x, over: start ... max(start, y), depth: runs.count + 1,
             ))
