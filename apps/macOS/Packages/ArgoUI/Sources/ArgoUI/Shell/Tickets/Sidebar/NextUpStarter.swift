@@ -1,7 +1,7 @@
 import ArgoEngine
 import SwiftUI
 
-/// The Next-up hero's second verb (#899): start a Session on the pick, and SAY what it will send.
+/// The Next-up hero's second verb (#899): start a Session on the pick, and say what it will send.
 ///
 /// **A sibling of the card's own open Button, never a control inside its label.** A `Button` nested
 /// in another `Button`'s label is drawn and not hittable — the outer one takes every click. So
@@ -9,8 +9,8 @@ import SwiftUI
 /// overlay over that space. Both are inset by `ArgoTicketsSidebar.heroPadding`, which is what puts
 /// the two in one place with nothing measured.
 ///
-/// `.quiet` and not the card's own style: it sits ON the raised card, so it needs a ground of its
-/// own to read as a second target rather than as a line of the card's text.
+/// It carries its own vessel (`NextUpStarterStyle`), because it sits ON the raised card and has to
+/// read as a second target rather than as a line of the card's text.
 struct NextUpStarter: View {
     /// What the press will send, and `nil` where the pick asks for no command.
     let command: WorkCommand?
@@ -18,26 +18,11 @@ struct NextUpStarter: View {
 
     var body: some View {
         Button(action: act) {
-            HStack(spacing: ArgoSpacing.snug) {
-                ArgoGlyph(ArgoSymbol.startSession, ArgoTicketsChrome.iconSize)
-                Text(words)
-            }
+            StartVerb(command: command)
         }
-        .buttonStyle(.quiet)
-        .help(spoken)
-        .accessibilityLabel(spoken)
-    }
-
-    /// The command, before the press — a press that silently dispatched one of five different jobs
-    /// would be one nobody could aim. A pick that asks for none says `Start` alone: the composer it
-    /// opens will be empty, and a command name it never resolved would be a promise it cannot keep.
-    private var words: String {
-        command.map { "/\($0.rawValue)" } ?? "Start"
-    }
-
-    private var spoken: String {
-        guard let command else { return "Start a Session on this ticket, with an empty composer" }
-        return "Start a Session on this ticket, on /\(command.rawValue)"
+        .buttonStyle(NextUpStarterStyle())
+        .help(StartVerb.spoken(command))
+        .accessibilityLabel(StartVerb.spoken(command))
     }
 }
 

@@ -61,7 +61,9 @@ struct NextUpCard: View {
     }
 
     private func starter(_ pick: NextUp.Pick) -> some View {
-        NextUpStarter(command: intents.command(pick.number)) { intents.start(pick.number) }
+        NextUpStarter(command: intents.starting.command(pick.number)) {
+            intents.starting.run(pick.number)
+        }
     }
 
     /// The act, the ticket, and the chips — everything the card draws. Named for the ACT because

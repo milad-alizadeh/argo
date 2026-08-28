@@ -474,11 +474,19 @@ The gallery is `next-up-pressable.png`, shot from the `nextUpPointer` specimen.
 
 **Amended #899: the card carries a second control at its foot — `Start`.** The hero is the room's
 answer to "what should I pick up", and opening the ticket was only half an answer to it; the other
-half is beginning the work. It is a `.quiet` control on the card's raised ground, trailing-aligned
-below the chips, and it **says which command it will send** — `/implement`, `/design-to-code`,
-`/grill-me`, `/prototype`, `/wayfinder` — because a press that silently dispatched one of five
-different jobs is a press nobody can aim. A ticket that matches no rule reads `Start` alone and
-opens an empty composer, which is the honest answer rather than a wrong one.
+half is beginning the work. It is trailing-aligned below the chips and spells the verb exactly
+as the toolbar's Start does — the word, then the command after it in `text.tertiary` on
+`machineCaption`, because it **says which command it will send** — `/implement`,
+`/design-to-code`, `/grill-me`, `/prototype`, `/wayfinder`. A press that silently dispatched one of
+five different jobs is a press nobody can aim. A ticket that matches no rule reads `Start` alone
+and opens an empty composer, which is the honest answer rather than a wrong one.
+
+**Its vessel is its own, and it answers the pointer on its own account.** It cannot borrow the
+`.quiet` control's flat `surface.overlay`: that fill is a fixed ink and the card under it is not, so
+measured on the render it went invisible against `surface.hover` and came out DARKER than
+`surface.selected` — in the two states it most has to read as a target of its own. It carries an
+`edge.subtle` rim, which separates it from the card in all three of the card's grounds, and takes
+`surface.hover` and `surface.selected` under its own pointer with `edge.strong` under the press.
 
 **The two controls are siblings, not one nested in the other.** A `Button` inside another `Button`'s
 label is drawn and unhittable — the outer one takes every click — so the starter is drawn twice: a
@@ -486,8 +494,10 @@ hidden copy inside the card's label holds its space, and the live one is an over
 Both are inset by the card's own `heroPadding`, which is what keeps them in one place with nothing
 measured. The degraded tiers carry no starter, for the reason they carry no chevron.
 
-The gallery is `next-up-start.png`, shot from the same `nextUpPointer` specimen — three grounds with
-the starter, then the card whose ticket asks for no command.
+The gallery is `next-up-start.png`, shot from the same `nextUpPointer` specimen: the card's three
+grounds, then two frames holding the card still while the STARTER's own pointer moves — which is
+the only evidence a still render can give that the two are separate targets — then the card whose
+ticket asks for no command.
 
 ## The ticket detail
 

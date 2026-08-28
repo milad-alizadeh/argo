@@ -32,9 +32,11 @@ extension CockpitView {
     /// does not: the listing the labels are on, and the screens this checkout has a design for
     /// (#899). The rule itself is `WorkCommand`'s, and it is `TicketStart` that performs the act.
     var ticketStart: TicketStart {
-        TicketStart(tickets: tickets, designs: actions.tickets.designedScreens()) {
-            await actions.tickets.startSession($0, $1, $2)
-        }
+        TicketStart(
+            tickets: tickets,
+            designs: actions.tickets.designedScreens,
+            spawn: { await actions.tickets.startSession($0, $1, $2) },
+        )
     }
 
     /// Open the composer on an empty ticket, and on nothing a refused write left behind: a sheet

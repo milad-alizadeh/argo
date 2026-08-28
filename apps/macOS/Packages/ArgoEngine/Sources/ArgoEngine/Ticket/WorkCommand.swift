@@ -5,23 +5,30 @@
 /// that does the wrong work — and that is worse than one waiting to be told what to do.
 ///
 /// The raw value is the command's own name, so the prompt and the mapping cannot say two things.
-public enum WorkCommand: String, Sendable, CaseIterable {
+public enum WorkCommand: String, Sendable {
     case designToCode = "design-to-code"
     case grillMe = "grill-me"
     case wayfinder
     case prototype
     case implement
 
-    /// The prompt the fresh Session's first turn carries — a `/command` and the Ticket it is about.
+    /// How the command is written and spoken — the one place the leading slash is spelled.
+    public var typed: String {
+        "/\(rawValue)"
+    }
+
+    /// The prompt the fresh Session's first turn carries: the command, and the Ticket it is about.
     ///
-    /// A seeded prompt is typed input on the CLI's first turn and not a `Skill` call, which is what
-    /// lets `/implement` accept it: what that command refuses is a MODEL-issued invocation.
+    /// A seeded prompt is a POSITIONAL on argv and so is typed input on the CLI's first turn, not a
+    /// `Skill` call — which is what lets `/implement` accept it while still refusing a model-issued
+    /// invocation. Verified against `claude` on 2026-08-28: a skill handed to it as `/name` on argv
+    /// ran, rather than being answered as prose about a slash command.
     ///
     /// Every command carries the number, including the four the ticket's own table spelled bare.
     /// Each of these acts on one Ticket, and a command with no subject is one that has to be typed
     /// again — which is the thing this ticket exists to remove.
     public func opening(on ticket: Int) -> String {
-        "/\(rawValue) \(ticket)"
+        "\(typed) \(ticket)"
     }
 
     /// Which command a Ticket asks for, and `nil` where it asks for none.
@@ -31,14 +38,34 @@ public enum WorkCommand: String, Sendable, CaseIterable {
     /// settled no design for the screen it names — so the resolver reads the tree, not just the
     /// Ticket.
     public static func resolving(_ ticket: Ticket, designs: Set<String>) -> WorkCommand? {
-        let labels = Set(ticket.labels.map(\.name))
-        if !labels.isDisjoint(with: designs) {
+        if names(designs, in: ticket) {
             return .designToCode
         }
+        let labels = Set(ticket.labels.map(\.name))
         if let asked = asked.first(where: { labels.contains($0.label) }) {
             return asked.command
         }
         return labels.isDisjoint(with: builds) ? nil : .implement
+    }
+
+    /// Rule 1: does this Ticket NAME a screen the tree has a design for?
+    ///
+    /// The title as well as the labels, because this tracker has no per-screen label and never has
+    /// — a rule that only read labels would be the load-bearing one that never fires. A screen's
+    /// name is a slug, so it is matched against the title as the words it is made of.
+    ///
+    /// The body is deliberately not read: a screen mentioned in passing halfway down a ticket is
+    /// not the screen that ticket is about, and rule 1 outranks every rule below it.
+    ///
+    /// Only a MULTI-WORD name is looked for in the title. `docs/designs/` holds `cockpit-spec.md`
+    /// among the studies, and a one-word name is a word before it is a screen — matching it would
+    /// send every ticket whose title says "spec" down the design route.
+    private static func names(_ designs: Set<String>, in ticket: Ticket) -> Bool {
+        let labels = Set(ticket.labels.map(\.name))
+        guard labels.isDisjoint(with: designs) else { return true }
+        let title = ticket.title.lowercased()
+        return designs.filter { $0.contains("-") }
+            .contains { title.contains($0.replacingOccurrences(of: "-", with: " ")) }
     }
 
     /// Rules 2, 3 and 4 — the `wayfinder:*` family, which is the tracker's own name for three of

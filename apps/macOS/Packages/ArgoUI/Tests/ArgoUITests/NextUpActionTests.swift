@@ -23,8 +23,7 @@ struct NextUpActionTests {
             view: Binding(get: { held.view }, set: { held.view = $0 }),
             backlogWidth: .constant(ArgoBacklogList.width),
             shut: .constant([]),
-            startSession: { held.started = $0 },
-            startCommand: { _ in .implement },
+            starting: StartIntent(run: { held.started = $0 }, command: { _ in .implement }),
         )
     }
 
@@ -51,7 +50,7 @@ struct NextUpActionTests {
     @Test func `the hero's Start verb starts a Session on the pick`() {
         let held = Held()
 
-        room(held).nextUpIntents.start(607)
+        room(held).nextUpIntents.starting.run(607)
 
         #expect(held.started == 607)
     }
@@ -61,13 +60,13 @@ struct NextUpActionTests {
     @Test func `the hero's Start verb does not open the ticket beside it`() {
         let held = Held()
 
-        room(held).nextUpIntents.start(607)
+        room(held).nextUpIntents.starting.run(607)
 
         #expect(held.ticket == nil)
     }
 
     /// The card SAYS what it will send, so the reading has to reach it as well as the act.
     @Test func `the hero says which command its Start will send`() {
-        #expect(room(Held()).nextUpIntents.command(607) == .implement)
+        #expect(room(Held()).nextUpIntents.starting.command(607) == .implement)
     }
 }

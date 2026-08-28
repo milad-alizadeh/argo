@@ -10,17 +10,19 @@ struct DesignedScreensTests {
         ("cockpit-work-room.md", "work-room"),
         ("cockpit-composer-picker.md", "composer-picker"),
         ("cockpit-work-room.inventory.md", "work-room"),
-        ("work-room", "work-room"),
-        ("composer-picker", "composer-picker"),
     ])
     func `a design names the screen it settles`(entry: String, screen: String) {
         #expect(DesignedScreens.screen(of: entry) == screen)
     }
 
-    /// A file that is not a `cockpit-` study names no screen — the index and the reference shots
-    /// beside it are about the folder, not about one surface.
-    @Test(arguments: ["README.md", "index.json"])
-    func `a file that is not a study names no screen`(entry: String) {
+    /// A screen is settled by its STUDY and by nothing else. The index, the reference shots, and
+    /// the render folders named after a study are all about the folder rather than about a surface
+    /// — and counting the folders would settle `renders` and `prototypes`, which nobody ever drew.
+    @Test(arguments: [
+        "README.md", "index.json", "renders", "prototypes", "work-room",
+        "cockpit-sessions-liquid-glass.png",
+    ])
+    func `an entry that is not a study names no screen`(entry: String) {
         #expect(DesignedScreens.screen(of: entry) == nil)
     }
 
@@ -30,6 +32,7 @@ struct DesignedScreensTests {
         try FileManager.default.createDirectory(
             at: designs.appending(path: "work-room"), withIntermediateDirectories: true,
         )
+        try Data().write(to: designs.appending(path: "cockpit-work-room.md"))
         try Data().write(to: designs.appending(path: "cockpit-composer-picker.md"))
         try Data().write(to: designs.appending(path: "README.md"))
         defer { try? FileManager.default.removeItem(at: project) }

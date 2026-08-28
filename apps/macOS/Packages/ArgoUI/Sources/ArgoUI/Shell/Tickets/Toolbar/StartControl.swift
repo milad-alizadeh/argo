@@ -13,8 +13,6 @@ import SwiftUI
 /// row is a fixed set of marks, and a pair that came and went with the provider would move the
 /// ones beside them.
 struct StartControl: View {
-    @Environment(\.argo) private var argo
-
     let verbs: TicketsToolbarIntents.Verbs
 
     var body: some View {
@@ -40,41 +38,14 @@ struct StartControl: View {
     /// glyph on its own would be the unlabelled mark the study cut.
     private var start: some View {
         Button(action: verbs.start) {
-            HStack(spacing: ArgoSpacing.snug) {
-                ArgoGlyph(ArgoSymbol.startSession, ArgoTicketsChrome.iconSize)
-                Text("Start")
-                    .argoText(ArgoTypography.control)
-                command
-            }
-            .foregroundStyle(argo.color.text.secondary)
-            .padding(.horizontal, ArgoSpacing.base)
-            .frame(height: ArgoTicketsChrome.iconButtonHeight)
-            .contentShape(.capsule)
+            StartVerb(command: verbs.command)
+                .padding(.horizontal, ArgoSpacing.base)
+                .frame(height: ArgoTicketsChrome.iconButtonHeight)
+                .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .help(spoken)
-        .accessibilityLabel(spoken)
-    }
-
-    /// What the press will send, beside the verb rather than only in its tooltip (#899): a press
-    /// that silently dispatched one of five different jobs is a press nobody can aim. Quieter ink
-    /// than the verb — it is what `Start` will do, not a second control.
-    ///
-    /// Nothing at all where the ticket asks for no command. `Start` alone is then the whole truth:
-    /// the Session opens with an empty composer.
-    @ViewBuilder private var command: some View {
-        if let command = verbs.command {
-            Text("/\(command.rawValue)")
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
-        }
-    }
-
-    private var spoken: String {
-        guard let command = verbs.command else {
-            return "Start a Session on this ticket, with an empty composer"
-        }
-        return "Start a Session on this ticket, on /\(command.rawValue)"
+        .help(StartVerb.spoken(verbs.command))
+        .accessibilityLabel(StartVerb.spoken(verbs.command))
     }
 }
 

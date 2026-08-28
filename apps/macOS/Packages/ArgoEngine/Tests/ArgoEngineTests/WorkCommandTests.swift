@@ -10,10 +10,14 @@ struct WorkCommandTests {
     /// The screens this repo has settled a design for, as `docs/designs/` names them.
     private static let designs: Set<String> = ["work-room", "composer-picker"]
 
-    private static func ticket(_ labels: [String]) -> Ticket {
+    private static func ticket(
+        _ labels: [String],
+        titled title: String = "Start goes to the Session and opens on the right command",
+    )
+        -> Ticket {
         Ticket(
             number: 899,
-            title: "Start goes to the Session and opens it on the command the ticket asks for",
+            title: title,
             status: "Todo",
             closure: .open,
             labels: labels.map { TicketLabel(name: $0) },
@@ -58,6 +62,47 @@ struct WorkCommandTests {
     /// checkout that has settled no design for the screen it names.
     @Test func `a named screen with no design falls through to the build label`() {
         #expect(WorkCommand.resolving(Self.ticket(["work-room", "bug"]), designs: []) == .implement)
+    }
+
+    /// This tracker has no per-screen label and never has, so a rule 1 that only read labels would
+    /// be the load-bearing rule that never fires. A ticket names its screen in its TITLE, and a
+    /// screen's name is a slug read back as the words it is made of.
+    @Test(arguments: [
+        "The Work room's four verbs do what they draw",
+        "The composer picker lists what is installed",
+    ])
+    func `a ticket whose title names a designed screen takes the design route`(title: String) {
+        #expect(
+            WorkCommand.resolving(
+                Self.ticket(["enhancement"], titled: title),
+                designs: Self.designs,
+            )
+                == .designToCode,
+        )
+    }
+
+    /// `docs/designs/` really does hold a `cockpit-spec.md`, so its screen is named `spec`. A
+    /// one-word name is a word before it is a screen, and matching it in a title would send every
+    /// ticket that says "spec" down the design route.
+    @Test func `a one-word screen name is not looked for in the title`() {
+        let named = Self.ticket(["bug"], titled: "The failure states spec contradicts itself")
+
+        #expect(WorkCommand.resolving(named, designs: ["spec", "work-room"]) == .implement)
+    }
+
+    /// The BODY is not read: a screen mentioned in passing halfway down a ticket is not the screen
+    /// that ticket is about, and rule 1 outranks every rule below it.
+    @Test func `a ticket that only mentions a screen in passing is not a design ticket`() {
+        let mentions = Ticket(
+            number: 899,
+            title: "The idle heartbeat published what had not changed",
+            status: "Todo",
+            closure: .open,
+            labels: [TicketLabel(name: "bug")],
+            body: "Seen while reading the work room, but the fault is in the poll.",
+        )
+
+        #expect(WorkCommand.resolving(mentions, designs: Self.designs) == .implement)
     }
 
     @Test(arguments: [

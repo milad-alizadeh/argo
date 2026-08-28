@@ -30,10 +30,14 @@ struct TicketStartTests {
     ]
 
     private func start(_ spawn: Spawn) -> TicketStart {
-        TicketStart(tickets: Self.tickets, designs: ["work-room"]) { ticket, mode, opening in
-            spawn.asked = Ask(ticket: ticket, mode: mode, opening: opening)
-            return spawn.answer
-        }
+        TicketStart(
+            tickets: Self.tickets,
+            designs: { ["work-room"] },
+            spawn: { ticket, mode, opening in
+                spawn.asked = Ask(ticket: ticket, mode: mode, opening: opening)
+                return spawn.answer
+            },
+        )
     }
 
     @Test func `a started Session opens on the command its ticket asks for`() async {

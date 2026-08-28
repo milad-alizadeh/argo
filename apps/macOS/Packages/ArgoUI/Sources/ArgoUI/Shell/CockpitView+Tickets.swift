@@ -41,8 +41,10 @@ extension CockpitView {
             shut: $navigation.shutParents,
             connect: openProjectPanel,
             intents: ticketsIntents(start),
-            startSession: { ticket in Task { await start.run(on: ticket, in: navigation) } },
-            startCommand: { start.command(on: $0) },
+            starting: StartIntent(
+                run: { ticket in Task { await start.run(on: ticket, in: navigation) } },
+                command: { start.command(on: $0) },
+            ),
             follow: { await actions.tickets.readTicket($0) },
             held: TicketsRoom.Held(query: $navigation.ticketsQuery),
         )
