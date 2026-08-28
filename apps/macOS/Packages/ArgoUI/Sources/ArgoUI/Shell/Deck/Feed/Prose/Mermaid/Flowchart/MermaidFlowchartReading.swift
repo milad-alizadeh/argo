@@ -9,10 +9,7 @@ import Foundation
 extension MermaidFlowchart {
     /// The flowchart this source draws, or `nil` for anything this reader cannot.
     static func read(_ source: String) -> MermaidFlowchart? {
-        var lines = source
-            .components(separatedBy: "\n")
-            .map { Self.stripped($0) }
-            .filter { !$0.isEmpty }
+        var lines = MermaidSource.lines(of: source)
         guard !lines.isEmpty, let direction = Self.direction(ofHeader: lines.removeFirst()) else {
             return nil
         }
@@ -43,29 +40,6 @@ extension MermaidFlowchart {
         guard let statement = MermaidStatement.read(line) else { return false }
         build.add(statement)
         return true
-    }
-
-    /// A line with its comment and its optional trailing `;` taken off. `%%` is mermaid's own
-    /// comment and says nothing about the diagram — but only OUTSIDE a quoted label, which exists
-    /// precisely so a label can carry what would otherwise read as syntax.
-    private static func stripped(_ line: String) -> String {
-        var kept = ""
-        var isQuoted = false
-        var previous: Character?
-        for character in line {
-            if character == "\"" {
-                isQuoted.toggle()
-            }
-            if !isQuoted, character == "%", previous == "%" {
-                kept.removeLast()
-                break
-            }
-            kept.append(character)
-            previous = character
-        }
-        let trimmed = kept.trimmingCharacters(in: .whitespaces)
-        return (trimmed.hasSuffix(";") ? String(trimmed.dropLast()) : trimmed)
-            .trimmingCharacters(in: .whitespaces)
     }
 
     /// Which way `graph TD` and `flowchart LR` run. A header with no direction runs top-down, which
