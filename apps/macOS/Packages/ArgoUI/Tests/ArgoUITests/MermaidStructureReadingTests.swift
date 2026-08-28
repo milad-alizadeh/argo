@@ -116,7 +116,7 @@ struct MermaidStructureReadingTests {
     @Test(arguments: [
         "",
         "graph TD",
-        "pie title Where the time went\n\"Reading\" : 40",
+        "C4Context\n  Person(dev, \"Dev\")",
         "graph TD\nA ~~~ B",
         "graph TD\nA <--> B",
         "graph TD\nA --> B\nsubgraph one",
@@ -143,7 +143,7 @@ struct MermaidStructureReadingTests {
         let source = "graph TD\nA --> B"
 
         #expect(MermaidDiagram.read(source)?.source == source)
-        #expect(MermaidDiagram.read("pie\n\"a\" : 1") == nil)
+        #expect(MermaidDiagram.read("C4Context\n  Person(dev, \"Dev\")") == nil)
     }
 
     /// The labels the view builds its `Text` views from, before SwiftUI has told it a measure:

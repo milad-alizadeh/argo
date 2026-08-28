@@ -60,9 +60,9 @@ struct MarkdownSpecimen: View {
     A diagram type nothing here can read yet:
 
     ```mermaid
-    pie title Where the time went
-      "Reading" : 40
-      "Layout" : 35
+    C4Context
+      Person(dev, "Dev")
+      System(argo, "Argo")
     ```
     """
 

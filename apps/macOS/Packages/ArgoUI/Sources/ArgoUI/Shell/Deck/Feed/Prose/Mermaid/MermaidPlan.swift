@@ -43,7 +43,7 @@ struct MermaidPlan: Equatable, Sendable {
 
 /// What a mark of a diagram MEANS. Never a colour: `MermaidInk` resolves a role to a design token,
 /// so every diagram type is themed once and no reader spells a colour.
-enum MermaidRole: Equatable, Sendable, CaseIterable {
+enum MermaidRole: Equatable, Sendable {
     /// A box, a slice, a bar — the thing the diagram is about.
     case node
     /// A connector between two of them, and its head.
@@ -52,4 +52,10 @@ enum MermaidRole: Equatable, Sendable, CaseIterable {
     case emphasis
     /// An aside: a title, a legend, anything said beside the diagram rather than in it.
     case note
+    /// The nth entry of a categorical series — a pie's slice, a bar, a Gantt's section.
+    ///
+    /// INDEXED rather than named, because "the nth thing the source listed" is the whole of what
+    /// one means, and it is the only role a reader states a NUMBER for. It wraps past the end of
+    /// the palette rather than running out; `ArgoPalette.SeriesRoles` owns that rule.
+    case series(Int)
 }

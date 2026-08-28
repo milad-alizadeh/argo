@@ -40,7 +40,7 @@ extension MermaidFigure {
     /// is nothing at all.
     private var laneShape: FeedInk.Shape {
         switch role {
-        case .node, .emphasis, .note: .frame
+        case .node, .emphasis, .note, .series: .frame
         case .edge: .bar
         }
     }

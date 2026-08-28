@@ -28,5 +28,9 @@ extension SpecimenRegistry {
         SpecimenEntry("feedMermaidMindmapShapes") {
             MarkdownSpecimen(text: MermaidSpecimen.mindmapShapes)
         },
+        // The series palette drawn as the thing it is for (#864): eight wedges touching, and a
+        // legend whose swatches have to be read back to them.
+        SpecimenEntry("feedMermaidPie") { MarkdownSpecimen(text: MermaidSpecimen.pie) },
+        SpecimenEntry("feedMermaidPieSingle") { MarkdownSpecimen(text: MermaidSpecimen.pieSingle) },
     ]
 }

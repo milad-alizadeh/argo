@@ -20,6 +20,7 @@ struct ContractSpecimen: View {
                 edges
                 states
                 diff
+                series
                 ramps
                 brand
                 scale
