@@ -56,6 +56,10 @@ struct MermaidPieReadingTests {
         ("pie showData", "", true),
         ("pie title Votes", "Votes", false),
         ("pie showData title Votes", "Votes", true),
+        // Mermaid's own keywords are case-insensitive, and this reader says so — so every
+        // spelling an agent really writes reaches the same chart.
+        ("PIE", "", false),
+        ("pie ShowData TITLE Votes", "Votes", true),
     ])
     func `the header carries showData and a title of its own`(
         header: String,
@@ -66,6 +70,24 @@ struct MermaidPieReadingTests {
 
         #expect(pie?.title == title)
         #expect(pie?.showsData == showsData)
+    }
+
+    @Test
+    func `a title on its own line is read whatever case its keyword is in`() {
+        #expect(Self.read("Title Where the time went\n\"Read\" : 3")?.title
+            == "Where the time went")
+    }
+
+    /// A legend is READ. Scientific notation is a number nobody wrote, and trailing zeros are a
+    /// precision the source did not claim.
+    @Test(arguments: [
+        ("1234567", "1234567 · 100%"),
+        ("42.96", "42.96 · 100%"),
+        ("3", "3 · 100%"),
+        ("0.5", "0.5 · 100%"),
+    ])
+    func `a value is written back the way it was written`(value: String, reading: String) {
+        #expect(MermaidPie.read("pie showData\n\"Read\" : " + value)?.readings == [reading])
     }
 
     /// The order is the order they were written, because that is the order they are drawn in.

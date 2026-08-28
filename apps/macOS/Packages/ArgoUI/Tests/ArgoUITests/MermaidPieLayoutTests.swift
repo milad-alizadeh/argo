@@ -72,10 +72,10 @@ struct MermaidPieLayoutTests {
         "\"Read\" : 1\n\"Write\" : 1",
         "title Where the time went\n\"Read\" : 1\n\"Write\" : 1",
     ])
-    func `the captions are the model's labels, in that order`(body: String) {
-        let pie = MermaidPie.read("pie\n" + body)
+    func `the captions are the model's labels, in that order`(body: String) throws {
+        let pie = try #require(MermaidPie.read("pie\n" + body))
 
-        #expect(pie?.laid.captions.map(\.label) == pie?.labels)
+        #expect(pie.laid.captions.map(\.label) == pie.labels)
     }
 
     @Test
@@ -120,6 +120,38 @@ struct MermaidPieLayoutTests {
             == ["75%", "25%"])
         #expect(MermaidPie.read("pie showData\n\"Read\" : 3\n\"Write\" : 1")?
             .laid.captions.map(\.label.text).suffix(2) == ["3 · 75%", "1 · 25%"])
+    }
+
+    /// A wedge claims the box it covers and not the circle it was cut from. The plan is SIZED
+    /// from these, and the lane draws them: a quarter turn that claimed a whole square would put
+    /// the reported height above the drawn one, and a pie would map to one copy of its circle per
+    /// slice rather than to a silhouette.
+    @Test
+    func `a wedge claims only the box it covers`() {
+        let boxes = Self.plan("\"Read\" : 1\n\"Write\" : 1\n\"Land\" : 1\n\"Ship\" : 1")
+            .figures.compactMap { figure -> CGRect? in
+                guard case .arc = figure.form else { return nil }
+                return figure.form.bounds
+            }
+        let quadrant = MermaidMeasure.chartDiameter / 2
+
+        // Four quarter turns, so four quadrants — the first from twelve o'clock to three. Within a
+        // hair, because a quadrant's corner is a cosine of a right angle rather than a zero.
+        #expect(boxes.count == 4)
+        #expect(boxes.allSatisfy {
+            abs($0.width - quadrant) < 0.001 && abs($0.height - quadrant) < 0.001
+        })
+        // Four different quadrants and not one drawn four times.
+        #expect(Set(boxes.map { CGPoint(x: round($0.minX), y: round($0.minY)) }).count == 4)
+    }
+
+    /// The one wedge that IS its circle. Nothing else in the plan may claim the whole square.
+    @Test
+    func `a whole circle claims its whole box`() {
+        let box = Self.plan("\"Read\" : 1").figures.first?.form.bounds
+
+        #expect(box?.width == MermaidMeasure.chartDiameter)
+        #expect(box?.height == MermaidMeasure.chartDiameter)
     }
 
     /// The plan is what the view frames itself at and what the lane reports, so a chart that laid

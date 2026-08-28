@@ -95,7 +95,7 @@ enum MermaidMeasure {
     static let chartDiameter: CGFloat = 168
     /// The mark in a legend row standing for the wedge it names. A measure: big enough to read a
     /// hue off, and it has to stay well under the line it is set beside.
-    static let swatch: CGFloat = 10
+    static let swatchSize: CGFloat = 10
 
     /// The face a chart's own title is set in — the loudest word a diagram writes, and still at
     /// the rhythm of the prose around it.

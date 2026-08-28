@@ -64,21 +64,27 @@ public extension ArgoPalette {
             added: ArgoColor(hex: 0xA9D18E),
             removed: ArgoColor(hex: 0xD98C93),
         ),
-        // Eight muted jewel tones, each held a state's distance from all four states, from Ion
-        // Blue and from every other entry — and each at 3:1 or better on the deck, because a
-        // wedge is a large mark rather than a word. Mid-luminance on purpose: they are read on
-        // this near-black deck today and have to survive a light one, which pastels would not.
+        // Eight muted jewel tones. Each is held a state's own distance from all four states,
+        // from Ion Blue and from BOTH diff inks — a pie and a patch are read in one feed inches
+        // apart, so a pink wedge that resolves near `diff.removed` reads as a deleted line — and
+        // from every other entry here. `interaction.destructive` is deliberately not in that set:
+        // it is a ground under a swiped roster row, never an ink in the feed, so no wedge is ever
+        // read beside it.
+        //
+        // Mid-luminance on purpose, and each at 3:1 or better on the deck: a wedge is a large
+        // mark rather than a word, and these have to survive a light appearance a pastel would
+        // not.
         series: SeriesRoles(hues: [
-            ArgoColor(hex: 0x6F62D0),
-            ArgoColor(hex: 0xA6AF64),
-            ArgoColor(hex: 0x80B3D0),
-            ArgoColor(hex: 0xA26F49),
-            ArgoColor(hex: 0x4C945D),
-            ArgoColor(hex: 0xC68BB0),
-            ArgoColor(hex: 0x478DAE),
-            ArgoColor(hex: 0xAB49AB),
-        ]),
-        // Source code takes no ink from this palette: the evidence panel reads a patch in Xcode's
+            ArgoColor(hex: 0x6666CC),
+            ArgoColor(hex: 0x97A53B),
+            ArgoColor(hex: 0x80B5D1),
+            ArgoColor(hex: 0xAC5953),
+            ArgoColor(hex: 0x4C944F),
+            ArgoColor(hex: 0xB980D1),
+            ArgoColor(hex: 0x318BAF),
+            ArgoColor(hex: 0xB04F9D),
+        ]), // Source code takes no ink from this palette: the evidence panel reads a patch in
+        // Xcode's
         // own dark theme (`SyntaxTheme`).
     )
 }

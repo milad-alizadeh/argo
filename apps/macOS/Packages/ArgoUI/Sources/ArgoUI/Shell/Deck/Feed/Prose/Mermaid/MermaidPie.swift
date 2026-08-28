@@ -66,9 +66,19 @@ struct MermaidPie: Equatable, Sendable {
             + readings.map { MermaidLabel(text: $0, face: aside, role: .note) }
     }
 
-    /// A value as the source would have written it — no trailing zeros on a whole number, and the
-    /// decimals kept on one that has them.
+    /// A value as the source would have written it: no decimal part where it has none, and no
+    /// trailing zeros where it has one.
+    ///
+    /// Never scientific notation — a legend is READ, and `1.23457e+06` is a number nobody wrote —
+    /// and never past four decimals, which is already finer than the share beside it.
     private static func number(_ value: Double) -> String {
-        String(format: "%g", value)
+        var text = String(format: "%.4f", value)
+        while text.hasSuffix("0") {
+            text.removeLast()
+        }
+        if text.hasSuffix(".") {
+            text.removeLast()
+        }
+        return text
     }
 }

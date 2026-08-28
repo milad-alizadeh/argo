@@ -8,9 +8,10 @@ public extension ArgoPalette {
     /// It is sealed the way the other two exemptions are: a hue here is correct INSIDE a chart and
     /// licenses nothing outside one. Nothing in the shell reads a series role.
     ///
-    /// Held apart from the four operational states and from Ion Blue by the same distance those
-    /// four are held apart from each other, so a slice can never read as a warning or as a
-    /// selection. `SeriesPaletteTests` asserts it, over every appearance.
+    /// Held apart from the four operational states, from Ion Blue and from both diff inks by the
+    /// same distance those four states are held apart from each other — so a slice can never read
+    /// as a warning, as a selection or as a deleted line. `SeriesPaletteTests` asserts it, over
+    /// every appearance.
     struct SeriesRoles: Sendable {
         /// The run, in the order a chart spends it. Longer than any chart written in a message
         /// needs; a series past the end WRAPS rather than running out — see `hue(_:)`.

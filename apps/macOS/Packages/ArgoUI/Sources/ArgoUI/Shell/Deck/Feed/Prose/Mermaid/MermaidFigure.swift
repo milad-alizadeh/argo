@@ -39,11 +39,11 @@ extension MermaidFigure.Form {
     var bounds: CGRect {
         switch self {
         case let .shape(_, rect): rect
-        // The box it is inscribed in, not the wedge's own tighter box. A layout drawing one arc
-        // draws the whole family, and together they occupy exactly this.
-        case let .arc(_, rect): rect
-        case let .path(points): Self.around(points)
-        case let .arrowhead(tip, from): Self.around([tip, from])
+        // Its own box and not the circle's: a wedge covers a fraction of what it is inscribed in,
+        // and the plan is SIZED from this.
+        case let .arc(arc, rect): arc.bounds(in: rect)
+        case let .path(points): .around(points)
+        case let .arrowhead(tip, from): .around([tip, from])
         }
     }
 
@@ -61,8 +61,12 @@ extension MermaidFigure.Form {
             .arrowhead(tip: tip.moved(by: offset), from: from.moved(by: offset))
         }
     }
+}
 
-    private static func around(_ points: [CGPoint]) -> CGRect {
+extension CGRect {
+    /// The smallest box holding every one of these points. Shared, because a form's own bounds and
+    /// a wedge's are the same reduction over different points.
+    static func around(_ points: [CGPoint]) -> CGRect {
         guard let first = points.first else { return .zero }
         return points.dropFirst().reduce(CGRect(origin: first, size: .zero)) { box, point in
             box.union(CGRect(origin: point, size: .zero))

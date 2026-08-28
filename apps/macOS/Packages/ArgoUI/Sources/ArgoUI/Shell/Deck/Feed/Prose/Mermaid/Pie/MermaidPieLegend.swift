@@ -4,31 +4,38 @@ import Foundation
 /// written under, and the reading of what it is worth.
 ///
 /// One value rather than four measurements threaded through the layout, and the place the rows'
-/// arithmetic is done ONCE: the swatches, the names and the readings are three lists that have to
-/// land on the same rows or a name is read against the wrong wedge.
+/// arithmetic is done ONCE — the swatch, the name and the reading of a row are placed against one
+/// geometry rather than three that have to agree.
 @MainActor
 struct MermaidPieLegend {
-    private let names: [String]
-    private let readings: [String]
+    /// One row's words, held together rather than as two lists indexed alike: a name and the
+    /// reading beside it ARE one row, and two lists are one off-by-one away from naming the wrong
+    /// wedge.
+    private struct Row {
+        let name: String
+        let reading: String
+    }
+
+    private let rows: [Row]
     private let nameWidth: CGFloat
     private let readingWidth: CGFloat
 
     init(_ pie: MermaidPie) {
-        self.names = pie.slices.map(\.label)
-        self.readings = pie.readings
-        self.nameWidth = Self.widest(names)
-        self.readingWidth = Self.widest(readings)
+        let rows = zip(pie.slices, pie.readings).map { Row(name: $0.label, reading: $1) }
+        self.rows = rows
+        self.nameWidth = Self.widest(rows.map(\.name))
+        self.readingWidth = Self.widest(rows.map(\.reading))
     }
 
     /// The swatch, the names under one edge and the readings under another — a column each, so a
     /// run of shares reads down rather than ragged.
     var width: CGFloat {
-        MermaidMeasure.swatch + MermaidMeasure.wordGap + nameWidth
+        MermaidMeasure.swatchSize + MermaidMeasure.wordGap + nameWidth
             + MermaidMeasure.nodeGap + readingWidth
     }
 
     var height: CGFloat {
-        Self.rowHeight * CGFloat(names.count)
+        Self.rowHeight * CGFloat(rows.count)
     }
 
     /// How tall one row stands: its own line, plus the room that keeps two names off each other.
@@ -38,14 +45,14 @@ struct MermaidPieLegend {
 
     /// One swatch per row, in the slice's own hue — the mark that ties a name to a wedge.
     func swatches(from origin: CGPoint) -> [MermaidFigure] {
-        names.indices.map { at in
+        rows.indices.map { at in
             let row = row(at, from: origin)
             return MermaidFigure(
                 form: .shape(.rounded, CGRect(
                     x: row.minX,
-                    y: row.midY - MermaidMeasure.swatch / 2,
-                    width: MermaidMeasure.swatch,
-                    height: MermaidMeasure.swatch,
+                    y: row.midY - MermaidMeasure.swatchSize / 2,
+                    width: MermaidMeasure.swatchSize,
+                    height: MermaidMeasure.swatchSize,
                 )),
                 role: .series(at),
             )
@@ -53,9 +60,9 @@ struct MermaidPieLegend {
     }
 
     func nameCaptions(from origin: CGPoint) -> [MermaidCaption] {
-        names.enumerated().map { at, name in
+        rows.enumerated().map { at, row in
             MermaidCaption(
-                label: MermaidLabel(text: name, face: MermaidMeasure.edgeFace),
+                label: MermaidLabel(text: row.name, face: MermaidMeasure.edgeFace),
                 rect: column(at, from: origin, width: nameWidth),
                 alignment: .leading,
             )
@@ -63,11 +70,11 @@ struct MermaidPieLegend {
     }
 
     func readingCaptions(from origin: CGPoint) -> [MermaidCaption] {
-        readings.enumerated().map { at, reading in
+        rows.enumerated().map { at, words in
             let row = row(at, from: origin)
             return MermaidCaption(
                 label: MermaidLabel(
-                    text: reading,
+                    text: words.reading,
                     face: MermaidMeasure.edgeFace,
                     role: .note,
                 ),
@@ -86,7 +93,7 @@ struct MermaidPieLegend {
     private func column(_ at: Int, from origin: CGPoint, width: CGFloat) -> CGRect {
         let row = row(at, from: origin)
         return CGRect(
-            x: row.minX + MermaidMeasure.swatch + MermaidMeasure.wordGap,
+            x: row.minX + MermaidMeasure.swatchSize + MermaidMeasure.wordGap,
             y: row.minY,
             width: width,
             height: row.height,

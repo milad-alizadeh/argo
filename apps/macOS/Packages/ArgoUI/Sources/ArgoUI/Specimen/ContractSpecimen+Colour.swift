@@ -144,7 +144,7 @@ extension ContractSpecimen {
     /// is the whole judgement: a swatch with air around it can pass for distinct when the wedge
     /// beside it will not.
     var series: some View {
-        section("Series — indexed hues for a chart, held off every status hue") {
+        section("Series — indexed hues for a chart, held off every hue that means something") {
             HStack(spacing: ArgoStroke.hairline) {
                 ForEach(argo.color.series.all, id: \.name) { role in
                     VStack(spacing: ArgoSpacing.tight) {

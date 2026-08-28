@@ -7,20 +7,24 @@ import Testing
 struct SeriesPaletteTests {
     static let palettes = ArgoPalette.all
 
-    /// A slice is read beside the slice next to it AND beside a roster full of status marks. It
-    /// owes both the same distance the four operational states owe each other: a wedge that lands
-    /// on the amber this app means `attention` with is a wedge that reads as a warning.
+    /// A slice is read beside the slice next to it AND beside everything else in the feed. It owes
+    /// them the distance the four operational states owe each other: a wedge that lands on the
+    /// amber this app means `attention` with reads as a warning, and one that lands on
+    /// `diff.removed` reads as a deleted line in a patch three rows up.
+    ///
+    /// `interaction.destructive` is not here on purpose — it is a ground under a swiped roster
+    /// row rather than an ink in the feed, so a wedge is never read beside it.
     @Test(arguments: palettes)
-    func `a series hue is held off every status hue`(
+    func `a series hue is held off every hue that means something`(
         _ appearance: (name: String, palette: ArgoPalette),
     ) {
-        let reserved = appearance.palette.state.all
+        let reserved = appearance.palette.state.all + appearance.palette.diff.all
             + [("accent", appearance.palette.interaction.accent)]
         for (at, hue) in appearance.palette.series.hues.enumerated() {
             for status in reserved {
                 #expect(
                     hue.distance(to: status.color) > 0.25,
-                    "series\(at + 1) resolves next door to state.\(status.name)",
+                    "series\(at + 1) resolves next door to \(status.name)",
                 )
             }
         }
