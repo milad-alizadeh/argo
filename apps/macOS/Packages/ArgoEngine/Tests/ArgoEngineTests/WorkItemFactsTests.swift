@@ -10,7 +10,7 @@ import Testing
 @Suite("Work Item facts")
 struct WorkItemFactsTests {
     private static func list(_ issues: [IssueJSON]) async throws -> [WorkItem] {
-        let api = RecordedGitHub(replies: ["&page=1": IssueJSON.list(issues)])
+        let api = RecordedGitHub(replies: [RecordedGitHub.openIssues: IssueJSON.list(issues)])
         return try await GitHubWorkItems(transport: api).list(in: "acme/api", grant: .listing)
     }
 
