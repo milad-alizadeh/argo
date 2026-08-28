@@ -130,6 +130,22 @@ struct DeliveryChipsSpecimen: View {
     }
 }
 
+/// Every reading the blockage mark draws, side by side — one digit, two digits, and the stranded
+/// ink. The two-digit case has no room render: the backlog's worst ticket waits on two, and a
+/// capsule that grew the wrong way at ten would not show up until somebody's real backlog did.
+struct BlockageMarksSpecimen: View {
+    var body: some View {
+        HStack(spacing: ArgoSpacing.section) {
+            BlockageMark(blockage: .init(count: 1, isStranded: false))
+            BlockageMark(blockage: .init(count: 2, isStranded: false))
+            BlockageMark(blockage: .init(count: 17, isStranded: false))
+            BlockageMark(blockage: .init(count: 2, isStranded: true))
+        }
+        .padding(ArgoSpacing.region)
+        .argoDeckSurface()
+    }
+}
+
 /// The five states of the room's one Delivery signal, side by side — a discrete union told once,
 /// which is the whole of what the backlog spends on a Delivery.
 struct DeliveryDotsSpecimen: View {

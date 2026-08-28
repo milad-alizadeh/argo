@@ -57,6 +57,33 @@ struct TicketsBacklogMarkTests {
         #expect(mark == TicketsRoomProjection.Blockage(count: 2, isStranded: true))
     }
 
+    /// The mark and the sidebar's `Blocked` count are two shapes of one engine fact, and #896 asks
+    /// for them to agree. They are different code — this counts what still stands, `admits` asks
+    /// which side of the partition a ticket falls — so the agreement is CHECKED over the whole open
+    /// set rather than asserted in a comment. A row carrying a mark is exactly a row `Blocked`
+    /// holds, and neither view holds a ticket whose edges nobody served.
+    @Test
+    func `a row carries a mark exactly where the sidebar counts it blocked`() {
+        let open = TicketsFixture.items.filter { $0.closure == .open }
+
+        for item in open {
+            let marked = TicketsRoomProjection.blockage(of: item) != nil
+            #expect(marked == TicketsView.blocked.admits(item, claimed: false))
+            #expect(marked != TicketsView.unblocked.admits(item, claimed: false))
+        }
+    }
+
+    /// …and the third state is in NEITHER, which is what keeps the two views a partition of the
+    /// tickets whose edges were read rather than of every ticket.
+    @Test
+    func `a ticket whose edges nobody served is in neither view and carries no mark`() {
+        let unedged = Self.item(1, blockedBy: nil)
+
+        #expect(TicketsRoomProjection.blockage(of: unedged) == nil)
+        #expect(!TicketsView.blocked.admits(unedged, claimed: false))
+        #expect(!TicketsView.unblocked.admits(unedged, claimed: false))
+    }
+
     @Test
     func `the mark reaches the row the list draws`() {
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading)

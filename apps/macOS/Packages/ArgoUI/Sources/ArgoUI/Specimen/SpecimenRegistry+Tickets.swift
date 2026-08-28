@@ -63,6 +63,14 @@ extension SpecimenRegistry {
         SpecimenEntry("strandedTicketsBacklog") {
             TicketsPanesSpecimen(reading: TicketsFixture.stranded)
         },
+        // A provider that served no dependency edges AT ALL, in the LIST (#896). Every row draws
+        // the same nothing an unblocked row draws, which is the point: the row does not claim
+        // `unblocked` over a reading nobody made, and only the sidebar — which can see the whole
+        // set — is allowed to tell the two silences apart, by counting neither view.
+        SpecimenEntry("edgelessTicketsBacklog") {
+            TicketsPanesSpecimen(reading: TicketsFixture.edgeless)
+        },
+        SpecimenEntry("blockageMarks") { BlockageMarksSpecimen() },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
         // The head's status pair, over a provider whose word IS the filing and one with words of
         // its own (#893). Every fixture spells "In progress", so no room render reaches the first.

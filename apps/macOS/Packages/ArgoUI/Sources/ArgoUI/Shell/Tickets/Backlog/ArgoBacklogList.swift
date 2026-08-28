@@ -73,8 +73,10 @@ extension EnvironmentValues {
     /// draws the shipping row.
     @Entry var backlogPaneWidth: CGFloat = ArgoBacklogList.width
 
-    /// The moment a row's age stamp is measured against (#897). In the environment rather than on
-    /// the row, so every row in a band reads one clock — and so a render can pin it, which is the
-    /// only way a dated row is shootable at all.
-    @Entry var backlogNow: Date = .now
+    /// The moment a row's age stamp is measured against (#897), and `nil` wherever nobody pinned
+    /// one — the shipping app, which reads the wall clock as it draws. Only a RENDER sets it, and
+    /// it has to: an age measured against the wall clock makes a shot that never matches itself
+    /// twice. Optional rather than defaulted to `.now`, because an environment default resolves
+    /// once and would freeze every age at whatever instant first read the key.
+    @Entry var backlogNow: Date?
 }

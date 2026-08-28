@@ -108,8 +108,13 @@ enum TicketsRoomProjection {
         /// (`TicketsRoomProjection+Tree.swift`). Empty on a leaf, and empty on a parent whose every
         /// child the view filtered out.
         var children: [Row]
-        /// What the blockage mark draws, and `nil` where it draws none (#896). One projection, read
-        /// by the mark here and counted by `Blocked` in the sidebar off the same engine seam.
+        /// What the blockage mark draws, and `nil` where it draws none (#896).
+        ///
+        /// The mark and the sidebar's `Blocked` count are two readings of ONE engine fact,
+        /// `Ticket.blockedBy`, through two shapes of it: this counts what still stands, and
+        /// `TicketsView.admits` asks which side of the partition the ticket falls. They cannot
+        /// drift apart silently — `TicketsBacklogMarkTests` holds them in step over the whole open
+        /// set, which is the check that makes the pair worth having in two shapes.
         let blockage: Blockage?
         /// When the provider last saw this ticket change, and `nil` where it served no date at all
         /// — in which case the row draws none rather than inventing one (#897). LAST TOUCHED and

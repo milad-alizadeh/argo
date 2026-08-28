@@ -689,7 +689,10 @@ what was considered and refused.
 | `BlockageMark` | atom | `Text` in a `Capsule().strokeBorder` | the count, in the Route's own waiting/dead-end inks |
 | `TicketAge` | — | pure `Date` arithmetic, no view | one rounded unit; not `AgePhrase`, which words the same distance as prose for a sentence to carry |
 
-`Drawn.caption(asOf:)` is where the three-way precedence lives, and the only place it is spelled.
+`Drawn.caption(asOf:)` is the one place the three-way precedence is CODED; the design's table
+above is where it is decided. Two statements of one rule, deliberately — the design is the SSOT and
+the function is the only implementation of it, so a row that drew a different order would disagree
+with a document rather than with a second copy of itself.
 `TicketsRoomProjection.blockage(of:)` is the nil-returning seam that withholds the mark —
 `TicketState.filing(beside:)`'s shape (#893), for the same reason: a view handed a value it must
 know not to draw is a view that will eventually draw it.
@@ -734,3 +737,20 @@ matches itself twice.
 **No fixture reached `stranded`.** Every blocker in the backlog is open or resolved, so the one
 state `state.failure` is spent on had never been drawn. `TicketsFixture.stranded` is its own reading
 for that reason, on the pattern `unjoinedClaims` set at #894.
+
+## Where the design and the code disagree
+
+- **#160 and #185 carry `blockedBy` edges the design says they do not have.** The sidebar section
+  reads: *"Being held up is not the same as having an edge: #160 and #185 are decisions awaiting an
+  answer, with nothing in `blockedBy` to show for it."* `TicketsFixture.items` gives both
+  `blockedBy: [272]`, so both now draw a blockage mark reading `1`. The disagreement is
+  **pre-existing** — the fixture has served those edges since #812, and it is what makes
+  `Unblocked + Blocked` sum to `All open` in every render — but nothing on screen showed it until a
+  row started drawing the count. Reconciling it moves two rows between two sidebar views and
+  re-shoots the room, which is #812's decision to revisit, not this ticket's. Recorded rather than
+  fixed.
+- **There is one appearance.** #896 asks for a mark "legible in both appearances"; the contract
+  defines a single theme, `ArgoTheme.graphite` at `.dark`, and no light palette exists to render.
+  The mark spends only `state.idle` and `state.failure` and states no colour of its own, so it will
+  inherit whatever a second appearance defines — but the criterion cannot be closed by a render
+  until there is one.

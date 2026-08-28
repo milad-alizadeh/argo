@@ -16,8 +16,11 @@ struct BacklogRow: View {
     /// they stand down instead. Read from the room rather than measured here: a row inside a
     /// `List` is proposed a width it cannot compare against the pane's own.
     @Environment(\.backlogPaneWidth) private var paneWidth
-    /// What the age stamp is measured against, so every row in a band reads one clock.
-    @Environment(\.backlogNow) private var now
+    /// What the age stamp is measured against, and `nil` wherever nobody pinned one — which is
+    /// every case but a render. Optional rather than defaulted to `.now`, because an environment
+    /// default resolves ONCE: a shipping row would then measure every age against the instant the
+    /// key was first read and never advance.
+    @Environment(\.backlogNow) private var pinnedNow
 
     let drawn: TicketsRoomProjection.Drawn
     /// Whether the twist points down. Meaningless on a leaf, whose slot draws nothing.
@@ -91,18 +94,18 @@ struct BacklogRow: View {
     /// Which fact wins the slot is `Drawn.caption(asOf:)`'s, told once. Only the roll-up carries a
     /// hover: a number nobody can reconcile against the rows under it has to say why on the spot.
     @ViewBuilder private var caption: some View {
-        if let fact = drawn.caption(asOf: now) {
+        if let fact = drawn.caption(asOf: pinnedNow ?? Date()) {
             if let rollUp = row.trailing {
-                set(fact)
+                captionText(fact)
                     .help("\(rollUp) — the tracker's own count of closed children, including "
                         + "children the backlog does not draw.")
             } else {
-                set(fact)
+                captionText(fact)
             }
         }
     }
 
-    private func set(_ fact: String) -> some View {
+    private func captionText(_ fact: String) -> some View {
         Text(fact)
             .argoText(ArgoTypography.machineCaption)
             .foregroundStyle(argo.color.text.disabled)
@@ -116,7 +119,7 @@ struct BacklogRow: View {
     private var announcement: String {
         (
             [String(row.id), row.title] + BacklogRowLabels(row.labels).spoken
-                + [spokenBlockage, drawn.caption(asOf: now)],
+                + [spokenBlockage, drawn.caption(asOf: pinnedNow ?? Date())],
         )
         .compactMap(\.self)
         .joined(separator: ", ")
