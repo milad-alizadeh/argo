@@ -20,6 +20,11 @@ public struct GitHubWorkItems: WorkItemPort {
         return URL(string: "https://github.com/\(scope)/issues/\(number)")
     }
 
+    /// How many tickets are read at once — and, because a ticket reads its two edges one after the
+    /// other, how many requests are in flight. Bounded at all because a repository with hundreds of
+    /// open issues is the fan-out GitHub's secondary limits refuse.
+    static let concurrentTickets = 8
+
     public func list(in scope: String, grant: AccountGrant) async throws -> [WorkItem] {
         // Open only. A closed ticket has left the room, and asking for every issue a repository
         // ever had costs a poll two extra requests per issue on edges nobody is waiting on. The
@@ -27,11 +32,35 @@ public struct GitHubWorkItems: WorkItemPort {
         let issues: [GitHubIssue] = try await reads.pages(
             [GitHubIssue].self, of: "/repos/\(scope)/issues?state=open", grant: grant,
         )
-        var items: [WorkItem] = []
-        for issue in issues where issue.pullRequest == nil {
-            try await items.append(workItem(issue, in: scope, grant: grant))
+        return try await workItems(
+            issues.filter { $0.pullRequest == nil }, in: scope, grant: grant,
+        )
+    }
+
+    /// Every ticket with its edges, `concurrentTickets` at a time and back in the order served —
+    /// the backlog draws in the provider's own order, and a fan-out lands in the host's.
+    private func workItems(
+        _ issues: [GitHubIssue], in scope: String, grant: AccountGrant,
+    ) async throws
+        -> [WorkItem] {
+        try await withThrowingTaskGroup(of: (Int, WorkItem).self) { group in
+            var read = [WorkItem?](repeating: nil, count: issues.count)
+            for (index, issue) in issues.enumerated() {
+                // Harvested before the next is added, from the point the group is full. This IS
+                // the throttle — without it the loop would add one task per ticket.
+                if index >= Self.concurrentTickets, let (at, item) = try await group.next() {
+                    read[at] = item
+                }
+                group.addTask {
+                    try await (index, workItem(issue, in: scope, grant: grant))
+                }
+            }
+            for try await (at, item) in group {
+                read[at] = item
+            }
+            // Every slot was filled above, so this drops nothing.
+            return read.compactMap(\.self)
         }
-        return items
     }
 
     /// The edges, asked for only where the issue's own summary says there is one. The summaries
