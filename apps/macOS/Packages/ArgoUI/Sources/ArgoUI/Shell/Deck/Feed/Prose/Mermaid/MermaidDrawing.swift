@@ -24,7 +24,7 @@ struct MermaidDrawing {
         case let .shape(outline, rect) where outline.isSolid:
             context.fill(outline.ground(in: rect), with: .color(line))
         case let .shape(outline, rect):
-            if let ground = ink.ground(of: figure.role) {
+            if let ground = ink.ground(of: figure.role, at: figure.weight) {
                 context.fill(outline.ground(in: rect), with: .color(ground.color))
             }
             context.stroke(outline.path(in: rect), with: .color(line), style: figure.style)
@@ -32,7 +32,7 @@ struct MermaidDrawing {
         // what keeps two adjacent wedges two wedges.
         case let .arc(arc, rect):
             let wedge = arc.path(in: rect)
-            if let ground = ink.ground(of: figure.role) {
+            if let ground = ink.ground(of: figure.role, at: figure.weight) {
                 context.fill(wedge, with: .color(ground.color))
             }
             context.stroke(wedge, with: .color(line), style: figure.style)

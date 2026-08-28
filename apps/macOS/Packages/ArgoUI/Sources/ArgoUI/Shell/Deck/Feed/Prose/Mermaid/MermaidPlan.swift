@@ -25,9 +25,16 @@ struct MermaidPlan: Equatable, Sendable {
         guard let first = marks.first else { return self }
         let bounds = marks.dropFirst().reduce(first) { $0.union($1) }
         let offset = CGPoint(x: -bounds.minX, y: -bounds.minY)
+        // Rebuilt FIELD BY FIELD, so a property added to `MermaidFigure` and forgotten here is
+        // dropped from every plan silently — nothing else in the type reconstructs one.
         return MermaidPlan(
             figures: figures.map {
-                MermaidFigure(form: $0.form.moved(by: offset), role: $0.role, line: $0.line)
+                MermaidFigure(
+                    form: $0.form.moved(by: offset),
+                    role: $0.role,
+                    line: $0.line,
+                    weight: $0.weight,
+                )
             },
             captions: captions.map {
                 MermaidCaption(
@@ -61,5 +68,12 @@ enum MermaidRole: Equatable, Sendable {
     /// INDEXED rather than named, because "the nth thing the source listed" is the whole of what
     /// one means, and it is the only role a reader states a NUMBER for. It wraps past the end of
     /// the palette rather than running out; `ArgoPalette.SeriesRoles` owns that rule.
+    ///
+    /// A figure's `weight` reads this role and only this one, so the SAME role can be drawn at
+    /// three strengths — and a Gantt's plain bar is the middle one while a pie slice is the top.
+    /// Deliberate, and forced: a rung above the hue walks into `diff.removed`, so a chart that has
+    /// to say "more than ordinary" has nowhere to put it except under the hue (#905). Two diagrams
+    /// in one message therefore draw `series(n)` at two strengths; what they never do is draw it
+    /// in two HUES, which is the thing the role is for.
     case series(Int)
 }

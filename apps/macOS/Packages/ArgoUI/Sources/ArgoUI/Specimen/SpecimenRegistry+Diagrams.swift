@@ -75,5 +75,12 @@ extension SpecimenRegistry {
         SpecimenEntry("feedMermaidGanttChain") {
             MarkdownSpecimen(text: MermaidSpecimen.ganttChain)
         },
+        // What a bar SAYS rather than where it sits (#905): every state in one hue.
+        SpecimenEntry("feedMermaidGanttStates") {
+            MarkdownSpecimen(text: MermaidSpecimen.ganttStates)
+        },
+        SpecimenEntry("feedMermaidGanttStatesOff") {
+            MarkdownSpecimen(text: MermaidSpecimen.ganttStatesOff)
+        },
     ]
 }

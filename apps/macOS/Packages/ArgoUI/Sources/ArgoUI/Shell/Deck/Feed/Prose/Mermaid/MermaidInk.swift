@@ -23,11 +23,15 @@ struct MermaidInk: Sendable {
     }
 
     /// The ground under it, or `nil` for a role that is a line rather than a container.
-    func ground(of role: MermaidRole) -> ArgoColor? {
+    ///
+    /// The weight reaches the SERIES ramp and nothing else: "the same thing, spent" is a question
+    /// only a categorical mark has an answer to, and a half-laid node ground would just read as a
+    /// hole in the surface.
+    func ground(of role: MermaidRole, at weight: MermaidFigure.Weight) -> ArgoColor? {
         switch role {
         case .node: palette.surface.raised
         case .edge, .emphasis, .note, .axis: nil
-        case let .series(index): palette.series.hue(index)
+        case let .series(index): palette.series.hue(index, at: weight.hue)
         }
     }
 
@@ -42,6 +46,19 @@ struct MermaidInk: Sendable {
         // A word in a series role is written ON that series' fill, which is the one ink the ramp
         // holds for words on a colour rather than on a surface.
         case .series: palette.text.onAccent
+        }
+    }
+}
+
+private extension MermaidFigure.Weight {
+    /// The same three rungs the contract spells, which is where the values live. Two enums for one
+    /// idea on purpose: a plan states a weight without importing the palette's vocabulary, exactly
+    /// as it states a role without naming a colour.
+    var hue: ArgoPalette.SeriesRoles.Weight {
+        switch self {
+        case .spent: .spent
+        case .ordinary: .ordinary
+        case .full: .full
         }
     }
 }

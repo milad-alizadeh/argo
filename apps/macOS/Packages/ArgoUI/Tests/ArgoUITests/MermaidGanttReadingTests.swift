@@ -88,9 +88,9 @@ struct MermaidGanttReadingTests {
         #expect(read.first?.end == Self.date("2026-01-05 12:30"))
     }
 
-    /// Every refusal in one place. Each of these draws SOMETHING under a looser reader — a bar at
-    /// a date nobody wrote, a milestone as a bar, a heading over nothing — and a wrong chart is
-    /// worse than a fence.
+    /// Every refusal about a task's DATES in one place — the ones about its states are next door,
+    /// in `MermaidGanttStateTests`. Each of these draws SOMETHING under a looser reader: a bar at a
+    /// date nobody wrote, a heading over nothing. A wrong chart is worse than a fence.
     @Test(arguments: [
         "",
         "dateFormat YYYY-MM-DD",
@@ -111,8 +111,6 @@ struct MermaidGanttReadingTests {
         // `after` and `excludes` are read now (#904); what still fences is an `after` naming
         // nothing, which `MermaidGanttChainTests` owns along with the rest of the chain.
         "dateFormat YYYY-MM-DD\nAfter it :after a1, 5d",
-        "dateFormat YYYY-MM-DD\nCritical :crit, a1, 2026-01-05, 5d",
-        "dateFormat YYYY-MM-DD\nA marker :milestone, 2026-01-05, 0d",
         "dateFormat YYYY-MM-DD\n: 2026-01-05, 1d",
         "dateFormat YYYY-MM-DD\nNo colon 2026-01-05 1d",
     ])

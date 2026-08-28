@@ -10,6 +10,15 @@ struct MermaidFigure: Equatable, Sendable {
     /// the same thing said more quietly or more loudly — so how it is stroked is its own property
     /// rather than a second role.
     var line: Line = .solid
+    /// How much of a SERIES ground is laid down. Orthogonal to the role exactly as `line` is: a
+    /// spent bar and a live one are one thing said at two strengths, not two roles — which is what
+    /// makes a Gantt's `done`, plain and `active` read as a scale (#905).
+    ///
+    /// It reaches the series ground and nothing else. `MermaidInk` honours it there and ignores it
+    /// on every other ground and on every stroke, because "the same thing, spent" is a question
+    /// only a categorical fill has an answer to — a half-laid node ground reads as a hole in the
+    /// surface, and a dimmed connector as a mistake.
+    var weight: Weight = .full
 
     /// The marks a plan is allowed to be made of. Every diagram type reduces to these, which is the
     /// whole reason one view can draw all of them.
@@ -35,6 +44,13 @@ struct MermaidFigure: Equatable, Sendable {
 
     enum Line: Equatable, Sendable {
         case solid, dotted, thick
+    }
+
+    /// The three strengths a series ground is laid down at, quietest first. Three and not a
+    /// number, so a layout states which rung it means rather than an opacity — the ink layer owns
+    /// the values, and the contract owns the exemption they take.
+    enum Weight: Equatable, Sendable {
+        case spent, ordinary, full
     }
 }
 
