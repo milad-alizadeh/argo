@@ -20,6 +20,13 @@ enum LinearAPI {
         return trimmed?.isEmpty == true ? nil : trimmed
     }
 
+    /// A provider colour in the one shape `WorkItemLabel` holds: six hex digits, no `#`. Linear
+    /// serves the `#`; GitHub does not, and a surface that had to know which provider a chip came
+    /// from to read its colour would be reading through the port rather than out of it.
+    static func hex(_ value: String?) -> String? {
+        text(value).map { $0.hasPrefix("#") ? String($0.dropFirst()) : $0 }
+    }
+
     /// Linear serves timestamps with fractional seconds, which the bare `.iso8601` strategy will
     /// not parse, and older ones without, which the fractional strategy will not. Both are tried,
     /// and `nil` is what neither reads: an invented age would put a ticket at the head of a

@@ -14,7 +14,9 @@ extension LinearIssue {
             status: state.name,
             closure: state.category.closure,
             assignees: assignee.map { [$0.displayName] } ?? [],
-            labels: labels.nodes.map(\.name),
+            labels: labels.nodes.map {
+                WorkItemLabel(name: $0.name, colour: LinearAPI.hex($0.color))
+            },
             priority: priority,
             // Linear carries no issue TYPE. Absent rather than filled from the project or the
             // milestone, neither of which is what the word means (#160).

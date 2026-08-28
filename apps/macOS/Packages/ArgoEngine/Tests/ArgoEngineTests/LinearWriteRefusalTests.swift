@@ -25,7 +25,7 @@ struct LinearWriteRefusalTests {
         // reply, which carries no relations — adopting that would blank a ticket's edges on
         // every write.
         #expect(written.number == 12)
-        #expect(written.labels == ["engine"])
+        #expect(written.labels == [WorkItemLabel(name: "engine")])
         #expect(written.blockedBy == [])
     }
 
