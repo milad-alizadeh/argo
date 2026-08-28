@@ -12,6 +12,7 @@ struct NextUpActionTests {
     private final class Held {
         var ticket: Int?
         var view = TicketsView.blocked
+        var started: Int?
     }
 
     private func room(_ held: Held) -> TicketsRoom {
@@ -22,6 +23,8 @@ struct NextUpActionTests {
             view: Binding(get: { held.view }, set: { held.view = $0 }),
             backlogWidth: .constant(ArgoBacklogList.width),
             shut: .constant([]),
+            startSession: { held.started = $0 },
+            startCommand: { _ in .implement },
         )
     }
 
@@ -41,5 +44,30 @@ struct NextUpActionTests {
         room(held).nextUpIntents.open(607)
 
         #expect(held.view == .blocked)
+    }
+
+    /// The hero's second verb (#899). It addresses the pick by number, the way the open verb beside
+    /// it does — the card knows which ticket it is offering and nothing else has to be told.
+    @Test func `the hero's Start verb starts a Session on the pick`() {
+        let held = Held()
+
+        room(held).nextUpIntents.start(607)
+
+        #expect(held.started == 607)
+    }
+
+    /// Start is a second control and not a second meaning for the first: pressing it must not also
+    /// open the ticket in the pane.
+    @Test func `the hero's Start verb does not open the ticket beside it`() {
+        let held = Held()
+
+        room(held).nextUpIntents.start(607)
+
+        #expect(held.ticket == nil)
+    }
+
+    /// The card SAYS what it will send, so the reading has to reach it as well as the act.
+    @Test func `the hero says which command its Start will send`() {
+        #expect(room(Held()).nextUpIntents.command(607) == .implement)
     }
 }

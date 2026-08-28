@@ -44,6 +44,7 @@ struct StartControl: View {
                 ArgoGlyph(ArgoSymbol.startSession, ArgoTicketsChrome.iconSize)
                 Text("Start")
                     .argoText(ArgoTypography.control)
+                command
             }
             .foregroundStyle(argo.color.text.secondary)
             .padding(.horizontal, ArgoSpacing.base)
@@ -51,13 +52,34 @@ struct StartControl: View {
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .help("Start a Session on this ticket")
-        .accessibilityLabel("Start a Session on this ticket")
+        .help(spoken)
+        .accessibilityLabel(spoken)
+    }
+
+    /// What the press will send, beside the verb rather than only in its tooltip (#899): a press
+    /// that silently dispatched one of five different jobs is a press nobody can aim. Quieter ink
+    /// than the verb — it is what `Start` will do, not a second control.
+    ///
+    /// Nothing at all where the ticket asks for no command. `Start` alone is then the whole truth:
+    /// the Session opens with an empty composer.
+    @ViewBuilder private var command: some View {
+        if let command = verbs.command {
+            Text("/\(command.rawValue)")
+                .argoText(ArgoTypography.machineCaption)
+                .foregroundStyle(argo.color.text.tertiary)
+        }
+    }
+
+    private var spoken: String {
+        guard let command = verbs.command else {
+            return "Start a Session on this ticket, with an empty composer"
+        }
+        return "Start a Session on this ticket, on /\(command.rawValue)"
     }
 }
 
 #Preview("Start control") {
-    StartControl(verbs: .inert)
+    StartControl(verbs: TicketsToolbarIntents.Verbs(command: .implement))
         .padding(ArgoSpacing.region)
         .argoAppearance()
 }

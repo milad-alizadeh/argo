@@ -15,10 +15,11 @@ extension CockpitView {
     /// The two link verbs are ABSENT where the Binding cannot address the ticket, which is what
     /// disables them: a Linear Binding holds a team id, and no page is derivable from one
     /// (`TicketAddress`).
-    var ticketsVerbs: TicketsToolbarIntents.Verbs {
+    func ticketsVerbs(_ start: TicketStart) -> TicketsToolbarIntents.Verbs {
         guard let ticket = navigation.ticket else { return .inert }
         var verbs = TicketsToolbarIntents.Verbs()
-        verbs.start = { Task { await startSession(on: ticket) } }
+        verbs.start = { Task { await start.run(on: ticket, in: navigation) } }
+        verbs.command = start.command(on: ticket)
         guard let url = ticketAddress?.browseURL(of: ticket) else { return verbs }
         verbs.openOnHost = { openURL(url) }
         // The same URL the verb beside it opens, off one derivation: two readings of one address
@@ -27,17 +28,13 @@ extension CockpitView {
         return verbs
     }
 
-    /// Start a Session on the open ticket, on `Code` — the rung work needs, and the only one this
-    /// row offers (`cockpit-work-room.md`, "`Start` starts"). It stays changeable over the live
-    /// Session, in the composer's `ModePicker`, which reads the rung back.
-    ///
-    /// The window stays in the Tickets room. The answer the reader asked for is the backlog row
-    /// going claimed, which happens here — switching them into the Sessions room would take the
-    /// list they were triaging away at the moment it told them something.
-    private func startSession(on ticket: Int) async {
-        guard let fresh = await actions.tickets.startSession(ticket, .code) else { return }
-        // Selected but not switched to: the roster is on the fresh Session whenever they go there.
-        navigation.session = fresh
+    /// Starting a Session on a ticket, assembled from the two readings the act needs and the room
+    /// does not: the listing the labels are on, and the screens this checkout has a design for
+    /// (#899). The rule itself is `WorkCommand`'s, and it is `TicketStart` that performs the act.
+    var ticketStart: TicketStart {
+        TicketStart(tickets: tickets, designs: actions.tickets.designedScreens()) {
+            await actions.tickets.startSession($0, $1, $2)
+        }
     }
 
     /// Open the composer on an empty ticket, and on nothing a refused write left behind: a sheet

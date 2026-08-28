@@ -169,7 +169,7 @@ public struct CockpitView: View {
         .sheet(isPresented: $isComposingTicket, onDismiss: closeTicketComposer) {
             NewTicketComposer(
                 composition: $ticketComposition,
-                control: ticketsIntents.creation.control,
+                control: ticketWriteControl,
                 reconnect: openProjectPanel,
                 cancel: closeTicketComposer,
                 create: createTicket,

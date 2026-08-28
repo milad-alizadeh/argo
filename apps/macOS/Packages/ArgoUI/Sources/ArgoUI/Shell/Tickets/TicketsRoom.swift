@@ -32,6 +32,12 @@ struct TicketsRoom {
     /// What the row's controls do, and what the one that writes through a provider renders (#275).
     /// Inert by default for the same reason `connect` is.
     var intents = TicketsToolbarIntents.inert
+    /// What the sidebar hero's Start raises, and what that press will send (#899). Two closures
+    /// rather than one: the card SAYS the command before it is pressed, so the reading has to reach
+    /// it separately from the act. Neither is a value the room could build — a spawn reaches the
+    /// engine, and the mapping needs the listing and the design tree.
+    var startSession: (Int) -> Void = { _ in }
+    var startCommand: (Int) -> WorkCommand? = { _ in nil }
     /// What a link to a ticket the listing does not hold raises: one read, by that number (#895).
     /// Inert by default, so a `#Preview` and a specimen draw the pane with no request behind them.
     var follow: @MainActor (Int) async -> Void = { _ in }
@@ -55,7 +61,7 @@ struct TicketsRoom {
     /// writes the same binding a backlog row does — the view binding is deliberately not written,
     /// for the reason on `NextUpIntents.open`.
     var nextUpIntents: NextUpIntents {
-        NextUpIntents(open: { ticket = $0 })
+        NextUpIntents(open: { ticket = $0 }, start: startSession, command: startCommand)
     }
 
     /// What the room puts in the WINDOW's row: every control the room has, on one line — the reason

@@ -1,3 +1,5 @@
+import ArgoEngine
+
 /// What the Tickets room's toolbar controls DO, grouped by the thing each acts on.
 ///
 /// Inert by default, for a `#Preview` and a specimen; the shell passes the live ones (#872). The
@@ -27,6 +29,9 @@ struct TicketsToolbarIntents {
 
     struct Verbs {
         var start: () -> Void = {}
+        /// Which command `Start` will send, drawn beside the word so the press can be aimed (#899),
+        /// and `nil` where the ticket asks for none — an empty composer, said as `Start` alone.
+        var command: WorkCommand?
         /// The two link verbs, and `nil` where this Binding cannot address the ticket in a browser
         /// at all — a Linear team id names no page (`TicketAddress`). Optional rather than an
         /// empty closure, because a control that draws live and does nothing is the thing #872 is

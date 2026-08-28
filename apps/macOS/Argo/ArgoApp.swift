@@ -152,6 +152,7 @@ struct ArgoApp: App {
     }
 
     private var actions: CockpitActions {
+        let projectURL = cockpit.hub.project.url
         var actions = CockpitActions(
             refreshCheckout: { Task { await cockpit.refreshCheckout() } },
             retryConnection: { Task { await cockpit.retryConnection() } },
@@ -182,11 +183,7 @@ struct ArgoApp: App {
             //
             // The CLI's own built-ins are NOT re-read here (#686). They are keyed to a version
             // rather than to a moment, and asking again would mean a hidden `claude` per keystroke.
-            skills: {
-                cockpit.builtins.catalog(
-                    joining: SkillCatalog(projectURL: cockpit.hub.project.url).skills(),
-                )
-            },
+            skills: { cockpit.builtins.catalog(forProjectAt: projectURL) },
             // The Session's OWN folder, not the Project's: a Session running in a worktree names
             // files in that worktree, and nothing outside it (#687). Read on every open, so a file
             // written while the Session was running is in the very next list.
@@ -197,7 +194,8 @@ struct ArgoApp: App {
         // The Tickets room's two provider acts, split across the coordinators that own them the way
         // the Connect panel's are: the create is a Binding act, and the spawn is the Hub's (#872).
         actions.tickets.createTicket = { await accounts.createTicket($0) }
-        actions.tickets.startSession = { await cockpit.spawnSession(on: $0, mode: $1) }
+        actions.tickets.startSession = { await cockpit.spawnSession(on: $0, mode: $1, opening: $2) }
+        actions.tickets.designedScreens = DesignedScreens(projectURL: projectURL).screens
         actions.tickets.readTicket = { await accounts.readTicket($0) }
         return actions
     }
