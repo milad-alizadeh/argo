@@ -24,8 +24,8 @@ struct ModeMenu: View {
                 .foregroundStyle(argo.color.text.tertiary)
                 .rotationEffect(.degrees(90))
                 .frame(
-                    width: ArgoWorkToolbar.iconButtonWidth,
-                    height: ArgoWorkToolbar.iconButtonHeight,
+                    width: ArgoWorkChrome.iconButtonWidth,
+                    height: ArgoWorkChrome.iconButtonHeight,
                 )
                 .contentShape(.capsule)
         }

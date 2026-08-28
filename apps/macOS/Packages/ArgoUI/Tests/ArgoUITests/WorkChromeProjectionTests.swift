@@ -1,17 +1,18 @@
 @testable import ArgoUI
 import Testing
 
-/// What the Work room's toolbar reads off the room (#816). The heading is two lines because a title
-/// without its count can lie about what you are filtered to, and the row's two vacancies are
-/// different pages: an empty backlog keeps New ticket, an unbound provider keeps nothing.
-@Suite("Work toolbar projection")
-struct WorkToolbarProjectionTests {
+/// What the Work room's chrome reads off the room (#816) — the two bands and the window's row, one
+/// value between them (#836). The heading is two lines because a title without its count can lie
+/// about what you are filtered to, and the room's two vacancies are different pages: an empty
+/// backlog keeps New ticket, an unbound provider keeps nothing.
+@Suite("Work chrome projection")
+struct WorkChromeProjectionTests {
     private static func reading(
         of view: WorkView = .allOpen,
         showing: Int? = 272,
     )
-        -> WorkToolbarProjection.Reading {
-        WorkToolbarProjection.reading(
+        -> WorkChromeProjection.Reading {
+        WorkChromeProjection.reading(
             of: WorkRoomProjection.room(from: WorkFixture.reading, in: view),
             in: view,
             showing: showing,
@@ -63,7 +64,7 @@ struct WorkToolbarProjectionTests {
             WorkFixture.item(272, blockedBy: []),
         ]))
 
-        #expect(WorkToolbarProjection.reading(of: one, in: .allOpen, showing: nil).subtitle
+        #expect(WorkChromeProjection.reading(of: one, in: .allOpen, showing: nil).subtitle
             == "All open · by priority · 1 ticket")
     }
 
@@ -81,7 +82,7 @@ struct WorkToolbarProjectionTests {
     @Test
     func `an empty backlog keeps New ticket and loses the rest`() {
         let empty = WorkRoomProjection.room(from: WorkFixture.answeredEmpty)
-        let reading = WorkToolbarProjection.reading(of: empty, in: .allOpen, showing: 272)
+        let reading = WorkChromeProjection.reading(of: empty, in: .allOpen, showing: 272)
 
         #expect(reading.draws)
         #expect(!reading.narrows)
@@ -90,10 +91,10 @@ struct WorkToolbarProjectionTests {
     }
 
     /// Nothing is bound, so there is nothing to create INTO — a different page from the one above,
-    /// and the row empties rather than keeping the call-to-action over a provider nobody asked.
+    /// and the chrome empties rather than keeping the call-to-action over a provider nobody asked.
     @Test
-    func `an unbound provider empties the row`() {
-        let reading = WorkToolbarProjection.reading(
+    func `an unbound provider empties the chrome`() {
+        let reading = WorkChromeProjection.reading(
             of: WorkRoomProjection.room(from: WorkFixture.unbound),
             in: .allOpen,
             showing: 272,

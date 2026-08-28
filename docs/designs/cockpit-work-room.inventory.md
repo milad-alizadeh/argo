@@ -31,6 +31,14 @@ The tables below cover #812, #814, #815 and #818; #817's and #816's own sections
 | `StatusPair` | atom | `ArgoUI/Shell/Work/Detail/` | `word: String`, `bucket: WorkItemState` (4 states) | — | `StatusPair` |
 | `WorkRoomVacancy` | molecule | `ArgoUI/Shell/Work/` | `vacancy: WorkRoomProjection.Vacancy` (`unbound` \| `nothingOpen(provider:)`), `project: String?`, `connect: () -> Void` | stock `ContentUnavailableView` | `.vacant` |
 
+### #836 — the room's chrome, mounted per column
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `BacklogHeader` | molecule | `ArgoUI/Shell/Work/Backlog/` | `reading: WorkChromeProjection.Reading`, `narrowing`, `grouping` | `ToolbarVessel`, `ToolbarIcon`, `BacklogMenu`, `DeckSeparator` | renamed from `BacklogToolbarLabel`, which was a toolbar item claiming 520pt |
+| `BacklogMenu` | atom | `ArgoUI/Shell/Work/Backlog/` | `grouping: () -> Void` | stock `Menu` | Mail's `⋯` beside its filter |
+| `TicketBand` | molecule | `ArgoUI/Shell/Work/Detail/` | `reading: WorkChromeProjection.Reading`, `intents`, `mode: Binding<SessionMode>` | `NewTicketButton`, `StartControl` | the controls #816 mounted in the window row |
+
 ### #815 — the fact strip and the sections
 
 | name | tier | location | props | composed-of | source |
@@ -314,8 +322,8 @@ picker now, not this room's.
 
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
-| `WorkToolbar` | organism | `ArgoUI/Shell/Work/Toolbar/` | `reading: Reading`, `intents: WorkToolbarIntents`, `held: Held` | `BacklogToolbarLabel`, `NewTicketButton`, `StartControl`, `BacklogSearchField` | the `.titlebar.three` grid |
-| `BacklogToolbarLabel` | molecule | `ArgoUI/Shell/Work/Toolbar/` | `reading: Reading`, `narrowing: () -> Void`, `grouping: () -> Void` | `ToolbarVessel`, `ToolbarIcon` | `.tb-list` |
+| `WorkToolbar` | organism | `ArgoUI/Shell/Work/Toolbar/` | `reading: Reading`, `query: Binding<String>` | `BacklogSearchField` | the `.titlebar.three` grid. **#836**: search alone; the rest went to the bands |
+| ~~`BacklogToolbarLabel`~~ | molecule | — | — | — | **#836**: renamed `BacklogHeader` and moved into the list pane |
 | `ToolbarVessel` | atom | `ArgoUI/Shell/Work/Toolbar/` | `content: Content` | `argoFloatingGlass(in: .capsule)` | `.icap.glass` |
 | `ToolbarIcon` | atom | `ArgoUI/Shell/Work/Toolbar/` | `symbol: String`, `label: String`, `act: () -> Void` | `ArgoGlyph` | `.ibtn` |
 | `NewTicketButton` | atom | `ArgoUI/Shell/Work/Toolbar/` | `act: () -> Void` | `ToolbarVessel`, `ToolbarIcon` | `ibtn('compose')` |
@@ -335,33 +343,81 @@ button's slot, the vessel inset, the split rule and the search field's measure.
   a word. Extracted it would be a `ToolbarIcon` with a label bolted on.
 - **The row's flexible spacer.** `ToolbarSpacer(.flexible, placement: .primaryAction)`, stock.
 
-## The column-placement question — answered wrongly, and what the render showed
+## The column-placement question — answered, and what the wrong answer showed (#836)
 
-**This build's answer does not hold, and the branch ships it anyway so the evidence is on the
-record.** What was tried: every item at `.primaryAction`, with the list block claiming
-`ArgoBacklogList.width` 520 at that region's leading edge, on the premise that `.primaryAction` is
-the region the detail pane draws.
+**#816's answer did not hold.** What it tried: every item at `.primaryAction`, with the list block
+claiming `ArgoBacklogList.width` 520 at that region's leading edge, on the premise that
+`.primaryAction` is the region the detail pane draws.
 
 **The premise is false.** macOS lays `.navigation` and `.primaryAction` out as ONE continuous band,
-so `ShellToolbar`'s sidebar toggle, New Session and the scope vessel are drawn first and eat about
-270pt before the block starts. Measured off `ARGO_SPECIMEN=workRoom` at the 1280 window:
+so `ShellToolbar`'s sidebar toggle, New Session and the scope vessel were drawn first and ate about
+270pt before the block started. Measured off `ARGO_SPECIMEN=workRoom` at the 1280 window:
 
-| | design (`menu.png`) | this build |
+| | design (`menu.png`) | #816 |
 |---|---|---|
 | `Backlog` heading | ~306, just past the sidebar | ~700, onto the ticket column |
 | filter / group-by | trailing edge of the 520 block | pushed to the window's trailing edge |
 | New ticket · Start · links · search | over the ticket column | behind an unlabelled `»` overflow |
 
-That last row breaks the design's own rule — nothing in this room is behind an unlabelled control.
-`ARGO_SPECIMEN=workToolbar` renders the same row in isolation and it IS the design, so the
-components are sound and only the mounting is wrong.
+That last row broke the design's own rule — nothing in this room is behind an unlabelled control.
+The row rendered in isolation WAS the design, so the components were sound and only the mounting
+was wrong.
 
-**The two routes left are the ticket's own, and the render is evidence for the one it preferred.**
-A three-column `NavigationSplitView` gives real per-column regions at every width, and costs a
-shell fork plus a per-room state reset — the objection that produced this build in the first place.
-A sticky header inside the list pane removes the 520 arithmetic and the overflow together, and
-costs the room a second chrome band and New ticket's placement over the column it opens.
-`.principal` stays closed for the reason `ShellToolbar` records.
+**The answer: each pane grew a band at its head.** `BacklogHeader` holds the heading, its count,
+the filter and `BacklogMenu`; `TicketBand` holds New ticket and the open ticket's verbs. A band
+inside a pane is aligned to its column by construction — no width to keep in step with anything,
+and nothing to recompute when the window moves. The window row keeps search alone, at the trailing
+edge, where the HIG puts a search field and where Mail's is.
+
+**New ticket went to the band on the second render, not the first.** Mounted in the window row it
+drew at 440pt — over the LIST, because `.primaryAction` begins where `ShellToolbar`'s items end and
+not where the ticket column does. The same fault as #816's in a smaller form: a control placed
+relative to a column has to be drawn BY that column.
+
+**Why this rather than a three-column `NavigationSplitView`.** That is what Mail actually is, and it
+would take the placement from the platform instead of from us. It also forks the shell's split view
+per room, which rebuilds the window on every room switch and drops the deck's per-Session state —
+and whether SwiftUI hands a column's own `.toolbar` to that column's section on macOS 26 is
+unverified, where Mail is AppKit. The bands need no fork and no spike. `.principal` stays closed for
+the reason `ShellToolbar` records.
+
+**What the bands cost.** Two chrome bands the approved renders do not show.
+`ArgoTicketDetail.bandHeight` reads `ArgoBacklogList.bandHeight` rather than repeating it, and
+`SurfaceMeasureTests` asserts the two are one number, so the panes' content cannot start on two
+lines.
+
+**What gives at a narrow window: the list.** Mounted, the bands needed more width than the room had
+below about 1050 — the sidebar's 280 and the list's fixed 520 left the ticket pane less than
+`TicketBand`, and its trailing verbs met the window's edge. So 520 became where the list RESTS and
+its ceiling rather than a floor, and `ArgoBacklogList.minimumWidth` is the remainder derived from
+the narrowest window: 960 less the sidebar, less `feedMinimumWidth`, less the two seams between
+them. Below 520 the pane narrows, titles truncate at the tail — which `BacklogRow` already does —
+and the ticket's prose re-wraps to what it is left. Rendered whole at 960 and at 1280.
+
+The seam term is not decoration: without it the arithmetic comes out exact, the split view takes
+the divider from the SIDEBAR instead, and the sidebar draws its labels off its own leading edge.
+`SurfaceMeasureTests` asserts the three columns fit the narrowest window, and that the list yields
+before it reaches the ticket's floor.
+
+**Two consequences beyond the mounting.**
+
+- **New Session left the Work room's row.** Mail's window creates one kind of thing and spends one
+  compose mark on it. `ShellToolbar.spawn` is optional now and `CockpitRoom.spawnsSessions` decides;
+  `⌘N` and the menu bar are untouched. That freed `square.and.pencil` for New ticket, whose `plus`
+  existed only to keep the two marks apart — and the pair is asserted together, so putting New
+  Session back without re-cutting the mark fails a test rather than shipping two compose marks.
+- **Group-by is a row in an `ellipsis` menu**, which is where Mail keeps sort and group beside its
+  own funnel. `rectangle.grid.1x2` was invented for an act the platform already houses.
+
+**The ellipsis is drawn by font, not by rung.** `ArgoGlyph` constrains a mark's HEIGHT, and an
+ellipsis is three dots whose ink is a fraction of its box: matched by height it drew three discs the
+size of the funnel beside it. `BacklogMenu` uses `argoIcon`, the font-based accessor the contract
+provides for a bare `Image`. `ProjectRowMenu` draws the same symbol through `ArgoGlyph` and likely
+has the same fault — not touched here, since it is not this room's.
+
+**`WorkToolbarProjection` is `WorkChromeProjection` now.** Three surfaces read one value — the two
+bands and the row — so a name saying "toolbar" would have described one of its callers.
+
 
 ## Where the design and the code disagree
 
@@ -406,8 +462,8 @@ the placement, not before.
 
 `ModeMenu` is a native `Menu`. AppKit owns the open popover, so it cannot be put on screen by a
 specimen and the open state has no headless render — `menu.png` stays the study's drawing of it.
-The row it hangs from is `workToolbar`, and the two vacancies are `emptyWorkToolbar` and
-`unboundWorkToolbar`.
+The chrome it hangs from is `workChrome`, and the two vacancies are `emptyWorkChrome` and
+`unboundWorkChrome` (renamed with the row's contents in #836).
 
 # #819 — priority groups the backlog roots
 

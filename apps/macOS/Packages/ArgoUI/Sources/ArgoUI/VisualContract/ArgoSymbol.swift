@@ -36,15 +36,18 @@ public enum ArgoSymbol {
     public static let inProgressView = "diamond.fill"
     public static let blockedView = "triangle"
 
-    /// The Work room's toolbar (`cockpit-work-room.md`). Each is the mark the study drew, named by
-    /// what the control does rather than by the shape.
-    /// A plus, and NOT the roster's compose mark: a ticket is filed rather than written, and the
-    /// same square-and-pencil on two rooms' toolbars reads as the same act in both.
-    public static let newTicket = addProject
-    /// Narrowing the backlog to a subset, and re-ordering what is left into groups. Two different
-    /// acts, so two marks — a funnel takes rows away, banded rows keep them all.
+    /// The Work room's chrome (`cockpit-work-room.md`), each mark named by what the control does
+    /// rather than by its shape.
+    /// The COMPOSE mark, which Mail spends on the one thing its window creates. This room creates a
+    /// ticket and New Session is not in its bar (#836), so the two marks are never in one bar and
+    /// the plus that kept them apart is no longer earning anything.
+    public static let newTicket = newSession
+    /// Narrowing the backlog to a subset. Mail's own funnel, unchanged.
     public static let filterBacklog = "line.3.horizontal.decrease"
-    public static let groupBacklog = "rectangle.grid.1x2"
+    /// Re-ordering what is left. A MENU and not a mark of its own: Mail keeps sort and group inside
+    /// the ellipsis beside its filter, and the banded-rows glyph that stood here was invented for
+    /// an act the platform already has a home for (#836).
+    public static let backlogMenu = projectMenu
     public static let searchBacklog = "magnifyingglass"
     /// Starting a Session on the open ticket — the verb the room is for. A play triangle rather
     /// than a bolt: the bolt was read as speed or as power, and neither is the act.

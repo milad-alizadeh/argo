@@ -1,70 +1,33 @@
-import ArgoEngine
 import SwiftUI
 
-/// The Work room's controls, in the window's ONE toolbar row, each placed over the thing it acts
-/// on — Mail's rule, transposed (`cockpit-work-room.md`).
+/// What the Work room puts in the WINDOW's toolbar row: search, at the trailing edge. That is all.
 ///
-/// ## How each control lands over its own column
+/// A toolbar item is laid out from the window's leading edge, so it cannot be placed against a
+/// column; anything that acts on one is in that column's band instead — `BacklogHeader`,
+/// `TicketBand`. The column question is settled in `cockpit-work-room.md` (#836).
 ///
-/// Every item here is `.primaryAction`, which is the region the DETAIL pane draws — `.navigation`
-/// is the window's leading region and lands over the sidebar, where the scope vessel is.
-/// `BacklogToolbarLabel` takes `ArgoWorkToolbar.listBlockWidth` at that region's leading edge,
-/// which is `ArgoBacklogList.width` and does not move with the window — so it lands over the list,
-/// and everything after it lands over the ticket column, at every window size.
-///
-/// Per-column toolbar REGIONS would need a genuine three-column `NavigationSplitView`, which the
-/// shell does not have: its split view is unconditional (#812). Why that stands and `.principal`
-/// does not is in `docs/designs/cockpit-work-room.md`, "The column question, settled".
+/// **Search stays here because it is the window's.** Mail keeps its field at the window's trailing
+/// edge too, and searches the list with it: the toolbar is one row, not three.
 struct WorkToolbar: ToolbarContent {
-    let reading: WorkToolbarProjection.Reading
-    var intents = WorkToolbarIntents.inert
-    /// The two things the row HOLDS rather than reads — grouped, because the parameter cap is three
-    /// and a binding pair travels together (the `DeckSeams` shape).
-    var held: Held
-
-    struct Held {
-        var query: Binding<String>
-        var mode: Binding<SessionMode>
-
-        /// Nothing remembers either, for a `#Preview` with no room above it.
-        static let unheld = Held(query: .constant(""), mode: .constant(.code))
-    }
+    let reading: WorkChromeProjection.Reading
+    /// What the field HOLDS. The room does not read it back — the query outlives the pane, so it is
+    /// held above the room with the rest of the window's state.
+    var query: Binding<String> = .constant("")
 
     @ToolbarContentBuilder var body: some ToolbarContent {
-        if reading.draws {
-            ToolbarItem(placement: .primaryAction) {
-                BacklogToolbarLabel(
-                    reading: reading,
-                    narrowing: intents.narrowing,
-                    grouping: intents.grouping,
-                )
-            }
-            // Each vessel draws its own glass, so the shared background the toolbar puts behind a
-            // region would stack a second capsule under all of them.
-            .sharedBackgroundVisibility(.hidden)
-            ToolbarItem(placement: .primaryAction) {
-                deckControls
-            }
-            .sharedBackgroundVisibility(.hidden)
+        // `narrows` and not `draws`: search goes with the list it searches, so an empty backlog
+        // loses it where New ticket in the band below survives.
+        if reading.narrows {
+            // The region packs from its own leading edge, which is where `ShellToolbar`'s items
+            // end — without this the field sits against the scope vessel rather than at the
+            // window's trailing edge, where the HIG puts a search field and where Mail's is.
             ToolbarSpacer(.flexible, placement: .primaryAction)
-            if reading.narrows {
-                ToolbarItem(placement: .primaryAction) {
-                    BacklogSearchField(query: held.query)
-                }
-                .sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .primaryAction) {
+                BacklogSearchField(query: query)
             }
-        }
-    }
-
-    /// The ticket column's own: the call-to-action that opens it, then the open ticket's verbs. One
-    /// item rather than two, so the toolbar cannot slip a region's own spacing between a pair the
-    /// design sets at `comfortable`.
-    private var deckControls: some View {
-        HStack(spacing: ArgoSpacing.comfortable) {
-            NewTicketButton(act: intents.creating)
-            if reading.ticket != nil {
-                StartControl(verbs: intents.verbs, mode: held.mode)
-            }
+            // The field draws its own glass, so the shared background the toolbar puts behind a
+            // region would stack a second capsule under it.
+            .sharedBackgroundVisibility(.hidden)
         }
     }
 }

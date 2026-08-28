@@ -12,8 +12,23 @@ struct BacklogList: View {
     /// Which parents are folded. Held above the pane for the same reason the ticket is: a fold the
     /// reader made outlives the pane, and it is what a specimen seeds to shoot `collapsed.png`.
     @Binding var shut: Set<Int>
+    /// What the band over the list says. The band is HERE and not in the window's toolbar because
+    /// its controls are the list's — see `BacklogHeader` (#836).
+    var header: WorkChromeProjection.Reading = .none
 
     var body: some View {
+        VStack(spacing: ArgoSpacing.flush) {
+            BacklogHeader(reading: header)
+            list
+        }
+        .frame(
+            minWidth: ArgoBacklogList.minimumWidth,
+            idealWidth: ArgoBacklogList.width,
+            maxWidth: ArgoBacklogList.width,
+        )
+    }
+
+    private var list: some View {
         List(selection: $selection) {
             ForEach(WorkRoomProjection.bands(of: rows)) { band in
                 // Flattened ONCE and handed to both, so the header counts the rows the outline
@@ -33,7 +48,6 @@ struct BacklogList: View {
         }
         .listStyle(.inset)
         .scrollContentBackground(.hidden)
-        .frame(width: ArgoBacklogList.width)
         .accessibilityLabel("Backlog")
     }
 }

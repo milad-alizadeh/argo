@@ -19,7 +19,7 @@ struct StartControl: View {
             start
             ModeMenu(mode: $mode)
             DeckSeparator()
-                .frame(height: ArgoWorkToolbar.splitDividerHeight)
+                .frame(height: ArgoWorkChrome.splitDividerHeight)
                 .accessibilityHidden(true)
             ToolbarIcon(
                 symbol: ArgoSymbol.openOnHost, label: "Open on host", act: verbs.openOnHost,
@@ -33,13 +33,13 @@ struct StartControl: View {
     private var start: some View {
         Button(action: verbs.start) {
             HStack(spacing: ArgoSpacing.snug) {
-                ArgoGlyph(ArgoSymbol.startSession, ArgoWorkToolbar.iconSize)
+                ArgoGlyph(ArgoSymbol.startSession, ArgoWorkChrome.iconSize)
                 Text("Start")
                     .argoText(ArgoTypography.control)
             }
             .foregroundStyle(argo.color.text.secondary)
             .padding(.horizontal, ArgoSpacing.base)
-            .frame(height: ArgoWorkToolbar.iconButtonHeight)
+            .frame(height: ArgoWorkChrome.iconButtonHeight)
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)

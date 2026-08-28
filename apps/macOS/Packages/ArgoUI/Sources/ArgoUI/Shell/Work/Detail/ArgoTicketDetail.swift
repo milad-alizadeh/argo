@@ -5,6 +5,14 @@ import SwiftUI
 /// `argoFeedMeasure()`, reused rather than redeclared — the feed already settled what a line of
 /// Argo's prose runs to.
 enum ArgoTicketDetail {
+    /// The band at the head of this pane, holding what acts on the ticket (#836) — the same height
+    /// as the list's band beside it, so both panes' content starts on one line.
+    ///
+    /// Read off the list rather than written down twice — one band, one number.
+    static let bandHeight: CGFloat = ArgoBacklogList.bandHeight
+    /// Inside the band, either edge. The pane's own inset, so New ticket starts on the vertical the
+    /// ticket's title below it starts on.
+    static let bandInsetX: CGFloat = ArgoSpacing.section
     /// The column off the deck's edges.
     static let inset: CGFloat = ArgoSpacing.section
     /// The rule between the provider's status word and Argo's bucket. Short deliberately: it

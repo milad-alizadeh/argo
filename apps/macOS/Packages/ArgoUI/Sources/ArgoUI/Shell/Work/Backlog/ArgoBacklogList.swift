@@ -3,9 +3,34 @@ import SwiftUI
 /// What the deck's leading pane is measured at (`docs/designs/cockpit-work-room.md` — the backlog
 /// list). Beside the surface, per `rules/design-system.md`: a measure is not a token.
 enum ArgoBacklogList {
-    /// The smallest width at which all twelve of the repo's real titles read whole at depth three.
-    /// At 480 three of them clip, which is the arithmetic that moved the backlog out of the rail.
+    /// The width the pane RESTS at, and its ceiling: the smallest at which all twelve of the repo's
+    /// real titles read whole at depth three. At 480 three of them clip, which is the arithmetic
+    /// that moved the backlog out of the rail.
     static let width: CGFloat = 520
+    /// …and what it gives up to when the window cannot afford 520 (#836). A title that clips is a
+    /// title you can still read the start of; a ticket pane squeezed under its own controls is a
+    /// control you cannot reach at all, so the list is what yields. Rows already truncate at the
+    /// tail, so nothing new happens below here — it happens to more rows.
+    ///
+    /// Derived, so it moves with the widths it is the remainder of rather than going stale beside
+    /// them: the narrowest window, less the sidebar, less a pane of prose, less the two seams
+    /// between the three — the split view's divider and the deck's own. Without that last term the
+    /// arithmetic comes out exact and the seams are taken from the SIDEBAR, which then draws its
+    /// labels off its own leading edge.
+    static let minimumWidth: CGFloat = ArgoLayout.windowMinimumWidth
+        - ArgoLayout.sidebarMinimumWidth
+        - ArgoLayout.feedMinimumWidth
+        - ArgoLayout.seamGrabWidth * 2
+    /// The band over the list — its title, its count, and the two controls that narrow it (#836).
+    /// A FLOOR and not a frame, for the reason the row height below is one: the two lines inside it
+    /// are set at the reader's own type size.
+    ///
+    /// The TICKET pane spends the same number on an empty band, so both panes' content starts on
+    /// one line. It reads this rather than repeating it — see `ArgoTicketDetail.bandHeight`.
+    static let bandHeight: CGFloat = 44
+    /// Inside the band, either edge. The gutter again, so the title starts on the vertical the rows
+    /// under it start on.
+    static let bandInsetX: CGFloat = ArgoSpacing.comfortable
     /// A FLOOR, not a frame — the same reason `ArgoWorkSidebar.viewRowHeight` is one. It grew from
     /// 28 when the title snapped up to `body` 13.
     static let rowHeight: CGFloat = 30

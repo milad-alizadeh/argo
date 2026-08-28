@@ -128,13 +128,17 @@ for a Session, read here for a Delivery.
 Mail puts **every** control in the window's one toolbar row, and places each by what it acts on.
 The Work room does the same, in the same order:
 
-| position | control | scope |
-|---|---|---|
-| over the list | `Backlog` and, under it, `All open · by priority · 12 tickets` | says what you are looking at, and how many |
-| trailing the list block | filter, group-by, **past a rule** | list-scoped, so they sit over the list |
-| leading the ticket column | **New ticket** | the call-to-action, its own vessel, opening the next column |
-| next | `▶ Start ⌄`, open-on-host, copy link | the ticket's own verbs |
-| trailing edge | search | a real field at 210, not an icon that becomes one |
+**Amended #836** — the first two rows are a band inside the list pane rather than toolbar items, for
+the reason **the column question** records below. Where each control sits is unchanged; what changed
+is which surface draws it.
+
+| position | control | scope | drawn by |
+|---|---|---|---|
+| leading the list | `Backlog` and, under it, `All open · by priority · 12 tickets` | says what you are looking at, and how many | the list's band |
+| trailing the list | filter, then the ordering menu, **past a rule** | list-scoped, so they end where the list ends | the list's band |
+| leading the ticket column | **New ticket** | the call-to-action, its own vessel, opening the next column | the ticket's band |
+| next | `▶ Start ⌄`, open-on-host, copy link | the ticket's own verbs | the ticket's band |
+| trailing edge | search | a real field at 210, not an icon that becomes one | the window row |
 
 **A title without its count can lie about what you are filtered to**, which is why the heading is
 two lines and Mail's is too (`Searching / Inbox — …, 11 results`).
@@ -144,22 +148,47 @@ reading `by priority` over an ungrouped list is the exact lie the second line ex
 the term arrived with the headers that justify it (#819). Through #812 and #814 — nesting is not a
 grouping — the line read `All open · 12 tickets`.
 
-### The column question, settled (#816)
+### The column question, settled (#836)
 
-The room's three columns are real, but macOS gives per-column toolbar regions only to a genuine
-three-column `NavigationSplitView`, and the shell's split view is unconditional — a room fills its
-slots rather than replacing them (#812). Forking it per room would rebuild the whole window on
-every room switch and drop the deck's per-Session state, both seam drags and the sidebar's width.
-`.principal` is closed for the reason `ShellToolbar` already records.
+macOS gives per-column toolbar regions only to a genuine three-column `NavigationSplitView`, and
+the shell's split view is unconditional — a room fills its slots rather than replacing them (#812).
+Forking it per room would rebuild the whole window on every room switch and drop the deck's
+per-Session state, both seam drags and the sidebar's width. `.principal` is closed for the reason
+`ShellToolbar` already records.
 
-**So the row claims the boundary directly.** Every item is `.primaryAction`, which is the region
-the detail pane draws; `.navigation` is the window's leading region, where the scope vessel sits
-over the sidebar. The list block then takes `ArgoBacklogList.width` 520 at that region's leading
-edge, so it lands over the list and everything after it lands over the ticket column, at any window
-size — because 520 does not move with the window.
+**#816 answered this by claiming the boundary from inside one region, and the answer was wrong.**
+Every item took `.primaryAction` and the list's block took a 520pt frame at its leading edge, on the
+premise that `.primaryAction` begins where the ticket column does. macOS lays `.navigation` and
+`.primaryAction` out as ONE continuous band, so the shell's own leading items are drawn first and
+the block landed most of a column late — with New ticket, Start and the two link verbs pushed into
+the system's overflow at the 1280 window. **Nothing in this room is behind an unlabelled control**,
+so that answer had to go.
+
+**So each pane grew a band at its head, and the controls moved into the column they act on.**
+`BacklogHeader` carries the heading, its count, the filter and `BacklogMenu`; `TicketBand` carries
+New ticket and the open ticket's verbs. Both are aligned to their column by construction — no width
+to keep in step with anything, and no arithmetic to redo when the window moves. The two bands are
+one height, so both panes' content starts on one line.
+
+**The window row keeps search alone**, at the trailing edge. That is Mail's own row read literally:
+compose at the leading edge of the message column, the message's verbs after it, and search at the
+window's trailing edge, searching the list from there.
+
+**When the window cannot afford three columns, the LIST is what yields.** 520 is where the list
+rests and its ceiling, not a floor: below it the pane narrows and titles truncate at the tail, which
+they already do. The ticket pane keeps `ArgoLayout.feedMinimumWidth` 320 and its prose re-wraps to
+whatever it is left. A clipped title is a title you can still read the start of; a ticket pane
+squeezed under its own controls is a control you cannot reach at all. Every control in the room is
+present and whole at `windowMinimumWidth` 960.
 
 **Search sits over the ticket but searches the list.** That is Mail's own split, and for the
 same reason: the toolbar is one row, not three.
+
+**New Session is not in this room's row (#836).** Mail's window creates one kind of thing and
+spends one compose mark on it. This room creates a ticket, so `ShellToolbar` draws New Session in
+every other room and `⌘N` and the menu bar reach it from this one. Two compose marks a finger
+apart, each making a different thing, is the confusion the plus was originally chosen to avoid —
+removing one of them is the better answer than re-cutting the mark.
 
 ### `Start` is a split control, not an ellipsis
 
@@ -188,10 +217,15 @@ that has to be learned costs more than the space a familiar mark saves.
 | control | was | is | why |
 |---|---|---|---|
 | Start | `bolt` | `play.fill` | a bolt reads as speed or as power; neither is the act. Play is the one mark every transport control in the OS uses for *begin* |
-| New ticket | `square.and.pencil` | `plus` | the compose mark is the ROSTER's, for a Session you write into. A ticket is filed, and one glyph on two rooms' toolbars reads as one act |
-| Group by | `list.bullet.indent` | `rectangle.grid.1x2` | an indented list is nesting, which this list already does on its own; banded rows are the grouping |
+| New ticket | `square.and.pencil` | `plus`, then **`square.and.pencil` again (#836)** | the compose mark was given up to keep it off the same row as New Session. #836 took New Session out of this room instead, so the mark is free and this is the one thing the window creates — which is exactly what Mail spends its compose mark on |
+| Group by | `list.bullet.indent`, then `rectangle.grid.1x2` | **an `ellipsis` menu (#836)** | both were marks invented for an act the platform already houses: Mail keeps sort and group inside the ellipsis beside its filter. A mark a reader has to learn costs more than the row it saves |
 
-Filter keeps `line.3.horizontal.decrease` — a funnel is the one glyph here nobody had to learn.
+Filter keeps `line.3.horizontal.decrease` — a funnel is the one glyph here nobody had to learn, and
+it is Mail's own.
+
+**An `ellipsis` menu is not the unlabelled overflow this design rules out.** It is a named control
+with named rows behind it; the overflow the study cut was the system's own last resort, holding
+controls nobody could see and nobody could name.
 
 **The filter/group capsule takes a rule between its two marks.** Sharing a vessel with no divider
 made a pair of unrelated acts read as one unfamiliar control — the same failure the `Start` split
@@ -321,7 +355,10 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 
 | Measurement | Value | Reason |
 |---|---|---|
-| List width | **520** | the smallest width at which all twelve real titles read whole at depth three; at 480 three of them clip |
+| List width | **520**, where it RESTS and its ceiling | the smallest width at which all twelve real titles read whole at depth three; at 480 three of them clip |
+| `minimumWidth` | **342**, derived | what the pane gives up to when the window cannot afford 520 (#836): the narrowest window less the sidebar, less a pane of prose, less the two seams between them. Titles truncate at the tail, which they already do — the ticket pane is what must not be squeezed |
+| `bandHeight` | **44**, a FLOOR | the band at the head of the pane (#836) — the title, its count, and the two controls that narrow the list. A floor because the two lines are set at the reader's own type size. `ArgoTicketDetail.bandHeight` READS this one, so both panes' content starts on one line |
+| `bandInsetX` | `ArgoSpacing.comfortable` 12 | the gutter again, so the title starts on the vertical its rows do |
 | `rowHeight` | **30**, a FLOOR not a frame | grew from 28 when the title snapped up to `body` 13 |
 | `gutter` | `ArgoSpacing.comfortable` 12 | the row's leading inset, before the twist |
 | `twistWidth` | **12** | a leaf keeps the slot, so every dot lands on one vertical |
@@ -334,7 +371,7 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | Measurement | Value | Reason |
 |---|---|---|
 | Row height | **46** | the shell's existing titlebar strip, unchanged — not restated in code, where `ArgoToolbarVessel` already names the band |
-| `listBlockWidth` | `ArgoBacklogList.width` **520** | what places every control over its own column: the block claims the backlog's own width at the leading edge of the region the detail pane draws, and 520 does not move with the window — see **the column question**, settled below |
+| ~~`listBlockWidth`~~ | **gone (#836)** | it claimed 520 inside one toolbar region to reach the column boundary, and macOS begins that region after the shell's own items. The list's controls are in the list's band now, aligned by construction |
 | `iconButton` | **26 × 24** inside a 3pt vessel inset | the capsule's own padding is the vessel's, not the button's |
 | `iconSize` | `ArgoIconSize.control` **13** | 14 was the SVG box the study drew into; `control` is the rung the contract gives "a control's own mark", and a fourth rung is a token change this room has no standing to make |
 | `searchWidth` | **210** | wide enough for `Search the backlog`; at 260 the trailing edge clipped at 1280 |
@@ -346,6 +383,8 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 
 | Measurement | Value | Reason |
 |---|---|---|
+| `bandHeight` | `ArgoBacklogList.bandHeight` **44** | the band at the head of this pane (#836), holding New ticket and the ticket's verbs. READ off the list's, never restated — one band, one number |
+| `bandInsetX` | `ArgoSpacing.section` 24 | the pane's own inset, so New ticket starts on the vertical the ticket's title does |
 | Reading measure | `ArgoFeedRow.column` 720 | reused, not redeclared: the feed already settled what a line of Argo's prose runs to |
 | `inset` | `ArgoSpacing.section` 24 | the column off the deck's edges |
 | `factStripGap` | `ArgoSpacing.section` 24 column / `ArgoSpacing.base` 8 row | between fact pairs; the pair's own key-to-value gap is `snug` 6 |
@@ -373,8 +412,10 @@ for; anything not listed is stock used directly.
 | `BacklogTwist` | atom | `DisclosureGroup`'s chevron, drawn | drawn rather than inherited so it can carry its own hit target |
 | `DeliveryDot` | atom | `Circle` at `ArgoLayout.statusDotSize` | the five-state table above |
 | `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
-| `WorkToolbar` | organism | `.toolbar { ToolbarItemGroup }` | the whole row; its placement per control is the table above |
-| `BacklogToolbarLabel` | molecule | a `VStack` of two `Text` | the heading and its count |
+| `WorkToolbar` | organism | `.toolbar { ToolbarItemGroup }` | the window row. **Amended #836**: search alone. Everything that acts on a column is in that column's band |
+| `BacklogHeader` | molecule | an `HStack` at the head of the list pane | the heading, its count, and the two controls that narrow the list. **Renamed #836** from `BacklogToolbarLabel`, which was a toolbar item claiming 520pt to reach this position |
+| `TicketBand` | molecule | an `HStack` at the head of the ticket pane | New ticket and the open ticket's verbs, over the column they address. **Added #836** |
+| `BacklogMenu` | atom | `Menu` under an `ellipsis` | how the list is ordered. **Added #836**: Mail keeps sort and group here rather than on a mark of their own |
 | `ToolbarVessel` | atom | `GlassEffectContainer` + `Capsule` | groups icon buttons; no border, no shadow |
 | `ToolbarIcon` | atom | `Button(.plain)` with a `Label(.iconOnly)` | one glyph at `iconSize` |
 | `NewTicketButton` | atom | `ToolbarIcon` in its own `ToolbarVessel` | the call-to-action; survives the empty backlog |
