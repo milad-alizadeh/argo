@@ -54,13 +54,17 @@ struct MarkdownBlockTests {
     /// read one answer about what the block is.
     @Test
     func `a mermaid fence Argo can read is a diagram`() {
-        #expect(MarkdownBlock.blocks(in: "```mermaid\ngraph TD\n  A --> B\n```")
-            == [.diagram(MermaidDiagram(
-                source: "graph TD\n  A --> B",
-                kind: .flowchart(MermaidFlowchart(
-                    nodes: ["A", "B"], edges: [.init(from: "A", to: "B")],
-                )),
-            ))])
+        let chart = MermaidFlowchart(
+            direction: .down,
+            nodes: [.init(name: "A", label: "A"), .init(name: "B", label: "B")],
+            edges: [.init(from: "A", to: "B")],
+            groups: [],
+        )
+        let expected: [MarkdownBlock] = [
+            .diagram(MermaidDiagram(source: "graph TD\n  A --> B", kind: .flowchart(chart))),
+        ]
+
+        #expect(MarkdownBlock.blocks(in: "```mermaid\ngraph TD\n  A --> B\n```") == expected)
     }
 
     /// Degrade-down: a diagram nothing here can read is the grey source it is today, info label and

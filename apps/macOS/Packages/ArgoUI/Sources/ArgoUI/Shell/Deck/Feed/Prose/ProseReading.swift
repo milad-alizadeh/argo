@@ -36,13 +36,14 @@ enum ProseReading {
         structures.reading(of: text) { MinimapProseBlock.blocks(from: blocks(in: $0)) }
     }
 
-    /// A diagram laid out across a measure. The renderer AND the overview lane both come here, so
-    /// their geometry is one layout rather than two implementations that happen to agree — which is
-    /// what makes their heights match by construction (#860).
+    /// A diagram laid out. The renderer AND the overview lane both come here, so their geometry is
+    /// one layout rather than two implementations that happen to agree — which is what makes their
+    /// heights match by construction (#860).
     ///
-    /// Keyed on the measure as well as the source, because the same diagram at two widths is two
-    /// layouts, and a key of the text alone would answer a resized deck with the old one.
-    static func plan(of diagram: MermaidDiagram, across measure: CGFloat) -> MermaidPlan {
-        plans.reading(of: "\(measure)\u{0}\(diagram.source)") { _ in diagram.laid(across: measure) }
+    /// Keyed on the source and nothing else, because a diagram is as big as the thing it draws: one
+    /// too wide for the column is scrolled rather than reflowed, so there is no second width for a
+    /// second layout to answer at (#861).
+    static func plan(of diagram: MermaidDiagram) -> MermaidPlan {
+        plans.reading(of: diagram.source) { _ in diagram.laid }
     }
 }

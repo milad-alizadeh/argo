@@ -6,59 +6,104 @@ import Testing
 /// today: an unsupported diagram degrades DOWN to its source, never to an error or an empty box.
 @Suite("Mermaid reading")
 struct MermaidReadingTests {
-    @Test
-    func `a graph header and its arrows are a flowchart`() {
-        #expect(MermaidFlowchart.read("graph TD\n  A --> B\n  B --> C") == MermaidFlowchart(
-            nodes: ["A", "B", "C"],
-            edges: [.init(from: "A", to: "B"), .init(from: "B", to: "C")],
-        ))
+    private static func read(_ source: String) -> MermaidFlowchart? {
+        MermaidFlowchart.read(source)
     }
 
-    /// `flowchart` is the same diagram under mermaid's newer keyword.
     @Test
-    func `flowchart is the same header`() {
-        #expect(MermaidFlowchart.read("flowchart TB\nA --> B")?.nodes == ["A", "B"])
+    func `a graph header and its arrows are a flowchart`() {
+        let chart = Self.read("graph TD\n  A --> B\n  B --> C")
+
+        #expect(chart?.names == ["A", "B", "C"])
+        #expect(chart?.edges == [.init(from: "A", to: "B"), .init(from: "B", to: "C")])
+        #expect(chart?.direction == .down)
+    }
+
+    /// `flowchart` is the same diagram under mermaid's newer keyword, and a header with no
+    /// direction runs the way mermaid's own default runs.
+    @Test(arguments: [
+        ("graph TD", MermaidFlowchart.Direction.down),
+        ("flowchart TB", .down),
+        ("graph BT", .up),
+        ("flowchart LR", .right),
+        ("graph RL", .left),
+        ("graph", .down),
+    ])
+    func `each header names the direction it runs`(
+        header: String,
+        direction: MermaidFlowchart.Direction,
+    ) {
+        #expect(Self.read("\(header)\nA --> B")?.direction == direction)
     }
 
     /// The order is the order the source named them, so a diagram read twice lays out twice the
     /// same.
     @Test
     func `nodes keep the order the source first named them`() {
-        #expect(MermaidFlowchart.read("graph TD\nC --> A\nC --> B")?.nodes == ["C", "A", "B"])
+        #expect(Self.read("graph TD\nC --> A\nC --> B")?.names == ["C", "A", "B"])
     }
 
     @Test(arguments: [
-        "",
-        "graph TD",
-        "pie title Where the time went\n\"Reading\" : 40",
-        "graph LR\nA --> B",
-        "graph TD\nA[Start] --> B",
-        "graph TD\nA -->|yes| B",
-        "graph TD\nA --> B\nsubgraph one",
-        "  A --> B",
+        ("A[Rect]", MermaidFlowchart.Shape.rect),
+        ("A(Rounded)", .rounded),
+        ("A([Stadium])", .stadium),
+        ("A[[Subroutine]]", .subroutine),
+        ("A{Decision}", .diamond),
+        ("A{{Hexagon}}", .hexagon),
+        ("A((Circle))", .circle),
+        ("A>Flag]", .flag),
+        ("A[(Store)]", .cylinder),
     ])
-    func `a source this reader cannot draw is read as nothing`(source: String) {
-        #expect(MermaidFlowchart.read(source) == nil)
+    func `each bracket names the figure the node is drawn as`(
+        spelling: String,
+        shape: MermaidFlowchart.Shape,
+    ) {
+        let node = Self.read("graph TD\n\(spelling) --> B")?.nodes.first
+
+        #expect(node?.shape == shape)
+        #expect(node?.name == "A")
+        #expect(node?.label.isEmpty == false)
+        #expect(node?.label != "A")
     }
 
-    /// A diagram is a whole or it is a fence. Reading the lines that happen to parse would draw a
-    /// diagram nobody wrote.
+    /// A bare name is a rect labelled with itself, which is what mermaid draws it as.
     @Test
-    func `one unreadable line refuses the whole source`() {
-        #expect(MermaidFlowchart.read("graph TD\nA --> B\nB -.-> C") == nil)
+    func `a bare name is a rect labelled with itself`() {
+        #expect(Self.read("graph TD\nA --> B")?.nodes.first
+            == MermaidFlowchart.Node(name: "A", label: "A", shape: .rect))
     }
 
-    @Test
-    func `a diagram carries the source its plan is cached on`() {
-        let source = "graph TD\nA --> B"
+    @Test(arguments: [
+        ("A --> B", MermaidFlowchart.Stroke.solid, true),
+        ("A --- B", .solid, false),
+        ("A -.-> B", .dotted, true),
+        ("A -.- B", .dotted, false),
+        ("A ==> B", .thick, true),
+        ("A === B", .thick, false),
+        ("A ----> B", .solid, true),
+    ])
+    func `each link kind is read as itself`(
+        spelling: String,
+        stroke: MermaidFlowchart.Stroke,
+        hasHead: Bool,
+    ) {
+        let edge = Self.read("graph TD\n\(spelling)")?.edges.first
 
-        #expect(MermaidDiagram.read(source)?.source == source)
-        #expect(MermaidDiagram.read("pie\n\"a\" : 1") == nil)
+        #expect(edge?.stroke == stroke)
+        #expect(edge?.hasHead == hasHead)
+        #expect(edge?.label == nil)
     }
 
-    /// The labels the view builds its `Text` views from, before SwiftUI has told it a measure.
-    @Test
-    func `a flowchart labels every node it named`() {
-        #expect(MermaidDiagram.read("graph TD\nA --> B")?.labels.map(\.text) == ["A", "B"])
+    /// Mermaid spells a word on a link two ways and means the same thing by both, so both land as
+    /// one value and nothing downstream has to know which was written.
+    @Test(arguments: [
+        "A -->|yes| B",
+        "A -- yes --> B",
+        "A -.yes.-> B",
+        "A == yes ==> B",
+        "A -->|\"yes\"| B",
+    ])
+    func `a link carries its word in either spelling`(spelling: String) {
+        #expect(Self.read("graph TD\n\(spelling)")?.edges.first?.label == "yes")
     }
 }

@@ -8,10 +8,18 @@ import Testing
 @MainActor
 @Suite("Mermaid layout")
 struct MermaidLayoutTests {
-    private static let measure: CGFloat = 620 - ArgoFeedRow.inset * 2
+    static func plan(_ source: String) -> MermaidPlan {
+        MermaidDiagram.read(source)?.laid ?? .empty
+    }
 
-    private static func plan(_ source: String) -> MermaidPlan {
-        MermaidDiagram.read(source)?.laid(across: measure) ?? .empty
+    /// Every box the plan drew, in the order it drew them.
+    static func boxes(of plan: MermaidPlan) -> [CGRect] {
+        plan.figures.compactMap { figure in
+            guard case let .shape(outline, rect) = figure.form, outline != .enclosure else {
+                return nil
+            }
+            return rect
+        }
     }
 
     /// Three ranks and a fork, so the suite has both a stack and a row in it.
@@ -19,10 +27,7 @@ struct MermaidLayoutTests {
 
     @Test
     func `no two nodes overlap`() {
-        let boxes = Self.plan(Self.source).figures.compactMap { figure -> CGRect? in
-            guard case let .roundedRect(rect) = figure.form else { return nil }
-            return rect
-        }
+        let boxes = Self.boxes(of: Self.plan(Self.source))
 
         #expect(boxes.count == 4)
         for (at, box) in boxes.enumerated() {
@@ -49,12 +54,22 @@ struct MermaidLayoutTests {
     }
 
     @Test
-    func `every caption is measured into the box it names`() {
+    func `every node's caption is measured into the box it names`() {
         let plan = Self.plan(Self.source)
+        let boxes = Self.boxes(of: plan)
 
-        for caption in plan.captions {
-            #expect(plan.figures.contains(MermaidFigure(form: .roundedRect(caption.rect))))
-        }
+        #expect(plan.captions.prefix(boxes.count).map(\.rect) == boxes)
+    }
+
+    /// A longest-path ranking, not a first-arrival one: `D` is drawn under BOTH branches that
+    /// reach it rather than beside the one that reached it second.
+    @Test
+    func `a node is ranked under everything that reaches it`() {
+        let boxes = Self.boxes(of: Self.plan(Self.source))
+
+        guard boxes.count == 4 else { return #expect(Bool(false), "every node was placed") }
+        #expect(boxes[1].midY == boxes[2].midY)
+        #expect(boxes[3].minY > boxes[1].maxY)
     }
 
     /// An edge leaves the foot of the box above and ends in a head on the top of the box below, so
@@ -63,7 +78,7 @@ struct MermaidLayoutTests {
     @Test
     func `an edge is drawn as a connector and its head`() {
         let plan = Self.plan("graph TD\nA --> B")
-        let boxes = plan.captions.map(\.rect)
+        let boxes = Self.boxes(of: plan)
 
         guard boxes.count == 2 else { return #expect(Bool(false), "both nodes were placed") }
         let tip = CGPoint(x: boxes[1].midX, y: boxes[1].minY)
@@ -76,40 +91,96 @@ struct MermaidLayoutTests {
         ])
     }
 
-    /// A diagram narrower than the column takes the column, so what it is centred in is what the
-    /// prose around it is set in.
-    @Test
-    func `the plan fills the measure it was laid out across`() {
-        let plan = Self.plan(Self.source)
+    /// An open link has no head at all, and the two loud links differ in the pen they are drawn
+    /// with rather than in the ink — a diagram is one ink.
+    @Test(arguments: [
+        ("A --- B", MermaidFigure.Line.solid, 0),
+        ("A -.-> B", .dotted, 1),
+        ("A ==> B", .thick, 1),
+    ])
+    func `a link is drawn the way it was written`(
+        source: String,
+        line: MermaidFigure.Line,
+        heads: Int,
+    ) {
+        let figures = Self.plan("graph TD\n\(source)").figures.filter { $0.role == .edge }
 
-        #expect(plan.size.width == Self.measure)
-        #expect(plan.size.height > 0)
-        #expect(plan.figures.allSatisfy { $0.form.bounds.maxY <= plan.size.height })
+        #expect(figures.allSatisfy { $0.line == line })
+        #expect(figures.count {
+            if case .arrowhead = $0.form {
+                true
+            } else {
+                false
+            }
+        } == heads)
     }
 
-    /// A cycle is a source somebody really writes. It settles at the depth its first arrival gives
-    /// it: two boxes, the first on top, and no empty rank charging its gap above them — the diagram
-    /// a reader wrote, not the one a relaxation pass ran out of passes on.
+    /// A word on an edge sits BESIDE the line, because a connector runs under it otherwise and a
+    /// word with a line through it is worse than one standing next to it.
     @Test
-    func `a cycle is laid out as the two ranks it is`() {
-        let plan = Self.plan("graph TD\nA --> B\nB --> A")
-        let straight = Self.plan("graph TD\nA --> B")
+    func `an edge's word stands clear of the line it belongs to`() {
+        let plan = Self.plan("graph TD\nA -->|yes| B")
 
-        #expect(plan.captions.map(\.label.text) == ["A", "B"])
-        #expect(plan.captions.first?.rect.minY == 0)
-        #expect((plan.captions.first?.rect.maxY ?? 0) < (plan.captions.last?.rect.minY ?? 0))
-        #expect(plan.size.height == straight.size.height)
+        guard let word = plan.captions.first(where: { $0.label.text == "yes" }) else {
+            return #expect(Bool(false), "the word was placed")
+        }
+        // Every connector here runs square, so a segment IS its own bounding box — which makes the
+        // claim exact rather than a sample of points along it.
+        let runs = plan.figures.compactMap { figure -> [CGPoint]? in
+            guard case let .path(points) = figure.form else { return nil }
+            return points
+        }.flatMap { points in
+            zip(points, points.dropFirst()).map { CGRect(around: $0, and: $1) }
+        }
+
+        #expect(!runs.isEmpty)
+        #expect(!runs.contains { $0.intersects(word.rect) })
+        #expect(word.rect.width > 0)
     }
 
-    /// A rank is drawn in the order the source named its nodes, left to right. The nodes are placed
-    /// out of a dictionary, and a dictionary's own order is seeded afresh on every launch — so the
-    /// claim has to be about the SOURCE's order rather than about two calls agreeing.
+    /// Each shape gets its OWN outline. A reader tells a decision from a step by the figure before
+    /// reading either of them, so two shapes drawing the same outline is the bug.
     @Test
-    func `a rank is placed in the order the source named its nodes`() {
-        let plan = Self.plan("graph TD\nA --> First\nA --> Second\nA --> Third")
-        let rank = plan.captions.filter { $0.rect.minY > 0 }
+    func `every documented node shape draws as its own figure`() {
+        let source = """
+        graph TD
+        A[Rect] --> B(Round)
+        B --> C([Stad])
+        C --> D[[Sub]]
+        D --> E{Dec}
+        E --> F{{Hex}}
+        F --> G((Circ))
+        G --> H>Flag]
+        H --> I[(Store)]
+        """
+        let outlines = Self.plan(source).figures.compactMap { figure -> MermaidFigure.Outline? in
+            guard case let .shape(outline, _) = figure.form else { return nil }
+            return outline
+        }
 
-        #expect(rank.map(\.label.text) == ["First", "Second", "Third"])
-        #expect(rank.map(\.rect.minX) == rank.map(\.rect.minX).sorted())
+        #expect(outlines.count == 9)
+        #expect(Set(outlines).count == 9)
+    }
+
+    /// A circle is drawn in a square box, because a label inscribed in one only fits the box it was
+    /// measured into if that box is as tall as it is wide.
+    @Test
+    func `a circle is measured into a square`() {
+        let box = Self.boxes(of: Self.plan("graph TD\nA((Circle)) --> B")).first
+
+        #expect(box?.width == box?.height)
+    }
+}
+
+extension CGRect {
+    /// The box two points span. Every connector here runs square, so a segment IS its own box —
+    /// which lets a caption's clearance be asserted exactly rather than sampled along the line.
+    init(around one: CGPoint, and other: CGPoint) {
+        self.init(
+            x: Swift.min(one.x, other.x),
+            y: Swift.min(one.y, other.y),
+            width: abs(one.x - other.x),
+            height: abs(one.y - other.y),
+        )
     }
 }
