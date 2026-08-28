@@ -133,7 +133,7 @@ final class PatienceTable<Key: Hashable, Item: Patient> {
 
     private func arm(_ id: String, for key: Key) -> Task<Void, Never> {
         Task { [weak self, patience] in
-            try? await Task.sleep(for: .seconds(patience.seconds))
+            await patience.elapse()
             guard !Task.isCancelled else { return }
             self?.expire(id, for: key)
         }
