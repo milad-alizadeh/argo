@@ -53,15 +53,25 @@ struct WorkRoom {
         }
     }
 
-    /// The backlog, the seam the reader moves, and the ticket. The width is SEATED on the way in
-    /// as well as on the way out: a window narrowed under a width already dragged has to bring the
-    /// pane back inside the limits, and only the read knows the deck it is being drawn in.
+    /// The backlog, the seam the reader moves, and the ticket. The width is seated on the way in
+    /// as well as on the way out — a window narrowed under a width already dragged has to bring the
+    /// pane back inside the limits.
     private func panes(limits: ClosedRange<CGFloat>) -> some View {
         HStack(spacing: ArgoSpacing.flush) {
             BacklogList(rows: room.backlog, selection: $ticket, shut: $shut)
                 .frame(width: ArgoLayout.seated(backlogWidth, in: limits))
             DeckSeam(width: $backlogWidth, limits: limits, growsRightward: true)
             TicketDetail(ticket: room.ticket) { ticket = $0 }
+        }
+        // Written BACK, not just seated on the way in: the toolbar block over this pane reads the
+        // stored width to line itself up, and a window resize that squeezed the pane without
+        // moving the number would slide the block off the seam. `onChange` and not the body, so
+        // the seating is not a write during layout.
+        .onChange(of: limits, initial: true) { _, settled in
+            let seated = ArgoLayout.seated(backlogWidth, in: settled)
+            if seated != backlogWidth {
+                backlogWidth = seated
+            }
         }
     }
 }

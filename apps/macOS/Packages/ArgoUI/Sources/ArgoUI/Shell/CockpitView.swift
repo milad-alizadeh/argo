@@ -46,10 +46,9 @@ public struct CockpitView: View {
         self.workItems = workItems
     }
 
-    /// Whether the window is in the room that DRAWS a transcript. The four projections below all
+    /// Whether the window is in the room that DRAWS a transcript. The four projections below each
     /// walk the selected Session's whole event stream, and `body` evaluates them whichever room is
-    /// on screen — so in Work and Code they were re-reading a transcript nothing renders, on every
-    /// update. Gated rather than cached: the presentation is a value the Hub rebuilds as the
+    /// on screen. Gated rather than cached: the presentation is a value the Hub rebuilds as the
     /// transcript grows, and a memoised feed would show the reading as it was when the user last
     /// clicked.
     private var isReadingASession: Bool {

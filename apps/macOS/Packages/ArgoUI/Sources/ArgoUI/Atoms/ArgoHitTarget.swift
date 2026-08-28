@@ -1,17 +1,12 @@
 import SwiftUI
 
 extension View {
-    /// Widens what a small mark answers clicks over, WITHOUT moving the mark.
-    ///
-    /// A glyph at an inline rung is twelve points across, and a chevron is narrower still — a
-    /// target a pointer has to be aimed at rather than moved to. The square here is invisible and
-    /// laid OVER the mark rather than around it, so nothing in the row's rhythm shifts and the
-    /// press lands where the reader was already pointing. The same trick `DeckSeam` plays over a
-    /// hairline, and for the same reason.
-    func argoHitTarget(_ size: CGFloat = ArgoLayout.controlHitTarget) -> some View {
+    /// Widens what a small mark answers clicks over, WITHOUT moving the mark: the square is laid
+    /// OVER it rather than around it, so nothing in the row's rhythm shifts.
+    func argoHitTarget() -> some View {
         overlay {
             Color.clear
-                .frame(width: size, height: size)
+                .frame(width: ArgoLayout.controlHitTarget, height: ArgoLayout.controlHitTarget)
                 .contentShape(.rect)
         }
     }

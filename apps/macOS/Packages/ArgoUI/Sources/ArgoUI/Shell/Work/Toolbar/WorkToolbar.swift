@@ -8,9 +8,9 @@ import SwiftUI
 ///
 /// Every item here is `.primaryAction`, which is the region the DETAIL pane draws — `.navigation`
 /// is the window's leading region and lands over the sidebar, where the scope vessel is.
-/// `BacklogToolbarLabel` takes `ArgoWorkToolbar.listBlockWidth` at that region's leading edge,
-/// which is `ArgoBacklogList.width` and does not move with the window — so it lands over the list,
-/// and everything after it lands over the ticket column, at every window size.
+/// `BacklogToolbarLabel` takes the BACKLOG's current width at that region's leading edge — so it
+/// lands over the list, and everything after it lands over the ticket column, at every window size
+/// and wherever the reader has dragged the seam (#844).
 ///
 /// Per-column toolbar REGIONS would need a genuine three-column `NavigationSplitView`, which the
 /// shell does not have: its split view is unconditional (#812). Why that stands and `.principal`
@@ -18,15 +18,18 @@ import SwiftUI
 struct WorkToolbar: ToolbarContent {
     let reading: WorkToolbarProjection.Reading
     var intents = WorkToolbarIntents.inert
-    /// The two things the row HOLDS rather than reads — grouped, because the parameter cap is three
-    /// and a binding pair travels together (the `DeckSeams` shape).
+    /// What the WINDOW holds for this row rather than what the row reads — grouped, because the
+    /// parameter cap is three and these travel together (the `DeckSeams` shape).
     var held: Held
 
     struct Held {
         var query: Binding<String>
         var mode: Binding<SessionMode>
+        /// Where the reader has dragged the seam, already seated by the room. A value and not a
+        /// binding: the row is placed OVER the backlog and never moves it.
+        var backlogWidth: CGFloat = ArgoBacklogList.width
 
-        /// Nothing remembers either, for a `#Preview` with no room above it.
+        /// Nothing remembers any of it, for a `#Preview` with no room above it.
         static let unheld = Held(query: .constant(""), mode: .constant(.code))
     }
 
@@ -35,6 +38,7 @@ struct WorkToolbar: ToolbarContent {
             ToolbarItem(placement: .primaryAction) {
                 BacklogToolbarLabel(
                     reading: reading,
+                    width: held.backlogWidth,
                     narrowing: intents.narrowing,
                     grouping: intents.grouping,
                 )

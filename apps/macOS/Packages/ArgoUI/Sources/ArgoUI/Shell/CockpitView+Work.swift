@@ -84,6 +84,7 @@ extension CockpitView {
                 held: WorkToolbar.Held(
                     query: $navigation.workQuery,
                     mode: $navigation.workMode,
+                    backlogWidth: navigation.backlogWidth,
                 ),
             )
         }

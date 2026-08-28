@@ -6,11 +6,6 @@ import SwiftUI
 /// The row height is NOT here. It is the shell's existing titlebar strip and `ArgoToolbarVessel`
 /// already names it, so a second number for the same band could only ever disagree with it.
 enum ArgoWorkToolbar {
-    /// How wide the list-scoped block claims at the row's leading edge, which is what puts every
-    /// control after it over the ticket column. The backlog's own width, read rather than repeated:
-    /// the two have to be the same number or the seam under the block moves off it.
-    static let listBlockWidth: CGFloat = ArgoBacklogList.width
-
     /// One icon button's slot. Wider than it is tall — a mark centred in a square sat pinched
     /// against a capsule's end cap, the same reason `ToolbarSegment.markSlotWidth` is not square.
     static let iconButtonWidth: CGFloat = 26

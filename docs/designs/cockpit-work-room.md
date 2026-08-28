@@ -34,7 +34,8 @@ while the deck beside them held four lines of prose in a pane that could take si
 shell's split view is unconditional, and the room strip moves into its head (#805) — but it
 holds **views**, whose names are short because a view name is *written* rather than inherited
 from a tracker. The backlog becomes the deck's leading pane at 520, where a title reads whole at
-depth three, and the ticket opens beside it.
+depth three, and the ticket opens beside it. **520 is where it OPENS, not where it stays** — see
+**the seam between the panes** below (#844).
 
 The four rejected rooms, and what each gave up:
 
@@ -63,8 +64,11 @@ at the foot.
   answer, with nothing in `blockedBy` to show for it. The first renders counted on edges
   alone, so those two were counted twice and the rail read 6 + 8 over 12 — corrected in
   `viewCount` and re-shot (#812). `In progress` cuts across both and is not part of the split.
-- **Charts** — one row per PRD-shaped parent (`#607 Wayfinder`, `#334 The Route`), the entry
-  point to the Route.
+- ~~**Charts** — one row per PRD-shaped parent (`#607 Wayfinder`, `#334 The Route`), the entry
+  point to the Route.~~ **Withdrawn (#844.)** The Route is #334 and is not built, so every row in
+  the group answered no click, under a heading that read as a charting feature. The group comes
+  back with the Route. `WorkItem.isChartShaped` survives it: the Next-up hero still reads a
+  PRD-shaped parent for its `next in #607` chip.
 - **The room strip** sits at the top of the sidebar's scroll, under the titlebar rather than in
   it. Xcode's navigator selector, and #805's question answered: a control belongs over the thing
   it changes, and the room changes both panes but *starts* in this one. It is drawn under the
@@ -106,9 +110,29 @@ that disagrees with it.
 over one visible row and read as a lie; the parent's own `n/m` roll-up already says how many
 children it has.
 
-**The indent caps at two steps.** Level three shares level two's inset. At 520 this is comfort
-rather than necessity — it is the rule that keeps a five-deep chart legible, and a chart that
-deep is read on the Route (#334), not here.
+**The indent caps at two steps.** Level three shares level two's inset. At the opening 520 this is
+comfort rather than necessity — it is the rule that keeps a five-deep parent legible, and a tree
+that deep is read on the Route (#334), not here.
+
+### The seam between the panes
+
+**Both panes are the reader's to size (#844).** The first cut fixed the backlog at 520 and joined
+the two with a hairline, which left the ticket detail taking every point the window gained or lost.
+They are joined by a `DeckSeam` now — the same seam the Sessions deck already uses — and the width
+is the WINDOW's (`CockpitNavigationModel.backlogWidth`), because the panes are rebuilt on every
+ticket click and a width owned inside that subtree loses the drag each time.
+
+| | |
+|---|---|
+| Opens at | `ArgoBacklogList.width` **520** — unchanged, and still the measure the twelve real titles were chosen against |
+| Floor | **280** — `ArgoLayout.backlogWidths.lowerBound` |
+| Ceiling | **760**, pulled in so the ticket detail always keeps `proseColumnMinimumWidth` **320** |
+
+**Why the floor is 280 and not the detail's 320.** At the minimum 960 window the deck is 680, and
+320 either side of it leaves the seam nowhere to travel — a seam that cannot move is worse than no
+seam, because it looks like one. 280 is the width the backlog was rejected *as a home for*, which
+is a different question from the narrowest a reader may drag it to for a moment. Titles truncate
+there; that is the reader's own choice and reversible in one drag.
 
 ### The delivery signal, on the dot alone
 
@@ -156,7 +180,9 @@ every room switch and drop the deck's per-Session state, both seam drags and the
 the detail pane draws; `.navigation` is the window's leading region, where the scope vessel sits
 over the sidebar. The list block then takes `ArgoBacklogList.width` 520 at that region's leading
 edge, so it lands over the list and everything after it lands over the ticket column, at any window
-size — because 520 does not move with the window.
+size. Since #844 that width is the pane's CURRENT one rather than a constant: the pane is
+draggable, and a block holding 520 would slide off the seam the moment the reader moved it. The
+room seats the width and hands it to the row (`WorkToolbar.Held.backlogWidth`).
 
 **Search sits over the ticket but searches the list.** That is Mail's own split, and for the
 same reason: the toolbar is one row, not three.
@@ -321,7 +347,7 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 
 | Measurement | Value | Reason |
 |---|---|---|
-| List width | **520** | the smallest width at which all twelve real titles read whole at depth three; at 480 three of them clip |
+| List width | **520**, the OPENING width | the smallest width at which all twelve real titles read whole at depth three; at 480 three of them clip. Draggable 280–760 since #844 — see **the seam between the panes** |
 | `rowHeight` | **30**, a FLOOR not a frame | grew from 28 when the title snapped up to `body` 13 |
 | `gutter` | `ArgoSpacing.comfortable` 12 | the row's leading inset, before the twist |
 | `twistWidth` | **12** | a leaf keeps the slot, so every dot lands on one vertical |
@@ -334,7 +360,7 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | Measurement | Value | Reason |
 |---|---|---|
 | Row height | **46** | the shell's existing titlebar strip, unchanged — not restated in code, where `ArgoToolbarVessel` already names the band |
-| `listBlockWidth` | `ArgoBacklogList.width` **520** | what places every control over its own column: the block claims the backlog's own width at the leading edge of the region the detail pane draws, and 520 does not move with the window — see **the column question**, settled below |
+| block width | the backlog's CURRENT width, passed in | what places every control over its own column: the block claims the backlog's own width at the leading edge of the region the detail pane draws. Read at runtime rather than fixed at 520, because the pane is draggable (#844) — see **the column question**, settled below |
 | `iconButton` | **26 × 24** inside a 3pt vessel inset | the capsule's own padding is the vessel's, not the button's |
 | `iconSize` | `ArgoIconSize.control` **13** | 14 was the SVG box the study drew into; `control` is the rung the contract gives "a control's own mark", and a fourth rung is a token change this room has no standing to make |
 | `searchWidth` | **210** | wide enough for `Search the backlog`; at 260 the trailing edge clipped at 1280 |
@@ -402,7 +428,7 @@ prototype's numbers survive.
 | backlog id, mono 11 | `ArgoTypography.machineCaption` | exact |
 | backlog title, 12.5 | `ArgoTypography.body` | snapped UP to 13; the row height grew 28 → 30 to carry it |
 | roll-up / odd priority, mono 10–10.5 | `ArgoTypography.machineCaption` | snapped up to 11, matching the id beside it |
-| `HIGH`, `BACKLOG`, `CHARTS`, section captions, 10 uppercase | `ArgoTypography.sectionLabel` | the role's documented job — "sidebar and rail group labels" |
+| `HIGH`, `BACKLOG`, section captions, 10 uppercase | `ArgoTypography.sectionLabel` | the role's documented job — "sidebar and rail group labels" |
 | view name, 12.5 | `ArgoTypography.rowMeta` | snapped DOWN to 11: a view name is chrome, and it must not compete with a ticket title beside it |
 | toolbar heading, 13 semibold | `ArgoTypography.windowTitle` | exact tuple |
 | toolbar sub-line, 11.5 | `ArgoTypography.rowMeta` | exact |

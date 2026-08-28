@@ -45,13 +45,18 @@ struct BacklogRow: View {
         .accessibilityLabel(announcement)
     }
 
-    /// The provider's own labels, cut to `ArgoBacklogList.labelLimit` and never counted past it —
-    /// a `+3` would be a number about labels nobody can read, on a row that has no room to.
+    /// The provider's own labels, cut by `BacklogRowLabels` — which also decides what the
+    /// announcement says, so the two cannot disagree about the same row.
     @ViewBuilder private var labels: some View {
-        if !row.labels.isEmpty {
+        let reading = BacklogRowLabels(row.labels)
+        if !reading.shown.isEmpty {
             HStack(spacing: ArgoBacklogList.labelGap) {
-                ForEach(row.labels.prefix(ArgoBacklogList.labelLimit), id: \.self) {
-                    LabelChip(label: $0)
+                ForEach(reading.shown, id: \.self) { LabelChip(label: $0) }
+                // Counted rather than listed: the row has no width for the rest, and silence about
+                // them would leave a ticket whose distinguishing label is third looking like one
+                // with two labels.
+                if let marker = reading.marker {
+                    LabelChip(label: marker)
                 }
             }
             .lineLimit(1)
@@ -83,7 +88,7 @@ struct BacklogRow: View {
 
     /// The id is spoken as a number rather than as `#607`, which VoiceOver reads as "number 607".
     private var announcement: String {
-        ([String(row.id), row.title] + row.labels + [drawn.trailing])
+        ([String(row.id), row.title] + BacklogRowLabels(row.labels).spoken + [drawn.trailing])
             .compactMap(\.self)
             .joined(separator: ", ")
     }

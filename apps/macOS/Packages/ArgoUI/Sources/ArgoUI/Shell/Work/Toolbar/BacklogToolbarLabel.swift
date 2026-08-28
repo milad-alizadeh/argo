@@ -6,14 +6,17 @@ import SwiftUI
 /// you are filtered to: `Backlog` alone reads the same over twelve tickets and over the four that
 /// survived a filter. Mail's own bar says `Searching / Inbox — …, 11 results` for this reason.
 ///
-/// It claims `ArgoWorkToolbar.listBlockWidth` at the leading edge, which is the backlog's own
-/// width. That is what places it over the list AND puts every control after it over the ticket
-/// column — see `WorkToolbar` for why the row settles the columns this way rather than with
-/// per-column toolbar regions.
+/// It claims the BACKLOG's own width at the leading edge, passed in rather than repeated: the pane
+/// is draggable (#844), so a block holding a constant slides off the seam the moment the reader
+/// moves it. That width is what places the block over the list AND puts every control after it
+/// over the ticket column — see `WorkToolbar` for why the row settles the columns this way rather
+/// than with per-column toolbar regions.
 struct BacklogToolbarLabel: View {
     @Environment(\.argo) private var argo
 
     let reading: WorkToolbarProjection.Reading
+    /// The backlog pane's width as it is drawn RIGHT NOW, seated inside its limits by the room.
+    var width: CGFloat = ArgoBacklogList.width
     /// The list's own controls, drawn at the block's trailing edge because that is where the block
     /// meets the list it narrows. Absent with no list to narrow.
     var narrowing: () -> Void = {}
@@ -39,7 +42,7 @@ struct BacklogToolbarLabel: View {
                 }
             }
         }
-        .frame(width: ArgoWorkToolbar.listBlockWidth, alignment: .leading)
+        .frame(width: width, alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(reading.heading), \(reading.subtitle)")
     }

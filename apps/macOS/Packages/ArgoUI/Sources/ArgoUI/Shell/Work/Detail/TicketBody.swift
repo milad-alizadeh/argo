@@ -38,10 +38,8 @@ struct TicketBody: View {
         }
     }
 
-    /// The tracker's own markdown, drawn by the FEED's renderer — a ticket body is written in the
-    /// same marks an agent writes, and a second reading of them here would be a second answer to
-    /// one question. It carries the feed's line height with it, so a paragraph here and a paragraph
-    /// in a reading are the same rhythm; the two are read minutes apart in the same window.
+    /// The tracker's own markdown, drawn by the FEED's renderer. It carries the feed's line height
+    /// with it, so a paragraph here and a paragraph in a reading set at the same rhythm.
     @ViewBuilder private var prose: some View {
         if let body = ticket.body {
             FeedMarkdown(text: body)
