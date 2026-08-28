@@ -26,9 +26,7 @@ struct NextUpStarterStyle: ButtonStyle {
             label
                 .padding(.horizontal, ArgoSpacing.base)
                 .padding(.vertical, ArgoSpacing.tight)
-                .background {
-                    RoundedRectangle(cornerRadius: ArgoRadius.control).fill(fill)
-                }
+                .background { ground }
                 .overlay {
                     RoundedRectangle(cornerRadius: ArgoRadius.control)
                         .strokeBorder(rim, lineWidth: ArgoStroke.border)
@@ -47,9 +45,22 @@ struct NextUpStarterStyle: ButtonStyle {
             return isHovered ? .over : .away
         }
 
-        private var fill: ArgoColor {
+        /// `surface.overlay` ALWAYS, with the wash over it rather than in place of it — the rule
+        /// `NextUpCardGround` already had to learn. The contract's hover and pressed roles are
+        /// TRANSLUCENT whites meant to be composited onto a ground; used as the fill they landed
+        /// within 3 of the card beneath, so a pointer on the starter was pixel-identical to no
+        /// pointer at all.
+        private var ground: some View {
+            RoundedRectangle(cornerRadius: ArgoRadius.control)
+                .fill(argo.color.surface.overlay)
+                .overlay {
+                    RoundedRectangle(cornerRadius: ArgoRadius.control).fill(wash)
+                }
+        }
+
+        private var wash: ArgoColor {
             switch pointer {
-            case .away: argo.color.surface.overlay
+            case .away: .transparent
             case .over: argo.color.surface.hover
             case .down: argo.color.surface.selected
             }

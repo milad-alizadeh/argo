@@ -485,8 +485,11 @@ and opens an empty composer, which is the honest answer rather than a wrong one.
 `.quiet` control's flat `surface.overlay`: that fill is a fixed ink and the card under it is not, so
 measured on the render it went invisible against `surface.hover` and came out DARKER than
 `surface.selected` — in the two states it most has to read as a target of its own. It carries an
-`edge.subtle` rim, which separates it from the card in all three of the card's grounds, and takes
-`surface.hover` and `surface.selected` under its own pointer with `edge.strong` under the press.
+`edge.subtle` rim, which separates it from the card in all three of the card's grounds, and answers
+its own pointer with `surface.hover` and `surface.selected` **washed over `surface.overlay` rather
+than in place of it** — the rule the card's own ground already had to learn. Used as the fill, those
+translucent whites landed within 3 of the card beneath and a pointer on the starter was
+pixel-identical to no pointer at all. Over the ground they span the same 12 levels the card does.
 
 **The two controls are siblings, not one nested in the other.** A `Button` inside another `Button`'s
 label is drawn and unhittable — the outer one takes every click — so the starter is drawn twice: a

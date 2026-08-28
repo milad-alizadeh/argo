@@ -9,10 +9,17 @@ import SwiftUI
 struct TicketStartSpecimen: View {
     private static let commands: [WorkCommand?] = [.implement, .designToCode, .grillMe, nil]
 
+    /// The two link verbs are PRESENT here, so the row renders the one a bound Project draws. Left
+    /// absent they render disabled (#872), which is a different state and not the one this specimen
+    /// is about.
+    private static func verbs(sending command: WorkCommand?) -> TicketsToolbarIntents.Verbs {
+        TicketsToolbarIntents.Verbs(command: command, openOnHost: {}, copyLink: {})
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             ForEach(Self.commands, id: \.self) { command in
-                StartControl(verbs: TicketsToolbarIntents.Verbs(command: command))
+                StartControl(verbs: Self.verbs(sending: command))
             }
         }
     }
