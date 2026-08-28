@@ -20,7 +20,12 @@ public struct CockpitView: View {
     /// presentation for the same reason `health` is: a listing is read through a Binding, and the
     /// Hub has never heard of one.
     let workItems: [WorkItem]
+    /// Where this Project's Work Items can be READ, on the provider's own site (#872). Beside the
+    /// listing for the reason it is: an address is the Binding's, and the Hub has never heard of
+    /// one. `nil` where the port is bound to nothing, which disables the row's two link verbs.
+    let workItemAddress: WorkItemAddress?
     @Environment(CockpitNavigationModel.self) var navigation
+    @Environment(\.openURL) var openURL
     /// Which roster row has its name field open. Held here rather than in the sidebar because the
     /// menu bar reaches it (`sessionCommands`), and the menu bar is outside the sidebar.
     @State var renamingSessionID: String?
@@ -31,6 +36,15 @@ public struct CockpitView: View {
     /// Where the reader left the split view's leading column. Held rather than left to the platform
     /// because one room takes it away: see `sidebarColumn`.
     @State var sidebarVisibility = NavigationSplitViewVisibility.automatic
+    /// Whether the New ticket composer is up, and what has been typed into it (#872). Held at the
+    /// top of the shell for the reason the drafts above are: the room below is rebuilt on every
+    /// pass, and words held any lower would leave with the first one that changed anything.
+    @State var isComposingTicket = false
+    @State var ticketComposition = TicketComposition()
+    /// Where the create it raised has got to (§4). Beside the composer rather than inside it: the
+    /// row's own button renders the same reading, and two answers about one write would let the
+    /// sheet and the row disagree.
+    @State var ticketWrite = WriteAttempt.idle
 
     public init(
         presentation: CockpitPresentation,
@@ -38,12 +52,14 @@ public struct CockpitView: View {
         connect: ConnectSurface = .closed,
         health: ConnectionHealthReading = .quiet,
         workItems: [WorkItem] = [],
+        workItemAddress: WorkItemAddress? = nil,
     ) {
         self.presentation = presentation
         self.actions = actions
         self.connect = connect
         self.health = health
         self.workItems = workItems
+        self.workItemAddress = workItemAddress
     }
 
     /// The selected Session's reading in the room that DRAWS a transcript, and nothing at all in
@@ -177,6 +193,20 @@ public struct CockpitView: View {
                     startsAtWelcome: connect.startsAtWelcome,
                 )
             }
+        }
+        // The Work room's own sheet (#872). On the shell rather than in the room, because the room
+        // is a pair of split-view slots and neither of them may present over the other.
+        // `onDismiss` and not the Cancel button alone: Escape and the system's own gesture put the
+        // sheet away without pressing anything, and a refusal left behind would go on being drawn
+        // by the row's New ticket button with nothing on screen to clear it.
+        .sheet(isPresented: $isComposingTicket, onDismiss: closeTicketComposer) {
+            NewTicketComposer(
+                composition: $ticketComposition,
+                control: workIntents.creation.control,
+                reconnect: openProjectPanel,
+                cancel: closeTicketComposer,
+                create: createTicket,
+            )
         }
         .focusedValue(\.sessionCommands, sessionCommands)
         .onChange(of: presentation.sessions.map(\.id), initial: true) { _, sessionIDs in

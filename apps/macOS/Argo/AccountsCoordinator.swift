@@ -24,6 +24,11 @@ final class AccountsCoordinator {
     /// Refreshed by every finished read, not by every panel act: the room is on screen whether or
     /// not the Connect panel is.
     private(set) var workItems: [WorkItem] = []
+    /// Where those items can be READ, on the provider's own site (#872) — the Work room's two link
+    /// verbs, and `nil` where the port is bound to nothing or the Binding addresses no page.
+    /// Published with the listing and off the same resolve, so the room can never open a URL from
+    /// one Binding against a backlog read through another.
+    private(set) var workItemAddress: WorkItemAddress?
 
     /// Reached from `AccountsCoordinator+Grant` and `+Scopes`, which is why these are not
     /// `private`: `private` in Swift is file-scoped.
@@ -37,6 +42,12 @@ final class AccountsCoordinator {
     /// because the poll reads through a Binding and files its failures on `health` — both of which
     /// are this half's, and neither of which the Hub has ever heard of.
     let workItemLedger = WorkItemLedger()
+    /// The write half (#872). Computed rather than held: it has no state of its own, and its
+    /// transport is `URLSession.shared`.
+    var workItemCreator: WorkItemCreator {
+        WorkItemCreator(bindings: bindings, items: workItemLedger, health: health)
+    }
+
     /// The loop that fills it. Pointed on every `refresh`, which is every act that could have
     /// moved a Binding. Re-pointing at an unchanged one costs nothing — the loop holds what it is
     /// already reading.
@@ -171,10 +182,14 @@ final class AccountsCoordinator {
         connections = await ConnectionHealthReading.over(ports, from: .init(
             registry: accounts.load(), ledger: health, projectID: project?.id,
         ))
+        // ONE resolve, and both the poll and the room's link verbs are pointed off it: two would
+        // let the backlog be read through one Binding while its links addressed another.
+        let resolution = await workItemBinding()
+        workItemAddress = WorkItemAddress(binding: resolution)
         // Reported before pointed, always: `point` is the only thing that starts a loop, and it
         // raises the landing itself — so this one call both settles the read and refreshes it.
         await poll.report(to: { [weak self] in await self?.readListing() })
-        await poll.point(workItemBinding(), at: project?.id)
+        await poll.point(resolution, at: project?.id)
         guard isOpen else { return }
         await show(ports: ports)
     }

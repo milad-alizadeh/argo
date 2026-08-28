@@ -134,6 +134,7 @@ extension CockpitPresentation.Session {
                 location: session.cwd,
                 workspace: workspace,
                 issue: Issue(
+                    workItem: session.workItem,
                     branch: workspace?.branch,
                     location: session.cwd,
                     ticket: annotations.ticket(session.id),
@@ -175,18 +176,38 @@ extension CockpitPresentation.Session {
 extension CockpitPresentation.Session.Issue {
     /// The Work Item this Session's git context names, and `nil` where it names none (#745).
     ///
-    /// DERIVED on both halves: the number is read off a branch by the convention
-    /// `docs/agents/worktrees.md` fixes, and the title came from outside Argo.
+    /// Two readings, and the DIRECT one wins: `workItem` is the ticket Argo was told to start this
+    /// Session on (#872), and the branch is the DERIVED convention `docs/agents/worktrees.md` fixes
+    /// (#745). The title came from outside Argo either way.
     ///
-    /// Three ways to have no link, and all three draw nothing rather than a guess: a branch
-    /// carrying no `#<N>`, and — once the host has been asked — a number it has nothing behind. A
-    /// number nobody has asked about yet keeps its link and carries no title, which `SessionTitle`
-    /// drops back to the derived name.
-    init?(branch: String?, location: String?, ticket: TicketReading?) {
-        guard let number = WorkItemLink.number(branch: branch, workspaceLocation: location),
-              ticket != .absent
+    /// The claim is asked first because it is the earlier and the firmer of the two: a Session
+    /// started on a ticket is claimed before anything has cut a branch to read the number off, and
+    /// a Session whose branch was later renamed is still the one that was started for it.
+    ///
+    /// Three ways to have no link, and all three draw nothing rather than a guess: no claim, a
+    /// branch carrying no `#<N>`, and — once the host has been asked — a number it has nothing
+    /// behind. A number nobody has asked about yet keeps its link and carries no title, which
+    /// `SessionTitle` drops back to the derived name.
+    init?(workItem: Int?, branch: String?, location: String?, ticket: TicketReading?) {
+        // The claim is asked first and is never dropped by the host: Argo was TOLD this number at
+        // the spawn, so an `absent` lookup says the host could not name it, not that the Session is
+        // on nothing. Only the DERIVED reading — a number guessed off a branch — needs the host to
+        // confirm it, because there a misread `#<N>` and a real ticket look identical.
+        guard let number = workItem
+            ?? Self.derived(branch: branch, location: location, ticket: ticket)
         else { return nil }
         self.init(number: number, title: ticket?.title)
+    }
+
+    /// The number a git context names, once the host has had its say. `nil` where the branch names
+    /// none, and where it names one the host answered has nothing behind — a branch naming a ticket
+    /// that does not exist (`TicketReading.absent`).
+    private static func derived(
+        branch: String?, location: String?, ticket: TicketReading?,
+    )
+        -> Int? {
+        guard ticket != .absent else { return nil }
+        return WorkItemLink.number(branch: branch, workspaceLocation: location)
     }
 }
 

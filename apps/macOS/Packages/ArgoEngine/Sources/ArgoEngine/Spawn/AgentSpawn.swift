@@ -8,6 +8,10 @@ struct AgentSpawn: Sendable, Equatable {
     let cli: AgentCLI
     let cwd: String
     let spawnedAtMs: Int
+    /// The Work Item this spawn was started on (#872), and `nil` for a New Session started on
+    /// none. On the row as well as under the claim, so the provisional row is claimed from the
+    /// moment it appears rather than from the moment its CLI writes a record.
+    var workItem: Int?
 
     /// How the PTY went away, once it has — and only for a spawn whose CLI never wrote a record,
     /// the one row no observation can reach.
@@ -32,6 +36,12 @@ extension AgentSpawn {
     /// The row for a plan that has just started. In an extension so the memberwise init survives
     /// for the fixtures that state a spawn with no plan behind it.
     init(spawning plan: AgentSpawnPlan, atMs: Int) {
-        self.init(claim: plan.claim, cli: plan.cli, cwd: plan.cwd, spawnedAtMs: atMs)
+        self.init(
+            claim: plan.claim,
+            cli: plan.cli,
+            cwd: plan.cwd,
+            spawnedAtMs: atMs,
+            workItem: plan.seed.workItem,
+        )
     }
 }

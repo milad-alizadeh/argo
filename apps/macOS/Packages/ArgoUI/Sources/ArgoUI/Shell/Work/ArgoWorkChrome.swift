@@ -30,6 +30,10 @@ enum ArgoWorkChrome {
     /// hold a mark plus the vessel's own inset.
     static let searchHeight: CGFloat = 28
 
+    /// The New ticket composer's body field, in lines. Reserved rather than grown into: a field
+    /// that expanded as you typed would move the two buttons under it while you were reading them.
+    static let composerBodyLines = 6
+
     /// The mark on every toolbar button. `ArgoIconSize.control` and not the design's 14: 14 is the
     /// SVG box the study drew its icons into, where `control` is the rung the contract already
     /// gives "a control's own mark" — and a fourth rung would be a token change this room has no

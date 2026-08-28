@@ -32,17 +32,16 @@ struct WorkRoom {
     /// What the row's controls do, and what the one that writes through a provider renders (#275).
     /// Inert by default for the same reason `connect` is.
     var intents = WorkToolbarIntents.inert
-    /// The two things the room's chrome HOLDS rather than reads — the query and the Mode a Session
-    /// would start in. Both outlive the pane, so both are held above the room; one value rather
-    /// than two members, because a binding pair travels together (the `DeckSeams` shape).
+    /// What the room's chrome HOLDS rather than reads — the query, which outlives the pane and is
+    /// therefore held above the room. A value rather than the binding bare: it was a pair until the
+    /// Mode chevron went (#872), and the search field is not the last thing this row will hold.
     var held = Held.unheld
 
     struct Held {
         var query: Binding<String>
-        var mode: Binding<SessionMode>
 
-        /// Nothing remembers either, for a `#Preview` and a specimen with no window above them.
-        static let unheld = Held(query: .constant(""), mode: .constant(.code))
+        /// Nothing remembers it, for a `#Preview` and a specimen with no window above them.
+        static let unheld = Held(query: .constant(""))
     }
 
     var sidebar: some View {

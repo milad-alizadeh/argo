@@ -17,8 +17,8 @@ import SwiftUI
 struct WorkToolbar: ToolbarContent {
     let reading: WorkChromeProjection.Reading
     var intents = WorkToolbarIntents.inert
-    /// What the row HOLDS rather than reads — the query and the Mode a Session would start in.
-    /// Both outlive the pane, so both are held above the room (`WorkRoom.Held`).
+    /// What the row HOLDS rather than reads — the query, which outlives the pane and is therefore
+    /// held above the room (`WorkRoom.Held`).
     var held = WorkRoom.Held.unheld
 
     @ToolbarContentBuilder var body: some ToolbarContent {
@@ -40,7 +40,7 @@ struct WorkToolbar: ToolbarContent {
             // there addressing nobody.
             if reading.ticket != nil {
                 ToolbarItem(placement: .primaryAction) {
-                    StartControl(verbs: intents.verbs, mode: held.mode)
+                    StartControl(verbs: intents.verbs)
                 }
                 .sharedBackgroundVisibility(.hidden)
             }

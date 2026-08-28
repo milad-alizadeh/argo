@@ -1,8 +1,10 @@
 /// What the Work room's toolbar controls DO, grouped by the thing each acts on.
 ///
-/// Inert by default, and passed inert by the shell for now: the room is fixture-fed end to end
-/// (`CockpitView+Work.workRoom`), so there is no live ticket for a verb to address yet. #388's read
-/// path supplies the Work Item link these two link verbs need, and the spawn ticket wires `start`.
+/// Inert by default, for a `#Preview` and a specimen; the shell passes the live ones (#872). The
+/// room reads live end to end since #820, and every verb here addresses that reading: New ticket
+/// writes through `WorkItemWriter`, `Start` spawns a Session seeded with the open ticket, and the
+/// two link verbs open the address `WorkItemAddress` derives from the Binding.
+///
 /// One value rather than five closures, because the cap is three parameters and these travel
 /// together anyway.
 struct WorkToolbarIntents {
@@ -25,8 +27,12 @@ struct WorkToolbarIntents {
 
     struct Verbs {
         var start: () -> Void = {}
-        var openOnHost: () -> Void = {}
-        var copyLink: () -> Void = {}
+        /// The two link verbs, and `nil` where this Binding cannot address the ticket in a browser
+        /// at all — a Linear team id names no page (`WorkItemAddress`). Optional rather than an
+        /// empty closure, because a control that draws live and does nothing is the thing #872 is
+        /// about: absent behaviour has to reach the control as absence, so it can disable.
+        var openOnHost: (() -> Void)?
+        var copyLink: (() -> Void)?
 
         /// Verbs with nothing behind them, for a preview and for a room whose ticket has no link
         /// to open.

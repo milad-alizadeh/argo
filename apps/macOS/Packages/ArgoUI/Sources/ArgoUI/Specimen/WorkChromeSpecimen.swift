@@ -12,7 +12,6 @@ struct WorkChromeSpecimen: View {
     private let reading: WorkReading
 
     @State private var query: String
-    @State private var mode = SessionMode.code
 
     /// Seeded, because the harness cannot type — and the row's own answer to a query that matched
     /// nothing is the state worth shooting: the field has to still be there to clear it (#873).
@@ -48,8 +47,20 @@ struct WorkChromeSpecimen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .argoDeckSurface()
         .toolbar {
-            WorkToolbar(reading: chrome, held: WorkRoom.Held(query: $query, mode: $mode))
+            WorkToolbar(reading: chrome, held: WorkRoom.Held(query: $query))
         }
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+    }
+}
+
+/// What New ticket opens (#872), on the ground the app puts it on. A sheet is a surface OVER the
+/// window, so it is rendered centred rather than in a pane of its own.
+struct NewTicketComposerSpecimen: View {
+    @State private var composition = TicketComposition()
+
+    var body: some View {
+        SpecimenScene.centred {
+            NewTicketComposer(composition: $composition)
+        }
     }
 }

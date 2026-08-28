@@ -58,6 +58,12 @@ final class ClaimLedger {
         update(claim) { $0.driveStatus = driveStatus }
     }
 
+    /// The ticket this claim was started on (#872). Never taken back: what a Session was started
+    /// for is something that happened, so an orphaned one is still the Session that took it.
+    func setWorkItem(_ number: Int, for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.workItem = number }
+    }
+
     func setMode(_ modeSet: SessionModeSet, for claim: SessionOwnership.ClaimID) {
         update(claim) { $0.modeSet = modeSet }
     }

@@ -13,6 +13,13 @@ public struct GitHubWorkItems: WorkItemPort {
         self.writes = GitHubWrites(transport: transport)
     }
 
+    /// `github.com/<owner>/<repo>/issues/<n>` — the browse URL, which is NOT the API path `path(of:
+    /// through:)` builds. A blank scope addresses nothing rather than the host's own front page.
+    public static func browseURL(of number: Int, in scope: String) -> URL? {
+        guard !scope.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        return URL(string: "https://github.com/\(scope)/issues/\(number)")
+    }
+
     public func list(in scope: String, grant: AccountGrant) async throws -> [WorkItem] {
         // Open only. A closed ticket has left the room, and asking for every issue a repository
         // ever had costs a poll two extra requests per issue on edges nobody is waiting on. The

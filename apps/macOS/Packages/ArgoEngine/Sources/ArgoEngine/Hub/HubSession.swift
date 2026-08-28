@@ -43,6 +43,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// Set by the Hub from its own record of the handoff, never read from a transcript: neither CLI
     /// knows anything happened.
     public internal(set) var handedOffTo: String?
+    /// The Work Item this Session was STARTED on, by number (#872). DIRECT — Argo was told at the
+    /// spawn — and absent for every Session started on no ticket, which is every external one and
+    /// every plain New Session. The link read off a branch is the DERIVED reading beside it, and
+    /// the cockpit prefers this one where both are there.
+    public internal(set) var workItem: Int?
     /// What this row is called, and how firmly — see `SessionTitle`.
     private var name: SessionTitle
     public var title: String {
@@ -134,6 +139,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.cwd = spawn.cwd
         // DIRECT: Argo chose this program and started it.
         self.cli = spawn.cli
+        // DIRECT on the same ground: the row is claimed from the moment it appears, rather than
+        // once a branch has been cut for something to read the number off (#872).
+        self.workItem = spawn.workItem
         self.lastActivityAtMs = spawn.exit?.atMs ?? spawn.spawnedAtMs
         self.startedAtMs = spawn.spawnedAtMs
         self.turn = SessionTurnState(lastStop: spawn.exit == nil ? .endTurn : .cancelled)
@@ -246,6 +254,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // — and a file that has not stated one yet does not un-state the root's.
         observedMode = continuation.observedMode ?? observedMode
         modeSet = continuation.modeSet ?? modeSet
+        // A resume continues the work the root was started on, so the later half only adds a ticket
+        // where the root named none.
+        workItem = continuation.workItem ?? workItem
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
         // The tip moves with the chain, unlike `sourceURL`: a resume continues the last link, and
         // the last link is whatever was merged in most recently.

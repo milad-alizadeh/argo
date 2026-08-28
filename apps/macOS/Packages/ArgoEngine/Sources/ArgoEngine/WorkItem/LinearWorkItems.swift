@@ -17,6 +17,14 @@ public struct LinearWorkItems: WorkItemPort {
     private static let pageSize = 100
     private static let pageLimit = 20
 
+    /// Nothing — and that is the honest answer, not a gap left for later. A Linear issue is
+    /// addressed `linear.app/<workspace>/issue/<TEAM-KEY>-<n>`, and a Linear Binding holds a team
+    /// ID: neither the workspace slug nor the team's key. A URL guessed from the id would 404, and
+    /// the room disables the two link verbs on this `nil` rather than drawing them live and inert.
+    public static func browseURL(of _: Int, in _: String) -> URL? {
+        nil
+    }
+
     public func list(in scope: String, grant: AccountGrant) async throws -> [WorkItem] {
         var items: [WorkItem] = []
         var after: LinearValue = .null
