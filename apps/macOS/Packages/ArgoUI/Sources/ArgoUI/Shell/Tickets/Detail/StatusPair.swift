@@ -1,10 +1,8 @@
 import ArgoEngine
 import SwiftUI
 
-/// The provider's own status word and Argo's bucket, on one line behind a short rule. Neither is
-/// shown in place of the other (#272): the word is the provider's and renders verbatim, the bucket
-/// is what Argo computes across providers with, and the pair reads as a label and its filing rather
-/// than as two competing claims.
+/// The provider's own status word, and Argo's bucket behind a short rule only where the bucket is
+/// not that same word (#272, #893) — on GitHub, `state` IS `open`.
 ///
 /// The bucket is set LOWERCASE — uppercase machine at 11 reads as loud as the word it is filing
 /// (`cockpit-work-room.md`, token reconciliation).
@@ -18,22 +16,25 @@ struct StatusPair: View {
         HStack(spacing: ArgoSpacing.snug) {
             Text(word)
                 .argoText(ArgoTypography.rowMeta)
-            ArgoRule(ink: argo.color.edge.subtle)
-                .frame(height: ArgoTicketDetail.statusDividerHeight)
-            Text(bucket.filing)
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.disabled)
+            if let filing = filingWorthDrawing {
+                ArgoRule(ink: argo.color.edge.subtle)
+                    .frame(height: ArgoTicketDetail.statusDividerHeight)
+                Text(filing)
+                    .argoText(ArgoTypography.machineCaption)
+                    .foregroundStyle(argo.color.text.disabled)
+            }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(word), filed under \(bucket.filing)")
+        .accessibilityLabel(filingWorthDrawing.map { "\(word), filed under \($0)" } ?? word)
+    }
+
+    /// Named apart from `TicketState.filing`, which is the same word unconditionally.
+    private var filingWorthDrawing: String? {
+        bucket.filing(beside: word)
     }
 }
 
-#Preview("Status pair — every bucket a word can be filed under") {
-    VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-        ForEach(TicketState.allCases, id: \.self) { StatusPair(word: "Todo", bucket: $0) }
-    }
-    .padding(ArgoSpacing.section)
-    .argoDeckSurface()
-    .argoAppearance()
+#Preview("Status pair — every reading a provider can put in the head") {
+    StatusPairSpecimen()
+        .argoAppearance()
 }
