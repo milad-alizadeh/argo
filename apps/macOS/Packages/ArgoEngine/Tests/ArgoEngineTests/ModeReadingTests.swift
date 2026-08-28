@@ -18,7 +18,37 @@ struct ModeReadingTests {
     func `the CLI's own value is read verbatim, in the order the file stated it`() async throws {
         let read = try await modes(Fixture.events("permissionModes"))
 
-        #expect(read == ["acceptEdits", "auto"])
+        // Three and not two: this fixture's prompt sits between the two records and states the
+        // stance it was submitted under, which is read as the same fact.
+        #expect(read == ["acceptEdits", "acceptEdits", "auto"])
+    }
+
+    /// A prompt states the stance it was submitted under, and that is the only timely reading of a
+    /// walk (#629). Verbatim from `claude` 2.1.250 on 2026-08-28: the rung was walked to `auto`
+    /// between the two prompts, and the CLI wrote NO `permission-mode` record for it until the
+    /// process exited — so a reader watching only that record draws the old rung for a whole
+    /// Session.
+    @Test
+    func `a prompt reports the stance it was submitted under`() async throws {
+        let read = try await modes(Fixture.events("promptStance"))
+
+        #expect(read == ["acceptEdits", "acceptEdits", "auto"])
+    }
+
+    /// A tool result is a `user` record that carries no stance, and it must contribute none:
+    /// counted as a reading it would be a record speaking after a set, which is what tells a
+    /// change that did not land from one that has not been reported yet.
+    ///
+    /// Read as its own line, because that is the claim — the whole file already passes above
+    /// whether or not this record is the one staying quiet.
+    @Test
+    func `a user record with no stance on it reports none`() async throws {
+        let lines = try Fixture.lines("promptStance")
+        let denial = try #require(lines.first { $0.contains("tool_result") })
+
+        let read = await modes(TranscriptReader().read(line: denial))
+
+        #expect(read.isEmpty)
     }
 
     /// The value is passed through unread: what it MEANS is `ClaudePermissionMode`'s, so a value
@@ -45,6 +75,40 @@ struct ModeReadingTests {
 
         let session = try #require(hub.sessions.first)
         #expect(session.mode == .exactly(.auto, cli: "auto"))
+    }
+
+    /// Only a PROMPT states a stance Argo may count. The host's own records carry the field too —
+    /// rarely, but they do — and a subagent's is not the root Session's fact at all. Counted, any
+    /// of them is a record speaking after a set, which is what raises a snap-back for a change
+    /// that landed perfectly well (#629).
+    @Test(arguments: ["isMeta", "isCompactSummary", "isSidechain"])
+    func `a record the host wrote itself states no stance`(flag: String) async {
+        let line = """
+        {"type": "user", "message": {"role": "user", "content": "hi"}, "uuid": "u", \
+        "permissionMode": "acceptEdits", "\(flag)": true, "sessionId": "s"}
+        """
+
+        let read = await modes(TranscriptReader().read(line: line))
+
+        #expect(read.isEmpty)
+    }
+
+    /// The walk's own reading, read off the file rather than assembled by hand (#629): Argo set
+    /// the rung, the CLI wrote no `permission-mode` record for it, and the next prompt is what
+    /// says where the Session landed. Without the prompt read as a stance nothing confirms the
+    /// walk until the process exits, which is the live failure this test stands in for.
+    @Test
+    @MainActor
+    func `a walk is confirmed by the next prompt's own stance`() async throws {
+        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo-mode"))
+        let events = try await Fixture.events("promptStance")
+        let observed = hubTestObservation(id: "session", events: events)
+
+        await hubObserveToEnd(hub, observed)
+
+        let session = try #require(hub.sessions.first)
+        #expect(session.mode == .exactly(.auto, cli: "auto"))
+        #expect(session.modeDidNotTake == nil)
     }
 
     /// A Session nothing has said a stance about is `unknown` — never the baseline rung, which

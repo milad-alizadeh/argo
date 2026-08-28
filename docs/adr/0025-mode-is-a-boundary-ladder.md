@@ -110,7 +110,8 @@ adapter works.
   rather than guessing a distance.
 - **The stance reads back off `{"type":"permission-mode","permissionMode":…}`**, written at every
   Turn boundary and after a change. Latest wins. Writes coalesce at boundaries, so an intermediate
-  cycle can be missing from the record.
+  cycle can be missing from the record. *(No longer true of a change, as of 2.1.250 — see the
+  2026-08-28 section, where a prompt's own `permissionMode` becomes the second source.)*
 - **`{"type":"mode","mode":"normal"}` sits beside it and is a different axis.** Never read it as
   the stance.
 - **`--permission-mode acceptEdits` was honoured end to end**: the footer read `accept edits` and
@@ -272,6 +273,59 @@ which would both misdraw the composer and put the gate on the wrong rung.
 **Nothing is published for a call allowed this way.** No Permission is raised, so the cockpit shows
 what it shows for any ungated tool: the Tool Call itself, off the transcript. That is the honest
 reading — Argo asked nobody, so there is nothing DIRECT to report about a decision it never made.
+
+## Verification · all four rungs again, 2.1.250, 2026-08-28 (#629)
+
+Re-verified against the installed `claude` on the date it closed the ticket, because every claim
+above was read off 2.1.228 and a mapping table nobody re-reads is a table that quietly stops being
+true. Same method: `LiveModeTests` on the live fixture, plus two PTY probes for the facts no test
+asserts directly.
+
+**Nothing in the CLI's own vocabulary moved.**
+
+| What was re-read | At 2.1.250 |
+|---|---|
+| `--permission-mode` choices | `acceptEdits · auto · bypassPermissions · manual · dontAsk · plan` — unchanged |
+| The `shift+tab` ring and its order | `auto → manual → acceptEdits → plan`, walked one rung per back-tab from `acceptEdits`, read off the footer — unchanged |
+| The 50 ms pacing behind each write | still enough: two paced back-tabs from `acceptEdits` land on `auto`, not one rung short |
+| `{"type":"permission-mode","permissionMode":…}` | still the record's shape and still latest-wins |
+
+So the `≈` rules stand unamended against values the CLI still accepts: `manual` and `default` read
+as `Read Only ≈`, `bypassPermissions` as `Auto ≈`, `dontAsk` as `unknown`.
+
+**What did move is WHEN the stance record is written, and it broke the mid-Session read.** On
+2.1.228 the record was written "at every Turn boundary and after a change". On 2.1.250 a rung
+walked mid-Session produces no record of its own: in the failing run the walk landed — the CLI ran
+the next Turn at `auto`, and the transcript proves it — but the only `permission-mode` record
+saying `auto` was **line 49 of 50**, written at process exit, three minutes after the composer
+needed it. `LiveModeTests`' `a rung set on a running Session takes effect` failed on exactly that,
+reading `acceptEdits` for the whole 180 s window.
+
+**A prompt states the stance it was submitted under, and that is the timely reading.** Every `user`
+record carrying a prompt has its own `permissionMode` field — and only a prompt does; a tool result
+is a `user` record with none. In the failing transcript that field read `auto` on the very next
+prompt, 1.4 seconds after the walk. Argo reads both now, latest wins:
+
+| Source | What it is good for |
+|---|---|
+| `permission-mode` record | a Session nobody has prompted since the change, and the opening stance |
+| a prompt's own `permissionMode` | every change, at the next Turn rather than at exit |
+
+**A prompt and nothing else.** The host's own records carry the field too — 2 of 1,494 across a
+51,000-record sweep are `isMeta` — and a Subagent's stance is not the root Session's fact. Counted,
+either is a record speaking after a set, which is the exact shape that snaps the control back off a
+change that landed. So meta, compact-summary and sidechain records state no stance.
+
+With the prompt read, all four of `LiveModeTests` pass against 2.1.250 on 2026-08-28, and the
+mid-Session test answers in **13 seconds** where it had spent 191 waiting for a record that only
+arrives at exit. Reverting the prompt source turns that one test red again with the record reading
+`acceptEdits`, which is the regression stated as a test.
+
+Neither source is enough alone, which is why both are read rather than one replacing the other. The
+counting rule below is unaffected in shape — a prompt's stance is a stance record like any other,
+so a record that speaks after a set and repeats the old value is still how a change that did not
+land is told from one not yet reported. It now speaks a Turn earlier, so the snap-back and its
+sentence arrive while the reader is still looking at the control.
 
 ## Consequences
 

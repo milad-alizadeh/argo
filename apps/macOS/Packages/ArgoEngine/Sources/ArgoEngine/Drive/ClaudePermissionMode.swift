@@ -4,7 +4,8 @@
 /// Verified against `claude` 2.1.227 on 2026-08-11, which is where two facts came from that the
 /// ADR's paper table did not have: the flag spells the manual rung `manual`, while the transcript
 /// still writes `default`, so both have to read; and `shift+tab` cycles a FOUR-value ring that
-/// `bypassPermissions` and `dontAsk` are not part of.
+/// `bypassPermissions` and `dontAsk` are not part of. Re-verified unchanged against 2.1.250 on
+/// 2026-08-28 (#629) — the choices, the ring and its order all still hold.
 enum ClaudePermissionMode: AgentStanceVocabulary {
     /// What Argo passes to put a Session on this rung. Read Only and Plan answer the same value:
     /// they are one boundary, and no flag carries the intent that separates them.

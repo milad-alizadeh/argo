@@ -60,7 +60,7 @@ struct SessionModeTests {
     /// Read Only and Plan set one boundary, so a cycle to either lands on the same value — which is
     /// why an observed `plan` can never be read back as Plan.
     @Test
-    func `the shift+tab ring is the one claude 2_1_227 cycles`() {
+    func `the shift+tab ring is the one claude 2_1_250 cycles`() {
         #expect(ClaudePermissionMode.ring == ["auto", "manual", "acceptEdits", "plan"])
     }
 
