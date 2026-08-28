@@ -1,0 +1,88 @@
+import ArgoEngine
+@testable import ArgoUI
+import Testing
+
+/// The Sessions deck now stays mounted in every room rather than being torn down and rebuilt on
+/// each switch (#858). That removes the one thing that used to guarantee freshness — a deck built
+/// from nothing every time it appeared — so these state the guarantee directly: the reading is
+/// taken from the presentation it is handed, on every pass, and nothing about it is remembered.
+@Suite("Sessions room reading")
+@MainActor
+struct SessionsRoomReadingTests {
+    /// The claim a memoised feed would break: a transcript that grew while the reader was in
+    /// another room reads as it is NOW, not as it was when they last looked at it.
+    @Test
+    func `a transcript that grew reads as it stands now`() {
+        let opening = Self.reading(events: Array(Self.transcript.prefix(3)))
+        let grown = Self.reading(events: Self.transcript)
+
+        #expect(opening.feed.count < grown.feed.count)
+    }
+
+    /// The other half of the same claim, across the selection rather than across time: the deck
+    /// keeps its identity through a room switch, so a reading carried over would draw one Session's
+    /// transcript under another's name.
+    @Test
+    func `the reading follows the selection`() {
+        let presentation = CockpitPresentation(
+            projects: [],
+            activeProjectID: nil,
+            sessions: [
+                Self.session(id: "one", events: Self.transcript),
+                Self.session(id: "two", events: []),
+            ],
+            checkout: .unavailable,
+            connection: .idle,
+        )
+
+        let quiet = SessionsRoomReading(presentation: presentation, sessionID: "two")
+
+        #expect(!SessionsRoomReading(presentation: presentation, sessionID: "one").feed.isEmpty)
+        #expect(quiet.feed.isEmpty)
+        #expect(quiet.header?.title == "two")
+    }
+
+    /// With nothing selected there is no Session to read, which is the one case that draws nothing
+    /// — never a room the deck happens to be out of.
+    @Test
+    func `nothing selected reads as nothing at all`() {
+        let reading = SessionsRoomReading(
+            presentation: Self.presentation(events: Self.transcript),
+            sessionID: nil,
+        )
+
+        #expect(reading.feed.isEmpty)
+        #expect(reading.header == nil)
+        #expect(reading.showing.plan == nil)
+    }
+
+    private static let transcript = TranscriptFixtures.previewTranscript
+
+    private static func reading(events: [TranscriptEvent]) -> SessionsRoomReading {
+        SessionsRoomReading(presentation: presentation(events: events), sessionID: "one")
+    }
+
+    private static func presentation(events: [TranscriptEvent]) -> CockpitPresentation {
+        CockpitPresentation(
+            projects: [],
+            activeProjectID: nil,
+            sessions: [session(id: "one", events: events)],
+            checkout: .unavailable,
+            connection: .idle,
+        )
+    }
+
+    private static func session(
+        id: String,
+        events: [TranscriptEvent],
+    )
+        -> CockpitPresentation.Session {
+        CockpitPresentation.Session(
+            id: id,
+            title: id,
+            access: .managed,
+            status: .idle,
+            transcript: .init(events: events),
+        )
+    }
+}
