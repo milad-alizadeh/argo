@@ -55,28 +55,24 @@ extension TicketsRoomProjection {
         let byNumber = Dictionary(uniqueKeysWithValues: shown.map { ($0.number, $0) })
 
         func node(_ item: Ticket) -> Row {
-            Row(
+            let siblings = item.children.filter { parents[$0] == item.number }
+                .compactMap { byNumber[$0] }
+            return Row(
                 id: item.number,
                 title: item.title,
                 delivery: reading.deliveries[item.number] ?? .absent,
                 trailing: rollUp(of: item, closed: closed),
                 priority: item.priority,
                 labels: item.labels,
-                children: newest(item.children
-                    .filter { parents[$0] == item.number }
-                    .compactMap { byNumber[$0] })
-                    .map(node),
+                children: newest(siblings).map(node),
             )
         }
 
         return newest(shown.filter { parents[$0.number] == nil }).map(node)
     }
 
-    /// The list's own order: highest number first, siblings against siblings (#892). Stated here
-    /// rather than inherited from the provider, whose default can change under a build that never
-    /// asked for one — and not `updatedAt`, which would move rows while they are being read, nor
-    /// `TicketsReading+Ranking`'s `Rank`, which answers what to pick up next rather than what
-    /// order the list is in.
+    /// The list's own order, stated rather than inherited: highest number first, siblings against
+    /// siblings (#892).
     private static func newest(_ items: [Ticket]) -> [Ticket] {
         items.sorted { $0.number > $1.number }
     }

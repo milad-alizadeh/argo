@@ -8,8 +8,7 @@ import Testing
 /// to a root rather than to a vanished row.
 @Suite("The backlog nests")
 struct TicketsBacklogTreeTests {
-    /// #607, by its number. The backlog draws newest first (#892), so the parent is no longer
-    /// whichever row happens to be first.
+    /// #607, by its number rather than by its place in the list.
     private static var parent: TicketsRoomProjection.Row? {
         TicketsRoomProjection.room(from: TicketsFixture.reading).backlog.first { $0.id == 607 }
     }
