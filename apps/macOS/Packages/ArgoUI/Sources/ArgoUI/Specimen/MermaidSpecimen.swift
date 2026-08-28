@@ -1,10 +1,11 @@
 import Foundation
 
-/// The flowcharts a reviewer and CI actually look at — the three shapes of graph a layered layout
-/// has to get right, each written the way an agent really writes one.
+/// The diagrams a reviewer and CI actually look at — the shapes of graph a layered layout has to
+/// get right (#861), and the shapes of exchange a sequence layout has to (#862), each written the
+/// way an agent really writes one.
 ///
 /// Fences and not models: a specimen that built a `MermaidFlowchart` by hand would prove the layout
-/// and skip the reader, and the reader is half of what #861 added.
+/// and skip the reader, and the reader is half of what each of them added.
 enum MermaidSpecimen {
     /// Four ranks, every node shape, all four link kinds and a word on an edge in both of its
     /// spellings — one screen carrying everything a reader has to be able to tell apart.
@@ -51,6 +52,69 @@ enum MermaidSpecimen {
       Review -->|changes| Build
       Review -->|approved| Land
       Land --> Build
+    ```
+    """
+
+    /// A plain exchange: three participants, an alias, an `actor`, and every arrow form beside the
+    /// others it has to be told apart from (#862).
+    nonisolated static let sequence = """
+    What happens when a ticket is picked up:
+
+    ```mermaid
+    sequenceDiagram
+      actor Dev
+      participant Argo
+      participant CI as The runner
+      Dev->>Argo: implement 862
+      Argo->>CI: open the PR
+      CI-->>Argo: checks green
+      Argo-)Dev: PR is up
+      CI-xArgo: flake on retry
+      Argo->Dev: nothing to say
+    ```
+    """
+
+    /// Activations and notes: bars in both spellings, a run inside a run, and a note in each of the
+    /// three placements.
+    nonisolated static let sequenceRuns = """
+    Who is busy, and what is worth saying about it:
+
+    ```mermaid
+    sequenceDiagram
+      participant Reader
+      participant Layout
+      Note left of Reader: a fence arrives
+      Reader->>+Layout: the model
+      Layout->>Layout: rank the nodes
+      Note over Layout: measured at the feed's own metrics
+      Layout->>+Layout: route the edges
+      Layout-->>-Layout: done
+      Layout-->>-Reader: the plan
+      Note right of Reader: drawn, and mapped
+    ```
+    """
+
+    /// Nested blocks: an `alt` with an `else`, a `loop` inside it, and an `opt` after — the shape a
+    /// frame has to get right or it closes over a lifeline it does not own.
+    nonisolated static let sequenceBlocks = """
+    The review, as it really branches:
+
+    ```mermaid
+    sequenceDiagram
+      participant Author
+      participant Review
+      participant Land
+      alt findings
+        Review->>Author: changes requested
+        loop until clean
+          Author->>Review: another push
+        end
+      else approved
+        Review->>Land: merge it
+      end
+      opt the branch is stale
+        Land->>Author: rebase first
+      end
     ```
     """
 }

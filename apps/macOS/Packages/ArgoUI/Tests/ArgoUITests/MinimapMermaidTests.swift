@@ -63,6 +63,18 @@ struct MinimapMermaidTests {
         #expect(laid?.rects.allSatisfy { $0.to <= narrow } == true)
     }
 
+    /// The claim #859's spine rests on, tested by a second diagram type: a sequence diagram is
+    /// mapped and measured by this very lane, which learned nothing about it (#862).
+    @Test
+    func `a sequence diagram maps through the same lane`() {
+        let diagram = MermaidDiagram.read("sequenceDiagram\nA->>B: go\nB-->>A: back")
+        let laid = diagram?.mapped(across: Self.measure)
+
+        #expect(laid?.height == diagram?.laid.size.height)
+        #expect(laid?.rects.isEmpty == false)
+        #expect(laid?.rects.allSatisfy { $0.ink == .diagram } == true)
+    }
+
     /// The block comes off the row's markdown carrying the diagram itself, so the lane lays it out
     /// through the feed's own cached plan rather than through a reduction of it.
     @Test

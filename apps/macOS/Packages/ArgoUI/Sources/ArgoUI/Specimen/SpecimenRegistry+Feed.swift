@@ -3,7 +3,7 @@ import SwiftUI
 /// The reading itself, at rest: every kind of row, the evidence panel over them, and the lane
 /// beside them. What the feed does while a Turn is RUNNING is `SpecimenRegistry+Live.swift`.
 extension SpecimenRegistry {
-    static let feed: [SpecimenEntry] = rows + asks + evidence + shots + lane
+    static let feed: [SpecimenEntry] = rows + asks + diagrams + evidence + shots + lane
 
     /// The question while it WAITS — one render per shape a call can put one in (#712), judged
     /// against `docs/designs/feed-ask/`. The settled reading is `feedAttention` above; these are
@@ -54,14 +54,6 @@ extension SpecimenRegistry {
         SpecimenEntry("feedMarkdownCodeTable") {
             MarkdownSpecimen(text: MarkdownSpecimen.codeDenseTable)
         },
-        // A diagram beside a fence declaring the same grammar that nothing here can read. The pair
-        // is the claim: what Argo reads is drawn, and what it cannot degrades to the source it
-        // shows today — never to an error and never to an empty box (#860).
-        SpecimenEntry("feedMermaid") { MarkdownSpecimen(text: MarkdownSpecimen.diagrams) },
-        // The three shapes of graph a layered layout has to get right, one specimen each (#861).
-        SpecimenEntry("feedMermaidFlowchart") { MarkdownSpecimen(text: MermaidSpecimen.flowchart) },
-        SpecimenEntry("feedMermaidSubgraph") { MarkdownSpecimen(text: MermaidSpecimen.subgraphs) },
-        SpecimenEntry("feedMermaidCycle") { MarkdownSpecimen(text: MermaidSpecimen.cycle) },
         SpecimenEntry("feedAttention") { SpecimenScene.sessions(FeedProjection.previewAskRows) },
         SpecimenEntry("feedPunctuation") { SpecimenScene.sessions(FeedProjection.previewMarkRows) },
         // The design's own render (#688): the command the user typed, their line verbatim, and the

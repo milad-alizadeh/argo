@@ -14,15 +14,23 @@ struct MermaidDiagram: Equatable, Sendable {
 
     enum Kind: Equatable, Sendable {
         case flowchart(MermaidFlowchart)
+        case sequence(MermaidSequence)
     }
 
     /// The diagram this source draws, or `nil` where nothing here can read it — an unsupported
     /// type, a syntax error, a fence still streaming in. That `nil` is what keeps the block a
     /// fence, and the reason detection is a PARSE: the renderer and the lane read one answer, so
     /// they cannot disagree about what the block is.
+    /// Each reader is asked in turn and every one of them owns its own header, so the order here
+    /// settles nothing — the first that says yes is the only one that could have.
     static func read(_ source: String) -> MermaidDiagram? {
-        guard let flowchart = MermaidFlowchart.read(source) else { return nil }
-        return MermaidDiagram(source: source, kind: .flowchart(flowchart))
+        if let flowchart = MermaidFlowchart.read(source) {
+            return MermaidDiagram(source: source, kind: .flowchart(flowchart))
+        }
+        if let sequence = MermaidSequence.read(source) {
+            return MermaidDiagram(source: source, kind: .sequence(sequence))
+        }
+        return nil
     }
 
     /// The captions the diagram sets, in the order its plan places them. Width-independent, because
@@ -30,6 +38,7 @@ struct MermaidDiagram: Equatable, Sendable {
     var labels: [MermaidLabel] {
         switch kind {
         case let .flowchart(flowchart): flowchart.labels
+        case let .sequence(sequence): sequence.labels
         }
     }
 
@@ -43,6 +52,7 @@ struct MermaidDiagram: Equatable, Sendable {
     @MainActor var laid: MermaidPlan {
         switch kind {
         case let .flowchart(flowchart): flowchart.laid
+        case let .sequence(sequence): sequence.laid
         }
     }
 }

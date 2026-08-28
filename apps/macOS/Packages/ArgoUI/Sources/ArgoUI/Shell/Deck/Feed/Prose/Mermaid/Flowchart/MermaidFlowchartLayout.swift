@@ -21,7 +21,7 @@ extension MermaidFlowchart {
         // `MermaidLayout` places its subviews by that position alone.
         let routes = edges.enumerated().map { routing.drawn($1, at: $0) }
         let enclosures = groups.map { MermaidEnclosure.drawn($0, in: placement.boxes) }
-        return Self.normalised(MermaidPlan(
+        return MermaidPlan(
             // Enclosures first, so a frame sits UNDER the boxes it is drawn around.
             figures: enclosures.compactMap { $0?.figure }
                 + nodes.compactMap { node in
@@ -30,7 +30,7 @@ extension MermaidFlowchart {
                 + routes.compactMap(\.self).flatMap(\.figures),
             captions: captions(in: placement.boxes) + wordsOn(routes) + titles(on: enclosures),
             size: placement.size,
-        ))
+        ).normalised
     }
 
     /// One node's own figure, in the box it was measured into.
@@ -89,29 +89,6 @@ extension MermaidFlowchart {
         return CGPoint(
             x: route.mid.x + aside.x * clear - size.width / 2,
             y: route.mid.y + aside.y * clear - size.height / 2,
-        )
-    }
-
-    /// The same plan slid into positive coordinates, at the size it really stands. A back edge's
-    /// lane and an enclosure's frame both reach outside the boxes, and a plan whose marks start at
-    /// a negative is a plan whose left-hand edge is drawn off the block.
-    private static func normalised(_ plan: MermaidPlan) -> MermaidPlan {
-        let marks = plan.figures.map(\.form.bounds) + plan.captions.map(\.rect)
-        guard let first = marks.first else { return plan }
-        let bounds = marks.dropFirst().reduce(first) { $0.union($1) }
-        let offset = CGPoint(x: -bounds.minX, y: -bounds.minY)
-        return MermaidPlan(
-            figures: plan.figures.map {
-                MermaidFigure(form: $0.form.moved(by: offset), role: $0.role, line: $0.line)
-            },
-            captions: plan.captions.map {
-                MermaidCaption(
-                    label: $0.label,
-                    rect: $0.rect.offsetBy(dx: offset.x, dy: offset.y),
-                    alignment: $0.alignment,
-                )
-            },
-            size: CGSize(width: ceil(bounds.width), height: ceil(bounds.height)),
         )
     }
 }

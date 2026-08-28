@@ -121,3 +121,55 @@ private struct MermaidPreview: View {
 #Preview("Mermaid — a cycle") {
     MermaidPreview(source: "graph TD\nRead --> Write\nWrite --> Read")
 }
+
+#Preview("Mermaid — a sequence") {
+    MermaidPreview(source: """
+    sequenceDiagram
+      actor Dev
+      participant Argo
+      participant CI as The runner
+      Dev->>Argo: implement 862
+      Argo->>CI: open the PR
+      CI-->>Argo: checks green
+    """)
+}
+
+// Every arrow form on one screen, which is the set a reader has to be able to tell apart.
+#Preview("Mermaid — the arrow forms") {
+    MermaidPreview(source: """
+    sequenceDiagram
+      A->B: plain
+      A-->B: dotted
+      A->>B: solid head
+      A-->>B: dotted head
+      A-)B: async
+      A-xB: lost
+    """)
+}
+
+// A run inside a run, a self-message, and a note in each of the three placements.
+#Preview("Mermaid — activations and notes") {
+    MermaidPreview(source: """
+    sequenceDiagram
+      Note left of Reader: a fence arrives
+      Reader->>+Layout: the model
+      Layout->>Layout: rank the nodes
+      Note over Layout: measured at the feed's metrics
+      Layout-->>-Reader: the plan
+      Note right of Reader: drawn
+    """)
+}
+
+#Preview("Mermaid — nested blocks") {
+    MermaidPreview(source: """
+    sequenceDiagram
+      alt findings
+        Review->>Author: changes requested
+        loop until clean
+          Author->>Review: another push
+        end
+      else approved
+        Review->>Land: merge it
+      end
+    """)
+}

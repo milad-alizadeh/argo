@@ -13,6 +13,32 @@ struct MermaidPlan: Equatable, Sendable {
     let size: CGSize
 
     static let empty = MermaidPlan(figures: [], captions: [], size: .zero)
+
+    /// The same plan slid into positive coordinates, at the size it really stands.
+    ///
+    /// Every layout places where it is natural to and normalises afterwards — a flowchart's back
+    /// edge, a sequence diagram's self-message and a frame drawn around either all reach outside
+    /// the boxes, and a plan whose marks start at a negative is a plan whose edge is drawn off the
+    /// block.
+    var normalised: MermaidPlan {
+        let marks = figures.map(\.form.bounds) + captions.map(\.rect)
+        guard let first = marks.first else { return self }
+        let bounds = marks.dropFirst().reduce(first) { $0.union($1) }
+        let offset = CGPoint(x: -bounds.minX, y: -bounds.minY)
+        return MermaidPlan(
+            figures: figures.map {
+                MermaidFigure(form: $0.form.moved(by: offset), role: $0.role, line: $0.line)
+            },
+            captions: captions.map {
+                MermaidCaption(
+                    label: $0.label,
+                    rect: $0.rect.offsetBy(dx: offset.x, dy: offset.y),
+                    alignment: $0.alignment,
+                )
+            },
+            size: CGSize(width: ceil(bounds.width), height: ceil(bounds.height)),
+        )
+    }
 }
 
 /// What a mark of a diagram MEANS. Never a colour: `MermaidInk` resolves a role to a design token,

@@ -51,6 +51,26 @@ enum MermaidMeasure {
     /// obviously attached to it.
     static let wordGap: CGFloat = ArgoSpacing.tight
 
+    /// The narrowest a sequence diagram sets one lifeline from the next, before any message's own
+    /// word widens the gap.
+    static let lifelineGap: CGFloat = ArgoSpacing.section
+    /// Between a participant's box and the head of its lifeline, and past the last event before its
+    /// foot — so the line reads as running on rather than stopping at what happened last.
+    static let lifelineTail: CGFloat = ArgoSpacing.loose
+    /// From a message's own word down to the line it names, and under that line before the next
+    /// event.
+    static let messageDrop: CGFloat = ArgoSpacing.snug
+    static let messageGap: CGFloat = ArgoSpacing.comfortable
+    /// How far a self-message loops out of its own lifeline, and how deep it drops doing it. Both
+    /// measures: the loop has to clear the bar on the lifeline and still stay well inside the gap
+    /// to the next one.
+    static let loopOut: CGFloat = 28
+    static let loopDrop: CGFloat = ArgoSpacing.loose
+
+    /// How wide an activation bar stands on its lifeline. A measure: much narrower and it reads as
+    /// a thick line rather than as a bar, and it has to stay far inside `nodeMinWidth`.
+    static let activationWidth: CGFloat = 10
+
     /// The face an edge's own word is set in, and the face a `subgraph`'s title takes. Quieter than
     /// the prose the nodes are set in, because both are said ABOUT the diagram rather than in it.
     static let edgeFace = ProseFace(rung: .footnote)
