@@ -29,8 +29,7 @@ struct LinearIssue: Decodable {
 
     struct Assignee: Decodable { let displayName: String }
 
-    /// `color` is `#rrggbb` as Linear spells it, and optional because a colour Argo could not read
-    /// is a silence rather than a hue to invent (`CONTEXT.md` L2 · degrade-down).
+    /// `color` is `#rrggbb` as Linear spells it.
     struct Label: Decodable {
         let name: String
         let color: String?

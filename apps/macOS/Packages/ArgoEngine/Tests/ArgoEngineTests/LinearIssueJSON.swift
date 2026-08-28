@@ -70,7 +70,6 @@ struct LinearIssueJSON {
         """
     }
 
-    /// A label object each, carrying `color` only where one was stated.
     private var labelObjects: String {
         labels.map { name in
             let colour = labelColours[name].map { #", "color": "\#($0)""# } ?? ""

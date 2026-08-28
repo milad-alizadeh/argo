@@ -20,10 +20,9 @@ enum LinearAPI {
         return trimmed?.isEmpty == true ? nil : trimmed
     }
 
-    /// A provider colour in the one shape `WorkItemLabel` holds: six hex digits, no `#`. Linear
-    /// serves the `#`; GitHub does not, and a surface that had to know which provider a chip came
-    /// from to read its colour would be reading through the port rather than out of it.
-    static func hex(_ value: String?) -> String? {
+    /// A colour in the shape `WorkItemLabel` holds: hex digits, no `#`, which is the `#` Linear
+    /// serves off.
+    static func bareHex(_ value: String?) -> String? {
         text(value).map { $0.hasPrefix("#") ? String($0.dropFirst()) : $0 }
     }
 
