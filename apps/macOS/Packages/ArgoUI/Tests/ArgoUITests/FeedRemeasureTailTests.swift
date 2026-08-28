@@ -3,16 +3,11 @@ import AppKit
 import Foundation
 import Testing
 
-/// What a full re-measure costs in the frame it lands in, and what it leaves for later.
-///
-/// The seam letting go used to empty the whole height cache and then note EVERY row at once, which
-/// made AppKit ask for every height inside one block — each now a miss, so each a full SwiftUI
-/// layout. That was up to 1.4 s of frozen main thread on one drag. The claim here is the split: the
-/// viewport squared up in the frame the seam let go in, everything else in bounded batches, none of
-/// it dropped (#856).
+/// What a full re-measure costs in the frame it lands in, and what it leaves for later: the
+/// viewport squared up now, everything else in bounded batches, none of it dropped (#856).
 ///
 /// Counted in measurements rather than in seconds. A wall clock on a shared machine measures the
-/// machine; the count of SwiftUI layout passes IS what the hang was made of.
+/// machine; the count of SwiftUI layout passes IS what a re-measure costs.
 @Suite("Feed re-measure tail")
 @MainActor
 struct FeedRemeasureTailTests {
@@ -50,6 +45,13 @@ struct FeedRemeasureTailTests {
         return Dragged(scroller: scroller, table: table)
     }
 
+    /// The same, with the seam let go — where every claim about the tail starts.
+    private static func letGo(_ handle: FeedTableHandle) throws -> Dragged {
+        let dragged = try midDrag(handle)
+        dragged.table.settleAfterResize()
+        return dragged
+    }
+
     @Test
     func `the frame the seam lets go in measures the rows on screen and no more`() throws {
         let handle = FeedTableHandle()
@@ -63,17 +65,16 @@ struct FeedRemeasureTailTests {
         #expect(dragged.table.measurements - before <= visible)
     }
 
-    /// The tail may not be dropped for lazy scroll-in measurement, however tempting: the minimap is
-    /// a miniature of the WHOLE document, so every row has to be measured in the end.
+    /// The tail runs to the end rather than leaving the rest to scroll-in measurement — see
+    /// `FeedTableCoordinator.measureTail`.
     @Test
     func `the rows nobody can see are measured by the tail behind it`() async throws {
         let handle = FeedTableHandle()
-        let dragged = try Self.midDrag(handle)
-        dragged.table.settleAfterResize()
+        let dragged = try Self.letGo(handle)
         let tail = Self.rows.count - dragged.table.visibleRows().count
         let before = dragged.table.measurements
 
-        await dragged.table.tailing?.value
+        try await #require(dragged.table.tailing).value
 
         #expect(tail > 0)
         #expect(dragged.table.measurements - before >= tail)
@@ -83,8 +84,7 @@ struct FeedRemeasureTailTests {
     @Test
     func `no one turn of the tail measures more than a batch`() async throws {
         let handle = FeedTableHandle()
-        let dragged = try Self.midDrag(handle)
-        dragged.table.settleAfterResize()
+        let dragged = try Self.letGo(handle)
         let wanted = dragged.table.measurements + Self.rows.count
             - dragged.table.visibleRows().count
         var most = 0
@@ -105,18 +105,21 @@ struct FeedRemeasureTailTests {
     }
 
     /// A seam drag fires many: a tail still running against a width the reader has already left is
-    /// work thrown away, and it notes rows the fresher pass is about to note again.
+    /// work thrown away, and it notes rows the fresher pass is about to note again. So two passes
+    /// back to back cost ONE pass over the reading, not two.
     @Test
-    func `a fresh full re-measure retires the tail already running`() throws {
+    func `a fresh full re-measure retires the tail already running`() async throws {
         let handle = FeedTableHandle()
-        let dragged = try Self.midDrag(handle)
-        dragged.table.settleAfterResize()
+        let dragged = try Self.letGo(handle)
         let stale = try #require(dragged.table.tailing)
+        let before = dragged.table.measurements
 
         dragged.table.settleAfterResize()
+        try await #require(dragged.table.tailing).value
+        await stale.value
 
-        #expect(stale.isCancelled)
-        #expect(dragged.table.tailing != stale)
+        let onePass = Self.rows.count + FeedTableCoordinator.remeasureBatch
+        #expect(dragged.table.measurements - before <= onePass)
     }
 
     /// Nothing is left un-measured once the tail has run, so the document height the minimap is a
@@ -124,11 +127,10 @@ struct FeedRemeasureTailTests {
     @Test
     func `the reading stands at the sum of its measured rows once the tail has run`() async throws {
         let handle = FeedTableHandle()
-        let dragged = try Self.midDrag(handle)
-        dragged.table.settleAfterResize()
+        let dragged = try Self.letGo(handle)
         let table = try #require(dragged.table.table)
 
-        await dragged.table.tailing?.value
+        try await #require(dragged.table.tailing).value
         let measured = dragged.table.measurements
 
         let summed = Self.rows.indices
