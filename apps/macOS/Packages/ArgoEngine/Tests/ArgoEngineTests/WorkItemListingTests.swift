@@ -15,6 +15,14 @@ struct WorkItemListingTests {
         return (items, api)
     }
 
+    /// One page of open issues, and whatever the edges off them answer.
+    private static func listing(
+        _ issues: [IssueJSON], edges: [String: String] = [:],
+    ) async throws
+        -> ([WorkItem], RecordedGitHub) {
+        try await list(edges.merging([RecordedGitHub.openIssues: IssueJSON.list(issues)]) { $1 })
+    }
+
     @Test
     func `a ticket carries the provider's own status word and its labels`() async throws {
         let issue = IssueJSON(
@@ -23,7 +31,7 @@ struct WorkItemListingTests {
             labels: ["engine", "swift"],
             assignees: ["octocat"],
         )
-        let (items, _) = try await Self.list(["&page=1": IssueJSON.list([issue])])
+        let (items, _) = try await Self.listing([issue])
 
         // The word renders verbatim (#272); the closure is what Argo groups across providers with.
         #expect(items.map(\.status) == ["open"])
@@ -52,7 +60,7 @@ struct WorkItemListingTests {
     @Test(arguments: closures)
     func `GitHub's closure kind decides the closure`(_ example: ClosureCase) async throws {
         let issue = IssueJSON(number: 1, state: example.state, reason: example.reason)
-        let (items, _) = try await Self.list(["&page=1": IssueJSON.list([issue])])
+        let (items, _) = try await Self.listing([issue])
 
         #expect(items.map(\.closure) == [example.closure])
     }
@@ -61,7 +69,7 @@ struct WorkItemListingTests {
     func `a pull request served from the issues path is not a Work Item`() async throws {
         // GitHub serves PRs from `/issues` too, and a PR is a Delivery (`CONTEXT.md` L4).
         let issues = [IssueJSON(number: 9, pullRequest: true), IssueJSON(number: 10)]
-        let (items, _) = try await Self.list(["&page=1": IssueJSON.list(issues)])
+        let (items, _) = try await Self.listing(issues)
 
         #expect(items.map(\.number) == [10])
     }
@@ -69,10 +77,10 @@ struct WorkItemListingTests {
     @Test
     func `children come back in the provider's own order`() async throws {
         let parent = IssueJSON(number: 3, children: 2)
-        let (items, _) = try await Self.list([
-            "&page=1": IssueJSON.list([parent]),
-            "sub_issues": IssueJSON.list([IssueJSON(number: 7), IssueJSON(number: 4)]),
-        ])
+        let (items, _) = try await Self.listing(
+            [parent],
+            edges: ["sub_issues": IssueJSON.list([IssueJSON(number: 7), IssueJSON(number: 4)])],
+        )
 
         #expect(items.first?.children == [7, 4])
     }
@@ -86,10 +94,10 @@ struct WorkItemListingTests {
             IssueJSON(number: 1, state: "closed", reason: "not_planned"),
             IssueJSON(number: 2, state: "open"),
         ]
-        let (items, _) = try await Self.list([
-            "&page=1": IssueJSON.list([blocked]),
-            "blocked_by": IssueJSON.list(blockers),
-        ])
+        let (items, _) = try await Self.listing(
+            [blocked],
+            edges: ["blocked_by": IssueJSON.list(blockers)],
+        )
 
         #expect(items.first?.blockedBy == [
             WorkItemBlocker(number: 1, closure: .ruledOut),
@@ -100,7 +108,7 @@ struct WorkItemListingTests {
 
     @Test
     func `an issue with no edges costs no further requests`() async throws {
-        let (_, api) = try await Self.list(["&page=1": IssueJSON.list([IssueJSON(number: 1)])])
+        let (_, api) = try await Self.listing([IssueJSON(number: 1)])
 
         #expect(await api.urls().count == 1)
     }
@@ -121,7 +129,7 @@ struct WorkItemListingTests {
     func `only open Work Items are listed`() async throws {
         // A closed ticket has left the room, and asking for every issue a repository ever had
         // costs a poll two extra requests per issue on edges nobody is waiting on.
-        let (_, api) = try await Self.list(["&page=1": IssueJSON.list([IssueJSON(number: 1)])])
+        let (_, api) = try await Self.listing([IssueJSON(number: 1)])
 
         #expect(await api.urls().allSatisfy { $0.contains("state=open") })
     }

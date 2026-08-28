@@ -10,7 +10,7 @@ struct WorkItemListingFailureTests {
         body: String = "[]", raising: Error? = nil,
     ) async
         -> ProviderFetchError? {
-        let api = RecordedGitHub(replies: ["&page=1": body], failure: raising)
+        let api = RecordedGitHub(replies: [RecordedGitHub.openIssues: body], failure: raising)
         do {
             _ = try await GitHubWorkItems(transport: api).list(in: "acme/api", grant: .listing)
             return nil

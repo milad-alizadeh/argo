@@ -1,11 +1,16 @@
 @testable import ArgoEngine
 import Foundation
+import Testing
 
 /// GitHub's endpoints, recorded — issues for the Work Item port, pulls and checks for the code
 /// host. Each reply is keyed by the part of the path that names it, so a test says which endpoint
 /// answered what rather than which request number did: a read makes a different number of requests
 /// depending on what it finds.
 actor RecordedGitHub: HTTPTransport {
+    /// The open-issue listing's key, spelled once against `GitHubWorkItems`' own path — every Work
+    /// Item suite keys its listing by this, and a query string that moves lands here.
+    static let openIssues = "issues?state=open"
+
     private let replies: [String: String]
     private let failure: Error?
     private var sent: [HTTPRequest] = []
@@ -20,14 +25,7 @@ actor RecordedGitHub: HTTPTransport {
         if let failure {
             throw failure
         }
-        // The longest match wins, not the first: a paged edge URL carries both `blocked_by` and
-        // `&page=1`, and picking between them by dictionary order made which reply a suite got
-        // depend on the hash seed of the run.
-        let reply = replies
-            .filter { request.url.contains($0.key) }
-            .max { $0.key.count < $1.key.count }?
-            .value
-        return Data((reply ?? "[]").utf8)
+        return Data(reply(to: request.url).utf8)
     }
 
     func urls() -> [String] {
@@ -38,6 +36,20 @@ actor RecordedGitHub: HTTPTransport {
     /// of what the port claims is about requests NOT made.
     func writes() -> [RecordedWrite] {
         sent.filter { $0.method != .get }.map(RecordedWrite.init)
+    }
+
+    /// The most specific key that names this URL. The longest match wins, not the first: a paged
+    /// edge URL carries both `blocked_by` and `&page=1`, and picking between them by dictionary
+    /// order made which reply a suite got depend on the hash seed of the run.
+    private func reply(to url: String) -> String {
+        let matched = replies.keys.filter { url.contains($0) }.sorted()
+        guard let longest = matched.max(by: { $0.count < $1.count }) else { return "[]" }
+        // Two matches of the SAME length leave specificity nothing to choose between, so the seed
+        // would decide again. Sorted above, so the suite that gets told is told the same thing.
+        if matched.contains(where: { $0 != longest && $0.count == longest.count }) {
+            Issue.record("\(url) matches \(matched) — the keys must tell this read's paths apart")
+        }
+        return replies[longest] ?? "[]"
     }
 }
 
