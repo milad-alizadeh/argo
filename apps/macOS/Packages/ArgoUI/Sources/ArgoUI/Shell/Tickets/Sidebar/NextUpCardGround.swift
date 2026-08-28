@@ -1,20 +1,15 @@
 import SwiftUI
 
 extension View {
-    /// The Next-up card's own shape: its inner padding, a fill, and a border at
-    /// `ArgoRadius.control` — three things a `ViewRow` has none of, which is what stops the hero
-    /// reading as another view (`cockpit-work-room.md` — the Next-up hero).
-    ///
-    /// The pointer is the caller's, because the card is drawn at rest for a degraded tier and lit
-    /// under the pointer by `NextUpCardStyle`. One shape either way, so the control and the
-    /// sentence cannot come apart.
+    /// The Next-up card's own shape: inner padding, a fill and a border at `ArgoRadius.control` —
+    /// three things a `ViewRow` has none of, which is what stops the hero reading as another view
+    /// (`cockpit-work-room.md` — the Next-up hero).
     func nextUpCardGround(_ pointer: NextUpCardStyle.Pointer = .away) -> some View {
         modifier(NextUpCardGround(pointer: pointer))
     }
 }
 
-/// A modifier and not a stack at each site: a `ButtonStyle` cannot share a private view of the card
-/// it is styling.
+/// A modifier, because a `ButtonStyle` cannot reach a private view of the card it is styling.
 private struct NextUpCardGround: ViewModifier {
     @Environment(\.argo) private var argo
 
@@ -28,9 +23,9 @@ private struct NextUpCardGround: ViewModifier {
             .overlay { rim }
     }
 
-    /// `surface.raised` ALWAYS, with the wash laid OVER it rather than in place of it. The
-    /// contract's hover and pressed roles are translucent whites: a card that swapped its fill for
-    /// one rendered lighter than the rail it is inset in and stopped reading as raised at all.
+    /// `surface.raised` ALWAYS, with the wash over it rather than in place of it. The contract's
+    /// hover and pressed roles are translucent whites, so a card that swapped its fill for one
+    /// rendered lighter than the rail it is inset in and stopped reading as raised at all.
     private var ground: some View {
         RoundedRectangle(cornerRadius: ArgoRadius.control)
             .fill(argo.color.surface.raised)
@@ -41,7 +36,6 @@ private struct NextUpCardGround: ViewModifier {
 
     /// The border carries the PRESS. Measured on the render, the two washes the contract names for
     /// hover and pressed land three levels apart over this ground — a step the eye does not read.
-    /// `edge.strong` against `edge.subtle` is the one that does, and it costs no new token.
     private var rim: some View {
         RoundedRectangle(cornerRadius: ArgoRadius.control)
             .strokeBorder(edge, lineWidth: ArgoStroke.border)

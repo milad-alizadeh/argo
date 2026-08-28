@@ -1,11 +1,10 @@
 import SwiftUI
 
 /// The hero's three grounds side by side (#898): at rest with its chevron, under the pointer, and
-/// pressed. One gallery rather than three cases — the pointer is a discrete union, and this is the
-/// only way any of it reaches a screenshot (`nextUpStillsPointer`).
+/// pressed. Hover and press are live input, so `nextUpStillsPointer` is what puts them on a
+/// screenshot at all.
 struct NextUpPointerSpecimen: View {
-    /// The room's own pick, so the gallery is the card readers actually meet. The fallback is
-    /// unreachable over this fixture and draws a tier, which is the state it would deserve.
+    /// The room's own pick, so the gallery is the card readers actually meet.
     private static let nextUp = TicketsFixture.room.nextUp ?? .backlogClear
 
     var body: some View {

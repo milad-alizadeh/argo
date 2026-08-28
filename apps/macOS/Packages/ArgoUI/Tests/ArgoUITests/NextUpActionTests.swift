@@ -2,14 +2,13 @@
 import SwiftUI
 import Testing
 
-/// What pressing the Next-up hero does (#898): it opens the picked ticket, and it opens nothing
-/// else. The hero ranks across the whole room, so the pick is regularly a ticket the open view does
-/// not admit — and the act must still be one write, to the ticket alone.
-@Suite("Next-up hero action")
+/// What the Next-up hero's open verb writes (#898). Nothing here presses anything — the seam is
+/// the intents `TicketsRoom` builds, which is where the act is decided.
+@Suite("Next-up hero verbs")
 @MainActor
 struct NextUpActionTests {
-    /// What the room's bindings are worth after a press. A class, so a `Binding` can write back to
-    /// it from a test with no view above it.
+    /// What the room's bindings are worth afterwards. A class, so a `Binding` can write back to it
+    /// with no view above it.
     private final class Held {
         var ticket: Int?
         var view = TicketsView.blocked
@@ -26,7 +25,7 @@ struct NextUpActionTests {
         )
     }
 
-    @Test func `pressing the hero opens its ticket in the pane`() {
+    @Test func `the hero's open verb writes the ticket the pane draws`() {
         let held = Held()
 
         room(held).nextUpIntents.open(607)
@@ -36,7 +35,7 @@ struct NextUpActionTests {
 
     /// The one thing the card must not do. It is a guard against an ADDITION rather than a deletion
     /// — nothing writes the view today, and this is what fails the day something does.
-    @Test func `pressing the hero leaves the open view alone`() {
+    @Test func `the hero's open verb leaves the open view alone`() {
         let held = Held()
 
         room(held).nextUpIntents.open(607)

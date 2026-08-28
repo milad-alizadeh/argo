@@ -462,7 +462,7 @@ At rest it carries a **trailing chevron beside the `NEXT UP` label**, which is t
 pressable before a pointer arrives; under the pointer the card's ground goes `surface.hover`, and
 under the click `surface.selected`. The three degraded tiers name no ticket and carry **neither the
 chevron nor the wash** — a card that lit up to open nothing is worse than one that never moves.
-The gallery is the `nextUpPointer` specimen.
+The gallery is `next-up-pressable.png`, shot from the `nextUpPointer` specimen.
 
 ## The ticket detail
 

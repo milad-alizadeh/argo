@@ -1,11 +1,7 @@
 import SwiftUI
 
-/// The Next-up hero AS a control (#898): the card's own ground, washed under the pointer and
-/// pressed under the click.
-///
-/// A style and not `.plain`: `.plain` leaves the card reading exactly as it did before — a border
-/// and a raised ground that answer nothing — and the report is that it looks like a control and is
-/// not one. What it draws instead is the hover-then-pressed pair every other row already uses.
+/// The Next-up hero AS a control (#898): its own ground, washed under the pointer and pressed under
+/// the click. `.plain` draws neither, which is the reading the report was about.
 struct NextUpCardStyle: ButtonStyle {
     /// Where the pointer is, which is the whole of what the card's ground says.
     enum Pointer: CaseIterable, Hashable {
@@ -18,8 +14,7 @@ struct NextUpCardStyle: ButtonStyle {
         Card(isPressed: configuration.isPressed, label: configuration.label)
     }
 
-    /// A nested `View` and not the chain in `makeBody`: hover is state, and a `ButtonStyle` holds
-    /// none of its own.
+    /// A nested `View`, because a `ButtonStyle` holds no `@State` and hover is state.
     private struct Card: View {
         @Environment(\.nextUpStillsPointer) private var still
 
@@ -35,7 +30,6 @@ struct NextUpCardStyle: ButtonStyle {
                 // target to aim at, on a rail that is mostly card.
                 .contentShape(.rect(cornerRadius: ArgoRadius.control))
                 .onHover { isHovered = $0 }
-                .pointerStyle(.link)
         }
 
         /// Pressed outranks hover, because the pointer is over the card for the whole of a click.
@@ -49,10 +43,7 @@ struct NextUpCardStyle: ButtonStyle {
 }
 
 extension EnvironmentValues {
-    /// The card's pointer state, forced for a RENDER. Hover and press are live input, so a
-    /// specimen has no other way to put either on a screenshot — the same reason
-    /// `argoStillsMotion` exists.
-    ///
-    /// Nothing outside `Specimen/` writes it, and unset is the shipping path.
+    /// The card's pointer state, forced for a RENDER. Hover and press are live input, so a specimen
+    /// has no other way to put either on a screenshot — the reason `argoStillsMotion` exists.
     @Entry var nextUpStillsPointer: NextUpCardStyle.Pointer?
 }

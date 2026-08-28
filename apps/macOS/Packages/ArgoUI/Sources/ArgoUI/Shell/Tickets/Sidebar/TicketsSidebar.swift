@@ -14,7 +14,7 @@ struct TicketsSidebar: View {
     /// Which view is open. A binding and not this pane's own state: it decides which rows the DECK
     /// draws, so the room is derived from it before either half is built.
     @Binding var view: TicketsView
-    /// What the hero performs. A value and not a closure, so #899's second verb joins it here.
+    /// What the hero performs (#898).
     var intents = NextUpIntents.inert
 
     var body: some View {
