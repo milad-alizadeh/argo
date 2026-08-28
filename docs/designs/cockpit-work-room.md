@@ -451,6 +451,19 @@ clear. See `pool-blocked.png`, `pool-running.png`, `empty.png`.
 
 **With no dependency edges the `unblocked` chip is suppressed, never asserted** (`edgeless.png`).
 
+**Amended #898: where the card names a ticket it is a CONTROL, and it says so.** Pressing it opens
+that ticket in the pane beside the rail — the same act as clicking its backlog row, and it changes
+nothing else: not the open view, and not the sidebar's selection. The hero ranks across the whole
+room, so its pick is regularly a ticket the open view does not admit; an open that re-pointed the
+rail would answer a question nobody asked. It is a `Button` and never a fifth row of the `List` it
+scrolls in — the arrow keys belong to the four views.
+
+At rest it carries a **trailing chevron beside the `NEXT UP` label**, which is the mark that says
+pressable before a pointer arrives; under the pointer the card's ground goes `surface.hover`, and
+under the click `surface.selected`. The three degraded tiers name no ticket and carry **neither the
+chevron nor the wash** — a card that lit up to open nothing is worse than one that never moves.
+The gallery is `next-up-pressable.png`, shot from the `nextUpPointer` specimen.
+
 ## The ticket detail
 
 One scrolling column, at the deck's trailing pane. **There is no 240pt facts sidebar** — at the

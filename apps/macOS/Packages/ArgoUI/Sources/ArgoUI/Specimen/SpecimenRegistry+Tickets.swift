@@ -71,6 +71,10 @@ extension SpecimenRegistry {
             TicketsPanesSpecimen(reading: TicketsFixture.edgeless)
         },
         SpecimenEntry("blockageMarks") { BlockageMarksSpecimen() },
+        // The hero is a control now (#898), and hover and press are live input: this is the one
+        // render that shows either. At rest carries the chevron, which is what says so before a
+        // pointer arrives.
+        SpecimenEntry("nextUpPointer") { SpecimenScene.centred { NextUpPointerSpecimen() } },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
         // The head's status pair, over a provider whose word IS the filing and one with words of
         // its own (#893). Every fixture spells "In progress", so no room render reaches the first.

@@ -2,8 +2,9 @@ import SwiftUI
 
 /// One earned reason on the Next-up hero (`cockpit-work-room.md` — the Next-up hero).
 ///
-/// A label and not a control: pressing it would filter to something the reader did not ask for,
-/// and the ticket above it is already the thing to open.
+/// A label and not a control of its own: pressing it would filter to something the reader did not
+/// ask for. Since #898 it sits INSIDE one — the card is the button, so a press here opens the
+/// ticket the chip is a reason for, which is the one act the whole card has.
 struct NextUpChip: View {
     @Environment(\.argo) private var argo
 

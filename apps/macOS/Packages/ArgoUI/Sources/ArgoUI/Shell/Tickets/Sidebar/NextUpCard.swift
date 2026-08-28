@@ -5,6 +5,9 @@ import SwiftUI
 ///
 /// Inset, on `surface.raised`, behind an `edge.subtle` border — three things a `ViewRow` has none
 /// of, which is what stops it reading as another view.
+///
+/// A CONTROL where it names a ticket (#898). A `Button` and not a row of the `List` it scrolls in:
+/// the arrow keys belong to the four views, and the hero is not a fifth (`TicketsSidebar.hero`).
 struct NextUpCard: View {
     @Environment(\.argo) private var argo
 
@@ -13,34 +16,66 @@ struct NextUpCard: View {
     static let titleLines = 3
 
     let nextUp: NextUp
+    /// What pressing it does (#898), inert for a `#Preview` and a specimen.
+    var intents = NextUpIntents.inert
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.base) {
-            GroupLabel("Next up")
-            content
-        }
-        .padding(ArgoTicketsSidebar.heroPadding)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.control))
-        .overlay {
-            RoundedRectangle(cornerRadius: ArgoRadius.control)
-                .strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.border)
-        }
-        .padding(.horizontal, ArgoTicketsSidebar.heroInset)
-        .padding(.top, ArgoTicketsSidebar.heroInset)
-        .padding(.bottom, ArgoTicketsSidebar.heroFootInset)
-        .accessibilityElement(children: .combine)
+        statement
+            .padding(.horizontal, ArgoTicketsSidebar.heroInset)
+            .padding(.top, ArgoTicketsSidebar.heroInset)
+            .padding(.bottom, ArgoTicketsSidebar.heroFootInset)
     }
 
-    @ViewBuilder private var content: some View {
+    /// Which of the four tiers the card states, and whether that one is a control.
+    @ViewBuilder private var statement: some View {
         switch nextUp {
-        case let .pick(pick): picked(pick)
+        case let .pick(pick): opener(pick)
         case .nothingUnblocked:
-            sentence("Nothing is unblocked. Every open leaf is waiting on something still open.")
+            tier("Nothing is unblocked. Every open leaf is waiting on something still open.")
         case .allRunning:
-            sentence("Everything takeable already has a Session running.")
+            tier("Everything takeable already has a Session running.")
         case .backlogClear:
-            sentence("The backlog is clear. Nothing is waiting to be picked up.")
+            tier("The backlog is clear. Nothing is waiting to be picked up.")
+        }
+    }
+
+    /// The pick, AS a control — `NextUpIntents.open`.
+    private func opener(_ pick: NextUp.Pick) -> some View {
+        Button { intents.open(pick.number) } label: {
+            card(picked(pick), opens: true)
+        }
+        .buttonStyle(NextUpCardStyle())
+        .accessibilityLabel(spoken(pick))
+    }
+
+    /// The act, the ticket, and the chips — everything the card draws. Named for the ACT because
+    /// this string is the whole of what a reader who cannot see the chevron is told, and it carries
+    /// the chips because the reasons are half of why this ticket is the one being offered.
+    private func spoken(_ pick: NextUp.Pick) -> String {
+        (["Next up, open ticket \(pick.number), \(pick.title)"] + pick.reasons.map(\.words))
+            .joined(separator: ", ")
+    }
+
+    /// A degraded tier: a sentence, and never a control — it names no ticket to open.
+    private func tier(_ words: String) -> some View {
+        card(sentence(words), opens: false)
+            .nextUpCardGround()
+            .accessibilityElement(children: .combine)
+    }
+
+    /// The label, and what the card states under it. `opens` draws the chevron — the card's one
+    /// mark AT REST that it is pressable, which the tiers must not carry.
+    private func card(_ statement: some View, opens: Bool) -> some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.base) {
+            HStack(spacing: ArgoSpacing.base) {
+                GroupLabel("Next up")
+                Spacer(minLength: ArgoSpacing.base)
+                if opens {
+                    ArgoGlyph(ArgoSymbol.disclosure, .chevron)
+                        .foregroundStyle(argo.color.text.tertiary)
+                }
+            }
+            statement
         }
     }
 
