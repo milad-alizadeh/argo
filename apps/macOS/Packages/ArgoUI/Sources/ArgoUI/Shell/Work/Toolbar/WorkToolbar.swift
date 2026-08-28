@@ -32,7 +32,7 @@ struct WorkToolbar: ToolbarContent {
                 .sharedBackgroundVisibility(.hidden)
             }
             ToolbarItem(placement: .primaryAction) {
-                NewTicketButton(act: intents.creating)
+                NewTicketButton(creation: intents.creation)
             }
             .sharedBackgroundVisibility(.hidden)
             // The verbs address the ticket the deck is OPEN on. With none open there is nothing for

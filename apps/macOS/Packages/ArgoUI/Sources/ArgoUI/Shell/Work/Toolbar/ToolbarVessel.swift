@@ -20,6 +20,9 @@ struct ToolbarVessel<Content: View>: View {
 /// One glyph in a vessel: the whole of what a toolbar button draws.
 struct ToolbarIcon: View {
     @Environment(\.argo) private var argo
+    /// `.buttonStyle(.plain)` over an explicit `foregroundStyle` dims for nobody, so a control
+    /// disabled in place picks its own ink (#275).
+    @Environment(\.isEnabled) private var isEnabled
 
     let symbol: String
     /// What the mark means, said in words for the pointer and for VoiceOver. One string, because a
@@ -30,7 +33,7 @@ struct ToolbarIcon: View {
     var body: some View {
         Button(action: act) {
             ArgoGlyph(symbol, ArgoWorkChrome.iconSize)
-                .foregroundStyle(argo.color.text.tertiary)
+                .foregroundStyle(isEnabled ? argo.color.text.tertiary : argo.color.text.disabled)
                 .frame(
                     width: ArgoWorkChrome.iconButtonWidth,
                     height: ArgoWorkChrome.iconButtonHeight,
