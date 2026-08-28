@@ -13,6 +13,7 @@ enum ProseReading {
     private static var marks = ProseCache<AttributedString>()
     private static var scans = ProseCache<[MarkdownBlock]>()
     private static var structures = ProseCache<[MinimapProseBlock]>()
+    private static var plans = ProseCache<MermaidPlan>()
 
     /// The agent's own inline marks. See `FeedProseText` for why the read is inline-only.
     static func marked(_ text: String) -> AttributedString {
@@ -33,5 +34,15 @@ enum ProseReading {
     /// The same blocks reduced to what the overview lane draws — see `MinimapProseBlock`.
     static func structure(of text: String) -> [MinimapProseBlock] {
         structures.reading(of: text) { MinimapProseBlock.blocks(from: blocks(in: $0)) }
+    }
+
+    /// A diagram laid out across a measure. The renderer AND the overview lane both come here, so
+    /// their geometry is one layout rather than two implementations that happen to agree — which is
+    /// what makes their heights match by construction (#860).
+    ///
+    /// Keyed on the measure as well as the source, because the same diagram at two widths is two
+    /// layouts, and a key of the text alone would answer a resized deck with the old one.
+    static func plan(of diagram: MermaidDiagram, across measure: CGFloat) -> MermaidPlan {
+        plans.reading(of: "\(measure)\u{0}\(diagram.source)") { _ in diagram.laid(across: measure) }
     }
 }

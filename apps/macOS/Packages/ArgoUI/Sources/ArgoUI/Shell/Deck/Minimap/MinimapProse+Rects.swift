@@ -38,6 +38,8 @@ extension MinimapProseBlock {
             Self.fence(lines: lines, hasInfo: hasInfo, ink: ink, across: measure)
         case let .table(table):
             table.laid(across: measure)
+        case let .diagram(diagram):
+            diagram.mapped(across: measure)
         }
     }
 

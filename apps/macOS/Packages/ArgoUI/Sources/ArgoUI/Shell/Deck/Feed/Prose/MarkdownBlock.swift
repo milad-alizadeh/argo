@@ -16,6 +16,10 @@ enum MarkdownBlock: Equatable {
     /// A fenced block, verbatim and unparsed. Its `info` string is the language the agent named,
     /// where it named one.
     case fenced(code: String, info: String?)
+    /// A closed `mermaid` fence Argo could read. Found HERE and not while drawing, so the renderer
+    /// and the overview lane can never disagree about what the block is; a fence declaring
+    /// `mermaid` that nothing can read stays a `fenced`, which is what it looks like today.
+    case diagram(MermaidDiagram)
     /// A pipe table. Found when a paragraph closes rather than line by line, because the row of
     /// dashes on the SECOND line is what says the first one was a header.
     case table(MarkdownTable)
@@ -55,7 +59,7 @@ private struct MarkdownScan {
     /// An unterminated fence still closes here — a turn that ended mid-block keeps its text.
     mutating func finished() -> [MarkdownBlock] {
         closeParagraph()
-        closeFence()
+        closeFence(terminated: false)
         return blocks
     }
 
@@ -64,14 +68,25 @@ private struct MarkdownScan {
             closeParagraph()
             fence = (lines: [], info: info.isEmpty ? nil : info)
         } else {
-            closeFence()
+            closeFence(terminated: true)
         }
     }
 
-    private mutating func closeFence() {
+    /// The fence, as whichever block it turned out to be. A diagram is only tried on a fence the
+    /// agent actually CLOSED: half a diagram is a diagram nobody wrote, so a fence still streaming
+    /// in stays the source it is until its closing marker arrives.
+    private mutating func closeFence(terminated: Bool) {
         guard let fence else { return }
-        blocks.append(.fenced(code: fence.lines.joined(separator: "\n"), info: fence.info))
         self.fence = nil
+        let code = fence.lines.joined(separator: "\n")
+        let declared = fence.info?.trimmingCharacters(in: .whitespaces).lowercased()
+        guard terminated, declared == "mermaid",
+              let diagram = MermaidDiagram.read(code)
+        else {
+            blocks.append(.fenced(code: code, info: fence.info))
+            return
+        }
+        blocks.append(.diagram(diagram))
     }
 
     /// Line breaks INSIDE a paragraph survive: a CLI writes at the terminal's measure, and a run of

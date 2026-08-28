@@ -37,6 +37,8 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
     case link
     /// A pipe table's grid. A container of cells, stroked the way the feed strokes it.
     case table
+    /// A drawn diagram: its nodes as the boxes they are, its connectors as the lines they are.
+    case diagram
 
     /// How a run of this ink is drawn, which is what keeps the map legible with the colour taken
     /// away — under Increased Contrast, and for a reader who cannot tell amber from the ramp.
@@ -57,7 +59,7 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
         switch self {
         case .prompt, .message, .thought, .command, .added, .removed, .failure, .unreadable,
              .link, .attention: .bar
-        case .media, .table: .frame
+        case .media, .table, .diagram: .frame
         case .boundary: .rule
         }
     }
@@ -69,7 +71,7 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
         switch self {
         case .failure, .attention: role(in: palette)
         case .prompt, .message, .thought, .command, .added, .removed, .media, .boundary,
-             .unreadable, .link, .table: nil
+             .unreadable, .link, .table, .diagram: nil
         }
     }
 
@@ -87,10 +89,10 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
         case .failure: palette.state.failure
         case .attention: palette.state.attention
         case .boundary: palette.text.disabled
-        // The ink the feed gives the same words: a link is the accent, a table's grid sits on the
-        // message's own rung.
+        // The ink the feed gives the same words: a link is the accent, while a table's grid and a
+        // diagram's figures are containers on the message's own rung.
         case .link: palette.interaction.accent
-        case .table: palette.text.secondary
+        case .table, .diagram: palette.text.secondary
         }
     }
 }

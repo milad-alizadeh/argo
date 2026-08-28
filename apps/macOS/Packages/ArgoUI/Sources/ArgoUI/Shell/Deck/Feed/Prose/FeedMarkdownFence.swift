@@ -59,7 +59,12 @@ struct FeedMarkdownFence: View {
         public static let inset: CGFloat = ArgoSpacing.section
         // The measure is typographic, not a rung of the ladder.
         """, info: "swift")
-        FeedMarkdownFence(code: "graph TD\n  A --> B", info: "mermaid")
+        // A diagram type nothing can read yet. One Argo CAN read is no longer a fence at all —
+        // `MarkdownBlock` makes it a `.diagram` before this view ever sees it.
+        FeedMarkdownFence(
+            code: "pie title Where the time went\n  \"Reading\" : 40",
+            info: "mermaid",
+        )
         FeedMarkdownFence(code: "Read 2 files · Ran 5", info: nil)
     }
     .padding(ArgoFeedRow.inset)
