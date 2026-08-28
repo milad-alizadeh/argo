@@ -27,15 +27,15 @@ extension CockpitView {
         return verbs
     }
 
-    /// Start a Session on the open ticket, on the rung the row names (`held.mode`).
+    /// Start a Session on the open ticket, on `Code` — the rung work needs, and the only one this
+    /// row offers (`cockpit-work-room.md`, "`Start` starts"). It stays changeable over the live
+    /// Session, in the composer's `ModePicker`, which reads the rung back.
     ///
     /// The window stays in the Work room. The answer the reader asked for is the backlog row going
     /// claimed, which happens here — switching them into the Sessions room would take the list they
     /// were triaging away at the moment it told them something.
     private func startSession(on ticket: Int) async {
-        guard let fresh = await actions.work.startSession(ticket, navigation.workMode) else {
-            return
-        }
+        guard let fresh = await actions.work.startSession(ticket, .code) else { return }
         // Selected but not switched to: the roster is on the fresh Session whenever they go there.
         navigation.session = fresh
     }

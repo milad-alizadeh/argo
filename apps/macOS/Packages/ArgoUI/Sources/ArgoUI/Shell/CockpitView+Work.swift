@@ -37,7 +37,7 @@ extension CockpitView {
             shut: $navigation.shutParents,
             connect: openProjectPanel,
             intents: workIntents,
-            held: WorkRoom.Held(query: $navigation.workQuery, mode: $navigation.workMode),
+            held: WorkRoom.Held(query: $navigation.workQuery),
         )
     }
 

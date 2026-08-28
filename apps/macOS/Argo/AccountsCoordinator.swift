@@ -42,10 +42,9 @@ final class AccountsCoordinator {
     /// because the poll reads through a Binding and files its failures on `health` — both of which
     /// are this half's, and neither of which the Hub has ever heard of.
     let workItemLedger = WorkItemLedger()
-    /// The write half, reached from `AccountsCoordinator+WorkItems` (#872). Made per write rather
-    /// than held: it is three seams and no state of its own, and its transport is `URLSession`'s
-    /// own shared one.
-    var creator: WorkItemCreator {
+    /// The write half (#872). Computed rather than held: it has no state of its own, and its
+    /// transport is `URLSession.shared`.
+    var workItemCreator: WorkItemCreator {
         WorkItemCreator(bindings: bindings, items: workItemLedger, health: health)
     }
 
@@ -197,7 +196,6 @@ final class AccountsCoordinator {
 
     /// Take what the ledger holds for the active Project. A Project with nothing bound reads EMPTY
     /// rather than keeping the last one's backlog.
-    ///
     private func readListing() async {
         workItems = await workItemLedger.items(of: project?.id)
     }

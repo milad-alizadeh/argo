@@ -4,9 +4,8 @@ import Foundation
 /// of `ProviderWorkItems`, and exhaustive over `AccountProvider` for the same reason: a third
 /// provider fails the build here rather than shipping a create that silently goes nowhere.
 ///
-/// It hands back a port rather than being one. `WorkItemWriting.surface` is what an adapter can be
-/// asked for, and a router has no adapter to answer for until a Binding names one — so the caller
-/// takes the port for its Binding and builds the `WorkItemWriter` over that.
+/// It hands back a port rather than being one: `WorkItemWriting.surface` takes no Binding, and a
+/// router has no adapter to answer for until one names it.
 public struct ProviderWorkItemWrites: Sendable {
     private let github: WorkItemWriting
     private let linear: WorkItemWriting
@@ -24,8 +23,7 @@ public struct ProviderWorkItemWrites: Sendable {
     }
 
     /// The writer for one Binding, over the ledger the room draws from and the health the chip
-    /// reads. One call, so no caller has to know that picking a port and building a writer are two
-    /// steps.
+    /// reads.
     public func writer(
         for binding: ResolvedBinding, items: WorkItemLedger, health: ConnectionHealthLedger,
     )
