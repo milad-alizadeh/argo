@@ -21,6 +21,11 @@ enum WorkChromeProjection {
         /// The ticket the verbs address — the one the deck is OPEN on, not the one at the top of
         /// the list.
         let ticket: Int?
+        /// Whether the pane draws the reader's fold. A search does not: a folded parent hiding the
+        /// only match would leave the heading claiming a result nobody can see (#873).
+        var folds = true
+        /// What the pane says where the query matched nothing, and `nil` wherever there are rows.
+        var empty: String?
 
         static let none = Reading(
             heading: "", subtitle: "", narrows: false, draws: false, ticket: nil,
@@ -40,17 +45,32 @@ enum WorkChromeProjection {
         // itself could keep New ticket over a provider nobody had asked.
         guard room.vacancy != .unbound else { return .none }
         let hasRows = !room.backlog.isEmpty
+        let narrowing = room.narrowing
+        // A search that matched nothing keeps the row: without it the field that emptied the list
+        // is the one control the reader can no longer reach to clear it.
+        let narrows = hasRows || narrowing != nil
         return Reading(
-            heading: "Backlog",
+            heading: narrowing == nil ? "Backlog" : "Searching",
             // The VIEW's count, not `backlog.count`: since #814 the backlog is a tree and its top
             // level is the roots, so counting it would report five where the view holds twelve —
             // and would drop by one every time a reader folded a parent. This is the same number
             // the sidebar's row for this view shows, which is what stops the two disagreeing.
             subtitle: subtitle(of: view, in: room),
-            narrows: hasRows,
+            narrows: narrows,
             draws: true,
-            ticket: hasRows ? showing : nil,
+            // `narrows` and not `hasRows`: a query that matched nothing empties the list while the
+            // ticket beside it is still open, so the verbs addressing it must not go with the rows.
+            ticket: narrows ? showing : nil,
+            folds: narrowing == nil,
+            empty: hasRows ? nil : narrowing.map { emptied(by: $0, in: view) },
         )
+    }
+
+    /// The stated empty for a query that matched nothing — it names the view it searched and
+    /// quotes the query, because those are the two things the reader can change.
+    private static func emptied(by narrowing: WorkRoomProjection.Narrowing, in view: WorkView)
+        -> String {
+        "No ticket in \(view.name) matches “\(narrowing.query)”."
     }
 
     /// The middle term names the GROUPING in force, and it is here because #819 put the priority
@@ -63,8 +83,19 @@ enum WorkChromeProjection {
     /// `<view> · by priority · <n> tickets`, and the last term DROPS where the view has no count to
     /// state — the same absence the sidebar's row draws, since the two read one number (#820).
     private static func subtitle(of view: WorkView, in room: WorkRoomProjection.Room) -> String {
-        let counted = room.view(view)?.count.map { [tickets($0)] } ?? []
+        let counted = lastTerm(of: view, in: room).map { [$0] } ?? []
         return ([view.name, grouping] + counted).joined(separator: " · ")
+    }
+
+    /// Under a query the term counts RESULTS and is never absent: a match is arithmetic this room
+    /// did itself, where a view's count rests on edges a provider may not have served. `results`
+    /// rather than `tickets` because the rows on screen can exceed it — the rails a match hangs
+    /// from are rows and not results (#873).
+    private static func lastTerm(of view: WorkView, in room: WorkRoomProjection.Room) -> String? {
+        if let narrowing = room.narrowing {
+            return "\(narrowing.matches) result\(narrowing.matches == 1 ? "" : "s")"
+        }
+        return room.view(view)?.count.map(tickets)
     }
 
     private static func tickets(_ count: Int) -> String {

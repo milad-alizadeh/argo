@@ -20,6 +20,9 @@ enum WorkRoomProjection {
         /// What the sidebar's hero states. Absent with nothing bound, where the room hides whole —
         /// a backlog-clear sentence under an unbound provider would answer a question nobody asked.
         let nextUp: NextUp?
+        /// What the search field's query has done to `backlog`, and `nil` where nothing is typed
+        /// (#873). Here, so the heading's count and the rows under it come off one value.
+        var narrowing: Narrowing?
 
         func view(_ kind: WorkView) -> ViewReading? {
             views.first { $0.id == kind }
@@ -85,27 +88,42 @@ enum WorkRoomProjection {
         let labels: [WorkItemLabel]
         /// The rows nested under this one, from the child edge (`WorkRoomProjection+Tree.swift`).
         /// Empty on a leaf, and empty on a parent whose every child the view filtered out.
-        let children: [Row]
+        var children: [Row]
+        /// Whether this row is on screen only because something under it matched the query — always
+        /// false where nothing is narrowing, so an unsearched list has no rails in it (#873).
+        var isRail = false
     }
 
     /// With no provider bound the room is VACANT rather than empty — no views, no list, no ticket
     /// (#272). Four views all reading zero would say the backlog is clear, which is a claim nobody
     /// has the standing to make when nobody was asked.
-    static func room(from reading: WorkReading, in view: WorkView = .allOpen) -> Room {
+    ///
+    /// `matching` is the search field's query, and it narrows LAST: the view chooses the set and
+    /// the query narrows within it, which is the order `cockpit-work-room.md` fixes and the order
+    /// the heading reads in.
+    static func room(
+        from reading: WorkReading,
+        in view: WorkView = .allOpen,
+        matching query: String = "",
+    )
+        -> Room {
         guard reading.provider != nil else { return .vacant(in: reading.project) }
         let open = reading.items.filter { $0.closure == .open }
         let closed = Set(reading.items.filter { $0.closure != .open }.map(\.number))
         let shown = items(of: open, in: view, claimed: reading.claimed)
+        let search = Query.typed(query).map { narrowed(shown, to: $0) }
+        let rows = tree(of: search?.items ?? shown, reading: reading, closed: closed)
         return Room(
             views: views(of: open, claimed: reading.claimed),
             provider: reading.provider,
-            backlog: tree(of: shown, reading: reading, closed: closed),
+            backlog: search.map { railed(rows, matching: $0.hits) } ?? rows,
             ticket: ticket(in: reading),
             project: reading.project,
             hasOpenWork: !open.isEmpty,
             // Over the whole open set, never the view on screen: the hero answers "what should I
             // pick up", and opening `Blocked` must not turn that into "nothing is unblocked".
             nextUp: reading.nextUp(of: open),
+            narrowing: search?.narrowing,
         )
     }
 }

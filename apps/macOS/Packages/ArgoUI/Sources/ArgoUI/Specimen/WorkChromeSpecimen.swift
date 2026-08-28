@@ -11,16 +11,19 @@ import SwiftUI
 struct WorkChromeSpecimen: View {
     private let reading: WorkReading
 
-    @State private var query = ""
+    @State private var query: String
     @State private var mode = SessionMode.code
 
-    init(reading: WorkReading) {
+    /// Seeded, because the harness cannot type — and the row's own answer to a query that matched
+    /// nothing is the state worth shooting: the field has to still be there to clear it (#873).
+    init(reading: WorkReading, matching query: String = "") {
         self.reading = reading
+        _query = State(initialValue: query)
     }
 
     private var chrome: WorkChromeProjection.Reading {
         WorkChromeProjection.reading(
-            of: WorkRoomProjection.room(from: reading),
+            of: WorkRoomProjection.room(from: reading, matching: query),
             in: .allOpen,
             showing: reading.showing,
         )

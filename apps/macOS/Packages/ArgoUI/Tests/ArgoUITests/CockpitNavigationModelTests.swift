@@ -85,6 +85,62 @@ struct CockpitNavigationModelTests {
         #expect(model.chosenSession.session == "a")
     }
 
+    /// The query outlives the pane it was typed over (#873), and a Project switch is the only
+    /// thing that takes it — which is a claim about every OTHER write to this model.
+    @Test
+    func `selecting a ticket leaves the backlog's query standing`() {
+        let model = CockpitNavigationModel()
+        model.workQuery = "canvas"
+        model.ticket = 336
+
+        #expect(model.workQuery == "canvas")
+    }
+
+    @Test
+    func `switching room leaves the backlog's query standing`() {
+        let model = CockpitNavigationModel()
+        model.workQuery = "canvas"
+        model.room = .code
+
+        #expect(model.workQuery == "canvas")
+    }
+
+    /// The roster moving under the window is not a Project switch, and it is the one write here
+    /// that already has side effects of its own.
+    @Test
+    func `a roster reconciliation leaves the backlog's query standing`() {
+        let model = CockpitNavigationModel()
+        model.workQuery = "canvas"
+        model.session = "b"
+        model.reconcile(against: ["a", "c"])
+
+        #expect(model.workQuery == "canvas")
+    }
+
+    /// Carried across, it would silently narrow a list of tickets it was never typed against, and
+    /// the heading's count would be counting a different Project's answer.
+    @Test
+    func `the backlog's query does not survive a Project switch`() {
+        let model = CockpitNavigationModel()
+        model.workQuery = "canvas"
+        model.projectSwitched()
+
+        #expect(model.workQuery.isEmpty)
+    }
+
+    /// The view, the fold and the seam are the reader's own settings rather than questions about
+    /// one backlog, so a Project switch leaves them alone.
+    @Test
+    func `a Project switch leaves the reader's own settings alone`() {
+        let model = CockpitNavigationModel()
+        model.workView = .blocked
+        model.shutParents = [607]
+        model.projectSwitched()
+
+        #expect(model.workView == .blocked)
+        #expect(model.shutParents == [607])
+    }
+
     @Test
     func `the room the window is in survives a roster change`() {
         let model = CockpitNavigationModel()

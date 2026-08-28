@@ -58,6 +58,13 @@ public final class CockpitNavigationModel {
 
     public init() {}
 
+    /// What a Project switch takes with it: the query alone, because it is the one thing here that
+    /// is a question about a particular Project's tickets (#873). The view, the fold and the seam
+    /// are the reader's own settings and stand.
+    func projectSwitched() {
+        workQuery = ""
+    }
+
     /// Repoints a selection that no longer names a live Session, falling back to the first.
     /// An empty roster leaves it `nil` — there is nothing honest to point at.
     func reconcile(against sessionIDs: [CockpitPresentation.Session.ID]) {

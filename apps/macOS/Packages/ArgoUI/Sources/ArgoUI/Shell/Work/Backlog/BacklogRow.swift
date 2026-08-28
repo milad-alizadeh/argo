@@ -44,7 +44,10 @@ struct BacklogRow: View {
                 .fixedSize()
             Text(row.title)
                 .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.secondary)
+                // A rail is on screen for a descendant's sake rather than for its own match, so its
+                // title takes the demotion the `#id` beside it already carries — without it the
+                // heading's `1 result` stands over three rows a reader would count as three (#873).
+                .foregroundStyle(row.isRail ? argo.color.text.tertiary : argo.color.text.secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: ArgoBacklogList.gap)

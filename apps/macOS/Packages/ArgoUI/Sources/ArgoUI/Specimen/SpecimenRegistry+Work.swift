@@ -15,7 +15,7 @@ extension SpecimenRegistry {
         // The view is what the DECK draws, not just a number in the rail — the one render that
         // shows the sidebar's selection reaching the pane beside it.
         SpecimenEntry("blockedWorkView") {
-            WorkPanesSpecimen(reading: WorkFixture.reading, opening: .blocked)
+            WorkPanesSpecimen(reading: WorkFixture.reading, seed: .init(opening: .blocked))
         },
         // The hero's three degraded tiers and its one-chip state (#817). Each is its own reading
         // rather than its own card: the tier is arithmetic over the backlog, so a specimen that
@@ -27,7 +27,21 @@ extension SpecimenRegistry {
         // in for the five rows it is holding, and the Children section naming them anyway. It is
         // seeded rather than clicked because everything opens open.
         SpecimenEntry("collapsedWorkBacklog") {
-            WorkPanesSpecimen(reading: WorkFixture.reading(showing: 607), folded: [607])
+            WorkPanesSpecimen(
+                reading: WorkFixture.reading(showing: 607),
+                seed: .init(folded: [607]),
+            )
+        },
+        // A query narrowing the list (#873): #336 matched, and the two parents it hangs from are
+        // kept as RAILS — demoted titles, and not counted in the `1 result` above them. The state
+        // is seeded because the harness cannot type into the field.
+        SpecimenEntry("searchedWorkBacklog") {
+            WorkPanesSpecimen(reading: WorkFixture.reading, seed: .init(query: "canvas"))
+        },
+        // The query matched nothing, which is a fact about the QUERY: the stated empty is inside
+        // the list pane and the row of controls stands, so the field can still be cleared.
+        SpecimenEntry("unmatchedWorkBacklog") {
+            WorkPanesSpecimen(reading: WorkFixture.reading, seed: .init(query: "kubernetes"))
         },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
         // A parent, deep: two Deliveries stacked, nine children rolled up over the five that are
@@ -55,6 +69,11 @@ extension SpecimenRegistry {
             WorkChromeSpecimen(reading: WorkFixture.answeredEmpty)
         },
         SpecimenEntry("unboundWorkChrome") { WorkChromeSpecimen(reading: WorkFixture.unbound) },
+        // The row over a query that matched NOTHING. The list is empty and the three controls that
+        // narrow it stand anyway — a field that removed itself here is one nobody could clear.
+        SpecimenEntry("unmatchedWorkChrome") {
+            WorkChromeSpecimen(reading: WorkFixture.reading, matching: "kubernetes")
+        },
     ] + writeControls
 
     /// The room's one provider-port write control, in each state a failing write leaves it in

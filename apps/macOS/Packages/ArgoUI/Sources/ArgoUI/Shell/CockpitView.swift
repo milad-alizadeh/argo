@@ -222,6 +222,11 @@ public struct CockpitView: View {
         .onChange(of: navigation.chosenSession) { _, pick in
             resumeIfSelectionIsDead(pick)
         }
+        // A window is scoped to one Project, and the backlog's query is a question about that
+        // Project's tickets — see `projectSwitched()` (#873).
+        .onChange(of: presentation.activeProjectID) { _, _ in
+            navigation.projectSwitched()
+        }
     }
 }
 
