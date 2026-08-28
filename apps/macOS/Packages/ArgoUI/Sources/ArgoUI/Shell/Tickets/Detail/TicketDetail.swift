@@ -9,14 +9,21 @@ import SwiftUI
 /// the room's controls (`TicketsToolbar`), which is a line of height back for the words.
 struct TicketDetail: View {
     let ticket: TicketsRoomProjection.Detail?
-    /// What opening a child does — the pane never reads back what it opened, so this is a closure
-    /// and not a binding that could disagree with `ticket`.
+    /// The number the pane is open on that nothing was read for, and `nil` wherever `ticket` has
+    /// something — the projection settles which of the two this is (`TicketsRoomProjection.Room`).
+    var unreadNumber: Int?
+    /// What opening a child or a blocker does — the pane never reads back what it opened, so this
+    /// is a closure and not a binding that could disagree with `ticket`.
     let open: (Int) -> Void
 
     var body: some View {
-        ScrollView {
+        // Only the ticket SCROLLS. A one-line sentence in a scroll view sits at the top of it,
+        // which is the wrong shape for a stated empty — `BacklogNoMatch` centres in the pane.
+        Group {
             if let ticket {
-                column(for: ticket)
+                ScrollView { column(for: ticket) }
+            } else if let unreadNumber {
+                TicketUnread(number: unreadNumber)
             }
         }
         // A FLOOR of its own, so the list beside it yields first (#836): the body wraps to whatever
@@ -62,6 +69,13 @@ struct TicketDetail: View {
 
 #Preview("Ticket detail — nothing selected") {
     TicketDetail(ticket: nil, open: { _ in })
+        .frame(width: ArgoTicketDetail.idealWidth, height: 320)
+        .argoDeckSurface()
+        .argoAppearance()
+}
+
+#Preview("Ticket detail — a link to a ticket nothing was read for") {
+    TicketDetail(ticket: nil, unreadNumber: 264, open: { _ in })
         .frame(width: ArgoTicketDetail.idealWidth, height: 320)
         .argoDeckSurface()
         .argoAppearance()

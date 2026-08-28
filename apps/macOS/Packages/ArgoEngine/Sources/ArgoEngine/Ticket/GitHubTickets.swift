@@ -37,6 +37,20 @@ public struct GitHubTickets: TicketPort {
         )
     }
 
+    /// GitHub serves pull requests from `/issues/<N>` too, and a Delivery is not a Ticket
+    /// (`CONTEXT.md` L4) — so one is `nil` here on the same terms a number behind which there is
+    /// nothing is.
+    public func ticket(
+        number: Int, in scope: String, grant: AccountGrant,
+    ) async throws
+        -> Ticket? {
+        let issue: GitHubIssue? = try await reads.found(
+            "/repos/\(scope)/issues/\(number)", grant: grant,
+        )
+        guard let issue, issue.pullRequest == nil else { return nil }
+        return try await ticket(issue, in: scope, grant: grant)
+    }
+
     /// Every ticket with its edges, `concurrentTickets` at a time and back in the order served —
     /// the backlog draws in the provider's own order, and a fan-out lands in the host's.
     private func tickets(

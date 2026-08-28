@@ -75,6 +75,17 @@ extension SpecimenRegistry {
         // empty — nobody has told us there are no blockers.
         SpecimenEntry("edgelessTicket") { TicketDetailSpecimen(reading: TicketsFixture.edgeless) },
         SpecimenEntry("deliveryChips") { DeliveryChipsSpecimen() },
+        // A CLOSED ticket, open in the pane (#895). It is in no listing and no sidebar view, so the
+        // only way here is a link — and the head sets the provider's `Closed` beside Argo's own
+        // `resolved`, which is the pair #893 exists to draw.
+        SpecimenEntry("closedTicket") {
+            TicketDetailSpecimen(reading: TicketsFixture.reading(showing: 264))
+        },
+        // A link followed to a number nothing has been read for: while the read is in flight, and
+        // after one that came back with nothing. Not an empty pane, which means "nothing selected".
+        SpecimenEntry("unreadTicketNumber") {
+            TicketDetailSpecimen(reading: TicketsFixture.reading(showing: 9001))
+        },
         // The fact strip's floor: a ticket the provider named and said nothing else about. Every
         // absent fact is left out, and Argo's own bucket is the one that survives.
         SpecimenEntry("unreadTicket") { TicketDetailSpecimen(reading: TicketsFixture.unread) },

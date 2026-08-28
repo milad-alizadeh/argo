@@ -85,6 +85,9 @@ public struct CockpitActions {
         /// Start a Session ON one ticket, on the rung the row names. The seed carries the number,
         /// which is what makes the Session claimable back (`TicketsReading.claimed`).
         public var startSession: (Int, SessionMode) async -> String? = { _, _ in nil }
+        /// Read ONE ticket, by the number a link named — the only way to a closed one, which no
+        /// listing carries (#895). It answers nothing: the listing it lands in is the answer.
+        public var readTicket: (Int) async -> Void = { _ in }
     }
 
     /// Everything the shell asks a Session to DO, through the engine's port (ADR-0024, #633).

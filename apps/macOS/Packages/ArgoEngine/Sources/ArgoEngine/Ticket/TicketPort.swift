@@ -9,6 +9,14 @@ public protocol TicketPort: Sendable {
     /// included.
     func list(in scope: String, grant: AccountGrant) async throws -> [Ticket]
 
+    /// ONE Ticket by the number a link named, in whatever state it is now — the read a closed
+    /// ticket is reachable through at all, since no listing carries one (#895).
+    ///
+    /// `nil` is the provider ANSWERING that there is nothing behind the number; a read that
+    /// established nothing throws instead. That is the distinction `TicketTitleReading` draws
+    /// between `.absent` and no reading, spelled in the two things a Swift call already has.
+    func ticket(number: Int, in scope: String, grant: AccountGrant) async throws -> Ticket?
+
     /// Where a human reads one item on this provider's own site, and `nil` where a Binding's scope
     /// cannot address one at all.
     ///

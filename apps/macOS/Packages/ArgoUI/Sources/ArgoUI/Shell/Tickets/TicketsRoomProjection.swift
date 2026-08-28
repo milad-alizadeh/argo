@@ -12,6 +12,10 @@ enum TicketsRoomProjection {
         let provider: TicketsProvider?
         let backlog: [Row]
         let ticket: Detail?
+        /// The number the deck is open on that nothing has been read for — a link followed to a
+        /// ticket the listing does not hold, which is every closed one (#895). `nil` wherever
+        /// `ticket` has something, so the pane draws one or the other and never both.
+        let unreadNumber: Int?
         /// The Project the window is scoped to. Carried for the vacancy pages, which name it.
         let project: String?
         /// Whether the provider served anything open AT ALL. A fact about the whole open set, which
@@ -45,7 +49,8 @@ enum TicketsRoomProjection {
         /// distinct from a provider that answered with an empty backlog, which keeps its views.
         static func vacant(in project: String? = nil) -> Room {
             Room(
-                views: [], provider: nil, backlog: [], ticket: nil, project: project,
+                views: [], provider: nil, backlog: [], ticket: nil, unreadNumber: nil,
+                project: project,
                 hasOpenTickets: false, nextUp: nil,
             )
         }
@@ -114,11 +119,13 @@ enum TicketsRoomProjection {
         let shown = items(of: open, in: view, claimed: reading.claimed)
         let search = Query.typed(query).map { narrowed(shown, to: $0) }
         let rows = tree(of: search?.items ?? shown, reading: reading, closed: closed)
+        let opened = ticket(in: reading)
         return Room(
             views: views(of: open, claims: reading.claims),
             provider: reading.provider,
             backlog: search.map { railed(rows, matching: $0.hits) } ?? rows,
-            ticket: ticket(in: reading),
+            ticket: opened,
+            unreadNumber: opened == nil ? reading.showing : nil,
             project: reading.project,
             hasOpenTickets: !open.isEmpty,
             // Over the whole open set, never the view on screen: the hero answers "what should I

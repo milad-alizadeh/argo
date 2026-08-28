@@ -105,12 +105,11 @@ struct TicketDetailSpecimen: View {
     }
 
     var body: some View {
-        TicketDetail(
-            ticket: TicketsRoomProjection.room(from: reading.opened(at: ticket)).ticket,
-            open: { ticket = $0 },
-        )
-        .frame(width: ArgoTicketDetail.idealWidth)
-        .argoDeckSurface()
+        let room = TicketsRoomProjection.room(from: reading.opened(at: ticket))
+
+        return TicketDetail(ticket: room.ticket, unreadNumber: room.unreadNumber) { ticket = $0 }
+            .frame(width: ArgoTicketDetail.idealWidth)
+            .argoDeckSurface()
     }
 }
 

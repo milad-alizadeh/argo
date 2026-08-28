@@ -4,19 +4,15 @@ import SwiftUI
 /// component with two callers (#815). The count changes nothing: it lives in the section heading.
 struct TicketLinkList: View {
     let links: [TicketsRoomProjection.Link]
-    /// `nil` where a row opens nothing: a blocker may be closed and out of the backlog, so its row
-    /// is text rather than a control that would lead somewhere empty.
-    var open: ((Int) -> Void)?
+    /// What opening one does. Every row is a control, blockers included: a blocker outside the
+    /// backlog is reachable by the number it names (#895), so the row no longer leads nowhere.
+    let open: (Int) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoTicketDetail.linkGap) {
             ForEach(links) { link in
-                if let open {
-                    Button { open(link.id) } label: { TicketLinkRow(link: link) }
-                        .buttonStyle(.plain)
-                } else {
-                    TicketLinkRow(link: link)
-                }
+                Button { open(link.id) } label: { TicketLinkRow(link: link) }
+                    .buttonStyle(.plain)
             }
         }
     }
@@ -83,7 +79,7 @@ private struct TicketLinkRow: View {
 
 #Preview("Link list — six blockers, one of them never read") {
     if let ticket = TicketsFixture.room(showing: 607).ticket {
-        TicketLinkList(links: ticket.blockedBy)
+        TicketLinkList(links: ticket.blockedBy, open: { _ in })
             .padding(ArgoTicketDetail.inset)
             .frame(width: ArgoTicketDetail.idealWidth)
             .argoDeckSurface()

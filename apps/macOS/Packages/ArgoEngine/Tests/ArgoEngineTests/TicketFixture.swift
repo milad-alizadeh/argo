@@ -18,6 +18,12 @@ actor ScriptedTickets: TicketReading {
         return try answer.get()
     }
 
+    /// Answered from whatever the script currently holds, and WITHOUT taking a turn: these suites
+    /// count `list` reads, and a by-number read is not one of them.
+    func ticket(number: Int, through _: ResolvedBinding) async throws -> Ticket? {
+        try script.first?.get().first { $0.number == number }
+    }
+
     func readCount() -> Int {
         reads
     }

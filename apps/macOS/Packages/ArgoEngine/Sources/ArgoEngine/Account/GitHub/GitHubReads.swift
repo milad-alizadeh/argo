@@ -15,13 +15,23 @@ struct GitHubReads: Sendable {
     private static let pageLimit = 20
 
     func get<Reply: Decodable>(_ path: String, grant: AccountGrant) async throws -> Reply {
+        guard let reply: Reply = try await found(path, grant: grant) else {
+            throw ProviderFetchError.unreachable
+        }
+        return reply
+    }
+
+    /// The same read, with GitHub's own `Not Found` told apart from an answer that established
+    /// nothing: `nil` is the host saying there is nothing behind this path, and everything else it
+    /// could not be read as throws. `GitHubTicketTitles` draws the same line for the same reason.
+    func found<Reply: Decodable>(_ path: String, grant: AccountGrant) async throws -> Reply? {
         let data = try await call.send(path, grant: grant)
         let decoder = GitHubCall.decoder
         // Checked before the reply, not after it fails to parse: a 4xx GitHub hands back as a BODY
-        // passes through the transport like any other answer, and read as an unparseable reply it
-        // would surface as a provider that did not respond.
-        if (try? decoder.decode(GitHubFailure.self, from: data)) != nil {
-            throw ProviderFetchError.unreachable
+        // passes through the transport like any other answer.
+        if let failure = try? decoder.decode(GitHubFailure.self, from: data) {
+            guard failure.isNotFound else { throw ProviderFetchError.unreachable }
+            return nil
         }
         guard let reply = try? decoder.decode(Reply.self, from: data) else {
             throw ProviderFetchError.unreachable
