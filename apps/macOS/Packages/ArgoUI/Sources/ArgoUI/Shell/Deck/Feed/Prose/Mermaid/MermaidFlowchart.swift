@@ -7,18 +7,13 @@ import Foundation
 /// geometry — that is `laid`'s, and keeping the two apart is what lets one model be
 /// laid out four ways for the four directions.
 struct MermaidFlowchart: Equatable, Sendable {
-    let direction: Direction
+    let direction: MermaidDirection
     /// Every node named, in the order the source first named one. That order IS the layout's
     /// tie-break, so a diagram read twice lays out twice the same.
     let nodes: [Node]
     let edges: [Edge]
     /// The `subgraph` blocks, in the order they were opened, each carrying the nodes it encloses.
     let groups: [Group]
-
-    /// Which way the ranks grow. `TD` and `TB` are one direction under two spellings.
-    enum Direction: Equatable, Sendable {
-        case down, up, right, left
-    }
 
     struct Node: Equatable, Sendable {
         let name: String
@@ -60,15 +55,24 @@ extension MermaidFlowchart {
     /// carries a word, then every group's title.
     ///
     /// The view builds one `Text` from each of these before SwiftUI has told it a measure, so this
-    /// order is a contract between the model and `laid` rather than an incidental.
+    /// order is a contract between the model and `laid` rather than an incidental — which is why
+    /// the three runs are named, and `laid` places the very lists it concatenates.
     var labels: [MermaidLabel] {
+        nodeLabels + edgeLabels + groupLabels
+    }
+
+    var nodeLabels: [MermaidLabel] {
         nodes.map { MermaidLabel(text: $0.label) }
-            + edges.compactMap(\.label).map {
-                MermaidLabel(text: $0, face: MermaidMeasure.edgeFace, role: .note)
-            }
-            + groups.map {
-                MermaidLabel(text: $0.title, face: MermaidMeasure.groupFace, role: .note)
-            }
+    }
+
+    var edgeLabels: [MermaidLabel] {
+        edges.compactMap(\.label).map {
+            MermaidLabel(text: $0, face: MermaidMeasure.edgeFace, role: .note)
+        }
+    }
+
+    var groupLabels: [MermaidLabel] {
+        groups.map { MermaidLabel(text: $0.title, face: MermaidMeasure.groupFace, role: .note) }
     }
 
     var names: [String] {

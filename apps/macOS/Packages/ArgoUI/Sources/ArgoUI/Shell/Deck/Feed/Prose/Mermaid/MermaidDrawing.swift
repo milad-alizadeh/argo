@@ -19,6 +19,10 @@ struct MermaidDrawing {
     private func draw(_ figure: MermaidFigure, in context: inout GraphicsContext) {
         let line = ink.line(of: figure.role).color
         switch figure.form {
+        // A solid outline is FILLED in the very ink the others are stroked in, which is what makes
+        // a dot a dot and a bar a bar rather than a ring and a hairline box.
+        case let .shape(outline, rect) where outline.isSolid:
+            context.fill(outline.ground(in: rect), with: .color(line))
         case let .shape(outline, rect):
             if let ground = ink.ground(of: figure.role) {
                 context.fill(outline.ground(in: rect), with: .color(ground.color))

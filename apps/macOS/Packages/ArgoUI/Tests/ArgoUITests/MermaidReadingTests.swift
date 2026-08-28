@@ -22,7 +22,7 @@ struct MermaidReadingTests {
     /// `flowchart` is the same diagram under mermaid's newer keyword, and a header with no
     /// direction runs the way mermaid's own default runs.
     @Test(arguments: [
-        ("graph TD", MermaidFlowchart.Direction.down),
+        ("graph TD", MermaidDirection.down),
         ("flowchart TB", .down),
         ("graph BT", .up),
         ("flowchart LR", .right),
@@ -31,7 +31,7 @@ struct MermaidReadingTests {
     ])
     func `each header names the direction it runs`(
         header: String,
-        direction: MermaidFlowchart.Direction,
+        direction: MermaidDirection,
     ) {
         #expect(Self.read("\(header)\nA --> B")?.direction == direction)
     }

@@ -28,7 +28,8 @@ enum MermaidMindmapBox {
             return CGSize(width: ceil(words.width * scale), height: ceil(words.height * scale))
         case .hexagon, .flag:
             return MermaidWords.pointed(words)
-        case .rect, .rounded, .capsule, .subroutine, .diamond, .cylinder, .enclosure:
+        case .rect, .rounded, .capsule, .subroutine, .diamond, .cylinder, .enclosure, .dot,
+             .bar:
             return words
         }
     }

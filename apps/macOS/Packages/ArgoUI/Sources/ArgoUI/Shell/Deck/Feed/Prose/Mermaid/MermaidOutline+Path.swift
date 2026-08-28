@@ -15,7 +15,7 @@ extension MermaidOutline {
         case .subroutine: Self.subroutine(in: rect)
         case .cylinder: Self.cylinder(in: rect, lidded: true)
         case .rect, .rounded, .enclosure, .capsule, .ellipse, .diamond, .hexagon, .flag,
-             .bang, .cloud:
+             .bang, .cloud, .dot, .bar:
             ground(in: rect)
         }
     }
@@ -23,11 +23,11 @@ extension MermaidOutline {
     /// The silhouette as it is filled — one closed shape, always.
     func ground(in rect: CGRect) -> Path {
         switch self {
-        case .rect, .subroutine: Path(rect)
+        case .rect, .subroutine, .bar: Path(rect)
         case .rounded: Path(roundedRect: rect, cornerRadius: MermaidMeasure.nodeRadius)
         case .enclosure: Path(roundedRect: rect, cornerRadius: MermaidMeasure.groupRadius)
         case .capsule: Path(roundedRect: rect, cornerRadius: rect.height / 2)
-        case .ellipse: Path(ellipseIn: rect)
+        case .ellipse, .dot: Path(ellipseIn: rect)
         case .diamond: Self.diamond(in: rect)
         case .hexagon: Self.hexagon(in: rect)
         case .flag: Self.flag(in: rect)

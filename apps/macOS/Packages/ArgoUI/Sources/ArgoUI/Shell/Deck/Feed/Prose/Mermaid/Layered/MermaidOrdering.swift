@@ -14,20 +14,20 @@ enum MermaidOrdering {
 }
 
 extension MermaidOrdering {
-    /// The rows of `chart`, each in the order its nodes should be drawn.
-    static func rows(of chart: MermaidFlowchart, ranked: MermaidRanking) -> [[String]] {
-        var best = grouped(ranked.rows(of: chart.names), by: chart.groups)
-        var fewest = crossings(of: best, in: chart)
+    /// The rows of `graph`, each in the order its nodes should be drawn.
+    static func rows(of graph: MermaidGraph, ranked: MermaidRanking) -> [[String]] {
+        var best = grouped(ranked.rows(of: graph.names), by: graph.groups)
+        var fewest = crossings(of: best, in: graph)
         var rows = best
         for pass in 0 ..< passes {
             // Cohesion is re-imposed after every sweep, not only on the way in: a sweep is free to
             // slide a member of a group past a stranger, and an enclosure drawn around a rank that
             // happened would close over a node it does not own.
             rows = grouped(
-                swept(rows, in: chart, downward: pass.isMultiple(of: 2)),
-                by: chart.groups,
+                swept(rows, in: graph, downward: pass.isMultiple(of: 2)),
+                by: graph.groups,
             )
-            let count = crossings(of: rows, in: chart)
+            let count = crossings(of: rows, in: graph)
             guard count < fewest else { continue }
             fewest = count
             best = rows
@@ -38,7 +38,7 @@ extension MermaidOrdering {
     /// One sweep: every rank but the one it reads from, re-sorted on where its neighbours sit.
     private static func swept(
         _ rows: [[String]],
-        in chart: MermaidFlowchart,
+        in graph: MermaidGraph,
         downward: Bool,
     )
         -> [[String]] {
@@ -47,7 +47,7 @@ extension MermaidOrdering {
         for at in order.dropFirst() {
             let fixed = rows[downward ? at - 1 : at + 1]
             rows[at] = sorted(rows[at], against: fixed) {
-                neighbours(of: $0, in: chart, above: downward)
+                neighbours(of: $0, in: graph, above: downward)
             }
         }
         return rows
@@ -88,11 +88,11 @@ extension MermaidOrdering {
     /// The nodes one node is joined to in the rank on one side of it.
     private static func neighbours(
         of name: String,
-        in chart: MermaidFlowchart,
+        in graph: MermaidGraph,
         above: Bool,
     )
         -> [String] {
-        chart.edges.compactMap { edge in
+        graph.edges.compactMap { edge in
             if above, edge.to == name {
                 return edge.from
             }
@@ -105,9 +105,9 @@ extension MermaidOrdering {
 
     /// How many pairs of edges between two neighbouring ranks cross — the inversions between where
     /// their two ends sit. The heuristic's own score, counted the same way every pass.
-    static func crossings(of rows: [[String]], in chart: MermaidFlowchart) -> Int {
+    static func crossings(of rows: [[String]], in graph: MermaidGraph) -> Int {
         rows.indices.dropLast().reduce(0) { total, at in
-            let pairs = chart.edges.compactMap { edge -> (Int, Int)? in
+            let pairs = graph.edges.compactMap { edge -> (Int, Int)? in
                 guard let from = rows[at].firstIndex(of: edge.from),
                       let to = rows[at + 1].firstIndex(of: edge.to) else { return nil }
                 return (from, to)
@@ -120,21 +120,21 @@ extension MermaidOrdering {
         }
     }
 
-    /// The same rows with each `subgraph`'s members drawn together. An enclosure is a box around
+    /// The same rows with each enclosure's members drawn together. An enclosure is a box around
     /// its members, so members standing either side of a stranger would draw a box over them.
     private static func grouped(
         _ rows: [[String]],
-        by groups: [MermaidFlowchart.Group],
+        by groups: [[String]],
     )
         -> [[String]] {
         rows.map { row in stable(row) { Double(groups.place(of: $0)) } }
     }
 }
 
-private extension [MermaidFlowchart.Group] {
+private extension [[String]] {
     /// Which enclosure a node belongs to, as a sort key. A node in none of them sorts after every
     /// node in one, so the groups stay whole and the loose nodes stand beside them.
     func place(of name: String) -> Int {
-        firstIndex { $0.members.contains(name) } ?? count
+        firstIndex { $0.contains(name) } ?? count
     }
 }
