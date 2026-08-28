@@ -33,15 +33,15 @@ extension MermaidRouting {
     /// the entering box's. Three segments where the two boxes are not in line and one where they
     /// are, which is what makes a straight chain read as a straight line.
     private func between(_ from: CGRect, to: CGRect) -> [CGPoint] {
-        let axis = placement.axis
-        let start = axis.exit(of: from)
-        let end = axis.entry(of: to)
-        guard axis.across(of: start) != axis.across(of: end) else { return [start, end] }
-        let turn = (axis.along(of: start) + axis.along(of: end)) / 2
+        let grain = placement.grain
+        let start = grain.exit(of: from)
+        let end = grain.entry(of: to)
+        guard grain.across(of: start) != grain.across(of: end) else { return [start, end] }
+        let turn = (grain.along(of: start) + grain.along(of: end)) / 2
         return [
             start,
-            axis.point(along: turn, across: axis.across(of: start)),
-            axis.point(along: turn, across: axis.across(of: end)),
+            grain.point(along: turn, across: grain.across(of: start)),
+            grain.point(along: turn, across: grain.across(of: end)),
             end,
         ]
     }
@@ -50,13 +50,13 @@ extension MermaidRouting {
     /// leaves and re-enters by the flank and runs its length in a lane outside the diagram, so it
     /// never shares a line with the forward edges it is answering.
     private func around(_ from: CGRect, to: CGRect, lane: CGFloat) -> [CGPoint] {
-        let axis = placement.axis
-        let start = axis.flank(of: from)
-        let end = axis.flank(of: to)
+        let grain = placement.grain
+        let start = grain.flank(of: from)
+        let end = grain.flank(of: to)
         return [
             start,
-            axis.point(along: axis.along(of: start), across: lane),
-            axis.point(along: axis.along(of: end), across: lane),
+            grain.point(along: grain.along(of: start), across: lane),
+            grain.point(along: grain.along(of: end), across: lane),
             end,
         ]
     }

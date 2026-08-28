@@ -90,6 +90,17 @@ struct MinimapMermaidTests {
         #expect(laid?.rects.allSatisfy { $0.y + $0.height <= (laid?.height ?? 0) } == true)
     }
 
+    /// And by a chart whose marks are a plotted field rather than a graph at all (#868).
+    @Test
+    func `a quadrant chart maps through the same lane`() {
+        let diagram = MermaidDiagram.read("quadrantChart\nx-axis Low --> High\nA: [0.2, 0.8]")
+        let laid = diagram?.mapped(across: Self.measure)
+
+        #expect(laid?.height == diagram?.laid.size.height)
+        #expect(laid?.rects.isEmpty == false)
+        #expect(laid?.rects.allSatisfy { $0.ink == .diagram } == true)
+    }
+
     /// The block comes off the row's markdown carrying the diagram itself, so the lane lays it out
     /// through the feed's own cached plan rather than through a reduction of it.
     @Test

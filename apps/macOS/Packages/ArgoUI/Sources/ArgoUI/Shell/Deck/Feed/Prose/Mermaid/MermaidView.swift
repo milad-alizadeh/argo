@@ -48,7 +48,8 @@ struct MermaidView: View {
 }
 
 /// The states this view can be in, each on the measure the feed reads at. A fence it cannot read
-/// never reaches here — `MarkdownBlock` leaves that one a `.fenced`, drawn by `FeedMarkdownFence`.
+/// never reaches here — `MarkdownBlock` leaves that one a `.fenced`, drawn by
+/// `FeedMarkdownFence`.
 private struct MermaidPreview: View {
     let source: String
 

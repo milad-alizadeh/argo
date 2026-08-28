@@ -18,6 +18,7 @@ struct MermaidDiagram: Equatable, Sendable {
         case mindmap(MermaidMindmap)
         case pie(MermaidPie)
         case state(MermaidState)
+        case quadrant(MermaidQuadrant)
     }
 
     /// The diagram this source draws, or `nil` where nothing here can read it — an unsupported
@@ -42,6 +43,9 @@ struct MermaidDiagram: Equatable, Sendable {
         if let state = MermaidState.read(source) {
             return MermaidDiagram(source: source, kind: .state(state))
         }
+        if let quadrant = MermaidQuadrant.read(source) {
+            return MermaidDiagram(source: source, kind: .quadrant(quadrant))
+        }
         return nil
     }
 
@@ -54,6 +58,7 @@ struct MermaidDiagram: Equatable, Sendable {
         case let .mindmap(mindmap): mindmap.labels
         case let .pie(pie): pie.labels
         case let .state(state): state.labels
+        case let .quadrant(quadrant): quadrant.labels
         }
     }
 
@@ -71,6 +76,7 @@ struct MermaidDiagram: Equatable, Sendable {
         case let .mindmap(mindmap): mindmap.laid
         case let .pie(pie): pie.laid
         case let .state(state): state.laid
+        case let .quadrant(quadrant): quadrant.laid
         }
     }
 }

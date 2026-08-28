@@ -1,0 +1,72 @@
+import Foundation
+
+/// A quadrant chart as its source wrote it: what the field is called, what each axis measures at
+/// both of its ends, what each of the four corners means, and the points plotted on it.
+struct MermaidQuadrant: Equatable, Sendable {
+    var title = ""
+    var xAxis = Axis()
+    var yAxis = Axis()
+    /// One per `Corner`, in `Corner.allCases` order — mermaid's numbering, not the order an eye
+    /// takes the corners in. Read and written through `subscript(_:)`, which owns the offset.
+    var corners = ["", "", "", ""]
+    var points: [Point] = []
+
+    /// What an axis is called at each end. `x-axis Low --> High` names both; `x-axis Low` names
+    /// only where the scale starts, which is a chart mermaid draws.
+    struct Axis: Equatable, Sendable {
+        var start = ""
+        var end = ""
+    }
+
+    struct Point: Equatable, Sendable {
+        let name: String
+        /// Where it plots: 0…1 on both axes, with y running UP. `0.9` is near the TOP, which is
+        /// the other way up from the coordinates it is drawn in.
+        let at: CGPoint
+    }
+
+    /// Mermaid's own numbering of the corners: `quadrant-1` is the TOP RIGHT, and they run
+    /// anticlockwise from there. Reading order would put `quadrant-1` top left and mirror every
+    /// chart drawn.
+    /// What a corner says. The one place mermaid's numbering from one becomes an index from zero.
+    subscript(corner: Corner) -> String {
+        get { corners[corner.rawValue - 1] }
+        set { corners[corner.rawValue - 1] = newValue }
+    }
+
+    enum Corner: Int, CaseIterable, Equatable, Sendable {
+        case one = 1, two, three, four
+
+        var isRight: Bool {
+            switch self {
+            case .one, .four: true
+            case .two, .three: false
+            }
+        }
+
+        var isTop: Bool {
+            switch self {
+            case .one, .two: true
+            case .three, .four: false
+            }
+        }
+    }
+}
+
+extension MermaidQuadrant {
+    /// One label per caption the plan places, in that order: the title, both ends of the x axis,
+    /// both ends of the y axis, the four corners, then each point's name.
+    ///
+    /// Every one is listed even where it says nothing. The view builds one `Text` per label and the
+    /// plan places one caption per label BY POSITION, so a title dropped for being empty would
+    /// slide every later caption one place along.
+    var labels: [MermaidLabel] {
+        let quiet = MermaidMeasure.edgeFace
+        var labels = [MermaidLabel(text: title, face: MermaidMeasure.titleFace, role: .note)]
+        labels += [xAxis.start, xAxis.end, yAxis.start, yAxis.end]
+            .map { MermaidLabel(text: $0, face: quiet, role: .axis) }
+        labels += corners.map { MermaidLabel(text: $0, face: quiet, role: .note) }
+        labels += points.map { MermaidLabel(text: $0.name, face: quiet) }
+        return labels
+    }
+}

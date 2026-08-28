@@ -2,7 +2,8 @@ import Foundation
 
 /// Which way a layered diagram's ranks grow. `TD` and `TB` are one direction under two spellings.
 ///
-/// Shared rather than any one reader's, because `MermaidAxis` turns it into points and the axis is
+/// Shared rather than any one reader's, because `MermaidGrain` turns it into points and the grain
+/// is
 /// the pass's — a state machine written `direction LR` runs the way a flowchart written `LR` does.
 enum MermaidDirection: Equatable, Sendable {
     case down, up, right, left
