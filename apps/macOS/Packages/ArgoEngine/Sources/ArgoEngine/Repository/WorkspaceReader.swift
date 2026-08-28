@@ -3,13 +3,12 @@ import Foundation
 /// What one working tree looks like, read off git's answers: what is uncommitted in it, what it has
 /// drifted from its upstream by, and what it is measured against.
 ///
-/// Takes the entry rather than a folder, so `kind`, `branch` and `headSha` come from the listing
-/// that found the worktree instead of from a second read of the same facts — two readers of one
-/// fact are two chances to disagree about it (#259).
+/// `kind`, `branch` and `headSha` are taken from the entry and never asked of git here: the listing
+/// that found the worktree already answered them.
 ///
-/// An actor for the reason `CheckoutReader` is one: the app's adapter blocks on a subprocess and
-/// the caller is the main actor. A folder git cannot answer for is `nil` rather than a projection
-/// of zeroes — nothing observed is not a clean tree.
+/// An actor because the app's adapter blocks on a subprocess and the caller is the main actor. A
+/// folder git cannot answer for is `nil` rather than a projection of zeroes — nothing observed is
+/// not a clean tree.
 actor WorkspaceReader {
     private let git: GitCommand
 
@@ -22,7 +21,7 @@ actor WorkspaceReader {
         // The whole read hangs off this answer rather than any one number inside it.
         guard let dirty = dirtyCount(at: directoryURL) else { return nil }
         return WorkspaceProjection(
-            kind: entry.isPrimary ? .main : .worktree,
+            kind: entry.kind,
             branch: entry.branch,
             baseRef: baseRef(at: directoryURL),
             headSha: entry.headSha,
@@ -43,7 +42,12 @@ actor WorkspaceReader {
     }
 
     /// The ref the branch is measured against: the remote's own default head, as git names it.
-    /// Absent for a repository with no remote, which has no shared base to be measured against.
+    ///
+    /// Absent wherever git will not name one, which is more often than "no remote": `origin/HEAD`
+    /// is a local symref a fresh clone sets and many checkouts never have, and a remote called
+    /// anything but `origin` has none under this name at all. So this is a DERIVED read that says
+    /// nothing rather than a base Argo can always state — asking a second question to guess at the
+    /// default branch would invent the very fact the absence is honest about.
     private func baseRef(at directoryURL: URL) -> String? {
         answer(["rev-parse", "--abbrev-ref", "origin/HEAD"], at: directoryURL)
     }

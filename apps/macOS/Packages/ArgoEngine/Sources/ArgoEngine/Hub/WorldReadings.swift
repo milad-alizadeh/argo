@@ -110,14 +110,18 @@ final class WorldReadings {
     /// per WORKTREE and not per Session, so four Sessions in one worktree cost one subprocess run
     /// rather than four.
     ///
-    /// Driven off git's listing and not off the roster's folders, which is what makes a worktree
-    /// that outlived the run that made it a Workspace anyway: `worktree-gc` reaps only after a pull
-    /// request merges, so an orphan is the ordinary case rather than the edge one (#259).
+    /// Scoped to the pointed Project's own repository: a Session recorded in a NESTED repository or
+    /// a submodule has no Workspace here rather than one describing another repository's branch.
     ///
     /// The cancellation check keeps a Project switch from paying for the rest of a sweep it no
     /// longer wants.
     func refreshWorkspaces() async {
-        guard let repositoryURL = repositoryURL() else { return }
+        // A Hub pointed nowhere is dropped rather than left holding the last Project's branches:
+        // going on answering with them would be a fact about a repository nobody is on.
+        guard let repositoryURL = repositoryURL() else {
+            workspaces = [:]
+            return
+        }
         let entries = await engine.worktrees(in: repositoryURL)
         let holders = Self.holders(
             of: entries.map { resolvedPath($0.path) },

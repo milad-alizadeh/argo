@@ -14,31 +14,31 @@ struct WorkspaceProjectionTests {
     @Test
     func `a Session Argo spawned knows its own Workspace DIRECT`() {
         // Argo chose the folder and made the worktree, so the identity is its own record.
-        #expect(Self.read.known(via: .managed).tier == .direct)
+        #expect(Self.read.known(via: .managed).held.tier == .direct)
     }
 
     @Test
     func `a Session Argo never owned reads its Workspace DERIVED`() {
-        #expect(Self.read.known(via: .external).tier == .derived)
+        #expect(Self.read.known(via: .external).held.tier == .derived)
     }
 
     @Test
     func `an orphaned Session degrades down with the record that went with its process`() {
         // Argo did spawn it, and then lost the PTY — so the folder is read back off git like any
         // other observation (`CONTEXT.md`, the degrade-down rule).
-        #expect(Self.read.known(via: .orphaned).tier == .derived)
+        #expect(Self.read.known(via: .orphaned).held.tier == .derived)
     }
 
     @Test
     func `neither fold disturbs a single count git reported`() {
-        let held = Self.read.shared(by: 3).known(via: .managed)
+        let folded = Self.read.shared(by: 3).known(via: .managed)
 
-        #expect(held.dirty == 2)
-        #expect(held.divergence == UpstreamDivergence(ahead: 1, behind: 3))
-        #expect(held.branch == "argo/#259")
-        #expect(held.baseRef == "origin/main")
-        #expect(held.headSha == "aaa")
-        #expect(held.kind == .worktree)
+        #expect(folded.dirty == 2)
+        #expect(folded.divergence == UpstreamDivergence(ahead: 1, behind: 3))
+        #expect(folded.branch == "argo/#259")
+        #expect(folded.baseRef == "origin/main")
+        #expect(folded.headSha == "aaa")
+        #expect(folded.kind == .worktree)
     }
 
     @Test
@@ -47,7 +47,6 @@ struct WorkspaceProjectionTests {
         let tierFirst = Self.read.known(via: .managed).shared(by: 3)
 
         #expect(sharedFirst == tierFirst)
-        #expect(sharedFirst.sharedCount == 3)
-        #expect(sharedFirst.tier == .direct)
+        #expect(sharedFirst.held == WorkspaceHolders(count: 3, tier: .direct))
     }
 }

@@ -16,7 +16,8 @@ public struct WorkspaceProjection: Equatable, Sendable {
     /// Absent for a detached HEAD, and for a repository git would not name a branch in.
     public let branch: String?
     /// The ref this branch is measured against — the remote's own default, as git names it. Absent
-    /// for a repository with no remote, which has no shared base to name.
+    /// wherever git will not name one, which is more often than a repository having no remote: see
+    /// `WorkspaceReader.baseRef(at:)`.
     public let baseRef: String?
     /// The commit checked out here, whole and in git's own form. What a Diff is addressed by
     /// (`CONTEXT.md` L4 · Diff).
@@ -27,14 +28,9 @@ public struct WorkspaceProjection: Equatable, Sendable {
     /// How far the branch has drifted from its upstream — see `UpstreamDivergence` for why the two
     /// counts travel together and why a branch with no upstream has none.
     public let divergence: UpstreamDivergence?
-    /// How many Agents are working in this folder. Not a git fact and never read as one: the
-    /// listing says a worktree exists, and the roster says who is in it — so a worktree nobody is
-    /// running in is honestly zero rather than missing.
-    public let sharedCount: Int
-    /// How Argo knows an Agent is HERE, which is the only part of this a tier applies to: the
-    /// counts above are all read back from git whoever is in the folder. `derived` until something
-    /// that knows the Agent's provenance says otherwise — see `known(via:)`.
-    public let tier: Tier
+    /// Who is in this folder and how Argo knows they are — the two facts here that are not git's.
+    /// See `WorkspaceHolders` for why they sit apart from the counts above rather than beside them.
+    public let held: WorkspaceHolders
 
     public init(
         kind: Kind,
@@ -43,8 +39,7 @@ public struct WorkspaceProjection: Equatable, Sendable {
         headSha: String? = nil,
         dirty: Int,
         divergence: UpstreamDivergence?,
-        sharedCount: Int = 0,
-        tier: Tier = .derived,
+        held: WorkspaceHolders = .unattributed,
     ) {
         self.kind = kind
         self.branch = branch
@@ -52,32 +47,21 @@ public struct WorkspaceProjection: Equatable, Sendable {
         self.headSha = headSha
         self.dirty = dirty
         self.divergence = divergence
-        self.sharedCount = sharedCount
-        self.tier = tier
+        self.held = held
     }
 
     /// The same reading, with how many Agents are in the folder folded in. Applied where the roster
-    /// is known, because the reader that asked git has no idea who is standing in its answer.
+    /// is known: the reader that asked git has no idea who is standing in its answer.
     func shared(by count: Int) -> WorkspaceProjection {
-        rewriting(sharedCount: count, tier: tier)
+        rewriting(held: held.counting(count))
     }
 
-    /// The same reading, told as one Agent's.
-    ///
-    /// DIRECT only for a Session Argo spawned: Argo chose the folder and made the worktree, so the
-    /// identity is its own record rather than an inference. `external` never was Argo's, and
-    /// `orphaned` was but the record went with the process — both are read back off git, and both
-    /// degrade down (`CONTEXT.md`, Honesty tier).
+    /// The same reading, with how Argo knows an Agent is in the folder folded in.
     func known(via provenance: SessionProvenance) -> WorkspaceProjection {
-        switch provenance {
-        case .managed:
-            rewriting(sharedCount: sharedCount, tier: .direct)
-        case .external, .orphaned:
-            rewriting(sharedCount: sharedCount, tier: .derived)
-        }
+        rewriting(held: held.known(via: provenance))
     }
 
-    private func rewriting(sharedCount: Int, tier: Tier) -> WorkspaceProjection {
+    private func rewriting(held: WorkspaceHolders) -> WorkspaceProjection {
         WorkspaceProjection(
             kind: kind,
             branch: branch,
@@ -85,8 +69,7 @@ public struct WorkspaceProjection: Equatable, Sendable {
             headSha: headSha,
             dirty: dirty,
             divergence: divergence,
-            sharedCount: sharedCount,
-            tier: tier,
+            held: held,
         )
     }
 }

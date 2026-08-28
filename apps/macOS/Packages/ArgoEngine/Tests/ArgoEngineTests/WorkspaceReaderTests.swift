@@ -7,7 +7,7 @@ import Testing
 @Suite("Workspace reading")
 struct WorkspaceReaderTests {
     @Test
-    func `the primary checkout git listed first is the main kind`() async {
+    func `the checkout git listed first is read as the main kind`() async {
         #expect(await read([status: ""], of: Self.primary)?.kind == .main)
     }
 
@@ -82,8 +82,7 @@ struct WorkspaceReaderTests {
         // The reader knows git's counts and nothing about who is standing in the folder, so the
         // tier it produces is the quieter one until something that knows the provenance says
         // otherwise (`CONTEXT.md`, the degrade-down rule).
-        #expect(await read([status: ""])?.tier == .derived)
-        #expect(await read([status: ""])?.sharedCount == 0)
+        #expect(await read([status: ""])?.held == .unattributed)
     }
 
     @Test
@@ -95,12 +94,12 @@ struct WorkspaceReaderTests {
 
     private static let primary = WorktreeEntry(
         path: "/repo", branch: "main",
-        headSha: "36e755ec341247fe58209dbf5a22bde41811dc9b", isPrimary: true,
+        headSha: "36e755ec341247fe58209dbf5a22bde41811dc9b", kind: .main,
     )
 
     private static let linked = WorktreeEntry(
         path: "/repo/.claude/worktrees/ticket-259", branch: "argo/#259-workspace-git-observer",
-        headSha: "d19907e7bb23edc1bc001cfc7d9607b40cc0685c", isPrimary: false,
+        headSha: "d19907e7bb23edc1bc001cfc7d9607b40cc0685c", kind: .worktree,
     )
 
     private func read(

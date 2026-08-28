@@ -40,7 +40,7 @@ struct HubWorkspaceTests {
         await hub.refreshWorkspaces()
 
         #expect(hub.sessions.first?.provenance == .external)
-        #expect(hub.sessions.first?.workspace?.tier == .derived)
+        #expect(hub.sessions.first?.workspace?.held.tier == .derived)
     }
 
     @Test
@@ -85,7 +85,7 @@ struct HubWorkspaceTests {
 /// The one worktree the repository in this suite holds, which is the folder every Session in it is
 /// running in. Outside the suite because the reads are handed to an `Engine`.
 private let oneWorktree = WorktreeEntry(
-    path: "/tmp/argo-workspace", branch: "argo/#510", headSha: "aaa", isPrimary: false,
+    path: "/tmp/argo-workspace", branch: "argo/#510", headSha: "aaa", kind: .worktree,
 )
 
 /// What git would say about that worktree.
