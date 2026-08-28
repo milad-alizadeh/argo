@@ -2,11 +2,9 @@ import Foundation
 
 /// A quadrant chart's points, drawn: a mark where each plots, and its name beside it.
 ///
-/// The names are the whole of this file. Points cluster — telling a cluster from a spread is what a
-/// quadrant chart is FOR — and a name drawn at a fixed offset from its own mark is a name drawn
-/// over its neighbour's. Each takes the first place clear of every mark and every word already
-/// settled, the field's own title, axis ends and corners INCLUDED. That is an order rather than a
-/// search: the same chart places the same names the same way every time.
+/// The names are the whole of this file: points cluster, and a name drawn at a fixed offset from
+/// its own mark is a name drawn over its neighbour's. Each takes the first place clear of every
+/// mark and every word already settled, the field's own title, axis ends and corners INCLUDED.
 @MainActor
 enum MermaidQuadrantPoints {
     static func dots(of field: MermaidQuadrantField) -> [CGRect] {
@@ -42,30 +40,37 @@ enum MermaidQuadrantPoints {
         return names
     }
 
-    /// The nearest standing place clear of everything settled so far, or its own mark where a
-    /// cluster leaves nothing free at all.
+    /// The nearest place clear of everything settled so far. A cluster can take every place at one
+    /// distance, so the search steps further OUT rather than giving up — a name that gave up on its
+    /// own mark would be squeezed to the width of a dot and drawn over it.
+    ///
+    /// The walk ends because `clear` is finite and each step stands further out than the last.
     private static func place(_ name: String, by dot: CGRect, clear: [CGRect]) -> CGRect {
         let size = CGSize(
             width: MermaidQuadrantField.width(of: name),
             height: MermaidQuadrantField.line,
         )
-        let tries = candidates(size, by: dot)
-        return tries.first { rect in !clear.contains { $0.intersects(rect) } } ?? dot
+        var step = 0
+        while true {
+            let tries = candidates(size, by: dot, at: step)
+            if let free = tries.first(where: { rect in !clear.contains { $0.intersects(rect) } }) {
+                return free
+            }
+            step += 1
+        }
     }
 
-    /// Where a name may stand, nearest first: under its mark, over it, then to each side, then a
-    /// line further out again.
-    private static func candidates(_ size: CGSize, by dot: CGRect) -> [CGRect] {
+    /// The four places a name may stand `step` lines out from its own mark: under it, over it, and
+    /// to each side.
+    private static func candidates(_ size: CGSize, by dot: CGRect, at step: Int) -> [CGRect] {
+        let out = MermaidMeasure.wordGap + size.height * CGFloat(step)
         let middle = dot.midX - size.width / 2
         let level = dot.midY - size.height / 2
-        return (0 ..< 3).flatMap { step -> [CGRect] in
-            let out = MermaidMeasure.wordGap + size.height * CGFloat(step)
-            return [
-                CGRect(origin: CGPoint(x: middle, y: dot.maxY + out), size: size),
-                CGRect(origin: CGPoint(x: middle, y: dot.minY - out - size.height), size: size),
-                CGRect(origin: CGPoint(x: dot.maxX + out, y: level), size: size),
-                CGRect(origin: CGPoint(x: dot.minX - out - size.width, y: level), size: size),
-            ]
-        }
+        return [
+            CGRect(origin: CGPoint(x: middle, y: dot.maxY + out), size: size),
+            CGRect(origin: CGPoint(x: middle, y: dot.minY - out - size.height), size: size),
+            CGRect(origin: CGPoint(x: dot.maxX + out, y: level), size: size),
+            CGRect(origin: CGPoint(x: dot.minX - out - size.width, y: level), size: size),
+        ]
     }
 }

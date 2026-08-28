@@ -6,9 +6,9 @@ struct MermaidRanks {
     /// Every node's measured box, by name. A dictionary and not a scan of the graph: this is asked
     /// once per node per rank, on every rank, and a linear lookup makes that quadratic.
     private let sizes: [String: CGSize]
-    /// An axis with no depth, used only to ask which way a size is measured — the real one is not
+    /// A grain with no depth, used only to ask which way a size is measured — the real one is not
     /// known until every rank has been measured with this.
-    let flat: MermaidAxis
+    let flat: MermaidGrain
     /// The extra room every gap gives an enclosure to close around its members without shutting
     /// over the node next door. Zero for a graph with no enclosure in it.
     let inset: CGFloat
@@ -18,7 +18,7 @@ struct MermaidRanks {
             graph.nodes.map { ($0.name, $0.size) },
             uniquingKeysWith: { first, _ in first },
         )
-        self.flat = MermaidAxis(direction: graph.direction, depth: 0)
+        self.flat = MermaidGrain(direction: graph.direction, depth: 0)
         self.inset = graph.groups.isEmpty ? 0 : MermaidMeasure.groupInset * 2
     }
 

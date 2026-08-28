@@ -24,14 +24,12 @@ extension MermaidQuadrant {
         switch word {
         case let .title(text):
             title = text
-        case let .axis(isVertical, axis):
-            if isVertical {
-                yAxis = axis
-            } else {
-                xAxis = axis
-            }
+        case let .xAxis(axis):
+            xAxis = axis
+        case let .yAxis(axis):
+            yAxis = axis
         case let .corner(corner, text):
-            corners[corner.rawValue - 1] = text
+            self[corner] = text
         case let .point(point):
             points.append(point)
         }

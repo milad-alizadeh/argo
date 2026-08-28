@@ -4,7 +4,7 @@ import Foundation
 ///
 /// The sizes arrive already measured on the graph — with the same prose metrics the paragraphs
 /// around the diagram are measured with, so a diagram sets at the feed's rhythm rather than
-/// floating at a scale of its own. Where they then go is `MermaidAxis`'s answer, which is what
+/// floating at a scale of its own. Where they then go is `MermaidGrain`'s answer, which is what
 /// makes the four directions one pass rather than four.
 ///
 /// An enclosure gets contiguity and wider gaps, not a lane of its own. A lane per group keeps every
@@ -14,18 +14,18 @@ import Foundation
 /// a follow-up behind this same seam (#861).
 struct MermaidPlacement {
     let boxes: [String: CGRect]
-    let axis: MermaidAxis
+    let grain: MermaidGrain
     /// The room the boxes alone take, before any enclosure is drawn around them.
     let size: CGSize
 }
 
 extension MermaidPlacement {
-    /// The rows laid out along their axis, each rank centred on the widest one.
+    /// The rows laid out along their grain, each rank centred on the widest one.
     static func of(_ graph: MermaidGraph, rows: [[String]]) -> Self {
         let ranks = MermaidRanks(graph: graph)
         let alongs = rows.map(ranks.along)
         let acrosses = rows.map(ranks.across)
-        let axis = MermaidAxis(
+        let grain = MermaidGrain(
             direction: graph.direction,
             depth: alongs.reduce(0, +) + ranks.rankStep * CGFloat(max(0, rows.count - 1)),
         )
@@ -36,7 +36,7 @@ extension MermaidPlacement {
             var across = (widest - acrosses[at]) / 2
             for name in row {
                 let size = ranks.size(of: name)
-                boxes[name] = axis.rect(
+                boxes[name] = grain.rect(
                     // Centred in its rank's own depth, so a tall box and a short one on the same
                     // rank hang off one line rather than off the rank's ceiling.
                     along: along + (alongs[at] - ranks.flat.along(of: size)) / 2,
@@ -49,10 +49,10 @@ extension MermaidPlacement {
         }
         return MermaidPlacement(
             boxes: boxes,
-            axis: axis,
-            size: axis.isVertical
-                ? CGSize(width: widest, height: axis.depth)
-                : CGSize(width: axis.depth, height: widest),
+            grain: grain,
+            size: grain.isVertical
+                ? CGSize(width: widest, height: grain.depth)
+                : CGSize(width: grain.depth, height: widest),
         )
     }
 }

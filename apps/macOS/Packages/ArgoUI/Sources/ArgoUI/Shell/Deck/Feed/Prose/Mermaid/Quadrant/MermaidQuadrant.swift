@@ -2,16 +2,12 @@ import Foundation
 
 /// A quadrant chart as its source wrote it: what the field is called, what each axis measures at
 /// both of its ends, what each of the four corners means, and the points plotted on it.
-///
-/// Everything is optional and nothing is ordered. A quadrant chart states facts ABOUT a field
-/// rather than a sequence of anything, so a source is a set of lines and the layout draws the same
-/// field whichever order they arrived in.
 struct MermaidQuadrant: Equatable, Sendable {
     var title = ""
     var xAxis = Axis()
     var yAxis = Axis()
     /// One per `Corner`, in `Corner.allCases` order — mermaid's numbering, not the order an eye
-    /// takes the corners in.
+    /// takes the corners in. Read and written through `subscript(_:)`, which owns the offset.
     var corners = ["", "", "", ""]
     var points: [Point] = []
 
@@ -32,6 +28,12 @@ struct MermaidQuadrant: Equatable, Sendable {
     /// Mermaid's own numbering of the corners: `quadrant-1` is the TOP RIGHT, and they run
     /// anticlockwise from there. Reading order would put `quadrant-1` top left and mirror every
     /// chart drawn.
+    /// What a corner says. The one place mermaid's numbering from one becomes an index from zero.
+    subscript(corner: Corner) -> String {
+        get { corners[corner.rawValue - 1] }
+        set { corners[corner.rawValue - 1] = newValue }
+    }
+
     enum Corner: Int, CaseIterable, Equatable, Sendable {
         case one = 1, two, three, four
 

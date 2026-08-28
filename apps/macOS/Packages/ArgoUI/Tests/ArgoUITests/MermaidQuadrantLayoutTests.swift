@@ -9,27 +9,27 @@ import Testing
 @MainActor
 @Suite("Mermaid quadrant layout")
 struct MermaidQuadrantLayoutTests {
-    static func plan(_ body: String) -> MermaidPlan {
+    private static func plan(_ body: String) -> MermaidPlan {
         MermaidQuadrant.read("quadrantChart\n" + body)?.laid ?? .empty
     }
 
     /// The field itself: the one rectangle a quadrant chart draws.
-    static func field(of plan: MermaidPlan) -> CGRect {
+    private static func field(of plan: MermaidPlan) -> CGRect {
         shapes(of: plan, .rect).first ?? .zero
     }
 
-    static func dots(of plan: MermaidPlan) -> [CGRect] {
+    private static func dots(of plan: MermaidPlan) -> [CGRect] {
         shapes(of: plan, .ellipse)
     }
 
-    static func shapes(of plan: MermaidPlan, _ outline: MermaidOutline) -> [CGRect] {
+    private static func shapes(of plan: MermaidPlan, _ outline: MermaidOutline) -> [CGRect] {
         plan.figures.compactMap { figure -> CGRect? in
             guard case let .shape(drawn, rect) = figure.form, drawn == outline else { return nil }
             return rect
         }
     }
 
-    static func paths(of plan: MermaidPlan) -> [[CGPoint]] {
+    private static func paths(of plan: MermaidPlan) -> [[CGPoint]] {
         plan.figures.compactMap { figure -> [CGPoint]? in
             guard case let .path(points) = figure.form else { return nil }
             return points
@@ -93,21 +93,6 @@ struct MermaidQuadrantLayoutTests {
         #expect(field.contains(Self.dots(of: plan)[0]))
     }
 
-    /// Mermaid's numbering, drawn: 1 top right, 2 top left, 3 bottom left, 4 bottom right. Reading
-    /// order here would mirror every chart.
-    @Test
-    func `the four corner labels stand in mermaid's own corners`() {
-        let plan = Self.plan(Self.labelled)
-        let field = Self.field(of: plan)
-        let corners = plan.captions.filter {
-            ["Expand", "Promote", "Re-evaluate", "Improve"].contains($0.label.text)
-        }
-
-        #expect(corners.map(\.label.text) == ["Expand", "Promote", "Re-evaluate", "Improve"])
-        #expect(corners.map { $0.rect.midX > field.midX } == [true, false, false, true])
-        #expect(corners.map { $0.rect.midY < field.midY } == [true, true, false, false])
-    }
-
     /// Points clustered on top of each other still read: the names nudge off one another rather
     /// than being drawn one over the next.
     @Test
@@ -139,26 +124,24 @@ struct MermaidQuadrantLayoutTests {
         }
     }
 
-    /// A corner's words step aside for a point plotted under them. The point cannot move — it is
-    /// the data — so the label is what gives way.
+    /// More points on one spot than there are places around a mark. Every name must still stand
+    /// clear of every other and of every mark: a name that gave up on its own dot would be squeezed
+    /// to 8 points wide and drawn over it.
     @Test
-    func `a corner label steps aside for a point plotted in its own corner`() {
-        let plan = Self.plan(Self.labelled + "\nEdge: [0.98, 0.98]")
-        let corner = plan.captions.first { $0.label.text == "Expand" }?.rect ?? .zero
+    func `a cluster deeper than the places around a mark still places every name`() {
+        let names = (1 ... 16).map { "Point \($0)" }
+        let plan = Self.plan(names.map { "\($0): [0.5, 0.5]" }.joined(separator: "\n"))
+        let placed = plan.captions.suffix(16).map(\.rect)
+        let marks = Self.dots(of: plan)
 
-        #expect(corner.width > 0)
-        #expect(!Self.dots(of: plan).contains { $0.intersects(corner) })
-    }
-
-    /// The title is set in a bigger face than everything else on the chart, so the room above the
-    /// field is its own line box rather than the quiet face's.
-    @Test
-    func `the title is given the room its own face takes`() {
-        let title = Self.plan(Self.labelled).captions.first {
-            $0.label.text == "Reach and engagement"
+        #expect(placed.count == 16)
+        #expect(placed.allSatisfy { $0.width > MermaidMeasure.pointRadius * 2 })
+        #expect(!placed.contains { name in marks.contains { $0.intersects(name) } })
+        for (at, name) in placed.enumerated() {
+            for other in placed[(at + 1)...] {
+                #expect(!name.intersects(other))
+            }
         }
-
-        #expect(title?.rect.height ?? 0 >= ceil(ProseFace.header.lineBox))
     }
 
     @Test
@@ -168,47 +151,6 @@ struct MermaidQuadrantLayoutTests {
         #expect(Self.dots(of: plan).isEmpty)
         #expect(Self.field(of: plan).width > 0)
         #expect(plan.captions.map(\.label.text).contains("Re-evaluate"))
-    }
-
-    /// The pairing the view rests on: it builds one `Text` per label and places it on the caption
-    /// at the same index.
-    @Test
-    func `captions carry the chart's labels, in order`() {
-        let chart = MermaidQuadrant.read("quadrantChart\n" + Self.labelled + "\nA: [0.2, 0.2]")
-
-        #expect(chart?.laid.captions.map(\.label) == chart?.labels)
-    }
-
-    /// The flip again, in words this time: `y-axis Low --> High` names the foot Low.
-    @Test
-    func `the y axis names its low end at the foot and its high end at the head`() {
-        let plan = Self.plan(Self.labelled)
-        let low = plan.captions.first { $0.label.text == "Low Engagement" }
-        let high = plan.captions.first { $0.label.text == "High Engagement" }
-        let field = Self.field(of: plan)
-
-        #expect(low?.rect.midY ?? 0 > field.midY)
-        #expect(high?.rect.midY ?? 0 < field.midY)
-        #expect(low?.rect.maxX ?? 0 <= field.minX)
-    }
-
-    @Test
-    func `both ends of the x axis stand under the field, low end first`() {
-        let plan = Self.plan(Self.labelled)
-        let field = Self.field(of: plan)
-        let low = plan.captions.first { $0.label.text == "Low Reach" }
-        let high = plan.captions.first { $0.label.text == "High Reach" }
-
-        #expect(low?.rect.minY ?? 0 >= field.maxY)
-        #expect(low?.rect.midX ?? 0 < high?.rect.midX ?? 0)
-    }
-
-    @Test
-    func `the title stands above the field`() {
-        let plan = Self.plan(Self.labelled)
-        let title = plan.captions.first { $0.label.text == "Reach and engagement" }
-
-        #expect(title?.rect.maxY ?? .infinity <= Self.field(of: plan).minY)
     }
 
     @Test

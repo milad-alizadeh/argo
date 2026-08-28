@@ -1,11 +1,9 @@
 import Foundation
 
-/// Which way a layered diagram's ranks grow, and how a rank's own line runs across them.
-///
-/// The direction changes the AXIS the layout works on, never the algorithm. Everything downstream
-/// speaks in `along` — how deep into the ranks — and `across` — where in its own rank — and this is
-/// the one type that turns that pair into a point on the screen.
-struct MermaidAxis: Equatable, Sendable {
+/// Which way a layered diagram's ranks grow, and how a rank's own line runs across them. Everything
+/// downstream speaks in `along` and `across`, and this is the one type that turns that pair into a
+/// point on the screen.
+struct MermaidGrain: Equatable, Sendable {
     let direction: MermaidDirection
     /// How far the ranks reach altogether, which is what a reversed direction counts back from.
     let depth: CGFloat
@@ -21,7 +19,7 @@ struct MermaidAxis: Equatable, Sendable {
     }
 }
 
-extension MermaidAxis {
+extension MermaidGrain {
     /// How much of the rank axis a box of this size takes.
     func along(of size: CGSize) -> CGFloat {
         isVertical ? size.height : size.width

@@ -4,7 +4,8 @@ import Foundation
 /// this reader has no rule for, which leaves the whole block the fence it is today (#859).
 enum MermaidQuadrantWord: Equatable {
     case title(String)
-    case axis(isVertical: Bool, MermaidQuadrant.Axis)
+    case xAxis(MermaidQuadrant.Axis)
+    case yAxis(MermaidQuadrant.Axis)
     case corner(MermaidQuadrant.Corner, String)
     case point(MermaidQuadrant.Point)
 
@@ -12,9 +13,9 @@ enum MermaidQuadrantWord: Equatable {
         if let text = rest(after: "title", of: line) {
             return .title(text)
         }
-        for (keyword, isVertical) in [("x-axis", false), ("y-axis", true)] {
+        for (keyword, read) in [("x-axis", Self.xAxis), ("y-axis", Self.yAxis)] {
             guard let text = rest(after: keyword, of: line) else { continue }
-            return .axis(isVertical: isVertical, axis(of: text))
+            return read(axis(of: text))
         }
         for corner in MermaidQuadrant.Corner.allCases {
             guard let text = rest(after: "quadrant-\(corner.rawValue)", of: line) else { continue }

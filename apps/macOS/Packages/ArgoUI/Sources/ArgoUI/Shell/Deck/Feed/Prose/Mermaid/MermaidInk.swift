@@ -18,8 +18,6 @@ struct MermaidInk: Sendable {
         // A boundary and not a hue of its own: what separates one slice from the slice beside it
         // is the same lit edge every other figure is bounded by.
         case .series: palette.edge.subtle
-        // The hairline, which is the quietest rule the contract draws — an axis has to be there
-        // without being read.
         case .axis: palette.edge.hairline
         }
     }

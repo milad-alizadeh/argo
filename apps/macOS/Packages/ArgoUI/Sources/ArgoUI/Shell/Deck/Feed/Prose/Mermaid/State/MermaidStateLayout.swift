@@ -114,7 +114,7 @@ extension MermaidState.Figure {
     private static func bar(on direction: MermaidDirection) -> CGSize {
         let length = MermaidMeasure.barLength
         let depth = MermaidMeasure.barDepth
-        guard MermaidAxis(direction: direction, depth: 0).isVertical else {
+        guard MermaidGrain(direction: direction, depth: 0).isVertical else {
             return CGSize(width: depth, height: length)
         }
         return CGSize(width: length, height: depth)

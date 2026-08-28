@@ -1,9 +1,6 @@
 import Foundation
 
 /// The square a quadrant chart plots on, and everything placed against it.
-///
-/// One value rather than a rect threaded through every pass, because the field is what the title,
-/// the axis words, the corners and the points are all measured from.
 @MainActor
 struct MermaidQuadrantField {
     let chart: MermaidQuadrant
@@ -27,15 +24,13 @@ struct MermaidQuadrantField {
 
     /// Where a point on the 0…1 scale is drawn. Two reversals in one expression and both
     /// deliberate: y runs UP the chart and DOWN the plan, and the plotted area is held a mark's own
-    /// radius inside the field so a point at 0 or at 1 is a whole dot rather than half of one lying
-    /// on the border.
+    /// radius inside the field so a point at 0 or at 1 is a whole dot inside it.
     func plot(_ at: CGPoint) -> CGPoint {
         let inner = rect.insetBy(dx: MermaidMeasure.pointRadius, dy: MermaidMeasure.pointRadius)
         return CGPoint(x: inner.minX + at.x * inner.width, y: inner.maxY - at.y * inner.height)
     }
 
-    /// The border and the two rules through the centre — the axes themselves, in the one role
-    /// every diagram type's axis takes.
+    /// The border and the two rules through the centre — the axes themselves, in the axis role.
     var figures: [MermaidFigure] {
         [
             MermaidFigure(form: .shape(.rect, rect), role: .axis),
@@ -69,11 +64,16 @@ struct MermaidQuadrantField {
         title.isEmpty ? 0 : ceil(ProseFace.header.lineBox) + MermaidMeasure.wordGap
     }
 
-    /// How wide the field is drawn: its own measure, or as much again as its widest corner asks
-    /// for, so four corner labels never meet in the middle.
+    /// How wide the field is drawn. Every word measured against it asks for room, because each is
+    /// given a fixed share of the field and a share too narrow is a word wrapped inside a one-line
+    /// box: a corner and an axis end each take half the field, and the title takes all of it.
     private static func side(of chart: MermaidQuadrant) -> CGFloat {
-        let widest = width(of: chart.corners) + MermaidMeasure.groupInset * 2
-        return max(MermaidMeasure.fieldSide, widest * 2)
+        [
+            MermaidMeasure.fieldSide,
+            (width(of: chart.corners) + MermaidMeasure.groupInset * 2) * 2,
+            width(of: [chart.xAxis.start, chart.xAxis.end]) * 2,
+            ceil(ProseMetrics.width(of: chart.title, in: .header)),
+        ].max() ?? MermaidMeasure.fieldSide
     }
 
     /// How wide one of the chart's quiet words runs, and how wide the widest of several does.
