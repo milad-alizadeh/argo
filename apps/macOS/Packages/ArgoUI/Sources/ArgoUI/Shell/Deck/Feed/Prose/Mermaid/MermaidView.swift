@@ -208,3 +208,32 @@ private struct MermaidPreview: View {
         MermaidPreview(source: "pie\n  \"Read\" : 0\n  \"Write\" : 0")
     }
 }
+// A field labelled everywhere it can be, with its points clustered where a chart is read closest.
+#Preview("Mermaid — a quadrant chart") {
+    MermaidPreview(source: """
+    quadrantChart
+      title Where the work stands
+      x-axis Cheap --> Costly
+      y-axis Rare --> Common
+      quadrant-1 Worth the work
+      quadrant-2 Do these first
+      quadrant-3 Leave for later
+      quadrant-4 Hard to justify
+      Flowcharts: [0.82, 0.94]
+      Sequence: [0.6, 0.78]
+      Pie: [0.15, 0.55]
+      Quadrant: [0.2, 0.5]
+      Mindmap: [0.24, 0.46]
+    """)
+}
+
+// The edges of the scale, and a chart saying nothing about its own axes.
+#Preview("Mermaid — a quadrant chart's edges") {
+    MermaidPreview(source: """
+    quadrantChart
+      Origin: [0, 0]
+      Far: [1, 1]
+      Left: [0, 1]
+      Right: [1, 0]
+    """)
+}

@@ -50,6 +50,10 @@ enum MermaidRole: Equatable, Sendable {
     case edge
     /// A mark the diagram itself calls out.
     case emphasis
+    /// The ink of an AXIS: the scale a diagram is measured against rather than a thing it is
+    /// about — a plotted field's border, the rules dividing it, a tick, and the words naming
+    /// either end of it. Quieter than a node's edge, because an axis is read past rather than at.
+    case axis
     /// An aside: a title, a legend, anything said beside the diagram rather than in it.
     case note
     /// The nth entry of a categorical series — a pie's slice, a bar, a Gantt's section.

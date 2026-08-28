@@ -41,5 +41,11 @@ extension SpecimenRegistry {
         SpecimenEntry("feedMermaidStateChoice") {
             MarkdownSpecimen(text: MermaidSpecimen.stateChoice)
         },
+        // A quadrant chart fully labelled with its points clustered, and one plotting the edges of
+        // the scale — the two states the flip and the nudging are actually looked at in (#868).
+        SpecimenEntry("feedMermaidQuadrant") { MarkdownSpecimen(text: MermaidSpecimen.quadrant) },
+        SpecimenEntry("feedMermaidQuadrantEdges") {
+            MarkdownSpecimen(text: MermaidSpecimen.quadrantEdges)
+        },
     ]
 }

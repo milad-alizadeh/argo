@@ -18,6 +18,9 @@ struct MermaidInk: Sendable {
         // A boundary and not a hue of its own: what separates one slice from the slice beside it
         // is the same lit edge every other figure is bounded by.
         case .series: palette.edge.subtle
+        // The hairline, which is the quietest rule the contract draws — an axis has to be there
+        // without being read.
+        case .axis: palette.edge.hairline
         }
     }
 
@@ -25,7 +28,7 @@ struct MermaidInk: Sendable {
     func ground(of role: MermaidRole) -> ArgoColor? {
         switch role {
         case .node: palette.surface.raised
-        case .edge, .emphasis, .note: nil
+        case .edge, .emphasis, .note, .axis: nil
         case let .series(index): palette.series.hue(index)
         }
     }
@@ -36,6 +39,7 @@ struct MermaidInk: Sendable {
         switch role {
         case .node: palette.text.primary
         case .edge, .note: palette.text.secondary
+        case .axis: palette.text.tertiary
         case .emphasis: palette.interaction.accent
         // A word in a series role is written ON that series' fill, which is the one ink the ramp
         // holds for words on a colour rather than on a surface.

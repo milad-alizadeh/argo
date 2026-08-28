@@ -111,6 +111,11 @@ enum MermaidMeasure {
     /// has to read as a bar at a glance, which needs both a length and a real weight.
     static let barLength: CGFloat = 64
     static let barDepth: CGFloat = 6
+    /// The narrowest a quadrant chart's field is drawn, before a corner's own words widen it, and
+    /// how big a point plotted on it is marked. Both measures: a field much under this cannot hold
+    /// four corner labels and the points between them, and a mark much under that reads as dirt.
+    static let fieldSide: CGFloat = 260
+    static let pointRadius: CGFloat = 4
 
     /// The face an edge's own word is set in, and the face a `subgraph`'s title takes. Quieter than
     /// the prose the nodes are set in, because both are said ABOUT the diagram rather than in it.
