@@ -43,20 +43,41 @@ struct WorkPanesSpecimen: View {
     /// Seeded the same way, and the reason a folded parent can be SHOT: everything opens open, so
     /// `collapsed.png` is a state nobody could reach without clicking (#814).
     @State private var shut: Set<Int>
+    /// Which chart the deck is scoped to, and which parents are on `Map` (#335). Seeded on the same
+    /// terms as the fold: a chart's Route is a state the shipping shell can be CLICKED into, and a
+    /// specimen names a starting state rather than freezing one.
+    @State private var chart: Int?
+    @State private var mapped: Set<Int>
 
     init(reading: WorkReading, opening: WorkView = .allOpen, folded: Set<Int> = []) {
         self.reading = reading
         _view = State(initialValue: opening)
         _shut = State(initialValue: folded)
         _ticket = State(initialValue: reading.showing)
+        _chart = State(initialValue: nil)
+        _mapped = State(initialValue: [])
+    }
+
+    /// The room opened straight onto one chart, in one presentation. Its own init rather than two
+    /// more defaulted parameters above: the two are one act, and every render that names a chart
+    /// names a presentation with it.
+    init(reading: WorkReading, chart: Int, presentation: WorkPresentation) {
+        self.reading = reading
+        _view = State(initialValue: .allOpen)
+        _shut = State(initialValue: [])
+        _ticket = State(initialValue: reading.showing)
+        _chart = State(initialValue: chart)
+        _mapped = State(initialValue: presentation == .map ? [chart] : [])
     }
 
     var body: some View {
         let work = WorkRoom(
-            room: WorkRoomProjection.room(from: reading, in: view),
+            room: WorkRoomProjection.room(from: reading, in: view, chart: chart),
             cockpitRoom: $cockpitRoom,
             ticket: $ticket,
             view: $view,
+            chart: $chart,
+            mapped: $mapped,
             shut: $shut,
         )
 

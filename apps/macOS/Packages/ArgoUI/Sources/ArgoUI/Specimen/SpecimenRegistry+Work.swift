@@ -50,6 +50,36 @@ extension SpecimenRegistry {
         // The toolbar row alone, in its three states (#816). At rest it is read off `workRoom`
         // above, over the panes it places its controls against; these two are the vacancies, which
         // differ in nothing BUT the row.
+        // The Route, and the same chart as its tree (#335). `route.png` is shot at a 1600 window
+        // rather than 1280, because the canvas widens when the work needs room rather than
+        // compressing to fit.
+        SpecimenEntry("chartRoute") {
+            WorkPanesSpecimen(
+                reading: WorkFixture.reading,
+                chart: WorkFixture.chart,
+                presentation: .map,
+            )
+        },
+        SpecimenEntry("chartTree") {
+            WorkPanesSpecimen(
+                reading: WorkFixture.reading,
+                chart: WorkFixture.chart,
+                presentation: .tree,
+            )
+        },
+        // Day one: every open child blocked, the line at the LEFT WALL with all of the work ahead
+        // of it. The state that must not read as finished, which is why waiting is a quiet neutral
+        // rather than red.
+        SpecimenEntry("dayOneRoute") {
+            RouteCanvasSpecimen(room: WorkFixture.dayOneChartRoom)
+        },
+        // The same chart finished: the line has walked past all of the work.
+        SpecimenEntry("resolvedRoute") {
+            RouteCanvasSpecimen(room: WorkFixture.resolvedChartRoom)
+        },
+        // The toggle alone, both positions. A written union of two, and the one control this ticket
+        // adds to the room.
+        SpecimenEntry("roomPresentation") { RoomPresentationSpecimen() },
         SpecimenEntry("workToolbar") { WorkToolbarSpecimen(reading: WorkFixture.reading) },
         SpecimenEntry("emptyWorkToolbar") {
             WorkToolbarSpecimen(reading: WorkFixture.answeredEmpty)

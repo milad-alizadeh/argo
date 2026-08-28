@@ -7,8 +7,11 @@ what it deliberately left inline. One row per component the assembled screen for
 and the ticket (#812), the nesting that turned the list into a tree (#814), the ticket's fact strip
 and its three sections (#815), the room's toolbar row (#816), the Next-up hero and its four tiers
 (#817), the room's two vacancy pages (#818), and the priority bands over the backlog's roots
-(#819). The design freezes 31 names across the whole room; the names below are the ones these
-tickets built. The rest (the Route) belongs to its own ticket and is absent rather than stubbed.
+(#819), and the Route's toggle, placement and three zones (#335). The design freezes 31 names
+across the whole room; the names below are the ones these tickets built. What remains of the Route
+— its edges (#336), its derived spacing (#337), its waiting and dead-end and cycle states (#338),
+its captions and legend (#339), and its zoom, Fit and selection (#340) — belongs to those tickets
+and is absent rather than stubbed.
 
 The tables below cover #812, #814, #815 and #818; #817's and #816's own sections are at the foot.
 
@@ -206,7 +209,80 @@ draws it on the Children and Blocked-by headings, so the disclaimer became the l
 
 The render carries the whole room, and `workRoom` now reproduces all of it: the sidebar, the
 backlog banded and nested (folded in `collapsedWorkBacklog`), the toolbar row, the hero and the
-ticket pane. The Route is the one thing still absent, because it is #334's.
+ticket pane. The Route is the deck's other presentation and has its own renders, below.
+
+## The Route (#335)
+
+### Extracted
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `RoomPresentation` | atom | `ArgoUI/Shell/Work/Route/` | `presentation: Binding<WorkPresentation>` | stock `Picker(.segmented)` | frozen name in `cockpit-work-room.md` |
+| `ChartDeck` | organism | `ArgoUI/Shell/Work/Route/` | `chart: ChartScope`, `presentation: Binding<WorkPresentation>`, `tree: ScopedTree` | `RoomPresentation`, `RouteCanvas`, `ScopedTree`, `ArgoRule` | `.route` / `.route-head` |
+| `RouteCanvas` | organism | `ArgoUI/Shell/Work/Route/` | `route: Route` | `RouteStop` | `.route-canvas` |
+| `RouteStop` | molecule | `ArgoUI/Shell/Work/Route/` | `stop: Route.Stop` | stock `Circle` + two `Text` | the study's `<g>` per node |
+| `ScopedTree` | organism | `ArgoUI/Shell/Work/Route/` | `rows: [Row]`, `selection: Binding<Int?>`, `shut: Binding<Set<Int>>` | `BacklogOutline` | none — the `Tree` half of the toggle |
+
+**Why each was extracted.** `RoomPresentation` is a frozen cross-screen name the design already
+settled. `RouteStop` is repetition — one per child, and there are forty on a large chart.
+`RouteCanvas` and `ChartDeck` carry states the happy path does not render (an empty line, a chart
+with no Route at all) and are what the specimens mount. `ScopedTree` exists because the `Tree` half
+had to be a component before the toggle had two sides to switch between.
+
+### Left inline
+
+- **The NOW line** — a `Rectangle` in one token fill, single-use and single-state. A `NowLine`
+  component would be a primitive with hardcoded children, which is the case the rule says not to
+  extract. It lives in `RouteCanvas`.
+- **The head** — crumb, title and the toggle in one `HStack`, inside `ChartDeck`. #340 adds zoom and
+  a Fit action to it; if that head grows a second caller it earns its own file then, and not before.
+
+### Two divergences from `route.png`, both recorded at their definition
+
+- **The label block is 260 on a 284 column, not the study's 132 on 166.** The study's titles are
+  invented and short — `This prototype`, `Read path`, `Node tree` — and over this repo's own tickets
+  every one of them truncated inside three words. #334's whole layout finding is that legibility is
+  decided by what a node *carries*, so the block is widened to where the fixture's titles read, on
+  the same grounds the backlog is 520 rather than 480. The step is now DERIVED from the block plus
+  its clearance, so the two cannot disagree; #337 replaces the chosen width with a measured one and
+  the arithmetic around it does not change.
+- **The NOW line's inset is half the column clearance, not a chosen 44.** At the widened block a
+  fixed 44 put the line through the behind-the-line titles. Half the gutter cannot, by construction.
+
+### The tag is the ticket's type, else its first label
+
+#335 asks for "the ticket's type or triage label" as the tag. There is no triage vocabulary in
+Swift and there will not be one: a `prd` label is somebody's topic (#160), and reaching for a
+triage-shaped label by pattern would be Argo ranking another tracker's words. So the tag is the
+provider's own type where it typed one, and the first label it served otherwise. It renders on the
+machine line — `#272 · Todo · task` — rather than as a `LabelChip`, because a chip on every one of
+forty dots would spend on the tag what the design spends on the title.
+
+### The chart row is what opens a Route
+
+`route.png` shows the toggle only in the Route's own head, and `deep.png` — the Tree over the same
+parent — shows no toggle anywhere, so nothing in the approved set reaches `Map` by clicking. The
+entry point the design names is the `CHARTS` rail row, which `WorkSidebar` left deliberately
+untagged with the note that "a chart opens the Route (#334), which is not built". #335 tags it: the
+rail's selection widens from `WorkView` to `WorkSelection`, and a chart scopes the deck to that
+parent. `deep.png` is untouched, because the backlog's own selection still draws the two panes.
+
+The room's toolbar EMPTIES for a chart, per the design — a backlog heading and a ticket count over a
+progress axis would be naming a pane that is not on screen. Decided in `WorkRoom.toolbar` rather
+than in `WorkToolbarProjection`, which is handed the room and the view and would need a third
+reading to know what replaced them.
+
+### The renders
+
+`chartRoute` and `chartTree` are the two presentations of one chart, both at a 1600×1000 window
+rather than 1280 — `route.png` is shot wide for the same reason, because the canvas widens when the
+work needs room rather than compressing to fit. `dayOneRoute` and `resolvedRoute` are the two ends
+of the axis: everything blocked with the line at the left wall, and the line walked past all of the
+work. Both are a whole backlog rewritten, so neither is reachable from the fixture the shell is
+fed. `roomPresentation` is the toggle alone, in both positions.
+
+Absent from `route.png` and correctly so: the blocker-to-dependent edges (#336), the three zone
+captions and the fog and destination mark and the legend (#339), and the zoom controls (#340).
 
 ## The two vacancies (#818)
 

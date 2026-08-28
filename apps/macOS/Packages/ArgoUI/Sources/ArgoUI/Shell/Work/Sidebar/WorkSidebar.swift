@@ -14,10 +14,14 @@ struct WorkSidebar: View {
     /// Which view is open. A binding and not this pane's own state: it decides which rows the DECK
     /// draws, so the room is derived from it before either half is built.
     @Binding var view: WorkView
+    /// Which chart the deck is scoped to, and `nil` on a view (#335). Held APART from the view
+    /// rather than folded into one selection, so leaving a chart puts the reader back on the rows
+    /// they left rather than on `All open`.
+    @Binding var chart: Int?
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            List(selection: $view) {
+            List(selection: selection) {
                 RoomStrip(selection: $cockpitRoom)
                     .previewSafeListRow()
                 backlogGroup
@@ -31,11 +35,29 @@ struct WorkSidebar: View {
         }
     }
 
+    /// The rail's one selection, standing for the two facts held above it. A derived binding rather
+    /// than a third piece of state: a `List` selects one row, and a second stored selection is how
+    /// a highlighted chart comes to disagree with the rows in the pane beside it.
+    private var selection: Binding<WorkSelection> {
+        Binding(
+            get: { WorkSelection(view: view, chart: chart) },
+            set: { choice in
+                switch choice {
+                case let .view(next):
+                    view = next
+                    chart = nil
+                case let .chart(parent):
+                    chart = parent
+                }
+            },
+        )
+    }
+
     private var backlogGroup: some View {
         Section {
             ForEach(room.views) { reading in
                 ViewRow(symbol: reading.id.symbol, name: reading.id.name, count: reading.count)
-                    .tag(reading.id)
+                    .tag(WorkSelection.view(reading.id))
             }
         } header: {
             GroupLabel("Backlog")
@@ -59,14 +81,16 @@ struct WorkSidebar: View {
     /// One row per PRD-shaped parent — the entry point to its Route. Absent rather than empty: a
     /// group heading over nothing says a chart is missing.
     ///
-    /// Deliberately UNTAGGED: a chart opens the Route (#334), which is not built, and the list's
-    /// selection is a `WorkView`. A tag here would make a row look selectable and then filter the
-    /// backlog to something nobody asked for.
+    /// TAGGED since #335, which is what made the row mean something: selecting it scopes the deck
+    /// to that parent and offers `Present as: Tree | Map`. It stood untagged through #814 because
+    /// the list's selection was a `WorkView` and the Route was not built, so a row that looked
+    /// selectable would have filtered the backlog to something nobody asked for.
     @ViewBuilder private var chartsGroup: some View {
         if !room.charts.isEmpty {
             Section {
                 ForEach(room.charts) { chart in
                     ViewRow(symbol: ArgoSymbol.workRoom, name: chart.name, count: chart.count)
+                        .tag(WorkSelection.chart(chart.id))
                 }
             } header: {
                 GroupLabel("Charts")
@@ -78,8 +102,9 @@ struct WorkSidebar: View {
 #Preview("Work sidebar") {
     @Previewable @State var room = CockpitRoom.work
     @Previewable @State var view = WorkView.allOpen
+    @Previewable @State var chart: Int?
 
-    WorkSidebar(room: WorkFixture.room, cockpitRoom: $room, view: $view)
+    WorkSidebar(room: WorkFixture.room, cockpitRoom: $room, view: $view, chart: $chart)
         .frame(width: ArgoLayout.sidebarMinimumWidth, height: 520)
         .argoAppearance()
 }
@@ -87,11 +112,13 @@ struct WorkSidebar: View {
 #Preview("Work sidebar — nothing bound") {
     @Previewable @State var room = CockpitRoom.work
     @Previewable @State var view = WorkView.allOpen
+    @Previewable @State var chart: Int?
 
     WorkSidebar(
         room: WorkRoomProjection.room(from: WorkFixture.unbound),
         cockpitRoom: $room,
         view: $view,
+        chart: $chart,
     )
     .frame(width: ArgoLayout.sidebarMinimumWidth, height: 520)
     .argoAppearance()

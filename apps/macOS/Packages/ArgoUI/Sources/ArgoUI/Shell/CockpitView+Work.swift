@@ -22,10 +22,14 @@ extension CockpitView {
         )
 
         return WorkRoom(
-            room: WorkRoomProjection.room(from: reading, in: navigation.workView),
+            room: WorkRoomProjection.room(
+                from: reading, in: navigation.workView, chart: navigation.workChart,
+            ),
             cockpitRoom: $navigation.room,
             ticket: $navigation.ticket,
             view: $navigation.workView,
+            chart: $navigation.workChart,
+            mapped: $navigation.mappedParents,
             shut: $navigation.shutParents,
             connect: { actions.openProjectPanel(presentation.activeProjectID) },
         )

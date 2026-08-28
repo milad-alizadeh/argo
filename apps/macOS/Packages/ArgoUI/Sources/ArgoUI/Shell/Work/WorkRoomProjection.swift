@@ -21,6 +21,9 @@ enum WorkRoomProjection {
         /// What the sidebar's hero states. Absent with nothing bound, where the room hides whole —
         /// a backlog-clear sentence under an unbound provider would answer a question nobody asked.
         let nextUp: NextUp?
+        /// The chart the deck is SCOPED to, and `nil` on a view — where the deck draws the backlog
+        /// and the ticket beside it, exactly as it did (#335).
+        let chart: ChartScope?
 
         func view(_ kind: WorkView) -> ViewReading? {
             views.first { $0.id == kind }
@@ -44,7 +47,7 @@ enum WorkRoomProjection {
         static func vacant(in project: String? = nil) -> Room {
             Room(
                 views: [], charts: [], provider: nil, backlog: [], ticket: nil, project: project,
-                hasOpenWork: false, nextUp: nil,
+                hasOpenWork: false, nextUp: nil, chart: nil,
             )
         }
     }
@@ -98,11 +101,16 @@ enum WorkRoomProjection {
     /// With no provider bound the room is VACANT rather than empty — no views, no list, no ticket
     /// (#272). Four views all reading zero would say the backlog is clear, which is a claim nobody
     /// has the standing to make when nobody was asked.
-    static func room(from reading: WorkReading, in view: WorkView = .allOpen) -> Room {
+    static func room(from reading: WorkReading, in view: WorkView = .allOpen, chart: Int? = nil)
+        -> Room {
         guard reading.provider != nil else { return .vacant(in: reading.project) }
         let open = reading.items.filter { $0.closure == .open }
         let closed = Set(reading.items.filter { $0.closure != .open }.map(\.number))
-        let shown = items(of: open, in: view, claimed: reading.claimed)
+        // Scoped to the chart where the rail is on one, and to the view otherwise. The view is
+        // still WHAT IT WAS while a chart is up — the rail's counts go on stating it, and leaving
+        // the chart puts the reader back on the rows they left (#335).
+        let shown = chart.map { scoped(open, to: $0) }
+            ?? items(of: open, in: view, claimed: reading.claimed)
         return Room(
             views: views(of: open, claimed: reading.claimed),
             charts: charts(of: reading, open: open),
@@ -114,6 +122,7 @@ enum WorkRoomProjection {
             // Over the whole open set, never the view on screen: the hero answers "what should I
             // pick up", and opening `Blocked` must not turn that into "nothing is unblocked".
             nextUp: reading.nextUp(of: open),
+            chart: chartScope(chart, in: reading),
         )
     }
 }
