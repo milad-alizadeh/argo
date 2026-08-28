@@ -1,8 +1,8 @@
 import Foundation
 
 /// The diagrams a reviewer and CI actually look at — the shapes of graph a layered layout has to
-/// get right (#861), and the shapes of exchange a sequence layout has to (#862), each written the
-/// way an agent really writes one.
+/// get right (#861), the shapes of exchange a sequence layout has to (#862) and the shapes of tree
+/// a mindmap has to (#867), each written the way an agent really writes one.
 ///
 /// Fences and not models: a specimen that built a `MermaidFlowchart` by hand would prove the layout
 /// and skip the reader, and the reader is half of what each of them added.
@@ -115,6 +115,48 @@ enum MermaidSpecimen {
       opt the branch is stale
         Land->>Author: rebase first
       end
+    ```
+    """
+
+    /// Three branches and four levels, indented at a width that CHANGES on the way down — which is
+    /// what says the nesting came from the columns rather than from a divisor. Two nodes carry a
+    /// break, one carries an icon and one a class (#867).
+    nonisolated static let mindmap = """
+    How a mermaid fence becomes a diagram:
+
+    ```mermaid
+    mindmap
+      root((Argo))
+        Reading
+            Source text
+            Model
+              Nodes and edges
+        Layout
+          Ranks
+          Routes
+            Elbows and<br/>arrowheads
+        Drawing
+          ::icon(fa fa-pen)
+          One canvas
+          Real Text<br/>over it
+          The overview lane
+          :::urgent
+    ```
+    """
+
+    /// Every figure a mindmap node can be drawn as, beside the others it has to be told apart from
+    /// — the pair a reader has to distinguish at a glance is the bang and the cloud.
+    nonisolated static let mindmapShapes = """
+    The shapes a mindmap spells:
+
+    ```mermaid
+    mindmap
+      root((Circle))
+        a[Square]
+        b(Rounded)
+        c))Bang((
+        d)Cloud(
+        e{{Hexagon}}
     ```
     """
 }

@@ -14,7 +14,8 @@ extension MermaidOutline {
         switch self {
         case .subroutine: Self.subroutine(in: rect)
         case .cylinder: Self.cylinder(in: rect, lidded: true)
-        case .rect, .rounded, .enclosure, .capsule, .ellipse, .diamond, .hexagon, .flag:
+        case .rect, .rounded, .enclosure, .capsule, .ellipse, .diamond, .hexagon, .flag,
+             .bang, .cloud:
             ground(in: rect)
         }
     }
@@ -31,6 +32,8 @@ extension MermaidOutline {
         case .hexagon: Self.hexagon(in: rect)
         case .flag: Self.flag(in: rect)
         case .cylinder: Self.cylinder(in: rect, lidded: false)
+        case .bang: Self.bang(in: rect)
+        case .cloud: Self.cloud(in: rect)
         }
     }
 

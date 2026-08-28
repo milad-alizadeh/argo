@@ -22,6 +22,10 @@ enum MermaidOutline: Equatable, Hashable, Sendable {
     case flag
     /// A drum standing on its end — a rect with an elliptical lid.
     case cylinder
+    /// A starburst: mermaid's `))bang((`.
+    case bang
+    /// A run of bumps around a soft body: mermaid's `)cloud(`.
+    case cloud
     /// The frame a `subgraph` is drawn as, at its own softer corner.
     case enclosure
 }

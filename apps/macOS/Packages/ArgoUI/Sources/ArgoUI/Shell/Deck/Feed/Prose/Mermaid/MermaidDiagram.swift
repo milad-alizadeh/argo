@@ -15,6 +15,7 @@ struct MermaidDiagram: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
         case flowchart(MermaidFlowchart)
         case sequence(MermaidSequence)
+        case mindmap(MermaidMindmap)
     }
 
     /// The diagram this source draws, or `nil` where nothing here can read it — an unsupported
@@ -30,6 +31,9 @@ struct MermaidDiagram: Equatable, Sendable {
         if let sequence = MermaidSequence.read(source) {
             return MermaidDiagram(source: source, kind: .sequence(sequence))
         }
+        if let mindmap = MermaidMindmap.read(source) {
+            return MermaidDiagram(source: source, kind: .mindmap(mindmap))
+        }
         return nil
     }
 
@@ -39,6 +43,7 @@ struct MermaidDiagram: Equatable, Sendable {
         switch kind {
         case let .flowchart(flowchart): flowchart.labels
         case let .sequence(sequence): sequence.labels
+        case let .mindmap(mindmap): mindmap.labels
         }
     }
 
@@ -53,6 +58,7 @@ struct MermaidDiagram: Equatable, Sendable {
         switch kind {
         case let .flowchart(flowchart): flowchart.laid
         case let .sequence(sequence): sequence.laid
+        case let .mindmap(mindmap): mindmap.laid
         }
     }
 }
