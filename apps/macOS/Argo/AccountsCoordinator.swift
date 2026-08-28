@@ -1,3 +1,4 @@
+import AppKit
 import ArgoEngine
 import ArgoUI
 import Foundation
@@ -28,7 +29,7 @@ final class AccountsCoordinator {
     /// `private`: `private` in Swift is file-scoped.
     let accounts: AccountRegistryStore
     let bindings: ProjectBindings
-    let authorization: GitHubAuthorization
+    let authorization: ProviderAuthorization
     /// What Argo has observed about each Binding's connection. Live and unpersisted, so a launch
     /// opens on what it can see rather than on what yesterday could.
     let health = ConnectionHealthLedger()
@@ -63,9 +64,9 @@ final class AccountsCoordinator {
         let store = AccountRegistryStore(bindings: ProjectBindingIndex(projects: projects))
         self.accounts = store
         self.bindings = ProjectBindings(projects: projects, accounts: store)
-        self.authorization = GitHubAuthorization(accounts: store)
+        self.authorization = ProviderAuthorization(accounts: store)
         self.poll = WorkItemPoll(
-            port: GitHubWorkItems(), health: health, items: workItemLedger,
+            port: ProviderWorkItems(), health: health, items: workItemLedger,
         )
     }
 

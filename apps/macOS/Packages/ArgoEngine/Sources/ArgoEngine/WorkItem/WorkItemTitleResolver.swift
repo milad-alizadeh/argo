@@ -4,14 +4,22 @@ import Foundation
 /// leaves each one where the next launch will find it (#745).
 public actor WorkItemTitleResolver {
     private let gitHub: GitHubWorkItemTitles
+    private let linear: LinearWorkItemTitles
     private let annotations: SessionAnnotationStore
     /// What each number settled at this launch. Only a SETTLED answer lands here: a read that
     /// established nothing is left out, so one offline moment at launch does not cost that ticket
     /// its name until the next one.
     private var settled: [Int: TicketReading] = [:]
 
-    public init(gitHub: GitHubWorkItemTitles, annotations: SessionAnnotationStore) {
-        self.gitHub = gitHub
+    /// Both adapters, not one per resolver: a Session's ticket is resolved through whatever
+    /// Binding its Project holds, and which provider that is changes per Project rather than per
+    /// launch.
+    public init(
+        titles: WorkItemTitleAdapters = WorkItemTitleAdapters(),
+        annotations: SessionAnnotationStore,
+    ) {
+        self.gitHub = titles.gitHub
+        self.linear = titles.linear
         self.annotations = annotations
     }
 
@@ -39,11 +47,8 @@ public actor WorkItemTitleResolver {
     }
 
     /// Which provider's adapter answers, decided here and nowhere else. An exhaustive `switch`, so
-    /// a provider added to the domain has to say what names a Work Item through it.
-    ///
-    /// Linear has no title adapter yet (#371 is its grant): asking establishes nothing rather than
-    /// sending a Linear token to GitHub, which is the one outcome worth ruling out at the type
-    /// level — the Work Item port is one Linear CAN fill (`AccountProvider.ports`).
+    /// a provider added to the domain has to say what names a Work Item through it — and so a
+    /// Linear token can never be sent to GitHub.
     private func read(_ number: Int, through binding: ResolvedBinding) async -> TicketReading? {
         switch binding.provider {
         case .github:
@@ -51,7 +56,9 @@ public actor WorkItemTitleResolver {
                 titleOf: number, in: binding.binding.scope, grant: binding.grant,
             )
         case .linear:
-            nil
+            await linear.read(
+                titleOf: number, in: binding.binding.scope, grant: binding.grant,
+            )
         }
     }
 }

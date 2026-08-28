@@ -8,7 +8,7 @@ import Foundation
 public actor WorkItemPoll {
     public typealias Sleeper = @Sendable (Duration) async throws -> Void
 
-    private let port: WorkItemPort
+    private let port: WorkItemReading
     private let health: ConnectionHealthLedger
     private let items: WorkItemLedger
     private let sleep: Sleeper
@@ -23,7 +23,7 @@ public actor WorkItemPoll {
     public typealias Landing = @Sendable () async -> Void
 
     public init(
-        port: WorkItemPort,
+        port: WorkItemReading,
         health: ConnectionHealthLedger,
         items: WorkItemLedger,
         sleep: @escaping Sleeper = { try await Task.sleep(for: $0) },
@@ -120,7 +120,7 @@ public actor WorkItemPoll {
     /// it would be two chances to record health differently.
     public func poll(_ target: PortReadTarget) async {
         do {
-            let listed = try await port.list(in: target.scope, grant: target.binding.grant)
+            let listed = try await port.list(through: target.binding)
             await items.record(listed, for: target.projectID)
             await health.succeeded(target.projectBinding, in: target.projectID, at: now())
         } catch {

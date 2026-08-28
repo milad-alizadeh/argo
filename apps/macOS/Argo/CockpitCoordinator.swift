@@ -42,9 +42,7 @@ final class CockpitCoordinator {
         self.configuration = configuration
         self.store = store
         self.annotationStore = annotationStore
-        self.ticketTitles = WorkItemTitleResolver(
-            gitHub: GitHubWorkItemTitles(), annotations: annotationStore,
-        )
+        self.ticketTitles = WorkItemTitleResolver(annotations: annotationStore)
         self.pointing = CockpitPointing(
             registry: .empty,
             launch: .unregistered(configuration.projectURL),

@@ -4,7 +4,7 @@ import Foundation
 /// A Work Item port that answers from a script, for the suites about polling rather than about
 /// GitHub. Each `list` takes the next answer and the last one repeats, so a test says "this read
 /// fails, every later one succeeds" without counting ticks.
-actor ScriptedWorkItems: WorkItemPort {
+actor ScriptedWorkItems: WorkItemReading {
     private var script: [Result<[WorkItem], ProviderFetchError>]
     private var reads = 0
 
@@ -12,7 +12,7 @@ actor ScriptedWorkItems: WorkItemPort {
         self.script = script
     }
 
-    func list(in _: String, grant _: AccountGrant) async throws -> [WorkItem] {
+    func list(through _: ResolvedBinding) async throws -> [WorkItem] {
         reads += 1
         guard let answer = script.count > 1 ? script.removeFirst() : script.first else { return [] }
         return try answer.get()

@@ -111,17 +111,19 @@ struct WorkItemTitleResolverTests {
     }
 
     @Test
-    func `a Work Item port bound to Linear is never read through GitHub`() async {
+    func `a Work Item port bound to Linear is read through Linear, never GitHub`() async {
         let file = AnnotationFile()
         defer { file.remove() }
-        let api = StubProviderAPI(body: Self.named)
+        let api = StubProviderAPI(body: Self.linearNamed)
 
-        await Self.resolver(api, file).resolve(links: ["chain-a": 745], through: Self.linear)
+        let annotations = await Self.resolver(api, file)
+            .resolve(links: ["chain-a": 745], through: Self.linear)
 
-        // Linear can fill the Work Item port (`AccountProvider.ports`) and has no title adapter
-        // yet, so the only wrong answer here is sending a Linear grant to `api.github.com`.
-        #expect(await api.urls().isEmpty)
-        #expect(await file.store().load().ticket("chain-a") == nil)
+        // Linear fills the Work Item port (`AccountProvider.ports`) and now has an adapter (#371).
+        // The wrong answer is a Linear grant reaching `api.github.com`, which the resolver's
+        // exhaustive switch is what rules out.
+        #expect(await api.urls() == [LinearAPI.endpoint])
+        #expect(annotations.ticket("chain-a") == .named("Derive the link"))
     }
 
     @Test
@@ -136,6 +138,9 @@ struct WorkItemTitleResolverTests {
     }
 
     private static let named = #"{ "number": 745, "title": "Derive the link" }"#
+    private static let linearNamed = """
+    { "data": { "team": { "issues": { "nodes": [{ "title": "Derive the link" }] } } } }
+    """
 
     private static let gitHub = binding(provider: .github, scope: "milad/argo")
     private static let linear = binding(provider: .linear, scope: "team-argo")
@@ -157,7 +162,7 @@ struct WorkItemTitleResolverTests {
     )
         -> WorkItemTitleResolver {
         WorkItemTitleResolver(
-            gitHub: GitHubWorkItemTitles(transport: api), annotations: file.store(),
+            titles: WorkItemTitleAdapters(transport: api), annotations: file.store(),
         )
     }
 }

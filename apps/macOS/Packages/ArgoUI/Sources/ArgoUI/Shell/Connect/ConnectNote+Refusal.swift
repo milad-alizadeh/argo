@@ -87,13 +87,38 @@ public extension ConnectNote {
     }
 }
 
+/// Whichever flow the provider took, said in one place: the panel has one grant path and so has
+/// one place a grant's failure becomes words.
 public extension ConnectNote {
-    /// A provider Argo cannot sign in to yet. Here rather than at its one call site so the copy
-    /// sweep can see it.
+    /// Exhaustive over the PROVIDER rather than over the error, which Swift cannot switch on: each
+    /// arm knows the one failure type its own flow raises, so a third provider fails the build here
+    /// the way it does at every other seam — instead of falling through to "could not be reached"
+    /// and losing the provider's own sentence.
+    init(grant: Error, provider: AccountProvider) {
+        self = Self.said(grant, by: provider)
+            // A failure that is not the flow's own: the transport, or the registry write behind it.
+            ?? ConnectNote(refusal: .unreadable(grant.localizedDescription))
+    }
+
+    private static func said(_ grant: Error, by provider: AccountProvider) -> ConnectNote? {
+        switch provider {
+        case .github:
+            (grant as? GitHubDeviceFlowError)
+                .map { ConnectNote(deviceFlow: $0, provider: provider) }
+        case .linear:
+            (grant as? LinearAuthorizationError)
+                .map { ConnectNote(authorization: $0, provider: provider) }
+        }
+    }
+}
+
+public extension ConnectNote {
+    /// A provider whose OAuth App this build does not carry, so there is nothing to sign in as.
+    /// Here rather than at its one call site so the copy sweep can see it.
     static func notYetAuthorizable(_ provider: AccountProvider) -> ConnectNote {
         ConnectNote(
             what: "Argo cannot sign in to \(provider.readableName) yet.",
-            why: "That connection is still being built.",
+            why: "This build carries no \(provider.readableName) app to sign in as.",
             fix: "Use a GitHub account for now.",
         )
     }

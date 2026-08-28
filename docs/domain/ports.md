@@ -37,6 +37,17 @@ Project on an already-authorized provider **binds without a second OAuth round-t
   read it — a control offered against a fact it cannot change lies about which of the two is
   authoritative.
 
+  **Two adapters fill it** (#371), and where they disagree is where the port earns its keep.
+  GitHub Issues carries no priority field, so its adapter reads and writes one off a **scoped
+  label**; Linear has a real priority field with four fixed rungs, so its adapter turns the
+  canonical verbatim *word* back into a rung and refuses a word Linear has no rung for. On
+  edges: Linear serves relations **with** the issue, so an empty list is the provider saying
+  there is nothing in the way (`blockedBy == []`), where GitHub serves only a summary and its
+  absence is UNKNOWN (`blockedBy == nil`). And on workflow: GitHub is a bare tracker reaching
+  `todo · done · closed`, where Linear expresses `in-progress` natively — but **not**
+  `in-review`, which Linear has no state *category* for. Reading it off a column a team happened
+  to name "In Review" would derive a canonical state from typography, which is a false DIRECT.
+
   Out of scope: comments, assignee, hard-delete, and any mapping-editor UI.
 - **Code host** — sources Delivery truth (PR/CI/review/merge). GitHub for v1. One GitHub
   Account can feed **both** ports **and fails as one** — but only within that Account; a second

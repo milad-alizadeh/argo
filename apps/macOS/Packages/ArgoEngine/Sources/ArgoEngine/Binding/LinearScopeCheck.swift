@@ -8,8 +8,6 @@ import Foundation
 /// Linear is GraphQL, so every answer is a 200 and the shape decides: a team that cannot be seen
 /// comes back as `errors` with a null `data.team`, not as a status code.
 struct LinearScopeCheck: BindingScopeCheck {
-    private static let endpoint = "https://api.linear.app/graphql"
-
     private let transport: HTTPTransport
 
     init(transport: HTTPTransport) {
@@ -22,7 +20,7 @@ struct LinearScopeCheck: BindingScopeCheck {
         }
         do {
             let data = try await transport.send(HTTPRequest(
-                url: Self.endpoint,
+                url: LinearAPI.endpoint,
                 body: .json(body),
                 bearerToken: probe.grant.accessToken,
             ))

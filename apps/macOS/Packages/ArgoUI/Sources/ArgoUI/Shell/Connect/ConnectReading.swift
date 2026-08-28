@@ -22,12 +22,18 @@ public struct ConnectReading: Equatable, Sendable {
     /// note never outlives the attempt it belongs to.
     public let note: ConnectNote?
     /// The providers this build can actually start a grant with — never `AccountProvider.allCases`,
-    /// since a provider with no flow behind it is a control that does nothing when pressed
-    /// (Linear's grant is #371). Injectable so a test can render the day Linear arrives.
+    /// since a provider with no flow behind it is a control that does nothing when pressed.
+    /// Injectable so a test can render either answer.
     public let authorizable: [AccountProvider]
 
     /// What this build can authorize, in one place.
-    public static let authorizableToday: [AccountProvider] = [.github]
+    ///
+    /// Linear's flow is built (#371) and its OAuth App is registered by hand, so the offer is
+    /// gated on the registration rather than named outright: a `Connect a Linear account` whose
+    /// only outcome is "Argo cannot sign in to Linear yet" is worse than no menu item.
+    public static let authorizableToday: [AccountProvider] = LinearOAuthApp.isRegistered
+        ? [.github, .linear]
+        : [.github]
     public let mode: ConnectPanelMode
 
     public init(

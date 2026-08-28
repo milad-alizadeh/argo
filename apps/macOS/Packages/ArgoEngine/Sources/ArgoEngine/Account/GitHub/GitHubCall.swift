@@ -30,25 +30,7 @@ struct GitHubCall: Sendable {
         do {
             return try await transport.send(request(path, method: method, body: body, grant: grant))
         } catch {
-            throw Self.fetchError(error)
+            throw ProviderFetchError.reading(error)
         }
     }
-
-    /// Every way an ask can fail, in the health ledger's words. Shared by the reads and the writes,
-    /// so two failing the same way cannot reach the ledger as two states.
-    static func fetchError(_ error: Error) -> ProviderFetchError {
-        switch error {
-        case HTTPTransportError.unauthorized: .grantRefused
-        case HTTPTransportError.rateLimited: .rateLimited
-        // Nothing was asked, so nothing was refused. Every other `URLError` reached the wire and
-        // failed there, which is `unreachable`.
-        case let urlError as URLError where offline.contains(urlError.code): .offline
-        default: .unreachable
-        }
-    }
-
-    /// The `URLError` codes that mean this Mac has no network.
-    private static let offline: Set<URLError.Code> = [
-        .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed,
-    ]
 }
