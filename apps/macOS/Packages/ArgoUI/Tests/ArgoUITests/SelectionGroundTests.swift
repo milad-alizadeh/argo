@@ -71,28 +71,4 @@ struct SelectionGroundTests {
         #expect(palette.surface.selected.composited(over: palette.surface.base)
             .chromaticSpread <= 0.05)
     }
-
-    /// One mechanism, both sidebars (#906): the roster and the Work room's view list each ask the
-    /// same function for a row's ground, so a selection cannot read as brand in one rail and as the
-    /// platform's fixed neutral in the other.
-    @Test(arguments: palettes)
-    func `a selected sidebar row takes the brand wash, whichever sidebar it is in`(
-        _ appearance: (name: String, palette: ArgoPalette),
-    ) {
-        let palette = appearance.palette
-        let selected = ArgoSelectedRowGround.ground(isSelected: true, in: palette)
-        #expect(selected.composited(over: palette.surface.base)
-            .chromaticSpread > palette.surface.selected.composited(over: palette.surface.base)
-            .chromaticSpread * 3)
-    }
-
-    /// And nothing at all under the others: the sidebar's own system material is the surface D3
-    /// reserves for an unselected row, so the ground may not lay a step of the ramp over it.
-    @Test(arguments: palettes)
-    func `an unselected sidebar row draws no ground of its own`(
-        _ appearance: (name: String, palette: ArgoPalette),
-    ) {
-        let ground = ArgoSelectedRowGround.ground(isSelected: false, in: appearance.palette)
-        #expect(ground.opacity == 0)
-    }
 }

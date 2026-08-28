@@ -100,11 +100,8 @@ struct SessionNavigator: View {
             select: { selection = row.id },
         )
         .previewSafeListRow()
-        // The selection's whole appearance: the study's full-bleed wash, in Ion Blue. It is the
-        // system capsule's REPLACEMENT, not a second highlight over it — a row background is drawn
-        // instead of the style's own, which is what makes this the option D30 ruled out's opposite.
-        // It also holds its colour while the list is not first responder, where the platform would
-        // grey it out: this is the one piece of state a reader tracks all day.
+        // Holds its colour while the list is not first responder, where the platform greys its
+        // own selection out: this is the one piece of state a reader tracks all day.
         .argoSelectedRowGround(isSelected: row.id == selection)
         .tag(row.id)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {

@@ -675,16 +675,23 @@ its approved study are authoritative for the replacement look and feel.
   So the scope of the reversal is restated: **selection takes the accent in every sidebar this app
   draws**, and no rail is exempt on the grounds that its rows are chrome rather than content.
 
-  - **One mechanism, not two.** `ArgoSelectedRowGround` is the single answer to "what is under this
-    row", and `.argoSelectedRowGround(isSelected:)` is how both `SessionNavigator` and
-    `TicketsSidebar` ask for it. A second copy of the ternary is how the two rails drift apart, and
-    `SelectionGroundTests` pins the function rather than either call site.
-  - **The ink is unchanged, and that is a measured claim, not an omission.** 0.10 is the weight
-    #875 chose precisely so the roster's voices read at least as well on the wash as on the neutral
-    ground it replaced; the Work room's view row is drawn in `rowMeta` on the same two voices
-    (`text.primary` for the name, `text.tertiary` for the mark and the count), so it inherits that
-    result rather than needing its own. `SelectionGroundTests` asserts the floor for the two voices
-    a row is actually read in.
+  - **One mechanism, not two.** `.argoSelectedRowGround(isSelected:)` is how both
+    `SessionNavigator` and `TicketsSidebar` ask for a row's ground, and a second copy of the
+    ternary is how the two rails drift apart. It is a wiring claim, not a palette one, so no unit
+    test pins it: this document already says selection is judged off a render, and the render is
+    the evidence (`blockedTicketsView`, `ticketsRoom`, `selectedRow`).
+  - **The ink is unchanged, and what that is worth is measured rather than asserted.** 0.10 is the
+    weight #875 chose so the roster's voices read at least as well on the wash as on the neutral
+    ground it replaced, and the view row is drawn on the same voices — `text.primary` for the name,
+    `text.tertiary` for the mark and the count — so it inherits that result rather than needing its
+    own. Stated exactly: `SelectionGroundTests` pins `text.primary` and `text.secondary` at 4.5:1
+    on the ground absolutely, and `text.tertiary` **only relatively**, against the wash it replaced.
+    Measured off the render, the title reads 7.60:1 on a selected row and the tertiary count reads
+    2.50:1, against 3.61:1 on an unselected one.
+  - **That tertiary drop is named, not hidden, and it is not this ticket's to fix.** It is #875's
+    shipped roster treatment exactly, at the same weight, and `text.tertiary` is a sub-AA voice on
+    `surface.base` already — the contract exempts it there for the same reason. Lifting it is a
+    change to the accent weight or to the ramp, which reopens #875 rather than extending it.
   - **Still not reopened, again:** the leading Ion Blue rail. Neither rail draws an edge of any
     kind, in the code or in this document.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.

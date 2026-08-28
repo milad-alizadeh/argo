@@ -36,9 +36,6 @@ struct TicketsSidebar: View {
         Section {
             ForEach(room.views) { reading in
                 ViewRow(symbol: reading.id.symbol, name: reading.id.name, count: reading.count)
-                    // The same wash the roster carries, for the same reason: the sidebar style's
-                    // own capsule is a fixed neutral, so which view the deck is filtered to was
-                    // barely separable from the rail behind it (#906).
                     .argoSelectedRowGround(isSelected: reading.id == view)
                     .tag(reading.id)
             }

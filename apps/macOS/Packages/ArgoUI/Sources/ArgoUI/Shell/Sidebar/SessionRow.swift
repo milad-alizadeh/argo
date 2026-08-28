@@ -2,9 +2,8 @@ import AppKit
 import ArgoEngine
 import SwiftUI
 
-/// One flat sidebar row over the sidebar's system material. It draws no selection of its own:
-/// `.listStyle(.sidebar)`'s own capsule is the wash (D30, D3), and a second one over it stacks
-/// two highlights.
+/// One flat sidebar row over the sidebar's system material. It draws no selection of its own: the
+/// ground is the list's, through `.argoSelectedRowGround(isSelected:)` (D30, as amended by #875).
 struct SessionRow: View {
     /// Bound and interval on the focus retries in `open()`.
     private static let focusAttempts = 20
