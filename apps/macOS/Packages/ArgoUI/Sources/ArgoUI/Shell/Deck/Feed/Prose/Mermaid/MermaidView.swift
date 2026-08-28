@@ -208,30 +208,3 @@ private struct MermaidPreview: View {
         MermaidPreview(source: "pie\n  \"Read\" : 0\n  \"Write\" : 0")
     }
 }
-#Preview("Mermaid — a state machine") {
-    MermaidPreview(source: """
-    stateDiagram-v2
-      [*] --> Reading
-      Reading --> Building : agreed
-      state "Waiting for CI" as wait
-      Building --> wait
-      wait --> [*] : green
-      note right of wait : the runner holds it
-    """)
-}
-
-// A composite with its own start, and the choice and fork figures beside each other.
-#Preview("Mermaid — composites and pseudo-states") {
-    MermaidPreview(source: """
-    stateDiagram-v2
-      [*] --> Working
-      state Working {
-        [*] --> Reading
-        Reading --> Writing
-      }
-      state pick <<choice>>
-      Working --> pick
-      pick --> Landed
-      pick --> Working
-    """)
-}
