@@ -26,6 +26,7 @@ struct MermaidDiagram: Equatable, Sendable {
         /// and the ends are terminals nothing is left to tell them apart — they differ only in the
         /// reader that stated it (#865).
         case compartmented(MermaidCompartmented)
+        case gantt(MermaidGantt)
     }
 
     /// The diagram this source draws, or `nil` where nothing here can read it — an unsupported
@@ -65,12 +66,18 @@ struct MermaidDiagram: Equatable, Sendable {
         if let entities = MermaidEntity.read(source) {
             return MermaidDiagram(source: source, kind: .compartmented(entities))
         }
+        if let gantt = MermaidGantt.read(source) {
+            return MermaidDiagram(source: source, kind: .gantt(gantt))
+        }
         return nil
     }
 
     /// The captions the diagram sets, in the order its plan places them. Width-independent, because
     /// the view builds one `Text` per label before SwiftUI has told it a measure.
-    var labels: [MermaidLabel] {
+    ///
+    /// `@MainActor` because a Gantt chart's are: which dates its axis is marked at is a question
+    /// about how wide the words on them RUN, and nothing here measures words off the main actor.
+    @MainActor var labels: [MermaidLabel] {
         switch kind {
         case let .flowchart(flowchart): flowchart.labels
         case let .sequence(sequence): sequence.labels
@@ -81,6 +88,7 @@ struct MermaidDiagram: Equatable, Sendable {
         case let .journey(journey): journey.labels
         case let .timeline(timeline): timeline.labels
         case let .compartmented(diagram): diagram.labels
+        case let .gantt(gantt): gantt.labels
         }
     }
 
@@ -102,6 +110,7 @@ struct MermaidDiagram: Equatable, Sendable {
         case let .journey(journey): journey.laid
         case let .timeline(timeline): timeline.laid
         case let .compartmented(diagram): diagram.laid
+        case let .gantt(gantt): gantt.laid
         }
     }
 }

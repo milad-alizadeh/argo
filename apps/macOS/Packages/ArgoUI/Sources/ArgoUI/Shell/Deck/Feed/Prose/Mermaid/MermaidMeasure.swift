@@ -149,6 +149,16 @@ enum MermaidMeasure {
     static let fieldSide: CGFloat = 260
     static let pointRadius: CGFloat = 4
 
+    /// How wide a Gantt chart's time axis is drawn. The chart's OWN width and never one handed
+    /// down — a diagram is as big as the thing it draws and is scrolled rather than reflowed
+    /// (#861) — so it is also the width its ticks are chosen to fit. A measure: much narrower and
+    /// a fortnight cannot carry its own dates.
+    static let axisWidth: CGFloat = 420
+    /// Between one tick's words and the next's: the least that reads as two dates and not one run.
+    static let tickGap: CGFloat = ArgoSpacing.comfortable
+    /// The least a bar stands, so a task of no length is still a mark rather than nothing.
+    static let barMinWidth: CGFloat = 3
+
     /// The face an edge's own word is set in, and the face a `subgraph`'s title takes. Quieter than
     /// the prose the nodes are set in, because both are said ABOUT the diagram rather than in it.
     static let edgeFace = ProseFace(rung: .footnote)

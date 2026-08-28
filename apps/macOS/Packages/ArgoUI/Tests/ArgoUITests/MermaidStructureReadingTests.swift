@@ -149,7 +149,7 @@ struct MermaidStructureReadingTests {
     /// The labels the view builds its `Text` views from, before SwiftUI has told it a measure:
     /// every node, then every edge that carries a word, then every group's title.
     @Test
-    func `a flowchart labels its nodes, then its edges, then its groups`() {
+    @MainActor func `a flowchart labels its nodes, then its edges, then its groups`() {
         let source = "graph TD\nsubgraph Reading\nA -->|first| B\nend\nB --> C"
 
         #expect(MermaidDiagram.read(source)?.labels.map(\.text) == [
