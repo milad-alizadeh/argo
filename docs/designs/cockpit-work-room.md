@@ -17,7 +17,7 @@ harness chrome. The measurements below are the numbers a ticket must carry.
 Eleven states: `rest`, `deep` (two Deliveries, nine children, six blockers), `collapsed` (a
 parent folded), `edgeless` (a provider with no dependency edges), `one-chip`, the three
 empty-pool tiers `pool-blocked` · `pool-running` · `empty`, `unbound` (no provider bound),
-`menu` (the Start verb's Mode menu), and `route`.
+`menu` (the Start verb's Mode menu — **superseded #872**, see `Start` below), and `route`.
 
 ## What won, and what lost
 
@@ -168,7 +168,7 @@ control.
 | leading the list pane | `Backlog` and, under it, `All open · by priority · 12 tickets` | says what you are looking at, and how many | the list pane |
 | after the scope vessel | filter, then the ordering menu, **past a rule** | list-scoped | the window row |
 | next | **New ticket** | the call-to-action, its own vessel — the one thing this window creates | the window row |
-| next | `▶ Start ⌄`, open-on-host, copy link | the ticket's own verbs | the window row |
+| next | `▶ Start`, open-on-host, copy link | the ticket's own verbs | the window row |
 | trailing edge | search | a real field at 210, not an icon that becomes one | the window row |
 
 **A title without its count can lie about what you are filtered to**, which is why the heading is
@@ -300,22 +300,36 @@ learn — and it takes a filled state whenever any facet is on. A funnel that lo
 or not it is narrowing makes the same false claim about the data that a search field returning the
 whole list does.
 
-### `Start` is a split control, not an ellipsis
+### `Start` starts — there is no rung to choose
 
 The study first drew an unlabelled `…`. **An overflow nobody can name is an overflow nobody
-opens**, so it is gone. In its place `Start` is a split control: the button starts a Session,
-the chevron opens the **Mode** it starts in — `Read Only · Plan · Code · Auto`, Argo's own
-ladder, each rung named by the boundary it will not cross unasked. See `menu.png`.
+opens**, so it is gone.
 
-**The rungs' boundaries are `SessionMode.boundary`'s words** — `no writes`, `no writes, proposes`,
-`the Workspace`, `no boundary` — not the longer sentences `menu.png` draws. The composer's own Mode
-control already says these four boundaries (#608, ADR-0025), and one fact said two ways is one of
-them waiting to go stale. `ModeMenu` is a native `Menu` with a `Picker`, as the names table below
-specifies, so a row is one line of text and the study's two-column layout is not reachable through
-it — the em dash carries the same pair.
+**#816 replaced it with a split control, and that was wrong too.** The button started a Session and
+a chevron beside it opened the **Mode** it would start in — `Read Only · Plan · Code · Auto`, one
+row per rung. See `menu.png`, which is the state that render captured.
+
+**Amended #872: the chevron is deleted and `Start` spawns in `Code`, always.** The menu asked a
+question with one answer. Starting a Session on a ticket is starting work on it, and `Code` is the
+rung that work needs — `SessionMode.code` is already spelled "the baseline rung, so ungated tools do
+not pay a Permission round trip", and `CockpitNavigationModel.workMode` already defaulted to it. So
+every open of that menu was a reader confirming the value that was there when they arrived. A
+control whose default is the answer in every case is not a choice; it is a click charged for
+nothing, on the one verb this room exists for.
+
+**The rung stays changeable, in the place that can honestly change it.** A Mode chosen before a
+Session exists is a guess about work nobody has started; the composer's own Mode control (#608,
+ADR-0025) sits over a live Session, reads the rung the CLI is actually on, and can say `≈` when the
+reading is approximate. That is the control that owns this fact. A second picker upstream of it,
+writing a rung nothing reads back, was two controls over one fact — and one fact said two ways is
+one of them waiting to go stale.
+
+**A deliberate Plan or Read Only start is not this room's gesture.** It begins in the composer of
+the Session that opened, one rung change away, and it costs the rare case a click rather than
+charging every case one.
 
 The two link verbs that would otherwise have hidden in that ellipsis — open on the code host,
-copy link — are icons beside it, past a hairline. Nothing in this room is behind an unlabelled
+copy link — are icons beside `Start`, past a hairline. Nothing in this room is behind an unlabelled
 control.
 
 ### The marks, re-cut
@@ -493,7 +507,7 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | `searchWidth` | **210** | wide enough for `Search the backlog`; at 260 the trailing edge clipped at 1280 |
 | Vessel shape | `Capsule()` | a capsule is a shape, not a radius — no `ArgoRadius` rung applies |
 | Vessel material | glass, **no border, no shadow** | `ArgoElevation.vessel` is zero; the specular rim is the cue |
-| Menu offset | **40** below the row | `ArgoRadius.popover` 12, `ArgoElevation.popover` — the one rung here that genuinely floats. **Not implemented, and not implementable**: `ModeMenu` is the stock `Menu` the frozen-names table specifies, and AppKit positions and draws its own popover. The number describes the study's drawing of it |
+| ~~Menu offset~~ | **gone (#872)** | it measured `ModeMenu`'s popover, which was never implementable — AppKit positions and draws its own — and the menu it described is deleted. `BacklogMenu`'s popover is AppKit's on the same terms |
 
 ### `ArgoTicketDetail` — `ArgoUI/Shell/Work/Detail/`
 
@@ -535,8 +549,8 @@ for; anything not listed is stock used directly.
 | `ToolbarVessel` | atom | `GlassEffectContainer` + `Capsule` | groups icon buttons; no border, no shadow |
 | `ToolbarIcon` | atom | `Button(.plain)` with a `Label(.iconOnly)` | one glyph at `iconSize` |
 | `NewTicketButton` | atom | `ToolbarIcon` in its own `ToolbarVessel` | the call-to-action; survives the empty backlog |
-| `StartControl` | molecule | `Button` + `Menu` in one vessel | the split verb; the chevron opens `ModeMenu` |
-| `ModeMenu` | molecule | `Menu` with a `Picker` | the four Mode rungs, each with the boundary it refuses |
+| `StartControl` | molecule | `Button` in one vessel, with the two link icons | the verb, spawning in `Code`. **Amended #872**: it was `Button` + `Menu`, and the chevron is gone |
+| ~~`ModeMenu`~~ | — | **gone (#872)** | the four Mode rungs. The rung is the composer's, over a live Session (#608) |
 | `BacklogSearchField` | atom | `.searchable` field | searches the list; sits at the trailing edge |
 | `TicketDetail` | organism | a `ScrollView` | one column; no inner split |
 | `TicketHead` | molecule | a `VStack` of `Text` | id, title, status pair |
