@@ -8,42 +8,43 @@ import Testing
 /// to a root rather than to a vanished row.
 @Suite("The backlog nests")
 struct TicketsBacklogTreeTests {
+    /// #607, by its number rather than by its place in the list.
+    private static var parent: TicketsRoomProjection.Row? {
+        TicketsRoomProjection.room(from: TicketsFixture.reading).backlog.first { $0.id == 607 }
+    }
+
     @Test
     func `a parent draws its open children under it`() {
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
 
-        #expect(room.backlog.map(\.id) == [607, 763, 275, 160, 185])
-        #expect(room.backlog.first?.children.map(\.id) == [609, 388, 272, 273, 334])
+        #expect(room.backlog.map(\.id) == [763, 607, 275, 185, 160])
+        #expect(Self.parent?.children.map(\.id) == [609, 388, 334, 273, 272])
     }
 
     /// The list draws what is OPEN; the edge names more than that. #607 carries nine children, two
     /// of them closed and two the poll never reached, and none of the four is a row.
     @Test
     func `a closed child is an edge the list does not draw`() {
-        let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
-
-        #expect(room.backlog.first?.children.map(\.id).contains(690) == false)
-        #expect(room.backlog.first?.trailing == "2/9")
+        #expect(Self.parent?.children.map(\.id).contains(690) == false)
+        #expect(Self.parent?.trailing == "2/9")
     }
 
     @Test
     func `a child of a child nests one step further`() {
-        let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
-
-        let route = room.backlog.first?.children.first { $0.id == 334 }
-        #expect(route?.children.map(\.id) == [335, 336])
+        let route = Self.parent?.children.first { $0.id == 334 }
+        #expect(route?.children.map(\.id) == [336, 335])
         #expect(route?.trailing == "0/2")
     }
 
-    /// Flattened, the tree is the same twelve rows in the same order the flat list drew — nesting
-    /// changes where a row is INSET, never which rows there are.
+    /// Flattened, the tree is every one of the twelve rows — nesting changes where a row is
+    /// INSET, never which rows there are.
     @Test
     func `the drawn order is every open item, parents before their children`() {
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
 
         let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
-        #expect(drawn.map(\.id) == [607, 609, 388, 272, 273, 334, 335, 336, 763, 275, 160, 185])
-        #expect(drawn.map(\.depth) == [0, 1, 1, 1, 1, 1, 2, 2, 0, 0, 0, 0])
+        #expect(drawn.map(\.id) == [763, 607, 609, 388, 334, 336, 335, 273, 272, 275, 185, 160])
+        #expect(drawn.map(\.depth) == [0, 0, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0])
     }
 
     /// Folding hides the subtree whole, not one level of it.
@@ -52,7 +53,7 @@ struct TicketsBacklogTreeTests {
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
 
         let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [607])
-        #expect(drawn.map(\.id) == [607, 763, 275, 160, 185])
+        #expect(drawn.map(\.id) == [763, 607, 275, 185, 160])
     }
 
     /// A shut parent is still a parent: the twist has to stay, or nothing could open it again.
@@ -61,7 +62,7 @@ struct TicketsBacklogTreeTests {
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
 
         let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [607])
-        #expect(drawn.first?.isParent == true)
+        #expect(drawn.first { $0.id == 607 }?.isParent == true)
         #expect(drawn.last?.isParent == false)
     }
 
@@ -76,7 +77,7 @@ struct TicketsBacklogTreeTests {
         ]
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading(of: items))
 
-        #expect(TicketsRoomProjection.drawn(room.backlog, shut: []).map(\.id) == [1, 3, 2])
+        #expect(TicketsRoomProjection.drawn(room.backlog, shut: []).map(\.id) == [2, 1, 3])
     }
 
     /// A provider that serves a cycle must not cost the reader the rows inside it. The edge that
@@ -98,7 +99,7 @@ struct TicketsBacklogTreeTests {
     func `a child whose parent the view filtered out becomes a root`() {
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading, in: .inProgress)
 
-        #expect(room.backlog.map(\.id) == [609, 388, 763])
+        #expect(room.backlog.map(\.id) == [763, 609, 388])
         #expect(room.backlog.flatMap(\.children).isEmpty)
     }
 }

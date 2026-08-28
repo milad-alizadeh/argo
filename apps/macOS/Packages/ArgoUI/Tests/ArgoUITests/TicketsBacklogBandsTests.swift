@@ -16,7 +16,7 @@ struct TicketsBacklogBandsTests {
         let bands = TicketsRoomProjection.bands(of: Self.roots)
 
         #expect(bands.map(\.priority) == ["high", "medium", "low"])
-        #expect(bands.map { $0.roots.map(\.id) } == [[607], [763], [275, 160, 185]])
+        #expect(bands.map { $0.roots.map(\.id) } == [[607], [763], [275, 185, 160]])
     }
 
     /// The conflict the design resolves: #273 and #334 are `medium` and #336 is `low`, and all
@@ -26,7 +26,7 @@ struct TicketsBacklogBandsTests {
         let bands = TicketsRoomProjection.bands(of: Self.roots)
 
         #expect(TicketsRoomProjection.drawn(bands[0], shut: []).map(\.id)
-            == [607, 609, 388, 272, 273, 334, 335, 336])
+            == [607, 609, 388, 334, 336, 335, 273, 272])
         #expect(bands[1].roots.map(\.id) == [763])
     }
 
@@ -50,8 +50,8 @@ struct TicketsBacklogBandsTests {
 
         let drawn = TicketsRoomProjection.drawn(bands[0], shut: [])
         let stated = drawn.filter { $0.odd != nil }
-        #expect(stated.map(\.id) == [273, 334, 335, 336])
-        #expect(stated.map(\.odd) == ["medium", "medium", "medium", "low"])
+        #expect(stated.map(\.id) == [334, 336, 335, 273])
+        #expect(stated.map(\.odd) == ["medium", "low", "medium", "medium"])
     }
 
     /// A root always agrees with the header it is under — the header is derived from it.
@@ -132,7 +132,7 @@ struct TicketsBacklogBandsTests {
 
         let bands = TicketsRoomProjection.bands(of: room.backlog)
         #expect(bands.count == 3)
-        #expect(bands[2].roots.map(\.id) == [275, 160, 185])
+        #expect(bands[2].roots.map(\.id) == [275, 185, 160])
         #expect(bands[2].priority == "Low")
     }
 

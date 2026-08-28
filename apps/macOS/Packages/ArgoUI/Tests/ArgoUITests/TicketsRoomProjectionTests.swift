@@ -14,7 +14,7 @@ struct TicketsRoomProjectionTests {
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
 
         #expect(drawnIds(room)
-            == [607, 609, 388, 272, 273, 334, 335, 336, 763, 275, 160, 185])
+            == [763, 607, 609, 388, 334, 336, 335, 273, 272, 275, 185, 160])
     }
 
     @Test
@@ -114,14 +114,14 @@ struct TicketsRoomProjectionTests {
 
         #expect(drawnIds(blocked).count == 8)
         #expect(drawnIds(blocked)
-            == [607, 272, 334, 335, 336, 275, 160, 185])
+            == [607, 334, 336, 335, 272, 275, 185, 160])
     }
 
     @Test
     func `in progress draws only the tickets a Session holds`() {
         let running = TicketsRoomProjection.room(from: TicketsFixture.reading, in: .inProgress)
 
-        #expect(running.backlog.map(\.id) == [609, 388, 763])
+        #expect(running.backlog.map(\.id) == [763, 609, 388])
     }
 
     /// Each view's own count is what it draws, or the rail is telling the reader a number the pane

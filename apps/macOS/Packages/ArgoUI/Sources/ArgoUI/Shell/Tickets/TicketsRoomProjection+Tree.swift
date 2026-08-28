@@ -55,21 +55,26 @@ extension TicketsRoomProjection {
         let byNumber = Dictionary(uniqueKeysWithValues: shown.map { ($0.number, $0) })
 
         func node(_ item: Ticket) -> Row {
-            Row(
+            let siblings = item.children.filter { parents[$0] == item.number }
+                .compactMap { byNumber[$0] }
+            return Row(
                 id: item.number,
                 title: item.title,
                 delivery: reading.deliveries[item.number] ?? .absent,
                 trailing: rollUp(of: item, closed: closed),
                 priority: item.priority,
                 labels: item.labels,
-                children: item.children
-                    .filter { parents[$0] == item.number }
-                    .compactMap { byNumber[$0] }
-                    .map(node),
+                children: newest(siblings).map(node),
             )
         }
 
-        return shown.filter { parents[$0.number] == nil }.map(node)
+        return newest(shown.filter { parents[$0.number] == nil }).map(node)
+    }
+
+    /// The list's own order, stated rather than inherited: highest number first, siblings against
+    /// siblings (#892).
+    private static func newest(_ items: [Ticket]) -> [Ticket] {
+        items.sorted { $0.number > $1.number }
     }
 
     /// Which shown item owns each shown child. Built once for the whole set rather than asked per

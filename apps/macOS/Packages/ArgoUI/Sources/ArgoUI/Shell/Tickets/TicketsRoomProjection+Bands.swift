@@ -24,14 +24,15 @@ extension TicketsRoomProjection {
     }
 
     /// The words the design draws headers for, in the order they stand. Still MATCHED here — a word
-    /// this list does not hold keeps its place in the provider's own order rather than being sorted
-    /// against the three. It comes off `TicketPriority` so the header order and the hero's rank
-    /// read one list (#273): two copies of these three words is how a band comes to sit above a
-    /// ticket the hero ranked below it.
+    /// this list does not hold opens its own band after the three, keyed off the first root
+    /// carrying it in the backlog's own order (#892) rather than being ranked against them. It
+    /// comes off `TicketPriority` so the header order and the hero's rank read one list (#273):
+    /// two copies of these three words is how a band comes to sit above a ticket the hero ranked
+    /// below it.
     private static let bandOrder = TicketPriority.known
 
-    /// The roots banded: the three known words first, then any other word in the order the provider
-    /// served it, and the roots nobody read a priority for last.
+    /// The roots banded: the three known words first, then any other word in the order its first
+    /// root stands in, and the roots nobody read a priority for last.
     static func bands(of roots: [Row]) -> [Band] {
         var order: [String?] = bandOrder.filter { word in
             roots.contains { key($0.priority) == word }
