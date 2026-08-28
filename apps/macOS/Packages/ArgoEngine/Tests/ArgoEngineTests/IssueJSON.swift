@@ -24,6 +24,9 @@ struct IssueJSON {
     /// provider with no dependency edges looks on the wire.
     var dependencies = true
     var pullRequest = false
+    /// GitHub's `updated_at`, on the wire. `nil` drops the key, which is the only way a host that
+    /// serves no timestamp can be told from one serving an unparseable string.
+    var updated: String?
 
     var json: String {
         """
@@ -35,6 +38,7 @@ struct IssueJSON {
           \(type.map { #""type": { "name": "\#($0)" },"# } ?? "")
           \(body.map { #""body": "\#($0)","# } ?? "")
           \(pullRequest ? #""pull_request": { "url": "u" },"# : "")
+          \(updated.map { #""updated_at": "\#($0)","# } ?? "")
           \(Self.dependencySummary(blockers, served: dependencies))
           "sub_issues_summary": { "total": \(children), "completed": 0, "percent_completed": 0 } }
         """

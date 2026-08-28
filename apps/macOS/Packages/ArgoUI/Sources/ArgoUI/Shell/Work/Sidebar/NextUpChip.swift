@@ -46,6 +46,7 @@ struct NextUpChip: View {
         NextUpChip(reason: .highPriority)
         NextUpChip(reason: .unblocked)
         NextUpChip(reason: .next(chart: "#607"))
+        NextUpChip(reason: .oldestUntouched)
     }
     .padding(ArgoSpacing.comfortable)
     .argoDeckSurface()

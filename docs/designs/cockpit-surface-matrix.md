@@ -21,7 +21,7 @@ switched by ⌘1/⌘2/⌘3 (Sessions is home; Code added by #183).
 | Surface | Axis | Content |
 |---|---|---|
 | **Project strip** (far-left vertical tabs) | cross-project | one icon per project + attention badge; click = swap the whole window. Borderless — tabs float on the scene (#201); hover the active tab for project name + `last synced` |
-| **Sessions room** (⌘1, home) | Runtime | Roster rail + session card; zero-state = bright orb + one compact **Next up** pointer card |
+| **Sessions room** (⌘1, home) | Runtime | Roster rail + session card; zero-state = the pinned `+ New session` row alone — ~~bright orb + one compact **Next up** pointer card~~, struck by B6 (see below) |
 | **Work room** (⌘2) | Work | provider-backed tickets, full-width; views: kanban ⇄ list+detail split; owns backlog + "what's next" |
 | **Code room** (⌘3) | Workspace | file explorer + lightweight editor + scratch terminal over the primary checkout; session-independent (#183) |
 | **Merged top bar** | chrome | one floating band (#201): Concierge orb + caption · connection chip · room tabs · global git group. No wordmark, no project label, no ⌘K button |
@@ -38,7 +38,7 @@ state on its Work Item.
 |---|---|---|---|---|
 | 0 | **Tickets produced by a session** (grilling is a skill in an ordinary chat, not a session type) | ordinary Roster row; session detail lists the tickets it produced (`produces` links, tagged "created here") | a produced ticket opens in the Work room; the chat itself via the session's Console | Roster → session detail |
 | 1 | **Ticket** (ideate) | Work Item row: `id · title · state word · priority` — parents show child roll-up `3/5` | ticket detail: body/spec, sub-items, `blockedBy`, linked Deliveries (incl. teammate PRs), producing session if any, **Implement** action | Work Items view |
-| — | **Next judgement** | one "Next up" card: ticket + reason (`unblocked · spec ready`) — echoed as a pointer card on the Sessions-room zero-state | the ranked list with reasons; full backlog | Work room (home echo is a pointer only) |
+| — | **Next judgement** | one "Next up" card: ticket + at most two earned reasons — and NO echo on the Sessions-room zero-state (see below) | the ranked list with reasons; full backlog | Work room only |
 | 2 | **Plan** | current task line + plan progress (`3/7`) at the top of Activity | the committed plan, step states | Session · Activity |
 | 3 | **Build** | collapsed timeline: now-line, latest steps, Background Tasks summary (R15) | steps expand to prose; a tool/agent row fills the Console capture slot (R13) | Session · Activity (+ Console) |
 | 4 | **Code** | `Changes · 12` tab label + net ± | per-file diff → hunks; All-files (cumulative) default, By-commit toggle | Session · Delivery · Changes |
@@ -82,6 +82,14 @@ state on its Work Item.
 Decided since first draft: **navigation = three rooms (⌘1 Sessions · ⌘2 Work · ⌘3 Code)
 inside a project-scoped window, with a far-left vertical project strip** (Slack-workspace
 idiom) as the only cross-project surface besides the Concierge. Sessions is home — you land
-in the running world. The Sessions-room zero-state carries a single Next-up *pointer* card;
-the backlog's home is the Work room. Chrome is one merged floating top bar (#201); the
-Concierge rides in it rather than in a bottom strip.
+in the running world. The backlog's home is the Work room. Chrome is one merged floating top
+bar (#201); the Concierge rides in it rather than in a bottom strip.
+
+**Amended by [#273](https://github.com/milad-alizadeh/argo/issues/273) — 2026-08-28:** this read
+"the Sessions-room zero-state carries a single Next-up *pointer* card". **There is no pointer
+card.** `cockpit-session-interior-decisions.md` B6 settled the roster zero-state as *"only the
+`+ New session` button — no hero, no illustration, no orb foregrounding, no Next-up card, no
+onboarding copy"*, and `cockpit-spec.md` §4.1 repeats it: a one-time transient state costs no
+permanent chrome. Two later decisions against this one line, and both name the card explicitly, so
+the line goes rather than the decisions. The hero lives in the Work room and only there — which
+keeps the surface-matrix rule intact anyway: the ranked list has exactly one home.
