@@ -8,6 +8,11 @@ import SwiftUI
 /// one row against its siblings.
 struct BacklogRow: View {
     @Environment(\.argo) private var argo
+    /// How wide the pane drawing this row is. The chips are RIGID — they would take the title's
+    /// last characters rather than give up their own — so under `ArgoBacklogList.labelsAppearAt`
+    /// they stand down instead. Read from the room rather than measured here: a row inside a
+    /// `List` is proposed a width it cannot compare against the pane's own.
+    @Environment(\.backlogPaneWidth) private var paneWidth
 
     let drawn: WorkRoomProjection.Drawn
     /// Whether the twist points down. Meaningless on a leaf, whose slot draws nothing.
@@ -21,6 +26,13 @@ struct BacklogRow: View {
     }
 
     var body: some View {
+        line
+            .frame(minHeight: ArgoBacklogList.rowHeight)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(announcement)
+    }
+
+    private var line: some View {
         HStack(spacing: ArgoBacklogList.gap) {
             BacklogTwist(toggle: toggle, isOpen: isOpen)
             DeliveryDot(reading: row.delivery)
@@ -40,16 +52,15 @@ struct BacklogRow: View {
             trailing
         }
         .padding(.leading, ArgoBacklogList.gutter + ArgoBacklogList.indent(atDepth: drawn.depth))
-        .frame(minHeight: ArgoBacklogList.rowHeight)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(announcement)
     }
 
-    /// The provider's own labels, cut by `BacklogRowLabels` — which also decides what the
-    /// announcement says, so the two cannot disagree about the same row.
+    /// The provider's own labels, cut by `BacklogRowLabels`, which also decides what the
+    /// announcement says. A width narrow enough to drop the chips does NOT quiet the announcement:
+    /// a screen reader has no column to run out of, and the cut here is about space rather than
+    /// about what the ticket is.
     @ViewBuilder private var labels: some View {
         let reading = BacklogRowLabels(row.labels)
-        if !reading.shown.isEmpty {
+        if !reading.shown.isEmpty, paneWidth >= ArgoBacklogList.labelsAppearAt {
             HStack(spacing: ArgoBacklogList.labelGap) {
                 ForEach(reading.shown, id: \.self) { LabelChip(label: $0) }
                 // Counted rather than listed: the row has no width for the rest, and silence about

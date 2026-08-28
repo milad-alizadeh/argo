@@ -17,6 +17,11 @@ enum ArgoBacklogList {
     /// The twist's slot. A LEAF KEEPS IT, so every dot in the list lands on one vertical — which is
     /// the whole reason the twist is drawn here rather than inherited from `DisclosureGroup`.
     static let twistWidth: CGFloat = 12
+    /// The narrowest pane that still carries label chips. Under it a row spends its width on the
+    /// chips and truncates the title to `T…`, which keeps the wrong half — the title is what a
+    /// reader scans by. Above the 280 floor and below the 520 the pane opens at, so a reader who
+    /// drags the seam in loses the chips before they lose the titles.
+    static let labelsAppearAt: CGFloat = 440
     /// How many of a ticket's labels a row draws. Two, because the row's job is to DISTINGUISH one
     /// ticket from the next — the whole set is the ticket detail's, which has the width for it.
     static let labelLimit = 2
@@ -33,4 +38,12 @@ enum ArgoBacklogList {
     static func indent(atDepth depth: Int) -> CGFloat {
         CGFloat(min(depth, indentDepthCap)) * indentStep
     }
+}
+
+extension EnvironmentValues {
+    /// How wide the backlog pane is being drawn right now, seated inside its limits by the room.
+    /// The rows inside a `List` cannot read it any other way: each is proposed its own width, not
+    /// the pane's. Defaults to the width the pane opens at, so a `#Preview` with no room above it
+    /// draws the shipping row.
+    @Entry var backlogPaneWidth: CGFloat = ArgoBacklogList.width
 }

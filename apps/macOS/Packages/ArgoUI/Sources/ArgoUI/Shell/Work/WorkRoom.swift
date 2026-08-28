@@ -48,7 +48,7 @@ struct WorkRoom {
             // The deck's own width, because the seam's ceiling is what is left after the ticket
             // detail's floor — `ArgoLayout.backlogLimits(in:)`.
             GeometryReader { deck in
-                panes(limits: ArgoLayout.backlogLimits(in: deck.size.width))
+                panes(in: deck.size.width)
             }
         }
     }
@@ -56,10 +56,16 @@ struct WorkRoom {
     /// The backlog, the seam the reader moves, and the ticket. The width is seated on the way in
     /// as well as on the way out — a window narrowed under a width already dragged has to bring the
     /// pane back inside the limits.
-    private func panes(limits: ClosedRange<CGFloat>) -> some View {
-        HStack(spacing: ArgoSpacing.flush) {
+    private func panes(in deck: CGFloat) -> some View {
+        let limits = ArgoLayout.backlogLimits(in: deck)
+
+        return HStack(spacing: ArgoSpacing.flush) {
+            let seated = ArgoLayout.seated(backlogWidth, in: limits)
             BacklogList(rows: room.backlog, selection: $ticket, shut: $shut)
-                .frame(width: ArgoLayout.seated(backlogWidth, in: limits))
+                .frame(width: seated)
+                // What the rows inside the `List` read to decide whether they have width for
+                // label chips — see `ArgoBacklogList.labelsAppearAt`.
+                .environment(\.backlogPaneWidth, seated)
             DeckSeam(width: $backlogWidth, limits: limits, growsRightward: true)
             TicketDetail(ticket: room.ticket) { ticket = $0 }
         }
@@ -67,10 +73,16 @@ struct WorkRoom {
         // stored width to line itself up, and a window resize that squeezed the pane without
         // moving the number would slide the block off the seam. `onChange` and not the body, so
         // the seating is not a write during layout.
-        .onChange(of: limits, initial: true) { _, settled in
-            let seated = ArgoLayout.seated(backlogWidth, in: settled)
-            if seated != backlogWidth {
-                backlogWidth = seated
+        //
+        // ONLY where the stored width is over the ceiling, and never on a deck of nothing. A
+        // `GeometryReader` reports zero on its first pass, whose limits are floor-to-floor — write
+        // that back and the pane is pinned at 280 for the life of the window, because `seated`
+        // cannot tell a width that was clamped from one the reader chose.
+        .onChange(of: deck, initial: true) { _, width in
+            guard width > 0 else { return }
+            let ceiling = ArgoLayout.backlogLimits(in: width).upperBound
+            if backlogWidth > ceiling {
+                backlogWidth = ceiling
             }
         }
     }
