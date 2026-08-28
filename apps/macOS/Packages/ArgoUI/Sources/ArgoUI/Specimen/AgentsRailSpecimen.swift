@@ -27,7 +27,7 @@ struct AgentsRailSpecimen: View {
             feed: feed,
             header: SessionHeaderFixture.header(for: .managed),
             readings: AgentsRailFixture.readings,
-            scope: scope,
+            scope: .constant(scope),
             isRailCollapsed: subject == .collapsed,
         )
     }

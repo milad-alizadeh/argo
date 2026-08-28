@@ -19,12 +19,12 @@ struct InstrumentDeckShell: View {
     var handOff: () async -> Void = {}
     /// The same Session's plan, which is standing state rather than a row.
     var showing = PlanShowing()
-    /// Which call's evidence the deck opens with. A parameter so a specimen can render the panel
-    /// open — the state is the deck's, and there is no other way to reach it without a click.
-    var open: FeedRow.ID?
-    /// Which result inside that row the deck opens AT. A parameter for the reason `open` is: a
-    /// screenshot cannot click.
-    var step: Int?
+    /// Which call's evidence the panel is showing. A BINDING since #875: the toolbar's toggle
+    /// writes it and the toolbar is above this view. A specimen still seeds it with `.constant`,
+    /// which is how a screenshot renders the panel open without a click.
+    var open: Binding<FeedRow.ID?> = .constant(nil)
+    /// Which result inside that row the panel is showing. Beside `open` and for its reason.
+    var step: Binding<Int?> = .constant(nil)
     /// Which picture the deck opens full size, for the same reason `open` is a parameter.
     var lit: FeedShot?
     /// Which row the reading opens held at — see `FeedView.held`. A parameter because a screenshot
@@ -38,9 +38,10 @@ struct InstrumentDeckShell: View {
     var intents = DeckIntents.inert
     /// Each Subagent's own reading, for the rail to scope the feed onto — see `FeedAgentReadings`.
     var readings = FeedAgentReadings.none
-    /// Which Agent the deck opens scoped to. A parameter for the reason `open` is one: a screenshot
-    /// cannot click a chip.
-    var scope = FeedScope.session
+    /// Which Agent the feed is scoped to. A binding for the reason `open` is one: the toolbar's
+    /// evidence toggle opens the newest evidence in the rows ON SCREEN, and this says which those
+    /// are. A screenshot still seeds it with `.constant` rather than clicking a chip.
+    var scope: Binding<FeedScope> = .constant(.session)
     /// The Work room, already assembled — one value rather than the projection and its two
     /// selections apart, so the sidebar and this deck cannot be handed different ones. `nil` in
     /// every other room, and the case below draws nothing for it.

@@ -66,7 +66,7 @@ struct DeckContentRow: View {
     /// The rows the reading zones actually draw: the Session's own, or the selected Subagent's.
     /// Every fallback, and why each one exists, is `FeedAgentReadings.rows(under:of:otherwise:)`.
     private var reading: [FeedRow] {
-        rail.readings.rows(under: rail.scope, of: agents, otherwise: feed)
+        rail.readings.reading(of: feed, under: rail.scope)
     }
 
     var body: some View {

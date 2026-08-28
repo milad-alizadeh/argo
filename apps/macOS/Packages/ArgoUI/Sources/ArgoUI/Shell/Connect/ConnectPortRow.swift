@@ -58,7 +58,7 @@ struct ConnectPortRow: View {
                 .argoText(ArgoTypography.control)
         }
         // Through the TINT, which a `foregroundStyle` on the label cannot reach — the same reason
-        // `ProjectRowMenu` sets it there. Neutral, so the panel's one accent control stays its
+        // `ProjectVessel` sets it there. Neutral, so the panel's one accent control stays its
         // call to action.
         .tint(argo.color.text.primary)
         .menuStyle(.borderlessButton)

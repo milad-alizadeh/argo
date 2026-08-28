@@ -33,8 +33,8 @@ extension ProjectVesselReading {
             self.init(
                 mark: ArgoSymbol.unreachableProject,
                 name: project.name,
-                help: "Project — \(project.name) · \(ProjectDrawerProjection.unreachable)",
-                announcement: "Project, \(project.name), \(ProjectDrawerProjection.unreachable)",
+                help: "Project — \(project.name) · \(ProjectMenuProjection.unreachable)",
+                announcement: "Project, \(project.name), \(ProjectMenuProjection.unreachable)",
             )
             return
         }

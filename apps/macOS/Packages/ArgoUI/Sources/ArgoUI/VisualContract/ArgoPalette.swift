@@ -52,8 +52,9 @@ public extension ArgoPalette {
         /// reads as a hole in one of them. It replaces the platform's own bordered fill, which on
         /// glass resolves within a point or two of the vessel.
         public let control: ArgoColor
-        /// The neutral wash a selected row carries. Selection is neutral here on purpose —
-        /// the Ion Blue of selection is the indicator edge, not the fill.
+        /// The neutral wash a control carries while it is pressed, open or current — a step in the
+        /// evidence panel, the scoped chip on the rail. NOT the roster's selection, which is the
+        /// brand hue as of #875: see `InteractionRoles.selectionGround`.
         public let selected: ArgoColor
         /// The ground something laid OVER the deck is read against — a picture opened full size.
         /// Near-opaque, and not a step of the ramp.
@@ -176,6 +177,22 @@ public extension ArgoPalette {
                 ("selectionIndicator", selectionIndicator), ("focusRing", focusRing),
                 ("destructive", destructive),
             ]
+        }
+
+        /// The brand hue laid under a whole row as a GROUND rather than drawn as an ink — the one
+        /// selection a reader tracks all day (#875 finding 1, amending D30). One hue, two weights:
+        /// `accent` at full strength where a control is the loud rung, this where a row is merely
+        /// selected.
+        ///
+        /// The weight is not a taste: at any more alpha the roster's own quietest voice falls below
+        /// the legibility it has on `surface.selected`, which is the wash this replaces. The
+        /// contract asserts exactly that.
+        ///
+        /// It is drawn by `SessionNavigator` as a row background, not by the platform: a macOS 26
+        /// sidebar's selection capsule is a fixed neutral that neither `.tint` nor the
+        /// `AccentColor` asset moves by a value.
+        public var selectionGround: ArgoColor {
+            accent.opacity(0.10)
         }
     }
 

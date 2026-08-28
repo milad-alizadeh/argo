@@ -39,7 +39,6 @@ struct SurfaceMeasureTests {
     @Test
     func `what the toolbar draws inside a vessel fits inside that vessel`() {
         #expect(ArgoToolbarVessel.scopeDividerHeight < ArgoToolbarVessel.height)
-        #expect(ArgoToolbarVessel.rowMenuWidth < ArgoToolbarVessel.height)
     }
 
     /// Without the overshoot a hairline inside a 3pt bar is indistinguishable from the fill's own

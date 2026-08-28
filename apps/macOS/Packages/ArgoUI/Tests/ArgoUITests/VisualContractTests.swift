@@ -67,12 +67,6 @@ struct VisualContractTests {
         #expect(appearance.palette.text.primary.contrastRatio(on: destructive) >= 4.5)
     }
 
-    @Test
-    func `the selected row's wash is neutral — the brand is the indicator, not the fill`() {
-        let wash = palette.surface.selected.composited(over: palette.surface.base)
-        #expect(wash.chromaticSpread <= 0.05)
-    }
-
     @Test(arguments: palettes)
     func `no two operational states are near-neighbours`(
         _ appearance: (name: String, palette: ArgoPalette),

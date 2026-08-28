@@ -15,9 +15,8 @@ public extension ArgoPalette {
             // Resolves to #3B3E44 on the composer vessel — the study's Deny pill, sampled from
             // `docs/designs/composer/perm.png` rather than chosen.
             control: ArgoColor(hex: 0xFFFFFF, opacity: 0.06),
-            // Resolves to #2B2D31 over `base` — the study's selected row. The app's
-            // `AccentColor` asset must carry the same value: the native sidebar capsule
-            // reads that, never this.
+            // Resolves to #2B2D31 over `base` — the study's selected row, now spent on pressed and
+            // current rather than on selection: the roster's capsule is Ion Blue as of #875.
             selected: ArgoColor(hex: 0xFFFFFF, opacity: 0.058),
             // Below `sunken` and nearly opaque.
             scrim: ArgoColor(hex: 0x0B0C0E, opacity: 0.90),

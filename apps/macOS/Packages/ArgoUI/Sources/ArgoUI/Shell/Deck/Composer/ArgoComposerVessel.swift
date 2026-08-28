@@ -94,10 +94,6 @@ public enum ArgoComposerVessel {
     /// `mcp__server__the_verb`, and one of those unchecked is a chip as wide as the vessel.
     public static let chipNameCeiling: CGFloat = 160
 
-    /// How tall the Mode control stands, measured off `docs/designs/composer/rest.png`. It has no
-    /// width: the control hugs the selected rung. Not `chipHeight`, though the two agree today.
-    public static let modeHeight: CGFloat = 20
-
     /// How tall the line standing in for a composer that cannot reach anything is (#546), measured
     /// off `docs/designs/composer/orphaned.png`. A row at the deck's foot rather than a vessel over
     /// the feed: nothing floats here, because there is nothing under it to look through to.

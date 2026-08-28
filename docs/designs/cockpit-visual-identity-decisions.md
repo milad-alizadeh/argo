@@ -624,6 +624,45 @@ its approved study are authoritative for the replacement look and feel.
   so a wrong accent looks exactly like a correct neutral wash — that artefact cost two rounds here.
   A preview of an `ArgoUI` view builds the package alone and cannot see the asset, so it shows the
   OS accent and is worthless for this one check.
+- **Amended by [#875](https://github.com/milad-alizadeh/argo/issues/875) — 2026-08-28: the wash is
+  Ion Blue, and the platform does not draw it.** Two clauses go: the one that keeps selection an ink
+  wash, and the one that names the asset as where the capsule's colour lives.
+
+  The trade the first made — spend no brand hue on selection, keep the neutral ramp intact — was
+  judged wrong on a pass over the running app. The accent was defined in the palette and spent
+  nowhere a reader meets it, and the one piece of state a reader tracks all day was drawn in a grey
+  a shade off the background. Selection is exactly where the identity has to be legible.
+
+  The second was simply no longer true. **On macOS 26 the `.listStyle(.sidebar)` selection capsule
+  is a fixed neutral.** Neither `.tint` nor the `AccentColor` asset moves it by a value — both
+  measured, not reasoned: a scarlet asset was shipped and the shell re-rendered, and the capsule
+  stayed `#464646` with the window active and the row clicked, while the rooms picker in the same
+  frame went scarlet. So the route D30 recorded is closed, and the wash is Argo's to draw.
+
+  - **How it is drawn now.** `SessionNavigator` gives the selected row a `listRowBackground` of
+    `interaction.selectionGround` — `interaction.accent` at 0.10. That REPLACES the style's capsule
+    rather than painting over it, which is what makes it the opposite of the option ruled out
+    below: there is one highlight in the row, not two, and the measured render carries no grey
+    capsule anywhere in the band. It is the study's own full-bleed wash, back — and it holds its
+    colour while the list is not first responder, where the platform would grey it out.
+  - **The weight is arithmetic, not taste.** A saturated Ion Blue row cannot carry this app's inks:
+    `text.primary` on `#3E9BFF` measures 2.60:1. At 0.10 every roster voice reads at least as well
+    as it did on the neutral wash this replaces, and the ground carries four times its chroma.
+    `SelectionGroundTests` asserts both, against the old wash rather than against a number.
+  - **The asset now carries the accent at FULL strength**, `#3E9BFF`, because what it still reaches
+    is the loud rung. The one placement nobody expected is the **rooms picker**:
+    `NSSegmentedControl` under Liquid Glass ignores `selectedSegmentBezelColor` (#857) but reads the
+    asset, and fills the selected segment with it outright. So finding 2 of #875 closes on the
+    app-wide asset alone, with no hand-rolled control — and one hue now reads at two weights, full
+    on the segment and a wash on the row. `AccentAssetTests` fails the build if asset and palette
+    ever part again. Every stock accented control and focus ring in the app moved with it, which is
+    the intent and not a side effect — and which was **looked at**, not assumed: the Connect
+    panel's `Create project` and the composer's Send are the two prominent controls that took it,
+    both rendered and judged (`connectChoosing`, `composerTyping`), along with `projectSettings`,
+    `workChrome` and `selectedRow`. Both now carry the identity where they were graphite, which is
+    the point of the change rather than a cost of it.
+  - **Still not reopened:** the leading Ion Blue rail. A selected row is carried by its ground
+    alone. The clause below stands exactly as written.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.

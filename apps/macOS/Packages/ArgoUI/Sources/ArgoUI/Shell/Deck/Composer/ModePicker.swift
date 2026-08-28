@@ -1,10 +1,16 @@
 import ArgoEngine
 import SwiftUI
 
-/// The `Read Only · Plan · Code · Auto` ladder, as a bespoke `Menu`.
+/// The `Read Only · Plan · Code · Auto` ladder, as the platform's own pull-down.
 ///
 /// It draws a READING rather than a choice (#545): a stance the ladder has no rung for draws the
 /// nearest one under a `≈`, or `unknown` where there is none, and neither ticks a row.
+///
+/// **Stock, deliberately (#875).** It used to wear a hand-drawn ground, an `edge.subtle` stroke at
+/// `ArgoRadius.control`, a pinned height and a chevron drawn beside the label — four decisions
+/// spent to arrive at what `Menu` draws by itself. The ground, the capsule and the indicator are
+/// the system's now, which is also what puts this control's press, focus and hover on the same
+/// footing as every other pull-down the reader meets.
 struct ModePicker: View {
     @Environment(\.argo) private var argo
 
@@ -13,46 +19,27 @@ struct ModePicker: View {
     var setMode: (SessionMode) -> Void = { _ in }
 
     var body: some View {
-        HStack(spacing: ArgoSpacing.snug) {
-            Menu {
-                // The header states what the CLI reports, for the reader who opened the control
-                // instead of hovering it. Only where the reading is not the ladder's own — an
-                // exact rung has nothing to footnote, and gets no header at all.
-                if let report = reading.report {
-                    Section(report) { rungs }
-                } else {
-                    rungs
-                }
-            } label: {
-                // The label style sizes the mark by FONT. `ArgoGlyph` frames by ink height, and
-                // framing a short wide glyph like `</>` up to a 10pt ink height scales its stroke
-                // with it — rendered, it drew a 2pt rule beside the word's 1pt one.
-                Label(reading.word, systemImage: reading.mark)
-                    .labelStyle(.argo(ArgoTypography.control))
+        Menu {
+            // The header states what the CLI reports, for the reader who opened the control
+            // instead of hovering it. Only where the reading is not the ladder's own — an
+            // exact rung has nothing to footnote, and gets no header at all.
+            if let report = reading.report {
+                Section(report) { rungs }
+            } else {
+                rungs
             }
-            // Not `.borderlessButton`: that wraps its label in about 10pt of its own padding, which
-            // puts the pill 10 over the width `composer/rest.png` measures.
-            .menuStyle(.button)
-            .buttonStyle(.plain)
-            .menuIndicator(.hidden)
-            // A button-styled `Menu` paints its label with the accent and reads the TINT — a
-            // `foregroundStyle` set anywhere around it loses.
-            .tint(argo.color.text.primary)
-            // Or the label stretches and the control stops hugging the rung.
-            .fixedSize()
-            // Beside the label: a `Menu` re-synthesises its label from icon and title alone, so a
-            // chevron inside one never draws.
-            Image(systemName: ArgoSymbol.disclosure)
-                .argoIcon(.inline)
-                .foregroundStyle(argo.color.text.secondary)
+        } label: {
+            // The label style sizes the mark by FONT. `ArgoGlyph` frames by ink height, and
+            // framing a short wide glyph like `</>` up to a 10pt ink height scales its stroke
+            // with it — rendered, it drew a 2pt rule beside the word's 1pt one.
+            Label(reading.word, systemImage: reading.mark)
+                .labelStyle(.argo(ArgoTypography.control))
         }
-        .padding(.horizontal, ArgoSpacing.snug)
-        .frame(height: ArgoComposerVessel.modeHeight)
-        .background(argo.color.surface.control, in: .rect(cornerRadius: ArgoRadius.control))
-        .overlay {
-            RoundedRectangle(cornerRadius: ArgoRadius.control)
-                .strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.border)
-        }
+        // A `Menu` paints its label with the accent and reads the TINT — a `foregroundStyle` set
+        // anywhere around it loses. Ion Blue is spent on selection and focus, not on a label.
+        .tint(argo.color.text.primary)
+        // Or the label stretches and the control stops hugging the rung.
+        .fixedSize()
         .help(reading.help)
         .accessibilityLabel("Mode, \(reading.help)")
     }

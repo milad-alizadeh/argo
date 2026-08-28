@@ -37,9 +37,12 @@ struct SessionNavigator: View {
             }
             archivedFoot
         }
-        // `.sidebar` carries the window's system material (D3), so the roster may not trade
-        // it for a styled list. Selection is that style's own capsule, coloured from the
-        // `AccentColor` asset — SwiftUI's `.tint` does not reach it (D30).
+        // `.sidebar` carries the window's system material (D3), so the roster may not trade it
+        // for a styled list. What it does NOT carry is a selection this app can colour: on macOS
+        // 26 the style's capsule is a fixed neutral, and neither `.tint` nor the `AccentColor`
+        // asset moves it by a value — both measured off a render with a scarlet probe (#875,
+        // amending D30, which recorded the asset as the route). The ground is `listRowBackground`
+        // below, which REPLACES the capsule rather than painting over it.
         .listStyle(.sidebar)
         // Over the whole list, not the chevron alone: dropping the section's `isExpanded:` gave up
         // the system's own expansion, so the rows arrive on this instead of in the click's frame.
@@ -97,6 +100,12 @@ struct SessionNavigator: View {
             select: { selection = row.id },
         )
         .previewSafeListRow()
+        // The selection's whole appearance: the study's full-bleed wash, in Ion Blue. It is the
+        // system capsule's REPLACEMENT, not a second highlight over it — a row background is drawn
+        // instead of the style's own, which is what makes this the option D30 ruled out's opposite.
+        // It also holds its colour while the list is not first responder, where the platform would
+        // grey it out: this is the one piece of state a reader tracks all day.
+        .listRowBackground(ground(of: row).color)
         .tag(row.id)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(
@@ -107,6 +116,12 @@ struct SessionNavigator: View {
             }
             .tint(argo.color.interaction.destructive)
         }
+    }
+
+    /// The selected row's ground, and nothing at all under the others — an unselected row is the
+    /// sidebar's own material, which is the surface D3 reserves for it.
+    private func ground(of row: SessionRosterProjection.Row) -> ArgoColor {
+        row.id == selection ? argo.color.interaction.selectionGround : .transparent
     }
 
     private var emptyState: some View {

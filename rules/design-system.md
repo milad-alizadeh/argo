@@ -197,6 +197,43 @@ A colour in this palette **means** something. Ion Blue is brand, selection and f
 else; four operational states are held apart by construction; two diff inks are held off both.
 That is the whole budget, and every one of them is asserted.
 
+### Where Ion Blue is actually spent
+
+Rationing it is only half the rule: a hue reserved for selection and then spent nowhere the reader
+meets selection buys a shell that reads as a stock, greyed-out Mac app. #875 put it back. Its
+placements, and only these:
+
+| Placement | Drawn by | Weight |
+|---|---|---|
+| The selected roster row | `interaction.selectionGround`, as a `listRowBackground` | a wash — `accent` at 0.10 |
+| The rooms picker's selected segment | the `AccentColor` **asset**, which `NSSegmentedControl` fills with | full |
+| Focus rings and stock accented controls | the same asset | full |
+| The selection indicator on a tab | `interaction.selectionIndicator` | full |
+| A link, and the ink an interactive word takes | `interaction.accent` | full |
+
+One hue, two weights: full strength where a control is the loud rung, a low-alpha ground where a
+row is merely selected. The weight is not a taste — at any more alpha the roster's quietest voice
+falls below the legibility it had on the neutral wash, which `SelectionGroundTests` asserts, along
+with an absolute floor for the two voices a row is actually read in.
+
+`selectionGround` is DERIVED — a computed role, not a stored one — so the `Mirror` gate below
+cannot see it and `ContractSpecimen` draws it by hand, beside the full-strength rung so the two
+weights can be judged together. Any derived role owes the specimen the same.
+
+**The asset is app-wide and is the only route to the loud half.** It reads no palette, so
+`AccentAssetTests` is what keeps the shipped file and `interaction.accent` one value — they had
+already drifted once. Re-colouring it moves every stock accented control in the app at the same
+time; that is the intent, not a side effect.
+
+**The platform will not colour a sidebar's selection.** On macOS 26 the `.listStyle(.sidebar)`
+capsule is a fixed neutral: neither `.tint` nor the asset moves it. Draw the row's ground with
+`listRowBackground`, which REPLACES that capsule rather than stacking a second highlight on it.
+
+**Judge selection off a render, never off a preview.** A preview of an `ArgoUI` view builds the
+package alone and cannot see the asset at all; and an inactive window draws the platform's own
+selection in an unemphasized grey. The `selectedRow` specimen renders both weights in one frame,
+in the app target.
+
 So before adding a colour, say which of those it is. If the answer is "none — it marks a *kind*
 of thing", it does not get a hue:
 

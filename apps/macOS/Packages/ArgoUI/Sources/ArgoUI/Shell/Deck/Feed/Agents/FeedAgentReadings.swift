@@ -42,4 +42,11 @@ struct FeedAgentReadings: Equatable, Sendable {
               let rows = rows(of: agent) else { return feed }
         return rows
     }
+
+    /// The same question asked with the Session's rows alone, which is the only thing two of the
+    /// three callers have: the deck's zones read it per layout pass, and the shell reads it to
+    /// resolve what the toolbar's evidence toggle opens on (#875). One decision, spelled once.
+    func reading(of feed: [FeedRow], under scope: FeedScope) -> [FeedRow] {
+        rows(under: scope, of: FeedAgents.all(in: feed), otherwise: feed)
+    }
 }

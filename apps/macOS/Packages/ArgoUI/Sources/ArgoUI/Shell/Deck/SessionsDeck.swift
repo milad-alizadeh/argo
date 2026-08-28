@@ -19,11 +19,14 @@ struct SessionsDeck: View {
     /// The selected Session's plan — standing state rather than a row, so it arrives beside the
     /// rows and not among them.
     var showing = PlanShowing()
-    /// Which call's evidence the panel is showing, if any. Held by the deck: the feed cannot own a
-    /// selection that resizes the row it sits in.
-    @State var open: FeedRow.ID?
-    /// Which result inside the open row the panel is showing — see `FeedRowSelection.step`.
-    @State var step: Int?
+    /// Which call's evidence the panel is showing, if any. NOT the feed's: the feed cannot own a
+    /// selection that resizes the row it sits in. Held above this view since #875, because the
+    /// toolbar's toggle reaches it and the toolbar is outside the deck — see `CockpitView`, which
+    /// is also where the per-Session clearing `.id(session)` used to give for free now lives.
+    var open: Binding<FeedRow.ID?> = .constant(nil)
+    /// Which result inside the open row the panel is showing — see `FeedRowSelection.step`. Beside
+    /// `open` and for its reason: the two are one selection.
+    var step: Binding<Int?> = .constant(nil)
     /// Which picture is open full size. Held HERE because the lightbox covers the whole deck.
     @State var lit: FeedShot?
     /// Which row the reading opens held at — see `FeedView.held`. Where the reading STARTS; the
@@ -44,9 +47,11 @@ struct SessionsDeck: View {
     /// reads them (#711). A specimen passes fixtures, so the scoped feed is a state somebody has
     /// looked at. See `FeedAgentReadings`.
     var readings = FeedAgentReadings.none
-    /// Which Agent's work the feed is reading. Held HERE, under the deck's per-Session identity,
-    /// because a scope names a delegation of THIS Session's and must not survive a switch.
-    @State var scope = FeedScope.session
+    /// Which Agent's work the feed is reading. Held above this view since #875, beside `open`: the
+    /// toolbar's toggle opens the newest evidence in the rows ON SCREEN, and which rows those are
+    /// is this. A scope still names a delegation of THIS Session's and must not survive a switch —
+    /// `CockpitView` clears it with the rest.
+    var scope: Binding<FeedScope> = .constant(.session)
     /// Where the keyboard is across the whole reading — the feed, the panel and the lightbox in one
     /// space, so focus can come back out of the two that cover it. See `FeedFocus`.
     @FocusState private var focus: FeedFocus?
@@ -76,9 +81,9 @@ struct SessionsDeck: View {
         .argoLightbox(selection, in: feed)
         // A panel and a lightbox are opened on a ROW, and a scope switch replaces every row under
         // them. Left open they would show one reading's evidence over another's feed.
-        .onChange(of: scope) { _, _ in
-            open = nil
-            step = nil
+        .onChange(of: scope.wrappedValue) { _, _ in
+            open.wrappedValue = nil
+            step.wrappedValue = nil
             lit = nil
         }
     }
@@ -94,7 +99,7 @@ struct SessionsDeck: View {
                 intents: intents,
                 seams: seams,
                 rail: AgentsRailControl(
-                    scope: $scope,
+                    scope: scope,
                     isCollapsed: isRailCollapsed,
                     readings: readings,
                 ),
@@ -110,7 +115,7 @@ struct SessionsDeck: View {
     }
 
     private var selection: FeedRowSelection {
-        FeedRowSelection(open: $open, step: $step, lit: $lit, focus: $focus)
+        FeedRowSelection(open: open, step: step, lit: $lit, focus: $focus)
     }
 }
 
@@ -126,10 +131,13 @@ struct SessionsDeck: View {
 }
 
 #Preview("Sessions deck — a call's evidence open beside the feed") {
-    SessionsDeck(feed: FeedProjection.previewRows, open: FeedProjection.previewFailedCallID)
-        .frame(width: 900, height: 620)
-        .argoDeckSurface()
-        .argoAppearance()
+    SessionsDeck(
+        feed: FeedProjection.previewRows,
+        open: .constant(FeedProjection.previewFailedCallID),
+    )
+    .frame(width: 900, height: 620)
+    .argoDeckSurface()
+    .argoAppearance()
 }
 
 #Preview("Sessions deck — the plan's list open over the feed") {
