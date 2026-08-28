@@ -4,11 +4,10 @@ extension TicketsReading {
     /// The hero, over the same open set the views count. Work happens at leaves, so a parent is
     /// neither picked nor counted into the pool that decides a tier.
     ///
-    /// A COLD-START planner, never a best-move-overall recommender: the pool is
-    /// `open · leaf · todo · unblocked · session-less`, and the pick is the head of it ranked by
-    /// `priority desc → PRD sequence → age` (`TicketsReading+Ranking.swift`). Which ticket most
-    /// needs
-    /// attention is a different question, and the attention channel's.
+    /// A COLD-START planner, never a best-move-overall recommender: the pool is `open · leaf · todo
+    /// · unblocked · session-less`, and the pick is the head of it ranked by `priority desc → PRD
+    /// sequence → age` (`TicketsReading+Ranking.swift`). Which ticket most needs attention is a
+    /// different question, and the attention channel's.
     func nextUp(of open: [Ticket]) -> NextUp {
         // No open LEAF is the clear tier, not the blocked one: "every open leaf is waiting on
         // something still open" is false when there is no open leaf to wait.

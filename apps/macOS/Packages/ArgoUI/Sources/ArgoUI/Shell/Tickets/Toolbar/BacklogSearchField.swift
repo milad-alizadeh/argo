@@ -4,8 +4,7 @@ import SwiftUI
 ///
 /// It stands in for `.searchable`, which is not used here for one reason: the system's field takes
 /// the width the toolbar gives it, and this one is measured at `ArgoTicketsChrome.searchWidth` so
-/// it
-/// clears the trailing edge at the 1280 window. Everything else about it is the stock field —
+/// it clears the trailing edge at the 1280 window. Everything else about it is the stock field —
 /// focus, the escape key, and the system's own clear button.
 ///
 /// **It sits over the ticket and searches the list.** That is Mail's own split, and for Mail's

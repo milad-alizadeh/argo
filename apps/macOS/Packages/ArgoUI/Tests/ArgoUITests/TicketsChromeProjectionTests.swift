@@ -2,9 +2,8 @@
 import Testing
 
 /// What the Tickets room's chrome reads off the room (#816) — the two bands and the window's row,
-/// one
-/// value between them (#836). The heading is two lines because a title without its count can lie
-/// about what you are filtered to, and the room's two vacancies are different pages: an empty
+/// one value between them (#836). The heading is two lines because a title without its count can
+/// lie about what you are filtered to, and the room's two vacancies are different pages: an empty
 /// backlog keeps New ticket, an unbound provider keeps nothing.
 @Suite("Tickets chrome projection")
 struct TicketsChromeProjectionTests {

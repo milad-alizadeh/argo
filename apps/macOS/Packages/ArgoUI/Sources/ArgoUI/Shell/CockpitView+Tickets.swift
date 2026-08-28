@@ -65,17 +65,15 @@ extension CockpitView {
     }
 
     /// The Tickets room with nothing bound hides its half of the split view WHOLE (#818). Hidden
-    /// here
-    /// and not by an empty sidebar view: a `NavigationSplitView` draws its column, its divider and
-    /// its toggle around an `EmptyView` all the same.
+    /// here and not by an empty sidebar view: a `NavigationSplitView` draws its column, its divider
+    /// and its toggle around an `EmptyView` all the same.
     ///
     /// The room is still reachable — Rooms is the sidebar's strip, not the rail that just went.
     /// This is where a machine with no Ticket Binding lands, which is every machine before
     /// onboarding and every Project bound to nothing after it.
     ///
     /// Takes the room already assembled rather than reading `ticketsRoom` again — see the note
-    /// there.
-    /// `nil` is every other room, where nothing hides anything.
+    /// there. `nil` is every other room, where nothing hides anything.
     func roomHidesSidebar(_ tickets: TicketsRoom?) -> Bool {
         tickets?.room.vacancy == .unbound
     }
@@ -117,9 +115,8 @@ extension CockpitView {
     }
 
     /// What the room adds to `ShellToolbar` — the Tickets room's whole row of controls, and nothing
-    /// in
-    /// the other two. `ToolbarContentBuilder` has no empty content, so the absence is an `if` over
-    /// the room the caller already assembled rather than a `switch` arm returning nothing.
+    /// in the other two. `ToolbarContentBuilder` has no empty content, so the absence is an `if`
+    /// over the room the caller already assembled rather than a `switch` arm returning nothing.
     @ToolbarContentBuilder func roomToolbar(tickets: TicketsRoom?) -> some ToolbarContent {
         if let tickets {
             tickets.toolbar

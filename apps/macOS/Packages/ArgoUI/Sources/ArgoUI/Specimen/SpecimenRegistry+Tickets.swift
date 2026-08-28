@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// The Tickets room (#812, #815, #816, #817, #818): the room at rest, its two vacancies, the
-/// ticket's
-/// own states, the hero's tiers, the marks it spends on a Delivery, and the toolbar row's three.
+/// ticket's own states, the hero's tiers, the marks it spends on a Delivery, and the toolbar row's
+/// three.
 extension SpecimenRegistry {
     static let tickets: [SpecimenEntry] = [
         SpecimenEntry("ticketsRoom") { TicketsRoomSpecimen() },

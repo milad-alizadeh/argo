@@ -119,8 +119,7 @@ public extension Hub {
         )
         // Filed under the claim for the reason the rung is: it must survive the re-key to the id
         // the CLI picks, or the Tickets room would show the ticket claimed only until the
-        // transcript
-        // appeared (#872). A resume names one too — it is the same work, continued.
+        // transcript appeared (#872). A resume names one too — it is the same work, continued.
         if let ticket = plan.seed.ticket {
             claims.setTicket(ticket, for: plan.claim)
         }

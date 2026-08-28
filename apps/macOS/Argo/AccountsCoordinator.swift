@@ -25,8 +25,7 @@ final class AccountsCoordinator {
     /// not the Connect panel is.
     private(set) var tickets: [Ticket] = []
     /// Where those items can be READ, on the provider's own site (#872) — the Tickets room's two
-    /// link
-    /// verbs, and `nil` where the port is bound to nothing or the Binding addresses no page.
+    /// link verbs, and `nil` where the port is bound to nothing or the Binding addresses no page.
     /// Published with the listing and off the same resolve, so the room can never open a URL from
     /// one Binding against a backlog read through another.
     private(set) var ticketAddress: TicketAddress?

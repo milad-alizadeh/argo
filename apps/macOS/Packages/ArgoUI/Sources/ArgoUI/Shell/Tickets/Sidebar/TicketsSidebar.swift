@@ -58,7 +58,7 @@ struct TicketsSidebar: View {
     }
 }
 
-#Preview("Work sidebar") {
+#Preview("Tickets sidebar") {
     @Previewable @State var room = CockpitRoom.tickets
     @Previewable @State var view = TicketsView.allOpen
 
@@ -67,7 +67,7 @@ struct TicketsSidebar: View {
         .argoAppearance()
 }
 
-#Preview("Work sidebar — nothing bound") {
+#Preview("Tickets sidebar — nothing bound") {
     @Previewable @State var room = CockpitRoom.tickets
     @Previewable @State var view = TicketsView.allOpen
 

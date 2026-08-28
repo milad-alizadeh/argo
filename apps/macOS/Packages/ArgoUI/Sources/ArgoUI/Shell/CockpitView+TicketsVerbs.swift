@@ -2,8 +2,7 @@ import ArgoEngine
 import SwiftUI
 
 /// What the Tickets room's row actually performs (#872) — the four verbs `ticketsIntents` hands
-/// down, and
-/// the composer New ticket opens.
+/// down, and the composer New ticket opens.
 ///
 /// Here rather than on the room: a verb reaches the provider port, the pasteboard, the browser or a
 /// spawn, and none of those is a value the room could hold. The room takes closures for exactly
@@ -11,8 +10,7 @@ import SwiftUI
 extension CockpitView {
     /// The open ticket's own three. `inert` with no ticket open — the row hides the vessel there
     /// anyway (`TicketsToolbar`), and a verb addressing nobody must not be one press away from
-    /// being
-    /// drawn.
+    /// being drawn.
     ///
     /// The two link verbs are ABSENT where the Binding cannot address the ticket, which is what
     /// disables them: a Linear Binding holds a team id, and no page is derivable from one
@@ -34,9 +32,8 @@ extension CockpitView {
     /// Session, in the composer's `ModePicker`, which reads the rung back.
     ///
     /// The window stays in the Tickets room. The answer the reader asked for is the backlog row
-    /// going
-    /// claimed, which happens here — switching them into the Sessions room would take the list they
-    /// were triaging away at the moment it told them something.
+    /// going claimed, which happens here — switching them into the Sessions room would take the
+    /// list they were triaging away at the moment it told them something.
     private func startSession(on ticket: Int) async {
         guard let fresh = await actions.tickets.startSession(ticket, .code) else { return }
         // Selected but not switched to: the roster is on the fresh Session whenever they go there.

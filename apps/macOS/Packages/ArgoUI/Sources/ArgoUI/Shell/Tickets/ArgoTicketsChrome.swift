@@ -1,8 +1,7 @@
 import SwiftUI
 
 /// What the Tickets room's toolbar row is measured at (`cockpit-work-room.md` — the toolbar).
-/// Beside
-/// the surface, per `rules/design-system.md`: a measure is not a token.
+/// Beside the surface, per `rules/design-system.md`: a measure is not a token.
 ///
 /// The row height is NOT here. It is the shell's existing titlebar strip and `ArgoToolbarVessel`
 /// already names it, so a second number for the same band could only ever disagree with it.

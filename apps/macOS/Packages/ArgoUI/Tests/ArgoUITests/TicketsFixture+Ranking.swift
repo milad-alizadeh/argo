@@ -7,8 +7,7 @@ import Foundation
 /// pick some other way.
 ///
 /// Beside the suites rather than in `Sources/` with the rest of `TicketsFixture`: no preview draws
-/// a
-/// ranking, so these two have no caller the app ships.
+/// a ranking, so these two have no caller the app ships.
 extension TicketsFixture {
     /// One takeable leaf. `blockedBy: []` throughout — a blocked leaf never reaches the pool, so a
     /// ranking case naming an edge would be testing the filter above the ranking instead.

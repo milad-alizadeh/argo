@@ -87,8 +87,8 @@ enum TicketsRoomProjection {
         /// belongs on the row, not only in the pane beside it.
         let labels: [TicketLabel]
         /// The rows nested under this one, from the child edge
-        /// (`TicketsRoomProjection+Tree.swift`).
-        /// Empty on a leaf, and empty on a parent whose every child the view filtered out.
+        /// (`TicketsRoomProjection+Tree.swift`). Empty on a leaf, and empty on a parent whose every
+        /// child the view filtered out.
         var children: [Row]
         /// Whether this row is on screen only because something under it matched the query — always
         /// false where nothing is narrowing, so an unsearched list has no rails in it (#873).

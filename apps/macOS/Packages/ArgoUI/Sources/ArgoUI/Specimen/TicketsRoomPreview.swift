@@ -24,8 +24,7 @@ extension ConnectionHealthReading {
 extension CockpitPresentation {
     /// The preview roster put on the backlog it is drawn beside: three Sessions on the three
     /// tickets `TicketsFixture` spells `In progress`, so the rail's count is arithmetic over the
-    /// room
-    /// rather than a number the specimen states.
+    /// room rather than a number the specimen states.
     ///
     /// The roster itself is not on screen in this room — the Work sidebar has the leading slot —
     /// so these three are read for their ticket links and nothing else.

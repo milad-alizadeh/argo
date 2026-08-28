@@ -15,10 +15,9 @@ struct BacklogMenu: View {
 
     var body: some View {
         Menu {
-            // One grouping today, so the menu states the one in force rather than offering a
-            // choice nothing can answer yet: `TicketsChromeProjection.grouping` is a constant until
-            // a
-            // port reads something else to group by (#388).
+            // One grouping today, so the menu states the one in force rather than offering a choice
+            // nothing can answer yet: `TicketsChromeProjection.grouping` is a constant until a port
+            // reads something else to group by (#388).
             Button("Group by priority", action: grouping)
         } label: {
             // `argoIcon` and not `ArgoGlyph`: a rung constrains a mark's HEIGHT, and an ellipsis is

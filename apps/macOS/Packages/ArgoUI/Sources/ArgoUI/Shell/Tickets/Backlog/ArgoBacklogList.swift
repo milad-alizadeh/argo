@@ -29,8 +29,7 @@ enum ArgoBacklogList {
     /// rows under it start on.
     static let bandInsetX: CGFloat = ArgoSpacing.comfortable
     /// A FLOOR, not a frame — the same reason `ArgoTicketsSidebar.viewRowHeight` is one. It grew
-    /// from
-    /// 28 when the title snapped up to `body` 13.
+    /// from 28 when the title snapped up to `body` 13.
     static let rowHeight: CGFloat = 30
     /// The row's leading inset, before the twist.
     static let gutter: CGFloat = ArgoSpacing.comfortable

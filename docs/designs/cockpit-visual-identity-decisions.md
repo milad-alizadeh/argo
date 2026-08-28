@@ -659,7 +659,7 @@ its approved study are authoritative for the replacement look and feel.
     the intent and not a side effect — and which was **looked at**, not assumed: the Connect
     panel's `Create project` and the composer's Send are the two prominent controls that took it,
     both rendered and judged (`connectChoosing`, `composerTyping`), along with `projectSettings`,
-    `workChrome` and `selectedRow`. Both now carry the identity where they were graphite, which is
+    `ticketsChrome` and `selectedRow`. Both now carry the identity where they were graphite, which is
     the point of the change rather than a cost of it.
   - **Still not reopened:** the leading Ion Blue rail. A selected row is carried by its ground
     alone. The clause below stands exactly as written.

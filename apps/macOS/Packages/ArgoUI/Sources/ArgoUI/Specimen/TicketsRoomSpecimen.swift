@@ -2,8 +2,7 @@ import ArgoEngine
 import SwiftUI
 
 /// The Tickets room in the shipping shell — the titlebar, the sidebar at its own ideal, and the
-/// deck's
-/// two panes. This is the state `docs/designs/work-room/rest.png` is shot from.
+/// deck's two panes. This is the state `docs/designs/work-room/rest.png` is shot from.
 ///
 /// The shell reads its room from three inputs now, not one fixture (#820): the listing, the Binding
 /// behind the foot, and the roster the claims come off. All three are handed in here, so this draws
@@ -142,8 +141,7 @@ struct DeliveryDotsSpecimen: View {
 
 extension CockpitNavigationModel {
     /// A window opened straight into the Tickets room, on the ticket the design's renders open on.
-    /// The
-    /// harness cannot click a room tab, so the state is built rather than driven.
+    /// The harness cannot click a room tab, so the state is built rather than driven.
     static var pointedAtTickets: CockpitNavigationModel {
         let navigation = CockpitNavigationModel()
         navigation.room = .tickets

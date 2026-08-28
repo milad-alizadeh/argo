@@ -23,10 +23,9 @@ struct ShellToolbar: ToolbarContent {
     /// Assembled by the caller: nothing below the bar reads a presentation.
     let scope: ScopeVessel
     /// New Session, in the rooms that create one. `nil` in the Tickets room, whose one create
-    /// action
-    /// is a ticket and wears the compose mark itself (#836) — Mail's window spends exactly one
-    /// compose button, and two of them a finger apart is two invitations to make different things.
-    /// `⌘N` and the menu bar still reach it from there.
+    /// action is a ticket and wears the compose mark itself (#836) — Mail's window spends exactly
+    /// one compose button, and two of them a finger apart is two invitations to make different
+    /// things. `⌘N` and the menu bar still reach it from there.
     let spawn: CockpitSpawn?
     /// The evidence panel's toggle, in the room that has a panel and `nil` in the others (#875).
     ///

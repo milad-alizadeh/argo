@@ -3,8 +3,7 @@ import SwiftUI
 
 /// The Tickets room's chrome alone — the window's one row of controls, over the heading the list
 /// keeps — for the two vacancies the shipping shell cannot be driven into, since its Tickets room
-/// is
-/// fed from one fixture.
+/// is fed from one fixture.
 ///
 /// The chrome and not the room, because what these states differ in IS the chrome: an empty backlog
 /// keeps New ticket and loses everything that narrows a list, and an unbound provider keeps nothing
