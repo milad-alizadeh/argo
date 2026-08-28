@@ -58,7 +58,7 @@ extension SessionHeaderProjection {
     }
 
     /// The issue as a link, and `nil` whenever there is no link to make. No attach affordance:
-    /// with no Work Item provider connected there are no Work Items (`CONTEXT.md` L1).
+    /// with no Ticket provider connected there are no Tickets (`CONTEXT.md` L1).
     static func link(to issue: CockpitPresentation.Session.Issue?) -> Header.IssueLink? {
         guard let issue else { return nil }
         // Named, never bare: `#400` alone is whatever number the reader last saw one of.

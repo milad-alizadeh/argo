@@ -2,7 +2,7 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// The Work room's two panes: how far the seam between them may travel, and what a row does with
+/// The Tickets room's two panes: how far the seam between them may travel, and what a row does with
 /// more labels than it has width for.
 @Suite("Backlog pane")
 struct BacklogPaneTests {
@@ -60,8 +60,8 @@ struct BacklogPaneTests {
 
     /// The cut is about names and widths, so these cases state names and let the colour be the
     /// silence it is on a provider that served none.
-    private func named(_ names: String...) -> [WorkItemLabel] {
-        names.map { WorkItemLabel(name: $0) }
+    private func named(_ names: String...) -> [TicketLabel] {
+        names.map { TicketLabel(name: $0) }
     }
 
     @Test
@@ -104,7 +104,7 @@ struct BacklogPaneTests {
     /// The projection carries the labels through verbatim, so the row has something to cut.
     @Test
     func `a backlog row carries the provider's labels`() {
-        let room = WorkRoomProjection.room(from: WorkFixture.reading)
+        let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
         let wayfinder = room.backlog.first { $0.id == 607 }
 
         #expect(wayfinder?.labels.map(\.name) == ["wayfinder", "work-room", "prd"])

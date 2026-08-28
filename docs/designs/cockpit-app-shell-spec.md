@@ -31,7 +31,7 @@ session interior + delivery/merge → #161 · work-room interior → #160/#185.
 
 > **Amended by #201.** The **Code-room prototype** (`cockpit-code-room-prototype.html`, #183)
 > is the chrome reference: its merged floating bar is the shell's bar in **every** room, not a
-> Code-room look. The Work-room and Session-interior prototypes were reconciled to it in the
+> Code-room look. The Tickets-room and Session-interior prototypes were reconciled to it in the
 > same change. Where this section and #159 disagree on the Concierge's *position*, this wins;
 > #159's substance — global, persistent, state-bearing, surviving `⌘1`/`⌘2` — is unchanged.
 
@@ -40,7 +40,7 @@ top bar. **There is no bottom chrome.** The bottom edge belongs to whatever the 
 there — in the Sessions room, the session Dock (#161).
 
 ```
-[traffic lights] [orb + caption] ————— [chip] [Sessions ⌘1 · Work ⌘2 · Code ⌘3] [⎇ main ↑2↓1 ▾] [⋯]
+[traffic lights] [orb + caption] ————— [chip] [Sessions ⌘1 · Tickets ⌘2 · Code ⌘3] [⎇ main ↑2↓1 ▾] [⋯]
 ```
 
 - **Project strip** — far-left, ~60px, **borderless**: tabs float on the scene, no panel fill,
@@ -57,9 +57,9 @@ there — in the Sessions room, the session Dock (#161).
   - **Concierge** — cheap CSS ring-orb (always-on, state-bearing) + live caption (#159).
     **Chrome/seat only** — behaviour and data model belong to map #190, out of scope for #157.
   - **Connection chip** — first item of the right cluster (see below).
-  - **Room tabs** — `Sessions ⌘1` · `Work ⌘2` · `Code ⌘3` (Code added by #183).
+  - **Room tabs** — `Sessions ⌘1` · `Tickets ⌘2` · `Code ⌘3` (Code added by #183).
   - **Git group** — the global checkout control (see below).
-- **Room tabs** — **Sessions is the home/default (⌘1)** — you land in the running world; Work
+- **Room tabs** — **Sessions is the home/default (⌘1)** — you land in the running world; Tickets
   (the backlog) and Code (the light IDE) are entered deliberately. The room switch survives;
   the Concierge persists across it (#159).
 - **No wordmark, no project label, no `⌘K` button.** The strip plus the window itself carry
@@ -72,9 +72,9 @@ there — in the Sessions room, the session Dock (#161).
   which map #190 owns wholesale; a permanent seat in global chrome for an undesigned subsystem
   is how a bar silts up before anyone has decided it needs to. The orb is the affordance and
   `hold ⌘␣` is the keymap entry. #190 may claim a seat if it earns one.
-- **Backlog counters** (`OPEN · READY · BLOCKED`, previously in the Work brow). Room *content*,
+- **Backlog counters** (`OPEN · READY · BLOCKED`, previously in the Tickets brow). Room *content*,
   not chrome — they would have to blank out in Sessions and Code, which is exactly the per-room
-  chrome this amendment removes. They fold into the Work rail's `BACKLOG · BY PRIORITY` row,
+  chrome this amendment removes. They fold into the Tickets rail's `BACKLOG · BY PRIORITY` row,
   beside the count already there.
 
 ### Global git / checkout chrome
@@ -138,11 +138,11 @@ Two layers, both first-class:
 
 | Key | Action |
 | --- | --- |
-| `⌘1` / `⌘2` / `⌘3` | Sessions room / Work room / Code room |
+| `⌘1` / `⌘2` / `⌘3` | Sessions room / Tickets room / Code room |
 | `⌘[` / `⌘]` | Previous / next project |
 | `⌘K` | Command palette (search + commands + jump) |
 | `⌘N` | Spawn a session |
-| `⌘⏎` | Primary action in context (e.g. Implement in Work) |
+| `⌘⏎` | Primary action in context (e.g. Implement in Tickets) |
 | hold `⌘␣` | Talk to the Concierge (seat only; behaviour = #190) |
 | `Esc` | Back / dismiss / close palette |
 | `↑` `↓` + `↵` | Move within a list · open the selection |
@@ -276,7 +276,7 @@ states, so they cannot fire.
 - **Delivery does not** — CI checks, review requested, merges. They are provider-polled, so a
   banner asserting *now* would fire off a possibly-minutes-old fact (a false `DIRECT` in banner
   form); GitHub already notifies on all three; and #167 separated Delivery from session liveness
-  and Work Item status as its own axis — letting CI into this channel quietly re-merges them.
+  and Ticket status as its own axis — letting CI into this channel quietly re-merges them.
 - **A menu-bar / tray item is out of scope** for the Phase-1 map — a fourth rendering of the same
   signal, with its own always-on menu surface, that only earns its place once the dock proves
   insufficient in use.

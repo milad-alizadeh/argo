@@ -9,16 +9,19 @@ import Testing
 @Suite("Next-up cadence")
 struct NextUpCadenceTests {
     private static let pool = [
-        WorkFixture.candidate(1, priority: "high", day: 5),
-        WorkFixture.candidate(2, priority: "medium", day: 5),
+        TicketsFixture.candidate(1, priority: "high", day: 5),
+        TicketsFixture.candidate(2, priority: "medium", day: 5),
     ]
 
     /// A poll delta is the whole re-rank: the listing arrives with the pick closed, and the hero
     /// names the next one on the same ladder.
     @Test
     func `a poll that closes the pick moves the hero to the next candidate`() throws {
-        let before = WorkFixture.reading(of: Self.pool)
-        let after = WorkFixture.reading(of: [WorkFixture.resolved(Self.pool[0]), Self.pool[1]])
+        let before = TicketsFixture.reading(of: Self.pool)
+        let after = TicketsFixture.reading(of: [
+            TicketsFixture.resolved(Self.pool[0]),
+            Self.pool[1],
+        ])
 
         try #expect(Self.pick(in: before).number == 1)
         try #expect(Self.pick(in: after).number == 2)
@@ -28,9 +31,9 @@ struct NextUpCadenceTests {
     /// local having changed at all.
     @Test
     func `a priority raised between two polls re-ranks on the next listing`() throws {
-        let raised = WorkFixture.reading(of: [
-            WorkFixture.candidate(1, priority: "low", day: 5),
-            WorkFixture.candidate(2, priority: "high", day: 5),
+        let raised = TicketsFixture.reading(of: [
+            TicketsFixture.candidate(1, priority: "low", day: 5),
+            TicketsFixture.candidate(2, priority: "high", day: 5),
         ])
 
         try #expect(Self.pick(in: raised).number == 2)
@@ -40,7 +43,7 @@ struct NextUpCadenceTests {
     /// claim is Argo's own fact and never the provider's.
     @Test
     func `a session starting on the pick hands the hero to the next one`() throws {
-        var started = WorkFixture.reading(of: Self.pool)
+        var started = TicketsFixture.reading(of: Self.pool)
         started.claimed = [1]
 
         try #expect(Self.pick(in: started).number == 2)
@@ -50,7 +53,7 @@ struct NextUpCadenceTests {
     /// remembered, so nothing has to be invalidated for this to happen.
     @Test
     func `a session stopping puts its ticket back at the head`() throws {
-        var stopped = WorkFixture.reading(of: Self.pool)
+        var stopped = TicketsFixture.reading(of: Self.pool)
         stopped.claimed = []
 
         try #expect(Self.pick(in: stopped).number == 1)
@@ -61,15 +64,15 @@ struct NextUpCadenceTests {
     /// up here as two rooms that differ without an input having moved.
     @Test
     func `two derivations of one unchanged reading are the same hero`() {
-        let reading = WorkFixture.reading(of: Self.pool)
+        let reading = TicketsFixture.reading(of: Self.pool)
 
         #expect(
-            WorkRoomProjection.room(from: reading).nextUp
-                == WorkRoomProjection.room(from: reading).nextUp,
+            TicketsRoomProjection.room(from: reading).nextUp
+                == TicketsRoomProjection.room(from: reading).nextUp,
         )
     }
 
-    private static func pick(in reading: WorkReading) throws -> NextUp.Pick {
+    private static func pick(in reading: TicketsReading) throws -> NextUp.Pick {
         try NextUpPick.of(reading)
     }
 }

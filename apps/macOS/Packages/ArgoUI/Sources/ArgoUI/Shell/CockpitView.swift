@@ -16,14 +16,14 @@ public struct CockpitView: View {
     /// inside it because it is not a Hub fact: the cockpit is a projection of the Hub, and Accounts
     /// and Bindings are registry facts the Hub has never heard of.
     let health: ConnectionHealthReading
-    /// The active Project's Work Items as the last poll that finished read them (#820). Beside the
+    /// The active Project's Tickets as the last poll that finished read them (#820). Beside the
     /// presentation for the same reason `health` is: a listing is read through a Binding, and the
     /// Hub has never heard of one.
-    let workItems: [WorkItem]
-    /// Where this Project's Work Items can be READ, on the provider's own site (#872). Beside the
+    let tickets: [Ticket]
+    /// Where this Project's Tickets can be READ, on the provider's own site (#872). Beside the
     /// listing for the reason it is: an address is the Binding's, and the Hub has never heard of
     /// one. `nil` where the port is bound to nothing, which disables the row's two link verbs.
-    let workItemAddress: WorkItemAddress?
+    let ticketAddress: TicketAddress?
     @Environment(CockpitNavigationModel.self) var navigation
     @Environment(\.openURL) var openURL
     /// Which roster row has its name field open. Held here rather than in the sidebar because the
@@ -59,15 +59,15 @@ public struct CockpitView: View {
         actions: CockpitActions,
         connect: ConnectSurface = .closed,
         health: ConnectionHealthReading = .quiet,
-        workItems: [WorkItem] = [],
-        workItemAddress: WorkItemAddress? = nil,
+        tickets: [Ticket] = [],
+        ticketAddress: TicketAddress? = nil,
     ) {
         self.presentation = presentation
         self.actions = actions
         self.connect = connect
         self.health = health
-        self.workItems = workItems
-        self.workItemAddress = workItemAddress
+        self.tickets = tickets
+        self.ticketAddress = ticketAddress
     }
 
     /// The selected Session's reading in the room that DRAWS a transcript, and nothing at all in
@@ -127,19 +127,19 @@ public struct CockpitView: View {
     public var body: some View {
         @Bindable var navigation = navigation
         // Assembled ONCE for the whole pass and handed to all four readers — the column's
-        // visibility, the sidebar, the toolbar row and the deck. `nil` outside the Work room, which
-        // is also what keeps the projection from running at all in the other two.
-        let work = navigation.room == .work ? workRoom : nil
+        // visibility, the sidebar, the toolbar row and the deck. `nil` outside the Tickets room,
+        // which is also what keeps the projection from running at all in the other two.
+        let tickets = navigation.room == .tickets ? ticketsRoom : nil
 
-        NavigationSplitView(columnVisibility: sidebarColumn(for: work)) {
-            sidebar(work: work)
+        NavigationSplitView(columnVisibility: sidebarColumn(for: tickets)) {
+            sidebar(tickets: tickets)
                 .navigationSplitViewColumnWidth(
                     min: ArgoLayout.sidebarMinimumWidth,
                     ideal: sidebarIdealWidth,
                     max: ArgoLayout.sidebarMaximumWidth,
                 )
         } detail: {
-            detail(work: work)
+            detail(tickets: tickets)
         }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")
         // Hidden, so the icons sit on the window's own ground — and the canopy directly below is
@@ -161,15 +161,15 @@ public struct CockpitView: View {
                 )
             }
         }
-        // The Work room's own sheet (#872). On the shell rather than in the room, because the room
-        // is a pair of split-view slots and neither of them may present over the other.
+        // The Tickets room's own sheet (#872). On the shell rather than in the room, because the
+        // room is a pair of split-view slots and neither of them may present over the other.
         // `onDismiss` and not the Cancel button alone: Escape and the system's own gesture put the
         // sheet away without pressing anything, and a refusal left behind would go on being drawn
         // by the row's New ticket button with nothing on screen to clear it.
         .sheet(isPresented: $isComposingTicket, onDismiss: closeTicketComposer) {
             NewTicketComposer(
                 composition: $ticketComposition,
-                control: workIntents.creation.control,
+                control: ticketsIntents.creation.control,
                 reconnect: openProjectPanel,
                 cancel: closeTicketComposer,
                 create: createTicket,

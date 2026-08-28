@@ -21,7 +21,7 @@ hence the Hub holds the join as a throwaway in-memory projection rather than wri
 
 ## L1
 
-**Account and Binding are two levels, not one.** The model said a Project "carries a Work Item
+**Account and Binding are two levels, not one.** The model said a Project "carries a Ticket
 provider," which reads as if choosing a provider and authorizing it were one act. They are not:
 authorizing happens once per identity per machine, choosing happens once per Project. Collapsing
 them forces a re-grant on every new Project and makes a personal-vs-work GitHub unrepresentable
@@ -40,7 +40,26 @@ adapters and separate failures.
 which is indistinguishable from an issue that does not exist. Validating at bind time is the
 only point where the two can still be told apart.
 
-**Work Item — provider-declared type over hierarchy.** The fallback to hierarchy (has children /
+**Ticket, and not Work Item or Issue (#881).** The term was `Work Item` until 2026-08-28, defined
+in this very model as "a ticket owned by a provider" — the word it should have been called. Every
+surface downstream then said *ticket* anyway: `AGENTS.md`, `docs/agents/worktrees.md`'s
+`argo/#<N>-<slug>` branch, `/implement <N>` spoken aloud, and Argo's own UI layer, which drew a
+`WorkItem` as `TicketHead` and `TicketBody`. One noun with two names either side of the port
+boundary is the thing this model exists to forbid, and `Work Item` was the half nobody spoke.
+
+*Work Item* also borrowed from a provider Argo does not integrate: it is Azure DevOps's term, and
+the neutrality it bought was neutrality against a tracker nobody here uses, paid for in a word the
+team does not say.
+
+*Issue* was considered and rejected on three counts. It collides with everyday English (*an issue*
+= a problem) and with `Finding` in the review vocabulary, where "issue" already means a defect. Not
+every item is one: `type` covers PRDs and decision tickets, and an **answer** is the resolved text
+of *a decision ticket* — calling a PRD an issue is the same category error as calling it a work
+item, in the other direction. And it privileges GitHub's and Linear's own word at the one boundary
+where a provider's vocabulary must not leak. `Ticket` is provider-neutral **and** already the house
+word, which is the pair `Work Item` was reaching for and missed.
+
+**Ticket — provider-declared type over hierarchy.** The fallback to hierarchy (has children /
 is a leaf) exists so a *childless PRD* isn't miscast as a Task. Providers that declare a type
 (GitHub issue types, Linear's project/milestone/issue distinction) are believed first.
 
@@ -58,7 +77,7 @@ not a stranded map.
 Linear threads replies, Jira Cloud stores ADF — so the Port supplies the projection rather than
 each consumer re-parsing a format it can't know.
 
-**Local-file/vault Work Item provider** was considered and **descoped**. Every provider is
+**Local-file/vault Ticket provider** was considered and **descoped**. Every provider is
 remote.
 
 **The L1 triangle supersedes ADR-0013's "join only through Delivery."** Three independent edges,

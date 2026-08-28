@@ -42,10 +42,10 @@ struct InstrumentDeckShell: View {
     /// evidence toggle opens the newest evidence in the rows ON SCREEN, and this says which those
     /// are. A screenshot still seeds it with `.constant` rather than clicking a chip.
     var scope: Binding<FeedScope> = .constant(.session)
-    /// The Work room, already assembled — one value rather than the projection and its two
+    /// The Tickets room, already assembled — one value rather than the projection and its two
     /// selections apart, so the sidebar and this deck cannot be handed different ones. `nil` in
     /// every other room, and the case below draws nothing for it.
-    var work: WorkRoom?
+    var tickets: TicketsRoom?
 
     /// Where the reader dragged the deck's seams. Owned HERE, above the identity below — keyed with
     /// the room it would snap back to its opening width on every Session switch.
@@ -90,8 +90,8 @@ struct InstrumentDeckShell: View {
             // carried across reopens on whatever call now sits at that position. Everything under
             // this has to be per-Session, which is why the seams above are held outside it.
             .id(session)
-        case .work:
-            work?.deck
+        case .tickets:
+            tickets?.deck
         case .code:
             Color.clear
         }
@@ -115,17 +115,17 @@ struct InstrumentDeckShell: View {
         .argoAppearance()
 }
 
-#Preview("Instrument Deck — the Work room") {
+#Preview("Instrument Deck — the Tickets room") {
     @Previewable @State var ticket: Int? = 272
-    @Previewable @State var cockpitRoom = CockpitRoom.work
-    @Previewable @State var view = WorkView.allOpen
+    @Previewable @State var cockpitRoom = CockpitRoom.tickets
+    @Previewable @State var view = TicketsView.allOpen
     @Previewable @State var width = ArgoBacklogList.width
     @Previewable @State var shut: Set<Int> = []
 
     InstrumentDeckShell(
-        room: .work,
-        work: WorkRoom(
-            room: WorkFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket, view: $view,
+        room: .tickets,
+        tickets: TicketsRoom(
+            room: TicketsFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket, view: $view,
             backlogWidth: $width, shut: $shut,
         ),
     )

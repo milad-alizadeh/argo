@@ -5,8 +5,9 @@ import SwiftUI
 /// see through it: with the evidence toggle's state and the room's toolbar in one expression, the
 /// body stopped type-checking in reasonable time.
 extension CockpitView {
-    /// Takes the room already assembled rather than reading `workRoom` again — see the note there.
-    @ViewBuilder func detail(work: WorkRoom?) -> some View {
+    /// Takes the room already assembled rather than reading `ticketsRoom` again — see the note
+    /// there.
+    @ViewBuilder func detail(tickets: TicketsRoom?) -> some View {
         @Bindable var navigation = navigation
 
         // Each resolved once and handed on: reading either a second time re-runs the
@@ -27,7 +28,7 @@ extension CockpitView {
             intents: intents(for: vessel),
             readings: reading.readings,
             scope: $feedScope,
-            work: work,
+            tickets: tickets,
         )
         // What the chain link at the foot of a handed-off reading does. Injected here because
         // this is the one view that holds the navigation.
@@ -55,7 +56,7 @@ extension CockpitView {
                 spawn: spawn(in: navigation),
                 evidence: evidenceControl,
             )
-            roomToolbar(work: work)
+            roomToolbar(tickets: tickets)
         }
     }
 }

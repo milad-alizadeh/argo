@@ -42,7 +42,7 @@ public struct CompanionOutcome: Sendable, Equatable {
     public enum Target: String, Sendable, CaseIterable {
         /// A Diff or Delivery, git-addressed by SHA.
         case code
-        /// A created Work Item, provider-id-addressed.
+        /// A created Ticket, provider-id-addressed.
         case ticket
         /// A plan or research file, path-addressed and possibly uncommitted.
         case artifact

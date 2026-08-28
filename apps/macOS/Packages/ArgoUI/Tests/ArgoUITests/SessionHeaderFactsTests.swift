@@ -117,7 +117,7 @@ struct SessionHeaderFactsTests {
     }
 
     @Test
-    func `with no Work Item provider connected there is no ticket on the header at all`() {
+    func `with no Ticket provider connected there is no ticket on the header at all`() {
         // Not an empty affordance, not an "attach" control: asserting a link to a provider that
         // does not exist is worse than no link (`CONTEXT.md` L1, and #502's Out of Scope).
         let header = header(issue: nil)
@@ -132,7 +132,7 @@ struct SessionHeaderFactsTests {
             cli: .claude,
             model: "claude-opus-5",
             workspace: .init(kind: .worktree, branch: "argo/#510", dirty: 2, unpushed: 1),
-            // Untitled: a Work Item's title is a title SOURCE, and the chain has its own suite.
+            // Untitled: a Ticket's title is a title SOURCE, and the chain has its own suite.
             issue: .init(number: 510),
         )
 

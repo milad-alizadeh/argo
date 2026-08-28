@@ -1,6 +1,6 @@
 import Foundation
 
-/// The Work Item a pull request body says it closes, read the way the code host reads it.
+/// The Ticket a pull request body says it closes, read the way the code host reads it.
 ///
 /// This is the native half of the join (ADR-0014): `/implement` writes `Closes #<N>` because that
 /// is the industry's own mechanism, and Argo reads back exactly what GitHub itself acts on — the
@@ -14,7 +14,7 @@ enum ClosingReference {
         "resolve", "resolves", "resolved",
     ]
 
-    /// The first Work Item number the body closes, and `nil` for a body that closes none.
+    /// The first Ticket number the body closes, and `nil` for a body that closes none.
     static func number(in body: String) -> Int? {
         let words = body.split(whereSeparator: \.isWhitespace).map(Self.bare)
         for (index, word) in words.enumerated()

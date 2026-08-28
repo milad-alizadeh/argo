@@ -38,7 +38,7 @@ struct ConnectPanelProjectionTests {
     func `both ports are drawn whether or not the reading mentions them`() {
         let panel = ConnectPanelProjection.panel(from: ConnectFixture.partly)
 
-        #expect(panel.ports.map(\.id) == [.workItem, .codeHost])
+        #expect(panel.ports.map(\.id) == [.ticket, .codeHost])
         #expect(panel.ports.map(\.isBound) == [true, false])
     }
 
@@ -134,7 +134,7 @@ struct ConnectPanelProjectionTests {
         let reading = ConnectReading(
             folder: ConnectFixture.folder,
             accounts: [ConnectFixture.personal],
-            ports: [ConnectPort(port: .workItem, state: .broken(
+            ports: [ConnectPort(port: .ticket, state: .broken(
                 accountID: ConnectFixture.work.id,
                 scope: "trili/cockpit",
                 fault: .accountRemoved,
@@ -161,7 +161,7 @@ struct ConnectPanelProjectionTests {
         #expect(panel.call == "Done")
         #expect(panel.isCallEnabled)
         #expect(panel.agent?.detail == "Claude Code")
-        #expect(panel.ports.map(\.id) == [.workItem, .codeHost])
+        #expect(panel.ports.map(\.id) == [.ticket, .codeHost])
     }
 
     @Test

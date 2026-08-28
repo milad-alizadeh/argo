@@ -31,7 +31,7 @@ public extension CockpitPresentation.Session {
     }
 
     /// Where the Session is working and what it is working ON — the git context, the folder it
-    /// sits in, and the Work Item its branch names. The three arrive together because the link is
+    /// sits in, and the Ticket its branch names. The three arrive together because the link is
     /// DERIVED from the other two.
     struct Work: Equatable, Sendable {
         public let location: String?

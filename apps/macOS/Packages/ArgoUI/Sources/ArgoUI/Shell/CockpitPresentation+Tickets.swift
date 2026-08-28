@@ -1,6 +1,6 @@
 import ArgoEngine
 
-/// What the roster says about Work Items — two derivations over the same Sessions, in the package
+/// What the roster says about Tickets — two derivations over the same Sessions, in the package
 /// rather than on the coordinator for the reason ADR-0022 gives: a derivation in the app target is
 /// one no test can reach.
 public extension CockpitPresentation {

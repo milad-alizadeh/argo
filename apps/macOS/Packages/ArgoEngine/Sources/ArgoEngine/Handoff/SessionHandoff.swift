@@ -10,7 +10,7 @@ public final class SessionHandoff {
     /// Which Session is being handed off, and what the fresh one inherits (story 48).
     ///
     /// `cwd` is the Workspace: the fresh Session runs in the same folder, so it is on the same
-    /// branch, and every fact derived from that branch — the Delivery, and the Work Item the
+    /// branch, and every fact derived from that branch — the Delivery, and the Ticket the
     /// Delivery serves — derives the same way for both. Nothing is copied across.
     public struct Request: Sendable, Equatable {
         public let sessionID: String

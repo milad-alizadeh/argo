@@ -2,7 +2,7 @@ import SwiftUI
 
 /// What every room's toolbar carries: scope at the window's leading edge, with the one verb the bar
 /// spends in front of it where the room creates Sessions, beside the sidebar toggle. What a room
-/// adds beyond this is the room's own — see `WorkToolbar`.
+/// adds beyond this is the room's own — see `TicketsToolbar`.
 ///
 /// New Session is NOT a second vessel (#433): the verb carries a small glass of its own.
 ///
@@ -10,7 +10,8 @@ import SwiftUI
 /// around — a `ToolbarItemGroup` gives each control in it a capsule of its own.
 ///
 /// Every item here is `.navigation`, which is the WINDOW's leading region — over the sidebar in a
-/// split view, not over the detail pane. A room's own row takes `.primaryAction` (`WorkToolbar`).
+/// split view, not over the detail pane. A room's own row takes `.primaryAction`
+/// (`TicketsToolbar`).
 ///
 /// The rooms picker is the sidebar's strip (`RoomStrip`, #816).
 ///
@@ -21,10 +22,10 @@ import SwiftUI
 struct ShellToolbar: ToolbarContent {
     /// Assembled by the caller: nothing below the bar reads a presentation.
     let scope: ScopeVessel
-    /// New Session, in the rooms that create one. `nil` in the Work room, whose one create action
-    /// is a ticket and wears the compose mark itself (#836) — Mail's window spends exactly one
-    /// compose button, and two of them a finger apart is two invitations to make different things.
-    /// `⌘N` and the menu bar still reach it from there.
+    /// New Session, in the rooms that create one. `nil` in the Tickets room, whose one create
+    /// action is a ticket and wears the compose mark itself (#836) — Mail's window spends exactly
+    /// one compose button, and two of them a finger apart is two invitations to make different
+    /// things. `⌘N` and the menu bar still reach it from there.
     let spawn: CockpitSpawn?
     /// The evidence panel's toggle, in the room that has a panel and `nil` in the others (#875).
     ///

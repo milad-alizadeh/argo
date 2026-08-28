@@ -191,7 +191,7 @@ The vocabulary below is the part every session needs. Use these words, never a s
 - **Project** — one registered git repo, keyed by a stable id. The scope of one cockpit window.
 - **Account** — one authenticated identity with a provider. One grant, one token in the keychain.
 - **Binding** — a Project's use of one Account through one port, plus the provider-side scope.
-- **Work Item** — a ticket owned by a provider. Argo stores the link, never the content.
+- **Ticket** — one unit of work owned by a provider. Argo stores the link, never the content.
 - **answer** — the resolved text of a decision ticket, held verbatim.
 - **Delivery** — the product in flight, derived per branch from git plus the code host.
 - **Person** — `me` or `other`.
@@ -233,7 +233,7 @@ cross), **Permission** (a per-action prompt), **Standing
 allow** (one tool that stopped asking), **Permission expiry** (Argo's own clock refused it), and
 **Gate** (Argo's policy on a Delivery step).
 
-**Ports** — **Work Item provider** and **Code host**. An **MCP server** is not a port, because it
+**Ports** — **Ticket provider** and **Code host**. An **MCP server** is not a port, because it
 is something an observed Session connects to rather than something Argo reads through.
 
 **Surfaces, not entities** — Cockpit, Roster, Panels, rooms. The **Hub** is the in-memory

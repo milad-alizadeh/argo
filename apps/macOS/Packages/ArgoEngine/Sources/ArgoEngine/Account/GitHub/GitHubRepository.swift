@@ -17,12 +17,12 @@ struct GitHubRepository: Decodable, Equatable, Sendable {
         return decoder
     }()
 
-    /// A repository with Issues switched off is visible and sources no Work Items, which after bind
+    /// A repository with Issues switched off is visible and sources no Tickets, which after bind
     /// time is indistinguishable from a repository nobody has filed anything in. The code-host port
     /// asks nothing further: PRs, checks and reviews are on every repository there is.
     func serves(_ port: AccountPort) -> Bool {
         switch port {
-        case .workItem: hasIssues
+        case .ticket: hasIssues
         case .codeHost: true
         }
     }

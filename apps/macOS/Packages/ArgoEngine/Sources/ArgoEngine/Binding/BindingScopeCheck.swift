@@ -4,7 +4,7 @@ import Foundation
 /// read this scope **through this port**?
 ///
 /// The port is part of the question and not context around it. One GitHub repository can be
-/// perfectly visible and still have Issues switched off, and a Work Item Binding to it reads empty
+/// perfectly visible and still have Issues switched off, and a Ticket Binding to it reads empty
 /// forever — the same silence a scope the Account cannot see produces, and the one bind time exists
 /// to tell apart.
 public struct BindingProbe: Sendable {

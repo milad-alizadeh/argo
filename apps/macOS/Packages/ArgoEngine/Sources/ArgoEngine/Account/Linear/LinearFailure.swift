@@ -3,7 +3,7 @@ import Foundation
 /// Why one Linear operation did not answer with what was asked for.
 ///
 /// One failure read into two vocabularies rather than two failures: health speaks
-/// `ProviderFetchError` and a write speaks `WorkItemWriteError`, and a read and a write that fail
+/// `ProviderFetchError` and a write speaks `TicketWriteError`, and a read and a write that fail
 /// the same way must not reach the app as two different words for it.
 enum LinearFailure: Error, Equatable {
     /// Linear took the operation and refused it, in its own words. GraphQL, so this arrives as a
@@ -29,7 +29,7 @@ enum LinearFailure: Error, Equatable {
 
     /// The writer's word. A refusal stays verbatim: the provider answered, and its sentence is
     /// the only thing that tells a missing scope from an illegal edit.
-    var writeError: WorkItemWriteError {
+    var writeError: TicketWriteError {
         switch self {
         case let .refused(reason): .refused(reason)
         case .unreadable: .unreachable(.unreachable)

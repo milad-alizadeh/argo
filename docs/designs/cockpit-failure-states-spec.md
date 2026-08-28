@@ -50,14 +50,14 @@ something has just broken. The data is old, not wrong; say so and keep it.
 ## 2 · Connection state belongs to a binding, not a project
 
 A Project carries **three independent bindings** (`CONTEXT.md` → Ports, ADR-0014): a **folder /
-git root** (always present, local, and the project's scope per ADR-0015), an **optional Work Item
+git root** (always present, local, and the project's scope per ADR-0015), an **optional Ticket
 provider** (GitHub Issues or Linear), and an **optional Code host** (GitHub). They fail
 independently and at different levels:
 
 | Level | What breaks | Blast radius |
 | --- | --- | --- |
 | **Account** (global) | the OAuth grant expires or is revoked — one grant feeds both GitHub ports, keychain-stored (ADR-0018) | **every** GitHub-bound project at once |
-| **Binding** (per project × per port) | repo renamed, org access revoked, Linear workspace unreachable, rate-limited | one port of one project — a Linear + GitHub project can have Work Items stale while Delivery is live |
+| **Binding** (per project × per port) | repo renamed, org access revoked, Linear workspace unreachable, rate-limited | one port of one project — a Linear + GitHub project can have Tickets stale while Delivery is live |
 | **Local** (per project) | folder moved or deleted, no longer a git root | one project — and not a connection failure at all (§6) |
 
 - Connection state is **per-project truth, surfaced only for the active project.**
@@ -105,7 +105,7 @@ only its behaviour.
 
 ## 4 · No optimistic writes
 
-Every one of #167's eight canonical write intents (`createWorkItem`, `updateFields`,
+Every one of #167's eight canonical write intents (`createTicket`, `updateFields`,
 `transitionTo`, `addBlockedBy` / `removeBlockedBy`, `setParent`, labels, `setPriority`,
 `close` / `reopen`) is remote HTTP, and the cockpit is **polled — a desktop app receives no
 webhooks** (`CONTEXT.md` → Ports). So a round trip sits between the click and the truth.
@@ -124,7 +124,7 @@ webhooks** (`CONTEXT.md` → Ports). So a round trip sits between the click and 
 
 **Why this is forced, not preferred:** an optimistic paint **is a false `DIRECT`**. `CONTEXT.md`'s
 degrade-down rule (ADR-0008, generalized) says a fact that cannot be established honestly is
-shown as unknown, never defaulted; #167 further ruled Work Item status **purely provider-sourced,
+shown as unknown, never defaulted; #167 further ruled Ticket status **purely provider-sourced,
 never synthesized from local facts**. Painting `done` before the provider has said `done`
 synthesizes a provider fact from a local one (your click). The usual counter — optimism hides
 latency — does not apply: **the write's own HTTP response is the confirmation**, so the wait is
@@ -170,7 +170,7 @@ suffices to create a project; git and a provider only *unlock* backlog, PRs, and
 - **Running sessions in that folder are not rescued by Relocate** — their PTYs are already broken.
   They degrade to `failed` on the existing four-state dot (#164). No new vocabulary.
 
-A per-room degradation was proposed (Work room alive on remote data, Sessions and Code showing the
+A per-room degradation was proposed (Tickets room alive on remote data, Sessions and Code showing the
 folder-missing state) and **rejected**: a project you cannot act in does not earn a half-lit
 window, and one error state is cheaper to spec and to build than a per-room matrix.
 
@@ -242,7 +242,7 @@ settled** — this doc deliberately does not restate them:
 | App shell (#172) | empty first-run shell + connect seam | `DIRECT` / `DERIVED` / `CONVENTION` section |
 | Onboarding (#165) | welcome · fresh | direct · partial · wired (+ in-panel `error`) |
 | Sessions room (#159 / #161) | roster zero-state = bare `+ New session` (B6) | external rows ghosted, hollow dot, no Outcomes, `unknown` ctx ring |
-| Work room (#160 / #185) | Next-up empty-pool tiers (#166) | no DAG ⇒ blocked filter no-op, `unblocked` chip suppressed |
+| Tickets room (#160 / #185) | Next-up empty-pool tiers (#166) | no DAG ⇒ blocked filter no-op, `unblocked` chip suppressed |
 | Code room (#183) | empty folder · unsupported binary · no folder | `DIRECT` floor is files-on-disk |
 | Delivery (#161) | teammate PR with no session row | bare tracker ⇒ three statuses (#167) |
 

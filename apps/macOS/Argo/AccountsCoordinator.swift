@@ -20,15 +20,15 @@ final class AccountsCoordinator {
     /// chrome on the window and the panel is a sheet over it, so tying this to the panel would hide
     /// the failure exactly while the user is not looking at the place that reports it.
     private(set) var connections = ConnectionHealthReading.quiet
-    /// The active Project's listing as the last read left it, for the Work room to draw (#820).
+    /// The active Project's listing as the last read left it, for the Tickets room to draw (#820).
     /// Refreshed by every finished read, not by every panel act: the room is on screen whether or
     /// not the Connect panel is.
-    private(set) var workItems: [WorkItem] = []
-    /// Where those items can be READ, on the provider's own site (#872) — the Work room's two link
-    /// verbs, and `nil` where the port is bound to nothing or the Binding addresses no page.
+    private(set) var tickets: [Ticket] = []
+    /// Where those items can be READ, on the provider's own site (#872) — the Tickets room's two
+    /// link verbs, and `nil` where the port is bound to nothing or the Binding addresses no page.
     /// Published with the listing and off the same resolve, so the room can never open a URL from
     /// one Binding against a backlog read through another.
-    private(set) var workItemAddress: WorkItemAddress?
+    private(set) var ticketAddress: TicketAddress?
 
     /// Reached from `AccountsCoordinator+Grant` and `+Scopes`, which is why these are not
     /// `private`: `private` in Swift is file-scoped.
@@ -41,17 +41,17 @@ final class AccountsCoordinator {
     /// Where every Project's listing lands, keyed by Project. Here rather than on the cockpit
     /// because the poll reads through a Binding and files its failures on `health` — both of which
     /// are this half's, and neither of which the Hub has ever heard of.
-    let workItemLedger = WorkItemLedger()
+    let ticketLedger = TicketLedger()
     /// The write half (#872). Computed rather than held: it has no state of its own, and its
     /// transport is `URLSession.shared`.
-    var workItemCreator: WorkItemCreator {
-        WorkItemCreator(bindings: bindings, items: workItemLedger, health: health)
+    var ticketCreator: TicketCreator {
+        TicketCreator(bindings: bindings, items: ticketLedger, health: health)
     }
 
     /// The loop that fills it. Pointed on every `refresh`, which is every act that could have
     /// moved a Binding. Re-pointing at an unchanged one costs nothing — the loop holds what it is
     /// already reading.
-    private let poll: WorkItemPoll
+    private let poll: TicketPoll
 
     /// Whether the panel is meant to be up. Kept apart from `reading` because every act ends in a
     /// rebuild, and a rebuild that decided for itself would re-open a panel the user just closed.
@@ -76,8 +76,8 @@ final class AccountsCoordinator {
         self.accounts = store
         self.bindings = ProjectBindings(projects: projects, accounts: store)
         self.authorization = ProviderAuthorization(accounts: store)
-        self.poll = WorkItemPoll(
-            port: ProviderWorkItems(), health: health, items: workItemLedger,
+        self.poll = TicketPoll(
+            port: ProviderTickets(), health: health, items: ticketLedger,
         )
     }
 
@@ -155,10 +155,10 @@ final class AccountsCoordinator {
         await refresh()
     }
 
-    /// How the active Project's Work Item port reads, for a reader that is not the panel (#745).
+    /// How the active Project's Ticket port reads, for a reader that is not the panel (#745).
     /// The same resolve the panel and the chip make, so no third answer about one Binding exists.
-    func workItemBinding() async -> BindingResolution {
-        await bindings.resolve(port: .workItem, forProject: project?.id)
+    func ticketBinding() async -> BindingResolution {
+        await bindings.resolve(port: .ticket, forProject: project?.id)
     }
 
     func unbind(_ port: AccountPort) async {
@@ -184,8 +184,8 @@ final class AccountsCoordinator {
         ))
         // ONE resolve, and both the poll and the room's link verbs are pointed off it: two would
         // let the backlog be read through one Binding while its links addressed another.
-        let resolution = await workItemBinding()
-        workItemAddress = WorkItemAddress(binding: resolution)
+        let resolution = await ticketBinding()
+        ticketAddress = TicketAddress(binding: resolution)
         // Reported before pointed, always: `point` is the only thing that starts a loop, and it
         // raises the landing itself — so this one call both settles the read and refreshes it.
         await poll.report(to: { [weak self] in await self?.readListing() })
@@ -197,7 +197,7 @@ final class AccountsCoordinator {
     /// Take what the ledger holds for the active Project. A Project with nothing bound reads EMPTY
     /// rather than keeping the last one's backlog.
     private func readListing() async {
-        workItems = await workItemLedger.items(of: project?.id)
+        tickets = await ticketLedger.items(of: project?.id)
     }
 
     private func show(ports: [ConnectPort]) async {

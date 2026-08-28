@@ -26,7 +26,7 @@ its approved study are authoritative for the replacement look and feel.
 ## D1 — App-wide identity, proved on Sessions first
 
 - **Decision:** Replace the visual identity of the whole cockpit. Use the existing Sessions room as
-  the proving ground, then carry the approved system through the shell, Work room, and Code room.
+  the proving ground, then carry the approved system through the shell, Tickets room, and Code room.
 - **Why:** Penumbra is embedded in the shared token contract, scene, and surface recipes. Styling
   Sessions as an isolated theme would create two competing systems and conceal whether the new
   direction can support the rest of the product.
@@ -659,7 +659,7 @@ its approved study are authoritative for the replacement look and feel.
     the intent and not a side effect — and which was **looked at**, not assumed: the Connect
     panel's `Create project` and the composer's Send are the two prominent controls that took it,
     both rendered and judged (`connectChoosing`, `composerTyping`), along with `projectSettings`,
-    `workChrome` and `selectedRow`. Both now carry the identity where they were graphite, which is
+    `ticketsChrome` and `selectedRow`. Both now carry the identity where they were graphite, which is
     the point of the change rather than a cost of it.
   - **Still not reopened:** the leading Ion Blue rail. A selected row is carried by its ground
     alone. The clause below stands exactly as written.
@@ -783,7 +783,7 @@ its approved study are authoritative for the replacement look and feel.
 
 ## D38 — Room shortcuts disclose on demand
 
-- **Decision:** The Rooms Liquid Glass vessel shows only `Sessions`, `Work`, and `Code` in its default
+- **Decision:** The Rooms Liquid Glass vessel shows only `Sessions`, `Tickets`, and `Code` in its default
   state. Do not print `⌘1`, `⌘2`, or `⌘3` permanently inside the capsule.
 - **Discovery:** Preserve the shortcuts unchanged and expose them through hover and keyboard-focus
   tooltips, the command palette, and the application's shortcut reference. Accessible names include

@@ -56,7 +56,7 @@ public struct ProjectRegistry: Equatable, Sendable {
     }
 
     /// Which Account a Project reads one port through, if it has chosen one. Absent is a
-    /// first-class answer — an unbound port is "no Work Items", not a failure (CONTEXT.md).
+    /// first-class answer — an unbound port is "no Tickets", not a failure (CONTEXT.md).
     public func binding(on port: AccountPort, of projectID: String?) -> ProjectBinding? {
         project(id: projectID)?.binding(on: port)
     }

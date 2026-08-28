@@ -18,7 +18,7 @@ public enum LinearOAuthApp {
         !clientID.isEmpty
     }
 
-    /// `read` and `write` are the two the Work Item port needs — the listing and the eight write
+    /// `read` and `write` are the two the Ticket port needs — the listing and the eight write
     /// intents. `issues:create` is not asked for separately: Linear folds it into `write`.
     public static let scopes = ["read", "write"]
 

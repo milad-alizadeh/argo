@@ -16,7 +16,7 @@
 
 ## Placement
 
-- A **third top-level room**: `Sessions ⌘1 · Work ⌘2 · Code ⌘3`. A peer room, not a mode.
+- A **third top-level room**: `Sessions ⌘1 · Tickets ⌘2 · Code ⌘3`. A peer room, not a mode.
 - **Session-independent by construction** — a scratch terminal attaches to no agent; the
   explorer reads a working tree directly. It could never live inside the Session card.
 
@@ -89,7 +89,7 @@ surface is just where it was discovered.
 Everything the Code-room prototype does with the chrome — merged floating top bar with no fill
 or divider line, Concierge orb and caption inside it, no wordmark, no project label, borderless
 project strip, macOS traffic-light clearance, `⌘K` with no button — is now the **shell's chrome
-in every room**, not a Code-room look. **This prototype is the chrome reference**; the Work-room
+in every room**, not a Code-room look. **This prototype is the chrome reference**; the Tickets-room
 and Session-interior prototypes were reconciled to it. Definitions live in
 `cockpit-app-shell-spec.md` → **Canonical chrome**.
 

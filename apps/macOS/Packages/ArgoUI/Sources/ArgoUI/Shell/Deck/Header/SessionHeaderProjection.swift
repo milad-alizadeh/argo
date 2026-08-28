@@ -30,7 +30,7 @@ enum SessionHeaderProjection {
             let detail: String
         }
 
-        /// The linked Work Item as the header says it: `Issue #400`, never a bare `#400`. The
+        /// The linked Ticket as the header says it: `Issue #400`, never a bare `#400`. The
         /// detail is the issue's own title where the provider gave one, absent where it did not.
         struct IssueLink: Equatable, Sendable {
             /// Beside the label, so the ⓘ panel can say the bare `#476` under a term that already

@@ -20,7 +20,7 @@ struct GitHubWrites: Sendable {
     func read<Reply: Decodable>(_ path: String, grant: AccountGrant) async throws -> Reply {
         let data = try await refusalRead(call.request(path, grant: grant))
         guard let reply = try? GitHubCall.decoder.decode(Reply.self, from: data) else {
-            throw WorkItemWriteError.unreachable(.unreachable)
+            throw TicketWriteError.unreachable(.unreachable)
         }
         return reply
     }
@@ -39,7 +39,7 @@ struct GitHubWrites: Sendable {
             throw Self.failure(error)
         }
         if let failure = try? GitHubCall.decoder.decode(GitHubFailure.self, from: data) {
-            throw WorkItemWriteError.refused(failure.reason)
+            throw TicketWriteError.refused(failure.reason)
         }
         return data
     }
@@ -47,7 +47,7 @@ struct GitHubWrites: Sendable {
     /// A 403 carrying a sentence is GitHub declining this write — a scope the token lacks, or a
     /// repository with dependencies turned off. Filed as a refused grant it would send the reader
     /// through an OAuth round-trip that fixes nothing and mark every Binding on that Account down.
-    private static func failure(_ error: Error) -> WorkItemWriteError {
+    private static func failure(_ error: Error) -> TicketWriteError {
         if case let HTTPTransportError.unauthorized(code, reason) = error,
            code == 403, let reason {
             return .refused(reason)

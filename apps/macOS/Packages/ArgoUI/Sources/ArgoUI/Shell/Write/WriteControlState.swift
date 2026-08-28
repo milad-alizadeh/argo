@@ -7,14 +7,14 @@ enum WriteControlState: Equatable, Sendable {
     /// Disabled in place: no spinner, no toast, no layout shift.
     case pending
     /// Pressable again, carrying the refusal's reason. Pressing is the retry; nothing auto-retries.
-    case refused(WorkItemWriteError)
+    case refused(TicketWriteError)
     /// Disabled, because there is no usable token for this Account.
     case blocked(AccountRecord)
 
     /// A write on the wire outranks a grant that has since been refused: it is already sent, and
     /// both readings disable the control anyway. `noBinding` never disables — the port having no
     /// Binding is not a fact about a write, and whether a control is drawn at all is the room's
-    /// vacancy to decide (`WorkChromeProjection.reading`).
+    /// vacancy to decide (`TicketsChromeProjection.reading`).
     static func over(
         _ admission: WriteAdmission, attempt: WriteAttempt,
     )

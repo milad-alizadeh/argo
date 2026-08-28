@@ -90,19 +90,19 @@ struct CockpitNavigationModelTests {
     @Test
     func `selecting a ticket leaves the backlog's query standing`() {
         let model = CockpitNavigationModel()
-        model.workQuery = "canvas"
+        model.ticketsQuery = "canvas"
         model.ticket = 336
 
-        #expect(model.workQuery == "canvas")
+        #expect(model.ticketsQuery == "canvas")
     }
 
     @Test
     func `switching room leaves the backlog's query standing`() {
         let model = CockpitNavigationModel()
-        model.workQuery = "canvas"
+        model.ticketsQuery = "canvas"
         model.room = .code
 
-        #expect(model.workQuery == "canvas")
+        #expect(model.ticketsQuery == "canvas")
     }
 
     /// The roster moving under the window is not a Project switch, and it is the one write here
@@ -110,11 +110,11 @@ struct CockpitNavigationModelTests {
     @Test
     func `a roster reconciliation leaves the backlog's query standing`() {
         let model = CockpitNavigationModel()
-        model.workQuery = "canvas"
+        model.ticketsQuery = "canvas"
         model.session = "b"
         model.reconcile(against: ["a", "c"])
 
-        #expect(model.workQuery == "canvas")
+        #expect(model.ticketsQuery == "canvas")
     }
 
     /// Carried across, it would silently narrow a list of tickets it was never typed against, and
@@ -122,10 +122,10 @@ struct CockpitNavigationModelTests {
     @Test
     func `the backlog's query does not survive a Project switch`() {
         let model = CockpitNavigationModel()
-        model.workQuery = "canvas"
+        model.ticketsQuery = "canvas"
         model.projectSwitched()
 
-        #expect(model.workQuery.isEmpty)
+        #expect(model.ticketsQuery.isEmpty)
     }
 
     /// The view, the fold and the seam are the reader's own settings rather than questions about
@@ -133,11 +133,11 @@ struct CockpitNavigationModelTests {
     @Test
     func `a Project switch leaves the reader's own settings alone`() {
         let model = CockpitNavigationModel()
-        model.workView = .blocked
+        model.ticketsView = .blocked
         model.shutParents = [607]
         model.projectSwitched()
 
-        #expect(model.workView == .blocked)
+        #expect(model.ticketsView == .blocked)
         #expect(model.shutParents == [607])
     }
 

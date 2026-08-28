@@ -1,7 +1,7 @@
 ## L1 · Organisation entities
 
 - **Project** — the scope of one cockpit window: a **registered git repo, keyed to a stable
-  id** (path is a mutable attribute), carrying an **optional** Work Item **Binding** and an
+  id** (path is a mutable attribute), carrying an **optional** Ticket **Binding** and an
   **optional** Code host Binding. One git root = one Project (a monorepo is one Project).
   Registration is the act that creates it — an unregistered repo on disk is not a Project. One
   active Project per window; the known set lives in a per-machine file registry. The **only
@@ -19,14 +19,14 @@
 
 - **Binding** — a Project's use of **one Account through one port**, plus the **provider-side
   scope** that Account reads through (GitHub: an `owner/repo`; Linear: a team). The unit that
-  makes provider choice *per-Project*: one Project on Linear for Work Items while another is on
+  makes provider choice *per-Project*: one Project on Linear for Tickets while another is on
   GitHub Issues, each naming its own Account. **Per-port, not per-Project** — one GitHub
   Account normally fills both Bindings in one act, and nothing in the model stops the two from
   naming different Accounts. A Binding is **validated against its Account at bind time**: an
   Account that cannot see the scope is a bind-time refusal, never a run of reads that 404 and
   read as "the ticket does not exist." Health is keyed here, not on the Project (#260).
 
-- **Work Item** — intent. A ticket owned by a Work Item provider; **Argo stores only the link**
+- **Ticket** — intent. One unit of work owned by a Ticket provider; **Argo stores only the link**
   (provider id + which port), never the content (title/status/body/blockers are read-through,
   cached but never authoritative). **No stored type** — "PRD" and "Task" are *roles*, taken from
   the **provider's declared type when it has one** and **falling back to hierarchy** (has
@@ -38,7 +38,7 @@
   the `wayfinder:<type>` label): the resolved text of a decision, **DERIVED and held verbatim**,
   formed from the `Answer:`-marked comment plus every later `Correction:`/`Amendment:`-marked
   one in creation order. A `ruled_out` closure carries `Out of scope:` instead and is
-  uncomposable by construction. **No identity of its own** — addressed by the Work Item link.
+  uncomposable by construction. **No identity of its own** — addressed by the Ticket link.
   Markers match on a **plain-text projection** each Port supplies alongside a flat,
   creation-ordered comment list (provider bodies are not uniformly markdown).
 
@@ -54,7 +54,7 @@
   detection degrades to a chrome notice rather than stranding a map.
 
   **Every provider is remote** — GitHub Issues / Linear via OAuth; no provider connected → no
-  Work Items → all sessions unlinked.
+  Tickets → all sessions unlinked.
 
 - **Delivery** — the product in flight: a **derived, branch-keyed** entity assembled per branch
   from local git facts ∪ code-host facts (PR/CI/review/merge). Comes into existence **at branch
@@ -70,7 +70,7 @@
 
 Three independent, optional, many-to-many edges:
 
-- **Session → Work Item** — "what am I working on" (survives with no branch). Persisted as a
+- **Session → Ticket** — "what am I working on" (survives with no branch). Persisted as a
   **user-asserted link only as the fallback**, when there is no Delivery to derive it through. A
   branch-backed link is *derived*, never also asserted (ADR-0017), so the edge is never
   double-sourced.
@@ -85,7 +85,7 @@ Three independent, optional, many-to-many edges:
   provider assignee is a **visible echo** for teammates, never the lease — it carries no age,
   nothing releases it, and it is written by the **agent** under `/wayfinder`, not by Argo.
 - **Session → Delivery** — "which branch / product am I moving."
-- **Delivery → Work Item** — "what intent does this branch serve" (survives with no session),
+- **Delivery → Ticket** — "what intent does this branch serve" (survives with no session),
   derived via the join precedence (native-ref → id-in-branch → unlinked). When it derives to
   **unlinked**, the user can **assert branch→ticket manually**, persisted like the branchless
   link (ADR-0017). An assertion wins over a derived *unlinked*, **never over a positive

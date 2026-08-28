@@ -22,7 +22,7 @@ public enum SpecimenRegistry {
         + commands
         + mentions
         + connect
-        + work
+        + tickets
 
     /// What `--list-specimens` answers with.
     public static var names: [String] {

@@ -93,7 +93,7 @@ struct SessionTicketTitleTests {
 
     @Test
     @MainActor
-    func `the branch a Session is on is what links it to its Work Item`() async throws {
+    func `the branch a Session is on is what links it to its Ticket`() async throws {
         let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
         await Self.observe(hub, id: "linked", branch: "argo/#741-anchor-the-feed")
 

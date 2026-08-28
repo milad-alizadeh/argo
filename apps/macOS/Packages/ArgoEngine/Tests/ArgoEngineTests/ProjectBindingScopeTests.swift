@@ -14,7 +14,7 @@ struct ProjectBindingScopeTests {
         await fixture.catalog.answer(.listed(["milad/argo"], truncated: false))
 
         let catalogue = await fixture.bindings()
-            .scopes(on: .workItem, through: "github:1")
+            .scopes(on: .ticket, through: "github:1")
 
         #expect(catalogue == .listed(["milad/argo"], truncated: false))
     }
@@ -40,7 +40,7 @@ struct ProjectBindingScopeTests {
         defer { fixture.remove() }
 
         let catalogue = await fixture.bindings()
-            .scopes(on: .workItem, through: "github:404")
+            .scopes(on: .ticket, through: "github:404")
 
         guard case .unreadable = catalogue else {
             Issue.record("an unheld account listed scopes: \(catalogue)")
@@ -76,7 +76,7 @@ struct ProjectBindingScopeTests {
         await fixture.accounts.grants.removeGrant(for: "github:1")
 
         let catalogue = await fixture.bindings()
-            .scopes(on: .workItem, through: "github:1")
+            .scopes(on: .ticket, through: "github:1")
 
         #expect(catalogue == .unauthorized)
     }

@@ -26,6 +26,6 @@ renamed or normalized).
   Session-keyed and **persisted** (ADR-0008), which is why it survives distinct from the
   live-derived, branch-keyed Delivery. The `produces` edge made concrete, pointing at a **typed
   target**, each addressed in *its own* space: **code** (a Diff/Delivery, git-addressed by SHA),
-  **ticket** (a created Work Item, provider-id-addressed), or **artifact** (a plan/research
+  **ticket** (one the Session filed, provider-id-addressed), or **artifact** (a plan/research
   file, path-addressed, possibly uncommitted). v1: **external sessions have no Outcome** — an
   honest gap, not a fabricated record.

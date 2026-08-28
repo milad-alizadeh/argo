@@ -18,9 +18,9 @@ struct ConnectionBlastRadiusTests {
         let bindings = fixture.bindings()
         let api = try await fixture.project("api")
         let cockpit = try await fixture.project("cockpit")
-        try await bindings.bind(.gitHub(port: .workItem), to: api)
+        try await bindings.bind(.gitHub(port: .ticket), to: api)
         try await bindings.bind(.gitHub(port: .codeHost), to: api)
-        try await bindings.bind(.gitHub(port: .workItem), to: cockpit)
+        try await bindings.bind(.gitHub(port: .ticket), to: cockpit)
 
         let reached = await store.bindings(through: "github:1")
 
@@ -60,8 +60,8 @@ struct ConnectionBlastRadiusTests {
         let bindings = fixture.bindings()
         let api = try await fixture.project("api")
         let cockpit = try await fixture.project("cockpit")
-        try await bindings.bind(.gitHub(port: .workItem), to: api)
-        try await bindings.bind(.gitHub(port: .workItem), to: cockpit)
+        try await bindings.bind(.gitHub(port: .ticket), to: api)
+        try await bindings.bind(.gitHub(port: .ticket), to: cockpit)
         let ledger = ConnectionHealthLedger()
         await ledger.grantRefused("github:1")
 

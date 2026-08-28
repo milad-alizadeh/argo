@@ -12,7 +12,7 @@ public extension AccountProvider {
     var ports: [AccountPort] {
         switch self {
         case .github: AccountPort.allCases
-        case .linear: [.workItem]
+        case .linear: [.ticket]
         }
     }
 

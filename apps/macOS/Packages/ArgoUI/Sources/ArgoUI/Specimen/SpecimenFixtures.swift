@@ -5,7 +5,7 @@ import Foundation
 /// because a fixture shaped like a row is a second way to build one.
 enum SpecimenFixtures {
     enum Room: String, CaseIterable, Identifiable {
-        case sessions, work, code
+        case sessions, tickets, code
 
         var id: Self {
             self
@@ -14,7 +14,7 @@ enum SpecimenFixtures {
         var title: String {
             switch self {
             case .sessions: "Sessions"
-            case .work: "Work"
+            case .tickets: "Tickets"
             case .code: "Code"
             }
         }
@@ -22,7 +22,7 @@ enum SpecimenFixtures {
         var symbol: String {
             switch self {
             case .sessions: "waveform"
-            case .work: "checklist"
+            case .tickets: "checklist"
             case .code: "chevron.left.forwardslash.chevron.right"
             }
         }

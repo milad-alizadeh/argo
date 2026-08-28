@@ -87,7 +87,7 @@ struct SurfaceMeasureTests {
         #expect(ArgoIconSize.allCases.allSatisfy { $0.rawValue > ArgoIconSize.statusDot })
     }
 
-    // MARK: - The Work room
+    // MARK: - The Tickets room
 
     /// The room's three panes tile the ideal window by construction, so the assertable claim is
     /// that 520 leaves the third of them something to be: the design calls the ticket's 480 its
@@ -139,16 +139,16 @@ struct SurfaceMeasureTests {
     /// so the row holding the larger type is the taller of the two.
     @Test
     func `a backlog row is floored taller than a sidebar view row`() {
-        #expect(ArgoBacklogList.rowHeight > ArgoWorkSidebar.viewRowHeight)
+        #expect(ArgoBacklogList.rowHeight > ArgoTicketsSidebar.viewRowHeight)
         #expect(ArgoBacklogList.rowHeight > ArgoTypography.body.lineBox)
-        #expect(ArgoWorkSidebar.viewRowHeight > ArgoTypography.rowMeta.lineBox)
+        #expect(ArgoTicketsSidebar.viewRowHeight > ArgoTypography.rowMeta.lineBox)
     }
 
     /// The glyph column exists so every view name starts on one vertical, which it can only do if
     /// it is wider than the marks it holds.
     @Test
     func `the sidebar's glyph column holds the mark it is drawn for`() {
-        #expect(ArgoWorkSidebar.glyphWidth > ArgoIconSize.inline.rawValue)
+        #expect(ArgoTicketsSidebar.glyphWidth > ArgoIconSize.inline.rawValue)
     }
 
     /// The twist's slot holds the mark drawn in it, the same way the sidebar's glyph column does —
@@ -196,7 +196,7 @@ struct SurfaceMeasureTests {
     /// measure a paragraph of Argo's own reading runs to.
     @Test
     func `the vacancy panel is narrower than a body of prose`() {
-        #expect(ArgoWorkRoomVacancy.panelWidth < ArgoFeedRow.column)
+        #expect(ArgoTicketsRoomVacancy.panelWidth < ArgoFeedRow.column)
     }
 
     /// It is a frame rather than a ceiling, so it has to fit the tightest deck the shell allows —
@@ -204,7 +204,7 @@ struct SurfaceMeasureTests {
     @Test
     func `the vacancy panel fits the narrowest deck the shell allows`() {
         #expect(
-            ArgoWorkRoomVacancy.panelWidth
+            ArgoTicketsRoomVacancy.panelWidth
                 < ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMaximumWidth,
         )
     }

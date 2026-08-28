@@ -107,7 +107,7 @@ struct DeliveryDerivationTests {
             workspaces: [.on("hotfix")], held: Held(assertions: assertions),
         )
 
-        #expect(derived.first?.workItem == .asserted(31))
+        #expect(derived.first?.ticket == .asserted(31))
     }
 
     @Test
@@ -118,7 +118,7 @@ struct DeliveryDerivationTests {
             workspaces: [.on("hotfix")], held: Held(assertions: assertions),
         )
 
-        #expect(derived.first?.workItem == .unlinked)
+        #expect(derived.first?.ticket == .unlinked)
     }
 
     @Test

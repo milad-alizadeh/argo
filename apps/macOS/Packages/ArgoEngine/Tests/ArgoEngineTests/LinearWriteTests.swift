@@ -4,23 +4,23 @@ import Testing
 
 /// What each canonical intent actually puts on the wire at Linear — the half of the port a
 /// conformance suite cannot see, because it asks whether a write landed and not what was sent.
-@Suite("Linear Work Item writes")
+@Suite("Linear Ticket writes")
 struct LinearWriteTests {
     /// Ticket 12, with 9 and 3 for the far ends an edge intent names.
     private static func team() -> RecordedLinear {
         LinearFixture.holding([
-            LinearIssueJSON(number: 12, title: "Port the Work room"),
+            LinearIssueJSON(number: 12, title: "Port the Tickets room"),
             LinearIssueJSON(number: 9),
             LinearIssueJSON(number: 3),
         ])
     }
 
     private static func apply(
-        _ intent: WorkItemIntent, to number: Int = 12,
+        _ intent: TicketIntent, to number: Int = 12,
     ) async throws
         -> RecordedLinear {
         let api = team()
-        _ = try await LinearWorkItems(transport: api).apply(
+        _ = try await LinearTickets(transport: api).apply(
             intent, to: number, through: .linear(),
         )
         return api
@@ -29,7 +29,7 @@ struct LinearWriteTests {
     @Test
     func `a subject is addressed by Linear's UUID and never by the number Argo holds`(
     ) async throws {
-        let api = try await Self.apply(.updateFields(WorkItemFields(title: "Something else")))
+        let api = try await Self.apply(.updateFields(TicketFields(title: "Something else")))
 
         #expect(await api.variables(of: "mutation IssueUpdate")?["id"] == .string("issue-12"))
     }
@@ -37,7 +37,7 @@ struct LinearWriteTests {
     @Test
     func `an edit names only the halves it changes`() async throws {
         // `nil` is "leave it alone", so sending it as null would clear a body nobody asked to.
-        let api = try await Self.apply(.updateFields(WorkItemFields(title: "Something else")))
+        let api = try await Self.apply(.updateFields(TicketFields(title: "Something else")))
 
         #expect(
             await api.variables(of: "mutation IssueUpdate")?["input"]
@@ -58,7 +58,7 @@ struct LinearWriteTests {
     }
 
     struct ClosingCase: Sendable {
-        let reason: WorkItemCloseReason
+        let reason: TicketCloseReason
         let column: String
     }
 
@@ -81,8 +81,8 @@ struct LinearWriteTests {
     func `a state Linear has no category for is refused, never approximated`() async {
         // Linear expresses `inReview` only as a column a team NAMED that way, which is a
         // `started` state — deriving the canonical one from prose would be a false DIRECT.
-        await #expect(throws: WorkItemWriteError.inexpressible(.inReview)) {
-            _ = try await LinearWorkItems(transport: Self.team()).apply(
+        await #expect(throws: TicketWriteError.inexpressible(.inReview)) {
+            _ = try await LinearTickets(transport: Self.team()).apply(
                 .transitionTo(.inReview), to: 12, through: .linear(),
             )
         }
@@ -113,7 +113,7 @@ struct LinearWriteTests {
         // Rounding to the nearest rung would file a ticket at an urgency nobody chose.
         let api = Self.team()
         await #expect(throws: (any Error).self) {
-            _ = try await LinearWorkItems(transport: api).apply(
+            _ = try await LinearTickets(transport: api).apply(
                 .setPriority("Blocker"), to: 12, through: .linear(),
             )
         }

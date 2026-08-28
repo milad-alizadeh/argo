@@ -7,7 +7,7 @@ public enum BindingRefusal: Error, Equatable {
     /// Binding is a choice about a Project, and a Project is created by registration alone.
     case noSuchProject
     case noSuchAccount
-    /// Linear issues grants for Work Items and nothing else, so a Linear Account cannot fill the
+    /// Linear issues grants for Tickets and nothing else, so a Linear Account cannot fill the
     /// code-host port.
     case portNotServedByProvider(AccountProvider, AccountPort)
     /// The Account is listed but its token is not in the keychain — the half-state a failed grant

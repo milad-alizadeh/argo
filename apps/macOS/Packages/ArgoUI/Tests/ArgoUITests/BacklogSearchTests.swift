@@ -9,15 +9,15 @@ import Testing
 /// The vocabulary is `cockpit-work-room.md` — **the two narrowings, decided**.
 @Suite("Backlog search")
 struct BacklogSearchTests {
-    private static func room(matching query: String, in view: WorkView = .allOpen)
-        -> WorkRoomProjection.Room {
-        WorkRoomProjection.room(from: WorkFixture.reading, in: view, matching: query)
+    private static func room(matching query: String, in view: TicketsView = .allOpen)
+        -> TicketsRoomProjection.Room {
+        TicketsRoomProjection.room(from: TicketsFixture.reading, in: view, matching: query)
     }
 
     /// Every row the list draws, at every depth — the count the reader can see, as opposed to the
     /// count of matches the heading states.
-    private static func rows(of room: WorkRoomProjection.Room) -> [Int] {
-        WorkRoomProjection.drawn(room.backlog, shut: []).map(\.id)
+    private static func rows(of room: TicketsRoomProjection.Room) -> [Int] {
+        TicketsRoomProjection.drawn(room.backlog, shut: []).map(\.id)
     }
 
     // MARK: - What a query matches
@@ -75,7 +75,7 @@ struct BacklogSearchTests {
     /// demoted, and a reader is never left counting rails as results.
     @Test
     func `a parent kept for its child's sake is a rail`() {
-        let drawn = WorkRoomProjection.drawn(Self.room(matching: "canvas").backlog, shut: [])
+        let drawn = TicketsRoomProjection.drawn(Self.room(matching: "canvas").backlog, shut: [])
         let rails = drawn.filter(\.row.isRail).map(\.id)
 
         #expect(rails == [607, 334])
@@ -83,7 +83,7 @@ struct BacklogSearchTests {
 
     @Test
     func `the row that matched is not a rail`() {
-        let drawn = WorkRoomProjection.drawn(Self.room(matching: "canvas").backlog, shut: [])
+        let drawn = TicketsRoomProjection.drawn(Self.room(matching: "canvas").backlog, shut: [])
 
         #expect(drawn.first { $0.id == 336 }?.row.isRail == false)
     }
@@ -105,7 +105,7 @@ struct BacklogSearchTests {
     /// definition.
     @Test
     func `an unsearched backlog has no rails in it`() {
-        let drawn = WorkRoomProjection.drawn(Self.room(matching: "").backlog, shut: [])
+        let drawn = TicketsRoomProjection.drawn(Self.room(matching: "").backlog, shut: [])
 
         #expect(!drawn.contains { $0.row.isRail })
     }
@@ -127,9 +127,9 @@ struct BacklogSearchTests {
 
     // MARK: - What the heading says
 
-    private static func chrome(matching query: String, in view: WorkView = .allOpen)
-        -> WorkChromeProjection.Reading {
-        WorkChromeProjection.reading(of: room(matching: query, in: view), in: view, showing: nil)
+    private static func chrome(matching query: String, in view: TicketsView = .allOpen)
+        -> TicketsChromeProjection.Reading {
+        TicketsChromeProjection.reading(of: room(matching: query, in: view), in: view, showing: nil)
     }
 
     /// Spelled out rather than interpolated from the projection: an expectation built from the
@@ -184,7 +184,7 @@ struct BacklogSearchTests {
     @Test
     func `a query that matches nothing leaves the open ticket's verbs standing`() {
         let room = Self.room(matching: "zzzzz")
-        let chrome = WorkChromeProjection.reading(of: room, in: .allOpen, showing: 272)
+        let chrome = TicketsChromeProjection.reading(of: room, in: .allOpen, showing: 272)
 
         #expect(room.ticket != nil)
         #expect(chrome.ticket == 272)

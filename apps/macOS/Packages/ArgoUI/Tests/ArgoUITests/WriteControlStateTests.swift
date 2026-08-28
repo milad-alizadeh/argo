@@ -44,13 +44,13 @@ struct WriteControlStateTests {
     func `a stale port still draws a pressable control`() {
         let stale = ConnectionHealthReading(connections: [
             PortConnection(
-                port: .workItem,
+                port: .ticket,
                 account: account,
                 health: BindingHealth(fault: .read(.offline), lastSuccess: nil),
             ),
         ])
 
-        #expect(WriteControlState.over(stale.writes(through: .workItem), attempt: .idle) == .live)
+        #expect(WriteControlState.over(stale.writes(through: .ticket), attempt: .idle) == .live)
     }
 
     @Test
@@ -74,7 +74,7 @@ struct WriteControlStateTests {
     @Test
     func `a port with no binding leaves the control alone`() {
         #expect(WriteControlState.over(.noBinding, attempt: .idle) == .live)
-        #expect(ConnectionHealthReading.quiet.writes(through: .workItem) == .noBinding)
+        #expect(ConnectionHealthReading.quiet.writes(through: .ticket) == .noBinding)
     }
 
     /// A grant that died mid-flight does not un-press the button: the write is already on the wire,

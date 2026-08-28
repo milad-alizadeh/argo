@@ -11,19 +11,19 @@ public final class CockpitNavigationModel {
     /// The one field the app target touches: its Navigate menu sets the room.
     public var room: CockpitRoom = .sessions
 
-    /// The ticket the Work room is open on. Beside the Session and not inside it: a room keeps
+    /// The ticket the Tickets room is open on. Beside the Session and not inside it: a room keeps
     /// where it was pointing while the reader is in another one.
     var ticket: Int?
     /// Which of the backlog's views is open. Here rather than in the sidebar, because it decides
     /// what the DECK draws — held inside the sidebar it filtered nothing.
-    var workView = WorkView.allOpen
+    var ticketsView = TicketsView.allOpen
     /// Which parents the backlog has folded. Beside the view for the same reason: a fold survives
     /// the reader leaving the room. Empty, because everything opens open (#814).
     var shutParents: Set<Int> = []
     /// What the backlog's search field is holding. Beside the view for its reason: the field sits
     /// over the ticket and narrows the LIST, so neither pane may own it (#816).
-    var workQuery = ""
-    /// What the reader has dragged the Work room's seam to. A preference of the WINDOW, like the
+    var ticketsQuery = ""
+    /// What the reader has dragged the Tickets room's seam to. A preference of the WINDOW, like the
     /// deck's own seams (`DeckSeams`) — the room's two panes are rebuilt on every ticket, and a
     /// width owned inside that subtree would lose the drag on every click.
     var backlogWidth = ArgoBacklogList.width
@@ -59,7 +59,7 @@ public final class CockpitNavigationModel {
     /// is a question about a particular Project's tickets (#873). The view, the fold and the seam
     /// are the reader's own settings and stand.
     func projectSwitched() {
-        workQuery = ""
+        ticketsQuery = ""
     }
 
     /// Repoints a selection that no longer names a live Session, falling back to the first.

@@ -16,7 +16,7 @@ struct PortConnectionFoldTests {
 
     private func fold(_ state: ConnectPortState, observed: BindingHealth) -> PortConnection {
         PortConnection(
-            port: ConnectPort(port: .workItem, state: state),
+            port: ConnectPort(port: .ticket, state: state),
             account: account,
             observed: observed,
         )
@@ -75,7 +75,7 @@ struct PortConnectionFoldTests {
         // machine; with two it names neither the thing that broke nor the thing to press.
         let connection = fold(.bound(accountID: "github:1", scope: "acme/api"), observed: .healthy)
 
-        #expect(connection.port == .workItem)
+        #expect(connection.port == .ticket)
         #expect(connection.account == account)
     }
 }

@@ -10,8 +10,8 @@ import Testing
 /// than the old wording could express.
 @Suite("Connection health")
 struct ConnectionHealthTests {
-    private let work = ProjectBinding(port: .workItem, accountID: "github:1", scope: "acme/api")
-    private let personal = ProjectBinding(port: .workItem, accountID: "github:2", scope: "me/blog")
+    private let work = ProjectBinding(port: .ticket, accountID: "github:1", scope: "acme/api")
+    private let personal = ProjectBinding(port: .ticket, accountID: "github:2", scope: "me/blog")
     private let now = Date(timeIntervalSince1970: 10000)
 
     @Test
@@ -154,7 +154,7 @@ struct ConnectionHealthTests {
         await ledger.succeeded(work, in: "P1", at: now)
         await ledger.failed(work, in: "P1", cause: .unreachable)
 
-        let rebound = ProjectBinding(port: .workItem, accountID: "github:2", scope: "acme/api")
+        let rebound = ProjectBinding(port: .ticket, accountID: "github:2", scope: "acme/api")
 
         let health = await ledger.health(of: rebound, in: "P1")
         #expect(health.state == .healthy)

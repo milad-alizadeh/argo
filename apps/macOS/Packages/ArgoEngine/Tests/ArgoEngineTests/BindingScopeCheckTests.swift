@@ -10,7 +10,7 @@ struct BindingScopeCheckTests {
     private static func probe(
         provider: AccountProvider = .github,
         scope: String = "milad/argo",
-        port: AccountPort = .workItem,
+        port: AccountPort = .ticket,
     )
         -> BindingProbe {
         BindingProbe(
@@ -43,18 +43,18 @@ struct BindingScopeCheckTests {
         #expect(visibility == .notVisible)
     }
 
-    /// Visible and sourcing no Work Items are different things. After bind time a repository with
+    /// Visible and sourcing no Tickets are different things. After bind time a repository with
     /// Issues switched off is indistinguishable from one nobody has filed anything in, which is the
     /// silence the whole check exists to prevent.
     @Test
-    func `a repository with Issues switched off cannot fill the Work Item port`() async {
+    func `a repository with Issues switched off cannot fill the Ticket port`() async {
         let api = StubProviderAPI(
             body: #"{ "id": 1, "full_name": "milad/argo", "has_issues": false }"#,
         )
 
         let check = ProviderScopeCheck(transport: api)
 
-        #expect(await check.visibility(of: Self.probe(port: .workItem)) == .notVisible)
+        #expect(await check.visibility(of: Self.probe(port: .ticket)) == .notVisible)
     }
 
     /// PRs, checks and reviews are on every repository there is, so the code-host port asks nothing

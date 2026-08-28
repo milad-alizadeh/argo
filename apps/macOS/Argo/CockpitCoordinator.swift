@@ -30,7 +30,7 @@ final class CockpitCoordinator {
     private let annotationStore: SessionAnnotationStore
     /// The pass that names each Session's ticket (#745). It caches its own reads for the launch, so
     /// asking again as the roster changes costs the code host one request per ticket, not per ask.
-    private let ticketTitles: WorkItemTitleResolver
+    private let ticketTitles: TicketTitleResolver
     private let configuration: LaunchConfiguration
 
     init(
@@ -42,7 +42,7 @@ final class CockpitCoordinator {
         self.configuration = configuration
         self.store = store
         self.annotationStore = annotationStore
-        self.ticketTitles = WorkItemTitleResolver(annotations: annotationStore)
+        self.ticketTitles = TicketTitleResolver(annotations: annotationStore)
         self.pointing = CockpitPointing(
             registry: .empty,
             launch: .unregistered(configuration.projectURL),
@@ -143,7 +143,7 @@ final class CockpitCoordinator {
         annotations = await annotationStore.setName(name, sessionID: sessionID)
     }
 
-    /// Name each Session's ticket through the Project's Work Item port (#745). What is resolved and
+    /// Name each Session's ticket through the Project's Ticket port (#745). What is resolved and
     /// what triggers a resolve are both `CockpitPresentation`'s (`+Tickets`).
     ///
     /// A port that is unbound or has come undone resolves nothing and leaves every stored title

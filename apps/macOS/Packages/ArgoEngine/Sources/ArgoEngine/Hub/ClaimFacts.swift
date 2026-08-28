@@ -28,11 +28,11 @@ struct ClaimFacts: Equatable {
     /// go back where they were typed: the composer cleared on the strength of a keystroke that was
     /// written, and this is the later news that it was never read.
     var lostTurn: String?
-    /// The Work Item this claim was started ON (#872), by number. DIRECT: Argo was told which
-    /// ticket at the spawn, so the Work room draws it claimed without waiting for a branch to be
+    /// The Ticket this claim was started ON (#872), by number. DIRECT: Argo was told which
+    /// ticket at the spawn, so the Tickets room draws it claimed without waiting for a branch to be
     /// cut. Here rather than on the row alone because the row is re-keyed the moment its CLI
     /// writes a record, and a claim outlives that.
-    var workItem: Int?
+    var ticket: Int?
 
     /// Absent rather than empty: a claim with nothing to say must leave the ledger, or an empty
     /// entry keeps it alive there long after the PTY behind it went.
@@ -45,6 +45,6 @@ struct ClaimFacts: Equatable {
             && modeSet == nil
             && driveStatus == nil
             && lostTurn == nil
-            && workItem == nil
+            && ticket == nil
     }
 }

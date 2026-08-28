@@ -10,14 +10,14 @@ struct LabelInkTests {
 
     @Test
     func `a label the provider gave no colour has no ink to draw with`() {
-        #expect(LabelInk(WorkItemLabel(name: "work-room"), on: deck) == nil)
+        #expect(LabelInk(TicketLabel(name: "work-room"), on: deck) == nil)
     }
 
     /// Absence and unreadable collapse to the same answer deliberately: a colour Argo could not
     /// parse is one nobody stated, and a chip that guessed would be asserting a fact.
     @Test(arguments: ["", "fff", "#12345", "ggggggg", "d73a4a7", "not-a-colour"])
     func `a colour Argo cannot read is a colour nobody stated`(hex: String) {
-        #expect(LabelInk(WorkItemLabel(name: "bug", colour: hex), on: deck) == nil)
+        #expect(LabelInk(TicketLabel(name: "bug", colour: hex), on: deck) == nil)
     }
 
     @Test(arguments: ["d73a4a", "#d73a4a", "D73A4A"])
@@ -29,7 +29,7 @@ struct LabelInkTests {
     /// as GitHub's own red would be brighter than any surface in the room.
     @Test
     func `the ground is a wash of the provider's hue, never the hue itself`() throws {
-        let ink = try #require(LabelInk(WorkItemLabel(name: "bug", colour: "d73a4a"), on: deck))
+        let ink = try #require(LabelInk(TicketLabel(name: "bug", colour: "d73a4a"), on: deck))
 
         #expect(ink.ground.opacity < 0.25)
         #expect(ink.edge.opacity < ink.word.opacity)
@@ -40,7 +40,7 @@ struct LabelInkTests {
     /// label set against a white page routinely carries.
     @Test(arguments: ["000000", "0d1117", "1d76db", "d73a4a", "5319e7", "0e8a16", "b60205"])
     func `every provider colour reads at AA against the ground under it`(hex: String) throws {
-        let ink = try #require(LabelInk(WorkItemLabel(name: "label", colour: hex), on: deck))
+        let ink = try #require(LabelInk(TicketLabel(name: "label", colour: hex), on: deck))
 
         #expect(ink.word.contrastRatio(on: deck) >= ArgoTicketDetail.labelWordContrast)
     }
@@ -50,7 +50,7 @@ struct LabelInkTests {
     /// be moved only just far enough.
     @Test
     func `a hue is moved no further than reading it demands`() throws {
-        let ink = try #require(LabelInk(WorkItemLabel(name: "ui", colour: "1d76db"), on: deck))
+        let ink = try #require(LabelInk(TicketLabel(name: "ui", colour: "1d76db"), on: deck))
 
         // Blue is the channel the reader chose; it must still dominate after the lift.
         #expect(ink.word.blue > ink.word.red)
@@ -71,8 +71,8 @@ struct LabelInkTests {
     /// stay different.
     @Test
     func `two dark labels stay different colours after the lift`() throws {
-        let red = try #require(LabelInk(WorkItemLabel(name: "a", colour: "800000"), on: deck))
-        let blue = try #require(LabelInk(WorkItemLabel(name: "b", colour: "000080"), on: deck))
+        let red = try #require(LabelInk(TicketLabel(name: "a", colour: "800000"), on: deck))
+        let blue = try #require(LabelInk(TicketLabel(name: "b", colour: "000080"), on: deck))
 
         #expect(red.word != blue.word)
         #expect(red.word.distance(to: blue.word) > 0.2)

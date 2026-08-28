@@ -95,7 +95,7 @@ public enum ArgoLayout {
         )
     }
 
-    /// The Work room's two panes. The backlog OPENS at `ArgoBacklogList.width` — the measure the
+    /// The Tickets room's two panes. The backlog OPENS at `ArgoBacklogList.width` — the measure the
     /// twelve real titles were chosen against — and the reader drags it from there.
     /// The floor is #836's derivation, kept: the narrowest window, less the sidebar, less a pane of
     /// prose, less the two seams between the three — the split view's divider and the deck's own.

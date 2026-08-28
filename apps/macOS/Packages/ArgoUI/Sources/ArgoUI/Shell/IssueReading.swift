@@ -1,4 +1,4 @@
-/// How a linked Work Item is worded wherever it is read as one thing — the house form, in the one
+/// How a linked Ticket is worded wherever it is read as one thing — the house form, in the one
 /// place every surface asks for it.
 ///
 /// It exists because three surfaces say it: the ⓘ panel's Issue fact, the roster row's title and

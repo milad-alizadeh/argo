@@ -2,6 +2,10 @@
 
 Status: partially superseded (#182) · 2026-07-22
 
+> **Renamed by #881 · 2026-08-28:** the entity called **Work Item** below is now **Ticket**,
+> and the **Work Item provider** port is the **Ticket provider**. The wording here is left as it
+> was written; `docs/domain/rationale.md` → L1 carries why the word changed.
+
 > **Superseded in part by the #182 rebuild** (see `CONTEXT.md` → L1):
 > - **Work Item `type` (PRD|Task) is dissolved** into parent/child hierarchy — "PRD" and
 >   "Task" are roles derived from whether a Work Item has children, not a stored field

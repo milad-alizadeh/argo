@@ -2,7 +2,7 @@
 import Foundation
 import Testing
 
-/// The third annotation: what the code host said about the Work Item a Session's branch names
+/// The third annotation: what the code host said about the Ticket a Session's branch names
 /// (#745). Persisted for the reason the other two are — a roster that read it fresh every launch
 /// would open on `/implement 745` until the network answered.
 @Suite("Session ticket title store")
@@ -12,11 +12,11 @@ struct SessionTicketTitleStoreTests {
         let file = AnnotationFile()
         defer { file.remove() }
 
-        await file.store().setTicket(.named("Derive the Work Item link"), sessionID: "chain-a")
+        await file.store().setTicket(.named("Derive the Ticket link"), sessionID: "chain-a")
         // A second store over the same file is what relaunching Argo amounts to.
         let annotations = await file.store().load()
 
-        #expect(annotations.ticket("chain-a") == .named("Derive the Work Item link"))
+        #expect(annotations.ticket("chain-a") == .named("Derive the Ticket link"))
     }
 
     @Test
@@ -48,13 +48,13 @@ struct SessionTicketTitleStoreTests {
         let store = file.store()
 
         await store.setName("Tonight's run", sessionID: "chain-a")
-        await store.setTicket(.named("Derive the Work Item link"), sessionID: "chain-a")
+        await store.setTicket(.named("Derive the Ticket link"), sessionID: "chain-a")
 
         // Argo writes one rung and the user writes the other, so a resolve must not overwrite a
         // rename — and Reset must still have a ticket title left to go back to.
         let annotations = await store.load()
         #expect(annotations.explicitName("chain-a") == "Tonight's run")
-        #expect(annotations.ticket("chain-a") == .named("Derive the Work Item link"))
+        #expect(annotations.ticket("chain-a") == .named("Derive the Ticket link"))
     }
 
     @Test

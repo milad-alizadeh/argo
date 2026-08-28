@@ -34,14 +34,14 @@ enum ConnectionHealthSpecimen {
     static let states: [State] = [
         State(name: "connectionStale", reading: ConnectionHealthReading(connections: [
             PortConnection(
-                port: .workItem,
+                port: .ticket,
                 account: work,
                 health: BindingHealth(fault: .read(.offline), lastSuccess: lastSuccess),
             ),
         ])),
         State(name: "connectionsStale", reading: ConnectionHealthReading(connections: [
             PortConnection(
-                port: .workItem,
+                port: .ticket,
                 account: work,
                 health: BindingHealth(fault: .read(.offline), lastSuccess: lastSuccess),
             ),
@@ -53,7 +53,7 @@ enum ConnectionHealthSpecimen {
         ])),
         State(name: "connectionNeedsReconnect", reading: ConnectionHealthReading(connections: [
             PortConnection(
-                port: .workItem,
+                port: .ticket,
                 account: work,
                 health: BindingHealth(fault: .grantRefused, lastSuccess: lastSuccess),
             ),

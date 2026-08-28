@@ -16,19 +16,19 @@ public struct Delivery: Equatable, Sendable, Identifiable {
     public let checks: [DeliveryCheck]
     public let reviews: [DeliveryReview]
     /// What intent this branch serves, by the join precedence.
-    public let workItem: DeliveryWorkItemLink
+    public let ticket: DeliveryTicketLink
 
     public init(
         branch: String,
         pullRequest: DeliveryPullRequest?,
         observed: Observed = Observed(),
-        workItem: DeliveryWorkItemLink = .unlinked,
+        ticket: DeliveryTicketLink = .unlinked,
     ) {
         self.branch = branch
         self.pullRequest = pullRequest
         self.checks = observed.checks
         self.reviews = observed.reviews
-        self.workItem = workItem
+        self.ticket = ticket
     }
 
     /// What the host was observed to hold beyond the pull request itself.
@@ -46,14 +46,14 @@ public struct Delivery: Equatable, Sendable, Identifiable {
         branch
     }
 
-    /// The same Delivery with its Work Item joined, `asserted` being what a human said this branch
+    /// The same Delivery with its Ticket joined, `asserted` being what a human said this branch
     /// serves — consulted only where the derivation itself found nothing.
     public func linking(to asserted: Int?) -> Delivery {
         Delivery(
             branch: branch,
             pullRequest: pullRequest,
             observed: Observed(checks: checks, reviews: reviews),
-            workItem: .derived(
+            ticket: .derived(
                 branch: branch, pullRequestBody: pullRequest?.body, asserted: asserted,
             ),
         )

@@ -2,12 +2,12 @@
 import Foundation
 import Testing
 
-/// GitHub's endpoints, recorded — issues for the Work Item port, pulls and checks for the code
+/// GitHub's endpoints, recorded — issues for the Ticket port, pulls and checks for the code
 /// host. Each reply is keyed by the part of the path that names it, so a test says which endpoint
 /// answered what rather than which request number did: a read makes a different number of requests
 /// depending on what it finds.
 actor RecordedGitHub: HTTPTransport {
-    /// The open-issue listing's key, spelled once against `GitHubWorkItems`' own path — every Work
+    /// The open-issue listing's key, spelled once against `GitHubTickets`' own path — every Work
     /// Item suite keys its listing by this, and a query string that moves lands here.
     static let openIssues = "issues?state=open"
 

@@ -55,7 +55,7 @@ struct BindingFixture {
         return id
     }
 
-    /// Which provider a Project's Work Item port actually resolves to, and which token it carries.
+    /// Which provider a Project's Ticket port actually resolves to, and which token it carries.
     /// Read through `resolve` rather than off the registry — the token is the only thing two
     /// Accounts of one provider differ by.
     func provider(of projectID: String) async -> AccountProvider? {
@@ -68,7 +68,7 @@ struct BindingFixture {
 
     private func ready(_ projectID: String) async -> ResolvedBinding? {
         guard case let .ready(resolved) = await bindings()
-            .resolve(port: .workItem, for: projectID) else { return nil }
+            .resolve(port: .ticket, for: projectID) else { return nil }
         return resolved
     }
 
@@ -94,7 +94,7 @@ extension AccountRegistryStore {
 
 extension ProjectBinding {
     static func gitHub(
-        port: AccountPort = .workItem,
+        port: AccountPort = .ticket,
         account: String = "github:1",
         scope: String = "milad-alizadeh/argo",
     )

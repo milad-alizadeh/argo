@@ -15,21 +15,21 @@ struct WriteAdmissionTests {
 
     @Test
     func `a healthy port is written through`() {
-        #expect(reading(.healthy).writes(through: .workItem) == .admitted)
+        #expect(reading(.healthy).writes(through: .ticket) == .admitted)
     }
 
     @Test
     func `a stale port is still written through`() {
         let stale = BindingHealth(fault: .read(.rateLimited), lastSuccess: now)
 
-        #expect(reading(stale).writes(through: .workItem) == .admitted)
+        #expect(reading(stale).writes(through: .ticket) == .admitted)
     }
 
     @Test
     func `a refused grant refuses the write, naming the account to reconnect`() {
         let refused = BindingHealth(fault: .grantRefused, lastSuccess: now)
 
-        #expect(reading(refused).writes(through: .workItem) == .refused(work))
+        #expect(reading(refused).writes(through: .ticket) == .refused(work))
     }
 
     /// A port the reading has no connection for is a fully-onboarded state, not a refusal — and
@@ -37,27 +37,27 @@ struct WriteAdmissionTests {
     /// reason: there is no control to grey out because there is no control.
     @Test
     func `a port with no binding has no write to admit`() {
-        #expect(ConnectionHealthReading.quiet.writes(through: .workItem) == .noBinding)
+        #expect(ConnectionHealthReading.quiet.writes(through: .ticket) == .noBinding)
     }
 
     @Test
     func `one refused port leaves the other writable`() {
         let reading = ConnectionHealthReading(connections: [
             PortConnection(
-                port: .workItem,
+                port: .ticket,
                 account: work,
                 health: BindingHealth(fault: .grantRefused, lastSuccess: now),
             ),
             PortConnection(port: .codeHost, account: work, health: .healthy),
         ])
 
-        #expect(reading.writes(through: .workItem) == .refused(work))
+        #expect(reading.writes(through: .ticket) == .refused(work))
         #expect(reading.writes(through: .codeHost) == .admitted)
     }
 
     private func reading(_ health: BindingHealth) -> ConnectionHealthReading {
         ConnectionHealthReading(connections: [
-            PortConnection(port: .workItem, account: work, health: health),
+            PortConnection(port: .ticket, account: work, health: health),
         ])
     }
 }

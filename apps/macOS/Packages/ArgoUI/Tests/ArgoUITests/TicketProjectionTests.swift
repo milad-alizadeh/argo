@@ -2,7 +2,7 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// What the ticket detail reads off a Work Item (#815) — the fact strip, the Deliveries, and the
+/// What the ticket detail reads off a Ticket (#815) — the fact strip, the Deliveries, and the
 /// two link sections. Every claim here is about what Argo is entitled to SAY: a fact nobody read is
 /// absent, and an absence is never dressed up as an answer.
 @Suite("The ticket's facts and its sections")
@@ -11,7 +11,7 @@ struct TicketProjectionTests {
 
     @Test
     func `the labels are the provider's own, verbatim and complete`() {
-        let ticket = WorkFixture.room.ticket
+        let ticket = TicketsFixture.room.ticket
 
         // `blocked` is one of them, and stays: a list that drops the members Argo restates
         // elsewhere is no longer the provider's list.
@@ -20,7 +20,7 @@ struct TicketProjectionTests {
 
     @Test
     func `the provider's priority and type words are kept as it spells them`() {
-        let ticket = WorkFixture.room(showing: 607).ticket
+        let ticket = TicketsFixture.room(showing: 607).ticket
 
         #expect(ticket?.priority == "high")
         #expect(ticket?.type == "PRD")
@@ -30,7 +30,7 @@ struct TicketProjectionTests {
     /// nothing, because Argo computes it rather than reading it.
     @Test
     func `a ticket nothing was read about carries no priority, type or labels`() {
-        let ticket = WorkRoomProjection.room(from: WorkFixture.unread).ticket
+        let ticket = TicketsRoomProjection.room(from: TicketsFixture.unread).ticket
 
         #expect(ticket?.priority == nil)
         #expect(ticket?.type == nil)
@@ -42,7 +42,7 @@ struct TicketProjectionTests {
 
     @Test
     func `two Deliveries on one ticket are two chips`() {
-        let ticket = WorkFixture.room(showing: 607).ticket
+        let ticket = TicketsFixture.room(showing: 607).ticket
 
         #expect(ticket?.deliveries.map(\.name) == ["argo#812", "argo#829"])
         #expect(ticket?.deliveries.first?.checks == .passing)
@@ -51,19 +51,19 @@ struct TicketProjectionTests {
 
     @Test
     func `one Delivery is one chip`() {
-        #expect(WorkFixture.room(showing: 763).ticket?.deliveries.count == 1)
+        #expect(TicketsFixture.room(showing: 763).ticket?.deliveries.count == 1)
     }
 
     @Test
     func `a ticket with nothing in flight carries no chip`() {
-        #expect(WorkFixture.room.ticket?.deliveries.isEmpty == true)
+        #expect(TicketsFixture.room.ticket?.deliveries.isEmpty == true)
     }
 
     // MARK: - Blocked by
 
     @Test
     func `six blockers are six links, in the provider's own edge order`() {
-        let ticket = WorkFixture.room(showing: 607).ticket
+        let ticket = TicketsFixture.room(showing: 607).ticket
 
         #expect(ticket?.blockedBy.map(\.id) == [609, 388, 264, 256, 375, 376])
     }
@@ -73,7 +73,8 @@ struct TicketProjectionTests {
     /// tell from a real title.
     @Test
     func `a blocker that is already closed still renders the tracker's name for it`() {
-        let closedBlocker = WorkFixture.room(showing: 607).ticket?.blockedBy.first { $0.id == 264 }
+        let closedBlocker = TicketsFixture.room(showing: 607).ticket?.blockedBy
+            .first { $0.id == 264 }
 
         #expect(closedBlocker?.title == "App shell: project strip, top bar, room tabs")
     }
@@ -82,9 +83,9 @@ struct TicketProjectionTests {
     /// stops. A placeholder here would read as the ticket's actual title.
     @Test
     func `a blocker the poll never reached is named by its number alone`() {
-        let unread = WorkFixture.item(272, blockedBy: [.init(number: 9001, closure: .open)])
-        let room = WorkRoomProjection.room(
-            from: WorkFixture.reading(of: [unread]).opened(at: 272),
+        let unread = TicketsFixture.item(272, blockedBy: [.init(number: 9001, closure: .open)])
+        let room = TicketsRoomProjection.room(
+            from: TicketsFixture.reading(of: [unread]).opened(at: 272),
         )
 
         #expect(room.ticket?.blockedBy.map(\.id) == [9001])
@@ -96,7 +97,7 @@ struct TicketProjectionTests {
     /// thing Argo can see either way — so it resolves to the quieter reading.
     @Test
     func `a provider with no dependency edges leaves the section absent`() {
-        let room = WorkRoomProjection.room(from: WorkFixture.edgeless)
+        let room = TicketsRoomProjection.room(from: TicketsFixture.edgeless)
 
         #expect(room.ticket?.blockedBy.isEmpty == true)
     }
@@ -105,7 +106,7 @@ struct TicketProjectionTests {
     /// backlog, and `absent` is the reading that says so rather than the quiet end of the five.
     @Test
     func `every blocker takes the absent mark`() {
-        let ticket = WorkFixture.room(showing: 607).ticket
+        let ticket = TicketsFixture.room(showing: 607).ticket
 
         #expect(ticket?.blockedBy.allSatisfy { $0.delivery == .absent } == true)
     }
@@ -114,7 +115,7 @@ struct TicketProjectionTests {
 
     @Test
     func `a parent lists its open children in its own order, with the provider's word`() {
-        let children = WorkFixture.room(showing: 607).ticket?.children
+        let children = TicketsFixture.room(showing: 607).ticket?.children
 
         #expect(children?.open.map(\.id) == [609, 388, 272, 273, 334])
         #expect(children?.open.first?.trailing == "In progress")
@@ -124,7 +125,7 @@ struct TicketProjectionTests {
     /// `2 of 9 closed` stands over five rows and is right.
     @Test
     func `the children figure counts the tracker's children, not the rows`() {
-        let children = WorkFixture.room(showing: 607).ticket?.children
+        let children = TicketsFixture.room(showing: 607).ticket?.children
 
         #expect(children?.closed == 2)
         #expect(children?.total == 9)
@@ -134,26 +135,26 @@ struct TicketProjectionTests {
     /// A child carries its own mark — unlike a blocker, it is in the backlog beside this pane.
     @Test
     func `a child carries the Delivery mark the backlog gives it`() {
-        let children = WorkFixture.room(showing: 607).ticket?.children
+        let children = TicketsFixture.room(showing: 607).ticket?.children
 
         #expect(children?.open.first { $0.id == 609 }?.delivery == .merged)
     }
 
     @Test
     func `a leaf has no Children section at all`() {
-        #expect(WorkFixture.room.ticket?.children == nil)
+        #expect(TicketsFixture.room.ticket?.children == nil)
     }
 
     /// A parent whose children are ALL closed keeps the section: the figure is the news there, and
     /// the sentence under it says what the empty list means.
     @Test
     func `a parent with every child closed keeps its section and its figure`() {
-        let parent = WorkItem(
+        let parent = Ticket(
             number: 1, title: "Done all through", status: "Todo", closure: .open,
             children: [690, 745],
         )
-        let items = [parent] + WorkFixture.items.filter { [690, 745].contains($0.number) }
-        let room = WorkRoomProjection.room(from: WorkFixture.reading(of: items).opened(at: 1))
+        let items = [parent] + TicketsFixture.items.filter { [690, 745].contains($0.number) }
+        let room = TicketsRoomProjection.room(from: TicketsFixture.reading(of: items).opened(at: 1))
 
         #expect(room.ticket?.children?.open.isEmpty == true)
         #expect(room.ticket?.children?.closed == 2)

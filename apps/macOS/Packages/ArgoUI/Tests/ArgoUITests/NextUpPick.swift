@@ -4,11 +4,11 @@ import Testing
 /// The pick out of a reading, for the three suites that assert on one. Held once: each of them had
 /// its own copy of this and its own error beside it, which is three ways for one unwrap to drift.
 enum NextUpPick {
-    static func of(_ reading: WorkReading) throws -> NextUp.Pick {
-        try of(WorkRoomProjection.room(from: reading))
+    static func of(_ reading: TicketsReading) throws -> NextUp.Pick {
+        try of(TicketsRoomProjection.room(from: reading))
     }
 
-    static func of(_ room: WorkRoomProjection.Room) throws -> NextUp.Pick {
+    static func of(_ room: TicketsRoomProjection.Room) throws -> NextUp.Pick {
         guard case let .pick(pick) = try #require(room.nextUp) else { throw Absent.notAPick }
         return pick
     }

@@ -9,7 +9,7 @@ A port names the *kind* of external truth; an **Account** is who Argo is when it
 once per identity per machine; choosing is Binding-level and done per Project — so a second
 Project on an already-authorized provider **binds without a second OAuth round-trip**.
 
-- **Work Item provider** — sources intent. GitHub Issues / Linear for v1; pluggable. The read
+- **Ticket provider** — sources intent. GitHub Issues / Linear for v1; pluggable. The read
   contract is children **in author order** (native on every provider); per ticket the verbatim
   status word, open/closed, closure kind, assignee, priority and labels; `blockedBy` **verified
   per-blocker**; and comments as `{ id, text, revisedAt }`, flat and creation-ordered.

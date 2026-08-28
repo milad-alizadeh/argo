@@ -27,7 +27,7 @@ Who gets to *name* a state depends on who *derives* it:
 - **Argo-owned words** — states Argo itself derives (Session liveness, Attention,
   Delivery lifecycle, Check, Connection). Argo has no upstream to defer to, so it fixes
   the word. **The tables below are the authority.**
-- **Provider-owned words** — the **Work Item status**, which is purely
+- **Provider-owned words** — the **Ticket status**, which is purely
   provider-sourced (#167 discipline: never synthesized from local facts). The word
   the user reads on a ticket is the **provider's native word, verbatim** (GitHub
   `Open`/`Closed`, Linear `In Progress`/`In Review`/`Done`, …). Argo's **canonical
@@ -87,7 +87,7 @@ session level. Rolled up:
 
 Connection health **never** enters this channel (`cockpit-failure-states-spec.md` §2).
 
-## Work Item status (provider-owned — word is read-through)
+## Ticket status (provider-owned — word is read-through)
 
 The **displayed word is the provider's**, shown verbatim. The canonical five is the
 internal bucket only.
@@ -103,7 +103,7 @@ internal bucket only.
 - **`done` vs `closed` are distinct and both kept** (#167). A bare tracker exposes
   only `todo`/`done`/`closed`; the `in-progress`/`in-review` words appear only when
   the provider's workflow carries them (two degradation tiers, #167).
-- **Discipline:** a running session does **not** make a Work Item `in-progress`; an
+- **Discipline:** a running session does **not** make a Ticket `in-progress`; an
   open PR does **not** make it `in-review`. Those are separate axes (Session
   liveness / Delivery review).
 
@@ -164,7 +164,7 @@ Empty-state and error **copy** is surface-local (harvested per-prototype), but i
 
 - **Tier axis — hide whole.** When a whole tier is unavailable, the surface **hides whole**
   (surface matrix) rather than showing a half-filled skeleton or a faked word — no provider ⇒ no
-  Work Item status words at all; external session ⇒ CONVENTION-tier words absent, their sections
+  Ticket status words at all; external session ⇒ CONVENTION-tier words absent, their sections
   hide.
 - **Freshness axis — keep and label.** `hide whole` governs the **tier** axis **only**
   (`cockpit-failure-states-spec.md` §1). Successfully-fetched data that has gone **stale** stays

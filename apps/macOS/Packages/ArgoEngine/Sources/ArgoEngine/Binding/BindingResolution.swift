@@ -22,7 +22,7 @@ public struct ResolvedBinding: Sendable {
 /// What a Project's port is, asked at read time.
 ///
 /// `unbound` is a first-class answer and not an error: it is what a fully-onboarded machine reaches
-/// when a Project simply has no Work Item provider, and the cockpit renders "no Work Items" for it
+/// when a Project simply has no Ticket provider, and the cockpit renders "no Tickets" for it
 /// rather than a failure (CONTEXT.md L1 · Binding).
 public enum BindingResolution: Sendable {
     case unbound

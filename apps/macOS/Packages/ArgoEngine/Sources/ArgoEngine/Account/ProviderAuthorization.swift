@@ -3,7 +3,7 @@ import Foundation
 /// Authorizing one identity with whichever provider was chosen — the act "Connect…" performs.
 ///
 /// The fourth place a new provider has to appear, beside `ProviderScopeCheck`,
-/// `ProviderScopeCatalog` and `ProviderWorkItems`, and exhaustive over `AccountProvider` for the
+/// `ProviderScopeCatalog` and `ProviderTickets`, and exhaustive over `AccountProvider` for the
 /// same reason: a third provider fails the build here rather than shipping a menu item that does
 /// nothing when pressed.
 ///

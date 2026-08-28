@@ -61,7 +61,7 @@ enum ConnectFixture {
         folder: folder,
         accounts: [personal, work],
         ports: [ConnectPort(
-            port: .workItem,
+            port: .ticket,
             state: .bound(accountID: work.id, scope: "trili/cockpit"),
         )],
     )
@@ -71,7 +71,7 @@ enum ConnectFixture {
         folder: folder,
         accounts: [personal, work],
         ports: [
-            ConnectPort(port: .workItem, state: .bound(
+            ConnectPort(port: .ticket, state: .bound(
                 accountID: personal.id,
                 scope: "milad-alizadeh/argo",
             )),
@@ -86,7 +86,7 @@ enum ConnectFixture {
     static let broken = ConnectReading(
         folder: folder,
         accounts: [personal],
-        ports: [ConnectPort(port: .workItem, state: .broken(
+        ports: [ConnectPort(port: .ticket, state: .broken(
             accountID: work.id,
             scope: "trili/cockpit",
             fault: .accountRemoved,
@@ -134,7 +134,7 @@ enum ConnectFixture {
     static let connecting = ConnectReading(
         folder: folder,
         accounts: [personal],
-        scopes: ConnectScopes(port: .workItem, accountID: personal.id, state: .loading),
+        scopes: ConnectScopes(port: .ticket, accountID: personal.id, state: .loading),
     )
 
     /// The repositories, listed. The row underneath still has to say which identity they came from.
@@ -142,7 +142,7 @@ enum ConnectFixture {
         folder: folder,
         accounts: [personal],
         scopes: ConnectScopes(
-            port: .workItem,
+            port: .ticket,
             accountID: personal.id,
             state: .listed(
                 ["milad-alizadeh/argo", "milad-alizadeh/dotfiles", "trili/cockpit"],
@@ -157,7 +157,7 @@ enum ConnectFixture {
         folder: folder,
         accounts: [personal],
         scopes: ConnectScopes(
-            port: .workItem,
+            port: .ticket,
             accountID: personal.id,
             state: .unreadable("GitHub could not be reached."),
         ),
@@ -169,7 +169,7 @@ enum ConnectFixture {
         folder: folder,
         accounts: [personal],
         scopes: ConnectScopes(
-            port: .workItem,
+            port: .ticket,
             accountID: personal.id,
             state: .unauthorized,
         ),

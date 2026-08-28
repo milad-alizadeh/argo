@@ -2,6 +2,10 @@
 
 Status: accepted; amended (#182) · 2026-07-22
 
+> **Renamed by #881 · 2026-08-28:** the entity called **Work Item** below is now **Ticket**,
+> and the **Work Item provider** port is the **Ticket provider**. The wording here is left as it
+> was written; `docs/domain/rationale.md` → L1 carries why the word changed.
+
 > **Amended by the #182 rebuild** (see `CONTEXT.md` → Ports, and ADR-0018):
 > - **Access mechanism = OAuth + the provider's HTTP API, not the `gh` CLI.** Providers are
 >   connected during onboarding; per-machine tokens live in the OS keychain; status is polled.

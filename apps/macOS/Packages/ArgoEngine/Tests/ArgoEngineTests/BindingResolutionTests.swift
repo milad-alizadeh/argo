@@ -6,8 +6,8 @@ import Testing
 /// to that has since come undone. Three answers, never two.
 @Suite("Binding resolution")
 struct BindingResolutionTests {
-    /// The state a fully-onboarded machine reaches whenever a Project simply has no Work Item
-    /// provider — "no Work Items", not a failure and not a first launch.
+    /// The state a fully-onboarded machine reaches whenever a Project simply has no Ticket
+    /// provider — "no Tickets", not a failure and not a first launch.
     @Test
     func `an unbound port is not an error`() async throws {
         let fixture = try BindingFixture()
@@ -17,7 +17,7 @@ struct BindingResolutionTests {
         let bindings = fixture.bindings()
         try await bindings.bind(.gitHub(port: .codeHost), to: projectID)
 
-        let resolution = await bindings.resolve(port: .workItem, for: projectID)
+        let resolution = await bindings.resolve(port: .ticket, for: projectID)
 
         guard case .unbound = resolution else {
             Issue.record("expected an unbound port, got \(resolution)")
@@ -30,7 +30,7 @@ struct BindingResolutionTests {
         let fixture = try BindingFixture()
         defer { fixture.remove() }
 
-        let resolution = await fixture.bindings().resolve(port: .workItem, for: "not-a-project")
+        let resolution = await fixture.bindings().resolve(port: .ticket, for: "not-a-project")
 
         guard case .unbound = resolution else {
             Issue.record("expected an unbound port, got \(resolution)")
@@ -52,7 +52,7 @@ struct BindingResolutionTests {
 
         try await store.remove(id: "github:1")
 
-        let resolution = await bindings.resolve(port: .workItem, for: projectID)
+        let resolution = await bindings.resolve(port: .ticket, for: projectID)
         guard case let .broken(binding, fault) = resolution else {
             Issue.record("expected a broken Binding, got \(resolution)")
             return
@@ -88,18 +88,18 @@ struct BindingResolutionTests {
         let store = fixture.accountStore()
         try await store.authorizeGitHub(id: "1")
         let bindings = fixture.bindings()
-        try await bindings.bind(.gitHub(port: .workItem), to: projectID)
+        try await bindings.bind(.gitHub(port: .ticket), to: projectID)
         try await bindings.bind(.gitHub(port: .codeHost), to: projectID)
 
         let removal = try await store.remove(id: "github:1")
 
         #expect(removal.orphaned.map(\.projectID) == [projectID, projectID])
-        #expect(Set(removal.orphaned.map(\.port)) == [.workItem, .codeHost])
+        #expect(Set(removal.orphaned.map(\.port)) == [.ticket, .codeHost])
     }
 
     /// `bind` refuses this, so a registry holding it was written by something else. Re-asked at
     /// read time because the file is not a trusted input — the alternative is reading Delivery
-    /// truth off a Work Item provider.
+    /// truth off a Ticket provider.
     @Test
     func `a hand-written Binding to a port its provider cannot fill reads as broken`() async throws {
         let fixture = try BindingFixture()
@@ -138,7 +138,7 @@ struct BindingResolutionTests {
             ),
         )
 
-        let resolution = await fixture.bindings().resolve(port: .workItem, for: projectID)
+        let resolution = await fixture.bindings().resolve(port: .ticket, for: projectID)
         guard case let .broken(_, fault) = resolution else {
             Issue.record("expected a broken Binding, got \(resolution)")
             return
