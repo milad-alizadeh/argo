@@ -34,6 +34,9 @@ struct WorkChromeSpecimen: View {
                 DeckSeparator()
                 Spacer(minLength: ArgoSpacing.flush)
             }
+            // BOUNDED, or the separator inside stretches the row to the window and the heading
+            // centres in it — a render of this stack rather than of the room.
+            .fixedSize(horizontal: false, vertical: true)
             DeckSeparator()
             Spacer(minLength: ArgoSpacing.flush)
         }
