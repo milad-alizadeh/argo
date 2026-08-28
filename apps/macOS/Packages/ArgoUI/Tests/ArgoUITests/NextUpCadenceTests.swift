@@ -70,12 +70,6 @@ struct NextUpCadenceTests {
     }
 
     private static func pick(in reading: WorkReading) throws -> NextUp.Pick {
-        guard case let .pick(pick) = try #require(WorkRoomProjection.room(from: reading).nextUp)
-        else { throw CadenceTestFailure.notAPick }
-        return pick
+        try NextUpPick.of(reading)
     }
-}
-
-private enum CadenceTestFailure: Error {
-    case notAPick
 }

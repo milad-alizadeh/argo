@@ -555,7 +555,7 @@ draws nothing — every name below is a value.
 
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
-| `WorkItemPriority` | value | `ArgoEngine/WorkItem/` | `init(word:)`, `rung: Int`, `known: [String]` | — | `priority desc`, the first ranking key |
+| `WorkItemPriority` | value | `ArgoEngine/WorkItem/` | `init(word:)`, `rung: Int`, `known: [String]` — five cases, `other` carrying no word | — | `priority desc`, the first ranking key |
 | `WorkItem.updatedAt` | value | `ArgoEngine/WorkItem/` | `Date?` | — | `age`, the third key |
 | `WorkReading.ranked(_:)` | value | `ArgoUI/Shell/Work/` | `[WorkItem] -> [WorkItem]` | `Rank` (private) | the ranking itself |
 | `NextUp.Reason.oldestUntouched` | value | `ArgoUI/Shell/Work/` | — | `NextUpChip`, unchanged | the design's fourth chip |
@@ -589,6 +589,12 @@ draws nothing — every name below is a value.
   age`, then the ticket NUMBER. The fourth is not a ranking input — it breaks the tie the three
   left, so an unchanged listing cannot yield two different picks across two polls. A hero that
   reshuffled under an unchanged backlog would churn on every one.
+- **`PRD sequence` is TWO keys, and both are the provider's own author order.** Which chart holds
+  the ticket — the order the provider served its charts in, which is the order the `CHARTS` group
+  draws — and then where in that chart's `children`. The first cut compared child indices across
+  unrelated charts, so position 0 of one PRD beat position 5 of another on nothing anybody had
+  stated; review caught it. Nobody sequenced two PRDs against each other, but the provider did serve
+  one before the other, and that is a fact rather than an invention.
 - **A cold-start planner, never a best-move recommender.** The pool is
   `open · leaf · todo · unblocked · session-less`. `todo` and `session-less` are ONE clause —
   `WorkItemState.open` is open and unclaimed — and blocked items are shown in the backlog but never
@@ -612,8 +618,37 @@ Two silences worth naming, because both could have been faked:
 
 - **An unknown priority word sits on ONE rung below `low`, and unread sits below THAT.** Two words
   nothing has ordered are not ordered against each other; absent is not a rung (ADR-0014).
+  `WorkItemPriority.other` therefore carries NO word: the first cut gave it the provider's spelling
+  as a payload, which made `.other("P0") != .other("urgent-ish")` under synthesised `Equatable`
+  while the comment beside it claimed they compared equal, and nothing read the payload anyway.
 - **A ticket with no timestamp read sorts LAST, not first.** Treating a silence as ancient would put
   the least-known ticket at the head of a list that sorts by neglect.
+
+## What review changed
+
+Three, all caught before the PR:
+
+- **`"high"` was written twice.** `WorkReading+NextUp` kept a `urgentPriority = "high"` constant for
+  the chip while the ranking sorted by `WorkItemPriority.high`, so the chip and the pick's own place
+  in the list could have disagreed — the exact failure moving `bandOrder` onto the ladder was meant
+  to prevent. The chip now reads `pick.priorityRung == .high`.
+- **The cross-chart sequence comparison, and the `other` payload** — both above.
+- **The pool fixture sat in `Sources/`.** `candidate` and `chart` have no caller the app ships, so
+  `WorkFixture+Ranking.swift` moved to `Tests/ArgoUITests/` — unlike the rest of `WorkFixture`,
+  which the previews draw from.
+
+## What the ticket asked for and this build does NOT do
+
+- **AC 2's second half, in part.** The ranking is reproducible by hand from priority (banded in the
+  backlog, stated in the fact strip) and from PRD sequence (the chart order in `CHARTS`, the child
+  order under a parent). **Age is not visible anywhere** — the design draws no timestamp, and the
+  `oldest untouched` chip surfaces it only in the fallback case. So two leaves tied on rung and
+  sequence swap places for a reason nothing on screen states. Rendering an age is a design change
+  this ticket has no approved measurement for.
+- **AC 4's `spec ready`.** Never inferred, which is the clause's force, but also never rendered:
+  the approved design draws four chips and this is not one, and `chipLimit` is 2.
+  `cockpit-surface-matrix.md` keeps the words as an open design question rather than deleting them
+  to match the code.
 
 ## Which specimen reproduces which render
 

@@ -38,7 +38,7 @@ state on its Work Item.
 |---|---|---|---|---|
 | 0 | **Tickets produced by a session** (grilling is a skill in an ordinary chat, not a session type) | ordinary Roster row; session detail lists the tickets it produced (`produces` links, tagged "created here") | a produced ticket opens in the Work room; the chat itself via the session's Console | Roster → session detail |
 | 1 | **Ticket** (ideate) | Work Item row: `id · title · state word · priority` — parents show child roll-up `3/5` | ticket detail: body/spec, sub-items, `blockedBy`, linked Deliveries (incl. teammate PRs), producing session if any, **Implement** action | Work Items view |
-| — | **Next judgement** | one "Next up" card: ticket + at most two earned reasons — and NO echo on the Sessions-room zero-state (see below) | the ranked list with reasons; full backlog | Work room only |
+| — | **Next judgement** | one "Next up" card: ticket + reason (`unblocked · spec ready`) — ~~echoed as a pointer card on the Sessions-room zero-state~~, struck (see below) | the ranked list with reasons; full backlog | Work room only |
 | 2 | **Plan** | current task line + plan progress (`3/7`) at the top of Activity | the committed plan, step states | Session · Activity |
 | 3 | **Build** | collapsed timeline: now-line, latest steps, Background Tasks summary (R15) | steps expand to prose; a tool/agent row fills the Console capture slot (R13) | Session · Activity (+ Console) |
 | 4 | **Code** | `Changes · 12` tab label + net ± | per-file diff → hunks; All-files (cumulative) default, By-commit toggle | Session · Delivery · Changes |
@@ -93,3 +93,8 @@ onboarding copy"*, and `cockpit-spec.md` §4.1 repeats it: a one-time transient 
 permanent chrome. Two later decisions against this one line, and both name the card explicitly, so
 the line goes rather than the decisions. The hero lives in the Work room and only there — which
 keeps the surface-matrix rule intact anyway: the ranked list has exactly one home.
+
+The `spec ready` in the Next-judgement row above is left standing and is **not implemented**. It
+would need an explicit provider label, never a read of the ticket's prose, and the approved
+`cockpit-work-room.md` draws four chips of which it is not one. It stays here as an open design
+question rather than being quietly deleted to match the code.

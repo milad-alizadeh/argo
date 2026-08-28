@@ -172,10 +172,7 @@ struct NextUpTests {
     }
 
     private func pick(in room: WorkRoomProjection.Room) throws -> NextUp.Pick {
-        guard case let .pick(pick) = try #require(room.nextUp) else {
-            throw NextUpTestFailure.notAPick
-        }
-        return pick
+        try NextUpPick.of(room)
     }
 
     /// #388 as an edgeless provider serves it: one priority word, no type, and no dependency
@@ -198,8 +195,4 @@ struct NextUpTests {
     private var leaf: WorkItem {
         WorkItem(number: 273, title: "The planner", status: "Todo", closure: .open)
     }
-}
-
-private enum NextUpTestFailure: Error {
-    case notAPick
 }

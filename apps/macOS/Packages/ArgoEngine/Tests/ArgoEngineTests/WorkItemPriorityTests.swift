@@ -18,27 +18,21 @@ struct WorkItemPriorityTests {
         #expect(WorkItemPriority(word: word) == rung)
     }
 
-    /// The word survives so a caller can still render it verbatim — matching it to no rung is not
-    /// licence to forget what the tracker said.
+    /// Two words nothing has ordered are not told apart here: the ladder says both sit below `low`,
+    /// and nothing further. Which is why the case carries no word.
     @Test
-    func `an unknown word keeps its own spelling`() {
-        #expect(WorkItemPriority(word: "P0") == .other("P0"))
+    func `every unknown word is the same rung`() {
+        #expect(WorkItemPriority(word: "P0") == .other)
+        #expect(WorkItemPriority(word: "P0") == WorkItemPriority(word: "urgent-ish"))
     }
 
     /// Absent is not a rung. A ticket nobody read a priority for sits below every word there is,
     /// including the ones this ladder has never heard of.
     @Test
     func `the rungs run high to unread, with unknown words between low and absent`() {
-        let ladder: [WorkItemPriority] = [.high, .medium, .low, .other("P0"), .unread]
+        let ladder: [WorkItemPriority] = [.high, .medium, .low, .other, .unread]
 
         #expect(ladder.map(\.rung) == [0, 1, 2, 3, 4])
-    }
-
-    /// Two words nothing has ordered are not ordered here either: the ladder says they are both
-    /// below `low`, and nothing further.
-    @Test
-    func `two unknown words share one rung`() {
-        #expect(WorkItemPriority(word: "P0").rung == WorkItemPriority(word: "urgent-ish").rung)
     }
 
     @Test

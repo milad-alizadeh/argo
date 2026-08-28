@@ -6,19 +6,15 @@ import Foundation
 /// The words stay the provider's and stay verbatim on the `WorkItem` — nothing here recases or
 /// rewrites one. This is the rung a word MATCHES, which is what ADR-0016 means by provider priority
 /// being a sort Argo reflects: the ladder is Argo's, the words on it are not.
-///
-/// A word nobody knows sits on ONE rung below `low` rather than scattered: two unknown words are
-/// not ordered against each other, because nothing has said which of them outranks the other. A
-/// ticket nobody read a priority for is lower still — absent is not a rung (ADR-0014, per-fact
-/// `unknown`).
 public enum WorkItemPriority: Equatable, Sendable {
     case high
     case medium
     case low
-    /// A word the provider spells and this ladder does not know. It carries the word so a caller
-    /// can still render it verbatim, and every one of them compares equal.
-    case other(String)
-    /// No priority word was read at all.
+    /// A word the provider spells and this ladder does not know. It carries no word, because two
+    /// unknown words are not ordered against each other: nothing has said which outranks the other.
+    case other
+    /// No priority word was read at all — lower than `other`, since absent is not a rung (ADR-0014,
+    /// per-fact `unknown`).
     case unread
 
     /// The words the ladder knows, highest first. The ONE place they are listed — the backlog's
@@ -36,13 +32,11 @@ public enum WorkItemPriority: Equatable, Sendable {
         case "high": self = .high
         case "medium": self = .medium
         case "low": self = .low
-        default: self = .other(word)
+        default: self = .other
         }
     }
 
-    /// Descending urgency, so the smaller number is the ticket to reach for first. An ordinal and
-    /// not `Comparable`: the type is a MATCH first, and a `<` on it would invite comparing two
-    /// `other` words that nothing has ordered.
+    /// Descending urgency, so the smaller number is the ticket to reach for first.
     public var rung: Int {
         switch self {
         case .high: 0
