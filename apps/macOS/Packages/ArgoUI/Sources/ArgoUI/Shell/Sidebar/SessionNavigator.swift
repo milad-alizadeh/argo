@@ -105,7 +105,7 @@ struct SessionNavigator: View {
         // instead of the style's own, which is what makes this the option D30 ruled out's opposite.
         // It also holds its colour while the list is not first responder, where the platform would
         // grey it out: this is the one piece of state a reader tracks all day.
-        .listRowBackground(ground(of: row).color)
+        .argoSelectedRowGround(isSelected: row.id == selection)
         .tag(row.id)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(
@@ -116,12 +116,6 @@ struct SessionNavigator: View {
             }
             .tint(argo.color.interaction.destructive)
         }
-    }
-
-    /// The selected row's ground, and nothing at all under the others — an unselected row is the
-    /// sidebar's own material, which is the surface D3 reserves for it.
-    private func ground(of row: SessionRosterProjection.Row) -> ArgoColor {
-        row.id == selection ? argo.color.interaction.selectionGround : .transparent
     }
 
     private var emptyState: some View {

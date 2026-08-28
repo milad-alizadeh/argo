@@ -597,8 +597,10 @@ its approved study are authoritative for the replacement look and feel.
 - **Disclosure:** Hover, focus, or inspection reveals the complete path and remaining technical
   facts, with direct copy where appropriate. Truncation never changes the stored title, workspace,
   or path.
-- **Composition:** Rows remain flat over the continuous native sidebar. Selection uses a restrained
-  neutral wash rather than a bordered or elevated card.
+- **Composition:** Rows remain flat over the continuous native sidebar. Selection is a full-bleed
+  wash rather than a bordered or elevated card, and the wash is the brand hue — Ion Blue at a low
+  weight, not a step off the neutral ramp. **This reverses the "restrained neutral wash" this line
+  read before**; see the #875 and #906 amendments below for what was traded and why.
 - **Selection amendment — 2026-08-07:** On macOS 26 the sidebar's own rounded, inset capsule **is**
   that wash, and the roster does not draw a second one. The study's full-bleed wash and leading Ion
   Blue rail were drawn in Electron, where no system selection existed; reproducing them natively
@@ -639,7 +641,7 @@ its approved study are authoritative for the replacement look and feel.
   stayed `#464646` with the window active and the row clicked, while the rooms picker in the same
   frame went scarlet. So the route D30 recorded is closed, and the wash is Argo's to draw.
 
-  - **How it is drawn now.** `SessionNavigator` gives the selected row a `listRowBackground` of
+  - **How it is drawn now.** A selected sidebar row takes a `listRowBackground` of
     `interaction.selectionGround` — `interaction.accent` at 0.10. That REPLACES the style's capsule
     rather than painting over it, which is what makes it the opposite of the option ruled out
     below: there is one highlight in the row, not two, and the measured render carries no grey
@@ -663,6 +665,28 @@ its approved study are authoritative for the replacement look and feel.
     the point of the change rather than a cost of it.
   - **Still not reopened:** the leading Ion Blue rail. A selected row is carried by its ground
     alone. The clause below stands exactly as written.
+- **Amended by [#906](https://github.com/milad-alizadeh/argo/issues/906) — 2026-08-28: EVERY
+  sidebar, not just the roster.** #875 reversed the decision but reached one rail. The Work room's
+  view list — `All open`, `Blocked`, and their neighbours — was still delegating its selected ground
+  to `.listStyle(.sidebar)`'s capsule, so the row naming what the deck beside it is filtered to was
+  the fixed neutral, a shade off the rail behind it. Read on the running app, that is the same
+  complaint #875 answered, in the room it did not reach.
+
+  So the scope of the reversal is restated: **selection takes the accent in every sidebar this app
+  draws**, and no rail is exempt on the grounds that its rows are chrome rather than content.
+
+  - **One mechanism, not two.** `ArgoSelectedRowGround` is the single answer to "what is under this
+    row", and `.argoSelectedRowGround(isSelected:)` is how both `SessionNavigator` and
+    `TicketsSidebar` ask for it. A second copy of the ternary is how the two rails drift apart, and
+    `SelectionGroundTests` pins the function rather than either call site.
+  - **The ink is unchanged, and that is a measured claim, not an omission.** 0.10 is the weight
+    #875 chose precisely so the roster's voices read at least as well on the wash as on the neutral
+    ground it replaced; the Work room's view row is drawn in `rowMeta` on the same two voices
+    (`text.primary` for the name, `text.tertiary` for the mark and the count), so it inherits that
+    result rather than needing its own. `SelectionGroundTests` asserts the floor for the two voices
+    a row is actually read in.
+  - **Still not reopened, again:** the leading Ion Blue rail. Neither rail draws an edge of any
+    kind, in the code or in this document.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.
