@@ -125,6 +125,10 @@ struct RhythmTests {
             ArgoFeedRow.askCardInset, ArgoFeedRow.askOptionGap,
         ]))
         #expect(ladder.isSuperset(of: [
+            MermaidMeasure.nodeInsetX, MermaidMeasure.nodeInsetY, MermaidMeasure.rankGap,
+            MermaidMeasure.nodeGap,
+        ]))
+        #expect(ladder.isSuperset(of: [
             ArgoMinimapLane.rectInset, ArgoMinimapLane.turnLineGap, ArgoMinimapLane.labelPadding,
         ]))
         #expect(ladder.isSuperset(of: [

@@ -39,14 +39,40 @@ struct MermaidView: View {
     }
 }
 
-#Preview("Mermaid — a flowchart the agent drew") {
-    VStack(alignment: .leading, spacing: ArgoFeedRow.blockStep) {
-        if let diagram = MermaidDiagram.read("graph TD\nReader --> Layout\nLayout --> Plan") {
-            MermaidView(diagram: diagram)
+/// The states this view can be in, each on the measure the feed reads at. A fence it cannot read
+/// never reaches here — `MarkdownBlock` leaves that one a `.fenced`, drawn by `FeedMarkdownFence`.
+private struct MermaidPreview: View {
+    let source: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ArgoFeedRow.blockStep) {
+            if let diagram = MermaidDiagram.read(source) {
+                MermaidView(diagram: diagram)
+            }
         }
+        .padding(ArgoFeedRow.inset)
+        .frame(width: 620)
+        .argoDeckSurface()
+        .argoAppearance()
     }
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 620)
-    .argoDeckSurface()
-    .argoAppearance()
+}
+
+#Preview("Mermaid — a flowchart the agent drew") {
+    MermaidPreview(source: "graph TD\nReader --> Layout\nLayout --> Plan")
+}
+
+// A rank of four, which is where a diagram first has to decide what to do about the column.
+#Preview("Mermaid — a fork wider than the measure") {
+    MermaidPreview(source: """
+    graph TD
+    Plan --> AVeryLongNodeName
+    Plan --> AnotherLongNodeName
+    Plan --> AThirdLongNodeName
+    Plan --> AFourthLongNodeName
+    """)
+}
+
+// A source somebody really writes: it settles at two ranks rather than ranking for ever.
+#Preview("Mermaid — a cycle") {
+    MermaidPreview(source: "graph TD\nRead --> Write\nWrite --> Read")
 }

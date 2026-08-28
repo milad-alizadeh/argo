@@ -18,10 +18,7 @@ struct MermaidLayout: Layout {
         cache _: inout (),
     )
         -> CGSize {
-        // SwiftUI runs layout on the main actor, but `Layout` itself makes no such claim — and the
-        // plan behind it is the main actor's cache. Asserting it is what lets ONE layout serve the
-        // drawn diagram and the lane that maps it.
-        MainActor.assumeIsolated { plan(across: proposal.width).size }
+        plan(across: proposal.width).size
     }
 
     func placeSubviews(
@@ -30,10 +27,8 @@ struct MermaidLayout: Layout {
         subviews: Subviews,
         cache _: inout (),
     ) {
-        MainActor.assumeIsolated {
-            for (caption, subview) in zip(plan(across: proposal.width).captions, subviews) {
-                place(caption, subview: subview, in: bounds)
-            }
+        for (caption, subview) in zip(plan(across: proposal.width).captions, subviews) {
+            place(caption, subview: subview, in: bounds)
         }
     }
 
@@ -48,10 +43,15 @@ struct MermaidLayout: Layout {
         )
     }
 
-    /// An unspecified proposal is answered at nothing, which is the plan at its own natural width —
-    /// SwiftUI probes with one before it has a column to offer.
-    @MainActor private func plan(across measure: CGFloat?) -> MermaidPlan {
-        ProseReading.plan(of: diagram, across: measure ?? 0)
+    /// The one cached layout, from the one place this type reaches for it. An unspecified proposal
+    /// is answered at nothing, which is the plan at its own natural width — SwiftUI probes with one
+    /// before it has a column to offer.
+    ///
+    /// SwiftUI runs layout on the main actor, but `Layout` itself makes no such claim — and the
+    /// plan behind it is the main actor's cache. Asserting it here is what lets ONE layout serve
+    /// the drawn diagram and the lane that maps it.
+    private func plan(across measure: CGFloat?) -> MermaidPlan {
+        MainActor.assumeIsolated { ProseReading.plan(of: diagram, across: measure ?? 0) }
     }
 }
 

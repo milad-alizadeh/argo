@@ -15,9 +15,8 @@ struct MermaidPlan: Equatable, Sendable {
     static let empty = MermaidPlan(figures: [], captions: [], size: .zero)
 }
 
-/// What a mark of a diagram MEANS. Never a colour: the view resolves a role to a design token, so
-/// every diagram type is themed once — and a reader that spelled a colour would put the palette in
-/// as many places as there are diagram types.
+/// What a mark of a diagram MEANS. Never a colour: `MermaidInk` resolves a role to a design token,
+/// so every diagram type is themed once and no reader spells a colour.
 enum MermaidRole: Equatable, Sendable, CaseIterable {
     /// A box, a slice, a bar — the thing the diagram is about.
     case node

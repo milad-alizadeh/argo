@@ -87,9 +87,29 @@ struct MermaidLayoutTests {
         #expect(plan.figures.allSatisfy { $0.form.bounds.maxY <= plan.size.height })
     }
 
-    /// A cycle is a source somebody really writes. It must settle rather than rank for ever.
+    /// A cycle is a source somebody really writes. It settles at the depth its first arrival gives
+    /// it: two boxes, the first on top, and no empty rank charging its gap above them — the diagram
+    /// a reader wrote, not the one a relaxation pass ran out of passes on.
     @Test
-    func `a cycle is laid out rather than looped on`() {
-        #expect(Self.plan("graph TD\nA --> B\nB --> A").captions.count == 2)
+    func `a cycle is laid out as the two ranks it is`() {
+        let plan = Self.plan("graph TD\nA --> B\nB --> A")
+        let straight = Self.plan("graph TD\nA --> B")
+
+        #expect(plan.captions.map(\.label.text) == ["A", "B"])
+        #expect(plan.captions.first?.rect.minY == 0)
+        #expect((plan.captions.first?.rect.maxY ?? 0) < (plan.captions.last?.rect.minY ?? 0))
+        #expect(plan.size.height == straight.size.height)
+    }
+
+    /// A rank is drawn in the order the source named its nodes, left to right. The nodes are placed
+    /// out of a dictionary, and a dictionary's own order is seeded afresh on every launch — so the
+    /// claim has to be about the SOURCE's order rather than about two calls agreeing.
+    @Test
+    func `a rank is placed in the order the source named its nodes`() {
+        let plan = Self.plan("graph TD\nA --> First\nA --> Second\nA --> Third")
+        let rank = plan.captions.filter { $0.rect.minY > 0 }
+
+        #expect(rank.map(\.label.text) == ["First", "Second", "Third"])
+        #expect(rank.map(\.rect.minX) == rank.map(\.rect.minX).sorted())
     }
 }
