@@ -34,12 +34,12 @@ struct WorktreeEnumerationTests {
     }
 
     @Test
-    func `git lists the primary checkout first, and nothing else is primary`() {
+    func `git lists the repository's own checkout first, and nothing else is main`() {
         let entries = WorktreeEntry.list(porcelain: Self.listing)
 
         // Read off the position git put it in, never off a path: `.claude/worktrees/` is Argo's
         // own habit and a worktree can sit anywhere at all.
-        #expect(entries.map(\.isPrimary) == [true, false])
+        #expect(entries.map(\.kind) == [.main, .worktree])
     }
 
     @Test
@@ -72,7 +72,7 @@ struct WorktreeEnumerationTests {
     }
 
     @Test
-    func `a bare repository's own entry is no Workspace, and takes primary with it`() {
+    func `a bare repository's own entry is no Workspace, and takes main with it`() {
         let entries = WorktreeEntry.list(porcelain: """
         worktree /repo.git
         bare
@@ -83,10 +83,10 @@ struct WorktreeEnumerationTests {
 
         """)
 
-        // A bare repository holds no working tree, so it has no PRIMARY one either — and the
-        // linked worktree beside it must not inherit that word by being first left standing.
+        // A bare repository holds no working tree, so it has no MAIN one either — and the linked
+        // worktree beside it must not inherit that word by being first left standing.
         #expect(entries.map(\.path) == ["/repo/checkout"])
-        #expect(entries.map(\.isPrimary) == [false])
+        #expect(entries.map(\.kind) == [.worktree])
     }
 
     @Test

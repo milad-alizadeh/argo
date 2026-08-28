@@ -2,10 +2,7 @@ import Foundation
 
 /// Which working trees a repository holds, read off git's own listing.
 ///
-/// An actor for the reason `WorkspaceReader` is one — the app's adapter blocks on a subprocess and
-/// the caller is the main actor. A folder git will not answer for holds none, which is a different
-/// answer from a repository holding one, and the two come out differently because the entry the
-/// primary checkout would have is missing rather than empty.
+/// An actor because the app's adapter blocks on a subprocess and the caller is the main actor.
 actor WorktreeEnumerationReader {
     private let git: GitCommand
 

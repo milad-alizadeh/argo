@@ -106,8 +106,8 @@ struct WorldReadingsTests {
 
         // Each folder credited to the DEEPEST worktree holding it and to nothing above that:
         // otherwise the primary checkout would claim every Session in the repository.
-        #expect(readings.workspace(inCwd: Self.repository)?.sharedCount == 2)
-        #expect(readings.workspace(inCwd: Self.linked)?.sharedCount == 1)
+        #expect(readings.workspace(inCwd: Self.repository)?.held.count == 2)
+        #expect(readings.workspace(inCwd: Self.linked)?.held.count == 1)
     }
 
     @Test
@@ -116,7 +116,7 @@ struct WorldReadingsTests {
 
         await readings.refreshWorkspaces()
 
-        #expect(readings.workspace(inCwd: Self.linked)?.sharedCount == 0)
+        #expect(readings.workspace(inCwd: Self.linked)?.held == .unattributed)
     }
 
     /// One subprocess run per WORKTREE: four Sessions in one worktree must not cost four.
@@ -156,6 +156,17 @@ struct WorldReadingsTests {
     }
 
     @Test
+    func `a Hub pointed nowhere drops the branches it was holding`() async {
+        let readings = Self.readings(cwds: [Self.repository], repository: { nil })
+        await readings.refreshWorkspaces()
+
+        #expect(readings.readWorkspaces.isEmpty)
+        // Going on answering with the last Project's worktrees would be a fact about a
+        // repository nobody is on.
+        #expect(readings.workspace(inCwd: Self.repository) == nil)
+    }
+
+    @Test
     func `stopping drops everything the readings knew about the machine`() async {
         let readings = Self.readings(runningIn: [Self.repository], cwds: [Self.repository])
         await readings.refreshLiveness()
@@ -180,6 +191,7 @@ struct WorldReadingsTests {
         cwds: [String] = [],
         worktrees: @escaping WorktreeEnumerationRead = twoWorktrees,
         workspace: @escaping WorkspaceRead = branchNamedAfterFolder,
+        repository: @escaping @MainActor () -> URL? = { URL(fileURLWithPath: repository) },
     )
         -> WorldReadings {
         WorldReadings(
@@ -189,7 +201,7 @@ struct WorldReadingsTests {
                 readWorkspace: workspace,
                 readLiveness: { live },
             ),
-            repositoryURL: { URL(fileURLWithPath: repository) },
+            repositoryURL: repository,
             sessionCwds: { cwds },
         )
     }
@@ -200,10 +212,10 @@ struct WorldReadingsTests {
 /// `Engine` and run off the main actor.
 private let twoWorktrees: WorktreeEnumerationRead = { _ in
     [
-        WorktreeEntry(path: "/tmp/argo-world", branch: "main", headSha: "aaa", isPrimary: true),
+        WorktreeEntry(path: "/tmp/argo-world", branch: "main", headSha: "aaa", kind: .main),
         WorktreeEntry(
             path: "/tmp/argo-world/.claude/worktrees/ticket-259",
-            branch: "ticket-259", headSha: "bbb", isPrimary: false,
+            branch: "ticket-259", headSha: "bbb", kind: .worktree,
         ),
     ]
 }
@@ -212,7 +224,7 @@ private let twoWorktrees: WorktreeEnumerationRead = { _ in
 /// tell which read answered which entry.
 private let branchNamedAfterFolder: WorkspaceRead = { entry in
     WorkspaceProjection(
-        kind: entry.isPrimary ? .main : .worktree,
+        kind: entry.kind,
         branch: entry.branch,
         dirty: 0,
         divergence: UpstreamDivergence(ahead: 0, behind: 0),
