@@ -21,29 +21,42 @@ struct NewTicketComposer: View {
     var create: (TicketDraft) -> Void = { _ in }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
+        VStack(alignment: .leading, spacing: ArgoSpacing.section) {
             Text("New ticket")
                 .argoText(ArgoTypography.identityHeading)
                 .foregroundStyle(argo.color.text.primary)
-                .padding(.horizontal, ArgoSpacing.section)
-                .padding(.top, ArgoSpacing.section)
-            Form {
-                Section {
-                    TextField("Title", text: $composition.title)
-                    TextField("Description", text: $composition.body, axis: .vertical)
-                        .lineLimit(ArgoTicketsChrome.composerBodyLines, reservesSpace: true)
-                }
-            }
-            .formStyle(.grouped)
+            fields
             call
-                .padding(.horizontal, ArgoSpacing.section)
-                .padding(.bottom, ArgoSpacing.section)
         }
+        .padding(ArgoSpacing.section)
         .frame(width: ArgoConnectPanel.width, alignment: .leading)
-        // The panel is its CONTENT's height. A grouped `Form` is happy to take whatever it is
-        // given, and without this the two buttons sit at the foot of the window rather than under
-        // the fields they act on — which is what a render of it showed.
+        // The panel is its CONTENT's height, rather than whatever the sheet is given: without this
+        // the two buttons sit at the foot of the window rather than under the fields they act on —
+        // which is what a render of it showed.
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var fields: some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.loose) {
+            field("Title") { TextField("", text: $composition.title) }
+            field("Description") {
+                TextField("", text: $composition.body, axis: .vertical)
+                    .lineLimit(ArgoTicketsChrome.composerBodyLines, reservesSpace: true)
+            }
+        }
+    }
+
+    /// One name and what is typed under it. The drawn name is hidden from VoiceOver because the
+    /// field carries the same one: two elements for one control is what reads it twice.
+    private func field(_ name: String, @ViewBuilder editor: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.base) {
+            GroupLabel(name)
+                .accessibilityHidden(true)
+            editor()
+                .argoText(ArgoTypography.body)
+                .foregroundStyle(argo.color.text.primary)
+                .accessibilityLabel(name)
+        }
     }
 
     /// Cancel, then the write. The note sits to their leading edge for the reason it does on the
