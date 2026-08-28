@@ -10,8 +10,9 @@ extension MermaidMindmap {
     /// The mindmap this source draws, or `nil` for anything this reader cannot — a header it does
     /// not know, a second root, a bracket that never closes, a fence with nothing in it yet.
     static func read(_ source: String) -> MermaidMindmap? {
-        var lines = MermaidSource.indented(of: source)
-        guard let header = lines.first, header.text.lowercased() == "mindmap" else { return nil }
+        guard var lines = MermaidSource.indented(of: source),
+              let header = lines.first, header.text.lowercased() == "mindmap"
+        else { return nil }
         lines.removeFirst()
         var build = MermaidMindmapBuild()
         for line in lines {
@@ -61,9 +62,14 @@ private struct MermaidMindmapBuild {
 
     /// `::icon(…)` and `:::someClass`, which say something about the node above rather than adding
     /// one under it. Read as nodes they would nest a phantom child under every annotated branch.
+    ///
+    /// A class is kept as the FACT of one and an icon is dropped outright, and the asymmetry is the
+    /// point. `:::urgent` says this node is called out, which the diagram can draw; `::icon(fa
+    /// fa-book)` names a glyph in an icon font Argo does not ship, and there is nothing honest to
+    /// put in its place. Both are consumed either way, so neither becomes a phantom child.
     private mutating func annotate(_ text: String) -> Bool {
         guard text.hasPrefix(":::") || text.hasPrefix("::icon(") else { return false }
-        // The class NAME is dropped: Argo has no user stylesheet to resolve it against.
+        // The class NAME is dropped too: Argo has no user stylesheet to resolve it against.
         if text.hasPrefix(":::"), !path.isEmpty {
             path[path.count - 1].isCalledOut = true
         }

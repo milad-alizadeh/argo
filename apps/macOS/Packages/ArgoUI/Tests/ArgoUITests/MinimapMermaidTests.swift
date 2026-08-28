@@ -75,6 +75,21 @@ struct MinimapMermaidTests {
         #expect(laid?.rects.allSatisfy { $0.ink == .diagram } == true)
     }
 
+    /// The same claim by a THIRD diagram type, whose layout the lane has never heard of either
+    /// (#867). The spine's whole promise is that the arm is generic, and only a type added after it
+    /// was written can say so.
+    @Test
+    func `a mindmap maps through the same lane`() {
+        let diagram = MermaidDiagram.read("mindmap\n  Argo\n    Reader\n      Scan\n    Layout")
+        let laid = diagram?.mapped(across: Self.measure)
+
+        #expect(laid?.height == diagram?.laid.size.height)
+        #expect((diagram?.laid.size.height ?? 0) > 0)
+        #expect(laid?.rects.isEmpty == false)
+        #expect(laid?.rects.allSatisfy { $0.ink == .diagram } == true)
+        #expect(laid?.rects.allSatisfy { $0.y + $0.height <= (laid?.height ?? 0) } == true)
+    }
+
     /// The block comes off the row's markdown carrying the diagram itself, so the lane lays it out
     /// through the feed's own cached plan rather than through a reduction of it.
     @Test

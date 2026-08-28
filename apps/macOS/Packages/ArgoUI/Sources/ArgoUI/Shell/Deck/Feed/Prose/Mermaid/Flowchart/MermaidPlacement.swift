@@ -66,24 +66,17 @@ extension MermaidPlacement {
     /// A circle is squared off and a pointed shape widened, because a label inscribed in either
     /// only fits the box it was measured into if that box is bigger than the words.
     static func box(of node: MermaidFlowchart.Node) -> CGSize {
-        let words = CGSize(
-            width: max(
-                MermaidMeasure.nodeMinWidth,
-                ceil(ProseMetrics.width(of: node.label)) + MermaidMeasure.nodeInsetX * 2,
-            ),
-            height: ceil(ProseFace.body.lineBox) + MermaidMeasure.nodeInsetY * 2,
-        )
+        let words = MermaidWords.box(of: node.label)
         switch node.shape {
         case .circle:
-            let side = max(words.width, words.height)
-            return CGSize(width: side, height: side)
+            return MermaidWords.squared(words)
         case .diamond:
             return CGSize(
                 width: ceil(words.width * MermaidMeasure.diamondScale),
                 height: ceil(words.height * MermaidMeasure.diamondScale),
             )
         case .hexagon, .flag:
-            return CGSize(width: words.width + MermaidMeasure.flagPoint * 2, height: words.height)
+            return MermaidWords.pointed(words)
         case .rect, .rounded, .stadium, .subroutine, .cylinder:
             return words
         }

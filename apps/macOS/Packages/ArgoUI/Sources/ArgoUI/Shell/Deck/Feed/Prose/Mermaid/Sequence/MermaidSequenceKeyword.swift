@@ -9,7 +9,7 @@ enum MermaidSequenceKeyword {
     static func rest(after keyword: String, of line: String) -> String? {
         guard line.lowercased().hasPrefix(keyword) else { return nil }
         let rest = line.dropFirst(keyword.count)
-        guard rest.first.map({ !MermaidSequence.isNameCharacter($0) }) ?? true else { return nil }
+        guard rest.first.map({ !MermaidScan.isIdentifier($0) }) ?? true else { return nil }
         return rest.trimmingCharacters(in: .whitespaces)
     }
 

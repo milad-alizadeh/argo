@@ -100,6 +100,27 @@ struct MermaidMindmapReadingTests {
         #expect(map?.root.isCalledOut == false)
     }
 
+    /// Brackets that close mid-line are PROSE. Read as a figure they leave a remainder, and
+    /// refusing on that would lose the whole map over one parenthesis somebody wrote in a branch.
+    @Test(arguments: [
+        "Argo(beta) ships",
+        "Reading (mostly) works",
+        "a[one] and b[two]",
+    ])
+    func `a bracket pair inside prose is text rather than a figure`(line: String) {
+        let node = Self.read("mindmap\n  \(line)")?.root
+
+        #expect(node?.text == line)
+        #expect(node?.outline == .rounded)
+    }
+
+    /// Indented with tabs ALONE it nests like anything else — what has no answer is a tab beside a
+    /// space, and only that is refused.
+    @Test
+    func `a source indented with tabs alone still nests`() {
+        #expect(Self.texts(under: "mindmap\n\tArgo\n\t\tReader") == ["Reader"])
+    }
+
     @Test
     func `the deepest node is reachable however deep it stands`() {
         let source = "mindmap\nA\n  B\n    C\n      D\n        E"
@@ -117,8 +138,11 @@ struct MermaidMindmapReadingTests {
         "  Argo\n    Reader",
         // Two nodes at the root's own column are two roots, which mermaid refuses as well.
         "mindmap\nArgo\nCodex",
-        // A bracket that never closes: a fence still streaming in looks exactly like this.
+        // An opener with no closer: a fence still streaming in looks exactly like this.
         "mindmap\n  Argo\n    Reader[the scan",
+        // Tabs beside spaces: a tab is as wide as the editor says, so the nesting has no one
+        // answer and the map degrades to its fence rather than to a wrong shape.
+        "mindmap\n\troot\n  A",
     ])
     func `a source this reader cannot read draws nothing`(source: String) {
         #expect(Self.read(source) == nil)

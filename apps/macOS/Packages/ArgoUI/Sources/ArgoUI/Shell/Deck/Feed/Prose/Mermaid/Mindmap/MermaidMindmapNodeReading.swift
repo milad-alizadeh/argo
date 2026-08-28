@@ -28,18 +28,26 @@ extension MermaidMindmap.Node {
         Spelling(open: ")", close: "(", outline: .cloud),
     ]
 
-    /// The node this line states, or `nil` where its brackets never close — which is what a fence
-    /// still streaming in looks like.
+    /// The node this line states, or `nil` where an opener never closes — which is what a fence
+    /// still streaming in looks like, and the one thing here that refuses a source.
+    ///
+    /// Brackets that close but do not reach the end of the line are PROSE, not a figure:
+    /// `Argo(beta)
+    /// ships` is a thing somebody writes on a mindmap, and reading it as a rounded node with
+    /// `" ships"` left over would refuse the whole map over one parenthesis. The distinction is
+    /// deliberate — an opener with no closer is an unfinished line, an opener with a closer
+    /// mid-line is a sentence.
     static func read(_ line: String) -> Self? {
         var scan = MermaidScan(line)
         // Mermaid's own handle for the node, which says nothing this draws.
-        _ = scan.takeRun(where: MermaidFlowchart.Node.isNameCharacter)
+        _ = scan.takeIdentifier()
         guard let spelling = spellings.first(where: { scan.matches($0.open) }) else {
             return MermaidMindmap.Node(text: broken(line))
         }
         guard scan.take(spelling.open), let inside = scan.takeUpTo(spelling.close),
-              scan.take(spelling.close), scan.isDone
+              scan.take(spelling.close)
         else { return nil }
+        guard scan.isDone else { return MermaidMindmap.Node(text: broken(line)) }
         let text = broken(unquoted(inside).trimmingCharacters(in: .whitespaces))
         return text.isEmpty ? nil : MermaidMindmap.Node(text: text, outline: spelling.outline)
     }
