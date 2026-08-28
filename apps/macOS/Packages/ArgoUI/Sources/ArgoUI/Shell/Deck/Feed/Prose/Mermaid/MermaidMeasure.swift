@@ -66,6 +66,28 @@ enum MermaidMeasure {
     /// only make a bang half again the size of the branch it hangs off.
     static let blobScale: CGFloat = 1.25
 
+    /// How far back off a box's own face a class relationship's terminal marker runs, and how wide
+    /// it stands across the line there. Measures, on `arrowLength`'s terms: a hollow triangle and a
+    /// diamond must both read as their own figure at a glance and both stay well inside `rankGap`.
+    static let markLength: CGFloat = 12
+    static let markWidth: CGFloat = 10
+    /// A diamond runs longer and stands narrower than the triangle beside it, which is the whole
+    /// difference between a composition and an inheritance at a glance.
+    static let diamondLength: CGFloat = 16
+    static let diamondWidth: CGFloat = 9
+
+    /// A crow's foot: how far the fork reaches back off the entity it stands at, how wide it opens
+    /// there, how far behind it the minimum mark sits, and how big that mark is. Measures: the pair
+    /// has to be read as two marks rather than one, at the size of a mark.
+    static let footLength: CGFloat = 10
+    static let footWidth: CGFloat = 12
+    static let footStep: CGFloat = 7
+    static let footDot: CGFloat = 6
+
+    /// How far back off the face a word written at an END of a relationship stands: clear of the
+    /// longest terminal mark drawn there, which is the diamond.
+    static let endWordReach: CGFloat = diamondLength + ArgoSpacing.tight
+
     /// How far an edge's word stands off the line it belongs to. Clear of the stroke and still
     /// obviously attached to it.
     static let wordGap: CGFloat = ArgoSpacing.tight

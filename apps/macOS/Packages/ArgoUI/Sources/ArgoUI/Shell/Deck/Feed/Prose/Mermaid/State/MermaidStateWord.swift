@@ -18,16 +18,6 @@ enum MermaidStateWord {
         word == terminal || isName(word)
     }
 
-    /// The text either side of the FIRST `:`, or `nil` where the line has none. First and not last,
-    /// because everything after it is words and words may carry colons.
-    static func split(_ line: String) -> (head: String, tail: String)? {
-        guard let at = line.firstIndex(of: ":") else { return nil }
-        return (
-            String(line[line.startIndex ..< at]).trimmingCharacters(in: .whitespaces),
-            String(line[line.index(after: at)...]).trimmingCharacters(in: .whitespaces),
-        )
-    }
-
     /// Which state a note's header is about: `right of A`, `left of A`, `over A`. The side is not
     /// kept — a note is placed by the layered pass like everything else, so where the source asked
     /// for it is a request the layout has no way to honour without a second placement rule.

@@ -21,6 +21,11 @@ struct MermaidDiagram: Equatable, Sendable {
         case quadrant(MermaidQuadrant)
         case journey(MermaidJourney)
         case timeline(MermaidTimeline)
+        /// A class diagram and an entity diagram alike: compartmented boxes joined by annotated
+        /// relationships. ONE case for two `mermaid` types, because once the boxes are compartments
+        /// and the ends are terminals nothing is left to tell them apart — they differ only in the
+        /// reader that stated it (#865).
+        case compartmented(MermaidCompartmented)
     }
 
     /// The diagram this source draws, or `nil` where nothing here can read it — an unsupported
@@ -54,6 +59,12 @@ struct MermaidDiagram: Equatable, Sendable {
         if let timeline = MermaidTimeline.read(source) {
             return MermaidDiagram(source: source, kind: .timeline(timeline))
         }
+        if let classes = MermaidClass.read(source) {
+            return MermaidDiagram(source: source, kind: .compartmented(classes))
+        }
+        if let entities = MermaidEntity.read(source) {
+            return MermaidDiagram(source: source, kind: .compartmented(entities))
+        }
         return nil
     }
 
@@ -69,6 +80,7 @@ struct MermaidDiagram: Equatable, Sendable {
         case let .quadrant(quadrant): quadrant.labels
         case let .journey(journey): journey.labels
         case let .timeline(timeline): timeline.labels
+        case let .compartmented(diagram): diagram.labels
         }
     }
 
@@ -89,6 +101,7 @@ struct MermaidDiagram: Equatable, Sendable {
         case let .quadrant(quadrant): quadrant.laid
         case let .journey(journey): journey.laid
         case let .timeline(timeline): timeline.laid
+        case let .compartmented(diagram): diagram.laid
         }
     }
 }

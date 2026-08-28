@@ -26,7 +26,7 @@ extension MermaidState {
 
     /// `A --> B`, with the word after a `:` where it carries one.
     static func moved(_ line: String, into build: inout MermaidStateBuild) -> Bool {
-        let cut = MermaidStateWord.split(line)
+        let cut = MermaidSource.split(line)
         let ends = (cut?.head ?? line).components(separatedBy: MermaidStateWord.arrow)
             .map { $0.trimmingCharacters(in: .whitespaces) }
         guard ends.count == 2, ends.allSatisfy(MermaidStateWord.isEnd) else { return false }
@@ -40,7 +40,7 @@ extension MermaidState {
 
     /// `id : the words`, which describes a state named anywhere in the source.
     static func described(_ line: String, into build: inout MermaidStateBuild) -> Bool {
-        guard let cut = MermaidStateWord.split(line),
+        guard let cut = MermaidSource.split(line),
               MermaidStateWord.isName(cut.head), !cut.tail.isEmpty else { return false }
         build.describe(cut.head, as: cut.tail)
         return true
@@ -56,7 +56,7 @@ extension MermaidState {
         let title = String(rest[rest.startIndex ..< close])
         let after = String(rest[rest.index(after: close)...])
             .trimmingCharacters(in: .whitespaces)
-        guard let name = MermaidState.word("as", of: after),
+        guard let name = MermaidSource.word("as", of: after),
               MermaidStateWord.isName(name), !title.isEmpty else { return nil }
         return (name, title)
     }

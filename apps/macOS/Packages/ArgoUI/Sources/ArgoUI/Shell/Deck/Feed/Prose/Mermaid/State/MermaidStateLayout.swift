@@ -35,7 +35,7 @@ extension MermaidState {
                     from: inside($0.from, at: \.last),
                     to: inside($0.to, at: \.first),
                     line: $0.kind == .attachment ? .dotted : .solid,
-                    hasHead: $0.kind == .transition,
+                    head: $0.kind == .transition ? .arrow : .none,
                 )
             },
             groups: composites.map(\.members),

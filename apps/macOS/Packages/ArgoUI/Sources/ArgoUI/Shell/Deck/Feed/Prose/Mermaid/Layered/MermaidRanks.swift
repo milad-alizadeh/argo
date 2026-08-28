@@ -12,6 +12,8 @@ struct MermaidRanks {
     /// The extra room every gap gives an enclosure to close around its members without shutting
     /// over the node next door. Zero for a graph with no enclosure in it.
     let inset: CGFloat
+    /// The room the graph itself asked its lane for — see `MermaidGraph.lane`.
+    private let lane: CGFloat
 
     init(graph: MermaidGraph) {
         self.sizes = Dictionary(
@@ -20,10 +22,11 @@ struct MermaidRanks {
         )
         self.flat = MermaidGrain(direction: graph.direction, depth: 0)
         self.inset = graph.groups.isEmpty ? 0 : MermaidMeasure.groupInset * 2
+        self.lane = graph.lane
     }
 
     var rankStep: CGFloat {
-        MermaidMeasure.rankGap + inset
+        MermaidMeasure.rankGap + inset + lane
     }
 
     var nodeStep: CGFloat {

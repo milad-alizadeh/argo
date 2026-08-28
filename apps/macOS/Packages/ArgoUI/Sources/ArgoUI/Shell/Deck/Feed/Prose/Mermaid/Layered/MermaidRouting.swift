@@ -23,9 +23,11 @@ extension MermaidRouting {
         let points = reversed.contains(index) || from == to
             ? around(from, to: to, lane: lane(of: index))
             : between(from, to: to)
+        guard let ends = MermaidEnds.of(points, edge: edge) else { return nil }
         let middle = Self.mid(of: points)
         return MermaidRoute(
-            figures: marks(along: points, of: edge), mid: middle.at, run: middle.run,
+            figures: Self.marks(of: ends, on: edge), mid: middle.at, run: middle.run,
+            tail: ends.tail, head: ends.head,
         )
     }
 
@@ -71,27 +73,19 @@ extension MermaidRouting {
         return -MermaidMeasure.backLane * CGFloat(ordinal)
     }
 
-    /// The connector and, where the link has one, its head — the line stopped short of its own tip
-    /// so the head reads as a point rather than a blot.
-    private func marks(along points: [CGPoint], of edge: MermaidGraph.Edge) -> [MermaidFigure] {
-        let line = edge.line
-        guard edge.hasHead, points.count > 1 else {
-            return [MermaidFigure(form: .path(points), role: .edge, line: line)]
-        }
-        let tip = points[points.count - 1]
-        let stem = Self.back(from: tip, towards: points[points.count - 2])
-        return [
-            MermaidFigure(form: .path(points.dropLast() + [stem]), role: .edge, line: line),
-            MermaidFigure(form: .arrowhead(tip: tip, from: stem), role: .edge, line: line),
-        ]
+    /// The connector, already stopped short of whatever finishes it, and the pass's own head at
+    /// each end that asked for one. A cap asking only for ROOM draws nothing here — the mark that
+    /// stands in it is the reader's (#865).
+    private static func marks(of ends: MermaidEnds, on edge: MermaidGraph.Edge) -> [MermaidFigure] {
+        [MermaidFigure(form: .path(ends.stroke), role: .edge, line: edge.line)]
+            + head(ends, of: edge)
     }
 
-    /// The point a head stands back at, one arrow's length up the line it came in on.
-    private static func back(from tip: CGPoint, towards previous: CGPoint) -> CGPoint {
-        let run = CGPoint(x: previous.x - tip.x, y: previous.y - tip.y)
-        let length = max(sqrt(run.x * run.x + run.y * run.y), MermaidMeasure.stroke)
-        let step = min(MermaidMeasure.arrowLength, length)
-        return CGPoint(x: tip.x + run.x / length * step, y: tip.y + run.y / length * step)
+    private static func head(_ ends: MermaidEnds, of edge: MermaidGraph.Edge) -> [MermaidFigure] {
+        guard edge.head == .arrow, let stem = ends.stroke.last else { return [] }
+        return [MermaidFigure(
+            form: .arrowhead(tip: ends.head.at, from: stem), role: .edge, line: edge.line,
+        )]
     }
 
     /// The middle of a route, measured ALONG it rather than between its ends, and the way the line
