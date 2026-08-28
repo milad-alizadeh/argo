@@ -36,11 +36,6 @@ struct NewTicketComposer: View {
         .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// The two fields, each under its own name (#891).
-    ///
-    /// No `Form`: macOS's grouped form style promotes a field's placeholder to a leading label and
-    /// sets the value trailing, which made this the one place in the cockpit a value was read from
-    /// the right.
     private var fields: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.loose) {
             field("Title") { TextField("", text: $composition.title) }
@@ -51,14 +46,15 @@ struct NewTicketComposer: View {
         }
     }
 
-    /// One name over what it names, both on the sheet's own leading edge. The name is drawn rather
-    /// than passed as the field's own label, so it carries the cockpit's `GroupLabel` and not the
-    /// platform's; the field keeps it for VoiceOver.
+    /// One name and what is typed under it. The drawn name is hidden from VoiceOver because the
+    /// field carries the same one: two elements for one control is what reads it twice.
     private func field(_ name: String, @ViewBuilder editor: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             GroupLabel(name)
+                .accessibilityHidden(true)
             editor()
-                .multilineTextAlignment(.leading)
+                .argoText(ArgoTypography.body)
+                .foregroundStyle(argo.color.text.primary)
                 .accessibilityLabel(name)
         }
     }
