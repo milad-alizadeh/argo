@@ -44,15 +44,16 @@ struct WorkToolbar: ToolbarContent {
                 }
                 .sharedBackgroundVisibility(.hidden)
             }
-        }
-        if reading.narrows {
-            // The region packs from its own leading edge, which is where the items above end —
-            // without this the field sits against them rather than at the window's trailing edge.
-            ToolbarSpacer(.flexible, placement: .primaryAction)
-            ToolbarItem(placement: .primaryAction) {
-                BacklogSearchField(query: held.query)
+            if reading.narrows {
+                // The region packs from its own leading edge, which is where the items above end —
+                // without this the field sits against them rather than at the window's trailing
+                // edge.
+                ToolbarSpacer(.flexible, placement: .primaryAction)
+                ToolbarItem(placement: .primaryAction) {
+                    BacklogSearchField(query: held.query)
+                }
+                .sharedBackgroundVisibility(.hidden)
             }
-            .sharedBackgroundVisibility(.hidden)
         }
     }
 }

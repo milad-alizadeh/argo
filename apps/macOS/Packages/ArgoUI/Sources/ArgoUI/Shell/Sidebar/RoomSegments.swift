@@ -12,10 +12,10 @@ import SwiftUI
 /// - **A mark AND a word on one segment.** `.segmented` draws one or the other on macOS; AppKit's
 ///   control draws both, which is what puts each room's own glyph back beside its name.
 ///
-/// It is the platform's control, not a restyle of it: arrow keys, focus, the segment's own
-/// VoiceOver announcement and the untinted glass the running system draws all come with it. The
-/// selection is deliberately NOT accent-filled — `selectedSegmentBezelColor` is ignored under
-/// Liquid Glass, and the raised glass capsule is what Tahoe draws for a selected segment.
+/// It is the platform's control, not a restyle of it: arrow keys, focus, VoiceOver and the
+/// untinted glass the running system draws all come with it. The selection is deliberately NOT
+/// accent-filled — `selectedSegmentBezelColor` is ignored under Liquid Glass, and the raised glass
+/// capsule is what Tahoe draws for a selected segment.
 struct RoomSegments: NSViewRepresentable {
     @Binding var selection: CockpitRoom
 
@@ -31,15 +31,22 @@ struct RoomSegments: NSViewRepresentable {
         control.setContentHuggingPriority(.defaultLow, for: .horizontal)
         // The glyph reads as the room's own mark only while it sits with the word — the symbol is
         // template art, so it takes the segment's own foreground rather than a colour named here.
+        //
+        // The shortcut rides on the image's description and the segment's tooltip, because
+        // `NSSegmentedControl` exposes no per-segment accessibility label — there is no
+        // `setAccessibilityLabel(_:forSegment:)`. A titled segment announces its title, so the
+        // description is a floor rather than the whole answer; the Navigate menu carries the same
+        // shortcut, and it is the one surface that can state it outright.
         for (index, room) in CockpitRoom.allCases.enumerated() {
-            let mark = NSImage(systemSymbolName: room.symbol, accessibilityDescription: nil)
+            let mark = NSImage(
+                systemSymbolName: room.symbol, accessibilityDescription: room.voiceOverLabel,
+            )
             mark?.isTemplate = true
             control.setImage(mark, forSegment: index)
             control.setImageScaling(.scaleProportionallyDown, forSegment: index)
             control.setLabel(room.title, forSegment: index)
             control.setToolTip(room.tooltip, forSegment: index)
         }
-        control.setAccessibilityLabel("Rooms")
         return control
     }
 

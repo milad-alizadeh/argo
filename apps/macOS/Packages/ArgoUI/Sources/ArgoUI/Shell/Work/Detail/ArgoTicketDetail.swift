@@ -5,14 +5,6 @@ import SwiftUI
 /// `argoFeedMeasure()`, reused rather than redeclared — the feed already settled what a line of
 /// Argo's prose runs to.
 enum ArgoTicketDetail {
-    /// The band at the head of this pane, holding what acts on the ticket (#836) — the same height
-    /// as the list's band beside it, so both panes' content starts on one line.
-    ///
-    /// Read off the list rather than written down twice — one band, one number.
-    static let bandHeight: CGFloat = ArgoBacklogList.bandHeight
-    /// Inside the band, either edge. The pane's own inset, so New ticket starts on the vertical the
-    /// ticket's title below it starts on.
-    static let bandInsetX: CGFloat = ArgoSpacing.section
     /// The column off the deck's edges.
     static let inset: CGFloat = ArgoSpacing.section
     /// The rule between the provider's status word and Argo's bucket. Short deliberately: it
@@ -45,6 +37,14 @@ enum ArgoTicketDetail {
     /// Above and below it — the type-setter's line box already stands clear of the glyphs, so this
     /// is the same hair `ArgoBadge` spends for the same reason.
     static let labelInsetY: CGFloat = ArgoSpacing.hair
+    /// How far a provider's own label colour is let into the chip — see `LabelInk` for why the hue
+    /// is kept and its weight is not. The word carries the hue at full strength, so only the two
+    /// grounds are rationed here.
+    static let labelGroundWash = 0.16
+    static let labelEdgeWash = 0.38
+    /// The lightness the word is lifted to. A label set against a tracker's white page routinely
+    /// lands below anything that reads on this deck — GitHub's own `000000` is a real label.
+    static let labelWordLightness = 0.72
 
     // MARK: - A Delivery chip
 

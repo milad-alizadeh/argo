@@ -33,10 +33,9 @@ struct WorkRoom {
     /// What the row's controls DO. Inert by default, so a preview and a specimen draw the row
     /// without anything behind it.
     var intents = WorkToolbarIntents()
-    /// The two things the room's chrome HOLDS rather than reads — the query in the window's row and
-    /// the Mode in the ticket's band. Both outlive the pane, so both are held above the room; one
-    /// value rather than two members, because a binding pair travels together (the `DeckSeams`
-    /// shape).
+    /// The two things the room's chrome HOLDS rather than reads — the query and the Mode a Session
+    /// would start in. Both outlive the pane, so both are held above the room; one value rather
+    /// than two members, because a binding pair travels together (the `DeckSeams` shape).
     var held = Held.unheld
 
     struct Held {

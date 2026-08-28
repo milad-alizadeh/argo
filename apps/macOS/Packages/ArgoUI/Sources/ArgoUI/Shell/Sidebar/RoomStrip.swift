@@ -26,7 +26,6 @@ struct RoomStrip: View {
             // controls (#816).
             .padding(.horizontal, ArgoSpacing.comfortable)
             .padding(.vertical, ArgoSpacing.base)
-            .accessibilityLabel("Rooms")
     }
 }
 
