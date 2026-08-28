@@ -1,11 +1,6 @@
 import ArgoEngine
 
 extension WorkReading {
-    /// The one priority word the hero treats as urgent, MATCHED rather than ranked: Argo does not
-    /// order a provider's words (#815), and the chip echoes this one back. Which words a provider
-    /// actually spells is #388's, and which of them outrank the rest is #273's.
-    private static let urgentPriority = "high"
-
     /// The hero, over the same open set the views count. Work happens at leaves, so a parent is
     /// neither picked nor counted into the pool that decides a tier.
     ///
@@ -37,7 +32,8 @@ extension WorkReading {
     /// claim rather than an arbitrary one.
     private func reasons(for pick: WorkItem, in pool: [WorkItem]) -> [NextUp.Reason] {
         var earned: [NextUp.Reason] = []
-        if pick.priority?.lowercased() == Self.urgentPriority {
+        // The same rung the ranking sorted by, so the chip and the pick's place cannot disagree.
+        if pick.priorityRung == .high {
             earned.append(.highPriority)
         }
         // Only where THIS ticket's edges were read. Inferring it from the backlog carrying edges

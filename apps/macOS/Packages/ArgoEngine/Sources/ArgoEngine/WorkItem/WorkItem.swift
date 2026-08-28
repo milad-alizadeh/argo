@@ -34,12 +34,8 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
     /// The ticket's body, verbatim, and `nil` where nothing was read. Held for as long as the
     /// listing is and never persisted, on the same terms as every other fact here.
     public let body: String?
-    /// When the provider last saw this ticket change, and `nil` where the adapter read none.
-    /// The only ORDERABLE fact here besides the priority rung, which is why it exists: a ranking
-    /// whose last tie-break is age needs one (#273).
-    ///
-    /// Last-touched rather than filed: `oldest untouched` is a claim about neglect, and a ticket
-    /// filed a year ago and edited this morning is not neglected.
+    /// When the provider last saw this ticket change, and `nil` where the adapter read none. LAST
+    /// TOUCHED and not filed: it is what `oldest untouched` claims, and the hero's age key (#273).
     public let updatedAt: Date?
 
     public init(

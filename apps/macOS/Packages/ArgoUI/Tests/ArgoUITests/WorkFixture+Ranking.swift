@@ -1,9 +1,13 @@
 import ArgoEngine
+@testable import ArgoUI
 import Foundation
 
 /// The pool a ranking case is built from (#273). Deliberately spare: `priority desc → PRD sequence
 /// → age` reads three facts, so a candidate states those three and nothing that could explain a
 /// pick some other way.
+///
+/// Beside the suites rather than in `Sources/` with the rest of `WorkFixture`: no preview draws a
+/// ranking, so these two have no caller the app ships.
 extension WorkFixture {
     /// One takeable leaf. `blockedBy: []` throughout — a blocked leaf never reaches the pool, so a
     /// ranking case naming an edge would be testing the filter above the ranking instead.
