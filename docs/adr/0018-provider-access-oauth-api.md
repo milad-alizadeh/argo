@@ -1,7 +1,27 @@
 # 0018 · Provider access is OAuth + HTTP API, not the `gh` CLI
 
 Status: accepted (#182) · 2026-07-22 · GitHub's grant settled (#367) · 2026-08-06 ·
-**amended: a provider has N accounts** (#414) · 2026-08-10
+**amended: a provider has N accounts** (#414) · 2026-08-10 · Linear's grant settled (#371) ·
+2026-08-28
+
+> **Linear's grant is authorization code + PKCE with a loopback redirect** — the second of the
+> two options the Decision below leaves per-provider, and it is *not* GitHub's. Linear serves no
+> device authorization endpoint, so the mechanism a distributed desktop binary can use is the
+> other one this ADR names: PKCE, where `client_secret` is optional and the S256 challenge is
+> what proves the exchange belongs to the request. The client id is public by construction, on
+> the same terms GitHub's is.
+>
+> This settles the token-lifecycle prediction below in Linear's favour: its access token expires
+> in 24 hours and arrives **with** a refresh token, where GitHub's does neither — which is
+> exactly why `AccountGrant.expiresAt` and `refreshToken` were left optional rather than
+> reshaped later. **Refresh itself is not built**: a user re-authorizes, which is the same act
+> the panel already offers for a revoked grant. The trigger to build it is a user finding the
+> re-authorization daily rather than occasional.
+>
+> The loopback listens on `127.0.0.1` only and for exactly one request, because the
+> authorization code arrives in a URL: a listener on every interface would put it on the network.
+> The redirect port is fixed rather than ephemeral, since a redirect URI is registered ahead of
+> time — so a second Argo cannot hold it, and that reads as a named refusal rather than a hang.
 
 > **A provider has N Accounts on a machine, not one.** This ADR says "tokens are stored
 > per-machine in the OS keychain" and reads throughout as though a provider had *one* grant.

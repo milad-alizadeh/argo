@@ -8,30 +8,46 @@ import Testing
 @Suite("Connect panel copy")
 struct ConnectCopyTests {
     /// Every failure the panel can report, so the sweeps below cover the set rather than a sample.
-    static let notes: [ConnectNote] =
-        [
-            .noSuchProject,
-            .noSuchAccount,
-            .portNotServedByProvider(.linear, .codeHost),
-            .noGrant,
-            .grantExpired,
-            .scopeNotVisible("milad-alizadeh/argo"),
-            .unauthorized,
-            .unreadable("The request timed out."),
-        ].map(ConnectNote.init(refusal:))
-        + [
-            BindingFault.accountRemoved,
-            .portNotServedByProvider,
-            .grantMissing,
-            .grantExpired,
-        ].map(ConnectNote.init(fault:))
-        + [
-            GitHubDeviceFlowError.declined,
-            .expired,
-            .malformedResponse,
-            .refused(code: "device_flow_disabled", description: ""),
-        ].map { ConnectNote(deviceFlow: $0, provider: .github) }
+    ///
+    /// Assembled in named halves rather than as one expression: the four sources have four
+    /// different element types, and one chain of them is past what the type-checker will do.
+    static let notes: [ConnectNote] = refusals + faults + deviceFlows + redirects
         + AccountProvider.allCases.map(ConnectNote.notYetAuthorizable)
+
+    private static let refusals: [ConnectNote] = [
+        BindingRefusal.noSuchProject,
+        .noSuchAccount,
+        .portNotServedByProvider(.linear, .codeHost),
+        .noGrant,
+        .grantExpired,
+        .scopeNotVisible("milad-alizadeh/argo"),
+        .unauthorized,
+        .unreadable("The request timed out."),
+    ].map(ConnectNote.init(refusal:))
+
+    private static let faults: [ConnectNote] = [
+        BindingFault.accountRemoved,
+        .portNotServedByProvider,
+        .grantMissing,
+        .grantExpired,
+    ].map(ConnectNote.init(fault:))
+
+    private static let deviceFlows: [ConnectNote] = [
+        GitHubDeviceFlowError.declined,
+        .expired,
+        .malformedResponse,
+        .refused(code: "device_flow_disabled", description: ""),
+    ].map { ConnectNote(deviceFlow: $0, provider: .github) }
+
+    /// Linear's shape, where GitHub's is a device code (#371).
+    private static let redirects: [ConnectNote] = [
+        LinearAuthorizationError.notRegistered,
+        .redirectUnavailable,
+        .abandoned,
+        .stateMismatch,
+        .refused("The workspace does not allow this app."),
+        .malformedResponse,
+    ].map { ConnectNote(authorization: $0, provider: .linear) }
 
     static let panels: [ConnectPanelProjection.Panel] = [
         ConnectFixture.fresh,

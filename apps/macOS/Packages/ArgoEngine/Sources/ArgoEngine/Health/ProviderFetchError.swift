@@ -23,3 +23,23 @@ public enum ProviderFetchError: Error, Equatable {
         }
     }
 }
+
+public extension ProviderFetchError {
+    /// Every way an ask can fail, in this vocabulary. Shared by both adapters rather than spelled
+    /// per-provider, so two providers failing the same way cannot reach the ledger as two states.
+    static func reading(_ error: Error) -> ProviderFetchError {
+        switch error {
+        case HTTPTransportError.unauthorized: .grantRefused
+        case HTTPTransportError.rateLimited: .rateLimited
+        // Nothing was asked, so nothing was refused. Every other `URLError` reached the wire and
+        // failed there, which is `unreachable`.
+        case let urlError as URLError where offlineCodes.contains(urlError.code): .offline
+        default: .unreachable
+        }
+    }
+
+    /// The `URLError` codes that mean this Mac has no network.
+    private static var offlineCodes: Set<URLError.Code> {
+        [.notConnectedToInternet, .networkConnectionLost, .dataNotAllowed]
+    }
+}

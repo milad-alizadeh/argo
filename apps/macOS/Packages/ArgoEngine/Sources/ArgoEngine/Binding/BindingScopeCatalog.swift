@@ -46,17 +46,17 @@ public protocol BindingScopeCatalog: Sendable {
 /// third provider fails the build here rather than shipping a picker that silently offers nothing.
 public struct ProviderScopeCatalog: BindingScopeCatalog {
     private let github: BindingScopeCatalog
+    private let linear: BindingScopeCatalog
 
     public init(transport: HTTPTransport = URLSessionTransport()) {
         self.github = GitHubScopeCatalog(transport: transport)
+        self.linear = LinearScopeCatalog(transport: transport)
     }
 
     public func scopes(for query: ScopeQuery) async -> ScopeCatalogue {
         switch query.provider {
         case .github: await github.scopes(for: query)
-        // Linear's grant is #371's, so no Account of this provider exists to query. Answered rather
-        // than crashed if one ever is: an empty picker would claim the workspace holds nothing.
-        case .linear: .unreadable("Argo cannot list Linear projects yet.")
+        case .linear: await linear.scopes(for: query)
         }
     }
 }

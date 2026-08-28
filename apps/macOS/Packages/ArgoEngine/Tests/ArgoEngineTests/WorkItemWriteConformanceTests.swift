@@ -4,12 +4,14 @@ import Testing
 
 /// The Work Item adapters the write conformance suite runs against.
 ///
-/// `GitHubWorkItems` is the shipped one; `WorkflowTracker` stands for the workflow-capable half of
-/// the port (Linear, Jira) that has no adapter yet. Two, because a suite run against one adapter
-/// only ever proves things about that adapter — the gaps sit in different places on each, which is
-/// what makes "declared, not discovered by failing" a claim about the PORT.
+/// Two are shipped — `GitHubWorkItems` and `LinearWorkItems` (#371) — and `WorkflowTracker` is
+/// the in-memory third that can be made to refuse a transition its workflow has no edge for, which
+/// neither real provider does. Three, because a suite run against one adapter only ever proves
+/// things about that adapter: the gaps sit in different places on each, which is what makes
+/// "declared, not discovered by failing" a claim about the PORT.
 enum WriteAdapter: String, CaseIterable, Sendable {
     case gitHub
+    case linear
     case workflow
 
     /// A port holding ticket 12, and the two an edge intent names at its far end.
@@ -20,6 +22,12 @@ enum WriteAdapter: String, CaseIterable, Sendable {
                 "/issues/12": IssueJSON(number: 12, title: "Port the Work room").json,
                 "/issues/9": IssueJSON(number: 9).json,
                 "/issues/3": IssueJSON(number: 3).json,
+            ]))
+        case .linear:
+            LinearWorkItems(transport: LinearFixture.holding([
+                LinearIssueJSON(number: 12, title: "Port the Work room"),
+                LinearIssueJSON(number: 9),
+                LinearIssueJSON(number: 3),
             ]))
         case .workflow:
             WorkflowTracker(holding: [
@@ -34,6 +42,10 @@ enum WriteAdapter: String, CaseIterable, Sendable {
         case .gitHub:
             GitHubWorkItems(transport: RecordedGitHub(replies: [
                 "/issues": IssueJSON(number: 101, title: "A new ticket").json,
+            ]))
+        case .linear:
+            LinearWorkItems(transport: LinearFixture.holding([
+                LinearIssueJSON(number: 101, title: "A new ticket"),
             ]))
         case .workflow:
             WorkflowTracker()

@@ -1,10 +1,12 @@
 import AppKit
 import SwiftUI
 
-/// The device flow while it waits: the code to type, where to type it, and a way to stop.
+/// A grant while it waits: where to finish it, the code to type where there is one, and a way to
+/// stop.
 ///
-/// `GitHubDeviceFlow` hands the challenge back before it starts polling, which is what this card
-/// draws.
+/// Both flows hand their challenge back before they start waiting, which is what this card draws.
+/// GitHub's carries a code; Linear's is a redirect and carries none, so the code row is simply
+/// absent rather than filled with something to look at.
 struct DeviceCodeCard: View {
     @Environment(\.argo) private var argo
     /// Whether the code has just been put on the pasteboard. Local, and never a fact about the
@@ -16,13 +18,15 @@ struct DeviceCodeCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-            Text(DeviceCodeCopy.heading(for: challenge.provider))
+            Text(DeviceCodeCopy.heading(for: challenge))
                 .argoText(ArgoTypography.rowTitle)
                 .foregroundStyle(argo.color.text.primary)
-            code
+            if let userCode = challenge.userCode {
+                code(userCode)
+            }
             HStack(spacing: ArgoSpacing.base) {
                 Link(destination: challenge.verificationURL) {
-                    Text(challenge.verificationURL.absoluteString)
+                    Text(DeviceCodeCopy.address(of: challenge))
                         .argoText(ArgoTypography.machineCaption)
                 }
                 Spacer(minLength: ArgoSpacing.base)
@@ -35,35 +39,24 @@ struct DeviceCodeCard: View {
         }
         // No ground of its own: it stands in a `Form` section, and the section IS the card.
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(spoken)
+        .accessibilityLabel(DeviceCodeCopy.spoken(challenge))
     }
 
     /// The code in the provider's own formatting, never re-spaced: what is shown has to match what
     /// is typed.
-    private var code: some View {
+    private func code(_ userCode: String) -> some View {
         HStack(spacing: ArgoSpacing.comfortable) {
-            Text(challenge.userCode)
+            Text(userCode)
                 .argoText(ArgoTypography.machineDisplay)
                 .foregroundStyle(argo.color.text.primary)
                 .textSelection(.enabled)
                 .frame(width: ArgoConnectPanel.deviceCodeWidth, alignment: .leading)
-            Button(hasCopied ? DeviceCodeCopy.copied : DeviceCodeCopy.copy, action: copy)
-                .buttonStyle(.quiet)
+            Button(hasCopied ? DeviceCodeCopy.copied : DeviceCodeCopy.copy) {
+                ArgoPasteboard.put(userCode)
+                hasCopied = true
+            }
+            .buttonStyle(.quiet)
         }
-    }
-
-    private func copy() {
-        ArgoPasteboard.put(challenge.userCode)
-        hasCopied = true
-    }
-
-    /// Spoken as one instruction, because the code is useless without the address and the address
-    /// is useless without the code.
-    private var spoken: String {
-        """
-        Type the code \(challenge.userCode) at \
-        \(challenge.verificationURL.absoluteString). Argo is waiting.
-        """
     }
 }
 
@@ -71,6 +64,19 @@ struct DeviceCodeCard: View {
     Form {
         Section {
             DeviceCodeCard(challenge: ConnectFixture.challenge, stopWaiting: {})
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: ArgoConnectPanel.width)
+    .argoAppearance()
+}
+
+// Linear's grant is a redirect: the browser is already open on it, so there is no code to type and
+// the card says where the tab is rather than what to put in it.
+#Preview("Redirect — waiting on the browser") {
+    Form {
+        Section {
+            DeviceCodeCard(challenge: ConnectFixture.redirect, stopWaiting: {})
         }
     }
     .formStyle(.grouped)

@@ -23,10 +23,20 @@ enum ConnectFixture {
 
     static let folder = "~/Developer/argo"
 
+    static let deviceURL = URL(string: "https://github.com/login/device")
+        ?? URL(fileURLWithPath: "/")
+
     static let challenge = ConnectChallenge(
         provider: .github,
         userCode: "WDJB-MJHT",
-        verificationURL: URL(string: "https://github.com/login/device")
+        verificationURL: deviceURL,
+    )
+
+    /// Linear's grant, which is a redirect: the browser carries the whole exchange, so there is no
+    /// code to type and the card draws one row fewer.
+    static let redirect = ConnectChallenge(
+        provider: .linear,
+        verificationURL: URL(string: "https://linear.app/oauth/authorize")
             ?? URL(fileURLWithPath: "/"),
     )
 

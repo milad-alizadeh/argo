@@ -52,7 +52,7 @@ struct GitHubWrites: Sendable {
            code == 403, let reason {
             return .refused(reason)
         }
-        return .unreachable(GitHubCall.fetchError(error))
+        return .unreachable(.reading(error))
     }
 
     /// The issue GitHub answered a write with, or the one read back where it answered with
