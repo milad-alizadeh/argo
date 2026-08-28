@@ -20,7 +20,13 @@ extension MermaidOrdering {
         var fewest = crossings(of: best, in: chart)
         var rows = best
         for pass in 0 ..< passes {
-            rows = swept(rows, in: chart, downward: pass.isMultiple(of: 2))
+            // Cohesion is re-imposed after every sweep, not only on the way in: a sweep is free to
+            // slide a member of a group past a stranger, and an enclosure drawn around a rank that
+            // happened would close over a node it does not own.
+            rows = grouped(
+                swept(rows, in: chart, downward: pass.isMultiple(of: 2)),
+                by: chart.groups,
+            )
             let count = crossings(of: rows, in: chart)
             guard count < fewest else { continue }
             fewest = count

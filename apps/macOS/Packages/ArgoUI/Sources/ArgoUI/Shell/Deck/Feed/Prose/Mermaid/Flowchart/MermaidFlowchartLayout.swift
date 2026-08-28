@@ -16,46 +16,55 @@ extension MermaidFlowchart {
         let rows = MermaidOrdering.rows(of: self, ranked: ranked)
         let placement = MermaidPlacement.of(self, rows: rows)
         let routing = MermaidRouting(placement: placement, reversed: ranked.reversed)
-        let routes = edges.enumerated().compactMap { routing.drawn($1, at: $0) }
-        let enclosures = groups.compactMap { MermaidEnclosure.drawn($0, in: placement.boxes) }
+        // One entry per edge and one per group, `nil` included. Compacting these BEFORE the
+        // captions are built is what would slide every later caption one place along `labels`, and
+        // `MermaidLayout` places its subviews by that position alone.
+        let routes = edges.enumerated().map { routing.drawn($1, at: $0) }
+        let enclosures = groups.map { MermaidEnclosure.drawn($0, in: placement.boxes) }
         return Self.normalised(MermaidPlan(
             // Enclosures first, so a frame sits UNDER the boxes it is drawn around.
-            figures: enclosures.map(\.figure)
-                + names
-                .compactMap { name in placement.boxes[name].map { figure(of: name, in: $0) } }
-                + routes.flatMap(\.figures),
-            captions: captions(in: placement.boxes)
-                + wordsOn(routes)
-                + zip(groups, enclosures).map { group, enclosure in
-                    MermaidCaption(
-                        label: MermaidLabel(
-                            text: group.title, face: MermaidMeasure.groupFace, role: .note,
-                        ),
-                        rect: enclosure.title,
-                        alignment: .leading,
-                    )
-                },
+            figures: enclosures.compactMap { $0?.figure }
+                + nodes.compactMap { node in
+                    placement.boxes[node.name].map { figure(of: node, in: $0) }
+                }
+                + routes.compactMap(\.self).flatMap(\.figures),
+            captions: captions(in: placement.boxes) + wordsOn(routes) + titles(on: enclosures),
             size: placement.size,
         ))
     }
 
     /// One node's own figure, in the box it was measured into.
-    private func figure(of name: String, in box: CGRect) -> MermaidFigure {
-        MermaidFigure(form: .shape(nodes.first { $0.name == name }?.shape.outline ?? .rect, box))
+    private func figure(of node: Node, in box: CGRect) -> MermaidFigure {
+        MermaidFigure(form: .shape(node.shape.outline, box))
     }
 
     /// One caption per node, in the order the source named them — which is the order `labels`
-    /// lists them, and the pairing the view rests on.
+    /// lists them, and the pairing the view rests on. A node with no box gets a caption with no
+    /// room rather than no caption: dropping one would shift every label after it.
     private func captions(in boxes: [String: CGRect]) -> [MermaidCaption] {
-        zip(nodes, labels).compactMap { node, label in
-            boxes[node.name].map { MermaidCaption(label: label, rect: $0) }
+        zip(nodes, labels).map { node, label in
+            MermaidCaption(label: label, rect: boxes[node.name] ?? .zero)
+        }
+    }
+
+    /// Each group's title, in the band along the top of its own frame.
+    private func titles(on enclosures: [(figure: MermaidFigure, title: CGRect)?])
+        -> [MermaidCaption] {
+        zip(groups, enclosures).map { group, enclosure in
+            MermaidCaption(
+                label: MermaidLabel(
+                    text: group.title, face: MermaidMeasure.groupFace, role: .note,
+                ),
+                rect: enclosure?.title ?? .zero,
+                alignment: .leading,
+            )
         }
     }
 
     /// An edge's own word, beside the middle of the line it belongs to rather than on top of it —
-    /// the connector runs under a caption otherwise, and a word with a line through it is worse
-    /// than one standing next to it.
-    private func wordsOn(_ routes: [MermaidRoute]) -> [MermaidCaption] {
+    /// the connector runs under a caption otherwise. One per edge that HAS a word, which is what
+    /// `labels` lists; an unrouted edge keeps its caption and loses only its place.
+    private func wordsOn(_ routes: [MermaidRoute?]) -> [MermaidCaption] {
         zip(edges, routes).compactMap { edge, route in
             guard let text = edge.label else { return nil }
             let face = MermaidMeasure.edgeFace
@@ -65,7 +74,8 @@ extension MermaidFlowchart {
             )
             return MermaidCaption(
                 label: MermaidLabel(text: text, face: face, role: .note),
-                rect: CGRect(origin: Self.beside(route, size: size), size: size),
+                rect: route
+                    .map { CGRect(origin: Self.beside($0, size: size), size: size) } ?? .zero,
             )
         }
     }
@@ -108,7 +118,7 @@ extension MermaidFlowchart {
 
 extension MermaidFlowchart.Shape {
     /// The outline mermaid draws this shape as.
-    var outline: MermaidFigure.Outline {
+    var outline: MermaidOutline {
         switch self {
         case .rect: .rect
         case .rounded: .rounded

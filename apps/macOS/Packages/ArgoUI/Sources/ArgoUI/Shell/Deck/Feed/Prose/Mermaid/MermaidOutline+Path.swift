@@ -8,7 +8,7 @@ import SwiftUI
 // carrying a second subpath fills whatever that subpath encloses too, which is how a lid becomes a
 // blot.
 
-extension MermaidFigure.Outline {
+extension MermaidOutline {
     /// The outline as it is stroked, in the box the layout measured it into.
     func path(in rect: CGRect) -> Path {
         switch self {
@@ -101,22 +101,6 @@ extension MermaidFigure.Outline {
             to: CGPoint(x: rect.maxX, y: rect.minY + lid),
             control: CGPoint(x: rect.midX, y: rect.minY + lid * 3),
         )
-        return path
-    }
-}
-
-/// A polyline, built. Its own type so every shape above and every connector draw through one.
-enum MermaidPath {
-    static func through(_ points: [CGPoint], closed: Bool = false) -> Path {
-        var path = Path()
-        guard let first = points.first else { return path }
-        path.move(to: first)
-        for point in points.dropFirst() {
-            path.addLine(to: point)
-        }
-        if closed {
-            path.closeSubpath()
-        }
         return path
     }
 }

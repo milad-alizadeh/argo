@@ -29,7 +29,7 @@ struct MermaidFlowchart: Equatable, Sendable {
 
     /// The figures mermaid lets a node be drawn as, each its own outline — a reader tells a
     /// decision from a step by its shape before reading either.
-    enum Shape: Equatable, Sendable, CaseIterable {
+    enum Shape: Equatable, Sendable {
         case rect, rounded, stadium, subroutine, diamond, hexagon, circle, flag, cylinder
     }
 
@@ -73,10 +73,5 @@ extension MermaidFlowchart {
 
     var names: [String] {
         nodes.map(\.name)
-    }
-
-    /// What one node points at, in the order the source wrote the edges.
-    func following(_ name: String) -> [String] {
-        edges.filter { $0.from == name }.map(\.to)
     }
 }

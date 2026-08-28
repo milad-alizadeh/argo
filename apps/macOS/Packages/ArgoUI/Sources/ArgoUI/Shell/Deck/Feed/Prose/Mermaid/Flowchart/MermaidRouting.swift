@@ -14,18 +14,6 @@ struct MermaidRouting {
     let reversed: Set<Int>
 }
 
-/// One edge, routed: what it draws, and where a word written on it would go.
-///
-/// The word's place is TWO facts, not one. The middle of the route says where, and the way the line
-/// runs there says which side is off it — and a word placed without the second sits on the stroke
-/// wherever the line happens to turn.
-struct MermaidRoute: Sendable {
-    let figures: [MermaidFigure]
-    let mid: CGPoint
-    /// A unit vector along the route at its middle.
-    let run: CGPoint
-}
-
 extension MermaidRouting {
     /// The figures one edge draws, and the point its word is written at. Nothing at all for an edge
     /// naming a node that was never placed, which is a state the reader does not produce.

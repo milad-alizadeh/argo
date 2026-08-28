@@ -6,13 +6,6 @@ import Foundation
 // The openers are tried LONGEST FIRST and that is the whole subtlety: `[[Sub]]` read with `[` first
 // is a rect whose label is `[Sub`, and it would draw without ever failing.
 
-/// One way mermaid lets a node's label be bracketed, and the figure those brackets name.
-struct MermaidSpelling: Equatable, Sendable {
-    let open: String
-    let close: String
-    let shape: MermaidFlowchart.Shape
-}
-
 extension MermaidFlowchart.Node {
     /// Every spelling mermaid gives a node's label, longest opener first.
     static let spellings = [

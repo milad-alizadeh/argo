@@ -44,6 +44,18 @@ struct MermaidLayoutTests {
         #expect(Self.plan(Self.source) == Self.plan(Self.source))
     }
 
+    /// A rank is drawn in the order the source named its nodes, left to right. The nodes are placed
+    /// out of a dictionary, and a dictionary's own order is seeded afresh on every launch — so the
+    /// claim has to be about the SOURCE's order rather than about two calls agreeing.
+    @Test
+    func `a rank is placed in the order the source named its nodes`() {
+        let plan = Self.plan("graph TD\nA --> First\nA --> Second\nA --> Third")
+        let rank = plan.captions.filter { $0.rect.minY > 0 }
+
+        #expect(rank.map(\.label.text) == ["First", "Second", "Third"])
+        #expect(rank.map(\.rect.minX) == rank.map(\.rect.minX).sorted())
+    }
+
     /// The pairing the view rests on: it builds one `Text` per label and places it on the caption
     /// at the same index.
     @Test
@@ -153,7 +165,7 @@ struct MermaidLayoutTests {
         G --> H>Flag]
         H --> I[(Store)]
         """
-        let outlines = Self.plan(source).figures.compactMap { figure -> MermaidFigure.Outline? in
+        let outlines = Self.plan(source).figures.compactMap { figure -> MermaidOutline? in
             guard case let .shape(outline, _) = figure.form else { return nil }
             return outline
         }

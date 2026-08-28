@@ -1,11 +1,17 @@
 import Foundation
 
-/// Every node's box: which rank it stands in, where along that rank, and how big it is.
+/// Every node's box: which rank it stands in, where across that rank, and how big it is.
 ///
 /// Sizes are measured with the same prose metrics the paragraphs around the diagram are measured
 /// with, so a diagram sets at the feed's rhythm rather than floating at a scale of its own. Where
 /// they then go is `MermaidAxis`'s answer, which is what makes the four directions one pass rather
 /// than four.
+///
+/// A `subgraph` gets contiguity and wider gaps, not a lane of its own. A lane per group keeps every
+/// enclosure clear of every stranger, and it also pushes a plain chain off its own line the moment
+/// one node of it is grouped — which is the far commoner diagram. So a group whose members span
+/// ranks a stranger also stands in can still be framed around that stranger; that is a compound
+/// layout, and a follow-up behind this same seam (#861).
 @MainActor
 struct MermaidPlacement {
     let boxes: [String: CGRect]
@@ -32,6 +38,8 @@ extension MermaidPlacement {
             for name in row {
                 let size = ranks.size(of: name)
                 boxes[name] = axis.rect(
+                    // Centred in its rank's own depth, so a tall box and a short one on the same
+                    // rank hang off one line rather than off the rank's ceiling.
                     along: along + (alongs[at] - ranks.flat.along(of: size)) / 2,
                     across: across,
                     size: size,
@@ -47,50 +55,6 @@ extension MermaidPlacement {
                 ? CGSize(width: widest, height: axis.depth)
                 : CGSize(width: axis.depth, height: widest),
         )
-    }
-}
-
-/// How far a rank reaches on each axis, and the gaps it keeps. A value rather than four parameters
-/// threaded through the pass that uses them.
-@MainActor
-private struct MermaidRanks {
-    let sizes: [String: CGSize]
-    /// An axis with no depth, used only to ask which way a size is measured — the real one is not
-    /// known until every rank has been measured with this.
-    let flat: MermaidAxis
-    /// The extra room every gap gives an enclosure to close around its members without shutting
-    /// over the node next door. Zero for a chart with no `subgraph` in it.
-    let inset: CGFloat
-
-    init(chart: MermaidFlowchart) {
-        self.sizes = chart.nodes.reduce(into: [String: CGSize]()) {
-            $0[$1.name] = MermaidPlacement.box(of: $1)
-        }
-        self.flat = MermaidAxis(direction: chart.direction, depth: 0)
-        self.inset = chart.groups.isEmpty ? 0 : MermaidMeasure.groupInset * 2
-    }
-
-    var rankStep: CGFloat {
-        MermaidMeasure.rankGap + inset
-    }
-
-    var nodeStep: CGFloat {
-        MermaidMeasure.nodeGap + inset
-    }
-
-    func size(of name: String) -> CGSize {
-        sizes[name] ?? .zero
-    }
-
-    /// How deep into the ranks one rank reaches: its tallest box.
-    func along(of row: [String]) -> CGFloat {
-        row.map { flat.along(of: size(of: $0)) }.max() ?? 0
-    }
-
-    /// How far one rank reaches across: its boxes and the gaps between them.
-    func across(of row: [String]) -> CGFloat {
-        row.map { flat.across(of: size(of: $0)) }.reduce(0, +)
-            + nodeStep * CGFloat(max(0, row.count - 1))
     }
 }
 

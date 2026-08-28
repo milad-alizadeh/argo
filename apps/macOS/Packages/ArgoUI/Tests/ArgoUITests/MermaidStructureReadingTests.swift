@@ -84,9 +84,27 @@ struct MermaidStructureReadingTests {
         #expect(chart?.names == ["A", "B", "C"])
     }
 
+    @Test(arguments: [
+        "graph TD\n%% a note to nobody\nA --> B",
+        "graph TD\nA --> B %% said about the line above",
+        "graph TD\nA --> B;",
+    ])
+    func `punctuation the diagram does not speak in says nothing`(source: String) {
+        #expect(Self.read(source)?.edges.count == 1)
+    }
+
+    /// Only OUTSIDE a quoted label, which exists precisely so a label can carry what would
+    /// otherwise read as syntax.
     @Test
-    func `a comment and a trailing semicolon say nothing about the diagram`() {
-        #expect(Self.read("graph TD\n%% a note to nobody\nA --> B;")?.edges.count == 1)
+    func `a comment mark inside a quoted label is part of the label`() {
+        #expect(Self.read("graph TD\nA[\"100%% done\"] --> B")?.nodes.first?.label == "100%% done")
+    }
+
+    /// `subgraph` is a keyword, not a prefix. A node whose name merely starts with those letters
+    /// would otherwise open a block nothing ever closes, and refuse the whole diagram.
+    @Test
+    func `a node whose name starts with the keyword is still a node`() {
+        #expect(Self.read("graph TD\nsubgraphFoo --> B")?.names == ["subgraphFoo", "B"])
     }
 
     @Test

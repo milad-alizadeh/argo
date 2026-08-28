@@ -46,14 +46,25 @@ extension MermaidFlowchart {
     }
 
     /// A line with its comment and its optional trailing `;` taken off. `%%` is mermaid's own
-    /// comment and says nothing about the diagram.
+    /// comment and says nothing about the diagram — but only OUTSIDE a quoted label, which exists
+    /// precisely so a label can carry what would otherwise read as syntax.
     private static func stripped(_ line: String) -> String {
-        var line = line
-        if let comment = line.range(of: "%%") {
-            line = String(line[line.startIndex ..< comment.lowerBound])
+        var kept = ""
+        var isQuoted = false
+        var previous: Character?
+        for character in line {
+            if character == "\"" {
+                isQuoted.toggle()
+            }
+            if !isQuoted, character == "%", previous == "%" {
+                kept.removeLast()
+                break
+            }
+            kept.append(character)
+            previous = character
         }
-        line = line.trimmingCharacters(in: .whitespaces)
-        return (line.hasSuffix(";") ? String(line.dropLast()) : line)
+        let trimmed = kept.trimmingCharacters(in: .whitespaces)
+        return (trimmed.hasSuffix(";") ? String(trimmed.dropLast()) : trimmed)
             .trimmingCharacters(in: .whitespaces)
     }
 
@@ -79,14 +90,21 @@ extension MermaidFlowchart {
     /// where the id is mermaid's own handle and the bracket carries the words. Anything else after
     /// the keyword IS the title, spaces and all, which is what mermaid does with it.
     private static func subgraphTitle(of line: String) -> String? {
-        guard line.lowercased().hasPrefix("subgraph") else { return nil }
-        let rest = line.dropFirst("subgraph".count).trimmingCharacters(in: .whitespaces)
-        var scan = MermaidScan(rest)
+        let keyword = "subgraph"
+        guard line.lowercased().hasPrefix(keyword) else { return nil }
+        // The keyword and not merely its letters: `subgraphFoo --> B` names a node, and reading it
+        // as a block would open one nothing ever closes and refuse the whole diagram.
+        let rest = line.dropFirst(keyword.count)
+        guard rest.first.map({ !MermaidFlowchart.Node.isNameCharacter($0) }) ?? true else {
+            return nil
+        }
+        let title = rest.trimmingCharacters(in: .whitespaces)
+        var scan = MermaidScan(title)
         _ = scan.takeRun(where: Node.isNameCharacter)
         scan.skipSpaces()
         guard Node.opensLabel(scan), let spelled = Node.readLabel(&scan),
               scan.rest.trimmingCharacters(in: .whitespaces).isEmpty
-        else { return rest }
+        else { return title }
         return spelled.label
     }
 }

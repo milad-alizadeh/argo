@@ -18,33 +18,12 @@ struct MermaidFigure: Equatable, Sendable {
     /// where it stands, how it moves and how big it is are the same answer for all of them, and
     /// only the path differs.
     enum Form: Equatable, Sendable {
-        case shape(Outline, CGRect)
+        case shape(MermaidOutline, CGRect)
         /// A polyline, in order. Two points is a straight connector.
         case path([CGPoint])
         /// A connector's head: a triangle pointing at `tip`, standing back along the line from
         /// `from`.
         case arrowhead(tip: CGPoint, from: CGPoint)
-    }
-
-    /// The closed outlines there are — mermaid's node shapes, and the enclosure a `subgraph` draws.
-    enum Outline: Equatable, Sendable, CaseIterable {
-        case rect
-        case rounded
-        case diamond
-        /// A circle when the box is square, which is the only box a layout gives it.
-        case ellipse
-        /// Both ends fully rounded: mermaid's stadium.
-        case capsule
-        /// A rect with a bar down each end.
-        case subroutine
-        /// Six sides, the two ends cut back to a point.
-        case hexagon
-        /// Five sides, one end cut to a point: mermaid's asymmetric flag.
-        case flag
-        /// A drum standing on its end — a rect with an elliptical lid.
-        case cylinder
-        /// The frame a `subgraph` is drawn as, at its own softer corner.
-        case enclosure
     }
 
     enum Line: Equatable, Sendable {

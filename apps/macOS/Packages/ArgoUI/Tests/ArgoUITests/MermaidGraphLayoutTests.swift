@@ -6,9 +6,8 @@ import Testing
 /// axis the ranks grow along, what a `subgraph` encloses, and what happens when the graph loops.
 ///
 /// The crossing count has its own claim and its own fixtures. It is the number the ordering pass
-/// exists to lower, so it is the one thing that can regress silently — a diagram with more
-/// crossings
-/// still draws, and still draws every edge.
+/// exists to lower, so it is the one thing here that can regress in silence: a diagram that crosses
+/// more still draws, and still draws every edge.
 @MainActor
 @Suite("Mermaid graph layout")
 struct MermaidGraphLayoutTests {
@@ -56,22 +55,63 @@ struct MermaidGraphLayoutTests {
         #expect(plan.captions.last?.label.text == "Reading")
     }
 
-    /// A cycle is a source somebody really writes. It lays out at the ranks its forward edges give
-    /// it, keeps every edge it was written with, and does not hang doing it.
+    /// Cohesion survives the ordering sweeps and not only the pass that sets them up, so a group's
+    /// members stand together on their rank and the frame around them clears the stranger beside
+    /// them.
+    ///
+    /// That is narrower than the guarantee an enclosure would want. A group spanning ranks a
+    /// stranger ALSO stands in can still be framed around it — see `MermaidPlacement` for why a
+    /// lane per group is not the answer, and #861 for the compound layout that is.
     @Test
-    func `a cycle lays out and loses no edge`() {
-        let plan = MermaidLayoutTests.plan("graph TD\nA --> B\nB --> C\nC --> A")
+    func `a group's members stand together on the rank they share`() {
+        let plan = MermaidLayoutTests.plan("""
+        graph TD
+        Top --> Beside
+        Top --> One
+        Top --> Two
+        subgraph Held
+        One --> Down
+        Two --> Down
+        end
+        """)
         let boxes = MermaidLayoutTests.boxes(of: plan)
+
+        guard let frame = Self.enclosure(of: plan), boxes.count == 5 else {
+            return #expect(Bool(false), "the frame and every node were placed")
+        }
+        // `Beside` is the one node of its rank the group does not own.
+        #expect(!frame.intersects(boxes[1]))
+        #expect(frame.contains(boxes[2]))
+        #expect(frame.contains(boxes[3]))
+    }
+
+    /// A cycle is a source somebody really writes. It has to lay out at the ranks its forward edges
+    /// give it rather than hang, which is what an unbroken ranking pass would do.
+    @Test
+    func `a cycle lays out at the ranks its forward edges give it`() {
+        let boxes = MermaidLayoutTests.boxes(of: Self.loop)
 
         #expect(boxes.count == 3)
         #expect(boxes.map(\.minY) == boxes.map(\.minY).sorted())
-        #expect(plan.figures.count {
-            if case .arrowhead = $0.form {
-                true
-            } else {
-                false
-            }
-        } == 3)
+    }
+
+    /// Breaking the cycle is a RANKING device. The edge that closes it is still an edge, and it is
+    /// still drawn.
+    @Test
+    func `a cycle keeps every edge it was written with`() {
+        #expect(Self.loop.figures.count(where: Self.isHead) == 3)
+    }
+
+    private static var loop: MermaidPlan {
+        MermaidLayoutTests.plan("graph TD\nA --> B\nB --> C\nC --> A")
+    }
+
+    private static func isHead(_ figure: MermaidFigure) -> Bool {
+        if case .arrowhead = figure.form {
+            true
+        } else {
+            false
+        }
     }
 
     /// The closing edge of a cycle runs in a lane OUTSIDE the ranks, so it never shares a line with
