@@ -34,8 +34,8 @@ while the deck beside them held four lines of prose in a pane that could take si
 shell's split view is unconditional, and the room strip moves into its head (#805) — but it
 holds **views**, whose names are short because a view name is *written* rather than inherited
 from a tracker. The backlog becomes the deck's leading pane at 520, where a title reads whole at
-depth three, and the ticket opens beside it. **520 is where it OPENS, not where it stays** — see
-**the seam between the panes** below (#844).
+depth three, and the ticket opens beside it. **520 is where it RESTS, not a width it is held at**
+— see **the seam between the panes** below (#844).
 
 The four rejected rooms, and what each gave up:
 
@@ -118,14 +118,13 @@ that deep is read on the Route (#334), not here.
 
 **Both panes are the reader's to size (#844).** #816 fixed the backlog at 520 and joined the two
 with a hairline, which left the ticket detail taking every point the window gained or lost; #836
-let the list yield below 520 but still gave nobody a handle.
-They are joined by a `DeckSeam` now — the same seam the Sessions deck already uses — and the width
-is the WINDOW's (`CockpitNavigationModel.backlogWidth`), because the panes are rebuilt on every
-ticket click and a width owned inside that subtree loses the drag each time.
+let the list yield below 520 but still gave nobody a handle. They are joined by a `DeckSeam` now —
+the same seam the Sessions deck already uses — and the width is the WINDOW's
+(`CockpitNavigationModel.backlogWidth`), because the panes are rebuilt on every ticket click and a
+width owned inside that subtree loses the drag each time.
 
 | | |
 |---|---|
-| Opens at | `ArgoBacklogList.width` **520** — unchanged, and still the measure the twelve real titles were chosen against |
 | Rests at | `ArgoBacklogList.width` **520** — unchanged, and still the measure the twelve real titles were chosen against |
 | Floor | **342** — `ArgoLayout.backlogWidths.lowerBound`, which is #836's derived `minimumWidth` |
 | Ceiling | **760**, pulled in so the ticket detail always keeps `proseColumnMinimumWidth` **320** |
@@ -208,8 +207,9 @@ window's trailing edge, searching the list from there.
 **When the window cannot afford three columns, the LIST is what yields.** 520 is where the list
 rests; since #844 it is neither a ceiling nor a floor, because the seam between the panes is the
 reader's to move (see **the seam between the panes**). Below 520 the pane narrows and titles
-truncate at the tail, which they already do. The ticket pane keeps `ArgoLayout.feedMinimumWidth` 320 and its prose re-wraps to
-whatever it is left. A clipped title is a title you can still read the start of; a ticket pane
+truncate at the tail, which they already do. The ticket pane keeps `ArgoLayout.feedMinimumWidth`
+320 and its prose re-wraps to whatever it is left. A clipped title is a title you can still read
+the start of; a ticket pane
 squeezed under its own controls is a control you cannot reach at all. Every control in the room is
 present and whole at `windowMinimumWidth` 960. The width that yield stops at is the seam's floor
 now — one number, named once in `ArgoLayout.backlogWidths`.

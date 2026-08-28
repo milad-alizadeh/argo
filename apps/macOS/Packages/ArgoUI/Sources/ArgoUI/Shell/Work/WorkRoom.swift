@@ -70,9 +70,13 @@ struct WorkRoom {
     }
 
     /// The backlog, the seam the reader moves, and the ticket. Each pane carries its own band at
-    /// its head (#836); the seam between them is the reader's (#844). The width is seated on the
-    /// way in as well as on the way out — a window narrowed under a width already dragged has to
-    /// bring the pane back inside the limits.
+    /// its head (#836); the seam between them is the reader's (#844).
+    ///
+    /// The stored width is the reader's INTENT and is never written back — it is seated for the
+    /// draw and left alone. Seating it in place looks like tidiness and is data loss: a window
+    /// narrow for one layout pass clamps the number, and `seated` cannot tell a width that was
+    /// clamped from one the reader chose, so widening the window again never brings it back. A
+    /// pane dragged to 520 came back at its floor on every launch that sized the window twice.
     private func panes(in deck: CGFloat) -> some View {
         let limits = ArgoLayout.backlogLimits(in: deck)
 
@@ -93,20 +97,6 @@ struct WorkRoom {
                 ticket: room.ticket,
                 band: TicketBand(reading: chrome, mode: held.mode),
             ) { ticket = $0 }
-        }
-        // Seated on the way OUT as well, so a window narrowed under a width already dragged brings
-        // the pane back inside its limits rather than holding a number nothing is drawn at.
-        //
-        // ONLY where the stored width is over the ceiling, and never on a deck of nothing. A
-        // `GeometryReader` reports zero on its first pass, whose limits are floor-to-floor — write
-        // that back and the pane is pinned at its floor for the life of the window, because
-        // `seated` cannot tell a width that was clamped from one the reader chose.
-        .onChange(of: deck, initial: true) { _, width in
-            guard width > 0 else { return }
-            let ceiling = ArgoLayout.backlogLimits(in: width).upperBound
-            if backlogWidth > ceiling {
-                backlogWidth = ceiling
-            }
         }
     }
 }
