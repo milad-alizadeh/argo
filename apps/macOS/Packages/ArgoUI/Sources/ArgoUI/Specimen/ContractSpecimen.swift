@@ -85,12 +85,37 @@ struct ContractSpecimen: View {
 
     private var brand: some View {
         section("Ion Blue — brand, selection, focus, and nothing else") {
-            HStack(spacing: ArgoSpacing.comfortable) {
-                Button("Primary") {}.buttonStyle(.borderedProminent)
-                Button("Secondary") {}.buttonStyle(.bordered)
-                Toggle("Auto-follow", isOn: .constant(true)).toggleStyle(.switch)
+            VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
+                HStack(spacing: ArgoSpacing.comfortable) {
+                    Button("Primary") {}.buttonStyle(.borderedProminent)
+                    Button("Secondary") {}.buttonStyle(.bordered)
+                    Toggle("Auto-follow", isOn: .constant(true)).toggleStyle(.switch)
+                }
+                .argoText(ArgoTypography.control)
+                selectionGround
             }
-            .argoText(ArgoTypography.control)
+        }
+    }
+
+    /// The hue's OTHER weight (#875). Derived rather than stored, so the `Mirror` gate over each
+    /// group's `all` array cannot see it — which is exactly why it is drawn here by hand: a role
+    /// the specimen skips is a colour that ships without ever being looked at.
+    ///
+    /// Both rungs side by side, because that is the only way two weights of one hue can be judged,
+    /// and the row's own quietest voice on it, because that is what set the weight.
+    private var selectionGround: some View {
+        HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.loose) {
+            label("selectionGround")
+            HStack(spacing: ArgoSpacing.snug) {
+                Text("A Session, selected")
+                    .foregroundStyle(argo.color.text.primary)
+                Text("4m ago")
+                    .foregroundStyle(argo.color.text.tertiary)
+            }
+            .argoText(ArgoTypography.body)
+            .padding(.horizontal, ArgoSpacing.base)
+            .padding(.vertical, ArgoSpacing.snug)
+            .background(argo.color.interaction.selectionGround)
         }
     }
 

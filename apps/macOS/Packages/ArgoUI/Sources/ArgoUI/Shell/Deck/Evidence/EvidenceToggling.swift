@@ -16,8 +16,11 @@ struct EvidenceToggling {
     /// Which row's evidence is open, if any.
     let open: FeedRow.ID?
 
+    /// Resolved against the rows, not read off the id — the SAME question `DeckZoning.isPanelOpen`
+    /// asks, and it has to be the same answer. An id no row answers to draws no panel, so a
+    /// control reading it as open would report a column that is not there.
     var isOpen: Bool {
-        open != nil
+        evidence != nil
     }
 
     /// What a press writes: `nil` closes, an id opens.
@@ -36,8 +39,14 @@ struct EvidenceToggling {
         return isOpen ? "Hide evidence" : "Show the newest evidence"
     }
 
-    /// Resolved against the CURRENT rows rather than remembered, for the reason `DeckZoning` does
-    /// the same: a live transcript grows under an open panel.
+    /// What the open id actually resolves to in the reading, or nothing. Both this and `latest`
+    /// are read off the CURRENT rows rather than remembered, for the reason `DeckZoning` does the
+    /// same: a live transcript grows under an open panel, and a scope switch replaces every row.
+    private var evidence: FeedEvidence? {
+        guard let open else { return nil }
+        return feed.first(where: { $0.id == open })?.content.opened
+    }
+
     private var latest: FeedRow.ID? {
         feed.last(where: { $0.content.opened != nil })?.id
     }

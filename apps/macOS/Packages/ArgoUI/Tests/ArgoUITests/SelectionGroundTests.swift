@@ -43,13 +43,32 @@ struct SelectionGroundTests {
         }
     }
 
-    /// "Argo's own Ion Blue, not the system accent" is only worth saying if the value holds on the
-    /// ground it is spent on — the accent is drawn AS AN INK at full strength on the deck.
+    /// "Argo's own Ion Blue, not the system accent" is only worth saying if the value holds where
+    /// it is spent, and it is spent at both weights: as an INK at full strength on the deck, and
+    /// as the GROUND under a row. Both are asserted, because the amended rule names both.
     @Test(arguments: palettes)
-    func `the brand hue holds against the graphite ground at AA`(
+    func `the brand hue holds against the graphite ground at AA, at either weight`(
         _ appearance: (name: String, palette: ArgoPalette),
     ) {
         let palette = appearance.palette
+        let ground = palette.interaction.selectionGround.composited(over: palette.surface.base)
         #expect(palette.interaction.accent.contrastRatio(on: palette.surface.base) >= 4.5)
+        // The row's own two loudest voices, absolutely rather than only against the old wash —
+        // `text.tertiary` is exempt for the reason it is exempt on `surface.selected`, which it
+        // already fell under: the contract measures every ink against `base`.
+        #expect(palette.text.primary.contrastRatio(on: ground) >= 4.5)
+        #expect(palette.text.secondary.contrastRatio(on: ground) >= 4.5)
+    }
+
+    /// The role the accent ground REPLACED on the roster is still neutral, and still has to be:
+    /// it is what a pressed, open or current control carries, and D30's argument against a brand
+    /// hue there never moved. The claim survived #875; only its subject changed.
+    @Test(arguments: palettes)
+    func `the pressed-and-current wash stays neutral`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let palette = appearance.palette
+        #expect(palette.surface.selected.composited(over: palette.surface.base)
+            .chromaticSpread <= 0.05)
     }
 }

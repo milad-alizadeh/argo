@@ -209,10 +209,16 @@ placements, and only these:
 | The rooms picker's selected segment | the `AccentColor` **asset**, which `NSSegmentedControl` fills with | full |
 | Focus rings and stock accented controls | the same asset | full |
 | The selection indicator on a tab | `interaction.selectionIndicator` | full |
+| A link, and the ink an interactive word takes | `interaction.accent` | full |
 
 One hue, two weights: full strength where a control is the loud rung, a low-alpha ground where a
 row is merely selected. The weight is not a taste — at any more alpha the roster's quietest voice
-falls below the legibility it had on the neutral wash, which `SelectionGroundTests` asserts.
+falls below the legibility it had on the neutral wash, which `SelectionGroundTests` asserts, along
+with an absolute floor for the two voices a row is actually read in.
+
+`selectionGround` is DERIVED — a computed role, not a stored one — so the `Mirror` gate below
+cannot see it and `ContractSpecimen` draws it by hand, beside the full-strength rung so the two
+weights can be judged together. Any derived role owes the specimen the same.
 
 **The asset is app-wide and is the only route to the loud half.** It reads no palette, so
 `AccentAssetTests` is what keeps the shipped file and `interaction.accent` one value — they had

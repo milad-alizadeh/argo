@@ -30,3 +30,24 @@ struct ProjectManageMenu: View {
         .accessibilityLabel("Manage \(row.name)")
     }
 }
+
+#Preview("Manage a Project") {
+    Menu("Manage") {
+        ProjectManageMenu(row: ProjectMenuProjection.rows(from: .preview)[0], actions: .inert)
+    }
+    .padding(ArgoSpacing.region)
+    .argoAppearance()
+}
+
+// Reveal is disabled rather than absent on a folder that is not there — the verb going quiet
+// would read as the click having missed.
+#Preview("Manage a Project — folder not found") {
+    Menu("Manage") {
+        ProjectManageMenu(
+            row: ProjectMenuProjection.rows(from: .unreachablePreview)[0],
+            actions: .inert,
+        )
+    }
+    .padding(ArgoSpacing.region)
+    .argoAppearance()
+}

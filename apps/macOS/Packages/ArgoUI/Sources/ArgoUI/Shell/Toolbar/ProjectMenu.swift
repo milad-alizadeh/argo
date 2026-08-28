@@ -64,3 +64,31 @@ struct ProjectMenu: View {
         )
     }
 }
+
+// The menu's own items, drawn inside a `Menu` because that is the only place they exist — a
+// `ForEach` of `Button`s outside one renders as a column of buttons and proves nothing about what
+// AppKit will build. Clicking the label in a preview opens the real thing.
+
+#Preview("Project menu") {
+    Menu("Projects") {
+        ProjectMenu(rows: ProjectMenuProjection.rows(from: .preview), actions: .inert)
+    }
+    .padding(ArgoSpacing.region)
+    .argoAppearance()
+}
+
+#Preview("Project menu — a Project whose folder is not there") {
+    Menu("Projects") {
+        ProjectMenu(rows: ProjectMenuProjection.rows(from: .unreachablePreview), actions: .inert)
+    }
+    .padding(ArgoSpacing.region)
+    .argoAppearance()
+}
+
+#Preview("Project menu — nothing registered") {
+    Menu("Projects") {
+        ProjectMenu(rows: ProjectMenuProjection.rows(from: .unregisteredPreview), actions: .inert)
+    }
+    .padding(ArgoSpacing.region)
+    .argoAppearance()
+}

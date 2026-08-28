@@ -656,7 +656,11 @@ its approved study are authoritative for the replacement look and feel.
     app-wide asset alone, with no hand-rolled control — and one hue now reads at two weights, full
     on the segment and a wash on the row. `AccentAssetTests` fails the build if asset and palette
     ever part again. Every stock accented control and focus ring in the app moved with it, which is
-    the intent and not a side effect.
+    the intent and not a side effect — and which was **looked at**, not assumed: the Connect
+    panel's `Create project` and the composer's Send are the two prominent controls that took it,
+    both rendered and judged (`connectChoosing`, `composerTyping`), along with `projectSettings`,
+    `workChrome` and `selectedRow`. Both now carry the identity where they were graphite, which is
+    the point of the change rather than a cost of it.
   - **Still not reopened:** the leading Ion Blue rail. A selected row is carried by its ground
     alone. The clause below stands exactly as written.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.

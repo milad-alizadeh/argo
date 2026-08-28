@@ -23,13 +23,21 @@ struct ProjectVessel: View {
         } label: {
             // The menu rows' role, not a control role: one size for the Project name here and in
             // the menu, and a rung above the branch beside it.
-            Label(reading.name, systemImage: reading.mark)
-                .labelStyle(.argo(ArgoTypography.rowTitle))
+            Label {
+                // A folder can be named anything. Truncated, not clipped — `.fixedSize()` would
+                // hand the bar a control as wide as the name and the frame below would then cut a
+                // letter in half.
+                Text(reading.name)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            } icon: {
+                ArgoGlyph(reading.mark, .control)
+            }
+            .labelStyle(.argo(ArgoTypography.rowTitle))
         }
         .menuStyle(.borderlessButton)
         // A `Menu` paints its label from the TINT; a `foregroundStyle` around it loses.
         .tint(argo.color.text.primary)
-        .fixedSize()
         .frame(maxWidth: ArgoToolbarVessel.projectVesselMaximumWidth, alignment: .leading)
         .help(reading.help)
         .accessibilityLabel(reading.announcement)

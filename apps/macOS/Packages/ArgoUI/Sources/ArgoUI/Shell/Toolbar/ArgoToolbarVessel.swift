@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// What the toolbar's containers and the drawers they open are measured at. Every one of these is
+/// What the toolbar's containers are measured at. Every one of these is
 /// a content MEASURE — a slot sized to the sentence it holds — so each carries its reason here
 /// rather than naming a step of `ArgoSpacing`.
 public enum ArgoToolbarVessel {

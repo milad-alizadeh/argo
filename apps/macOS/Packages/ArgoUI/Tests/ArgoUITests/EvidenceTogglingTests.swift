@@ -42,13 +42,26 @@ struct EvidenceTogglingTests {
         #expect(toggling.next == nil)
     }
 
-    /// A control that can only close is still a control that does something: the panel outlives a
-    /// reading whose rows have gone, and the reader must still be able to shut it.
+    /// The control and the deck have to agree, and `DeckZoning.isPanelOpen` resolves the id
+    /// against the rows rather than trusting it. An id no row answers to draws no panel — read as
+    /// open here, the toggle would report a column that is not on screen and its one press would
+    /// close nothing.
     @Test
-    func `an open panel over a reading with nothing left can still be closed`() {
+    func `an id no row answers to reads as shut, not as an open panel`() {
         let toggling = EvidenceToggling(feed: saidNothing, open: 0)
 
-        #expect(toggling.canToggle)
+        #expect(!toggling.isOpen)
+        #expect(!toggling.canToggle)
+    }
+
+    /// The same id against a reading that DOES carry it: open, and one press closes it. The pair
+    /// above and below is the whole claim — the rows decide, never the id on its own.
+    @Test
+    func `the same id against a reading that carries it is open`() throws {
+        let open = try #require(openableRows(in: twoCalls).first)
+        let toggling = EvidenceToggling(feed: twoCalls, open: open)
+
+        #expect(toggling.isOpen)
         #expect(toggling.next == nil)
     }
 
