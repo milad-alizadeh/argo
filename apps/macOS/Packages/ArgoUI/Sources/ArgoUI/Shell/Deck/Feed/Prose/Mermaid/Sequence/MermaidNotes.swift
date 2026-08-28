@@ -12,14 +12,18 @@ enum MermaidNotes {
         var figures: [MermaidFigure] = []
         var captions: [MermaidCaption] = []
         for (at, event) in stage.diagram.events.enumerated() {
-            guard case let .note(note) = event, let rect = rect(of: note, at: at, in: stage)
-            else { continue }
-            figures.append(MermaidFigure(form: .shape(.rect, rect)))
+            guard case let .note(note) = event else { continue }
+            let rect = rect(of: note, at: at, in: stage)
+            if let rect {
+                figures.append(MermaidFigure(form: .shape(.rect, rect)))
+            }
+            // A note with no room still takes its caption. Dropping one would slide every later
+            // label one place along, and `MermaidLayout` places its subviews by that position.
             captions.append(MermaidCaption(
                 label: MermaidLabel(
                     text: note.text, face: MermaidMeasure.edgeFace, role: .note,
                 ),
-                rect: rect.insetBy(dx: MermaidMeasure.nodeInsetX, dy: 0),
+                rect: rect?.insetBy(dx: MermaidMeasure.nodeInsetX, dy: 0) ?? .zero,
             ))
         }
         return (figures, captions)

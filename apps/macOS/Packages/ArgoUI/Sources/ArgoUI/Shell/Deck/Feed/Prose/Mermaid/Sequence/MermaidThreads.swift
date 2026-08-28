@@ -16,11 +16,17 @@ enum MermaidThreads {
         var figures: [MermaidFigure] = []
         var captions: [MermaidCaption] = []
         for (at, event) in stage.diagram.events.enumerated() {
-            guard case let .message(message) = event,
-                  let drawn = drawn(message, at: at, in: Setting(stage, activations))
-            else { continue }
-            figures += drawn.figures
-            captions.append(drawn.caption)
+            guard case let .message(message) = event else { continue }
+            let drawn = drawn(message, at: at, in: Setting(stage, activations))
+            figures += drawn?.figures ?? []
+            // A message with nowhere to run still takes its caption. Dropping one would slide
+            // every later label one place along, and the view places its subviews by position.
+            captions.append(drawn?.caption ?? MermaidCaption(
+                label: MermaidLabel(
+                    text: message.text, face: MermaidMeasure.edgeFace, role: .note,
+                ),
+                rect: .zero,
+            ))
         }
         return (figures, captions)
     }
