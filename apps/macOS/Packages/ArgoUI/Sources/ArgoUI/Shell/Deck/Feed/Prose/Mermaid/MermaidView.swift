@@ -17,9 +17,15 @@ struct MermaidView: View {
 
     var body: some View {
         let ink = MermaidInk(palette: argo.color)
+        // The CACHED plan's own labels, never `diagram.labels` again: the two are the same list —
+        // `MermaidLayout` places one subview per caption and the suites assert the pairing — but
+        // one of them is memoised on the source and the other is recomputed on every body. A Gantt
+        // chart's labels walk its whole tick choice to answer, so reading them live here would cost
+        // that walk per visible row, per frame, all the way through a seam drag.
+        let labels = ProseReading.plan(of: diagram).captions.map(\.label)
         ScrollView(.horizontal) {
             MermaidLayout(diagram: diagram) {
-                ForEach(Array(diagram.labels.enumerated()), id: \.offset) { _, label in
+                ForEach(Array(labels.enumerated()), id: \.offset) { _, label in
                     Text(label.text)
                         .argoText(label.face.rung, label.face.isBold ? .semibold : nil)
                         .foregroundStyle(ink.words(of: label.role))

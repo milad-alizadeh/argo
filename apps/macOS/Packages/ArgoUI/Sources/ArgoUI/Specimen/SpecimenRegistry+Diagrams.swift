@@ -63,5 +63,12 @@ extension SpecimenRegistry {
             MarkdownSpecimen(text: MermaidSpecimen.classMembers)
         },
         SpecimenEntry("feedMermaidEntity") { MarkdownSpecimen(text: MermaidSpecimen.entities) },
+        // The three ranges a Gantt's tick step has to be chosen across (#903): a quarter in
+        // sections, one day hour by hour, and a decade where a tick a day would be a smear.
+        SpecimenEntry("feedMermaidGantt") { MarkdownSpecimen(text: MermaidSpecimen.gantt) },
+        SpecimenEntry("feedMermaidGanttDay") { MarkdownSpecimen(text: MermaidSpecimen.ganttDay) },
+        SpecimenEntry("feedMermaidGanttYears") {
+            MarkdownSpecimen(text: MermaidSpecimen.ganttYears)
+        },
     ]
 }

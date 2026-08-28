@@ -32,6 +32,9 @@ struct MermaidSpecimenTests {
         MermaidSpecimen.classes,
         MermaidSpecimen.classMembers,
         MermaidSpecimen.entities,
+        MermaidSpecimen.gantt,
+        MermaidSpecimen.ganttDay,
+        MermaidSpecimen.ganttYears,
     ])
     func `a specimen's fence reads as a diagram and lays out`(specimen: String) {
         let drawn = MarkdownBlock.blocks(in: specimen).compactMap { block -> MermaidDiagram? in

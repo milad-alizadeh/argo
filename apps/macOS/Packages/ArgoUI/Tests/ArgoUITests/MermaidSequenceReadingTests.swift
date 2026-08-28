@@ -164,7 +164,7 @@ struct MermaidSequenceReadingTests {
     /// The pairing the view rests on: one label per caption, participants first, then messages,
     /// then notes, then the frames' own words.
     @Test
-    func `the labels are the participants, the messages, the notes and the frames`() {
+    @MainActor func `the labels are the participants, the messages, the notes and the frames`() {
         let diagram = Self.read("""
         loop twice
         A->>B: go
