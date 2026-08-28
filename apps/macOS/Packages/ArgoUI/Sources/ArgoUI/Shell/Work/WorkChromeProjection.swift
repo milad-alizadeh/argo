@@ -1,5 +1,5 @@
-/// What the Work room's CHROME draws, off the same room value both panes take — the list's own band
-/// and the window row above the ticket, which since #836 are two surfaces reading one value.
+/// What the Work room's CHROME draws, off the same room value both panes take — the window's row
+/// of controls and the heading over the list, which are two surfaces reading one value.
 ///
 /// A VALUE and not a read of the panes: the count under the heading has to be the count of the rows
 /// the list is drawing, and two surfaces counting the same set separately is how a heading comes to
@@ -12,8 +12,7 @@ enum WorkChromeProjection {
         let subtitle: String
         /// Whether the list-scoped controls stand: filter, the ordering menu, and search. They go
         /// together — each of them narrows the same list, and with no list there is nothing to
-        /// narrow. Two surfaces read this one answer, because the band holds the first two and the
-        /// row above the ticket holds the third.
+        /// narrow.
         let narrows: Bool
         /// Whether the chrome draws at all, which is also whether New ticket does: the two
         /// coincide, because New ticket survives an empty backlog and the only thing that empties

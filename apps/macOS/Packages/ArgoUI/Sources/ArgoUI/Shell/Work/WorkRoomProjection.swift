@@ -82,7 +82,7 @@ enum WorkRoomProjection {
         /// The provider's own labels, verbatim and in the order it served them. The row draws the
         /// first `ArgoBacklogList.labelLimit` of them — what distinguishes one ticket from the next
         /// belongs on the row, not only in the pane beside it.
-        let labels: [String]
+        let labels: [WorkItemLabel]
         /// The rows nested under this one, from the child edge (`WorkRoomProjection+Tree.swift`).
         /// Empty on a leaf, and empty on a parent whose every child the view filtered out.
         let children: [Row]

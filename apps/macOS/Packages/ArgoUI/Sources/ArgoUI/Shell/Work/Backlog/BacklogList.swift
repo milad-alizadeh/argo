@@ -14,8 +14,8 @@ struct BacklogList: View {
     /// Which parents are folded. Held above the pane for the same reason the ticket is: a fold the
     /// reader made outlives the pane, and it is what a specimen seeds to shoot `collapsed.png`.
     @Binding var shut: Set<Int>
-    /// What the band over the list says. The band is HERE and not in the window's toolbar because
-    /// its controls are the list's — see `BacklogHeader` (#836).
+    /// What the heading over the list says. Words only — the controls that narrow the list are in
+    /// the window's row with the rest of the room's, see `WorkToolbar`.
     var header: WorkChromeProjection.Reading = .none
 
     var body: some View {

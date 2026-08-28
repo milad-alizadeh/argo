@@ -105,10 +105,29 @@ extension WorkFixture {
     /// beside each edge, so an item cannot be closed in one list and open in the other.
     private static let closedNumbers: Set<Int> = [690, 745, 264, 256, 375, 376]
 
+    /// A fixture label in a colour a tracker plausibly serves. GitHub's own defaults where the name
+    /// is one of GitHub's; the rest are picked to spread across the wheel, because what these
+    /// renders have to show is chips a reader can tell apart. `work-room` is deliberately left
+    /// colourless — the neutral chip is a state as real as the coloured one, and no render would
+    /// show it if every fixture label had a hue.
+    private static func labelled(_ name: String) -> WorkItemLabel {
+        WorkItemLabel(name: name, colour: labelColours[name])
+    }
+
+    private static let labelColours: [String: String] = [
+        "bug": "d73a4a",
+        "enhancement": "a2eeef",
+        "design": "d876e3",
+        "prd": "0e8a16",
+        "ui": "1d76db",
+        "wayfinder": "5319e7",
+        "blocked": "b60205",
+    ]
+
     private static func open(_ number: Int, _ title: String, _ shape: Shape = Shape()) -> WorkItem {
         WorkItem(
             number: number, title: title, status: shape.status, closure: .open,
-            labels: shape.labels,
+            labels: shape.labels.map(labelled),
             children: shape.children,
             blockedBy: shape.blockedBy.map {
                 WorkItemBlocker(number: $0, closure: closedNumbers.contains($0) ? .resolved : .open)

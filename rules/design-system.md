@@ -211,6 +211,14 @@ of thing", it does not get a hue:
   Xcode's own dark theme (`SyntaxTheme`), because the reader has the same files open in Xcode all
   day. That theme is sealed behind one constant and never leaks into the shell — a hue that is
   correct inside the panel is not licensed outside it.
+- **A colour the provider itself set is a reading, not a claim of Argo's**, and is the second
+  exemption. A tracker label's hue was chosen by the reader on the tracker, and dropping it makes
+  Argo's list harder to scan than the page it mirrors — the colour IS how they find `bug` in a
+  column of chips. It is drawn through `LabelInk`, which keeps the hue and spends none of the
+  budget's loudness on it: a wash for the ground, a hairline's worth for the edge, and the word
+  lifted only far enough to read. A label the provider gave no colour keeps the neutral chip —
+  absence is a silence, never a hue Argo picked to fill it. Like the syntax theme, this is sealed:
+  it applies to a colour READ from a provider, and licenses nothing Argo chooses for itself.
 
 ## Roles, not values
 

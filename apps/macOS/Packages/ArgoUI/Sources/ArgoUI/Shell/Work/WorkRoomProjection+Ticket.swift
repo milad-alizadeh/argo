@@ -16,7 +16,7 @@ extension WorkRoomProjection {
         let type: String?
         /// The provider's labels, verbatim and complete — the ones `priority` and `type` restate
         /// included.
-        let labels: [String]
+        let labels: [WorkItemLabel]
         /// The Deliveries in flight, one chip each.
         let deliveries: [DeliveryFacts]
         /// `nil` on a ticket the tracker gives no children: the section is then absent.

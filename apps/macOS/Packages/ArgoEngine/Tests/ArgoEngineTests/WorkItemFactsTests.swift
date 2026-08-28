@@ -61,7 +61,19 @@ struct WorkItemFactsTests {
     func `a label read as a priority is still a label`() async throws {
         let item = try await Self.first(IssueJSON(number: 1, labels: ["bug", "priority: high"]))
 
-        #expect(item.labels == ["bug", "priority: high"])
+        #expect(item.labels.map(\.name) == ["bug", "priority: high"])
+    }
+
+    @Test
+    func `a label carries the colour the provider set it in, and nothing where it set none`()
+        async throws {
+        let item = try await Self.first(IssueJSON(
+            number: 1, labels: ["bug", "work-room"], labelColours: ["bug": "d73a4a"],
+        ))
+
+        // Verbatim, six digits and no `#` — the surface reads it, and nothing here invents one for
+        // the label that arrived without.
+        #expect(item.labels.map(\.colour) == ["d73a4a", nil])
     }
 
     @Test

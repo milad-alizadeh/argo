@@ -20,11 +20,19 @@ struct FeedMarkdownFence: View {
                         .argoText(ArgoTypography.sectionLabel)
                         .foregroundStyle(argo.color.text.tertiary)
                 }
-                words(colouring.whole)
-                    .argoMono(.body)
-                    .textSelection(.enabled)
-                    .lineSpacing(ArgoFeedRow.machineLineSpacing)
-                    .fixedSize(horizontal: false, vertical: true)
+                // A fence's lines are the record's, so they break where the writer broke them. Left
+                // to wrap they fold at whatever the pane is left, which turns an aligned block —
+                // a pipe table, a diff, a column of values — into prose that reads as garbage.
+                // `fixedSize` horizontally is what refuses the fold; the scroll view is what makes
+                // the overflow reachable rather than clipped.
+                ScrollView(.horizontal) {
+                    words(colouring.whole)
+                        .argoMono(.body)
+                        .textSelection(.enabled)
+                        .lineSpacing(ArgoFeedRow.machineLineSpacing)
+                        .fixedSize(horizontal: true, vertical: true)
+                }
+                .scrollIndicators(.automatic, axes: .horizontal)
             }
             .padding(ArgoSpacing.base)
             .frame(maxWidth: .infinity, alignment: .leading)

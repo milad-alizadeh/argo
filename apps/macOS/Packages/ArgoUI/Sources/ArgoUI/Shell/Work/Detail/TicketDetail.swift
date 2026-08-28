@@ -4,23 +4,19 @@ import SwiftUI
 /// — at the ideal window this pane is 480, and a second column inside it would leave neither
 /// readable (`cockpit-work-room.md`). That is what the room trades for showing list and ticket
 /// at once, and why the facts are a strip under the title instead.
+///
+/// The pane carries no band of its own: the ticket's verbs are in the window's row with the rest of
+/// the room's controls (`WorkToolbar`), which is a line of height back for the words.
 struct TicketDetail: View {
     let ticket: WorkRoomProjection.Ticket?
-    /// What acts on what is open, at the head of the pane (#836) — New ticket and the ticket's own
-    /// verbs, over the column they address. Inert by default, so a specimen renders the pane with
-    /// nothing behind its controls.
-    var band = TicketBand(reading: .none)
     /// What opening a child does — the pane never reads back what it opened, so this is a closure
     /// and not a binding that could disagree with `ticket`.
     let open: (Int) -> Void
 
     var body: some View {
-        VStack(spacing: ArgoSpacing.flush) {
-            band
-            ScrollView {
-                if let ticket {
-                    column(for: ticket)
-                }
+        ScrollView {
+            if let ticket {
+                column(for: ticket)
             }
         }
         // A FLOOR of its own, so the list beside it yields first (#836): the body wraps to whatever

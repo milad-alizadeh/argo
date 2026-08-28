@@ -27,7 +27,7 @@ struct TicketFactStrip: View {
             if !ticket.labels.isEmpty {
                 pair("Labels") {
                     WrapFlow(gap: ArgoTicketDetail.labelGap) {
-                        ForEach(ticket.labels, id: \.self) { LabelChip(label: $0) }
+                        ForEach(ticket.labels) { LabelChip(label: $0) }
                     }
                 }
             }

@@ -63,9 +63,9 @@ actor WorkflowTracker: WorkItemWriting {
         case let .setPriority(word):
             return WorkItem(copying: item, priority: word)
         case let .addLabel(label):
-            return WorkItem(copying: item, labels: item.labels + [label])
+            return WorkItem(copying: item, labels: item.labels + [WorkItemLabel(name: label)])
         case let .removeLabel(label):
-            return WorkItem(copying: item, labels: item.labels.filter { $0 != label })
+            return WorkItem(copying: item, labels: item.labels.filter { $0.name != label })
         case let .close(reason):
             try transition(item.number, to: .closed)
             return WorkItem(copying: item, status: "closed", closure: reason.closure)

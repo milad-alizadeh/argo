@@ -31,7 +31,14 @@ struct GitHubIssue: Decodable {
     let subIssuesSummary: SubIssuesSummary?
     let issueDependenciesSummary: DependenciesSummary?
 
-    struct Label: Decodable { let name: String }
+    /// GitHub serves `color` as six hex digits without a `#`. Optional because a label written
+    /// through the API can carry none, and because the field is absent from the trimmed label
+    /// objects some events embed.
+    struct Label: Decodable {
+        let name: String
+        let color: String?
+    }
+
     struct User: Decodable { let login: String }
     struct IssueType: Decodable { let name: String }
     struct PullRequestMark: Decodable { let url: String }
@@ -79,7 +86,7 @@ struct GitHubIssue: Decodable {
             status: state,
             closure: closure,
             assignees: assignees.map(\.login),
-            labels: labels.map(\.name),
+            labels: labels.map { WorkItemLabel(name: $0.name, colour: $0.color) },
             priority: priority,
             type: type?.name,
             children: children,

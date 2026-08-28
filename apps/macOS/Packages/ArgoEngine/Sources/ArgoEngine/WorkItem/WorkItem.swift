@@ -16,7 +16,7 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
     public let status: String
     public let closure: WorkItemClosure
     public let assignees: [String]
-    public let labels: [String]
+    public let labels: [WorkItemLabel]
     /// The provider's own priority word, verbatim and in its own case, and `nil` where the adapter
     /// read no priority for this ticket. Absent rather than a middle rung nothing said — Argo
     /// neither ranks these nor recases them (ADR-0014, per-fact `unknown`).
@@ -44,7 +44,7 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
         status: String,
         closure: WorkItemClosure,
         assignees: [String] = [],
-        labels: [String] = [],
+        labels: [WorkItemLabel] = [],
         priority: String? = nil,
         type: String? = nil,
         children: [Int] = [],

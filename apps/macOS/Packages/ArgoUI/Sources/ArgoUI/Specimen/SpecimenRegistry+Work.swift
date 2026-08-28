@@ -47,10 +47,9 @@ extension SpecimenRegistry {
         // The fact strip's floor: a ticket the provider named and said nothing else about. Every
         // absent fact is left out, and Argo's own bucket is the one that survives.
         SpecimenEntry("unreadTicket") { TicketDetailSpecimen(reading: WorkFixture.unread) },
-        // The room's chrome alone, in its three states (#816, remounted #836) — the window's row
-        // over the two bands the panes carry. At rest it is read off `workRoom` above, over the
-        // panes it places its controls against; these two are the vacancies, which differ in
-        // nothing BUT the chrome.
+        // The room's chrome alone, in its three states — the window's one row of controls over the
+        // heading the list keeps. At rest it is read off `workRoom` above; these two are the
+        // vacancies, which differ in nothing BUT the chrome.
         SpecimenEntry("workChrome") { WorkChromeSpecimen(reading: WorkFixture.reading) },
         SpecimenEntry("emptyWorkChrome") {
             WorkChromeSpecimen(reading: WorkFixture.answeredEmpty)

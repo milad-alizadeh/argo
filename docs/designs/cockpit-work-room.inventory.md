@@ -33,13 +33,17 @@ foot.
 | `StatusPair` | atom | `ArgoUI/Shell/Work/Detail/` | `word: String`, `bucket: WorkItemState` (4 states) | — | `StatusPair` |
 | `WorkRoomVacancy` | molecule | `ArgoUI/Shell/Work/` | `vacancy: WorkRoomProjection.Vacancy` (`unbound` \| `nothingOpen(provider:)`), `project: String?`, `connect: () -> Void` | stock `ContentUnavailableView` | `.vacant` |
 
-### #836 — the room's chrome, mounted per column
+### #836 — the room's chrome, mounted per column — **reversed by #855**
+
+The per-column bands are gone; every control is back in the window's one row. See **the
+column-placement question** below for what the bands bought and what they cost.
 
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
-| `BacklogHeader` | molecule | `ArgoUI/Shell/Work/Backlog/` | `reading: WorkChromeProjection.Reading`, `narrowing`, `grouping` | `ToolbarVessel`, `ToolbarIcon`, `BacklogMenu`, `DeckSeparator` | renamed from `BacklogToolbarLabel`, which was a toolbar item claiming 520pt |
+| `BacklogHeader` | molecule | `ArgoUI/Shell/Work/Backlog/` | `reading: WorkChromeProjection.Reading` | — | renamed from `BacklogToolbarLabel`, which was a toolbar item claiming 520pt. **#855**: words only, the controls left it |
+| `BacklogControls` | molecule | `ArgoUI/Shell/Work/Toolbar/` | `narrowing`, `grouping` | `ToolbarVessel`, `ToolbarIcon`, `BacklogMenu`, `DeckSeparator` | **#855**: split out of `BacklogHeader` when the controls returned to the row |
 | `BacklogMenu` | atom | `ArgoUI/Shell/Work/Backlog/` | `grouping: () -> Void` | stock `Menu` | Mail's `⋯` beside its filter |
-| `TicketBand` | molecule | `ArgoUI/Shell/Work/Detail/` | `reading: WorkChromeProjection.Reading`, `intents`, `mode: Binding<SessionMode>` | `NewTicketButton`, `StartControl` | the controls #816 mounted in the window row |
+| ~~`TicketBand`~~ | — | — | — | — | added by #836 to carry New ticket and the ticket's verbs over their column. **Deleted by #855**: both are toolbar items again |
 
 ### #815 — the fact strip and the sections
 
@@ -324,7 +328,7 @@ picker now, not this room's.
 
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
-| `WorkToolbar` | organism | `ArgoUI/Shell/Work/Toolbar/` | `reading: Reading`, `query: Binding<String>` | `BacklogSearchField` | the `.titlebar.three` grid. **#836**: search alone; the rest went to the bands |
+| `WorkToolbar` | organism | `ArgoUI/Shell/Work/Toolbar/` | `reading: Reading`, `intents: WorkToolbarIntents`, `held: WorkRoom.Held` | `BacklogControls`, `NewTicketButton`, `StartControl`, `BacklogSearchField` | the `.titlebar.three` grid. **#836**: search alone, the rest went to the bands. **#855**: every control the room has, on one line |
 | ~~`BacklogToolbarLabel`~~ | molecule | — | — | — | **#836**: renamed `BacklogHeader` and moved into the list pane |
 | `ToolbarVessel` | atom | `ArgoUI/Shell/Work/Toolbar/` | `content: Content` | `argoFloatingGlass(in: .capsule)` | `.icap.glass` |
 | `ToolbarIcon` | atom | `ArgoUI/Shell/Work/Toolbar/` | `symbol: String`, `label: String`, `act: () -> Void` | `ArgoGlyph` | `.ibtn` |
@@ -383,10 +387,17 @@ and whether SwiftUI hands a column's own `.toolbar` to that column's section on 
 unverified, where Mail is AppKit. The bands need no fork and no spike. `.principal` stays closed for
 the reason `ShellToolbar` records.
 
-**What the bands cost.** Two chrome bands the approved renders do not show.
-`ArgoTicketDetail.bandHeight` reads `ArgoBacklogList.bandHeight` rather than repeating it, and
-`SurfaceMeasureTests` asserts the two are one number, so the panes' content cannot start on two
-lines.
+**What the bands cost, and why they were reversed (#855).** Two chrome bands the approved renders
+do not show — 44pt in each pane. The sharper cost was legibility: nothing about a filter mark says
+which column it acts on, so a reader met the same family of marks at three heights and read three
+unrelated rows rather than one row placed by scope. The placement was legible only to somebody who
+already knew the rule.
+
+**So #855 put every control back in the window's one row**, in scope order — the list's two, New
+ticket, the ticket's verbs, search at the trailing edge. That is the arrangement #816 set out to
+reach, arrived at by giving up the column boundary rather than by claiming it: the boundary was
+never the point, one legible row was. `TicketBand` is deleted and `ArgoTicketDetail.bandHeight`
+with it; `BacklogHeader` keeps `ArgoBacklogList.bandHeight` for its two lines of words.
 
 **What gives at a narrow window: the list.** Mounted, the bands needed more width than the room had
 below about 1050 — the sidebar's 280 and the list's fixed 520 left the ticket pane less than

@@ -10,7 +10,7 @@ public extension WorkItem {
         copying item: WorkItem,
         title: String? = nil,
         status: String? = nil,
-        labels: [String]? = nil,
+        labels: [WorkItemLabel]? = nil,
         closure: WorkItemClosure? = nil,
         priority: String?? = nil,
         type: String?? = nil,

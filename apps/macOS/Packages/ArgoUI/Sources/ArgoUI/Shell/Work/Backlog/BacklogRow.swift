@@ -62,12 +62,12 @@ struct BacklogRow: View {
         let reading = BacklogRowLabels(row.labels)
         if !reading.shown.isEmpty, paneWidth >= ArgoBacklogList.labelsAppearAt {
             HStack(spacing: ArgoBacklogList.labelGap) {
-                ForEach(reading.shown, id: \.self) { LabelChip(label: $0) }
+                ForEach(reading.shown) { LabelChip(label: $0) }
                 // Counted rather than listed: the row has no width for the rest, and silence about
                 // them would leave a ticket whose distinguishing label is third looking like one
                 // with two labels.
                 if let marker = reading.marker {
-                    LabelChip(label: marker)
+                    LabelChip(counting: marker)
                 }
             }
             .lineLimit(1)

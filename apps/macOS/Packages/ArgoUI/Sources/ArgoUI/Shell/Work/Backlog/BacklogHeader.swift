@@ -8,41 +8,23 @@ import SwiftUI
 /// survived a filter. Mail's own band says `Inbox — …` over `All Mail · 290 messages, 149 unread`
 /// for this reason.
 ///
-/// In the pane and not the window's row, because its controls are the list's and have to end where
-/// the list ends — `cockpit-work-room.md`, the column question (#836).
+/// **Words only.** The controls that narrow this list are in the window's row with every other
+/// control the room has, because a row of marks met at three different heights reads as three
+/// unrelated rows — see `WorkToolbar`.
 struct BacklogHeader: View {
     @Environment(\.argo) private var argo
 
     let reading: WorkChromeProjection.Reading
-    /// The list's own controls. Absent with no list to narrow — the same absence the search field
-    /// takes in the row above.
-    var narrowing: () -> Void = {}
-    var grouping: () -> Void = {}
 
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
             lines
             Spacer(minLength: ArgoSpacing.base)
-            if reading.narrows {
-                controls
-            }
         }
         .padding(.horizontal, ArgoBacklogList.bandInsetX)
         .frame(minHeight: ArgoBacklogList.bandHeight)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(reading.heading), \(reading.subtitle)")
-    }
-
-    /// Filter, then the menu that holds every other way to order the list — Mail's own pair, in
-    /// Mail's own order. The rule between them is what stops one capsule reading as one control.
-    private var controls: some View {
-        ToolbarVessel {
-            ToolbarIcon(symbol: ArgoSymbol.filterBacklog, label: "Filter", act: narrowing)
-            DeckSeparator()
-                .frame(height: ArgoWorkChrome.splitDividerHeight)
-                .accessibilityHidden(true)
-            BacklogMenu(grouping: grouping)
-        }
     }
 
     private var lines: some View {

@@ -15,7 +15,7 @@ struct TicketProjectionTests {
 
         // `blocked` is one of them, and stays: a list that drops the members Argo restates
         // elsewhere is no longer the provider's list.
-        #expect(ticket?.labels == ["work-room", "ui", "blocked"])
+        #expect(ticket?.labels.map(\.name) == ["work-room", "ui", "blocked"])
     }
 
     @Test
