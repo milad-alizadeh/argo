@@ -16,6 +16,7 @@ public extension WorkItem {
         type: String?? = nil,
         blockedBy: [WorkItemBlocker]?? = nil,
         body: String?? = nil,
+        updatedAt: Date?? = nil,
     ) {
         self.init(
             number: item.number,
@@ -29,6 +30,7 @@ public extension WorkItem {
             children: item.children,
             blockedBy: blockedBy ?? item.blockedBy,
             body: body ?? item.body,
+            updatedAt: updatedAt ?? item.updatedAt,
         )
     }
 }
