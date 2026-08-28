@@ -19,6 +19,10 @@ enum FeedScrollEvent {
     /// The wait for a width burst to go quiet elapsed. `stillLive` is the adapter's reading of a
     /// live drag — the model's resize flag or the table's own live-resize state, whichever is true.
     case settleElapsed(stillLive: Bool, anchor: FeedAnchor?)
+    /// A batch of the chunked full re-measure landed, with where the reading sits now. Its own
+    /// event because rows above the reader change height as they are measured, and the reading has
+    /// to be put back after each batch (#856).
+    case rowsMeasured(anchor: FeedAnchor?)
     /// The way-back control.
     case followRequested
 }

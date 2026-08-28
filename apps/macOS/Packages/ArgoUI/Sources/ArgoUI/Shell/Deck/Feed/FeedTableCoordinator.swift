@@ -44,6 +44,9 @@ import SwiftUI
 
     /// The full re-measure waiting for a width burst to go quiet — see `FeedSettle`.
     var settling: Task<Void, Never>?
+    /// The rows nobody can see, measured a batch at a time behind the visible ones — see
+    /// `remeasureEverything`.
+    var tailing: Task<Void, Never>?
 
     /// Measured row heights, by row index — the cache behind `heightOfRow`.
     ///
@@ -53,6 +56,11 @@ import SwiftUI
     /// constraints). Profiled, not surmised — the stutter was that tower. A delegate height is
     /// one `sizeThatFits` against the ruler below, paid once per row per width.
     private var heights: [Int: CGFloat] = [:]
+
+    /// How many rows have actually been measured, ever — every entry is one full SwiftUI layout
+    /// pass. Not a statistic: it is what #856's claim is about, and the only honest way for a suite
+    /// to ask what a re-measure COST rather than what it left behind.
+    private(set) var measurements = 0
     /// The one view content is measured in — never installed in a window, reused per row, and
     /// building no sizing constraints of its own: `sizeThatFits` is asked directly.
     private let ruler: NSHostingController<AnyView> = {
@@ -65,6 +73,10 @@ import SwiftUI
     /// to the truth keeps the table from speculatively realising twice the rows a wheel tick
     /// will actually show, which is work thrown away at frame rate.
     nonisolated static let estimatedRowHeight: CGFloat = ArgoFeedRow.lineHeight * 3
+
+    /// How many rows one batch of the chunked full re-measure takes on. Each is a full SwiftUI
+    /// layout, so the batch is what a frame can afford rather than what the table would like.
+    nonisolated static let remeasureBatch = 50
 
     /// The tallest a single row may claim to be. Far above any real one, and far below AppKit's
     /// ±2^45 geometry window, which `NSTableView` leaves once summed origins pass it.
@@ -139,6 +151,7 @@ import SwiftUI
             in: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude),
         ).height))
         heights[index] = height
+        measurements += 1
         // The ruler would otherwise keep the row's live view graph — tasks included — alive
         // in a controller no window ever shows.
         ruler.rootView = AnyView(EmptyView())

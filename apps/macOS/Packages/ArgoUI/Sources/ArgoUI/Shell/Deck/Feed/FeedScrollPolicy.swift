@@ -49,6 +49,8 @@ struct FeedScrollPolicy {
             FeedScrollDecision(landing: landing(on: anchor), remeasure: .all)
         case let .settleElapsed(stillLive, anchor):
             settleElapsed(stillLive: stillLive, anchor: anchor)
+        case let .rowsMeasured(anchor):
+            FeedScrollDecision(landing: landing(on: anchor))
         case .followRequested:
             followRequested()
         }

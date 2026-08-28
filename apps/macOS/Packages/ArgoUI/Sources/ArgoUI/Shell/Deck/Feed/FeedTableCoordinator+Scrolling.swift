@@ -144,36 +144,7 @@ extension FeedTableCoordinator {
         }
     }
 
-    private func remeasure(_ scope: FeedRemeasure) {
-        guard let table, let scroller else { return }
-        switch scope {
-        case .none:
-            return
-        case .visible:
-            let rows = visibleRows()
-            dropMeasuredHeights(rows)
-            note(rows, on: table)
-        case .all:
-            dropMeasuredHeights()
-            note(IndexSet(shown.indices), on: table)
-        case .rebuild:
-            // A row measured against an interim launch width is cached too tall, and a reload
-            // re-asking that cache re-seats every row on the stale answer.
-            dropMeasuredHeights()
-            table.reloadData()
-        }
-        scroller.layoutSubtreeIfNeeded()
-    }
-
-    /// Zero duration: this is a correction, not motion.
-    private func note(_ rows: IndexSet, on table: NSTableView) {
-        NSAnimationContext.runAnimationGroup { pass in
-            pass.duration = 0
-            table.noteHeightOfRows(withIndexesChanged: rows)
-        }
-    }
-
-    private func land(_ landing: FeedLanding, over pace: TimeInterval?) {
+    func land(_ landing: FeedLanding, over pace: TimeInterval?) {
         switch landing {
         case .stay:
             return

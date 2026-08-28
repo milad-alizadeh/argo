@@ -141,6 +141,25 @@ struct FeedScrollPolicyTests {
         #expect(decision.settle == .none)
     }
 
+    /// The full re-measure lands in batches now (#856), and the rows ABOVE the reader change
+    /// height as they are measured — which slides the reading out from under them unless every
+    /// batch puts it back.
+    @Test
+    func `a measured batch puts a detached reading back on the row it was on`() {
+        var policy = FeedScrollFixture.laidOut()
+        _ = FeedScrollFixture.scrolledAway(&policy)
+        let decision = policy.resolve(.rowsMeasured(anchor: Self.anchor))
+        #expect(decision.landing == .row(2, into: 12))
+        #expect(decision.remeasure == .none)
+        #expect(decision.settle == .none)
+    }
+
+    @Test
+    func `a measured batch keeps a following reading at the end it grew`() {
+        var policy = FeedScrollFixture.laidOut()
+        #expect(policy.resolve(.rowsMeasured(anchor: Self.anchor)).landing == .end)
+    }
+
     @Test
     func `the way-back control lands at the newest line`() {
         var policy = FeedScrollFixture.laidOut()
