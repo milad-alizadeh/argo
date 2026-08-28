@@ -22,9 +22,14 @@ public final class Hub {
 
     /// The process table and git. Lazy for the reason above: the folders it asks git about are the
     /// ones on this Hub's roster, which is read back off these readings.
-    @ObservationIgnored lazy var readings = WorldReadings(engine: engine) { [weak self] in
-        self?.sessions.compactMap(\.cwd) ?? []
-    }
+    @ObservationIgnored lazy var readings = WorldReadings(
+        engine: engine,
+        // The RESOLVED Project, which `refreshCheckout` settles on the repository root: the
+        // worktree listing is a fact about a repository, and a launch path inside one would ask
+        // git the same question from further in.
+        repositoryURL: { [weak self] in self?.project.url },
+        sessionCwds: { [weak self] in self?.sessions.compactMap(\.cwd) ?? [] },
+    )
 
     /// Everything Argo knows per claim: what the agent said, what its gate is holding, and the
     /// rung Argo put it on (#634). One key and one publish rule, where there were five of each.

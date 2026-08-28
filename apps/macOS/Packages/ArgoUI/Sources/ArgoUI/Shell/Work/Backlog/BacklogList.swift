@@ -1,8 +1,11 @@
 import SwiftUI
 
 /// The deck's leading pane — the backlog, banded by priority over its roots (#819). Its width is
-/// the CALLER's: the pane opens at `ArgoBacklogList.width`, which is the measure the titles were
-/// chosen against, and the reader drags it from there (`WorkRoom.deck`).
+/// the CALLER's: the pane rests at `ArgoBacklogList.width`, which is the measure the titles were
+/// chosen against, and the reader drags it from there (`WorkRoom.deck`). It carries no frame of
+/// its own — #836's `minWidth/idealWidth/maxWidth` let the `HStack` distribute the deck between
+/// the two panes, and the seam settles that now. The floor those named survives as the seam's
+/// (`ArgoLayout.backlogWidths`).
 struct BacklogList: View {
     /// The tree's roots, banded here: which rows a band draws depends on the fold, which is the
     /// pane's state rather than the room's.
@@ -11,8 +14,18 @@ struct BacklogList: View {
     /// Which parents are folded. Held above the pane for the same reason the ticket is: a fold the
     /// reader made outlives the pane, and it is what a specimen seeds to shoot `collapsed.png`.
     @Binding var shut: Set<Int>
+    /// What the band over the list says. The band is HERE and not in the window's toolbar because
+    /// its controls are the list's — see `BacklogHeader` (#836).
+    var header: WorkChromeProjection.Reading = .none
 
     var body: some View {
+        VStack(spacing: ArgoSpacing.flush) {
+            BacklogHeader(reading: header)
+            list
+        }
+    }
+
+    private var list: some View {
         List(selection: $selection) {
             ForEach(WorkRoomProjection.bands(of: rows)) { band in
                 // Flattened ONCE and handed to both, so the header counts the rows the outline

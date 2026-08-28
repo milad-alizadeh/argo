@@ -2,30 +2,28 @@
 import Foundation
 import Testing
 
-/// What the reader makes of git's answers about one Session's folder, asked of the parse directly
+/// What the reader makes of git's answers about one working tree, asked of the parse directly
 /// rather than through a repository on disk.
 @Suite("Workspace reading")
 struct WorkspaceReaderTests {
-    private static let folderURL = URL(fileURLWithPath: "/tmp/argo")
-
     @Test
-    func `a linked worktree keeps its own git directory beside the shared one`() async {
-        let projection = await read([
-            status: "",
-            gitDirs: "/tmp/argo/.git/worktrees/ticket-510\n/tmp/argo/.git\n",
-        ])
-
-        #expect(projection?.kind == .worktree)
+    func `the checkout git listed first is read as the main kind`() async {
+        #expect(await read([status: ""], of: Self.primary)?.kind == .main)
     }
 
     @Test
-    func `the primary checkout answers the same path twice, and is not a worktree`() async {
-        let projection = await read([
-            status: "",
-            gitDirs: "/tmp/argo/.git\n/tmp/argo/.git\n",
-        ])
+    func `a linked worktree is the worktree kind`() async {
+        #expect(await read([status: ""], of: Self.linked)?.kind == .worktree)
+    }
 
-        #expect(projection?.kind == .main)
+    @Test
+    func `the branch and the head come from the listing, not a second read of them`() async {
+        // Asking git again would be a second chance to disagree with the listing that found the
+        // worktree in the first place (#259).
+        let projection = await read([status: ""], of: Self.linked)
+
+        #expect(projection?.branch == "argo/#259-workspace-git-observer")
+        #expect(projection?.headSha == "d19907e7bb23edc1bc001cfc7d9607b40cc0685c")
     }
 
     @Test
@@ -45,52 +43,78 @@ struct WorkspaceReaderTests {
     }
 
     @Test
-    func `commits ahead of the upstream are counted`() async {
-        let projection = await read([status: "", unpushed: "2\n"])
+    func `both sides of the divergence come from one reading of one range`() async {
+        // Left of the three dots is what the upstream has and HEAD does not; right is the reverse.
+        let projection = await read([status: "", divergence: "4\t2\n"])
 
-        #expect(projection?.unpushed == 2)
+        #expect(projection?.divergence == UpstreamDivergence(ahead: 2, behind: 4))
     }
 
     @Test
-    func `a branch with no upstream is absent, never zero`() async {
+    func `a branch with no upstream has no divergence at all, never two zeroes`() async {
         // git exits non-zero for a branch with nothing to be ahead OF, and "nothing to compare
         // against" is a different fact from "level with it".
-        let projection = await read([status: " M README.md\n", branch: "main\n"])
+        let projection = await read([status: " M README.md\n"])
 
         #expect(projection?.dirty == 1)
-        #expect(projection?.unpushed == nil)
+        #expect(projection?.divergence == nil)
     }
 
     @Test
-    func `the branch is read at the same moment as the counts beside it`() async {
-        let projection = await read([status: "", branch: "argo/#510-session-header-facts\n"])
-
-        #expect(projection?.branch == "argo/#510-session-header-facts")
+    func `a half-read range is no divergence rather than one number`() async {
+        #expect(await read([status: "", divergence: "4\n"])?.divergence == nil)
     }
 
     @Test
-    func `a detached HEAD names no branch`() async {
-        // `HEAD` is what git answers there, and it is not a name anybody can check out.
-        #expect(await read([status: "", branch: "HEAD\n"])?.branch == nil)
+    func `the base is the remote's own default head, as git names it`() async {
+        #expect(await read([status: "", baseRef: "origin/main\n"])?.baseRef == "origin/main")
     }
 
     @Test
-    func `a folder git will not count for reads as nothing at all`() async {
+    func `a repository with no remote names no base`() async {
+        // Every owned Workspace branches from the Project's shared base, and a repository with no
+        // remote has none to name.
+        #expect(await read([status: ""])?.baseRef == nil)
+    }
+
+    @Test
+    func `a reading nothing has said whose tier it is degrades down`() async {
+        // The reader knows git's counts and nothing about who is standing in the folder, so the
+        // tier it produces is the quieter one until something that knows the provenance says
+        // otherwise (`CONTEXT.md`, the degrade-down rule).
+        #expect(await read([status: ""])?.held == .unattributed)
+    }
+
+    @Test
+    func `a worktree git will not count for reads as nothing at all`() async {
         // Not a Workspace of zeroes: a folder deleted under a Session has no clean tree, and a
         // read that answered `0 dirty` there would be a false DIRECT (`CONTEXT.md`).
-        #expect(await read([branch: "main\n"]) == nil)
+        #expect(await read([baseRef: "origin/main\n"]) == nil)
     }
 
-    private func read(_ answers: [String: String]) async -> WorkspaceProjection? {
-        await WorkspaceReader(git: gitAnswering(answers)).read(at: Self.folderURL)
+    private static let primary = WorktreeEntry(
+        path: "/repo", branch: "main",
+        headSha: "36e755ec341247fe58209dbf5a22bde41811dc9b", kind: .main,
+    )
+
+    private static let linked = WorktreeEntry(
+        path: "/repo/.claude/worktrees/ticket-259", branch: "argo/#259-workspace-git-observer",
+        headSha: "d19907e7bb23edc1bc001cfc7d9607b40cc0685c", kind: .worktree,
+    )
+
+    private func read(
+        _ answers: [String: String], of entry: WorktreeEntry = Self.linked,
+    ) async
+        -> WorkspaceProjection? {
+        await WorkspaceReader(git: gitAnswering(answers)).read(entry)
     }
 }
 
-/// The four questions a Workspace read asks git, as the tables above key them.
-private let gitDirs = "rev-parse --path-format=absolute --git-dir --git-common-dir"
-private let branch = "rev-parse --abbrev-ref HEAD"
+/// The three questions a Workspace read asks git, as the tables above key them. The branch, the
+/// head and the kind are not among them: the listing already answered those.
 private let status = "status --porcelain --untracked-files=all"
-private let unpushed = "rev-list --count @{upstream}..HEAD"
+private let baseRef = "rev-parse --abbrev-ref origin/HEAD"
+private let divergence = "rev-list --count --left-right @{upstream}...HEAD"
 
 /// A table of what git would say, keyed by the arguments asked; anything absent is a command that
 /// answered nothing.

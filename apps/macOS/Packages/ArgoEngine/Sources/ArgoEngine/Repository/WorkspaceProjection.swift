@@ -1,7 +1,8 @@
-/// The git working context one Session is running in (`CONTEXT.md` L3), as git answers it.
+/// The git working context of one working tree (`CONTEXT.md` L3 · Workspace), as git answers it.
 ///
 /// Distinct from `CheckoutProjection`, which is the ONE checkout the window is pointed at: this is
-/// read per Session cwd, and two Sessions in two worktrees of one repository have two of these.
+/// read per worktree, and a repository with four of them has four of these. Read per WORKTREE and
+/// not per Session, so a worktree that outlived the run that made it is a Workspace anyway.
 public struct WorkspaceProjection: Equatable, Sendable {
     /// Whether the folder is the repository's own checkout or one it was given (`CONTEXT.md` L3).
     /// Declared once here and aliased by the shell, never restated as a second enum.
@@ -11,21 +12,64 @@ public struct WorkspaceProjection: Equatable, Sendable {
     }
 
     public let kind: Kind
-    /// The branch the folder is on right now, read at the same moment as the counts below so the
-    /// three are one reading rather than a name from the transcript beside numbers from git.
+    /// The branch the folder is on, and the join key Delivery is addressed by (`CONTEXT.md` L3).
     /// Absent for a detached HEAD, and for a repository git would not name a branch in.
     public let branch: String?
-    /// How many files are changed and not committed. A DIRECT count of what git reported, so a
-    /// zero here means git said nothing was dirty — never that nobody asked.
+    /// The ref this branch is measured against — the remote's own default, as git names it. Absent
+    /// wherever git will not name one, which is more often than a repository having no remote: see
+    /// `WorkspaceReader.baseRef(at:)`.
+    public let baseRef: String?
+    /// The commit checked out here, whole and in git's own form. What a Diff is addressed by
+    /// (`CONTEXT.md` L4 · Diff).
+    public let headSha: String?
+    /// How many files are changed and not committed. A count of what git reported, so a zero here
+    /// means git said nothing was dirty — never that nobody asked.
     public let dirty: Int
-    /// How many commits are ahead of the branch's upstream. Absent for a branch with no upstream
-    /// at all: there is nothing to be ahead OF, which is a different fact from being level with it.
-    public let unpushed: Int?
+    /// How far the branch has drifted from its upstream — see `UpstreamDivergence` for why the two
+    /// counts travel together and why a branch with no upstream has none.
+    public let divergence: UpstreamDivergence?
+    /// Who is in this folder and how Argo knows they are — the two facts here that are not git's.
+    /// See `WorkspaceHolders` for why they sit apart from the counts above rather than beside them.
+    public let held: WorkspaceHolders
 
-    public init(kind: Kind, branch: String?, dirty: Int, unpushed: Int?) {
+    public init(
+        kind: Kind,
+        branch: String?,
+        baseRef: String? = nil,
+        headSha: String? = nil,
+        dirty: Int,
+        divergence: UpstreamDivergence?,
+        held: WorkspaceHolders = .unattributed,
+    ) {
         self.kind = kind
         self.branch = branch
+        self.baseRef = baseRef
+        self.headSha = headSha
         self.dirty = dirty
-        self.unpushed = unpushed
+        self.divergence = divergence
+        self.held = held
+    }
+
+    /// The same reading, with how many Agents are in the folder folded in. Applied where the roster
+    /// is known: the reader that asked git has no idea who is standing in its answer.
+    func shared(by count: Int) -> WorkspaceProjection {
+        rewriting(held: held.counting(count))
+    }
+
+    /// The same reading, with how Argo knows an Agent is in the folder folded in.
+    func known(via provenance: SessionProvenance) -> WorkspaceProjection {
+        rewriting(held: held.known(via: provenance))
+    }
+
+    private func rewriting(held: WorkspaceHolders) -> WorkspaceProjection {
+        WorkspaceProjection(
+            kind: kind,
+            branch: branch,
+            baseRef: baseRef,
+            headSha: headSha,
+            dirty: dirty,
+            divergence: divergence,
+            held: held,
+        )
     }
 }

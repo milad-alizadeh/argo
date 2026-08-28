@@ -6,17 +6,31 @@ import SwiftUI
 /// at once, and why the facts are a strip under the title instead.
 struct TicketDetail: View {
     let ticket: WorkRoomProjection.Ticket?
+    /// What acts on what is open, at the head of the pane (#836) — New ticket and the ticket's own
+    /// verbs, over the column they address. Inert by default, so a specimen renders the pane with
+    /// nothing behind its controls.
+    var band = TicketBand(reading: .none)
     /// What opening a child does — the pane never reads back what it opened, so this is a closure
     /// and not a binding that could disagree with `ticket`.
     let open: (Int) -> Void
 
     var body: some View {
-        ScrollView {
-            if let ticket {
-                column(for: ticket)
+        VStack(spacing: ArgoSpacing.flush) {
+            band
+            ScrollView {
+                if let ticket {
+                    column(for: ticket)
+                }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // A FLOOR of its own, so the list beside it yields first (#836): the body wraps to whatever
+        // this pane is left, and `feedMinimumWidth` is the width the feed already settled a column
+        // of Argo's prose still reads at.
+        .frame(
+            minWidth: ArgoLayout.feedMinimumWidth,
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+        )
     }
 
     private func column(for ticket: WorkRoomProjection.Ticket) -> some View {

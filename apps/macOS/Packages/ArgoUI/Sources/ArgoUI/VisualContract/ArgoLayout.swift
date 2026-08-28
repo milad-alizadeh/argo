@@ -97,11 +97,15 @@ public enum ArgoLayout {
 
     /// The Work room's two panes. The backlog OPENS at `ArgoBacklogList.width` — the measure the
     /// twelve real titles were chosen against — and the reader drags it from there.
-    /// The floor is 280 and not the detail's 320: at the MINIMUM window the two floors have to
-    /// leave the seam somewhere to go, and 320 either side of a 680 deck leaves it nowhere. A
-    /// backlog at 280 truncates titles, which is why 280 was rejected as the pane's home — but it
-    /// is the reader's own drag rather than where the pane opens.
-    public static let backlogWidths: ClosedRange<CGFloat> = 280 ... 760
+    /// The floor is #836's derivation, kept: the narrowest window, less the sidebar, less a pane of
+    /// prose, less the two seams between the three — the split view's divider and the deck's own.
+    /// Derived so it moves with the widths it is the remainder of rather than going stale beside
+    /// them. It arrived as the width the list YIELDS to when the window cannot afford 520, which is
+    /// the same question a seam's floor asks, so the seam took it over rather than naming a second
+    /// number for it (`ArgoBacklogList.minimumWidth` now reads this).
+    public static let backlogWidths: ClosedRange<CGFloat> =
+        (windowMinimumWidth - sidebarMinimumWidth - proseColumnMinimumWidth - seamGrabWidth * 2)
+            ... 760
     /// The narrowest the ticket detail may be squeezed to by the backlog beside it.
     public static let ticketDetailMinimumWidth = proseColumnMinimumWidth
 

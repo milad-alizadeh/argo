@@ -52,6 +52,7 @@ func testHub(
         // this machine's checkouts happen to be. `HubWorkspaceTests` supplies its own read.
         engine: Engine(
             readCheckout: checkout,
+            readWorktrees: noWorktrees,
             readWorkspace: noWorkspaceRead,
             readLiveness: liveness,
         ),
@@ -64,6 +65,10 @@ let noLiveProcesses: LivenessRead = { [] }
 
 /// A machine where git answers for no folder at all.
 let noWorkspaceRead: WorkspaceRead = { _ in nil }
+
+/// A repository git holds no working tree of — which is every suite supplying no listing, so none
+/// of them shells out to whatever worktrees this machine happens to have.
+let noWorktrees: WorktreeEnumerationRead = { _ in [] }
 
 /// A machine running an agent in each of these folders.
 func liveProcesses(in cwds: String...) -> LivenessRead {

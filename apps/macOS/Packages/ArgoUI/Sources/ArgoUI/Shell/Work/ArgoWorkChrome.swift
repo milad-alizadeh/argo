@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// The row height is NOT here. It is the shell's existing titlebar strip and `ArgoToolbarVessel`
 /// already names it, so a second number for the same band could only ever disagree with it.
-enum ArgoWorkToolbar {
+enum ArgoWorkChrome {
     /// One icon button's slot. Wider than it is tall — a mark centred in a square sat pinched
     /// against a capsule's end cap, the same reason `ToolbarSegment.markSlotWidth` is not square.
     static let iconButtonWidth: CGFloat = 26
@@ -19,7 +19,8 @@ enum ArgoWorkToolbar {
     /// deliberately: these are segments of one control, not two controls side by side.
     static let vesselGap: CGFloat = ArgoSpacing.hair
 
-    /// The rule inside the Start vessel, between the verb and the two link icons past it.
+    /// The rule inside a vessel, between the segments of one control — the Start verb and the two
+    /// link icons past it, and the filter and the menu beside it in the list's own band.
     static let splitDividerHeight: CGFloat = 15
 
     /// Wide enough for `Search the backlog`, and no wider — at 260 the field clipped the trailing

@@ -41,7 +41,10 @@ extension Hub {
         published.provenance = ownership.provenance(sessionID: session.id)
         // A spawn already knows its own program; a swept record's is the store it came out of.
         published.cli = session.cli ?? discovery.cli
-        published.workspace = readings.workspace(inCwd: session.cwd)
+        // The tier applied here and not in the reader: git answers the same counts whoever is in
+        // the folder, and how Argo knows an AGENT is there is the row's provenance.
+        published.workspace = readings.workspace(inCwd: session.cwd)?
+            .known(via: published.provenance)
         // Everything Argo established outside the transcript, in ONE lookup (#634). Through the
         // claim rather than the Session id: the claim is what the channels are keyed by, exists
         // before the CLI has picked an id, and outlives the reconciliation that gave the row one.

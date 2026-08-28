@@ -83,6 +83,9 @@ extension WorkspaceProjection {
     /// A Workspace on one branch. `nil` is the folder git would not name a branch in, which is a
     /// detached HEAD and a Session with no Delivery.
     static func on(_ branch: String?) -> WorkspaceProjection {
-        WorkspaceProjection(kind: .worktree, branch: branch, dirty: 0, unpushed: 0)
+        WorkspaceProjection(
+            kind: .worktree, branch: branch, dirty: 0,
+            divergence: UpstreamDivergence(ahead: 0, behind: 0),
+        )
     }
 }

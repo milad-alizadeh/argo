@@ -186,11 +186,7 @@ public struct CockpitView: View {
             .toolbar {
                 ShellToolbar(
                     scope: ScopeVessel(presentation: presentation, actions: actions),
-                    spawn: CockpitSpawn(
-                        presentation: presentation,
-                        actions: actions,
-                        navigation: navigation,
-                    ),
+                    spawn: spawn(in: navigation),
                 )
                 roomToolbar(navigation: navigation)
             }

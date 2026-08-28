@@ -3,7 +3,7 @@ import SwiftUI
 /// Search, at the row's trailing edge — **a real field, not an icon that becomes one.**
 ///
 /// It stands in for `.searchable`, which is not used here for one reason: the system's field takes
-/// the width the toolbar gives it, and this one is measured at `ArgoWorkToolbar.searchWidth` so it
+/// the width the toolbar gives it, and this one is measured at `ArgoWorkChrome.searchWidth` so it
 /// clears the trailing edge at the 1280 window. Everything else about it is the stock field —
 /// focus, the escape key, and the system's own clear button.
 ///
@@ -24,7 +24,7 @@ struct BacklogSearchField: View {
                 .foregroundStyle(argo.color.text.primary)
         }
         .padding(.horizontal, ArgoSpacing.base)
-        .frame(width: ArgoWorkToolbar.searchWidth, height: ArgoWorkToolbar.searchHeight)
+        .frame(width: ArgoWorkChrome.searchWidth, height: ArgoWorkChrome.searchHeight)
         .argoFloatingGlass(in: .capsule)
         .accessibilityLabel("Search the backlog")
     }
