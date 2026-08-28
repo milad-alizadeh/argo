@@ -48,7 +48,16 @@ struct TicketsRoom {
     }
 
     var sidebar: some View {
-        TicketsSidebar(room: room, cockpitRoom: $cockpitRoom, view: $view)
+        TicketsSidebar(room: room, cockpitRoom: $cockpitRoom, view: $view, intents: nextUpIntents)
+    }
+
+    /// What the sidebar's hero performs (#898). Built here and not in the sidebar: the ticket is
+    /// held above the room, and the hero writes the same binding a backlog row does — one place
+    /// deciding what "open a ticket" means for both.
+    ///
+    /// The view binding is deliberately NOT written. See `NextUpIntents.open`.
+    var nextUpIntents: NextUpIntents {
+        NextUpIntents(open: { ticket = $0 })
     }
 
     /// What the room puts in the WINDOW's row: every control the room has, on one line — the reason
