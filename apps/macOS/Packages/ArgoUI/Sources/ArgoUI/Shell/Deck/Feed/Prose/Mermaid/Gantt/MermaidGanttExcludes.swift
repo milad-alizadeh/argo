@@ -22,9 +22,15 @@ struct MermaidGanttExcludes: Equatable, Sendable {
         weekdays.count == 7
     }
 
-    /// How far either walk steps before the source is called unreadable. Nothing legible is a
-    /// quarter of a millennium long, and a fence is the honest end of one that is.
+    /// How far a walk LOOKING for a day steps before the source is called unreadable. Nothing
+    /// legible is a quarter of a millennium long, and a fence is the honest end of one that is.
     private static let limit = 100_000
+
+    /// And how long a bar may be before it cannot be broken around its days off at all. `runs`
+    /// walks a task a day at a time and draws a FIGURE per stretch, so a span of centuries is
+    /// hundreds of thousands of rects redrawn every frame — a chart nothing can render rather
+    /// than a chart. Fifty-five years is longer than any roadmap and a fifth of the cap above.
+    private static let drawLimit = 20000
 
     /// The names of the weekdays, in the calendar's own order — `firstIndex` + 1 is its number.
     private static let names = [
@@ -37,8 +43,13 @@ struct MermaidGanttExcludes: Equatable, Sendable {
             || weekdays.contains(MermaidGanttClock.calendar.component(.weekday, from: day))
     }
 
-    /// One `excludes` line, at the source's own date grammar. A word neither table knows leaves
-    /// the whole chart a fence: a day off quietly dropped would draw every bar after it too short.
+    /// One `excludes` line, at the date grammar in force WHERE IT WAS WRITTEN — so a named date
+    /// above its own `dateFormat` is read at the default one and fences, while the same two lines
+    /// the other way round read fine. Mermaid keeps the words and dates them at the end instead;
+    /// this reads them where it meets them, which is how every other line here is read.
+    ///
+    /// A word neither table knows leaves the whole chart a fence: a day off quietly dropped would
+    /// draw every bar after it too short.
     mutating func add(_ text: String, at pattern: String) -> Bool {
         let words = text.split { $0 == "," || $0.isWhitespace }
         guard !words.isEmpty else { return false }
@@ -97,9 +108,21 @@ struct MermaidGanttExcludes: Equatable, Sendable {
         return nil
     }
 
+    /// Whether a task this long can be drawn broken at all. Read at RESOLUTION, so a span past the
+    /// cap leaves the block a fence rather than a plan of hundreds of thousands of rects — and a
+    /// stated end reaches `runs` without passing the walk cap above, which is the one way a bar
+    /// can be longer than anything the length form could ever produce.
+    func draws(from start: Date, to end: Date) -> Bool {
+        guard !isEmpty else { return true }
+        guard let days = MermaidGanttClock.calendar
+            .dateComponents([.day], from: start, to: end).day
+        else { return false }
+        return days <= Self.drawLimit
+    }
+
     /// The stretches of a task that are really drawn: everything between its two ends that is not
     /// a day off. A bar drawn solid across an excluded weekend would say work happens on a day the
-    /// chart itself says it cannot — the phantom this epic keeps being caught by.
+    /// chart itself says it cannot — the phantom this epic has been caught by seven times.
     func runs(from start: Date, to end: Date) -> [ClosedRange<Date>] {
         guard !isEmpty, end > start else { return [start ... Swift.max(start, end)] }
         var runs: [ClosedRange<Date>] = []
@@ -115,12 +138,15 @@ struct MermaidGanttExcludes: Equatable, Sendable {
         return runs.isEmpty ? [start ... start] : runs
     }
 
-    /// Every day the span touches, clipped to its two ends. Terminates on the step itself — a
-    /// calendar that cannot name tomorrow ends the walk — so it needs no cap of its own.
+    /// Every day the span touches, clipped to its two ends — capped like both its siblings, and
+    /// for the same reason. It terminates on the step alone, but terminating is not the same as
+    /// being drawable: `draws` has already refused anything that could reach the cap here, so this
+    /// is the floor under that rather than a truncation anything is expected to hit.
     private func slices(from start: Date, to end: Date) -> [ClosedRange<Date>] {
         var slices: [ClosedRange<Date>] = []
         var at = MermaidGanttClock.start(of: .day, at: start) ?? start
-        while at < end, let next = Self.day(after: at), next > at {
+        for _ in 0 ..< Self.drawLimit {
+            guard at < end, let next = Self.day(after: at), next > at else { break }
             slices.append(Swift.max(at, start) ... Swift.min(next, end))
             at = next
         }

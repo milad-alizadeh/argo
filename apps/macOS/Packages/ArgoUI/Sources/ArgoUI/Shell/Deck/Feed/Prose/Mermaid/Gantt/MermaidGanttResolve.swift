@@ -57,22 +57,29 @@ private struct Walk {
         guard walking.insert(at).inserted else { return nil }
         defer { walking.remove(at) }
         let draft = drafts[at]
-        guard let opened = begin(draft.begin),
-              // The decision this reading makes about a start on a day off: it moves to the next
-              // day work can happen on. The source excluded that day, so a bar opening on it would
-              // draw work the chart says is impossible.
-              let start = excludes.opening(at: opened),
-              let end = end(draft.length, from: start), end >= start
+        guard let start = begin(draft.begin),
+              let end = end(draft.length, from: start), end >= start,
+              // A bar too long to be broken around its days off is a chart nothing can render.
+              excludes.draws(from: start, to: end)
         else { return nil }
         let placed = MermaidGantt.Task(name: draft.name, id: draft.id, start: start, end: end)
         settled[at] = placed
         return placed
     }
 
+    /// The one decision this reading makes about a day off and a start.
+    ///
+    /// A date the source WROTE is never moved — neither of a task's two ends is, and both halves
+    /// of that rule are here and in `MermaidGanttExcludes.end(from:nominally:)`. A written start on
+    /// a Saturday stays on the Saturday it says; the bar simply opens where work can, because
+    /// `runs` breaks it around the weekend on its own.
+    ///
+    /// A start this reader DERIVED is the one date it is free to move, because nothing was written
+    /// for it to contradict: a task waiting on one that ends on a Saturday opens on the Monday.
     private mutating func begin(_ begin: MermaidGanttDraft.Begin) -> Date? {
         switch begin {
         case let .on(date): date
-        case let .after(ids): latest(of: ids)
+        case let .after(ids): latest(of: ids).flatMap { excludes.opening(at: $0) }
         }
     }
 

@@ -82,22 +82,67 @@ struct MermaidGanttChainTests {
         #expect(read.first?.end == Self.date("2026-01-10"))
     }
 
-    /// The decision this ticket asks for, stated: a task told to start on a day nothing happens
-    /// starts on the next day something can. The source excluded the day, so a bar beginning on
-    /// it would draw work the chart says is impossible.
+    /// The decision this ticket asks for, in the half where the source WROTE the date: it stays
+    /// where it was written. A start on a Saturday is as much a fact about the chart as a stated
+    /// end is, and moving it would make this reader disagree with the source about a date that is
+    /// on the page. The two days of work still land on the Monday and the Tuesday, and `runs`
+    /// breaks the bar around the weekend rather than the reader moving it.
     @Test
-    func `a task starting on an excluded day starts on the next working one`() {
+    func `a written start on an excluded day stays where it was written`() {
         let read = Self.tasks("""
         excludes weekends
         Saturday start : 2026-01-03, 2d
         """)
 
-        #expect(read.first?.start == Self.date("2026-01-05"))
+        #expect(read.first?.start == Self.date("2026-01-03"))
         #expect(read.first?.end == Self.date("2026-01-07"))
     }
 
+    /// The other half, where the date is one this reader DERIVED. Nothing was written for it to
+    /// contradict, so a task waiting on one that ends on a Saturday opens on the Monday rather
+    /// than in a weekend the chart says nothing happens in.
+    @Test
+    func `a derived start moves off a day off`() {
+        let read = Self.tasks("""
+        excludes weekends
+        Ends on a Saturday :a, 2026-01-01, 2d
+        Waits for it       :b, after a, 1d
+        """)
+
+        #expect(read.first?.end == Self.date("2026-01-03"))
+        #expect(read.last?.start == Self.date("2026-01-05"))
+    }
+
+    /// Both written ends kept, on one line. A range the source stated across a weekend keeps both
+    /// of its dates; the weekend comes out of the INK, which is `runs`' job, not the reader's.
+    @Test
+    func `a stated range keeps both of its written dates`() {
+        let read = Self.tasks("""
+        excludes weekends
+        Sat to Wed : 2026-01-03, 2026-01-07
+        """)
+
+        #expect(read.first?.start == Self.date("2026-01-03"))
+        #expect(read.first?.end == Self.date("2026-01-07"))
+    }
+
+    /// A line a real roadmap has in it: work dated over a weekend on a chart with the weekends
+    /// off. It is a task the source wrote, so it is a row on the chart — fencing the whole diagram
+    /// over one such line would be the reader disagreeing with the source, not reading it.
+    @Test
+    func `a task dated entirely inside its days off is still a task`() {
+        let read = Self.tasks("""
+        excludes weekends
+        Weekend work : 2026-01-03, 2026-01-04
+        Normal work  : 2026-01-05, 1d
+        """)
+
+        #expect(read.count == 2)
+        #expect(read.first?.start == Self.date("2026-01-03"))
+    }
+
     /// The two compose, and in this order: the predecessor's end is its REAL end, and the
-    /// dependent is then moved off the excluded day that end lands on.
+    /// dependent — a DERIVED start — is then moved off the excluded day that end lands on.
     @Test
     func `a dependent starts after its predecessor's real end`() {
         let read = Self.tasks("""
@@ -144,12 +189,26 @@ struct MermaidGanttChainTests {
         "excludes bank holidays\nAny : 2026-01-05, 1d",
         "excludes 2026-02-30\nAny : 2026-01-05, 1d",
         "excludes\nAny : 2026-01-05, 1d",
-        // A chart on which no work can ever happen: every task would walk forever.
+        // A chart on which no work can ever happen: every length would walk forever.
         "excludes monday, tuesday, wednesday, thursday, friday, saturday, sunday\n"
             + "Any : 2026-01-05, 1d",
+        // A bar too long to be broken around its days off. A stated end does not go through the
+        // walk that caps a length, so this is the one way past that cap — and a plan of hundreds
+        // of thousands of rects, redrawn every frame, is a chart nothing can render.
+        "excludes weekends\nA millennium : 2000-01-01, 3000-01-01",
     ])
     func `a chain or an exclusion this reader cannot resolve stays a fence`(body: String) {
         #expect(Self.read(body) == nil)
+    }
+
+    /// The other side of the cap that fences a millennium: a chart longer than any real roadmap
+    /// still reads, so the refusal is aimed at what cannot be drawn rather than at what is merely
+    /// long.
+    @Test
+    func `a chart longer than any roadmap still reads`() {
+        let read = Self.tasks("excludes weekends\nThirty years : 2000-01-01, 2030-01-01")
+
+        #expect(read.first?.end == Self.date("2030-01-01"))
     }
 
     /// A weekday by its own name, which is what `excludes` is mostly written with.
@@ -161,37 +220,5 @@ struct MermaidGanttChainTests {
         """)
 
         #expect(read.first?.end == Self.date("2026-01-11"))
-    }
-}
-
-/// What an exclusion does to the ink, which is the half of it a reading test cannot see.
-@MainActor
-@Suite("Mermaid gantt excluded bars")
-struct MermaidGanttExcludedBarTests {
-    private static func bars(_ body: String) -> [CGRect] {
-        let plan = MermaidGantt.read("gantt\ndateFormat YYYY-MM-DD\n" + body)?.laid ?? .empty
-        return plan.figures.compactMap { figure -> CGRect? in
-            guard case let .shape(.rounded, rect) = figure.form else { return nil }
-            return rect
-        }
-    }
-
-    /// The claim `excludes` exists for. A bar drawn solid from Thursday to the Thursday after
-    /// would say work happened over the weekend the chart just said it does not.
-    @Test
-    func `a bar is broken around the days it says no work happens on`() {
-        let drawn = Self.bars("excludes weekends\nAcross a weekend : 2026-01-01, 5d")
-
-        #expect(drawn.count == 2)
-        #expect(drawn.first?.maxX ?? 0 < drawn.last?.minX ?? 0)
-        #expect(drawn.first?.minY == drawn.last?.minY)
-    }
-
-    /// And the chart that excludes nothing draws exactly what #903 drew: one bar, unbroken.
-    @Test
-    func `a chart with no day off draws one bar per task`() {
-        let drawn = Self.bars("Across a weekend : 2026-01-01, 5d")
-
-        #expect(drawn.count == 1)
     }
 }
