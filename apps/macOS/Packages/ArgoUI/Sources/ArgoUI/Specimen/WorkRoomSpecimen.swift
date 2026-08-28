@@ -45,17 +45,29 @@ struct WorkPanesSpecimen: View {
     @State private var shut: Set<Int>
     /// The pane opens where it ships, so a render is shot at the width the reader first meets.
     @State private var backlogWidth = ArgoBacklogList.width
+    /// What the search field is holding. Seeded for the same reason the fold is: the harness cannot
+    /// type, and the states #873 has to show are all past a typed query.
+    @State private var query: String
 
-    init(reading: WorkReading, opening: WorkView = .allOpen, folded: Set<Int> = []) {
+    /// What a specimen SEEDS, as one value. A struct rather than three more parameters — the cap is
+    /// three, and a defaulted parameter still spends one (`WorkFixture.Shape`'s reason).
+    struct Seed {
+        var opening = WorkView.allOpen
+        var folded: Set<Int> = []
+        var query = ""
+    }
+
+    init(reading: WorkReading, seed: Seed = Seed()) {
         self.reading = reading
-        _view = State(initialValue: opening)
-        _shut = State(initialValue: folded)
+        _view = State(initialValue: seed.opening)
+        _shut = State(initialValue: seed.folded)
+        _query = State(initialValue: seed.query)
         _ticket = State(initialValue: reading.showing)
     }
 
     var body: some View {
         let work = WorkRoom(
-            room: WorkRoomProjection.room(from: reading, in: view),
+            room: WorkRoomProjection.room(from: reading, in: view, matching: query),
             cockpitRoom: $cockpitRoom,
             ticket: $ticket,
             view: $view,

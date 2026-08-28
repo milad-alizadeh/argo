@@ -27,7 +27,9 @@ extension CockpitView {
         )
 
         return WorkRoom(
-            room: WorkRoomProjection.room(from: reading, in: navigation.workView),
+            room: WorkRoomProjection.room(
+                from: reading, in: navigation.workView, matching: navigation.workQuery,
+            ),
             cockpitRoom: $navigation.room,
             ticket: $navigation.ticket,
             view: $navigation.workView,

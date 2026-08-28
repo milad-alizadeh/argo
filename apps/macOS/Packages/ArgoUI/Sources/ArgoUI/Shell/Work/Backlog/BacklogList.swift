@@ -21,7 +21,11 @@ struct BacklogList: View {
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
             BacklogHeader(reading: header)
-            list
+            if let stated = header.empty {
+                BacklogNoMatch(stated: stated)
+            } else {
+                list
+            }
         }
     }
 
@@ -30,7 +34,9 @@ struct BacklogList: View {
             ForEach(WorkRoomProjection.bands(of: rows)) { band in
                 // Flattened ONCE and handed to both, so the header counts the rows the outline
                 // draws rather than a second answer to the same question.
-                let drawn = WorkRoomProjection.drawn(band, shut: shut)
+                // A search draws the tree open whatever the reader folded — a parent that hid the
+                // one match would leave the heading claiming a result nobody can see (#873).
+                let drawn = WorkRoomProjection.drawn(band, shut: header.folds ? shut : [])
                 // `.inset` spends about 52 between one section and the next section's word where
                 // the design draws 12, and `listSectionSpacing` is unavailable on macOS — so this
                 // is a row rather than the `Section` header the frozen name stands in for, and
@@ -40,7 +46,7 @@ struct BacklogList: View {
                     .previewSafeListRow()
                     .listRowSeparator(.hidden)
                     .selectionDisabled()
-                BacklogOutline(drawn: drawn, shut: $shut)
+                BacklogOutline(drawn: drawn, shut: $shut, folds: header.folds)
             }
         }
         .listStyle(.inset)

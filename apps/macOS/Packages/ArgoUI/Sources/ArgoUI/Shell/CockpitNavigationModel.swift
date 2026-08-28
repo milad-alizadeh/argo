@@ -58,6 +58,15 @@ public final class CockpitNavigationModel {
 
     public init() {}
 
+    /// What a Project switch takes with it, which is the backlog's query and nothing else (#873).
+    /// A query is a question about ONE Project's backlog: carried across, it would silently narrow
+    /// a list of tickets it was never typed against, and the heading's `N results` would be
+    /// counting a different Project's answer. The view, the fold and the seam are the reader's own
+    /// settings rather than questions about one backlog, so they stand.
+    func projectSwitched() {
+        workQuery = ""
+    }
+
     /// Repoints a selection that no longer names a live Session, falling back to the first.
     /// An empty roster leaves it `nil` — there is nothing honest to point at.
     func reconcile(against sessionIDs: [CockpitPresentation.Session.ID]) {

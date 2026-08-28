@@ -234,6 +234,72 @@ every other room and `⌘N` and the menu bar reach it from this one. Two compose
 apart, each making a different thing, is the confusion the plus was originally chosen to avoid —
 removing one of them is the better answer than re-cutting the mark.
 
+### The two narrowings, decided (#873)
+
+The field and the funnel narrow the SAME list, so they are decided together. Deciding one alone
+gets two narrowings that do not compose, and the reader meets a list nobody can account for.
+
+**They compose by intersection, in one fixed order, and neither ever widens.** The sidebar's view
+chooses the set, the funnel narrows within it, the query narrows within that. The heading reads in
+that same order, so what is on screen can always be read back off it.
+
+#### Search matches the number and the title, and nothing else
+
+**The query is a substring of the ticket's title, or of its number** — case- and
+diacritic-insensitive, and a leading `#` on a number is optional. A field holding only spaces is
+not a query: it returns the whole list rather than matching everything by accident.
+
+**Not the body.** A ticket's body is read only for the ticket the deck is open on, so a body match
+would return a different set for the same query depending on what the reader last clicked. A search
+whose answer depends on what you clicked is worse than one that never reads a body at all.
+
+**Not labels, type or assignee.** Those are closed sets of the provider's own words, which is what
+makes them the funnel's — see below. A field that also matched them would silently overlap the
+control beside it, and no reader could tell which of the two excluded a ticket.
+
+**The heading says it is searching**, on the two-line shape the rest of this section already
+argues for: `Searching` over `All open · by priority · 3 results`. It reads `results` and not
+`tickets`, because the count is of MATCHES and the rows on screen can exceed it — see the rails
+below. Clearing the field returns `Backlog` over `All open · by priority · 12 tickets`.
+
+**A matching child under a non-matching parent keeps its parents, as rails.** The list's structure
+is "priority groups the roots, a child hangs under its parent whatever its own priority" — a match
+that vanished because its parent did not match would be a row the reader can see the count of and
+never reach. A rail draws its title in `text.tertiary` rather than `text.secondary`, the same
+demotion the row's `#id` already carries, so it is not read as a match.
+
+**A search draws everything open, and the twists stand down.** A fold that hid the only match would
+leave the heading claiming results nobody can see. The reader's fold is not cleared — it comes back
+when the field clears.
+
+**No matches is a stated empty INSIDE the list pane, never one of the room's vacancies.** The three
+vacancy pages are facts about the provider; this is a fact about the query. It also has to keep the
+row of controls: a search field that removes itself the moment it matches nothing is a field nobody
+can clear.
+
+**The query is the Project's.** It survives selecting a ticket and switching room — both leave the
+backlog it was typed against standing. It does not survive a Project switch: carried across, it
+would silently narrow a list of tickets it was never typed against, and `3 results` would be
+counting a different Project's answer.
+
+#### The funnel narrows by label, type and assignee
+
+**Those three, and no others.** They are the facts the provider serves per ticket that have a
+closed set of values, which is what a funnel can offer as rows and what a reader can pick from
+without typing. Multi-select within one facet is OR; across facets it is AND.
+
+**Not status.** The sidebar's four views are already the cut across closure, claim and blockage,
+and `status` is the provider's own word with no fixed vocabulary behind it. A funnel offering it
+would be a second control answering the view's question in different words.
+
+**Not priority.** Priority is the grouping in force, so every band is already on screen and named.
+Narrowing by the thing the list is grouped by removes headers rather than rows.
+
+**The mark stays `line.3.horizontal.decrease`** — a funnel is the one glyph here nobody had to
+learn — and it takes a filled state whenever any facet is on. A funnel that looks identical whether
+or not it is narrowing makes the same false claim about the data that a search field returning the
+whole list does.
+
 ### `Start` is a split control, not an ellipsis
 
 The study first drew an unlabelled `…`. **An overflow nobody can name is an overflow nobody
@@ -356,6 +422,10 @@ fact nobody asked.
 **The empty backlog keeps New ticket.** It is the moment you most want it. The list's filter and
 group-by go, and so does search — there is no list to narrow and nothing to search.
 
+**A query that matches nothing is a fourth state, and it is not one of these** (#873). It is a fact
+about the query rather than about the provider, so it stays inside the list pane and the room's row
+of controls stands — see **the two narrowings** above.
+
 ## The Route, re-skinned
 
 **#334's geometry is unchanged and is not re-decided here.** The progress axis, the NOW line, the
@@ -476,6 +546,7 @@ for; anything not listed is stock used directly.
 | `LabelChip` | atom | `Text` in a rounded rect | a provider label, verbatim |
 | `TicketLinkList` | molecule | a `VStack` of `Button(.plain)` | ONE component; `blockedBy` and Children are two callers with different trailing facts |
 | `WorkRoomVacancy` | molecule | `ContentUnavailableView` | both room-level states — unbound, and answered-with-nothing |
+| `BacklogNoMatch` | atom | a centred `Text` in the list pane | **Added #873**: the query matched nothing. Deliberately NOT a `WorkRoomVacancy` case — that one replaces the whole deck, and this is a fact about the query rather than about the provider |
 | `RoomPresentation` | atom | `Picker(.segmented)` | `Present as: Tree \| Map`, map-scoped not room-scoped (#334) |
 
 ## Token reconciliation

@@ -74,7 +74,7 @@ extension WorkRoomProjection {
 
     /// Which shown item owns each shown child. Built once for the whole set rather than asked per
     /// node, because the answer for one child depends on every other edge served.
-    private static func parentEdges(of shown: [WorkItem]) -> [Int: Int] {
+    static func parentEdges(of shown: [WorkItem]) -> [Int: Int] {
         let numbers = Set(shown.map(\.number))
         var parents: [Int: Int] = [:]
         for item in shown {
