@@ -32,6 +32,9 @@ struct TicketsRoom {
     /// What the row's controls do, and what the one that writes through a provider renders (#275).
     /// Inert by default for the same reason `connect` is.
     var intents = TicketsToolbarIntents.inert
+    /// What a link to a ticket the listing does not hold raises: one read, by that number (#895).
+    /// Inert by default, so a `#Preview` and a specimen draw the pane with no request behind them.
+    var follow: @MainActor (Int) async -> Void = { _ in }
     /// What the room's chrome HOLDS rather than reads — the query, which outlives the pane and is
     /// therefore held above the room. A value rather than the binding bare: it was a pair until the
     /// Mode chevron went (#872), and the search field is not the last thing this row will hold.
@@ -71,6 +74,12 @@ struct TicketsRoom {
             GeometryReader { deck in
                 panes(in: deck.size.width)
             }
+            // Keyed on the number, so one ticket a reader followed costs one read: the task is
+            // not re-run while the deck stays open on it.
+            .task(id: room.unreadNumber) {
+                guard let unread = room.unreadNumber else { return }
+                await follow(unread)
+            }
         }
     }
 
@@ -99,7 +108,7 @@ struct TicketsRoom {
             // chips — see `ArgoBacklogList.labelsAppearAt`.
             .environment(\.backlogPaneWidth, seated)
             DeckSeam(width: $backlogWidth, limits: limits, growsRightward: true)
-            TicketDetail(ticket: room.ticket) { ticket = $0 }
+            TicketDetail(ticket: room.ticket, unreadNumber: room.unreadNumber) { ticket = $0 }
         }
     }
 }

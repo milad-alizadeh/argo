@@ -37,6 +37,7 @@ extension CockpitView {
             shut: $navigation.shutParents,
             connect: openProjectPanel,
             intents: ticketsIntents,
+            follow: { await actions.tickets.readTicket($0) },
             held: TicketsRoom.Held(query: $navigation.ticketsQuery),
         )
     }

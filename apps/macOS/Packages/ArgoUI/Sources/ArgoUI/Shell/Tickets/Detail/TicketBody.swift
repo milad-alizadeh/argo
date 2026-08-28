@@ -68,7 +68,7 @@ struct TicketBody: View {
     @ViewBuilder private var blockedBy: some View {
         if !ticket.blockedBy.isEmpty {
             heading("Blocked by · \(ticket.blockedBy.count)")
-            TicketLinkList(links: ticket.blockedBy)
+            TicketLinkList(links: ticket.blockedBy, open: open)
         }
     }
 

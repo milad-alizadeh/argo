@@ -7,6 +7,10 @@ import Foundation
 /// never merged, which is what stops a failed poll emptying a room that was full a second ago.
 public actor TicketLedger {
     private var listings: [String: [Ticket]] = [:]
+    /// Tickets read one at a time, by a number a link named (#895). Kept apart from the listing
+    /// because a poll replaces that whole and a closed ticket was never in it — a followed ticket
+    /// is not the poll's to retire.
+    private var followed: [String: [Int: Ticket]] = [:]
 
     public init() {}
 
@@ -40,13 +44,27 @@ public actor TicketLedger {
         listings[projectID] = listing
     }
 
+    /// One ticket the provider answered about by number, because a link named it and the listing
+    /// does not hold it. The value came back from the PROVIDER, never from the click.
+    func follow(_ item: Ticket, for projectID: String) {
+        followed[projectID, default: [:]][item.number] = item
+    }
+
     /// The listing, and an empty one for a Project nothing has read yet — which reads the same as
     /// a repository with no issues, because from a surface's side they are the same: no Tickets
     /// to show, and the health chip is what says whether that is an answer or a silence.
     ///
     /// No Project at all reads empty on the same terms, and never the last one's listing: a window
     /// pointed away from a Project must not go on drawing its backlog.
+    ///
+    /// The tickets followed by number come after it, in their own numeric order. The listing WINS
+    /// where both hold a number: it was read this tick, and a follow may be an hour old.
     public func items(of projectID: String?) -> [Ticket] {
-        projectID.flatMap { listings[$0] } ?? []
+        guard let projectID else { return [] }
+        let listed = listings[projectID] ?? []
+        let numbers = Set(listed.map(\.number))
+        return listed + (followed[projectID] ?? [:]).values
+            .filter { !numbers.contains($0.number) }
+            .sorted { $0.number < $1.number }
     }
 }

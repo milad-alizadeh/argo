@@ -22,6 +22,12 @@ public struct ProviderTickets: TicketReading {
         try await port(binding.provider).list(in: binding.binding.scope, grant: binding.grant)
     }
 
+    public func ticket(number: Int, through binding: ResolvedBinding) async throws -> Ticket? {
+        try await port(binding.provider).ticket(
+            number: number, in: binding.binding.scope, grant: binding.grant,
+        )
+    }
+
     private func port(_ provider: AccountProvider) -> TicketPort {
         switch provider {
         case .github: github

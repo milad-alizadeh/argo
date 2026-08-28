@@ -7,4 +7,8 @@ import Foundation
 /// out at the type level (#371).
 public protocol TicketReading: Sendable {
     func list(through binding: ResolvedBinding) async throws -> [Ticket]
+
+    /// One Ticket by number, on `TicketPort.ticket(number:in:grant:)`'s terms — `nil` where the
+    /// provider answered and has nothing behind it (#895).
+    func ticket(number: Int, through binding: ResolvedBinding) async throws -> Ticket?
 }

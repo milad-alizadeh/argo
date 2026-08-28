@@ -145,6 +145,71 @@ struct TicketProjectionTests {
         #expect(TicketsFixture.room.ticket?.children == nil)
     }
 
+    // MARK: - Reached by a link, not by the listing
+
+    /// A closed ticket is in no listing and no sidebar view, so the only way to it is a link. Once
+    /// it is in `items` the pane reads it as what it is, and never as open (#895).
+    @Test
+    func `a closed ticket reached by link opens as closed`() {
+        let ticket = TicketsFixture.room(showing: 264).ticket
+
+        #expect(ticket?.id == 264)
+        #expect(ticket?.bucket == .resolved)
+    }
+
+    /// AC4's half that stands: the four views count the OPEN set, so a closed ticket arriving by
+    /// link moves none of them. What it does move is the roll-up, which counts the closed set.
+    @Test
+    func `a closed ticket reached by link moves no sidebar count`() {
+        let open = TicketsFixture.items.filter { $0.closure == .open }
+        let without = TicketsRoomProjection.room(from: TicketsFixture.reading(of: open))
+
+        let with = TicketsRoomProjection.room(
+            from: TicketsFixture.reading(of: open + [Self.closed264]),
+        )
+
+        #expect(with.views == without.views)
+    }
+
+    /// The bug this ticket is named for. A parent whose closed children are not in `items` rolls up
+    /// `0/2`, because the roll-up counts them out of the closed set — which is empty for GitHub
+    /// until something reads one. The closed child arriving is what moves the number.
+    @Test
+    func `a parent's roll-up counts only the closed children that have been read`() {
+        let parent = Ticket(
+            number: 1, title: "Done all through", status: "Todo", closure: .open,
+            children: [264, 690],
+        )
+        let unread = TicketsRoomProjection.room(from: TicketsFixture.reading(of: [parent]))
+
+        let read = TicketsRoomProjection.room(
+            from: TicketsFixture.reading(of: [parent, Self.closed264]),
+        )
+
+        #expect(unread.backlog.first?.trailing == "0/2")
+        #expect(read.backlog.first?.trailing == "1/2")
+    }
+
+    /// A number the reader followed that nothing has been read for. Neither a ticket nor an empty
+    /// pane: the deck says so, and the read it names is what fills it.
+    @Test
+    func `a followed number nothing was read for is unread, not an empty pane`() {
+        let room = TicketsRoomProjection.room(from: TicketsFixture.reading(showing: 9001))
+
+        #expect(room.ticket == nil)
+        #expect(room.unreadNumber == 9001)
+    }
+
+    /// The other side of it, so the pane cannot draw both: a ticket the reading holds is read.
+    @Test
+    func `a ticket the reading holds is not unread`() {
+        #expect(TicketsFixture.room(showing: 264).unreadNumber == nil)
+    }
+
+    private static let closed264 = Ticket(
+        number: 264, title: "App shell", status: "Closed", closure: .resolved,
+    )
+
     /// A parent whose children are ALL closed keeps the section: the figure is the news there, and
     /// the sentence under it says what the empty list means.
     @Test

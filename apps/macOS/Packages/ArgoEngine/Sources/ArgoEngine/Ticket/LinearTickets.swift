@@ -60,6 +60,19 @@ public struct LinearTickets: TicketPort {
         }
     }
 
+    /// Linear can answer this one: `LinearDocuments.teamIssue` is deliberately unfiltered by
+    /// state, where the listing above drops everything completed or cancelled.
+    public func ticket(
+        number: Int, in scope: String, grant: AccountGrant,
+    ) async throws
+        -> Ticket? {
+        do {
+            return try await issue(number, in: scope, grant: grant)?.ticket()
+        } catch {
+            throw error.fetchError
+        }
+    }
+
     /// One ticket by the number Argo holds, in whatever state it is now — the read a write adopts
     /// through, and `nil` where the team holds no such number.
     func issue(

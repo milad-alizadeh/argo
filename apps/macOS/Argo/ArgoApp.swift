@@ -24,20 +24,14 @@ struct ArgoApp: App {
             arguments: CommandLine.arguments,
             currentDirectoryURL: currentDirectoryURL,
         )
-        // Answered before anything else is built, and the process ends on it: `specimens.sh` asks
-        // the app what it can render rather than parsing Swift source for a list.
-        if configuration.listsSpecimens {
-            for name in SpecimenRegistry.names {
-                print(name)
-            }
-            exit(0)
+        // Settled before anything else is built, and the process may end on it: `specimens.sh`
+        // asks the app what it can render rather than parsing Swift source for a list, and a name
+        // nothing answers to stops here rather than drawing the cockpit under it.
+        let launch = SpecimenLaunch(configuration)
+        if let code = launch.ending?.stated() {
+            exit(code)
         }
-        // A name nothing answers to ends the launch here, rather than drawing the cockpit under it.
-        if let refusal = SpecimenRegistry.refusal(for: configuration.specimenName) {
-            FileHandle.standardError.write(Data(refusal.utf8))
-            exit(1)
-        }
-        self.specimen = configuration.specimenName.flatMap(SpecimenRegistry.entry(named:))
+        self.specimen = launch.entry
         let projects = ProjectRegistryStore()
         let cockpit = CockpitCoordinator(configuration: configuration, store: projects)
         let accounts = AccountsCoordinator(projects: projects)
@@ -204,6 +198,7 @@ struct ArgoApp: App {
         // the Connect panel's are: the create is a Binding act, and the spawn is the Hub's (#872).
         actions.tickets.createTicket = { await accounts.createTicket($0) }
         actions.tickets.startSession = { await cockpit.spawnSession(on: $0, mode: $1) }
+        actions.tickets.readTicket = { await accounts.readTicket($0) }
         return actions
     }
 }
