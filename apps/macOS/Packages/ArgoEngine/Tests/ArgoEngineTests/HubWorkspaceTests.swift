@@ -8,16 +8,16 @@ import Testing
 @MainActor
 struct HubWorkspaceTests {
     private static let cwd = "/tmp/argo-workspace"
-    private static let read = gitRead
 
     @Test
-    func `a Session carries what git said about the folder it is running in`() async {
+    func `a Session carries what git said about the worktree it is running in`() async {
         let hub = Self.hub()
         await hubObserveToEnd(hub, Self.observation(id: "worktree"))
 
         await hub.refreshWorkspaces()
 
-        #expect(hub.sessions.first?.workspace == Self.read)
+        #expect(hub.sessions.first?.workspace?.branch == "argo/#510")
+        #expect(hub.sessions.first?.workspace?.dirty == 3)
     }
 
     @Test
@@ -28,6 +28,19 @@ struct HubWorkspaceTests {
 
         // Before the first poll there is no answer, and an unread folder is not a clean one.
         #expect(hub.sessions.first?.workspace == nil)
+    }
+
+    /// AC4. An external Session's folder is one Argo read off git and never chose, so how Argo
+    /// knows the Session is HERE is an observation rather than its own record.
+    @Test
+    func `an external Session's Workspace is DERIVED`() async {
+        let hub = Self.hub()
+        await hubObserveToEnd(hub, Self.observation(id: "external"))
+
+        await hub.refreshWorkspaces()
+
+        #expect(hub.sessions.first?.provenance == .external)
+        #expect(hub.sessions.first?.workspace?.tier == .derived)
     }
 
     @Test
@@ -57,6 +70,7 @@ struct HubWorkspaceTests {
             projectURL: URL(fileURLWithPath: cwd),
             engine: Engine(
                 readCheckout: CheckoutFixture().read,
+                readWorktrees: { _ in [oneWorktree] },
                 readWorkspace: { _ in gitRead },
                 readLiveness: noLiveProcesses,
             ),
@@ -68,11 +82,18 @@ struct HubWorkspaceTests {
     }
 }
 
-/// What git would say about the folder every Session in this suite is running in. Outside the
-/// suite because the read is handed to an `Engine` and runs off the main actor.
+/// The one worktree the repository in this suite holds, which is the folder every Session in it is
+/// running in. Outside the suite because the reads are handed to an `Engine`.
+private let oneWorktree = WorktreeEntry(
+    path: "/tmp/argo-workspace", branch: "argo/#510", headSha: "aaa", isPrimary: false,
+)
+
+/// What git would say about that worktree.
 private let gitRead = WorkspaceProjection(
     kind: .worktree,
     branch: "argo/#510",
+    baseRef: "origin/main",
+    headSha: "aaa",
     dirty: 3,
-    unpushed: 1,
+    divergence: UpstreamDivergence(ahead: 1, behind: 0),
 )

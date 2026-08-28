@@ -203,7 +203,9 @@ extension CockpitPresentation.Session.Workspace {
             kind: session.workspace?.kind,
             branch: session.workspace?.branch ?? session.branch,
             dirty: session.workspace?.dirty,
-            unpushed: session.workspace?.unpushed,
+            // Unpushed is the header's word for the ahead half of the divergence; the behind half
+            // has no mark on this surface, so it stops at the engine.
+            unpushed: session.workspace?.divergence?.ahead,
         )
     }
 }

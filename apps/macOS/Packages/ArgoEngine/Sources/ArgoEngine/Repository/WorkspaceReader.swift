@@ -1,11 +1,15 @@
 import Foundation
 
-/// What a Session's working folder is, read off git's answers: whether it is a worktree of its
-/// own, what is uncommitted in it, and what is unpushed from it.
+/// What one working tree looks like, read off git's answers: what is uncommitted in it, what it has
+/// drifted from its upstream by, and what it is measured against.
 ///
-/// An actor for the reason `CheckoutReader` is one — the app's adapter blocks on a subprocess and
+/// Takes the entry rather than a folder, so `kind`, `branch` and `headSha` come from the listing
+/// that found the worktree instead of from a second read of the same facts — two readers of one
+/// fact are two chances to disagree about it (#259).
+///
+/// An actor for the reason `CheckoutReader` is one: the app's adapter blocks on a subprocess and
 /// the caller is the main actor. A folder git cannot answer for is `nil` rather than a projection
-/// of zeroes: nothing observed is not a clean tree.
+/// of zeroes — nothing observed is not a clean tree.
 actor WorkspaceReader {
     private let git: GitCommand
 
@@ -13,14 +17,17 @@ actor WorkspaceReader {
         self.git = git
     }
 
-    func read(at directoryURL: URL) -> WorkspaceProjection? {
+    func read(_ entry: WorktreeEntry) -> WorkspaceProjection? {
+        let directoryURL = URL(fileURLWithPath: entry.path)
         // The whole read hangs off this answer rather than any one number inside it.
         guard let dirty = dirtyCount(at: directoryURL) else { return nil }
         return WorkspaceProjection(
-            kind: isWorktree(at: directoryURL) ? .worktree : .main,
-            branch: branch(at: directoryURL),
+            kind: entry.isPrimary ? .main : .worktree,
+            branch: entry.branch,
+            baseRef: baseRef(at: directoryURL),
+            headSha: entry.headSha,
             dirty: dirty,
-            unpushed: unpushedCount(at: directoryURL),
+            divergence: divergence(at: directoryURL),
         )
     }
 
@@ -35,30 +42,23 @@ actor WorkspaceReader {
             .map { $0.split(whereSeparator: \.isNewline).count }
     }
 
-    /// The branch the folder is on, and nothing for a detached HEAD — `HEAD` is what git answers
-    /// there, and it is not a name anybody can check out.
-    private func branch(at directoryURL: URL) -> String? {
-        let head = answer(["rev-parse", "--abbrev-ref", "HEAD"], at: directoryURL)
-        return head == "HEAD" ? nil : head
+    /// The ref the branch is measured against: the remote's own default head, as git names it.
+    /// Absent for a repository with no remote, which has no shared base to be measured against.
+    private func baseRef(at directoryURL: URL) -> String? {
+        answer(["rev-parse", "--abbrev-ref", "origin/HEAD"], at: directoryURL)
     }
 
-    /// A linked worktree keeps its own git directory and shares the repository's common one; the
-    /// primary checkout has the same path for both. Comparing git's two answers is the check —
-    /// a path under `.claude/worktrees/` is this repository's convention, not git's.
-    private func isWorktree(at directoryURL: URL) -> Bool {
-        guard let output = answer(
-            ["rev-parse", "--path-format=absolute", "--git-dir", "--git-common-dir"],
-            at: directoryURL,
-        ) else { return false }
-        let paths = output.split(whereSeparator: \.isNewline)
-        guard paths.count == 2 else { return false }
-        return paths[0] != paths[1]
-    }
-
-    /// Commits the upstream has not seen. A branch with no upstream makes git exit non-zero, and
-    /// that `nil` is carried all the way to the header rather than being read as zero.
-    private func unpushedCount(at directoryURL: URL) -> Int? {
-        answer(["rev-list", "--count", "@{upstream}..HEAD"], at: directoryURL).flatMap(Int.init)
+    /// Both counts from one range. Left of the three dots is what the upstream has and HEAD does
+    /// not, right is the reverse — asked together so the pair is one reading of one history.
+    ///
+    /// A branch with no upstream makes git exit non-zero, and that absence is carried all the way
+    /// to the header rather than being read as two zeroes.
+    private func divergence(at directoryURL: URL) -> UpstreamDivergence? {
+        let counts = answer(
+            ["rev-list", "--count", "--left-right", "@{upstream}...HEAD"], at: directoryURL,
+        )?.split(whereSeparator: \.isWhitespace).compactMap { Int($0) }
+        guard let counts, counts.count == 2 else { return nil }
+        return UpstreamDivergence(ahead: counts[1], behind: counts[0])
     }
 
     /// git ends its answers with a newline, and an answer with nothing left in it is one git did
