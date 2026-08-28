@@ -36,6 +36,7 @@ struct TicketsSidebar: View {
         Section {
             ForEach(room.views) { reading in
                 ViewRow(symbol: reading.id.symbol, name: reading.id.name, count: reading.count)
+                    .argoSelectedRowGround(isSelected: reading.id == view)
                     .tag(reading.id)
             }
         } header: {

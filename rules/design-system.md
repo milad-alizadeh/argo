@@ -205,7 +205,7 @@ placements, and only these:
 
 | Placement | Drawn by | Weight |
 |---|---|---|
-| The selected roster row | `interaction.selectionGround`, as a `listRowBackground` | a wash — `accent` at 0.10 |
+| A selected sidebar row — the roster's, and the Work room's view list | `interaction.selectionGround`, as a `listRowBackground`, via `.argoSelectedRowGround(isSelected:)` | a wash — `accent` at 0.10 |
 | The rooms picker's selected segment | the `AccentColor` **asset**, which `NSSegmentedControl` fills with | full |
 | Focus rings and stock accented controls | the same asset | full |
 | The selection indicator on a tab | `interaction.selectionIndicator` | full |
@@ -228,6 +228,8 @@ time; that is the intent, not a side effect.
 **The platform will not colour a sidebar's selection.** On macOS 26 the `.listStyle(.sidebar)`
 capsule is a fixed neutral: neither `.tint` nor the asset moves it. Draw the row's ground with
 `listRowBackground`, which REPLACES that capsule rather than stacking a second highlight on it.
+Every sidebar, not just the roster (#906) — a new rail asks `.argoSelectedRowGround(isSelected:)`
+for its ground rather than growing a second copy of the same ternary.
 
 **Judge selection off a render, never off a preview.** A preview of an `ArgoUI` view builds the
 package alone and cannot see the asset at all; and an inactive window draws the platform's own

@@ -597,8 +597,10 @@ its approved study are authoritative for the replacement look and feel.
 - **Disclosure:** Hover, focus, or inspection reveals the complete path and remaining technical
   facts, with direct copy where appropriate. Truncation never changes the stored title, workspace,
   or path.
-- **Composition:** Rows remain flat over the continuous native sidebar. Selection uses a restrained
-  neutral wash rather than a bordered or elevated card.
+- **Composition:** Rows remain flat over the continuous native sidebar. Selection is a full-bleed
+  wash rather than a bordered or elevated card, and the wash is the brand hue — Ion Blue at a low
+  weight, not a step off the neutral ramp. **This reverses the "restrained neutral wash" this line
+  read before**; see the #875 and #906 amendments below for what was traded and why.
 - **Selection amendment — 2026-08-07:** On macOS 26 the sidebar's own rounded, inset capsule **is**
   that wash, and the roster does not draw a second one. The study's full-bleed wash and leading Ion
   Blue rail were drawn in Electron, where no system selection existed; reproducing them natively
@@ -639,7 +641,7 @@ its approved study are authoritative for the replacement look and feel.
   stayed `#464646` with the window active and the row clicked, while the rooms picker in the same
   frame went scarlet. So the route D30 recorded is closed, and the wash is Argo's to draw.
 
-  - **How it is drawn now.** `SessionNavigator` gives the selected row a `listRowBackground` of
+  - **How it is drawn now.** A selected sidebar row takes a `listRowBackground` of
     `interaction.selectionGround` — `interaction.accent` at 0.10. That REPLACES the style's capsule
     rather than painting over it, which is what makes it the opposite of the option ruled out
     below: there is one highlight in the row, not two, and the measured render carries no grey
@@ -663,6 +665,35 @@ its approved study are authoritative for the replacement look and feel.
     the point of the change rather than a cost of it.
   - **Still not reopened:** the leading Ion Blue rail. A selected row is carried by its ground
     alone. The clause below stands exactly as written.
+- **Amended by [#906](https://github.com/milad-alizadeh/argo/issues/906) — 2026-08-28: EVERY
+  sidebar, not just the roster.** #875 reversed the decision but reached one rail. The Work room's
+  view list — `All open`, `Blocked`, and their neighbours — was still delegating its selected ground
+  to `.listStyle(.sidebar)`'s capsule, so the row naming what the deck beside it is filtered to was
+  the fixed neutral, a shade off the rail behind it. Read on the running app, that is the same
+  complaint #875 answered, in the room it did not reach.
+
+  So the scope of the reversal is restated: **selection takes the accent in every sidebar this app
+  draws**, and no rail is exempt on the grounds that its rows are chrome rather than content.
+
+  - **One mechanism, not two.** `.argoSelectedRowGround(isSelected:)` is how both
+    `SessionNavigator` and `TicketsSidebar` ask for a row's ground, and a second copy of the
+    ternary is how the two rails drift apart. It is a wiring claim, not a palette one, so no unit
+    test pins it: this document already says selection is judged off a render, and the render is
+    the evidence (`blockedTicketsView`, `ticketsRoom`, `selectedRow`).
+  - **The ink is unchanged, and what that is worth is measured rather than asserted.** 0.10 is the
+    weight #875 chose so the roster's voices read at least as well on the wash as on the neutral
+    ground it replaced, and the view row is drawn on the same voices — `text.primary` for the name,
+    `text.tertiary` for the mark and the count — so it inherits that result rather than needing its
+    own. Stated exactly: `SelectionGroundTests` pins `text.primary` and `text.secondary` at 4.5:1
+    on the ground absolutely, and `text.tertiary` **only relatively**, against the wash it replaced.
+    Measured off the render, the title reads 7.60:1 on a selected row and the tertiary count reads
+    2.50:1, against 3.61:1 on an unselected one.
+  - **That tertiary drop is named, not hidden, and it is not this ticket's to fix.** It is #875's
+    shipped roster treatment exactly, at the same weight, and `text.tertiary` is a sub-AA voice on
+    `surface.base` already — the contract exempts it there for the same reason. Lifting it is a
+    change to the accent weight or to the ramp, which reopens #875 rather than extending it.
+  - **Still not reopened, again:** the leading Ion Blue rail. Neither rail draws an edge of any
+    kind, in the code or in this document.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.
