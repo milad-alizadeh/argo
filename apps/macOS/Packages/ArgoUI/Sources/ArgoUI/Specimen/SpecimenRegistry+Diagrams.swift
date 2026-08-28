@@ -70,5 +70,10 @@ extension SpecimenRegistry {
         SpecimenEntry("feedMermaidGanttYears") {
             MarkdownSpecimen(text: MermaidSpecimen.ganttYears)
         },
+        // The chain and the days off (#904): bars placed by the bar above them, broken around
+        // the weekends, and one pushed off the Saturday it was told to start on.
+        SpecimenEntry("feedMermaidGanttChain") {
+            MarkdownSpecimen(text: MermaidSpecimen.ganttChain)
+        },
     ]
 }

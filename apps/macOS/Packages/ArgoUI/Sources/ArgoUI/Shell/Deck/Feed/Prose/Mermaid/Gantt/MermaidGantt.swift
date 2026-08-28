@@ -10,6 +10,9 @@ struct MermaidGantt: Equatable, Sendable {
     var title = ""
     /// How a tick is labelled, as a `DateFormatter` pattern — see `MermaidGanttFormat`.
     var axisPattern = MermaidGanttFormat.defaultAxis
+    /// The days the chart says no work happens on. Already spent on the tasks' own dates — they
+    /// are the real ones — and kept because a bar is DRAWN broken around each of them.
+    var excludes = MermaidGanttExcludes()
     var sections: [Section] = []
 
     struct Section: Equatable, Sendable {
@@ -19,10 +22,11 @@ struct MermaidGantt: Equatable, Sendable {
 
     struct Task: Equatable, Sendable {
         let name: String
-        /// The handle the source gave it, empty where it gave none. Read by nothing yet: it is
-        /// what #904's `after <id>` resolves against, and a reader refusing it here would make
-        /// those sources fall to a fence for the wrong reason.
+        /// The handle the source gave it, empty where it gave none — what an `after` naming it
+        /// was resolved against.
         let id: String
+        /// Both ends are the REAL ones: an `after` has already been followed and a length has
+        /// already been counted in days the chart's `excludes` leaves it (#904).
         let start: Date
         /// Never before `start` — the reader refuses a task that ends before it begins.
         let end: Date

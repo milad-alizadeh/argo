@@ -35,24 +35,29 @@ extension MermaidGanttChart {
         }
     }
 
-    /// One bar per task, on its own line of the gutter and in its section's hue.
+    /// A task's bar on its own line of the gutter, in its section's hue — and BROKEN around every
+    /// day the chart excludes, which is why a task can draw more than one figure (#904). A solid
+    /// bar across an excluded weekend would say work happens on a day the chart says it cannot.
     var bars: [MermaidFigure] {
-        gantt.rows.enumerated().compactMap { at, row in
-            guard case let .task(task, series) = row else { return nil }
-            let row = rowRect(at)
-            let start = x(of: task.start)
-            return MermaidFigure(
-                form: .shape(.rounded, CGRect(
-                    x: start,
-                    y: row.midY - Self.barHeight / 2,
-                    // A task of no length is still a mark: a bar of nothing at all would say the
-                    // source wrote no task there.
-                    width: max(MermaidMeasure.barMinWidth, x(of: task.end) - start),
-                    height: Self.barHeight,
-                )),
-                role: .series(series),
-            )
+        gantt.rows.enumerated().flatMap { at, row -> [MermaidFigure] in
+            guard case let .task(task, series) = row else { return [] }
+            let line = rowRect(at)
+            return gantt.excludes.runs(from: task.start, to: task.end).map { run in
+                MermaidFigure(form: .shape(.rounded, bar(run, on: line)), role: .series(series))
+            }
         }
+    }
+
+    /// One stretch of a task, on its row. A stretch of no length is still a mark: a bar of nothing
+    /// at all would say the source wrote no task there.
+    private func bar(_ run: ClosedRange<Date>, on line: CGRect) -> CGRect {
+        let from = x(of: run.lowerBound)
+        return CGRect(
+            x: from,
+            y: line.midY - Self.barHeight / 2,
+            width: max(MermaidMeasure.barMinWidth, x(of: run.upperBound) - from),
+            height: Self.barHeight,
+        )
     }
 
     /// The chart's own name, over the whole figure — or nothing, where the source named it

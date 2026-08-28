@@ -108,7 +108,8 @@ struct MermaidGanttReadingTests {
         "dateFormat YYYY-MM-DD\nUnknown length : 2026-01-05, 3fortnights",
         "dateFormat QQQQ\nAny : 2026-01-05, 1d",
         "axisFormat %q\nAny : 2026-01-05, 1d",
-        "dateFormat YYYY-MM-DD\nexcludes weekends\nAny : 2026-01-05, 1d",
+        // `after` and `excludes` are read now (#904); what still fences is an `after` naming
+        // nothing, which `MermaidGanttChainTests` owns along with the rest of the chain.
         "dateFormat YYYY-MM-DD\nAfter it :after a1, 5d",
         "dateFormat YYYY-MM-DD\nCritical :crit, a1, 2026-01-05, 5d",
         "dateFormat YYYY-MM-DD\nA marker :milestone, 2026-01-05, 0d",

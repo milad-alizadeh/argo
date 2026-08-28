@@ -1,6 +1,6 @@
 import Foundation
 
-/// The three things a Gantt layout has to get right (#903).
+/// The four things a Gantt layout has to get right (#903, #904).
 extension MermaidSpecimen {
     /// A multi-section chart across a quarter, in both of the absolute task forms and carrying
     /// ids: the hues have to separate the sections, and the dates over the bars have to stay off
@@ -58,6 +58,28 @@ extension MermaidSpecimen {
         The first attempt : 2016-01-01, 2019-06-30
         The rewrite       : 2019-07-01, 2023-12-31
         The one that shipped : 2024-01-01, 2026-06-30
+    ```
+    """
+
+    /// A chain and a week of weekends (#904): every task but the first is placed by the one above
+    /// it, the bars break around the days off, and `The bars` was told to start on a Saturday.
+    nonisolated static let ganttChain = """
+    And how it would run with the weekends off:
+
+    ```mermaid
+    gantt
+      title The epic, weekends off
+      dateFormat YYYY-MM-DD
+      axisFormat %b %d
+      excludes weekends
+      section Reading
+        The reader :read, 2026-01-01, 5d
+        The dates  :dates, after read, 3d
+      section Drawing
+        The axis   :axis, after dates, 4d
+        The bars   :bars, after axis, 2d
+      section Landing
+        Review     :rev, after bars, 3d
     ```
     """
 }
