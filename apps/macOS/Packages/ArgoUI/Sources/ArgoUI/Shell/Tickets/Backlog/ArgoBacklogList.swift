@@ -48,6 +48,11 @@ enum ArgoBacklogList {
     static let labelLimit = 2
     /// Between the label chips, and between the last of them and the trailing fact.
     static let labelGap: CGFloat = ArgoSpacing.hair
+    /// The blockage mark's capsule, as a floor on both axes: at one digit it is a circle the size
+    /// of a `viewRowHeight` glyph, and a second digit grows it sideways rather than shrinking the
+    /// numeral. Sized against the machine caption it sets, not against the dot at the row's leading
+    /// edge — the dot is a signal and this is a number somebody reads.
+    static let blockageMark: CGFloat = 16
     /// One level of nesting. Sized so a child's dot lands under its parent's id.
     static let indentStep: CGFloat = ArgoSpacing.loose
     /// Level three shares level two's inset. At 520 this is comfort rather than necessity — it is
@@ -67,4 +72,11 @@ extension EnvironmentValues {
     /// the pane's. Defaults to the width the pane opens at, so a `#Preview` with no room above it
     /// draws the shipping row.
     @Entry var backlogPaneWidth: CGFloat = ArgoBacklogList.width
+
+    /// The moment a row's age stamp is measured against (#897), and `nil` wherever nobody pinned
+    /// one — the shipping app, which reads the wall clock as it draws. Only a RENDER sets it, and
+    /// it has to: an age measured against the wall clock makes a shot that never matches itself
+    /// twice. Optional rather than defaulted to `.now`, because an environment default resolves
+    /// once and would freeze every age at whatever instant first read the key.
+    @Entry var backlogNow: Date?
 }

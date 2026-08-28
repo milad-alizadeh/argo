@@ -74,6 +74,16 @@ public struct Ticket: Equatable, Sendable, Identifiable {
         blockedBy.map(TicketBlockage.init(blockers:)) ?? .unread
     }
 
+    /// How many blockers still stand in the way, and `nil` where the provider served no edges at
+    /// all — UNKNOWN, never zero. Zero is a provider SAYING the way is clear, which is a different
+    /// fact and the one a mark may rest on (`CONTEXT.md` L2 · degrade-down).
+    ///
+    /// A ruled-out blocker counts. It satisfies nothing (`TicketClosure.satisfiesBlocker`), so the
+    /// ticket is stranded rather than clear, and a count that dropped it would read as startable.
+    public var standingBlockers: Int? {
+        blockedBy?.filter { !$0.closure.satisfiesBlocker }.count
+    }
+
     public func state(claimed: Bool) -> TicketState {
         TicketState(closure: closure, claimed: claimed)
     }

@@ -28,6 +28,18 @@ extension TicketsRoomProjection {
         open.filter { view.admits($0, claimed: claimed.contains($0.number)) }
     }
 
+    /// The blockage worth marking on a backlog row, and `nil` where the row marks nothing (#896).
+    ///
+    /// A nil-returning seam on the pattern of `TicketState.filing(beside:)` (#893): it WITHHOLDS
+    /// the fact rather than handing the row a value it would have to know not to draw. Two
+    /// different silences reach the same nothing — the provider said the way is clear, and the
+    /// provider served no edges at all — and that is correct, because a row that drew either would
+    /// be claiming `unblocked` over the second (`CONTEXT.md` L2 · degrade-down).
+    static func blockage(of item: Ticket) -> Blockage? {
+        guard let standing = item.standingBlockers, standing > 0 else { return nil }
+        return Blockage(count: standing, isStranded: item.blockage == .stranded)
+    }
+
     /// The parent's `n/m`, over the TRACKER's children rather than the rows drawn under it.
     static func rollUp(of item: Ticket, closed: Set<Int>) -> String? {
         guard !item.children.isEmpty else { return nil }

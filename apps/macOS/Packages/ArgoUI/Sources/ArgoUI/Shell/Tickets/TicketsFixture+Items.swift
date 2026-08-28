@@ -1,4 +1,5 @@
 import ArgoEngine
+import Foundation
 
 extension TicketsFixture {
     /// What varies between one fixture ticket and the next. A struct rather than three more
@@ -97,6 +98,20 @@ extension TicketsFixture {
     - `TicketsRoomProjection.room(from:in:)` is where both halves are assembled.
     """
 
+    /// How long before `TicketsFixture.asOf` the provider last saw each ticket change (#897).
+    ///
+    /// A SPREAD across every rung of the stamp — hours, days, weeks, months, a year — because a
+    /// column where seventy-five rows all read `3d` proves the stamp compiles and nothing else.
+    /// It is also what puts all four states of the trailing region in one shot: #609 is dated and
+    /// clear, #336 is dated and blocked, #272 is BOTH blocked and stale, and #763 is neither —
+    /// deliberately absent, so one row in every render is a row the provider served no date for.
+    /// #607's date is drawn over by its own roll-up, which is the precedence rule rendered rather
+    /// than asserted.
+    private static let daysUntouched: [Int: Double] = [
+        336: 2 / 24.0, 609: 1, 607: 3, 388: 5, 275: 8, 272: 12, 334: 21, 273: 40, 185: 60,
+        335: 95, 160: 400,
+    ]
+
     /// The provider's own word for a ticket somebody is on. Verbatim, and deliberately not
     /// `TicketState.claimed`'s spelling — the two are different facts (#272).
     private static let working = "In progress"
@@ -159,6 +174,13 @@ extension TicketsFixture {
             priority: priorities[item.number],
             type: types[item.number],
             body: bodies[item.number],
+            updatedAt: .some(daysUntouched[item.number].map(untouched)),
         )
+    }
+
+    /// One age as an instant, counted back off the fixture's own fixed `asOf` — so a render pinned
+    /// to that instant shows the same stamps in a year's time as it does today.
+    private static func untouched(_ days: Double) -> Date {
+        asOf.addingTimeInterval(-days * 86400)
     }
 }

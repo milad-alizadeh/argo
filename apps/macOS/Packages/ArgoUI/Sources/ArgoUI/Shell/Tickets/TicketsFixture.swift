@@ -1,4 +1,5 @@
 import ArgoEngine
+import Foundation
 
 /// The backlog the Tickets room renders from (#812) — twelve open tickets, the two closed children
 /// that make a parent's roll-up say `2/9`, and the four closed blockers that let a `blockedBy` list
@@ -134,6 +135,26 @@ enum TicketsFixture {
     static func reading(of items: [Ticket]) -> TicketsReading {
         TicketsReading(items: items, provider: bound, project: project)
     }
+
+    /// The instant every fixture age is counted back from, and the one a render pins
+    /// `backlogNow` to. Fixed rather than `.now`: an age stamp measured against the wall clock
+    /// makes a render that never matches itself twice, and every shot of a dated row would then be
+    /// a shot of a different row.
+    static let asOf = Date(timeIntervalSince1970: 1_760_000_000)
+
+    /// A ticket whose blocker was RULED OUT, so no amount of waiting clears the edge — the state
+    /// `state.failure` is spent on (`cockpit-work-room.md` — the Route).
+    ///
+    /// A fixture of its own because no other one reaches it: every blocker in the backlog above is
+    /// either open or resolved, so the stranded mark had no render anywhere until this one.
+    static let stranded = reading(of: [
+        item(272, blockedBy: [
+            TicketBlocker(number: 609, closure: .ruledOut),
+            TicketBlocker(number: 388, closure: .open),
+        ]),
+        item(273, blockedBy: [TicketBlocker(number: 999, closure: .ruledOut)]),
+        item(275, blockedBy: []),
+    ])
 
     static let bound = TicketsProvider(
         name: "GitHub",

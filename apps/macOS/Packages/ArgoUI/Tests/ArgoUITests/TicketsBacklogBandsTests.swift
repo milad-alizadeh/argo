@@ -63,8 +63,8 @@ struct TicketsBacklogBandsTests {
             .filter { $0.depth == 0 }.allSatisfy { $0.odd == nil })
     }
 
-    /// The trailing slot holds one fact. #334 is a `medium` under `HIGH` AND a parent, and the
-    /// roll-up is what it draws — the two never collide.
+    /// The caption holds one fact. #334 is a `medium` under `HIGH` AND a parent, and the roll-up
+    /// is what it draws — the two never collide.
     @Test
     func `a parent's roll-up wins the trailing slot over an odd priority`() {
         let bands = TicketsRoomProjection.bands(of: Self.roots)
@@ -72,17 +72,17 @@ struct TicketsBacklogBandsTests {
         let route = TicketsRoomProjection.drawn(bands[0], shut: []).first { $0.id == 334 }
         #expect(route?.odd == "medium")
         #expect(route?.row.trailing == "0/2")
-        #expect(route?.trailing == "0/2")
+        #expect(route?.caption(asOf: TicketsFixture.asOf) == "0/2")
     }
 
     /// A leaf with an odd priority has the slot to itself.
     @Test
-    func `a leaf's odd priority takes the trailing slot`() {
+    func `a leaf's odd priority takes the caption slot`() {
         let bands = TicketsRoomProjection.bands(of: Self.roots)
 
         let planner = TicketsRoomProjection.drawn(bands[0], shut: []).first { $0.id == 273 }
         #expect(planner?.row.trailing == nil)
-        #expect(planner?.trailing == "medium")
+        #expect(planner?.caption(asOf: TicketsFixture.asOf) == "medium")
     }
 
     /// No port reads a priority yet (#388), so a reading with none is the state that ships. Those

@@ -26,6 +26,7 @@ struct TicketsRoomSpecimen: View {
             ticketAddress: TicketsFixture.address,
         )
         .environment(navigation)
+        .environment(\.backlogNow, TicketsFixture.asOf)
     }
 }
 
@@ -88,6 +89,9 @@ struct TicketsPanesSpecimen: View {
             tickets.deck
         }
         .argoDeckSurface()
+        // Pinned, so a dated row is shootable at all: measured against the wall clock every shot
+        // of one would read a different age from the last (#897).
+        .environment(\.backlogNow, TicketsFixture.asOf)
     }
 }
 
@@ -122,6 +126,22 @@ struct DeliveryChipsSpecimen: View {
         }
         .padding(ArgoSpacing.region)
         .frame(width: ArgoTicketDetail.idealWidth, alignment: .leading)
+        .argoDeckSurface()
+    }
+}
+
+/// Every reading the blockage mark draws, side by side — one digit, two digits, and the stranded
+/// ink. The two-digit case has no room render: the backlog's worst ticket waits on two, and a
+/// capsule that grew the wrong way at ten would not show up until somebody's real backlog did.
+struct BlockageMarksSpecimen: View {
+    var body: some View {
+        HStack(spacing: ArgoSpacing.section) {
+            BlockageMark(blockage: .init(count: 1, isStranded: false))
+            BlockageMark(blockage: .init(count: 2, isStranded: false))
+            BlockageMark(blockage: .init(count: 17, isStranded: false))
+            BlockageMark(blockage: .init(count: 2, isStranded: true))
+        }
+        .padding(ArgoSpacing.region)
         .argoDeckSurface()
     }
 }

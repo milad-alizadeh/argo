@@ -673,3 +673,84 @@ no pixel in them: the fixture's pool has exactly one takeable unclaimed leaf (#2
 clear leaves are claimed), so the pick is the same ticket the ranking or the provider's order would
 both have named. The `oldest untouched` chip has no design render of its own and is drawn in
 `NextUpChip`'s own preview beside the other three.
+
+---
+
+# The trailing region (#896 · #897)
+
+Two tickets, one build, because the question neither could answer alone was *what shows when a row
+is both blocked and stale*. The rule is in the design under **the trailing region**; this records
+what was considered and refused.
+
+## Extracted
+
+| Name | Kind | Built from | Note |
+|---|---|---|---|
+| `BlockageMark` | atom | `Text` in a `Capsule().strokeBorder` | the count, in the Route's own waiting/dead-end inks |
+| `TicketAge` | — | pure `Date` arithmetic, no view | one rounded unit; not `AgePhrase`, which words the same distance as prose for a sentence to carry |
+
+`Drawn.caption(asOf:)` is the one place the three-way precedence is CODED; the design's table
+above is where it is decided. Two statements of one rule, deliberately — the design is the SSOT and
+the function is the only implementation of it, so a row that drew a different order would disagree
+with a document rather than with a second copy of itself.
+`TicketsRoomProjection.blockage(of:)` is the nil-returning seam that withholds the mark —
+`TicketState.filing(beside:)`'s shape (#893), for the same reason: a view handed a value it must
+know not to draw is a view that will eventually draw it.
+
+## What was refused
+
+- **A third slot for the date, outboard of the caption.** #897 floated it ("the trailing region may
+  need to hold two marks"), and its own AC settles it the other way: *the precedence between the
+  date, the parent roll-up and the priority word* presupposes one slot and an order. A permanent
+  date column at the trailing edge also costs the width the label chips are already rationed by, at
+  a pane the reader can drag down to 440.
+- **`Aug 12` past a horizon.** #897's prose suggests it; its AC asks only for *relative and short*.
+  A stamp that changes register halfway down the column loses the rhythm that made it scannable,
+  and it drags a calendar and a locale into a value the projection can otherwise compute exactly.
+- **A filled mark, Linear's red circle.** The shape is #896's stated reference and the count is
+  taken from it, but the fill and the hue are not: red is `state.failure`, which this room has
+  already spent on the ticket that can *never* unblock. Seventeen rows of it would say every one of
+  them is a dead end. Hollow, on `state.idle`, is the same information without the alarm.
+- **A `blocked` label chip.** The fixture carries one and a provider can serve one, but a synthesised
+  chip would sit in the labels' own region claiming to be the provider's word.
+
+## Which specimen reproduces which state
+
+| State | Where |
+|---|---|
+| clear and dated | `ticketsRoom`, `blockedTicketsView` — #609 at `1d` |
+| blocked and dated | the same shots — #336 at `2h` behind one blocker |
+| **both blocked and stale** | the same shots — #272, `2` and `1w` |
+| neither | the same shots — #763, no mark and no caption |
+| roll-up over an age | the same shots — #607 draws `2/9`, never its own `3d` |
+| stranded | `strandedTicketsBacklog`, added here |
+
+## The fixture gap this build found
+
+**No fixture ticket carried `updatedAt` at all.** `TicketsFixture.items` set every other fact and
+never a date, so #897's absence was invisible to every render in the repo — and `isOldest` returned
+false for all twelve, which meant the hero's `oldest untouched` fallback had no room render either.
+The dates are counted back from a fixed `TicketsFixture.asOf` rather than from `.now`, and the
+specimens pin `backlogNow` to it: an age measured against the wall clock makes a render that never
+matches itself twice.
+
+**No fixture reached `stranded`.** Every blocker in the backlog is open or resolved, so the one
+state `state.failure` is spent on had never been drawn. `TicketsFixture.stranded` is its own reading
+for that reason, on the pattern `unjoinedClaims` set at #894.
+
+## Where the design and the code disagree
+
+- **#160 and #185 carry `blockedBy` edges the design says they do not have.** The sidebar section
+  reads: *"Being held up is not the same as having an edge: #160 and #185 are decisions awaiting an
+  answer, with nothing in `blockedBy` to show for it."* `TicketsFixture.items` gives both
+  `blockedBy: [272]`, so both now draw a blockage mark reading `1`. The disagreement is
+  **pre-existing** — the fixture has served those edges since #812, and it is what makes
+  `Unblocked + Blocked` sum to `All open` in every render — but nothing on screen showed it until a
+  row started drawing the count. Reconciling it moves two rows between two sidebar views and
+  re-shoots the room, which is #812's decision to revisit, not this ticket's. Recorded rather than
+  fixed.
+- **There is one appearance.** #896 asks for a mark "legible in both appearances"; the contract
+  defines a single theme, `ArgoTheme.graphite` at `.dark`, and no light palette exists to render.
+  The mark spends only `state.idle` and `state.failure` and states no colour of its own, so it will
+  inherit whatever a second appearance defines — but the criterion cannot be closed by a render
+  until there is one.

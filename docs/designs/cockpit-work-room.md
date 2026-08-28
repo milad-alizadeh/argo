@@ -119,6 +119,62 @@ children it has.
 comfort rather than necessity — it is the rule that keeps a five-deep parent legible, and a tree
 that deep is read on the Route (#334), not here.
 
+### The trailing region — two marks, and the precedence between them
+
+**Amended #896 · #897.** The row shipped with one trailing fact and one dot. Three tickets then
+proposed a mark for that one slot without reference to each other — a blockage count (#896), a date
+(#897), and a `claimed` mark (#894, withdrawn). A row grows four marks nobody designed together
+exactly that way, so the region is settled here, once, and a fourth fact has to be placed in this
+order rather than race the others for the position.
+
+**The region holds at most two marks, in this order: the blockage mark, then the caption.** Both
+sit after the label chips, both are rigid, and neither displaces the title — the title is still the
+only thing the row squeezes.
+
+**The blockage mark does not contend.** It answers a different question from everything in the
+caption: *can I start this*, rather than *what is this* or *how long has it sat*. A row that is both
+blocked and stale therefore draws both, and the count is a count rather than a flag — blocked by
+three and blocked by one are different distances from startable.
+
+**The caption holds exactly one fact, in this order.** First one present wins; the rest are not
+drawn.
+
+| | Fact | Why it sits here |
+|---|---|---|
+| 1 | the parent's `n/m` roll-up | the only place the tracker's own child count is stated |
+| 2 | the child's odd priority word | the only place a row disagrees with the header over it (#819) |
+| 3 | the age, last touched | context, and the one a reader can get from the pane beside it |
+
+**The age is last because nearly every row has one.** An age that outranked the other two would
+silently delete them from the only list that states them, which is a worse loss than a date a
+reader can still read in the pane. It is therefore the slot's *default* — what the caption says
+when nothing more specific has claimed it — and a parent's row shows its roll-up rather than its
+date, deliberately.
+
+**The mark sits inboard of the caption, not outboard of it.** The caption keeps the trailing edge
+it has always been right-aligned to, so adding the mark moves nothing on an unblocked row.
+
+**The age is relative all the way out** — `now`, `4h`, `6d`, `3w`, `2mo`, `1y` — and never becomes
+`Aug 12` past a horizon. The reason to look is distance from now; an absolute date hands that
+subtraction back to the reader, and a column that changes register halfway down loses the rhythm
+that made it scannable. One rounded unit, in the machine caption the roll-up already sets.
+
+**Absence draws nothing, and says nothing.** A row whose provider served no date draws no caption —
+no placeholder and no reserved gap. A ticket whose blockers the provider never served draws no mark
+either, and that silence is deliberate: it is not a claim that the ticket is unblocked, which is the
+claim Argo has no standing to make (`CONTEXT.md` L2 · degrade-down). The mark and its absence are
+therefore drawn identically for a *clear* ticket and an *unread* one, which is correct — the row
+says nothing about blockage in both cases, and only the sidebar's `Blocked` count, which can see the
+whole set, is allowed to tell them apart.
+
+**The mark's ink is the Route's, unchanged.** Waiting is `state.idle`, so seventeen blocked rows do
+not read as an emergency on day one; `state.failure` is spent only on a ticket that can never
+unblock itself — one whose blocker was **ruled out**, which satisfies nothing and needs a human to
+re-scope one of the two. No palette role is added.
+
+**None of this is a leading accent.** The region is trailing, and a selected or current row is still
+carried by its ground alone.
+
 ### The seam between the panes
 
 **Both panes are the reader's to size (#844).** #816 fixed the backlog at 520 and joined the two
@@ -505,7 +561,8 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | `twistWidth` | **12** | a leaf keeps the slot, so every dot lands on one vertical |
 | `indentStep` | `ArgoSpacing.loose` 16 | one level; a child's dot lands under its parent's id |
 | `indentDepthCap` | **2** | level three shares level two's inset |
-| `gap` | `ArgoSpacing.base` 8 | between dot, id, title and the trailing fact |
+| `gap` | `ArgoSpacing.base` 8 | between dot, id, title and the trailing region |
+| `blockageMark` | **16**, a floor on both axes | at one digit a circle; a second digit grows the capsule sideways rather than shrinking the numeral (#896) |
 
 ### `ArgoTicketsChrome` — `ArgoUI/Shell/Tickets/`
 
@@ -551,6 +608,7 @@ for; anything not listed is stock used directly.
 | `BacklogRow` | molecule | an `HStack` in a `List` row | `twist · dot · id · title · trailing` |
 | `BacklogTwist` | atom | `DisclosureGroup`'s chevron, drawn | drawn rather than inherited so it can carry its own hit target |
 | `DeliveryDot` | atom | `Circle` at `ArgoLayout.statusDotSize` | the five-state table above |
+| `BlockageMark` | atom | a count in a `Capsule().strokeBorder` | **Added #896**: how many blockers still stand, in the trailing region. Hollow rather than filled, so the numeral's contrast is the ink's own in both appearances |
 | `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
 | `TicketsToolbar` | organism | `.toolbar { ToolbarItem }` per control | the window row, and **every control the room has**. Amended twice: #836 moved all but search into per-pane bands, and the bands are now gone — see the column question |
 | `BacklogControls` | molecule | a `ToolbarVessel` | filter and `BacklogMenu`, past a rule. Split out of `BacklogHeader` when the controls returned to the row |
@@ -584,7 +642,8 @@ prototype's numbers survive.
 |---|---|---|
 | backlog id, mono 11 | `ArgoTypography.machineCaption` | exact |
 | backlog title, 12.5 | `ArgoTypography.body` | snapped UP to 13; the row height grew 28 → 30 to carry it |
-| roll-up / odd priority, mono 10–10.5 | `ArgoTypography.machineCaption` | snapped up to 11, matching the id beside it |
+| roll-up / odd priority / age, mono 10–10.5 | `ArgoTypography.machineCaption` | snapped up to 11, matching the id beside it. The age joined the slot in #897 and takes the role already there — the caption is one column whatever fact is in it |
+| blockage count, mono | `ArgoTypography.machineCaption` | the same role again (#896), not `badge`: `badge`'s 0.6 tracking sets a numeral off-centre in a capsule, and a blocker count is a machine number like the roll-up beside it |
 | `HIGH`, `BACKLOG`, section captions, 10 uppercase | `ArgoTypography.sectionLabel` | the role's documented job — "sidebar and rail group labels" |
 | view name, 12.5 | `ArgoTypography.rowMeta` | snapped DOWN to 11: a view name is chrome, and it must not compete with a ticket title beside it |
 | toolbar heading, 13 semibold | `ArgoTypography.windowTitle` | exact tuple |
