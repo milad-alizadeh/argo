@@ -9,10 +9,20 @@ struct WorkToolbarIntents {
     /// The list's own: narrow it, and re-group what is left.
     var narrowing: () -> Void = {}
     var grouping: () -> Void = {}
-    /// The call-to-action, which belongs to no ticket — it makes one.
-    var creating: () -> Void = {}
+    /// The call-to-action, which belongs to no ticket — it makes one, and it makes it THROUGH a
+    /// provider. So it is this room's one provider-port write control, and the verb travels with
+    /// what the control renders (#275).
+    var creation = Creation()
     /// The open ticket's own.
     var verbs = Verbs()
+
+    /// A write verb and its whole rendering, in one value: §7 decides whether it may be pressed
+    /// and §4 what it says when it did not land, and a surface that took the closure without the
+    /// state would be a button that presses into a dead connection.
+    struct Creation {
+        var act: () -> Void = {}
+        var control = WriteControlState.live
+    }
 
     struct Verbs {
         var start: () -> Void = {}

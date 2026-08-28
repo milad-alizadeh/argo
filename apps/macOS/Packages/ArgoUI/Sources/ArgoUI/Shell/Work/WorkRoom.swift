@@ -7,6 +7,10 @@ import SwiftUI
 /// replacing them — which is what `cockpit-work-room.md` means by "it does not own a split of its
 /// own". Both halves read the same `Room` value, so the sidebar's counts and the deck's rows can
 /// never be two different answers.
+///
+/// `@MainActor` because it holds the bands' verbs: a closure a control calls is not `Sendable`, so
+/// the value carrying one belongs where the control does.
+@MainActor
 struct WorkRoom {
     let room: WorkRoomProjection.Room
     /// Which room the strip in the sidebar's head is on — the whole window's, not this room's.
@@ -26,6 +30,9 @@ struct WorkRoom {
     /// What the unbound page's `Connect a provider…` does. Inert by default, so a preview and a
     /// specimen draw the button without opening a panel behind the render.
     var connect: @MainActor () -> Void = {}
+    /// What the bands' controls do, and — for the one of them that writes through a provider —
+    /// what it renders (#275). Inert by default for the same reason `connect` is.
+    var intents = WorkToolbarIntents.inert
     /// The two things the room's chrome HOLDS rather than reads — the query in the window's row and
     /// the Mode in the ticket's band. Both outlive the pane, so both are held above the room; one
     /// value rather than two members, because a binding pair travels together (the `DeckSeams`
@@ -95,7 +102,7 @@ struct WorkRoom {
             DeckSeam(width: $backlogWidth, limits: limits, growsRightward: true)
             TicketDetail(
                 ticket: room.ticket,
-                band: TicketBand(reading: chrome, mode: held.mode),
+                band: TicketBand(reading: chrome, intents: intents, mode: held.mode),
             ) { ticket = $0 }
         }
     }

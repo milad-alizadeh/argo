@@ -29,8 +29,22 @@ extension CockpitView {
             backlogWidth: $navigation.backlogWidth,
             shut: $navigation.shutParents,
             connect: { actions.openProjectPanel(presentation.activeProjectID) },
+            intents: workIntents,
             held: WorkRoom.Held(query: $navigation.workQuery, mode: $navigation.workMode),
         )
+    }
+
+    /// What the room's bands do. Only one of the controls has anything behind it yet, and it is
+    /// the one that writes: New ticket is `createWorkItem`, so §7 of the failure spec decides
+    /// whether it may be pressed at all.
+    ///
+    /// The attempt is `idle` because nothing composes a draft yet — the pending and refused
+    /// renderings are built and specimen-proven, and the surface that supplies the draft is what
+    /// will drive them (#275 AC6). The admission below is live now.
+    private var workIntents: WorkToolbarIntents {
+        var intents = WorkToolbarIntents.inert
+        intents.creation.control = .over(health.writes(through: .workItem), .idle)
+        return intents
     }
 
     /// The Work room with nothing bound hides WHOLE, which includes its half of the split view

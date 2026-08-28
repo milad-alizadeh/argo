@@ -19,7 +19,7 @@ struct TicketBand: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.comfortable) {
             if reading.draws {
-                NewTicketButton(act: intents.creating)
+                NewTicketButton(creation: intents.creation)
                 // The verbs address the ticket the deck is OPEN on. With none open there is
                 // nothing for Start, open-on-host or copy link to name, and the vessel goes rather
                 // than standing there addressing nobody.

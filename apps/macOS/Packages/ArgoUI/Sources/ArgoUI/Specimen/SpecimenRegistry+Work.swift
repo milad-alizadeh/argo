@@ -56,5 +56,15 @@ extension SpecimenRegistry {
             WorkChromeSpecimen(reading: WorkFixture.answeredEmpty)
         },
         SpecimenEntry("unboundWorkChrome") { WorkChromeSpecimen(reading: WorkFixture.unbound) },
-    ]
+    ] + writeControls
+
+    /// The room's one provider-port write control, in each state a failing write leaves it in
+    /// (#275). Mapped from the fixture list, so a state is added by adding a row to it.
+    private static let writeControls: [SpecimenEntry] = WriteControlSpecimen.states.map { state in
+        SpecimenEntry(state.name) {
+            SpecimenScene.centred {
+                NewTicketButton(creation: WorkToolbarIntents.Creation(control: state.control))
+            }
+        }
+    }
 }
