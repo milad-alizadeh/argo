@@ -47,6 +47,25 @@ enum MermaidMeasure {
     /// as big, because the shape is at its full width on ONE line and narrows from there.
     static let diamondScale: CGFloat = 1.5
 
+    /// What a bang and a cloud are built from. Ratios and counts rather than steps: both are
+    /// silhouettes around a label, and both have to read as themselves at the size the words set
+    /// them. Few enough spikes that each is a spike, deep enough a notch that it is not a circle.
+    static let bangSpikes = 11
+    static let bangNotch: CGFloat = 0.82
+    static let cloudBumps = 9
+    static let cloudBody: CGFloat = 0.84
+
+    /// How much wider a bang or a cloud stands than the words in it — the same argument as
+    /// `diamondScale`, at the gentler ratio a round silhouette needs.
+    ///
+    /// √2 is the figure for a bare rect inscribed in an ellipse, and it is NOT the figure here: the
+    /// box being scaled is the words box, which already carries `nodeInsetX` and `nodeInsetY`
+    /// around the glyphs, so the corner that has to stay inside is the GLYPH corner well within it.
+    /// Rendered at the worst case — the widest label over two lines, `feedMermaidMindmapShapes` —
+    /// both silhouettes clear the text at every corner with room to spare. Raising this to √2 would
+    /// only make a bang half again the size of the branch it hangs off.
+    static let blobScale: CGFloat = 1.25
+
     /// How far an edge's word stands off the line it belongs to. Clear of the stroke and still
     /// obviously attached to it.
     static let wordGap: CGFloat = ArgoSpacing.tight

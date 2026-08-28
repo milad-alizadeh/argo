@@ -38,14 +38,14 @@ extension MermaidSequence.Message {
     /// try the keywords first and fall through to here.
     static func read(_ line: String) -> Self? {
         var scan = MermaidScan(line)
-        let from = scan.takeRun(where: MermaidSequence.isNameCharacter)
+        let from = scan.takeIdentifier()
         guard !from.isEmpty else { return nil }
         scan.skipSpaces()
         guard let arrow = MermaidArrow.read(&scan) else { return nil }
         scan.skipSpaces()
         let activates = scan.take("+")
         let deactivates = !activates && scan.take("-")
-        let to = scan.takeRun(where: MermaidSequence.isNameCharacter)
+        let to = scan.takeIdentifier()
         guard !to.isEmpty else { return nil }
         scan.skipSpaces()
         // Everything after the `:` is the message, verbatim — a colon inside it included, which is

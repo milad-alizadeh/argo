@@ -69,12 +69,12 @@ extension MermaidFlowchart {
         // The keyword and not merely its letters: `subgraphFoo --> B` names a node, and reading it
         // as a block would open one nothing ever closes and refuse the whole diagram.
         let rest = line.dropFirst(keyword.count)
-        guard rest.first.map({ !MermaidFlowchart.Node.isNameCharacter($0) }) ?? true else {
+        guard rest.first.map({ !MermaidScan.isIdentifier($0) }) ?? true else {
             return nil
         }
         let title = rest.trimmingCharacters(in: .whitespaces)
         var scan = MermaidScan(title)
-        _ = scan.takeRun(where: Node.isNameCharacter)
+        _ = scan.takeIdentifier()
         scan.skipSpaces()
         guard Node.opensLabel(scan), let spelled = Node.readLabel(&scan),
               scan.rest.trimmingCharacters(in: .whitespaces).isEmpty

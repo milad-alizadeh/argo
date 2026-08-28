@@ -23,17 +23,11 @@ extension MermaidFlowchart.Node {
     /// The node at the cursor, or `nil` where the text there is not one. A bare name is a node with
     /// itself for a label and a plain rect for a figure, which is what mermaid draws it as.
     static func read(_ scan: inout MermaidScan) -> Self? {
-        let name = scan.takeRun(where: isNameCharacter)
+        let name = scan.takeIdentifier()
         guard !name.isEmpty else { return nil }
         guard opensLabel(scan) else { return MermaidFlowchart.Node(name: name, label: name) }
         guard let spelled = readLabel(&scan) else { return nil }
         return MermaidFlowchart.Node(name: name, label: spelled.label, shape: spelled.shape)
-    }
-
-    /// A name mermaid would accept for a node. Deliberately narrow: `-` reads as a link and a space
-    /// reads as the end of the node, so a line using either is one this reader leaves as a fence.
-    static func isNameCharacter(_ character: Character) -> Bool {
-        character.isLetter || character.isNumber || character == "_"
     }
 
     /// Whether a label's own brackets open at the cursor. Asked before reading one so a bracket

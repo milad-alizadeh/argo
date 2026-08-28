@@ -25,15 +25,8 @@ extension MermaidSequence {
         return MermaidSequence(participants: build.participants, events: build.events)
     }
 
-    /// A name mermaid would accept for a participant. Deliberately narrow, like the flowchart's:
-    /// `-` opens an arrow and a space ends the name, so a line using either in a name is one this
-    /// reader leaves as a fence.
-    static func isNameCharacter(_ character: Character) -> Bool {
-        character.isLetter || character.isNumber || character == "_"
-    }
-
-    /// Whether every character of `name` is one, and there is at least one of them.
+    /// Whether `name` is one mermaid would accept for a participant, and not empty.
     static func isName(_ name: some StringProtocol) -> Bool {
-        !name.isEmpty && name.allSatisfy(isNameCharacter)
+        !name.isEmpty && name.allSatisfy(MermaidScan.isIdentifier)
     }
 }

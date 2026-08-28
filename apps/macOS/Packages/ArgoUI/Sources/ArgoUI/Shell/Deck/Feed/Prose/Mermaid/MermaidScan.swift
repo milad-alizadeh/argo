@@ -1,9 +1,9 @@
 import Foundation
 
-/// A cursor over one line of a flowchart's source.
+/// A cursor over one line of a mermaid source, whatever type declared it.
 ///
-/// A cursor and not a split, because a flowchart line is not separable by any one character: `|` is
-/// a label's fence AND the pipe inside a quoted label, and `-` opens a link AND sits inside
+/// A cursor and not a split, because such a line is not separable by any one character: `|` is a
+/// label's fence AND the pipe inside a quoted label, and `-` opens a link AND sits inside
 /// `-. text .->`. Only a left-to-right read knows which it is looking at.
 struct MermaidScan {
     private let characters: [Character]
@@ -60,6 +60,19 @@ struct MermaidScan {
             end += 1
         }
         return nil
+    }
+
+    /// The bare identifier at the cursor, empty where there is none — a flowchart's node name, a
+    /// sequence diagram's participant, a mindmap's own optional handle.
+    mutating func takeIdentifier() -> String {
+        takeRun(where: Self.isIdentifier)
+    }
+
+    /// A character mermaid would accept in one. Deliberately narrow, and ONE rule for every reader
+    /// here: `-` opens a link and a space ends the token, so a reader that widened this would
+    /// swallow syntax — and a reader pointing at another type's copy would change with it.
+    static func isIdentifier(_ character: Character) -> Bool {
+        character.isLetter || character.isNumber || character == "_"
     }
 
     /// A run of characters the caller still wants, taken while they last.

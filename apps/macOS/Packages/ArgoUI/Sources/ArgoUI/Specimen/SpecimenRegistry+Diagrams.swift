@@ -22,5 +22,11 @@ extension SpecimenRegistry {
         SpecimenEntry("feedMermaidSequenceBlocks") {
             MarkdownSpecimen(text: MermaidSpecimen.sequenceBlocks)
         },
+        // The two things a mindmap layout has to get right (#867): branches that go ROUND the root
+        // at three levels and more, and six node figures no two of which may draw alike.
+        SpecimenEntry("feedMermaidMindmap") { MarkdownSpecimen(text: MermaidSpecimen.mindmap) },
+        SpecimenEntry("feedMermaidMindmapShapes") {
+            MarkdownSpecimen(text: MermaidSpecimen.mindmapShapes)
+        },
     ]
 }
