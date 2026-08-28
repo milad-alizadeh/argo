@@ -28,7 +28,9 @@ public final class Hub {
         // worktree listing is a fact about a repository, and a launch path inside one would ask
         // git the same question from further in.
         repositoryURL: { [weak self] in self?.project.url },
-        sessionCwds: { [weak self] in self?.sessions.compactMap(\.cwd) ?? [] },
+        sessions: { [weak self] in
+            self?.sessions.map { SessionActivity(cwd: $0.cwd, lastSeenAtMs: $0.lastSeenAtMs) } ?? []
+        },
     )
 
     /// Everything Argo knows per claim: what the agent said, what its gate is holding, and the

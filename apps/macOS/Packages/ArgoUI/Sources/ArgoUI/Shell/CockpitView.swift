@@ -46,58 +46,20 @@ public struct CockpitView: View {
         self.workItems = workItems
     }
 
-    /// Whether the window is in the room that DRAWS a transcript. The four projections below each
-    /// walk the selected Session's whole event stream, and `body` evaluates them whichever room is
-    /// on screen. Gated rather than cached: the presentation is a value the Hub rebuilds as the
-    /// transcript grows, and a memoised feed would show the reading as it was when the user last
-    /// clicked.
-    private var isReadingASession: Bool {
-        navigation.room == .sessions
-    }
-
-    /// The selected Session's reading, or nothing at all in a room with no feed.
-    private var feed: [FeedRow] {
-        guard isReadingASession else { return [] }
-        return FeedProjection.rows(
-            from: events,
-            working: FeedWorking.isWorking(presentation.session(navigation.session)),
-            handedOff: presentation.handoff(of: navigation.session),
-            expired: presentation.session(navigation.session)?.expiredPermissions ?? [],
-            asking: askingNow,
-        )
-    }
-
-    /// What the feed's ask rows are told about answering: the question Argo is holding open, and
-    /// whether this Session can be driven at all (#546).
-    var askingNow: FeedAskProjection.Asking {
-        FeedAskProjection.asking(for: presentation.session(navigation.session))
-    }
-
-    /// The same Session's plan, off the same stream — the standing state a whole transcript
-    /// resolves to, not a row in it.
-    private var showing: PlanShowing {
-        guard isReadingASession else { return PlanShowing() }
-        return PlanShowing(plan: PlanProjection.reading(from: events))
-    }
-
-    /// What the deck's top zone names.
-    private var header: SessionHeaderProjection.Header? {
-        guard isReadingASession else { return nil }
-        return presentation.session(navigation.session).map(SessionHeaderProjection.header(from:))
-    }
-
-    private var events: [TranscriptEvent] {
-        presentation.session(navigation.session)?.events ?? []
-    }
-
-    /// The same Session's Subagents, each already read, and nothing outside the Sessions room.
-    /// Recomputed with the feed above and for its reason: a fan-out's files grow while the reader
-    /// is looking at one of them.
-    private var readings: FeedAgentReadings {
-        guard isReadingASession else { return .none }
-        return FeedAgentReadings(
-            events: presentation.session(navigation.session)?.subagentEvents ?? [:],
-        )
+    /// The selected Session's reading in the room that DRAWS a transcript, and nothing at all in
+    /// the other two — the projection walks the whole event stream, and `body` runs in every room.
+    ///
+    /// Gated rather than cached: the presentation is a value the Hub rebuilds as the transcript
+    /// grows, and a memoised reading would show it as it stood when the reader last clicked. That
+    /// guarantee is what `SessionsRoomReadingTests` holds.
+    ///
+    /// The gate is a cost that was measured, not assumed (#858). Mounting the deck across rooms so
+    /// a switch need not rebuild it means this may not collapse — and an ungated reading cost a
+    /// 100-230 ms main-thread stall on every transcript batch in the rooms that draw no transcript,
+    /// where a gated one costs nothing at all.
+    private var reading: SessionsRoomReading {
+        guard navigation.room == .sessions else { return .none }
+        return SessionsRoomReading(presentation: presentation, sessionID: navigation.session)
     }
 
     /// What is in the deck's one slot for the selected Session — the composer, the Permission
@@ -151,20 +113,21 @@ public struct CockpitView: View {
                     max: ArgoLayout.sidebarMaximumWidth,
                 )
         } detail: {
-            // Resolved once and handed to both: reading it a second time re-runs the selection
-            // lookup and every projection behind it.
+            // Each resolved once and handed on: reading either a second time re-runs the
+            // selection lookup and every projection behind it.
             let vessel = vessel
+            let reading = reading
 
             InstrumentDeckShell(
                 room: navigation.room,
                 session: navigation.session,
-                feed: feed,
-                header: header,
+                feed: reading.feed,
+                header: reading.header,
                 handOff: handOff,
-                showing: showing,
+                showing: reading.showing,
                 vessel: vessel,
                 intents: intents(for: vessel),
-                readings: readings,
+                readings: reading.readings,
                 work: work,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
@@ -173,7 +136,7 @@ public struct CockpitView: View {
             // What a waiting ask row's options and its `Answer` do (#712). Injected here for the
             // reason above: the rows are hosted per table cell, and this is where the Session the
             // answer addresses is known.
-            .environment(\.feedAskAnswering, answer(on: askingNow.live))
+            .environment(\.feedAskAnswering, answer(on: reading.asking.live))
             .overlay(alignment: .topLeading) {
                 ConnectionChips(
                     connection: presentation.connection,

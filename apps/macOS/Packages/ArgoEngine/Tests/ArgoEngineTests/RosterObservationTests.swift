@@ -1,6 +1,4 @@
 @testable import ArgoEngine
-import Observation
-import Synchronization
 import Testing
 
 /// The roster is what the cockpit draws, and every claim-keyed fact now reaches it through a nested
@@ -9,29 +7,8 @@ import Testing
 @Suite("Roster observation", .serialized)
 @MainActor
 struct RosterObservationTests {
-    /// Tripped from inside `onChange`, which runs on the mutating side before the write lands — so
-    /// the flag is what is asserted, never the value. Behind a `Mutex` because the callback is
-    /// `@Sendable` and the checker will not take our word for where it runs.
-    private final class Tripwire: Sendable {
-        private let flag = Mutex(false)
-
-        var fired: Bool {
-            flag.withLock { $0 }
-        }
-
-        func trip() {
-            flag.withLock { $0 = true }
-        }
-    }
-
     private func watchingSessions(_ hub: Hub) -> Tripwire {
-        let tripwire = Tripwire()
-        withObservationTracking {
-            _ = hub.sessions
-        } onChange: {
-            tripwire.trip()
-        }
-        return tripwire
+        Tripwire.watching { _ = hub.sessions }
     }
 
     @Test

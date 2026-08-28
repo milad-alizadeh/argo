@@ -18,10 +18,9 @@ final class WorldReadings {
     /// folders below are: the Hub re-points, and a held URL would go on answering for the Project
     /// it was pointed at first.
     @ObservationIgnored private let repositoryURL: @MainActor () -> URL?
-    /// Which folders Agents are working in, to say how many are in each worktree. Supplied rather
-    /// than held, because the answer is read off the roster and the roster is read off these
-    /// readings.
-    @ObservationIgnored private let sessionCwds: @MainActor () -> [String]
+    /// The observed Sessions. Supplied rather than held, because the answer is read off the roster
+    /// and the roster is read off these readings.
+    @ObservationIgnored private let sessions: @MainActor () -> [SessionActivity]
 
     private var liveCwds: Set<String> = []
     /// Absent until a read has happened, so an unread liveness degrades down to quiet rather than
@@ -37,11 +36,11 @@ final class WorldReadings {
     init(
         engine: Engine,
         repositoryURL: @escaping @MainActor () -> URL?,
-        sessionCwds: @escaping @MainActor () -> [String],
+        sessions: @escaping @MainActor () -> [SessionActivity],
     ) {
         self.engine = engine
         self.repositoryURL = repositoryURL
-        self.sessionCwds = sessionCwds
+        self.sessions = sessions
     }
 
     /// Whether a Session running in `cwd` and last writing at `lastActivityAtMs` is live, judged
@@ -94,16 +93,64 @@ final class WorldReadings {
         }
     }
 
-    /// Ask the process table which working directories an agent is running in, and stamp the answer
-    /// with the moment it was taken.
+    /// Ask the process table which working directories an agent is running in, and publish the
+    /// answer with the moment it was taken — but only when publishing would change an answer.
     ///
-    /// The stamp is written every read, including one that found the same processes as the last:
-    /// freezing the clock would leave a Session that stopped writing reading live for as long as it
-    /// stayed matched.
-    func refreshLiveness() async {
+    /// Both properties are observed, so a write re-renders every view that draws a Session. Written
+    /// unconditionally they re-rendered the whole cockpit every five seconds with nothing on screen
+    /// moving (#858).
+    ///
+    /// Freezing the stamp instead would leave a Session matched by the process table but silent
+    /// past `SessionLiveness.recentActivityWindowMs` reading live for as long as it stayed matched.
+    /// So the second test is the fold's ANSWER rather than its input: a poll that found the same
+    /// processes still publishes where the newer clock reads some observed Session differently,
+    /// which is that window crossing and nothing else.
+    ///
+    /// `clock` is read AFTER the process table, never before: `ps` plus an `lsof` per agent is slow
+    /// enough to be felt, and the stamp is when the read landed rather than when it was asked for.
+    func refreshLiveness(clock: () -> Int = { Date().epochMs }) async {
         let cwds = await engine.liveCwds()
-        liveCwds = cwds
-        readAtMs = Date().epochMs
+        let read = Read(cwds: cwds, atMs: clock())
+        let published = Read(cwds: liveCwds, atMs: readAtMs)
+        guard Self.publishes(read, over: published, for: sessions()) else { return }
+        liveCwds = read.cwds
+        readAtMs = read.atMs
+    }
+
+    /// One poll's answer: which folders were found running an agent, and the clock it was found at.
+    private struct Read {
+        let cwds: Set<String>
+        /// Absent only for the read nobody has taken — see `readAtMs`.
+        let atMs: Int?
+    }
+
+    /// Whether a read says anything the published one does not: a moved process table, or a clock
+    /// that alone reads one of these Sessions differently.
+    private static func publishes(
+        _ read: Read,
+        over published: Read,
+        for sessions: [SessionActivity],
+    )
+        -> Bool {
+        read.cwds != published.cwds
+            || verdicts(of: sessions, at: read) != verdicts(of: sessions, at: published)
+    }
+
+    /// How each Session's liveness reads against one poll — the same fold `Hub.observed(_:)` runs,
+    /// over the same `lastSeenAtMs`. Order is the roster's, so two folds compare position by
+    /// position.
+    private static func verdicts(
+        of sessions: [SessionActivity],
+        at read: Read,
+    )
+        -> [SessionLiveness] {
+        sessions.map { session in
+            SessionLiveness.read(
+                processMatch: session.cwd.map { read.cwds.contains(resolvedPath($0)) } ?? false,
+                lastActivityAtMs: session.lastSeenAtMs,
+                nowMs: read.atMs,
+            )
+        }
     }
 
     /// Ask git which worktrees the repository holds, then what each one looks like now — one read
@@ -119,13 +166,13 @@ final class WorldReadings {
         // A Hub pointed nowhere is dropped rather than left holding the last Project's branches:
         // going on answering with them would be a fact about a repository nobody is on.
         guard let repositoryURL = repositoryURL() else {
-            workspaces = [:]
+            publish(workspaces: [:])
             return
         }
         let entries = await engine.worktrees(in: repositoryURL)
         let holders = Self.holders(
             of: entries.map { resolvedPath($0.path) },
-            amongst: sessionCwds().map(resolvedPath),
+            amongst: sessions().compactMap(\.cwd).map(resolvedPath),
         )
         var read: [String: WorkspaceProjection] = [:]
         for entry in entries {
@@ -133,6 +180,13 @@ final class WorldReadings {
             let path = resolvedPath(entry.path)
             read[path] = await engine.workspace(of: entry)?.shared(by: holders[path] ?? 0)
         }
+        publish(workspaces: read)
+    }
+
+    /// Written only where git answered something new. The property is observed, so a sweep that
+    /// found every worktree exactly as it left it would re-render the whole cockpit (#858).
+    private func publish(workspaces read: [String: WorkspaceProjection]) {
+        guard read != workspaces else { return }
         workspaces = read
     }
 

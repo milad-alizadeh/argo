@@ -202,7 +202,7 @@ struct WorldReadingsTests {
                 readLiveness: { live },
             ),
             repositoryURL: repository,
-            sessionCwds: { cwds },
+            sessions: { cwds.map { SessionActivity(cwd: $0, lastSeenAtMs: nowMs) } },
         )
     }
 }
