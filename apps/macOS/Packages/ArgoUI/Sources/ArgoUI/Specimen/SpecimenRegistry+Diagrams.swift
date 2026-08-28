@@ -32,5 +32,14 @@ extension SpecimenRegistry {
         // legend whose swatches have to be read back to them.
         SpecimenEntry("feedMermaidPie") { MarkdownSpecimen(text: MermaidSpecimen.pie) },
         SpecimenEntry("feedMermaidPieSingle") { MarkdownSpecimen(text: MermaidSpecimen.pieSingle) },
+        // The three shapes of machine a state diagram has to get right (#863): a flat one, one
+        // whose composite encloses its own states, and one that branches at a choice.
+        SpecimenEntry("feedMermaidState") { MarkdownSpecimen(text: MermaidSpecimen.state) },
+        SpecimenEntry("feedMermaidStateComposite") {
+            MarkdownSpecimen(text: MermaidSpecimen.stateComposite)
+        },
+        SpecimenEntry("feedMermaidStateChoice") {
+            MarkdownSpecimen(text: MermaidSpecimen.stateChoice)
+        },
     ]
 }

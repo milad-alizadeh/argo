@@ -100,6 +100,17 @@ enum MermaidMeasure {
     /// The face a chart's own title is set in — the loudest word a diagram writes, and still at
     /// the rhythm of the prose around it.
     static let titleFace = ProseFace(rung: .body, isBold: true)
+    /// How big a state machine's start and end marks stand, and the room a ringed end keeps
+    /// between its ring and its own centre. Measures: a dot is the size of a MARK, and it has to
+    /// read as a full stop beside a state rather than as a state of its own.
+    static let dotSide: CGFloat = 14
+    static let ringGap: CGFloat = 3
+    /// A choice's diamond. Sized rather than measured, because it carries no words to measure.
+    static let choiceSide: CGFloat = 26
+    /// How far a fork or a join bar stands across its rank, and how thick it is along it. A bar
+    /// has to read as a bar at a glance, which needs both a length and a real weight.
+    static let barLength: CGFloat = 64
+    static let barDepth: CGFloat = 6
 
     /// The face an edge's own word is set in, and the face a `subgraph`'s title takes. Quieter than
     /// the prose the nodes are set in, because both are said ABOUT the diagram rather than in it.

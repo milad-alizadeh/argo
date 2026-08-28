@@ -37,7 +37,8 @@ extension MermaidLayered {
             )
             return MermaidCaption(
                 label: MermaidLabel(text: text, face: face, role: .note),
-                rect: route.map { CGRect(origin: Self.beside($0, size: size), size: size) } ?? .zero,
+                rect: route
+                    .map { CGRect(origin: Self.beside($0, size: size), size: size) } ?? .zero,
             )
         }
     }

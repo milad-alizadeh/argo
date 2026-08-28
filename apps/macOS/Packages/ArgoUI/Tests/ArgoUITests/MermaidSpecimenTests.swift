@@ -21,6 +21,9 @@ struct MermaidSpecimenTests {
         MermaidSpecimen.mindmapShapes,
         MermaidSpecimen.pie,
         MermaidSpecimen.pieSingle,
+        MermaidSpecimen.state,
+        MermaidSpecimen.stateComposite,
+        MermaidSpecimen.stateChoice,
     ])
     func `a specimen's fence reads as a diagram and lays out`(specimen: String) {
         let drawn = MarkdownBlock.blocks(in: specimen).compactMap { block -> MermaidDiagram? in
