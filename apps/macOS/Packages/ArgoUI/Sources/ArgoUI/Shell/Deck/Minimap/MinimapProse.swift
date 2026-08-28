@@ -15,6 +15,9 @@ enum MinimapProseBlock: Equatable, Sendable {
     /// A pipe table, whole. The table itself and not a reduction of it, so the lane deals its
     /// columns through the very function the feed's own layout deals them with.
     case table(MarkdownTable)
+    /// A drawn diagram, whole, for the same reason: the lane lays it out through the one cached
+    /// plan the renderer draws, so its silhouette and its height are the diagram's own.
+    case diagram(MermaidDiagram)
 }
 
 /// A run of wrapping words and the two things that decide where they start.
@@ -59,6 +62,8 @@ extension MinimapProseBlock {
                 )
             case let .table(table):
                 .table(table)
+            case let .diagram(diagram):
+                .diagram(diagram)
             }
         }
     }

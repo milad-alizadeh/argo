@@ -43,6 +43,8 @@ private struct FeedMarkdownBlock: View {
             item(marker: marker, text: text)
         case let .fenced(code, info):
             FeedMarkdownFence(code: code, info: info)
+        case let .diagram(diagram):
+            MermaidView(diagram: diagram)
         case let .table(table):
             FeedMarkdownTable(table: table)
         }

@@ -209,4 +209,27 @@ struct SurfaceMeasureTests {
                 < ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMaximumWidth,
         )
     }
+
+    /// A connector's head is drawn in the lane between two ranks, so it has to stand well inside
+    /// that lane — a head as long as the gap would touch the box it left.
+    @Test
+    func `a connector's head stands well inside the gap between two ranks`() {
+        #expect(MermaidMeasure.arrowLength > 0)
+        #expect(MermaidMeasure.arrowLength < MermaidMeasure.rankGap / 2)
+        #expect(MermaidMeasure.arrowWidth < MermaidMeasure.arrowLength * 2)
+    }
+
+    /// The floor is what keeps a one-letter node a BOX. It has to clear the room a label is given
+    /// on either side of it, or the narrowest node would be narrower than its own padding.
+    @Test
+    func `the narrowest node is wider than the room its label is given`() {
+        #expect(MermaidMeasure.nodeMinWidth > MermaidMeasure.nodeInsetX * 2)
+    }
+
+    /// A diagram sets at the feed's rhythm, so its own boxes must not out-measure the column the
+    /// prose around them runs to.
+    @Test
+    func `a node is drawn narrower than the feed's own measure`() {
+        #expect(MermaidMeasure.nodeMinWidth < ArgoFeedRow.column - ArgoFeedRow.inset * 2)
+    }
 }

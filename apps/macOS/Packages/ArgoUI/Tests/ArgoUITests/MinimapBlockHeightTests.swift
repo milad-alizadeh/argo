@@ -41,6 +41,8 @@ struct MinimapBlockHeightTests {
         "```swift\nlet a = 1\nlet b = 2\n```",
         "```\nlet a = 1\n```",
         "| a | b |\n|---|---|\n| 1 | 2 |",
+        "```mermaid\ngraph TD\n  Reader --> Layout\n  Reader --> Plan\n```",
+        "```mermaid\npie title Nothing here can read this\n```",
         "| Rule | Where it is spelled |\n|---|---|\n| A column is as wide as its widest cell wants "
             + "to be, which takes more than one line to say | `FeedMarkdownTable` |",
     ]
@@ -79,7 +81,8 @@ struct MinimapBlockHeightTests {
                 ProseFace(rung: ArgoTypography.sectionLabel.rung)
                     .snapping(ofLines: hasInfo ? 1 : 0)
                     + ProseFace.machine.snapping(ofLines: lines)
-            case .table:
+            // A table and a diagram both size themselves, so neither pays for a snapped baseline.
+            case .table, .diagram:
                 0
             }
         }

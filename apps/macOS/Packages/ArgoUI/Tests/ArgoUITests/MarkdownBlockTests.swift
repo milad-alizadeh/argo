@@ -50,6 +50,37 @@ struct MarkdownBlockTests {
         ])
     }
 
+    /// The detection is a PARSE and not a rendering decision, so the renderer and the overview lane
+    /// read one answer about what the block is.
+    @Test
+    func `a mermaid fence Argo can read is a diagram`() {
+        #expect(MarkdownBlock.blocks(in: "```mermaid\ngraph TD\n  A --> B\n```")
+            == [.diagram(MermaidDiagram(
+                source: "graph TD\n  A --> B",
+                kind: .flowchart(MermaidFlowchart(
+                    nodes: ["A", "B"], edges: [.init(from: "A", to: "B")],
+                )),
+            ))])
+    }
+
+    /// Degrade-down: a diagram nothing here can read is the grey source it is today, info label and
+    /// all — never an error and never an empty box.
+    @Test
+    func `a mermaid fence Argo cannot read stays a fence`() {
+        #expect(MarkdownBlock.blocks(in: "```mermaid\npie title Time\n\"Reading\" : 40\n```") == [
+            .fenced(code: "pie title Time\n\"Reading\" : 40", info: "mermaid"),
+        ])
+    }
+
+    /// Half a diagram is a diagram nobody wrote. A fence still arriving keeps its characters until
+    /// the agent closes it.
+    @Test
+    func `an unterminated mermaid fence stays a fence`() {
+        #expect(MarkdownBlock.blocks(in: "```mermaid\ngraph TD\n  A --> B") == [
+            .fenced(code: "graph TD\n  A --> B", info: "mermaid"),
+        ])
+    }
+
     /// A CLI writes at the terminal's measure, so a run of lines it meant as one block is joined as
     /// it was written rather than reflowed.
     @Test

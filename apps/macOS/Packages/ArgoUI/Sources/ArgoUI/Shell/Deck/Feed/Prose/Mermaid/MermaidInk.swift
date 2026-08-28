@@ -1,0 +1,38 @@
+import SwiftUI
+
+/// What a diagram's roles are drawn in: the one place a `MermaidRole` becomes a colour.
+///
+/// A value resolved at the call site rather than an environment read mid-draw — `MermaidView` reads
+/// the palette in its body and hands the colours to the canvas, exactly as the prose renderer is
+/// handed a marked span's ground.
+struct MermaidInk: Sendable {
+    let palette: ArgoPalette
+
+    /// The line a figure of this role is stroked in, and the words a caption of it is set in.
+    func line(of role: MermaidRole) -> ArgoColor {
+        switch role {
+        case .node: palette.edge.subtle
+        case .edge: palette.text.tertiary
+        case .emphasis: palette.interaction.accent
+        case .note: palette.text.tertiary
+        }
+    }
+
+    /// The ground under it, or `nil` for a role that is a line rather than a container.
+    func ground(of role: MermaidRole) -> ArgoColor? {
+        switch role {
+        case .node: palette.surface.raised
+        case .edge, .emphasis, .note: nil
+        }
+    }
+
+    /// The ink a caption of this role is set in. A node's words are the message's own rung, so a
+    /// diagram reads at the loudness of the prose it sits in.
+    func words(of role: MermaidRole) -> ArgoColor {
+        switch role {
+        case .node: palette.text.primary
+        case .edge, .note: palette.text.secondary
+        case .emphasis: palette.interaction.accent
+        }
+    }
+}

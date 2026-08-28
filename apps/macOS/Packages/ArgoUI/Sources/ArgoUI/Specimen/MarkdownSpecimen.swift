@@ -35,11 +35,34 @@ struct MarkdownSpecimen: View {
     2. The line height and the measure answer to the type ramp instead.
 
     - The contract suite asserts every one of them, per [ADR-0021](https://example.com).
-    - A fence Argo has no grammar for is drawn as it arrived:
+    - A fence Argo can read is drawn as the diagram it is:
 
     ```mermaid
     graph TD
       A --> B
+    ```
+    """
+
+    /// A diagram Argo reads beside a fence declaring the same grammar it cannot, so both halves of
+    /// the bargain are on one screen: what is read is drawn, and what is not is the grey source it
+    /// has always been.
+    nonisolated static let diagrams = """
+    The spine, in the order the data moves:
+
+    ```mermaid
+    graph TD
+      Reader --> Layout
+      Layout --> Plan
+      Plan --> View
+      Plan --> Minimap
+    ```
+
+    A diagram type nothing here can read yet:
+
+    ```mermaid
+    pie title Where the time went
+      "Reading" : 40
+      "Layout" : 35
     ```
     """
 
