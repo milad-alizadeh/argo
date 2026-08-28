@@ -11,20 +11,25 @@ struct LabelChip: View {
     @Environment(\.argo) private var argo
 
     let word: String
-    /// The provider's colour, already read. `nil` is both "the provider gave none" and "this chip
-    /// is not a provider label at all" — Argo's own overflow count is the second, and neither has
-    /// a hue to spend.
-    var ink: LabelInk?
+    /// The label this chip draws, where it is one. `nil` says this chip is Argo's own overflow
+    /// count rather than a provider label, which has no hue to spend either way.
+    var label: WorkItemLabel?
 
     init(label: WorkItemLabel) {
         self.word = label.name
-        self.ink = LabelInk(label)
+        self.label = label
     }
 
     /// Argo's own marker over the labels a row had no width for. Neutral by construction: it counts
     /// labels rather than being one, so no provider colour could be right for it.
     init(counting word: String) {
         self.word = word
+    }
+
+    /// Read here rather than at the call site because the treatment needs the surface the chip sits
+    /// on, and that is a palette fact only a view holds — see `LabelInk`.
+    private var ink: LabelInk? {
+        label.flatMap { LabelInk($0, on: argo.color.surface.base) }
     }
 
     var body: some View {
