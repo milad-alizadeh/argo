@@ -16,14 +16,18 @@ extension PermissionChannelTests {
         @Test
         func `a hook that outlives its payload is still told when the gate expires the call`()
             async throws {
-            let patience = PermissionPatience(seconds: 2)
-            try await PermissionGate.withGate(patience: patience) { fixture, claim, _ in
+            let clock = HeldPermissionClock()
+            try await PermissionGate.withGate(patience: clock.patience) { fixture, claim, _ in
                 let hook = try RelayHook.launched(fixture, claim)
                 defer { hook.end() }
 
                 // The payload's pipe is already closed, so any half-close has already happened:
-                // the prompt must be raised AND survive it long enough for the clock to decide.
+                // the prompt must be raised AND survive it.
                 await settle { fixture.hub.sessions.first?.permission != nil }
+                await anyHalfCloseHasLanded()
+                #expect(fixture.hub.sessions.first?.permission != nil)
+
+                clock.release()
                 await settle {
                     fixture.hub.sessions.first?.expiredPermissions.isEmpty == false
                 }
@@ -52,6 +56,15 @@ extension PermissionChannelTests {
             }
         }
     }
+}
+
+/// Long enough that a half-close, which the socket carries within microseconds of the payload
+/// beside it, has reached the gate as its own read event and been acted on.
+///
+/// NOTHING races this: the clock above is held, so the prompt cannot end while it runs. A machine
+/// too slow for it makes the test slow rather than red, which is the direction #826 is about.
+private func anyHalfCloseHasLanded() async {
+    try? await Task.sleep(for: .milliseconds(250))
 }
 
 /// The shipped `permission-hook.sh`, run the way the CLI runs it: payload on stdin, then the
