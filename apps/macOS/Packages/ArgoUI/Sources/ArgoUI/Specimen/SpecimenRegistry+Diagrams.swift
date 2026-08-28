@@ -49,5 +49,12 @@ extension SpecimenRegistry {
         SpecimenEntry("feedMermaidQuadrantEdges") {
             MarkdownSpecimen(text: MermaidSpecimen.quadrantEdges)
         },
+        // The three states one banded layout has to get right (#866): a journey's ratings and its
+        // actor chips, a timeline whose periods carry uneven stacks, and a timeline naming no band.
+        SpecimenEntry("feedMermaidJourney") { MarkdownSpecimen(text: MermaidSpecimen.journey) },
+        SpecimenEntry("feedMermaidTimeline") { MarkdownSpecimen(text: MermaidSpecimen.timeline) },
+        SpecimenEntry("feedMermaidTimelinePlain") {
+            MarkdownSpecimen(text: MermaidSpecimen.timelinePlain)
+        },
     ]
 }

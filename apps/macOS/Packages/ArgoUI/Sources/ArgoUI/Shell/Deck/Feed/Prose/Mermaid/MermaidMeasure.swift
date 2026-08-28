@@ -97,6 +97,16 @@ enum MermaidMeasure {
     /// hue off, and it has to stay well under the line it is set beside.
     static let swatchSize: CGFloat = 10
 
+    /// Between one row of a banded diagram and the next — under a column's heading, and under the
+    /// rating before the rows stacked below it.
+    static let bandStep: CGFloat = ArgoSpacing.base
+
+    /// One step of a journey's rating, and the gap between two of them. A measure: this is the
+    /// length of a mark rather than a step of the rhythm, and five of them plus their gaps have to
+    /// stay near the narrowest box a task's own words set.
+    static let ratingStep: CGFloat = 14
+    static let ratingGap: CGFloat = ArgoSpacing.tight
+
     /// The face a chart's own title is set in — the loudest word a diagram writes, and still at
     /// the rhythm of the prose around it.
     static let titleFace = ProseFace(rung: .body, isBold: true)
