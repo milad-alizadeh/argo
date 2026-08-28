@@ -7,13 +7,25 @@ import Foundation
 /// makes an expiry a fact Argo owns (DIRECT) rather than a peer close it would have to guess at —
 /// and guessing is what degrade-down forbids, since the two causes of a peer close mean opposite
 /// things to a reader.
-public struct PermissionPatience: Sendable, Equatable {
+public struct PermissionPatience: Sendable {
     /// What ARGO waits — long enough that the timeout is never the thing that decides, and no clock
     /// is drawn because there is none worth reading (decision 6).
     public let seconds: Int
 
+    /// How that wait is SPENT, where `seconds` is the number Argo publishes. `init(seconds:)` ties
+    /// the two together and the internal init below is the only place they can part (#826).
+    ///
+    /// It must return to cancellation, because every way a request ends but its clock cancels that
+    /// clock — a substitute that cannot be cancelled leaves a `Task` against a torn-down gate.
+    let elapse: @Sendable () async -> Void
+
     public init(seconds: Int) {
+        self.init(seconds: seconds, elapse: { try? await Task.sleep(for: .seconds(seconds)) })
+    }
+
+    init(seconds: Int, elapse: @escaping @Sendable () async -> Void) {
         self.seconds = seconds
+        self.elapse = elapse
     }
 
     public static let `default` = PermissionPatience(seconds: 86400)
