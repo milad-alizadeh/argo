@@ -70,10 +70,10 @@ struct SeriesPaletteTests {
         }
     }
 
-    /// `SeriesRoles` is not in `VisualContractCoverageTests`' reflected list and cannot be: its
-    /// storage IS its catalog, one array enumerated by place, so a hue cannot go missing from
-    /// `all`. What it owes instead is that the array is not empty — a group nothing enumerates
-    /// draws nothing in the specimen.
+    /// `SeriesRoles` is not in `VisualContractCoverageTests`' reflected list and cannot be: the
+    /// stored array is enumerated by place, so a hue cannot go missing from `all`. The WEIGHTED
+    /// rungs are derived and no reflection reaches them at all, which is why `ramp(_:)` exists and
+    /// why the specimen draws it by hand — see the ramp suite below.
     @Test(arguments: palettes)
     func `every series hue reaches the specimen through its own catalog`(
         _ appearance: (name: String, palette: ArgoPalette),
@@ -81,5 +81,81 @@ struct SeriesPaletteTests {
         let series = appearance.palette.series
         #expect(series.all.map(\.color) == series.hues)
         #expect(series.all.first?.name == "series1")
+        // The rungs under each hue are a third catalog again, and the specimen draws THIS.
+        #expect(series.ramp(0).map(\.color) == [
+            series.hue(0, at: .spent), series.hue(0, at: .ordinary), series.hue(0, at: .full),
+        ])
+        #expect(series.ramp(0).first?.name == "series1 spent")
+    }
+}
+
+/// The weighted rungs of a series hue — a Gantt's `done`, plain and `active` (#905).
+///
+/// Its own suite because the ramp is where this family knowingly stops meeting the two floors
+/// above. Every claim here is the exemption written down: move a rung and one of these reds.
+@Suite("Series ramp — one hue at three strengths")
+struct SeriesRampTests {
+    static let palettes = ArgoPalette.all
+    private static let rungs = ArgoPalette.SeriesRoles.Weight.allCases
+
+    /// The property the ramp exists for: three strengths of ONE hue, strictly ordered, so the
+    /// three read as a scale rather than as a set. `full` is the hue itself — a plain Gantt bar
+    /// and a pie slice are one mark, drawn identically.
+    @Test(arguments: palettes)
+    func `the rungs are one hue, strictly ordered, topped by the hue itself`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let series = appearance.palette.series
+        let base = appearance.palette.surface.base
+        for index in series.hues.indices {
+            #expect(series.hue(index, at: .full) == series.hue(index))
+            let drawn = Self.rungs.map { series.hue(index, at: $0).contrastRatio(on: base) }
+            #expect(zip(drawn, drawn.dropFirst()).allSatisfy { $1 > $0 })
+            // Stretched at the quiet end: the top step is the larger one, which is what keeps
+            // `active` clear of a plain bar once a critical ring is drawing beside it.
+            #expect(drawn[2] / drawn[1] > drawn[1] / drawn[0])
+        }
+    }
+
+    /// The exemption, asserted at what it really achieves rather than waived.
+    ///
+    /// The 3:1 floor next door is for a mark whose own hue has to be identified across a feed. A
+    /// dimmed bar's section comes from the heading over it, and being quiet is its whole message —
+    /// but it still has to be a bar rather than a stain, so the floor it does clear is written
+    /// down. There is no arrangement that clears 3:1: the run is 3.35:1 at full.
+    @Test(arguments: palettes)
+    func `the dimmed rungs clear the floor they are actually read at`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let series = appearance.palette.series
+        let base = appearance.palette.surface.base
+        for index in series.hues.indices {
+            #expect(series.hue(index, at: .spent).contrastRatio(on: base) >= 1.6)
+            #expect(series.hue(index, at: .ordinary).contrastRatio(on: base) >= 2.2)
+        }
+    }
+
+    /// The separation rule bends here too, and by how much is the point.
+    ///
+    /// Dimming pulls a hue toward the ground, and this ground is a near-neutral — so every rung
+    /// drifts toward `state.idle`, the one reserved hue that is itself a grey. `spent` comes out
+    /// the far side and is clean; `ordinary` passes through the middle and is not. Asserted at the
+    /// real number so a change that makes it worse reds rather than passing quietly.
+    @Test(arguments: palettes)
+    func `a dimmed rung is held off every hue that means something, as far as it can be`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let palette = appearance.palette
+        let reserved = palette.state.all + palette.diff.all
+            + [("accent", palette.interaction.accent)]
+        for index in palette.series.hues.indices {
+            let spent = palette.series.hue(index, at: .spent).composited(over: palette.surface.base)
+            let mid = palette.series.hue(index, at: .ordinary)
+                .composited(over: palette.surface.base)
+            for status in reserved {
+                #expect(spent.distance(to: status.color) > 0.25, "spent \(index) ≈ \(status.name)")
+                #expect(mid.distance(to: status.color) > 0.13, "ordinary \(index) ≈ \(status.name)")
+            }
+        }
     }
 }

@@ -25,6 +25,8 @@ struct MermaidGantt: Equatable, Sendable {
         /// The handle the source gave it, empty where it gave none — what an `after` naming it
         /// was resolved against.
         let id: String
+        /// What the source said about it besides its dates — see `MermaidGanttState`.
+        let states: Set<MermaidGanttState>
         /// Both ends are the REAL ones: an `after` has already been followed and a length has
         /// already been counted in days the chart's `excludes` leaves it (#904).
         let start: Date

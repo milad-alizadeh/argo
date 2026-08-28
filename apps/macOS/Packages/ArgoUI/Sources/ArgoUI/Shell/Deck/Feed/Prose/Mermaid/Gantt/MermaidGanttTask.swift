@@ -1,6 +1,6 @@
 import Foundation
 
-/// One task row as the source WROTE it: `Name : [id,] start-or-after, end-or-duration`.
+/// One task row as the source WROTE it: `Name : [states,] [id,] start-or-after, end-or-duration`.
 ///
 /// Not yet a `MermaidGantt.Task`, because neither of its ends is knowable line by line — `after`
 /// may name an id declared below, and a length is counted in days the chart's `excludes` has not
@@ -9,6 +9,9 @@ struct MermaidGanttDraft: Equatable, Sendable {
     let name: String
     /// The handle the source gave it, empty where it gave none.
     let id: String
+    /// What the source said about it besides its dates. Carried through resolution untouched — see
+    /// `MermaidGanttState`.
+    let states: Set<MermaidGanttState>
     let begin: Begin
     let length: Length
 
@@ -26,31 +29,27 @@ struct MermaidGanttDraft: Equatable, Sendable {
 }
 
 enum MermaidGanttTask {
-    /// What #905 draws distinctly and this slice must not silently draw as an ordinary bar. Read
-    /// as an id they would each place a task correctly and colour it wrong; `milestone` would
-    /// place a marker as a bar spanning nothing.
-    private static let states: Set<String> = ["done", "active", "crit", "milestone"]
-
     static func of(_ line: String, at pattern: String) -> MermaidGanttDraft? {
         guard let colon = line.firstIndex(of: ":") else { return nil }
         let name = line[..<colon].trimmingCharacters(in: .whitespaces)
-        let fields = line[line.index(after: colon)...]
+        let written = line[line.index(after: colon)...]
             .split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
-        guard !name.isEmpty, fields.count == 2 || fields.count == 3 else { return nil }
+        guard !name.isEmpty, let read = MermaidGanttState.read(leading: written) else { return nil }
+        let (states, fields) = (read.states, Array(read.rest))
+        guard fields.count == 2 || fields.count == 3 else { return nil }
         guard let id = id(of: fields.dropLast(2)),
               let begin = begin(fields[fields.count - 2], at: pattern),
               let length = length(fields[fields.count - 1], at: pattern)
         else { return nil }
-        return MermaidGanttDraft(name: name, id: id, begin: begin, length: length)
+        return MermaidGanttDraft(name: name, id: id, states: states, begin: begin, length: length)
     }
 
     /// The handle in front of the dates, or `""` where there is none. Anything that is not a bare
-    /// identifier — and any of the state keywords, which are — is refused.
+    /// identifier is refused — a state word cannot reach here, because the run of them in front of
+    /// it has already been taken.
     private static func id(of fields: ArraySlice<String>) -> String? {
         guard let written = fields.first else { return "" }
-        guard !written.isEmpty, !states.contains(written.lowercased()),
-              written.allSatisfy(MermaidScan.isIdentifier)
-        else { return nil }
+        guard !written.isEmpty, written.allSatisfy(MermaidScan.isIdentifier) else { return nil }
         return written
     }
 

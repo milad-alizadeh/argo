@@ -60,9 +60,19 @@ private struct Walk {
         guard let start = begin(draft.begin),
               let end = end(draft.length, from: start), end >= start,
               // A bar too long to be broken around its days off is a chart nothing can render.
-              excludes.draws(from: start, to: end)
+              excludes.draws(from: start, to: end),
+              // A milestone is a POINT, and only here is that knowable: an `after` and a length
+              // counted around the days off both settle at resolution. Given a length the source
+              // says two things at once, and drawing the marker at either end drops the other.
+              !draft.states.contains(.milestone) || end == start
         else { return nil }
-        let placed = MermaidGantt.Task(name: draft.name, id: draft.id, start: start, end: end)
+        let placed = MermaidGantt.Task(
+            name: draft.name,
+            id: draft.id,
+            states: draft.states,
+            start: start,
+            end: end,
+        )
         settled[at] = placed
         return placed
     }
