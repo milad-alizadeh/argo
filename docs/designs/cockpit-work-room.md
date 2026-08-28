@@ -34,7 +34,8 @@ while the deck beside them held four lines of prose in a pane that could take si
 shell's split view is unconditional, and the room strip moves into its head (#805) — but it
 holds **views**, whose names are short because a view name is *written* rather than inherited
 from a tracker. The backlog becomes the deck's leading pane at 520, where a title reads whole at
-depth three, and the ticket opens beside it.
+depth three, and the ticket opens beside it. **520 is where it RESTS, not a width it is held at**
+— see **the seam between the panes** below (#844).
 
 The four rejected rooms, and what each gave up:
 
@@ -63,8 +64,11 @@ at the foot.
   answer, with nothing in `blockedBy` to show for it. The first renders counted on edges
   alone, so those two were counted twice and the rail read 6 + 8 over 12 — corrected in
   `viewCount` and re-shot (#812). `In progress` cuts across both and is not part of the split.
-- **Charts** — one row per PRD-shaped parent (`#607 Wayfinder`, `#334 The Route`), the entry
-  point to the Route.
+- ~~**Charts** — one row per PRD-shaped parent (`#607 Wayfinder`, `#334 The Route`), the entry
+  point to the Route.~~ **Withdrawn (#844.)** The Route is #334 and is not built, so every row in
+  the group answered no click, under a heading that read as a charting feature. The group comes
+  back with the Route. `WorkItem.isChartShaped` survives it: the Next-up hero still reads a
+  PRD-shaped parent for its `next in #607` chip.
 - **The room strip** sits at the top of the sidebar's scroll, under the titlebar rather than in
   it. Xcode's navigator selector, and #805's question answered: a control belongs over the thing
   it changes, and the room changes both panes but *starts* in this one. It is drawn under the
@@ -106,9 +110,35 @@ that disagrees with it.
 over one visible row and read as a lie; the parent's own `n/m` roll-up already says how many
 children it has.
 
-**The indent caps at two steps.** Level three shares level two's inset. At 520 this is comfort
-rather than necessity — it is the rule that keeps a five-deep chart legible, and a chart that
-deep is read on the Route (#334), not here.
+**The indent caps at two steps.** Level three shares level two's inset. At the opening 520 this is
+comfort rather than necessity — it is the rule that keeps a five-deep parent legible, and a tree
+that deep is read on the Route (#334), not here.
+
+### The seam between the panes
+
+**Both panes are the reader's to size (#844).** #816 fixed the backlog at 520 and joined the two
+with a hairline, which left the ticket detail taking every point the window gained or lost; #836
+let the list yield below 520 but still gave nobody a handle. They are joined by a `DeckSeam` now —
+the same seam the Sessions deck already uses — and the width is the WINDOW's
+(`CockpitNavigationModel.backlogWidth`), because the panes are rebuilt on every ticket click and a
+width owned inside that subtree loses the drag each time.
+
+| | |
+|---|---|
+| Rests at | `ArgoBacklogList.width` **520** — unchanged, and still the measure the twelve real titles were chosen against |
+| Floor | **342** — `ArgoLayout.backlogWidths.lowerBound`, which is #836's derived `minimumWidth` |
+| Ceiling | **760**, pulled in so the ticket detail always keeps `proseColumnMinimumWidth` **320** |
+
+**The floor is #836's number, not a second one.** That commit derived 342 as the width the list
+yields to when the window cannot afford 520 — the narrowest window, less the sidebar, less a pane
+of prose, less the two seams between them. "How narrow may the list get before the ticket pane
+suffers" is the same question a seam's floor asks, so the seam took the answer over rather than
+naming a rival. `ArgoBacklogList.minimumWidth` reads it back.
+
+**Travel is thin at the narrowest window, and that is arithmetic.** At 960 the deck is 680 and the
+seam moves between 342 and 351 — nine points. It widens fast: 329 points at the 1280 ideal, 418 at
+1600. A seam that cannot move at all would be worse than none, because it looks like one; nine
+points is small but honest, and the window is the thing to widen.
 
 ### The delivery signal, on the dot alone
 
@@ -175,11 +205,14 @@ compose at the leading edge of the message column, the message's verbs after it,
 window's trailing edge, searching the list from there.
 
 **When the window cannot afford three columns, the LIST is what yields.** 520 is where the list
-rests and its ceiling, not a floor: below it the pane narrows and titles truncate at the tail, which
-they already do. The ticket pane keeps `ArgoLayout.feedMinimumWidth` 320 and its prose re-wraps to
-whatever it is left. A clipped title is a title you can still read the start of; a ticket pane
+rests; since #844 it is neither a ceiling nor a floor, because the seam between the panes is the
+reader's to move (see **the seam between the panes**). Below 520 the pane narrows and titles
+truncate at the tail, which they already do. The ticket pane keeps `ArgoLayout.feedMinimumWidth`
+320 and its prose re-wraps to whatever it is left. A clipped title is a title you can still read
+the start of; a ticket pane
 squeezed under its own controls is a control you cannot reach at all. Every control in the room is
-present and whole at `windowMinimumWidth` 960.
+present and whole at `windowMinimumWidth` 960. The width that yield stops at is the seam's floor
+now — one number, named once in `ArgoLayout.backlogWidths`.
 
 **Search sits over the ticket but searches the list.** That is Mail's own split, and for the
 same reason: the toolbar is one row, not three.
@@ -355,10 +388,12 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 
 | Measurement | Value | Reason |
 |---|---|---|
-| List width | **520**, where it RESTS and its ceiling | the smallest width at which all twelve real titles read whole at depth three; at 480 three of them clip |
-| `minimumWidth` | **342**, derived | what the pane gives up to when the window cannot afford 520 (#836): the narrowest window less the sidebar, less a pane of prose, less the two seams between them. Titles truncate at the tail, which they already do — the ticket pane is what must not be squeezed |
+| List width | **520**, where it RESTS | the smallest width at which all twelve real titles read whole at depth three; at 480 three of them clip. Not a ceiling since #844 — the reader drags the seam from here, to 760 — see **the seam between the panes** |
+| `minimumWidth` | **342**, derived | what the pane gives up to when the window cannot afford 520 (#836): the narrowest window less the sidebar, less a pane of prose, less the two seams between them. Titles truncate at the tail, which they already do — the ticket pane is what must not be squeezed. Since #844 this is also the SEAM's floor, and it is named once in `ArgoLayout.backlogWidths` |
 | `bandHeight` | **44**, a FLOOR | the band at the head of the pane (#836) — the title, its count, and the two controls that narrow the list. A floor because the two lines are set at the reader's own type size. `ArgoTicketDetail.bandHeight` READS this one, so both panes' content starts on one line |
 | `bandInsetX` | `ArgoSpacing.comfortable` 12 | the gutter again, so the title starts on the vertical its rows do |
+| `labelsAppearAt` | **440** | the narrowest pane that still carries a row's label chips (#844). The chips are rigid, so under this they take the title's characters rather than give up their own |
+| `labelLimit` | **2**, then a `+n` chip | the row DISTINGUISHES one ticket from the next; the whole set is the ticket pane's |
 | `rowHeight` | **30**, a FLOOR not a frame | grew from 28 when the title snapped up to `body` 13 |
 | `gutter` | `ArgoSpacing.comfortable` 12 | the row's leading inset, before the twist |
 | `twistWidth` | **12** | a leaf keeps the slot, so every dot lands on one vertical |
@@ -366,12 +401,12 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | `indentDepthCap` | **2** | level three shares level two's inset |
 | `gap` | `ArgoSpacing.base` 8 | between dot, id, title and the trailing fact |
 
-### `ArgoWorkToolbar` — `ArgoUI/Shell/Work/Toolbar/`
+### `ArgoWorkChrome` — `ArgoUI/Shell/Work/`
 
 | Measurement | Value | Reason |
 |---|---|---|
 | Row height | **46** | the shell's existing titlebar strip, unchanged — not restated in code, where `ArgoToolbarVessel` already names the band |
-| ~~`listBlockWidth`~~ | **gone (#836)** | it claimed 520 inside one toolbar region to reach the column boundary, and macOS begins that region after the shell's own items. The list's controls are in the list's band now, aligned by construction |
+| ~~`listBlockWidth`~~ | **gone (#836)** | it claimed 520 inside one toolbar region to reach the column boundary, and macOS begins that region after the shell's own items. The list's controls are in the list's band now, aligned by construction — which is also what makes the pane safe to drag (#844): a band has no width to keep in step with the seam |
 | `iconButton` | **26 × 24** inside a 3pt vessel inset | the capsule's own padding is the vessel's, not the button's |
 | `iconSize` | `ArgoIconSize.control` **13** | 14 was the SVG box the study drew into; `control` is the rung the contract gives "a control's own mark", and a fourth rung is a token change this room has no standing to make |
 | `searchWidth` | **210** | wide enough for `Search the backlog`; at 260 the trailing edge clipped at 1280 |
@@ -443,7 +478,7 @@ prototype's numbers survive.
 | backlog id, mono 11 | `ArgoTypography.machineCaption` | exact |
 | backlog title, 12.5 | `ArgoTypography.body` | snapped UP to 13; the row height grew 28 → 30 to carry it |
 | roll-up / odd priority, mono 10–10.5 | `ArgoTypography.machineCaption` | snapped up to 11, matching the id beside it |
-| `HIGH`, `BACKLOG`, `CHARTS`, section captions, 10 uppercase | `ArgoTypography.sectionLabel` | the role's documented job — "sidebar and rail group labels" |
+| `HIGH`, `BACKLOG`, section captions, 10 uppercase | `ArgoTypography.sectionLabel` | the role's documented job — "sidebar and rail group labels" |
 | view name, 12.5 | `ArgoTypography.rowMeta` | snapped DOWN to 11: a view name is chrome, and it must not compete with a ticket title beside it |
 | toolbar heading, 13 semibold | `ArgoTypography.windowTitle` | exact tuple |
 | toolbar sub-line, 11.5 | `ArgoTypography.rowMeta` | exact |

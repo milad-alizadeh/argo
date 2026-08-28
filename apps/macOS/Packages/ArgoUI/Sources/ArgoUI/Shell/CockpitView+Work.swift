@@ -26,6 +26,7 @@ extension CockpitView {
             cockpitRoom: $navigation.room,
             ticket: $navigation.ticket,
             view: $navigation.workView,
+            backlogWidth: $navigation.backlogWidth,
             shut: $navigation.shutParents,
             connect: { actions.openProjectPanel(presentation.activeProjectID) },
             held: WorkRoom.Held(query: $navigation.workQuery, mode: $navigation.workMode),

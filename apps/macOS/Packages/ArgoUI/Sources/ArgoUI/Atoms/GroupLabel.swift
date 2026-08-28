@@ -23,7 +23,7 @@ struct GroupLabel: View {
 #Preview("Group label") {
     VStack(alignment: .leading, spacing: ArgoSpacing.base) {
         GroupLabel("Backlog")
-        GroupLabel("Charts")
+        GroupLabel("Deliveries")
     }
     .padding(ArgoSpacing.section)
     .argoAppearance()

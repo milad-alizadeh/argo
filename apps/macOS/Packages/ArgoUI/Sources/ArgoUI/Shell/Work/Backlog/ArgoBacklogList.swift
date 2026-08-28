@@ -3,9 +3,10 @@ import SwiftUI
 /// What the deck's leading pane is measured at (`docs/designs/cockpit-work-room.md` — the backlog
 /// list). Beside the surface, per `rules/design-system.md`: a measure is not a token.
 enum ArgoBacklogList {
-    /// The width the pane RESTS at, and its ceiling: the smallest at which all twelve of the repo's
-    /// real titles read whole at depth three. At 480 three of them clip, which is the arithmetic
-    /// that moved the backlog out of the rail.
+    /// The width the pane RESTS at: the smallest at which all twelve of the repo's real titles read
+    /// whole at depth three. At 480 three of them clip, which is the arithmetic that moved the
+    /// backlog out of the rail. No longer a ceiling — it is where the pane opens, and the reader
+    /// drags it from there (#844, `ArgoLayout.backlogLimits`).
     static let width: CGFloat = 520
     /// …and what it gives up to when the window cannot afford 520 (#836). A title that clips is a
     /// title you can still read the start of; a ticket pane squeezed under its own controls is a
@@ -17,10 +18,9 @@ enum ArgoBacklogList {
     /// between the three — the split view's divider and the deck's own. Without that last term the
     /// arithmetic comes out exact and the seams are taken from the SIDEBAR, which then draws its
     /// labels off its own leading edge.
-    static let minimumWidth: CGFloat = ArgoLayout.windowMinimumWidth
-        - ArgoLayout.sidebarMinimumWidth
-        - ArgoLayout.feedMinimumWidth
-        - ArgoLayout.seamGrabWidth * 2
+    /// Since #844 it is the SEAM's floor, so the derivation lives with the other seam limits and
+    /// this reads it — one number, one place.
+    static let minimumWidth = ArgoLayout.backlogWidths.lowerBound
     /// The band over the list — its title, its count, and the two controls that narrow it (#836).
     /// A FLOOR and not a frame, for the reason the row height below is one: the two lines inside it
     /// are set at the reader's own type size.
@@ -41,6 +41,16 @@ enum ArgoBacklogList {
     /// The twist's slot. A LEAF KEEPS IT, so every dot in the list lands on one vertical — which is
     /// the whole reason the twist is drawn here rather than inherited from `DisclosureGroup`.
     static let twistWidth: CGFloat = 12
+    /// The narrowest pane that still carries label chips. Under it a row spends its width on the
+    /// chips and truncates the title to `T…`, which keeps the wrong half — the title is what a
+    /// reader scans by. Between `minimumWidth` and the 520 the pane rests at, so a reader dragging
+    /// the seam in loses the chips before they lose the titles.
+    static let labelsAppearAt: CGFloat = 440
+    /// How many of a ticket's labels a row draws. Two, because the row's job is to DISTINGUISH one
+    /// ticket from the next — the whole set is the ticket detail's, which has the width for it.
+    static let labelLimit = 2
+    /// Between the label chips, and between the last of them and the trailing fact.
+    static let labelGap: CGFloat = ArgoSpacing.hair
     /// One level of nesting. Sized so a child's dot lands under its parent's id.
     static let indentStep: CGFloat = ArgoSpacing.loose
     /// Level three shares level two's inset. At 520 this is comfort rather than necessity — it is
@@ -52,4 +62,12 @@ enum ArgoBacklogList {
     static func indent(atDepth depth: Int) -> CGFloat {
         CGFloat(min(depth, indentDepthCap)) * indentStep
     }
+}
+
+extension EnvironmentValues {
+    /// How wide the backlog pane is being drawn right now, seated inside its limits by the room.
+    /// The rows inside a `List` cannot read it any other way: each is proposed its own width, not
+    /// the pane's. Defaults to the width the pane opens at, so a `#Preview` with no room above it
+    /// draws the shipping row.
+    @Entry var backlogPaneWidth: CGFloat = ArgoBacklogList.width
 }

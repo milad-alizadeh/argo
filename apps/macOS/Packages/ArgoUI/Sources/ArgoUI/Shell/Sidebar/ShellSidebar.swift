@@ -32,15 +32,10 @@ struct ShellSidebar: View {
     /// The pipeline and the order it publishes in, in one value. Which step comes before which is
     /// `RosterListing`'s and no longer this body's — see the invariants stated there.
     @State private var roster = RosterListing()
-    /// The sidebar's own, not the presentation's: a restart mid-search comes back to the whole
-    /// list.
-    @State private var query = ""
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
             RoomStrip(selection: $room)
-                .padding(.horizontal, ArgoSpacing.comfortable)
-                .padding(.vertical, ArgoSpacing.base)
             navigator
         }
     }
@@ -48,7 +43,7 @@ struct ShellSidebar: View {
     /// Split out from `body` so the strip above it stays one line: the roster is the sidebar's
     /// content, and the strip is the window's control sitting over it.
     private var navigator: some View {
-        let reading = roster.reading(of: presentation.sessions, matching: query)
+        let reading = roster.reading(of: presentation.sessions)
 
         return SessionNavigator(
             rows: reading.rows,
@@ -56,10 +51,8 @@ struct ShellSidebar: View {
             selection: $selection,
             archive: archive,
             rename: rename,
-            isFiltered: !query.isEmpty,
             renamingRowID: renamingSessionID,
         )
-        .searchable(text: $query, placement: .sidebar, prompt: "Search Sessions")
         .argoAnimation(.resettle, value: reading.rows.map(\.id))
         // Read off the PUBLISHED roster, which is what makes this a fixed point rather than a
         // second placement decision: a row admitted once stays where it was put. The captured

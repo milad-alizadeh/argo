@@ -26,6 +26,7 @@ struct QueuedTurnChip: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             Button(action: cancel) {
                 ArgoGlyph(ArgoSymbol.dismiss, .inline)
+                    .argoHitTarget()
                     .foregroundStyle(argo.color.text.tertiary)
             }
             .buttonStyle(.plain)

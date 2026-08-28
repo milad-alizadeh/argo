@@ -105,14 +105,6 @@ struct WorkRoomProjectionTests {
         #expect(room.ticket?.bucket == .claimed)
     }
 
-    @Test
-    func `a chart names its parent and counts its open children`() {
-        let room = WorkRoomProjection.room(from: WorkFixture.reading)
-
-        #expect(room.charts.map(\.name) == ["#607 Wayfinder", "#334 The Route"])
-        #expect(room.charts.first?.count == 5)
-    }
-
     /// The view is what the deck DRAWS, not just a number in the rail: opening one filters the
     /// backlog to it. Before this the selection was written and never read, so every view drew the
     /// same twelve rows.

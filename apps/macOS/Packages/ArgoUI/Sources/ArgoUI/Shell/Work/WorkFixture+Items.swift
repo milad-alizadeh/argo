@@ -79,13 +79,22 @@ extension WorkFixture {
     """
 
     /// #607's own body, so the render of a PARENT is a parent's page rather than a leaf's prose
-    /// under a parent's title. Prose only, for the same reason `body` is.
+    /// under a parent's title.
+    ///
+    /// It carries MARKS where `body` above is prose, and the pair is the point: a tracker's bodies
+    /// are markdown, so one fixture has to prove the heading, the list and the code span reach the
+    /// pane's renderer and one has to prove a paragraph on its own still sets as one.
     static let parentBody = """
     The Work room, end to end: the views sidebar, the backlog in the deck, the ticket beside it, \
-    and the Route the charts open onto.
+    and the Route a parent opens onto.
 
-    Nine children carry it. Two are closed and two the poll has not reached, which is why the \
-    roll-up beside this ticket counts more than the rows nested under it.
+    ## What carries it
+
+    Nine children. Two are closed and two the poll has not reached, which is why the roll-up \
+    beside this ticket counts more than the rows nested under it.
+
+    - The sidebar's counts are arithmetic over the same list the deck draws.
+    - `WorkRoomProjection.room(from:in:)` is where both halves are assembled.
     """
 
     /// The provider's own word for a ticket somebody is on. Verbatim, and deliberately not

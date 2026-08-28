@@ -52,7 +52,8 @@ extension WorkReading {
         return Array(earned.prefix(NextUp.chipLimit))
     }
 
-    /// The chart this pick hangs under, by the same type word the `CHARTS` group is built from.
+    /// The PRD-shaped parent this pick hangs under, which is the chip's `next in #607`. The
+    /// sidebar no longer lists these (#844); `isChartShaped` is read here and nowhere else.
     private func chart(holding number: Int) -> String? {
         items
             .first { $0.isChartShaped && $0.children.contains(number) }

@@ -38,15 +38,14 @@ struct TicketBody: View {
         }
     }
 
-    /// Set at the feed's own line height, so a paragraph here and a paragraph in a reading are the
-    /// same rhythm — the two are read minutes apart in the same window.
+    /// The tracker's own markdown, drawn by the FEED's renderer. It carries the feed's line height
+    /// with it, so a paragraph here and a paragraph in a reading set at the same rhythm.
     @ViewBuilder private var prose: some View {
         if let body = ticket.body {
-            Text(body)
-                .argoText(ArgoTypography.body)
+            FeedMarkdown(text: body)
                 .foregroundStyle(argo.color.text.secondary)
-                .lineSpacing(ArgoFeedRow.proseLineSpacing)
-                .fixedSize(horizontal: false, vertical: true)
+                .environment(\.proseVoice, argo.color.text.secondary)
+                .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

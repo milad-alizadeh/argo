@@ -1,9 +1,11 @@
 import SwiftUI
 
 /// The deck's leading pane — the backlog, banded by priority over its roots (#819). Its width is
-/// fixed at 520 rather than shared out of the deck: 520 is the measure the titles were chosen
-/// against, and a pane that shrinks with the window would put them back where the rail had them
-/// (`cockpit-work-room.md`).
+/// the CALLER's: the pane rests at `ArgoBacklogList.width`, which is the measure the titles were
+/// chosen against, and the reader drags it from there (`WorkRoom.deck`). It carries no frame of
+/// its own — #836's `minWidth/idealWidth/maxWidth` let the `HStack` distribute the deck between
+/// the two panes, and the seam settles that now. The floor those named survives as the seam's
+/// (`ArgoLayout.backlogWidths`).
 struct BacklogList: View {
     /// The tree's roots, banded here: which rows a band draws depends on the fold, which is the
     /// pane's state rather than the room's.
@@ -21,11 +23,6 @@ struct BacklogList: View {
             BacklogHeader(reading: header)
             list
         }
-        .frame(
-            minWidth: ArgoBacklogList.minimumWidth,
-            idealWidth: ArgoBacklogList.width,
-            maxWidth: ArgoBacklogList.width,
-        )
     }
 
     private var list: some View {
@@ -57,7 +54,7 @@ struct BacklogList: View {
     @Previewable @State var shut: Set<Int> = []
 
     BacklogList(rows: WorkFixture.room.backlog, selection: $selection, shut: $shut)
-        .frame(height: 520)
+        .frame(width: ArgoBacklogList.width, height: 520)
         .argoDeckSurface()
         .argoAppearance()
 }
@@ -67,7 +64,7 @@ struct BacklogList: View {
     @Previewable @State var shut: Set = [607]
 
     BacklogList(rows: WorkFixture.room.backlog, selection: $selection, shut: $shut)
-        .frame(height: 520)
+        .frame(width: ArgoBacklogList.width, height: 520)
         .argoDeckSurface()
         .argoAppearance()
 }
@@ -79,14 +76,14 @@ struct BacklogList: View {
     let unread = WorkRoomProjection.room(from: WorkFixture.reading(of: WorkFixture.items)).backlog
 
     BacklogList(rows: unread, selection: .constant(nil), shut: $shut)
-        .frame(height: 420)
+        .frame(width: ArgoBacklogList.width, height: 420)
         .argoDeckSurface()
         .argoAppearance()
 }
 
 #Preview("Backlog list — the provider answered with nothing") {
     BacklogList(rows: [], selection: .constant(nil), shut: .constant([]))
-        .frame(height: 320)
+        .frame(width: ArgoBacklogList.width, height: 320)
         .argoDeckSurface()
         .argoAppearance()
 }

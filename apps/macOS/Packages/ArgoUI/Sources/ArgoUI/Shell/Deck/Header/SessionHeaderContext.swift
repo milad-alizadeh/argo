@@ -61,6 +61,7 @@ struct SessionHeaderContext: View {
         // toggle would close the panel hover has just opened.
         Button { isGuideOpen = true } label: {
             ArgoGlyph(ArgoSymbol.about, .inline)
+                .argoHitTarget()
         }
         .buttonStyle(.plain)
         .foregroundStyle(argo.color.text.tertiary)

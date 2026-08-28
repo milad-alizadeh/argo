@@ -16,6 +16,9 @@ struct WorkRoom {
     /// Which view is open. Above the room too, and for a sharper reason: `room.backlog` is already
     /// filtered to it, so the selection has to be settled before the room is derived.
     @Binding var view: WorkView
+    /// What the reader has dragged the seam between the two panes to. Above the room for the same
+    /// reason the fold is: the panes are rebuilt on every ticket.
+    @Binding var backlogWidth: CGFloat
     /// Which parents the reader has folded. Above the room for the same reason the ticket is: a
     /// fold outlives the pane. **Everything opens open**, so it is empty until somebody folds
     /// something — a tree that opens shut hides what it was added for (#814).
@@ -58,19 +61,42 @@ struct WorkRoom {
         if let vacancy = room.vacancy {
             WorkRoomVacancy(vacancy: vacancy, project: room.project, connect: connect)
         } else {
-            HStack(spacing: ArgoSpacing.flush) {
-                BacklogList(
-                    rows: room.backlog,
-                    selection: $ticket,
-                    shut: $shut,
-                    header: chrome,
-                )
-                DeckSeparator()
-                TicketDetail(
-                    ticket: room.ticket,
-                    band: TicketBand(reading: chrome, mode: held.mode),
-                ) { ticket = $0 }
+            // The deck's own width, because the seam's ceiling is what is left after the ticket
+            // detail's floor — `ArgoLayout.backlogLimits(in:)`.
+            GeometryReader { deck in
+                panes(in: deck.size.width)
             }
+        }
+    }
+
+    /// The backlog, the seam the reader moves, and the ticket. Each pane carries its own band at
+    /// its head (#836); the seam between them is the reader's (#844).
+    ///
+    /// The stored width is the reader's INTENT and is never written back — it is seated for the
+    /// draw and left alone. Seating it in place looks like tidiness and is data loss: a window
+    /// narrow for one layout pass clamps the number, and `seated` cannot tell a width that was
+    /// clamped from one the reader chose, so widening the window again never brings it back. A
+    /// pane dragged to 520 came back at its floor on every launch that sized the window twice.
+    private func panes(in deck: CGFloat) -> some View {
+        let limits = ArgoLayout.backlogLimits(in: deck)
+
+        return HStack(spacing: ArgoSpacing.flush) {
+            let seated = ArgoLayout.seated(backlogWidth, in: limits)
+            BacklogList(
+                rows: room.backlog,
+                selection: $ticket,
+                shut: $shut,
+                header: chrome,
+            )
+            .frame(width: seated)
+            // What the rows inside the `List` read to decide whether they have width for label
+            // chips — see `ArgoBacklogList.labelsAppearAt`.
+            .environment(\.backlogPaneWidth, seated)
+            DeckSeam(width: $backlogWidth, limits: limits, growsRightward: true)
+            TicketDetail(
+                ticket: room.ticket,
+                band: TicketBand(reading: chrome, mode: held.mode),
+            ) { ticket = $0 }
         }
     }
 }
@@ -79,11 +105,12 @@ struct WorkRoom {
     @Previewable @State var ticket: Int? = 272
     @Previewable @State var cockpitRoom = CockpitRoom.work
     @Previewable @State var view = WorkView.allOpen
+    @Previewable @State var width = ArgoBacklogList.width
     @Previewable @State var shut: Set<Int> = []
 
     WorkRoom(
         room: WorkFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket, view: $view,
-        shut: $shut,
+        backlogWidth: $width, shut: $shut,
     )
     .deck
     .frame(width: ArgoBacklogList.width + ArgoTicketDetail.idealWidth, height: 620)

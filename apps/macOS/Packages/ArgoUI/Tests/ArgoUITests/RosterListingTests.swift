@@ -1,52 +1,37 @@
 @testable import ArgoUI
 import Testing
 
-/// The roster pipeline: project, hold, search — in that order, which is the whole of it. A
-/// pipeline reordered by accident produces a roster that still renders, so these are the claims
-/// that catch it.
+/// The roster pipeline: project, then hold — which is the whole of it. A pipeline reordered by
+/// accident produces a roster that still renders, so these are the claims that catch it.
 @Suite("Roster listing")
 struct RosterListingTests {
-    // MARK: - Order before search
-
-    /// Filtered AFTER the order is published, so a query cannot re-order what it leaves behind.
-    @Test
-    func `a query does not re-order the rows it keeps`() {
-        var roster = RosterListing()
-        roster.hold(roster.reading(of: sessions(named: "one", "two", "three"), matching: ""))
-
-        // The activity order has since flipped, and a query keeps two of the three.
-        let searched = roster.reading(of: sessions(named: "three", "two", "one"), matching: "e")
-
-        #expect(searched.rows.map(\.id) == ["one", "three"])
-    }
-
-    /// The hold covers the WHOLE roster and not only the rows a query kept — otherwise clearing
-    /// the search would hand back a list nothing was holding.
-    @Test
-    func `a hold taken while a query is narrowing still covers the rows it hid`() {
-        var roster = RosterListing()
-        roster.hold(roster.reading(of: sessions(named: "alpha", "beta", "gamma"), matching: "a"))
-
-        let cleared = roster.reading(of: sessions(named: "gamma", "beta", "alpha"), matching: "")
-
-        #expect(cleared.rows.map(\.id) == ["alpha", "beta", "gamma"])
-    }
+    // MARK: - The published order
 
     @Test
     func `an unheld roster is the activity order`() {
         let roster = RosterListing()
-        let reading = roster.reading(of: sessions(named: "gamma", "alpha"), matching: "")
+        let reading = roster.reading(of: sessions(named: "gamma", "alpha"))
 
         #expect(reading.rows.map(\.id) == ["gamma", "alpha"])
     }
 
     @Test
+    func `a held roster does not re-order under a change in activity`() {
+        var roster = RosterListing()
+        roster.hold(roster.reading(of: sessions(named: "one", "two", "three")))
+
+        let later = roster.reading(of: sessions(named: "three", "two", "one"))
+
+        #expect(later.rows.map(\.id) == ["one", "two", "three"])
+    }
+
+    @Test
     func `releasing re-settles the roster to the activity order`() {
         var roster = RosterListing()
-        roster.hold(roster.reading(of: sessions(named: "alpha", "beta"), matching: ""))
+        roster.hold(roster.reading(of: sessions(named: "alpha", "beta")))
         roster.release()
 
-        let reading = roster.reading(of: sessions(named: "beta", "alpha"), matching: "")
+        let reading = roster.reading(of: sessions(named: "beta", "alpha"))
 
         #expect(reading.rows.map(\.id) == ["beta", "alpha"])
     }
@@ -57,37 +42,27 @@ struct RosterListingTests {
     @Test
     func `a Session admitted while held stays where it was put`() {
         var roster = RosterListing()
-        roster.hold(roster.reading(of: sessions(named: "alpha", "beta"), matching: ""))
+        roster.hold(roster.reading(of: sessions(named: "alpha", "beta")))
 
-        let arrived = roster.reading(of: sessions(named: "new", "alpha", "beta"), matching: "")
+        let arrived = roster.reading(of: sessions(named: "new", "alpha", "beta"))
         roster.admit(arrived)
 
         // "new" has since gone quiet and sorts last; the held order does not re-place it.
-        let later = roster.reading(of: sessions(named: "alpha", "beta", "new"), matching: "")
+        let later = roster.reading(of: sessions(named: "alpha", "beta", "new"))
 
         #expect(later.rows.map(\.id) == ["new", "alpha", "beta"])
     }
 
     // MARK: - The archived list
 
-    /// A search that stopped at the fold would answer "no Sessions" about a list it never looked
-    /// in.
-    @Test
-    func `the same query filters the list behind the fold`() {
-        let roster = RosterListing()
-        let reading = roster.reading(of: archived(named: "alpha", "beta"), matching: "alpha")
-
-        #expect(reading.archived.map(\.id) == ["alpha"])
-    }
-
     /// Not held by the order above: nothing behind the fold is under the pointer, so there is no
     /// swap to refuse.
     @Test
     func `the list behind the fold follows the activity order even while the roster is held`() {
         var roster = RosterListing()
-        roster.hold(roster.reading(of: archived(named: "alpha", "beta"), matching: ""))
+        roster.hold(roster.reading(of: archived(named: "alpha", "beta")))
 
-        let reading = roster.reading(of: archived(named: "beta", "alpha"), matching: "")
+        let reading = roster.reading(of: archived(named: "beta", "alpha"))
 
         #expect(reading.archived.map(\.id) == ["beta", "alpha"])
     }
@@ -97,7 +72,7 @@ struct RosterListingTests {
         let roster = RosterListing()
         let mixed = sessions(named: "kept") + archived(named: "gone")
 
-        #expect(roster.reading(of: mixed, matching: "").rows.map(\.id) == ["kept"])
+        #expect(roster.reading(of: mixed).rows.map(\.id) == ["kept"])
     }
 
     @Test
@@ -105,7 +80,7 @@ struct RosterListingTests {
         let roster = RosterListing()
         let mixed = sessions(named: "kept") + archived(named: "gone")
 
-        #expect(roster.reading(of: mixed, matching: "").archived.map(\.id) == ["gone"])
+        #expect(roster.reading(of: mixed).archived.map(\.id) == ["gone"])
     }
 
     // MARK: - What a hold is taken over
@@ -115,9 +90,8 @@ struct RosterListingTests {
     @Test
     func `the ids a hold is taken over are the whole published roster`() {
         let roster = RosterListing()
-        let reading = roster.reading(of: sessions(named: "alpha", "beta"), matching: "alpha")
+        let reading = roster.reading(of: sessions(named: "alpha", "beta"))
 
-        #expect(reading.rows.map(\.id) == ["alpha"])
         #expect(reading.ids == ["alpha", "beta"])
     }
 
@@ -131,7 +105,6 @@ struct RosterListingTests {
         ids.map { session(id: $0, isArchived: true) }
     }
 
-    /// The id is also the title, so a query matches the row the test names.
     private func session(id: String, isArchived: Bool) -> CockpitPresentation.Session {
         CockpitPresentation.Session(
             id: id,
