@@ -58,6 +58,27 @@ struct WorkVerbTests {
         #expect(issue?.number == 873)
     }
 
+    /// `.absent` is the host saying nothing sits behind a number READ OFF A BRANCH, which is the
+    /// only reading that needs confirming. A claim Argo was told at the spawn does not.
+    @Test func `a host that cannot name the ticket does not un-claim the Session`() {
+        let issue = CockpitPresentation.Session.Issue(
+            workItem: 872, branch: nil, location: nil, ticket: .absent,
+        )
+
+        #expect(issue?.number == 872)
+        #expect(issue?.title == nil)
+    }
+
+    /// …and the DERIVED half keeps the rule #745 gave it: a branch naming a ticket that does not
+    /// exist draws nothing rather than a guess.
+    @Test func `a branch naming a ticket the host has nothing behind links to nothing`() {
+        #expect(
+            CockpitPresentation.Session.Issue(
+                workItem: nil, branch: "argo/#873-backlog-search", location: nil, ticket: .absent,
+            ) == nil,
+        )
+    }
+
     @Test func `a Session with neither reading links to nothing`() {
         #expect(
             CockpitPresentation.Session.Issue(

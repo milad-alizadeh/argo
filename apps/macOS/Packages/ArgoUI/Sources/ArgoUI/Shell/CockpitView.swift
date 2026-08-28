@@ -196,12 +196,15 @@ public struct CockpitView: View {
         }
         // The Work room's own sheet (#872). On the shell rather than in the room, because the room
         // is a pair of split-view slots and neither of them may present over the other.
-        .sheet(isPresented: $isComposingTicket) {
+        // `onDismiss` and not the Cancel button alone: Escape and the system's own gesture put the
+        // sheet away without pressing anything, and a refusal left behind would go on being drawn
+        // by the row's New ticket button with nothing on screen to clear it.
+        .sheet(isPresented: $isComposingTicket, onDismiss: closeTicketComposer) {
             NewTicketComposer(
                 composition: $ticketComposition,
                 control: workIntents.creation.control,
                 reconnect: openProjectPanel,
-                cancel: { isComposingTicket = false },
+                cancel: closeTicketComposer,
                 create: createTicket,
             )
         }

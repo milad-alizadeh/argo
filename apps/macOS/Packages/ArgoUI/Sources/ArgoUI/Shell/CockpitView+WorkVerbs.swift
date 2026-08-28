@@ -65,4 +65,12 @@ extension CockpitView {
             ticketWrite = .failed(refusal)
         }
     }
+
+    /// Put the composer away, and the refusal it was holding with it. The row's New ticket button
+    /// renders `ticketWrite` too, so a `failed` left standing here would draw a refusal beside a
+    /// write nobody can now see or retry — the live-and-inert control this ticket is about.
+    func closeTicketComposer() {
+        isComposingTicket = false
+        ticketWrite = .idle
+    }
 }
