@@ -34,6 +34,9 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
     /// The ticket's body, verbatim, and `nil` where nothing was read. Held for as long as the
     /// listing is and never persisted, on the same terms as every other fact here.
     public let body: String?
+    /// When the provider last saw this ticket change, and `nil` where the adapter read none. LAST
+    /// TOUCHED and not filed: it is what `oldest untouched` claims, and the hero's age key (#273).
+    public let updatedAt: Date?
 
     public init(
         number: Int,
@@ -47,6 +50,7 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
         children: [Int] = [],
         blockedBy: [WorkItemBlocker]? = nil,
         body: String? = nil,
+        updatedAt: Date? = nil,
     ) {
         self.number = number
         self.title = title
@@ -59,6 +63,7 @@ public struct WorkItem: Equatable, Sendable, Identifiable {
         self.children = children
         self.blockedBy = blockedBy
         self.body = body
+        self.updatedAt = updatedAt
     }
 
     public var id: Int {

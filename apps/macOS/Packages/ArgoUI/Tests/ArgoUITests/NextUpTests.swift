@@ -122,6 +122,46 @@ struct NextUpTests {
         #expect(atRest.nextUp == filtered.nextUp)
     }
 
+    /// The design's honest fallback, and the only state that reaches it: with the edges unread and
+    /// no priority word, the other three reasons are all refused, so the card names the one input
+    /// left rather than carrying no chip at all.
+    @Test
+    func `a pick that earned nothing else says it is the oldest untouched`() throws {
+        let room = WorkRoomProjection.room(from: Self.edgeless(dated: true))
+
+        try #expect(pick(in: room).reasons == [.oldestUntouched])
+    }
+
+    /// And it is CHECKED, not assumed: with no timestamp read there is no age, so `oldest` is not a
+    /// thing anybody may say — the card carries no chip rather than a fourth unearned one.
+    @Test
+    func `with no age read the fallback is suppressed too`() throws {
+        let room = WorkRoomProjection.room(from: Self.edgeless(dated: false))
+
+        try #expect(pick(in: room).reasons.isEmpty)
+    }
+
+    /// `spec ready` would need an explicit provider label, and the design draws no such chip — so
+    /// there is no case for one, and prose that says the words earns nothing (#273).
+    @Test
+    func `spec readiness is never inferred from a ticket's prose`() throws {
+        let reading = WorkFixture.reading(of: [WorkItem(
+            number: 1, title: "A ticket", status: "Todo", closure: .open,
+            labels: ["spec ready"], blockedBy: [], body: "Spec ready — pick this up.",
+        )])
+
+        try #expect(pick(in: WorkRoomProjection.room(from: reading)).reasons == [.unblocked])
+    }
+
+    /// A provider that serves no dependency summary, no priority word and no chart — every claim
+    /// but the age refused. `dated` is the one thing that varies between the two cases above.
+    private static func edgeless(dated: Bool) -> WorkReading {
+        WorkFixture.reading(of: [WorkItem(
+            copying: WorkFixture.candidate(1, day: dated ? 1 : nil),
+            blockedBy: .some(nil),
+        )])
+    }
+
     /// Only priority takes ink. Two coloured chips would read as a scale, and the hero never
     /// renders a score.
     @Test
@@ -132,10 +172,7 @@ struct NextUpTests {
     }
 
     private func pick(in room: WorkRoomProjection.Room) throws -> NextUp.Pick {
-        guard case let .pick(pick) = try #require(room.nextUp) else {
-            throw NextUpTestFailure.notAPick
-        }
-        return pick
+        try NextUpPick.of(room)
     }
 
     /// #388 as an edgeless provider serves it: one priority word, no type, and no dependency
@@ -158,8 +195,4 @@ struct NextUpTests {
     private var leaf: WorkItem {
         WorkItem(number: 273, title: "The planner", status: "Todo", closure: .open)
     }
-}
-
-private enum NextUpTestFailure: Error {
-    case notAPick
 }

@@ -25,6 +25,9 @@ struct GitHubIssue: Decodable {
     /// GitHub serves pull requests from `/issues` too, and this is the only field telling them
     /// apart. A pull request is a Delivery (`CONTEXT.md` L4), never a Work Item.
     let pullRequest: PullRequestMark?
+    /// GitHub's `updated_at`, held as the STRING it arrives as: the decoder these calls share sets
+    /// no date strategy, and giving it one would re-read every other date on the wire.
+    let updatedAt: String?
     let subIssuesSummary: SubIssuesSummary?
     let issueDependenciesSummary: DependenciesSummary?
 
@@ -34,6 +37,15 @@ struct GitHubIssue: Decodable {
     struct PullRequestMark: Decodable { let url: String }
     struct SubIssuesSummary: Decodable { let total: Int }
     struct DependenciesSummary: Decodable { let totalBlockedBy: Int }
+
+    /// When GitHub last saw the ticket change, and `nil` where the field was absent OR unparseable.
+    /// Both collapse to absent deliberately: a timestamp nothing could read is not an age, and
+    /// inventing one would put a ticket at the head of a ranking that sorts by neglect.
+    /// GitHub serves `updated_at` as RFC 3339 with a `Z` offset, which `.iso8601` parses as it
+    /// stands.
+    var touched: Date? {
+        updatedAt.flatMap { try? Date($0, strategy: .iso8601) }
+    }
 
     var hasChildren: Bool {
         (subIssuesSummary?.total ?? 0) > 0
@@ -73,6 +85,7 @@ struct GitHubIssue: Decodable {
             children: children,
             blockedBy: blockedBy,
             body: prose?.isEmpty == true ? nil : prose,
+            updatedAt: touched,
         )
     }
 }

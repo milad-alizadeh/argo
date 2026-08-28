@@ -1,3 +1,5 @@
+import ArgoEngine
+
 /// The backlog's top-level structure: priority over the ROOTS, a child staying under its parent
 /// whatever its own priority is (`cockpit-work-room.md` — the one conflict, and how it resolves).
 extension WorkRoomProjection {
@@ -21,8 +23,12 @@ extension WorkRoomProjection {
         }
     }
 
-    /// The words the design draws headers for, in the order they stand. Matched, never ranked.
-    private static let bandOrder = ["high", "medium", "low"]
+    /// The words the design draws headers for, in the order they stand. Still MATCHED here — a word
+    /// this list does not hold keeps its place in the provider's own order rather than being sorted
+    /// against the three. It comes off `WorkItemPriority` so the header order and the hero's rank
+    /// read one list (#273): two copies of these three words is how a band comes to sit above a
+    /// ticket the hero ranked below it.
+    private static let bandOrder = WorkItemPriority.known
 
     /// The roots banded: the three known words first, then any other word in the order the provider
     /// served it, and the roots nobody read a priority for last.

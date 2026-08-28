@@ -1,16 +1,13 @@
 import ArgoEngine
 
 extension WorkReading {
-    /// The one priority word the hero treats as urgent, MATCHED rather than ranked: Argo does not
-    /// order a provider's words (#815), and the chip echoes this one back. Which words a provider
-    /// actually spells is #388's, and which of them outrank the rest is #273's.
-    private static let urgentPriority = "high"
-
     /// The hero, over the same open set the views count. Work happens at leaves, so a parent is
     /// neither picked nor counted into the pool that decides a tier.
     ///
-    /// The pick is the first takeable leaf in the provider's own order, which is not a ranking —
-    /// #273 owns which ticket lands here and replaces that line when it does.
+    /// A COLD-START planner, never a best-move-overall recommender: the pool is
+    /// `open · leaf · todo · unblocked · session-less`, and the pick is the head of it ranked by
+    /// `priority desc → PRD sequence → age` (`WorkReading+Ranking.swift`). Which ticket most needs
+    /// attention is a different question, and the attention channel's.
     func nextUp(of open: [WorkItem]) -> NextUp {
         // No open LEAF is the clear tier, not the blocked one: "every open leaf is waiting on
         // something still open" is false when there is no open leaf to wait.
@@ -21,19 +18,22 @@ extension WorkReading {
         // backlog where everything is blocked. The CHIP is what gets suppressed, not the pick.
         let unblocked = leaves.filter { $0.blockage != .blocked && $0.blockage != .stranded }
         guard !unblocked.isEmpty else { return .nothingUnblocked }
-        guard let pick = unblocked.first(where: { !claimed.contains($0.number) }) else {
-            return .allRunning
-        }
+        // `todo` and `session-less` in ONE clause: `WorkItemState.open` is open AND unclaimed, and
+        // the claim is the roster join the room already makes.
+        let pool = unblocked.filter { $0.state(claimed: claimed.contains($0.number)) == .open }
+        guard let pick = ranked(pool).first else { return .allRunning }
         return .pick(NextUp.Pick(
-            number: pick.number, title: pick.title, reasons: reasons(for: pick),
+            number: pick.number, title: pick.title, reasons: reasons(for: pick, in: pool),
         ))
     }
 
-    /// `high priority` → `unblocked` → `next in <PRD>`, cut to `chipLimit`. Order is the priority,
-    /// so the cut drops the weakest claim rather than an arbitrary one.
-    private func reasons(for pick: WorkItem) -> [NextUp.Reason] {
+    /// `high priority` → `unblocked` → `next in <PRD>`, cut to `chipLimit`, with `oldest untouched`
+    /// where none of the three was earned. Order is the priority, so the cut drops the weakest
+    /// claim rather than an arbitrary one.
+    private func reasons(for pick: WorkItem, in pool: [WorkItem]) -> [NextUp.Reason] {
         var earned: [NextUp.Reason] = []
-        if pick.priority?.lowercased() == Self.urgentPriority {
+        // The same rung the ranking sorted by, so the chip and the pick's place cannot disagree.
+        if pick.priorityRung == .high {
             earned.append(.highPriority)
         }
         // Only where THIS ticket's edges were read. Inferring it from the backlog carrying edges
@@ -43,6 +43,11 @@ extension WorkReading {
         }
         if let chart = chart(holding: pick.number) {
             earned.append(.next(chart: chart))
+        }
+        // A FALLBACK, and still checked: the card says why this ticket rather than the rest, so
+        // with nothing else earned it names the one input left — and only where that was read.
+        if earned.isEmpty, isOldest(pick, in: pool) {
+            earned.append(.oldestUntouched)
         }
         return Array(earned.prefix(NextUp.chipLimit))
     }

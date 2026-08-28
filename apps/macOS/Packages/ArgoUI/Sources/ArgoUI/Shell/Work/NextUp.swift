@@ -26,12 +26,15 @@ enum NextUp: Sendable, Equatable {
     /// One earned reason. An unknown earns nothing: with no dependency edges read, `unblocked` is
     /// suppressed rather than asserted.
     ///
-    /// The design's fourth reason, `oldest untouched`, has no case here — it is earned by a ranking
-    /// that picks by age (#273), and nothing reads an age.
+    /// There is deliberately no `spec ready` case. The design draws no such chip, and the one thing
+    /// that could earn one is an explicit provider label — never a read of the prose (#273).
     enum Reason: Sendable, Equatable {
         case highPriority
         case unblocked
         case next(chart: String)
+        /// The design's honest fallback, earned only where the other three were not AND a timestamp
+        /// was actually read: it is the age tie-break of the ranking, said out loud.
+        case oldestUntouched
     }
 }
 
@@ -42,6 +45,7 @@ extension NextUp.Reason {
         case .highPriority: "high priority"
         case .unblocked: "unblocked"
         case let .next(chart): "next in \(chart)"
+        case .oldestUntouched: "oldest untouched"
         }
     }
 

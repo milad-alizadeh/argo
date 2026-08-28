@@ -3,14 +3,16 @@
 What `design-to-code` extracted while building [`cockpit-work-room.md`](cockpit-work-room.md), and
 what it deliberately left inline. One row per component the assembled screen forced out.
 
-**Scope: #812, #814, #815, #816, #817, #818 and #819** — the views sidebar, the flat backlog list
+**Scope: #812, #814, #815, #816, #817, #818, #819 and #273** — the views sidebar, the flat backlog list
 and the ticket (#812), the nesting that turned the list into a tree (#814), the ticket's fact strip
 and its three sections (#815), the room's toolbar row (#816), the Next-up hero and its four tiers
 (#817), the room's two vacancy pages (#818), and the priority bands over the backlog's roots
-(#819). The design freezes 31 names across the whole room; the names below are the ones these
-tickets built. The rest (the Route) belongs to its own ticket and is absent rather than stubbed.
+(#819), and the ranking that decides which ticket the hero holds (#273). The design freezes 31
+names across the whole room; the names below are the ones these tickets built. The rest (the Route)
+belongs to its own ticket and is absent rather than stubbed.
 
-The tables below cover #812, #814, #815 and #818; #817's and #816's own sections are at the foot.
+The tables below cover #812, #814, #815 and #818; #817's, #816's and #273's own sections are at the
+foot.
 
 ## Extracted
 
@@ -541,3 +543,117 @@ could not hold something the design had already settled.
 1280×800 window — the band counts `8 · 1 · 3`, falling to `1 · 1 · 3` with #607 folded, and the
 odd priorities on #273, #335 and #336. The unread band has no design render of its own; it is
 visible in `nothingUnblocked` and `everythingRunning`, whose readings carry no priorities at all.
+---
+
+# #273 — the ranking behind the hero
+
+#817 built the card and its four tiers; this is the ranking that decides which ticket lands in it.
+**No component came out.** The card, the chip and the wrap were all extracted then, and a ranking
+draws nothing — every name below is a value.
+
+## Extracted
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `WorkItemPriority` | value | `ArgoEngine/WorkItem/` | `init(word:)`, `rung: Int`, `known: [String]` — five cases, `other` carrying no word | — | `priority desc`, the first ranking key |
+| `WorkItem.updatedAt` | value | `ArgoEngine/WorkItem/` | `Date?` | — | `age`, the third key |
+| `WorkReading.ranked(_:)` | value | `ArgoUI/Shell/Work/` | `[WorkItem] -> [WorkItem]` | `Rank` (private) | the ranking itself |
+| `NextUp.Reason.oldestUntouched` | value | `ArgoUI/Shell/Work/` | — | `NextUpChip`, unchanged | the design's fourth chip |
+
+`NextUpChip` needed no edit for the fourth reason: it renders `reason.words` and takes its ink from
+`isUrgent`, so a new case is a new word and nothing else. That is the one place this ticket found the
+#817 build had already paid for the extension.
+
+## The three decisions the ticket left open
+
+- **The priority ladder lives in the ENGINE.** `WorkRoomProjection+Bands` held
+  `bandOrder = ["high", "medium", "low"]` in `ArgoUI` under the comment *"Matched, never ranked"*.
+  Both halves are now true of one list: `WorkItemPriority.known` is the words, and `rung` is the
+  order — bands still MATCH against it and the hero RANKS by it. Two copies of those three words is
+  how a band comes to sit above a ticket the hero ranked below it. Licensed by ADR-0016: *"provider
+  priority is a sort Argo reflects"*. The words stay the provider's and stay verbatim on the
+  `WorkItem` — nothing recases one.
+- **`age` is last-touched, not filed.** `oldest untouched` is a claim about neglect, and a ticket
+  filed a year ago and edited this morning is not neglected. It reads GitHub's `updated_at`, held on
+  the wire as the STRING it arrives as: the decoder these calls share sets no date strategy, and
+  giving it one would re-read every other date on the wire.
+- **There is no Sessions-room pointer card.** AC 8 asked for one; two later designs forbid it by
+  name. `cockpit-session-interior-decisions.md` B6 and `cockpit-spec.md` §4.1 both settle the roster
+  zero-state as the pinned `+ New session` row alone, *"no Next-up card"* included.
+  `cockpit-surface-matrix.md` is amended rather than the code, and the AC closes on its actual
+  force: the ranked list has exactly one home, and it is this room.
+
+## What the ranking refuses to be
+
+- **A total order, and deliberately more than three keys deep.** `priority desc → PRD sequence →
+  age`, then the ticket NUMBER. The fourth is not a ranking input — it breaks the tie the three
+  left, so an unchanged listing cannot yield two different picks across two polls. A hero that
+  reshuffled under an unchanged backlog would churn on every one.
+- **`PRD sequence` is TWO keys, and both are the provider's own author order.** Which chart holds
+  the ticket — the order the provider served its charts in, which is the order the `CHARTS` group
+  draws — and then where in that chart's `children`. The first cut compared child indices across
+  unrelated charts, so position 0 of one PRD beat position 5 of another on nothing anybody had
+  stated; review caught it. Nobody sequenced two PRDs against each other, but the provider did serve
+  one before the other, and that is a fact rather than an invention.
+- **A cold-start planner, never a best-move recommender.** The pool is
+  `open · leaf · todo · unblocked · session-less`. `todo` and `session-less` are ONE clause —
+  `WorkItemState.open` is open and unclaimed — and blocked items are shown in the backlog but never
+  recommended here.
+- **No score, anywhere.** `Rank` is four sort keys and never a number rendered; nothing sums or
+  weights them. Spec-readiness and blocker-criticality are not inputs at all.
+- **`spec ready` has no case.** The design draws no such chip and the only thing that could earn one
+  is an explicit provider label — never a read of the ticket's prose. A test holds the line: a
+  ticket labelled and bodied `spec ready` earns the ordinary chips and nothing more.
+
+## Two claims #817 recorded that this ticket supersedes
+
+- **"`oldest untouched` has no case at all"** — it has one now, and it stays a checked FALLBACK: it
+  is earned only where none of the other three was AND a timestamp was actually read. A ticket
+  nobody read an age for still carries no chip, which is the same suppression in a new place.
+- **The inputs named `WorkReading.edgesRead` and `WorkReading.priorities`** — #820 moved every
+  per-ticket fact onto the `WorkItem` itself, so both reads are now `pick.blockage` and
+  `pick.priority`. The suppression they describe is unchanged.
+
+Two silences worth naming, because both could have been faked:
+
+- **An unknown priority word sits on ONE rung below `low`, and unread sits below THAT.** Two words
+  nothing has ordered are not ordered against each other; absent is not a rung (ADR-0014).
+  `WorkItemPriority.other` therefore carries NO word: the first cut gave it the provider's spelling
+  as a payload, which made `.other("P0") != .other("urgent-ish")` under synthesised `Equatable`
+  while the comment beside it claimed they compared equal, and nothing read the payload anyway.
+- **A ticket with no timestamp read sorts LAST, not first.** Treating a silence as ancient would put
+  the least-known ticket at the head of a list that sorts by neglect.
+
+## What review changed
+
+Three, all caught before the PR:
+
+- **`"high"` was written twice.** `WorkReading+NextUp` kept a `urgentPriority = "high"` constant for
+  the chip while the ranking sorted by `WorkItemPriority.high`, so the chip and the pick's own place
+  in the list could have disagreed — the exact failure moving `bandOrder` onto the ladder was meant
+  to prevent. The chip now reads `pick.priorityRung == .high`.
+- **The cross-chart sequence comparison, and the `other` payload** — both above.
+- **The pool fixture sat in `Sources/`.** `candidate` and `chart` have no caller the app ships, so
+  `WorkFixture+Ranking.swift` moved to `Tests/ArgoUITests/` — unlike the rest of `WorkFixture`,
+  which the previews draw from.
+
+## What the ticket asked for and this build does NOT do
+
+- **AC 2's second half, in part.** The ranking is reproducible by hand from priority (banded in the
+  backlog, stated in the fact strip) and from PRD sequence (the chart order in `CHARTS`, the child
+  order under a parent). **Age is not visible anywhere** — the design draws no timestamp, and the
+  `oldest untouched` chip surfaces it only in the fallback case. So two leaves tied on rung and
+  sequence swap places for a reason nothing on screen states. Rendering an age is a design change
+  this ticket has no approved measurement for.
+- **AC 4's `spec ready`.** Never inferred, which is the clause's force, but also never rendered:
+  the approved design draws four chips and this is not one, and `chipLimit` is 2.
+  `cockpit-surface-matrix.md` keeps the words as an open design question rather than deleting them
+  to match the code.
+
+## Which specimen reproduces which render
+
+None new. The hero's four tiers and its one-chip state were all shot at #817, and the ranking moves
+no pixel in them: the fixture's pool has exactly one takeable unclaimed leaf (#273 — the other three
+clear leaves are claimed), so the pick is the same ticket the ranking or the provider's order would
+both have named. The `oldest untouched` chip has no design render of its own and is drawn in
+`NextUpChip`'s own preview beside the other three.

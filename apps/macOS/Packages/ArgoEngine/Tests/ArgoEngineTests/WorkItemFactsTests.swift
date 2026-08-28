@@ -107,4 +107,30 @@ struct WorkItemFactsTests {
         // Absent, not empty — and every claim built on the edges is suppressed above this.
         #expect(item.blockedBy == nil)
     }
+
+    /// The one ORDERABLE fact besides the priority rung, and the reason it is read: a ranking whose
+    /// last tie-break is age needs one (#273).
+    @Test
+    func `the last-touched timestamp arrives with the listing`() async throws {
+        let item = try await Self.first(IssueJSON(number: 1, updated: "2026-08-01T09:30:00Z"))
+
+        // Built from components rather than from the same parser the read uses, so the assertion
+        // cannot agree with a wrong answer by making it twice.
+        let expected = DateComponents(
+            calendar: Calendar(identifier: .gregorian),
+            timeZone: TimeZone(secondsFromGMT: 0),
+            year: 2026, month: 8, day: 1, hour: 9, minute: 30,
+        ).date
+        #expect(item.updatedAt == expected)
+    }
+
+    /// A timestamp nothing could read is not an age. Both silences collapse to absent, because a
+    /// date invented from an unparseable string would put this ticket at the head of a ranking that
+    /// sorts by neglect.
+    @Test(arguments: [nil, "last Tuesday"])
+    func `a timestamp nobody could read is no age at all`(wire: String?) async throws {
+        let item = try await Self.first(IssueJSON(number: 1, updated: wire))
+
+        #expect(item.updatedAt == nil)
+    }
 }
