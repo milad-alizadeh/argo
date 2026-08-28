@@ -17,6 +17,9 @@
 # can repeat. It resizes through System Events, so it needs Accessibility permission the same way
 # the capture below needs Screen Recording.
 #
+# Everything it does is scoped to the pid it launched, so a dev build or another worktree's copy
+# can be up at the same time: neither is captured, resized or closed by a render here.
+#
 # It captures the WINDOW, not the screen: a full-screen grab carries the desktop and whatever
 # else is open into the evidence, and a judge asked whether the pixels match a spec should not
 # have to work out which pixels are the app.
@@ -32,8 +35,8 @@ APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 APP="$APP_DIR/build/Build/Products/Debug/Argo.app"
 PROJECT_ROOT=$(git -C "$APP_DIR" rev-parse --show-toplevel)
 
-# `open --args` hands the app its own working directory, not this shell's, so a relative transcript
-# path resolves somewhere else and the deck renders "Transcript unavailable" with no hint why.
+# A relative transcript path is resolved here rather than left to the app, so that what the deck
+# is asked for does not depend on which directory it happens to be launched from.
 if [ -n "$TRANSCRIPT" ]; then
   case $TRANSCRIPT in
     /*) ;;
@@ -50,32 +53,31 @@ xcodebuild -project Argo.xcodeproj -scheme Argo -configuration Debug \
 
 mkdir -p "$(dirname "$OUT")"
 
-# A running Argo must go first, and this is not housekeeping. `open` on an app whose bundle
-# id is already running ACTIVATES that instance instead of launching this build — so with a
-# copy left up by another worktree, the capture is of somebody else's tree and looks
-# entirely plausible. That is the one failure a screenshot cannot self-report.
-if pgrep -x Argo >/dev/null 2>&1; then
-  echo "screenshot: an Argo is already running — quitting it so this build is what gets captured"
-  osascript -e 'tell application "Argo" to quit' >/dev/null 2>&1 || true
-  attempt=0
-  while pgrep -x Argo >/dev/null 2>&1 && [ "$attempt" -lt 20 ]; do
-    attempt=$((attempt + 1))
-    sleep 0.25
-  done
-fi
-
 set -- --project "$PROJECT_ROOT"
 [ -n "$TRANSCRIPT" ] && set -- "$@" --transcript "$TRANSCRIPT"
 [ -n "${ARGO_SPECIMEN:-}" ] && set -- "$@" --specimen "$ARGO_SPECIMEN"
-open "$APP" --args "$@"
 
-# The window is not on screen the instant `open` returns, and the first frame it does put up
-# is unpainted. Poll for the id, then let one more beat pass so the capture is of a settled
+# The binary, not `open` on the bundle: `open` on a bundle id that is already running ACTIVATES
+# that instance rather than launching this build. This pid is what everything below addresses.
+#
+# Its output goes to /dev/null, which `open` did too: as a child of this shell it would otherwise
+# hold the caller's stdout, and under ARGO_KEEP_RUNNING the terminal would hang after the render.
+"$APP/Contents/MacOS/Argo" "$@" >/dev/null 2>&1 &
+app_pid=$!
+
+# Nothing quits by name any more, so an instance leaked here is invisible and stays up forever.
+# Under `set -e` every step below can exit — the resize needs Accessibility permission, the
+# capture needs Screen Recording — and a specimen set is dozens of renders to interrupt.
+trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+trap 'exit 130' INT TERM
+
+# The window is not on screen the instant the process starts, and the first frame it does put
+# up is unpainted. Poll for the id, then let one more beat pass so the capture is of a settled
 # window rather than of a layout mid-flight.
 window_id=""
 attempt=0
 while [ "$attempt" -lt 40 ]; do
-  window_id=$(swift scripts/WindowID.swift Argo 2>/dev/null || true)
+  window_id=$(swift scripts/WindowID.swift "$app_pid" 2>/dev/null || true)
   [ -n "$window_id" ] && break
   attempt=$((attempt + 1))
   sleep 0.25
@@ -95,15 +97,18 @@ if [ -n "${ARGO_WINDOW_SIZE:-}" ]; then
   esac
   width=${ARGO_WINDOW_SIZE%x*}
   height=${ARGO_WINDOW_SIZE#*x}
-  osascript -e "tell application \"System Events\" to tell process \"Argo\" \
+  # By unix id, not by name: `process "Argo"` would resize whichever copy System Events found.
+  osascript -e "tell application \"System Events\" \
+    to tell (first process whose unix id is $app_pid) \
     to set size of front window to {$width, $height}"
 fi
 
 sleep 0.5
 screencapture -o -x -l"$window_id" "$OUT"
 
-if [ -z "${ARGO_KEEP_RUNNING:-}" ]; then
-  osascript -e 'tell application "Argo" to quit' >/dev/null 2>&1 || true
+# The app is meant to outlive this script here, so the sweeper is disarmed rather than fired.
+if [ -n "${ARGO_KEEP_RUNNING:-}" ]; then
+  trap - EXIT
 fi
 
 echo "screenshot: $OUT"

@@ -18,12 +18,21 @@ width is part of the state. Entries live in `ArgoUI/Specimen/SpecimenRegistry+*.
 **Drive it like a user** — `sh scripts/e2e-test.sh`, also from `apps/macOS`. The only tests here
 that click; every other Swift test builds a projection and asserts on it.
 
-## Why the screenshot script quits a running Argo
+## Why the screenshot script launches the binary, not the bundle
 
 `bun run screenshot --filter=@argo/macos -- <out.png>` builds the app, launches it, and
-captures the WINDOW rather than the screen. It quits any running Argo first, and that step
-is load-bearing: `open` on an already-running bundle id activates THAT instance, so a copy
-left up by another worktree yields a plausible-looking screenshot of somebody else's tree.
+captures the WINDOW rather than the screen. It runs `Argo.app/Contents/MacOS/Argo` directly
+and keeps the pid, and that is load-bearing: `open` on an already-running bundle id activates
+THAT instance instead of launching this build, so a copy left up by another worktree would
+yield a plausible-looking screenshot of somebody else's tree — the one failure a screenshot
+cannot self-report.
+
+A direct launch starts this build regardless, so nothing has to be closed to make the capture
+honest. Every step downstream is scoped to that pid — `WindowID.swift` matches
+`kCGWindowOwnerPID`, `ARGO_WINDOW_SIZE` resizes the process with that `unix id`, and the
+trailing quit signals it alone. Two Argos can therefore be up at once, and a render leaves the
+dev build you are looking at running (#885). `scripts/screenshot-scope.test.mjs`, in
+`bun run test:hooks`, is what holds that.
 
 Screen Recording permission is required the first time a terminal captures another
 process's window. Without it the PNG is blank rather than an error.
