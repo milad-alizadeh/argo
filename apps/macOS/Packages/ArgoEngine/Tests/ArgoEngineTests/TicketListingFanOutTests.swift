@@ -7,8 +7,8 @@ import Testing
 ///
 /// The point of the fan-out is latency, which no assertion can see — so the suite asserts the two
 /// things that make the latency safe to have.
-@Suite("Work Item listing fan-out")
-struct WorkItemListingFanOutTests {
+@Suite("Ticket listing fan-out")
+struct TicketListingFanOutTests {
     /// Enough tickets that the throttle has to harvest and re-add rather than start them all, and
     /// both edges on each: the cap counts TICKETS, so a ticket must not be able to spend two
     /// requests of it at once.
@@ -16,8 +16,8 @@ struct WorkItemListingFanOutTests {
         IssueJSON(number: $0, children: 1, blockers: 1)
     }
 
-    private static func list(_ api: HeldEdges) async throws -> [WorkItem] {
-        try await GitHubWorkItems(transport: api).list(in: "acme/api", grant: .listing)
+    private static func list(_ api: HeldEdges) async throws -> [Ticket] {
+        try await GitHubTickets(transport: api).list(in: "acme/api", grant: .listing)
     }
 
     @Test
@@ -27,7 +27,7 @@ struct WorkItemListingFanOutTests {
 
         // Exactly the cap, in requests: the gate holds each read open until that many are in
         // flight, and a ticket reads its two edges one after the other.
-        #expect(await api.peak() == GitHubWorkItems.concurrentTickets)
+        #expect(await api.peak() == GitHubTickets.concurrentTickets)
     }
 
     @Test
@@ -81,7 +81,7 @@ private actor HeldEdges: HTTPTransport {
         guard let edge = Edge(request.url) else { return Data(listing.utf8) }
         inFlight += 1
         highest = max(highest, inFlight)
-        for _ in 0 ..< Self.yields where inFlight < GitHubWorkItems.concurrentTickets {
+        for _ in 0 ..< Self.yields where inFlight < GitHubTickets.concurrentTickets {
             await Task.yield()
         }
         inFlight -= 1
