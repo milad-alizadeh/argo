@@ -55,7 +55,7 @@ enum MermaidNotes {
             x = (first + last - across) / 2
         }
         return CGRect(
-            x: x, y: stage.timeline.top(at: index), width: across, height: height,
+            x: x, y: stage.rows.top(at: index), width: across, height: height,
         )
     }
 }

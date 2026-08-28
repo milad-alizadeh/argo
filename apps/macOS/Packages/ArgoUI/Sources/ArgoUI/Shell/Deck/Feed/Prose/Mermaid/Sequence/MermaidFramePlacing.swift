@@ -15,7 +15,7 @@ extension MermaidFrameWalk {
             figures: [MermaidFigure(form: .shape(.enclosure, box), role: .note)] + rules(open, box),
             captions: [caption(at: open.opened, in: box, from: box.minY)]
                 + open.dividers.map {
-                    caption(at: $0, in: box, from: stage.timeline.top(at: $0))
+                    caption(at: $0, in: box, from: stage.rows.top(at: $0))
                 },
         )
     }
@@ -30,10 +30,10 @@ extension MermaidFrameWalk {
             - inset
         let right = (boxes.indices.contains(span.upperBound) ? boxes[span.upperBound].maxX : 0)
             + inset
-        let top = stage.timeline.top(at: open.opened)
+        let top = stage.rows.top(at: open.opened)
         return CGRect(
             x: left, y: top, width: max(0, right - left),
-            height: max(0, stage.timeline.bottom(at: index) - top),
+            height: max(0, stage.rows.bottom(at: index) - top),
         )
     }
 
@@ -41,7 +41,7 @@ extension MermaidFrameWalk {
     /// divides the frame rather than closing anything.
     private func rules(_ open: MermaidOpenFrame, _ box: CGRect) -> [MermaidFigure] {
         open.dividers.map { at in
-            let y = stage.timeline.top(at: at)
+            let y = stage.rows.top(at: at)
             return MermaidFigure(
                 form: .path([CGPoint(x: box.minX, y: y), CGPoint(x: box.maxX, y: y)]),
                 role: .note,

@@ -53,14 +53,14 @@ enum MermaidThreads {
               let toX = setting.stage.x(of: message.to)
         else { return nil }
         let words = setting.stage.words(of: message.text)
-        let y = setting.stage.timeline.line(at: index, under: words.height)
+        let y = setting.stage.rows.line(at: index, under: words.height)
         let offset = setting.activations.offsets[index] ?? (from: 0, to: 0)
         let run = message.from == message.to
             ? loop(from: CGPoint(x: fromX, y: y), offset: offset)
             : straight(from: CGPoint(x: fromX, y: y), to: toX, offset: offset)
         return (
             figures(of: message, along: run),
-            caption(of: message, in: setting.stage.timeline.top(at: index), along: run),
+            caption(of: message, in: setting.stage.rows.top(at: index), along: run),
         )
     }
 
@@ -92,7 +92,7 @@ enum MermaidThreads {
         let label = MermaidLabel(text: message.text, face: MermaidMeasure.edgeFace, role: .note)
         let size = CGSize(
             width: ceil(ProseMetrics.width(of: message.text, in: MermaidMeasure.edgeFace)),
-            height: MermaidTimeline.words(of: message.text),
+            height: MermaidSequenceRows.words(of: message.text),
         )
         guard let first = run.first, let last = run.last else {
             return MermaidCaption(label: label, rect: .zero)

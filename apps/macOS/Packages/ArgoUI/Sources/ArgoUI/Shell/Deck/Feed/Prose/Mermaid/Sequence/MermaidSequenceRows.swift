@@ -6,7 +6,7 @@ import Foundation
 /// and no ordering pass, because the source already stated the order. Every event takes the room it
 /// needs and the next one starts under it.
 @MainActor
-struct MermaidTimeline {
+struct MermaidSequenceRows {
     /// One per event, in event order.
     let tops: [CGFloat]
     let heights: [CGFloat]
@@ -14,7 +14,7 @@ struct MermaidTimeline {
     let head: CGFloat
     let foot: CGFloat
 
-    static func of(_ diagram: MermaidSequence, under head: CGFloat) -> MermaidTimeline {
+    static func of(_ diagram: MermaidSequence, under head: CGFloat) -> MermaidSequenceRows {
         let heights = diagram.events.map(height(of:))
         var tops: [CGFloat] = []
         var y = head + MermaidMeasure.lifelineTail
@@ -22,7 +22,7 @@ struct MermaidTimeline {
             tops.append(y)
             y += height
         }
-        return MermaidTimeline(
+        return MermaidSequenceRows(
             tops: tops,
             heights: heights,
             head: head,

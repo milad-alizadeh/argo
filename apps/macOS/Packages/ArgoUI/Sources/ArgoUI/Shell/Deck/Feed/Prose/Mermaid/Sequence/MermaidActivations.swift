@@ -62,9 +62,9 @@ private extension MermaidActivations {
         mutating func step(_ event: MermaidSequence.Event, at index: Int) {
             switch event {
             case let .activate(name):
-                turnOn(name, at: stage.timeline.top(at: index))
+                turnOn(name, at: stage.rows.top(at: index))
             case let .deactivate(name):
-                turnOff(name, at: stage.timeline.top(at: index))
+                turnOff(name, at: stage.rows.top(at: index))
             case let .message(message):
                 record(message, at: index)
             case .note, .opens, .divides, .closes:
@@ -76,7 +76,7 @@ private extension MermaidActivations {
         /// John finishing, not Alice — and both ends are measured against the bar the arrow really
         /// touches: the sender's before it closes, the receiver's after it opens.
         mutating func record(_ message: MermaidSequence.Message, at index: Int) {
-            let y = stage.timeline.line(at: index, under: stage.words(of: message.text).height)
+            let y = stage.rows.line(at: index, under: stage.words(of: message.text).height)
             let sides = sides(of: message)
             let sender = depth(of: message.from)
             if message.deactivates {
@@ -129,7 +129,7 @@ private extension MermaidActivations {
         mutating func closeRest() {
             for name in open.keys.sorted() {
                 while !(open[name] ?? []).isEmpty {
-                    turnOff(name, at: stage.timeline.foot)
+                    turnOff(name, at: stage.rows.foot)
                 }
             }
         }

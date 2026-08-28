@@ -9,13 +9,13 @@ import Foundation
 struct MermaidStage {
     let diagram: MermaidSequence
     let columns: MermaidColumns
-    let timeline: MermaidTimeline
+    let rows: MermaidSequenceRows
 
     init(_ diagram: MermaidSequence) {
         let columns = MermaidColumns.of(diagram)
         self.diagram = diagram
         self.columns = columns
-        self.timeline = MermaidTimeline.of(diagram, under: columns.headerHeight)
+        self.rows = MermaidSequenceRows.of(diagram, under: columns.headerHeight)
     }
 
     /// Where a participant's lifeline runs, or `nil` for a name the diagram never met. The reader
@@ -29,7 +29,7 @@ struct MermaidStage {
     func words(of text: String) -> CGSize {
         CGSize(
             width: ceil(ProseMetrics.width(of: text, in: MermaidMeasure.edgeFace)),
-            height: MermaidTimeline.words(of: text),
+            height: MermaidSequenceRows.words(of: text),
         )
     }
 
@@ -55,8 +55,8 @@ struct MermaidStage {
         columns.centres.map { x in
             MermaidFigure(
                 form: .path([
-                    CGPoint(x: x, y: timeline.head),
-                    CGPoint(x: x, y: timeline.foot),
+                    CGPoint(x: x, y: rows.head),
+                    CGPoint(x: x, y: rows.foot),
                 ]),
                 role: .edge,
                 line: .dotted,

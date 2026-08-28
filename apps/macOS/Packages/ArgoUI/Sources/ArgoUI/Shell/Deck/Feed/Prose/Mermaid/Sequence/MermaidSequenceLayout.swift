@@ -26,7 +26,7 @@ extension MermaidSequence {
             // In `labels`' own order — participants, messages, notes, frames — which is the
             // pairing `MermaidLayout` places its subviews by.
             captions: stage.names + threads.captions + notes.captions + frames.captions,
-            size: CGSize(width: stage.columns.width, height: stage.timeline.foot),
+            size: CGSize(width: stage.columns.width, height: stage.rows.foot),
         ).normalised
     }
 
