@@ -8,8 +8,8 @@ struct ScopeVessel: View {
     @Environment(\.argo) private var argo
 
     let project: ProjectVesselReading
-    /// The drawer hangs off the Project half, so its rows arrive with it.
-    let rows: [ProjectDrawerProjection.Row]
+    /// The menu hangs off the Project half, so its rows arrive with it.
+    let rows: [ProjectMenuProjection.Row]
     let checkout: CheckoutReading
     let actions: CockpitActions
 
@@ -25,9 +25,10 @@ struct ScopeVessel: View {
         // ~3.5pt off its own rim while the Rooms vessel next to it breathed at 8.5 — two capsules
         // on one bar, at two densities.
         .padding(.horizontal, ArgoSpacing.snug)
-        // The contract reserves the brand hue for selection and focus; a symbol in a menu label
-        // takes the control's accent unless the control says otherwise.
-        .tint(argo.color.text.tertiary)
+        // The rule between the halves only. Each half states its OWN tint since #875, because each
+        // is a menu now and a menu takes its label's ink from there — one tint for both would put
+        // the checkout at the Project's weight.
+        .foregroundStyle(argo.color.text.tertiary)
     }
 }
 
@@ -36,7 +37,7 @@ extension ScopeVessel {
     init(presentation: CockpitPresentation, actions: CockpitActions) {
         self.init(
             project: ProjectVesselReading(presentation: presentation),
-            rows: ProjectDrawerProjection.rows(from: presentation),
+            rows: ProjectMenuProjection.rows(from: presentation),
             checkout: CheckoutReading(presentation: presentation),
             actions: actions,
         )
@@ -46,7 +47,7 @@ extension ScopeVessel {
 #Preview("Scope vessel") {
     ScopeVessel(
         project: ProjectVesselReading(presentation: .preview),
-        rows: ProjectDrawerProjection.rows(from: .preview),
+        rows: ProjectMenuProjection.rows(from: .preview),
         checkout: CheckoutReading(presentation: .preview),
         actions: .inert,
     )
@@ -57,7 +58,7 @@ extension ScopeVessel {
 #Preview("Scope vessel — nothing registered") {
     ScopeVessel(
         project: ProjectVesselReading(presentation: .unregisteredPreview),
-        rows: ProjectDrawerProjection.rows(from: .unregisteredPreview),
+        rows: ProjectMenuProjection.rows(from: .unregisteredPreview),
         checkout: CheckoutReading(presentation: .unregisteredPreview),
         actions: .inert,
     )

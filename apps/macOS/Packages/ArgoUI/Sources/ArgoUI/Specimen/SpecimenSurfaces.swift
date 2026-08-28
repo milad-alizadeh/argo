@@ -17,6 +17,24 @@ struct SessionRowsSpecimen: View {
     }
 }
 
+/// The sidebar with a row SELECTED and a room picked — the one render that shows where #875 put
+/// the identity, and the only one that can.
+///
+/// It has to be an app-target specimen and it has to be this view: the selection capsule is
+/// coloured from the `AccentColor` asset, which an `ArgoUI` preview builds without and draws in the
+/// OS accent instead (D30). The rooms strip is in the same frame deliberately — the segmented
+/// control's selected segment is the second placement of the same hue, and two weights of one
+/// colour can only be judged side by side.
+struct SelectedRowSpecimen: View {
+    @State private var selection = CockpitPresentation.preview.sessions.first?.id
+    @State private var room = CockpitRoom.sessions
+
+    var body: some View {
+        ShellSidebar(presentation: .preview, selection: $selection, room: $room)
+            .frame(width: ArgoLayout.sidebarIdealWidth)
+    }
+}
+
 /// The shell against a roster that MIXES access — a ghosted row inside the whole window rather
 /// than in a list on its own. `ghostedRows` is the close read of the same claim.
 struct RosterSpecimen: View {
@@ -55,45 +73,11 @@ struct ToolbarSpecimen: View {
     }
 }
 
-/// The drawer in a REAL popover, opened on appear. A popover is its own window with its own
-/// environment, and the row's body came apart inside one while rendering fine outside it — which
-/// `DrawerSpecimen`, drawing the content directly, cannot catch.
-struct OpenDrawerSpecimen: View {
-    @State private var isOpen = false
-
-    var body: some View {
-        ProjectVessel(
-            reading: ProjectVesselReading(presentation: .preview),
-            rows: ProjectDrawerProjection.rows(from: .preview),
-            actions: .inert,
-        )
-        .padding(ArgoSpacing.region)
-        .onAppear { isOpen = true }
-        .popover(isPresented: $isOpen, arrowEdge: .bottom) {
-            ProjectDrawer(
-                rows: ProjectDrawerProjection.rows(from: .preview),
-                actions: .inert,
-            )
-        }
-    }
-}
-
-/// The drawer as it hangs off the vessel: over the window's own ground, at its own width, rather
-/// than filling the frame. A popover is a window of its own and never lands in a screenshot of
-/// this one, so the harness draws the content directly.
-struct DrawerSpecimen: View {
-    @Environment(\.argo) private var argo
-
-    let presentation: CockpitPresentation
-
-    var body: some View {
-        // In a popover the panel is the system's own material and the drawer must add nothing;
-        // this specimen has no popover to sit in, so it stands in for one.
-        ProjectDrawer(rows: ProjectDrawerProjection.rows(from: presentation), actions: .inert)
-            .glassEffect(in: .rect(cornerRadius: ArgoRadius.popover))
-            .padding(ArgoSpacing.region)
-    }
-}
+// The Project menu has no specimen of its own since #875. It is a native menu: its items are drawn
+// in a window of the system's, which never lands in a screenshot of this one, and there is no
+// content left to draw directly — the heading, the rows and the active fill are all AppKit's now.
+// `toolbarScope` above is the whole of what a render can see, and `ProjectMenuE2ETests` is what
+// opens it.
 
 /// A reading that is still being WRITTEN, for the one claim no stopped fixture can carry: a row
 /// arriving at the end must not drag a reader who has scrolled up away from the line they are on.

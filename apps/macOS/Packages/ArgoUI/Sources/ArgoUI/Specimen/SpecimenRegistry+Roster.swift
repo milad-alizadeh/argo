@@ -10,6 +10,10 @@ extension SpecimenRegistry {
         // nobody has looked at on the ground half the readers will see it on.
         SpecimenEntry("flatContract") { ContractSpecimen().argoWithoutTransparency() },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
+        // Where the identity is spent (#875): the selection capsule and the rooms picker's own
+        // selected segment, in one frame and on an ACTIVE window — an inactive one draws selection
+        // in the system's neutral grey whatever the accent says.
+        SpecimenEntry("selectedRow") { SelectedRowSpecimen() },
         SpecimenEntry("turnClock") { TurnClockRosterSpecimen() },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },
@@ -39,12 +43,6 @@ extension SpecimenRegistry {
             ToolbarSpecimen(presentation: .unreachablePreview)
         },
         SpecimenEntry("detachedToolbarScope") { ToolbarSpecimen(presentation: .emptyPreview) },
-        SpecimenEntry("projectDrawer") { DrawerSpecimen(presentation: .preview) },
-        SpecimenEntry("unreachableProjectDrawer") {
-            DrawerSpecimen(presentation: .unreachablePreview)
-        },
-        SpecimenEntry("emptyProjectDrawer") { DrawerSpecimen(presentation: .unregisteredPreview) },
-        SpecimenEntry("openProjectDrawer") { OpenDrawerSpecimen() },
         // The verb while it is being carried out — the first spawn of a window waits on a login
         // shell reporting a `PATH`, and until this state existed that wait looked exactly like a
         // press that did nothing.

@@ -27,8 +27,8 @@ struct ProjectVesselReadingTests {
     func `the unreachable sentence is the drawer projection's own`() {
         let reading = ProjectVesselReading(project: Self.moved)
 
-        #expect(reading.help.hasSuffix(ProjectDrawerProjection.unreachable))
-        #expect(reading.announcement.hasSuffix(ProjectDrawerProjection.unreachable))
+        #expect(reading.help.hasSuffix(ProjectMenuProjection.unreachable))
+        #expect(reading.announcement.hasSuffix(ProjectMenuProjection.unreachable))
     }
 
     @Test

@@ -26,6 +26,13 @@ struct ShellToolbar: ToolbarContent {
     /// compose button, and two of them a finger apart is two invitations to make different things.
     /// `⌘N` and the menu bar still reach it from there.
     let spawn: CockpitSpawn?
+    /// The evidence panel's toggle, in the room that has a panel and `nil` in the others (#875).
+    ///
+    /// It rides in THIS content rather than in one of its own, and that is not tidiness: a
+    /// `ToolbarSpacer` declared in a sibling `ToolbarContent` — after this one in the same
+    /// `.toolbar` — segfaults the app before it puts up a window. Declared here it behaves, and
+    /// the spacer is what carries the toggle to the trailing edge.
+    var evidence: EvidenceToggle?
 
     @ToolbarContentBuilder var body: some ToolbarContent {
         if let spawn {
@@ -40,6 +47,16 @@ struct ShellToolbar: ToolbarContent {
         }
         ToolbarItem(placement: .navigation) {
             scope
+        }
+        if let evidence {
+            // The region packs from its own leading edge, so without this the toggle sits against
+            // the checkout rather than at the window's trailing edge, which is where a right-hand
+            // column's control belongs.
+            ToolbarSpacer(.flexible, placement: .primaryAction)
+            ToolbarItem(placement: .primaryAction) {
+                evidence
+            }
+            .sharedBackgroundVisibility(.hidden)
         }
     }
 }

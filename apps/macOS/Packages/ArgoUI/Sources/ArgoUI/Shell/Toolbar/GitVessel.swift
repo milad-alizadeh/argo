@@ -4,6 +4,11 @@ import SwiftUI
 ///
 /// It applies no glass of its own: the toolbar supplies Liquid Glass, and a hand-rolled capsule
 /// here would defeat the group that merges this half with the Project into one vessel.
+///
+/// **A plain pull-down (#875).** The chevron was drawn beside the menu because a `Menu`
+/// re-synthesises its label from icon and title alone, so one placed inside never drew — which is
+/// a reason to let the system draw its own indicator, not a reason to draw a second mark. It has
+/// one now, and the selected-segment wash under it is gone with `ToolbarSegment`.
 struct GitVessel: View {
     @Environment(\.argo) private var argo
 
@@ -11,33 +16,27 @@ struct GitVessel: View {
     let refresh: () -> Void
 
     var body: some View {
-        HStack(spacing: ArgoSpacing.snug) {
-            Menu {
-                Button("Refresh checkout", action: refresh)
-                    .keyboardShortcut("r", modifiers: [.command, .shift])
-            } label: {
-                Label {
-                    Text(reading.label)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                } icon: {
-                    // The rooms' role, so the branch mark measures the same as the marks in the
-                    // vessel at the other end of the bar. `ArgoGlyph` frames it by HEIGHT, which
-                    // is what stops a mark that fills its em box standing over one that does not.
-                    ArgoGlyph(ArgoSymbol.branch, .control)
-                }
-                .labelStyle(.argo(ArgoTypography.machineEmphasis))
+        Menu {
+            Button("Refresh checkout", action: refresh)
+                .keyboardShortcut("r", modifiers: [.command, .shift])
+        } label: {
+            Label {
+                Text(reading.label)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            } icon: {
+                // The rooms' role, so the branch mark measures the same as the marks in the
+                // vessel at the other end of the bar. `ArgoGlyph` frames it by HEIGHT, which
+                // is what stops a mark that fills its em box standing over one that does not.
+                ArgoGlyph(ArgoSymbol.branch, .control)
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            // BESIDE the menu, not inside it. A menu re-synthesises its label from the icon and
-            // title alone, so a chevron in there never drew at all — and the system's own comes
-            // out a different mark from the Project half's, on what is meant to be one vessel.
-            ArgoDisclosure(.below)
+            .labelStyle(.argo(ArgoTypography.machineEmphasis))
         }
-        .foregroundStyle(argo.color.text.secondary)
-        .toolbarSegment()
+        .menuStyle(.borderlessButton)
+        // As on `ProjectVessel`: a `Menu` reads the tint, never a `foregroundStyle` around it. A
+        // rung below the Project half, which is the name this checkout qualifies.
+        .tint(argo.color.text.secondary)
+        .fixedSize()
         .help(reading.help)
         .accessibilityLabel(reading.announcement)
     }

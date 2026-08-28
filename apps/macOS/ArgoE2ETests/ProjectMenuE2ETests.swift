@@ -1,16 +1,18 @@
 import XCTest
 
-/// The drawer, driven the way a person drives it.
+/// The Project menu, driven the way a person drives it.
 ///
-/// Every other test in this repo is a package test: it cannot launch the app and cannot click, so
-/// a view that renders correctly in a specimen and comes apart inside a popover passes all of
-/// them. This is the only target that can click.
+/// Every other test in this repo is a package test: it cannot launch the app and cannot click, so a
+/// menu that assembles fine as a value and comes apart as AppKit items passes all of them. This is
+/// the only target that can click — and since #875 it is the ONLY thing that can see this control
+/// open at all, because a native menu draws in a window of the system's and no specimen render
+/// contains one.
 /// `@MainActor` on the whole case: driving a UI is main-actor work under Swift 6, and
 /// `XCUIApplication()` is isolated to it — a stored default in a nonisolated class does not
 /// compile. The async `setUp`/`tearDown` overrides are what let an isolated case override
 /// XCTest's own nonisolated ones.
 @MainActor
-final class ProjectDrawerE2ETests: XCTestCase {
+final class ProjectMenuE2ETests: XCTestCase {
     /// `XCUIApplication()` only describes the app — nothing launches until `launch()`.
     private let app = XCUIApplication()
 
@@ -42,28 +44,32 @@ final class ProjectDrawerE2ETests: XCTestCase {
     /// Each test case here costs a launch, and a terminate-then-relaunch of the same bundle id is
     /// the flakiest moment in the run: on a CI runner the second app came up without an
     /// addressable accessibility tree.
-    func testTheDrawerOpensAndCarriesItsVerbs() throws {
+    func testTheMenuOpensAndCarriesItsVerbs() throws {
         try scopeVessel().click()
 
+        // The switch itself: the fixture's Projects are the menu's own items, drawn by AppKit.
         XCTAssertTrue(
-            app.staticTexts["Projects · registered on this Mac"].waitForExistence(timeout: 10),
-            "The drawer did not appear — the popover is empty, or the app went down opening it.",
+            app.menuItems["Add Project…"].waitForExistence(timeout: 10),
+            "The Project menu did not appear, or the app went down opening it.",
         )
         // Liveness after the fact, not just at launch: a crash on click leaves the assertion above
         // passing against a window that is already gone.
         XCTAssertEqual(app.state, .runningForeground)
 
-        // The per-Project menu is a `Menu` inside a popover — two presentations deep, which is
-        // where AppKit and SwiftUI disagree most often, and where a row that combined its own
-        // accessibility children swallowed this outright.
-        let menu = app.descendants(matching: .any)["Manage this Project"].firstMatch
-        XCTAssertTrue(menu.waitForExistence(timeout: 10), "No row carried its management menu.")
-        menu.click()
+        // The verbs are one submenu deep, which is where AppKit and SwiftUI disagree most often.
+        let manage = app.menuItems["Manage"].firstMatch
+        XCTAssertTrue(manage.waitForExistence(timeout: 10), "The menu carries no Manage branch.")
+        manage.hover()
 
-        for verb in ["Reveal in Finder", "Locate…", "Remove from Argo"] {
+        let project = app.menuItems.matching(NSPredicate(format: "label BEGINSWITH 'argo'"))
+            .firstMatch
+        XCTAssertTrue(project.waitForExistence(timeout: 10), "Manage lists no Project.")
+        project.hover()
+
+        for verb in ["Reveal in Finder", "Remove from Argo"] {
             XCTAssertTrue(
                 app.menuItems[verb].waitForExistence(timeout: 10),
-                "The row menu is missing \(verb).",
+                "The Project's verbs are missing \(verb).",
             )
         }
         XCTAssertEqual(app.state, .runningForeground)

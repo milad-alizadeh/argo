@@ -80,8 +80,8 @@ enum SpecimenScene {
             header: vessel.prompt == nil
                 ? SessionHeaderFixture.header(for: access)
                 : SessionHeaderFixture.needsInput,
-            open: open,
-            step: step,
+            open: .constant(open),
+            step: .constant(step),
             lit: lit,
             held: held,
             vessel: vessel,

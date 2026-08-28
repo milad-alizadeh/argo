@@ -7,7 +7,7 @@ import SwiftUI
 /// already names it, so a second number for the same band could only ever disagree with it.
 enum ArgoWorkChrome {
     /// One icon button's slot. Wider than it is tall — a mark centred in a square sat pinched
-    /// against a capsule's end cap, the same reason `ToolbarSegment.markSlotWidth` is not square.
+    /// against a capsule's end cap.
     static let iconButtonWidth: CGFloat = 26
     static let iconButtonHeight: CGFloat = 24
 

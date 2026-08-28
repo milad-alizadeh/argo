@@ -95,6 +95,11 @@ public enum ArgoSymbol {
     /// Closing the evidence panel.
     public static let dismiss = "xmark"
 
+    /// Opening and closing the evidence panel from the toolbar (#875). The platform's own
+    /// right-sidebar mark, because that is the shape the panel takes: a column at the trailing
+    /// edge, not a sheet and not an inspector of its own invention.
+    public static let evidencePanel = "sidebar.right"
+
     /// Taking a step's address to the pasteboard — the platform's own copy mark.
     public static let copyAddress = "doc.on.doc"
     /// A file outside the tree the Session is working in.

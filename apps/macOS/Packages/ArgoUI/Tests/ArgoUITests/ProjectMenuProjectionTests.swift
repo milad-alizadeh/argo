@@ -1,23 +1,26 @@
 @testable import ArgoUI
 import Testing
 
-/// What the drawer says about the registered set. Every claim here is one the drawer must make in
+/// What the menu says about the registered set. Every claim here is one the menu must make in
 /// WORDS — a dashed edge and a tinted dot are not readable by everyone, and neither is testable.
-@Suite("Project drawer projection")
-struct ProjectDrawerProjectionTests {
+@Suite("Project menu projection")
+struct ProjectMenuProjectionTests {
     @Test
     func `every registered Project is one row, in the order the registry holds them`() {
-        let rows = ProjectDrawerProjection.rows(from: presentation())
+        let rows = ProjectMenuProjection.rows(from: presentation())
 
         #expect(rows.map(\.id) == ["argo", "cockpit", "moved"])
         #expect(rows.map(\.name) == ["argo", "cockpit", "penumbra"])
     }
 
+    /// The folder is NOT on the line: a path in a menu row is the diagnostic table D30 took off
+    /// the roster, and `Reveal in Finder` is the verb that has it.
     @Test
-    func `a reachable Project shows the folder it is registered at`() throws {
-        let row = try #require(ProjectDrawerProjection.rows(from: presentation()).first)
+    func `a reachable Project's line carries what is live in it, never its folder`() throws {
+        let row = try #require(ProjectMenuProjection.rows(from: presentation()).first)
 
-        #expect(row.detail == "/Users/milad/Developer/argo")
+        #expect(row.title == "argo — 5 live")
+        #expect(!row.title.contains("/"))
         #expect(row.isReachable)
     }
 
@@ -25,17 +28,17 @@ struct ProjectDrawerProjectionTests {
     /// says so, rather than dropping out of the set.
     @Test
     func `an unreachable Project keeps its position and states folder not found`() throws {
-        let rows = ProjectDrawerProjection.rows(from: presentation())
+        let rows = ProjectMenuProjection.rows(from: presentation())
         let row = try #require(rows.last)
 
         #expect(rows.count == 3)
-        #expect(row.detail == "folder not found")
+        #expect(row.title == "penumbra — folder not found")
         #expect(row.accessibilityLabel.contains("folder not found"))
     }
 
     @Test
     func `the active Project is the one ticked, and only that one`() {
-        let rows = ProjectDrawerProjection.rows(from: presentation(activeProjectID: "cockpit"))
+        let rows = ProjectMenuProjection.rows(from: presentation(activeProjectID: "cockpit"))
 
         #expect(rows.map(\.isActive) == [false, true, false])
     }
@@ -48,11 +51,11 @@ struct ProjectDrawerProjectionTests {
             location: "/Users/milad/Developer/cockpit",
         )
 
-        let rows = ProjectDrawerProjection.rows(from: presentation(projects: [unobserved]))
+        let rows = ProjectMenuProjection.rows(from: presentation(projects: [unobserved]))
 
         // Not "0 live": the Hub is pointed at one Project, and a count for any other is a fact
         // Argo does not have.
-        #expect(rows.map(\.liveSessions) == [nil])
+        #expect(rows.map(\.title) == ["cockpit"])
         #expect(rows.map(\.accessibilityLabel) == ["Project, cockpit"])
     }
 
@@ -65,9 +68,9 @@ struct ProjectDrawerProjectionTests {
             liveSessionCount: 3,
         )
 
-        let rows = ProjectDrawerProjection.rows(from: presentation(projects: [counted]))
+        let rows = ProjectMenuProjection.rows(from: presentation(projects: [counted]))
 
-        #expect(rows.map(\.liveSessions) == ["3 live"])
+        #expect(rows.map(\.title) == ["argo — 3 live"])
         #expect(rows.map(\.accessibilityLabel) == ["Project, argo, 3 live Sessions"])
     }
 
@@ -80,9 +83,9 @@ struct ProjectDrawerProjectionTests {
             liveSessionCount: 0,
         )
 
-        let rows = ProjectDrawerProjection.rows(from: presentation(projects: [counted]))
+        let rows = ProjectMenuProjection.rows(from: presentation(projects: [counted]))
 
-        #expect(rows.map(\.liveSessions) == ["0 live"])
+        #expect(rows.map(\.title) == ["argo — 0 live"])
         #expect(rows.map(\.accessibilityLabel) == ["Project, argo, no live Sessions"])
     }
 
@@ -95,7 +98,7 @@ struct ProjectDrawerProjectionTests {
             liveSessionCount: 1,
         )
 
-        let rows = ProjectDrawerProjection.rows(from: presentation(projects: [counted]))
+        let rows = ProjectMenuProjection.rows(from: presentation(projects: [counted]))
 
         #expect(rows.map(\.accessibilityLabel) == ["Project, argo, 1 live Session"])
     }
@@ -111,7 +114,7 @@ struct ProjectDrawerProjectionTests {
             isRegistered: false,
         )
 
-        let rows = ProjectDrawerProjection.rows(from: presentation(projects: [pointed]))
+        let rows = ProjectMenuProjection.rows(from: presentation(projects: [pointed]))
 
         #expect(rows.map(\.name) == ["pointed"])
         #expect(rows.map(\.isRegistered) == [false])
@@ -119,14 +122,26 @@ struct ProjectDrawerProjectionTests {
 
     @Test
     func `a registered Project carries them`() {
-        let rows = ProjectDrawerProjection.rows(from: presentation())
+        let rows = ProjectMenuProjection.rows(from: presentation())
 
         #expect(rows.map(\.isRegistered) == [true, true, true])
     }
 
+    /// What the inline `Picker` opens ticked. `nil` rather than the first row: a window pointed at
+    /// nothing must not draw a tick beside a Project it is not on.
+    @Test
+    func `the tick goes on the active Project, and nowhere when there is none`() {
+        let rows = ProjectMenuProjection.rows(from: presentation(activeProjectID: "cockpit"))
+
+        #expect(ProjectMenuProjection.active(in: rows) == "cockpit")
+        #expect(ProjectMenuProjection.active(in: ProjectMenuProjection.rows(
+            from: presentation(activeProjectID: nil),
+        )) == nil)
+    }
+
     @Test
     func `a machine that has registered nothing draws no rows`() {
-        #expect(ProjectDrawerProjection.rows(from: .unregisteredPreview).isEmpty)
+        #expect(ProjectMenuProjection.rows(from: .unregisteredPreview).isEmpty)
     }
 
     private func presentation(
