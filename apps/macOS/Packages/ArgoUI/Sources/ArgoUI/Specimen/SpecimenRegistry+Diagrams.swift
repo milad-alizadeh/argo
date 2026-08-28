@@ -56,5 +56,12 @@ extension SpecimenRegistry {
         SpecimenEntry("feedMermaidTimelinePlain") {
             MarkdownSpecimen(text: MermaidSpecimen.timelinePlain)
         },
+        // The compartmented pair (#865): every class relationship beside the others it has to be
+        // told from, the compartments themselves, and an entity diagram's own cardinality.
+        SpecimenEntry("feedMermaidClass") { MarkdownSpecimen(text: MermaidSpecimen.classes) },
+        SpecimenEntry("feedMermaidClassMembers") {
+            MarkdownSpecimen(text: MermaidSpecimen.classMembers)
+        },
+        SpecimenEntry("feedMermaidEntity") { MarkdownSpecimen(text: MermaidSpecimen.entities) },
     ]
 }

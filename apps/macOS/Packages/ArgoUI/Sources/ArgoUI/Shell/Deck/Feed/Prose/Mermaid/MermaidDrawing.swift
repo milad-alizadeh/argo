@@ -38,6 +38,8 @@ struct MermaidDrawing {
             context.stroke(wedge, with: .color(line), style: figure.style)
         case let .path(points):
             context.stroke(MermaidPath.through(points), with: .color(line), style: figure.style)
+        case let .polygon(points):
+            context.fill(MermaidPath.through(points, closed: true), with: .color(line))
         // A head is a solid mark and not an outline: at this size a stroked triangle reads as a
         // smudge.
         case let .arrowhead(tip, from):

@@ -23,6 +23,11 @@ struct MermaidFigure: Equatable, Sendable {
         case arc(MermaidArc, CGRect)
         /// A polyline, in order. Two points is a straight connector.
         case path([CGPoint])
+        /// A closed run of points, FILLED in its own line ink. A mark small enough that a stroked
+        /// outline would read as a smudge and whose silhouette is not a `MermaidOutline` in any
+        /// box — a composition's diamond, which stands ALONG the line rather than square to the
+        /// page (#865).
+        case polygon([CGPoint])
         /// A connector's head: a triangle pointing at `tip`, standing back along the line from
         /// `from`.
         case arrowhead(tip: CGPoint, from: CGPoint)
@@ -42,7 +47,7 @@ extension MermaidFigure.Form {
         // Its own box and not the circle's: a wedge covers a fraction of what it is inscribed in,
         // and the plan is SIZED from this.
         case let .arc(arc, rect): arc.bounds(in: rect)
-        case let .path(points): .around(points)
+        case let .path(points), let .polygon(points): .around(points)
         case let .arrowhead(tip, from): .around([tip, from])
         }
     }
@@ -57,6 +62,8 @@ extension MermaidFigure.Form {
             .arc(arc, rect.offsetBy(dx: offset.x, dy: offset.y))
         case let .path(points):
             .path(points.map { $0.moved(by: offset) })
+        case let .polygon(points):
+            .polygon(points.map { $0.moved(by: offset) })
         case let .arrowhead(tip, from):
             .arrowhead(tip: tip.moved(by: offset), from: from.moved(by: offset))
         }

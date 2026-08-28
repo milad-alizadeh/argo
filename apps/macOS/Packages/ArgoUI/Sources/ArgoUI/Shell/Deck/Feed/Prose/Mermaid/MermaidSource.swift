@@ -7,6 +7,31 @@ import Foundation
 /// — and a second reader spelling this itself would be one spelling away from reading a label as
 /// syntax.
 enum MermaidSource {
+    /// The rest of a line after `keyword `, or `nil` where the line does not open with it. The
+    /// space is the point: `stateful --> A` names a state, and reading it as a declaration would
+    /// refuse a diagram nothing is wrong with.
+    static func word(_ keyword: String, of line: String) -> String? {
+        guard line.lowercased().hasPrefix("\(keyword) ") else { return nil }
+        return String(line.dropFirst(keyword.count)).trimmingCharacters(in: .whitespaces)
+    }
+
+    /// The text either side of the FIRST `:`, or `nil` where the line has none. First and not last,
+    /// because everything after it is words and words may carry colons.
+    static func split(_ line: String) -> (head: String, tail: String)? {
+        guard let at = line.firstIndex(of: ":") else { return nil }
+        return (
+            String(line[line.startIndex ..< at]).trimmingCharacters(in: .whitespaces),
+            String(line[line.index(after: at)...]).trimmingCharacters(in: .whitespaces),
+        )
+    }
+
+    /// The same words with a wrapping pair of quotes taken off. Mermaid quotes a label only so it
+    /// can hold spaces, so the quotes are spelling and not part of what the label says.
+    static func unquoted(_ text: String) -> String {
+        guard text.count > 1, text.hasPrefix("\""), text.hasSuffix("\"") else { return text }
+        return String(text.dropFirst().dropLast())
+    }
+
     static func lines(of source: String) -> [String] {
         source.components(separatedBy: "\n").map(stripped).filter { !$0.isEmpty }
     }

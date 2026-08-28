@@ -28,6 +28,42 @@ extension MermaidLayered {
     /// `texts` is one entry per edge, `nil` for an edge with nothing written on it, so the two
     /// lists stay in step with `routes`.
     func words(_ texts: [String?]) -> [MermaidCaption] {
+        placed(texts) { route, size in
+            Self.aside(
+                of: CGPoint(x: -route.run.y, y: route.run.x), from: route.mid, size: size,
+            )
+        }
+    }
+
+    /// The word written at one END of each route that carries one — back off the box's own face,
+    /// clear of the terminal mark standing there, and square out from the line like any other word
+    /// on it. A cardinality belongs to the box it stands against, so it is placed against it.
+    func endWords(
+        _ texts: [String?],
+        at end: KeyPath<MermaidRoute, MermaidRoute.End>,
+    )
+        -> [MermaidCaption] {
+        placed(texts) { route, size in
+            let end = route[keyPath: end]
+            let along = MermaidMeasure.endWordReach
+                + (abs(end.run.x) * size.width + abs(end.run.y) * size.height) / 2
+            // The OPPOSITE side of the line from the word written on it. Both ends and the middle
+            // on one side would stack three words down one flank of a short connector.
+            return Self.aside(
+                of: Self.opposite(end.across, to: route),
+                from: end.back(along),
+                size: size,
+            )
+        }
+    }
+
+    /// One caption per text that has one, on the rect its own placement answers — and `.zero` for
+    /// a route that was never drawn, which is a state no reader produces.
+    private func placed(
+        _ texts: [String?],
+        at point: (MermaidRoute, CGSize) -> CGPoint,
+    )
+        -> [MermaidCaption] {
         zip(texts, routes).compactMap { text, route in
             guard let text else { return nil }
             let face = MermaidMeasure.edgeFace
@@ -36,22 +72,29 @@ extension MermaidLayered {
                 height: ceil(face.lineBox),
             )
             return MermaidCaption(
-                label: MermaidLabel(text: text, face: face, role: .note),
-                rect: route
-                    .map { CGRect(origin: Self.beside($0, size: size), size: size) } ?? .zero,
+                label: MermaidLabels.edge(text),
+                rect: route.map { CGRect(origin: point($0, size), size: size) } ?? .zero,
             )
         }
     }
 
-    /// Where a word of that size stands beside a route: square out from the line at its middle, far
-    /// enough that the box clears the stroke whichever way the line was running.
-    private static func beside(_ route: MermaidRoute, size: CGSize) -> CGPoint {
-        let aside = CGPoint(x: -route.run.y, y: route.run.x)
-        let clear = abs(aside.x) * size.width / 2 + abs(aside.y) * size.height / 2
+    /// The way square out from an end that faces AWAY from the side the route's own word is on.
+    /// An end's own across points whichever way its run does, so the two ends of one route face
+    /// opposite flanks unless one of them is turned.
+    private static func opposite(_ across: CGPoint, to route: MermaidRoute) -> CGPoint {
+        let mid = CGPoint(x: -route.run.y, y: route.run.x)
+        guard across.x * mid.x + across.y * mid.y > 0 else { return across }
+        return CGPoint(x: -across.x, y: -across.y)
+    }
+
+    /// Where a word of that size stands beside a point on a line: square out from it, far enough
+    /// that the box clears the stroke whichever way the line was running.
+    private static func aside(of across: CGPoint, from point: CGPoint, size: CGSize) -> CGPoint {
+        let clear = abs(across.x) * size.width / 2 + abs(across.y) * size.height / 2
             + MermaidMeasure.wordGap
         return CGPoint(
-            x: route.mid.x + aside.x * clear - size.width / 2,
-            y: route.mid.y + aside.y * clear - size.height / 2,
+            x: point.x + across.x * clear - size.width / 2,
+            y: point.y + across.y * clear - size.height / 2,
         )
     }
 }

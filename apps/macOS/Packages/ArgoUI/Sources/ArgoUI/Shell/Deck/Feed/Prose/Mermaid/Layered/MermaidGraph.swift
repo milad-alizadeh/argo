@@ -19,19 +19,57 @@ struct MermaidGraph: Equatable, Sendable {
     /// The enclosures, in the order they were opened, each carrying the names it holds — a nested
     /// block's members included, so the outer frame really does contain the inner one.
     let groups: [[String]]
+    /// Extra room every rank gap keeps, over and above the pass's own.
+    ///
+    /// The gap between ranks is the lane every connector is drawn in, and what has to FIT there is
+    /// the reader's answer, exactly as a node's size is: a bare arrow needs nothing, and a class
+    /// relationship carrying a diamond and a cardinality at each end needs both of them twice over.
+    /// Stated once for the graph and not per edge, because one lane holds them all (#865).
+    var lane: CGFloat = 0
 
     struct Node: Equatable, Sendable {
         let name: String
         let size: CGSize
     }
 
-    /// One connector. How it is stroked and whether it ends in a head, because the pass draws it —
-    /// but never what it SAYS, because a word is a caption and captions are the reader's.
+    /// One connector. How it is stroked and what finishes each of its ends, because the pass draws
+    /// the line — but never what it SAYS, because a word is a caption and captions are the
+    /// reader's.
     struct Edge: Equatable, Sendable {
         let from: String
         let to: String
         var line: MermaidFigure.Line = .solid
-        var hasHead = true
+        var head: Cap = .arrow
+        var tail: Cap = .none
+    }
+
+    /// What stands at one end of a connector.
+    ///
+    /// `room` is the same claim `Node.size` makes, at the other end of the line: a class diagram's
+    /// six terminal markers and an entity's crow's foot are the READER's figures, so the pass
+    /// leaves
+    /// the gap they asked for and says where the line arrived and which way it was running (#865).
+    enum Cap: Equatable, Sendable {
+        /// Nothing: the stroke runs right up to the box's own face.
+        case none
+        /// The pass's own arrowhead, at the measure sheet's size.
+        ///
+        /// Drawn at the HEAD only. `MermaidRouting` trims both ends but heads only the one, so a
+        /// tail asking for an arrow gets a stroke stopping short of its box with nothing standing
+        /// in the gap. Nothing wants a tail arrow yet; a bidirectional message would, and that is
+        /// a change to `MermaidRouting.head`, not a spelling here.
+        case arrow
+        /// Room for a mark the reader draws, that far back off the face.
+        case mark(CGFloat)
+
+        /// How much of the stroke this cap takes off the end it stands at.
+        var room: CGFloat {
+            switch self {
+            case .none: 0
+            case .arrow: MermaidMeasure.arrowLength
+            case let .mark(room): room
+            }
+        }
     }
 
     var names: [String] {

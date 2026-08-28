@@ -14,7 +14,7 @@ extension MermaidFlowchart {
             edges: edges.map {
                 MermaidGraph.Edge(
                     from: $0.from, to: $0.to,
-                    line: MermaidFigure.Line($0.stroke), hasHead: $0.hasHead,
+                    line: MermaidFigure.Line($0.stroke), head: $0.hasHead ? .arrow : .none,
                 )
             },
             groups: groups.map(\.members),

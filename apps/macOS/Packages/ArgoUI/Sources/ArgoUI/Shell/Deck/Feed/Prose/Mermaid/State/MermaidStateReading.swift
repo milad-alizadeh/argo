@@ -42,7 +42,7 @@ extension MermaidState {
         if line == "}" {
             return build.closeComposite()
         }
-        if let rest = word("direction", of: line) {
+        if let rest = MermaidSource.word("direction", of: line) {
             guard let direction = MermaidDirection.named(rest) else { return false }
             // Mermaid scopes a direction to the composite it stands in. Argo lays one plan out on
             // ONE axis, so a nested direction is read and ignored rather than turning the whole
@@ -52,10 +52,10 @@ extension MermaidState {
             }
             return true
         }
-        if let rest = word("note", of: line) {
+        if let rest = MermaidSource.word("note", of: line) {
             return opened(rest, into: &build, note: &note)
         }
-        if let rest = word("state", of: line) {
+        if let rest = MermaidSource.word("state", of: line) {
             return declared(rest, into: &build)
         }
         return line.contains(MermaidStateWord.arrow)
@@ -92,7 +92,7 @@ extension MermaidState {
         note: inout MermaidStateNote?,
     )
         -> Bool {
-        let cut = MermaidStateWord.split(rest)
+        let cut = MermaidSource.split(rest)
         guard let about = MermaidStateWord.placement(of: cut?.head ?? rest),
               build.has(about) else { return false }
         guard let words = cut?.tail else {
@@ -102,13 +102,5 @@ extension MermaidState {
         guard !words.isEmpty else { return false }
         build.attach(MermaidStateNote(about: about, text: words))
         return true
-    }
-
-    /// The rest of a line after `keyword `, or `nil` where the line does not open with it. The
-    /// space is the point: `stateful --> A` names a state, and reading it as a declaration would
-    /// refuse a diagram nothing is wrong with.
-    static func word(_ keyword: String, of line: String) -> String? {
-        guard line.lowercased().hasPrefix("\(keyword) ") else { return nil }
-        return String(line.dropFirst(keyword.count)).trimmingCharacters(in: .whitespaces)
     }
 }
