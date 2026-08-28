@@ -21,13 +21,10 @@ enum WorkChromeProjection {
         /// The ticket the verbs address — the one the deck is OPEN on, not the one at the top of
         /// the list.
         let ticket: Int?
-        /// Whether the pane draws the reader's fold. A search does NOT (#873): a folded parent
-        /// hiding the only match would leave the heading claiming a result nobody can see. The fold
-        /// itself is untouched and comes back with the list.
+        /// Whether the pane draws the reader's fold. A search does not: a folded parent hiding the
+        /// only match would leave the heading claiming a result nobody can see (#873).
         var folds = true
         /// What the pane says where the query matched nothing, and `nil` wherever there are rows.
-        /// A sentence rather than a `Bool`, because it quotes the query back — and it lives here
-        /// with the count for the same reason the count does.
         var empty: String?
 
         static let none = Reading(
@@ -49,6 +46,9 @@ enum WorkChromeProjection {
         guard room.vacancy != .unbound else { return .none }
         let hasRows = !room.backlog.isEmpty
         let narrowing = room.narrowing
+        // A search that matched nothing keeps the row: without it the field that emptied the list
+        // is the one control the reader can no longer reach to clear it.
+        let narrows = hasRows || narrowing != nil
         return Reading(
             heading: narrowing == nil ? "Backlog" : "Searching",
             // The VIEW's count, not `backlog.count`: since #814 the backlog is a tree and its top
@@ -56,15 +56,11 @@ enum WorkChromeProjection {
             // and would drop by one every time a reader folded a parent. This is the same number
             // the sidebar's row for this view shows, which is what stops the two disagreeing.
             subtitle: subtitle(of: view, in: room),
-            // `hasRows` OR a query: a search that matched nothing has to keep the row of controls,
-            // or the field that emptied the list is the one control the reader can no longer reach
-            // to clear it.
-            narrows: hasRows || narrowing != nil,
+            narrows: narrows,
             draws: true,
-            // The ROOM's ticket and not `hasRows`: a query that matched nothing empties the list
-            // while the ticket beside it is still open, and the verbs addressing it must not go
-            // with the rows. An answered-empty backlog has no ticket either way (#873).
-            ticket: room.ticket == nil ? nil : showing,
+            // `narrows` and not `hasRows`: a query that matched nothing empties the list while the
+            // ticket beside it is still open, so the verbs addressing it must not go with the rows.
+            ticket: narrows ? showing : nil,
             folds: narrowing == nil,
             empty: hasRows ? nil : narrowing.map { emptied(by: $0, in: view) },
         )
@@ -87,15 +83,15 @@ enum WorkChromeProjection {
     /// `<view> · by priority · <n> tickets`, and the last term DROPS where the view has no count to
     /// state — the same absence the sidebar's row draws, since the two read one number (#820).
     private static func subtitle(of view: WorkView, in room: WorkRoomProjection.Room) -> String {
-        let counted = count(of: view, in: room).map { [$0] } ?? []
+        let counted = lastTerm(of: view, in: room).map { [$0] } ?? []
         return ([view.name, grouping] + counted).joined(separator: " · ")
     }
 
-    /// The last term. Under a query it counts RESULTS and is never absent: a match is something
-    /// this room worked out for itself, where a view's count rests on edges a provider may not have
-    /// served. It says `results` rather than `tickets` because the rows on screen can exceed it —
-    /// a match keeps the parents it hangs from, and those are rails rather than results (#873).
-    private static func count(of view: WorkView, in room: WorkRoomProjection.Room) -> String? {
+    /// Under a query the term counts RESULTS and is never absent: a match is arithmetic this room
+    /// did itself, where a view's count rests on edges a provider may not have served. `results`
+    /// rather than `tickets` because the rows on screen can exceed it — the rails a match hangs
+    /// from are rows and not results (#873).
+    private static func lastTerm(of view: WorkView, in room: WorkRoomProjection.Room) -> String? {
         if let narrowing = room.narrowing {
             return "\(narrowing.matches) result\(narrowing.matches == 1 ? "" : "s")"
         }

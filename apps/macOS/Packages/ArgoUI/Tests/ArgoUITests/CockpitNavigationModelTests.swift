@@ -85,14 +85,34 @@ struct CockpitNavigationModelTests {
         #expect(model.chosenSession.session == "a")
     }
 
-    /// The query is a question about ONE Project's backlog (#873). It outlives the pane it was
-    /// typed over, so both of these leave it standing.
+    /// The query outlives the pane it was typed over (#873), and a Project switch is the only
+    /// thing that takes it — which is a claim about every OTHER write to this model.
     @Test
-    func `the backlog's query survives selecting a ticket and switching room`() {
+    func `selecting a ticket leaves the backlog's query standing`() {
         let model = CockpitNavigationModel()
         model.workQuery = "canvas"
         model.ticket = 336
+
+        #expect(model.workQuery == "canvas")
+    }
+
+    @Test
+    func `switching room leaves the backlog's query standing`() {
+        let model = CockpitNavigationModel()
+        model.workQuery = "canvas"
         model.room = .code
+
+        #expect(model.workQuery == "canvas")
+    }
+
+    /// The roster moving under the window is not a Project switch, and it is the one write here
+    /// that already has side effects of its own.
+    @Test
+    func `a roster reconciliation leaves the backlog's query standing`() {
+        let model = CockpitNavigationModel()
+        model.workQuery = "canvas"
+        model.session = "b"
+        model.reconcile(against: ["a", "c"])
 
         #expect(model.workQuery == "canvas")
     }

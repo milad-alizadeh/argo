@@ -45,12 +45,11 @@ struct WorkPanesSpecimen: View {
     @State private var shut: Set<Int>
     /// The pane opens where it ships, so a render is shot at the width the reader first meets.
     @State private var backlogWidth = ArgoBacklogList.width
-    /// What the search field is holding. Seeded for the same reason the fold is: the harness cannot
-    /// type, and the states #873 has to show are all past a typed query.
+    /// What the search field is holding. Seeded for the same reason the fold is: the harness
+    /// cannot type, and every state #873 has to show is past a typed query.
     @State private var query: String
 
-    /// What a specimen SEEDS, as one value. A struct rather than three more parameters — the cap is
-    /// three, and a defaulted parameter still spends one (`WorkFixture.Shape`'s reason).
+    /// What a specimen seeds, as one value — a struct because the parameter cap is three.
     struct Seed {
         var opening = WorkView.allOpen
         var folded: Set<Int> = []

@@ -33,12 +33,11 @@ struct BacklogSearchTests {
         #expect(Self.rows(of: Self.room(matching: "TRANSPORT")) == [763])
     }
 
-    /// The number is the thing a reader has in hand when they came from anywhere else in the app,
-    /// and `#` is how this room writes one everywhere else.
-    @Test
-    func `a query matches a ticket by its number, with or without the hash`() {
-        #expect(Self.rows(of: Self.room(matching: "763")) == [763])
-        #expect(Self.rows(of: Self.room(matching: "#763")) == [763])
+    /// The number is what a reader has in hand coming from anywhere else in the app, and `#` is
+    /// how this room writes one everywhere else.
+    @Test(arguments: ["763", "#763"])
+    func `a query matches a ticket by its number`(typed: String) {
+        #expect(Self.rows(of: Self.room(matching: typed)) == [763])
     }
 
     /// A blank field is not a query. Matching everything by accident would be the same false claim
@@ -75,11 +74,26 @@ struct BacklogSearchTests {
     /// A rail is on screen for its child's sake, so it is marked as one — the row draws its title
     /// demoted, and a reader is never left counting rails as results.
     @Test
-    func `a parent kept for its child's sake is a rail, and the match is not`() {
+    func `a parent kept for its child's sake is a rail`() {
         let drawn = WorkRoomProjection.drawn(Self.room(matching: "canvas").backlog, shut: [])
         let rails = drawn.filter(\.row.isRail).map(\.id)
 
         #expect(rails == [607, 334])
+    }
+
+    @Test
+    func `the row that matched is not a rail`() {
+        let drawn = WorkRoomProjection.drawn(Self.room(matching: "canvas").backlog, shut: [])
+
+        #expect(drawn.first { $0.id == 336 }?.row.isRail == false)
+    }
+
+    /// An ancestor the VIEW excluded is not brought back: #609 matches under `Unblocked` and #607
+    /// — its parent, and blocked — stays out. The match stands as a root rather than dragging a
+    /// row past the filter the sidebar is holding.
+    @Test
+    func `a match keeps no rail the view already excluded`() {
+        #expect(Self.rows(of: Self.room(matching: "Prototype", in: .unblocked)) == [609])
     }
 
     @Test
@@ -134,8 +148,12 @@ struct BacklogSearchTests {
     }
 
     @Test
-    func `clearing the field returns the heading to the view and its count`() {
+    func `clearing the field returns the heading to the list it names`() {
         #expect(Self.chrome(matching: "").heading == "Backlog")
+    }
+
+    @Test
+    func `clearing the field returns the count to the view's own`() {
         #expect(Self.chrome(matching: "").subtitle == "All open · by priority · 12 tickets")
     }
 

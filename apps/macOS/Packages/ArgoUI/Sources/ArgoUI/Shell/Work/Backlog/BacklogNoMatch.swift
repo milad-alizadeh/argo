@@ -1,17 +1,11 @@
 import SwiftUI
 
-/// What the list pane says where the query matched nothing (#873).
-///
-/// **Inside the pane, never one of the room's vacancies.** `WorkRoomVacancy`'s three pages are
-/// facts about the provider and they replace the whole deck; this is a fact about the query, and
-/// replacing the deck over a typo would take the ticket beside it away too. Keeping it here is also
-/// what keeps the row of controls standing — a search field that removes itself the moment it
-/// matches nothing is a field nobody can clear.
+/// What the list pane says where the query matched nothing (#873). Inside the pane rather than one
+/// of `WorkRoomVacancy`'s three, which replace the whole deck.
 struct BacklogNoMatch: View {
     @Environment(\.argo) private var argo
 
-    /// The sentence, from `WorkChromeProjection` — it quotes the query and names the view, because
-    /// those are the two things the reader can change.
+    /// The sentence, from `WorkChromeProjection` — it quotes the query and names the view.
     let stated: String
 
     var body: some View {
