@@ -19,8 +19,8 @@ public struct MessageRecord: Sendable, Equatable {
     /// child's, so the root Session's Turn is neither opened nor closed by one.
     public let isSidechain: Bool
     /// The standing stance this record was written under, which only a PROMPT carries — a tool
-    /// result is a user record with none (#629). It is the CLI's own report and the timely one: a
-    /// rung walked mid-Session reaches `permission-mode` only at a later Turn or at exit.
+    /// result is a user record with none. Read as a stance for the reason `case permissionMode`
+    /// below states (#629).
     public let permissionMode: String?
     /// Only an assistant record names one.
     public let model: String?
@@ -113,10 +113,10 @@ extension MessageRecord {
         self.cwd = record.stringField("cwd")
         self.gitBranch = record.stringField("gitBranch")
         self.timestampMs = ArgoEngine.timestampMs(record)
-        self.permissionMode = record.stringField("permissionMode")
         self.isMeta = record["isMeta"]?.bool == true
         self.isCompactSummary = record["isCompactSummary"]?.bool == true
         self.isSidechain = record["isSidechain"]?.bool == true
+        self.permissionMode = record.stringField("permissionMode")
         self.model = message?.stringField("model")
         self.stopReason = message?.stringField("stop_reason")
         self.usage = Usage(reported: message?["usage"])

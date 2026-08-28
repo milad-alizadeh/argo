@@ -18,8 +18,8 @@ struct ModeReadingTests {
     func `the CLI's own value is read verbatim, in the order the file stated it`() async throws {
         let read = try await modes(Fixture.events("permissionModes"))
 
-        // Three and not two: the prompt between the records states the stance it was submitted
-        // under, and is read as the same fact — see the walk fixture below.
+        // Three and not two: this fixture's prompt sits between the two records and states the
+        // stance it was submitted under, which is read as the same fact.
         #expect(read == ["acceptEdits", "acceptEdits", "auto"])
     }
 
@@ -38,11 +38,17 @@ struct ModeReadingTests {
     /// A tool result is a `user` record that carries no stance, and it must contribute none:
     /// counted as a reading it would be a record speaking after a set, which is what tells a
     /// change that did not land from one that has not been reported yet.
+    ///
+    /// Read as its own line, because that is the claim — the whole file already passes above
+    /// whether or not this record is the one staying quiet.
     @Test
     func `a user record with no stance on it reports none`() async throws {
-        let read = try await modes(Fixture.events("promptStance"))
+        let lines = try Fixture.lines("promptStance")
+        let denial = try #require(lines.first { $0.contains("tool_result") })
 
-        #expect(read.count == 3)
+        let read = await modes(TranscriptReader().read(line: denial))
+
+        #expect(read.isEmpty)
     }
 
     /// The value is passed through unread: what it MEANS is `ClaudePermissionMode`'s, so a value
@@ -69,6 +75,22 @@ struct ModeReadingTests {
 
         let session = try #require(hub.sessions.first)
         #expect(session.mode == .exactly(.auto, cli: "auto"))
+    }
+
+    /// Only a PROMPT states a stance Argo may count. The host's own records carry the field too —
+    /// rarely, but they do — and a subagent's is not the root Session's fact at all. Counted, any
+    /// of them is a record speaking after a set, which is what raises a snap-back for a change
+    /// that landed perfectly well (#629).
+    @Test(arguments: ["isMeta", "isCompactSummary", "isSidechain"])
+    func `a record the host wrote itself states no stance`(flag: String) async {
+        let line = """
+        {"type": "user", "message": {"role": "user", "content": "hi"}, "uuid": "u", \
+        "permissionMode": "acceptEdits", "\(flag)": true, "sessionId": "s"}
+        """
+
+        let read = await modes(TranscriptReader().read(line: line))
+
+        #expect(read.isEmpty)
     }
 
     /// The walk's own reading, read off the file rather than assembled by hand (#629): Argo set

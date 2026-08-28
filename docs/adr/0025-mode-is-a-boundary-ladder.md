@@ -311,6 +311,11 @@ prompt, 1.4 seconds after the walk. Argo reads both now, latest wins:
 | `permission-mode` record | a Session nobody has prompted since the change, and the opening stance |
 | a prompt's own `permissionMode` | every change, at the next Turn rather than at exit |
 
+**A prompt and nothing else.** The host's own records carry the field too — 2 of 1,494 across a
+51,000-record sweep are `isMeta` — and a Subagent's stance is not the root Session's fact. Counted,
+either is a record speaking after a set, which is the exact shape that snaps the control back off a
+change that landed. So meta, compact-summary and sidechain records state no stance.
+
 With the prompt read, all four of `LiveModeTests` pass against 2.1.250 on 2026-08-28, and the
 mid-Session test answers in **13 seconds** where it had spent 191 waiting for a record that only
 arrives at exit. Reverting the prompt source turns that one test red again with the record reading

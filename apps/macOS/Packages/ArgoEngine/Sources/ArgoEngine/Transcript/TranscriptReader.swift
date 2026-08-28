@@ -93,11 +93,14 @@ public actor TranscriptReader {
     }
 
     /// A prompt states the stance it was submitted under, and it is the same observed fact the
-    /// `permission-mode` record carries (#629). Both are read, because neither is enough alone: a
-    /// rung walked mid-Session reaches the record only at a later Turn or at exit, and a Session
-    /// nobody has prompted since the walk has only the record.
+    /// `permission-mode` record carries — which is why both are read (`TranscriptRecord`, #629).
+    ///
+    /// A PROMPT and nothing else: the host's own records carry the field too, and a Subagent's
+    /// stance is not the root Session's fact. Counted, either is a record speaking after a set —
+    /// which is what snaps the control back off a change that landed.
     private func stance(of message: MessageRecord) -> [TranscriptEvent] {
-        message.permissionMode.map { [.mode(cli: $0)] } ?? []
+        guard !message.isMeta, !message.isCompactSummary, !message.isSidechain else { return [] }
+        return message.permissionMode.map { [.mode(cli: $0)] } ?? []
     }
 
     /// Every line of a whole file, in order. The batch face of the same reader the tail uses, so a
