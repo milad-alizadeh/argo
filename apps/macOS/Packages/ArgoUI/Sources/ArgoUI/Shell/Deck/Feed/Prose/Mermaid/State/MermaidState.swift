@@ -22,13 +22,16 @@ struct MermaidState: Equatable, Sendable {
         var figure: Figure = .state
     }
 
-    /// The figures a state machine is drawn with.
-    ///
-    /// `[*]` is TWO of these — a filled dot where it is a source, a ringed dot where it is a
-    /// target — which is why the reader makes a node per END rather than one node for the token.
-    /// A machine whose `[*]` were one node would start where it finishes.
+    /// The figures a state machine is drawn with. `[*]` is TWO of them, which is why the reader
+    /// makes a node per END of the transition rather than one node for the token.
     enum Figure: Equatable, Sendable {
         case state, start, end, choice, fork, note
+
+        /// Whether the figure is drawn big enough to hold words. The marks are not: mermaid draws
+        /// a described choice as the same small diamond, so the description is not shown.
+        var carriesWords: Bool {
+            self == .state || self == .note
+        }
     }
 
     struct Transition: Equatable, Sendable {
@@ -47,10 +50,13 @@ struct MermaidState: Equatable, Sendable {
 
     /// A composite block: the id transitions name it by, the words on its frame, and every state
     /// inside it — a nested block's members included, so the outer frame really contains the inner.
+    ///
+    /// Never empty in a machine the reader returned: a frame around nothing draws nothing, and the
+    /// transitions naming it would then point at no node at all.
     struct Composite: Equatable, Sendable {
         let name: String
         let title: String
-        let members: [String]
+        var members: [String]
     }
 
     func node(named name: String) -> Node? {
@@ -59,33 +65,19 @@ struct MermaidState: Equatable, Sendable {
 }
 
 extension MermaidState {
-    /// One label per caption the plan places, in that order: every node, then every transition that
-    /// carries a word, then every composite's title.
-    ///
-    /// The view builds one `Text` from each of these before SwiftUI has told it a measure, so this
-    /// order is a contract between the model and `laid` rather than an incidental.
+    /// The words this machine sets, in the runs `MermaidLabels` orders them in.
+    var captions: MermaidLabels {
+        MermaidLabels(
+            nodes: nodes.map {
+                $0.figure == .note ? MermaidLabels.edge($0.label) : MermaidLabel(text: $0.label)
+            },
+            edges: transitions.compactMap(\.label).map(MermaidLabels.edge),
+            groups: composites.map { MermaidLabels.group($0.title) },
+        )
+    }
+
     var labels: [MermaidLabel] {
-        nodeLabels + transitionLabels + compositeLabels
-    }
-
-    var nodeLabels: [MermaidLabel] {
-        nodes.map {
-            $0.figure == .note
-                ? MermaidLabel(text: $0.label, face: MermaidMeasure.edgeFace, role: .note)
-                : MermaidLabel(text: $0.label)
-        }
-    }
-
-    var transitionLabels: [MermaidLabel] {
-        transitions.compactMap(\.label).map {
-            MermaidLabel(text: $0, face: MermaidMeasure.edgeFace, role: .note)
-        }
-    }
-
-    var compositeLabels: [MermaidLabel] {
-        composites.map {
-            MermaidLabel(text: $0.title, face: MermaidMeasure.groupFace, role: .note)
-        }
+        captions.all
     }
 
     var names: [String] {

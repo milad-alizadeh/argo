@@ -118,6 +118,33 @@ struct MermaidStateReadingTests {
         #expect(Self.read("stateDiagram-v2\nA --> B")?.direction == .down)
     }
 
+    /// A STATED limitation, pinned. Mermaid scopes a direction to the composite it stands in;
+    /// Argo lays one plan out on one axis, so a nested direction is read and ignored rather than
+    /// turning the machine around it.
+    @Test
+    func `a direction inside a composite does not turn the whole machine`() {
+        let machine = Self.read("""
+        stateDiagram-v2
+        [*] --> Working
+        state Working {
+          direction LR
+          A --> B
+        }
+        """)
+
+        #expect(machine?.direction == .down)
+    }
+
+    /// A figure with no room for words keeps none, which is what mermaid draws — the description
+    /// would otherwise be set into a 26-point diamond and spill out of it.
+    @Test
+    func `a description does not go into a figure that carries no words`() {
+        let machine = Self.read("stateDiagram-v2\nstate pick <<choice>>\nA --> pick\npick : decide")
+
+        #expect(machine?.node(named: "pick")?.label.isEmpty == true)
+        #expect(machine?.node(named: "pick")?.figure == .choice)
+    }
+
     /// The degrade-down rule: anything this reader cannot read whole stays the fence it is today,
     /// never an error and never an empty box (#859).
     @Test(arguments: [
@@ -128,6 +155,11 @@ struct MermaidStateReadingTests {
         "stateDiagram-v2\nA -->",
         "stateDiagram-v2\nnote right of A : floating",
         "stateDiagram-v2\nA --> B\nnote left of A\n  half a note",
+        // A composite holding nothing. Really written — `direction` inside one is the common way
+        // to reach it — and the transitions naming it would otherwise resolve to no node, so the
+        // arrow would vanish and its word would be drawn in the diagram's corner.
+        "stateDiagram-v2\nA --> X\nstate X {\n  direction LR\n}",
+        "stateDiagram-v2\nA --> X\nstate X {\n}",
         "erDiagram\nA ||--o{ B : has",
     ])
     func `a source this reader cannot read whole stays a fence`(source: String) {

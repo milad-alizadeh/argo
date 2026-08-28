@@ -18,10 +18,15 @@ extension MermaidState {
         for line in lines {
             guard Self.step(line, into: &build, note: &note) else { return nil }
         }
+        let machine = build.machine
         // A header on its own is a diagram with nothing in it, and an unclosed block — a composite
         // or a note — is half a one.
-        guard build.isBalanced, note == nil, !build.machine.nodes.isEmpty else { return nil }
-        return build.machine
+        guard build.isBalanced, note == nil, !machine.nodes.isEmpty else { return nil }
+        // A composite holding nothing draws no frame, and the transitions naming it would resolve
+        // to no node at all — an arrow that vanishes with its word left in the corner. `state X {
+        // direction LR }` is really written, so this is a fence rather than a half-drawn machine.
+        guard machine.composites.allSatisfy({ !$0.members.isEmpty }) else { return nil }
+        return machine
     }
 
     /// One line, read. `false` is a line this reader has no rule for, which refuses the source.
@@ -39,7 +44,12 @@ extension MermaidState {
         }
         if let rest = word("direction", of: line) {
             guard let direction = MermaidDirection.named(rest) else { return false }
-            build.direction = direction
+            // Mermaid scopes a direction to the composite it stands in. Argo lays one plan out on
+            // ONE axis, so a nested direction is read and ignored rather than turning the whole
+            // machine — a per-composite axis needs a compound layout that does not exist yet.
+            if !build.isNested {
+                build.direction = direction
+            }
             return true
         }
         if let rest = word("note", of: line) {

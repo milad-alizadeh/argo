@@ -8,6 +8,7 @@ import Foundation
 extension MermaidState {
     var laid: MermaidPlan {
         let laid = MermaidLayered.of(graph)
+        let words = captions
         return MermaidPlan(
             // Frames first, so a composite sits UNDER the states it is drawn around.
             figures: laid.frames
@@ -15,22 +16,14 @@ extension MermaidState {
                     laid.boxes[node.name].map { node.figure.marks(in: $0) } ?? []
                 }
                 + laid.connectors,
-            captions: laid.captions(nodeLabels, on: names)
+            captions: laid.captions(words.nodes, on: names)
                 + laid.words(transitions.map(\.label))
-                + laid.titles(compositeLabels),
+                + laid.titles(words.groups),
             size: laid.size,
         ).normalised
     }
 
     /// The machine as the layered pass sees it.
-    ///
-    /// A transition naming a COMPOSITE is retargeted to a state inside it — its FIRST member
-    /// where the transition arrives, its LAST where the transition leaves. Both ends matter: a
-    /// machine leaving a composite by its own way in would rank whatever follows beside the states
-    /// inside it, and the frame drawn round them would then close over a stranger.
-    ///
-    /// The alternative is dropping the transition, and a machine missing an arrow reads wrongly
-    /// rather than merely oddly.
     var graph: MermaidGraph {
         MermaidGraph(
             direction: direction,
@@ -49,17 +42,24 @@ extension MermaidState {
         )
     }
 
+    /// The state a transition naming a COMPOSITE really joins: its first member where the
+    /// transition arrives, its last where it leaves. Leaving by the way IN would rank whatever
+    /// follows beside the states inside, and the frame would then close over a stranger.
+    ///
+    /// It attaches to a member's own box and not to the frame, so `[*] --> Working` draws a dot
+    /// arrowing at the dot inside rather than at the enclosure. Routing to a frame is a change
+    /// behind this same seam, like `MermaidRouting`'s box avoidance (#863).
+    ///
+    /// A composite is never empty here — `MermaidState.read` refuses one that is — so the fallback
+    /// is for a name that is no composite at all.
     private func inside(_ name: String, at end: KeyPath<[String], String?>) -> String {
         composites.first { $0.name == name }?.members[keyPath: end] ?? name
     }
 }
 
 extension MermaidState.Figure {
-    /// The marks this figure draws in the box it was placed in.
-    ///
-    /// An end is TWO: a ring, and a filled centre inside it. Drawn as a pair rather than as an
-    /// outline of its own, because a ring with a solid middle is one shape stroked and another
-    /// filled, and a single path carrying both fills the gap between them.
+    /// The marks this figure draws in the box it was placed in. An end is TWO — a ring, and a
+    /// filled centre — because one path carrying both fills the gap between them.
     func marks(in box: CGRect) -> [MermaidFigure] {
         guard self == .end else {
             return [MermaidFigure(form: .shape(outline, box), role: role)]
@@ -94,9 +94,8 @@ extension MermaidState.Figure {
 }
 
 extension MermaidState.Figure {
-    /// How much room this figure needs. Only a state and a note have words to measure; the marks
-    /// are the size the measure sheet says, and a bar stands ACROSS the ranks whichever way they
-    /// run.
+    /// How much room this figure needs. Only a figure that carries words is measured; the marks
+    /// are the size the measure sheet says.
     @MainActor func box(of label: String, on direction: MermaidDirection) -> CGSize {
         switch self {
         case .state: MermaidWords.box(of: label)
@@ -111,8 +110,7 @@ extension MermaidState.Figure {
         CGSize(width: side, height: side)
     }
 
-    /// A bar stands ACROSS the ranks whichever way they run, so it reads as the line the
-    /// transitions through it fan out from.
+    /// A bar stands ACROSS the ranks, so it reads as the line the transitions fan out from.
     private static func bar(on direction: MermaidDirection) -> CGSize {
         let length = MermaidMeasure.barLength
         let depth = MermaidMeasure.barDepth

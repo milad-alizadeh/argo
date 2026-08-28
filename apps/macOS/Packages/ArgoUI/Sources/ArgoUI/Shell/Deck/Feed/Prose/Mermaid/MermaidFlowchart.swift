@@ -51,28 +51,17 @@ struct MermaidFlowchart: Equatable, Sendable {
 }
 
 extension MermaidFlowchart {
-    /// One label per caption the plan places, in that order: every node, then every edge that
-    /// carries a word, then every group's title.
-    ///
-    /// The view builds one `Text` from each of these before SwiftUI has told it a measure, so this
-    /// order is a contract between the model and `laid` rather than an incidental — which is why
-    /// the three runs are named, and `laid` places the very lists it concatenates.
+    /// The words this chart sets, in the runs `MermaidLabels` orders them in.
+    var captions: MermaidLabels {
+        MermaidLabels(
+            nodes: nodes.map { MermaidLabel(text: $0.label) },
+            edges: edges.compactMap(\.label).map(MermaidLabels.edge),
+            groups: groups.map { MermaidLabels.group($0.title) },
+        )
+    }
+
     var labels: [MermaidLabel] {
-        nodeLabels + edgeLabels + groupLabels
-    }
-
-    var nodeLabels: [MermaidLabel] {
-        nodes.map { MermaidLabel(text: $0.label) }
-    }
-
-    var edgeLabels: [MermaidLabel] {
-        edges.compactMap(\.label).map {
-            MermaidLabel(text: $0, face: MermaidMeasure.edgeFace, role: .note)
-        }
-    }
-
-    var groupLabels: [MermaidLabel] {
-        groups.map { MermaidLabel(text: $0.title, face: MermaidMeasure.groupFace, role: .note) }
+        captions.all
     }
 
     var names: [String] {

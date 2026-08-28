@@ -8,6 +8,7 @@ import Foundation
 extension MermaidFlowchart {
     var laid: MermaidPlan {
         let laid = MermaidLayered.of(graph)
+        let words = captions
         return MermaidPlan(
             // Enclosures first, so a frame sits UNDER the boxes it is drawn around.
             figures: laid.frames
@@ -17,9 +18,9 @@ extension MermaidFlowchart {
                     }
                 }
                 + laid.connectors,
-            captions: laid.captions(nodeLabels, on: names)
+            captions: laid.captions(words.nodes, on: names)
                 + laid.words(edges.map(\.label))
-                + laid.titles(groupLabels),
+                + laid.titles(words.groups),
             size: laid.size,
         ).normalised
     }

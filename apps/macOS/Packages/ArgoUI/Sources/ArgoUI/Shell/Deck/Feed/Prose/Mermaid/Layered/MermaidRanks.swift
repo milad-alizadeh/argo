@@ -3,7 +3,9 @@ import Foundation
 /// How far a rank reaches on each axis, and the gaps it keeps. A value rather than four parameters
 /// threaded through the pass that uses them.
 struct MermaidRanks {
-    let graph: MermaidGraph
+    /// Every node's measured box, by name. A dictionary and not a scan of the graph: this is asked
+    /// once per node per rank, on every rank, and a linear lookup makes that quadratic.
+    private let sizes: [String: CGSize]
     /// An axis with no depth, used only to ask which way a size is measured — the real one is not
     /// known until every rank has been measured with this.
     let flat: MermaidAxis
@@ -12,7 +14,10 @@ struct MermaidRanks {
     let inset: CGFloat
 
     init(graph: MermaidGraph) {
-        self.graph = graph
+        self.sizes = Dictionary(
+            graph.nodes.map { ($0.name, $0.size) },
+            uniquingKeysWith: { first, _ in first },
+        )
         self.flat = MermaidAxis(direction: graph.direction, depth: 0)
         self.inset = graph.groups.isEmpty ? 0 : MermaidMeasure.groupInset * 2
     }
@@ -26,7 +31,7 @@ struct MermaidRanks {
     }
 
     func size(of name: String) -> CGSize {
-        graph.size(of: name)
+        sizes[name] ?? .zero
     }
 
     /// How deep into the ranks one rank reaches: its tallest box.

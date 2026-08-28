@@ -2,10 +2,6 @@ import Foundation
 
 /// The pieces a state machine's lines are cut into: names, the `:` that opens a description, and
 /// the `[*]` that is a start at one end of a transition and an end at the other.
-///
-/// Split rather than scanned, unlike the flowchart's. A state machine's own punctuation is
-/// unambiguous — `-->` is the only arrow and `:` always opens words — so a cursor would buy
-/// nothing that a split does not already give.
 enum MermaidStateWord {
     /// The token both pseudo-states are written as.
     static let terminal = "[*]"
@@ -30,12 +26,6 @@ enum MermaidStateWord {
             String(line[line.startIndex ..< at]).trimmingCharacters(in: .whitespaces),
             String(line[line.index(after: at)...]).trimmingCharacters(in: .whitespaces),
         )
-    }
-
-    /// The words inside a pair of quotes, where the text is quoted at all.
-    static func unquoted(_ text: String) -> String? {
-        guard text.count > 1, text.hasPrefix("\""), text.hasSuffix("\"") else { return nil }
-        return String(text.dropFirst().dropLast())
     }
 
     /// Which state a note's header is about: `right of A`, `left of A`, `over A`. The side is not

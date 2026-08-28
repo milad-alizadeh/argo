@@ -10,8 +10,14 @@ import Testing
 @MainActor
 @Suite("Mermaid state layout")
 struct MermaidStateLayoutTests {
+    /// The plan for a source this suite expects to be readable. A reader regression fails HERE,
+    /// saying so, rather than downstream as a count that does not add up.
     static func plan(_ source: String) -> MermaidPlan {
-        MermaidDiagram.read(source)?.laid ?? .empty
+        guard let diagram = MermaidDiagram.read(source) else {
+            Issue.record("the machine was not read: \(source)")
+            return .empty
+        }
+        return diagram.laid
     }
 
     /// Every outline the plan drew, in the order it drew them.
@@ -125,23 +131,6 @@ struct MermaidStateLayoutTests {
         #expect(down.count == 2 && across.count == 2)
         #expect(down[0].midX == down[1].midX)
         #expect(across[0].midY == across[1].midY)
-    }
-
-    /// One caption per label, in the order the model lists them — the pairing `MermaidLayout` rests
-    /// on when it places one `Text` per subview.
-    @Test
-    func `every label is captioned in the order the model lists it`() {
-        let source = """
-        stateDiagram-v2
-        [*] --> Working
-        state Working {
-          Reading --> Writing : next
-        }
-        """
-        guard let diagram = MermaidDiagram.read(source) else {
-            return #expect(Bool(false), "the machine was read")
-        }
-        #expect(diagram.laid.captions.map(\.label) == diagram.labels)
     }
 
     /// The plan stands where it is drawn: nothing at a negative, and the size is the room the marks

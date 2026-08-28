@@ -9,36 +9,35 @@ struct MermaidStateBuild {
     private(set) var nodes: [MermaidState.Node] = []
     private(set) var transitions: [MermaidState.Transition] = []
     var direction: MermaidDirection = .down
-    private var names: [String] = []
-    private var titles: [String] = []
-    private var members: [[String]] = []
-    /// The blocks open at the cursor, innermost last.
+    private var blocks: [MermaidState.Composite] = []
+    /// Which blocks are open at the cursor, innermost last.
     private var open: [Int] = []
 
     var isBalanced: Bool {
         open.isEmpty
     }
 
-    var composites: [MermaidState.Composite] {
-        zip(zip(names, titles), members).map {
-            MermaidState.Composite(name: $0.0, title: $0.1, members: $1)
-        }
+    /// Whether the cursor stands inside a composite.
+    var isNested: Bool {
+        !open.isEmpty
     }
 
     /// Which composite the cursor is inside, as the scope a `[*]` belongs to. The empty string is
     /// the machine itself, which no state can be named.
     var scope: String {
-        open.last.map { names[$0] } ?? ""
+        open.last.map { blocks[$0].name } ?? ""
+    }
+
+    func has(_ name: String) -> Bool {
+        nodes.contains { $0.name == name }
     }
 }
 
 extension MermaidStateBuild {
     /// Opens a composite block. Its members accumulate until the matching `}`.
     mutating func openComposite(_ name: String, titled title: String) {
-        names.append(name)
-        titles.append(title)
-        members.append([])
-        open.append(names.count - 1)
+        blocks.append(MermaidState.Composite(name: name, title: title, members: []))
+        open.append(blocks.count - 1)
     }
 
     /// Closes the innermost open block, and says whether there was one.
@@ -57,11 +56,14 @@ extension MermaidStateBuild {
         nodes[at] = node
     }
 
-    /// A state's description, given after it was named. It states something even where the state
-    /// was first mentioned bare, which is the whole point of the `id : words` spelling.
+    /// A state's description, given after it was named — the whole point of the `id : words`
+    /// spelling being that the state may have been mentioned bare first.
+    ///
+    /// A figure with no room for words keeps none, which is what mermaid draws.
     mutating func describe(_ name: String, as label: String) {
         add(MermaidState.Node(name: name, label: name))
-        guard let at = nodes.firstIndex(where: { $0.name == name }) else { return }
+        guard let at = nodes.firstIndex(where: { $0.name == name }),
+              nodes[at].figure.carriesWords else { return }
         nodes[at] = MermaidState.Node(name: name, label: label, figure: nodes[at].figure)
     }
 
@@ -82,47 +84,33 @@ extension MermaidStateBuild {
         return name
     }
 
-    private mutating func enclose(_ name: String) {
-        for at in open where !members[at].contains(name) {
-            members[at].append(name)
-        }
-    }
-}
-
-/// A `note` block still being read: which state it is about, and the lines gathered so far.
-struct MermaidStateNote {
-    let about: String
-    var text = ""
-
-    mutating func add(_ line: String) {
-        text += text.isEmpty ? line : " \(line)"
-    }
-}
-
-extension MermaidStateBuild {
-    func has(_ name: String) -> Bool {
-        nodes.contains { $0.name == name }
-    }
-
     /// A note, and the tether that says which state it is about. A node like any other, so the
-    /// layered pass places it and it can never be drawn over the machine (#863).
+    /// layered pass places it and it can never be drawn over the machine.
     mutating func attach(_ note: MermaidStateNote) {
         let name = "note#\(nodes.count)"
         add(MermaidState.Node(name: name, label: note.text, figure: .note))
         add(MermaidState.Transition(from: note.about, to: name, kind: .attachment))
     }
 
+    private mutating func enclose(_ name: String) {
+        for at in open where !blocks[at].members.contains(name) {
+            blocks[at].members.append(name)
+        }
+    }
+}
+
+extension MermaidStateBuild {
     /// The machine these lines wrote.
     ///
     /// A composite's own name is not a state. `A --> Working` is read before `state Working {` is
     /// opened, so the node that transition made is dropped here and the frame stands in its place.
     var machine: MermaidState {
-        let framed = Set(composites.map(\.name))
+        let framed = Set(blocks.map(\.name))
         return MermaidState(
             direction: direction,
             nodes: nodes.filter { !framed.contains($0.name) },
             transitions: transitions,
-            composites: composites.map {
+            composites: blocks.map {
                 MermaidState.Composite(
                     name: $0.name,
                     title: $0.title,

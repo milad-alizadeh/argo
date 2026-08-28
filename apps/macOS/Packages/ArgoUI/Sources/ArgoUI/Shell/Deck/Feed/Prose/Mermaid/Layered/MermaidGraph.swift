@@ -37,8 +37,4 @@ struct MermaidGraph: Equatable, Sendable {
     var names: [String] {
         nodes.map(\.name)
     }
-
-    func size(of name: String) -> CGSize {
-        nodes.first { $0.name == name }?.size ?? .zero
-    }
 }
