@@ -91,7 +91,11 @@ public enum ArgoLayout {
 
     /// The Work room's two panes. The backlog OPENS at `ArgoBacklogList.width` — the measure the
     /// twelve real titles were chosen against — and the reader drags it from there.
-    public static let backlogWidths: ClosedRange<CGFloat> = 320 ... 760
+    /// The floor is 280 and not the detail's 320: at the MINIMUM window the two floors have to
+    /// leave the seam somewhere to go, and 320 either side of a 680 deck leaves it nowhere. A
+    /// backlog at 280 truncates titles, which is why 280 was rejected as the pane's home — but it
+    /// is the reader's own drag rather than where the pane opens.
+    public static let backlogWidths: ClosedRange<CGFloat> = 280 ... 760
     /// The narrowest the ticket detail may be squeezed to by the backlog beside it — the same 320
     /// the feed and the evidence panel stop at, because it is the same question: what a column of
     /// this app's prose stops being readable under.
