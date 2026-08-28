@@ -1,77 +1,77 @@
 import Foundation
 
-/// The simplest flowchart there is: a `graph`/`flowchart` header and arrows between bare node
-/// names.
+/// A flowchart as its source wrote it: which way it runs, the nodes it named, the edges between
+/// them and the `subgraph` blocks drawn around them.
 ///
-/// Everything else a flowchart can say — node shapes, labelled edges, subgraphs, a direction other
-/// than top-down — is #861's. Until then it is not read at all, and a fence Argo cannot read is the
-/// fence it is today.
+/// Everything here is a fact the SOURCE stated. Nothing is placed, measured or defaulted to a
+/// geometry — that is `laid`'s, and keeping the two apart is what lets one model be
+/// laid out four ways for the four directions.
 struct MermaidFlowchart: Equatable, Sendable {
+    let direction: Direction
     /// Every node named, in the order the source first named one. That order IS the layout's
     /// tie-break, so a diagram read twice lays out twice the same.
-    let nodes: [String]
+    let nodes: [Node]
     let edges: [Edge]
+    /// The `subgraph` blocks, in the order they were opened, each carrying the nodes it encloses.
+    let groups: [Group]
+
+    /// Which way the ranks grow. `TD` and `TB` are one direction under two spellings.
+    enum Direction: Equatable, Sendable {
+        case down, up, right, left
+    }
+
+    struct Node: Equatable, Sendable {
+        let name: String
+        /// What the box says. A bare node name IS its own label.
+        var label: String
+        var shape: Shape = .rect
+    }
+
+    /// The figures mermaid lets a node be drawn as, each its own outline — a reader tells a
+    /// decision from a step by its shape before reading either.
+    enum Shape: Equatable, Sendable {
+        case rect, rounded, stadium, subroutine, diamond, hexagon, circle, flag, cylinder
+    }
 
     struct Edge: Equatable, Sendable {
         let from: String
         let to: String
+        /// The word written on the connector, in either of mermaid's two spellings for it.
+        var label: String?
+        var stroke: Stroke = .solid
+        /// `false` for an open link — `---` rather than `-->` — which is drawn without a head.
+        var hasHead = true
     }
 
-    /// One label per node, in the order its plan captions them. A bare node name IS its label,
-    /// which is the only labelling this reader understands.
-    var labels: [MermaidLabel] {
-        nodes.map { MermaidLabel(text: $0) }
+    enum Stroke: Equatable, Sendable {
+        case solid, dotted, thick
+    }
+
+    /// A `subgraph` block: the title it was opened with and every node inside it, a nested block's
+    /// members included so the outer enclosure really does contain the inner one.
+    struct Group: Equatable, Sendable {
+        let title: String
+        let members: [String]
     }
 }
 
 extension MermaidFlowchart {
-    /// The flowchart this source draws, or `nil` for anything this reader cannot. Nothing is
-    /// guessed and nothing is skipped: a source read half-way would draw a diagram the author did
-    /// not write.
-    static func read(_ source: String) -> MermaidFlowchart? {
-        var lines = source
-            .components(separatedBy: "\n")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-        guard !lines.isEmpty, isHeader(lines.removeFirst()) else { return nil }
-        var nodes: [String] = []
-        var edges: [Edge] = []
-        for line in lines {
-            guard let edge = Edge.read(line) else { return nil }
-            for name in [edge.from, edge.to] where !nodes.contains(name) {
-                nodes.append(name)
+    /// One label per caption the plan places, in that order: every node, then every edge that
+    /// carries a word, then every group's title.
+    ///
+    /// The view builds one `Text` from each of these before SwiftUI has told it a measure, so this
+    /// order is a contract between the model and `laid` rather than an incidental.
+    var labels: [MermaidLabel] {
+        nodes.map { MermaidLabel(text: $0.label) }
+            + edges.compactMap(\.label).map {
+                MermaidLabel(text: $0, face: MermaidMeasure.edgeFace, role: .note)
             }
-            edges.append(edge)
-        }
-        // A header on its own is a diagram with nothing in it, which is nothing to draw.
-        guard !edges.isEmpty else { return nil }
-        return MermaidFlowchart(nodes: nodes, edges: edges)
+            + groups.map {
+                MermaidLabel(text: $0.title, face: MermaidMeasure.groupFace, role: .note)
+            }
     }
 
-    /// `graph TD` and `flowchart TB`, and no other direction yet: a direction read and then drawn
-    /// top-down anyway would be a diagram nobody wrote.
-    private static func isHeader(_ line: String) -> Bool {
-        let words = line.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
-        guard words.count == 2, ["graph", "flowchart"].contains(words[0].lowercased()) else {
-            return false
-        }
-        return ["TD", "TB"].contains(words[1].uppercased())
-    }
-}
-
-extension MermaidFlowchart.Edge {
-    /// `A --> B`, and nothing else on the line.
-    static func read(_ line: String) -> Self? {
-        let sides = line
-            .components(separatedBy: "-->")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-        guard sides.count == 2, sides.allSatisfy(isName) else { return nil }
-        return MermaidFlowchart.Edge(from: sides[0], to: sides[1])
-    }
-
-    /// A bare node name — letters, digits and underscores. `A[Start]` is a node SHAPE and
-    /// `A -->|yes| B` a labelled edge; both are #861's, and a fence until then.
-    private static func isName(_ text: String) -> Bool {
-        !text.isEmpty && text.allSatisfy { $0.isLetter || $0.isNumber || $0 == "_" }
+    var names: [String] {
+        nodes.map(\.name)
     }
 }

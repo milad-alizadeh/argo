@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// A diagram's own layout: the plan is laid out across the PROPOSAL the block is actually given,
-/// the block takes the plan's size, and every caption is placed on the rect it was measured into.
+/// A diagram's own layout: the block takes the plan's size, and every caption is placed on the rect
+/// it was measured into.
 ///
-/// A `Layout` for `MarkdownTableLayout`'s reason: the geometry is a function of the proposal, and a
-/// width learned through `@State` would arrive one frame after the feed had measured the row and
-/// cached its height — so the row would keep the height of a layout nobody ever saw.
+/// A `Layout` for `MarkdownTableLayout`'s reason: the captions are real `Text` views and only the
+/// layout system can put a view on a rect a value decided. It answers the same size at every
+/// proposal, because the plan behind it is the same plan at every width — see
+/// `MermaidDiagram.laid`.
 ///
 /// Subviews arrive one per `MermaidDiagram.labels`, in that order, which is the order the plan
 /// captions them.
@@ -13,21 +14,21 @@ struct MermaidLayout: Layout {
     let diagram: MermaidDiagram
 
     func sizeThatFits(
-        proposal: ProposedViewSize,
+        proposal _: ProposedViewSize,
         subviews _: Subviews,
         cache _: inout (),
     )
         -> CGSize {
-        plan(across: proposal.width).size
+        plan.size
     }
 
     func placeSubviews(
         in bounds: CGRect,
-        proposal: ProposedViewSize,
+        proposal _: ProposedViewSize,
         subviews: Subviews,
         cache _: inout (),
     ) {
-        for (caption, subview) in zip(plan(across: proposal.width).captions, subviews) {
+        for (caption, subview) in zip(plan.captions, subviews) {
             place(caption, subview: subview, in: bounds)
         }
     }
@@ -43,15 +44,13 @@ struct MermaidLayout: Layout {
         )
     }
 
-    /// The one cached layout, from the one place this type reaches for it. An unspecified proposal
-    /// is answered at nothing, which is the plan at its own natural width — SwiftUI probes with one
-    /// before it has a column to offer.
+    /// The one cached layout, from the one place this type reaches for it.
     ///
     /// SwiftUI runs layout on the main actor, but `Layout` itself makes no such claim — and the
     /// plan behind it is the main actor's cache. Asserting it here is what lets ONE layout serve
     /// the drawn diagram and the lane that maps it.
-    private func plan(across measure: CGFloat?) -> MermaidPlan {
-        MainActor.assumeIsolated { ProseReading.plan(of: diagram, across: measure ?? 0) }
+    private var plan: MermaidPlan {
+        MainActor.assumeIsolated { ProseReading.plan(of: diagram) }
     }
 }
 

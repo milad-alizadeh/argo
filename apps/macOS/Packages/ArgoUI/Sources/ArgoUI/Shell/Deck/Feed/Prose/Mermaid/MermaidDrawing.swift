@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// A plan drawn: every figure in the ink its ROLE resolves to, and nothing else. Written once, for
-/// every diagram type there will ever be.
+/// A plan drawn: every figure in the ink its ROLE resolves to and at the weight its LINE asks for,
+/// and nothing else. Written once, for every diagram type there will ever be.
 ///
 /// The captions are not here. They are real `Text` views placed over this by `MermaidLayout`, so a
 /// node's label stays selectable and stays sharp at Retina instead of being glyphs painted into a
@@ -17,43 +17,20 @@ struct MermaidDrawing {
     }
 
     private func draw(_ figure: MermaidFigure, in context: inout GraphicsContext) {
-        let path = Self.path(of: figure.form)
-        if let ground = ink.ground(of: figure.role) {
-            context.fill(path, with: .color(ground.color))
-        }
         let line = ink.line(of: figure.role).color
         switch figure.form {
+        case let .shape(outline, rect):
+            if let ground = ink.ground(of: figure.role) {
+                context.fill(outline.ground(in: rect), with: .color(ground.color))
+            }
+            context.stroke(outline.path(in: rect), with: .color(line), style: figure.style)
+        case let .path(points):
+            context.stroke(MermaidPath.through(points), with: .color(line), style: figure.style)
         // A head is a solid mark and not an outline: at this size a stroked triangle reads as a
         // smudge.
-        case .arrowhead:
-            context.fill(path, with: .color(line))
-        case .rect, .roundedRect, .diamond, .ellipse, .path:
-            context.stroke(path, with: .color(line), lineWidth: MermaidMeasure.stroke)
+        case let .arrowhead(tip, from):
+            context.fill(Self.arrowhead(tip: tip, from: from), with: .color(line))
         }
-    }
-
-    private static func path(of form: MermaidFigure.Form) -> Path {
-        switch form {
-        case let .rect(rect): Path(rect)
-        case let .roundedRect(rect): rounded(rect)
-        case let .diamond(rect): diamond(in: rect)
-        case let .ellipse(rect): Path(ellipseIn: rect)
-        case let .path(points): line(through: points)
-        case let .arrowhead(tip, from): arrowhead(tip: tip, from: from)
-        }
-    }
-
-    private static func rounded(_ rect: CGRect) -> Path {
-        Path(roundedRect: rect, cornerRadius: MermaidMeasure.nodeRadius)
-    }
-
-    private static func diamond(in rect: CGRect) -> Path {
-        line(through: [
-            CGPoint(x: rect.midX, y: rect.minY),
-            CGPoint(x: rect.maxX, y: rect.midY),
-            CGPoint(x: rect.midX, y: rect.maxY),
-            CGPoint(x: rect.minX, y: rect.midY),
-        ], closed: true)
     }
 
     /// A triangle on the tip, as wide at its back as the measure sheet says and standing on the
@@ -70,23 +47,28 @@ struct MermaidDrawing {
             x: tip.x - along.x * MermaidMeasure.arrowLength,
             y: tip.y - along.y * MermaidMeasure.arrowLength,
         )
-        return line(through: [
+        return MermaidPath.through([
             tip,
             CGPoint(x: back.x + across.x, y: back.y + across.y),
             CGPoint(x: back.x - across.x, y: back.y - across.y),
         ], closed: true)
     }
+}
 
-    private static func line(through points: [CGPoint], closed: Bool = false) -> Path {
-        var path = Path()
-        guard let first = points.first else { return path }
-        path.move(to: first)
-        for point in points.dropFirst() {
-            path.addLine(to: point)
+extension MermaidFigure {
+    /// The pen this figure is stroked with. The three link kinds have to be told apart at a glance,
+    /// so they differ in weight AND in pattern rather than in colour — a diagram is one ink.
+    var style: StrokeStyle {
+        switch line {
+        case .solid:
+            StrokeStyle(lineWidth: MermaidMeasure.stroke)
+        case .thick:
+            StrokeStyle(lineWidth: MermaidMeasure.thickStroke)
+        case .dotted:
+            StrokeStyle(
+                lineWidth: MermaidMeasure.stroke,
+                dash: [MermaidMeasure.dash, MermaidMeasure.dash],
+            )
         }
-        if closed {
-            path.closeSubpath()
-        }
-        return path
     }
 }

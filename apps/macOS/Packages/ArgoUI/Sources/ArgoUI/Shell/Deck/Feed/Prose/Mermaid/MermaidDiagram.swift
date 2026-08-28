@@ -2,9 +2,9 @@ import Foundation
 
 /// A `mermaid` fence Argo can draw: the model its own reader made, and the source it was read from.
 ///
-/// The source is kept because the laid-out plan is CACHED on it — see
-/// `ProseReading.plan(of:across:)`. The renderer and the overview lane must read ONE layout, and
-/// the text is the only key both of them hold.
+/// The source is kept because the laid-out plan is CACHED on it — see `ProseReading.plan(of:)`.
+/// The renderer and the overview lane must read ONE layout, and the text is the only key both of
+/// them hold.
 ///
 /// Adding a diagram type is a case here, a reader and a layout. No view, no lane and no theming
 /// changes (#859).
@@ -33,11 +33,16 @@ struct MermaidDiagram: Equatable, Sendable {
         }
     }
 
-    /// The diagram laid out across a measure. Uncached: callers come through
-    /// `ProseReading.plan(of:across:)`, which is the one layout the renderer and the lane share.
-    @MainActor func laid(across measure: CGFloat) -> MermaidPlan {
+    /// The diagram laid out. Uncached: callers come through `ProseReading.plan(of:)`, which is the
+    /// one layout the renderer and the lane share.
+    ///
+    /// No measure, and that is a claim rather than an omission: a diagram is as big as the thing it
+    /// draws, so it is SCROLLED where the prose column cannot hold it rather than reflowed to fit.
+    /// A layout with nothing to reflow against cannot answer two widths two ways, which is what
+    /// makes the drawn height and the reported height the same number by construction (#860).
+    @MainActor var laid: MermaidPlan {
         switch kind {
-        case let .flowchart(flowchart): flowchart.laid(across: measure)
+        case let .flowchart(flowchart): flowchart.laid
         }
     }
 }

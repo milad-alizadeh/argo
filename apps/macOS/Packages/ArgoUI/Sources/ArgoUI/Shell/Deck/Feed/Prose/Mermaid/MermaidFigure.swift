@@ -6,19 +6,28 @@ import Foundation
 struct MermaidFigure: Equatable, Sendable {
     let form: Form
     var role: MermaidRole = .node
+    /// How the outline is drawn. A dotted or a thick connector is the same ROLE as a plain one —
+    /// the same thing said more quietly or more loudly — so how it is stroked is its own property
+    /// rather than a second role.
+    var line: Line = .solid
 
-    /// The shapes a plan is allowed to be made of. Every diagram type reduces to these, which is
-    /// the whole reason one view can draw all of them.
+    /// The marks a plan is allowed to be made of. Every diagram type reduces to these, which is the
+    /// whole reason one view can draw all of them.
+    ///
+    /// A closed outline is ONE case carrying which outline it is, rather than a case per shape:
+    /// where it stands, how it moves and how big it is are the same answer for all of them, and
+    /// only the path differs.
     enum Form: Equatable, Sendable {
-        case rect(CGRect)
-        case roundedRect(CGRect)
-        case diamond(CGRect)
-        case ellipse(CGRect)
+        case shape(MermaidOutline, CGRect)
         /// A polyline, in order. Two points is a straight connector.
         case path([CGPoint])
         /// A connector's head: a triangle pointing at `tip`, standing back along the line from
         /// `from`.
         case arrowhead(tip: CGPoint, from: CGPoint)
+    }
+
+    enum Line: Equatable, Sendable {
+        case solid, dotted, thick
     }
 }
 
@@ -27,12 +36,22 @@ extension MermaidFigure.Form {
     /// silhouette to the lane rather than a featureless slab.
     var bounds: CGRect {
         switch self {
-        case let .rect(rect), let .roundedRect(rect), let .diamond(rect), let .ellipse(rect):
-            rect
+        case let .shape(_, rect): rect
+        case let .path(points): Self.around(points)
+        case let .arrowhead(tip, from): Self.around([tip, from])
+        }
+    }
+
+    /// The same form, moved. What lets a layout place its figures wherever they fall and slide the
+    /// whole plan into positive coordinates afterwards.
+    func moved(by offset: CGPoint) -> Self {
+        switch self {
+        case let .shape(outline, rect):
+            .shape(outline, rect.offsetBy(dx: offset.x, dy: offset.y))
         case let .path(points):
-            Self.around(points)
+            .path(points.map { $0.moved(by: offset) })
         case let .arrowhead(tip, from):
-            Self.around([tip, from])
+            .arrowhead(tip: tip.moved(by: offset), from: from.moved(by: offset))
         }
     }
 
@@ -41,5 +60,12 @@ extension MermaidFigure.Form {
         return points.dropFirst().reduce(CGRect(origin: first, size: .zero)) { box, point in
             box.union(CGRect(origin: point, size: .zero))
         }
+    }
+}
+
+extension CGPoint {
+    /// The same point, `offset` further along both axes.
+    func moved(by offset: CGPoint) -> CGPoint {
+        CGPoint(x: x + offset.x, y: y + offset.y)
     }
 }

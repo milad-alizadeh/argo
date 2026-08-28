@@ -9,22 +9,28 @@ import Foundation
 
 extension MermaidDiagram {
     /// The diagram's figures as rectangles, and how tall the whole thing stands.
+    ///
+    /// The measure CLIPS rather than lays out. A diagram is laid out at its own width and scrolls
+    /// where the column cannot hold it, so what the lane draws is what a reader who has not
+    /// scrolled can see — a mark past the column's edge is one that is not on screen.
     @MainActor func mapped(across measure: CGFloat) -> (rects: [MinimapRowRect], height: CGFloat) {
-        let plan = ProseReading.plan(of: self, across: measure)
-        return (plan.figures.map(\.mapped), plan.size.height)
+        let plan = ProseReading.plan(of: self)
+        return (plan.figures.compactMap { $0.mapped(within: measure) }, plan.size.height)
     }
 }
 
 extension MermaidFigure {
-    /// One figure as the lane draws it. A connector is a hairline in both directions, so a straight
-    /// line survives the reduction instead of collapsing to nothing.
-    var mapped: MinimapRowRect {
+    /// One figure as the lane draws it, or nothing where it stands entirely past the column's edge.
+    /// A connector is a hairline in both directions, so a straight line survives the reduction
+    /// instead of collapsing to nothing.
+    func mapped(within measure: CGFloat) -> MinimapRowRect? {
         let bounds = form.bounds
+        guard bounds.minX < measure else { return nil }
         return MinimapRowRect(
             y: bounds.minY,
             height: max(bounds.height, MermaidMeasure.stroke),
             from: bounds.minX,
-            to: max(bounds.maxX, bounds.minX + MermaidMeasure.stroke),
+            to: min(measure, max(bounds.maxX, bounds.minX + MermaidMeasure.stroke)),
             ink: .diagram,
             shape: laneShape,
         )

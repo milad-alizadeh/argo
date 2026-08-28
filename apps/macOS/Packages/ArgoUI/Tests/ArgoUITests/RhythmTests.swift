@@ -126,7 +126,8 @@ struct RhythmTests {
         ]))
         #expect(ladder.isSuperset(of: [
             MermaidMeasure.nodeInsetX, MermaidMeasure.nodeInsetY, MermaidMeasure.rankGap,
-            MermaidMeasure.nodeGap,
+            MermaidMeasure.nodeGap, MermaidMeasure.groupInset, MermaidMeasure.backLane,
+            MermaidMeasure.wordGap,
         ]))
         #expect(ladder.isSuperset(of: [
             ArgoMinimapLane.rectInset, ArgoMinimapLane.turnLineGap, ArgoMinimapLane.labelPadding,

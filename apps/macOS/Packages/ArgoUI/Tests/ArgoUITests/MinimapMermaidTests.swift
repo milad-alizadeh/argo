@@ -30,7 +30,7 @@ struct MinimapMermaidTests {
     /// because there is only one of them.
     @Test
     func `the reported height is the plan's own`() {
-        let plan = Self.diagram?.laid(across: Self.measure)
+        let plan = Self.diagram?.laid
 
         #expect(Self.diagram?.mapped(across: Self.measure).height == plan?.size.height)
         #expect((plan?.size.height ?? 0) > 0)
@@ -45,19 +45,44 @@ struct MinimapMermaidTests {
         #expect(laid?.rects.allSatisfy { $0.y + $0.height <= (laid?.height ?? 0) } == true)
     }
 
+    /// A diagram too wide for the column is scrolled, so what the lane draws is what a reader who
+    /// has not scrolled can see: the marks past the edge are clipped, not squeezed in.
+    @Test
+    func `a diagram wider than the column is clipped to it, not shrunk into it`() {
+        let wide = MermaidDiagram.read("""
+        graph LR
+        A --> AnotherRatherLongNodeName
+        AnotherRatherLongNodeName --> AThirdRatherLongNodeName
+        AThirdRatherLongNodeName --> AFourthRatherLongNodeName
+        """)
+        let narrow: CGFloat = 120
+        let laid = wide?.mapped(across: narrow)
+
+        #expect((wide?.laid.size.width ?? 0) > narrow)
+        #expect(laid?.rects.isEmpty == false)
+        #expect(laid?.rects.allSatisfy { $0.to <= narrow } == true)
+    }
+
     /// The block comes off the row's markdown carrying the diagram itself, so the lane lays it out
     /// through the feed's own cached plan rather than through a reduction of it.
     @Test
     func `a diagram read from markdown carries the diagram itself`() {
         let text = "```mermaid\n\(Self.source)\n```"
+        let blocks = MinimapProseBlock.blocks(from: MarkdownBlock.blocks(in: text))
+        let chart = MermaidFlowchart(
+            direction: .down,
+            nodes: [
+                .init(name: "A", label: "A"),
+                .init(name: "B", label: "B"),
+                .init(name: "C", label: "C"),
+            ],
+            edges: [.init(from: "A", to: "B"), .init(from: "A", to: "C")],
+            groups: [],
+        )
+        let expected: [MinimapProseBlock] = [
+            .diagram(MermaidDiagram(source: Self.source, kind: .flowchart(chart))),
+        ]
 
-        #expect(MinimapProseBlock.blocks(from: MarkdownBlock.blocks(in: text))
-            == [.diagram(MermaidDiagram(
-                source: Self.source,
-                kind: .flowchart(MermaidFlowchart(
-                    nodes: ["A", "B", "C"],
-                    edges: [.init(from: "A", to: "B"), .init(from: "A", to: "C")],
-                )),
-            ))])
+        #expect(blocks == expected)
     }
 }
