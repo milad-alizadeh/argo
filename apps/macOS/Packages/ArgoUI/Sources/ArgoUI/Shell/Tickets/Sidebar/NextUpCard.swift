@@ -8,6 +8,9 @@ import SwiftUI
 ///
 /// A CONTROL where it names a ticket (#898). A `Button` and not a row of the `List` it scrolls in:
 /// the arrow keys belong to the four views, and the hero is not a fifth (`TicketsSidebar.hero`).
+///
+/// TWO controls since #899: the card opens the ticket, and the starter at its foot starts a Session
+/// on it. They are siblings rather than one nested in the other — see `opener(_:)`.
 struct NextUpCard: View {
     @Environment(\.argo) private var argo
 
@@ -39,13 +42,28 @@ struct NextUpCard: View {
         }
     }
 
-    /// The pick, AS a control — `NextUpIntents.open`.
+    /// The pick, AS a control — `NextUpIntents.open` — carrying the second verb over it.
+    ///
+    /// The starter is drawn twice on purpose: `picked(_:)` holds a hidden one so the card is laid
+    /// out around it, and the live one is an OVERLAY, which is what makes it hittable. Nesting it
+    /// in the label would draw a control the card's own Button swallows every click of
+    /// (`NextUpStarter`). Both are inset by `heroPadding`, so the two land in one place.
     private func opener(_ pick: NextUp.Pick) -> some View {
         Button { intents.open(pick.number) } label: {
             card(picked(pick), opens: true)
         }
         .buttonStyle(NextUpCardStyle())
         .accessibilityLabel(spoken(pick))
+        .overlay(alignment: .bottomTrailing) {
+            starter(pick)
+                .padding(ArgoTicketsSidebar.heroPadding)
+        }
+    }
+
+    private func starter(_ pick: NextUp.Pick) -> some View {
+        NextUpStarter(command: intents.starting.command(pick.number)) {
+            intents.starting.run(pick.number)
+        }
     }
 
     /// The act, the ticket, and the chips — everything the card draws. Named for the ACT because
@@ -96,6 +114,11 @@ struct NextUpCard: View {
             if !pick.reasons.isEmpty {
                 chips(pick.reasons)
             }
+            // The space the overlaid starter lands on. Hidden and not absent: `hidden()` keeps a
+            // view in the layout, which is the whole reason the two agree without a measurement.
+            starter(pick)
+                .hidden()
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 

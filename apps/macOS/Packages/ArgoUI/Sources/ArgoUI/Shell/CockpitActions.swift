@@ -82,9 +82,15 @@ public struct CockpitActions {
         /// File a ticket through `TicketWriter`. Answers `nil` where it landed, and the refusal
         /// otherwise — nothing retries, so the reply IS the outcome.
         public var createTicket: (TicketDraft) async -> TicketWriteError? = { _ in nil }
-        /// Start a Session ON one ticket, on the rung the row names. The seed carries the number,
-        /// which is what makes the Session claimable back (`TicketsReading.claimed`).
-        public var startSession: (Int, SessionMode) async -> String? = { _, _ in nil }
+        /// Start a Session ON one ticket, on the rung the row names, opening on the prompt the
+        /// ticket asks for (#899). The seed carries the number, which is what makes the Session
+        /// claimable back (`TicketsReading.claimed`), and the opening is `nil` where the ticket
+        /// matches no rule — an empty composer, which is the honest answer.
+        public var startSession: (Int, SessionMode, String?) async -> String? = { _, _, _ in nil }
+        /// The screens the Project has settled a design for, read off `docs/designs/` on every call
+        /// (`DesignedScreens`). Performed by the app layer for `skills`' reason: it walks a
+        /// directory, and no view in `ArgoUI` may.
+        public var designedScreens: () -> Set<String> = { [] }
         /// Read ONE ticket, by the number a link named — the only way to a closed one, which no
         /// listing carries (#895). It answers nothing: the listing it lands in is the answer.
         public var readTicket: (Int) async -> Void = { _ in }

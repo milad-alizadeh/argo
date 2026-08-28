@@ -71,6 +71,13 @@ public final class BuiltinCommandReader {
         )
     }
 
+    /// The same catalog for one Project, reading its skills here rather than at the call site. The
+    /// join is the only thing the app layer was doing with either half, and a derivation in the app
+    /// target is one no test can reach (ADR-0022).
+    public func catalog(forProjectAt projectURL: URL) -> CommandCatalog {
+        catalog(joining: SkillCatalog(projectURL: projectURL).skills())
+    }
+
     private func reading(inProjectAt projectURL: URL) async {
         let reported = await version(projectURL)
         if let kept = store.commands(reportedBy: reported) {

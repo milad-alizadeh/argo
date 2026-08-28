@@ -389,6 +389,14 @@ one of them waiting to go stale.
 the Session that opened, one rung change away, and it costs the rare case a click rather than
 charging every case one.
 
+**Amended #899: `Start` names the command it will send, and the press goes to the Session.** The
+command sits after the word in `text.tertiary` on `machineCaption` — it is what `Start` will do, not
+a second control — and nothing is drawn where the ticket asks for none. Pressing it now lands the
+window in the Sessions room on the fresh Session, which **reverses #872's decision to stay put**:
+that reasoning held for a Start whose only visible answer was the backlog row going claimed, and a
+Start that begins real work has its answer in the other room. A refused spawn moves nothing. The
+gallery is `start-command.png`, from the `ticketStart` specimen.
+
 The two link verbs that would otherwise have hidden in that ellipsis — open on the code host,
 copy link — are icons beside `Start`, past a hairline. Nothing in this room is behind an unlabelled
 control.
@@ -463,6 +471,36 @@ pressable before a pointer arrives; under the pointer the card's ground goes `su
 under the click `surface.selected`. The three degraded tiers name no ticket and carry **neither the
 chevron nor the wash** — a card that lit up to open nothing is worse than one that never moves.
 The gallery is `next-up-pressable.png`, shot from the `nextUpPointer` specimen.
+
+**Amended #899: the card carries a second control at its foot — `Start`.** The hero is the room's
+answer to "what should I pick up", and opening the ticket was only half an answer to it; the other
+half is beginning the work. It is trailing-aligned below the chips and spells the verb exactly
+as the toolbar's Start does — the word, then the command after it in `text.tertiary` on
+`machineCaption`, because it **says which command it will send** — `/implement`,
+`/design-to-code`, `/grill-me`, `/prototype`, `/wayfinder`. A press that silently dispatched one of
+five different jobs is a press nobody can aim. A ticket that matches no rule reads `Start` alone
+and opens an empty composer, which is the honest answer rather than a wrong one.
+
+**Its vessel is its own, and it answers the pointer on its own account.** It cannot borrow the
+`.quiet` control's flat `surface.overlay`: that fill is a fixed ink and the card under it is not, so
+measured on the render it went invisible against `surface.hover` and came out DARKER than
+`surface.selected` — in the two states it most has to read as a target of its own. It carries an
+`edge.subtle` rim, which separates it from the card in all three of the card's grounds, and answers
+its own pointer with `surface.hover` and `surface.selected` **washed over `surface.overlay` rather
+than in place of it** — the rule the card's own ground already had to learn. Used as the fill, those
+translucent whites landed within 3 of the card beneath and a pointer on the starter was
+pixel-identical to no pointer at all. Over the ground they span the same 12 levels the card does.
+
+**The two controls are siblings, not one nested in the other.** A `Button` inside another `Button`'s
+label is drawn and unhittable — the outer one takes every click — so the starter is drawn twice: a
+hidden copy inside the card's label holds its space, and the live one is an overlay over that space.
+Both are inset by the card's own `heroPadding`, which is what keeps them in one place with nothing
+measured. The degraded tiers carry no starter, for the reason they carry no chevron.
+
+The gallery is `next-up-start.png`, shot from the same `nextUpPointer` specimen: the card's three
+grounds, then two frames holding the card still while the STARTER's own pointer moves — which is
+the only evidence a still render can give that the two are separate targets — then the card whose
+ticket asks for no command.
 
 ## The ticket detail
 

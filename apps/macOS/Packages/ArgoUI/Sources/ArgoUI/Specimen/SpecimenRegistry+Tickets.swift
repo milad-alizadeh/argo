@@ -75,6 +75,9 @@ extension SpecimenRegistry {
         // render that shows either. At rest carries the chevron, which is what says so before a
         // pointer arrives.
         SpecimenEntry("nextUpPointer") { SpecimenScene.centred { NextUpPointerSpecimen() } },
+        // The room's Start, saying what it will send before it is pressed (#899) — and the ticket
+        // that asks for nothing, which no fixture reaches on its own.
+        SpecimenEntry("ticketStart") { SpecimenScene.centred { TicketStartSpecimen() } },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
         // The head's status pair, over a provider whose word IS the filing and one with words of
         // its own (#893). Every fixture spells "In progress", so no room render reaches the first.

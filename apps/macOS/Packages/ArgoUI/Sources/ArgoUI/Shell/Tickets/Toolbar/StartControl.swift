@@ -13,8 +13,6 @@ import SwiftUI
 /// row is a fixed set of marks, and a pair that came and went with the provider would move the
 /// ones beside them.
 struct StartControl: View {
-    @Environment(\.argo) private var argo
-
     let verbs: TicketsToolbarIntents.Verbs
 
     var body: some View {
@@ -40,24 +38,19 @@ struct StartControl: View {
     /// glyph on its own would be the unlabelled mark the study cut.
     private var start: some View {
         Button(action: verbs.start) {
-            HStack(spacing: ArgoSpacing.snug) {
-                ArgoGlyph(ArgoSymbol.startSession, ArgoTicketsChrome.iconSize)
-                Text("Start")
-                    .argoText(ArgoTypography.control)
-            }
-            .foregroundStyle(argo.color.text.secondary)
-            .padding(.horizontal, ArgoSpacing.base)
-            .frame(height: ArgoTicketsChrome.iconButtonHeight)
-            .contentShape(.capsule)
+            StartVerb(command: verbs.command)
+                .padding(.horizontal, ArgoSpacing.base)
+                .frame(height: ArgoTicketsChrome.iconButtonHeight)
+                .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .help("Start a Session on this ticket")
-        .accessibilityLabel("Start a Session on this ticket")
+        .help(StartVerb.spoken(verbs.command))
+        .accessibilityLabel(StartVerb.spoken(verbs.command))
     }
 }
 
 #Preview("Start control") {
-    StartControl(verbs: .inert)
+    StartControl(verbs: TicketsToolbarIntents.Verbs(command: .implement))
         .padding(ArgoSpacing.region)
         .argoAppearance()
 }

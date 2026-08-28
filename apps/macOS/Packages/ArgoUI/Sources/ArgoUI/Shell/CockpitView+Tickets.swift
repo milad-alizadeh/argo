@@ -26,6 +26,10 @@ extension CockpitView {
             showing: navigation.ticket,
         )
 
+        // Assembled once and shared by the room's two Start controls, so the toolbar's Start and
+        // the hero's can never resolve one ticket to two commands.
+        let start = ticketStart
+
         return TicketsRoom(
             room: TicketsRoomProjection.room(
                 from: reading, in: navigation.ticketsView, matching: navigation.ticketsQuery,
@@ -36,7 +40,11 @@ extension CockpitView {
             backlogWidth: $navigation.backlogWidth,
             shut: $navigation.shutParents,
             connect: openProjectPanel,
-            intents: ticketsIntents,
+            intents: ticketsIntents(start),
+            starting: StartIntent(
+                run: { ticket in Task { await start.run(on: ticket, in: navigation) } },
+                command: { start.command(on: $0) },
+            ),
             follow: { await actions.tickets.readTicket($0) },
             held: TicketsRoom.Held(query: $navigation.ticketsQuery),
         )
@@ -49,15 +57,19 @@ extension CockpitView {
     /// `grouping` stays inert, deliberately: `BacklogMenu` states the one grouping in force rather
     /// than offering a choice nothing can answer, and it becomes a menu when a port reads a second
     /// thing to group by (#388).
-    var ticketsIntents: TicketsToolbarIntents {
+    func ticketsIntents(_ start: TicketStart) -> TicketsToolbarIntents {
         var intents = TicketsToolbarIntents.inert
-        intents.creation.control = .over(
-            health.writes(through: .ticket), attempt: ticketWrite,
-        )
+        intents.creation.control = ticketWriteControl
         intents.creation.act = { openTicketComposer() }
         intents.creation.reconnect = openProjectPanel
-        intents.verbs = ticketsVerbs
+        intents.verbs = ticketsVerbs(start)
         return intents
+    }
+
+    /// What the New ticket control renders — read by the row's own button AND by the composer's, so
+    /// one write can never be drawn two ways (§4).
+    var ticketWriteControl: WriteControlState {
+        .over(health.writes(through: .ticket), attempt: ticketWrite)
     }
 
     /// The Connect panel on the active Project, which is where both of the room's repairs land.
