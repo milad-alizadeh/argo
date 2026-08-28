@@ -28,6 +28,7 @@ struct EvidenceHeader: View {
             readingToggle
             Button(action: dismiss) {
                 ArgoGlyph(ArgoSymbol.dismiss, .inline)
+                    .argoHitTarget()
             }
             .buttonStyle(.plain)
             .foregroundStyle(argo.color.text.tertiary)
@@ -70,6 +71,7 @@ struct EvidenceHeader: View {
         if evidence.offersProse {
             Button { reading = reading == .prose ? .source : .prose } label: {
                 ArgoGlyph(destination.symbol, .inline)
+                    .argoHitTarget()
             }
             .buttonStyle(.plain)
             .foregroundStyle(argo.color.text.tertiary)

@@ -46,11 +46,20 @@ public struct CockpitView: View {
         self.workItems = workItems
     }
 
-    /// The selected Session's reading. Recomputed on every update rather than cached: the
-    /// presentation is a value the Hub rebuilds as the transcript grows, so a memoised feed would
-    /// show the reading as it was when the user last clicked.
+    /// Whether the window is in the room that DRAWS a transcript. The four projections below all
+    /// walk the selected Session's whole event stream, and `body` evaluates them whichever room is
+    /// on screen — so in Work and Code they were re-reading a transcript nothing renders, on every
+    /// update. Gated rather than cached: the presentation is a value the Hub rebuilds as the
+    /// transcript grows, and a memoised feed would show the reading as it was when the user last
+    /// clicked.
+    private var isReadingASession: Bool {
+        navigation.room == .sessions
+    }
+
+    /// The selected Session's reading, or nothing at all in a room with no feed.
     private var feed: [FeedRow] {
-        FeedProjection.rows(
+        guard isReadingASession else { return [] }
+        return FeedProjection.rows(
             from: events,
             working: FeedWorking.isWorking(presentation.session(navigation.session)),
             handedOff: presentation.handoff(of: navigation.session),
@@ -68,22 +77,28 @@ public struct CockpitView: View {
     /// The same Session's plan, off the same stream — the standing state a whole transcript
     /// resolves to, not a row in it.
     private var showing: PlanShowing {
-        PlanShowing(plan: PlanProjection.reading(from: events))
+        guard isReadingASession else { return PlanShowing() }
+        return PlanShowing(plan: PlanProjection.reading(from: events))
     }
 
     /// What the deck's top zone names.
     private var header: SessionHeaderProjection.Header? {
-        presentation.session(navigation.session).map(SessionHeaderProjection.header(from:))
+        guard isReadingASession else { return nil }
+        return presentation.session(navigation.session).map(SessionHeaderProjection.header(from:))
     }
 
     private var events: [TranscriptEvent] {
         presentation.session(navigation.session)?.events ?? []
     }
 
-    /// The same Session's Subagents, each already read. Recomputed with the feed above and for its
-    /// reason: a fan-out's files grow while the reader is looking at one of them.
+    /// The same Session's Subagents, each already read, and nothing outside the Sessions room.
+    /// Recomputed with the feed above and for its reason: a fan-out's files grow while the reader
+    /// is looking at one of them.
     private var readings: FeedAgentReadings {
-        FeedAgentReadings(events: presentation.session(navigation.session)?.subagentEvents ?? [:])
+        guard isReadingASession else { return .none }
+        return FeedAgentReadings(
+            events: presentation.session(navigation.session)?.subagentEvents ?? [:],
+        )
     }
 
     /// What is in the deck's one slot for the selected Session — the composer, the Permission

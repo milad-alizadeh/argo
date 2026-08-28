@@ -56,6 +56,7 @@ private struct StandingAllowChip: View {
                 .fixedSize(horizontal: false, vertical: true)
             Button(action: revoke) {
                 ArgoGlyph(ArgoSymbol.dismiss, .inline)
+                    .argoHitTarget()
                     .foregroundStyle(argo.color.text.tertiary)
             }
             .buttonStyle(.plain)

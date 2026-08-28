@@ -26,6 +26,11 @@ struct RoomStrip: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
+        // The inset is the STRIP's, not each sidebar's. Both rooms place it at the head of their
+        // own pane, and a picker that lands a few points apart between them reads as two controls
+        // (#816).
+        .padding(.horizontal, ArgoSpacing.comfortable)
+        .padding(.vertical, ArgoSpacing.base)
     }
 }
 
@@ -33,7 +38,6 @@ struct RoomStrip: View {
     @Previewable @State var room = CockpitRoom.work
 
     RoomStrip(selection: $room)
-        .padding(ArgoSpacing.comfortable)
         .frame(width: ArgoLayout.sidebarMinimumWidth)
         .argoAppearance()
 }

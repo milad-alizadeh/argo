@@ -27,6 +27,9 @@ struct BacklogTwist: View {
             .foregroundStyle(argo.color.text.disabled)
             .frame(width: ArgoBacklogList.twistWidth, height: ArgoBacklogList.rowHeight)
             .contentShape(Rectangle())
+            // The slot is twelve points across, which is the column the dots line up on and not a
+            // target. This widens what answers the press past it without moving the mark.
+            .argoHitTarget()
     }
 }
 

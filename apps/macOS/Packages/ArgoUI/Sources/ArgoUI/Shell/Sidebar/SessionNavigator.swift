@@ -13,10 +13,6 @@ struct SessionNavigator: View {
     var archive: (String, Bool) -> Void = { _, _ in }
     /// Name a Session, or — with `nil` — drop the name it has. Inert by default, like the archive.
     var rename: (String, String?) -> Void = { _, _ in }
-    /// Whether a search is narrowing the two lists above. It changes only what an EMPTY roster
-    /// says: "no Sessions" and "none that match what you typed" are different claims, and a
-    /// machine full of Sessions that reported the first would read as one that had lost them.
-    var isFiltered = false
     /// Which row is being typed into, if any — at most one, by construction. Held above the rows
     /// because the menu bar's Rename opens it too, and a state per row could only ever be set by
     /// the row that owns it.
@@ -115,10 +111,9 @@ struct SessionNavigator: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-            Text(isFiltered ? "No matching Sessions" : "No Sessions yet")
+            Text("No Sessions yet")
                 .argoText(ArgoTypography.rowTitle)
-            Text(isFiltered ? "Nothing here matches what you typed." :
-                "Observed Sessions appear here.")
+            Text("Observed Sessions appear here.")
                 .argoText(ArgoTypography.rowMeta)
                 .foregroundStyle(argo.color.text.tertiary)
         }

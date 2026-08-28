@@ -15,6 +15,9 @@ struct WorkRoom {
     /// Which view is open. Above the room too, and for a sharper reason: `room.backlog` is already
     /// filtered to it, so the selection has to be settled before the room is derived.
     @Binding var view: WorkView
+    /// What the reader has dragged the seam between the two panes to. Above the room for the same
+    /// reason the fold is: the panes are rebuilt on every ticket.
+    @Binding var backlogWidth: CGFloat
     /// Which parents the reader has folded. Above the room for the same reason the ticket is: a
     /// fold outlives the pane. **Everything opens open**, so it is empty until somebody folds
     /// something — a tree that opens shut hides what it was added for (#814).
@@ -42,11 +45,23 @@ struct WorkRoom {
         if let vacancy = room.vacancy {
             WorkRoomVacancy(vacancy: vacancy, project: room.project, connect: connect)
         } else {
-            HStack(spacing: ArgoSpacing.flush) {
-                BacklogList(rows: room.backlog, selection: $ticket, shut: $shut)
-                DeckSeparator()
-                TicketDetail(ticket: room.ticket) { ticket = $0 }
+            // The deck's own width, because the seam's ceiling is what is left after the ticket
+            // detail's floor — `ArgoLayout.backlogLimits(in:)`.
+            GeometryReader { deck in
+                panes(limits: ArgoLayout.backlogLimits(in: deck.size.width))
             }
+        }
+    }
+
+    /// The backlog, the seam the reader moves, and the ticket. The width is SEATED on the way in
+    /// as well as on the way out: a window narrowed under a width already dragged has to bring the
+    /// pane back inside the limits, and only the read knows the deck it is being drawn in.
+    private func panes(limits: ClosedRange<CGFloat>) -> some View {
+        HStack(spacing: ArgoSpacing.flush) {
+            BacklogList(rows: room.backlog, selection: $ticket, shut: $shut)
+                .frame(width: ArgoLayout.seated(backlogWidth, in: limits))
+            DeckSeam(width: $backlogWidth, limits: limits, growsRightward: true)
+            TicketDetail(ticket: room.ticket) { ticket = $0 }
         }
     }
 }
@@ -55,11 +70,12 @@ struct WorkRoom {
     @Previewable @State var ticket: Int? = 272
     @Previewable @State var cockpitRoom = CockpitRoom.work
     @Previewable @State var view = WorkView.allOpen
+    @Previewable @State var width = ArgoBacklogList.width
     @Previewable @State var shut: Set<Int> = []
 
     WorkRoom(
         room: WorkFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket, view: $view,
-        shut: $shut,
+        backlogWidth: $width, shut: $shut,
     )
     .deck
     .frame(width: ArgoBacklogList.width + ArgoTicketDetail.idealWidth, height: 620)

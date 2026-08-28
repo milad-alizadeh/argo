@@ -118,13 +118,14 @@ struct InstrumentDeckShell: View {
     @Previewable @State var ticket: Int? = 272
     @Previewable @State var cockpitRoom = CockpitRoom.work
     @Previewable @State var view = WorkView.allOpen
+    @Previewable @State var width = ArgoBacklogList.width
     @Previewable @State var shut: Set<Int> = []
 
     InstrumentDeckShell(
         room: .work,
         work: WorkRoom(
             room: WorkFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket, view: $view,
-            shut: $shut,
+            backlogWidth: $width, shut: $shut,
         ),
     )
     .frame(width: ArgoBacklogList.width + ArgoTicketDetail.idealWidth, height: 620)

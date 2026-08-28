@@ -23,7 +23,7 @@ struct AgentsRailStrip: View {
             LazyVStack(spacing: ArgoSpacing.snug) {
                 // `.plain` for the reason the rail's own heading takes it: a filled control ground
                 // here would be a card in a column 28 points wide.
-                Button(action: expand) { ArgoDisclosure(.beside) }
+                Button(action: expand) { ArgoDisclosure(.beside).argoHitTarget() }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Show subagents")
                 ForEach(agents) { dot($0) }

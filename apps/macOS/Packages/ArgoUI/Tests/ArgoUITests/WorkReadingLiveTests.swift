@@ -185,10 +185,8 @@ struct WorkReadingLiveTests {
             number: 606, title: "A typed leaf", status: "open", closure: .open, type: "PRD",
             blockedBy: [],
         )
-        let room = Self.room(items: [Self.chart, leaf, Self.read], health: Self.answered)
-
-        #expect(room.charts.map(\.id) == [607])
-        #expect(room.charts.map(\.count) == [1])
+        #expect(Self.chart.isChartShaped)
+        #expect(!leaf.isChartShaped)
     }
 
     /// Where the provider carries no type at all the role falls back to hierarchy
@@ -196,11 +194,8 @@ struct WorkReadingLiveTests {
     /// switched off can have. A ticket the provider DID type does not fall back.
     @Test
     func `an untyped parent is chart-shaped, and a typed non-PRD one is not`() {
-        let untyped = Self.room(items: [Self.chart.untyped, Self.read], health: Self.answered)
-        let tasked = Self.room(items: [Self.chart.typed("task"), Self.read], health: Self.answered)
-
-        #expect(untyped.charts.map(\.id) == [607])
-        #expect(tasked.charts.isEmpty)
+        #expect(Self.chart.untyped.isChartShaped)
+        #expect(!Self.chart.typed("task").isChartShaped)
     }
 
     private static let chart = WorkItem(

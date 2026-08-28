@@ -54,6 +54,10 @@ public enum ArgoLayout {
     /// The narrowest the feed may be squeezed to by its neighbours. Read against the lane at ITS
     /// narrowest, because the two shrink together — see `minimapLaneWidth(sharing:)`.
     public static let feedMinimumWidth: CGFloat = 320
+    /// The square a small mark answers clicks over (`argoHitTarget`). The mark keeps its rung; this
+    /// is the shape UNDER it, which is what a pointer actually has to find — the same distinction
+    /// `seamGrabWidth` draws for a hairline.
+    public static let controlHitTarget: CGFloat = 24
     /// A draggable seam's hit area. The line stays a hairline; this is the width of the invisible
     /// strip over it, which is what a pointer actually has to find.
     public static let seamGrabWidth: CGFloat = 9
@@ -83,6 +87,22 @@ public enum ArgoLayout {
         let taken = minimapLaneWidths.lowerBound + feedMinimumWidth + seamGrabWidth
         let floor = railWidths.lowerBound
         return floor ... max(floor, min(railWidths.upperBound, deck - taken))
+    }
+
+    /// The Work room's two panes. The backlog OPENS at `ArgoBacklogList.width` — the measure the
+    /// twelve real titles were chosen against — and the reader drags it from there.
+    public static let backlogWidths: ClosedRange<CGFloat> = 320 ... 760
+    /// The narrowest the ticket detail may be squeezed to by the backlog beside it — the same 320
+    /// the feed and the evidence panel stop at, because it is the same question: what a column of
+    /// this app's prose stops being readable under.
+    public static let ticketDetailMinimumWidth: CGFloat = 320
+
+    /// How wide the backlog may be dragged in a deck of a given width, carrying the same invariant
+    /// `railLimits(in:)` does: whatever the reader drags to, the ticket detail keeps its floor.
+    public static func backlogLimits(in deck: CGFloat) -> ClosedRange<CGFloat> {
+        let floor = backlogWidths.lowerBound
+        let ceiling = deck - ticketDetailMinimumWidth - seamGrabWidth
+        return floor ... max(floor, min(backlogWidths.upperBound, ceiling))
     }
 
     /// A zone's width, seated inside its limits and on a whole point. A pointer reports in

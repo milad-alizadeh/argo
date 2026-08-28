@@ -57,14 +57,4 @@ struct WorkRoomVacancyTests {
     func `an unbound room still knows which Project it is scoped to`() {
         #expect(WorkRoomProjection.room(from: WorkFixture.unbound).project == "argo")
     }
-
-    /// A finished backlog is every item CLOSED, not an absence of items — so the charts the
-    /// provider exposes are still there, reading zero.
-    @Test
-    func `a finished backlog keeps its charts at zero`() {
-        let room = WorkRoomProjection.room(from: WorkFixture.answeredEmpty)
-
-        #expect(room.charts.map(\.name) == ["#607 Wayfinder", "#334 The Route"])
-        #expect(room.charts.map(\.count) == [0, 0])
-    }
 }

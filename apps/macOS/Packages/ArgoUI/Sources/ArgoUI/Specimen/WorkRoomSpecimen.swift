@@ -43,6 +43,8 @@ struct WorkPanesSpecimen: View {
     /// Seeded the same way, and the reason a folded parent can be SHOT: everything opens open, so
     /// `collapsed.png` is a state nobody could reach without clicking (#814).
     @State private var shut: Set<Int>
+    /// The pane opens where it ships, so a render is shot at the width the reader first meets.
+    @State private var backlogWidth = ArgoBacklogList.width
 
     init(reading: WorkReading, opening: WorkView = .allOpen, folded: Set<Int> = []) {
         self.reading = reading
@@ -57,6 +59,7 @@ struct WorkPanesSpecimen: View {
             cockpitRoom: $cockpitRoom,
             ticket: $ticket,
             view: $view,
+            backlogWidth: $backlogWidth,
             shut: $shut,
         )
 

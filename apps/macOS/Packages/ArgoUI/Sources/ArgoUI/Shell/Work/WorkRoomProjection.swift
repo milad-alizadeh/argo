@@ -1,6 +1,6 @@
 import ArgoEngine
 
-/// The Work room as one value: the sidebar's views and charts, the backlog's rows, and the ticket
+/// The Work room as one value: the sidebar's views, the backlog's rows, and the ticket
 /// the deck is open on.
 ///
 /// The sidebar's counts are arithmetic over the SAME list the deck draws, computed here once. Two
@@ -9,7 +9,6 @@ import ArgoEngine
 enum WorkRoomProjection {
     struct Room: Sendable, Equatable {
         let views: [ViewReading]
-        let charts: [ChartReading]
         let provider: WorkProvider?
         let backlog: [Row]
         let ticket: Ticket?
@@ -43,7 +42,7 @@ enum WorkRoomProjection {
         /// distinct from a provider that answered with an empty backlog, which keeps its views.
         static func vacant(in project: String? = nil) -> Room {
             Room(
-                views: [], charts: [], provider: nil, backlog: [], ticket: nil, project: project,
+                views: [], provider: nil, backlog: [], ticket: nil, project: project,
                 hasOpenWork: false, nextUp: nil,
             )
         }
@@ -69,16 +68,6 @@ enum WorkRoomProjection {
         let count: Int?
     }
 
-    /// One PRD-shaped parent in the `CHARTS` group — the entry point to its Route.
-    struct ChartReading: Sendable, Equatable, Identifiable {
-        let id: Int
-        /// The parent's number and the head of its title, which is what fits the rail.
-        let name: String
-        /// How many of its children are open AND were read. It undercounts a chart whose children
-        /// the poll has not reached, which is the quieter of the two ways to be wrong.
-        let count: Int
-    }
-
     /// One row of the backlog: `twist · dot · id · title`, plus one trailing fact.
     struct Row: Sendable, Equatable, Identifiable {
         let id: Int
@@ -90,6 +79,10 @@ enum WorkRoomProjection {
         /// The provider's own priority word, absent where nothing was read. It BANDS a root and
         /// it is what a child states when the band's header disagrees with it (#819).
         let priority: String?
+        /// The provider's own labels, verbatim and in the order it served them. The row draws the
+        /// first `ArgoBacklogList.labelLimit` of them — what distinguishes one ticket from the next
+        /// belongs on the row, not only in the pane beside it.
+        let labels: [String]
         /// The rows nested under this one, from the child edge (`WorkRoomProjection+Tree.swift`).
         /// Empty on a leaf, and empty on a parent whose every child the view filtered out.
         let children: [Row]
@@ -105,7 +98,6 @@ enum WorkRoomProjection {
         let shown = items(of: open, in: view, claimed: reading.claimed)
         return Room(
             views: views(of: open, claimed: reading.claimed),
-            charts: charts(of: reading, open: open),
             provider: reading.provider,
             backlog: tree(of: shown, reading: reading, closed: closed),
             ticket: ticket(in: reading),
