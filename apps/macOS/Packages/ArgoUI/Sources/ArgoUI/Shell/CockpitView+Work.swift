@@ -41,20 +41,26 @@ extension CockpitView {
         )
     }
 
-    /// What the room's controls do. New ticket is `createWorkItem`, so §7 of the failure spec
-    /// decides whether it may be pressed, and the panel it points at on a dead token is the same
-    /// one the unbound page's `Connect a provider…` opens.
+    /// What the room's controls do (#872). New ticket is `createWorkItem`, so §7 of the failure
+    /// spec decides whether it may be pressed, and the panel it points at on a dead token is the
+    /// same one the unbound page's `Connect a provider…` opens.
     ///
-    /// The attempt is `idle`: nothing composes a draft yet, so no write is ever in flight (#850).
-    private var workIntents: WorkToolbarIntents {
+    /// `grouping` stays inert, deliberately: `BacklogMenu` states the one grouping in force rather
+    /// than offering a choice nothing can answer, and it becomes a menu when a port reads a second
+    /// thing to group by (#388).
+    var workIntents: WorkToolbarIntents {
         var intents = WorkToolbarIntents.inert
-        intents.creation.control = .over(health.writes(through: .workItem), attempt: .idle)
+        intents.creation.control = .over(
+            health.writes(through: .workItem), attempt: ticketWrite,
+        )
+        intents.creation.act = { openTicketComposer() }
         intents.creation.reconnect = openProjectPanel
+        intents.verbs = workVerbs
         return intents
     }
 
     /// The Connect panel on the active Project, which is where both of the room's repairs land.
-    private var openProjectPanel: @MainActor () -> Void {
+    var openProjectPanel: @MainActor () -> Void {
         { actions.openProjectPanel(presentation.activeProjectID) }
     }
 

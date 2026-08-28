@@ -8,6 +8,10 @@ import SwiftUI
 /// The two link verbs — open on the code host, copy link — are icons beside it rather than rows
 /// inside it, because nothing in this room is behind an unlabelled control
 /// (`cockpit-work-room.md`).
+///
+/// The two link verbs DISABLE where the Binding cannot address the ticket in a browser (#872) —
+/// drawn and unpressable, rather than live and inert. Disabled and not hidden: the row is a fixed
+/// set of marks, and a pair that came and went with the provider would move the ones beside them.
 struct StartControl: View {
     @Environment(\.argo) private var argo
 
@@ -22,9 +26,15 @@ struct StartControl: View {
                 .frame(height: ArgoWorkChrome.splitDividerHeight)
                 .accessibilityHidden(true)
             ToolbarIcon(
-                symbol: ArgoSymbol.openOnHost, label: "Open on host", act: verbs.openOnHost,
+                symbol: ArgoSymbol.openOnHost,
+                label: "Open on host",
+                act: verbs.openOnHost ?? {},
             )
-            ToolbarIcon(symbol: ArgoSymbol.copyLink, label: "Copy link", act: verbs.copyLink)
+            .disabled(verbs.openOnHost == nil)
+            ToolbarIcon(
+                symbol: ArgoSymbol.copyLink, label: "Copy link", act: verbs.copyLink ?? {},
+            )
+            .disabled(verbs.copyLink == nil)
         }
     }
 

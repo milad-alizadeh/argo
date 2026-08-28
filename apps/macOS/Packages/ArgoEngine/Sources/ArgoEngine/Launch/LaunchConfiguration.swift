@@ -51,6 +51,26 @@ public struct LaunchConfiguration: Equatable, Sendable {
         )
     }
 
+    /// The same launch with both folders resolved to the repository ROOT each sits in.
+    ///
+    /// A launch may name any folder inside a repository while the registry holds roots, so both are
+    /// resolved before `LaunchProject` matches them — without it, a launch inside a registered repo
+    /// draws that repo twice. Here rather than on the coordinator for ADR-0022's reason: it is a
+    /// derivation over values, and one in the app target is one no test can reach.
+    public func resolvingRoots(through store: ProjectRegistryStore) async -> LaunchConfiguration {
+        var overrideRootURL: URL?
+        if let projectOverrideURL {
+            overrideRootURL = await store.projectRoot(of: projectOverrideURL)
+        }
+        return await LaunchConfiguration(
+            launchDirectoryURL: store.projectRoot(of: launchDirectoryURL),
+            projectOverrideURL: overrideRootURL,
+            transcriptURLs: transcriptURLs,
+            specimenName: specimenName,
+            listsSpecimens: listsSpecimens,
+        )
+    }
+
     public init(arguments: [String], currentDirectoryURL: URL) {
         let launchDirectoryURL = URL(
             fileURLWithPath: currentDirectoryURL.path,

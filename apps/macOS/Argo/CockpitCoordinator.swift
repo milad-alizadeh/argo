@@ -86,7 +86,7 @@ final class CockpitCoordinator {
     func start() async {
         let registry = await store.load()
         annotations = await annotationStore.load()
-        let resolved = await launchConfiguration()
+        let resolved = await configuration.resolvingRoots(through: store)
         // Started with the window rather than with the first `/`, so the picker never waits on a
         // hidden `claude` spawning. Its own folder, because that is the one the CLI is trusted in.
         builtins.read(inProjectAt: resolved.projectURL)
@@ -172,22 +172,6 @@ final class CockpitCoordinator {
     /// what it was pointed with.
     func retryConnection() async {
         await hub.reconnect()
-    }
-
-    /// A launch may name any folder inside a repository while the registry holds roots, so both are
-    /// resolved to roots before `LaunchProject` matches them. Without it a launch inside a
-    /// registered repo draws that repo twice.
-    private func launchConfiguration() async -> LaunchConfiguration {
-        var projectOverrideURL: URL?
-        if let overrideURL = configuration.projectOverrideURL {
-            projectOverrideURL = await store.projectRoot(of: overrideURL)
-        }
-        return await LaunchConfiguration(
-            launchDirectoryURL: store.projectRoot(of: configuration.launchDirectoryURL),
-            projectOverrideURL: projectOverrideURL,
-            transcriptURLs: configuration.transcriptURLs,
-            specimenName: configuration.specimenName,
-        )
     }
 
     /// Carry out what the act decided: hold the new pointing, persist the one registry write it

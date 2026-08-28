@@ -74,6 +74,9 @@ extension SpecimenRegistry {
         SpecimenEntry("unmatchedWorkChrome") {
             WorkChromeSpecimen(reading: WorkFixture.reading, matching: "kubernetes")
         },
+        // What New ticket opens (#872): two fields and one act, at the panel's own width. Empty,
+        // which is the state it is met in — a typed one is the same sheet with prose in it.
+        SpecimenEntry("newTicketComposer") { NewTicketComposerSpecimen() },
     ] + writeControls
 
     /// The room's one provider-port write control, in each state a failing write leaves it in

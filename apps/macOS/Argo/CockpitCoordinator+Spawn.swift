@@ -10,8 +10,15 @@ extension CockpitCoordinator {
     /// CLI names a Session — so the shell can point at what it just started, and `nil` where
     /// nothing started at all.
     func spawnSession() async -> String? {
+        await spawn(.unseeded)
+    }
+
+    /// The one spawn every entry point below goes through. Each of them differs in nothing but its
+    /// seed, and three copies of one `do`/`catch` was three places for a refusal to stop being
+    /// reported.
+    private func spawn(_ seed: SessionSeed) async -> String? {
         do {
-            return try await hub.spawnSession().value
+            return try await hub.spawnSession(seed: seed).value
         } catch let failure as AgentSpawnError {
             report(detail: failure.detail)
         } catch {
@@ -37,22 +44,23 @@ extension CockpitCoordinator {
         }
     }
 
+    /// The same spawn, started ON a ticket and on the rung the Work room's row names (#872).
+    ///
+    /// The Project's own folder: Argo cuts no branch and makes no worktree, so what makes this the
+    /// ticket's Session is the seed naming it — which is also what the Work room reads back to draw
+    /// the row as claimed.
+    func spawnSession(on workItem: Int, mode: SessionMode) async -> String? {
+        await spawn(SessionSeed(mode: mode, workItem: workItem))
+    }
+
     /// The same spawn in another Session's folder (#546). Seeded with that Session's cwd and
     /// nothing else: a fresh start on the same branch, not a handoff, so no brief and no prompt.
     func spawnSession(beside sessionID: String) async -> String? {
-        do {
-            guard let cwd = hub.sessions.first(where: { $0.id == sessionID })?.cwd else {
-                throw AgentSpawnError.hostRefused(
-                    detail: "Argo does not know which folder that Session was running in",
-                )
-            }
-            return try await hub.spawnSession(seed: SessionSeed(cwd: cwd)).value
-        } catch let failure as AgentSpawnError {
-            report(detail: failure.detail)
-        } catch {
-            report(detail: error.localizedDescription)
+        guard let cwd = hub.sessions.first(where: { $0.id == sessionID })?.cwd else {
+            report(detail: "Argo does not know which folder that Session was running in")
+            return nil
         }
-        return nil
+        return await spawn(SessionSeed(cwd: cwd))
     }
 
     /// Hand a full Session's work to a fresh one (#513): `/handoff` in its own terminal, the wait

@@ -59,6 +59,7 @@ struct ArgoApp: App {
                         connect: connectSurface,
                         health: accounts.connections,
                         workItems: accounts.workItems,
+                        workItemAddress: accounts.workItemAddress,
                     )
                     .environment(navigation)
                     .task {
@@ -156,7 +157,7 @@ struct ArgoApp: App {
     }
 
     private var actions: CockpitActions {
-        CockpitActions(
+        var actions = CockpitActions(
             refreshCheckout: { Task { await cockpit.refreshCheckout() } },
             retryConnection: { Task { await cockpit.retryConnection() } },
             selectProject: { id in Task { await cockpit.select(projectID: id) } },
@@ -198,5 +199,10 @@ struct ArgoApp: App {
                 await gitWorkspaceFileRead(URL(fileURLWithPath: root))
             },
         )
+        // The Work room's two provider acts, split across the coordinators that own them the way
+        // the Connect panel's are: the create is a Binding act, and the spawn is the Hub's (#872).
+        actions.work.createWorkItem = { await accounts.createWorkItem($0) }
+        actions.work.startSession = { await cockpit.spawnSession(on: $0, mode: $1) }
+        return actions
     }
 }

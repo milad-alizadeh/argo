@@ -21,6 +21,8 @@ struct HubSpawnTests {
         #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
         #expect(fixture.hub.sessions.map(\.status) == [.idle])
         #expect(fixture.hub.sessions.map(\.sourceURL) == [nil])
+        // A New Session is started on no ticket, which is absence and not a number (#872).
+        #expect(fixture.hub.sessions.map(\.workItem) == [nil])
     }
 
     @Test
@@ -167,6 +169,31 @@ struct HubSpawnTests {
         // And it is still there — still owned, still steerable — when you come back.
         #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
         await fixture.hub.disconnect()
+    }
+
+    /// #872: the Work room starts a Session ON a ticket, and the claim is what reads back.
+    @Test
+    func `a spawn seeded with a ticket names it from the row's first moment`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+
+        _ = try await fixture.hub.spawnSession(seed: SessionSeed(workItem: 872))
+
+        #expect(fixture.hub.sessions.map(\.workItem) == [872])
+    }
+
+    /// The whole reason it is filed under the claim: the row is re-keyed to the id the CLI picks,
+    /// and a ticket held on the row alone would go with it.
+    @Test
+    func `the ticket survives the record replacing the spawn's row`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        _ = try await fixture.hub.spawnSession(seed: SessionSeed(workItem: 872))
+
+        await hubObserveToEnd(fixture.hub, Self.observedSpawn(of: fixture))
+
+        #expect(fixture.hub.sessions.map(\.id) == ["session-from-cli"])
+        #expect(fixture.hub.sessions.map(\.workItem) == [872])
     }
 
     @Test

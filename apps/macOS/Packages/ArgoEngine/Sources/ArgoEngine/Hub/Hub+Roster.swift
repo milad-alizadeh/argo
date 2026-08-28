@@ -61,6 +61,9 @@ extension Hub {
         // The rung falls back to the row's own, which is where a spawn's lives until something
         // sets a second one.
         published.modeSet = facts.modeSet ?? session.modeSet
+        // The ticket falls back to the row's own for the reason the rung does: a provisional row
+        // carries what it was spawned with until the claim is bound to a Session id (#872).
+        published.workItem = facts.workItem ?? session.workItem
         published.lostTurn = facts.lostTurn
         // Read through the claim rather than as recorded: the fresh row is re-keyed to its CLI's
         // own id the moment its record appears, and the link has to follow it there.

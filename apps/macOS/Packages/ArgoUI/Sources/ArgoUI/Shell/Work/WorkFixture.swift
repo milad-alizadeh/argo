@@ -129,6 +129,10 @@ enum WorkFixture {
     /// The Project the design's renders are shot in — this repo, by the name the window carries.
     static let project = "argo"
 
+    /// The Binding behind `bound`, addressed — what the room's two link verbs are drawn live off
+    /// (#872). The repo the titles above were taken from, so a render's link goes where it says.
+    static let address = WorkItemAddress(provider: .github, scope: "milad-alizadeh/argo")
+
     static func item(_ number: Int, blockedBy: [WorkItemBlocker]) -> WorkItem {
         WorkItem(
             number: number, title: "A ticket behind an edge", status: "Todo", closure: .open,

@@ -53,3 +53,15 @@ struct WorkChromeSpecimen: View {
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
     }
 }
+
+/// What New ticket opens (#872), on the ground the app puts it on. A sheet is a surface OVER the
+/// window, so it is rendered centred rather than in a pane of its own.
+struct NewTicketComposerSpecimen: View {
+    @State private var composition = TicketComposition()
+
+    var body: some View {
+        SpecimenScene.centred {
+            NewTicketComposer(composition: $composition)
+        }
+    }
+}
