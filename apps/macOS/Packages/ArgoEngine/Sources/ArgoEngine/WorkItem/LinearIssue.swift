@@ -28,7 +28,13 @@ struct LinearIssue: Decodable {
     let inverseRelations: LinearNodes<Relation>
 
     struct Assignee: Decodable { let displayName: String }
-    struct Label: Decodable { let name: String }
+
+    /// `color` is `#rrggbb` as Linear spells it.
+    struct Label: Decodable {
+        let name: String
+        let color: String?
+    }
+
     struct Child: Decodable { let number: Int }
 
     struct Relation: Decodable {

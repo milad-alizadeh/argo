@@ -15,7 +15,7 @@ enum LinearDocuments {
       id number title description priorityLabel updatedAt
       state { name type }
       assignee { displayName }
-      labels(first: 50) { nodes { name } }
+      labels(first: 50) { nodes { name color } }
       children(first: 100) { nodes { number } }
       inverseRelations(first: 50) { nodes { type issue { number state { name type } } } }
     }

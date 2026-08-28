@@ -20,6 +20,12 @@ enum LinearAPI {
         return trimmed?.isEmpty == true ? nil : trimmed
     }
 
+    /// A colour in the shape `WorkItemLabel` holds: hex digits, no `#`, which is the `#` Linear
+    /// serves off.
+    static func bareHex(_ value: String?) -> String? {
+        text(value).map { $0.hasPrefix("#") ? String($0.dropFirst()) : $0 }
+    }
+
     /// Linear serves timestamps with fractional seconds, which the bare `.iso8601` strategy will
     /// not parse, and older ones without, which the fractional strategy will not. Both are tried,
     /// and `nil` is what neither reads: an invented age would put a ticket at the head of a

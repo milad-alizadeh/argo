@@ -16,6 +16,10 @@ struct LinearIssueJSON {
     var category = "unstarted"
     var priority: String?
     var labels: [String] = []
+    /// The `color` Linear serves beside a label name, per label, `#`-prefixed as its API spells it.
+    /// A name missing from here has its key DROPPED rather than nulled, which is the shape a label
+    /// carrying no colour arrives in.
+    var labelColours: [String: String] = [:]
     var assignee: String?
     var body: String?
     var children: [Int] = []
@@ -36,7 +40,7 @@ struct LinearIssueJSON {
           "updatedAt": \(Self.quoted(updated)),
           "state": { "name": "\(state)", "type": "\(category)" },
           "assignee": \(assignee.map { #"{ "displayName": "\#($0)" }"# } ?? "null"),
-          "labels": { "nodes": [\(Self.objects(labels, named: "name"))] },
+          "labels": { "nodes": [\(labelObjects)] },
           "children": { "nodes": [\(Self.numbers(children))] },
           "inverseRelations": { "nodes": [\(relations)] } }
         """
@@ -66,6 +70,14 @@ struct LinearIssueJSON {
         """
     }
 
+    private var labelObjects: String {
+        labels.map { name in
+            let colour = labelColours[name].map { #", "color": "\#($0)""# } ?? ""
+            return #"{ "name": "\#(name)"\#(colour) }"#
+        }
+        .joined(separator: ",")
+    }
+
     private var relations: String {
         let blocking = blockers.map { Self.edge("blocks", $0.number, $0.category) }
         return (blocking + related.map { Self.edge("related", $0, "unstarted") })
@@ -85,9 +97,5 @@ struct LinearIssueJSON {
 
     private static func numbers(_ numbers: [Int]) -> String {
         numbers.map { #"{ "number": \#($0) }"# }.joined(separator: ",")
-    }
-
-    private static func objects(_ names: [String], named key: String) -> String {
-        names.map { #"{ "\#(key)": "\#($0)" }"# }.joined(separator: ",")
     }
 }

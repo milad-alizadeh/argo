@@ -107,6 +107,24 @@ struct LinearListingTests {
     }
 
     @Test
+    func `a label's colour arrives bare, as GitHub's already does`() async throws {
+        let (items, _) = try await Self.list([
+            LinearIssueJSON(number: 12, labels: ["engine"], labelColours: ["engine": "#5E6AD2"]),
+        ])
+
+        #expect(items.first?.labels == [WorkItemLabel(name: "engine", colour: "5E6AD2")])
+    }
+
+    @Test
+    func `a label Linear served no colour for keeps none`() async throws {
+        let (items, _) = try await Self.list([
+            LinearIssueJSON(number: 12, labels: ["engine"]),
+        ])
+
+        #expect(items.first?.labels.map(\.colour) == [nil])
+    }
+
+    @Test
     func `a team this identity cannot see is a failed read, never an empty backlog`() async {
         // Linear is GraphQL, so this arrives as a 200 with a null team rather than as a 404.
         let api = RecordedLinear(replies: ["query TeamIssues": #"{ "data": { "team": null } }"#])
