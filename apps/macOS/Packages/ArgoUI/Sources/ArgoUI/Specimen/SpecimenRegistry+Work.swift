@@ -15,7 +15,7 @@ extension SpecimenRegistry {
         // The view is what the DECK draws, not just a number in the rail — the one render that
         // shows the sidebar's selection reaching the pane beside it.
         SpecimenEntry("blockedWorkView") {
-            WorkPanesSpecimen(reading: WorkFixture.reading, opening: .blocked)
+            WorkPanesSpecimen(reading: WorkFixture.reading, opening: .init(view: .blocked))
         },
         // The hero's three degraded tiers and its one-chip state (#817). Each is its own reading
         // rather than its own card: the tier is arithmetic over the backlog, so a specimen that
@@ -27,7 +27,10 @@ extension SpecimenRegistry {
         // in for the five rows it is holding, and the Children section naming them anyway. It is
         // seeded rather than clicked because everything opens open.
         SpecimenEntry("collapsedWorkBacklog") {
-            WorkPanesSpecimen(reading: WorkFixture.reading(showing: 607), folded: [607])
+            WorkPanesSpecimen(
+                reading: WorkFixture.reading(showing: 607),
+                opening: .init(folded: [607]),
+            )
         },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
         // A parent, deep: two Deliveries stacked, nine children rolled up over the five that are
@@ -50,40 +53,38 @@ extension SpecimenRegistry {
         // The toolbar row alone, in its three states (#816). At rest it is read off `workRoom`
         // above, over the panes it places its controls against; these two are the vacancies, which
         // differ in nothing BUT the row.
-        // The Route, and the same chart as its tree (#335). `route.png` is shot at a 1600 window
-        // rather than 1280, because the canvas widens when the work needs room rather than
-        // compressing to fit.
-        SpecimenEntry("chartRoute") {
-            WorkPanesSpecimen(
-                reading: WorkFixture.reading,
-                chart: WorkFixture.chart,
-                presentation: .map,
-            )
-        },
-        SpecimenEntry("chartTree") {
-            WorkPanesSpecimen(
-                reading: WorkFixture.reading,
-                chart: WorkFixture.chart,
-                presentation: .tree,
-            )
-        },
-        // Day one: every open child blocked, the line at the LEFT WALL with all of the work ahead
-        // of it. The state that must not read as finished, which is why waiting is a quiet neutral
-        // rather than red.
-        SpecimenEntry("dayOneRoute") {
-            RouteCanvasSpecimen(room: WorkFixture.dayOneChartRoom)
-        },
-        // The same chart finished: the line has walked past all of the work.
-        SpecimenEntry("resolvedRoute") {
-            RouteCanvasSpecimen(room: WorkFixture.resolvedChartRoom)
-        },
-        // The toggle alone, both positions. A written union of two, and the one control this ticket
-        // adds to the room.
-        SpecimenEntry("roomPresentation") { RoomPresentationSpecimen() },
         SpecimenEntry("workToolbar") { WorkToolbarSpecimen(reading: WorkFixture.reading) },
         SpecimenEntry("emptyWorkToolbar") {
             WorkToolbarSpecimen(reading: WorkFixture.answeredEmpty)
         },
         SpecimenEntry("unboundWorkToolbar") { WorkToolbarSpecimen(reading: WorkFixture.unbound) },
+        // The Route (#335). `route.png` is shot at a 1600 window rather than 1280, because the
+        // canvas widens when the work needs room rather than compressing to fit.
+        SpecimenEntry("chartRoute") {
+            WorkPanesSpecimen(
+                reading: WorkFixture.reading,
+                opening: .chart(WorkFixture.chart, .map),
+            )
+        },
+        // The same chart as its tree, which is what the toggle switches between.
+        SpecimenEntry("chartTree") {
+            WorkPanesSpecimen(
+                reading: WorkFixture.reading,
+                opening: .chart(WorkFixture.chart, .tree),
+            )
+        },
+        // Day one: every open child blocked, the line at the LEFT WALL with all of the work ahead
+        // of it. The state that must not read as finished, which is why waiting is a quiet neutral.
+        SpecimenEntry("dayOneRoute") { RouteCanvasSpecimen(room: WorkFixture.dayOneChartRoom) },
+        // The same chart finished: the line has walked past all of the work.
+        SpecimenEntry("resolvedRoute") { RouteCanvasSpecimen(room: WorkFixture.resolvedChartRoom) },
+        // Closed work past one column's row cap, so the band wraps into a second column and the
+        // line stands a column further right — its position is the progress bar.
+        SpecimenEntry("longTailRoute") { RouteCanvasSpecimen(room: WorkFixture.longTailChartRoom) },
+        // A provider serving no edges at all: every open child answers an unknown distance, so the
+        // route collapses to one takeable column rather than failing.
+        SpecimenEntry("edgelessRoute") { RouteCanvasSpecimen(room: WorkFixture.edgelessChartRoom) },
+        // The toggle alone: both positions, and the disabled state a chart with no Route leaves it.
+        SpecimenEntry("roomPresentation") { RoomPresentationSpecimen() },
     ]
 }

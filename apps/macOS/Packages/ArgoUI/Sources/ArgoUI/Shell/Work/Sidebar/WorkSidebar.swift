@@ -14,9 +14,7 @@ struct WorkSidebar: View {
     /// Which view is open. A binding and not this pane's own state: it decides which rows the DECK
     /// draws, so the room is derived from it before either half is built.
     @Binding var view: WorkView
-    /// Which chart the deck is scoped to, and `nil` on a view (#335). Held APART from the view
-    /// rather than folded into one selection, so leaving a chart puts the reader back on the rows
-    /// they left rather than on `All open`.
+    /// Which chart the deck is scoped to, and `nil` on a view (#335).
     @Binding var chart: Int?
 
     var body: some View {
@@ -35,9 +33,8 @@ struct WorkSidebar: View {
         }
     }
 
-    /// The rail's one selection, standing for the two facts held above it. A derived binding rather
-    /// than a third piece of state: a `List` selects one row, and a second stored selection is how
-    /// a highlighted chart comes to disagree with the rows in the pane beside it.
+    /// The rail's one selection, derived from the two facts held above it rather than stored — a
+    /// `List` selects one row, so a second stored selection could disagree with the pane beside it.
     private var selection: Binding<WorkSelection> {
         Binding(
             get: { WorkSelection(view: view, chart: chart) },

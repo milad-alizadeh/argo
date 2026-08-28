@@ -37,37 +37,34 @@ struct WorkPanesSpecimen: View {
     /// Seeded from the reading, so a specimen opens with the list's selection on the ticket the
     /// pane beside it is drawing — the two are one act in the app and must not part in a render.
     @State private var ticket: Int?
-    /// Seeded from `opening` rather than parameterised, so the room still switches views when a
-    /// person drives it — a specimen names a starting state, it does not freeze one.
+    /// Seeded rather than parameterised, so the room still switches when a person drives it: a
+    /// specimen names a starting state, it does not freeze one.
     @State private var view: WorkView
-    /// Seeded the same way, and the reason a folded parent can be SHOT: everything opens open, so
-    /// `collapsed.png` is a state nobody could reach without clicking (#814).
     @State private var shut: Set<Int>
-    /// Which chart the deck is scoped to, and which parents are on `Map` (#335). Seeded on the same
-    /// terms as the fold: a chart's Route is a state the shipping shell can be CLICKED into, and a
-    /// specimen names a starting state rather than freezing one.
     @State private var chart: Int?
     @State private var mapped: Set<Int>
 
-    init(reading: WorkReading, opening: WorkView = .allOpen, folded: Set<Int> = []) {
+    init(reading: WorkReading, opening: Opening = Opening()) {
         self.reading = reading
-        _view = State(initialValue: opening)
-        _shut = State(initialValue: folded)
+        _view = State(initialValue: opening.view)
+        _shut = State(initialValue: opening.folded)
         _ticket = State(initialValue: reading.showing)
-        _chart = State(initialValue: nil)
-        _mapped = State(initialValue: [])
+        _chart = State(initialValue: opening.chart)
+        _mapped = State(initialValue: opening.chart
+            .map { opening.presentation == .map ? [$0] : [] } ?? [])
     }
 
-    /// The room opened straight onto one chart, in one presentation. Its own init rather than two
-    /// more defaulted parameters above: the two are one act, and every render that names a chart
-    /// names a presentation with it.
-    init(reading: WorkReading, chart: Int, presentation: WorkPresentation) {
-        self.reading = reading
-        _view = State(initialValue: .allOpen)
-        _shut = State(initialValue: [])
-        _ticket = State(initialValue: reading.showing)
-        _chart = State(initialValue: chart)
-        _mapped = State(initialValue: presentation == .map ? [chart] : [])
+    /// What a render starts on. A value rather than four more parameters — the cap is three, and a
+    /// chart and the presentation it opens in are one act.
+    struct Opening {
+        var view = WorkView.allOpen
+        var folded: Set<Int> = []
+        var chart: Int?
+        var presentation = WorkPresentation.tree
+
+        static func chart(_ number: Int, _ presentation: WorkPresentation) -> Opening {
+            Opening(chart: number, presentation: presentation)
+        }
     }
 
     var body: some View {

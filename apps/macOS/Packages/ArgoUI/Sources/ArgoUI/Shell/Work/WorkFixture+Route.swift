@@ -1,46 +1,69 @@
 import ArgoEngine
 
-/// The chart-scoped readings the Route's renders and previews are shot from (#335).
-///
-/// The chart is #607, the same parent `deep.png` opens on and the same one the design study's own
-/// Route draws — so the map and the tree beside it are two presentations of one real set of tickets
-/// rather than two fixtures that happen to agree.
+/// The chart-scoped readings the Route's renders and previews are shot from (#335). The chart is
+/// #607 — the parent `deep.png` opens on — so the map and the tree beside it are two presentations
+/// of one real set of tickets.
 extension WorkFixture {
-    /// The chart the Route is read over.
     static let chart = 607
 
-    /// The room scoped to that chart, mid-flight: two children closed behind the line, three
-    /// takeable on it, and two ahead in the columns their blockers put them in.
+    /// Mid-flight: two children closed behind the line, three takeable on it, two ahead.
     static let chartRoom = WorkRoomProjection.room(from: reading, chart: chart)
 
-    /// A chart on DAY ONE — every open child blocked, so the line stands at the left wall with all
-    /// of the work ahead of it. The one state a progress axis has to survive without reading as
-    /// finished.
+    /// Day one — every open child blocked, so nothing is takeable and the line stands at the left
+    /// wall.
     static let dayOneChartRoom = WorkRoomProjection.room(from: reading(of: dayOne), chart: chart)
 
-    /// The same chart FINISHED: the line has walked past all of the work and there is nothing on it
-    /// or ahead of it.
+    /// Finished: the line has walked past all of the work.
     static let resolvedChartRoom = WorkRoomProjection
         .room(from: reading(of: items.map(resolved)), chart: chart)
 
-    /// The same chart over a provider that exposes NO dependency edges. Every open child answers an
-    /// unknown distance, which degrades down to the nearest column — so the whole route collapses
-    /// to one takeable column and still renders (`edgeless.png`'s provider, on the axis).
+    /// A provider that serves no dependency edges at all. Every open child answers an unknown
+    /// distance, which degrades down, so the route collapses to one takeable column.
     static let edgelessChartRoom = WorkRoomProjection.room(from: edgeless, chart: chart)
 
-    /// Every open child of the chart blocked behind ONE open ticket outside it — which is what a
-    /// parent looks like the day it is charted, and the only honest way to reach an empty line: a
-    /// DAG always has a source, so blocking the children behind each other would leave one
-    /// takeable.
+    /// More closed children than one column holds, so the closed band wraps (#334 — closed work is
+    /// a list, not a graph). Unreachable from the twelve-ticket fixture.
+    static let longTailChartRoom = WorkRoomProjection
+        .room(from: reading(of: longTail), chart: longTailChart)
+
+    private static let longTailChart = 800
+
+    /// Every open child of the chart blocked behind one open ticket OUTSIDE it. A DAG always has a
+    /// source, so blocking the children behind each other would leave one of them takeable.
     private static let dayOne: [WorkItem] = items.map { item in
         guard item.closure == .open, chartChildren.contains(item.number) else { return item }
         return WorkItem(copying: item, blockedBy: [WorkItemBlocker(number: gate, closure: .open)])
     }
 
-    /// The ticket every child waits on. Open, and NOT one of them.
+    /// The ticket every child waits on: open, and not one of them.
     private static let gate = 763
 
     private static let chartChildren = Set(
         items.first { $0.number == chart }?.children ?? [],
     )
+
+    private static let longTail: [WorkItem] = {
+        let closed = (1 ... ArgoRoute.behindRowCap + 3).map { step in
+            WorkItem(
+                number: 810 + step,
+                title: "A shipped step, number \(step)",
+                status: "Done",
+                closure: .resolved,
+                blockedBy: [],
+            )
+        }
+        let takeable = WorkItem(
+            number: 809, title: "What is left to do", status: "Todo", closure: .open, blockedBy: [],
+        )
+        let parent = WorkItem(
+            number: longTailChart,
+            title: "A chart most of the way through its work",
+            status: "In progress",
+            closure: .open,
+            type: "PRD",
+            children: [takeable.number] + closed.map(\.number),
+            blockedBy: [],
+        )
+        return [parent, takeable] + closed
+    }()
 }

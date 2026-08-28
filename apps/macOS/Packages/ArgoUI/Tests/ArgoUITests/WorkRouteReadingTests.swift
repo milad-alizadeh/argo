@@ -2,29 +2,25 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// What a Route stop SAYS, and what it refuses to say (#335).
-///
-/// Every rendered word is the tracker's own — the status word verbatim, the tag off the ticket's
-/// own type or label. Where a provider served nothing, the stop falls back to Argo's neutral bucket
-/// name rather than inventing vocabulary, and where it served no edges the placement degrades to
-/// one takeable column instead of failing.
+/// What a Route stop says, and what it refuses to say (#335). Every rendered word is the tracker's
+/// own; where it served none, Argo's neutral bucket name stands in.
 @Suite("A Route stop speaks the tracker's words")
 struct WorkRouteReadingTests {
     @Test
     func `the provider's status word renders verbatim`() throws {
         let route = try #require(WorkFixture.chartRoom.chart?.route)
 
-        #expect(word(of: 609, in: route) == "In progress")
-        #expect(word(of: 388, in: route) == "In progress")
-        #expect(word(of: 690, in: route) == "Done")
+        #expect(WorkRouteFixture.stop(609, in: route)?.word == "In progress")
+        #expect(WorkRouteFixture.stop(388, in: route)?.word == "In progress")
+        #expect(WorkRouteFixture.stop(690, in: route)?.word == "Done")
     }
 
     /// A ticket the provider named and said nothing else about. `open` is Argo's own bucket, and it
     /// is a FALLBACK — a ticket carrying a word renders that word however Argo would file it.
     @Test
     func `a ticket with no status word falls back to Argo's bucket`() throws {
-        let parent = Self.node(1, children: [2])
-        let wordless = WorkItem(number: 2, title: "#2", status: "", closure: .open)
+        let parent = WorkRouteFixture.node(1, children: [2])
+        let wordless = WorkRouteFixture.wordless(2)
         let route = try #require(WorkRoomProjection.route(of: parent, among: [parent, wordless]))
 
         #expect(route.stops.first?.word == "open")
@@ -34,8 +30,8 @@ struct WorkRouteReadingTests {
     /// the provider's closure and Argo's own claim — so the fallback moves with the claim.
     @Test
     func `a claimed ticket with no word falls back to claimed`() throws {
-        let parent = Self.node(1, children: [2])
-        let wordless = WorkItem(number: 2, title: "#2", status: "", closure: .open)
+        let parent = WorkRouteFixture.node(1, children: [2])
+        let wordless = WorkRouteFixture.wordless(2)
         let route = try #require(
             WorkRoomProjection.route(of: parent, among: [parent, wordless], claimed: [2]),
         )
@@ -50,8 +46,8 @@ struct WorkRouteReadingTests {
     func `a typed ticket wears its type, not one of its labels`() throws {
         let route = try #require(WorkFixture.chartRoom.chart?.route)
 
-        #expect(tag(of: 272, in: route) == "task")
-        #expect(tag(of: 334, in: route) == "PRD")
+        #expect(WorkRouteFixture.stop(272, in: route)?.tag == "task")
+        #expect(WorkRouteFixture.stop(334, in: route)?.tag == "PRD")
     }
 
     /// A child the provider only LABELLED wears its first label instead, which is what makes the
@@ -61,7 +57,7 @@ struct WorkRouteReadingTests {
     /// reaching for one by pattern would be Argo ranking somebody else's topics (#160).
     @Test
     func `an untyped ticket wears its first label`() throws {
-        let parent = Self.node(1, children: [2, 3])
+        let parent = WorkRouteFixture.node(1, children: [2, 3])
         let triaged = WorkItem(
             number: 2, title: "#2", status: "Todo", closure: .open,
             labels: ["ready-for-agent", "ui"],
@@ -71,8 +67,8 @@ struct WorkRouteReadingTests {
             WorkRoomProjection.route(of: parent, among: [parent, triaged, bare]),
         )
 
-        #expect(tag(of: 2, in: route) == "ready-for-agent")
-        #expect(tag(of: 3, in: route) == nil)
+        #expect(WorkRouteFixture.stop(2, in: route)?.tag == "ready-for-agent")
+        #expect(WorkRouteFixture.stop(3, in: route)?.tag == nil)
     }
 
     /// A dependency cycle RESOLVES. It resolves to the wrong column — a ring has no honest distance
@@ -80,10 +76,10 @@ struct WorkRouteReadingTests {
     /// rather than recursing without bound.
     @Test
     func `a dependency cycle resolves rather than recursing`() throws {
-        let parent = Self.node(1, children: [2, 3])
+        let parent = WorkRouteFixture.node(1, children: [2, 3])
         let ring = [
-            Self.node(2, blockedBy: [WorkItemBlocker(number: 3, closure: .open)]),
-            Self.node(3, blockedBy: [WorkItemBlocker(number: 2, closure: .open)]),
+            WorkRouteFixture.node(2, blockedBy: [WorkItemBlocker(number: 3, closure: .open)]),
+            WorkRouteFixture.node(3, blockedBy: [WorkItemBlocker(number: 2, closure: .open)]),
         ]
         let route = try #require(WorkRoomProjection.route(of: parent, among: [parent] + ring))
 
@@ -108,8 +104,11 @@ struct WorkRouteReadingTests {
     /// read.
     @Test
     func `a blocker outside the listing puts its dependent one column out`() throws {
-        let parent = Self.node(1, children: [2])
-        let child = Self.node(2, blockedBy: [WorkItemBlocker(number: 99, closure: .open)])
+        let parent = WorkRouteFixture.node(1, children: [2])
+        let child = WorkRouteFixture.node(
+            2,
+            blockedBy: [WorkItemBlocker(number: 99, closure: .open)],
+        )
         let route = try #require(WorkRoomProjection.route(of: parent, among: [parent, child]))
 
         #expect(route.stops.first?.zone == .ahead)
@@ -120,27 +119,13 @@ struct WorkRouteReadingTests {
     /// disagrees with the GitHub and Linear UIs here, and this is where that shows on the axis.
     @Test
     func `a ruled-out blocker keeps its dependent ahead of the line`() throws {
-        let parent = Self.node(1, children: [2])
-        let child = Self.node(2, blockedBy: [WorkItemBlocker(number: 3, closure: .ruledOut)])
+        let parent = WorkRouteFixture.node(1, children: [2])
+        let child = WorkRouteFixture.node(
+            2,
+            blockedBy: [WorkItemBlocker(number: 3, closure: .ruledOut)],
+        )
         let route = try #require(WorkRoomProjection.route(of: parent, among: [parent, child]))
 
         #expect(route.stops.first?.zone == .ahead)
-    }
-
-    private func word(of number: Int, in route: WorkRoomProjection.Route) -> String? {
-        route.stops.first { $0.id == number }?.word
-    }
-
-    private func tag(of number: Int, in route: WorkRoomProjection.Route) -> String? {
-        route.stops.first { $0.id == number }?.tag
-    }
-
-    private static func node(
-        _ number: Int,
-        blockedBy: [WorkItemBlocker] = [],
-        children: [Int] = [],
-    )
-        -> WorkItem {
-        WorkRoutePlacementTests.node(number, blockedBy: blockedBy, children: children)
     }
 }

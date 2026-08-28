@@ -15,13 +15,11 @@ struct WorkRoom {
     /// Which view is open. Above the room too, and for a sharper reason: `room.backlog` is already
     /// filtered to it, so the selection has to be settled before the room is derived.
     @Binding var view: WorkView
-    /// Which chart the deck is scoped to, and `nil` on a view (#335). Above the room for the same
-    /// reason the view is: it decides which rows the room is derived over.
+    /// Which chart the deck is scoped to, and `nil` on a view. It decides which rows the room is
+    /// derived over, so it is settled before either half is built (#335).
     @Binding var chart: Int?
-    /// Which parents the reader has switched to `Map`. A SET and not one value, because the toggle
-    /// is map-scoped: mapping one parent leaves every other on whatever it had. Empty until
-    /// somebody switches something — a chart opens as its tree, which is the presentation that
-    /// works whether or not its edges were served.
+    /// Which parents the reader has switched to `Map`. A set, because the toggle is map-scoped.
+    /// Empty until somebody switches: a chart opens as its tree.
     @Binding var mapped: Set<Int>
     /// Which parents the reader has folded. Above the room for the same reason the ticket is: a
     /// fold outlives the pane. **Everything opens open**, so it is empty until somebody folds
@@ -39,10 +37,8 @@ struct WorkRoom {
     /// the two things the row HOLDS are the window's rather than the room's — see `WorkToolbar` for
     /// why the row settles its columns by claiming the backlog's width.
     ///
-    /// A chart's deck carries its own head, so the row EMPTIES for it (`cockpit-work-room.md`): a
-    /// backlog heading and a ticket count over a progress axis would be naming a pane that is not
-    /// on screen. Decided here rather than inside the projection, which is handed the room and the
-    /// view and would need a third reading to know what replaced them.
+    /// A chart's deck carries its own head, so the row empties for it (`cockpit-work-room.md`): a
+    /// backlog heading over a progress axis names a pane that is not on screen.
     func toolbar(held: WorkToolbar.Held) -> WorkToolbar {
         WorkToolbar(
             reading: room.chart == nil
@@ -72,8 +68,7 @@ struct WorkRoom {
         }
     }
 
-    /// One parent's presentation, off the set of mapped parents. Derived rather than stored, so the
-    /// map-scoped rule is arithmetic instead of something every caller has to remember.
+    /// One parent's presentation, off the set of mapped parents.
     private func presentation(of parent: Int) -> Binding<WorkPresentation> {
         Binding(
             get: { mapped.contains(parent) ? .map : .tree },

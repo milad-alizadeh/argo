@@ -2,12 +2,10 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// Where the Route PUTS each child of a parent (#334, #335).
+/// Where the Route puts each child of a parent (#334, #335).
 ///
-/// Placement is a pure function of children plus blocking edges, so it is tested as one: feed it a
-/// set of tickets, assert the zone and the column each one lands in. No view is mounted and nothing
-/// is snapshotted — a test that rendered the canvas would be asserting SwiftUI's layout, and the
-/// one thing this ticket computes is the geometry the canvas is handed.
+/// Placement is a pure function of children plus blocking edges, so it is tested as one — no view
+/// is mounted and nothing is snapshotted.
 @Suite("The Route places a parent's children")
 struct WorkRoutePlacementTests {
     /// The mid-flight parent the design's own Route is drawn over: #607, nine children, of which
@@ -27,8 +25,8 @@ struct WorkRoutePlacementTests {
     func `an ahead column is the number of closures still to come`() throws {
         let route = try #require(WorkFixture.chartRoom.chart?.route)
 
-        #expect(column(of: 272, in: route) == 1)
-        #expect(column(of: 334, in: route) == 2)
+        #expect(WorkRouteFixture.stop(272, in: route)?.column == 1)
+        #expect(WorkRouteFixture.stop(334, in: route)?.column == 2)
         #expect(route.reach == 2)
     }
 
@@ -78,9 +76,9 @@ struct WorkRoutePlacementTests {
 
     @Test
     func `a single-child parent renders one stop`() throws {
-        let parent = Self.node(1, children: [2])
+        let parent = WorkRouteFixture.node(1, children: [2])
         let route = try #require(
-            WorkRoomProjection.route(of: parent, among: [parent, Self.node(2)]),
+            WorkRoomProjection.route(of: parent, among: [parent, WorkRouteFixture.node(2)]),
         )
 
         #expect(route.stops.map(\.id) == [2])
@@ -92,31 +90,37 @@ struct WorkRoutePlacementTests {
     /// presentation of it — an axis with nothing on it reads as finished work.
     @Test
     func `a parent with no children read has no route`() {
-        let parent = Self.node(1, children: [2, 3])
+        let parent = WorkRouteFixture.node(1, children: [2, 3])
 
         #expect(WorkRoomProjection.route(of: parent, among: [parent]) == nil)
     }
 
-    private func column(of number: Int, in route: WorkRoomProjection.Route) -> Int? {
-        route.stops.first { $0.id == number }?.column
-    }
-
-    /// A ticket for a placement fixture. Titles ARE the numbers: what the Route reads of a child is
-    /// its closure, its edges and its own words, and prose titles would only make the expectations
-    /// longer to read.
-    static func node(
-        _ number: Int,
-        blockedBy: [WorkItemBlocker] = [],
-        children: [Int] = [],
-    )
-        -> WorkItem {
-        WorkItem(
-            number: number,
-            title: "#\(number)",
-            status: "Todo",
-            closure: .open,
-            children: children,
-            blockedBy: blockedBy,
+    /// A ticket OUTSIDE a ring gets the same column whichever order the walk reached the ring in.
+    /// The guard resolves a revisited ticket to `0`; caching that `0` would leave a clean
+    /// dependent's column depending on the order its siblings happened to be charted in.
+    @Test
+    func `a ring does not poison the column of a ticket outside it`() throws {
+        let ring = [
+            WorkRouteFixture.node(2, blockedBy: [WorkItemBlocker(number: 3, closure: .open)]),
+            WorkRouteFixture.node(3, blockedBy: [WorkItemBlocker(number: 2, closure: .open)]),
+        ]
+        let clean = WorkRouteFixture.node(
+            4,
+            blockedBy: [WorkItemBlocker(number: 2, closure: .open)],
         )
+        let enteringAt2 = WorkRouteFixture.node(1, children: [2, 3, 4])
+        let enteringAt3 = WorkRouteFixture.node(1, children: [3, 2, 4])
+
+        let forwards = try #require(
+            WorkRoomProjection.route(of: enteringAt2, among: [enteringAt2, clean] + ring),
+        )
+        let backwards = try #require(
+            WorkRoomProjection.route(of: enteringAt3, among: [enteringAt3, clean] + ring),
+        )
+
+        #expect(WorkRouteFixture.stop(4, in: forwards)?.column == WorkRouteFixture.stop(
+            4,
+            in: backwards,
+        )?.column)
     }
 }

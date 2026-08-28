@@ -2,74 +2,80 @@ import SwiftUI
 
 /// The Route's canvas: the NOW line, and every child of the parent placed against it.
 ///
-/// The geometry is PROGRESS, left to right — closed children behind the line, the takeable set on
-/// it, and blocked children in the column their remaining depth names. The line's position IS the
-/// progress bar: at the start it stands at the left wall with everything ahead of it.
-///
-/// It WIDENS rather than compresses. The canvas is sized from the work in it and scrolls, so
-/// legibility never degrades as a parent grows — #337 is where the step itself starts deriving from
-/// real label widths instead of `ArgoRoute`'s fixed one.
-///
-/// An opaque Work-room surface, not glass and not a card (`cockpit-work-room.md`).
+/// Closed children behind the line, the takeable set on it, blocked children in the column their
+/// remaining depth names. It widens rather than compresses, and scrolls.
 struct RouteCanvas: View {
     @Environment(\.argo) private var argo
 
     let route: WorkRoomProjection.Route
 
     var body: some View {
+        let geometry = RouteGeometry(route: route)
+
         ScrollView([.horizontal, .vertical]) {
             ZStack(alignment: .topLeading) {
-                nowLine
+                nowLine(geometry)
                 ForEach(route.stops) { stop in
                     RouteStop(stop: stop)
-                        .offset(
-                            x: ArgoRoute.x(inZone: stop.zone, column: stop.column),
-                            y: ArgoRoute.y(atRow: stop.row),
-                        )
+                        .offset(x: geometry.x(of: stop), y: geometry.y(of: stop))
                 }
             }
-            .frame(width: width, height: height, alignment: .topLeading)
+            .frame(width: geometry.width, height: geometry.height, alignment: .topLeading)
         }
-        // A `ScrollView` CENTRES content smaller than its viewport, which stood a short route's
-        // line and dots in the middle of an empty deck. The anchor is what top-leads it; a
-        // `maxHeight: .infinity` frame inside cannot, because a scrollable axis is proposed no
-        // height for `.infinity` to reach for.
+        // A `ScrollView` centres content smaller than its viewport, which stood a short route's
+        // line and dots in the middle of an empty deck. A `maxHeight: .infinity` frame inside
+        // cannot fix it, because a scrollable axis is proposed no height for `.infinity` to reach.
         .defaultScrollAnchor(.topLeading)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Ion Blue as current position, at the indicator width the contract already spends on a
-    /// selection edge. It reaches above the first row, where #339 writes its caption.
-    private var nowLine: some View {
+    /// Ion Blue as current position, at the indicator width the contract spends on a selection
+    /// edge.
+    private func nowLine(_ geometry: RouteGeometry) -> some View {
         Rectangle()
             .fill(argo.color.interaction.accent.color)
-            .frame(width: ArgoStroke.indicator, height: height - lineTop)
-            .offset(x: ArgoRoute.nowLineX, y: lineTop)
+            .frame(width: ArgoStroke.indicator, height: geometry.height - geometry.lineTop)
+            .offset(x: geometry.nowLineX, y: geometry.lineTop)
             .accessibilityHidden(true)
-    }
-
-    private var lineTop: CGFloat {
-        ArgoRoute.originY - ArgoRoute.nowLineLift
-    }
-
-    /// As wide as the furthest column plus the label block standing in it. `.ahead` and not the
-    /// zone of any particular stop: `reach` is `0` on a parent with nothing ahead, and the takeable
-    /// column sits at exactly that x.
-    private var width: CGFloat {
-        ArgoRoute.x(inZone: .ahead, column: route.reach)
-            + ArgoRoute.labelWidth + ArgoRoute.trailingPad
-    }
-
-    private var height: CGFloat {
-        ArgoRoute.y(atRow: (route.stops.map(\.row).max() ?? 0) + 1) + ArgoRoute.bottomPad
     }
 }
 
 #Preview("Route canvas — a parent mid-flight") {
-    if let route = WorkFixture.chartRoom.chart?.route {
-        RouteCanvas(route: route)
-            .frame(width: 1000, height: 420)
-            .argoDeckSurface()
-            .argoAppearance()
+    RouteCanvasPreview(room: WorkFixture.chartRoom)
+}
+
+#Preview("Route canvas — day one, everything blocked") {
+    RouteCanvasPreview(room: WorkFixture.dayOneChartRoom)
+}
+
+#Preview("Route canvas — resolved, the line past all the work") {
+    RouteCanvasPreview(room: WorkFixture.resolvedChartRoom)
+}
+
+#Preview("Route canvas — a provider with no dependency edges") {
+    RouteCanvasPreview(room: WorkFixture.edgelessChartRoom)
+}
+
+#Preview("Route canvas — closed work wrapped into a second column") {
+    RouteCanvasPreview(room: WorkFixture.longTailChartRoom)
+}
+
+/// One canvas at the width the deck leaves it, or the reason there is none — so a fixture that
+/// stops producing a Route fails loudly in a preview instead of rendering blank.
+private struct RouteCanvasPreview: View {
+    let room: WorkRoomProjection.Room
+
+    var body: some View {
+        Group {
+            if let route = room.chart?.route {
+                RouteCanvas(route: route)
+            } else {
+                Text("No Route — the fixture served no children")
+                    .argoText(ArgoTypography.rowMeta)
+            }
+        }
+        .frame(width: 1100, height: 460)
+        .argoDeckSurface()
+        .argoAppearance()
     }
 }

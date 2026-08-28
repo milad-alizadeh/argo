@@ -70,6 +70,11 @@ costs nothing inside one Swift module: the minimap re-lays out the feed, so it r
 | `ArgoConnectPanel` | `Shell/Connect/` | the Connect panel's width and the device code's slot in it |
 | `ArgoAgentsRail` | `Shell/Deck/Feed/Agents/` | where the rail opens, and where it collapses to |
 | `ArgoRosterFoot` | `Shell/Sidebar/` | the floor under the roster's archive header |
+| `ArgoWorkSidebar` | `Shell/Work/Sidebar/` | the Work room's rail — its row floor, its glyph column, the hero's insets |
+| `ArgoBacklogList` | `Shell/Work/Backlog/` | the backlog pane's width, its row floor, the twist's slot and the indent |
+| `ArgoTicketDetail` | `Shell/Work/Detail/` | the ticket pane's insets, its fact strip, its chips and its body's steps |
+| `ArgoWorkToolbar` | `Shell/Work/Toolbar/` | the room's toolbar row — its icon buttons and their vessels |
+| `ArgoRoute` | `Shell/Work/Route/` | the Route's axis — the label block, the column and row steps, the NOW line's gutter |
 | `ArgoLayout` | `VisualContract/` | the window's structural proportions — pane widths, minimums, the splits |
 
 `ArgoLayout` is the one that stays, and not as an exception: pane widths and the splits between
