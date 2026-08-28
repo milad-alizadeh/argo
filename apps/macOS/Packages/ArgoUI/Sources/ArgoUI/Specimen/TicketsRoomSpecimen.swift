@@ -26,6 +26,7 @@ struct TicketsRoomSpecimen: View {
             ticketAddress: TicketsFixture.address,
         )
         .environment(navigation)
+        .environment(\.backlogNow, TicketsFixture.asOf)
     }
 }
 
@@ -88,6 +89,9 @@ struct TicketsPanesSpecimen: View {
             tickets.deck
         }
         .argoDeckSurface()
+        // Pinned, so a dated row is shootable at all: measured against the wall clock every shot
+        // of one would read a different age from the last (#897).
+        .environment(\.backlogNow, TicketsFixture.asOf)
     }
 }
 

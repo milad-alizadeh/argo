@@ -1,8 +1,11 @@
 import SwiftUI
 
-/// One row of the backlog: `twist · dot · id · title`, then the ticket's labels and one trailing
-/// fact — a parent's roll-up, or the priority a child does not share with the header over it
-/// (#819).
+/// One row of the backlog: `twist · dot · id · title`, then the ticket's labels and the trailing
+/// region — a blockage mark, then one caption (`cockpit-work-room.md` — the trailing region).
+///
+/// The two trailing marks do not contend. The mark answers whether the ticket can be STARTED
+/// (#896) and the caption says what it is or how long it has sat (#819, #897), so a row that is
+/// both blocked and stale draws both. Which caption wins is `Drawn.caption(asOf:)`'s, told once.
 ///
 /// The INDENT is the row's, not the list's: `List` insets a whole section, and what moves here is
 /// one row against its siblings.
@@ -13,6 +16,8 @@ struct BacklogRow: View {
     /// they stand down instead. Read from the room rather than measured here: a row inside a
     /// `List` is proposed a width it cannot compare against the pane's own.
     @Environment(\.backlogPaneWidth) private var paneWidth
+    /// What the age stamp is measured against, so every row in a band reads one clock.
+    @Environment(\.backlogNow) private var now
 
     let drawn: TicketsRoomProjection.Drawn
     /// Whether the twist points down. Meaningless on a leaf, whose slot draws nothing.
@@ -52,7 +57,12 @@ struct BacklogRow: View {
                 .truncationMode(.tail)
             Spacer(minLength: ArgoBacklogList.gap)
             labels
-            trailing
+            // Inboard of the caption, so the caption keeps the trailing edge it has always been
+            // right-aligned to and an unblocked row is drawn exactly where it was.
+            if let blockage = row.blockage {
+                BlockageMark(blockage: blockage)
+            }
+            caption
         }
         .padding(.leading, ArgoBacklogList.gutter + ArgoBacklogList.indent(atDepth: drawn.depth))
     }
@@ -78,21 +88,21 @@ struct BacklogRow: View {
         }
     }
 
-    /// Which fact wins the slot is `Drawn.trailing`'s, told once. Only the roll-up carries a hover:
-    /// a number nobody can reconcile against the rows under it has to say why on the spot.
-    @ViewBuilder private var trailing: some View {
-        if let fact = drawn.trailing {
+    /// Which fact wins the slot is `Drawn.caption(asOf:)`'s, told once. Only the roll-up carries a
+    /// hover: a number nobody can reconcile against the rows under it has to say why on the spot.
+    @ViewBuilder private var caption: some View {
+        if let fact = drawn.caption(asOf: now) {
             if let rollUp = row.trailing {
-                caption(fact)
+                set(fact)
                     .help("\(rollUp) — the tracker's own count of closed children, including "
                         + "children the backlog does not draw.")
             } else {
-                caption(fact)
+                set(fact)
             }
         }
     }
 
-    private func caption(_ fact: String) -> some View {
+    private func set(_ fact: String) -> some View {
         Text(fact)
             .argoText(ArgoTypography.machineCaption)
             .foregroundStyle(argo.color.text.disabled)
@@ -101,14 +111,25 @@ struct BacklogRow: View {
     }
 
     /// The id is spoken as a number rather than as `#607`, which VoiceOver reads as "number 607".
+    /// The blockage is SPOKEN where the mark is a numeral in a capsule: speech has no capsule, so
+    /// a bare `2` in this sentence would be read as a second id.
     private var announcement: String {
-        ([String(row.id), row.title] + BacklogRowLabels(row.labels).spoken + [drawn.trailing])
-            .compactMap(\.self)
-            .joined(separator: ", ")
+        (
+            [String(row.id), row.title] + BacklogRowLabels(row.labels).spoken
+                + [spokenBlockage, drawn.caption(asOf: now)],
+        )
+        .compactMap(\.self)
+        .joined(separator: ", ")
+    }
+
+    private var spokenBlockage: String? {
+        row.blockage.map {
+            $0.isStranded ? "stranded, \($0.count) blockers" : "blocked by \($0.count)"
+        }
     }
 }
 
-#Preview("Backlog rows — a parent, a leaf, an odd priority and every Delivery state") {
+#Preview("Backlog rows — a roll-up, an odd priority, a blockage mark and an age") {
     let high = TicketsRoomProjection.bands(of: TicketsFixture.room.backlog)[0]
 
     return List {
@@ -121,4 +142,5 @@ struct BacklogRow: View {
     .frame(width: ArgoBacklogList.width, height: 420)
     .argoDeckSurface()
     .argoAppearance()
+    .environment(\.backlogNow, TicketsFixture.asOf)
 }

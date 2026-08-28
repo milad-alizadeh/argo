@@ -1,4 +1,5 @@
 import ArgoEngine
+import Foundation
 
 /// The Tickets room as one value: the sidebar's views, the backlog's rows, and the ticket
 /// the deck is open on.
@@ -76,7 +77,19 @@ enum TicketsRoomProjection {
         let count: Int?
     }
 
-    /// One row of the backlog: `twist · dot · id · title`, plus one trailing fact.
+    /// What a row's blockage mark carries (#896). Built only where there is something to mark, so
+    /// `count` is never zero and the type has no case for "nothing" — `blockage(of:)` returns `nil`
+    /// there instead.
+    struct Blockage: Sendable, Equatable {
+        /// How many blockers still stand. A COUNT and not a flag: blocked by three and blocked by
+        /// one are different distances from startable.
+        let count: Int
+        /// Whether one of those blockers was ruled out, so no amount of waiting clears the edge and
+        /// a human has to re-scope one of the two. It picks the mark's ink, nothing else.
+        let isStranded: Bool
+    }
+
+    /// One row of the backlog: `twist · dot · id · title`, plus the trailing region.
     struct Row: Sendable, Equatable, Identifiable {
         let id: Int
         let title: String
@@ -95,6 +108,13 @@ enum TicketsRoomProjection {
         /// (`TicketsRoomProjection+Tree.swift`). Empty on a leaf, and empty on a parent whose every
         /// child the view filtered out.
         var children: [Row]
+        /// What the blockage mark draws, and `nil` where it draws none (#896). One projection, read
+        /// by the mark here and counted by `Blocked` in the sidebar off the same engine seam.
+        let blockage: Blockage?
+        /// When the provider last saw this ticket change, and `nil` where it served no date at all
+        /// — in which case the row draws none rather than inventing one (#897). LAST TOUCHED and
+        /// not filed: `Ticket.updatedAt` is the only date any adapter reads.
+        let touched: Date?
         /// Whether this row is on screen only because something under it matched the query — always
         /// false where nothing is narrowing, so an unsearched list has no rails in it (#873).
         var isRail = false

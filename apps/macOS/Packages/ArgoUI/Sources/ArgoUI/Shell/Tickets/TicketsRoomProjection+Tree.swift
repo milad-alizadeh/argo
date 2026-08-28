@@ -1,4 +1,5 @@
 import ArgoEngine
+import Foundation
 
 /// The backlog's nesting, derived from the CHILD EDGE (#814). Nothing here reads a nested literal:
 /// the provider serves `children` per item and the shape of the list follows from it, so moving a
@@ -30,10 +31,19 @@ extension TicketsRoomProjection {
             !row.children.isEmpty
         }
 
-        /// The one trailing fact, and the only place the precedence is spelled: a parent's roll-up
-        /// wins the slot, so the two can never collide.
-        var trailing: String? {
-            row.trailing ?? odd
+        /// The one caption the trailing region carries, and the only place its precedence is
+        /// spelled (`cockpit-work-room.md` — the trailing region): a parent's roll-up, then a
+        /// child's odd priority, then the age. First one present wins; the rest are not drawn.
+        ///
+        /// The age is LAST because nearly every row has one — an age that outranked the other two
+        /// would silently delete them from the only list that states them. It is also why nothing
+        /// here defaults: a row the provider served no date for draws no caption, not a gap.
+        ///
+        /// The blockage mark is not in this order. It answers a different question — whether the
+        /// ticket can be started, rather than what it is or how long it has sat — so a row that is
+        /// both blocked and stale draws both rather than choosing.
+        func caption(asOf now: Date) -> String? {
+            row.trailing ?? odd ?? row.touched.map { TicketAge.stamp(since: $0, asOf: now) }
         }
     }
 
@@ -65,6 +75,8 @@ extension TicketsRoomProjection {
                 priority: item.priority,
                 labels: item.labels,
                 children: newest(siblings).map(node),
+                blockage: blockage(of: item),
+                touched: item.updatedAt,
             )
         }
 

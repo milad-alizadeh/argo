@@ -55,6 +55,7 @@ struct BacklogOutline: View {
     .frame(width: ArgoBacklogList.width * 2, height: 420)
     .argoDeckSurface()
     .argoAppearance()
+    .environment(\.backlogNow, TicketsFixture.asOf)
 }
 
 #Preview("Backlog outline — the provider answered with nothing") {
@@ -63,4 +64,5 @@ struct BacklogOutline: View {
         .frame(width: ArgoBacklogList.width, height: 240)
         .argoDeckSurface()
         .argoAppearance()
+        .environment(\.backlogNow, TicketsFixture.asOf)
 }

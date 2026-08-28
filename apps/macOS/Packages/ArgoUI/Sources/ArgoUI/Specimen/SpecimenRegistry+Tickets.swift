@@ -57,6 +57,12 @@ extension SpecimenRegistry {
         SpecimenEntry("unjoinedTicketsProgress") {
             TicketsPanesSpecimen(reading: TicketsFixture.unjoinedClaims)
         },
+        // A ticket whose blocker was RULED OUT (#896). The mark carries the same count and spends
+        // `state.failure` on it, because this one never clears itself — every other blocked row in
+        // the room is waiting on something that can still land.
+        SpecimenEntry("strandedTicketsBacklog") {
+            TicketsPanesSpecimen(reading: TicketsFixture.stranded)
+        },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
         // The head's status pair, over a provider whose word IS the filing and one with words of
         // its own (#893). Every fixture spells "In progress", so no room render reaches the first.
