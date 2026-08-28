@@ -21,29 +21,46 @@ struct NewTicketComposer: View {
     var create: (TicketDraft) -> Void = { _ in }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
+        VStack(alignment: .leading, spacing: ArgoSpacing.section) {
             Text("New ticket")
                 .argoText(ArgoTypography.identityHeading)
                 .foregroundStyle(argo.color.text.primary)
-                .padding(.horizontal, ArgoSpacing.section)
-                .padding(.top, ArgoSpacing.section)
-            Form {
-                Section {
-                    TextField("Title", text: $composition.title)
-                    TextField("Description", text: $composition.body, axis: .vertical)
-                        .lineLimit(ArgoTicketsChrome.composerBodyLines, reservesSpace: true)
-                }
-            }
-            .formStyle(.grouped)
+            fields
             call
-                .padding(.horizontal, ArgoSpacing.section)
-                .padding(.bottom, ArgoSpacing.section)
         }
+        .padding(ArgoSpacing.section)
         .frame(width: ArgoConnectPanel.width, alignment: .leading)
-        // The panel is its CONTENT's height. A grouped `Form` is happy to take whatever it is
-        // given, and without this the two buttons sit at the foot of the window rather than under
-        // the fields they act on — which is what a render of it showed.
+        // The panel is its CONTENT's height, rather than whatever the sheet is given: without this
+        // the two buttons sit at the foot of the window rather than under the fields they act on —
+        // which is what a render of it showed.
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// The two fields, each under its own name (#891).
+    ///
+    /// No `Form`: macOS's grouped form style promotes a field's placeholder to a leading label and
+    /// sets the value trailing, which made this the one place in the cockpit a value was read from
+    /// the right.
+    private var fields: some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.loose) {
+            field("Title") { TextField("", text: $composition.title) }
+            field("Description") {
+                TextField("", text: $composition.body, axis: .vertical)
+                    .lineLimit(ArgoTicketsChrome.composerBodyLines, reservesSpace: true)
+            }
+        }
+    }
+
+    /// One name over what it names, both on the sheet's own leading edge. The name is drawn rather
+    /// than passed as the field's own label, so it carries the cockpit's `GroupLabel` and not the
+    /// platform's; the field keeps it for VoiceOver.
+    private func field(_ name: String, @ViewBuilder editor: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.base) {
+            GroupLabel(name)
+            editor()
+                .multilineTextAlignment(.leading)
+                .accessibilityLabel(name)
+        }
     }
 
     /// Cancel, then the write. The note sits to their leading edge for the reason it does on the
