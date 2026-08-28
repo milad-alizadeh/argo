@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// The Work room, as the PAIR of views the shell's split view slots take.
@@ -22,19 +23,34 @@ struct WorkRoom {
     /// What the unbound page's `Connect a provider…` does. Inert by default, so a preview and a
     /// specimen draw the button without opening a panel behind the render.
     var connect: @MainActor () -> Void = {}
+    /// The two things the room's chrome HOLDS rather than reads — the query in the window's row and
+    /// the Mode in the ticket's band. Both outlive the pane, so both are held above the room; one
+    /// value rather than two members, because a binding pair travels together (the `DeckSeams`
+    /// shape).
+    var held = Held.unheld
+
+    struct Held {
+        var query: Binding<String>
+        var mode: Binding<SessionMode>
+
+        /// Nothing remembers either, for a `#Preview` and a specimen with no window above them.
+        static let unheld = Held(query: .constant(""), mode: .constant(.code))
+    }
 
     var sidebar: some View {
         WorkSidebar(room: room, cockpitRoom: $cockpitRoom, view: $view)
     }
 
-    /// The room's controls, in the window's one toolbar row. A function and not a property, because
-    /// the two things the row HOLDS are the window's rather than the room's — see `WorkToolbar` for
-    /// why the row settles its columns by claiming the backlog's width.
-    func toolbar(held: WorkToolbar.Held) -> WorkToolbar {
-        WorkToolbar(
-            reading: WorkToolbarProjection.reading(of: room, in: view, showing: ticket),
-            held: held,
-        )
+    /// What the room puts in the WINDOW's row: search, and nothing else. Everything that acts on a
+    /// column is in that column's band, for the reason `WorkToolbar` records.
+    var toolbar: WorkToolbar {
+        WorkToolbar(reading: chrome, query: held.query)
+    }
+
+    /// Read ONCE and handed to both the band and the row above the ticket, so the count under the
+    /// title and the controls that narrow it can never be two answers about one list.
+    private var chrome: WorkChromeProjection.Reading {
+        WorkChromeProjection.reading(of: room, in: view, showing: ticket)
     }
 
     /// The two panes, OR one of the room's two vacancies — never both.
@@ -43,9 +59,17 @@ struct WorkRoom {
             WorkRoomVacancy(vacancy: vacancy, project: room.project, connect: connect)
         } else {
             HStack(spacing: ArgoSpacing.flush) {
-                BacklogList(rows: room.backlog, selection: $ticket, shut: $shut)
+                BacklogList(
+                    rows: room.backlog,
+                    selection: $ticket,
+                    shut: $shut,
+                    header: chrome,
+                )
                 DeckSeparator()
-                TicketDetail(ticket: room.ticket) { ticket = $0 }
+                TicketDetail(
+                    ticket: room.ticket,
+                    band: TicketBand(reading: chrome, mode: held.mode),
+                ) { ticket = $0 }
             }
         }
     }

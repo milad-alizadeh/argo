@@ -9,10 +9,10 @@ struct ToolbarVessel<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        HStack(spacing: ArgoWorkToolbar.vesselGap) {
+        HStack(spacing: ArgoWorkChrome.vesselGap) {
             content
         }
-        .padding(ArgoWorkToolbar.vesselInset)
+        .padding(ArgoWorkChrome.vesselInset)
         .argoFloatingGlass(in: .capsule)
     }
 }
@@ -29,11 +29,11 @@ struct ToolbarIcon: View {
 
     var body: some View {
         Button(action: act) {
-            ArgoGlyph(symbol, ArgoWorkToolbar.iconSize)
+            ArgoGlyph(symbol, ArgoWorkChrome.iconSize)
                 .foregroundStyle(argo.color.text.tertiary)
                 .frame(
-                    width: ArgoWorkToolbar.iconButtonWidth,
-                    height: ArgoWorkToolbar.iconButtonHeight,
+                    width: ArgoWorkChrome.iconButtonWidth,
+                    height: ArgoWorkChrome.iconButtonHeight,
                 )
                 .contentShape(.capsule)
         }
@@ -50,7 +50,7 @@ struct ToolbarIcon: View {
         }
         ToolbarVessel {
             ToolbarIcon(symbol: ArgoSymbol.filterBacklog, label: "Filter")
-            ToolbarIcon(symbol: ArgoSymbol.groupBacklog, label: "Group by")
+            BacklogMenu()
         }
     }
     .padding(ArgoSpacing.region)

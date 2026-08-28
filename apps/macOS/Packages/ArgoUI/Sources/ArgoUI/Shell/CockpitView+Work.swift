@@ -28,6 +28,7 @@ extension CockpitView {
             view: $navigation.workView,
             shut: $navigation.shutParents,
             connect: { actions.openProjectPanel(presentation.activeProjectID) },
+            held: WorkRoom.Held(query: $navigation.workQuery, mode: $navigation.workMode),
         )
     }
 
@@ -71,6 +72,14 @@ extension CockpitView {
         }
     }
 
+    /// New Session, in the rooms that make one — `nil` in Work, where the compose mark is the
+    /// ticket's (#836). Assembled here and not in the toolbar builder: a ternary inside
+    /// `ToolbarContentBuilder` is an expression the type-checker gives up on.
+    func spawn(in navigation: CockpitNavigationModel) -> CockpitSpawn? {
+        guard navigation.room.spawnsSessions else { return nil }
+        return CockpitSpawn(presentation: presentation, actions: actions, navigation: navigation)
+    }
+
     /// What the room adds to `ShellToolbar`. The `if` reads a `switch`'s answer rather than testing
     /// the room itself: `ToolbarContentBuilder` has no empty content, so the exhaustiveness the
     /// next room needs has to live in `addsAToolbar` below.
@@ -79,12 +88,7 @@ extension CockpitView {
         @Bindable var navigation = navigation
 
         if navigation.room.addsAToolbar {
-            workRoom.toolbar(
-                held: WorkToolbar.Held(
-                    query: $navigation.workQuery,
-                    mode: $navigation.workMode,
-                ),
-            )
+            workRoom.toolbar
         }
     }
 
@@ -107,6 +111,16 @@ extension CockpitRoom {
         switch self {
         case .work: true
         case .sessions, .code: false
+        }
+    }
+
+    /// Whether the bar spends its one compose verb on New Session here (#836). Work does not: the
+    /// thing that room creates is a ticket, and its own row already carries the compose mark for
+    /// it. `⌘N` and the menu bar are unaffected in every room.
+    var spawnsSessions: Bool {
+        switch self {
+        case .sessions, .code: true
+        case .work: false
         }
     }
 }

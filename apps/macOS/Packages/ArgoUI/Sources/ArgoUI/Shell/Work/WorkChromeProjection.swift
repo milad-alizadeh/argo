@@ -1,20 +1,23 @@
-/// What the Work room's toolbar draws, off the same room value both panes take.
+/// What the Work room's CHROME draws, off the same room value both panes take — the list's own band
+/// and the window row above the ticket, which since #836 are two surfaces reading one value.
 ///
 /// A VALUE and not a read of the panes: the count under the heading has to be the count of the rows
 /// the list is drawing, and two surfaces counting the same set separately is how a heading comes to
 /// disagree with what is under it.
-enum WorkToolbarProjection {
+enum WorkChromeProjection {
     struct Reading: Sendable, Equatable {
         /// What you are looking at. One word, and never enough on its own.
         let heading: String
         /// …and how many, which is the half that stops the heading lying about the filter.
         let subtitle: String
-        /// Whether the list-scoped controls stand: filter, group-by and search. They go together —
-        /// each of them narrows the same list, and with no list there is nothing to narrow.
+        /// Whether the list-scoped controls stand: filter, the ordering menu, and search. They go
+        /// together — each of them narrows the same list, and with no list there is nothing to
+        /// narrow. Two surfaces read this one answer, because the band holds the first two and the
+        /// row above the ticket holds the third.
         let narrows: Bool
-        /// Whether the row draws at all, which is also whether New ticket does: the two coincide,
-        /// because New ticket survives an empty backlog and the only thing that empties the row is
-        /// having nothing to create into.
+        /// Whether the chrome draws at all, which is also whether New ticket does: the two
+        /// coincide, because New ticket survives an empty backlog and the only thing that empties
+        /// the chrome is having nothing to create into.
         let draws: Bool
         /// The ticket the verbs address — the one the deck is OPEN on, not the one at the top of
         /// the list.

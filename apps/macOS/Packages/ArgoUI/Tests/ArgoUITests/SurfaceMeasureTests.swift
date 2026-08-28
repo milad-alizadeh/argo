@@ -99,6 +99,35 @@ struct SurfaceMeasureTests {
         #expect(ArgoTicketDetail.idealWidth < ArgoBacklogList.width)
     }
 
+    /// Both panes carry a band at their head (#836), and the list is what gives up width when the
+    /// window cannot afford both — so the claim worth asserting is that the narrowest window still
+    /// seats all three columns. Under this, a control in the ticket's band meets the window's edge.
+    @Test
+    func `the room's three columns fit the narrowest window`() {
+        let columns = ArgoLayout.sidebarMinimumWidth
+            + ArgoBacklogList.minimumWidth
+            + ArgoLayout.feedMinimumWidth
+
+        #expect(columns <= ArgoLayout.windowMinimumWidth)
+    }
+
+    /// The list yields and the ticket does not, which is what makes a clipped title the room's
+    /// answer to a narrow window rather than an unreachable control.
+    @Test
+    func `the list gives up width before it reaches the ticket's floor`() {
+        #expect(ArgoBacklogList.minimumWidth < ArgoBacklogList.width)
+        #expect(ArgoBacklogList.minimumWidth > ArgoLayout.feedMinimumWidth)
+    }
+
+    /// The band is a FLOOR holding two lines — the title and the count under it — so a height that
+    /// did not clear both would crop the half that stops the title lying about the filter.
+    @Test
+    func `the band clears the two lines it is drawn for`() {
+        let lines = ArgoTypography.windowTitle.lineBox + ArgoTypography.rowMeta.lineBox
+
+        #expect(ArgoBacklogList.bandHeight > lines)
+    }
+
     /// The list is the wider pane, which is the whole reason the backlog left the rail: the design
     /// rejected four rooms that put provider-owned text in a narrow column.
     @Test
