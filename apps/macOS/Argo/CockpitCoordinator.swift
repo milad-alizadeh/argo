@@ -151,7 +151,9 @@ final class CockpitCoordinator {
     /// Sessions losing the work they are on.
     func nameTickets(through resolution: BindingResolution) async {
         guard case let .ready(binding) = resolution else { return }
-        let links = presentation.ticketLinks
+        // The Binding is immaterial to this one read: an unbound provider turns `unlinked` into
+        // `unread`, and neither of those carries a number, so the links are the same either way.
+        let links = presentation(.quiet).ticketLinks
         guard !links.isEmpty else { return }
         annotations = await ticketTitles.resolve(links: links, through: binding)
     }

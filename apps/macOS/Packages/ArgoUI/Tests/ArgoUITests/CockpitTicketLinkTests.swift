@@ -18,7 +18,8 @@ struct CockpitTicketLinkTests {
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
             id: id, title: "Session \(id)", access: .managed, status: .idle,
-            work: .init(issue: ticket.map { .init(number: $0, title: title) }),
+            work: .init(ticket: ticket
+                .map { .linked(.init(number: $0, title: title)) } ?? .unlinked),
         )
     }
 

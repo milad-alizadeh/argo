@@ -30,6 +30,46 @@ enum SessionHeaderProjection {
             let detail: String
         }
 
+        /// What the Issue row draws. The row used to VANISH where nothing was linked, which told
+        /// a reader nothing about whether there was a link to expect or a branch to repair.
+        ///
+        /// Two cases and not three, unlike the reading behind it: `unread` has no row at all, and
+        /// that is the header's `nil` above. The optional is a RENDERING absence — draw nothing
+        /// here — where `TicketLinkReading.unread` is a domain one, and folding them into one
+        /// enum would make every reader of this type answer a question about the Binding.
+        enum IssueRow: Equatable, Sendable {
+            case link(IssueLink)
+            /// A provider is bound and nothing named a Ticket for this Session.
+            case unlinked
+
+            /// The link where the row is one, for the surfaces that draw only a link.
+            var link: IssueLink? {
+                switch self {
+                case let .link(link): link
+                case .unlinked: nil
+                }
+            }
+
+            /// What the row reads as, on the line and out loud. Never blank: a row that draws
+            /// nothing is the absence #894 replaced.
+            var label: String {
+                switch self {
+                case let .link(link): link.label
+                case .unlinked: Header.unlinkedWord
+                }
+            }
+
+            /// The title behind the link, and nothing for the row that is not one.
+            var detail: String? {
+                link?.detail
+            }
+        }
+
+        /// What an unlinked Session's Issue row says. States the reading rather than blaming the
+        /// Session: Argo could not name a Ticket for it, and cutting a branch that says which one
+        /// is the repair.
+        static let unlinkedWord = "No ticket linked"
+
         /// The linked Ticket as the header says it: `Issue #400`, never a bare `#400`. The
         /// detail is the issue's own title where the provider gave one, absent where it did not.
         struct IssueLink: Equatable, Sendable {
@@ -59,7 +99,10 @@ enum SessionHeaderProjection {
         /// What is running: `Claude Code · Opus 5`. Composed of the parts that are present, so a
         /// Session whose record named a model but no CLI reads as the model alone.
         let agent: String?
-        let issue: IssueLink?
+        /// The Issue row: a link where one was read, and the word for the reading where none
+        /// was. `nil` only where no Ticket provider is bound, which is the one state with nothing
+        /// to say (#894).
+        let issue: IssueRow?
         /// The one instrument on the header. Never absent: an unreadable context is still a
         /// context, and the absence lives INSIDE the reading, as `unknown`.
         let context: Context
@@ -82,7 +125,7 @@ enum SessionHeaderProjection {
             checkout: Checkout?,
             marks: [Mark],
             agent: String?,
-            issue: IssueLink?,
+            issue: IssueRow?,
             context: Context,
             spend: String?,
             handoff: Handoff?,
@@ -156,7 +199,7 @@ enum SessionHeaderProjection {
             checkout: checkout(for: session.workspace),
             marks: marks(for: session.workspace),
             agent: agent(cli: session.cli, model: session.model),
-            issue: link(to: session.issue),
+            issue: row(for: session.ticket),
             context: context(tokens: session.contextTokens),
             spend: spend(from: session),
             handoff: handoff(from: session),

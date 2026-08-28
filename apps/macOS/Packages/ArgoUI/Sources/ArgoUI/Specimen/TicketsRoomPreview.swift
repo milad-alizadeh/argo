@@ -37,7 +37,7 @@ extension CockpitPresentation {
                 title: "Working #\($0)",
                 access: .managed,
                 status: .running,
-                work: .init(issue: .init(number: $0)),
+                work: .init(ticket: .linked(.init(number: $0))),
             )
         },
         checkout: .branch("main"),

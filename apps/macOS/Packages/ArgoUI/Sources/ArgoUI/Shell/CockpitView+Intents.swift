@@ -110,7 +110,7 @@ extension CockpitView {
     var handOff: () async -> Void {
         guard let session = presentation.session(navigation.session) else { return {} }
         return {
-            guard let fresh = await actions.handOffSession(session.id, session.issue?.number)
+            guard let fresh = await actions.handOffSession(session.id, session.ticket.link?.number)
             else { return }
             navigation.session = fresh
         }

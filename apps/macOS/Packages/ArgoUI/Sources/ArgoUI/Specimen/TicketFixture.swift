@@ -49,7 +49,7 @@ enum TicketFixture {
                 workspace: .init(
                     kind: .worktree, branch: issue.map { "argo/#\($0.number)-\(id)" } ?? "main",
                 ),
-                issue: issue,
+                ticket: issue.map { .linked($0) } ?? .unlinked,
             ),
         )
     }

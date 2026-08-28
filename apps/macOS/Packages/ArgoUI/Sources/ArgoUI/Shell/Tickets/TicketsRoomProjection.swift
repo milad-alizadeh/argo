@@ -115,7 +115,7 @@ enum TicketsRoomProjection {
         let search = Query.typed(query).map { narrowed(shown, to: $0) }
         let rows = tree(of: search?.items ?? shown, reading: reading, closed: closed)
         return Room(
-            views: views(of: open, claimed: reading.claimed),
+            views: views(of: open, claims: reading.claims),
             provider: reading.provider,
             backlog: search.map { railed(rows, matching: $0.hits) } ?? rows,
             ticket: ticket(in: reading),

@@ -51,6 +51,12 @@ extension SpecimenRegistry {
         SpecimenEntry("unmatchedTicketsBacklog") {
             TicketsPanesSpecimen(reading: TicketsFixture.reading, seed: .init(query: "kubernetes"))
         },
+        // A live Session Argo could not join to a ticket (#894): `In progress` draws NO count,
+        // beside three views that still draw theirs. A zero there would say nothing is in progress
+        // about a machine with an agent running on it.
+        SpecimenEntry("unjoinedTicketsProgress") {
+            TicketsPanesSpecimen(reading: TicketsFixture.unjoinedClaims)
+        },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
         // The head's status pair, over a provider whose word IS the filing and one with words of
         // its own (#893). Every fixture spells "In progress", so no room render reaches the first.

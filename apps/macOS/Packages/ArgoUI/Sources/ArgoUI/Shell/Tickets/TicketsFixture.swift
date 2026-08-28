@@ -79,6 +79,22 @@ enum TicketsFixture {
         )
     }
 
+    /// A live Session on the machine whose own ticket link Argo could not name (#894) — so the
+    /// claim join is INCOMPLETE and `In progress` counts nothing rather than counting the two it
+    /// could see. The other three views are unaffected: their ground was read.
+    ///
+    /// A fixture of its own because no other one reaches this state: every reading here sets
+    /// `claimed` outright, which asserts the join was whole. No render had ever drawn the absent
+    /// count until this one.
+    static let unjoinedClaims = TicketsReading(
+        items: items,
+        claimed: [388, 609],
+        claimsAreWhole: false,
+        provider: bound,
+        project: project,
+        showing: 388,
+    )
+
     /// Every open leaf waiting on something still open, so the hero has nothing to offer and says
     /// which of the three reasons it is.
     static let poolBlocked = reading(of: [

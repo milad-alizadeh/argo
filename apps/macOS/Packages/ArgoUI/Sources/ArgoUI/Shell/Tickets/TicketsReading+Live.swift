@@ -24,6 +24,7 @@ extension TicketsReading {
         TicketsReading(
             items: sources.items,
             claimed: claims(in: sources.sessions),
+            claimsAreWhole: live(in: sources.sessions).allSatisfy(\.ticket.isRead),
             provider: TicketsProvider(reading: sources.health),
             project: sources.project,
             showing: showing,
@@ -36,6 +37,16 @@ extension TicketsReading {
     /// LIVE Sessions only. An ended Session's branch still names the ticket it was cut for, and
     /// counting that as a claim would leave `In progress` filling up for the life of the machine.
     private static func claims(in sessions: [CockpitPresentation.Session]) -> Set<Int> {
-        Set(sessions.filter(\.isLive).compactMap { $0.issue?.number })
+        Set(live(in: sessions).compactMap { $0.ticket.link?.number })
+    }
+
+    /// The Sessions a claim can come from. Read once and asked twice — which tickets they hold,
+    /// and whether that answer is complete — so the count and its honesty cannot disagree about
+    /// which Sessions they were derived over.
+    private static func live(
+        in sessions: [CockpitPresentation.Session],
+    )
+        -> [CockpitPresentation.Session] {
+        sessions.filter(\.isLive)
     }
 }

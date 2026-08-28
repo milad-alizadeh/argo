@@ -30,6 +30,9 @@ public final class SessionOwnership {
         /// on. Absent for a resume, which has its roster id already, and for a CLI that cannot be
         /// told (`AgentCLI.namesFreshSession`).
         let namedUUID: String?
+        /// The Ticket the spawn named for this claim (#894). Here rather than straight in the
+        /// ledger because a fresh CLI has no Session id yet, and the file is keyed by one.
+        var ticket: Int?
     }
 
     /// Main-actor isolated like the registry itself, so a test can hand it a clock it moves by hand

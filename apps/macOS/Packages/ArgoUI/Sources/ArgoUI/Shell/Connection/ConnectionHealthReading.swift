@@ -57,6 +57,12 @@ public struct ConnectionHealthReading: Equatable, Sendable {
     /// resting state, and the one it holds for almost all of a session.
     public static let quiet = ConnectionHealthReading(connections: [])
 
+    /// Whether this Project reads through the given port at all. Unbound ports are absent from
+    /// the reading, so their presence IS the binding — there is no separate flag to disagree with.
+    public func isBound(_ port: AccountPort) -> Bool {
+        connections.contains { $0.port == port }
+    }
+
     public init(connections: [PortConnection]) {
         self.connections = connections
     }

@@ -17,7 +17,7 @@ extension CockpitPresentationTests {
             projects: projects,
             activeProjectID: projects.first?.id,
             hub: hub,
-            annotations: annotations,
+            readings: .init(annotations: annotations),
         )
     }
 

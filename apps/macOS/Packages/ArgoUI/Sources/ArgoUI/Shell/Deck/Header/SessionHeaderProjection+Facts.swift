@@ -57,16 +57,23 @@ extension SessionHeaderProjection {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    /// The issue as a link, and `nil` whenever there is no link to make. No attach affordance:
-    /// with no Ticket provider connected there are no Tickets (`CONTEXT.md` L1).
-    static func link(to issue: CockpitPresentation.Session.Issue?) -> Header.IssueLink? {
-        guard let issue else { return nil }
+    /// The Issue row for a Session's Ticket reading (#894). A bound provider and no link reads as
+    /// unlinked rather than drawing nothing: the row going missing was indistinguishable from a
+    /// header that had not loaded, and it is the one state a reader can repair.
+    ///
+    /// `unread` draws nothing at all, and no attach affordance with it: with no Ticket provider
+    /// connected there are no Tickets to attach (`CONTEXT.md` L1).
+    static func row(for ticket: CockpitPresentation.Session.TicketLinkReading) -> Header.IssueRow? {
+        switch ticket {
+        case .unread: nil
+        case .unlinked: .unlinked
         // Named, never bare: `#400` alone is whatever number the reader last saw one of.
-        return Header.IssueLink(
-            number: issue.number,
-            label: "Issue #\(issue.number)",
-            detail: issue.title,
-        )
+        case let .linked(issue): .link(Header.IssueLink(
+                number: issue.number,
+                label: "Issue #\(issue.number)",
+                detail: issue.title,
+            ))
+        }
     }
 
     private static func countMark(

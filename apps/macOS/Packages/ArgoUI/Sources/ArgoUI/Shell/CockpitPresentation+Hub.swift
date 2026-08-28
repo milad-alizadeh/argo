@@ -12,7 +12,7 @@ public extension CockpitPresentation {
     /// The unregistered mark stays for the window's life, not only while it is active: it is the
     /// only way back to where the process was pointed.
     @MainActor
-    init(pointing: CockpitPointing, hub: Hub, annotations: SessionAnnotations = .empty) {
+    init(pointing: CockpitPointing, hub: Hub, readings: Readings = .none) {
         let registered = pointing.registry.projects.map {
             Project(id: $0.id, name: $0.name, location: $0.path, isReachable: $0.isReachable)
         }
@@ -32,23 +32,23 @@ public extension CockpitPresentation {
             projects: projects,
             activeProjectID: pointing.launch.id,
             hub: hub,
-            annotations: annotations,
+            readings: readings,
         )
     }
 
     /// The Projects and the annotations are the app's own state, passed in; everything below is
     /// the Hub's reading of the Project it is pointed at.
     ///
-    /// The annotations arrive as a whole set rather than as a flag per Session because a Session
-    /// the Hub is not reporting still has one — an archive is a decision about a chain id.
+    /// The readings arrive as a whole set rather than as a flag per Session because a Session the
+    /// Hub is not reporting still has annotations — an archive is a decision about a chain id.
     @MainActor
     init(
         projects: [Project],
         activeProjectID: Project.ID?,
         hub: Hub,
-        annotations: SessionAnnotations = .empty,
+        readings: Readings = .none,
     ) {
-        let sessions = hub.sessions.map { Session(observed: $0, annotations: annotations) }
+        let sessions = hub.sessions.map { Session(observed: $0, readings: readings) }
         self.init(
             projects: Self.counted(projects, activeProjectID: activeProjectID, in: sessions),
             activeProjectID: activeProjectID,
@@ -116,7 +116,7 @@ extension CockpitPresentation.Session {
     /// renamed: location <- cwd — "Names are words, not abbreviations" (rules/code-style.md).
     /// renamed: claimed <- ticket — the slot sits beside a title reading also about the ticket, and
     /// one of the two has to say WHICH fact about it (#881).
-    init(observed session: HubSession, annotations: SessionAnnotations) {
+    init(observed session: HubSession, readings: CockpitPresentation.Readings) {
         // Read once and handed to both: the Workspace draws the branch and the Ticket link joins
         // on it, and two readings of one fact would let the two disagree.
         let workspace = Workspace(observed: session)
@@ -135,11 +135,14 @@ extension CockpitPresentation.Session {
             work: Work(
                 location: session.cwd,
                 workspace: workspace,
-                issue: Issue(
-                    claimed: session.ticket,
-                    branch: workspace?.branch,
-                    location: session.cwd,
-                    title: annotations.ticket(session.id),
+                ticket: TicketLinkReading(
+                    link: Issue(
+                        claimed: session.ticket,
+                        branch: workspace?.branch,
+                        location: session.cwd,
+                        title: readings.annotations.ticket(session.id),
+                    ),
+                    isProviderBound: readings.isTicketProviderBound,
                 ),
             ),
             spend: Spend(
@@ -161,10 +164,10 @@ extension CockpitPresentation.Session {
             annotations: Annotations(
                 // Read off the annotations by chain id and never off the record: the transcript has
                 // no opinion about this, and a Session whose file just grew is still archived.
-                isArchived: annotations.isArchived(session.id),
+                isArchived: readings.annotations.isArchived(session.id),
                 // Beside the observed title rather than over it: the derived one is what Reset goes
                 // back to (#502, story 20).
-                explicitName: annotations.explicitName(session.id),
+                explicitName: readings.annotations.explicitName(session.id),
             ),
             transcript: Transcript(
                 events: session.events,
@@ -186,6 +189,8 @@ extension CockpitPresentation.Session.Issue {
     /// started on a ticket is claimed before anything has cut a branch to read the number off, and
     /// a Session whose branch was later renamed is still the one that was started for it.
     ///
+    /// Each link carries the tier that produced it, so the two are never rendered as each other.
+    ///
     /// Three ways to have no link, and all three draw nothing rather than a guess: no claim, a
     /// branch carrying no `#<N>`, and — once the host has been asked — a number it has nothing
     /// behind. A number nobody has asked about yet keeps its link and carries no title, which
@@ -195,10 +200,13 @@ extension CockpitPresentation.Session.Issue {
         // the spawn, so an `absent` lookup says the host could not name it, not that the Session is
         // on nothing. Only the DERIVED reading — a number guessed off a branch — needs the host to
         // confirm it, because there a misread `#<N>` and a real ticket look identical.
-        guard let number = claimed
-            ?? Self.derived(branch: branch, location: location, title: title)
+        if let claimed {
+            self.init(number: claimed, title: title?.title, tier: .direct)
+            return
+        }
+        guard let number = Self.derived(branch: branch, location: location, title: title)
         else { return nil }
-        self.init(number: number, title: title?.title)
+        self.init(number: number, title: title?.title, tier: .derived)
     }
 
     /// The number a git context names, once the host has had its say. `nil` where the branch names

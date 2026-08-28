@@ -122,6 +122,9 @@ public extension Hub {
         // transcript appeared (#872). A resume names one too — it is the same work, continued.
         if let ticket = plan.seed.ticket {
             claims.setTicket(ticket, for: plan.claim)
+            // And into the durable ledger, which is the only one of the two a relaunch reads
+            // (#894).
+            ownership.record(ticket: ticket, ofClaim: plan.claim)
         }
         guard plan.seed.resuming == nil else { return }
         spawns[plan.claim] = AgentSpawn(spawning: plan, atMs: Date().epochMs)

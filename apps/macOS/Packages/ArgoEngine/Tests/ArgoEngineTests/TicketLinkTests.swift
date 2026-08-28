@@ -23,9 +23,30 @@ struct TicketLinkTests {
         // A `#` with nothing to read after it is not a number.
         "argo/#-no-number",
         "argo/#",
+        // Three SHAPES this repo's own worktrees actually produce (#894), sampled rather than
+        // inventoried — they carry no number in the branch or the folder, and no recogniser,
+        // however wide, recovers a number nobody wrote. The repair is upstream of Argo; what Argo
+        // owes is to say it could not tell rather than to guess.
+        "worktree-885-screenshot-pid-scope",
+        "worktree-parallel-workitem-edges",
+        "worktree-ticket-verbs-detail-pane",
     ])
     func `a branch carrying no number links to nothing`(branch: String) {
         #expect(TicketLink.number(branch: branch, workspaceLocation: nil) == nil)
+    }
+
+    /// `worktree-885-…` reads as a folder stem and not as a ticket: the prefix
+    /// `docs/agents/worktrees.md` fixes is `ticket-`, and widening it to any leading number would
+    /// read #885 off a folder that names a worktree rather than a Ticket (#894).
+    @Test
+    func `a worktree folder that is not a ticket folder names no Ticket`() {
+        let number = TicketLink.number(
+            branch: "worktree-885-screenshot-pid-scope",
+            workspaceLocation: "/Users/milad/Developer/argo/.claude/worktrees/"
+                + "worktree-885-screenshot-pid-scope",
+        )
+
+        #expect(number == nil)
     }
 
     @Test

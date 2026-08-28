@@ -62,8 +62,12 @@ extension Hub {
         // sets a second one.
         published.modeSet = facts.modeSet ?? session.modeSet
         // The ticket falls back to the row's own for the reason the rung does: a provisional row
-        // carries what it was spawned with until the claim is bound to a Session id (#872).
+        // carries what it was spawned with until the claim is bound to a Session id (#872). And
+        // then to the durable ledger, which is all a relaunch has left: both readings above die
+        // with the process that established them, and without this one every spawn-seeded link
+        // degrades to the branch guess on the next launch (#894).
         published.ticket = facts.ticket ?? session.ticket
+            ?? ownership.spawnTicket(ofSessionID: session.id)
         published.lostTurn = facts.lostTurn
         // Read through the claim rather than as recorded: the fresh row is re-keyed to its CLI's
         // own id the moment its record appears, and the link has to follow it there.
