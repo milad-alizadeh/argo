@@ -20,11 +20,12 @@ final class AccountsCoordinator {
     /// chrome on the window and the panel is a sheet over it, so tying this to the panel would hide
     /// the failure exactly while the user is not looking at the place that reports it.
     private(set) var connections = ConnectionHealthReading.quiet
-    /// The active Project's listing as the last read left it, for the Work room to draw (#820).
+    /// The active Project's listing as the last read left it, for the Tickets room to draw (#820).
     /// Refreshed by every finished read, not by every panel act: the room is on screen whether or
     /// not the Connect panel is.
     private(set) var tickets: [Ticket] = []
-    /// Where those items can be READ, on the provider's own site (#872) — the Work room's two link
+    /// Where those items can be READ, on the provider's own site (#872) — the Tickets room's two
+    /// link
     /// verbs, and `nil` where the port is bound to nothing or the Binding addresses no page.
     /// Published with the listing and off the same resolve, so the room can never open a URL from
     /// one Binding against a backlog read through another.

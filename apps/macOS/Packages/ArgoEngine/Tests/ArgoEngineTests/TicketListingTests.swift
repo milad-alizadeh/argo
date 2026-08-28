@@ -2,7 +2,7 @@
 import Foundation
 import Testing
 
-/// Enumerating a repository's Tickets through one Binding's grant — the read a Work room and a
+/// Enumerating a repository's Tickets through one Binding's grant — the read a Tickets room and a
 /// poll are both built on (`CONTEXT.md` → Ports).
 @Suite("Ticket listing")
 struct TicketListingTests {
@@ -27,7 +27,7 @@ struct TicketListingTests {
     func `a ticket carries the provider's own status word and its labels`() async throws {
         let issue = IssueJSON(
             number: 12,
-            title: "Port the Work room",
+            title: "Port the Tickets room",
             labels: ["engine", "swift"],
             assignees: ["octocat"],
         )
@@ -36,7 +36,7 @@ struct TicketListingTests {
         // The word renders verbatim (#272); the closure is what Argo groups across providers with.
         #expect(items.map(\.status) == ["open"])
         #expect(items.map(\.closure) == [.open])
-        #expect(items.first?.title == "Port the Work room")
+        #expect(items.first?.title == "Port the Tickets room")
         #expect(items.first?.labels.map(\.name) == ["engine", "swift"])
         #expect(items.first?.assignees == ["octocat"])
     }

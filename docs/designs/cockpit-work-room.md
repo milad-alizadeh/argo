@@ -2,9 +2,14 @@
      approved-at: c0e24739
      prototype: worktree-prototype-609-work-room -->
 
-# The Work room
+# The Tickets room
 
-The approved design for the **Work room** (#609) — the views sidebar, the backlog list, the
+> **Renamed by #881 · 2026-08-28:** this room was called **Work** when the design was approved.
+> The room, its symbols and its specimen names now read **Tickets**; this file, its `.html` and the
+> `work-room/` renders keep their names, because six other docs and the design's own provenance
+> cite them by path.
+
+The approved design for the **Tickets room** (#609) — the views sidebar, the backlog list, the
 ticket detail, the Next-up hero, the room's toolbar, its empty and degraded states, and the
 Route's re-skin. Before this, every design in `docs/designs/` was a Sessions surface and
 `InstrumentDeckShell` drew `Color.clear` for `.work`, so a session sent at #272 would have
@@ -156,7 +161,7 @@ for a Session, read here for a Delivery.
 ## The toolbar — Mail's placement, transposed
 
 Mail puts **every** control in the window's one toolbar row, and places each by what it acts on.
-The Work room does the same, in the same order:
+The Tickets room does the same, in the same order:
 
 **Amended again — the bands are gone, and every control is back in the window's one row.** #836
 split them across a band per pane; see **the column question** below for what that bought and what
@@ -453,7 +458,7 @@ colour and material:
 - **Red is `state.failure` and is spent only on a ticket that can never unblock** — the dead-end
   dependent, whose edge is drawn dashed in the same ink.
 - Closed work behind the line is `text.disabled` and draws no edges.
-- The canvas is an opaque Work-room surface on `surface.base`. It is not glass and not a card.
+- The canvas is an opaque Tickets-room surface on `surface.base`. It is not glass and not a card.
 - The Route replaces both deck panes and carries its own head, so the room's toolbar empties for
   it too.
 
@@ -466,7 +471,7 @@ The Route's own component names stay #334's to freeze. This design does not name
 
 Surface sheets, beside the surface, per `rules/design-system.md` — a measure is not a token.
 
-### `ArgoWorkSidebar` — `ArgoUI/Shell/Work/Sidebar/`
+### `ArgoTicketsSidebar` — `ArgoUI/Shell/Tickets/Sidebar/`
 
 | Measurement | Value | Reason |
 |---|---|---|
@@ -479,7 +484,7 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | Hero radius | `ArgoRadius.control` 6 | a card, not a popover |
 | `footPadding` | `ArgoSpacing.base` 8 / `ArgoSpacing.comfortable` 12 | around the provider chip, above a hairline |
 
-### `ArgoBacklogList` — `ArgoUI/Shell/Work/Backlog/`
+### `ArgoBacklogList` — `ArgoUI/Shell/Tickets/Backlog/`
 
 | Measurement | Value | Reason |
 |---|---|---|
@@ -496,7 +501,7 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | `indentDepthCap` | **2** | level three shares level two's inset |
 | `gap` | `ArgoSpacing.base` 8 | between dot, id, title and the trailing fact |
 
-### `ArgoWorkChrome` — `ArgoUI/Shell/Work/`
+### `ArgoTicketsChrome` — `ArgoUI/Shell/Tickets/`
 
 | Measurement | Value | Reason |
 |---|---|---|
@@ -509,7 +514,7 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | Vessel material | glass, **no border, no shadow** | `ArgoElevation.vessel` is zero; the specular rim is the cue |
 | ~~Menu offset~~ | **gone (#872)** | it measured `ModeMenu`'s popover, which was never implementable — AppKit positions and draws its own — and the menu it described is deleted. `BacklogMenu`'s popover is AppKit's on the same terms |
 
-### `ArgoTicketDetail` — `ArgoUI/Shell/Work/Detail/`
+### `ArgoTicketDetail` — `ArgoUI/Shell/Tickets/Detail/`
 
 | Measurement | Value | Reason |
 |---|---|---|
@@ -528,9 +533,9 @@ for; anything not listed is stock used directly.
 
 | name | tier | stands in for | notes |
 |---|---|---|---|
-| `WorkRoom` | organism | the shell's existing `NavigationSplitView` slots | supplies sidebar and detail; it does not own a split of its own |
-| `WorkSidebar` | organism | `List(selection:)` with two `Section`s | views, not tickets |
-| `RoomStrip` | atom | `Picker(.segmented)` | `Sessions \| Work \| Code`, at the head of EVERY room's sidebar (#805). #816 deleted the titlebar's `RoomsVessel`, so this is the window's only rooms picker and it lives in `Shell/Sidebar/` rather than under `Work/` |
+| `TicketsRoom` | organism | the shell's existing `NavigationSplitView` slots | supplies sidebar and detail; it does not own a split of its own |
+| `TicketsSidebar` | organism | `List(selection:)` with two `Section`s | views, not tickets |
+| `RoomStrip` | atom | `Picker(.segmented)` | `Sessions \| Tickets \| Code`, at the head of EVERY room's sidebar (#805). #816 deleted the titlebar's `RoomsVessel`, so this is the window's only rooms picker and it lives in `Shell/Sidebar/` rather than under `Tickets/` |
 | `ViewRow` | molecule | an `HStack` in a `List` row | glyph · name · count, at `viewRowHeight` as a floor |
 | `ProviderFoot` | atom | an `HStack` above a `Divider` | the bound provider, at the sidebar's foot |
 | `NextUpCard` | molecule | a `VStack` on `surface.raised` | the hero; carries the ticket or an empty-tier sentence |
@@ -541,7 +546,7 @@ for; anything not listed is stock used directly.
 | `BacklogTwist` | atom | `DisclosureGroup`'s chevron, drawn | drawn rather than inherited so it can carry its own hit target |
 | `DeliveryDot` | atom | `Circle` at `ArgoLayout.statusDotSize` | the five-state table above |
 | `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
-| `WorkToolbar` | organism | `.toolbar { ToolbarItem }` per control | the window row, and **every control the room has**. Amended twice: #836 moved all but search into per-pane bands, and the bands are now gone — see the column question |
+| `TicketsToolbar` | organism | `.toolbar { ToolbarItem }` per control | the window row, and **every control the room has**. Amended twice: #836 moved all but search into per-pane bands, and the bands are now gone — see the column question |
 | `BacklogControls` | molecule | a `ToolbarVessel` | filter and `BacklogMenu`, past a rule. Split out of `BacklogHeader` when the controls returned to the row |
 | `BacklogHeader` | molecule | an `HStack` at the head of the list pane | the heading and its count, and nothing else. **Renamed #836** from `BacklogToolbarLabel`; the controls left it when the row was reassembled |
 | ~~`TicketBand`~~ | — | **gone** | added by #836 to carry New ticket and the ticket's verbs over their column; both are toolbar items again |
@@ -559,8 +564,8 @@ for; anything not listed is stock used directly.
 | `DeliveryChip` | molecule | `Button(.plain)` opening a URL | deep-links; two on one ticket are two of these |
 | `LabelChip` | atom | `Text` in a rounded rect | a provider label, verbatim |
 | `TicketLinkList` | molecule | a `VStack` of `Button(.plain)` | ONE component; `blockedBy` and Children are two callers with different trailing facts |
-| `WorkRoomVacancy` | molecule | `ContentUnavailableView` | both room-level states — unbound, and answered-with-nothing |
-| `BacklogNoMatch` | atom | a centred `Text` in the list pane | **Added #873**: the query matched nothing. Deliberately NOT a `WorkRoomVacancy` case — that one replaces the whole deck, and this is a fact about the query rather than about the provider |
+| `TicketsRoomVacancy` | molecule | `ContentUnavailableView` | both room-level states — unbound, and answered-with-nothing |
+| `BacklogNoMatch` | atom | a centred `Text` in the list pane | **Added #873**: the query matched nothing. Deliberately NOT a `TicketsRoomVacancy` case — that one replaces the whole deck, and this is a fact about the query rather than about the provider |
 | `RoomPresentation` | atom | `Picker(.segmented)` | `Present as: Tree \| Map`, map-scoped not room-scoped (#334) |
 
 ## Token reconciliation

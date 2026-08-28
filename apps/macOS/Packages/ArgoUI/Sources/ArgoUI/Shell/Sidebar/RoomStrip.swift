@@ -4,7 +4,8 @@ import SwiftUI
 /// (`cockpit-work-room.md`, #805). Xcode's navigator selector: a control belongs over the thing it
 /// changes, and the room changes both panes but STARTS in this one.
 ///
-/// **The only rooms picker in the window (#816)**, and every room's rather than the Work room's —
+/// **The only rooms picker in the window (#816)**, and every room's rather than the Tickets room's
+/// —
 /// which is why it lives beside `ShellSidebar` rather than under `Work/`.
 ///
 /// The platform's own segmented control, dressed by nothing — `RoomSegments` is AppKit's, reached
@@ -30,7 +31,7 @@ struct RoomStrip: View {
 }
 
 #Preview("Room strip") {
-    @Previewable @State var room = CockpitRoom.work
+    @Previewable @State var room = CockpitRoom.tickets
 
     RoomStrip(selection: $room)
         .frame(width: ArgoLayout.sidebarMinimumWidth)

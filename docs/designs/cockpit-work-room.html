@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>The Work room — approved design (#609)</title>
+<title>The Tickets room — approved design (#609)</title>
 <!--
-  The APPROVED Work room (#609, under #607) — the study that produced it explored five rooms
+  The APPROVED Tickets room (#609, under #607) — the study that produced it explored five rooms
   and this is the one that was chosen. Every state #609 names is reachable from the selector
   at the top, or by ?state=<key>; ?render=1 strips the chrome for the PNGs.
 
@@ -534,9 +534,9 @@
    and it counts CLOSED children too, which is why it does not match the rows beneath it: the
    backlog lists what is open. */
 const TICKETS = [
-  { id:'#607', t:'Wayfinder: the Work room, end to end', pri:'HIGH', type:'PRD',
+  { id:'#607', t:'Wayfinder: the Tickets room, end to end', pri:'HIGH', type:'PRD',
     word:'In Progress', bucket:'in progress', d:null, kids:[2,9], by:[] },
-  { id:'#609', t:'Prototype: what the Work room looks like in the Liquid Glass shell',
+  { id:'#609', t:'Prototype: what the Tickets room looks like in the Liquid Glass shell',
     parent:'#607', pri:'HIGH', type:'design', word:'In Progress', bucket:'in progress',
     d:'draft', by:[] },
   { id:'#388', t:'Ticket read path: listing, status, labels, dependency edges',
@@ -558,7 +558,7 @@ const TICKETS = [
     type:'task', word:'Needs triage', bucket:'todo', d:'checks', by:[] },
   { id:'#160', t:'Ticket vocabulary: type is a property, not a ladder', pri:'LOW',
     type:'decision', word:'Awaiting answer', bucket:'blocked', d:null, by:[] },
-  { id:'#185', t:'Work room interior: what a leaf carries', pri:'LOW', type:'decision',
+  { id:'#185', t:'Tickets room interior: what a leaf carries', pri:'LOW', type:'decision',
     word:'Awaiting answer', bucket:'blocked', d:null, by:[] },
 ];
 
@@ -836,7 +836,7 @@ function routeView() {
   <div class="route">
     <div class="route-head">
       <span class="crumb">Work · #607</span>
-      <h1>Wayfinder: the Work room, end to end</h1>
+      <h1>Wayfinder: the Tickets room, end to end</h1>
       <div class="present"><button>Tree</button><button class="on">Map</button></div>
     </div>
     <div class="route-canvas">
@@ -862,7 +862,7 @@ function routeView() {
         <circle cx="${fogX + 52}" cy="${PADY + 1.5 * ROWH}" r="5" fill="none"
                 stroke="var(--text-off)" stroke-width="1.5"/>
         <text x="${fogX + 66}" y="${PADY + 1.5 * ROWH + 4}" fill="var(--text-off)" font-size="11"
-              font-family="-apple-system, sans-serif">Work room, shipped</text>
+              font-family="-apple-system, sans-serif">Tickets room, shipped</text>
       </svg>
     </div>
     <div class="legend">

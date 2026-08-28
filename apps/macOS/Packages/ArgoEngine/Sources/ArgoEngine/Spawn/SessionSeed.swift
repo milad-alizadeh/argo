@@ -18,7 +18,7 @@ public struct SessionSeed: Sendable, Equatable {
     /// the third caller of one spawn path (#10).
     public let resuming: SessionResumeTarget?
     /// The Ticket this Session is being started ON, by its number (#872). DIRECT and Argo's own:
-    /// the claim is what the Work room reads back to draw the ticket as claimed, and it is filed
+    /// the claim is what the Tickets room reads back to draw the ticket as claimed, and it is filed
     /// under the claim so it survives the re-key to the id the CLI picks.
     ///
     /// Absent is the plain New Session, which serves whatever its branch turns out to name — the

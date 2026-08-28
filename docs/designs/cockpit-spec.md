@@ -12,7 +12,7 @@
 >
 > **The amendments are already applied.** #201 (Concierge into the merged top bar; toggle and
 > backlog counters cut; chip placed first; `last synced` on the project-tab tooltip), #202 (no
-> "enable worktrees" setting), and #178's audit (density → out of scope; the Work-room
+> "enable worktrees" setting), and #178's audit (density → out of scope; the Tickets-room
 > bulk/filtering residue) live only in closed issue comments. They are folded **inline** below,
 > so the assembled read is the current read. A per-surface doc that reads differently is the one
 > that is behind.
@@ -44,7 +44,7 @@
 > stands — read a `*-prototype.html` reference as a pointer to a settled decision, not to a file
 > you can open.
 
-The Sessions room and the Work room have **no written surface spec** — their detail lives in
+The Sessions room and the Tickets room have **no written surface spec** — their detail lives in
 `cockpit-session-interior-decisions.md` plus their prototypes. §4 and §5 below are therefore
 the closest thing to a spec they have, and are correspondingly less thin.
 
@@ -64,7 +64,7 @@ cross projects.
 - **One merged floating top bar** (#201) — no fill, no divider line, no reserved band pushing
   content down, so the lit Penumbra scene reads as one room. Two fixed regions, not four, and
   **no bottom chrome**: the bottom edge belongs to the room (e.g. the session Dock).
-- **Bar order** — `[traffic lights] [orb + caption] ⋯ [connection chip] [Sessions ⌘1 · Work ⌘2 ·
+- **Bar order** — `[traffic lights] [orb + caption] ⋯ [connection chip] [Sessions ⌘1 · Tickets ⌘2 ·
   Code ⌘3] [⎇ branch ▾] [⋯]`. Reading order runs condition-of-the-world → where I am → what I am
   on. macOS traffic-light clearance (`hiddenInset`).
 - **The Concierge orb and caption ride in the bar, globally**, surviving every room switch
@@ -73,7 +73,7 @@ cross projects.
 - **The bar deliberately carries no** wordmark, project label, `⌘K` button, conversation-mode
   toggle (#201: chrome holds no seat for an undesigned subsystem — that is #190's), or backlog
   counters (#201: room content, which would blank out in two of three rooms — they fold into the
-  Work rail's `BACKLOG · BY PRIORITY` row).
+  Tickets rail's `BACKLOG · BY PRIORITY` row).
 - **The connection chip is placed first in the right cluster** (#201) — a right-aligned cluster
   means appending would shove permanent chrome sideways the moment a silent element wakes up.
 - **Global git group, in all three rooms, always the primary checkout.** `select · manage`.
@@ -227,7 +227,7 @@ feed with scroll-spy and click-to-jump. The whole cockpit shares one navigation 
 
 Detail: `cockpit-session-interior-decisions.md`, `cockpit-session-interior-prototype.html`.
 
-## 5 · Work room (`⌘2`)
+## 5 · Tickets room (`⌘2`)
 
 - **List rail plus two-pane detail** — the backlog gets a home with room for a ticket body.
   Kanban is out of scope for v1.
@@ -555,7 +555,7 @@ this spec.** Concretely, on `main` today:
 
 - one `SessionScreen` composing the panel domains that are left — `roster`, `delivery`,
   `console` — from ADR-0009's story/work split (`concierge` went with #284, `activity` with #261);
-- no project strip, no rooms, no Work or Code surface, no ports.
+- no project strip, no rooms, no Tickets or Code surface, no ports.
 
 Two bullets that stood here are now closed: the retired runtime vocabulary in the components
 (`RunRow`, `AgentRow`, `PhaseGroup`, `phaseState`, `agentState`) and the `demoSeed` standing in
@@ -579,7 +579,7 @@ the current UI as a step toward it.
 
 ### Known-unspecified — flagged, deliberately not specced
 
-**Work-room multi-select, bulk transitions, and filtering depth** beyond #160's project-scoped
+**Tickets-room multi-select, bulk transitions, and filtering depth** beyond #160's project-scoped
 flatten-on-filter. #178's audit found this did **not** fold into the shell's keyboard/command model
 as #157 assumed: #172's spec settled `⌘K` and the global keymap but contains no multi-select,
 bulk-operation or filtering-depth content, and **no surface ticket picked it up**. It is unowned,
@@ -615,7 +615,7 @@ Code-room prototype already renders. Phase 2 inherits the decoupling rather than
 Deploy and release lifecycle nodes (reserved, unwired until a code-host deploy signal exists) ·
 multi-Delivery rendering (v1 shows the single active Delivery; the glance banner was cut) · ticket
 comments · a state-map editor UI · a menu-bar / tray item (a fourth rendering of the same attention
-signal) · a merge-conflict GUI · kanban in the Work room · Linear-specific onboarding pixels ·
+signal) · a merge-conflict GUI · kanban in the Tickets room · Linear-specific onboarding pixels ·
 multi-user / assignee filtering · the file-vault Ticket provider · MCP servers as an observed
 session attribute · any app-global Preferences surface · foreign-session discovery as a ranked v1
 concern · stack or tooling changes.

@@ -3,7 +3,7 @@ import Foundation
 /// The Ticket port filled by GitHub Issues, read through one Binding's grant.
 ///
 /// Sibling to `GitHubTicketTitles`, which answers one number. This one enumerates, which is the
-/// read a Work room and a poll are built on.
+/// read a Tickets room and a poll are built on.
 public struct GitHubTickets: TicketPort {
     let reads: GitHubReads
     let writes: GitHubWrites

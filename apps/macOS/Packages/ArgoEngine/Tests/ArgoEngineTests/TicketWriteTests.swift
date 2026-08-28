@@ -25,12 +25,12 @@ struct TicketWriteTests {
     @Test
     func `an edit of the prose is one patch of the issue`() async throws {
         let write = try await Self.write(
-            .updateFields(TicketFields(title: "Port the Work room")),
+            .updateFields(TicketFields(title: "Port the Tickets room")),
         )
 
         #expect(write.method == .patch)
         #expect(write.path == "/repos/acme/api/issues/12")
-        #expect(write.field("title") == "Port the Work room")
+        #expect(write.field("title") == "Port the Tickets room")
         // Absent rather than empty: an edit that named no body must not clear the one there is.
         #expect(write.field("body") == nil)
     }
@@ -176,14 +176,14 @@ struct TicketWriteTests {
     func `a created ticket carries its title, body and type`() async throws {
         let api = RecordedGitHub(replies: ["/issues": IssueJSON(number: 101).json])
         _ = try await GitHubTickets(transport: api).create(
-            TicketDraft(title: "Port the Work room", body: "Phase 5", type: "Task"),
+            TicketDraft(title: "Port the Tickets room", body: "Phase 5", type: "Task"),
             through: .stub(),
         )
         let write = try #require(await api.writes().first)
 
         #expect(write.method == .post)
         #expect(write.path == "/repos/acme/api/issues")
-        #expect(write.field("title") == "Port the Work room")
+        #expect(write.field("title") == "Port the Tickets room")
         #expect(write.field("body") == "Phase 5")
         #expect(write.field("type") == "Task")
     }

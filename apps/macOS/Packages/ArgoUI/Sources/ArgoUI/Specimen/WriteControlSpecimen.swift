@@ -1,10 +1,11 @@
 import ArgoEngine
 
-/// The Work room's one provider-port write control in each state §4 and §7 give it. What they have
+/// The Tickets room's one provider-port write control in each state §4 and §7 give it. What they
+/// have
 /// to settle is that the vessel's geometry does not move between them, and that the reason arrives
 /// beside the mark rather than under it.
 ///
-/// `live` is absent: every other Work room specimen already renders it.
+/// `live` is absent: every other Tickets room specimen already renders it.
 enum WriteControlSpecimen {
     struct State {
         let name: String

@@ -138,7 +138,8 @@ struct RhythmTests {
             ArgoPlanPill.betweenSteps,
         ]))
         #expect(ladder.isSuperset(of: [
-            ArgoWorkSidebar.gutter, ArgoWorkSidebar.footPaddingX, ArgoWorkSidebar.footPaddingY,
+            ArgoTicketsSidebar.gutter, ArgoTicketsSidebar.footPaddingX,
+            ArgoTicketsSidebar.footPaddingY,
         ]))
         #expect(ladder.isSuperset(of: [ArgoBacklogList.gutter, ArgoBacklogList.gap]))
         #expect(ladder.isSuperset(of: [

@@ -170,7 +170,7 @@ suffices to create a project; git and a provider only *unlock* backlog, PRs, and
 - **Running sessions in that folder are not rescued by Relocate** — their PTYs are already broken.
   They degrade to `failed` on the existing four-state dot (#164). No new vocabulary.
 
-A per-room degradation was proposed (Work room alive on remote data, Sessions and Code showing the
+A per-room degradation was proposed (Tickets room alive on remote data, Sessions and Code showing the
 folder-missing state) and **rejected**: a project you cannot act in does not earn a half-lit
 window, and one error state is cheaper to spec and to build than a per-room matrix.
 
@@ -242,7 +242,7 @@ settled** — this doc deliberately does not restate them:
 | App shell (#172) | empty first-run shell + connect seam | `DIRECT` / `DERIVED` / `CONVENTION` section |
 | Onboarding (#165) | welcome · fresh | direct · partial · wired (+ in-panel `error`) |
 | Sessions room (#159 / #161) | roster zero-state = bare `+ New session` (B6) | external rows ghosted, hollow dot, no Outcomes, `unknown` ctx ring |
-| Work room (#160 / #185) | Next-up empty-pool tiers (#166) | no DAG ⇒ blocked filter no-op, `unblocked` chip suppressed |
+| Tickets room (#160 / #185) | Next-up empty-pool tiers (#166) | no DAG ⇒ blocked filter no-op, `unblocked` chip suppressed |
 | Code room (#183) | empty folder · unsupported binary · no folder | `DIRECT` floor is files-on-disk |
 | Delivery (#161) | teammate PR with no session row | bare tracker ⇒ three statuses (#167) |
 

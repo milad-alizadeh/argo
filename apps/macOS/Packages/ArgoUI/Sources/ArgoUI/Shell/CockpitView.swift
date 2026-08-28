@@ -127,19 +127,20 @@ public struct CockpitView: View {
     public var body: some View {
         @Bindable var navigation = navigation
         // Assembled ONCE for the whole pass and handed to all four readers — the column's
-        // visibility, the sidebar, the toolbar row and the deck. `nil` outside the Work room, which
+        // visibility, the sidebar, the toolbar row and the deck. `nil` outside the Tickets room,
+        // which
         // is also what keeps the projection from running at all in the other two.
-        let work = navigation.room == .work ? workRoom : nil
+        let tickets = navigation.room == .tickets ? ticketsRoom : nil
 
-        NavigationSplitView(columnVisibility: sidebarColumn(for: work)) {
-            sidebar(work: work)
+        NavigationSplitView(columnVisibility: sidebarColumn(for: tickets)) {
+            sidebar(tickets: tickets)
                 .navigationSplitViewColumnWidth(
                     min: ArgoLayout.sidebarMinimumWidth,
                     ideal: sidebarIdealWidth,
                     max: ArgoLayout.sidebarMaximumWidth,
                 )
         } detail: {
-            detail(work: work)
+            detail(tickets: tickets)
         }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")
         // Hidden, so the icons sit on the window's own ground — and the canopy directly below is
@@ -161,7 +162,8 @@ public struct CockpitView: View {
                 )
             }
         }
-        // The Work room's own sheet (#872). On the shell rather than in the room, because the room
+        // The Tickets room's own sheet (#872). On the shell rather than in the room, because the
+        // room
         // is a pair of split-view slots and neither of them may present over the other.
         // `onDismiss` and not the Cancel button alone: Escape and the system's own gesture put the
         // sheet away without pressing anything, and a refusal left behind would go on being drawn
@@ -169,7 +171,7 @@ public struct CockpitView: View {
         .sheet(isPresented: $isComposingTicket, onDismiss: closeTicketComposer) {
             NewTicketComposer(
                 composition: $ticketComposition,
-                control: workIntents.creation.control,
+                control: ticketsIntents.creation.control,
                 reconnect: openProjectPanel,
                 cancel: closeTicketComposer,
                 create: createTicket,

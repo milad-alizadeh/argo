@@ -8,14 +8,14 @@ struct CockpitRoomTests {
     @Test
     func `hovering a room offers the word its tab stopped drawing`() {
         #expect(CockpitRoom.sessions.tooltip == "Sessions — Command 1")
-        #expect(CockpitRoom.work.tooltip == "Work — Command 2")
+        #expect(CockpitRoom.tickets.tooltip == "Tickets — Command 2")
         #expect(CockpitRoom.code.tooltip == "Code — Command 3")
     }
 
     @Test
     func `a room speaks to VoiceOver the word its tab stopped drawing`() {
         #expect(CockpitRoom.sessions.voiceOverLabel == "Sessions, Command 1")
-        #expect(CockpitRoom.work.voiceOverLabel == "Work, Command 2")
+        #expect(CockpitRoom.tickets.voiceOverLabel == "Tickets, Command 2")
         #expect(CockpitRoom.code.voiceOverLabel == "Code, Command 3")
     }
 

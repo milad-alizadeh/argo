@@ -29,7 +29,7 @@ struct ClaimFacts: Equatable {
     /// written, and this is the later news that it was never read.
     var lostTurn: String?
     /// The Ticket this claim was started ON (#872), by number. DIRECT: Argo was told which
-    /// ticket at the spawn, so the Work room draws it claimed without waiting for a branch to be
+    /// ticket at the spawn, so the Tickets room draws it claimed without waiting for a branch to be
     /// cut. Here rather than on the row alone because the row is re-keyed the moment its CLI
     /// writes a record, and a claim outlives that.
     var ticket: Int?

@@ -32,7 +32,7 @@ public enum ArgoTypography {
     public static let windowTitle = ArgoTextStyle(
         typeface: .interface, rung: .headline, weight: .semibold,
     )
-    /// A heading inside a body of prose — the Work room's `Acceptance criteria` (#813). It is
+    /// A heading inside a body of prose — the Tickets room's `Acceptance criteria` (#813). It is
     /// `body`'s own 13, so weight is the whole of what lifts it off the paragraph under it.
     ///
     /// `windowTitle` carries this tuple too, and neither may be folded into the other: a retune of

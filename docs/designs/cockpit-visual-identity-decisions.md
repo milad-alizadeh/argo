@@ -26,7 +26,7 @@ its approved study are authoritative for the replacement look and feel.
 ## D1 — App-wide identity, proved on Sessions first
 
 - **Decision:** Replace the visual identity of the whole cockpit. Use the existing Sessions room as
-  the proving ground, then carry the approved system through the shell, Work room, and Code room.
+  the proving ground, then carry the approved system through the shell, Tickets room, and Code room.
 - **Why:** Penumbra is embedded in the shared token contract, scene, and surface recipes. Styling
   Sessions as an isolated theme would create two competing systems and conceal whether the new
   direction can support the rest of the product.
@@ -783,7 +783,7 @@ its approved study are authoritative for the replacement look and feel.
 
 ## D38 — Room shortcuts disclose on demand
 
-- **Decision:** The Rooms Liquid Glass vessel shows only `Sessions`, `Work`, and `Code` in its default
+- **Decision:** The Rooms Liquid Glass vessel shows only `Sessions`, `Tickets`, and `Code` in its default
   state. Do not print `⌘1`, `⌘2`, or `⌘3` permanently inside the capsule.
 - **Discovery:** Preserve the shortcuts unchanged and expose them through hover and keyboard-focus
   tooltips, the command palette, and the application's shortcut reference. Accessible names include

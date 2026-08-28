@@ -116,7 +116,8 @@ public actor TicketPoll {
         }
     }
 
-    /// One read. Public because a Work room's Refresh is the same act as a tick, and two paths to
+    /// One read. Public because a Tickets room's Refresh is the same act as a tick, and two paths
+    /// to
     /// it would be two chances to record health differently.
     public func poll(_ target: PortReadTarget) async {
         do {

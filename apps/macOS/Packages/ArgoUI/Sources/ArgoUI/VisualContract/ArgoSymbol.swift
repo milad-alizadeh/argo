@@ -28,7 +28,7 @@ public enum ArgoSymbol {
     /// rung.
     public static let disclosure = "chevron.right"
 
-    /// One mark per view in the Work room's sidebar (`cockpit-work-room.md`). Filled against
+    /// One mark per view in the Tickets room's sidebar (`cockpit-work-room.md`). Filled against
     /// outlined tells the two halves of the open set apart at a glance; the shapes tell the four
     /// views apart at any fill.
     public static let allOpenView = "circle.fill"
@@ -36,7 +36,7 @@ public enum ArgoSymbol {
     public static let inProgressView = "diamond.fill"
     public static let blockedView = "triangle"
 
-    /// The Work room's chrome (`cockpit-work-room.md`), each mark named by what the control does
+    /// The Tickets room's chrome (`cockpit-work-room.md`), each mark named by what the control does
     /// rather than by its shape.
     /// The COMPOSE mark, which Mail spends on the one thing its window creates. This room creates a
     /// ticket and New Session is not in its bar (#836), so the two marks are never in one bar and
@@ -62,7 +62,7 @@ public enum ArgoSymbol {
     /// `apple.terminal` is a terminal WINDOW. Bare `terminal` is `ran` below, the feed's mark for a
     /// command that ran, and one glyph cannot mean both a room and a step inside it.
     public static let sessionsRoom = "apple.terminal"
-    public static let workRoom = "checklist"
+    public static let ticketsRoom = "checklist"
     public static let codeRoom = programSource
 
     /// One mark per kind of call the feed can name. A call whose kind Argo could not read carries

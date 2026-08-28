@@ -3,13 +3,13 @@ import Foundation
 import Testing
 
 /// The repeating read, and what each outcome does to the two ledgers behind it — a desktop app
-/// receives no webhooks, so this loop is the only reason a Work room is ever right.
+/// receives no webhooks, so this loop is the only reason a Tickets room is ever right.
 @Suite("Ticket poll")
 struct TicketPollTests {
     private let target = PortReadTarget(binding: .stub(), projectID: "P1")
     private let ticket = Ticket(
         number: 12,
-        title: "Port the Work room",
+        title: "Port the Tickets room",
         status: "open",
         closure: .open,
     )

@@ -10,7 +10,11 @@ import Testing
 struct LinearWriteRefusalTests {
     private static func team(_ replies: [String: String] = [:]) -> RecordedLinear {
         RecordedLinear(
-            holding: [LinearIssueJSON(number: 12, title: "Port the Work room", labels: ["engine"])],
+            holding: [LinearIssueJSON(
+                number: 12,
+                title: "Port the Tickets room",
+                labels: ["engine"],
+            )],
             replies: LinearFixture.team.merging(replies) { $1 },
         )
     }

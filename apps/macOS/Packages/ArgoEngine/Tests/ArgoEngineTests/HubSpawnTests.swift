@@ -171,7 +171,7 @@ struct HubSpawnTests {
         await fixture.hub.disconnect()
     }
 
-    /// #872: the Work room starts a Session ON a ticket, and the claim is what reads back.
+    /// #872: the Tickets room starts a Session ON a ticket, and the claim is what reads back.
     @Test
     func `a spawn seeded with a ticket names it from the row's first moment`() async throws {
         let fixture = try SpawnFixture()

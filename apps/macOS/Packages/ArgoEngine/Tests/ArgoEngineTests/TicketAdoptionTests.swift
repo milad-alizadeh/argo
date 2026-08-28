@@ -44,26 +44,27 @@ struct TicketAdoptionTests {
     func `a written ticket replaces the one the room was holding`() async throws {
         let listed = Ticket(number: 12, title: "Old title", status: "open", closure: .open)
         let writing = Self.writing([
-            "/issues/12": IssueJSON(number: 12, title: "Port the Work room").json,
+            "/issues/12": IssueJSON(number: 12, title: "Port the Tickets room").json,
         ])
         await writing.items.record([listed], for: Self.project)
 
         _ = try await writing.writer.apply(
-            .updateFields(TicketFields(title: "Port the Work room")),
+            .updateFields(TicketFields(title: "Port the Tickets room")),
             to: 12,
             on: Self.target,
         )
 
         // Without waiting for the next tick: a poll is a minute away, and a room that went on
         // drawing the old title for it would be showing something the provider has stopped saying.
-        #expect(await writing.items.items(of: Self.project).map(\.title) == ["Port the Work room"])
+        #expect(await writing.items.items(of: Self.project)
+            .map(\.title) == ["Port the Tickets room"])
     }
 
     @Test
     func `a ticket that closed leaves the room rather than sitting in it`() async throws {
         let listed = Ticket(
             number: 12,
-            title: "Port the Work room",
+            title: "Port the Tickets room",
             status: "open",
             closure: .open,
         )

@@ -68,22 +68,22 @@ public struct CockpitActions {
     /// shells out to git over a tree that can hold a hundred thousand paths, and the composer
     /// must stay typeable while it lists.
     public var workspaceFiles: (String) async -> [String] = { _ in [] }
-    /// What the Work room's row performs through a provider (#872). A value rather than two more
+    /// What the Tickets room's row performs through a provider (#872). A value rather than two more
     /// callbacks in the list above, and outside the initialiser: these travel together, and the
     /// init is already at the cap `swift-boundaries.sh` edge 6 holds it to.
-    public var work = Work()
+    public var tickets = Tickets()
 
-    /// The two acts the Work room's row raises that reach outside the shell.
+    /// The two acts the Tickets room's row raises that reach outside the shell.
     ///
     /// Both `async` and both answered: a create answers with the refusal that stopped it, so the
     /// composer can put the provider's own words beside the button (§4); a spawn answers with the
     /// fresh Session's id, on the same terms as `spawnSession` above.
-    public struct Work {
+    public struct Tickets {
         /// File a ticket through `TicketWriter`. Answers `nil` where it landed, and the refusal
         /// otherwise — nothing retries, so the reply IS the outcome.
         public var createTicket: (TicketDraft) async -> TicketWriteError? = { _ in nil }
         /// Start a Session ON one ticket, on the rung the row names. The seed carries the number,
-        /// which is what makes the Session claimable back (`WorkReading.claimed`).
+        /// which is what makes the Session claimable back (`TicketsReading.claimed`).
         public var startSession: (Int, SessionMode) async -> String? = { _, _ in nil }
     }
 

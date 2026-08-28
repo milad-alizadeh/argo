@@ -9,7 +9,7 @@ struct LinearWriteTests {
     /// Ticket 12, with 9 and 3 for the far ends an edge intent names.
     private static func team() -> RecordedLinear {
         LinearFixture.holding([
-            LinearIssueJSON(number: 12, title: "Port the Work room"),
+            LinearIssueJSON(number: 12, title: "Port the Tickets room"),
             LinearIssueJSON(number: 9),
             LinearIssueJSON(number: 3),
         ])

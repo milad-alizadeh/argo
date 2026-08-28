@@ -2,7 +2,7 @@ import SwiftUI
 
 public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
     case sessions
-    case work
+    case tickets
     case code
 
     public var id: Self {
@@ -12,7 +12,7 @@ public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
     public var title: String {
         switch self {
         case .sessions: "Sessions"
-        case .work: "Work"
+        case .tickets: "Tickets"
         case .code: "Code"
         }
     }
@@ -20,7 +20,7 @@ public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
     var symbol: String {
         switch self {
         case .sessions: ArgoSymbol.sessionsRoom
-        case .work: ArgoSymbol.workRoom
+        case .tickets: ArgoSymbol.ticketsRoom
         case .code: ArgoSymbol.codeRoom
         }
     }
@@ -28,7 +28,7 @@ public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
     public var shortcut: KeyEquivalent {
         switch self {
         case .sessions: "1"
-        case .work: "2"
+        case .tickets: "2"
         case .code: "3"
         }
     }
@@ -36,7 +36,7 @@ public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
     var shortcutDescription: String {
         switch self {
         case .sessions: "Command 1"
-        case .work: "Command 2"
+        case .tickets: "Command 2"
         case .code: "Command 3"
         }
     }

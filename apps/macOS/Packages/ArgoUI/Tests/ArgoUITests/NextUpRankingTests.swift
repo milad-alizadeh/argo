@@ -12,10 +12,11 @@ struct NextUpRankingTests {
     @Test
     func `priority outranks every key beneath it`() throws {
         let pool = [
-            WorkFixture.candidate(2, priority: "low", day: 1),
-            WorkFixture.candidate(1, priority: "high", day: 9),
+            TicketsFixture.candidate(2, priority: "low", day: 1),
+            TicketsFixture.candidate(1, priority: "high", day: 9),
         ]
-        let reading = WorkFixture.reading(of: [WorkFixture.chart(7, sequencing: [2, 1])] + pool)
+        let reading = TicketsFixture
+            .reading(of: [TicketsFixture.chart(7, sequencing: [2, 1])] + pool)
 
         try #expect(Self.pick(in: reading).number == 1)
     }
@@ -24,9 +25,9 @@ struct NextUpRankingTests {
     /// `low` with nothing else to separate them.
     @Test
     func `the middle rung outranks the bottom one`() throws {
-        let reading = WorkFixture.reading(of: [
-            WorkFixture.candidate(1, priority: "low", day: 1),
-            WorkFixture.candidate(2, priority: "medium", day: 1),
+        let reading = TicketsFixture.reading(of: [
+            TicketsFixture.candidate(1, priority: "low", day: 1),
+            TicketsFixture.candidate(2, priority: "medium", day: 1),
         ])
 
         try #expect(Self.pick(in: reading).number == 2)
@@ -36,9 +37,9 @@ struct NextUpRankingTests {
     /// priority for sits below THAT. Absent is not a rung.
     @Test
     func `an unknown word outranks no priority read at all`() throws {
-        let reading = WorkFixture.reading(of: [
-            WorkFixture.candidate(1, day: 1),
-            WorkFixture.candidate(2, priority: "P0", day: 1),
+        let reading = TicketsFixture.reading(of: [
+            TicketsFixture.candidate(1, day: 1),
+            TicketsFixture.candidate(2, priority: "P0", day: 1),
         ])
 
         try #expect(Self.pick(in: reading).number == 2)
@@ -48,9 +49,9 @@ struct NextUpRankingTests {
     /// ladder says both sit below `low` and says nothing further.
     @Test
     func `two unknown words fall through to the age beneath them`() throws {
-        let reading = WorkFixture.reading(of: [
-            WorkFixture.candidate(1, priority: "P0", day: 9),
-            WorkFixture.candidate(2, priority: "urgent-ish", day: 1),
+        let reading = TicketsFixture.reading(of: [
+            TicketsFixture.candidate(1, priority: "P0", day: 9),
+            TicketsFixture.candidate(2, priority: "urgent-ish", day: 1),
         ])
 
         try #expect(Self.pick(in: reading).number == 2)
@@ -61,10 +62,11 @@ struct NextUpRankingTests {
     @Test
     func `the PRD sequence outranks the age beneath it`() throws {
         let pool = [
-            WorkFixture.candidate(2, priority: "medium", day: 1),
-            WorkFixture.candidate(1, priority: "medium", day: 9),
+            TicketsFixture.candidate(2, priority: "medium", day: 1),
+            TicketsFixture.candidate(1, priority: "medium", day: 9),
         ]
-        let reading = WorkFixture.reading(of: [WorkFixture.chart(7, sequencing: [1, 2])] + pool)
+        let reading = TicketsFixture
+            .reading(of: [TicketsFixture.chart(7, sequencing: [1, 2])] + pool)
 
         try #expect(Self.pick(in: reading).number == 1)
     }
@@ -74,24 +76,24 @@ struct NextUpRankingTests {
     /// draws: #2 sits at position 0 of the second chart and still loses to the first chart's.
     @Test
     func `a ticket in a later chart loses to one in an earlier chart`() throws {
-        let pool = [WorkFixture.candidate(2, priority: "medium", day: 1)]
-            + [WorkFixture.candidate(1, priority: "medium", day: 9)]
+        let pool = [TicketsFixture.candidate(2, priority: "medium", day: 1)]
+            + [TicketsFixture.candidate(1, priority: "medium", day: 9)]
         let charts = [
-            WorkFixture.chart(7, sequencing: [99, 1]),
-            WorkFixture.chart(8, sequencing: [2]),
+            TicketsFixture.chart(7, sequencing: [99, 1]),
+            TicketsFixture.chart(8, sequencing: [2]),
         ]
 
-        try #expect(Self.pick(in: WorkFixture.reading(of: charts + pool)).number == 1)
+        try #expect(Self.pick(in: TicketsFixture.reading(of: charts + pool)).number == 1)
     }
 
     /// A PRD's sequence is somebody stating an order. A ticket nobody sequenced does not overtake
     /// one on a statement nobody made — even where it is the older of the two.
     @Test
     func `a ticket in no chart sorts behind every ticket in one`() throws {
-        let charted = WorkFixture.candidate(1, priority: "medium", day: 9)
-        let loose = WorkFixture.candidate(2, priority: "medium", day: 1)
-        let reading = WorkFixture.reading(
-            of: [WorkFixture.chart(7, sequencing: [1])] + [charted, loose],
+        let charted = TicketsFixture.candidate(1, priority: "medium", day: 9)
+        let loose = TicketsFixture.candidate(2, priority: "medium", day: 1)
+        let reading = TicketsFixture.reading(
+            of: [TicketsFixture.chart(7, sequencing: [1])] + [charted, loose],
         )
 
         try #expect(Self.pick(in: reading).number == 1)
@@ -101,9 +103,9 @@ struct NextUpRankingTests {
     /// ticket nobody has touched is the one most likely still to need starting.
     @Test
     func `the oldest wins where nothing above the age separates the two`() throws {
-        let reading = WorkFixture.reading(of: [
-            WorkFixture.candidate(1, priority: "medium", day: 9),
-            WorkFixture.candidate(2, priority: "medium", day: 1),
+        let reading = TicketsFixture.reading(of: [
+            TicketsFixture.candidate(1, priority: "medium", day: 9),
+            TicketsFixture.candidate(2, priority: "medium", day: 1),
         ])
 
         try #expect(Self.pick(in: reading).number == 2)
@@ -114,9 +116,9 @@ struct NextUpRankingTests {
     /// (`CONTEXT.md` L2 · degrade-down).
     @Test
     func `a ticket with no timestamp read sorts behind one that has an age`() throws {
-        let reading = WorkFixture.reading(of: [
-            WorkFixture.candidate(1, priority: "medium"),
-            WorkFixture.candidate(2, priority: "medium", day: 9),
+        let reading = TicketsFixture.reading(of: [
+            TicketsFixture.candidate(1, priority: "medium"),
+            TicketsFixture.candidate(2, priority: "medium", day: 9),
         ])
 
         try #expect(Self.pick(in: reading).number == 2)
@@ -126,9 +128,9 @@ struct NextUpRankingTests {
     /// ticket that would otherwise rank first is not the answer to "what should I START".
     @Test
     func `a claimed leaf is out of the pool however it would rank`() throws {
-        var reading = WorkFixture.reading(of: [
-            WorkFixture.candidate(1, priority: "high", day: 1),
-            WorkFixture.candidate(2, priority: "low", day: 9),
+        var reading = TicketsFixture.reading(of: [
+            TicketsFixture.candidate(1, priority: "high", day: 1),
+            TicketsFixture.candidate(2, priority: "low", day: 9),
         ])
         reading.claimed = [1]
 
@@ -139,16 +141,16 @@ struct NextUpRankingTests {
     /// way twice — a hero that reshuffled under an unchanged listing would churn on every poll.
     @Test
     func `a pool the three inputs cannot separate still ranks the same way twice`() throws {
-        let reading = WorkFixture.reading(of: [
-            WorkFixture.candidate(9, priority: "medium", day: 1),
-            WorkFixture.candidate(4, priority: "medium", day: 1),
+        let reading = TicketsFixture.reading(of: [
+            TicketsFixture.candidate(9, priority: "medium", day: 1),
+            TicketsFixture.candidate(4, priority: "medium", day: 1),
         ])
 
         try #expect(Self.pick(in: reading).number == 4)
-        try #expect(Self.pick(in: WorkFixture.reading(of: reading.items.reversed())).number == 4)
+        try #expect(Self.pick(in: TicketsFixture.reading(of: reading.items.reversed())).number == 4)
     }
 
-    private static func pick(in reading: WorkReading) throws -> NextUp.Pick {
+    private static func pick(in reading: TicketsReading) throws -> NextUp.Pick {
         try NextUpPick.of(reading)
     }
 }

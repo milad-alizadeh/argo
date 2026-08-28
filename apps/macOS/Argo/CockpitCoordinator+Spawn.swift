@@ -44,10 +44,11 @@ extension CockpitCoordinator {
         }
     }
 
-    /// The same spawn, started ON a ticket and on the rung the Work room's row names (#872).
+    /// The same spawn, started ON a ticket and on the rung the Tickets room's row names (#872).
     ///
     /// The Project's own folder: Argo cuts no branch and makes no worktree, so what makes this the
-    /// ticket's Session is the seed naming it — which is also what the Work room reads back to draw
+    /// ticket's Session is the seed naming it — which is also what the Tickets room reads back to
+    /// draw
     /// the row as claimed.
     func spawnSession(on ticket: Int, mode: SessionMode) async -> String? {
         await spawn(SessionSeed(mode: mode, ticket: ticket))

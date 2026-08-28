@@ -19,19 +19,19 @@ enum WriteAdapter: String, CaseIterable, Sendable {
         switch self {
         case .gitHub:
             GitHubTickets(transport: RecordedGitHub(replies: [
-                "/issues/12": IssueJSON(number: 12, title: "Port the Work room").json,
+                "/issues/12": IssueJSON(number: 12, title: "Port the Tickets room").json,
                 "/issues/9": IssueJSON(number: 9).json,
                 "/issues/3": IssueJSON(number: 3).json,
             ]))
         case .linear:
             LinearTickets(transport: LinearFixture.holding([
-                LinearIssueJSON(number: 12, title: "Port the Work room"),
+                LinearIssueJSON(number: 12, title: "Port the Tickets room"),
                 LinearIssueJSON(number: 9),
                 LinearIssueJSON(number: 3),
             ]))
         case .workflow:
             WorkflowTracker(holding: [
-                Ticket(number: 12, title: "Port the Work room", status: "Todo", closure: .open),
+                Ticket(number: 12, title: "Port the Tickets room", status: "Todo", closure: .open),
             ])
         }
     }
