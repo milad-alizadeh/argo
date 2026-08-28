@@ -26,8 +26,8 @@ extension CockpitView {
             showing: navigation.ticket,
         )
 
-        // Read ONCE per pass and shared by the room's two Start controls: it lists the design tree,
-        // and the toolbar's Start and the hero's would otherwise each walk it on every pass.
+        // Assembled once and shared by the room's two Start controls, so the toolbar's Start and
+        // the hero's can never resolve one ticket to two commands.
         let start = ticketStart
 
         return TicketsRoom(
