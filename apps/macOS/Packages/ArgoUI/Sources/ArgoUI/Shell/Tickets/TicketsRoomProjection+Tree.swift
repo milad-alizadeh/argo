@@ -62,14 +62,23 @@ extension TicketsRoomProjection {
                 trailing: rollUp(of: item, closed: closed),
                 priority: item.priority,
                 labels: item.labels,
-                children: item.children
+                children: newest(item.children
                     .filter { parents[$0] == item.number }
-                    .compactMap { byNumber[$0] }
+                    .compactMap { byNumber[$0] })
                     .map(node),
             )
         }
 
-        return shown.filter { parents[$0.number] == nil }.map(node)
+        return newest(shown.filter { parents[$0.number] == nil }).map(node)
+    }
+
+    /// The list's own order: highest number first, siblings against siblings (#892). Stated here
+    /// rather than inherited from the provider, whose default can change under a build that never
+    /// asked for one — and not `updatedAt`, which would move rows while they are being read, nor
+    /// `TicketsReading+Ranking`'s `Rank`, which answers what to pick up next rather than what
+    /// order the list is in.
+    private static func newest(_ items: [Ticket]) -> [Ticket] {
+        items.sorted { $0.number > $1.number }
     }
 
     /// Which shown item owns each shown child. Built once for the whole set rather than asked per
