@@ -63,7 +63,11 @@ extension SpecimenRegistry {
     private static let writeControls: [SpecimenEntry] = WriteControlSpecimen.states.map { state in
         SpecimenEntry(state.name) {
             SpecimenScene.centred {
-                NewTicketButton(creation: WorkToolbarIntents.Creation(control: state.control))
+                // The repair is inert but PRESENT: §7 makes the disabled reading point at a
+                // Reconnect, so a render without it would prove the wrong shape.
+                NewTicketButton(
+                    creation: WorkToolbarIntents.Creation(control: state.control, reconnect: {}),
+                )
             }
         }
     }

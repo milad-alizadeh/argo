@@ -1,11 +1,7 @@
 import ArgoEngine
 
-/// How a refused write reads at the control — the REAL reason, one line, never a paraphrase
-/// (`cockpit-failure-states-spec.md` §5).
-///
-/// In `ArgoUI` and not on the error, for the reason `ConnectionCause.readableName` is here: the
-/// engine's job is to hold what the provider said, and the words on screen are Argo's vocabulary.
-/// The unabridged output the same rule promises one gesture away is #275's AC8 and not yet built.
+/// How a refused write reads at the control — the real reason, one line (§5). The unabridged
+/// output the same rule promises one gesture away is #850.
 extension WorkItemWriteError {
     var reason: String {
         switch self {
@@ -15,8 +11,7 @@ extension WorkItemWriteError {
             "This provider has no status for \(state.readableName)"
         case let .illegalTransition(from, to):
             "This provider will not move a ticket from \(from.readableName) to \(to.readableName)"
-        // The clause the rule exists for. Nothing is trimmed, capitalised or re-worded: the
-        // provider's sentence is usually the only thing here that says how to fix it.
+        // Verbatim: the provider's sentence is usually the only thing here that says how to fix it.
         case let .refused(words):
             words
         case let .unreachable(failure):
@@ -26,8 +21,8 @@ extension WorkItemWriteError {
 }
 
 private extension ProviderFetchError {
-    /// The cause word is the CHIP's — one connection, one vocabulary, whether it is read off the
-    /// top bar or off the control that just failed.
+    /// The cause word is the chip's, so one connection reads in one vocabulary wherever you meet
+    /// it. `grantRefused` has none because it is an Account fact, not a connection one.
     var reason: String {
         guard let cause else { return "The account's token was refused" }
         return "The write did not land — \(cause.readableName)"

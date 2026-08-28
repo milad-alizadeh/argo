@@ -1,24 +1,26 @@
 import ArgoEngine
 
-/// What a write control SAYS — the half of the state that is words rather than policy.
-///
-/// Apart from the state itself so the fold stays a fold: the precedence between an admission and an
-/// attempt is a rule with tests on it, and the sentence beside the button is a wording that will
-/// change without the rule changing.
-///
-/// **One tone, and it is the chip's.** Both of these read in `failure` ink, because the chip
-/// already spends red on `needs reconnect` and this is the same fact seen from the control — an
-/// amber here would make one connection two colours depending on where you looked at it.
+/// What a write control says, and whether the sentence has a repair behind it.
 extension WriteControlState {
-    /// The one line beside the control, and `nil` where there is nothing to say. Pending says
-    /// nothing on purpose: the disabled control IS the statement, and a word beside it would be
-    /// the layout shift §4 rules out.
+    /// Pending says nothing: a word appearing beside it would be the layout shift §4 rules out.
     var reason: String? {
         switch self {
-        case .live, .pending, .absent: nil
+        case .live, .pending: nil
         case let .refused(refusal): refusal.reason
+        // The chip's own wording for this level, separators and status word included: the line
+        // states the fact and the button beside it carries the act.
         case let .blocked(account):
-            "Reconnect \(account.displayName) on \(account.provider.readableName)"
+            "\(account.provider.readableName) · \(account.displayName) · needs reconnect"
+        }
+    }
+
+    /// §7 disables the control "pointing at the same `Reconnect`", so the note carries the act.
+    /// Only the refused grant has one — a provider that answered "no" is not repaired by
+    /// re-granting anything.
+    var needsReconnect: Bool {
+        switch self {
+        case .blocked: true
+        case .live, .pending, .refused: false
         }
     }
 }

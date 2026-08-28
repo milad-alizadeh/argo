@@ -20,8 +20,8 @@ struct ToolbarVessel<Content: View>: View {
 /// One glyph in a vessel: the whole of what a toolbar button draws.
 struct ToolbarIcon: View {
     @Environment(\.argo) private var argo
-    /// A control disabled in place has to LOOK it: `.buttonStyle(.plain)` over an explicit
-    /// `foregroundStyle` dims for nobody, so the ink is chosen here (#275 §4).
+    /// `.buttonStyle(.plain)` over an explicit `foregroundStyle` dims for nobody, so a control
+    /// disabled in place picks its own ink (#275).
     @Environment(\.isEnabled) private var isEnabled
 
     let symbol: String
