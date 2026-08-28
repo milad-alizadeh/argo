@@ -8,7 +8,7 @@ import SwiftUI
 /// The pane carries no band of its own: the ticket's verbs are in the window's row with the rest of
 /// the room's controls (`WorkToolbar`), which is a line of height back for the words.
 struct TicketDetail: View {
-    let ticket: WorkRoomProjection.Ticket?
+    let ticket: WorkRoomProjection.Detail?
     /// What opening a child does — the pane never reads back what it opened, so this is a closure
     /// and not a binding that could disagree with `ticket`.
     let open: (Int) -> Void
@@ -29,7 +29,7 @@ struct TicketDetail: View {
         )
     }
 
-    private func column(for ticket: WorkRoomProjection.Ticket) -> some View {
+    private func column(for ticket: WorkRoomProjection.Detail) -> some View {
         // `stripStep` twice over: the strip pads its own hairline off the labels above it, and
         // this spends the same step again under it.
         VStack(alignment: .leading, spacing: ArgoTicketDetail.stripStep) {

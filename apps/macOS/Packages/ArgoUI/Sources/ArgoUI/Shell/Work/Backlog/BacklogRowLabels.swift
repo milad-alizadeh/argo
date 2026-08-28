@@ -8,12 +8,12 @@ import ArgoEngine
 /// and speech has no width, so speech taken straight off `labels` announces marks nobody can see.
 struct BacklogRowLabels: Equatable {
     /// The labels the row draws, in the provider's own order.
-    let shown: [WorkItemLabel]
+    let shown: [TicketLabel]
     /// How many it left, and `0` where it left none. COUNTED and not listed: the row has no width
     /// for the rest, and a number is the honest thing to say about marks it is not drawing.
     let overflow: Int
 
-    init(_ labels: [WorkItemLabel], limit: Int = ArgoBacklogList.labelLimit) {
+    init(_ labels: [TicketLabel], limit: Int = ArgoBacklogList.labelLimit) {
         self.shown = Array(labels.prefix(limit))
         self.overflow = max(0, labels.count - shown.count)
     }

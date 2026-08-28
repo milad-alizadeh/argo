@@ -52,7 +52,7 @@ struct NextUpTests {
     /// nothing about this one, and inferring from the neighbours is the failure the tier guards.
     @Test
     func `edges read for another ticket earn this one nothing`() throws {
-        let read = WorkItem(
+        let read = Ticket(
             number: 999,
             title: "Read",
             status: "Todo",
@@ -145,9 +145,9 @@ struct NextUpTests {
     /// there is no case for one, and prose that says the words earns nothing (#273).
     @Test
     func `spec readiness is never inferred from a ticket's prose`() throws {
-        let reading = WorkFixture.reading(of: [WorkItem(
+        let reading = WorkFixture.reading(of: [Ticket(
             number: 1, title: "A ticket", status: "Todo", closure: .open,
-            labels: [WorkItemLabel(name: "spec ready")], blockedBy: [],
+            labels: [TicketLabel(name: "spec ready")], blockedBy: [],
             body: "Spec ready — pick this up.",
         )])
 
@@ -157,7 +157,7 @@ struct NextUpTests {
     /// A provider that serves no dependency summary, no priority word and no chart — every claim
     /// but the age refused. `dated` is the one thing that varies between the two cases above.
     private static func edgeless(dated: Bool) -> WorkReading {
-        WorkFixture.reading(of: [WorkItem(
+        WorkFixture.reading(of: [Ticket(
             copying: WorkFixture.candidate(1, day: dated ? 1 : nil),
             blockedBy: .some(nil),
         )])
@@ -178,22 +178,22 @@ struct NextUpTests {
 
     /// #388 as an edgeless provider serves it: one priority word, no type, and no dependency
     /// summary — which is exactly what earns or refuses each chip above.
-    private static func priced(_ priority: String) -> WorkItem {
-        WorkItem(
-            number: 388, title: "Work Item read path", status: "Todo", closure: .open,
+    private static func priced(_ priority: String) -> Ticket {
+        Ticket(
+            number: 388, title: "Ticket read path", status: "Todo", closure: .open,
             priority: priority,
         )
     }
 
     /// A chart is one by its TYPE word, which is what the `CHARTS` group and this chip both read.
-    private var chart: WorkItem {
-        WorkItem(
+    private var chart: Ticket {
+        Ticket(
             number: 607, title: "Wayfinder", status: "Todo", closure: .open, type: "PRD",
             children: [273],
         )
     }
 
-    private var leaf: WorkItem {
-        WorkItem(number: 273, title: "The planner", status: "Todo", closure: .open)
+    private var leaf: Ticket {
+        Ticket(number: 273, title: "The planner", status: "Todo", closure: .open)
     }
 }

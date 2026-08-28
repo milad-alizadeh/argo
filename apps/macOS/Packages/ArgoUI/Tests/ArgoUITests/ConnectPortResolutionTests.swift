@@ -8,7 +8,7 @@ import Testing
 struct ConnectPortResolutionTests {
     @Test
     func `an unbound port carries no Account and no scope`() {
-        let port = ConnectPort(port: .workItem, resolution: .unbound)
+        let port = ConnectPort(port: .ticket, resolution: .unbound)
 
         #expect(port.state == .unbound)
         #expect(port.accountID == nil)
@@ -37,11 +37,11 @@ struct ConnectPortResolutionTests {
     @Test
     func `a broken port keeps what it was pointing at, under the reason it broke`() {
         let binding = ProjectBinding(
-            port: .workItem,
+            port: .ticket,
             accountID: ConnectFixture.work.id,
             scope: "trili/cockpit",
         )
-        let port = ConnectPort(port: .workItem, resolution: .broken(binding, .grantExpired))
+        let port = ConnectPort(port: .ticket, resolution: .broken(binding, .grantExpired))
 
         #expect(port.state == .broken(
             accountID: ConnectFixture.work.id,

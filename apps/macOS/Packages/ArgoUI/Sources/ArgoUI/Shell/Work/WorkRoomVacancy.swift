@@ -53,8 +53,8 @@ struct WorkRoomVacancy: View {
     private var title: String {
         switch vacancy {
         case .unbound:
-            project.map { "No Work Item provider is connected to \($0)" }
-                ?? "No Work Item provider is connected"
+            project.map { "No Ticket provider is connected to \($0)" }
+                ?? "No Ticket provider is connected"
         case let .unread(provider):
             "Nothing has been read from \(provider) yet"
         case .nothingOpen:
@@ -79,7 +79,7 @@ struct WorkRoomVacancy: View {
             """
         case let .nothingOpen(provider):
             """
-            \(provider) answered: every Work Item it exposes for this Project is closed. Nothing \
+            \(provider) answered: every Ticket it exposes for this Project is closed. Nothing \
             is waiting to be picked up.
             """
         }

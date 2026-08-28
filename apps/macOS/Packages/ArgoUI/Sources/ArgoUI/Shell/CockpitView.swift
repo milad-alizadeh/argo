@@ -16,14 +16,14 @@ public struct CockpitView: View {
     /// inside it because it is not a Hub fact: the cockpit is a projection of the Hub, and Accounts
     /// and Bindings are registry facts the Hub has never heard of.
     let health: ConnectionHealthReading
-    /// The active Project's Work Items as the last poll that finished read them (#820). Beside the
+    /// The active Project's Tickets as the last poll that finished read them (#820). Beside the
     /// presentation for the same reason `health` is: a listing is read through a Binding, and the
     /// Hub has never heard of one.
-    let workItems: [WorkItem]
-    /// Where this Project's Work Items can be READ, on the provider's own site (#872). Beside the
+    let tickets: [Ticket]
+    /// Where this Project's Tickets can be READ, on the provider's own site (#872). Beside the
     /// listing for the reason it is: an address is the Binding's, and the Hub has never heard of
     /// one. `nil` where the port is bound to nothing, which disables the row's two link verbs.
-    let workItemAddress: WorkItemAddress?
+    let ticketAddress: TicketAddress?
     @Environment(CockpitNavigationModel.self) var navigation
     @Environment(\.openURL) var openURL
     /// Which roster row has its name field open. Held here rather than in the sidebar because the
@@ -59,15 +59,15 @@ public struct CockpitView: View {
         actions: CockpitActions,
         connect: ConnectSurface = .closed,
         health: ConnectionHealthReading = .quiet,
-        workItems: [WorkItem] = [],
-        workItemAddress: WorkItemAddress? = nil,
+        tickets: [Ticket] = [],
+        ticketAddress: TicketAddress? = nil,
     ) {
         self.presentation = presentation
         self.actions = actions
         self.connect = connect
         self.health = health
-        self.workItems = workItems
-        self.workItemAddress = workItemAddress
+        self.tickets = tickets
+        self.ticketAddress = ticketAddress
     }
 
     /// The selected Session's reading in the room that DRAWS a transcript, and nothing at all in

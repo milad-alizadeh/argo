@@ -8,7 +8,7 @@ import SwiftUI
 struct TicketFactStrip: View {
     @Environment(\.argo) private var argo
 
-    let ticket: WorkRoomProjection.Ticket
+    let ticket: WorkRoomProjection.Detail
 
     var body: some View {
         WrapFlow(along: ArgoTicketDetail.factGap, between: ArgoTicketDetail.factLineGap) {

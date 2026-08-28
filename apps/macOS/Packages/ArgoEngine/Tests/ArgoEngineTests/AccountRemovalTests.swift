@@ -52,7 +52,7 @@ struct AccountRemovalTests {
     @Test
     func `what a removal would orphan can be asked without removing`() async throws {
         let fixture = try AccountFixture(bindings: StubBindingIndex(bindings: [
-            "github:1": [AccountBindingReference(projectID: "argo", port: .workItem)],
+            "github:1": [AccountBindingReference(projectID: "argo", port: .ticket)],
         ]))
         defer { fixture.remove() }
         let store = fixture.store()
@@ -60,7 +60,7 @@ struct AccountRemovalTests {
 
         let orphans = await store.bindings(through: "github:1")
 
-        #expect(orphans.map(\.port) == [.workItem])
+        #expect(orphans.map(\.port) == [.ticket])
         #expect(await store.load().accounts.map(\.id) == ["github:1"])
     }
 

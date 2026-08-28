@@ -4,7 +4,7 @@ import SwiftUI
 /// The composer New ticket opens: a title, a body, and the one act that files them (#872).
 ///
 /// Two fields and no more. Everything else a provider carries — labels, priority, type, a parent —
-/// is a per-provider affordance the port declares over (`WorkItemSurface`), and a field for one the
+/// is a per-provider affordance the port declares over (`TicketSurface`), and a field for one the
 /// Binding cannot take would be a control that exists to be refused. The ticket is edited on the
 /// provider after it is filed.
 ///
@@ -18,7 +18,7 @@ struct NewTicketComposer: View {
     var control = WriteControlState.live
     var reconnect: () -> Void = {}
     var cancel: () -> Void = {}
-    var create: (WorkItemDraft) -> Void = { _ in }
+    var create: (TicketDraft) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {

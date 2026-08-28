@@ -67,7 +67,7 @@ at the foot.
 - ~~**Charts** — one row per PRD-shaped parent (`#607 Wayfinder`, `#334 The Route`), the entry
   point to the Route.~~ **Withdrawn (#844.)** The Route is #334 and is not built, so every row in
   the group answered no click, under a heading that read as a charting feature. The group comes
-  back with the Route. `WorkItem.isChartShaped` survives it: the Next-up hero still reads a
+  back with the Route. `Ticket.isChartShaped` survives it: the Next-up hero still reads a
   PRD-shaped parent for its `next in #607` chip.
 - **The room strip** sits at the top of the sidebar's scroll, under the titlebar rather than in
   it. Xcode's navigator selector, and #805's question answered: a control belongs over the thing
@@ -636,7 +636,7 @@ that size is the uppercase and the tracking, not a point of size nobody can see.
   not draw, so `2/9` over five visible rows is correct and will be reported as a bug. It is worth
   a hover explaining itself.
 - **Every ranking input Next-up needs is missing in Swift.** `open · leaf · todo · unblocked ·
-  session-less` — none of the five exists; `ArgoEngine/WorkItem/` (#763) reads a title for a
+  session-less` — none of the five exists; `ArgoEngine/Ticket/` (#763) reads a title for a
   number. The `edgeless` render is therefore the **first** state this ships in, not an edge case.
 - **The Route's canvas does not fit the ideal window.** At 1280 with the sidebar open, the deck
   leaves ~1000pt and the eight-node route asks for ~1044. It scrolls, per #334, but no render at

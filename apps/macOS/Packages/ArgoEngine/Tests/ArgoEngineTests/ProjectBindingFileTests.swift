@@ -16,7 +16,7 @@ struct ProjectBindingFileTests {
 
         let reloaded = await ProjectRegistryStore(fileURL: fixture.projects.registryFileURL).load()
 
-        let binding = try #require(reloaded.binding(on: .workItem, of: projectID))
+        let binding = try #require(reloaded.binding(on: .ticket, of: projectID))
         #expect(binding.accountID == "github:1")
         #expect(binding.scope == "milad/argo")
     }
@@ -50,7 +50,25 @@ struct ProjectBindingFileTests {
         let registry = await fixture.store().load()
 
         #expect(registry.projects.map(\.id) == ["a"])
-        #expect(registry.binding(on: .workItem, of: "a") == nil)
+        #expect(registry.binding(on: .ticket, of: "a") == nil)
+    }
+
+    /// Every registry written before #881 spells the Ticket port `workItem`. Reading it as the
+    /// unreadable-record case would silently unbind every machine that had one.
+    @Test
+    func `a registry file that spells the Ticket port workItem still reads`() async throws {
+        let fixture = try ProjectFixture()
+        defer { fixture.remove() }
+        try fixture.writeRegistryFile("""
+        { "activeProjectId": "a",
+          "projects": [{ "id": "a", "path": "/tmp/argo", "bindings": [
+            { "port": "workItem", "accountID": "github:1", "scope": "milad/argo" }
+          ] }] }
+        """)
+
+        let registry = await fixture.store().load()
+
+        #expect(registry.binding(on: .ticket, of: "a")?.scope == "milad/argo")
     }
 
     /// The same bargain the registry strikes for a record: one unreadable Binding leaves its port
@@ -59,7 +77,7 @@ struct ProjectBindingFileTests {
     func `an unreadable Binding leaves its own port unbound`() async throws {
         let registry = try await Self.halfUnreadableRegistry()
 
-        #expect(registry.binding(on: .workItem, of: "a") == nil)
+        #expect(registry.binding(on: .ticket, of: "a") == nil)
     }
 
     @Test
@@ -76,7 +94,7 @@ struct ProjectBindingFileTests {
         try fixture.writeRegistryFile("""
         { "activeProjectId": "a",
           "projects": [{ "id": "a", "path": "/tmp/argo", "bindings": [
-            { "port": "workItem" },
+            { "port": "ticket" },
             { "port": "codeHost", "accountID": "github:1", "scope": "milad/argo" }
           ] }] }
         """)
@@ -98,6 +116,6 @@ struct ProjectBindingFileTests {
 
         let registry = await fixture.projects.store().load()
         #expect(registry.project(id: projectID)?.path == moved.path)
-        #expect(registry.binding(on: .workItem, of: projectID)?.accountID == "github:1")
+        #expect(registry.binding(on: .ticket, of: projectID)?.accountID == "github:1")
     }
 }

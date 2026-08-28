@@ -14,7 +14,7 @@ enum SessionTitle {
         ticket(for: session) ?? session.title
     }
 
-    /// The linked Work Item as a title, in the house form (#745).
+    /// The linked Ticket as a title, in the house form (#745).
     ///
     /// `nil` for a link the provider has not named, and not `#741` alone: a bare number carries no
     /// more than the `/implement 741` it would be replacing, and it costs the reader the words.

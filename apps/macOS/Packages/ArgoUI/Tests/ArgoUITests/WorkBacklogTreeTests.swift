@@ -2,7 +2,7 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// What the backlog reads off the CHILD EDGE (#814). The tree is derived from `WorkItem.children`
+/// What the backlog reads off the CHILD EDGE (#814). The tree is derived from `Ticket.children`
 /// rather than written down nested, so a provider that reparents a ticket moves the row without
 /// anybody editing a literal — and the two ways an edge can lie (a second parent, a cycle) resolve
 /// to a root rather than to a vanished row.
@@ -70,9 +70,9 @@ struct WorkBacklogTreeTests {
     @Test
     func `a child claimed by two parents is drawn once`() {
         let items = [
-            WorkItem(number: 1, title: "First", status: "Todo", closure: .open, children: [3]),
-            WorkItem(number: 2, title: "Second", status: "Todo", closure: .open, children: [3]),
-            WorkItem(number: 3, title: "Shared", status: "Todo", closure: .open),
+            Ticket(number: 1, title: "First", status: "Todo", closure: .open, children: [3]),
+            Ticket(number: 2, title: "Second", status: "Todo", closure: .open, children: [3]),
+            Ticket(number: 3, title: "Shared", status: "Todo", closure: .open),
         ]
         let room = WorkRoomProjection.room(from: WorkFixture.reading(of: items))
 
@@ -84,8 +84,8 @@ struct WorkBacklogTreeTests {
     @Test
     func `a cycle in the child edge leaves every row drawn`() {
         let items = [
-            WorkItem(number: 1, title: "First", status: "Todo", closure: .open, children: [2]),
-            WorkItem(number: 2, title: "Second", status: "Todo", closure: .open, children: [1]),
+            Ticket(number: 1, title: "First", status: "Todo", closure: .open, children: [2]),
+            Ticket(number: 2, title: "Second", status: "Todo", closure: .open, children: [1]),
         ]
         let room = WorkRoomProjection.room(from: WorkFixture.reading(of: items))
 

@@ -16,7 +16,7 @@ public enum WriteAdmission: Equatable, Sendable {
 public extension ConnectionHealthReading {
     /// What one port admits, for a caller deciding whether its write control is live.
     ///
-    /// The reading is per Binding, so the ports answer independently: a dead Work Item grant leaves
+    /// The reading is per Binding, so the ports answer independently: a dead Ticket grant leaves
     /// the code host writable.
     func writes(through port: AccountPort) -> WriteAdmission {
         guard let connection = connections.first(where: { $0.port == port }) else {

@@ -7,12 +7,12 @@ import Foundation
 /// Beside the specimen rather than in `ShellPreview`: they exist to make ONE render reproducible,
 /// and neither is a preview of the shell itself.
 extension ConnectionHealthReading {
-    /// A Work Item Binding that has read successfully — which is what draws the foot's dot at all.
+    /// A Ticket Binding that has read successfully — which is what draws the foot's dot at all.
     /// A Binding nothing has ever read through is honestly stateless, and that is a different
     /// render (`WorkReadingLiveTests`).
     static let previewBound = ConnectionHealthReading(connections: [
         PortConnection(
-            port: .workItem,
+            port: .ticket,
             account: AccountRecord(
                 provider: .github, providerAccountID: "1", displayName: "milad-alizadeh",
             ),

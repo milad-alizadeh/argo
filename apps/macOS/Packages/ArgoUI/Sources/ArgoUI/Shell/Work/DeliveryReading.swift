@@ -1,4 +1,4 @@
-/// What a Work Item's Delivery says, as the one mark the backlog spends on it
+/// What a Ticket's Delivery says, as the one mark the backlog spends on it
 /// (`cockpit-work-room.md` — the delivery signal, on the dot alone). Five states on one 6pt mark
 /// and no chip beside it: a row that draws its Delivery twice is a row with no room for a title.
 enum DeliveryReading: Sendable, Equatable, CaseIterable {

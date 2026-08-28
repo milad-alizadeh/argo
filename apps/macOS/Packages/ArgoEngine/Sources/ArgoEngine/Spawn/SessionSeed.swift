@@ -17,26 +17,26 @@ public struct SessionSeed: Sendable, Equatable {
     /// The chain to CONTINUE rather than start. Absent is the plain New Session; present makes this
     /// the third caller of one spawn path (#10).
     public let resuming: SessionResumeTarget?
-    /// The Work Item this Session is being started ON, by its number (#872). DIRECT and Argo's own:
+    /// The Ticket this Session is being started ON, by its number (#872). DIRECT and Argo's own:
     /// the claim is what the Work room reads back to draw the ticket as claimed, and it is filed
     /// under the claim so it survives the re-key to the id the CLI picks.
     ///
     /// Absent is the plain New Session, which serves whatever its branch turns out to name — the
-    /// DERIVED reading `WorkItemLink` takes, and the only one there was before this.
-    public let workItem: Int?
+    /// DERIVED reading `TicketLink` takes, and the only one there was before this.
+    public let ticket: Int?
 
     public init(
         cwd: String? = nil,
         opening: String? = nil,
         mode: SessionMode? = nil,
         resuming: SessionResumeTarget? = nil,
-        workItem: Int? = nil,
+        ticket: Int? = nil,
     ) {
         self.cwd = cwd
         self.opening = opening
         self.mode = mode
         self.resuming = resuming
-        self.workItem = workItem
+        self.ticket = ticket
     }
 
     /// A New Session: the Project's folder, and nothing said yet.

@@ -12,13 +12,13 @@ struct WriteRefusalReasonTests {
     func `the provider's own words are rendered verbatim`() {
         let words = "Issues are disabled for this repository."
 
-        #expect(WorkItemWriteError.refused(words).reason == words)
+        #expect(TicketWriteError.refused(words).reason == words)
     }
 
     @Test
     func `a write the provider does not offer names the write`() {
         #expect(
-            WorkItemWriteError.unavailable(.labels).reason
+            TicketWriteError.unavailable(.labels).reason
                 == "This provider does not support labels",
         )
     }
@@ -26,14 +26,14 @@ struct WriteRefusalReasonTests {
     @Test
     func `a status the provider cannot express names the status`() {
         #expect(
-            WorkItemWriteError.inexpressible(.inReview).reason
+            TicketWriteError.inexpressible(.inReview).reason
                 == "This provider has no status for in review",
         )
     }
 
     @Test
     func `a transition the provider has no edge for names both ends`() {
-        let refusal = WorkItemWriteError.illegalTransition(from: .todo, to: .done)
+        let refusal = TicketWriteError.illegalTransition(from: .todo, to: .done)
 
         #expect(refusal.reason == "This provider will not move a ticket from todo to done")
     }
@@ -43,7 +43,7 @@ struct WriteRefusalReasonTests {
     @Test
     func `a write that never reached the provider carries the chip's cause word`() {
         #expect(
-            WorkItemWriteError.unreachable(.rateLimited).reason
+            TicketWriteError.unreachable(.rateLimited).reason
                 == "The write did not land — rate limited",
         )
     }
@@ -53,22 +53,22 @@ struct WriteRefusalReasonTests {
     @Test
     func `a refused token is worded as the account fact it is`() {
         #expect(
-            WorkItemWriteError.unreachable(.grantRefused).reason
+            TicketWriteError.unreachable(.grantRefused).reason
                 == "The account's token was refused",
         )
     }
 
     @Test
     func `every write has a noun to be refused by`() {
-        for write in WorkItemWrite.allCases {
-            #expect(!WorkItemWriteError.unavailable(write).reason.isEmpty)
+        for write in TicketWrite.allCases {
+            #expect(!TicketWriteError.unavailable(write).reason.isEmpty)
         }
     }
 
     @Test
     func `every canonical status has a word to be inexpressible in`() {
-        for state in WorkItemCanonicalState.allCases {
-            #expect(!WorkItemWriteError.inexpressible(state).reason.isEmpty)
+        for state in TicketCanonicalState.allCases {
+            #expect(!TicketWriteError.inexpressible(state).reason.isEmpty)
         }
     }
 }

@@ -2,7 +2,7 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// What the Work room reads off a set of Work Items (#812). The four sidebar views are arithmetic
+/// What the Work room reads off a set of Tickets (#812). The four sidebar views are arithmetic
 /// over the same list the deck draws, so a count that disagrees with the rows under it is the one
 /// defect a render cannot show.
 @Suite("Work room projection")

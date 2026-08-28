@@ -27,7 +27,7 @@ public extension ConnectionHealthReading {
     }
 
     /// The reading over ports already resolved. Unbound ports are absent rather than healthy: a
-    /// Project with no Work Item provider is a fully-onboarded state, not a connection.
+    /// Project with no Ticket provider is a fully-onboarded state, not a connection.
     static func over(
         _ ports: [ConnectPort],
         from sources: Sources,

@@ -6,7 +6,7 @@ import Testing
 ///
 /// GraphQL, so a refusal is a 200 carrying `errors` and the SHAPE is what says so — the one place
 /// this adapter's failure reading differs from GitHub's in kind rather than in wording.
-@Suite("Linear Work Item write refusals")
+@Suite("Linear Ticket write refusals")
 struct LinearWriteRefusalTests {
     private static func team(_ replies: [String: String] = [:]) -> RecordedLinear {
         RecordedLinear(
@@ -17,15 +17,15 @@ struct LinearWriteRefusalTests {
 
     @Test
     func `a write answers with the ticket as Linear now holds it, edges and all`() async throws {
-        let written = try await LinearWorkItems(transport: Self.team()).apply(
-            .updateFields(WorkItemFields(title: "Something else")), to: 12, through: .linear(),
+        let written = try await LinearTickets(transport: Self.team()).apply(
+            .updateFields(TicketFields(title: "Something else")), to: 12, through: .linear(),
         )
 
         // Read back through the listing's own fields rather than adopted from the mutation's
         // reply, which carries no relations — adopting that would blank a ticket's edges on
         // every write.
         #expect(written.number == 12)
-        #expect(written.labels == [WorkItemLabel(name: "engine")])
+        #expect(written.labels == [TicketLabel(name: "engine")])
         #expect(written.blockedBy == [])
     }
 
@@ -33,9 +33,9 @@ struct LinearWriteRefusalTests {
     func `Linear's own sentence travels verbatim`() async {
         let refusal = #"{ "errors": [{ "message": "Field is not writable." }], "data": null }"#
 
-        await #expect(throws: WorkItemWriteError.refused("Field is not writable.")) {
-            _ = try await LinearWorkItems(transport: Self.team(["mutation IssueUpdate": refusal]))
-                .apply(.updateFields(WorkItemFields(title: "x")), to: 12, through: .linear())
+        await #expect(throws: TicketWriteError.refused("Field is not writable.")) {
+            _ = try await LinearTickets(transport: Self.team(["mutation IssueUpdate": refusal]))
+                .apply(.updateFields(TicketFields(title: "x")), to: 12, through: .linear())
         }
     }
 
@@ -43,19 +43,19 @@ struct LinearWriteRefusalTests {
     func `a mutation that answered false is a write that did not land`() async {
         let unapplied = #"{ "data": { "result": { "success": false } } }"#
 
-        await #expect(throws: WorkItemWriteError.refused("Linear did not apply the change.")) {
-            _ = try await LinearWorkItems(transport: Self.team(["mutation IssueUpdate": unapplied]))
-                .apply(.updateFields(WorkItemFields(title: "x")), to: 12, through: .linear())
+        await #expect(throws: TicketWriteError.refused("Linear did not apply the change.")) {
+            _ = try await LinearTickets(transport: Self.team(["mutation IssueUpdate": unapplied]))
+                .apply(.updateFields(TicketFields(title: "x")), to: 12, through: .linear())
         }
     }
 
     @Test
     func `a number the team does not hold is refused rather than written blind`() async {
-        let refusal = WorkItemWriteError.refused("Linear holds no issue 99 in this team.")
+        let refusal = TicketWriteError.refused("Linear holds no issue 99 in this team.")
 
         await #expect(throws: refusal) {
-            _ = try await LinearWorkItems(transport: Self.team()).apply(
-                .updateFields(WorkItemFields(title: "x")), to: 99, through: .linear(),
+            _ = try await LinearTickets(transport: Self.team()).apply(
+                .updateFields(TicketFields(title: "x")), to: 99, through: .linear(),
             )
         }
     }
@@ -66,9 +66,9 @@ struct LinearWriteRefusalTests {
         let none = #"{ "data": { "issueLabels": { "nodes": [] } } }"#
 
         await #expect(
-            throws: WorkItemWriteError.refused("This workspace has no label called \"nope\"."),
+            throws: TicketWriteError.refused("This workspace has no label called \"nope\"."),
         ) {
-            _ = try await LinearWorkItems(transport: Self.team(["query Label": none]))
+            _ = try await LinearTickets(transport: Self.team(["query Label": none]))
                 .apply(.addLabel("nope"), to: 12, through: .linear())
         }
     }
@@ -81,8 +81,8 @@ struct LinearWriteRefusalTests {
         ] } } } }
         """
 
-        await #expect(throws: WorkItemWriteError.inexpressible(.closed)) {
-            _ = try await LinearWorkItems(transport: Self.team(["query TeamStates": narrow]))
+        await #expect(throws: TicketWriteError.inexpressible(.closed)) {
+            _ = try await LinearTickets(transport: Self.team(["query TeamStates": narrow]))
                 .apply(.close(.ruledOut), to: 12, through: .linear())
         }
     }
@@ -95,9 +95,9 @@ struct LinearWriteRefusalTests {
             failure: HTTPTransportError.unauthorized(code: 401, reason: nil),
         )
 
-        await #expect(throws: WorkItemWriteError.unreachable(.grantRefused)) {
-            _ = try await LinearWorkItems(transport: api).apply(
-                .updateFields(WorkItemFields(title: "x")), to: 12, through: .linear(),
+        await #expect(throws: TicketWriteError.unreachable(.grantRefused)) {
+            _ = try await LinearTickets(transport: api).apply(
+                .updateFields(TicketFields(title: "x")), to: 12, through: .linear(),
             )
         }
     }
@@ -113,8 +113,8 @@ struct LinearWriteRefusalTests {
             replies: LinearFixture.team,
         )
 
-        let filed = try await LinearWorkItems(transport: api).create(
-            WorkItemDraft(title: "A new ticket", body: "Why", parent: 3), through: .linear(),
+        let filed = try await LinearTickets(transport: api).create(
+            TicketDraft(title: "A new ticket", body: "Why", parent: 3), through: .linear(),
         )
 
         #expect(filed.number == 101)

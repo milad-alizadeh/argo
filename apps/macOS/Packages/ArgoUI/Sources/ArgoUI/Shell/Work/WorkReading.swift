@@ -1,17 +1,17 @@
 import ArgoEngine
 
-/// Everything the Work room is derived from: the provider's own Work Items, plus the facts only
+/// Everything the Work room is derived from: the provider's own Tickets, plus the facts only
 /// Argo holds.
 ///
 /// A VALUE, and the room's whole input. Nothing under `WorkRoom` reads a store, so a specimen
 /// builds one of these from a fixture and gets the same room the app draws.
 ///
-/// Every per-ticket fact the provider owns lives on the `WorkItem` itself — status, labels,
+/// Every per-ticket fact the provider owns lives on the `Ticket` itself — status, labels,
 /// priority, type, body and the edges (#820). What is left here is what no provider carries.
 struct WorkReading: Sendable {
     /// The provider's items in the order it served them, closed ones included: a parent's roll-up
     /// counts children the backlog does not draw.
-    var items: [WorkItem] = []
+    var items: [Ticket] = []
     /// Which items a Session has taken. DIRECT and Argo's alone — no provider carries a claim.
     var claimed: Set<Int> = []
     /// What was read about each item's Delivery. Absent where nothing was read, which is a state

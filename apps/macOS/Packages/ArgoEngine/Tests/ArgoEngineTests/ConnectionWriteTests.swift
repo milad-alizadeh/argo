@@ -6,7 +6,7 @@ import Testing
 /// last read landed.
 @Suite("Writes under a failing connection")
 struct ConnectionWriteTests {
-    private let binding = ProjectBinding(port: .workItem, accountID: "github:1", scope: "acme/api")
+    private let binding = ProjectBinding(port: .ticket, accountID: "github:1", scope: "acme/api")
     private let now = Date(timeIntervalSince1970: 10000)
 
     @Test

@@ -91,8 +91,8 @@ struct WorkBacklogBandsTests {
     @Test
     func `roots with no priority read band under a header that says so`() {
         let items = [
-            WorkItem(number: 1, title: "First", status: "Todo", closure: .open),
-            WorkItem(number: 2, title: "Second", status: "Todo", closure: .open),
+            Ticket(number: 1, title: "First", status: "Todo", closure: .open),
+            Ticket(number: 2, title: "Second", status: "Todo", closure: .open),
         ]
         let room = WorkRoomProjection.room(from: WorkFixture.reading(of: items))
 

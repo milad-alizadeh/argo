@@ -33,7 +33,7 @@ struct BindingValidationTests {
 
         _ = try? await bindings.bind(.gitHub(scope: "acme/private"), to: projectID)
 
-        #expect(await fixture.projects.store().load().binding(on: .workItem, of: projectID) == nil)
+        #expect(await fixture.projects.store().load().binding(on: .ticket, of: projectID) == nil)
     }
 
     /// A provider that cannot be reached has not said no. Refusing this attempt is right; recording
@@ -52,7 +52,7 @@ struct BindingValidationTests {
             try await bindings.bind(.gitHub(), to: projectID)
         }
 
-        #expect(await fixture.projects.store().load().binding(on: .workItem, of: projectID) == nil)
+        #expect(await fixture.projects.store().load().binding(on: .ticket, of: projectID) == nil)
     }
 
     @Test

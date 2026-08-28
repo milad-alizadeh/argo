@@ -9,45 +9,45 @@ struct LinearBindingTests {
     @Test
     func `a poll on a Linear Binding reads Linear, and one on GitHub reads GitHub`() async throws {
         // The one outcome worth ruling out is a grant reaching the other provider's host — which
-        // is why the poll takes a Binding rather than a scope and a token (`WorkItemReading`).
+        // is why the poll takes a Binding rather than a scope and a token (`TicketReading`).
         let linear = StubProviderAPI(body: LinearIssueJSON.page([]))
         let github = StubProviderAPI(body: "[]")
 
-        _ = try await ProviderWorkItems(transport: linear).list(through: .linear())
-        _ = try await ProviderWorkItems(transport: github).list(through: .stub())
+        _ = try await ProviderTickets(transport: linear).list(through: .linear())
+        _ = try await ProviderTickets(transport: github).list(through: .stub())
 
         #expect(await linear.urls() == [LinearAPI.endpoint])
         #expect(await github.urls().allSatisfy { $0.hasPrefix(GitHubOAuthApp.apiHost) })
     }
 
     @Test
-    func `a Linear Work Item port and a GitHub code host fail independently`() async {
+    func `a Linear Ticket port and a GitHub code host fail independently`() async {
         // AC2. Health is keyed on the Binding, so a Linear workspace that has gone down must leave
         // the GitHub code host reading healthy — and a reconnect on one Account must not clear a
         // refusal recorded against the other (#569).
         let ledger = ConnectionHealthLedger()
-        let workItem = PortReadTarget(binding: .linear(), projectID: "P1")
+        let ticket = PortReadTarget(binding: .linear(), projectID: "P1")
         let codeHost = PortReadTarget(binding: .stub(), projectID: "P1")
 
         await ledger.succeeded(codeHost.projectBinding, in: "P1", at: Date())
-        await ledger.record(.unreachable, of: workItem)
+        await ledger.record(.unreachable, of: ticket)
 
-        #expect(await ledger.health(of: workItem.projectBinding, in: "P1").state != .healthy)
+        #expect(await ledger.health(of: ticket.projectBinding, in: "P1").state != .healthy)
         #expect(await ledger.health(of: codeHost.projectBinding, in: "P1").state == .healthy)
     }
 
     @Test
     func `reconnecting one account leaves the other's refusal standing`() async {
         let ledger = ConnectionHealthLedger()
-        let workItem = PortReadTarget(binding: .linear(), projectID: "P1")
+        let ticket = PortReadTarget(binding: .linear(), projectID: "P1")
         let codeHost = PortReadTarget(binding: .stub(), projectID: "P1")
 
-        await ledger.record(.grantRefused, of: workItem)
+        await ledger.record(.grantRefused, of: ticket)
         await ledger.record(.grantRefused, of: codeHost)
         // The Linear identity is authorized again. GitHub's refusal is a different Account's.
-        await ledger.reconnected(workItem.projectBinding.accountID)
+        await ledger.reconnected(ticket.projectBinding.accountID)
 
-        #expect(await ledger.health(of: workItem.projectBinding, in: "P1").state != .needsReconnect)
+        #expect(await ledger.health(of: ticket.projectBinding, in: "P1").state != .needsReconnect)
         #expect(await ledger.health(of: codeHost.projectBinding, in: "P1").state == .needsReconnect)
     }
 
@@ -90,6 +90,6 @@ struct LinearBindingTests {
     }
 
     private static let query = ScopeQuery(
-        port: .workItem, provider: .linear, grant: .linear,
+        port: .ticket, provider: .linear, grant: .linear,
     )
 }

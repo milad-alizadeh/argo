@@ -11,7 +11,7 @@ public enum HTTPBody: Sendable {
 
 /// Which verb a request is sent with.
 ///
-/// Reads and OAuth exchanges only ever needed the first two; the other two are what a Work Item
+/// Reads and OAuth exchanges only ever needed the first two; the other two are what a Ticket
 /// write resolves to (#257) — GitHub edits an issue with `PATCH` and drops a label, a dependency or
 /// a sub-issue with `DELETE`. No `PUT`, because nothing asks for one.
 public enum HTTPMethod: String, Sendable {

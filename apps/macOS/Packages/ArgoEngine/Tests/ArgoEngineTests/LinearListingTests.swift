@@ -2,16 +2,16 @@
 import Foundation
 import Testing
 
-/// Enumerating a Linear team's Work Items through one Binding's grant — the port's second read,
+/// Enumerating a Linear team's Tickets through one Binding's grant — the port's second read,
 /// and the one that proves the port is a port (#371).
-@Suite("Linear Work Item listing")
+@Suite("Linear Ticket listing")
 struct LinearListingTests {
     private static func list(
         _ issues: [LinearIssueJSON],
     ) async throws
-        -> ([WorkItem], RecordedLinear) {
+        -> ([Ticket], RecordedLinear) {
         let api = LinearFixture.holding(issues)
-        let items = try await LinearWorkItems(transport: api).list(
+        let items = try await LinearTickets(transport: api).list(
             in: "team-eng", grant: .linear,
         )
         return (items, api)
@@ -33,8 +33,8 @@ struct LinearListingTests {
 
     struct CategoryCase: Sendable {
         let category: String
-        let closure: WorkItemClosure
-        let canonical: WorkItemCanonicalState
+        let closure: TicketClosure
+        let canonical: TicketCanonicalState
     }
 
     /// Linear's six categories, and the one Argo does not know — which degrades to the quietest
@@ -80,7 +80,7 @@ struct LinearListingTests {
             LinearIssueJSON(number: 12, blockers: [(number: 9, category: "canceled")]),
         ])
 
-        #expect(items.first?.blockedBy == [WorkItemBlocker(number: 9, closure: .ruledOut)])
+        #expect(items.first?.blockedBy == [TicketBlocker(number: 9, closure: .ruledOut)])
         // Argo disagrees with Linear's own UI here: a cancelled blocker satisfies nothing.
         #expect(items.first?.blockage == .stranded)
     }
@@ -112,7 +112,7 @@ struct LinearListingTests {
             LinearIssueJSON(number: 12, labels: ["engine"], labelColours: ["engine": "#5E6AD2"]),
         ])
 
-        #expect(items.first?.labels == [WorkItemLabel(name: "engine", colour: "5E6AD2")])
+        #expect(items.first?.labels == [TicketLabel(name: "engine", colour: "5E6AD2")])
     }
 
     @Test
@@ -130,7 +130,7 @@ struct LinearListingTests {
         let api = RecordedLinear(replies: ["query TeamIssues": #"{ "data": { "team": null } }"#])
 
         await #expect(throws: ProviderFetchError.unreachable) {
-            try await LinearWorkItems(transport: api).list(in: "team-eng", grant: .linear)
+            try await LinearTickets(transport: api).list(in: "team-eng", grant: .linear)
         }
     }
 
@@ -139,7 +139,7 @@ struct LinearListingTests {
         let api = RecordedLinear(failure: HTTPTransportError.unauthorized(code: 401, reason: nil))
 
         await #expect(throws: ProviderFetchError.grantRefused) {
-            try await LinearWorkItems(transport: api).list(in: "team-eng", grant: .linear)
+            try await LinearTickets(transport: api).list(in: "team-eng", grant: .linear)
         }
     }
 
@@ -148,7 +148,7 @@ struct LinearListingTests {
         let api = RecordedLinear(replies: [
             "query TeamIssues": LinearIssueJSON.page([LinearIssueJSON(number: 12)]),
         ])
-        _ = try await LinearWorkItems(transport: api).list(in: "team-eng", grant: .linear)
+        _ = try await LinearTickets(transport: api).list(in: "team-eng", grant: .linear)
 
         // A page saying it is the last one ends the walk: one request, not the backstop's twenty.
         #expect(await api.documents().count == 1)

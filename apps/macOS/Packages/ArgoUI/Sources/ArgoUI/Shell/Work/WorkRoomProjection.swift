@@ -11,7 +11,7 @@ enum WorkRoomProjection {
         let views: [ViewReading]
         let provider: WorkProvider?
         let backlog: [Row]
-        let ticket: Ticket?
+        let ticket: Detail?
         /// The Project the window is scoped to. Carried for the vacancy pages, which name it.
         let project: String?
         /// Whether the provider served anything open AT ALL. A fact about the whole open set, which
@@ -85,7 +85,7 @@ enum WorkRoomProjection {
         /// The provider's own labels, verbatim and in the order it served them. The row draws the
         /// first `ArgoBacklogList.labelLimit` of them — what distinguishes one ticket from the next
         /// belongs on the row, not only in the pane beside it.
-        let labels: [WorkItemLabel]
+        let labels: [TicketLabel]
         /// The rows nested under this one, from the child edge (`WorkRoomProjection+Tree.swift`).
         /// Empty on a leaf, and empty on a parent whose every child the view filtered out.
         var children: [Row]

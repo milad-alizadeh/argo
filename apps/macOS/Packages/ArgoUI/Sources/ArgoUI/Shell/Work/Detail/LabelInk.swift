@@ -11,7 +11,7 @@ import SwiftUI
 /// chip still belongs to the deck it sits on. The measures are `ArgoTicketDetail`'s.
 ///
 /// A label the provider gave no colour reads as `nil` and the chip keeps its neutral — the same
-/// silence `WorkItemLabel.colour` carries, not a hue invented to fill it.
+/// silence `TicketLabel.colour` carries, not a hue invented to fill it.
 struct LabelInk: Equatable {
     let ground: ArgoColor
     let edge: ArgoColor
@@ -22,7 +22,7 @@ struct LabelInk: Equatable {
     /// `backdrop` is the surface the chip sits on, and the word is measured AGAINST it rather than
     /// against an absolute: what makes a word readable is its contrast with the ground under it,
     /// so a hue already clear of this deck is left exactly as the provider set it.
-    init?(_ label: WorkItemLabel, on backdrop: ArgoColor) {
+    init?(_ label: TicketLabel, on backdrop: ArgoColor) {
         guard let hue = ArgoColor(providerHex: label.colour) else { return nil }
         let read = hue.carried(to: ArgoTicketDetail.labelWordContrast, on: backdrop)
         self.ground = read.opacity(ArgoTicketDetail.labelGroundWash)

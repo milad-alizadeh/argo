@@ -22,7 +22,7 @@ struct ConnectionHealthProjectionTests {
     @Test
     func `a healthy connection draws no chip at all`() {
         let reading = ConnectionHealthReading(connections: [
-            PortConnection(port: .workItem, account: work, health: .healthy),
+            PortConnection(port: .ticket, account: work, health: .healthy),
         ])
 
         #expect(ConnectionHealthProjection.chip(from: reading, asOf: now) == nil)
@@ -70,7 +70,7 @@ struct ConnectionHealthProjectionTests {
     func `a refused grant names the account and offers the one act that fixes it`() {
         let reading = ConnectionHealthReading(connections: [
             PortConnection(
-                port: .workItem,
+                port: .ticket,
                 account: work,
                 health: BindingHealth(fault: .grantRefused, lastSuccess: now),
             ),
@@ -87,7 +87,7 @@ struct ConnectionHealthProjectionTests {
     @Test
     func `one account filling both ports is one reconnect, not two`() {
         let reading = ConnectionHealthReading(connections: [
-            refused(.workItem, work),
+            refused(.ticket, work),
             refused(.codeHost, work),
         ])
 
@@ -100,7 +100,7 @@ struct ConnectionHealthProjectionTests {
     @Test
     func `two refused accounts are counted, not named`() {
         let reading = ConnectionHealthReading(connections: [
-            refused(.workItem, work),
+            refused(.ticket, work),
             refused(.codeHost, personal),
         ])
 
@@ -114,7 +114,7 @@ struct ConnectionHealthProjectionTests {
     func `a refused grant outranks a stale read in the roll-up`() {
         let reading = ConnectionHealthReading(connections: [
             PortConnection(
-                port: .workItem,
+                port: .ticket,
                 account: work,
                 health: BindingHealth(fault: .read(.offline), lastSuccess: now),
             ),
@@ -133,7 +133,7 @@ struct ConnectionHealthProjectionTests {
     func `two stale connections roll up to a count`() {
         let reading = ConnectionHealthReading(connections: [
             PortConnection(
-                port: .workItem,
+                port: .ticket,
                 account: work,
                 health: BindingHealth(fault: .read(.offline), lastSuccess: now),
             ),
@@ -155,7 +155,7 @@ struct ConnectionHealthProjectionTests {
         #expect(ConnectionHealthProjection.chip(from: stale(.offline, lastSuccess: now), asOf: now)?
             .state == .attention)
         #expect(ConnectionHealthProjection.chip(
-            from: ConnectionHealthReading(connections: [refused(.workItem, work)]),
+            from: ConnectionHealthReading(connections: [refused(.ticket, work)]),
             asOf: now,
         )?.state == .failure)
     }
@@ -196,7 +196,7 @@ struct ConnectionHealthProjectionTests {
     private func stale(_ cause: ConnectionCause, lastSuccess: Date?) -> ConnectionHealthReading {
         ConnectionHealthReading(connections: [
             PortConnection(
-                port: .workItem,
+                port: .ticket,
                 account: work,
                 health: BindingHealth(fault: .read(cause), lastSuccess: lastSuccess),
             ),

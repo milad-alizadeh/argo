@@ -30,7 +30,7 @@ foot.
 | `DeliveryDot` | atom | `ArgoUI/Shell/Work/Backlog/` | `reading: DeliveryReading` (5 states) | — | `DeliveryDot` |
 | `TicketDetail` | organism | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket?`, `open: (Int) -> Void` (#815) | `TicketHead`, `TicketFactStrip`, `TicketBody` | `TicketDetail` |
 | `TicketHead` | molecule | `ArgoUI/Shell/Work/Detail/` | `ticket: Ticket` | `StatusPair` | `TicketHead` |
-| `StatusPair` | atom | `ArgoUI/Shell/Work/Detail/` | `word: String`, `bucket: WorkItemState` (4 states) | — | `StatusPair` |
+| `StatusPair` | atom | `ArgoUI/Shell/Work/Detail/` | `word: String`, `bucket: TicketState` (4 states) | — | `StatusPair` |
 | `WorkRoomVacancy` | molecule | `ArgoUI/Shell/Work/` | `vacancy: WorkRoomProjection.Vacancy` (`unbound` \| `nothingOpen(provider:)`), `project: String?`, `connect: () -> Void` | stock `ContentUnavailableView` | `.vacant` |
 
 ### #836 — the room's chrome, mounted per column — **reversed by #855**
@@ -133,7 +133,7 @@ A fourth, found by `pixel-review` on #818's pair and left standing:
 
 - **An empty `blockedBy` is the section ABSENT, not an empty section.** The design's explorable
   distinguishes `null` (no edges) from `[]` (edges read, none found) and draws `Nothing.` for the
-  second. Swift cannot tell them apart — `WorkItem.blockedBy` is one array either way, and no port
+  second. Swift cannot tell them apart — `Ticket.blockedBy` is one array either way, and no port
   carries a "this provider has dependency edges" capability — so degrade-down resolves it to the
   quieter reading and the section is drawn only when there is a blocker to name. If a port ever
   learns to say which it is, that becomes a real tri-state and the rule changes with it.
@@ -141,7 +141,7 @@ A fourth, found by `pixel-review` on #818's pair and left standing:
   `'Closed elsewhere'`; a stand-in a reader cannot tell from a real title is worse than a short
   row. Closed blockers the poll DID reach keep the tracker's name, which is the ticket's own
   acceptance criterion and what the four closed rows in `deep.png` are testing.
-- **Priority and type are reading-side facts, not `WorkItem` fields.** No port reads either
+- **Priority and type are reading-side facts, not `Ticket` fields.** No port reads either
   (#388), and #160 has not settled the type vocabulary, so they arrive beside the item the way a
   body does and are ABSENT rather than defaulted. `unreadTicket` is the render of the floor.
 - **`checks` has three readings, not two.** The design draws `checks passing` or `checks failing`;
@@ -197,7 +197,7 @@ the list's own `List`. Three things the stock control cannot give forced it:
 - **A leaf keeps the slot.** `OutlineGroup` gives a leaf no chevron at all, so every dot would land
   on a different vertical.
 
-The nesting itself is unchanged by this: `Row.children` comes from `WorkItem.children`, never from a
+The nesting itself is unchanged by this: `Row.children` comes from `Ticket.children`, never from a
 literal, and `Drawn.depth` is what the row is inset by.
 
 Two ways a provider's edges can lie are resolved rather than trusted, because a tree that loses a row
@@ -566,9 +566,9 @@ draws nothing — every name below is a value.
 
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
-| `WorkItemPriority` | value | `ArgoEngine/WorkItem/` | `init(word:)`, `rung: Int`, `known: [String]` — five cases, `other` carrying no word | — | `priority desc`, the first ranking key |
-| `WorkItem.updatedAt` | value | `ArgoEngine/WorkItem/` | `Date?` | — | `age`, the third key |
-| `WorkReading.ranked(_:)` | value | `ArgoUI/Shell/Work/` | `[WorkItem] -> [WorkItem]` | `Rank` (private) | the ranking itself |
+| `TicketPriority` | value | `ArgoEngine/Ticket/` | `init(word:)`, `rung: Int`, `known: [String]` — five cases, `other` carrying no word | — | `priority desc`, the first ranking key |
+| `Ticket.updatedAt` | value | `ArgoEngine/Ticket/` | `Date?` | — | `age`, the third key |
+| `WorkReading.ranked(_:)` | value | `ArgoUI/Shell/Work/` | `[Ticket] -> [Ticket]` | `Rank` (private) | the ranking itself |
 | `NextUp.Reason.oldestUntouched` | value | `ArgoUI/Shell/Work/` | — | `NextUpChip`, unchanged | the design's fourth chip |
 
 `NextUpChip` needed no edit for the fourth reason: it renders `reason.words` and takes its ink from
@@ -579,11 +579,11 @@ draws nothing — every name below is a value.
 
 - **The priority ladder lives in the ENGINE.** `WorkRoomProjection+Bands` held
   `bandOrder = ["high", "medium", "low"]` in `ArgoUI` under the comment *"Matched, never ranked"*.
-  Both halves are now true of one list: `WorkItemPriority.known` is the words, and `rung` is the
+  Both halves are now true of one list: `TicketPriority.known` is the words, and `rung` is the
   order — bands still MATCH against it and the hero RANKS by it. Two copies of those three words is
   how a band comes to sit above a ticket the hero ranked below it. Licensed by ADR-0016: *"provider
   priority is a sort Argo reflects"*. The words stay the provider's and stay verbatim on the
-  `WorkItem` — nothing recases one.
+  `Ticket` — nothing recases one.
 - **`age` is last-touched, not filed.** `oldest untouched` is a claim about neglect, and a ticket
   filed a year ago and edited this morning is not neglected. It reads GitHub's `updated_at`, held on
   the wire as the STRING it arrives as: the decoder these calls share sets no date strategy, and
@@ -608,7 +608,7 @@ draws nothing — every name below is a value.
   one before the other, and that is a fact rather than an invention.
 - **A cold-start planner, never a best-move recommender.** The pool is
   `open · leaf · todo · unblocked · session-less`. `todo` and `session-less` are ONE clause —
-  `WorkItemState.open` is open and unclaimed — and blocked items are shown in the backlog but never
+  `TicketState.open` is open and unclaimed — and blocked items are shown in the backlog but never
   recommended here.
 - **No score, anywhere.** `Rank` is four sort keys and never a number rendered; nothing sums or
   weights them. Spec-readiness and blocker-criticality are not inputs at all.
@@ -622,14 +622,14 @@ draws nothing — every name below is a value.
   is earned only where none of the other three was AND a timestamp was actually read. A ticket
   nobody read an age for still carries no chip, which is the same suppression in a new place.
 - **The inputs named `WorkReading.edgesRead` and `WorkReading.priorities`** — #820 moved every
-  per-ticket fact onto the `WorkItem` itself, so both reads are now `pick.blockage` and
+  per-ticket fact onto the `Ticket` itself, so both reads are now `pick.blockage` and
   `pick.priority`. The suppression they describe is unchanged.
 
 Two silences worth naming, because both could have been faked:
 
 - **An unknown priority word sits on ONE rung below `low`, and unread sits below THAT.** Two words
   nothing has ordered are not ordered against each other; absent is not a rung (ADR-0014).
-  `WorkItemPriority.other` therefore carries NO word: the first cut gave it the provider's spelling
+  `TicketPriority.other` therefore carries NO word: the first cut gave it the provider's spelling
   as a payload, which made `.other("P0") != .other("urgent-ish")` under synthesised `Equatable`
   while the comment beside it claimed they compared equal, and nothing read the payload anyway.
 - **A ticket with no timestamp read sorts LAST, not first.** Treating a silence as ancient would put
@@ -640,7 +640,7 @@ Two silences worth naming, because both could have been faked:
 Three, all caught before the PR:
 
 - **`"high"` was written twice.** `WorkReading+NextUp` kept a `urgentPriority = "high"` constant for
-  the chip while the ranking sorted by `WorkItemPriority.high`, so the chip and the pick's own place
+  the chip while the ranking sorted by `TicketPriority.high`, so the chip and the pick's own place
   in the list could have disagreed — the exact failure moving `bandOrder` onto the ladder was meant
   to prevent. The chip now reads `pick.priorityRung == .high`.
 - **The cross-chart sequence comparison, and the `other` payload** — both above.

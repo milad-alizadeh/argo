@@ -5,7 +5,7 @@ import SwiftUI
 struct TicketBody: View {
     @Environment(\.argo) private var argo
 
-    let ticket: WorkRoomProjection.Ticket
+    let ticket: WorkRoomProjection.Detail
     /// What opening a child does.
     let open: (Int) -> Void
 
@@ -64,7 +64,7 @@ struct TicketBody: View {
         }
     }
 
-    /// Absent when empty, never an empty section (`WorkRoomProjection.Ticket.blockedBy`).
+    /// Absent when empty, never an empty section (`WorkRoomProjection.Detail.blockedBy`).
     @ViewBuilder private var blockedBy: some View {
         if !ticket.blockedBy.isEmpty {
             heading("Blocked by · \(ticket.blockedBy.count)")

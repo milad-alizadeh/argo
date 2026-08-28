@@ -6,9 +6,9 @@
   **one Account** and **one port**. A provider has `0—N` **Accounts** on this machine, so
   Account is the level a grant, a token and a revocation all sit at, and Binding is the level a
   provider *choice* and its health sit at.
-- **L1 triangle** (all optional): **Session—Work Item** (branchless-fallback assertion, else
+- **L1 triangle** (all optional): **Session—Ticket** (branchless-fallback assertion, else
   derived), **Session—Delivery** (**`0..1` at a time**, N over a resume chain),
-  **Delivery—Work Item** (join precedence, **user-assertable when unlinked**). Many-to-many
+  **Delivery—Ticket** (join precedence, **user-assertable when unlinked**). Many-to-many
   holds only *across time*; at any instant a Session is on at most one branch → one Delivery.
 - **Agent tree**: **Session** *is* the root **Agent** (`parentId: null`); an **Agent** `0..N`
   child **Subagent** (recursive via `parentId`). Each **Agent** owns **`0..1` Workspace** (else
@@ -23,7 +23,7 @@
 - **Delivery detail**: **Delivery** `1—1` **Diff**, `0—N` **Review** (`0—N` **Finding**), `0—N`
   **Check**, and `1—N` **Gate** (per automatable step).
 - **Session** `0—N` **Outcome** (the `produces` link; each refs a typed target —
-  **Diff/Delivery** | **Work Item** | **artifact**). External sessions: none in v1.
+  **Diff/Delivery** | **Ticket** | **artifact**). External sessions: none in v1.
 - **Session** `0..1` **session Terminal** (live PTY, managed-only) and `0—N` **MCP server**
   (observed attribute, deferred); a **Workspace** additionally has `0—N` agent-less **scratch
   Terminal**.

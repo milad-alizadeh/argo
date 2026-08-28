@@ -217,7 +217,7 @@ Detail: `cockpit-onboarding-spec.md`; Project Settings in `cockpit-app-shell-spe
   push, create-PR, merge); **semantic changes route to the agent**. You never ask an LLM to run
   `git restore`, and you never hand-run plumbing. **There is no user-facing staging index** —
   "unstage" is spelled *exclude from PR*, and the mental model stays at review altitude.
-- **A Delivery is one object anchored to the work item**, embedded in the session rather than
+- **A Delivery is one object anchored to the ticket**, embedded in the session rather than
   re-rendered, so the same PR seen from two rooms is one truth. A teammate's PR with no local
   session renders **Work-side only, with no session row** — an honest gap, not a stub.
 
@@ -308,14 +308,14 @@ Detail: `cockpit-code-room-spec.md`.
 **One word per state, identical on every surface** — `running` in the roster and `active` in the
 header can never disagree. The registry is the authority for Argo-owned words.
 
-- **Work Item status is the provider's own word, verbatim.** Argo's canonical five are an
+- **Ticket status is the provider's own word, verbatim.** Argo's canonical five are an
   **internal bucket** for ranking, filtering and transitions only — never shown in place of the
   provider's word. Argo never overwrites GitHub's `Open` with its own `todo`.
 - **`done` (completed successfully) and `closed` (terminated without completing) stay distinct** —
   abandoning and finishing must not read alike.
 - **A bare tracker gets `todo`/`done`/`closed` only, with transitions greyed out**; the full five
   appear only when the provider's workflow actually carries them.
-- **Work Item status is never synthesized from local facts.** A running session does not make a
+- **Ticket status is never synthesized from local facts.** A running session does not make a
   ticket `in-progress`; an open PR does not make it `in-review`. Those are separate axes —
   session liveness and Delivery review.
 - **Code-host vocabulary is preserved verbatim** — Check names, PR states and review verdicts are
@@ -440,7 +440,7 @@ sessions-only state:
 // The event vocabulary widens from one member to the three observer families.
 type HubEvent =
   | { type: 'session-created' | 'session-updated'; session: SessionView }
-  | { type: 'work-items-synced'; projectId: string; items: WorkItemView[] }
+  | { type: 'work-items-synced'; projectId: string; items: TicketView[] }
   | { type: 'delivery-derived'; branch: string; delivery: DeliveryView }
   | { type: 'workspace-changed'; workspace: WorkspaceView }
   | { type: 'binding-health'; binding: BindingId; health: ConnectionHealth }
@@ -450,13 +450,13 @@ interface CockpitState {
   projects: ProjectView[]
   activeProjectId: string | null
   sessions: SessionView[]          // facts only — words/tones derived renderer-side
-  workItems: WorkItemView[]        // provider word verbatim + canonical bucket alongside
+  tickets: TicketView[]        // provider word verbatim + canonical bucket alongside
   deliveries: DeliveryView[]       // branch-keyed, derived, never persisted
   connections: ConnectionHealth[]  // per binding, not per project (§9 rule 2)
 }
 ```
 
-Two disciplines the shape enforces: a `WorkItemView` carries **both** the provider's verbatim word
+Two disciplines the shape enforces: a `TicketView` carries **both** the provider's verbatim word
 and the canonical bucket, because §7 needs the first for display and the second for ranking; and
 `ConnectionHealth` is keyed by **binding**, not project, because the three bindings fail
 independently.
@@ -492,13 +492,13 @@ is an **amend** under #170's disposition, not a build-as-written.
 `observe/` survives and extends (incremental tailing beyond the launch sweep). Two adapter ports
 join it as observer families:
 
-- **Work Item provider** — GitHub Issues v1, Linear pluggable. **OAuth device flow, provider HTTP
+- **Ticket provider** — GitHub Issues v1, Linear pluggable. **OAuth device flow, provider HTTP
   API, keychain-stored per-machine tokens** (ADR-0018) — *not* the `gh` CLI, which remains how
   agents operate the repo. **Polled**: a desktop app receives no webhooks.
 - **Code host** — GitHub v1. One GitHub grant feeds both ports and fails as one.
 
 The port interface is **capability-declared canonical intents**, not provider-shaped setters:
-`createWorkItem` · `updateFields` · `transitionTo(canonical)` (the adapter resolves the native
+`createTicket` · `updateFields` · `transitionTo(canonical)` (the adapter resolves the native
 mechanism and the legal transition — deliberately not `setStatus`) · `addBlockedBy` /
 `removeBlockedBy` · `setParent` · labels · `setPriority` · `close(reason)` / `reopen`. A
 per-workspace **state-map** (provider state → canonical, heuristic-seeded, `in-review` by
@@ -517,7 +517,7 @@ cockpit-port caller in v1, and the contract is `docs/agents/issue-tracker.md`, n
 
 Files are always the source of truth (ADR-0008). Argo's own state lives in per-machine `userData`
 and is **never committed**. Argo owns only the glue (ADR-0017) — the Project registry and the small
-set of user-asserted links no external signal carries: branchless Session→Work Item, and
+set of user-asserted links no external signal carries: branchless Session→Ticket, and
 branch→ticket when the join derives to *unlinked*. **The join is derived, never persisted** — the
 Hub assembles it in memory at launch as a throwaway projection. SQLite, if it ever returns, is a
 rebuildable cache only.
@@ -616,7 +616,7 @@ Deploy and release lifecycle nodes (reserved, unwired until a code-host deploy s
 multi-Delivery rendering (v1 shows the single active Delivery; the glance banner was cut) · ticket
 comments · a state-map editor UI · a menu-bar / tray item (a fourth rendering of the same attention
 signal) · a merge-conflict GUI · kanban in the Work room · Linear-specific onboarding pixels ·
-multi-user / assignee filtering · the file-vault Work Item provider · MCP servers as an observed
+multi-user / assignee filtering · the file-vault Ticket provider · MCP servers as an observed
 session attribute · any app-global Preferences surface · foreign-session discovery as a ranked v1
 concern · stack or tooling changes.
 

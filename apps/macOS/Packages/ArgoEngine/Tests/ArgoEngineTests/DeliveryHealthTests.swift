@@ -48,7 +48,7 @@ struct DeliveryHealthTests {
     @Test
     func `a refused grant takes every Binding on that Account with it`() async {
         // Account-level, so it is recorded once and the blast radius is derived — the same rule the
-        // Work Item port records under, because one GitHub grant feeds both ports and fails as one.
+        // Ticket port records under, because one GitHub grant feeds both ports and fails as one.
         let health = ConnectionHealthLedger()
         let target = PortReadTarget.codeHost()
         await DeliveryDerivation(
@@ -57,10 +57,10 @@ struct DeliveryHealthTests {
             deliveries: DeliveryLedger(),
         )
         .derive(target, locally: .init(workspaces: []))
-        let workItems = ProjectBinding(
-            port: .workItem, accountID: target.accountID, scope: "acme/api",
+        let tickets = ProjectBinding(
+            port: .ticket, accountID: target.accountID, scope: "acme/api",
         )
 
-        #expect(await health.health(of: workItems, in: "P1").state == .needsReconnect)
+        #expect(await health.health(of: tickets, in: "P1").state == .needsReconnect)
     }
 }

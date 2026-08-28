@@ -8,7 +8,7 @@ extension WorkRoomProjection {
     /// (`cockpit-work-room.md`), so the pair can only be counted where EVERY open ticket's edges
     /// were read. Where one was not, both counts are absent rather than short: a number that has
     /// silently dropped the tickets nobody asked about is worse than no number.
-    static func views(of open: [WorkItem], claimed: Set<Int>) -> [ViewReading] {
+    static func views(of open: [Ticket], claimed: Set<Int>) -> [ViewReading] {
         let edged = open.allSatisfy { $0.blockage != .unread }
         return WorkView.allCases.map { view in
             guard edged || !view.restsOnEdges else {
@@ -19,12 +19,12 @@ extension WorkRoomProjection {
     }
 
     /// The open items one view holds. The list and the count beside it both come through here.
-    static func items(of open: [WorkItem], in view: WorkView, claimed: Set<Int>) -> [WorkItem] {
+    static func items(of open: [Ticket], in view: WorkView, claimed: Set<Int>) -> [Ticket] {
         open.filter { view.admits($0, claimed: claimed.contains($0.number)) }
     }
 
     /// The parent's `n/m`, over the TRACKER's children rather than the rows drawn under it.
-    static func rollUp(of item: WorkItem, closed: Set<Int>) -> String? {
+    static func rollUp(of item: Ticket, closed: Set<Int>) -> String? {
         guard !item.children.isEmpty else { return nil }
         return "\(item.children.filter(closed.contains).count)/\(item.children.count)"
     }

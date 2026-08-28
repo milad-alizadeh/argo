@@ -51,7 +51,7 @@ public struct CockpitActions {
     ///
     /// The only `async` action here, because it is the only one answered in minutes: the control
     /// that raises it holds itself for as long as it runs. The issue travels WITH the id because
-    /// the engine carries no Work Item, so the view is where the link is known.
+    /// the engine carries no Ticket, so the view is where the link is known.
     ///
     /// Answers with the fresh Session's id, `nil` where no handoff happened — the app performs
     /// and the shell decides what to point at (`CockpitNavigationModel.session` is not public).
@@ -79,9 +79,9 @@ public struct CockpitActions {
     /// composer can put the provider's own words beside the button (§4); a spawn answers with the
     /// fresh Session's id, on the same terms as `spawnSession` above.
     public struct Work {
-        /// File a ticket through `WorkItemWriter`. Answers `nil` where it landed, and the refusal
+        /// File a ticket through `TicketWriter`. Answers `nil` where it landed, and the refusal
         /// otherwise — nothing retries, so the reply IS the outcome.
-        public var createWorkItem: (WorkItemDraft) async -> WorkItemWriteError? = { _ in nil }
+        public var createTicket: (TicketDraft) async -> TicketWriteError? = { _ in nil }
         /// Start a Session ON one ticket, on the rung the row names. The seed carries the number,
         /// which is what makes the Session claimable back (`WorkReading.claimed`).
         public var startSession: (Int, SessionMode) async -> String? = { _, _ in nil }

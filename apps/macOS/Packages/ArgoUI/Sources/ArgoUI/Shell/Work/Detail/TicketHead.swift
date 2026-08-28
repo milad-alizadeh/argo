@@ -6,7 +6,7 @@ import SwiftUI
 struct TicketHead: View {
     @Environment(\.argo) private var argo
 
-    let ticket: WorkRoomProjection.Ticket
+    let ticket: WorkRoomProjection.Detail
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoTicketDetail.headStep) {

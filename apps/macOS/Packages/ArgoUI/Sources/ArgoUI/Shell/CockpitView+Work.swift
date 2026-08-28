@@ -12,13 +12,13 @@ extension CockpitView {
     /// pass, which is what the room switch was waiting for.
     ///
     /// Read from the provider (#820): the poll's own listing, the roster that says which of it is
-    /// claimed, and the Work Item Binding's health behind the foot. Nothing here is a fixture, and
+    /// claimed, and the Ticket Binding's health behind the foot. Nothing here is a fixture, and
     /// nothing missing from the read is filled in — the room degrades to the quieter page instead.
     var workRoom: WorkRoom {
         @Bindable var navigation = navigation
         let reading = WorkReading.live(
             WorkReading.Sources(
-                items: workItems,
+                items: tickets,
                 sessions: presentation.sessions,
                 health: health,
                 project: presentation.activeProject?.name,
@@ -41,7 +41,7 @@ extension CockpitView {
         )
     }
 
-    /// What the room's controls do (#872). New ticket is `createWorkItem`, so §7 of the failure
+    /// What the room's controls do (#872). New ticket is `createTicket`, so §7 of the failure
     /// spec decides whether it may be pressed, and the panel it points at on a dead token is the
     /// same one the unbound page's `Connect a provider…` opens.
     ///
@@ -51,7 +51,7 @@ extension CockpitView {
     var workIntents: WorkToolbarIntents {
         var intents = WorkToolbarIntents.inert
         intents.creation.control = .over(
-            health.writes(through: .workItem), attempt: ticketWrite,
+            health.writes(through: .ticket), attempt: ticketWrite,
         )
         intents.creation.act = { openTicketComposer() }
         intents.creation.reconnect = openProjectPanel
@@ -69,7 +69,7 @@ extension CockpitView {
     /// its toggle around an `EmptyView` all the same.
     ///
     /// The room is still reachable — Rooms is the sidebar's strip, not the rail that just went.
-    /// This is where a machine with no Work Item Binding lands, which is every machine before
+    /// This is where a machine with no Ticket Binding lands, which is every machine before
     /// onboarding and every Project bound to nothing after it.
     ///
     /// Takes the room already assembled rather than reading `workRoom` again — see the note there.

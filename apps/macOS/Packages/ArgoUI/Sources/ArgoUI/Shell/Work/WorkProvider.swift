@@ -16,13 +16,13 @@ struct WorkProvider: Sendable, Equatable {
     /// looks identical either way, and only one of the two may be said out loud.
     let hasAnswered: Bool
 
-    /// The Work Item port's own connection, and `nil` where nothing is bound to it — which is what
+    /// The Ticket port's own connection, and `nil` where nothing is bound to it — which is what
     /// makes the whole room vacant rather than an empty foot under a full one.
     ///
-    /// The Work Item port ALONE. A window whose code host is failing still has a Work Item provider
+    /// The Ticket port ALONE. A window whose code host is failing still has a Ticket provider
     /// that is reading fine, and a foot that folded the two would name the wrong thing to repair.
     init?(reading: ConnectionHealthReading) {
-        guard let connection = reading.connections.first(where: { $0.port == .workItem })
+        guard let connection = reading.connections.first(where: { $0.port == .ticket })
         else { return nil }
         self.init(
             name: connection.account.provider.readableName,

@@ -276,7 +276,7 @@ states, so they cannot fire.
 - **Delivery does not** — CI checks, review requested, merges. They are provider-polled, so a
   banner asserting *now* would fire off a possibly-minutes-old fact (a false `DIRECT` in banner
   form); GitHub already notifies on all three; and #167 separated Delivery from session liveness
-  and Work Item status as its own axis — letting CI into this channel quietly re-merges them.
+  and Ticket status as its own axis — letting CI into this channel quietly re-merges them.
 - **A menu-bar / tray item is out of scope** for the Phase-1 map — a fourth rendering of the same
   signal, with its own always-on menu surface, that only earns its place once the dock proves
   insufficient in use.

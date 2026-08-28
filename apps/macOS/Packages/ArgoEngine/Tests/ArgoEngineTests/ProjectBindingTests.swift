@@ -13,13 +13,13 @@ struct ProjectBindingTests {
         try await fixture.accountStore().authorizeGitHub(id: "1")
         let bindings = fixture.bindings()
 
-        try await bindings.bind(.gitHub(port: .workItem, scope: "milad/argo"), to: projectID)
+        try await bindings.bind(.gitHub(port: .ticket, scope: "milad/argo"), to: projectID)
         try await bindings.bind(.gitHub(port: .codeHost, scope: "milad/argo"), to: projectID)
-        try await bindings.bind(.gitHub(port: .workItem, scope: "milad/cockpit"), to: projectID)
+        try await bindings.bind(.gitHub(port: .ticket, scope: "milad/cockpit"), to: projectID)
 
         let project = try #require(await fixture.projects.store().load().project(id: projectID))
         #expect(project.bindings.count == 2)
-        #expect(project.binding(on: .workItem)?.scope == "milad/cockpit")
+        #expect(project.binding(on: .ticket)?.scope == "milad/cockpit")
         #expect(project.binding(on: .codeHost)?.scope == "milad/argo")
     }
 
@@ -34,13 +34,13 @@ struct ProjectBindingTests {
         try await store.authorizeGitHub(id: "1", login: "personal")
         try await store.authorizeGitHub(id: "2", login: "work", token: "ghu_work")
         let bindings = fixture.bindings()
-        try await bindings.bind(.gitHub(port: .workItem, account: "github:1"), to: projectID)
+        try await bindings.bind(.gitHub(port: .ticket, account: "github:1"), to: projectID)
         try await bindings.bind(.gitHub(port: .codeHost, account: "github:1"), to: projectID)
 
-        try await bindings.bind(.gitHub(port: .workItem, account: "github:2"), to: projectID)
+        try await bindings.bind(.gitHub(port: .ticket, account: "github:2"), to: projectID)
 
         let project = try #require(await fixture.projects.store().load().project(id: projectID))
-        #expect(project.binding(on: .workItem)?.accountID == "github:2")
+        #expect(project.binding(on: .ticket)?.accountID == "github:2")
         #expect(project.binding(on: .codeHost)?.accountID == "github:1")
     }
 
@@ -51,13 +51,13 @@ struct ProjectBindingTests {
         let projectID = try await fixture.project("argo")
         try await fixture.accountStore().authorizeGitHub(id: "1")
         let bindings = fixture.bindings()
-        try await bindings.bind(.gitHub(port: .workItem), to: projectID)
+        try await bindings.bind(.gitHub(port: .ticket), to: projectID)
         try await bindings.bind(.gitHub(port: .codeHost), to: projectID)
 
-        await bindings.unbind(port: .workItem, from: projectID)
+        await bindings.unbind(port: .ticket, from: projectID)
 
         let project = try #require(await fixture.projects.store().load().project(id: projectID))
-        #expect(project.binding(on: .workItem) == nil)
+        #expect(project.binding(on: .ticket) == nil)
         #expect(project.binding(on: .codeHost) != nil)
     }
 
@@ -74,9 +74,9 @@ struct ProjectBindingTests {
         try await store.authorizeLinear(id: "u_9", token: "lin_work")
         let bindings = fixture.bindings()
 
-        try await bindings.bind(.gitHub(port: .workItem, scope: "milad/cockpit"), to: cockpit)
+        try await bindings.bind(.gitHub(port: .ticket, scope: "milad/cockpit"), to: cockpit)
         try await bindings.bind(
-            ProjectBinding(port: .workItem, accountID: "linear:u_9", scope: "TEAM-1"),
+            ProjectBinding(port: .ticket, accountID: "linear:u_9", scope: "TEAM-1"),
             to: engine,
         )
 

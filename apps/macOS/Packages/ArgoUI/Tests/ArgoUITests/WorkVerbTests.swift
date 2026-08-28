@@ -33,7 +33,7 @@ struct WorkVerbTests {
     /// seed alone.
     @Test func `a Session started on a ticket names it with no branch at all`() {
         let issue = CockpitPresentation.Session.Issue(
-            workItem: 872, branch: nil, location: nil, ticket: nil,
+            claimed: 872, branch: nil, location: nil, title: nil,
         )
 
         #expect(issue?.number == 872)
@@ -43,7 +43,7 @@ struct WorkVerbTests {
     /// later cut for something else is still the Session that was started for 872.
     @Test func `the claim outranks the branch where the two disagree`() {
         let issue = CockpitPresentation.Session.Issue(
-            workItem: 872, branch: "argo/#873-backlog-search", location: nil, ticket: nil,
+            claimed: 872, branch: "argo/#873-backlog-search", location: nil, title: nil,
         )
 
         #expect(issue?.number == 872)
@@ -52,7 +52,7 @@ struct WorkVerbTests {
     /// The reading #745 built is untouched where nothing claimed anything.
     @Test func `a Session claiming nothing still reads its branch`() {
         let issue = CockpitPresentation.Session.Issue(
-            workItem: nil, branch: "argo/#873-backlog-search", location: nil, ticket: nil,
+            claimed: nil, branch: "argo/#873-backlog-search", location: nil, title: nil,
         )
 
         #expect(issue?.number == 873)
@@ -62,7 +62,7 @@ struct WorkVerbTests {
     /// only reading that needs confirming. A claim Argo was told at the spawn does not.
     @Test func `a host that cannot name the ticket does not un-claim the Session`() {
         let issue = CockpitPresentation.Session.Issue(
-            workItem: 872, branch: nil, location: nil, ticket: .absent,
+            claimed: 872, branch: nil, location: nil, title: .absent,
         )
 
         #expect(issue?.number == 872)
@@ -74,7 +74,7 @@ struct WorkVerbTests {
     @Test func `a branch naming a ticket the host has nothing behind links to nothing`() {
         #expect(
             CockpitPresentation.Session.Issue(
-                workItem: nil, branch: "argo/#873-backlog-search", location: nil, ticket: .absent,
+                claimed: nil, branch: "argo/#873-backlog-search", location: nil, title: .absent,
             ) == nil,
         )
     }
@@ -82,7 +82,7 @@ struct WorkVerbTests {
     @Test func `a Session with neither reading links to nothing`() {
         #expect(
             CockpitPresentation.Session.Issue(
-                workItem: nil, branch: "main", location: nil, ticket: nil,
+                claimed: nil, branch: "main", location: nil, title: nil,
             ) == nil,
         )
     }

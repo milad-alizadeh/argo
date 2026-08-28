@@ -1,0 +1,98 @@
+import Foundation
+
+/// One issue as GitHub's REST API serves it, parsed at the boundary and nowhere else.
+///
+/// The two summaries carry counts and no numbers, so they answer "is there an edge here at all"
+/// and never which. `totalBlockedBy` rather than `blockedBy`: the latter counts OPEN blockers
+/// only, and a cancelled blocker is exactly the edge Argo must still see.
+struct GitHubIssue: Decodable {
+    /// GitHub's database id, which is NOT the issue number a human reads. Carried because every
+    /// dependency and sub-issue endpoint names the ticket at the far end of an edge by this and
+    /// never by the number (#257).
+    let id: Int
+    let number: Int
+    let title: String
+    let state: String
+    let stateReason: String?
+    let labels: [Label]
+    let assignees: [User]
+    /// GitHub's own issue type, absent on a repository that has not turned them on — which reads
+    /// the same as an untyped issue, because from a surface's side it is: no type word to draw.
+    let type: IssueType?
+    /// The Markdown the ticket was filed with. Absent and blank are one state here, since neither
+    /// is a body anything could render.
+    let body: String?
+    /// GitHub serves pull requests from `/issues` too, and this is the only field telling them
+    /// apart. A pull request is a Delivery (`CONTEXT.md` L4), never a Ticket.
+    let pullRequest: PullRequestMark?
+    /// GitHub's `updated_at`, held as the STRING it arrives as: the decoder these calls share sets
+    /// no date strategy, and giving it one would re-read every other date on the wire.
+    let updatedAt: String?
+    let subIssuesSummary: SubIssuesSummary?
+    let issueDependenciesSummary: DependenciesSummary?
+
+    /// GitHub serves `color` as six hex digits without a `#`. Optional because a label written
+    /// through the API can carry none, and because the field is absent from the trimmed label
+    /// objects some events embed.
+    struct Label: Decodable {
+        let name: String
+        let color: String?
+    }
+
+    struct User: Decodable { let login: String }
+    struct IssueType: Decodable { let name: String }
+    struct PullRequestMark: Decodable { let url: String }
+    struct SubIssuesSummary: Decodable { let total: Int }
+    struct DependenciesSummary: Decodable { let totalBlockedBy: Int }
+
+    /// When GitHub last saw the ticket change, and `nil` where the field was absent OR unparseable.
+    /// Both collapse to absent deliberately: a timestamp nothing could read is not an age, and
+    /// inventing one would put a ticket at the head of a ranking that sorts by neglect.
+    /// GitHub serves `updated_at` as RFC 3339 with a `Z` offset, which `.iso8601` parses as it
+    /// stands.
+    var touched: Date? {
+        updatedAt.flatMap { try? Date($0, strategy: .iso8601) }
+    }
+
+    var hasChildren: Bool {
+        (subIssuesSummary?.total ?? 0) > 0
+    }
+
+    var hasBlockers: Bool {
+        (issueDependenciesSummary?.totalBlockedBy ?? 0) > 0
+    }
+
+    /// GitHub's closure kinds, verbatim. `duplicate` and `not_planned` are both cancellations;
+    /// `completed` is the only one that says the work was done. A closed issue with no reason at
+    /// all predates the field and cannot be told apart, which is what `closedUnreadably` is for.
+    var closure: TicketClosure {
+        guard state != "open" else { return .open }
+        switch stateReason {
+        case "completed": return .resolved
+        case "not_planned", "duplicate": return .ruledOut
+        default: return .closedUnreadably
+        }
+    }
+
+    /// The ticket without its edges — everything one listing request already answered.
+    /// `blockedBy` is `nil` where the host served no dependency summary at all: its ABSENCE is what
+    /// says the host does not expose dependency edges, since a zero count is an answer and no field
+    /// is a silence (`CONTEXT.md` L2 · degrade-down).
+    func ticket(children: [Int], blockedBy: [TicketBlocker]?) -> Ticket {
+        let prose = body?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return Ticket(
+            number: number,
+            title: title,
+            status: state,
+            closure: closure,
+            assignees: assignees.map(\.login),
+            labels: labels.map { TicketLabel(name: $0.name, colour: $0.color) },
+            priority: priority,
+            type: type?.name,
+            children: children,
+            blockedBy: blockedBy,
+            body: prose?.isEmpty == true ? nil : prose,
+            updatedAt: touched,
+        )
+    }
+}

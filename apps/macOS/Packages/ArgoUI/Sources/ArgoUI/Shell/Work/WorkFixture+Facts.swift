@@ -26,7 +26,7 @@ extension WorkFixture {
         160: "decision", 185: "decision",
     ]
 
-    /// The standard reading with the priority words edited. Priority lives ON a `WorkItem` now
+    /// The standard reading with the priority words edited. Priority lives ON a `Ticket` now
     /// (#820), so a case that wants a different word rebuilds the items rather than patching a
     /// dictionary beside them — which is also what stops one from drifting from the other.
     static func reading(priorities edit: (inout [Int: String]) -> Void) -> WorkReading {
@@ -37,8 +37,8 @@ extension WorkFixture {
         return reading
     }
 
-    private static func priced(_ item: WorkItem, _ word: String?) -> WorkItem {
-        WorkItem(copying: item, priority: word)
+    private static func priced(_ item: Ticket, _ word: String?) -> Ticket {
+        Ticket(copying: item, priority: word)
     }
 
     /// The bodies, on the two tickets a render opens on. Every other ticket carries none, which is
@@ -52,7 +52,7 @@ extension WorkFixture {
             delivery(812, "argo/#607-work-room-rail", diff: (412, 96), checks: .passing),
             delivery(829, "argo/#607-ticket-detail", diff: (188, 12), checks: .failing),
         ],
-        763: [delivery(791, "argo/#763-workitem-port", diff: (640, 210), checks: .passing)],
+        763: [delivery(791, "argo/#763-ticket-port", diff: (640, 210), checks: .passing)],
         609: [delivery(834, "worktree-prototype-609-work-room", diff: (1180, 0), checks: .passing)],
     ]
 

@@ -24,7 +24,7 @@ extension WorkRoomProjection {
             )
         }
 
-        func matches(_ item: WorkItem) -> Bool {
+        func matches(_ item: Ticket) -> Bool {
             if let digits, String(item.number).contains(digits) {
                 return true
             }
@@ -47,7 +47,7 @@ extension WorkRoomProjection {
     struct Narrowed {
         let query: Query
         /// The matches AND the ancestors they hang from, in the order the provider served them.
-        let items: [WorkItem]
+        let items: [Ticket]
         /// Which of `items` matched. The rest are on screen for a descendant's sake.
         let hits: Set<Int>
 
@@ -63,7 +63,7 @@ extension WorkRoomProjection {
     /// An ancestor the VIEW excluded is not brought back — the chain stops there and the match
     /// stands as a root, which is what `tree(of:reading:closed:)` already does with any shown item
     /// whose parent is not shown.
-    static func narrowed(_ shown: [WorkItem], to query: Query) -> Narrowed {
+    static func narrowed(_ shown: [Ticket], to query: Query) -> Narrowed {
         let hits = Set(shown.filter(query.matches).map(\.number))
         guard !hits.isEmpty else { return Narrowed(query: query, items: [], hits: hits) }
         let kept = hits.union(ancestors(of: hits, in: shown))
@@ -73,7 +73,7 @@ extension WorkRoomProjection {
 
     /// Every shown item on the path from a match up to its root. The walk terminates because
     /// `parentEdges` holds no cycle — that is the invariant its own refusal keeps.
-    private static func ancestors(of hits: Set<Int>, in shown: [WorkItem]) -> Set<Int> {
+    private static func ancestors(of hits: Set<Int>, in shown: [Ticket]) -> Set<Int> {
         let parents = parentEdges(of: shown)
         var kept: Set<Int> = []
         for hit in hits {

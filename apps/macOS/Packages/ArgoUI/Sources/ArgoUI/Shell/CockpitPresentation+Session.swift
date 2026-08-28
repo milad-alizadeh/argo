@@ -43,7 +43,7 @@ public extension CockpitPresentation {
             }
         }
 
-        /// The Work Item this Session serves, as a LINK and never as its content
+        /// The Ticket this Session serves, as a LINK and never as its content
         /// (`CONTEXT.md` L1): Argo stores the reference, the provider owns the words. The title
         /// is read through and absent whenever the provider has not answered — which, with no
         /// provider connected, is always.
@@ -69,7 +69,7 @@ public extension CockpitPresentation {
         public let workspace: Workspace?
         public let access: Access
         public let status: SessionStatus
-        /// The linked Work Item, when there is a provider to have read one from. `nil` covers
+        /// The linked Ticket, when there is a provider to have read one from. `nil` covers
         /// both "no provider connected" and "connected, and this Session is unlinked" — the
         /// difference belongs to a provider surface, and neither renders a link here.
         public let issue: Issue?

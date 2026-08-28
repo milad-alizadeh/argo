@@ -11,8 +11,8 @@ import Foundation
 extension WorkFixture {
     /// One takeable leaf. `blockedBy: []` throughout — a blocked leaf never reaches the pool, so a
     /// ranking case naming an edge would be testing the filter above the ranking instead.
-    static func candidate(_ number: Int, priority: String? = nil, day: Int? = nil) -> WorkItem {
-        WorkItem(
+    static func candidate(_ number: Int, priority: String? = nil, day: Int? = nil) -> Ticket {
+        Ticket(
             number: number,
             title: "Candidate #\(number)",
             status: "Todo",
@@ -25,8 +25,8 @@ extension WorkFixture {
 
     /// A chart over the candidates it sequences, in the order given: `children` is the provider's
     /// own author order, and that order IS the PRD sequence the ranking reads.
-    static func chart(_ number: Int, sequencing children: [Int]) -> WorkItem {
-        WorkItem(
+    static func chart(_ number: Int, sequencing children: [Int]) -> Ticket {
+        Ticket(
             number: number, title: "A PRD", status: "Todo", closure: .open, type: "PRD",
             children: children, blockedBy: [],
         )

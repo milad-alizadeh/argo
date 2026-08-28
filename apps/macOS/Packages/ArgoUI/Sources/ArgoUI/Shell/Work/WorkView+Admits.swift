@@ -10,7 +10,7 @@ extension WorkView {
         }
     }
 
-    /// Whether this view holds an open Work Item. ONE predicate, used both to count a view in the
+    /// Whether this view holds an open Ticket. ONE predicate, used both to count a view in the
     /// sidebar and to fill the list beside it — the two asking the same question separately is how
     /// a rail comes to disagree with the rows it sits next to.
     ///
@@ -21,7 +21,7 @@ extension WorkView {
     /// A ticket whose edges nobody served is `unread`, and in NEITHER view (#820): only a provider
     /// SAYING there is nothing in the way makes a ticket unblocked, and only one naming an edge
     /// makes it blocked (`CONTEXT.md` L2 · degrade-down).
-    func admits(_ item: WorkItem, claimed: Bool) -> Bool {
+    func admits(_ item: Ticket, claimed: Bool) -> Bool {
         switch self {
         case .allOpen: true
         case .unblocked: item.blockage == .clear

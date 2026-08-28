@@ -9,7 +9,7 @@ extension WorkReading {
     /// Everything the app hands in. The listing is the provider's; the other three are the window's
     /// own, and none of them is a Hub fact.
     struct Sources {
-        let items: [WorkItem]
+        let items: [Ticket]
         let sessions: [CockpitPresentation.Session]
         let health: ConnectionHealthReading
         let project: String?

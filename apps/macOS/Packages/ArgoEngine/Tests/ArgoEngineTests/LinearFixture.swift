@@ -47,14 +47,14 @@ enum LinearFixture {
 }
 
 extension ResolvedBinding {
-    /// A Work Item Binding resolved onto one Linear identity. The scope is a team id, which is what
+    /// A Ticket Binding resolved onto one Linear identity. The scope is a team id, which is what
     /// a Linear Binding holds where a GitHub one holds `owner/repo`.
     static func linear(scope: String = "team-eng") -> ResolvedBinding {
         let account = AccountRecord(
             provider: .linear, providerAccountID: "L1", displayName: "milad",
         )
         return ResolvedBinding(
-            binding: ProjectBinding(port: .workItem, accountID: account.id, scope: scope),
+            binding: ProjectBinding(port: .ticket, accountID: account.id, scope: scope),
             account: account,
             grant: AccountGrant(accessToken: "lin_api_key", scopes: ["read", "write"]),
         )

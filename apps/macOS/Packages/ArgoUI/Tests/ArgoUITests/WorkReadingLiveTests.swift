@@ -4,14 +4,14 @@ import Foundation
 import Testing
 
 /// The room read from what the app actually holds (#820) — the poll's listing, the roster, and the
-/// Work Item Binding's health. Every case here is a fact NOT read, and what the room says instead.
+/// Ticket Binding's health. Every case here is a fact NOT read, and what the room says instead.
 @Suite("Work room live reading")
 struct WorkReadingLiveTests {
     private static let account = AccountRecord(
         provider: .github, providerAccountID: "1", displayName: "octocat",
     )
 
-    private static func health(_ health: BindingHealth, port: AccountPort = .workItem)
+    private static func health(_ health: BindingHealth, port: AccountPort = .ticket)
         -> ConnectionHealthReading {
         ConnectionHealthReading(connections: [
             PortConnection(port: port, account: account, health: health),
@@ -25,7 +25,7 @@ struct WorkReadingLiveTests {
     )
 
     private static func room(
-        items: [WorkItem] = [],
+        items: [Ticket] = [],
         sessions: [CockpitPresentation.Session] = [],
         health: ConnectionHealthReading = .quiet,
         view: WorkView = .allOpen,
@@ -40,13 +40,13 @@ struct WorkReadingLiveTests {
         return WorkRoomProjection.room(from: reading, in: view)
     }
 
-    private static let read = WorkItem(
+    private static let read = Ticket(
         number: 812, title: "The views sidebar", status: "open", closure: .open, blockedBy: [],
     )
 
     /// The tier the room ships in: a provider that exposes no dependency edges. The room draws —
     /// there IS a backlog — and only the claims resting on edges go quiet.
-    private static let unedged = WorkItem(
+    private static let unedged = Ticket(
         number: 812, title: "The views sidebar", status: "open", closure: .open,
     )
 
@@ -66,7 +66,7 @@ struct WorkReadingLiveTests {
     }
 
     /// The sharpest of the three nothings: bound, nobody has answered, and the listing is empty
-    /// because of it. Saying "every Work Item is closed" here is the false DIRECT — and a Binding
+    /// because of it. Saying "every Ticket is closed" here is the false DIRECT — and a Binding
     /// failing all session sits in this state for the whole launch, not for an instant.
     @Test
     func `a Binding that has not answered is not an empty backlog`() {
@@ -104,7 +104,7 @@ struct WorkReadingLiveTests {
         #expect(room.provider?.state == example.state)
     }
 
-    /// The Work Item port alone. A code host that is failing is a different repair, and a foot that
+    /// The Ticket port alone. A code host that is failing is a different repair, and a foot that
     /// folded the two would name the wrong one.
     @Test
     func `a code host bound alone leaves the Work room unbound`() {
@@ -181,7 +181,7 @@ struct WorkReadingLiveTests {
     /// is not one — its row would open onto a Route with nothing on it.
     @Test
     func `a chart is a PRD-typed parent`() {
-        let leaf = WorkItem(
+        let leaf = Ticket(
             number: 606, title: "A typed leaf", status: "open", closure: .open, type: "PRD",
             blockedBy: [],
         )
@@ -190,7 +190,7 @@ struct WorkReadingLiveTests {
     }
 
     /// Where the provider carries no type at all the role falls back to hierarchy
-    /// (`CONTEXT.md` L1 · Work Item), which is the only reading a repository with issue types
+    /// (`CONTEXT.md` L1 · Ticket), which is the only reading a repository with issue types
     /// switched off can have. A ticket the provider DID type does not fall back.
     @Test
     func `an untyped parent is chart-shaped, and a typed non-PRD one is not`() {
@@ -198,18 +198,18 @@ struct WorkReadingLiveTests {
         #expect(!Self.chart.typed("task").isChartShaped)
     }
 
-    private static let chart = WorkItem(
+    private static let chart = Ticket(
         number: 607, title: "Wayfinder: the Work room", status: "open", closure: .open,
         type: "PRD", children: [812], blockedBy: [],
     )
 }
 
-private extension WorkItem {
-    var untyped: WorkItem {
-        WorkItem(copying: self, type: .some(nil))
+private extension Ticket {
+    var untyped: Ticket {
+        Ticket(copying: self, type: .some(nil))
     }
 
-    func typed(_ word: String) -> WorkItem {
-        WorkItem(copying: self, type: word)
+    func typed(_ word: String) -> Ticket {
+        Ticket(copying: self, type: word)
     }
 }

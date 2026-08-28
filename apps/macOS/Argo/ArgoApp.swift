@@ -58,8 +58,8 @@ struct ArgoApp: App {
                         actions: actions,
                         connect: connectSurface,
                         health: accounts.connections,
-                        workItems: accounts.workItems,
-                        workItemAddress: accounts.workItemAddress,
+                        tickets: accounts.tickets,
+                        ticketAddress: accounts.ticketAddress,
                     )
                     .environment(navigation)
                     .task {
@@ -81,7 +81,7 @@ struct ArgoApp: App {
                         of: cockpit.presentation.untitledTicketNumbers,
                         initial: true,
                     ) { _, _ in
-                        Task { await cockpit.nameTickets(through: accounts.workItemBinding()) }
+                        Task { await cockpit.nameTickets(through: accounts.ticketBinding()) }
                     }
                     // Every PTY this window owns dies with the window, and the observer above ends
                     // them on ⌘Q too: nothing can re-adopt an agent Argo started, so one that
@@ -201,7 +201,7 @@ struct ArgoApp: App {
         )
         // The Work room's two provider acts, split across the coordinators that own them the way
         // the Connect panel's are: the create is a Binding act, and the spawn is the Hub's (#872).
-        actions.work.createWorkItem = { await accounts.createWorkItem($0) }
+        actions.work.createTicket = { await accounts.createTicket($0) }
         actions.work.startSession = { await cockpit.spawnSession(on: $0, mode: $1) }
         return actions
     }

@@ -2,7 +2,7 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// What the ticket detail reads off a Work Item (#815) — the fact strip, the Deliveries, and the
+/// What the ticket detail reads off a Ticket (#815) — the fact strip, the Deliveries, and the
 /// two link sections. Every claim here is about what Argo is entitled to SAY: a fact nobody read is
 /// absent, and an absence is never dressed up as an answer.
 @Suite("The ticket's facts and its sections")
@@ -148,7 +148,7 @@ struct TicketProjectionTests {
     /// the sentence under it says what the empty list means.
     @Test
     func `a parent with every child closed keeps its section and its figure`() {
-        let parent = WorkItem(
+        let parent = Ticket(
             number: 1, title: "Done all through", status: "Todo", closure: .open,
             children: [690, 745],
         )

@@ -30,14 +30,14 @@ switched by ⌘1/⌘2/⌘3 (Sessions is home; Code added by #183).
 
 The Delivery axis has no top-level surface of its own: a Delivery renders inside
 whichever Session card you view it from (single home = the branch), and as linked
-state on its Work Item.
+state on its Ticket.
 
 ## The matrix
 
 | # | Stage | Glance (collapsed, always visible on its surface) | Drill (one gesture) | Surface |
 |---|---|---|---|---|
 | 0 | **Tickets produced by a session** (grilling is a skill in an ordinary chat, not a session type) | ordinary Roster row; session detail lists the tickets it produced (`produces` links, tagged "created here") | a produced ticket opens in the Work room; the chat itself via the session's Console | Roster → session detail |
-| 1 | **Ticket** (ideate) | Work Item row: `id · title · state word · priority` — parents show child roll-up `3/5` | ticket detail: body/spec, sub-items, `blockedBy`, linked Deliveries (incl. teammate PRs), producing session if any, **Implement** action | Work Items view |
+| 1 | **Ticket** (ideate) | Ticket row: `id · title · state word · priority` — parents show child roll-up `3/5` | ticket detail: body/spec, sub-items, `blockedBy`, linked Deliveries (incl. teammate PRs), producing session if any, **Implement** action | Tickets view |
 | — | **Next judgement** | one "Next up" card: ticket + reason (`unblocked · spec ready`) — ~~echoed as a pointer card on the Sessions-room zero-state~~, struck (see below) | the ranked list with reasons; full backlog | Work room only |
 | 2 | **Plan** | current task line + plan progress (`3/7`) at the top of Activity | the committed plan, step states | Session · Activity |
 | 3 | **Build** | collapsed timeline: now-line, latest steps, Background Tasks summary (R15) | steps expand to prose; a tool/agent row fills the Console capture slot (R13) | Session · Activity (+ Console) |
@@ -65,7 +65,7 @@ state on its Work Item.
   link. The matrix above never violates it.
 - **Two-Delivery sessions** render two lifecycle strips — the active one open, the
   other collapsed to its glance line. The weight is the discouragement.
-- **Fallbacks:** no provider → Work Items view and Next judgement absent, Home falls
+- **Fallbacks:** no provider → Tickets view and Next judgement absent, Home falls
   back to Roster + orb; external session → CONVENTION rows (Plan, Outcomes, agent
   Review verdict) absent, their sections hide; no code host → lifecycle ends at
   Commit. Surfaces hide whole — no half-filled skeletons.

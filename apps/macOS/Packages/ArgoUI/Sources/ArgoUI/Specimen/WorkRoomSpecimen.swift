@@ -20,10 +20,10 @@ struct WorkRoomSpecimen: View {
             presentation: .workingTheBacklog,
             actions: .inert,
             health: .previewBound,
-            workItems: WorkFixture.items,
+            tickets: WorkFixture.items,
             // The Binding the foot above it names, addressed — without it the row's two link verbs
             // render disabled, which is a different state from the one this shot is of (#872).
-            workItemAddress: WorkFixture.address,
+            ticketAddress: WorkFixture.address,
         )
         .environment(navigation)
     }

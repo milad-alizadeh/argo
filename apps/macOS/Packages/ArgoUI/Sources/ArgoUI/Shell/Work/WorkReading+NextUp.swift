@@ -8,7 +8,7 @@ extension WorkReading {
     /// `open · leaf · todo · unblocked · session-less`, and the pick is the head of it ranked by
     /// `priority desc → PRD sequence → age` (`WorkReading+Ranking.swift`). Which ticket most needs
     /// attention is a different question, and the attention channel's.
-    func nextUp(of open: [WorkItem]) -> NextUp {
+    func nextUp(of open: [Ticket]) -> NextUp {
         // No open LEAF is the clear tier, not the blocked one: "every open leaf is waiting on
         // something still open" is false when there is no open leaf to wait.
         let leaves = open.filter(\.children.isEmpty)
@@ -18,7 +18,7 @@ extension WorkReading {
         // backlog where everything is blocked. The CHIP is what gets suppressed, not the pick.
         let unblocked = leaves.filter { $0.blockage != .blocked && $0.blockage != .stranded }
         guard !unblocked.isEmpty else { return .nothingUnblocked }
-        // `todo` and `session-less` in ONE clause: `WorkItemState.open` is open AND unclaimed, and
+        // `todo` and `session-less` in ONE clause: `TicketState.open` is open AND unclaimed, and
         // the claim is the roster join the room already makes.
         let pool = unblocked.filter { $0.state(claimed: claimed.contains($0.number)) == .open }
         guard let pick = ranked(pool).first else { return .allRunning }
@@ -30,7 +30,7 @@ extension WorkReading {
     /// `high priority` → `unblocked` → `next in <PRD>`, cut to `chipLimit`, with `oldest untouched`
     /// where none of the three was earned. Order is the priority, so the cut drops the weakest
     /// claim rather than an arbitrary one.
-    private func reasons(for pick: WorkItem, in pool: [WorkItem]) -> [NextUp.Reason] {
+    private func reasons(for pick: Ticket, in pool: [Ticket]) -> [NextUp.Reason] {
         var earned: [NextUp.Reason] = []
         // The same rung the ranking sorted by, so the chip and the pick's place cannot disagree.
         if pick.priorityRung == .high {

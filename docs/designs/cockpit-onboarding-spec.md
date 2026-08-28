@@ -14,7 +14,7 @@
 2. **Connect** — three **independent** connection rows, completable **in any order**, none
    blocking another:
    - **Folder** — the project's scope.
-   - **Connections** — Work Item provider + code host.
+   - **Connections** — Ticket provider + code host.
    - **Companion plugin** — the CONVENTION-tier upgrade.
 
 This is a panel, not a funnel: it is re-entered later from Settings (entry points owned by the
@@ -31,7 +31,7 @@ shell spec, #172), and the same panel serves reconnect (§Error).
 
 ## Connections — one sign-in, both ports
 
-- **One GitHub OAuth device-flow sign-in feeds both ports** (Work Items *and* code host,
+- **One GitHub OAuth device-flow sign-in feeds both ports** (Tickets *and* code host,
   ADR-0014). It is not two connections wearing one name — it is one grant, and it fails as one
   (`cockpit-failure-states-spec.md` §2, account level).
 - Tokens are **keychain-stored per machine** (ADR-0018). No `gh` CLI dependency.

@@ -60,8 +60,8 @@ struct BacklogPaneTests {
 
     /// The cut is about names and widths, so these cases state names and let the colour be the
     /// silence it is on a provider that served none.
-    private func named(_ names: String...) -> [WorkItemLabel] {
-        names.map { WorkItemLabel(name: $0) }
+    private func named(_ names: String...) -> [TicketLabel] {
+        names.map { TicketLabel(name: $0) }
     }
 
     @Test

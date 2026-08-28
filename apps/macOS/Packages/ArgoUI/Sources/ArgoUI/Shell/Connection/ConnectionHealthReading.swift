@@ -48,7 +48,7 @@ public struct PortConnection: Equatable, Sendable, Identifiable {
 /// provider died stays silent — you learn on switch, which is also the first moment you could act
 /// on it, and the strip's one dot channel says "your agent is waiting on you" and never this.
 ///
-/// Unbound ports are simply absent. A Project with no Work Item provider is a fully-onboarded
+/// Unbound ports are simply absent. A Project with no Ticket provider is a fully-onboarded
 /// state, not a connection that is down.
 public struct ConnectionHealthReading: Equatable, Sendable {
     public let connections: [PortConnection]

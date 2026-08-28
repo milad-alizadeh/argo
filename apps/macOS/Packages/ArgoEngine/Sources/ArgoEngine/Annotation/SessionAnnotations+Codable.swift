@@ -48,7 +48,7 @@ extension SessionAnnotations.Annotation: Codable {
     private static func ticket(
         from container: KeyedDecodingContainer<CodingKeys>,
     ) throws
-        -> TicketReading? {
+        -> TicketTitleReading? {
         if let title = try container.decodeIfPresent(String.self, forKey: .ticketTitle),
            let named = SessionAnnotations.name(from: title) {
             return .named(named)

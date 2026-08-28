@@ -6,5 +6,5 @@ enum WriteAttempt: Equatable, Sendable {
     case idle
     case pending
     /// The error rather than a sentence, so the provider's own words reach the control unedited.
-    case failed(WorkItemWriteError)
+    case failed(TicketWriteError)
 }

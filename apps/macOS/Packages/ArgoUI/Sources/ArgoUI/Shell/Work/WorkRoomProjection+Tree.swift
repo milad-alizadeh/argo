@@ -50,11 +50,11 @@ extension WorkRoomProjection {
     /// The shown items as a tree. A shown item whose parent is also shown nests under it, and
     /// everything else is a root — which keeps a view's filter from taking a child down with its
     /// parent.
-    static func tree(of shown: [WorkItem], reading: WorkReading, closed: Set<Int>) -> [Row] {
+    static func tree(of shown: [Ticket], reading: WorkReading, closed: Set<Int>) -> [Row] {
         let parents = parentEdges(of: shown)
         let byNumber = Dictionary(uniqueKeysWithValues: shown.map { ($0.number, $0) })
 
-        func node(_ item: WorkItem) -> Row {
+        func node(_ item: Ticket) -> Row {
             Row(
                 id: item.number,
                 title: item.title,
@@ -74,7 +74,7 @@ extension WorkRoomProjection {
 
     /// Which shown item owns each shown child. Built once for the whole set rather than asked per
     /// node, because the answer for one child depends on every other edge served.
-    static func parentEdges(of shown: [WorkItem]) -> [Int: Int] {
+    static func parentEdges(of shown: [Ticket]) -> [Int: Int] {
         let numbers = Set(shown.map(\.number))
         var parents: [Int: Int] = [:]
         for item in shown {

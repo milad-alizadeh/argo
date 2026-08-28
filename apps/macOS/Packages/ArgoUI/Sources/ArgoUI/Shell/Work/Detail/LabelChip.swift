@@ -13,9 +13,9 @@ struct LabelChip: View {
     let word: String
     /// The label this chip draws, where it is one. `nil` says this chip is Argo's own overflow
     /// count rather than a provider label, which has no hue to spend either way.
-    var label: WorkItemLabel?
+    var label: TicketLabel?
 
-    init(label: WorkItemLabel) {
+    init(label: TicketLabel) {
         self.word = label.name
         self.label = label
     }
@@ -53,11 +53,11 @@ struct LabelChip: View {
 
 #Preview("Label chips — the provider's colours, one it gave none, and Argo's own count") {
     HStack(spacing: ArgoTicketDetail.labelGap) {
-        LabelChip(label: WorkItemLabel(name: "bug", colour: "d73a4a"))
-        LabelChip(label: WorkItemLabel(name: "enhancement", colour: "a2eeef"))
-        LabelChip(label: WorkItemLabel(name: "ready-for-agent", colour: "0e8a16"))
-        LabelChip(label: WorkItemLabel(name: "wayfinder:map", colour: "5319e7"))
-        LabelChip(label: WorkItemLabel(name: "unread"))
+        LabelChip(label: TicketLabel(name: "bug", colour: "d73a4a"))
+        LabelChip(label: TicketLabel(name: "enhancement", colour: "a2eeef"))
+        LabelChip(label: TicketLabel(name: "ready-for-agent", colour: "0e8a16"))
+        LabelChip(label: TicketLabel(name: "wayfinder:map", colour: "5319e7"))
+        LabelChip(label: TicketLabel(name: "unread"))
         LabelChip(counting: "+2")
     }
     .padding(ArgoSpacing.region)

@@ -539,7 +539,7 @@ const TICKETS = [
   { id:'#609', t:'Prototype: what the Work room looks like in the Liquid Glass shell',
     parent:'#607', pri:'HIGH', type:'design', word:'In Progress', bucket:'in progress',
     d:'draft', by:[] },
-  { id:'#388', t:'Work Item read path: listing, status, labels, dependency edges',
+  { id:'#388', t:'Ticket read path: listing, status, labels, dependency edges',
     parent:'#607', pri:'HIGH', type:'task', word:'Todo', bucket:'todo', d:null, by:['#609'] },
   { id:'#272', t:'The generic node tree and ticket detail', parent:'#607',
     pri:'HIGH', type:'task', word:'Todo', bucket:'todo', d:null, by:['#609','#388'] },
@@ -552,7 +552,7 @@ const TICKETS = [
     pri:'MEDIUM', type:'task', word:'Backlog', bucket:'todo', d:null, by:['#334'] },
   { id:'#336', t:'The canvas: derived spacing and the edge rule', parent:'#334',
     pri:'LOW', type:'task', word:'Backlog', bucket:'todo', d:null, by:['#335'] },
-  { id:'#763', t:'WorkItem transport and grant plumbing', pri:'MEDIUM', type:'task',
+  { id:'#763', t:'Ticket transport and grant plumbing', pri:'MEDIUM', type:'task',
     word:'In Review', bucket:'in progress', d:'open', by:[] },
   { id:'#275', t:'The provider connection chip as a graphite transient', pri:'LOW',
     type:'task', word:'Needs triage', bucket:'todo', d:'checks', by:[] },
@@ -600,7 +600,7 @@ const SIX = ['#609','#388','#264','#256','#375','#376'];
    The tracker still names them, and the view renders the tracker's name. */
 const CLOSED = {
   '#264':'App shell: project strip, top bar, room tabs',
-  '#256':'Work Item provider port over OAuth (Electron)',
+  '#256':'Ticket provider port over OAuth (Electron)',
   '#375':'The graphite/Ion visual foundation',
   '#376':'The native Liquid Glass shell',
 };
@@ -626,7 +626,7 @@ const STATES = {
                    q:'Every candidate already has a Session.' },
   'empty':       { n:'Empty backlog — the pool is clear',
                    q:'An empty backlog, and the backlog-clear hero tier that goes with it.' },
-  'unbound':     { n:'No Work Item provider bound — the room hides whole',
+  'unbound':     { n:'No Ticket provider bound — the room hides whole',
                    q:'What the user sees instead, and how it differs from an empty backlog (#272).' },
   'collapsed':   { n:'A parent shut — its roll-up standing in for its children',
                    q:'What a shut parent says on its own, and where the n/m roll-up sits against the title.',
@@ -750,7 +750,7 @@ function subtreeA(t, depth, group) {
   return row + childrenOf(t.id).map(c => subtreeA(c, depth + 1, group)).join('');
 }
 /* ============================================================================
-   The room with no Work Item provider bound. #272 says the room hides whole
+   The room with no Ticket provider bound. #272 says the room hides whole
    rather than rendering an empty backlog — so there is no rail, no ledger and
    no hero, and the difference from an empty backlog is that nothing has been
    read at all rather than read and found empty.
@@ -761,7 +761,7 @@ const cleared = () => `
   <div class="vacant">
     <div class="panel">
       <h2>Nothing open in argo</h2>
-      <p>GitHub answered: every Work Item it exposes for this Project is closed. Nothing is
+      <p>GitHub answered: every Ticket it exposes for this Project is closed. Nothing is
       waiting to be picked up.</p>
     </div>
   </div>`;
@@ -769,7 +769,7 @@ const cleared = () => `
 const unbound = () => `
   <div class="vacant">
     <div class="panel">
-      <h2>No Work Item provider is connected to argo</h2>
+      <h2>No Ticket provider is connected to argo</h2>
       <p>Argo reads tickets through a provider you connect per Project. Nothing here has been
       read yet — this is not an empty backlog.</p>
       <button class="start pri">Connect a provider…</button>

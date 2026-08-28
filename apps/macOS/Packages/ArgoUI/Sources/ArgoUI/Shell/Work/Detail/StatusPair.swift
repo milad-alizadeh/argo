@@ -12,7 +12,7 @@ struct StatusPair: View {
     @Environment(\.argo) private var argo
 
     let word: String
-    let bucket: WorkItemState
+    let bucket: TicketState
 
     var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
@@ -31,7 +31,7 @@ struct StatusPair: View {
 
 #Preview("Status pair — every bucket a word can be filed under") {
     VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-        ForEach(WorkItemState.allCases, id: \.self) { StatusPair(word: "Todo", bucket: $0) }
+        ForEach(TicketState.allCases, id: \.self) { StatusPair(word: "Todo", bucket: $0) }
     }
     .padding(ArgoSpacing.section)
     .argoDeckSurface()

@@ -41,7 +41,7 @@ public actor SessionAnnotationStore {
     /// Hold what the code host said about this Session's ticket (#745). Argo's own write and never
     /// a gesture — the rename is `setName`.
     @discardableResult
-    public func setTicket(_ ticket: TicketReading?, sessionID: String) -> SessionAnnotations {
+    public func setTicket(_ ticket: TicketTitleReading?, sessionID: String) -> SessionAnnotations {
         persist(load().reading(ticket, sessionID: sessionID))
     }
 

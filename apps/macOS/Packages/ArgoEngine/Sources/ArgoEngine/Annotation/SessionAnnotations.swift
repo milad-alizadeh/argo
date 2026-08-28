@@ -18,16 +18,16 @@ public struct SessionAnnotations: Equatable, Sendable {
         /// The name the user gave this Session, `nil` for one they never named. Dropping the name
         /// IS the reset (#502, story 20) — there is no second flag saying whether it is in force.
         public var explicitName: String?
-        /// What the code host last said about the Work Item this Session's branch names (#745).
+        /// What the code host last said about the Ticket this Session's branch names (#745).
         /// `nil` for a Session nobody has asked about yet. DERIVED, and kept apart from
         /// `explicitName` above because Argo writes this one and the user writes that one: merged,
         /// a resolve would silently overwrite a rename.
-        public var ticket: TicketReading?
+        public var ticket: TicketTitleReading?
 
         public init(
             isArchived: Bool = false,
             explicitName: String? = nil,
-            ticket: TicketReading? = nil,
+            ticket: TicketTitleReading? = nil,
         ) {
             self.isArchived = isArchived
             self.explicitName = SessionAnnotations.name(from: explicitName)
@@ -56,7 +56,7 @@ public struct SessionAnnotations: Equatable, Sendable {
         }
 
         /// And for the ticket.
-        func reading(_ ticket: TicketReading?) -> Annotation {
+        func reading(_ ticket: TicketTitleReading?) -> Annotation {
             var next = self
             next.ticket = ticket
             return next
@@ -101,7 +101,7 @@ public struct SessionAnnotations: Equatable, Sendable {
 
     /// What the code host said about this Session's ticket, and `nil` where nothing has asked.
     /// Which of the three a surface DRAWS is the projection's, on the ground `explicitName` is.
-    public func ticket(_ sessionID: String) -> TicketReading? {
+    public func ticket(_ sessionID: String) -> TicketTitleReading? {
         annotation(for: sessionID).ticket
     }
 
@@ -120,7 +120,7 @@ public struct SessionAnnotations: Equatable, Sendable {
 
     /// Hold what the code host said about a ticket. Never the user's gesture: the rename writes
     /// `naming` above.
-    func reading(_ ticket: TicketReading?, sessionID: String) -> SessionAnnotations {
+    func reading(_ ticket: TicketTitleReading?, sessionID: String) -> SessionAnnotations {
         setting(annotation(for: sessionID).reading(ticket), for: sessionID)
     }
 

@@ -114,8 +114,10 @@ extension CockpitPresentation.Session {
     /// `renamed:` line here says otherwise (ADR-0027, amended by #755).
     ///
     /// renamed: location <- cwd — "Names are words, not abbreviations" (rules/code-style.md).
+    /// renamed: claimed <- ticket — the slot sits beside a title reading also about the ticket, and
+    /// one of the two has to say WHICH fact about it (#881).
     init(observed session: HubSession, annotations: SessionAnnotations) {
-        // Read once and handed to both: the Workspace draws the branch and the Work Item link joins
+        // Read once and handed to both: the Workspace draws the branch and the Ticket link joins
         // on it, and two readings of one fact would let the two disagree.
         let workspace = Workspace(observed: session)
         self.init(
@@ -134,10 +136,10 @@ extension CockpitPresentation.Session {
                 location: session.cwd,
                 workspace: workspace,
                 issue: Issue(
-                    workItem: session.workItem,
+                    claimed: session.ticket,
                     branch: workspace?.branch,
                     location: session.cwd,
-                    ticket: annotations.ticket(session.id),
+                    title: annotations.ticket(session.id),
                 ),
             ),
             spend: Spend(
@@ -174,9 +176,9 @@ extension CockpitPresentation.Session {
 }
 
 extension CockpitPresentation.Session.Issue {
-    /// The Work Item this Session's git context names, and `nil` where it names none (#745).
+    /// The Ticket this Session's git context names, and `nil` where it names none (#745).
     ///
-    /// Two readings, and the DIRECT one wins: `workItem` is the ticket Argo was told to start this
+    /// Two readings, and the DIRECT one wins: `claimed` is the ticket Argo was told to start this
     /// Session on (#872), and the branch is the DERIVED convention `docs/agents/worktrees.md` fixes
     /// (#745). The title came from outside Argo either way.
     ///
@@ -188,26 +190,26 @@ extension CockpitPresentation.Session.Issue {
     /// branch carrying no `#<N>`, and — once the host has been asked — a number it has nothing
     /// behind. A number nobody has asked about yet keeps its link and carries no title, which
     /// `SessionTitle` drops back to the derived name.
-    init?(workItem: Int?, branch: String?, location: String?, ticket: TicketReading?) {
+    init?(claimed: Int?, branch: String?, location: String?, title: TicketTitleReading?) {
         // The claim is asked first and is never dropped by the host: Argo was TOLD this number at
         // the spawn, so an `absent` lookup says the host could not name it, not that the Session is
         // on nothing. Only the DERIVED reading — a number guessed off a branch — needs the host to
         // confirm it, because there a misread `#<N>` and a real ticket look identical.
-        guard let number = workItem
-            ?? Self.derived(branch: branch, location: location, ticket: ticket)
+        guard let number = claimed
+            ?? Self.derived(branch: branch, location: location, title: title)
         else { return nil }
-        self.init(number: number, title: ticket?.title)
+        self.init(number: number, title: title?.title)
     }
 
     /// The number a git context names, once the host has had its say. `nil` where the branch names
     /// none, and where it names one the host answered has nothing behind — a branch naming a ticket
-    /// that does not exist (`TicketReading.absent`).
+    /// that does not exist (`TicketTitleReading.absent`).
     private static func derived(
-        branch: String?, location: String?, ticket: TicketReading?,
+        branch: String?, location: String?, title: TicketTitleReading?,
     )
         -> Int? {
-        guard ticket != .absent else { return nil }
-        return WorkItemLink.number(branch: branch, workspaceLocation: location)
+        guard title != .absent else { return nil }
+        return TicketLink.number(branch: branch, workspaceLocation: location)
     }
 }
 

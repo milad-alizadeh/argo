@@ -1,6 +1,6 @@
 ## Storage & ownership
 
-Every source of truth is external: Work Items live in a project-management provider, Delivery
+Every source of truth is external: Tickets live in a project-management provider, Delivery
 truth in a code host, Sessions in the filesystem (CLI transcripts) + terminal. Argo owns only
 the **glue** — the Project registry, the Account registry, and the user-asserted links no
 external signal carries.

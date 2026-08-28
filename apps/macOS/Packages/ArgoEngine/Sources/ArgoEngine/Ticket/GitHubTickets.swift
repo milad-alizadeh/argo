@@ -1,0 +1,90 @@
+import Foundation
+
+/// The Ticket port filled by GitHub Issues, read through one Binding's grant.
+///
+/// Sibling to `GitHubTicketTitles`, which answers one number. This one enumerates, which is the
+/// read a Work room and a poll are built on.
+public struct GitHubTickets: TicketPort {
+    let reads: GitHubReads
+    let writes: GitHubWrites
+
+    public init(transport: HTTPTransport = URLSessionTransport()) {
+        self.reads = GitHubReads(transport: transport)
+        self.writes = GitHubWrites(transport: transport)
+    }
+
+    /// `github.com/<owner>/<repo>/issues/<n>` — the browse URL, which is NOT the API path `path(of:
+    /// through:)` builds. A blank scope addresses nothing rather than the host's own front page.
+    public static func browseURL(of number: Int, in scope: String) -> URL? {
+        guard !scope.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        return URL(string: "https://github.com/\(scope)/issues/\(number)")
+    }
+
+    /// How many tickets are read at once — and, because a ticket reads its two edges one after the
+    /// other, how many requests are in flight. Bounded at all because a repository with hundreds of
+    /// open issues is the fan-out GitHub's secondary limits refuse.
+    static let concurrentTickets = 8
+
+    public func list(in scope: String, grant: AccountGrant) async throws -> [Ticket] {
+        // Open only. A closed ticket has left the room, and asking for every issue a repository
+        // ever had costs a poll two extra requests per issue on edges nobody is waiting on. The
+        // closures that DO matter travel on the blocker edges, which carry their own.
+        let issues: [GitHubIssue] = try await reads.pages(
+            [GitHubIssue].self, of: "/repos/\(scope)/issues?state=open", grant: grant,
+        )
+        return try await tickets(
+            issues.filter { $0.pullRequest == nil }, in: scope, grant: grant,
+        )
+    }
+
+    /// Every ticket with its edges, `concurrentTickets` at a time and back in the order served —
+    /// the backlog draws in the provider's own order, and a fan-out lands in the host's.
+    private func tickets(
+        _ issues: [GitHubIssue], in scope: String, grant: AccountGrant,
+    ) async throws
+        -> [Ticket] {
+        try await withThrowingTaskGroup(of: (Int, Ticket).self) { group in
+            var read = [Ticket?](repeating: nil, count: issues.count)
+            for (index, issue) in issues.enumerated() {
+                // Harvested before the next is added, from the point the group is full. This IS
+                // the throttle — without it the loop would add one task per ticket.
+                if index >= Self.concurrentTickets, let (at, item) = try await group.next() {
+                    read[at] = item
+                }
+                group.addTask {
+                    try await (index, ticket(issue, in: scope, grant: grant))
+                }
+            }
+            for try await (at, item) in group {
+                read[at] = item
+            }
+            // Every slot was filled above, so this drops nothing.
+            return read.compactMap(\.self)
+        }
+    }
+
+    /// The edges, asked for only where the issue's own summary says there is one. The summaries
+    /// carry counts and never numbers, so they answer "is there an edge" and never "which".
+    func ticket(
+        _ issue: GitHubIssue, in scope: String, grant: AccountGrant,
+    ) async throws
+        -> Ticket {
+        let path = "/repos/\(scope)/issues/\(issue.number)"
+        let children: [GitHubIssue] = issue.hasChildren
+            ? try await reads.pages([GitHubIssue].self, of: "\(path)/sub_issues", grant: grant)
+            : []
+        let blockers: [GitHubIssue] = issue.hasBlockers
+            ? try await reads.pages(
+                [GitHubIssue].self, of: "\(path)/dependencies/blocked_by", grant: grant,
+            )
+            : []
+        return issue.ticket(
+            children: children.map(\.number),
+            // A host that served no summary served no edges either, and that is `nil` rather than
+            // the empty list a host with none of them answers with.
+            blockedBy: issue.issueDependenciesSummary == nil
+                ? nil
+                : blockers.map { TicketBlocker(number: $0.number, closure: $0.closure) },
+        )
+    }
+}

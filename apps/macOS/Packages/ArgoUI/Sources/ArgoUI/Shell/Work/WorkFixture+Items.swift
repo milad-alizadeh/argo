@@ -17,9 +17,9 @@ extension WorkFixture {
     /// #607 carries nine children: five open and read, two closed and read, and two the poll has
     /// not reached — the three states a roll-up has to survive. Its six blockers are the other
     /// worst honest case: two still open, four already closed and named from the tracker.
-    static let items: [WorkItem] = listed.map(carrying)
+    static let items: [Ticket] = listed.map(carrying)
 
-    private static let listed: [WorkItem] = [
+    private static let listed: [Ticket] = [
         open(
             607,
             "Wayfinder: the Work room, end to end",
@@ -36,7 +36,7 @@ extension WorkFixture {
         ),
         open(
             388,
-            "Work Item read path: listing, status, labels, dependency edges",
+            "Ticket read path: listing, status, labels, dependency edges",
             .init(status: working),
         ),
         open(
@@ -51,14 +51,14 @@ extension WorkFixture {
         ),
         open(335, "Placement: zones, columns and the cycle guard", .init(blockedBy: [334])),
         open(336, "The canvas: derived spacing and the edge rule", .init(blockedBy: [335])),
-        open(763, "WorkItem transport and grant plumbing", .init(status: working)),
+        open(763, "Ticket transport and grant plumbing", .init(status: working)),
         open(275, "The provider connection chip as a graphite transient", .init(blockedBy: [272])),
         open(160, "Ticket vocabulary: type is a property, not a ladder", .init(blockedBy: [272])),
         open(185, "Work room interior: what a leaf carries", .init(blockedBy: [272])),
         closed(690, "A room tab is its mark alone"),
         closed(745, "Name a roster row by the ticket it is working"),
         closed(264, "App shell: project strip, top bar, room tabs"),
-        closed(256, "Work Item provider port over OAuth (Electron)"),
+        closed(256, "Ticket provider port over OAuth (Electron)"),
         closed(375, "The graphite/Ion visual foundation"),
         closed(376, "The native Liquid Glass shell"),
     ]
@@ -98,7 +98,7 @@ extension WorkFixture {
     """
 
     /// The provider's own word for a ticket somebody is on. Verbatim, and deliberately not
-    /// `WorkItemState.claimed`'s spelling — the two are different facts (#272).
+    /// `TicketState.claimed`'s spelling — the two are different facts (#272).
     private static let working = "In progress"
 
     /// Which fixture numbers are closed. A blocker's closure is read from here rather than written
@@ -110,8 +110,8 @@ extension WorkFixture {
     /// renders have to show is chips a reader can tell apart. `work-room` is deliberately left
     /// colourless — the neutral chip is a state as real as the coloured one, and no render would
     /// show it if every fixture label had a hue.
-    private static func labelled(_ name: String) -> WorkItemLabel {
-        WorkItemLabel(name: name, colour: labelColours[name])
+    private static func labelled(_ name: String) -> TicketLabel {
+        TicketLabel(name: name, colour: labelColours[name])
     }
 
     private static let labelColours: [String: String] = [
@@ -124,19 +124,19 @@ extension WorkFixture {
         "blocked": "b60205",
     ]
 
-    private static func open(_ number: Int, _ title: String, _ shape: Shape = Shape()) -> WorkItem {
-        WorkItem(
+    private static func open(_ number: Int, _ title: String, _ shape: Shape = Shape()) -> Ticket {
+        Ticket(
             number: number, title: title, status: shape.status, closure: .open,
             labels: shape.labels.map(labelled),
             children: shape.children,
             blockedBy: shape.blockedBy.map {
-                WorkItemBlocker(number: $0, closure: closedNumbers.contains($0) ? .resolved : .open)
+                TicketBlocker(number: $0, closure: closedNumbers.contains($0) ? .resolved : .open)
             },
         )
     }
 
-    private static func closed(_ number: Int, _ title: String) -> WorkItem {
-        WorkItem(
+    private static func closed(_ number: Int, _ title: String) -> Ticket {
+        Ticket(
             number: number,
             title: title,
             status: "Done",
@@ -147,14 +147,14 @@ extension WorkFixture {
 
     /// The same ticket, finished. Everything but the status word survives: a closed parent still
     /// has the children a chart counts, and closing a ticket does not strip its labels.
-    static func resolved(_ item: WorkItem) -> WorkItem {
-        WorkItem(copying: item, status: "Done", closure: .resolved)
+    static func resolved(_ item: Ticket) -> Ticket {
+        Ticket(copying: item, status: "Done", closure: .resolved)
     }
 
     /// The same ticket carrying the facts one listing request answers alongside it — the provider's
     /// own priority and type words, and the body of the two tickets a render opens on.
-    private static func carrying(_ item: WorkItem) -> WorkItem {
-        WorkItem(
+    private static func carrying(_ item: Ticket) -> Ticket {
+        Ticket(
             copying: item,
             priority: priorities[item.number],
             type: types[item.number],

@@ -60,8 +60,8 @@ final class ClaimLedger {
 
     /// The ticket this claim was started on (#872). Never taken back: what a Session was started
     /// for is something that happened, so an orphaned one is still the Session that took it.
-    func setWorkItem(_ number: Int, for claim: SessionOwnership.ClaimID) {
-        update(claim) { $0.workItem = number }
+    func setTicket(_ number: Int, for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.ticket = number }
     }
 
     func setMode(_ modeSet: SessionModeSet, for claim: SessionOwnership.ClaimID) {

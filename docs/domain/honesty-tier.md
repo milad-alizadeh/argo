@@ -5,7 +5,7 @@ A property **of each rendered fact**, not a session-wide mode — one Session mi
 - **DIRECT** — Argo owns the fact (managed pid, a mode Argo set).
 - **DERIVED** — observed from outside Argo, whether **inferred** from a signal (external
   liveness via process-match + mtime; the `~n%` context estimate) **or read verbatim** from an
-  external authority (a code-host Review or Check; a Work Item's Answer prose). Verbatim reads
+  external authority (a code-host Review or Check; a Ticket's Answer prose). Verbatim reads
   are **never reworded or summarized**.
 - **CONVENTION** — arrived over the companion-plugin/MCP channel (managed-only, e.g.
   `report_status`); never existed in a transcript.

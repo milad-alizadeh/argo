@@ -7,7 +7,7 @@ extension WorkReading {
     /// The pool in rank order. A total order, so the same listing always yields the same pick: the
     /// number is the last key, and it breaks the tie the three ranking inputs left rather than
     /// ranking anything itself.
-    func ranked(_ pool: [WorkItem]) -> [WorkItem] {
+    func ranked(_ pool: [Ticket]) -> [Ticket] {
         pool
             .map { (item: $0, rank: rank(of: $0)) }
             .sorted { $0.rank < $1.rank }
@@ -17,12 +17,12 @@ extension WorkReading {
     /// Whether this ticket is the pool's most neglected — the fallback claim, checked rather than
     /// assumed. False for a ticket nobody read a timestamp for: no age was read, so `oldest` is not
     /// a thing anybody may say about it (`CONTEXT.md` L2 · degrade-down).
-    func isOldest(_ item: WorkItem, in pool: [WorkItem]) -> Bool {
+    func isOldest(_ item: Ticket, in pool: [Ticket]) -> Bool {
         guard let touched = item.updatedAt else { return false }
         return pool.compactMap(\.updatedAt).allSatisfy { touched <= $0 }
     }
 
-    private func rank(of item: WorkItem) -> Rank {
+    private func rank(of item: Ticket) -> Rank {
         let place = sequence(of: item.number)
         return Rank(
             rung: item.priorityRung.rung,
@@ -60,7 +60,7 @@ extension WorkReading {
 /// Every key is an ascending `Int` and every absent one is `.max`, so "unknown sorts last" is said
 /// once rather than once per key.
 private struct Rank: Comparable {
-    /// Rung 0 is `high`. `WorkItemPriority` owns which word is which.
+    /// Rung 0 is `high`. `TicketPriority` owns which word is which.
     let rung: Int
     /// Which chart holds the ticket, and where in that chart — the two halves of `PRD sequence`.
     let chart: Int

@@ -7,7 +7,7 @@ enum WriteControlState: Equatable, Sendable {
     /// Disabled in place: no spinner, no toast, no layout shift.
     case pending
     /// Pressable again, carrying the refusal's reason. Pressing is the retry; nothing auto-retries.
-    case refused(WorkItemWriteError)
+    case refused(TicketWriteError)
     /// Disabled, because there is no usable token for this Account.
     case blocked(AccountRecord)
 

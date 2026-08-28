@@ -20,7 +20,7 @@ enum LinearAPI {
         return trimmed?.isEmpty == true ? nil : trimmed
     }
 
-    /// A colour in the shape `WorkItemLabel` holds: hex digits, no `#`, which is the `#` Linear
+    /// A colour in the shape `TicketLabel` holds: hex digits, no `#`, which is the `#` Linear
     /// serves off.
     static func bareHex(_ value: String?) -> String? {
         text(value).map { $0.hasPrefix("#") ? String($0.dropFirst()) : $0 }

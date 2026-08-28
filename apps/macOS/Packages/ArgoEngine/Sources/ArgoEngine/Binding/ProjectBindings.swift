@@ -88,7 +88,7 @@ public actor ProjectBindings {
             return .broken(binding, .accountRemoved)
         }
         // `bind` refuses this, so reaching it means the file was hand-edited: the registry is not a
-        // trusted input, and the alternative is reading Delivery truth off a Work Item provider.
+        // trusted input, and the alternative is reading Delivery truth off a Ticket provider.
         guard account.provider.serves(port) else {
             return .broken(binding, .portNotServedByProvider)
         }

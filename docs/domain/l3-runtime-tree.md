@@ -41,7 +41,7 @@
   `PlanEntry[]`, status `pending | in_progress | completed` (ADR-0020). One list per Session,
   not one per Turn. A **Turn** carries at most the **snapshot** in force while it ran; the
   Session's current plan is the newest snapshot observed, which is **DERIVED** — which is why a
-  turn that touched no plan does not blank it. Distinct from Work Item and Delivery lifecycle.
+  turn that touched no plan does not blank it. Distinct from Ticket and Delivery lifecycle.
 - **Workspace** — the git working context attached to an Agent: `kind: main | worktree`, plus
   `branch`, `baseRef`, `dirty`, `unpushed`, `headSha`, `ahead`/`behind`, `sharedCount`. **The
   join key `branch` lives here** — Delivery is keyed by `Workspace.branch`. Node-scoped

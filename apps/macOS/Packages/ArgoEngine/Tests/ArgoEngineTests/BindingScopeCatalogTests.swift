@@ -7,7 +7,7 @@ import Testing
 /// be read are never the same claim (#821).
 @Suite("Binding scope catalogue")
 struct BindingScopeCatalogTests {
-    private static func query(port: AccountPort = .workItem) -> ScopeQuery {
+    private static func query(port: AccountPort = .ticket) -> ScopeQuery {
         ScopeQuery(
             port: port,
             provider: .github,
@@ -31,9 +31,9 @@ struct BindingScopeCatalogTests {
     }
 
     /// The same rule the check makes at bind time, made one step earlier: a repository that cannot
-    /// source Work Items is never offered under the port that reads them.
+    /// source Tickets is never offered under the port that reads them.
     @Test
-    func `a repository with Issues switched off is not offered for the Work Item port`() async {
+    func `a repository with Issues switched off is not offered for the Ticket port`() async {
         let api = StubProviderAPI(body: """
         [{ "full_name": "milad/argo", "has_issues": false },
          { "full_name": "trili/cockpit", "has_issues": true }]
@@ -134,7 +134,7 @@ struct BindingScopeCatalogTests {
     func `a provider with no listing behind it says so rather than offering nothing`() async {
         let api = StubProviderAPI(body: "[]")
         let query = ScopeQuery(
-            port: .workItem,
+            port: .ticket,
             provider: .linear,
             grant: AccountGrant(accessToken: "lin_api", scopes: []),
         )

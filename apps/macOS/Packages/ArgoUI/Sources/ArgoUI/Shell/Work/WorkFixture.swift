@@ -59,7 +59,7 @@ enum WorkFixture {
     /// The fact strip's floor: `Bucket` is Argo's own and survives, and every absent fact is left
     /// out rather than defaulted.
     static let unread = WorkReading(
-        items: [WorkItem(
+        items: [Ticket(
             number: 272, title: nodeTreeTitle, status: "Todo", closure: .open, blockedBy: [],
         )],
         provider: bound,
@@ -82,8 +82,8 @@ enum WorkFixture {
     /// Every open leaf waiting on something still open, so the hero has nothing to offer and says
     /// which of the three reasons it is.
     static let poolBlocked = reading(of: [
-        item(272, blockedBy: [WorkItemBlocker(number: 999, closure: .open)]),
-        item(273, blockedBy: [WorkItemBlocker(number: 999, closure: .open)]),
+        item(272, blockedBy: [TicketBlocker(number: 999, closure: .open)]),
+        item(273, blockedBy: [TicketBlocker(number: 999, closure: .open)]),
     ])
 
     /// The pool is takeable and every one of it is already somebody's. A different sentence from
@@ -102,9 +102,9 @@ enum WorkFixture {
     /// a card that has never been asked to wrap.
     static let oneChip = WorkReading(
         items: [
-            WorkItem(
+            Ticket(
                 number: 388,
-                title: "Work Item read path: listing, status, labels, dependency edges",
+                title: "Ticket read path: listing, status, labels, dependency edges",
                 status: "Todo",
                 closure: .open,
                 priority: "high",
@@ -115,7 +115,7 @@ enum WorkFixture {
 
     /// One item's own reading, for a test that needs a single edge rather than the whole backlog.
     /// Bound, because an unbound room is vacant whatever is in it.
-    static func reading(of items: [WorkItem]) -> WorkReading {
+    static func reading(of items: [Ticket]) -> WorkReading {
         WorkReading(items: items, provider: bound, project: project)
     }
 
@@ -131,10 +131,10 @@ enum WorkFixture {
 
     /// The Binding behind `bound`, addressed — what the room's two link verbs are drawn live off
     /// (#872). The repo the titles above were taken from, so a render's link goes where it says.
-    static let address = WorkItemAddress(provider: .github, scope: "milad-alizadeh/argo")
+    static let address = TicketAddress(provider: .github, scope: "milad-alizadeh/argo")
 
-    static func item(_ number: Int, blockedBy: [WorkItemBlocker]) -> WorkItem {
-        WorkItem(
+    static func item(_ number: Int, blockedBy: [TicketBlocker]) -> Ticket {
+        Ticket(
             number: number, title: "A ticket behind an edge", status: "Todo", closure: .open,
             blockedBy: blockedBy,
         )
@@ -142,7 +142,7 @@ enum WorkFixture {
 
     /// The same ticket from a provider that serves no dependency summary: the edges are not empty,
     /// they are UNREAD, and every claim built on them is suppressed above this.
-    private static func unedged(_ item: WorkItem) -> WorkItem {
-        WorkItem(copying: item, blockedBy: .some(nil))
+    private static func unedged(_ item: Ticket) -> Ticket {
+        Ticket(copying: item, blockedBy: .some(nil))
     }
 }

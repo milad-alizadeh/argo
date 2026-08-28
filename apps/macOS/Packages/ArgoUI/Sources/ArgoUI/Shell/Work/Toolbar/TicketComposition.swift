@@ -11,15 +11,15 @@ struct TicketComposition: Equatable {
 
     /// The draft this composes to, and `nil` while there is nothing a provider would take. Every
     /// provider refuses a ticket with no title, so the control says so before the wire rather than
-    /// spending a round trip to be told (`WorkItemSurface` — a capability decides whether an
+    /// spending a round trip to be told (`TicketSurface` — a capability decides whether an
     /// affordance exists; this decides whether there is anything to send).
     ///
     /// The body is dropped where it is blank rather than sent empty: absent and empty are one state
     /// on a ticket body, and `nil` is the one that says nothing was written.
-    var draft: WorkItemDraft? {
+    var draft: TicketDraft? {
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty else { return nil }
         let body = body.trimmingCharacters(in: .whitespacesAndNewlines)
-        return WorkItemDraft(title: title, body: body.isEmpty ? nil : body)
+        return TicketDraft(title: title, body: body.isEmpty ? nil : body)
     }
 }

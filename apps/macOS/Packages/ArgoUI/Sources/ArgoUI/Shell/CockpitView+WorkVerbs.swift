@@ -14,12 +14,12 @@ extension CockpitView {
     ///
     /// The two link verbs are ABSENT where the Binding cannot address the ticket, which is what
     /// disables them: a Linear Binding holds a team id, and no page is derivable from one
-    /// (`WorkItemAddress`).
+    /// (`TicketAddress`).
     var workVerbs: WorkToolbarIntents.Verbs {
         guard let ticket = navigation.ticket else { return .inert }
         var verbs = WorkToolbarIntents.Verbs()
         verbs.start = { Task { await startSession(on: ticket) } }
-        guard let url = workItemAddress?.browseURL(of: ticket) else { return verbs }
+        guard let url = ticketAddress?.browseURL(of: ticket) else { return verbs }
         verbs.openOnHost = { openURL(url) }
         // The same URL the verb beside it opens, off one derivation: two readings of one address
         // is how a copied link comes to point somewhere else than the one that opened.
@@ -54,10 +54,10 @@ extension CockpitView {
     ///
     /// The sheet stays up on a refusal, holding what was typed. Closing it would throw away the
     /// only copy of a ticket the provider declined for a reason the reader can often fix.
-    func createTicket(_ draft: WorkItemDraft) {
+    func createTicket(_ draft: TicketDraft) {
         ticketWrite = .pending
         Task {
-            guard let refusal = await actions.work.createWorkItem(draft) else {
+            guard let refusal = await actions.work.createTicket(draft) else {
                 ticketWrite = .idle
                 isComposingTicket = false
                 return

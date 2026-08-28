@@ -2,7 +2,7 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// The two readings the roster's Work Item links drive (#745) — what triggers a resolve, and what
+/// The two readings the roster's Ticket links drive (#745) — what triggers a resolve, and what
 /// one is performed over. They came out of the app target so a test could reach them (ADR-0022).
 @Suite("Roster ticket links")
 struct CockpitTicketLinkTests {

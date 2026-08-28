@@ -42,7 +42,7 @@ struct ConnectScopePickerProjectionTests {
     func `the scope picker is drawn on its own port and on no other`() {
         let panel = ConnectPanelProjection.panel(from: ConnectFixture.choosing)
 
-        #expect(panel.ports.first?.id == .workItem)
+        #expect(panel.ports.first?.id == .ticket)
         #expect(panel.ports.first?.picker != nil)
         #expect(panel.ports.last?.picker == nil)
     }
@@ -62,12 +62,12 @@ struct ConnectScopePickerProjectionTests {
         let reading = ConnectReading(
             folder: ConnectFixture.folder,
             accounts: [ConnectFixture.personal],
-            ports: [ConnectPort(port: .workItem, state: .bound(
+            ports: [ConnectPort(port: .ticket, state: .bound(
                 accountID: ConnectFixture.personal.id,
                 scope: "milad-alizadeh/argo",
             ))],
             scopes: ConnectScopes(
-                port: .workItem,
+                port: .ticket,
                 accountID: ConnectFixture.personal.id,
                 state: .loading,
             ),
@@ -85,7 +85,7 @@ struct ConnectScopePickerProjectionTests {
             folder: ConnectFixture.folder,
             accounts: [ConnectFixture.personal, ConnectFixture.work],
             scopes: ConnectScopes(
-                port: .workItem,
+                port: .ticket,
                 accountID: ConnectFixture.work.id,
                 state: .loading,
             ),
@@ -105,7 +105,7 @@ struct ConnectScopePickerProjectionTests {
             folder: ConnectFixture.folder,
             accounts: [],
             scopes: ConnectScopes(
-                port: .workItem,
+                port: .ticket,
                 accountID: ConnectFixture.personal.id,
                 state: .loading,
             ),
