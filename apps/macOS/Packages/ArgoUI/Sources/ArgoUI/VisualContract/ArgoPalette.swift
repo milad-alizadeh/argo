@@ -7,6 +7,7 @@ public struct ArgoPalette: Sendable {
     public let interaction: InteractionRoles
     public let state: StateRoles
     public let diff: DiffRoles
+    public let series: SeriesRoles
 
     public init(
         surface: SurfaceRoles,
@@ -15,6 +16,7 @@ public struct ArgoPalette: Sendable {
         interaction: InteractionRoles,
         state: StateRoles,
         diff: DiffRoles,
+        series: SeriesRoles,
     ) {
         self.surface = surface
         self.text = text
@@ -22,6 +24,7 @@ public struct ArgoPalette: Sendable {
         self.interaction = interaction
         self.state = state
         self.diff = diff
+        self.series = series
     }
 }
 
@@ -248,28 +251,6 @@ public extension ArgoPalette {
         /// rather than as the vessel lit up.
         public func wash(_ role: ArgoColor) -> ArgoColor {
             role.opacity(0.1)
-        }
-    }
-
-    /// What a change did to a file, as a pair of inks. The contract asserts their distance from
-    /// `state`, which they share a feed with inches apart.
-    struct DiffRoles: Sendable {
-        public let added: ArgoColor
-        public let removed: ArgoColor
-
-        public init(added: ArgoColor, removed: ArgoColor) {
-            self.added = added
-            self.removed = removed
-        }
-
-        public var all: [(name: String, color: ArgoColor)] {
-            [("added", added), ("removed", removed)]
-        }
-
-        /// The same role as a GROUND under a whole line of code rather than as an ink on it.
-        /// Weaker than `StateRoles.muted`: source has to stay readable on it.
-        public func wash(_ role: ArgoColor) -> ArgoColor {
-            role.opacity(0.12)
         }
     }
 }

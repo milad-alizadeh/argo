@@ -90,6 +90,17 @@ enum MermaidMeasure {
     /// a thick line rather than as a bar, and it has to stay far inside `nodeMinWidth`.
     static let activationWidth: CGFloat = 10
 
+    /// How wide a chart's circle is drawn. A measure: at much under this a slice worth a
+    /// twentieth of the whole comes out a sliver rather than a wedge.
+    static let chartDiameter: CGFloat = 168
+    /// The mark in a legend row standing for the wedge it names. A measure: big enough to read a
+    /// hue off, and it has to stay well under the line it is set beside.
+    static let swatch: CGFloat = 10
+
+    /// The face a chart's own title is set in — the loudest word a diagram writes, and still at
+    /// the rhythm of the prose around it.
+    static let titleFace = ProseFace(rung: .body, isBold: true)
+
     /// The face an edge's own word is set in, and the face a `subgraph`'s title takes. Quieter than
     /// the prose the nodes are set in, because both are said ABOUT the diagram rather than in it.
     static let edgeFace = ProseFace(rung: .footnote)

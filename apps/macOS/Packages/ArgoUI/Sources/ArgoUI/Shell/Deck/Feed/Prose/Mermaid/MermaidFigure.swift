@@ -19,6 +19,8 @@ struct MermaidFigure: Equatable, Sendable {
     /// only the path differs.
     enum Form: Equatable, Sendable {
         case shape(MermaidOutline, CGRect)
+        /// A wedge of the circle inscribed in the box — see `MermaidArc`.
+        case arc(MermaidArc, CGRect)
         /// A polyline, in order. Two points is a straight connector.
         case path([CGPoint])
         /// A connector's head: a triangle pointing at `tip`, standing back along the line from
@@ -37,6 +39,9 @@ extension MermaidFigure.Form {
     var bounds: CGRect {
         switch self {
         case let .shape(_, rect): rect
+        // The box it is inscribed in, not the wedge's own tighter box. A layout drawing one arc
+        // draws the whole family, and together they occupy exactly this.
+        case let .arc(_, rect): rect
         case let .path(points): Self.around(points)
         case let .arrowhead(tip, from): Self.around([tip, from])
         }
@@ -48,6 +53,8 @@ extension MermaidFigure.Form {
         switch self {
         case let .shape(outline, rect):
             .shape(outline, rect.offsetBy(dx: offset.x, dy: offset.y))
+        case let .arc(arc, rect):
+            .arc(arc, rect.offsetBy(dx: offset.x, dy: offset.y))
         case let .path(points):
             .path(points.map { $0.moved(by: offset) })
         case let .arrowhead(tip, from):

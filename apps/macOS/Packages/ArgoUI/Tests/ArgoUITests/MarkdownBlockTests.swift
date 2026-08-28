@@ -71,8 +71,8 @@ struct MarkdownBlockTests {
     /// all — never an error and never an empty box.
     @Test
     func `a mermaid fence Argo cannot read stays a fence`() {
-        #expect(MarkdownBlock.blocks(in: "```mermaid\npie title Time\n\"Reading\" : 40\n```") == [
-            .fenced(code: "pie title Time\n\"Reading\" : 40", info: "mermaid"),
+        #expect(MarkdownBlock.blocks(in: "```mermaid\nC4Context\n  Person(dev, \"Dev\")\n```") == [
+            .fenced(code: "C4Context\n  Person(dev, \"Dev\")", info: "mermaid"),
         ])
     }
 

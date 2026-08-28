@@ -19,6 +19,8 @@ struct MermaidSpecimenTests {
         MermaidSpecimen.sequenceBlocks,
         MermaidSpecimen.mindmap,
         MermaidSpecimen.mindmapShapes,
+        MermaidSpecimen.pie,
+        MermaidSpecimen.pieSingle,
     ])
     func `a specimen's fence reads as a diagram and lays out`(specimen: String) {
         let drawn = MarkdownBlock.blocks(in: specimen).compactMap { block -> MermaidDiagram? in

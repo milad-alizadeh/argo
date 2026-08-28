@@ -64,6 +64,20 @@ public extension ArgoPalette {
             added: ArgoColor(hex: 0xA9D18E),
             removed: ArgoColor(hex: 0xD98C93),
         ),
+        // Eight muted jewel tones, each held a state's distance from all four states, from Ion
+        // Blue and from every other entry — and each at 3:1 or better on the deck, because a
+        // wedge is a large mark rather than a word. Mid-luminance on purpose: they are read on
+        // this near-black deck today and have to survive a light one, which pastels would not.
+        series: SeriesRoles(hues: [
+            ArgoColor(hex: 0x6F62D0),
+            ArgoColor(hex: 0xA6AF64),
+            ArgoColor(hex: 0x80B3D0),
+            ArgoColor(hex: 0xA26F49),
+            ArgoColor(hex: 0x4C945D),
+            ArgoColor(hex: 0xC68BB0),
+            ArgoColor(hex: 0x478DAE),
+            ArgoColor(hex: 0xAB49AB),
+        ]),
         // Source code takes no ink from this palette: the evidence panel reads a patch in Xcode's
         // own dark theme (`SyntaxTheme`).
     )

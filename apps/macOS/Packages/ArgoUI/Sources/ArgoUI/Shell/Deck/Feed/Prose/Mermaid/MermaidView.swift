@@ -173,3 +173,38 @@ private struct MermaidPreview: View {
       end
     """)
 }
+
+#Preview("Mermaid — a pie") {
+    MermaidPreview(source: """
+    pie showData title Where the week went
+      "Reading the ticket" : 42.5
+      "Writing the code" : 31
+      "Waiting on CI" : 18.25
+      "Reviewing" : 15
+    """)
+}
+
+// Every hue of the series run at once, which is the set two adjacent wedges have to be told apart
+// from — and the ninth slice, which wraps to the first.
+#Preview("Mermaid — the series run, and past its end") {
+    MermaidPreview(source: """
+    pie
+      "One" : 1
+      "Two" : 1
+      "Three" : 1
+      "Four" : 1
+      "Five" : 1
+      "Six" : 1
+      "Seven" : 1
+      "Eight" : 1
+      "Nine" : 1
+    """)
+}
+
+// The two the arithmetic has to survive: one slice, and a chart worth nothing at all.
+#Preview("Mermaid — one slice, and none") {
+    VStack(alignment: .leading) {
+        MermaidPreview(source: "pie\n  \"The only thing that happened\" : 1")
+        MermaidPreview(source: "pie\n  \"Read\" : 0\n  \"Write\" : 0")
+    }
+}

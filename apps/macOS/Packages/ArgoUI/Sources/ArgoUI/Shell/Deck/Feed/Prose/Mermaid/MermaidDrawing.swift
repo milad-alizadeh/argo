@@ -24,6 +24,14 @@ struct MermaidDrawing {
                 context.fill(outline.ground(in: rect), with: .color(ground.color))
             }
             context.stroke(outline.path(in: rect), with: .color(line), style: figure.style)
+        // Filled in its series' own hue and bounded by the same edge every figure takes, which is
+        // what keeps two adjacent wedges two wedges.
+        case let .arc(arc, rect):
+            let wedge = arc.path(in: rect)
+            if let ground = ink.ground(of: figure.role) {
+                context.fill(wedge, with: .color(ground.color))
+            }
+            context.stroke(wedge, with: .color(line), style: figure.style)
         case let .path(points):
             context.stroke(MermaidPath.through(points), with: .color(line), style: figure.style)
         // A head is a solid mark and not an outline: at this size a stroked triangle reads as a

@@ -139,6 +139,25 @@ extension ContractSpecimen {
         }
     }
 
+    /// The run of hues categorical data is drawn in, as the fills they really are and in the
+    /// order a chart spends them — touching, exactly as two slices of one pie are. That adjacency
+    /// is the whole judgement: a swatch with air around it can pass for distinct when the wedge
+    /// beside it will not.
+    var series: some View {
+        section("Series — indexed hues for a chart, held off every status hue") {
+            HStack(spacing: ArgoStroke.hairline) {
+                ForEach(argo.color.series.all, id: \.name) { role in
+                    VStack(spacing: ArgoSpacing.tight) {
+                        Rectangle().fill(role.color).frame(width: 68, height: 40)
+                        Text(role.name)
+                            .argoText(ArgoTypography.machineCaption)
+                            .foregroundStyle(argo.color.text.tertiary)
+                    }
+                }
+            }
+        }
+    }
+
     /// Source is read in Xcode's own dark theme — the one place a hue outside the contract is
     /// correct, shown here so the exemption is visible.
     var syntax: some View {
