@@ -1,0 +1,4 @@
+{"type": "permission-mode", "permissionMode": "acceptEdits", "sessionId": "walk-session"}
+{"parentUuid": null, "type": "user", "message": {"role": "user", "content": "touch the file"}, "uuid": "walk-prompt", "timestamp": "2026-08-28T16:52:21.888Z", "permissionMode": "acceptEdits", "cwd": "/Users/x/tree", "sessionId": "walk-session"}
+{"parentUuid": "walk-prompt", "type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "content": "Denied in Argo", "is_error": true, "tool_use_id": "call-1"}]}, "uuid": "walk-denial", "timestamp": "2026-08-28T16:52:25.321Z", "cwd": "/Users/x/tree", "sessionId": "walk-session"}
+{"parentUuid": "walk-denial", "type": "user", "message": {"role": "user", "content": "Reply with the single word: ready"}, "uuid": "walk-after", "timestamp": "2026-08-28T16:52:27.155Z", "permissionMode": "auto", "cwd": "/Users/x/tree", "sessionId": "walk-session"}

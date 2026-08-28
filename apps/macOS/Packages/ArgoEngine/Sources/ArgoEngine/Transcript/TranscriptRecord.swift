@@ -18,6 +18,10 @@ public struct MessageRecord: Sendable, Equatable {
     /// A delegated subagent's record, written into the parent's own file. Its Turns are the
     /// child's, so the root Session's Turn is neither opened nor closed by one.
     public let isSidechain: Bool
+    /// The standing stance this record was written under, which only a PROMPT carries — a tool
+    /// result is a user record with none (#629). It is the CLI's own report and the timely one: a
+    /// rung walked mid-Session reaches `permission-mode` only at a later Turn or at exit.
+    public let permissionMode: String?
     /// Only an assistant record names one.
     public let model: String?
     public let stopReason: String?
@@ -43,9 +47,10 @@ public enum TranscriptRecord: Sendable, Equatable {
     /// a machine that queued several off one Session leaves several files, each holding one copy of
     /// the same prompt and no agent output at all.
     case queueOperation
-    /// The host's own note of the Session's standing permission stance, written at every Turn
-    /// boundary and after a change. The `mode` record beside it in the same file is NOT this: it
-    /// carries `normal` and names a different axis.
+    /// The host's own note of the Session's standing permission stance. Written at some Turn
+    /// boundaries and at exit, and NOT reliably after a change — which is why a prompt's own
+    /// `permissionMode` is read as the same fact (#629). The `mode` record beside it in the same
+    /// file is NOT this: it carries `normal` and names a different axis.
     case permissionMode(String)
     /// A record whose `type` this reader does not know — the hosts write several (`system`,
     /// `mode`, `bridge-session`) and will write more. Carries the raw line so observing it loses
@@ -108,6 +113,7 @@ extension MessageRecord {
         self.cwd = record.stringField("cwd")
         self.gitBranch = record.stringField("gitBranch")
         self.timestampMs = ArgoEngine.timestampMs(record)
+        self.permissionMode = record.stringField("permissionMode")
         self.isMeta = record["isMeta"]?.bool == true
         self.isCompactSummary = record["isCompactSummary"]?.bool == true
         self.isSidechain = record["isSidechain"]?.bool == true

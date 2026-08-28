@@ -69,7 +69,8 @@ public actor TranscriptReader {
         }
         switch record {
         case let .user(message):
-            return identity(of: message) + context.events(for: message) + userEvents(message)
+            return identity(of: message) + stance(of: message)
+                + context.events(for: message) + userEvents(message)
         case let .assistant(message):
             return identity(of: message) + context.events(for: message) + assistantEvents(message)
         case let .attachment(message):
@@ -89,6 +90,14 @@ public actor TranscriptReader {
 
     private func identity(of message: MessageRecord) -> [TranscriptEvent] {
         message.uuid.map { [.recordIdentity(uuid: $0)] } ?? []
+    }
+
+    /// A prompt states the stance it was submitted under, and it is the same observed fact the
+    /// `permission-mode` record carries (#629). Both are read, because neither is enough alone: a
+    /// rung walked mid-Session reaches the record only at a later Turn or at exit, and a Session
+    /// nobody has prompted since the walk has only the record.
+    private func stance(of message: MessageRecord) -> [TranscriptEvent] {
+        message.permissionMode.map { [.mode(cli: $0)] } ?? []
     }
 
     /// Every line of a whole file, in order. The batch face of the same reader the tail uses, so a
