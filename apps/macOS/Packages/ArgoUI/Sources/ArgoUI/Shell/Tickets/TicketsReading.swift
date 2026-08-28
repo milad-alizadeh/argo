@@ -14,6 +14,11 @@ struct TicketsReading: Sendable {
     var items: [Ticket] = []
     /// Which items a Session has taken. DIRECT and Argo's alone — no provider carries a claim.
     var claimed: Set<Int> = []
+    /// Whether every LIVE Session's own link was read, which is what makes `claimed` above a
+    /// complete answer rather than a partial one (#894). False where any of them is on a ticket
+    /// Argo could not name: `In progress` then counts absent, because a number that has silently
+    /// dropped the Sessions Argo could not join is worse than no number.
+    var claimsAreWhole: Bool = true
     /// What was read about each item's Delivery. Absent where nothing was read, which is a state
     /// of its own and not a quiet one (`DeliveryReading.absent`). Empty until a code host is read
     /// (#258), so every backlog dot is a hollow ring today.
@@ -31,6 +36,10 @@ struct TicketsReading: Sendable {
     var project: String?
     /// Which ticket the deck opens on.
     var showing: Int?
+
+    var claims: TicketClaims {
+        TicketClaims(numbers: claimed, areWhole: claimsAreWhole)
+    }
 
     /// The same reading, opened on another ticket. A specimen selecting a child re-derives the room
     /// rather than mutating it, which is what keeps the room a value.

@@ -105,22 +105,35 @@ struct SessionHeaderFactsTests {
         #expect(header(cli: nil, model: nil).agent == nil)
     }
 
+    /// Bound, and nothing named a Ticket for this Session — the row SAYS so (#894). It used to
+    /// vanish, which a reader cannot tell from a header that failed to load, and which hid the one
+    /// state they can repair by cutting a branch that names the ticket.
+    @Test
+    func `a Session nothing linked to a ticket says so rather than dropping the row`() {
+        let header = header(ticket: .unlinked)
+
+        #expect(header.issue == .unlinked)
+        #expect(header.issue?.label == "No ticket linked")
+        #expect(header.issue?.detail == nil)
+        #expect(header.announcement.contains("No ticket linked"))
+    }
+
     @Test
     func `a linked issue is named, never left as a bare number`() throws {
-        let linked = header(issue: .init(number: 400, title: "The Session header"))
+        let linked = header(ticket: .linked(.init(number: 400, title: "The Session header")))
 
-        let issue = try #require(linked.issue)
+        let issue = try #require(linked.issue?.link)
         #expect(issue.label == "Issue #400")
         // Read through verbatim, and absent rather than invented for a provider that gave none.
         #expect(issue.detail == "The Session header")
-        #expect(header(issue: .init(number: 400)).issue?.detail == nil)
+        #expect(header(ticket: .linked(.init(number: 400))).issue?.detail == nil)
     }
 
     @Test
     func `with no Ticket provider connected there is no ticket on the header at all`() {
         // Not an empty affordance, not an "attach" control: asserting a link to a provider that
         // does not exist is worse than no link (`CONTEXT.md` L1, and #502's Out of Scope).
-        let header = header(issue: nil)
+        let header = header(ticket: .unread)
 
         #expect(header.issue == nil)
         #expect(!header.announcement.contains("Issue"))
@@ -133,7 +146,7 @@ struct SessionHeaderFactsTests {
             model: "claude-opus-5",
             workspace: .init(kind: .worktree, branch: "argo/#510", dirty: 2, unpushed: 1),
             // Untitled: a Ticket's title is a title SOURCE, and the chain has its own suite.
-            issue: .init(number: 510),
+            ticket: .linked(.init(number: 510)),
         )
 
         // Each mark says what it COUNTS, once, in the same order the header draws it.
@@ -166,7 +179,7 @@ struct SessionHeaderFactsTests {
         cli: AgentCLI? = .claude,
         model: String? = "claude-opus-5",
         workspace: CockpitPresentation.Session.Workspace? = .init(branch: "main"),
-        issue: CockpitPresentation.Session.Issue? = nil,
+        ticket: CockpitPresentation.Session.TicketLinkReading = .unread,
     )
         -> SessionHeaderProjection.Header {
         SessionHeaderProjection.header(from: CockpitPresentation.Session(
@@ -178,7 +191,7 @@ struct SessionHeaderFactsTests {
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: workspace,
-                issue: issue,
+                ticket: ticket,
             ),
         ))
     }

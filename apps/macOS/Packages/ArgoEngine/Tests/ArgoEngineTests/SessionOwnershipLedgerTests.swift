@@ -42,6 +42,48 @@ struct SessionOwnershipLedgerTests {
         #expect(grading(registry(at: fileURL)) == .orphaned)
     }
 
+    /// The DIRECT number Argo was TOLD at the spawn (#872), kept where the next launch can read
+    /// it. Without it a relaunch has only the branch to go on, and every Session started on a
+    /// ticket nobody cut a branch for silently degrades to no link at all (#894).
+    @Test
+    func `a Session spawned on a ticket keeps that number across a relaunch`() {
+        let fileURL = temporaryFileURL()
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let first = registry(at: fileURL)
+        let claim = first.claim(naming: uuid)
+        first.record(ticket: 894, ofClaim: claim)
+        first.bind(sessionID: "session-a", uuid: uuid)
+        first.release(claim)
+
+        #expect(registry(at: fileURL).spawnTicket(ofSessionID: "session-a") == 894)
+    }
+
+    /// A RESUME opens its window at the claim, before anything has said which ticket it is for, so
+    /// the number arrives after the file was already written once. It still lands (#894).
+    @Test
+    func `a resumed Session records the ticket it was resumed on`() {
+        let fileURL = temporaryFileURL()
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let first = registry(at: fileURL)
+        let claim = first.claim(resuming: "session-a")
+        first.record(ticket: 894, ofClaim: claim)
+
+        #expect(registry(at: fileURL).spawnTicket(ofSessionID: "session-a") == 894)
+    }
+
+    /// Nothing is invented for a Session nobody named a number for — the branch reading is the
+    /// only one left, and a number here would outrank it (`CONTEXT.md` degrade-down).
+    @Test
+    func `a Session spawned on no ticket carries no number over`() {
+        let fileURL = temporaryFileURL()
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let first = registry(at: fileURL)
+        _ = first.claim(naming: uuid)
+        first.bind(sessionID: "session-a", uuid: uuid)
+
+        #expect(registry(at: fileURL).spawnTicket(ofSessionID: "session-a") == nil)
+    }
+
     @Test
     func `a Session no Argo ever owned is still external after a relaunch`() {
         let fileURL = temporaryFileURL()

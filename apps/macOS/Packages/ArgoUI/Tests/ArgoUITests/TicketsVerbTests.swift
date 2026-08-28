@@ -58,6 +58,22 @@ struct TicketsVerbTests {
         #expect(issue?.number == 873)
     }
 
+    /// The two readings are never rendered as each other (#894): a number Argo was TOLD is DIRECT,
+    /// and one read off a branch by convention is DERIVED. Without this the branches could be
+    /// swapped and nothing would notice — the tier is the whole of what the link carries besides
+    /// its number (`CONTEXT.md` Honesty tier).
+    @Test func `a claimed link is DIRECT and a branch-read one is DERIVED`() {
+        let claimed = CockpitPresentation.Session.Issue(
+            claimed: 872, branch: nil, location: nil, title: nil,
+        )
+        let derived = CockpitPresentation.Session.Issue(
+            claimed: nil, branch: "argo/#873-backlog-search", location: nil, title: nil,
+        )
+
+        #expect(claimed?.tier == .direct)
+        #expect(derived?.tier == .derived)
+    }
+
     /// `.absent` is the host saying nothing sits behind a number READ OFF A BRANCH, which is the
     /// only reading that needs confirming. A claim Argo was told at the spawn does not.
     @Test func `a host that cannot name the ticket does not un-claim the Session`() {
@@ -106,7 +122,8 @@ struct TicketsVerbTests {
             title: "New session",
             access: .managed,
             status: .idle,
-            work: .init(issue: .init(number: ticket, title: nil)),
+            // DIRECT: this helper stands for a Session Argo was TOLD the ticket of.
+            work: .init(ticket: .linked(.init(number: ticket, title: nil, tier: .direct))),
         )
     }
 }

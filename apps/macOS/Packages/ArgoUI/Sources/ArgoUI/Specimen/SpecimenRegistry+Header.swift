@@ -23,6 +23,12 @@ extension SpecimenRegistry {
         SpecimenEntry("contextGuideUnread") {
             ContextGuideSpecimen(header: SessionHeaderFixture.unguided)
         },
+        // The Issue row over a branch that names no ticket (#894). It used to VANISH here, which a
+        // reader cannot tell from a panel that failed to load — and no fixture had ever reached the
+        // state, so no render had ever shown it.
+        SpecimenEntry("contextGuideUnlinked") {
+            ContextGuideSpecimen(header: SessionHeaderFixture.unlinked)
+        },
         // No button left on the red header, and the reading ends in a link to the next Session.
         SpecimenEntry("handedOffReading") {
             InstrumentDeckShell(

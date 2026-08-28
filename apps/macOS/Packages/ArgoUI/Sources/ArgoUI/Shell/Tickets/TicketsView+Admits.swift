@@ -1,12 +1,35 @@
 import ArgoEngine
 
 extension TicketsView {
-    /// Whether this view's answer rests on the dependency edges. The two that do cannot be counted
-    /// at all where a ticket's edges were not served (`TicketsRoomProjection.views`).
-    var restsOnEdges: Bool {
+    /// What a view's count rests on having been READ. A view whose ground was not read counts
+    /// absent rather than short (`TicketsRoomProjection.views`), because a number that has
+    /// silently dropped what nobody asked about is worse than no number.
+    ///
+    /// One reading per view rather than a predicate per ground, so a fifth view has to say which
+    /// of the three it is instead of inheriting whichever predicate answers false.
+    enum Ground: Equatable, Sendable {
+        /// Every open ticket answers it, so nothing can be missing from the count.
+        case nothing
+        /// The provider's dependency edges (#820).
+        case edges
+        /// The roster join — which live Session is on which ticket (#894).
+        case claims
+
+        /// Whether this ground was read, given what was read of each.
+        func isRead(edges: Bool, claims: Bool) -> Bool {
+            switch self {
+            case .nothing: true
+            case .edges: edges
+            case .claims: claims
+            }
+        }
+    }
+
+    var ground: Ground {
         switch self {
-        case .unblocked, .blocked: true
-        case .allOpen, .inProgress: false
+        case .allOpen: .nothing
+        case .unblocked, .blocked: .edges
+        case .inProgress: .claims
         }
     }
 

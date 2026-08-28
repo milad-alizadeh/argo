@@ -50,10 +50,16 @@ public extension CockpitPresentation {
         public struct Issue: Equatable, Sendable {
             public let number: Int
             public let title: String?
+            /// Which reading produced this link (`CONTEXT.md` Honesty tier). DIRECT is the number
+            /// Argo was TOLD at the spawn; DERIVED is the one read off a branch by convention. The
+            /// default is the lower of the two, so a link built without saying which never claims
+            /// to be the firmer one (degrade-down).
+            public let tier: Tier
 
-            public init(number: Int, title: String? = nil) {
+            public init(number: Int, title: String? = nil, tier: Tier = .derived) {
                 self.number = number
                 self.title = title
+                self.tier = tier
             }
         }
 
@@ -69,10 +75,10 @@ public extension CockpitPresentation {
         public let workspace: Workspace?
         public let access: Access
         public let status: SessionStatus
-        /// The linked Ticket, when there is a provider to have read one from. `nil` covers
-        /// both "no provider connected" and "connected, and this Session is unlinked" — the
-        /// difference belongs to a provider surface, and neither renders a link here.
-        public let issue: Issue?
+        /// Which Ticket this Session is on, and — where it is on none — which of the two ways
+        /// that is true (#894). A reading rather than an optional, so a Session nobody could have
+        /// read a link for is never drawn as one nothing named a Ticket for.
+        public let ticket: TicketLinkReading
         /// When this Session was last seen to run, in milliseconds since the epoch. The Hub's own
         /// sort key rather than a second reading of it. Absent where neither the records nor the
         /// file behind them could say — a gap, never a moment standing in for one.
@@ -180,7 +186,7 @@ public extension CockpitPresentation {
             self.handedOffTo = chain.handedOffTo
             self.workspaceLocation = work.location
             self.workspace = work.workspace
-            self.issue = work.issue
+            self.ticket = work.ticket
             self.spentTokens = spend.spentTokens
             self.cachedTokens = spend.cachedTokens
             self.subagentTokens = spend.subagentTokens

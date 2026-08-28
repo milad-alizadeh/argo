@@ -147,7 +147,7 @@ struct SessionRenameProjectionTests {
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(branch: "main"),
-                issue: issue,
+                ticket: issue.map { .linked($0) } ?? .unread,
             ),
             annotations: .init(isArchived: isArchived, explicitName: explicitName),
         )

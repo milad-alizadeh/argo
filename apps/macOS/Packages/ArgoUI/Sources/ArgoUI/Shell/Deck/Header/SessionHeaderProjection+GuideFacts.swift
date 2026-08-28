@@ -27,7 +27,7 @@ extension SessionHeaderProjection {
                     .map { Fact(term: "Agent", value: $0) },
                 checkout(for: session.workspace)
                     .map { Fact(term: "Branch", value: branchReading($0, in: session)) },
-                link(to: session.issue).map { Fact(term: "Issue", value: issueReading($0)) },
+                row(for: session.ticket).map { Fact(term: "Issue", value: issueReading($0)) },
                 mark(for: session.access).map { Fact(term: "Access", value: $0.word) },
             ].compactMap(\.self)
     }
@@ -59,7 +59,8 @@ extension SessionHeaderProjection {
 
     /// `#476 — Anchor the feed on its newest line`. The number is bare here, unlike the line's own
     /// `Issue #476`, because the row's term has already said the word.
-    private static func issueReading(_ issue: Header.IssueLink) -> String {
-        IssueReading.words(number: issue.number, title: issue.detail)
+    private static func issueReading(_ row: Header.IssueRow) -> String {
+        guard let link = row.link else { return Header.unlinkedWord }
+        return IssueReading.words(number: link.number, title: link.detail)
     }
 }

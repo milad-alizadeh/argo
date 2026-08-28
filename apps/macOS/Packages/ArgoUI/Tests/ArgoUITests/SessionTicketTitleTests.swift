@@ -101,9 +101,12 @@ struct SessionTicketTitleTests {
 
         // Derived from the join key and not from the prompt text, which is what makes it work for
         // an external Session too (`CONTEXT.md` L3).
-        #expect(session.issue?.number == 741)
+        #expect(session.ticket.link?.number == 741)
+        // DERIVED, and it stays that way through the whole projection: a number read off a branch
+        // by convention must never reach a surface as one Argo was told (#894).
+        #expect(session.ticket.link?.tier == .derived)
         // Nothing has resolved it, so the link carries no words yet.
-        #expect(session.issue?.title == nil)
+        #expect(session.ticket.link?.title == nil)
     }
 
     @Test
@@ -137,8 +140,10 @@ struct SessionTicketTitleTests {
         // Item that does not exist (`CONTEXT.md`, "Honesty tier").
         let session = try #require(Self.projection(of: hub, annotations: annotations)
             .sessions.first)
-        #expect(session.issue == nil)
-        #expect(SessionHeaderProjection.header(from: session).issue == nil)
+        // Bound and unrecognised is a READING, not an absence (#894): the header says so rather
+        // than dropping the row, which is what a reader repairs a branch off.
+        #expect(session.ticket == .unlinked)
+        #expect(SessionHeaderProjection.header(from: session).issue == .unlinked)
     }
 
     @Test
@@ -149,7 +154,7 @@ struct SessionTicketTitleTests {
 
         let session = try #require(Self.projection(of: hub).sessions.first)
 
-        #expect(session.issue == nil)
+        #expect(session.ticket == .unlinked)
     }
 
     @Test
@@ -178,7 +183,10 @@ struct SessionTicketTitleTests {
     )
         -> CockpitPresentation {
         CockpitPresentation(
-            projects: [], activeProjectID: nil, hub: hub, annotations: annotations,
+            projects: [], activeProjectID: nil, hub: hub,
+            // Bound throughout: every case here is about which Ticket a branch names, and with no
+            // provider bound the answer would be `unread` before the branch was ever read (#894).
+            readings: .init(annotations: annotations, isTicketProviderBound: true),
         )
     }
 
@@ -220,7 +228,7 @@ struct SessionTicketTitleTests {
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(branch: "argo/#741-anchor-the-feed"),
-                issue: issue,
+                ticket: issue.map { .linked($0) } ?? .unread,
             ),
             annotations: .init(explicitName: explicitName),
         )

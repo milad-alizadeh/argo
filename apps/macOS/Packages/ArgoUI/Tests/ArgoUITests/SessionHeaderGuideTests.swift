@@ -115,10 +115,10 @@ struct SessionHeaderGuideTests {
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(kind: .worktree, branch: "argo/#694-context-guide", dirty: 3),
-                issue: .init(
+                ticket: .linked(.init(
                     number: 694,
                     title: "The ⓘ panel says what the header stopped saying",
-                ),
+                )),
             ),
             spend: .init(
                 spentTokens: 1_830_000,

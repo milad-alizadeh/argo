@@ -82,7 +82,7 @@ enum SessionHeaderFixture {
         work: .init(
             location: "/Users/milad/Developer/argo",
             workspace: .init(kind: .worktree, branch: "argo/#476-feed-scroll-anchor"),
-            issue: .init(number: 476, title: "Anchor the feed on its newest line"),
+            ticket: .linked(.init(number: 476, title: "Anchor the feed on its newest line")),
         ),
         spend: .init(spentTokens: 22_470_000, cachedTokens: 20_400_000, contextTokens: 163_912),
         transcript: .init(
@@ -107,6 +107,22 @@ enum SessionHeaderFixture {
         title: "A Session read off a record that carried no usage",
         access: .external,
         status: .idle,
+    ))
+
+    /// A Session on a branch that names no ticket, with a provider bound to have read one (#894).
+    /// The Issue row used to VANISH here, which is the one state in the panel a reader can repair.
+    static let unlinked = SessionHeaderProjection.header(from: CockpitPresentation.Session(
+        id: "header-unlinked",
+        title: "Sweep the rules folder",
+        access: .managed,
+        status: .idle,
+        chain: .init(cli: .claude, model: "claude-opus-5"),
+        work: .init(
+            location: "/Users/milad/Developer/argo",
+            workspace: .init(kind: .worktree, branch: "worktree-parallel-workitem-edges"),
+            ticket: .unlinked,
+        ),
+        spend: .init(contextTokens: 67175),
     ))
 
     static func header(for access: CockpitPresentation.Session.Access)
@@ -166,7 +182,7 @@ enum SessionHeaderFixture {
                 workspace: .init(kind: .worktree, branch: branch, dirty: 3, unpushed: 1),
                 // A link with no title read through it, which is every Session in this build: no
                 // provider is connected (#414), so nothing answers with one.
-                issue: .init(number: 510),
+                ticket: .linked(.init(number: 510)),
             ),
             spend: .init(contextTokens: contextTokens),
         )

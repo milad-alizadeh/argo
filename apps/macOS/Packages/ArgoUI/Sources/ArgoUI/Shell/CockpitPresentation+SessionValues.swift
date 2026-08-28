@@ -31,21 +31,23 @@ public extension CockpitPresentation.Session {
     }
 
     /// Where the Session is working and what it is working ON — the git context, the folder it
-    /// sits in, and the Ticket its branch names. The three arrive together because the link is
-    /// DERIVED from the other two.
+    /// sits in, and the Ticket reading its branch feeds. The three arrive together because one
+    /// half of that reading is DERIVED from the other two.
     struct Work: Equatable, Sendable {
         public let location: String?
         public let workspace: Workspace?
-        public let issue: Issue?
+        public let ticket: TicketLinkReading
 
+        /// `unread` is the default because it is the quietest: a Work value built without saying
+        /// anything about a Ticket has established nothing about one.
         public init(
             location: String? = nil,
             workspace: Workspace? = nil,
-            issue: Issue? = nil,
+            ticket: TicketLinkReading = .unread,
         ) {
             self.location = location
             self.workspace = workspace
-            self.issue = issue
+            self.ticket = ticket
         }
     }
 

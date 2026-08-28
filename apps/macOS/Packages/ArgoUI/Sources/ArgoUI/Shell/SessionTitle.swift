@@ -19,7 +19,7 @@ enum SessionTitle {
     /// `nil` for a link the provider has not named, and not `#741` alone: a bare number carries no
     /// more than the `/implement 741` it would be replacing, and it costs the reader the words.
     static func ticket(for session: CockpitPresentation.Session) -> String? {
-        guard let issue = session.issue, let title = issue.title else { return nil }
+        guard let issue = session.ticket.link, let title = issue.title else { return nil }
         return IssueReading.words(number: issue.number, title: title)
     }
 

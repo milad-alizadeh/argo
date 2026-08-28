@@ -54,7 +54,7 @@ struct ArgoApp: App {
                     SpecimenScreen(entry: specimen)
                 } else {
                     CockpitView(
-                        presentation: cockpit.presentation,
+                        presentation: presentation,
                         actions: actions,
                         connect: connectSurface,
                         health: accounts.connections,
@@ -78,7 +78,7 @@ struct ArgoApp: App {
                     // event worth a code-host read (#745). Keyed on the unnamed set rather than on
                     // the roster, so a turn ending on a named ticket asks nothing.
                     .onChange(
-                        of: cockpit.presentation.untitledTicketNumbers,
+                        of: presentation.untitledTicketNumbers,
                         initial: true,
                     ) { _, _ in
                         Task { await cockpit.nameTickets(through: accounts.ticketBinding()) }
@@ -110,20 +110,21 @@ struct ArgoApp: App {
         .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
             NewSessionCommands(
-                presentation: cockpit.presentation,
+                presentation: presentation,
                 actions: actions,
                 navigation: navigation,
             )
-            CommandMenu("Navigate") {
-                ForEach(CockpitRoom.allCases) { candidate in
-                    Button(candidate.title) { navigation.room = candidate }
-                        .keyboardShortcut(candidate.shortcut, modifiers: .command)
-                }
-            }
+            NavigateCommands(navigation: navigation)
             CommandMenu("Session") { SessionCommandItems(commands: sessionCommands) }
             // In the slot Preferences would have taken, because there is no app-global one.
-            ProjectSettingsCommands(presentation: cockpit.presentation, actions: actions)
+            ProjectSettingsCommands(presentation: presentation, actions: actions)
         }
+    }
+
+    /// The window's whole projection. The Ticket Binding folded in here is the Accounts
+    /// coordinator's, so no surface below can build a second projection that answers differently.
+    private var presentation: CockpitPresentation {
+        cockpit.presentation(accounts.connections)
     }
 
     private var connectSurface: ConnectSurface {

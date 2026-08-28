@@ -41,6 +41,11 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
         /// Absent in a file written before this field existed, which reads as nobody holding it —
         /// the quieter answer, and the one a relaunch wants.
         var owner: Owner?
+        /// The Ticket Argo was TOLD this Session was started on (#872), kept where the next launch
+        /// can still read it (#894). DIRECT, and the only reading that survives the process that
+        /// established it — without it a relaunch has the branch guess alone. Absent for every
+        /// Session nobody named a number for, which is every external one.
+        var ticket: Int?
     }
 
     /// Keyed by the Session id the roster carries, never by a claim: a claim dies with the process
@@ -68,10 +73,29 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
     ///
     /// Answers whether anything moved, so a caller can skip writing a file it did not change.
     mutating func open(sessionID: String, atMs: Int, owner: Owner) -> Bool {
-        let opened = Window(fromMs: windows[sessionID]?.fromMs ?? atMs, toMs: nil, owner: owner)
+        let held = windows[sessionID]
+        let opened = Window(
+            fromMs: held?.fromMs ?? atMs, toMs: nil, owner: owner, ticket: held?.ticket,
+        )
         guard windows[sessionID] != opened else { return false }
         windows[sessionID] = opened
         return true
+    }
+
+    /// The Ticket a spawn named for this Session. Written onto the window rather than beside it,
+    /// so the two facts about one Session are dropped together or not at all.
+    ///
+    /// Answers whether anything moved, on the same ground `open` does.
+    mutating func note(ticket: Int, sessionID: String) -> Bool {
+        guard var window = windows[sessionID], window.ticket != ticket else { return false }
+        window.ticket = ticket
+        windows[sessionID] = window
+        return true
+    }
+
+    /// What a previous Argo was told this Session was started on, and `nil` where none was.
+    func ticket(sessionID: String) -> Int? {
+        windows[sessionID]?.ticket
     }
 
     /// And no longer does. An id no window was opened for is left alone: the PTY that ran under it
