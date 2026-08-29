@@ -12,27 +12,81 @@ struct HubJoinTests {
     private static let said = TranscriptEvent.message(markdown: "the child said")
     private static let saidAgain = TranscriptEvent.message(markdown: "the child said again")
 
-    /// A read arriving while the sweep is admitting a transcript still lands: the roster is held
-    /// back from being REBUILT, not from being told what one of its Sessions is now reading.
+    /// The reading the rail draws, which is what all of this is for.
     @Test
-    func `a Subagent's reading reaches its Session while a sweep is in flight`() {
+    func `a Subagent's reading reaches its Session`() {
         var join = settledJoin()
-        join.add(hubTestObservation(id: "swept", events: []))
 
         join.apply([Self.said], ofSubagent: agentID, to: "session")
 
         #expect(join.sessions.first?.subagentEvents[agentID] == [Self.said])
     }
 
+    /// A transcript admitted mid-sweep can duplicate a uuid or join a chain, and neither is known
+    /// until the file has been read — so what the roster last folded is older than the set, and a
+    /// child's bytes wait for the fold that can place them rather than being written on a guess.
     @Test
-    func `a Subagent's reading publishes no transcript the sweep has not read`() {
+    func `a Subagent's reading arrives with the rebuild while a sweep is in flight`() {
+        var join = settledJoin()
+        join.add(hubTestObservation(id: "swept", events: []))
+
+        join.apply([Self.said], ofSubagent: agentID, to: "session")
+
+        #expect(join.sessions.first?.subagentEvents[agentID] == nil)
+        join.apply([.title("Swept")], to: "swept")
+        #expect(join.sessions.first?.subagentEvents[agentID] == [Self.said])
+    }
+
+    /// Not on the row it would have joined, and not on any other: a batch against a transcript
+    /// nothing has read has no row to be right about.
+    @Test
+    func `a Subagent's reading against an unread transcript reaches no row`() {
         var join = settledJoin()
         join.add(hubTestObservation(id: "swept", events: []))
 
         join.apply([Self.said], ofSubagent: agentID, to: "swept")
-        join.apply([Self.said], ofSubagent: agentID, to: "session")
 
+        let readings = join.sessions.flatMap(\.subagentEvents.keys)
         #expect(join.sessions.map(\.id) == ["session"])
+        #expect(readings.isEmpty)
+    }
+
+    /// The rejection below is a fact about the SET, and the set moves without the roster being
+    /// refolded: a file admitted a moment ago can duplicate the uuid of a row that was writable
+    /// when the fold was taken. Written on that stale answer, the bytes are published and then
+    /// dropped by the rebuild that finally sees both halves.
+    @Test
+    func `a Subagent's reading is not published against a transcript a later file duplicates`() {
+        let origin = recordURL("origin", "moved")
+        let worktree = recordURL("worktree", "moved")
+        var join = HubJoin()
+        join.add(hubTestObservation(at: origin, events: []))
+        join.apply([.prompt(text: "Origin", images: [], atMs: 1)], to: origin.path)
+
+        join.add(hubTestObservation(at: worktree, events: []))
+        join.apply([Self.said], ofSubagent: agentID, to: origin.path)
+
+        #expect(join.sessions.first?.subagentEvents[agentID] == nil)
+        join.apply([.prompt(text: "Live", images: [], atMs: 2)], to: worktree.path)
+        #expect(join.sessions.first?.subagentEvents[agentID] == nil)
+    }
+
+    /// And the rejection lifts when the set moves back: the file that duplicated the uuid going
+    /// away leaves one path carrying it, which is a row a batch can be written into again.
+    @Test
+    func `a Subagent's reading is written in place again once the file duplicating it is gone`() {
+        let origin = recordURL("origin", "moved")
+        let worktree = recordURL("worktree", "moved")
+        var join = HubJoin()
+        join.add(hubTestObservation(at: origin, events: []))
+        join.add(hubTestObservation(at: worktree, events: []))
+        join.apply([.title("Frozen")], to: origin.path)
+        join.apply([.prompt(text: "Live", images: [], atMs: 2)], to: worktree.path)
+
+        join.remove(transcriptID: origin.path)
+        join.apply([Self.said], ofSubagent: agentID, to: worktree.path)
+
+        #expect(join.sessions.first?.subagentEvents[agentID] == [Self.said])
     }
 
     /// The gate the whole-set assignment was there for, exercised through the path that rebuilds:
@@ -76,8 +130,9 @@ struct HubJoinTests {
     }
 
     /// Two paths carrying one uuid are one file the CLI MOVED, and the path it left holds a frozen
-    /// prefix that no roster draws. A child read beside THAT half is a reading the next rebuild
-    /// drops, so publishing it would put bytes on a row that later lose them.
+    /// prefix that no roster draws. A child read beside THAT half is DROPPED rather than delayed —
+    /// the rebuild discards that half's whole reading, here and on main alike — so publishing it
+    /// in place would put bytes on a row that then loses them.
     @Test
     func `a Subagent's reading beside the frozen half of a moved transcript publishes nothing`() {
         let frozen = recordURL("origin", "moved")

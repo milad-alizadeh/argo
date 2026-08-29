@@ -19,9 +19,19 @@ struct HubRoster {
         self.writableRow = Self.writableRows(of: chained, transcripts: transcripts)
     }
 
+    /// Stop writing in place until the roster is folded again. What every rejection below decides
+    /// is a fact about the SET — which uuids two paths carry, which link a chain ends on — so a
+    /// set that has moved without the fold being retaken leaves this map older than the facts it
+    /// encodes, and an answer it gives then is a guess.
+    mutating func holdWrites() {
+        writableRow = [:]
+    }
+
     /// One Subagent's own reading, onto the published row its transcript may be written into.
-    /// Everything else — a transcript this roster was built without, and the two rejected below —
-    /// reaches nothing here, and arrives with the next rebuild.
+    /// Everything else — a transcript this roster was built without, one held back above, and the
+    /// two rejected below — reaches nothing here. Those readings are published by the next
+    /// rebuild, except where that rebuild drops the transcript's whole reading with it: the frozen
+    /// half of a moved file is not carried by any roster, before this change or after it.
     mutating func apply(
         _ read: [TranscriptEvent],
         ofSubagent agentID: String,

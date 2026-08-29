@@ -31,6 +31,10 @@ struct HubJoin {
         guard positions[observation.id] == nil else { return }
         positions[observation.id] = transcripts.count
         transcripts.append(HubTranscript(observation: observation))
+        // The set has moved and nothing has refolded the roster — this transcript can be a chain's
+        // new link or the second path onto one uuid, and which of those it is nobody knows until
+        // its file has been read.
+        roster.holdWrites()
     }
 
     mutating func remove(transcriptID: String) {
@@ -75,8 +79,8 @@ struct HubJoin {
         transcripts[index].session.apply(read, ofSubagent: agentID)
         // Written THROUGH, to the transcript above and the published row here: the roster is a
         // fold over the transcripts rather than a second copy of them, so a batch that reached
-        // only one of the two would be lost at the next rebuild or published twice by it. What
-        // the roster refuses to write in place it publishes at that rebuild instead.
+        // only one of the two would be lost at the next rebuild or published twice by it. The
+        // transcript is the copy that keeps it; the roster takes it only where it can place it.
         roster.apply(read, ofSubagent: agentID, from: transcriptID)
     }
 
@@ -103,11 +107,15 @@ struct HubJoin {
 
     /// Published only once every transcript in the set has settled. While a sweep admits a new
     /// transcript the roster keeps the rows it has, in the order it has them: briefly missing a
-    /// row, never rewriting itself under the reader. What does move meanwhile is a published
-    /// Session's Subagent reading, which its own tail writes in place — no row joins, leaves or
-    /// changes place for it.
+    /// row, never rewriting itself under the reader. Nothing is written into it in place while it
+    /// is held back either — see `HubRoster.holdWrites`.
     private mutating func rebuild() {
-        guard transcripts.allSatisfy(\.isSettled) else { return }
+        guard transcripts.allSatisfy(\.isSettled) else {
+            // Held back, so the facts have moved and the fold has not: the same staleness `add`
+            // opens, reached by the other path into it.
+            roster.holdWrites()
+            return
+        }
         roster = HubSessionChain.roster(from: transcripts, owners: recordOwners)
     }
 }
