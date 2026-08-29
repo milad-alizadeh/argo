@@ -14,7 +14,9 @@ seconds=${2:?usage: load-burst.sh <workers> <seconds>}
 
 # Both arguments are capped, because the mistake this guards against is transposing them:
 # `load-burst.sh 600 8` forks 600 spinners if only the seconds are checked.
-cores=$(sysctl -n hw.ncpu 2>/dev/null || echo 8)
+# `nproc` on Linux, `sysctl` on macOS. The fallback is deliberately small: guessing high on
+# a box whose core count cannot be read is how a two-core runner ends up with 32 spinners.
+cores=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
 if [ "$workers" -lt 1 ] || [ "$workers" -gt $((cores * 4)) ]; then
   echo "load-burst: refusing $workers workers; $((cores * 4)) is the ceiling" >&2
   exit 1

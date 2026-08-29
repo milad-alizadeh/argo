@@ -22,36 +22,51 @@ function check(name, fn) {
 
 const SCRIPT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'load-burst.sh')
 const sh = (script, args) => spawnSync('/bin/sh', [script, ...args], { encoding: 'utf8' })
-// `pgrep -P` only finds live children, so workers are counted through their own command
-// line instead — an orphan is reparented and would otherwise vanish from the count.
-const workersAlive = () =>
-  spawnSync('/bin/sh', ['-c', `pgrep -f '${SCRIPT}' | wc -l`], { encoding: 'utf8' }).stdout.trim()
+
+// The whole check runs in one shell, and asserts the PROPERTY rather than a duration: the
+// workers are still alive the moment their parent is gone, and they stop by themselves
+// afterwards. Nothing here measures elapsed seconds, because a shared CI runner is exactly
+// the loaded machine this ticket is about — a wall-clock bound would make this the flake it
+// was written to prevent.
+//
+// Workers are held by PID, taken before the kill. `pgrep -f` on the script path cannot be
+// used: this shell's own command line contains that path, so on Linux it matches ITSELF and
+// the poll never ends. That is what reddened CI (#937) — a self-match, not a timing bound.
+const OUTLIVES_PARENT = `
+  sh '${SCRIPT}' 3 8 >/dev/null 2>&1 &
+  parent=$!
+  sleep 2
+  workers=$(pgrep -P "$parent" || true)
+  [ -n "$workers" ] || exit 2
+  kill -9 "$parent" 2>/dev/null
+  sleep 1
+  # THE GUARANTEE: the parent is gone and these are not. Were the deadline the parent's,
+  # they would have died with it, and this is where that shows.
+  for w in $workers; do kill -0 "$w" 2>/dev/null || exit 3; done
+  # And they stop on their own. The ceiling is a hang guard, not a claim about when.
+  turn=0
+  while [ "$turn" -lt 60 ]; do
+    alive=0
+    for w in $workers; do if kill -0 "$w" 2>/dev/null; then alive=1; fi; done
+    if [ "$alive" -eq 0 ]; then exit 0; fi
+    sleep 1
+    turn=$((turn + 1))
+  done
+  # Reap them before reporting. A check about leaked spinners must not leak spinners when
+  # it fails, which is the whole shape of the incident behind #918.
+  kill -9 $workers 2>/dev/null
+  exit 4
+`
 
 check('a worker outlives its parent and still stops on its own deadline', () => {
-  const started = Date.now()
-  const burst = spawnSync(
-    '/bin/sh',
-    [
-      '-c',
-      // Start the burst, SIGKILL the parent shell so no trap can run, then wait for the
-      // workers to go on their own. SIGKILL is the point: a trap would prove nothing.
-      `sh '${SCRIPT}' 3 8 >/dev/null 2>&1 &
-       parent=$!
-       sleep 2
-       kill -9 $parent
-       while [ "$(pgrep -f '${SCRIPT}' | wc -l)" -gt 0 ]; do sleep 0.2; done`,
-    ],
-    { encoding: 'utf8', timeout: 30000 },
-  )
-  const took = (Date.now() - started) / 1000
-  assert.equal(burst.status, 0, burst.stderr)
-  // They outlived the kill at 2s and stopped near their own 8s deadline. The floor is 6.9
-  // rather than 8 because `date +%s` truncates: a burst starting at T.9 gets a deadline of
-  // floor(T) + 8, which is 7.1s of wall clock. Anything below that floor would mean the
-  // parent's death is what stopped them, which is the guarantee failing open.
-  assert.ok(took >= 6.9, `workers stopped after ${took}s — the kill stopped them, not the clock`)
-  assert.ok(took < 14, `workers outlived their 8s deadline by too much (${took}s)`)
-  assert.equal(workersAlive(), '0')
+  const burst = spawnSync('/bin/sh', ['-c', OUTLIVES_PARENT], { encoding: 'utf8', timeout: 120000 })
+  const said = {
+    2: 'the burst started no workers to observe',
+    3: "the workers died WITH their parent — the deadline is the parent's, not theirs",
+    4: 'the workers never stopped on their own',
+    null: 'the shell was killed or timed out',
+  }
+  assert.equal(burst.status, 0, said[burst.status] ?? burst.stderr)
 })
 
 for (const [name, args, said] of [
