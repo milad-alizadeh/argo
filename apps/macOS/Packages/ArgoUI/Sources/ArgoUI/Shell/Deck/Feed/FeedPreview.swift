@@ -28,6 +28,10 @@ struct FeedPreview: View {
     /// anywhere but at the foot of the lane.
     var held: FeedRow.ID?
 
+    /// Which prompts the reading opens unfolded — see `FeedView.opensUnfolded`. Set after building
+    /// for the reason `naming` is: it is a state only a still needs.
+    var opensUnfolded: Set<FeedRow.ID> = []
+
     /// Which row the reading opens with the keyboard cursor on. Set after building, for the reason
     /// `naming` is: the cursor arrives with an arrow key and a still cannot press one, so this is
     /// the only way to look at the ring #533 asked for.
@@ -70,6 +74,7 @@ struct FeedPreview: View {
                     .homing(onto: table),
                     held: held,
                     table: table,
+                    opensUnfolded: opensUnfolded,
                 )
                 if showsOverview {
                     DeckSeparator()

@@ -30,9 +30,10 @@ import SwiftUI
     }
 
     /// The model the table is applied, with everything the deck owns left inert: these suites open
-    /// no row, fold nothing and follow nothing. Also the way a suite grows the reading under a
-    /// table that is already laid out.
-    static func model(showing rows: [FeedRow]) -> FeedTableModel {
+    /// no row and follow nothing. Also the way a suite grows the reading under a table that is
+    /// already laid out — and `unfolded` is the one thing they do drive, because applying a second
+    /// model that names a prompt IS how the reader lets its fold out.
+    static func model(showing rows: [FeedRow], unfolded: Set<FeedRow.ID> = []) -> FeedTableModel {
         let focus = FocusState<FeedFocus?>()
         return FeedTableModel(
             rows: rows,
@@ -44,7 +45,7 @@ import SwiftUI
             isResizing: false,
             isUnderComposer: false,
             washed: nil,
-            unfolded: .constant([]),
+            unfolded: .constant(unfolded),
             environment: FeedCellEnvironment(),
         )
     }

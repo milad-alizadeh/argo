@@ -18,57 +18,40 @@ struct FeedPrompt: View {
     /// transcript grows, and a fold that lived in the row would quietly re-close behind the reader.
     @Binding var isExpanded: Bool
 
-    /// What the prompt is worth folded and unfolded. Both MEASURED, not estimated: whether a prompt
-    /// is long is a question about the column it landed in, not about its character count.
-    @State private var foldedHeight: CGFloat = 0
-    @State private var wholeHeight: CGFloat = 0
-    /// The column the bubble landed in, which its ceiling is a share of. Measured rather than taken
-    /// from the contract, because the reader drags the seam. `nil` until the first layout answers,
-    /// which is one frame of an unbounded bubble rather than one sized to a guess.
-    @State private var column: CGFloat?
+    /// Whether the layout gave the control a box to stand in. Read back AFTER the pass that decided
+    /// it, and used for NOTHING that lays out: that is what makes it safe here and makes the same
+    /// lateness in a size #946 itself — a late fact the row's cached height never sees.
+    @State private var isOffered = false
 
     var body: some View {
         bubble
             .frame(maxWidth: .infinity, alignment: .trailing)
-            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { column = $0 }
     }
 
-    /// The widest the bubble may run: its share of the column it landed in, once that is known.
-    private var ceiling: CGFloat? {
-        column.map { $0 * ArgoFeedRow.bubbleShare }
-    }
-
-    /// Whether anything is actually hidden. A control offering to unfold a prompt that is already
-    /// whole is a claim there is more to read.
-    private var isFolded: Bool {
-        wholeHeight > foldedHeight + ArgoFeedRow.foldTolerance
-    }
-
+    /// The bubble's ceiling, its insets, and whether there is more of the prompt than the fold
+    /// shows are all `PromptBubbleLayout`'s, decided from the proposal in the pass that makes it —
+    /// see that type for why none of the three may be learned through `@State` (#946). WHICH state
+    /// the reader has it in stays here, as the line limit on the words below.
     private var bubble: some View {
-        VStack(alignment: .trailing, spacing: ArgoSpacing.snug) {
-            if !shots.isEmpty {
-                FeedGalleryRow(gallery: FeedGallery(shots: shots), open: open)
+        PromptBubbleLayout(text: text) {
+            VStack(alignment: .trailing, spacing: ArgoSpacing.snug) {
+                // A prompt that was only a picture draws no block of words: an empty one above the
+                // thumbnail is a line of prose the reader never wrote.
+                if !shots.isEmpty {
+                    FeedGalleryRow(gallery: FeedGallery(shots: shots), open: open)
+                }
+                if !text.isEmpty {
+                    prose(lineLimit: isExpanded ? nil : ArgoFeedRow.collapsedPromptLines)
+                        .textSelection(.enabled)
+                }
             }
-            // A prompt that was only a picture draws none: an empty block above the thumbnail is a
-            // line of prose the reader never wrote.
-            if !text.isEmpty {
-                prose(lineLimit: isExpanded ? nil : ArgoFeedRow.collapsedPromptLines)
-                    .textSelection(.enabled)
-                    .background(alignment: .top) { rulers }
-            }
-            if isFolded {
-                disclosure
-            }
+            disclosure
         }
-        .padding(.vertical, ArgoFeedRow.bubbleInsetY)
-        .padding(.horizontal, ArgoFeedRow.bubbleInsetX)
         .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.popover))
         // The one row narrower than the measure, so the one row that has to say where its keyboard
-        // cursor goes. INSIDE the ceiling below, which is a frame the bubble is right-aligned in
-        // rather than the bubble: a ring around that frame is the wrong box #533 was filed about.
+        // cursor goes. On the bubble and not on the box it is right-aligned in: a ring around that
+        // box is the wrong one #533 was filed about.
         .argoFeedCursorShape(radius: ArgoRadius.popover)
-        // A ceiling, not a width: the bubble sizes to a short prompt and holds a long one here.
-        .frame(maxWidth: ceiling, alignment: .trailing)
         // `contain` where there are pictures, so each thumbnail stays a control of its own; a
         // combined bubble would fuse them into one label nobody can open.
         .accessibilityElement(children: shots.isEmpty ? .combine : .contain)
@@ -81,32 +64,27 @@ struct FeedPrompt: View {
         return text.isEmpty ? "Prompt: \(pictures)" : "Prompt: \(text), with \(pictures)"
     }
 
-    /// The two copies the fold is decided by, drawn behind the visible one at exactly its width
-    /// and never seen. Measuring the visible copy instead would answer with whatever state it is
-    /// currently in, which is the state being asked about.
-    private var rulers: some View {
-        ZStack {
-            ruler(lineLimit: ArgoFeedRow.collapsedPromptLines) { foldedHeight = $0 }
-            ruler(lineLimit: nil) { wholeHeight = $0 }
-        }
-        .hidden()
-        .accessibilityHidden(true)
-    }
-
     private var disclosure: some View {
         Button(isExpanded ? "Show less" : "Show more") { isExpanded.toggle() }
             .buttonStyle(.plain)
             .argoText(ArgoTypography.caption)
             .foregroundStyle(argo.color.text.tertiary)
-    }
-
-    private func ruler(
-        lineLimit: Int?,
-        report: @escaping (CGFloat) -> Void,
-    )
-        -> some View {
-        prose(lineLimit: lineLimit)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { report($0) }
+            .fixedSize()
+            // How the layout puts the control away where the prompt already stands whole: proposed
+            // a box of nothing, it collapses to nothing and the clip leaves nothing drawn. Both
+            // floors are stated, because a frame given only a ceiling never shrinks past its own
+            // words — which is a control drawn in the corner of a bubble with nothing to unfold.
+            .frame(
+                minWidth: 0, maxWidth: .infinity,
+                minHeight: 0, maxHeight: .infinity,
+                alignment: .trailing,
+            )
+            .clipped()
+            .onGeometryChange(for: Bool.self) { $0.size.height > 0 } action: { isOffered = $0 }
+            // Stated rather than left to the empty box the layout gave it. What a screen reader
+            // makes of a control of no size is not something a package test here can settle, so
+            // the control says for itself that it is not on offer.
+            .accessibilityHidden(!isOffered)
     }
 
     private func prose(lineLimit: Int?) -> some View {

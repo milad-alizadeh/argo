@@ -16,7 +16,7 @@ extension MinimapRowShape {
         across measure: CGFloat,
     )
         -> [MinimapRowRect] {
-        let inside = measure * ArgoFeedRow.bubbleShare - ArgoFeedRow.bubbleInsetX * 2
+        let inside = ArgoFeedRow.bubbleInside(of: measure)
         guard inside > 0 else { return [] }
         let lay = ProseMetrics.lay(out: text, across: inside)
         let pictures = shots > 0 ? Self.shots(shots, across: inside) : []

@@ -29,9 +29,21 @@ struct FeedView: View {
     /// `held` before this view exists.
     let table: FeedTableHandle
 
+    /// Which prompts the reading OPENS unfolded. A parameter for the reason `held` is one: a still
+    /// cannot press a control, and the unfolded state is otherwise unreachable.
+    var opensUnfolded: Set<FeedRow.ID> = []
+
     /// Which prompts the reader has unfolded. Held here so it survives the row being rebuilt when
-    /// the projection hands the feed a newer copy of it.
-    @State private var unfolded: Set<FeedRow.ID> = []
+    /// the projection hands the feed a newer copy of it. `nil` until the reader has folded
+    /// anything, which is what lets `opensUnfolded` stand from the FIRST frame — a still seeded a
+    /// frame later renders the folded state and calls it the unfolded one.
+    @State private var unfolded: Set<FeedRow.ID>?
+
+    /// The reader's folds, or what the reading was opened on while they have made none.
+    private var folds: Binding<Set<FeedRow.ID>> {
+        Binding(get: { unfolded ?? opensUnfolded }, set: { unfolded = $0 })
+    }
+
     /// The row the user's own words just landed on, while the accent wash stands over it.
     @State var washed: FeedRow.ID?
     /// When the wait this reading is showing began, or `nil` while it is showing none. Held here
@@ -48,7 +60,7 @@ struct FeedView: View {
             isResizing: isResizing,
             isUnderComposer: isUnderComposer,
             washed: washed,
-            unfolded: $unfolded,
+            unfolded: folds,
             handle: table,
         )
         // The backstop for anything that still hands the keyboard back by writing a row into the
