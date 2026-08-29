@@ -83,13 +83,15 @@ import SwiftUI
         private(set) var paneCost = FeedPaneCost()
     #endif
 
-    /// The one view content is measured in — never installed in a window, reused per row, and
-    /// building no sizing constraints of its own: `sizeThatFits` is asked directly.
-    private let ruler: NSHostingController<AnyView> = {
-        let ruler = NSHostingController(rootView: AnyView(EmptyView()))
-        ruler.sizingOptions = []
-        return ruler
-    }()
+    /// The views content is measured in — never installed in a window, and building no sizing
+    /// constraints of their own: `sizeThatFits` is asked directly.
+    ///
+    /// One per `FeedRow.Content.Shape`, and one MEASURE per shape is what the split buys: a
+    /// controller handed the tree it already holds diffs, and one handed a different tree rebuilds.
+    /// Measuring `FeedProjection.longRows` through a single controller costs 140 ms; through one
+    /// per
+    /// shape, 73 ms. Nine controllers is the ceiling, because `Shape` has nine cases.
+    private var rulers: [FeedRow.Content.Shape: NSHostingController<AnyView>] = [:]
 
     /// One frame notification arrived — see `FeedPaneCost`.
     func notedPane() {
@@ -142,6 +144,9 @@ import SwiftUI
         if fresh.rows == stale {
             touchUp(against: fresh, from: staleEnvironment)
         } else {
+            // The reading boundary: the rulers still hold the last one's live rows, and this one
+            // is about to measure its own through them.
+            surrenderRulers()
             decide(.rowsChanged(from: stale, to: fresh.rows))
         }
         // The seam letting go is the moment the width is final: one full re-measure squares
@@ -178,6 +183,7 @@ import SwiftUI
         if let known = geometry.height(at: index, under: ground) {
             return known
         }
+        let ruler = ruler(for: model.rows[index].content.shape)
         ruler.rootView = model.content(at: index)
         // Rounded UP to a whole point: a non-integral row height still blurs baselines on
         // current macOS, and up rather than to-nearest so text is never clipped by rounding.
@@ -186,10 +192,28 @@ import SwiftUI
         ).height))
         geometry.record(height, at: index, under: ground)
         measurements += 1
-        // The ruler would otherwise keep the row's live view graph — tasks included — alive
-        // in a controller no window ever shows.
-        ruler.rootView = AnyView(EmptyView())
         return height
+    }
+
+    /// The controller a row of this shape is measured in, made on first use.
+    private func ruler(for shape: FeedRow.Content.Shape) -> NSHostingController<AnyView> {
+        if let known = rulers[shape] {
+            return known
+        }
+        let made = NSHostingController(rootView: AnyView(EmptyView()))
+        made.sizingOptions = []
+        rulers[shape] = made
+        return made
+    }
+
+    /// Every ruler emptied. A ruler holds its last row's live view graph — tasks included — in a
+    /// controller no window ever shows, so the graphs are surrendered at the READING boundary
+    /// rather than after each row: clearing per row is what made every measure a full rebuild.
+    /// Nine graphs of the reading on screen is the same order as the cells already hold.
+    func surrenderRulers() {
+        for ruler in rulers.values {
+            ruler.rootView = AnyView(EmptyView())
+        }
     }
 
     /// Measured heights surrendered — all of them for a re-wrap, or the rows named.

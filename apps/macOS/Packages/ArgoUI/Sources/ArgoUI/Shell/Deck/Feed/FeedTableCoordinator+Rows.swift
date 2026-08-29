@@ -11,8 +11,14 @@ extension FeedTableCoordinator: NSTableViewDataSource, NSTableViewDelegate {
 
     func tableView(_ table: NSTableView, viewFor _: NSTableColumn?, row index: Int) -> NSView? {
         guard let model, shown.indices.contains(index) else { return nil }
-        let cell = table.makeView(withIdentifier: FeedRowCell.reuse, owner: nil) as? FeedRowCell
-            ?? FeedRowCell()
+        // Recycled per shape — see `FeedRow.Content.Shape`. A pool shared across shapes hands a
+        // cell the wrong tree and pays a full rebuild for every row a scroll exposes.
+        let shape = shown[index].content.shape
+        let cell = table.makeView(
+            withIdentifier: FeedRowCell.reuse(shape),
+            owner: nil,
+        ) as? FeedRowCell
+            ?? FeedRowCell(shape: shape)
         cell.host.rootView = model.content(at: index, hasCursor: index == cursorRow)
         return cell
     }
