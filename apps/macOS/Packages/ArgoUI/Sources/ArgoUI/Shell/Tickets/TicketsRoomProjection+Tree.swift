@@ -5,10 +5,11 @@ import Foundation
 /// the provider serves `children` per item and the shape of the list follows from it, so moving a
 /// ticket upstream moves a row without anybody editing a fixture.
 ///
-/// Two ways an edge can lie are resolved rather than trusted. A child claimed by two parents hangs
-/// under the first that claimed it, and an edge that would make an item its own ancestor is refused
-/// — both so that every shown item is drawn EXACTLY once. A tree that loses a row to a bad edge is
-/// worse than a tree that flattens one.
+/// Two ways an edge can lie are resolved rather than trusted, and both resolutions are Argo's own
+/// rather than the provider array's (#919). A child claimed by two parents hangs under the
+/// LOWEST-NUMBERED of them, and an edge that would make an item its own ancestor is refused — both
+/// so that every shown item is drawn EXACTLY once. A tree that loses a row to a bad edge is worse
+/// than a tree that flattens one.
 extension TicketsRoomProjection {
     /// One row as the list draws it: the row itself and how far in it sits. Flat, because selection
     /// and row height are the `List`'s and a `List` counts rows rather than subtrees.
@@ -89,12 +90,20 @@ extension TicketsRoomProjection {
         items.sorted { $0.number > $1.number }
     }
 
+    /// The order the edges are RESOLVED in, stated on the same terms as the order they are drawn
+    /// in: lowest number first, so a child two parents both claim hangs under the lower-numbered of
+    /// them rather than under whichever the provider's array happened to name first (#919).
+    private static func oldest(_ items: [Ticket]) -> [Ticket] {
+        items.sorted { $0.number < $1.number }
+    }
+
     /// Which shown item owns each shown child. Built once for the whole set rather than asked per
-    /// node, because the answer for one child depends on every other edge served.
+    /// node, because the answer for one child depends on every other edge served — and in a stated
+    /// order, so a contested edge and a refused cycle resolve the same way on every poll.
     static func parentEdges(of shown: [Ticket]) -> [Int: Int] {
         let numbers = Set(shown.map(\.number))
         var parents: [Int: Int] = [:]
-        for item in shown {
+        for item in oldest(shown) {
             for child in item.children
                 where numbers.contains(child) && parents[child] == nil && child != item.number
                 && !wouldCycle(adding: child, under: item.number, given: parents) {
