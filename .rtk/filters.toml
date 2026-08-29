@@ -4,7 +4,8 @@
 schema_version = 1
 
 # swift-testing prints one line per passing test; only failures, skips and the final
-# summary carry information. rtk ships swift-build but no swift-test filter.
+# summary carry information. Build noise is stripped here too, because a suite that will not
+# compile is neither a pass nor a test failure and its diagnostics must lead.
 # filter_stderr: swift's build phase (Building/Build complete!) arrives on stderr.
 [filters.swift-test]
 description = "Compact swift test output — strip passes and build noise, keep failures and the summary"
@@ -25,6 +26,7 @@ strip_lines_matching = [
   "Target Platform:",
   "^Test Suite '.*' (started|passed)",
   "^\\s*Executed \\d+ tests?, with 0 failures",
+  "^(Fetching|Fetched|Computing|Computed|Creating working copy|Working copy of|Resolved source packages) ",
 ]
 max_lines = 120
 
@@ -53,9 +55,80 @@ input = """
 """
 expected = "􀢄  Test \"broken case\" recorded an issue at FooTests.swift:42:9: Expectation failed: x == 2\n􀢄  Test \"broken case\" failed after 0.1 seconds with 1 issue.\n􀢄  Test run with 2 tests in 1 suite failed after 0.2 seconds with 1 issue."
 
+[[tests.swift-test]]
+name = "a suite that cannot compile shows the compiler, not a pass"
+input = """
+Fetched https://github.com/apple/swift-argument-parser from cache (0.70s)
+Building for debugging...
+[10/293] Compiling ArgoUI FeedRow.swift
+/repo/Sources/ArgoUI/MermaidDiagram.swift:118:1: error: expected declaration
+error: fatalError
+"""
+expected = "/repo/Sources/ArgoUI/MermaidDiagram.swift:118:1: error: expected declaration\nerror: fatalError"
+
+# Without this filter rtk's built-in proxy handles `swift build`, and it truncates: a cold
+# build emits hundreds of progress lines before it reaches the file that broke, so the
+# diagnostics fell off the end and the run read as clean (#925). This one is an allowlist
+# rather than a strip list, because that is what makes the swallowing impossible rather than
+# unlikely — no volume of progress can push a diagnostic past max_lines when progress is
+# never kept. `Build complete!` is kept because it is the whole report of a build that worked.
+[filters.swift-build]
+description = "Compact swift build output — keep every compiler diagnostic and nothing else"
+match_command = "^swift\\s+build\\b"
+strip_ansi = true
+filter_stderr = true
+keep_lines_matching = [
+  "(error|warning|note): ",
+  "^ld: ",
+  "Undefined symbols",
+  "^\\*\\* BUILD FAILED",
+  "^Build complete!",
+]
+max_lines = 200
+on_empty = "ok"
+
+[[tests.swift-build]]
+name = "a build that worked collapses to its completion line"
+input = """
+Fetched https://github.com/apple/swift-argument-parser from cache (0.70s)
+Building for debugging...
+[0/1] Planning build
+[3/4] Compiling ArgoUI MermaidDiagram.swift
+[4/4] Emitting module ArgoUI
+Build complete! (0.50s)
+"""
+expected = "Build complete! (0.50s)"
+
+[[tests.swift-build]]
+name = "diagnostics survive the progress lines that buried them"
+input = """
+Building for debugging...
+[10/293] Compiling ArgoUI FeedRow.swift
+[11/293] Compiling ArgoUI FeedScale.swift
+/repo/Sources/ArgoUI/MermaidDiagram.swift:118:1: error: expected declaration
+116 | }
+  | `- error: expected '}' in struct
+/repo/Sources/ArgoUI/MermaidDiagram.swift:12:9: warning: variable 'x' was never used
+/repo/Sources/ArgoUI/MermaidDiagram.swift:12:9: note: in declaration of 'Broken'
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+"""
+expected = "/repo/Sources/ArgoUI/MermaidDiagram.swift:118:1: error: expected declaration\n  | `- error: expected '}' in struct\n/repo/Sources/ArgoUI/MermaidDiagram.swift:12:9: warning: variable 'x' was never used\n/repo/Sources/ArgoUI/MermaidDiagram.swift:12:9: note: in declaration of 'Broken'\nerror: emit-module command failed with exit code 1 (use -v to see invocation)"
+
+[[tests.swift-build]]
+name = "a linker failure is not a compiler diagnostic and still survives"
+input = """
+[293/293] Linking ArgoUI
+ld: symbol(s) not found for architecture arm64
+** BUILD FAILED **
+"""
+expected = "ld: symbol(s) not found for architecture arm64\n** BUILD FAILED **"
+
 # `bun run <task>` fronts turbo, so rtk's built-in ^turbo filter never matches it.
 # Same idea: cache noise and per-test pass lines out, failures and summaries kept.
 # turbo's own `Tasks:` count line is kept — on a failing run it is the headline.
+# `(\S+:\S+: )?` is turbo's per-task prefix (`@argo/macos:test: `): without it every
+# ^-anchored strip below is dead and the build noise it should drop pushes the compiler
+# diagnostics past max_lines (#925).
 [filters.bun-run]
 description = "Compact bun run output — strip turbo cache noise and per-test pass lines, keep failures"
 match_command = "^bun run (test|quality|format-and-lint|lint|build)\\b"
@@ -68,12 +141,13 @@ strip_lines_matching = [
   "Running \\w+ in \\d+ packages",
   "^\\s*Duration:\\s+",
   "Remote caching (enabled|disabled)",
-  "^Building for debugging",
-  "^\\[\\d+/\\d+\\]",
-  "^Build complete!",
+  "^(\\S+:\\S+: )?Building for debugging",
+  "^(\\S+:\\S+: )?\\[\\d+/\\d+\\]",
+  "^(\\S+:\\S+: )?Build complete!",
+  "^(\\S+:\\S+: )?(Fetching|Fetched|Computing|Computed|Creating working copy|Working copy of|Resolved source packages) ",
   "(Test|Suite) [\"“].*[\"”].* passed after",
   "started\\.$",
-  "^[􀟈◇] ",
+  "^(\\S+:\\S+: )?[􀟈◇] ",
   "Testing Library Version",
   "Target Platform:",
 ]
@@ -95,9 +169,24 @@ Duration: 6s
 """
 expected = "@argo/macos:test: swift-test: ArgoEngine\n􁁛  Test run with 10 tests in 2 suites passed after 0.5 seconds.\n Tasks:    1 successful, 1 total"
 
+[[tests.bun-run]]
+name = "a package that will not compile shows the compiler, not the progress"
+input = """
+@argo/macos:test: swift-test: ArgoUI
+@argo/macos:test: Fetched https://github.com/apple/swift-argument-parser from cache (0.70s)
+@argo/macos:test: Building for debugging...
+@argo/macos:test: [87/404] Compiling ArgoEngine BuiltinCommand.swift
+@argo/macos:test: /repo/Sources/ArgoUI/MermaidDiagram.swift:118:1: error: expected declaration
+@argo/macos:test: error: fatalError
+ Tasks:    0 successful, 1 total
+"""
+expected = "@argo/macos:test: swift-test: ArgoUI\n@argo/macos:test: /repo/Sources/ArgoUI/MermaidDiagram.swift:118:1: error: expected declaration\n@argo/macos:test: error: fatalError\n Tasks:    0 successful, 1 total"
+
 # The e2e suite runs xcodebuild test through a shell script the hook cannot see into,
 # and xcodebuild's per-phase and per-test-pass lines are tens of KB a run. XCTest
-# failure lines ("error:", "failed") and the result summary don't match any strip.
+# failure lines ("error:", "failed") and the result summary don't match any strip. `^note: `
+# is xcodebuild's own build-system note, never a compiler one — those carry a file and column
+# ahead of the word and survive.
 [filters.e2e-test]
 description = "Compact e2e-test.sh output — strip xcodebuild phases and XCTest pass lines, keep failures"
 match_command = "^sh scripts/e2e-test\\.sh\\b"
@@ -133,3 +222,14 @@ Test Case '-[FeedE2ETests testSeam]' failed (1.4 seconds).
 Executed 2 tests, with 1 failure (0 unexpected) in 3.5 (3.6) seconds
 """
 expected = "/repo/FeedE2ETests.swift:30: error: -[FeedE2ETests testSeam] : XCTAssertTrue failed\nTest Case '-[FeedE2ETests testSeam]' failed (1.4 seconds).\nExecuted 2 tests, with 1 failure (0 unexpected) in 3.5 (3.6) seconds"
+
+[[tests.e2e-test]]
+name = "a suite that will not compile shows the compiler, not the phases"
+input = """
+note: Building targets in dependency order
+CompileSwift normal arm64 MermaidDiagram.swift
+/repo/Sources/ArgoUI/MermaidDiagram.swift:118:1: error: expected declaration
+/repo/Sources/ArgoUI/MermaidDiagram.swift:12:9: note: in declaration of 'Broken'
+** BUILD FAILED **
+"""
+expected = "/repo/Sources/ArgoUI/MermaidDiagram.swift:118:1: error: expected declaration\n/repo/Sources/ArgoUI/MermaidDiagram.swift:12:9: note: in declaration of 'Broken'\n** BUILD FAILED **"

@@ -160,12 +160,19 @@ running Argo, what the pixels are judged against, the specimen harness in full:
 **Always prefix shell commands with `rtk`** so output is filtered before it reaches context. The
 global Bash hook (rtk ≥ 0.45) auto-wraps `git`, `grep`, `gh`, `ls`, `find` and similar, and it
 rewrites inside compound commands too — `cd apps/macOS && swift test` is caught. This repo's own
-noisy entrypoints are covered by **`.rtk/filters.toml`** at the root: `swift test` (passes and
-build noise out, failures and the summary kept), `bun run test|quality|…` (turbo cache noise
-out), and `sh scripts/e2e-test.sh` (xcodebuild phases out).
+noisy entrypoints are covered by **`.rtk/filters.toml`** at the root: `swift build` and
+`swift test` (progress and passes out, every compiler diagnostic kept), `bun run
+test|quality|…` (turbo cache noise out), and `sh scripts/e2e-test.sh` (xcodebuild phases out).
+
+rtk reads `.rtk/filters.toml` from the **working directory only** — never a parent, not even the
+git root. `apps/macOS` and both `Packages/*` therefore carry a `.rtk` symlink back to the root
+one, because that is where `swift build`, `swift test` and `e2e-test.sh` are actually run. Add
+one wherever a new run location appears; without it rtk falls back to its built-in proxy, which
+prints the head of the output and truncates the rest — and a cold build's errors come last (#925).
 
 The filters are inert until trusted: **run `rtk trust --yes` once per checkout**, and again after
-any edit to the file — trust is keyed to its hash. `rtk verify` runs the filters' inline tests.
+any edit to the file — trust is keyed to its hash. `rtk verify` runs the filters' inline tests,
+which include a compiler-error case for every filter that can see a build.
 
 ```bash
 rtk err bun run quality:swift       # SwiftFormat --check, SwiftLint, package boundaries
