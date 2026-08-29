@@ -35,7 +35,7 @@ struct FeedLightbox: View {
             .buttonStyle(.plain)
             .transition(.opacity)
         }
-        .showing(shot.media, in: $showing)
+        .showing(shot.media, drawnIn: .full, in: $showing)
         .onExitCommand(perform: dismiss)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(shot.address), full size")

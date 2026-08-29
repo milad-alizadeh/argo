@@ -20,7 +20,7 @@ struct FeedShotView: View {
             .disabled(showing.picture == nil)
             .help(shot.address)
             .frame(width: ArgoFeedRow.shotWidth, alignment: .leading)
-            .showing(shot.media, in: $showing)
+            .showing(shot.media, drawnIn: .plate(ArgoFeedRow.shotPlate), in: $showing)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(spoken)
             .accessibilityHint(showing.picture == nil ? "" : "Opens this image full size")

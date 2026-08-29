@@ -1,43 +1,23 @@
 import AppKit
 import ArgoEngine
 
-/// A media result's bytes, decoded once, with what the image itself says about its size.
+/// A media result's bytes, decoded at the size the surface asking draws them, with what the image
+/// itself says about its size.
 ///
 /// Decoding base64 into an `NSImage` is work and a SwiftUI `body` runs whenever anything near it
 /// changes, so this is a held value and never a computed property: a gallery of six shots
 /// recomputing its pictures on every layout pass is the jitter.
 struct MediaPicture {
     let image: NSImage
-    /// The image's own pixel dimensions, `nil` where no representation carries them. Read off the
-    /// REPRESENTATION rather than `NSImage.size`, which is in points and would report a Retina
-    /// screenshot at half the size the file actually is.
+    /// The image's own pixel dimensions, `nil` where the file did not say. The SOURCE's, not the
+    /// bitmap's — a thumbnail is drawn small and still reports what the file is.
     let pixels: (width: Int, height: Int)?
+    private let points: CGSize
 
-    /// `nil` where there are no bytes, or none that decode. Both are the same thing to a surface:
-    /// there is no picture, and it says so rather than drawing a broken one.
-    init?(_ media: MediaEvidence) {
-        guard let bytes = media.bytes, let image = Self.decode(bytes) else { return nil }
-        self.image = image
-        self.pixels = image.representations.first.map { ($0.pixelsWide, $0.pixelsHigh) }
-    }
-
-    /// One decode per distinct byte run, however many surfaces show it. The lightbox opens the
-    /// SAME `NSImage` the thumbnail drew, so AppKit reuses the rasterised bitmap and the open
-    /// fade starts on a free main thread — a second decode at mount stalled the fade's first
-    /// frames, which read as a flash.
-    /// `nonisolated(unsafe)` on the strength of `NSCache`'s own documented thread safety — the
-    /// compiler cannot see it, but the type synchronises its accesses itself.
-    nonisolated(unsafe) private static let decoded = NSCache<NSString, NSImage>()
-
-    private static func decode(_ bytes: String) -> NSImage? {
-        if let image = decoded.object(forKey: bytes as NSString) {
-            return image
-        }
-        guard let data = Data(base64Encoded: bytes), let image = NSImage(data: data) else {
-            return nil
-        }
-        decoded.setObject(image, forKey: bytes as NSString)
-        return image
+    init(_ bitmap: MediaBitmap) {
+        self.image = bitmap.image
+        self.pixels = bitmap.pixels
+        self.points = bitmap.points
     }
 
     /// `1280 × 800`, or nothing at all where the image did not say. Never a guess from the point
@@ -50,14 +30,15 @@ struct MediaPicture {
     /// deliberate half: a 2× capture at its pixel count in points is the same picture upscaled and
     /// softer, and full size means one image pixel per device pixel.
     var naturalSize: CGSize {
-        image.size
+        points
     }
 }
 
 extension MediaEvidence {
-    /// Where the picture came from, paying a decode to find out whether there is one at all. For
+    /// Where the picture came from, answering whether there IS one from the file's signature
+    /// alone — no decode, and a cost that does not grow with the picture (ADR-0028 Rule 3). For
     /// callers holding no `MediaPicture` — the projection's own reading, and the tests.
     var provenance: MediaProvenance {
-        MediaProvenance(self, showing: MediaPicture(self) != nil)
+        MediaProvenance(self, showing: bytes.map(MediaDecode.isPicture) ?? false)
     }
 }
