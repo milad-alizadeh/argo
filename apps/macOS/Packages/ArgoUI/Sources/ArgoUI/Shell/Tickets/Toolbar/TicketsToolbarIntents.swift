@@ -10,8 +10,12 @@ import ArgoEngine
 /// One value rather than five closures, because the cap is three parameters and these travel
 /// together anyway.
 struct TicketsToolbarIntents {
-    /// The list's own: narrow it, and re-group what is left.
-    var narrowing: () -> Void = {}
+    /// The list's own: re-group it. Inert by design, and the reason is on `ticketsIntents` — the
+    /// menu states the grouping in force rather than offering a choice nothing can answer yet.
+    ///
+    /// **There is no `narrowing` beside it (#900).** It was the funnel's, and the funnel was a mark
+    /// bound to `{}` in the shipping app; a slot nothing assigns is what let it draw live and do
+    /// nothing, so the slot goes with the mark.
     var grouping: () -> Void = {}
     /// The call-to-action, which belongs to no ticket — it makes one, through a provider. So it is
     /// this room's one provider-port write control, and the verb travels with what the control

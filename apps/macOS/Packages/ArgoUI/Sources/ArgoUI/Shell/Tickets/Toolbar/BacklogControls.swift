@@ -1,21 +1,22 @@
 import SwiftUI
 
-/// The list's own two controls: filter, then the menu that holds every other way to order it —
-/// Mail's own pair, in Mail's own order. The rule between them is what stops one capsule reading as
-/// one control.
+/// The list's own control: the menu that holds every way of ordering it.
 ///
-/// In the window's row rather than over the column it narrows: nothing about a filter mark says
-/// which column it acts on, and this room has one list to narrow.
+/// **The funnel beside it is gone (#900).** It drew Mail's own filter mark, and it was bound to an
+/// empty closure in the shipping app — no sheet, no popover, no state, and nothing downstream
+/// reading a filter because nothing ever wrote one. A mark that draws live and does nothing costs a
+/// reader a click and a theory about the room every time they meet it, and the room already has its
+/// two narrowings: the sidebar's four views choose the set, and the search field narrows within it.
+/// The rule that stood between the two marks went with it — it existed only to stop the pair
+/// reading as one control, and one mark is not a pair.
+///
+/// In the window's row rather than over the column it orders: this room has one list, and the
+/// controls that act on it read in scope order along one line rather than at three heights.
 struct BacklogControls: View {
-    var narrowing: () -> Void = {}
     var grouping: () -> Void = {}
 
     var body: some View {
         ToolbarVessel {
-            ToolbarIcon(symbol: ArgoSymbol.filterBacklog, label: "Filter", act: narrowing)
-            DeckSeparator()
-                .frame(height: ArgoTicketsChrome.splitDividerHeight)
-                .accessibilityHidden(true)
             BacklogMenu(grouping: grouping)
         }
     }

@@ -46,14 +46,17 @@ struct ToolbarIcon: View {
     }
 }
 
-#Preview("Toolbar vessels — one mark, and two sharing a capsule") {
+#Preview("Toolbar vessels — one mark, and marks sharing a capsule past a rule") {
     HStack(spacing: ArgoSpacing.comfortable) {
         ToolbarVessel {
             ToolbarIcon(symbol: ArgoSymbol.newTicket, label: "New ticket")
         }
         ToolbarVessel {
-            ToolbarIcon(symbol: ArgoSymbol.filterBacklog, label: "Filter")
-            BacklogMenu()
+            ToolbarIcon(symbol: ArgoSymbol.openOnHost, label: "Open on host")
+            DeckSeparator()
+                .frame(height: ArgoTicketsChrome.splitDividerHeight)
+                .accessibilityHidden(true)
+            ToolbarIcon(symbol: ArgoSymbol.copyLink, label: "Copy link")
         }
     }
     .padding(ArgoSpacing.region)

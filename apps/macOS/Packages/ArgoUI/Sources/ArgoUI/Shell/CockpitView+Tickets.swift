@@ -56,7 +56,9 @@ extension CockpitView {
     ///
     /// `grouping` stays inert, deliberately: `BacklogMenu` states the one grouping in force rather
     /// than offering a choice nothing can answer, and it becomes a menu when a port reads a second
-    /// thing to group by (#388).
+    /// thing to group by (#388). It is the ONLY one — every other slot on the intents is assigned
+    /// here, and `BacklogControlsTests` fails if a slot is added and this method does not grow a
+    /// line for it. That is what the funnel's `narrowing` never had (#900).
     func ticketsIntents(_ start: TicketStart) -> TicketsToolbarIntents {
         var intents = TicketsToolbarIntents.inert
         intents.creation.control = ticketWriteControl

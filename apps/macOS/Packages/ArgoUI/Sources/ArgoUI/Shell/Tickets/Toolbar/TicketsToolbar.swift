@@ -23,11 +23,11 @@ struct TicketsToolbar: ToolbarContent {
 
     @ToolbarContentBuilder var body: some ToolbarContent {
         if reading.draws {
-            // `narrows` and not `draws`: the three controls that narrow a list go with the list
-            // they narrow, so an empty backlog loses them where New ticket survives.
+            // `narrows` and not `draws`: the controls that act on the list go with the list they
+            // act on, so an empty backlog loses them where New ticket survives.
             if reading.narrows {
                 ToolbarItem(placement: .primaryAction) {
-                    BacklogControls(narrowing: intents.narrowing, grouping: intents.grouping)
+                    BacklogControls(grouping: intents.grouping)
                 }
                 .sharedBackgroundVisibility(.hidden)
             }

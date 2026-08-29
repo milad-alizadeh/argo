@@ -46,7 +46,7 @@ column-placement question** below for what the bands bought and what they cost.
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
 | `BacklogHeader` | molecule | `ArgoUI/Shell/Tickets/Backlog/` | `reading: TicketsChromeProjection.Reading` | — | renamed from `BacklogToolbarLabel`, which was a toolbar item claiming 520pt. **#855**: words only, the controls left it |
-| `BacklogControls` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | `narrowing`, `grouping` | `ToolbarVessel`, `ToolbarIcon`, `BacklogMenu`, `DeckSeparator` | **#855**: split out of `BacklogHeader` when the controls returned to the row |
+| `BacklogControls` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | `grouping` | `ToolbarVessel`, `BacklogMenu` | **#855**: split out of `BacklogHeader` when the controls returned to the row. **#900**: the funnel it also held was bound to `{}`, so the mark, its `narrowing` intent and the rule beside it are deleted |
 | `BacklogMenu` | atom | `ArgoUI/Shell/Tickets/Backlog/` | `grouping: () -> Void` | stock `Menu` | Mail's `⋯` beside its filter |
 | ~~`TicketBand`~~ | — | — | — | — | added by #836 to carry New ticket and the ticket's verbs over their column. **Deleted by #855**: both are toolbar items again |
 
