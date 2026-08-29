@@ -3,23 +3,12 @@ import Foundation
 /// The engine ports the app composes: transcript observation, repository checkout and process
 /// liveness reads.
 public struct Engine: Sendable {
-    private let readCheckout: CheckoutRead
-    private let readWorktrees: WorktreeEnumerationRead
-    private let readWorkspace: WorkspaceRead
-    private let readLiveness: LivenessRead
+    private let reads: EngineReads
 
     /// The `git`- and `ps`-backed reads are the app's adapters; a caller with no repository and no
-    /// process table to read supplies its own.
-    public init(
-        readCheckout: @escaping CheckoutRead = gitCheckoutRead,
-        readWorktrees: @escaping WorktreeEnumerationRead = gitWorktreeEnumerationRead,
-        readWorkspace: @escaping WorkspaceRead = gitWorkspaceRead,
-        readLiveness: @escaping LivenessRead = processLivenessRead,
-    ) {
-        self.readCheckout = readCheckout
-        self.readWorktrees = readWorktrees
-        self.readWorkspace = readWorkspace
-        self.readLiveness = readLiveness
+    /// process table to read supplies its own set (`EngineReads`).
+    public init(reads: EngineReads = .ofThisMachine) {
+        self.reads = reads
     }
 
     public func observeTranscript(at url: URL) throws -> TranscriptObservation {
@@ -100,22 +89,29 @@ public struct Engine: Sendable {
     }
 
     public func checkout(at url: URL) async -> CheckoutProjection {
-        await readCheckout(url)
+        await reads.checkout(url)
     }
 
     /// Every working tree the repository holding this folder has, in git's own order — and none for
     /// a folder that is in no repository.
     public func worktrees(in url: URL) async -> [WorktreeEntry] {
-        await readWorktrees(url)
+        await reads.worktrees(url)
     }
 
     /// The git working context of one working tree, or nothing where git could not answer for it.
     public func workspace(of entry: WorktreeEntry) async -> WorkspaceProjection? {
-        await readWorkspace(entry)
+        await reads.workspace(entry)
     }
 
     /// The working directories a live CLI is running in, right now.
     public func liveCwds() async -> Set<String> {
-        await readLiveness()
+        await reads.liveness()
+    }
+
+    /// How the file system spells each of these paths. A read like the four above and for their
+    /// reason: it opens the file system, so it happens here rather than wherever the answer is
+    /// wanted (ADR-0028 Rule 6).
+    public func resolvedPaths(_ paths: [String]) async -> [String: String] {
+        await reads.paths(paths)
     }
 }

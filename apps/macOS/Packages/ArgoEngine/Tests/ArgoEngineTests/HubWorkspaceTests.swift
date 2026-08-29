@@ -68,12 +68,12 @@ struct HubWorkspaceTests {
     private static func hub() -> Hub {
         Hub(
             projectURL: URL(fileURLWithPath: cwd),
-            engine: Engine(
-                readCheckout: CheckoutFixture().read,
-                readWorktrees: { _ in [oneWorktree] },
-                readWorkspace: { _ in gitRead },
-                readLiveness: noLiveProcesses,
-            ),
+            engine: Engine(reads: .init(
+                checkout: CheckoutFixture().read,
+                worktrees: { _ in [oneWorktree] },
+                workspace: { _ in gitRead },
+                liveness: noLiveProcesses,
+            )),
         )
     }
 

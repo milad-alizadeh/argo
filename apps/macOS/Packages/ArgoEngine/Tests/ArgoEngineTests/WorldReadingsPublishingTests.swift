@@ -103,14 +103,14 @@ struct WorldReadingsPublishingTests {
             let processes = LiveProcesses(running: running)
             self.processes = processes
             self.readings = WorldReadings(
-                engine: Engine(
-                    readCheckout: CheckoutFixture().read,
-                    readWorktrees: { _ in
+                engine: Engine(reads: .init(
+                    checkout: CheckoutFixture().read,
+                    worktrees: { _ in
                         [WorktreeEntry(
                             path: repository, branch: "main", headSha: "aaa", kind: .main,
                         )]
                     },
-                    readWorkspace: { entry in
+                    workspace: { entry in
                         WorkspaceProjection(
                             kind: entry.kind,
                             branch: entry.branch,
@@ -118,8 +118,8 @@ struct WorldReadingsPublishingTests {
                             divergence: UpstreamDivergence(ahead: 0, behind: 0),
                         )
                     },
-                    readLiveness: { processes.running ? [repository] : [] },
-                ),
+                    liveness: { processes.running ? [repository] : [] },
+                )),
                 repositoryURL: { URL(fileURLWithPath: repository) },
                 sessions: {
                     [SessionActivity(cwd: repository, lastSeenAtMs: startedAtMs)]
@@ -159,4 +159,4 @@ private let startedAtMs = 1_700_000_000_000
 /// The one folder every case turns on, already resolved — `lsof` answers with the symlinks
 /// followed, so an unresolved path would never match. Outside the suite because the reads above are
 /// handed to an `Engine` and run off the main actor.
-private let repository = resolvedPath("/tmp/argo-world")
+private let repository = resolvedTestPath("/tmp/argo-world")

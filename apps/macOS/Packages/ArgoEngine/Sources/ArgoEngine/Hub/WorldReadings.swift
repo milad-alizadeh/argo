@@ -1,11 +1,12 @@
 import Foundation
 
 /// What Argo read about the world OUTSIDE the transcripts: which working directories a live CLI was
-/// running in when the process table was last read, when that read was taken, and what git last
-/// said about each Session's folder.
+/// running in when the process table was last read, when that read was taken, what git last said
+/// about each Session's folder, and how the file system spells each of those folders.
 ///
 /// Polled rather than watched — a process exiting writes nothing anywhere Argo could be listening
-/// for it. Both reads are on the same beat because both go stale the same way.
+/// for it, and a symlink being repointed writes nothing either. The three reads are on the same
+/// beat because all three go stale the same way.
 @MainActor
 @Observable
 final class WorldReadings {
@@ -13,7 +14,8 @@ final class WorldReadings {
     /// direction: the stale answer is the quieter one, and the recency window bounds it.
     static let interval = Duration.seconds(5)
 
-    @ObservationIgnored private let engine: Engine
+    /// Not `private`: `WorldReadings+Spelling` asks it for a spelling.
+    @ObservationIgnored let engine: Engine
     /// The repository to enumerate worktrees of. Supplied rather than held for the reason the
     /// folders below are: the Hub re-points, and a held URL would go on answering for the Project
     /// it was pointed at first.
@@ -31,6 +33,16 @@ final class WorldReadings {
     /// in (#259). Resolved on the way IN, so a lookup costs one `realpath` rather than one per
     /// worktree per Session per poll.
     private var workspaces: [String: WorkspaceProjection] = [:]
+    /// How the file system spells each folder these readings answer about, keyed by the path as
+    /// written. Filled by the sweep and never by a read: `realpath` is a file-system call, and no
+    /// `@MainActor` type makes one (#959, ADR-0028 Rule 6).
+    ///
+    /// One sweep old at most. What is cached is not a Session's location — which is fixed for the
+    /// life of the Session — but the resolution of a SYMLINK, and a symlink can be repointed while
+    /// the app runs, so the sweep asks the whole table again rather than answering from memory.
+    /// `WorldReadings+Spelling` is where that is settled.
+    /// Not `private`: `WorldReadings+Spelling` is the one thing that reads or writes it.
+    var resolved: [String: String] = [:]
     @ObservationIgnored private var polling: Task<Void, Never>?
 
     init(
@@ -48,10 +60,10 @@ final class WorldReadings {
     /// thing twice.
     func liveness(inCwd cwd: String?, lastActivityAtMs: Int?) -> SessionLiveness {
         SessionLiveness.read(
-            // Both sides resolved, because they are spelled differently: `lsof` answers with the
-            // symlinks already followed and a transcript reports the path its agent was launched
-            // with, which under `/tmp` is never the same string.
-            processMatch: cwd.map { liveCwds.contains(resolvedPath($0)) } ?? false,
+            // Both sides spelled the same way, because they arrive spelled differently: `lsof`
+            // answers with the symlinks already followed and a transcript reports the path its
+            // agent was launched with, which under `/tmp` is never the same string.
+            processMatch: cwd.map { liveCwds.contains(spelled($0)) } ?? false,
             lastActivityAtMs: lastActivityAtMs,
             nowMs: readAtMs,
         )
@@ -65,7 +77,7 @@ final class WorldReadings {
     /// every Session in the repository with the repository's own branch.
     func workspace(inCwd cwd: String?) -> WorkspaceProjection? {
         guard let cwd,
-              let path = Self.deepest(of: Array(workspaces.keys), holding: resolvedPath(cwd))
+              let path = Self.deepest(of: Array(workspaces.keys), holding: spelled(cwd))
         else { return nil }
         return workspaces[path]
     }
@@ -110,9 +122,11 @@ final class WorldReadings {
     /// enough to be felt, and the stamp is when the read landed rather than when it was asked for.
     func refreshLiveness(clock: () -> Int = { Date().epochMs }) async {
         let cwds = await engine.liveCwds()
+        let observed = sessions()
+        await spell(observed.compactMap(\.cwd), settling: .foldersNotYetSpelled)
         let read = Read(cwds: cwds, atMs: clock())
         let published = Read(cwds: liveCwds, atMs: readAtMs)
-        guard Self.publishes(read, over: published, for: sessions()) else { return }
+        guard publishes(read, over: published, for: observed) else { return }
         liveCwds = read.cwds
         readAtMs = read.atMs
     }
@@ -126,7 +140,7 @@ final class WorldReadings {
 
     /// Whether a read says anything the published one does not: a moved process table, or a clock
     /// that alone reads one of these Sessions differently.
-    private static func publishes(
+    private func publishes(
         _ read: Read,
         over published: Read,
         for sessions: [SessionActivity],
@@ -139,14 +153,14 @@ final class WorldReadings {
     /// How each Session's liveness reads against one poll — the same fold `Hub.observed(_:)` runs,
     /// over the same `lastSeenAtMs`. Order is the roster's, so two folds compare position by
     /// position.
-    private static func verdicts(
+    private func verdicts(
         of sessions: [SessionActivity],
         at read: Read,
     )
         -> [SessionLiveness] {
         sessions.map { session in
             SessionLiveness.read(
-                processMatch: session.cwd.map { read.cwds.contains(resolvedPath($0)) } ?? false,
+                processMatch: session.cwd.map { read.cwds.contains(spelled($0)) } ?? false,
                 lastActivityAtMs: session.lastSeenAtMs,
                 nowMs: read.atMs,
             )
@@ -167,17 +181,23 @@ final class WorldReadings {
         // going on answering with them would be a fact about a repository nobody is on.
         guard let repositoryURL = repositoryURL() else {
             publish(workspaces: [:])
+            // The roster's own folders stay spelled and the gone Project's worktrees do not: the
+            // table answers about folders these readings can be ASKED about, and the roster
+            // survives a Hub being let go where a repository's branches do not.
+            await spell(sessions().compactMap(\.cwd), settling: .theWholeTable)
             return
         }
         let entries = await engine.worktrees(in: repositoryURL)
+        let cwds = sessions().compactMap(\.cwd)
+        await spell(entries.map(\.path) + cwds, settling: .theWholeTable)
         let holders = Self.holders(
-            of: entries.map { resolvedPath($0.path) },
-            amongst: sessions().compactMap(\.cwd).map(resolvedPath),
+            of: entries.map { spelled($0.path) },
+            amongst: cwds.map(spelled),
         )
         var read: [String: WorkspaceProjection] = [:]
         for entry in entries {
             guard !Task.isCancelled else { return }
-            let path = resolvedPath(entry.path)
+            let path = spelled(entry.path)
             read[path] = await engine.workspace(of: entry)?.shared(by: holders[path] ?? 0)
         }
         publish(workspaces: read)
@@ -221,5 +241,6 @@ final class WorldReadings {
         liveCwds = []
         readAtMs = nil
         workspaces = [:]
+        resolved = [:]
     }
 }

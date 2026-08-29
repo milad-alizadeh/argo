@@ -171,8 +171,12 @@ func hubFixtureURL(_ name: String) throws -> URL {
 /// The descriptor table is asked which entries are open rather than every possible number being
 /// probed: the soft limit here is over a million, and walking it is slow enough to look like a
 /// hang when a test polls.
+///
+/// `F_GETPATH` answers with every symlink resolved, and `URL.resolvingSymlinksInPath` does not:
+/// Foundation leaves `/tmp` and `/var` alone, which is exactly where a test writes. Both sides go
+/// through `realpath` so the comparison is of the same name.
 func openDescriptorCount(for url: URL) -> Int {
-    let path = realPath(of: url)
+    let path = resolvedTestPath(url.path)
     var pathBuffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
     return openDescriptors().count { descriptor in
         guard fcntl(descriptor, F_GETPATH, &pathBuffer) != -1 else { return false }
@@ -180,15 +184,6 @@ func openDescriptorCount(for url: URL) -> Int {
         let name = pathBuffer.prefix { $0 != 0 }
         return String(validating: name, as: UTF8.self) == path
     }
-}
-
-/// `F_GETPATH` answers with every symlink resolved, and `URL.resolvingSymlinksInPath` does not:
-/// Foundation leaves `/tmp` and `/var` alone, which is exactly where a test writes. Both sides go
-/// through `realpath` so the comparison is of the same name.
-private func realPath(of url: URL) -> String {
-    guard let resolved = realpath(url.path, nil) else { return url.path }
-    defer { free(resolved) }
-    return String(cString: resolved)
 }
 
 private func openDescriptors() -> [Int32] {

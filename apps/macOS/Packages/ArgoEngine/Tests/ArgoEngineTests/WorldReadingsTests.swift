@@ -36,8 +36,8 @@ struct WorldReadingsTests {
         let folder = "/tmp/argo-world-\(UUID().uuidString)"
         try FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: folder) }
-        #expect(resolvedPath(folder) != folder)
-        let readings = Self.readings(runningIn: [resolvedPath(folder)])
+        #expect(resolvedTestPath(folder) != folder)
+        let readings = Self.readings(runningIn: [resolvedTestPath(folder)], cwds: [folder])
 
         await readings.refreshLiveness()
 
@@ -195,12 +195,12 @@ struct WorldReadingsTests {
     )
         -> WorldReadings {
         WorldReadings(
-            engine: Engine(
-                readCheckout: CheckoutFixture().read,
-                readWorktrees: worktrees,
-                readWorkspace: workspace,
-                readLiveness: { live },
-            ),
+            engine: Engine(reads: .init(
+                checkout: CheckoutFixture().read,
+                worktrees: worktrees,
+                workspace: workspace,
+                liveness: { live },
+            )),
             repositoryURL: repository,
             sessions: { cwds.map { SessionActivity(cwd: $0, lastSeenAtMs: nowMs) } },
         )

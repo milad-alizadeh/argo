@@ -108,7 +108,7 @@ struct SpawnFixture {
         self.chainFileURL = root.appending(path: "chain.json")
         self.ownershipFileURL = root.appending(path: "ownership.json")
         self.modeFileURL = root.appending(path: "mode.json")
-        self.engine = Engine(readCheckout: CheckoutFixture().read, readLiveness: liveness)
+        self.engine = Engine(reads: .init(checkout: CheckoutFixture().read, liveness: liveness))
         self.services = SpawnServices(
             host: host,
             // The same stand-in for both surfaces: what a Codex spawn does with its pipes is the
@@ -139,7 +139,7 @@ struct SpawnFixture {
     /// The resolved project path — what a claim is keyed by, and what the CLI would record. The
     /// two differ before resolution on any Mac, because `NSTemporaryDirectory` is under `/var`.
     var resolvedProjectPath: String {
-        resolvedPath(projectURL.path)
+        resolvedTestPath(projectURL.path)
     }
 
     func remove() {

@@ -73,7 +73,10 @@ struct TranscriptWatchTests {
 
     private static func watch() -> TranscriptWatch {
         TranscriptWatch(
-            engine: Engine(readCheckout: CheckoutFixture().read, readLiveness: noLiveProcesses),
+            engine: Engine(reads: .init(
+                checkout: CheckoutFixture().read,
+                liveness: noLiveProcesses,
+            )),
             discovery: SessionDiscovery(),
         )
     }

@@ -45,6 +45,10 @@ public extension Hub {
         do {
             try await start(plan)
             publish(plan)
+            // The provisional row's folder, spelled at the one moment it is known. A spawn is in no
+            // transcript and in no sweep yet, so without this its row would match no process and no
+            // worktree until the next sweep (#959) — see `Hub.didApply()`.
+            await readings.spell([cwd], settling: .foldersNotYetSpelled)
             return plan.claim
         } catch {
             // Nothing started, so nothing is owned. Relinquishing keeps the window from covering an

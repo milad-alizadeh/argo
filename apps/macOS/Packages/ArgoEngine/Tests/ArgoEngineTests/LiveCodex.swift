@@ -31,7 +31,10 @@ struct LiveCodex {
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
         self.hub = Hub(
             projectURL: projectURL,
-            engine: Engine(readCheckout: CheckoutFixture().read, readLiveness: noLiveProcesses),
+            engine: Engine(reads: .init(
+                checkout: CheckoutFixture().read,
+                liveness: noLiveProcesses,
+            )),
             spawnServices: SpawnServices(host: FakeProcessHost(), permissionPatience: patience),
         )
     }

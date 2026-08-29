@@ -73,8 +73,8 @@ struct HubLivenessTests {
             withIntermediateDirectories: true,
         )
         defer { try? FileManager.default.removeItem(atPath: folder) }
-        #expect(resolvedPath(folder) != folder)
-        let hub = await Self.hub(runningIn: resolvedPath(folder))
+        #expect(resolvedTestPath(folder) != folder)
+        let hub = await Self.hub(runningIn: resolvedTestPath(folder))
 
         await hubObserveToEnd(hub, hubTestObservation(id: "symlinked", events: [
             .cwd(folder),

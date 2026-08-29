@@ -50,12 +50,12 @@ func testHub(
         projectURL: projectURL,
         // No git read of any Session's folder: a suite that shelled out per poll would assert what
         // this machine's checkouts happen to be. `HubWorkspaceTests` supplies its own read.
-        engine: Engine(
-            readCheckout: checkout,
-            readWorktrees: noWorktrees,
-            readWorkspace: noWorkspaceRead,
-            readLiveness: liveness,
-        ),
+        engine: Engine(reads: .init(
+            checkout: checkout,
+            worktrees: noWorktrees,
+            workspace: noWorkspaceRead,
+            liveness: liveness,
+        )),
         discovery: discovery,
     )
 }
