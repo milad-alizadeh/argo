@@ -9,6 +9,10 @@ import SwiftUI
 /// A running Agent has neither total yet: the host measures the whole run and reports it with the
 /// delegating call's result. So the duration counts UP from the handover instead, and the spend
 /// slot stays empty rather than drawing a `0` that would claim a busy agent had spent nothing.
+///
+/// A backgrounded Agent is never reported either figure, at either end (#908) — so a finished one
+/// draws NOTHING here. The count-up is gated on `isRunning` for exactly that: a clock still growing
+/// beside an idle dot would say the work goes on, which is the untruth the rail was fixed to stop.
 struct AgentMeter: View {
     @Environment(\.argo) private var argo
 
@@ -36,7 +40,7 @@ struct AgentMeter: View {
     @ViewBuilder private var duration: some View {
         if let durationMs = agent.durationMs {
             Text(TurnClockPhrase.figure(seconds: durationMs / 1000))
-        } else if let startedAtMs = agent.startedAtMs {
+        } else if agent.isRunning, let startedAtMs = agent.startedAtMs {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 Text(counted(from: startedAtMs, at: context.date))
             }

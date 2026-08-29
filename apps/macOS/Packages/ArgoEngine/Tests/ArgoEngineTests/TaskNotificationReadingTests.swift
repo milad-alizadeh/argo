@@ -112,6 +112,35 @@ struct TaskNotificationReadingTests {
     }
 
     @Test
+    func `An async launch reads as the call starting, not as the call ending`() async throws {
+        let launch = try await #require(outcomes(of: "n-call-agent").first)
+
+        // The receipt names `async_launched`, which resolves nothing: the agent it started is
+        // still working, and the report that ends it arrives later as an outcome of its own.
+        #expect(launch.status == .inProgress)
+    }
+
+    /// Unlike a synchronous result, which names the agent only once it is over — so a chip for a
+    /// backgrounded agent has the key its reading is scoped by from the moment it starts.
+    @Test
+    func `An async launch names its agent up front`() async throws {
+        let launch = try await #require(outcomes(of: "n-call-agent").first)
+
+        #expect(launch.subagentID == "a6198311a6979b60e")
+    }
+
+    /// The receipt states what was HANDED OVER, never what it cost — and the report that ends it
+    /// states a token total Argo will not read as a spend. So a backgrounded agent reports neither,
+    /// at either end, and the chip has nothing to draw.
+    @Test
+    func `An async launch reports no spend and no duration`() async throws {
+        let launch = try await #require(outcomes(of: "n-call-agent").first)
+
+        #expect(launch.usage == nil)
+        #expect(launch.reportedDurationMs == nil)
+    }
+
+    @Test
     func `The launch result stays suppressed`() async throws {
         let launch = try await #require(outcomes(of: "n-call-agent").first)
 

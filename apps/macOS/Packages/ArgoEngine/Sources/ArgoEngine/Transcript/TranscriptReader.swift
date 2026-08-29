@@ -139,9 +139,11 @@ public actor TranscriptReader {
         return message.isMeta ? metaEvents(message) : promptEvents(message)
     }
 
-    /// A delegating call's outcome, arriving late — a SECOND outcome for a call the launch result
-    /// already resolved, and a resumed agent files a third. Every surface reads outcomes by id, so
-    /// the newest one wins without any of them being told a report can arrive twice.
+    /// A delegating call's outcome, arriving late — a SECOND outcome for a call the launch receipt
+    /// only OPENED, and a resumed agent files a third. This is what resolves a backgrounded
+    /// delegation: the receipt leaves it `inProgress` (#908) and the report states how it ended.
+    /// Every surface reads outcomes by id, so the newest one wins without any of them being told a
+    /// report can arrive twice.
     private func reported(
         _ report: TaskNotification,
         in message: MessageRecord,
