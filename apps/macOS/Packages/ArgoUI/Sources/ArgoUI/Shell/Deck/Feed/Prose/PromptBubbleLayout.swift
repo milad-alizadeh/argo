@@ -72,8 +72,9 @@ struct PromptBubbleLayout: Layout {
     /// What is actually drawn, at the sizes it takes: the words, and the control under them where
     /// the words do not all stand.
     private func parts(of subviews: Subviews, across inside: CGFloat?) -> [CGSize] {
+        guard let first = subviews.first else { return [] }
         let room = ProposedViewSize(width: inside, height: nil)
-        let words = subviews[0].sizeThatFits(room)
+        let words = first.sizeThatFits(room)
         guard subviews.count > 1, isFolded(across: inside) else { return [words] }
         return [words, subviews[1].sizeThatFits(room)]
     }
