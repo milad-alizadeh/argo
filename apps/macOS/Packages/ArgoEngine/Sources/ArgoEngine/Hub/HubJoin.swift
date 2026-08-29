@@ -4,8 +4,12 @@ import Foundation
 /// transcript owns each record, and the Sessions those two facts stitch into. A value with no tasks
 /// in it, so dropping a whole Project's worth is `HubJoin()`.
 struct HubJoin {
-    /// Rebuilt on mutation rather than on read: only the write side knows when it changed.
-    private(set) var sessions: [HubSession] = []
+    /// Rebuilt on mutation rather than on read: only the write side knows when it changed. A
+    /// Subagent's batch is written into it in place instead — see `apply(_:ofSubagent:to:)`.
+    private var roster = HubRoster()
+    var sessions: [HubSession] {
+        roster.sessions
+    }
 
     /// In the order they joined the set, which is the order the observation projection renders and
     /// the one record ownership is resolved by.
@@ -13,6 +17,9 @@ struct HubJoin {
     /// Record uuid → the id of the transcript that owns it. Keyed by id and not by position:
     /// dropping one transcript renumbers every position after it.
     private var recordOwners: [String: String] = [:]
+    /// Transcript id to its position in `transcripts`. Held rather than scanned for: a Subagent's
+    /// tail asks this on every batch it delivers.
+    private var positions: [String: Int] = [:]
 
     var isEmpty: Bool {
         transcripts.isEmpty
@@ -22,12 +29,16 @@ struct HubJoin {
     /// claim, absent from the roster until its file has been read. Re-adding one already here
     /// changes nothing.
     mutating func add(_ observation: TranscriptObservation) {
-        guard !transcripts.contains(where: { $0.id == observation.id }) else { return }
+        guard positions[observation.id] == nil else { return }
+        positions[observation.id] = transcripts.count
         transcripts.append(HubTranscript(observation: observation))
     }
 
     mutating func remove(transcriptID: String) {
         transcripts.removeAll { $0.id == transcriptID }
+        // Every position after the one dropped has moved, so the table is taken again rather than
+        // patched — a removal is a sweep's answer, not something a tail does.
+        positions = Dictionary(uniqueKeysWithValues: transcripts.enumerated().map { ($1.id, $0) })
         recordOwners = recordOwners.filter { $0.value != transcriptID }
         rebuild()
     }
@@ -64,7 +75,11 @@ struct HubJoin {
     ) {
         guard !read.isEmpty, let index = position(of: transcriptID) else { return }
         transcripts[index].session.apply(read, ofSubagent: agentID)
-        rebuild()
+        // Onto that Session's published row and nothing else: a child's bytes join no chain and
+        // move no sort key, so rebuilding the roster for them is work with a scope its cause does
+        // not have (ADR-0028 Rule 1). A transcript the roster was published without reaches
+        // nothing here, and its reading arrives with the rebuild that publishes it.
+        roster.apply(read, ofSubagent: agentID, from: transcriptID)
     }
 
     /// Settle a transcript whose tail ended without ever delivering a backfill — a file that could
@@ -85,7 +100,7 @@ struct HubJoin {
     }
 
     private func position(of transcriptID: String) -> Int? {
-        transcripts.firstIndex { $0.id == transcriptID }
+        positions[transcriptID]
     }
 
     /// Published only once every transcript in the set has settled. While a sweep admits a new
@@ -93,6 +108,6 @@ struct HubJoin {
     /// under the reader.
     private mutating func rebuild() {
         guard transcripts.allSatisfy(\.isSettled) else { return }
-        sessions = HubSessionChain.sessions(from: transcripts, owners: recordOwners)
+        roster = HubSessionChain.roster(from: transcripts, owners: recordOwners)
     }
 }
