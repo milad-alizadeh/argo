@@ -67,22 +67,27 @@ struct MinimapReshapeTests {
         let scroller = try #require(deck.table.scroller)
         deck.lane.layoutSubtreeIfNeeded()
         let derived = deck.lane.geometryDerivations
+        let noticed = deck.lane.reshapeNotices
 
         scroller.frame = NSRect(x: 0, y: 0, width: 240, height: MinimapLaneFixture.column.height)
         deck.table.settleAfterResize()
         try await #require(deck.table.tailing).value
         deck.lane.layoutSubtreeIfNeeded()
 
-        let batches = Self.rows.count / FeedTableCoordinator.remeasureBatch
-        #expect(batches > 1)
+        // The burst was real — more than one notice arrived — which is what makes the count below
+        // a claim rather than an observation over nothing.
+        #expect(deck.lane.reshapeNotices - noticed > 1)
         #expect(deck.lane.geometryDerivations == derived + 1)
     }
 
-    /// Deferring the rebuild must not be able to strand it: a reshape the lane could not answer —
-    /// no reading to read, or a hand holding the geometry still — is not consumed, so the notice
-    /// that comes after it still lands.
+    /// Deferring the rebuild must not be able to strand it. A reshape the lane could not answer —
+    /// no reading to read, or a hand holding the geometry still — leaves the height unrecorded, so
+    /// the next notice at that same height still lands.
+    ///
+    /// This holds the deferral, not the whole change: it fails if the handler records the height
+    /// it merely heard about, which is what makes a bailed refresh permanent.
     @Test
-    func `a reshape the lane could not answer is not consumed`() throws {
+    func `a notice the lane could not answer leaves the next one able to land`() throws {
         let deck = MinimapLaneFixture.mounted(over: Array(FeedProjection.longRows.dropLast(20)))
         let scroller = try #require(deck.table.scroller)
         deck.lane.layoutSubtreeIfNeeded()

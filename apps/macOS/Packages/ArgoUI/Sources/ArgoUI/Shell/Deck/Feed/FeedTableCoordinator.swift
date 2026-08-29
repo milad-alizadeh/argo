@@ -100,16 +100,19 @@ import SwiftUI
         pane == laidOutPane
     }
 
-    /// One pane derivation, against the size it is derived for.
-    func derivingPane(at pane: CGSize, _ work: () -> Void) {
+    /// One pane derivation, against the size it is derived for. The size is recorded only where
+    /// the reading was actually laid out against it: a pass no policy answered laid out nothing.
+    func derivingPane(at pane: CGSize, _ work: () -> Bool) {
         #if DEBUG
-            paneCost.derivations += 1
             paneCost.nestings += isDerivingPane ? 1 : 0
         #endif
-        laidOutPane = pane
         isDerivingPane = true
         defer { isDerivingPane = false }
-        work()
+        guard work() else { return }
+        #if DEBUG
+            paneCost.derivations += 1
+        #endif
+        laidOutPane = pane
     }
 
     deinit {

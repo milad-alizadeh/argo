@@ -56,8 +56,12 @@ enum FeedRemeasure: Equatable {
     /// Whether the pass asks AppKit for its heights now rather than at the next layout.
     ///
     /// Only the full settled pass does, and it is reached from a notification only through the
-    /// 250ms settle timer. Everything else — a per-frame width, and the reload the first real
-    /// width earns — leaves the layout to the pass that was going to happen anyway (#955).
+    /// 250ms settle timer. The other three do not, and this is why the two that land on a MEASURED
+    /// row are still correct without it: `noteHeightOfRows` makes AppKit ask the delegate for each
+    /// noted height synchronously, so the table's own row geometry is square before `land` reads
+    /// `rect(ofRow:)`. What the forced layout added was the scroll view's layout pass, not the
+    /// table's row geometry — and paying for one per frame of a drag is #955 (`.rebuild` lands on
+    /// `.end` or `.stay` only, neither of which reads a row's rect).
     var forcesLayout: Bool {
         switch self {
         case .none, .visible, .rebuild: false

@@ -206,6 +206,9 @@ extension MinimapLaneView {
     /// `reshapedTo` is `refresh`'s to write: a height consumed here would be a reshape a bailed
     /// refresh could strand, with nothing left to re-arm it.
     @objc private func readingReshaped(_: Notification) {
+        #if DEBUG
+            reshapeNotices += 1
+        #endif
         guard watched?.documentView?.frame.height != reshapedTo else { return }
         needsLayout = true
     }

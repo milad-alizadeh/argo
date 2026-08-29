@@ -28,10 +28,13 @@ extension FeedTableCoordinator {
         )
     }
 
-    /// One event in, one decision out, executed.
-    func decide(_ event: FeedScrollEvent) {
-        guard let decision = handle?.resolve(event) else { return }
+    /// One event in, one decision out, executed. False when there was no policy to answer it, so
+    /// a caller that records what it laid out cannot record a pass that laid out nothing.
+    @discardableResult
+    func decide(_ event: FeedScrollEvent) -> Bool {
+        guard let decision = handle?.resolve(event) else { return false }
         execute(decision)
+        return true
     }
 
     /// `pace` is the way-back control's animation. Every other landing is instant, because a feed

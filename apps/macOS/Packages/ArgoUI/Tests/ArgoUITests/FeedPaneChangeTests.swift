@@ -26,7 +26,12 @@ struct FeedPaneChangeTests {
     private static func laidOut() throws -> Feed {
         let handle = FeedTableHandle()
         let table = FeedTableFixture.laidOut(FeedProjection.longRows, in: column, through: handle)
-        return try Feed(table: table, handle: handle, scroller: #require(table.scroller))
+        let scroller = try #require(table.scroller)
+        // The fixture frames the scroller before the handle is attached, so the width it was built
+        // at was nobody's decision. One notice with the handle in place is the mounted state every
+        // claim below starts from.
+        FeedTableFixture.postFrameChange(on: scroller.contentView)
+        return Feed(table: table, handle: handle, scroller: scroller)
     }
 
     private static func resize(_ feed: Feed, to width: CGFloat) {
@@ -48,15 +53,17 @@ struct FeedPaneChangeTests {
         #expect(feed.table.paneCost.derivations == cost.derivations)
     }
 
-    /// ADR-0028's acceptance line for the feed. A reader's scroll moves the clip view's BOUNDS,
-    /// which is why it must reach no re-measure: the pane did not change shape, so nothing about
-    /// the rows did either. Counted in measurements — one is a full SwiftUI layout pass — rather
-    /// than in the DEBUG instrument, so the claim holds whatever the pane path is doing.
+    /// ADR-0028's acceptance line for the feed: a scroll over a settled reading re-measures
+    /// nothing. Counted in measurements, one of which is a full SwiftUI layout pass.
+    ///
+    /// Not counted in `FeedPaneCost`, and deliberately: a scroll moves the clip view's BOUNDS, and
+    /// `paneChanged` is registered for frame changes only, so no assertion about the pane path
+    /// could fail here however broken that path became. What the pane path costs is
+    /// `FeedPaneChangeTests`' other claims; what a scroll costs is this one.
     @Test
     func `a reader scrolling a settled reading re-measures nothing`() throws {
         let feed = try Self.laidOut()
         let measured = feed.table.measurements
-        let cost = feed.table.paneCost
         let clip = feed.scroller.contentView
 
         for at in stride(from: CGFloat(0), to: 2000, by: 200) {
@@ -69,9 +76,6 @@ struct FeedPaneChangeTests {
         }
 
         #expect(feed.table.measurements == measured)
-        // A scroll changes no frame, so the pane handler is not even reached — the reading being
-        // travelled over is not the reading changing shape.
-        #expect(feed.table.paneCost.notices == cost.notices)
     }
 
     @Test
@@ -90,7 +94,13 @@ struct FeedPaneChangeTests {
     /// nest, and the second claim would pass over an empty set.
     @Test
     func `no derivation runs inside the layout that re-fired the notification`() throws {
-        let feed = try Self.laidOut()
+        // Built rather than taken from `laidOut()`: a mount is precisely the case where no pane has
+        // been laid out yet, and it is the first derivation whose forced layout re-fires.
+        let handle = FeedTableHandle()
+        let table = FeedTableFixture.laidOut(
+            FeedProjection.longRows, in: Self.column, through: handle,
+        )
+        let feed = try Feed(table: table, handle: handle, scroller: #require(table.scroller))
         let window = NSWindow(
             contentRect: NSRect(origin: .zero, size: Self.column),
             styleMask: [.titled, .resizable], backing: .buffered, defer: false,
@@ -106,16 +116,60 @@ struct FeedPaneChangeTests {
         #expect(feed.table.laidOutPane == feed.scroller.contentView.bounds.size)
     }
 
+    /// Why a mid-drag width no longer forces a layout, as a claim rather than an assumption
+    /// (#955). `noteHeightOfRows` asks the delegate for each noted height synchronously, so the
+    /// table's row geometry is already square when the decision's landing reads `rect(ofRow:)` —
+    /// and it has to be, because that landing is the row the reader was on.
+    ///
+    /// Asserted with no `layoutSubtreeIfNeeded` of its own: what is claimed is what the table knows
+    /// the moment the notification's own work returns.
+    @Test
+    func `a width change squares up the rows on screen before anything lays out`() throws {
+        let feed = try Self.laidOut()
+        feed.handle.settle(at: 1200, over: nil)
+        let table = try #require(feed.table.table)
+
+        feed.scroller.frame = NSRect(x: 0, y: 0, width: 500, height: Self.column.height)
+
+        let onScreen = feed.table.visibleRows()
+        #expect(!onScreen.isEmpty)
+        #expect(onScreen.allSatisfy {
+            table.rect(ofRow: $0).height == feed.table.measuredHeight(at: $0, in: table)
+        })
+    }
+
+    /// The coordinator holds its handle weakly — the deck owns it — so a resize can arrive with no
+    /// policy to answer it. Recording that size as laid out would lose it: nothing would derive it
+    /// when the deck came back, because the pane would already look answered.
+    @Test
+    func `a resize no policy answered is not remembered as laid out`() throws {
+        let feed = try Self.laidOut()
+        let held = feed.table.handle
+        feed.table.handle = nil
+
+        Self.resize(feed, to: 500)
+
+        let pane = feed.scroller.contentView.bounds.size
+        #expect(feed.table.laidOutPane != pane)
+        // And it is still there to be derived once there is something to answer it.
+        feed.table.handle = held
+        let derived = feed.table.paneCost.derivations
+        FeedTableFixture.postFrameChange(on: feed.scroller.contentView)
+        #expect(feed.table.paneCost.derivations == derived + 1)
+    }
+
     /// A fix that made scrolling cheap by making resize wrong would be no fix at all.
     @Test
     func `a pane resize keeps a detached reading on the row the reader was on`() throws {
         let feed = try Self.laidOut()
         feed.handle.settle(at: 1200, over: nil)
-        let held = try #require(feed.table.anchor()).row
+        let held = try #require(feed.table.anchor())
 
         Self.resize(feed, to: 500)
 
-        #expect(try #require(feed.table.anchor()).row == held)
+        // The row AND how far into it: a landing that read stale row geometry would put the
+        // reading somewhere else inside the row it named.
+        #expect(try #require(feed.table.anchor()) == held)
     }
 
     @Test

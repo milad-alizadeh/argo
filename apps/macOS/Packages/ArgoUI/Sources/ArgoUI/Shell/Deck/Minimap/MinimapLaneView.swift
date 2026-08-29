@@ -78,7 +78,12 @@ final class MinimapLaneView: NSView {
     #if DEBUG
         /// How many times the whole-document geometry has been derived — the counter ADR-0028
         /// Rule 7 asks for, and what "no geometry rebuild across a scroll" is measured with (#955).
+        /// DEBUG for the reason `FeedPaneCost` states.
         private(set) var geometryDerivations = 0
+        /// How many reshape notices arrived, so a claim about the two can say which burst it was
+        /// made over rather than assuming one happened. Written by the pointer half, like the two
+        /// redraw counts below it.
+        var reshapeNotices = 0
     #endif
 
     /// How many times the rects have been rasterised — the instrument #402 asks for, to show that
