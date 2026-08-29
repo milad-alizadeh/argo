@@ -8,22 +8,10 @@ import SwiftUI
 /// what `forgetEvidence()` replaces: the deck's per-Session identity used to discard this state for
 /// free, and now the shell has to say so.
 extension CockpitView {
-    /// The rows the panel and its control are resolved against: the Session's own, or the
-    /// Subagent's the rail scoped onto. The toggle opens what is ON SCREEN, so it asks the same
-    /// question the deck's zones do, through the same answer.
-    var evidenceReading: [FeedRow] {
-        let reading = reading
-        return reading.readings.reading(of: reading.feed, under: feedScope)
-    }
-
-    var evidenceToggling: EvidenceToggling {
-        EvidenceToggling(feed: evidenceReading, open: openEvidence)
-    }
-
     /// The step goes with the row: a panel opened on a different call has no business resuming at
     /// whichever result the last one was showing.
-    func toggleEvidence() {
-        openEvidence = evidenceToggling.next
+    func toggleEvidence(_ toggling: EvidenceToggling) {
+        openEvidence = toggling.next
         evidenceStep = nil
     }
 
@@ -38,8 +26,13 @@ extension CockpitView {
 
     /// The toggle, in the room that has a panel and `nil` in the others. It is handed to
     /// `ShellToolbar` rather than declared beside it — see the note on `ShellToolbar.evidence`.
-    var evidenceControl: EvidenceToggle? {
+    ///
+    /// The rows are `DeckContentRow.reading`'s question, asked of the pass's own reading: the
+    /// toggle opens what is ON SCREEN, so it has to read the rows the deck's zones draw (#875).
+    func evidenceControl(in reading: SessionsRoomReading) -> EvidenceToggle? {
         guard navigation.room == .sessions else { return nil }
-        return EvidenceToggle(toggling: evidenceToggling, act: toggleEvidence)
+        let rows = reading.readings.reading(of: reading.feed, under: feedScope)
+        let toggling = EvidenceToggling(feed: rows, open: openEvidence)
+        return EvidenceToggle(toggling: toggling) { toggleEvidence(toggling) }
     }
 }

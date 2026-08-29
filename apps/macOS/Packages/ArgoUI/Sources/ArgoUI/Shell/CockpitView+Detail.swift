@@ -5,15 +5,14 @@ import SwiftUI
 /// see through it: with the evidence toggle's state and the room's toolbar in one expression, the
 /// body stopped type-checking in reasonable time.
 extension CockpitView {
-    /// Takes the room already assembled rather than reading `ticketsRoom` again — see the note
-    /// there.
-    @ViewBuilder func detail(tickets: TicketsRoom?) -> some View {
+    /// Takes the room and the reading already assembled rather than reading `ticketsRoom` or
+    /// `reading` again — see the notes there.
+    @ViewBuilder func detail(tickets: TicketsRoom?, reading: SessionsRoomReading) -> some View {
         @Bindable var navigation = navigation
 
-        // Each resolved once and handed on: reading either a second time re-runs the
-        // selection lookup and every projection behind it.
+        // Resolved once and handed on: reading it a second time re-runs the selection lookup and
+        // every projection behind it.
         let vessel = vessel
-        let reading = reading
 
         InstrumentDeckShell(
             room: navigation.room,
@@ -54,7 +53,7 @@ extension CockpitView {
             ShellToolbar(
                 scope: ScopeVessel(presentation: presentation, actions: actions),
                 spawn: spawn(in: navigation),
-                evidence: evidenceControl,
+                evidence: evidenceControl(in: reading),
             )
             roomToolbar(tickets: tickets)
         }

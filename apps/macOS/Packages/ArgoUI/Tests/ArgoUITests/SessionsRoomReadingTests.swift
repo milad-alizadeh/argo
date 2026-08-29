@@ -56,6 +56,20 @@ struct SessionsRoomReadingTests {
         #expect(reading.showing.plan == nil)
     }
 
+    /// The gate `CockpitView.body` evaluates on every pass, in every room: only the room that
+    /// DRAWS a transcript pays for the projection behind one (#858).
+    @Test(arguments: [(CockpitRoom.sessions, true), (.tickets, false), (.code, false)])
+    func `only the room that draws a transcript takes a reading`(room: CockpitRoom, reads: Bool) {
+        let reading = SessionsRoomReading.taken(
+            in: room,
+            of: Self.presentation(events: Self.transcript),
+            for: "one",
+        )
+
+        #expect(!reading.feed.isEmpty == reads)
+        #expect((reading.header != nil) == reads)
+    }
+
     private static let transcript = TranscriptFixtures.previewTranscript
 
     private static func reading(events: [TranscriptEvent]) -> SessionsRoomReading {

@@ -21,6 +21,24 @@ struct SessionsRoomReading {
     /// reading taken at all.
     static let none = SessionsRoomReading()
 
+    /// The selected Session's reading in the room that DRAWS a transcript, and nothing at all in
+    /// the other two — the projection walks the whole event stream, and `CockpitView.body` runs in
+    /// every room.
+    ///
+    /// The gate is a cost that was measured, not assumed (#858): an ungated reading cost a 100-230
+    /// ms main-thread stall on every transcript batch in the rooms that draw no transcript, where a
+    /// gated one costs nothing at all. Here rather than on `CockpitView` so the shell has ONE place
+    /// that takes a reading and every other reader is handed the value (#957).
+    static func taken(
+        in room: CockpitRoom,
+        of presentation: CockpitPresentation,
+        for sessionID: CockpitPresentation.Session.ID?,
+    )
+        -> SessionsRoomReading {
+        guard room == .sessions else { return .none }
+        return SessionsRoomReading(presentation: presentation, sessionID: sessionID)
+    }
+
     private init() {
         self.feed = []
         self.header = nil
