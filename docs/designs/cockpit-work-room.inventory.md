@@ -46,8 +46,8 @@ column-placement question** below for what the bands bought and what they cost.
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
 | `BacklogHeader` | molecule | `ArgoUI/Shell/Tickets/Backlog/` | `reading: TicketsChromeProjection.Reading` | — | renamed from `BacklogToolbarLabel`, which was a toolbar item claiming 520pt. **#855**: words only, the controls left it |
-| `BacklogControls` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | `narrowing`, `grouping` | `ToolbarVessel`, `ToolbarIcon`, `BacklogMenu`, `DeckSeparator` | **#855**: split out of `BacklogHeader` when the controls returned to the row |
-| `BacklogMenu` | atom | `ArgoUI/Shell/Tickets/Backlog/` | `grouping: () -> Void` | stock `Menu` | Mail's `⋯` beside its filter |
+| `BacklogControls` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | — | `ToolbarVessel`, `BacklogMenu` | **#855**: split out of `BacklogHeader` when the controls returned to the row. **#900**: the funnel it also held was bound to `{}`, so the mark, its `narrowing` intent and the rule beside it are deleted |
+| `BacklogMenu` | atom | `ArgoUI/Shell/Tickets/Backlog/` | — | stock `Menu` | Mail's `⋯` beside its filter. **#900**: its one row is a `Text`, so the `grouping` closure it took is gone too |
 | ~~`TicketBand`~~ | — | — | — | — | added by #836 to carry New ticket and the ticket's verbs over their column. **Deleted by #855**: both are toolbar items again |
 
 ### #815 — the fact strip and the sections
@@ -428,8 +428,8 @@ before it reaches the ticket's floor.
   own funnel. `rectangle.grid.1x2` was invented for an act the platform already houses.
 
 **The ellipsis is drawn by font, not by rung.** `ArgoGlyph` constrains a mark's HEIGHT, and an
-ellipsis is three dots whose ink is a fraction of its box: matched by height it drew three discs the
-size of the funnel beside it. `BacklogMenu` uses `argoIcon`, the font-based accessor the contract
+ellipsis is three dots whose ink is a fraction of its box: matched by height it drew three discs as
+tall as a full glyph (the funnel beside it, until #900 deleted that mark). `BacklogMenu` uses `argoIcon`, the font-based accessor the contract
 provides for a bare `Image`. `ProjectRowMenu` draws the same symbol through `ArgoGlyph` and likely
 has the same fault — not touched here, since it is not this room's.
 

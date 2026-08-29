@@ -237,7 +237,7 @@ control.
 | position | control | scope | drawn by |
 |---|---|---|---|
 | leading the list pane | `Backlog` and, under it, `All open · by priority · 12 tickets` | says what you are looking at, and how many | the list pane |
-| after the scope vessel | filter, then the ordering menu, **past a rule** | list-scoped | the window row |
+| after the scope vessel | the ordering menu, alone in its vessel | list-scoped | the window row |
 | next | **New ticket** | the call-to-action, its own vessel — the one thing this window creates | the window row |
 | next | `▶ Start`, open-on-host, copy link | the ticket's own verbs | the window row |
 | trailing edge | search | a real field at 210, not an icon that becomes one | the window row |
@@ -277,7 +277,7 @@ four more over the ticket — and read three unrelated rows rather than one row 
 placement was legible only to somebody who already knew the rule. It also cost both panes a 44pt
 band, which is the height a room this dense can least spare.
 
-**So the controls are back in the window's one row, in scope order left to right**: the list's two,
+**So the controls are back in the window's one row, in scope order left to right**: the list's own,
 then the one thing the window creates, then the open ticket's verbs, then search at the trailing
 edge. That is Mail's own row read literally, and it is the arrangement #836 set out to reach before
 `.primaryAction`'s geometry defeated it — reached now by giving up the column boundary rather than
@@ -307,12 +307,16 @@ removing one of them is the better answer than re-cutting the mark.
 
 ### The two narrowings, decided (#873)
 
-The field and the funnel narrow the SAME list, so they are decided together. Deciding one alone
-gets two narrowings that do not compose, and the reader meets a list nobody can account for.
+**Amended #900 — the two are the sidebar's view and the query.** They were the field and the
+funnel; the funnel is gone, and why is at the foot of this section. What the heading says is
+unchanged, because the funnel never reached it.
+
+Both narrow the SAME list, so they are decided together. Deciding one alone gets two narrowings
+that do not compose, and the reader meets a list nobody can account for.
 
 **They compose by intersection, in one fixed order, and neither ever widens.** The sidebar's view
-chooses the set, the funnel narrows within it, the query narrows within that. The heading reads in
-that same order, so what is on screen can always be read back off it.
+chooses the set, the query narrows within it. The heading reads in that same order, so what is on
+screen can always be read back off it.
 
 #### Search matches the number and the title, and nothing else
 
@@ -324,9 +328,12 @@ not a query: it returns the whole list rather than matching everything by accide
 would return a different set for the same query depending on what the reader last clicked. A search
 whose answer depends on what you clicked is worse than one that never reads a body at all.
 
-**Not labels, type or assignee.** Those are closed sets of the provider's own words, which is what
-makes them the funnel's — see below. A field that also matched them would silently overlap the
-control beside it, and no reader could tell which of the two excluded a ticket.
+**Not labels, type or assignee.** Those are closed sets of the provider's own words — the facets a
+funnel would have offered as rows, and the search field is not the place to fold them in. A query
+that also matched them would exclude tickets on words the reader never typed, and nothing on screen
+would say which fact did it. **Amended #900:** the funnel that was to own them is gone, so today
+nothing narrows by them at all — which is a room with one narrowing missing, not a room with a
+control that lies about having it.
 
 **The heading says it is searching**, on the two-line shape the rest of this section already
 argues for: `Searching` over `All open · by priority · 3 results`. It reads `results` and not
@@ -353,23 +360,37 @@ backlog it was typed against standing. It does not survive a Project switch: car
 would silently narrow a list of tickets it was never typed against, and `3 results` would be
 counting a different Project's answer.
 
-#### The funnel narrows by label, type and assignee
+#### The funnel is deleted (#900)
 
-**Those three, and no others.** They are the facts the provider serves per ticket that have a
-closed set of values, which is what a funnel can offer as rows and what a reader can pick from
-without typing. Multi-select within one facet is OR; across facets it is AND.
+**It drew a live mark and did nothing.** `line.3.horizontal.decrease` shipped in the list's vessel
+bound to an empty closure — no sheet, no popover, no state written and nothing downstream reading
+one. Pressing it produced no response of any kind. That is worse than no control at all: it costs a
+reader a click and a theory about the room every time they meet it, and the room's own inventory
+said nothing was wrong, because a mark drawn is a mark somebody assumes is wired.
 
-**Not status.** The sidebar's four views are already the cut across closure, claim and blockage,
-and `status` is the provider's own word with no fixed vocabulary behind it. A funnel offering it
-would be a second control answering the view's question in different words.
+**Its facets were named here and never built.** This section used to specify label, type and
+assignee — the provider's closed sets — with `status` ruled out (the sidebar's four views are
+already the cut across closure, claim and blockage, and `status` is the provider's own word with no
+fixed vocabulary behind it) and `priority` ruled out (it is the grouping in force, so narrowing by
+it removes headers rather than rows). Those exclusions still hold for any future facet control. The
+inclusions were never wired to anything, in either direction: nothing wrote a facet and nothing read
+one.
 
-**Not priority.** Priority is the grouping in force, so every band is already on screen and named.
-Narrowing by the thing the list is grouped by removes headers rather than rows.
+**So the mark goes rather than the specification growing a filled state.** A funnel that looks
+identical whether or not it is narrowing makes a false claim about the data — but a funnel that
+narrows nothing at all makes a larger one, and the honest repair for an unbuilt control is to stop
+drawing it. `ArgoSymbol.filterBacklog` is deleted with it, so nothing can draw the glyph again
+without first naming what it filters by, here.
 
-**The mark stays `line.3.horizontal.decrease`** — a funnel is the one glyph here nobody had to
-learn — and it takes a filled state whenever any facet is on. A funnel that looks identical whether
-or not it is narrowing makes the same false claim about the data that a search field returning the
-whole list does.
+**What the room keeps is the two narrowings above**, which do compose and are both live. **The
+renders in `work-room/` and `cockpit-work-room.html` predate this and still draw the funnel** — as
+with the Mode menu #872 cut, they are superseded on this one mark and remain the spec for
+everything else in the frame.
+
+**Its neighbour was made a stated row in the same pass.** `Group by priority` was a `Button` over a
+closure the shell never assigned — the funnel's fault one level down, inside the menu rather than
+on the row. With one grouping there is no choice to offer, so the menu draws it as text: the state
+in force, said once. It becomes buttons when a port reads a second thing to group by (#388).
 
 ### `Start` starts — there is no rung to choose
 
@@ -423,16 +444,20 @@ that has to be learned costs more than the space a familiar mark saves.
 | New ticket | `square.and.pencil` | `plus`, then **`square.and.pencil` again (#836)** | the compose mark was given up to keep it off the same row as New Session. #836 took New Session out of this room instead, so the mark is free and this is the one thing the window creates — which is exactly what Mail spends its compose mark on |
 | Group by | `list.bullet.indent`, then `rectangle.grid.1x2` | **an `ellipsis` menu (#836)** | both were marks invented for an act the platform already houses: Mail keeps sort and group inside the ellipsis beside its filter. A mark a reader has to learn costs more than the row it saves |
 
-Filter keeps `line.3.horizontal.decrease` — a funnel is the one glyph here nobody had to learn, and
-it is Mail's own.
+Filter kept `line.3.horizontal.decrease` — a funnel is the one glyph here nobody had to learn, and
+it is Mail's own. **Deleted #900**: the mark was never the problem, and a familiar glyph over an
+empty act is a worse trade than an unfamiliar one over a real act. See **the funnel is deleted**
+above.
 
 **An `ellipsis` menu is not the unlabelled overflow this design rules out.** It is a named control
 with named rows behind it; the overflow the study cut was the system's own last resort, holding
 controls nobody could see and nobody could name.
 
-**The filter/group capsule takes a rule between its two marks.** Sharing a vessel with no divider
+**The filter/group capsule took a rule between its two marks.** Sharing a vessel with no divider
 made a pair of unrelated acts read as one unfamiliar control — the same failure the `Start` split
-already avoids, and it takes the same hairline to fix.
+already avoids, and it takes the same hairline to fix. **Amended #900**: with the funnel gone the
+list's vessel holds one mark, and the rule went with the pair it was there to separate. `Start`
+keeps its own, because it still has two segments.
 
 ### Liquid Glass, one material, every vessel
 
@@ -561,8 +586,8 @@ sidebar and its views stay (all reading zero), the hero shows the backlog-clear 
 deck says who answered. Conflating the two would tell a reader their backlog is empty when in
 fact nobody asked.
 
-**The empty backlog keeps New ticket.** It is the moment you most want it. The list's filter and
-group-by go, and so does search — there is no list to narrow and nothing to search.
+**The empty backlog keeps New ticket.** It is the moment you most want it. The list's ordering menu
+goes, and so does search — there is no list to order and nothing to search.
 
 **A query that matches nothing is a fourth state, and it is not one of these** (#873). It is a fact
 about the query rather than about the provider, so it stays inside the list pane and the room's row
@@ -677,7 +702,7 @@ for; anything not listed is stock used directly.
 | `BlockageMark` | atom | an `ArgoGlyph` and a count in a `Capsule().strokeBorder` | **Added #896**: how many blockers still stand, in the trailing region. Hollow rather than filled, so the contrast is the ink's own in both appearances. **Amended #939**: the glyph leads and names the state, which the numeral alone never did; it is `BlockageMark.symbol`, the sidebar's `ArgoSymbol.blockedView` |
 | `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
 | `TicketsToolbar` | organism | `.toolbar { ToolbarItem }` per control | the window row, and **every control the room has**. Amended twice: #836 moved all but search into per-pane bands, and the bands are now gone — see the column question |
-| `BacklogControls` | molecule | a `ToolbarVessel` | filter and `BacklogMenu`, past a rule. Split out of `BacklogHeader` when the controls returned to the row |
+| `BacklogControls` | molecule | a `ToolbarVessel` | `BacklogMenu`, alone. Split out of `BacklogHeader` when the controls returned to the row. **Amended #900**: the funnel and the rule beside it are gone |
 | `BacklogHeader` | molecule | an `HStack` at the head of the list pane | the heading and its count, and nothing else. **Renamed #836** from `BacklogToolbarLabel`; the controls left it when the row was reassembled |
 | ~~`TicketBand`~~ | — | **gone** | added by #836 to carry New ticket and the ticket's verbs over their column; both are toolbar items again |
 | `BacklogMenu` | atom | `Menu` under an `ellipsis` | how the list is ordered. **Added #836**: Mail keeps sort and group here rather than on a mark of their own |

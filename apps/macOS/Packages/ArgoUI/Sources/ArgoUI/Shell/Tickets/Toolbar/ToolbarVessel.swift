@@ -28,7 +28,9 @@ struct ToolbarIcon: View {
     /// What the mark means, said in words for the pointer and for VoiceOver. One string, because a
     /// tooltip and a label that disagree are two claims about one control.
     let label: String
-    var act: () -> Void = {}
+    /// No default. A mark drawn over `{}` looks live and is not, which is what #900 shipped — so
+    /// the act is written at every call site, including a preview's.
+    let act: () -> Void
 
     var body: some View {
         Button(action: act) {
@@ -46,14 +48,17 @@ struct ToolbarIcon: View {
     }
 }
 
-#Preview("Toolbar vessels — one mark, and two sharing a capsule") {
+#Preview("Toolbar vessels — one mark, and marks sharing a capsule past a rule") {
     HStack(spacing: ArgoSpacing.comfortable) {
         ToolbarVessel {
-            ToolbarIcon(symbol: ArgoSymbol.newTicket, label: "New ticket")
+            ToolbarIcon(symbol: ArgoSymbol.newTicket, label: "New ticket", act: {})
         }
         ToolbarVessel {
-            ToolbarIcon(symbol: ArgoSymbol.filterBacklog, label: "Filter")
-            BacklogMenu()
+            ToolbarIcon(symbol: ArgoSymbol.openOnHost, label: "Open on host", act: {})
+            DeckSeparator()
+                .frame(height: ArgoTicketsChrome.splitDividerHeight)
+                .accessibilityHidden(true)
+            ToolbarIcon(symbol: ArgoSymbol.copyLink, label: "Copy link", act: {})
         }
     }
     .padding(ArgoSpacing.region)

@@ -44,9 +44,7 @@ public enum ArgoSymbol {
     /// ticket and New Session is not in its bar (#836), so the two marks are never in one bar and
     /// the plus that kept them apart is no longer earning anything.
     public static let newTicket = newSession
-    /// Narrowing the backlog to a subset. Mail's own funnel, unchanged.
-    public static let filterBacklog = "line.3.horizontal.decrease"
-    /// Re-ordering what is left. A MENU and not a mark of its own: Mail keeps sort and group inside
+    /// Re-ordering the backlog. A MENU and not a mark of its own: Mail keeps sort and group inside
     /// the ellipsis beside its filter, and the banded-rows glyph that stood here was invented for
     /// an act the platform already has a home for (#836).
     public static let backlogMenu = projectMenu

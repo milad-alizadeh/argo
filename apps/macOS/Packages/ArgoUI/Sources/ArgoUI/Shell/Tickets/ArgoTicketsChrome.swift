@@ -20,7 +20,7 @@ enum ArgoTicketsChrome {
     static let vesselGap: CGFloat = ArgoSpacing.hair
 
     /// The rule inside a vessel, between the segments of one control — the Start verb and the two
-    /// link icons past it, and the filter and the menu beside it in the list's own band.
+    /// link icons past it.
     static let splitDividerHeight: CGFloat = 15
 
     /// Wide enough for `Search the backlog`, and no wider — at 260 the field clipped the trailing
