@@ -3,7 +3,7 @@ import ArgoEngine
 import Testing
 
 /// WHEN each menu's data is read, which is the whole of what stops a keystroke reaching the file
-/// system (#961). The listing itself is `ComposerMenusTests`.
+/// system (#961), and which answers are allowed to land. What a line OPENS is `ComposerMenusTests`.
 ///
 /// Both halves follow one rule — read on the OPENING of the menu, never on the keystrokes after it
 /// — so both are asserted here, against the same counted line.
@@ -15,9 +15,9 @@ struct ComposerMenuReadsTests {
     func `typing on inside a mention does not read the Workspace again`() {
         var menus = ComposerMenus()
 
-        let reads = menus.lineChanged(from: "@REA", to: Self.line("@READ"))
+        let asks = menus.lineChanged(from: "@REA", to: Self.line("@READ"))
 
-        #expect(reads.files == false)
+        #expect(asks.files == false)
     }
 
     /// The bug this replaced: every character inside a `/` line walked the skills directories and
@@ -27,18 +27,41 @@ struct ComposerMenuReadsTests {
     func `typing on inside a command does not read the skills again`() {
         var menus = ComposerMenus()
 
-        let reads = menus.lineChanged(from: "/imp", to: Self.line("/impl"))
+        let asks = menus.lineChanged(from: "/imp", to: Self.line("/impl"))
 
-        #expect(reads.commands == false)
+        #expect(asks.commands == false)
+    }
+
+    /// A space closes the menu without the reader having left the command they are typing, so a
+    /// space held down and rubbed out was a walk of the skills directories every second keystroke —
+    /// on the caret's thread. The same for a second slash: `/usr/` then a backspace.
+    @Test(arguments: [("/review ", "/review"), ("/usr/", "/usr")])
+    func `editing on inside a command line reads nothing`(was: String, now: String) {
+        var menus = ComposerMenus()
+
+        let asks = menus.lineChanged(from: was, to: Self.line(now))
+
+        #expect(asks.commands == false)
     }
 
     @Test
     func `the slash that opens the menu asks for the skills`() {
         var menus = ComposerMenus()
 
-        let reads = menus.lineChanged(from: "", to: Self.line("/"))
+        let asks = menus.lineChanged(from: "", to: Self.line("/"))
 
-        #expect(reads.commands)
+        #expect(asks.commands)
+    }
+
+    /// The composer arriving is itself an opening, whatever the line says: read now and the menu
+    /// has its rows before the reader has typed the `/`, rather than waiting when it opens.
+    @Test
+    func `arriving at a Session reads the skills without waiting for a slash`() {
+        var menus = ComposerMenus()
+
+        let asks = menus.sessionChanged(to: Self.line(""))
+
+        #expect(asks.commands)
     }
 
     /// Counted over a whole command typed one character at a time, because the defect was per
@@ -59,21 +82,50 @@ struct ComposerMenuReadsTests {
         #expect(reads == 1)
     }
 
-    /// The half of the bargain the cache owes: a skill installed while the app is running is in the
-    /// menu the reader opens next, because opening is what re-reads.
+    /// Escape then typing on is the reader's natural way of asking for the menu back, and it is a
+    /// re-open: the catalog behind it is as old as the last one, so it is read again. Without this
+    /// the only bound on staleness is the reader leaving command mode entirely, which is the half
+    /// of #961's bargain that keeps a skill installed mid-Session reachable.
     @Test
-    func `a skill installed while the app is running is in the next menu`() throws {
+    func `an Escape and a retype read the skills again`() {
         var menus = ComposerMenus()
-        menus.lineChanged(from: "", to: Self.line("/"))
-        menus.commandsAnswered(Self.catalog)
+        menus.lineChanged(from: "", to: Self.line("/imp"))
+        menus.dismissed(on: Self.line("/imp"))
 
-        // Away from the menu and back to it — one `/` typed on a line that had none.
-        let reopened = menus.lineChanged(from: "just some prose", to: Self.line("/"))
-        menus.commandsAnswered(Self.catalogWithShip)
+        let asks = menus.lineChanged(from: "/imp", to: Self.line("/impl"))
 
-        #expect(reopened.commands)
+        #expect(asks.commands)
+    }
+
+    // MARK: - Which answers land
+
+    /// The menu draws what the LAST read answered, which is what puts a skill installed while the
+    /// app was running into it.
+    @Test
+    func `the latest answer replaces the one before it`() throws {
+        var menus = ComposerMenus()
+        let first = menus.lineChanged(from: "", to: Self.line("/"))
+        menus.commandsAnswered(Self.catalog, to: first.generation)
+
+        let again = menus.lineChanged(from: "prose", to: Self.line("/"))
+        menus.commandsAnswered(Self.catalogWithShip, to: again.generation)
+
         let rows = try #require(menus.listing(on: Self.line("/"))?.rows)
         #expect(rows.map(\.id).contains("/ship"))
+    }
+
+    /// Two opens in flight at once, and the slower one answering second. Without the token the
+    /// older walk would overwrite the newer, and a read still running across a Session change would
+    /// land the last Project's skills on this one.
+    @Test
+    func `an answer to an overtaken read lands nowhere`() throws {
+        var menus = ComposerMenus()
+        let overtaken = menus.lineChanged(from: "", to: Self.line("/"))
+        menus.sessionChanged(to: Self.line("/"))
+
+        menus.commandsAnswered(Self.catalog, to: overtaken.generation)
+
+        #expect(try #require(menus.listing(on: Self.line("/"))).isReading)
     }
 
     private static let catalog = CommandCatalog(

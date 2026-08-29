@@ -16,14 +16,11 @@ public final class BuiltinCommandReader {
     /// harness passes — `OwnedStateFile`'s rule.
     public static let defaultFileURL: URL? = BuiltinCommandStore.defaultFileURL
 
-    /// The skills half of the catalog, off this actor (#961). A stored property and not an
-    /// initialiser parameter: the init is at the cap `swift-boundaries.sh` edge 6 holds it to, and
-    /// nothing about this reader varies with it.
-    private let installed = SkillReading()
-
     private let store: BuiltinCommandStore
     private let session: HelpPanelSession
     private let version: AgentVersionReading
+    /// The skills half of the catalog, walked off this actor (#961).
+    private let skills: SkillReading
     /// The read in flight, so a second `read(inProjectAt:)` joins it rather than starting a second
     /// hidden `claude` beside the first.
     private var inFlight: Task<Void, Never>?
@@ -51,10 +48,12 @@ public final class BuiltinCommandReader {
         store: BuiltinCommandStore,
         session: HelpPanelSession,
         version: @escaping AgentVersionReading,
+        skills: SkillReading = SkillReading(),
     ) {
         self.store = store
         self.session = session
         self.version = version
+        self.skills = skills
     }
 
     /// Ask, unless the answer is already known. Returns as soon as the work is under way: the
@@ -81,9 +80,9 @@ public final class BuiltinCommandReader {
     /// target is one no test can reach (ADR-0022).
     ///
     /// `async` because the skills half is a directory walk and this class is the main actor
-    /// (#961, ADR-0028 Rule 6). The join itself stays here, where it has always been.
+    /// (#961, ADR-0028 Rule 6). The join itself stays here.
     public func catalog(forProjectAt projectURL: URL) async -> CommandCatalog {
-        await catalog(joining: installed.skills(forProjectAt: projectURL))
+        await catalog(joining: skills.skills(forProjectAt: projectURL))
     }
 
     private func reading(inProjectAt projectURL: URL) async {

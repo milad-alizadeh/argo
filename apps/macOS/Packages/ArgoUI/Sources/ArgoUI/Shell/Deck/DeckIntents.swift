@@ -24,7 +24,7 @@ struct DeckIntents {
     /// The exit the undriveable line offers: a fresh Session in the shown one's folder.
     var spawnBeside: () async -> Void = {}
     /// Every skill installed for this Project (#685). A closure and not a value, because it is READ
-    /// AFRESH each time the menu OPENS — that is what puts a skill installed mid-Session in the
+    /// AFRESH each time the menu opens — that is what puts a skill installed mid-Session in the
     /// list with no watcher and no restart — and never on the keystrokes after it (#961). The
     /// filesystem stays on this side of it: what the view holds is whatever the last call answered.
     /// `async` the way `files` is, because a walk of the skills directories may not land on the

@@ -63,8 +63,8 @@ public struct CockpitActions {
     /// that is what puts a skill installed mid-Session in the very next list. WHEN it is called is
     /// the composer's: once per `/` menu opening, never per keystroke (#961).
     ///
-    /// `async` where it once was not, because the walk is file-system work and its caller is the
-    /// main actor (ADR-0028 Rule 6).
+    /// `async` because the walk is file-system work and its caller is the main actor
+    /// (ADR-0028 Rule 6).
     public var skills: () async -> CommandCatalog = { CommandCatalog.empty }
     /// Every file in one folder's Workspace, relative to it (#687) — what the `@` picker lists.
     ///

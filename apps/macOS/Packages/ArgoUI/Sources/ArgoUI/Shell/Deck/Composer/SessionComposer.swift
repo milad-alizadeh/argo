@@ -26,10 +26,10 @@ struct SessionComposer: View {
     /// and the seam is where the port's reason goes. Async besides, because the walk along the
     /// ring is (#653).
     var setMode: (SessionMode) async throws -> Void = { _ in }
-    /// Every skill installed for this Project, read afresh each time the `/` menu OPENS and never
-    /// on the keystrokes after it (#685, #961). ASYNC for the reason `files` is, and for one more:
-    /// it walks directories and decodes, and the actor that draws the caret does neither
-    /// (ADR-0028 Rule 6). The view holds only what this last answered.
+    /// Every skill installed for this Project, read afresh each time the `/` menu opens and never
+    /// on the keystrokes after it (#685, #961). ASYNC because it walks directories and decodes,
+    /// and the actor that draws the caret does neither (ADR-0028 Rule 6). The view holds only what
+    /// this last answered.
     var commands: () async -> CommandCatalog = { CommandCatalog.empty }
     /// Every file in this Session's Workspace, read afresh each time the `@` menu opens (#687).
     /// ASYNC where `commands` is not: this one shells out to git over a tree that can hold a
@@ -213,11 +213,14 @@ struct SessionComposer: View {
     /// Whatever the line has just opened, asked for and never waited on — so a hundred-thousand
     /// path tree lists behind a composer that stayed typeable throughout, and the skills walk
     /// happens somewhere other than the thread drawing the caret.
-    private func read(_ reads: ComposerMenus.Reads) {
-        if reads.commands {
-            Task { await menus.commandsAnswered(commands()) }
+    ///
+    /// The skills answer carries the token it was asked with, so a read overtaken by a later one
+    /// or by a Session change lands nowhere.
+    private func read(_ asks: ComposerMenus.Asks) {
+        if asks.commands {
+            Task { await menus.commandsAnswered(commands(), to: asks.generation) }
         }
-        if reads.files {
+        if asks.files {
             Task { await menus.workspaceAnswered(files()) }
         }
     }

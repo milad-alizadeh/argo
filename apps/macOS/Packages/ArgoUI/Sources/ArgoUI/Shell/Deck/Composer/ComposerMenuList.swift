@@ -26,7 +26,11 @@ struct ComposerMenuList: View {
     /// Scrolls past its ceiling and is drawn at its own height under it, so a two-row list is two
     /// rows tall rather than a mostly-empty panel.
     @ViewBuilder private var list: some View {
-        if listing.isEmpty {
+        if listing.isReading {
+            // The status strip above is the whole surface. Nothing is said about what matched,
+            // because nothing has been looked in yet.
+            EmptyView()
+        } else if listing.isEmpty {
             ComposerMenuZeroLine(query: listing.query, sigil: listing.sigil)
         } else {
             ScrollView(.vertical) {

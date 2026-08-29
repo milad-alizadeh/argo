@@ -8,9 +8,9 @@ import Foundation
 /// reach the synchronous walk at all: omitting the `await` is a build failure rather than a review
 /// note.
 ///
-/// Stateless, and nothing here is cached. WHEN to walk again belongs to the caller, which is the
-/// only place that knows what a stale list would cost — for the composer, one walk per `/` menu
-/// opening rather than one per keystroke.
+/// Nothing is cached. WHEN to walk again belongs to the caller, which is the only place that knows
+/// what a stale list would cost — for the composer, one walk per `/` menu opening rather than one
+/// per keystroke.
 public actor SkillReading {
     private let homeURL: URL
 
