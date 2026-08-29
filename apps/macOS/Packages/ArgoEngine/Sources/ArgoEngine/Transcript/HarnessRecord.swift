@@ -33,16 +33,25 @@ private func tag(_ text: String, _ name: String) -> String? {
     return inner.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
-/// A finished background agent's report, filed as a user record because that is where the CLI puts
-/// it. Not a prompt and not a call of its own: it names the call that DELEGATED the work, so it is
-/// that call's outcome arriving late (#825).
+/// A background agent's report, filed as a user record because that is where the CLI puts it.
+///
+/// Never a prompt. Where it names the call that DELEGATED the work it is that call's outcome
+/// arriving late (#825) — and where it names none there is nothing to join it to, which is a
+/// report standing on its own rather than a record to hand back to the prompt path (#945).
 struct TaskNotification {
-    /// The delegating call this report answers.
-    let callID: String
-    /// The Subagent that produced it — the same `agentId` the launch result already reported.
+    /// The delegating call this report answers, where the record names one — and `nil` where it
+    /// does not. A resumed agent's later report and a monitor's mid-run event both arrive without
+    /// one, and there is then nothing to JOIN the report to (#945).
+    let callID: String?
+    /// The task the CLI filed this under — the same `agentId` a delegating call's launch result
+    /// reported, where one delegated the work. A monitor's own task names no Subagent transcript.
     let subagentID: String?
+    /// The host's own one-line account of what the agent did, which is the only thing an
+    /// unjoinable report can be addressed by.
+    let summary: String?
     let status: ToolCallStatus
-    /// The report itself, or `nil` where the agent finished without printing one.
+    /// What the agent said, or `nil` where it said nothing — its report where it finished, and the
+    /// event it announced where it is still working.
     let text: String?
 }
 
@@ -51,20 +60,39 @@ private let notificationPreamble = "<task-notification>"
 
 /// The report a user record carries, or `nil` where it carries none.
 ///
+/// Recognition only: a record beginning with the envelope IS a notification whatever else it
+/// carries, and what a missing `tool-use-id` costs is the reader's to decide (#945).
+///
 /// Matched at the head, the discipline `skillDirectory` uses: a prompt that merely QUOTES the word
 /// is a prompt, and reading it as machinery would swallow what the user asked.
 func taskNotification(_ content: [ContentBlock]) -> TaskNotification? {
     guard let text = firstText(content), text.hasPrefix(notificationPreamble) else { return nil }
-    guard let callID = tag(text, "tool-use-id"), !callID.isEmpty else { return nil }
-    let report = tag(text, "result")
+    // `result` is where a finished agent puts its report and `event` where a monitor puts its
+    // mid-run one. Both are the agent's own words; only the tag around them differs.
+    let report = tag(text, "result") ?? tag(text, "event")
     return TaskNotification(
-        callID: callID,
-        subagentID: tag(text, "task-id"),
-        // Anything other than `completed` is the agent stopping short of one, which is a call that
-        // failed rather than a call that answered.
-        status: tag(text, "status") == "completed" ? .completed : .failed,
-        text: report?.isEmpty == true ? nil : report,
+        callID: nonEmpty(tag(text, "tool-use-id")),
+        subagentID: nonEmpty(tag(text, "task-id")),
+        summary: nonEmpty(tag(text, "summary")),
+        status: reportedStatus(tag(text, "status")),
+        text: nonEmpty(report),
     )
+}
+
+/// What a notification's status says about the agent that filed it.
+///
+/// Anything other than `completed` is the agent stopping short of a report, which is a call that
+/// failed rather than one that answered. An ABSENT status is a notification announcing an EVENT
+/// rather than an ending: no rung here says that, and of the two that exist the quiet one is the
+/// honest degrade — a failure the record never stated would be the louder lie.
+private func reportedStatus(_ reported: String?) -> ToolCallStatus {
+    guard let reported else { return .completed }
+    return reported == "completed" ? .completed : .failed
+}
+
+/// A tag with nothing in it states nothing, so it answers as nothing.
+private func nonEmpty(_ text: String?) -> String? {
+    text?.isEmpty == true ? nil : text
 }
 
 /// A local command's own stdout, stored as a user record because that is where the CLI puts it.

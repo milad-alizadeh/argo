@@ -40,6 +40,18 @@ struct TaskNotificationReadingTests {
 
     private struct NotPrinted: Error {}
 
+    private typealias Stood = (call: ToolCall, outcome: ToolCallOutcome)
+
+    /// The row an unjoinable report stood up for itself, addressed by the summary it carries.
+    private func standalone(summarising summary: String) async throws -> Stood {
+        let read = try await events()
+        let call = try #require(read.compactMap { event -> ToolCall? in
+            guard case let .toolCall(call) = event, call.narration == summary else { return nil }
+            return call
+        }.first)
+        return try (call, #require(read.outcomes()[call.id]))
+    }
+
     @Test
     func `A notification opens no Turn and renders no prompt`() async throws {
         let read = try await prompts()
@@ -94,14 +106,74 @@ struct TaskNotificationReadingTests {
     }
 
     @Test
-    func `A notification naming no call this file opened is dropped, not invented`() async throws {
-        let read = try await events()
+    func `A report lands on no call this file never opened`() async throws {
+        // Invented onto that id, the outcome would claim a join Argo cannot make.
+        #expect(try await events().outcomes()["n-call-in-another-file"] == nil)
+    }
 
-        #expect(read.outcomes()["n-call-in-another-file"] == nil)
-        #expect(!read.contains {
-            guard case let .toolCall(call) = $0 else { return false }
-            return call.id == "n-call-in-another-file"
-        })
+    @Test
+    func `That report is drawn all the same, rather than dropped`() async throws {
+        let stood = try await standalone(summarising: "Agent \"Resumed chain\" finished")
+
+        #expect(try report(of: stood.outcome).text == "A report for a call this file never opened.")
+    }
+
+    @Test
+    func `A notification carrying no tool-use id is still never a prompt`() async throws {
+        // The envelope is recognisable at its head whatever else it carries; a missing id says the
+        // report cannot be JOINED, never that the user typed the XML (#945).
+        let read = try await prompts()
+
+        #expect(!read.contains { $0.contains("a1e1f7432a058b0fe") })
+        #expect(!read.contains { $0.contains("Monitor event") })
+    }
+
+    @Test
+    func `An unjoinable report stands as a row of its own`() async throws {
+        let stood = try await standalone(summarising: "Agent \"Implement ticket 899\" finished")
+
+        #expect(stood.outcome.status == .completed)
+        let text = try report(of: stood.outcome).text
+        #expect(text == "The failing test is a pre-existing flake on main.")
+        // The words are still read off a record Argo does not own.
+        #expect(try report(of: stood.outcome).tier == .derived)
+        // Never a delegation, which the Agents rail lifts a child from, and never the delegate's
+        // spend, which the envelope states in a shape no reading here can fill.
+        #expect(stood.call.kind == .other)
+        #expect(stood.call.name == "background agent")
+        #expect(stood.outcome.usage == nil)
+    }
+
+    @Test
+    func `One agent reporting twice is two rows, not one overwritten`() async throws {
+        // A notification says in its own text that it fires again for the same task. Addressed by
+        // the task rather than by the record, the second report would replace the first.
+        let rows = try await events().compactMap { event -> ToolCall? in
+            guard case let .toolCall(call) = event,
+                  call.narration == "Agent \"Implement ticket 899\" finished"
+            else { return nil }
+            return call
+        }
+
+        #expect(rows.count == 2)
+        #expect(rows[0].id != rows[1].id)
+    }
+
+    @Test
+    func `A joined report stating no status is not read as a failure either`() async throws {
+        let outcome = try await #require(events().outcomes()["n-call-quiet"])
+
+        #expect(outcome.status == .completed)
+    }
+
+    @Test
+    func `A notification stating no status claims no failure`() async throws {
+        // A monitor's mid-run event states none. Read as one, every such report would be drawn as
+        // an agent that fell over.
+        let stood = try await standalone(summarising: "Monitor event: \"PR 651 CI checks landing\"")
+
+        #expect(stood.outcome.status == .completed)
+        #expect(try report(of: stood.outcome).text.hasSuffix("ALL CHECKS DONE"))
     }
 
     @Test

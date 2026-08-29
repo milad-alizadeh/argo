@@ -14,8 +14,8 @@ public actor TranscriptReader {
     /// What a call needs to be remembered by until its result lands: the kind decides which
     /// evidence its result is read as, and the target is the path a disk fallback would re-read.
     ///
-    /// This and the three members below it are internal rather than `private` only because
-    /// `TranscriptReader+Outcome.swift` reads them, and `private` in Swift is file-scoped. The
+    /// This and the three members below it are internal rather than `private` only because the
+    /// reader's own extension files read them, and `private` in Swift is file-scoped. The
     /// actor's isolation is what protects them; nothing outside this type touches either.
     struct OpenCall {
         let kind: ToolCallKind
@@ -130,41 +130,13 @@ public actor TranscriptReader {
         }
 
         // A finished background agent writes its report into its OWN file, so the only trace of it
-        // in this one is this notification. Suppressed without being routed, the report would be
-        // lost rather than tidied.
+        // in this one is this notification. Every one is routed: suppressed, the report would be
+        // lost rather than tidied, and taken at face value it is drawn as a prompt (#945).
         if let report = taskNotification(message.content) {
             return reported(report, in: message)
         }
 
         return message.isMeta ? metaEvents(message) : promptEvents(message)
-    }
-
-    /// A delegating call's outcome, arriving late — a SECOND outcome for a call the launch receipt
-    /// only OPENED, and a resumed agent files a third. This is what resolves a backgrounded
-    /// delegation: the receipt leaves it `inProgress` (#908) and the report states how it ended.
-    /// Every surface reads outcomes by id, so the newest one wins without any of them being told a
-    /// report can arrive twice.
-    private func reported(
-        _ report: TaskNotification,
-        in message: MessageRecord,
-    )
-        -> [TranscriptEvent] {
-        // A report quoting an id this file never opened belongs to a call in another file (a
-        // resumed chain), the same rule `evidence(for:)` follows.
-        guard openCalls[report.callID] != nil else { return [] }
-        return [.toolCallOutcome(ToolCallOutcome(
-            id: report.callID,
-            status: report.status,
-            // `derived`: the text is read off an external record rather than owned by Argo.
-            result: report.text.map { .output(OutputEvidence(tier: .derived, text: $0)) },
-            endedAtMs: message.timestampMs,
-            // The notification states the delegate's spend in a shape of its own — a token TOTAL
-            // rather than the host's four counters — which no reading here can honestly fill.
-            usage: nil,
-            // The join key onto the delegate's own transcript, which this outcome replaces the
-            // launch result's copy of. Dropped, it would orphan the Subagent.
-            subagentID: report.subagentID,
-        ))]
     }
 
     /// The CLI talking to itself. Almost all of it means nothing to a reader — but a skill's
