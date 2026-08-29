@@ -73,8 +73,9 @@ struct FeedAgentsTests {
             == [nil, "a-back"])
     }
 
-    /// The id arrives WITH the result, so a chip for work still in flight has none — and a rail
-    /// full of running Agents is the state the rail exists for.
+    /// A synchronous result is where the id arrives, so a chip for work still in flight has none —
+    /// and a rail full of running Agents is the state the rail exists for. A backgrounded launch
+    /// names one up front instead; see `FeedAgentsAsyncTests`.
     @Test
     func `a subagent still working names no id`() {
         #expect(agents(in: FeedFixture.handedOver(subagent: "a-back")).first?.subagentID == nil)

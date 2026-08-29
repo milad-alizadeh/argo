@@ -8,7 +8,7 @@ extension TranscriptReader {
     /// thing the evidence needs — `toolUseResult` — sits beside `message` at the RECORD level: one
     /// object shared by every result part the record carried, which is the host's shape.
     func outcome(of result: ToolResultBlock, in message: MessageRecord) -> ToolCallOutcome {
-        let status: ToolCallStatus = result.isError ? .failed : .completed
+        let status = status(of: result, reported: message.toolUseResult)
         return ToolCallOutcome(
             id: result.toolUseId,
             status: status,
@@ -20,6 +20,24 @@ extension TranscriptReader {
             subagentID: message.toolUseResult?.stringField("agentId"),
             reportedDurationMs: message.toolUseResult?["totalDurationMs"]?.int,
         )
+    }
+
+    /// How the answering record leaves the call.
+    ///
+    /// A backgrounded delegation is answered AT ONCE with a launch receipt, which resolves nothing:
+    /// the agent it names is still working, and the report that ends it lands later as a second
+    /// outcome for the same id. Reading the receipt as `completed` would retire the call the moment
+    /// it started, and with it every "someone is working" reading keyed off a pending call.
+    ///
+    /// Confined to a DELEGATION the reader opened, the rule `evidence(for:)` follows. `reported`
+    /// sits at the record level and is shared by every result the record carried, so a receipt
+    /// beside another tool's result would leave that call unresolved — and only a delegation has a
+    /// report coming to resolve it.
+    private func status(of result: ToolResultBlock, reported: JSONValue?) -> ToolCallStatus {
+        guard !result.isError else { return .failed }
+        guard openCalls[result.toolUseId]?.kind == .delegate,
+              reported?.stringField("status") == asyncLaunchStatus else { return .completed }
+        return .inProgress
     }
 
     /// What the call itself reported spending.
@@ -67,3 +85,8 @@ extension TranscriptReader {
             ?? outputEvidence(of: resolved).map(ToolResult.output)
     }
 }
+
+/// The status a host writes into the receipt answering a backgrounded delegation. A backgrounded
+/// shell command is answered `forked` instead, under a `backgroundTaskId` this shares no field
+/// with — which is why #908 could not fix both at once.
+private let asyncLaunchStatus = "async_launched"

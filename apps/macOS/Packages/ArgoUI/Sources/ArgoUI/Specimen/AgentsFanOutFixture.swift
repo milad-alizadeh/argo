@@ -11,18 +11,23 @@ enum AgentsFanOutFixture {
         // The first third are still out. A fan-out mid-flight is what the rail is glanced at
         // to read, so the fixture is not a list of finished work.
         let isRunning = position.isMultiple(of: 3)
+        // Every second one was launched in the BACKGROUND, so the column holds both shapes: an
+        // async agent is named by its launch receipt, which reports nothing else ever (#908).
+        let isAsync = position.isMultiple(of: 2)
         return FeedAgent(
             id: position,
             label: brief,
             isRunning: isRunning,
-            // The three figures arrive TOGETHER, on the record that answers the handover — so a
-            // running chip has none of them and counts up from `startedAtMs` instead. Varied per
-            // position, because a column of twenty identical figures proves nothing about the
+            // Synchronously the figures arrive TOGETHER, on the record that answers the handover —
+            // so a running chip has none of them and counts up from `startedAtMs` instead. Varied
+            // per position, because a column of twenty identical figures proves nothing about the
             // column's rhythm.
-            spend: isRunning ? nil : spent(at: position),
-            subagentID: isRunning ? nil : "a-\(position)",
-            durationMs: isRunning ? nil : 40000 + position * 23000,
-            startedAtMs: isRunning ? Date().epochMs - (30 + position) * 1000 : nil,
+            spend: isRunning || isAsync ? nil : spent(at: position),
+            subagentID: isRunning && !isAsync ? nil : "a-\(position)",
+            durationMs: isRunning || isAsync ? nil : 40000 + position * 23000,
+            // Set whatever the chip's state: the handover is a moment the delegating call always
+            // wrote, and a finished async chip having one is what `AgentMeter` must NOT tick on.
+            startedAtMs: Date().epochMs - (30 + position) * 1000,
         )
     }
 

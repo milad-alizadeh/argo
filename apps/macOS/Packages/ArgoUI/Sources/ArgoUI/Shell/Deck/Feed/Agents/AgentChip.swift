@@ -4,8 +4,9 @@ import SwiftUI
 ///
 /// The spend is LABELLED. A bare `143.6K` beside a name is a number nobody can name — tokens,
 /// dollars, lines — and the row it sits in is exactly where a reader has least context to guess
-/// from. It appears only once the subagent has reported: nothing is reported until the delegating
-/// call comes back, and a running chip showing `0` would claim a busy agent had spent nothing.
+/// from. It appears only once the subagent has reported — with the delegating call's result, and
+/// never at all for a backgrounded Agent (#908) — because a chip showing `0` would claim the work
+/// was free rather than unpriced.
 struct AgentChip: View {
     @Environment(\.argo) private var argo
 

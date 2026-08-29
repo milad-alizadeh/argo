@@ -28,10 +28,11 @@ enum FeedAgents {
 
     /// How many subagents are running right now, as far as the record can say.
     ///
-    /// A delegation the transcript has not answered IS a subagent still working: the parent writes
-    /// the call when it hands the work over and the result when it comes back. DERIVED, degrading
-    /// the honest way — a transcript that stopped mid-turn leaves a delegation open forever, which
-    /// reads as one running rather than as none.
+    /// A delegation the transcript has not RESOLVED IS a subagent still working: the parent writes
+    /// the call when it hands the work over and the result when it comes back — or, for a
+    /// backgrounded launch, a receipt that resolves nothing until the report lands. DERIVED,
+    /// degrading the honest way — a transcript that stopped mid-turn leaves a delegation open
+    /// forever, which reads as one running rather than as none.
     static func running(in rows: [FeedRow]) -> Int {
         all(in: rows).filter(\.isRunning).count
     }
