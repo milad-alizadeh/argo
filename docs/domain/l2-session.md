@@ -35,6 +35,13 @@
   chain, and `leafUuid` still owns the immediate link where there is one. The relocated half is the
   live one, so the merged Session's `cwd` and `branch` are the worktree's.
 
+  **Or it MOVES one** (#770), which is the shape seen in practice. The file keeps its uuid and is
+  moved into the worktree's own project directory, so one Session is one uuid under two paths and
+  the path it left is never written to again. A Session is KEYED by that path — by the roster and
+  by the ownership ledger both — so ownership follows the file: the claim that named the transcript
+  re-keys to the new path. A claim that stayed behind renders a Session Argo is steering right now
+  as one it never spawned, which is #942.
+
 - **Session status** — a DERIVED rollup on the Session:
   - **running** — a Turn is in progress.
   - **permission** — blocked on an agent `request_permission` prompt.
