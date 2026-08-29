@@ -142,8 +142,14 @@ struct CompanionChannelTests {
 
             fixture.host.endLastProcess(exitCode: 0)
 
-            await settle { fixture.hub.sessions.first?.statusReading.tier == .derived }
-            #expect(fixture.hub.sessions.first?.statusReading.tier == .derived)
+            // NAMED, and that is load-bearing. Written as a second trailing closure over
+            // `fixture` it compiles to the same closure entity as the wait above, so it re-tests
+            // "a status arrived" — false the instant the exit retires it — and never settles. It
+            // burnt its whole budget on the main actor every run, and the `#expect` below passed
+            // regardless, which is why nothing ever reported it (#918).
+            let degraded = { fixture.hub.sessions.first?.statusReading.tier == .derived }
+            await settle(until: degraded)
+            #expect(degraded())
         }
     }
 

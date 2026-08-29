@@ -1,5 +1,4 @@
 @testable import ArgoUI
-import Foundation
 import Testing
 
 /// What survives a session at the length a real one reaches.
@@ -13,15 +12,23 @@ struct FeedScaleTests {
     /// same-named files apart can easily ask every path about every other one.
     ///
     /// A RATIO and not a stopwatch — an absolute budget on a shared runner measures the runner.
-    /// The 40x tolerance is wide for the same reason, and still nowhere near the hundredfold a
-    /// quadratic pass produces at tenfold the events.
+    /// The 40x is UNCHANGED from #757, and it is not a tolerance to widen when this goes red: it is
+    /// the gap between the ~10x a linear pass costs at tenfold the events and the ~100x a quadratic
+    /// one does, and the whole claim is that the answer sits well below the middle of it. It reads
+    /// 9.1-9.9 on this machine, loaded or idle.
+    ///
+    /// What #918 changed is the MEASURE, never the bound. Wall clock made this a reading of how
+    /// busy the Mac was: it failed at 0.1946s against 0.1854s, a 5% miss, on a tree whose feed
+    /// nobody had touched — three other agents were building at the time. Both sides are now the
+    /// CPU the pass SPENT rather than the seconds that passed, taken as the cheapest of several
+    /// runs, so a thread the scheduler puts down costs nothing and neither side moves under load.
     @Test
     func `ten times the events costs nothing like a hundred times the work`() {
         let once = TranscriptFixtures.longTranscript
         let tenfold = (0 ..< 10).flatMap { _ in once }
 
-        let short = elapsed { _ = FeedProjection.rows(from: once) }
-        let long = elapsed { _ = FeedProjection.rows(from: tenfold) }
+        let short = leastCPUSeconds { _ = FeedProjection.rows(from: once) }
+        let long = leastCPUSeconds { _ = FeedProjection.rows(from: tenfold) }
 
         #expect(long < short * 40)
     }
@@ -47,11 +54,5 @@ struct FeedScaleTests {
             guard case let .call(call) = row.content else { return false }
             return call.ending.hasFailed
         })
-    }
-
-    private func elapsed(_ work: () -> Void) -> Duration {
-        let started = ContinuousClock.now
-        work()
-        return ContinuousClock.now - started
     }
 }
