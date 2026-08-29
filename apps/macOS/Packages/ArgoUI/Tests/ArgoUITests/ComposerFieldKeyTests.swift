@@ -20,6 +20,7 @@ import Testing
         field.input.insertText("first", replacementRange: field.input.selectedRange())
         field.press(.shift)
         field.input.insertText("second", replacementRange: field.input.selectedRange())
+        field.settle { field.input.string == "first\nsecond" }
 
         #expect(field.input.string == "first\nsecond")
         #expect(field.draft.text == "first\nsecond")
@@ -41,7 +42,11 @@ import Testing
     }
 
     /// A composer hosted for real, holding what it was sent and what it holds.
-    private final class Hosted {
+    ///
+    /// Stated `@MainActor` because a nested type inherits the suite's isolation on some toolchains
+    /// and not others: Swift 6.3 gives it, so this file builds clean here while CI reports
+    /// `keyDown(with:)` as a call into the main actor from a nonisolated context (#932).
+    @MainActor private final class Hosted {
         let host: NSHostingView<AnyView>
         let input: ComposerTextInput
         let store: Store
@@ -61,7 +66,8 @@ import Testing
         }
 
         /// Return under `modifiers`, as the field's own `keyDown` sees it, followed by a layout
-        /// pass — but a layout pass is not a promise, which is `settle`'s subject below.
+        /// pass — which is a REQUEST for the write-back and not a promise of it, so every caller
+        /// asserting on the control's own string waits with `settle` first.
         func press(_ modifiers: NSEvent.ModifierFlags) {
             guard let event = NSEvent.keyEvent(
                 with: .keyDown,
@@ -79,25 +85,50 @@ import Testing
             host.layoutSubtreeIfNeeded()
         }
 
-        /// Turn the run loop until the control reflects the state, and give up rather than hang.
+        /// Turn the run loop until the control agrees with the state behind it, and RECORD AN
+        /// ISSUE at the caller's own line if it never does.
         ///
-        /// SwiftUI writes state back into a hosted AppKit control on a run-loop turn of its OWN, so
-        /// `layoutSubtreeIfNeeded` can return before the write-back has happened. Asserting
-        /// straight after it reads whichever side of that turn the machine happened to be on: under
-        /// load this suite saw the store hold the sent Turn and an empty draft while the text view
-        /// still showed what had been typed — the store right, the control stale, which is that gap
-        /// exactly (#918).
-        func settle(until settled: () -> Bool) {
-            let deadline = Date(timeIntervalSinceNow: 5)
-            while !settled(), Date() < deadline {
+        /// SwiftUI writes state back into a hosted control on a run-loop turn of its own, so
+        /// `layoutSubtreeIfNeeded` returning is not a promise that the write-back has happened.
+        /// A wait that ran out silently would leave the `#expect` below it to fail instead,
+        /// reporting the control as wrong when what is wrong is that nobody waited (#932).
+        ///
+        /// It turns the run loop rather than sleeping, because the write-back is queued ON this
+        /// thread's run loop.
+        ///
+        /// It has never engaged on the machine it was written on: over six full ArgoUI runs under
+        /// a twelve-worker load burst, all twelve waits settled on their first check, under 7µs.
+        func settle(
+            until settled: () -> Bool,
+            at location: SourceLocation = #_sourceLocation,
+        ) {
+            let deadline = ContinuousClock.now + Self.settleLimit
+            while ContinuousClock.now < deadline {
+                if settled() {
+                    return
+                }
                 RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.001))
                 host.layoutSubtreeIfNeeded()
             }
+            if settled() {
+                return
+            }
+            Issue.record(
+                "the field never caught up with its state within \(Self.settleLimit)",
+                sourceLocation: location,
+            )
         }
+
+        /// A hang guard and not a budget: nothing here asserts how FAST the write-back lands. Ten
+        /// seconds matches `ArgoEngineTests`' own bound, raised by `ARGO_SETTLE_LIMIT_SECONDS`.
+        static let settleLimit: Duration = .seconds(
+            ProcessInfo.processInfo.environment["ARGO_SETTLE_LIMIT_SECONDS"]
+                .flatMap(Int.init) ?? 10,
+        )
     }
 
     /// What the composer is driven through: the draft it writes and the Turns it delivered.
-    @Observable final class Store {
+    @MainActor @Observable final class Store {
         var draft = ComposerDraft()
         var sent: [String] = []
     }
