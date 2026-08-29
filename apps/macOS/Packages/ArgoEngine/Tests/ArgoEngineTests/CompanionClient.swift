@@ -6,8 +6,13 @@ import Foundation
 ///
 /// Blocking and synchronous on purpose. The server is on the main actor's run loop, so a test
 /// drives it by writing and then letting that run loop turn — which is what `settle` is for.
-struct CompanionClient {
-    private let descriptor: Int32
+///
+/// A `final class` rather than a value, because the descriptor is a resource with a lifetime: as a
+/// struct every COPY of it closed the same number, and the copies outlive each other (#936).
+@MainActor
+final class CompanionClient {
+    /// Readable so a test can name the number this client holds; `-1` once it has been released.
+    private(set) var descriptor: Int32
 
     init?(socketPath: String) {
         // Bounded like the server's own copy: `sun_path` is 104 bytes, and a path longer than that
@@ -63,8 +68,13 @@ struct CompanionClient {
         }
     }
 
+    /// Release the descriptor, once. Idempotent, because a second `close` of a number the kernel
+    /// has already reissued lands on whatever now holds it — a listening socket in another suite,
+    /// which is #936, or a subprocess pipe, which is #588.
     func close() {
+        guard descriptor >= 0 else { return }
         Darwin.close(descriptor)
+        descriptor = -1
     }
 
     /// A `tools/call` as the CLI would make it.
