@@ -92,6 +92,13 @@ struct FeedPromptFoldTests {
     /// through the coordinator the deck builds. Applying a second model that names the prompt is
     /// how the reader lets the fold out.
     private func rowHeight(unfolded: Set<FeedRow.ID>) -> CGFloat {
+        unfolding(to: unfolded).first ?? 0
+    }
+
+    /// Every height the table gives for the row across one press: the first answer after the fold
+    /// changes, and the answer once the reading has settled. A press the reader sees as ONE step is
+    /// a row whose answers are all the same number.
+    private func unfolding(to unfolded: Set<FeedRow.ID>) -> [CGFloat] {
         let rows = [FeedRow(id: 0, content: .prompt(text: Self.long, shots: []))]
         let handle = FeedTableHandle()
         let coordinator = FeedTableFixture.laidOut(
@@ -99,9 +106,11 @@ struct FeedPromptFoldTests {
             in: CGSize(width: ArgoFeedRow.column, height: 800),
             through: handle,
         )
-        guard let table = coordinator.table else { return 0 }
+        guard let table = coordinator.table else { return [] }
         coordinator.apply(FeedTableFixture.model(showing: rows, unfolded: unfolded))
-        return coordinator.tableView(table, heightOfRow: 0)
+        let first = coordinator.tableView(table, heightOfRow: 0)
+        coordinator.remeasure(.all)
+        return [first, coordinator.tableView(table, heightOfRow: 0)]
     }
 
     @Test
@@ -109,6 +118,13 @@ struct FeedPromptFoldTests {
         let hidden = prose(lines: wholeLines) - prose(lines: ArgoFeedRow.collapsedPromptLines)
         let grew = rowHeight(unfolded: [0]) - rowHeight(unfolded: [])
         #expect(abs(grew - hidden) <= Self.slack)
+    }
+
+    @Test
+    func `the row the press lands on is one height, not a wrong one and then a right one`() {
+        let across = unfolding(to: [0])
+        #expect(across.count == 2)
+        #expect(across.first == across.last)
     }
 
     @Test
