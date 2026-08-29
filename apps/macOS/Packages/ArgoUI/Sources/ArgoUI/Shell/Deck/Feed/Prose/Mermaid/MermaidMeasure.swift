@@ -84,6 +84,11 @@ enum MermaidMeasure {
     static let footStep: CGFloat = 7
     static let footDot: CGFloat = 6
 
+    /// How far apart two edges leaving one box by the same face stand. A measure: two terminal
+    /// marks at those points have to read as two marks, so it is the widest mark this file draws
+    /// across a line — a crow's foot's bar — with air either side of it.
+    static let exitFan: CGFloat = footWidth + ArgoSpacing.tight
+
     /// How far back off the face a word written at an END of a relationship stands: clear of the
     /// longest terminal mark drawn there, which is the diamond.
     static let endWordReach: CGFloat = diamondLength + ArgoSpacing.tight

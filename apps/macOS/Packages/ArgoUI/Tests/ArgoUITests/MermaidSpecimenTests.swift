@@ -32,6 +32,7 @@ struct MermaidSpecimenTests {
         MermaidSpecimen.classes,
         MermaidSpecimen.classMembers,
         MermaidSpecimen.entities,
+        MermaidSpecimen.classFan,
         MermaidSpecimen.gantt,
         MermaidSpecimen.ganttDay,
         MermaidSpecimen.ganttYears,

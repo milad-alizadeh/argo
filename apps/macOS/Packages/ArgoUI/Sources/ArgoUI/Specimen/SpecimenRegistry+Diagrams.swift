@@ -63,6 +63,9 @@ extension SpecimenRegistry {
             MarkdownSpecimen(text: MermaidSpecimen.classMembers)
         },
         SpecimenEntry("feedMermaidEntity") { MarkdownSpecimen(text: MermaidSpecimen.entities) },
+        // Four ends on one face, two marked alike and two not — the diagram #865 could not draw
+        // and #920 exists for.
+        SpecimenEntry("feedMermaidClassFan") { MarkdownSpecimen(text: MermaidSpecimen.classFan) },
         // The three ranges a Gantt's tick step has to be chosen across (#903): a quarter in
         // sections, one day hour by hour, and a decade where a tick a day would be a smear.
         SpecimenEntry("feedMermaidGantt") { MarkdownSpecimen(text: MermaidSpecimen.gantt) },

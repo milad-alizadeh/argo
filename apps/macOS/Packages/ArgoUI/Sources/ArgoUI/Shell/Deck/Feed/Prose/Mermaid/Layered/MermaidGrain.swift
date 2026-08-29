@@ -41,17 +41,9 @@ extension MermaidGrain {
         )
     }
 
-    /// The middle of the face a connector LEAVES a box by — the one facing the next rank.
-    func exit(of box: CGRect) -> CGPoint {
-        face(of: box, ahead: !isReversed)
-    }
-
-    /// The middle of the face a connector ENTERS a box by.
-    func entry(of box: CGRect) -> CGPoint {
-        face(of: box, ahead: isReversed)
-    }
-
-    /// The middle of one of the two faces that look up and down the rank axis.
+    /// The middle of one of the two faces that look up and down the rank axis — the one a
+    /// connector LEAVES by where `ahead` agrees with the way the ranks grow, and the one it
+    /// ENTERS by where it does not.
     func face(of box: CGRect, ahead: Bool) -> CGPoint {
         isVertical
             ? CGPoint(x: box.midX, y: ahead ? box.maxY : box.minY)

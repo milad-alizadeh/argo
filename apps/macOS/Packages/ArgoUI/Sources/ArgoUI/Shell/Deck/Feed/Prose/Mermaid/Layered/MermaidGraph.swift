@@ -30,6 +30,30 @@ struct MermaidGraph: Equatable, Sendable {
     struct Node: Equatable, Sendable {
         let name: String
         let size: CGSize
+        /// Whether the figure drawn in this box really reaches the whole of it.
+        ///
+        /// The pass places every end on a box's own FACE and never sees the figure inside it, so
+        /// this is the reader's answer to the one question that costs: a diamond and a circle
+        /// touch their box at the middle of each face and nowhere else, and an end fanned off that
+        /// middle would stand in the air beside the shape. A box that is not filled keeps the
+        /// midpoint for every end, which is what every box did before there was a fan (#920).
+        ///
+        /// `false` by default on the model's own terms — a reader that has not answered gets the
+        /// quieter drawing rather than a stem hanging off nothing.
+        ///
+        /// Asked ONCE for all four faces, and the pass fans a different pair of them per
+        /// direction — the ends across the ranks in `TD`, the sides in `LR`, the flank for a back
+        /// edge either way. So a figure flat along only two of its faces, like a capsule or a
+        /// hexagon, has to answer `false` and gives up a fan it would have been safe to have in
+        /// half the directions. Deliberate while the answer is a Bool: the fix is a figure saying
+        /// how much of each face it really reaches, which is a SPAN, and no shape here needs one
+        /// yet. A wider Bool would only move the lie.
+        ///
+        /// `true` claims the whole face, corners included, which a rounded rect does not quite
+        /// keep: its corner arc is `nodeRadius`, and a narrow box carrying enough edges puts the
+        /// outermost end within that arc. The fan reserves a whole mark inside the face against
+        /// exactly that, and the arc is a fraction of the mark.
+        var fillsBox = false
     }
 
     /// One connector. How it is stroked and what finishes each of its ends, because the pass draws
