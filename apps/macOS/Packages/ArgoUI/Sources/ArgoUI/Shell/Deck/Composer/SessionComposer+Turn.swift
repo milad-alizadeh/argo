@@ -23,6 +23,20 @@ extension SessionComposer {
         }
     }
 
+    /// The footer's `+`, and `nil` where the adapter takes nothing — which is what takes the
+    /// control off the row rather than greying it (design decision 9).
+    var footerAttach: (([SessionAttachment]) -> Void)? {
+        guard composer.canAttach else { return nil }
+        return { incoming in take(incoming) }
+    }
+
+    /// What a drop, a paste and the `+` all end in — one act, so the three gestures cannot come to
+    /// mean three different things. The capability is answered inside the draft rather than at each
+    /// gesture, which is what lets a refused drop say why.
+    func take(_ incoming: [SessionAttachment]) {
+        draft.attach(incoming, canAttach: composer.canAttach)
+    }
+
     /// Stop the Turn, and empty the composer behind it (#541, ADR-0024).
     ///
     /// The clearing happens HERE rather than off the Session going idle, and the order is what
@@ -33,20 +47,45 @@ extension SessionComposer {
         draft.stopped(via: stop)
     }
 
-    /// Ask the Session for a rung. The control shows nothing of its own, so a refusal needs no
-    /// undoing here.
+    /// Ask the Session for a rung.
     ///
     /// In a `Task` because the picker's setter cannot wait: the walk takes a keystroke per rung
     /// with a gap behind each (#653), and the note lands when it resolves.
     func ask(for mode: SessionMode) {
-        Task {
-            do {
-                try await setMode(mode)
-                draft.modeAsked(refusedWith: nil)
-            } catch {
-                draft.modeAsked(refusedWith: error)
+        Task { await walk(to: mode) }
+    }
+
+    /// The walk, and what each of its endings leaves on the seam (#940). Awaitable and internal so
+    /// a test can make the claim the `Task` above only fires and forgets.
+    ///
+    /// `modeBusy` is the one refusal the composer ANSWERS instead of repeating — but only while a
+    /// Turn is running. Held against a Session the composer reads as idle, the rung would be
+    /// waiting on a boundary that has already gone by.
+    func walk(to mode: SessionMode) async {
+        do {
+            try await setMode(mode)
+            draft.modeLanded(mode)
+        } catch {
+            guard (error as? SessionDriveError) == .modeBusy, composer.isRunning else {
+                return draft.modeRefused(error)
             }
+            draft.modeHeld(mode)
         }
+    }
+
+    /// The Turn has ended, so what was waiting on it goes — the rung first, then the queue, for
+    /// the reason `honour(_:)` states.
+    func turnEnded() {
+        guard let held = draft.beginModeWalk() else { return draft.flush(via: sending) }
+        Task { await honour(held) }
+    }
+
+    /// The held rung and then the queue, and the ORDER is the whole of what this decides: a
+    /// follow-up released ahead of the walk would run under a boundary its author had already
+    /// moved, and it would put the Session back to running, which is what refuses the walk.
+    func honour(_ held: SessionMode) async {
+        await walk(to: held)
+        draft.flush(via: sending)
     }
 
     /// The seam's remedy, which is not the same act as pressing send: what it puts back is

@@ -252,8 +252,10 @@ thing this state must not look like.
   apart.
 - `SessionMode+Rung` — each rung's `label`, `boundary` and `mark` (#608, #545). The rungs
   themselves are `ArgoEngine`'s `SessionMode`; only the words and marks are the composer's.
-- `SessionModeReading+Label` — what the control SAYS for one reading: the word (with `≈`), the
-  mark, the CLI's own value, and which rung — if any — may be ticked (#545).
+- `SessionModeReading+Label` — what one READING is worth: the word (with `≈`), the mark, the
+  CLI's own value, and which rung — if any — may be ticked (#545).
+- `ModeControlLabel` — what the control SAYS, which is the reading unless a rung is being held for
+  the Turn's end, in which case it is that rung under `≈`, ticking nothing (#940).
 
 ## Stayed inline
 

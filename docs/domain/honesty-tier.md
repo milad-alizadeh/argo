@@ -24,6 +24,15 @@ the CLI's own value stated verbatim on hover. The tier stays DIRECT, because Arg
 exactly and only its vocabulary is coarser. Degrading it to `unknown` would discard something
 plainly observed, which is the opposite failure from the one the rule above prevents (ADR-0025).
 
+**The mark has a second sense, and it is not DIRECT** (#940). A rung the user picked while a Turn
+was running cannot be walked yet — the ring is stepped with keystrokes mid-Turn nobody can promise
+the agent receives — so Argo holds the intent and walks it at the Turn's boundary. The control
+draws that rung under the same `≈`, because the mark's common meaning across both senses is *the
+word is not exactly the fact*. Here Argo has only ASKED, so the fact is not one it owns. What keeps
+it honest rather than a false DIRECT is that the held rung **ticks nothing**, and the footnote on
+the closed control and in the menu names **the rung the Session is standing on** until the walk
+lands, so nothing on screen claims the held rung is established.
+
 **Nearest is judged by what happens without further user input**, which is the tiebreak a
 standing stance needs: `default` reads and nothing else while nobody is answering prompts, so it
 is `Read Only ≈` rather than the `Code` its approvals could eventually reach. Where even that is

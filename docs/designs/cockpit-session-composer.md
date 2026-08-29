@@ -223,6 +223,13 @@ that follows the selected rung, and a mark in each row. Decision 1 records what 
      caption, so the rule above stands: the rows are still a word and a mark. An exact reading has
      nothing to footnote and gets no header.
 
+   **A rung picked mid-Turn is held under the same `≈`** (amended in build, #940). The port
+   refuses a walk while a Turn runs, so the picked rung is kept and walked at the boundary. Until
+   it lands the closed control reads `≈ Auto` and ticks nothing, and the footnote — tooltip and
+   menu header both — reads `Code until this Turn ends, then Auto`, which is the one place the
+   rung the Session is actually standing on is still stated. The seam carries the port's own
+   refusal beside what Argo did with the intent.
+
    The four rungs are always all offered, in both cases. What Argo can *read* and what it can
    *set* are different questions, and a Session Argo cannot place on the ladder can still be put
    on a rung.

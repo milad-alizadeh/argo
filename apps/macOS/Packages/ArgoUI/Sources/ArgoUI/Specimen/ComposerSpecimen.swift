@@ -110,6 +110,12 @@ struct ComposerSpecimen: View {
     /// noticing their message is gone, and only a render can settle whether the line is enough.
     static let stopped = ComposerDraft(notice: ComposerDraft.cleared)
 
+    /// A rung picked while the Turn was running (#940). The picker draws it under `≈` and ticks
+    /// nothing; the seam carries the port's refusal beside what Argo did with the intent. What the
+    /// render has to settle is that the pair reads as ONE held intent rather than as a control that
+    /// took a click and moved somewhere nobody asked for.
+    static let modeHeld = ComposerDraft(notice: ComposerDraft.held(.auto), heldMode: .auto)
+
     /// The refused state's draft: the message still where it was typed, the reason above it —
     /// in the port's own words, so the render and the seam cannot drift apart.
     static let refused = ComposerDraft(

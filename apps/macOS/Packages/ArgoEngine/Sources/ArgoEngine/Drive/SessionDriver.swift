@@ -147,7 +147,9 @@ public enum SessionDriveError: Error, Equatable {
         case .nothingPending: "Nothing is waiting on this Session for an answer"
         case .noSuchGrant: "This Session holds no standing allow for that tool"
         case .modeUnreachable: "Argo cannot say which rung this Session is on — Mode is unchanged"
-        case .modeBusy: "The Mode stays where it is while a Turn is running — stop it first"
+        // No remedy named: stopping the Turn is not the only way past this one, so the sentence
+        // states the refusal and leaves the remedy to whoever is holding the intent.
+        case .modeBusy: "The Mode cannot be walked while a Turn is running"
         case .modeWalking: "A Mode change is already under way on this Session"
         case .cannotAttach:
             "This adapter takes no attachments — dropped files are refused rather than "

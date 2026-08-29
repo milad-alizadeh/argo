@@ -13,7 +13,7 @@ struct ComposerModeAskTests {
     func `a refused rung leaves the draft untouched`() {
         var draft = ComposerDraft(text: "Carry on with the plan.")
 
-        draft.modeAsked(refusedWith: SessionDriveError.modeBusy)
+        draft.modeRefused(SessionDriveError.modeUnreachable)
 
         #expect(draft.text == "Carry on with the plan.")
         #expect(draft.refusal == nil)
@@ -21,23 +21,29 @@ struct ComposerModeAskTests {
 
     /// A notice and not a refusal, for the reason `cannotAttach` is one: nothing is unsent, so a
     /// Retry would have nothing to put back — and Retry is what a refusal draws.
-    @Test(arguments: [SessionDriveError.modeBusy, .modeUnreachable, .notDrivable])
+    @Test(arguments: [SessionDriveError.modeUnreachable, .modeWalking, .notDrivable])
     func `the port's own reason reaches the seam as a notice`(refused: SessionDriveError) {
         var draft = ComposerDraft()
 
-        draft.modeAsked(refusedWith: refused)
+        draft.modeRefused(refused)
 
         #expect(draft.notice == refused.detail)
         #expect(ComposerSeamNote.note(for: draft, enteredAtMs: 0) == .notice(refused.detail))
     }
 
+    /// A rung that landed takes back only the sentence IT put up — the Turn the reader stopped is
+    /// still news, and the walk landing is not what un-says it.
     @Test
-    func `a rung that landed says nothing at all`() {
-        var draft = ComposerDraft(notice: ComposerDraft.cleared)
+    func `a rung that landed says nothing of its own`() {
+        var held = ComposerDraft()
+        held.modeHeld(.auto)
+        var stopped = ComposerDraft(notice: ComposerDraft.cleared)
 
-        draft.modeAsked(refusedWith: nil)
+        held.modeLanded(.auto)
+        stopped.modeLanded(.auto)
 
-        #expect(draft.notice == nil)
-        #expect(ComposerSeamNote.note(for: draft, enteredAtMs: 0) == nil)
+        #expect(held.notice == nil)
+        #expect(held.heldMode == nil)
+        #expect(stopped.notice == ComposerDraft.cleared)
     }
 }
