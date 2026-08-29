@@ -58,8 +58,13 @@ struct FeedGeometryTests {
 
         let returned = try Self.entered(kept)
 
+        let back = try #require(returned.table.table).frame.height
+        let screens = NSScreen.screens.map { "\($0.frame.size) @\($0.backingScaleFactor)" }
+        print(
+            "CIPROBE stood=\(stood) back=\(back) firstMeasurements=\(opened.table.measurements) returnMeasurements=\(returned.table.measurements) keptCount=\(kept.geometry.count) rows=\(Self.rows.count) firstLayouts=\(String(describing: opened.table.table?.layouts)) backLayouts=\(String(describing: returned.table.table?.layouts)) firstDoc=\(opened.scroller.documentView?.frame.height ?? -1) backDoc=\(returned.scroller.documentView?.frame.height ?? -1) screens=\(screens)",
+        )
         #expect(stood > 0)
-        #expect(try #require(returned.table.table).frame.height == stood)
+        #expect(back == stood)
     }
 
     /// A height is a fact about a row's content AT A WIDTH. The reader who drags the sidebar while
