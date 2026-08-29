@@ -81,9 +81,9 @@ public struct CockpitView: View {
     /// a switch need not rebuild it means this may not collapse — and an ungated reading cost a
     /// 100-230 ms main-thread stall on every transcript batch in the rooms that draw no transcript,
     /// where a gated one costs nothing at all.
-    /// Not `private`: `CockpitView+Detail` draws it and `CockpitView+Evidence` resolves the
-    /// evidence toggle against the same rows.
-    var reading: SessionsRoomReading {
+    /// `private`, which is what stops a second one being taken: `body` resolves it and hands it
+    /// on, so no extension of this type can reach the property at all (#957).
+    private var reading: SessionsRoomReading {
         guard navigation.room == .sessions else { return .none }
         return SessionsRoomReading(presentation: presentation, sessionID: navigation.session)
     }
@@ -130,6 +130,10 @@ public struct CockpitView: View {
         // visibility, the sidebar, the toolbar row and the deck. `nil` outside the Tickets room,
         // which is also what keeps the projection from running at all in the other two.
         let tickets = navigation.room == .tickets ? ticketsRoom : nil
+        // The same for the reading, which the deck draws and the toolbar's evidence toggle
+        // resolves against: two readers each taking their own walked the whole event stream twice
+        // in one pass.
+        let reading = reading
 
         NavigationSplitView(columnVisibility: sidebarColumn(for: tickets)) {
             sidebar(tickets: tickets)
@@ -139,7 +143,7 @@ public struct CockpitView: View {
                     max: ArgoLayout.sidebarMaximumWidth,
                 )
         } detail: {
-            detail(tickets: tickets)
+            detail(tickets: tickets, reading: reading)
         }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")
         // Hidden, so the icons sit on the window's own ground — and the canopy directly below is

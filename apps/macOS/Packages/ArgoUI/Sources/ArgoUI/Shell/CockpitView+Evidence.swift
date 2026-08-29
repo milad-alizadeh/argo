@@ -8,22 +8,13 @@ import SwiftUI
 /// what `forgetEvidence()` replaces: the deck's per-Session identity used to discard this state for
 /// free, and now the shell has to say so.
 extension CockpitView {
-    /// The rows the panel and its control are resolved against: the Session's own, or the
-    /// Subagent's the rail scoped onto. The toggle opens what is ON SCREEN, so it asks the same
-    /// question the deck's zones do, through the same answer.
-    var evidenceReading: [FeedRow] {
-        let reading = reading
-        return reading.readings.reading(of: reading.feed, under: feedScope)
-    }
-
-    var evidenceToggling: EvidenceToggling {
-        EvidenceToggling(feed: evidenceReading, open: openEvidence)
-    }
-
     /// The step goes with the row: a panel opened on a different call has no business resuming at
     /// whichever result the last one was showing.
-    func toggleEvidence() {
-        openEvidence = evidenceToggling.next
+    ///
+    /// Takes the decision the control was DRAWN from rather than resolving it afresh, so a press
+    /// can never open on rows the reader is not looking at.
+    func toggleEvidence(_ toggling: EvidenceToggling) {
+        openEvidence = toggling.next
         evidenceStep = nil
     }
 
@@ -38,8 +29,13 @@ extension CockpitView {
 
     /// The toggle, in the room that has a panel and `nil` in the others. It is handed to
     /// `ShellToolbar` rather than declared beside it — see the note on `ShellToolbar.evidence`.
-    var evidenceControl: EvidenceToggle? {
+    ///
+    /// Takes the pass's own reading rather than `CockpitView.reading`, which is `private` for that
+    /// reason: the toggle opens what is ON SCREEN, so it reads the rows the deck's zones were
+    /// handed rather than asking the same question a second time (#957).
+    func evidenceControl(in reading: SessionsRoomReading) -> EvidenceToggle? {
         guard navigation.room == .sessions else { return nil }
-        return EvidenceToggle(toggling: evidenceToggling, act: toggleEvidence)
+        let toggling = EvidenceToggling(feed: reading.rows(under: feedScope), open: openEvidence)
+        return EvidenceToggle(toggling: toggling) { toggleEvidence(toggling) }
     }
 }

@@ -47,4 +47,11 @@ struct SessionsRoomReading {
         self.showing = PlanShowing(plan: PlanProjection.reading(from: events))
         self.readings = FeedAgentReadings(events: session?.subagentEvents ?? [:])
     }
+
+    /// The rows ON SCREEN under a scope — the Session's own, or the Subagent's the rail scoped
+    /// onto. Asked of the reading the pass already took, so the deck's zones and the toolbar's
+    /// evidence toggle share one answer rather than each walking the event stream (#957).
+    func rows(under scope: FeedScope) -> [FeedRow] {
+        readings.reading(of: feed, under: scope)
+    }
 }
