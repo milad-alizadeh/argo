@@ -86,6 +86,11 @@ final class MinimapLaneView: NSView {
         var reshapeNotices = 0
     #endif
 
+    /// How many times the rects have been BUILT, which the rasterise count cannot say: the whole
+    /// point of the derivation stamp is that a frame skips the build and reaches no rasterise
+    /// either way. This is what "a scroll inside the band costs nothing" is measured with.
+    var rectBuilds = 0
+
     /// How many times the rects have been rasterised — the instrument #402 asks for, to show that
     /// scrolling the feed inside a band repaints no content in the lane.
     var rectRedraws = 0
@@ -98,6 +103,12 @@ final class MinimapLaneView: NSView {
     /// What holds the rects inside the lane. The band hangs off both ends of it by several lane
     /// heights, and without this it would paint over the deck header above and the row below.
     private let rectsClip = CALayer()
+    /// How many times the geometry has been derived. Everything the rects are built from lives in
+    /// it, so a band painted at this number is already the pixels a fresh build would produce.
+    private(set) var derivation = 0
+    /// The derivation the pixels on `rectsLayer` were built from, which is what lets a scroll skip
+    /// building rects to prove they did not change (#963).
+    var paintedAt: Int?
     /// The slice of the miniature currently held as pixels, and what was drawn into it. All three
     /// are compared before a rasterise, so a feed append outside the band costs nothing.
     var drawnBand: MinimapBand?
@@ -177,6 +188,7 @@ final class MinimapLaneView: NSView {
         // which height the lane has already answered.
         reshapedTo = watched?.documentView?.frame.height
         geometry = MinimapGeometry(reading, lane: bounds.size)
+        derivation += 1
         settleViewport()
     }
 
@@ -213,6 +225,7 @@ final class MinimapLaneView: NSView {
     override func viewDidChangeBackingProperties() {
         super.viewDidChangeBackingProperties()
         drawnBand = nil
+        paintedAt = nil
         settleViewport()
     }
 

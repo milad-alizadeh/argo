@@ -5,8 +5,7 @@ import SwiftUI
 ///
 /// It decides nothing about WHERE the reading lands — that is `FeedScrollPolicy`'s, reached through
 /// the handle. What stays here is AppKit facts only: the scroll view, the table, the
-/// measured-height
-/// cache, the ruler, and the keyboard's focused row.
+/// measured-height cache, the rulers, and the keyboard's focused row.
 @MainActor final class FeedTableCoordinator: NSObject {
     var model: FeedTableModel?
     /// The shared scroll authority, which holds the policy this coordinator reports to.
@@ -86,12 +85,12 @@ import SwiftUI
     /// The views content is measured in — never installed in a window, and building no sizing
     /// constraints of their own: `sizeThatFits` is asked directly.
     ///
-    /// One per `FeedRow.Content.Shape`, and one MEASURE per shape is what the split buys: a
-    /// controller handed the tree it already holds diffs, and one handed a different tree rebuilds.
-    /// Measuring `FeedProjection.longRows` through a single controller costs 140 ms; through one
-    /// per
-    /// shape, 73 ms. Nine controllers is the ceiling, because `Shape` has nine cases.
-    private var rulers: [FeedRow.Content.Shape: NSHostingController<AnyView>] = [:]
+    /// One per `FeedRow.Content.Shape` — see that type, which states what the split costs and
+    /// why. Ten controllers is the ceiling, because `Shape` has ten cases: an enum key rather than
+    /// a cache, so nothing here needs evicting (ADR-0028 Rule 4).
+    /// Read and written only through `FeedTableCoordinator+Rulers`, which is where the reason for
+    /// keeping one per shape is stated.
+    var rulers: [FeedRow.Content.Shape: NSHostingController<AnyView>] = [:]
 
     /// One frame notification arrived — see `FeedPaneCost`.
     func notedPane() {
@@ -193,27 +192,6 @@ import SwiftUI
         geometry.record(height, at: index, under: ground)
         measurements += 1
         return height
-    }
-
-    /// The controller a row of this shape is measured in, made on first use.
-    private func ruler(for shape: FeedRow.Content.Shape) -> NSHostingController<AnyView> {
-        if let known = rulers[shape] {
-            return known
-        }
-        let made = NSHostingController(rootView: AnyView(EmptyView()))
-        made.sizingOptions = []
-        rulers[shape] = made
-        return made
-    }
-
-    /// Every ruler emptied. A ruler holds its last row's live view graph — tasks included — in a
-    /// controller no window ever shows, so the graphs are surrendered at the READING boundary
-    /// rather than after each row: clearing per row is what made every measure a full rebuild.
-    /// Nine graphs of the reading on screen is the same order as the cells already hold.
-    func surrenderRulers() {
-        for ruler in rulers.values {
-            ruler.rootView = AnyView(EmptyView())
-        }
     }
 
     /// Measured heights surrendered — all of them for a re-wrap, or the rows named.

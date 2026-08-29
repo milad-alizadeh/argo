@@ -3,14 +3,16 @@ import AppKit
 import SwiftUI
 import Testing
 
-/// What recycling by shape buys, and the claim that it is still being done (ADR-0028 Rules 1 and
-/// 7).
+/// What recycling by shape buys, and the claim that it is still being done (ADR-0028 Rules 1
+/// and 7).
 ///
 /// A hosting view handed a different view tree tears its own down and builds the new one; handed
-/// the
-/// same tree with fresh values it diffs. The reading's rows alternate between shapes constantly, so
-/// a single pool hands almost every recycled cell the wrong tree — and that build is what a scroll
-/// pays per row it exposes, and what the ruler pays per row on every re-measure.
+/// the same tree with fresh values it diffs. The reading's rows alternate between shapes
+/// constantly, so a single pool hands almost every recycled cell the wrong tree — and that build
+/// is what a scroll pays per row it exposes, and what the ruler pays per row on every re-measure.
+///
+/// Both halves of the split get a claim here, because they are separate mechanisms that fail
+/// separately: the cells recycle by shape, and the rulers are kept by shape.
 @Suite("Feed row shape")
 @MainActor
 struct FeedRowShapeTests {
@@ -18,11 +20,27 @@ struct FeedRowShapeTests {
 
     @Test
     func `every content case names the tree its row builds`() {
-        // Each case answers, and the two that build one view share one shape.
-        #expect(FeedRow.Content.message("said").shape == .prose)
-        #expect(FeedRow.Content.thought("reasoned").shape == .prose)
-        #expect(FeedRow.Content.prompt(text: "asked", shots: []).shape == .prompt)
+        // One shape per branch of `FeedRowView.body`, so no two cases may answer the same one.
+        let cases: [FeedRow.Content] = [
+            .prompt(text: "asked", shots: []),
+            .message("said"),
+            .thought("reasoned"),
+            .mark(.working),
+        ]
+        #expect(Set(cases.map(\.shape)).count == cases.count)
+        #expect(FeedRow.Content.message("said").shape == .message)
         #expect(FeedRow.Content.mark(.working).shape == .mark)
+    }
+
+    /// The identifier really is a function of the shape. Without this, a `reuse(_:)` that ignored
+    /// its argument and returned one constant — the exact shape of the change being reverted —
+    /// would leave every claim below green, since both sides of them are computed by `reuse`.
+    @Test
+    func `two shapes never share a pool`() {
+        let identifiers = Set(
+            [FeedRow.Content.Shape.prompt, .message, .call, .mark].map(FeedRowCell.reuse),
+        )
+        #expect(identifiers.count == 4)
     }
 
     @Test
@@ -41,17 +59,30 @@ struct FeedRowShapeTests {
             #expect(try #require(cell).identifier == FeedRowCell.reuse(shape))
             seen.insert(shape)
         }
-        // The fixture is the shipping projection, so this states what it actually covers.
+        // The fixture is the shipping projection, so this states what it actually covers: it holds
+        // no gallery, skill-load, ask or unreadable row, and those four go unexercised here.
         #expect(seen.count >= 5)
+    }
+
+    /// The ruler half, which no assertion about heights can make: a reading measured through one
+    /// controller lands on exactly the same heights and costs twice as much.
+    @Test
+    func `a reading is measured through one ruler per shape it holds`() {
+        let rows = FeedProjection.longRows
+        let handle = FeedTableHandle()
+        let coordinator = FeedTableFixture.laidOut(rows, in: Self.column, through: handle)
+
+        // The fixture measures every row on the way in, so every shape present has been measured.
+        #expect(coordinator.rulerShapes == Set(rows.map(\.content.shape)))
+        #expect(coordinator.rulerShapes.count >= 5)
     }
 
     /// The cost, as a RATIO between two arms measured in the same run — a wall-clock budget would
     /// measure the machine (see `CostMeasure`), and the arms move together on any box.
     ///
-    /// Recorded on the shipping fixture: 140 ms through one controller against 73 ms through one
-    /// per
-    /// shape, a ratio of 1.92. Gated at 1.4 to leave room for a quieter or busier machine without
-    /// letting the split silently stop paying.
+    /// This one measures the framework rather than the feed: it is what says the split is worth
+    /// keeping at all, and `a reading is measured through one ruler per shape it holds` is what
+    /// says the feed is still taking it. Recorded on the shipping fixture at 1.81; gated at 1.4.
     @Test
     func `measuring by shape costs less than measuring through one ruler`() {
         let rows = FeedProjection.longRows
