@@ -92,8 +92,8 @@ landed ones with `bun run worktrees:gc` — is in `docs/agents/worktrees.md`, an
 
 ## Cross-CLI guardrail hooks
 
-`hooks.json` (repo root) is the neutral SSOT for the three guardrail hooks (placement write
-guard, worktree edit guard, worktree-gc), projected per-harness. **Edit
+`hooks.json` (repo root) is the neutral SSOT for the four guardrail hooks (placement write
+guard, worktree edit guard, worktree naming guard, worktree-gc), projected per-harness. **Edit
 `hooks.json`, then run `bun run hooks:sync`** — it regenerates `.claude/settings.json` and
 `.codex/hooks.json`; never hand-edit those blocks. Consumers opt in via `scaffold.mjs --hooks`,
 and re-scope the edit guard to their own layout with `worktreeGuard.roots` in the same file.

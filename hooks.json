@@ -9,6 +9,13 @@
       "agentGated": true
     },
     {
+      "$comment": "Creation-time naming guard. The edit guard above enforces THAT work runs in a worktree; this enforces WHICH — the branch and directory carry the ticket number, at the only moment the name is still free to change. It never fires on an edit inside an existing tree, so trees named before it drain untouched (#901).",
+      "event": "pre-tool",
+      "matcher": "Bash|EnterWorktree",
+      "command": "node \"$(git rev-parse --show-toplevel)/scripts/worktree-name-guard.mjs\"",
+      "agentGated": true
+    },
+    {
       "$comment": "Write only — Edit cannot create a file, so an edit is never a placement decision. Denies a NEW file loose at a module root, which root-files-check.mjs would fail the build on later, once imports already point at it (ADR-0021).",
       "event": "pre-tool",
       "matcher": "Write",

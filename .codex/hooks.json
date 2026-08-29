@@ -11,6 +11,15 @@
         ]
       },
       {
+        "matcher": "Bash|EnterWorktree",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/scripts/worktree-name-guard.mjs\""
+          }
+        ]
+      },
+      {
         "matcher": "Write",
         "hooks": [
           {

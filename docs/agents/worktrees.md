@@ -4,7 +4,8 @@ Implementation work runs in a git worktree under `.claude/worktrees/`, never the
 checkout — multiple agent sessions run concurrently, and isolating each unit of work on its own
 tree and branch keeps them from clobbering each other's files. A `PreToolUse` hook
 (`scripts/worktree-guard.mjs`) enforces it, blocking agent `Edit`/`Write` to `apps/**` or
-`packages/**` from outside a worktree; this file is the *how* it cites — naming, resuming an
+`packages/**` from outside a worktree, and a second one (`scripts/worktree-name-guard.mjs`)
+enforces the naming below at creation. This file is the *how* they cite — naming, resuming an
 interrupted worktree, recovering a deleted one. It applies to all implementation work, not just
 `/implement` runs, and is self-contained so it stands alone when the hooks copy it into a
 consumer project.
@@ -29,15 +30,44 @@ the ticket (#745). A branch without it breaks the PR→ticket link and leaves th
 `/implement <N>`.
 
 For work with no ticket, keep the shape but drop the number: worktree `ticket-<slug>`, branch
-`argo/<slug>`.
+`argo/<slug>`. Work with no ticket may start — refusing it would push spikes back into the
+shared main checkout, which is the worse failure. What may not start is an *undeclared* one:
+the numberless slug may not itself begin with a number, because `argo/901-naming` is a dropped
+`#` and nothing downstream can tell it from a deliberate statement that no ticket exists.
+
+### The names are enforced, not merely documented
+
+`scripts/worktree-name-guard.mjs` is a `PreToolUse` hook on `Bash` and `EnterWorktree`. It
+refuses:
+
+- a worktree directory that is not `.claude/worktrees/ticket-<N>-<slug>` — from `git worktree
+  add` or an `EnterWorktree` `name:`;
+- an explicit `-b` branch that is not `argo/#<N>-<slug>`;
+- a directory and branch that do not share one `<N>-<slug>` stem — each name can be well-formed
+  alone and still not name the same work;
+- `git branch -m`, `git switch -c` or `git checkout -b` inside a worktree, onto a branch that is
+  not `argo/#<N>-<slug>`.
+
+Every refusal states the correct shape, so the fix is in the message rather than a lookup.
+
+It fires **only at creation**, the one moment a name is still free. Editing inside an existing
+tree is not guarded here, and neither is `git worktree add <path> <branch>` (the recovery below),
+`EnterWorktree` with `path:` (re-entering), or a two-name `git branch -m <old> <new>`, which
+provably targets a branch other than the one in hand. A tree already named off-convention
+therefore drains rather than breaks — renaming a branch under a running agent is worse than the
+misnaming. A path the hook cannot resolve (one still holding a `$`) is allowed for the same
+reason: guessing at an expansion would deny a name that may well be correct.
+
+What it cannot enforce is the `git branch -m` in **Entering** below actually happening. The
+directory carries the `<N>` either way, so the cockpit row survives; `Closes #<N>` does not.
 
 ## Entering
 
 Enter a worktree first, unprompted, on the ticket branch:
 
-- **Claude Code:** `EnterWorktree` with `name: "ticket-<N>-<slug>"`. It creates the worktree on a
-  new branch of the same name; rename that branch to `argo/#<N>-<slug>` so `/ship` can parse it
-  (`git branch -m argo/#<N>-<slug>`).
+- **Claude Code:** `EnterWorktree` with `name: "ticket-<N>-<slug>"`. It puts the worktree on a
+  branch named `worktree-<name>`, which carries no `#<N>`, so the rename is not optional:
+  `git branch -m argo/#<N>-<slug>`, in the new worktree, before the first commit.
 - **Other harnesses:** `git worktree add -b argo/#<N>-<slug> .claude/worktrees/ticket-<N>-<slug>`.
 
 Then **`rtk trust --yes`** in the new worktree. rtk trusts `.rtk/filters.toml` by path, so a

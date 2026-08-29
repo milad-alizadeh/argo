@@ -45,7 +45,9 @@ const SKILL_AGENTS = ['claude-code', 'cursor', 'codex']
 // script is missing here projects a hook pointing at nothing.
 const HOOK_ASSETS = [
   'hooks.json',
+  'scripts/hook-io.mjs',
   'scripts/worktree-guard.mjs',
+  'scripts/worktree-name-guard.mjs',
   'scripts/worktree-gc.sh',
   'scripts/placement-guard.mjs',
   'scripts/module-map.mjs',
