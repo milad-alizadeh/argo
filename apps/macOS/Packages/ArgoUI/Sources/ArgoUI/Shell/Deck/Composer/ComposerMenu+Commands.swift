@@ -3,13 +3,30 @@ import ArgoEngine
 /// Where the `/` menu opens, what is in it, and in what order (design decisions 2, 3 and 4).
 extension ComposerMenu {
     /// The listing for a line, or `nil` where the line opens none.
-    static func commands(for text: String, in catalog: CommandCatalog) -> Listing? {
+    ///
+    /// A `nil` catalog is the walk still in flight, which is a listing of its own rather than no
+    /// listing: a menu that vanished until the directories answered would read as the composer
+    /// refusing the line, and ⏎ would send the half-typed line meanwhile.
+    static func commands(for text: String, in catalog: CommandCatalog?) -> Listing? {
         guard let query = command(in: text) else { return nil }
+        guard let catalog else { return reading(query) }
         return Listing(
             sections: sections(of: catalog.commands, matching: query),
             query: query,
             sigil: .command,
             status: status(of: catalog.builtins),
+        )
+    }
+
+    /// The surface over a line whose skills have not answered. No rows, one strip saying they are
+    /// coming, and no zero line — see `Listing.isReading`.
+    private static func reading(_ query: String) -> Listing {
+        Listing(
+            sections: [],
+            query: query,
+            sigil: .command,
+            status: Status(words: readingSkills, mark: .waiting),
+            isReading: true,
         )
     }
 
@@ -114,6 +131,10 @@ extension ComposerMenu {
     /// The header over the weaker half. It names the characters rather than a kind of match,
     /// because "contains" is what the reader can check against their own line.
     static let alsoContains = "Also contains"
+
+    /// Named as the directories they are read from, because that is what the reader can act on:
+    /// a machine with a slow home folder is a thing they know about their own machine.
+    static let readingSkills = "Reading the skills installed for this Project…"
 
     /// Says what is missing AND that nothing is: the skills below are all of them, so the reader
     /// is not being asked to wait before using the menu.

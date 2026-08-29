@@ -34,6 +34,12 @@ final class BuiltinReaderFixture {
         rootURL.appending(path: "project", directoryHint: .isDirectory)
     }
 
+    /// The user's own skills folder, so the reader under test walks THIS machine's fixture rather
+    /// than whatever the person running the suite happens to have installed.
+    var homeURL: URL {
+        rootURL.appending(path: "home", directoryHint: .isDirectory)
+    }
+
     /// One skill, standing for the half of the catalog that answers straight away.
     let projectSkill = Command(name: "implement", description: "Build it.", origin: .project)
 
@@ -54,6 +60,7 @@ final class BuiltinReaderFixture {
                 pace: .none,
             ),
             version: { _ in version },
+            skills: SkillReading(homeURL: homeURL),
         )
     }
 

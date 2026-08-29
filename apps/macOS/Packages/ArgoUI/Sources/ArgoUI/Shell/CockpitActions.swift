@@ -60,8 +60,12 @@ public struct CockpitActions {
     ///
     /// Performed by the app layer for the reason the Project intents above are: it walks
     /// directories, and no view in `ArgoUI` may. Answered fresh on every call and nothing cached —
-    /// that is what puts a skill installed mid-Session in the very next list.
-    public var skills: () -> CommandCatalog = { CommandCatalog.empty }
+    /// that is what puts a skill installed mid-Session in the very next list. WHEN it is called is
+    /// the composer's: once per `/` menu opening, never per keystroke (#961).
+    ///
+    /// `async` because the walk is file-system work and its caller is the main actor
+    /// (ADR-0028 Rule 6).
+    public var skills: () async -> CommandCatalog = { CommandCatalog.empty }
     /// Every file in one folder's Workspace, relative to it (#687) — what the `@` picker lists.
     ///
     /// Performed by the app layer for the reason `skills` is, and `async` where that is not: it
@@ -149,7 +153,7 @@ public struct CockpitActions {
         clearLostTurn: @escaping (String) -> Void = { _ in },
         handOffSession: @escaping (String, Int?) async -> String?,
         drive: any SessionDriver,
-        skills: @escaping () -> CommandCatalog = { CommandCatalog.empty },
+        skills: @escaping () async -> CommandCatalog = { CommandCatalog.empty },
         workspaceFiles: @escaping (String) async -> [String] = { _ in [] },
     ) {
         self.refreshCheckout = refreshCheckout

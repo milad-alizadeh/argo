@@ -19,6 +19,8 @@ public final class BuiltinCommandReader {
     private let store: BuiltinCommandStore
     private let session: HelpPanelSession
     private let version: AgentVersionReading
+    /// The skills half of the catalog, walked off this actor (#961).
+    private let skills: SkillReading
     /// The read in flight, so a second `read(inProjectAt:)` joins it rather than starting a second
     /// hidden `claude` beside the first.
     private var inFlight: Task<Void, Never>?
@@ -46,10 +48,12 @@ public final class BuiltinCommandReader {
         store: BuiltinCommandStore,
         session: HelpPanelSession,
         version: @escaping AgentVersionReading,
+        skills: SkillReading = SkillReading(),
     ) {
         self.store = store
         self.session = session
         self.version = version
+        self.skills = skills
     }
 
     /// Ask, unless the answer is already known. Returns as soon as the work is under way: the
@@ -74,8 +78,11 @@ public final class BuiltinCommandReader {
     /// The same catalog for one Project, reading its skills here rather than at the call site. The
     /// join is the only thing the app layer was doing with either half, and a derivation in the app
     /// target is one no test can reach (ADR-0022).
-    public func catalog(forProjectAt projectURL: URL) -> CommandCatalog {
-        catalog(joining: SkillCatalog(projectURL: projectURL).skills())
+    ///
+    /// `async` because the skills half is a directory walk and this class is the main actor
+    /// (#961, ADR-0028 Rule 6). The join itself stays here.
+    public func catalog(forProjectAt projectURL: URL) async -> CommandCatalog {
+        await catalog(joining: skills.skills(forProjectAt: projectURL))
     }
 
     private func reading(inProjectAt projectURL: URL) async {

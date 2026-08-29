@@ -16,6 +16,10 @@ enum ComposerMenu {
         /// How a slower half of the catalog is doing, pinned above the list. `nil` where the sigil
         /// reads from one place and has nothing to report (design decision 9).
         var status: Status?
+        /// Whether the catalog behind the rows has answered at all. A listing still being read has
+        /// nothing to say about what matched, so it carries its status strip and NOT the zero line:
+        /// "nothing matched" is a statement about a catalog that was looked in.
+        var isReading = false
 
         /// Every row, in drawing order — what the keyboard cursor walks, so it cannot fall out of
         /// step with the sections it walks through.

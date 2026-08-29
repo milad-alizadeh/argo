@@ -7,11 +7,14 @@ import Foundation
 ///
 /// The two roots are values the caller supplies, for `TranscriptRecordStore`'s reason — the CLI
 /// owns these directories and Argo only reads them.
-public struct SkillCatalog {
+///
+/// INTERNAL, and `SkillReading` is the only way in from outside this module (#961). The walk is
+/// file-system work, and the one caller that had it was the main actor.
+struct SkillCatalog {
     private let projectURL: URL
     private let homeURL: URL
 
-    public init(projectURL: URL, homeURL: URL = FileManager.default.homeDirectoryForCurrentUser) {
+    init(projectURL: URL, homeURL: URL = FileManager.default.homeDirectoryForCurrentUser) {
         self.projectURL = projectURL.standardizedFileURL
         self.homeURL = homeURL.standardizedFileURL
     }
@@ -27,7 +30,7 @@ public struct SkillCatalog {
     ///
     /// A name the Project and the user both carry is listed ONCE, under the Project, marked
     /// `shadowsUser` (`cockpit-composer-picker.md` decision 7).
-    public func skills() -> [Command] {
+    func skills() -> [Command] {
         Self.shadowed(sources().flatMap(skills(in:)))
     }
 
