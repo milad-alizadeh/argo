@@ -44,14 +44,15 @@ struct ArgoApp: App {
     var body: some Scene {
         // The window's whole projection, resolved ONCE for the pass and handed to all four readers
         // below — the shell, the ticket-naming observer and the two command menus. Read through a
-        // computed property instead, each of them rebuilt the roster and every projection behind
-        // it, at two `realpath` calls per Session a time (#959).
+        // computed property instead, each of the four rebuilt the roster and every projection
+        // behind it, and each rebuild cost two `realpath` calls per Session (#959).
         //
         // The Ticket Binding folded in is the Accounts coordinator's, so no surface below can build
         // a second projection that answers differently.
         let presentation = cockpit.presentation(accounts.connections)
-        // Handed on for the same reason, and read three times for the same three readers.
-        let actions = actions
+        // Handed on for the same reason, to three of the same readers. Named apart from the
+        // property it is read from, so a rename there cannot quietly put the three rebuilds back.
+        let actions = cockpitActions
 
         Window("Argo", id: "cockpit") {
             Group {
@@ -156,7 +157,7 @@ struct ArgoApp: App {
         )
     }
 
-    private var actions: CockpitActions {
+    private var cockpitActions: CockpitActions {
         let projectURL = cockpit.hub.project.url
         var actions = CockpitActions(
             refreshCheckout: { Task { await cockpit.refreshCheckout() } },

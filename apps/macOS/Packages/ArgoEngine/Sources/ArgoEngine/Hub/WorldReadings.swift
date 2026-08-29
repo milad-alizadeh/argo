@@ -1,11 +1,12 @@
 import Foundation
 
 /// What Argo read about the world OUTSIDE the transcripts: which working directories a live CLI was
-/// running in when the process table was last read, when that read was taken, and what git last
-/// said about each Session's folder.
+/// running in when the process table was last read, when that read was taken, what git last said
+/// about each Session's folder, and how the file system spells each of those folders.
 ///
 /// Polled rather than watched — a process exiting writes nothing anywhere Argo could be listening
-/// for it. Both reads are on the same beat because both go stale the same way.
+/// for it, and a symlink being repointed writes nothing either. The three reads are on the same
+/// beat because all three go stale the same way.
 @MainActor
 @Observable
 final class WorldReadings {
@@ -13,7 +14,8 @@ final class WorldReadings {
     /// direction: the stale answer is the quieter one, and the recency window bounds it.
     static let interval = Duration.seconds(5)
 
-    @ObservationIgnored private let engine: Engine
+    /// Not `private`: `WorldReadings+Spelling` asks it for a spelling.
+    @ObservationIgnored let engine: Engine
     /// The repository to enumerate worktrees of. Supplied rather than held for the reason the
     /// folders below are: the Hub re-points, and a held URL would go on answering for the Project
     /// it was pointed at first.
@@ -32,9 +34,15 @@ final class WorldReadings {
     /// worktree per Session per poll.
     private var workspaces: [String: WorkspaceProjection] = [:]
     /// How the file system spells each folder these readings answer about, keyed by the path as
-    /// written. Filled by the sweep and never by a read: `realpath` is a file-system call, and a
-    /// Session's folder does not move while it is running (#959, ADR-0028 Rule 6).
-    private var resolved: [String: String] = [:]
+    /// written. Filled by the sweep and never by a read: `realpath` is a file-system call, and no
+    /// `@MainActor` type makes one (#959, ADR-0028 Rule 6).
+    ///
+    /// One sweep old at most. What is cached is not a Session's location — which is fixed for the
+    /// life of the Session — but the resolution of a SYMLINK, and a symlink can be repointed while
+    /// the app runs, so the sweep asks the whole table again rather than answering from memory.
+    /// `WorldReadings+Spelling` is where that is settled.
+    /// Not `private`: `WorldReadings+Spelling` is the one thing that reads or writes it.
+    var resolved: [String: String] = [:]
     @ObservationIgnored private var polling: Task<Void, Never>?
 
     init(
@@ -115,7 +123,7 @@ final class WorldReadings {
     func refreshLiveness(clock: () -> Int = { Date().epochMs }) async {
         let cwds = await engine.liveCwds()
         let observed = sessions()
-        await spell(observed.compactMap(\.cwd))
+        await spell(observed.compactMap(\.cwd), settling: .foldersNotYetSpelled)
         let read = Read(cwds: cwds, atMs: clock())
         let published = Read(cwds: liveCwds, atMs: readAtMs)
         guard publishes(read, over: published, for: observed) else { return }
@@ -173,11 +181,15 @@ final class WorldReadings {
         // going on answering with them would be a fact about a repository nobody is on.
         guard let repositoryURL = repositoryURL() else {
             publish(workspaces: [:])
+            // The roster's own folders stay spelled and the gone Project's worktrees do not: the
+            // table answers about folders these readings can be ASKED about, and the roster
+            // survives a Hub being let go where a repository's branches do not.
+            await spell(sessions().compactMap(\.cwd), settling: .theWholeTable)
             return
         }
         let entries = await engine.worktrees(in: repositoryURL)
         let cwds = sessions().compactMap(\.cwd)
-        await resolve(entries.map(\.path) + cwds)
+        await spell(entries.map(\.path) + cwds, settling: .theWholeTable)
         let holders = Self.holders(
             of: entries.map { spelled($0.path) },
             amongst: cwds.map(spelled),
@@ -189,50 +201,6 @@ final class WorldReadings {
             read[path] = await engine.workspace(of: entry)?.shared(by: holders[path] ?? 0)
         }
         publish(workspaces: read)
-    }
-
-    /// How the file system spells one path, and the path itself where nothing has spelled it yet —
-    /// a Session that appeared since the last sweep. Degrade-down: an unspelled folder matches no
-    /// live process and no worktree, which is the quieter answer, and the next sweep settles it.
-    private func spelled(_ path: String) -> String {
-        resolved[path] ?? path
-    }
-
-    /// Spell every folder these readings can be asked about, and DROP what nothing asks about any
-    /// more: the worktree sweep names the whole repository and the whole roster, so the table is
-    /// bounded by those rather than growing with every folder the window has ever been pointed at
-    /// (Rule 4). The one caller that sees everything is the one that prunes.
-    private func resolve(_ paths: [String]) async {
-        let table = await spelling(paths)
-        publish(resolved: table)
-    }
-
-    /// Spell folders beside what is already held, for a caller that names only some of them: the
-    /// liveness poll, which sees the roster and not the repository, and the batch that has just put
-    /// a Session on that roster — whose folder would otherwise match no process and no worktree
-    /// until the next sweep. The sweep above is what prunes.
-    func spell(_ paths: [String]) async {
-        let table = await spelling(paths)
-        publish(resolved: resolved.merging(table) { _, spelled in spelled })
-    }
-
-    /// The table these paths make, asking the file system only about the ones nothing has spelled
-    /// yet — which after the first sweep is a Session that has just appeared, and nothing else.
-    private func spelling(_ paths: [String]) async -> [String: String] {
-        let held = resolved
-        let unspelled = Set(paths.filter { held[$0] == nil })
-        let read = unspelled.isEmpty ? [:] : await engine.resolvedPaths(Array(unspelled))
-        return paths.reduce(into: [String: String]()) { table, path in
-            table[path] = read[path] ?? held[path]
-        }
-    }
-
-    /// Written only where a spelling moved, for `publish(workspaces:)`'s reason: the table is
-    /// observed, so a folder spelled for the first time re-renders the row that reads it — and
-    /// where git said the same thing as last time, nothing else would.
-    private func publish(resolved table: [String: String]) {
-        guard table != resolved else { return }
-        resolved = table
     }
 
     /// Written only where git answered something new. The property is observed, so a sweep that

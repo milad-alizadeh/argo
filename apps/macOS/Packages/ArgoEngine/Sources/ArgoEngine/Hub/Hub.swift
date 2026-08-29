@@ -16,7 +16,7 @@ public final class Hub {
     /// beside them. Built lazily because its reconciliation hook reads this Hub.
     @ObservationIgnored lazy var watch: TranscriptWatch = {
         let watch = TranscriptWatch(engine: engine, discovery: discovery)
-        watch.onApplied = { [weak self] in await self?.applied() }
+        watch.onApplied = { [weak self] in await self?.didApply() }
         return watch
     }()
 

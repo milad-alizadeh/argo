@@ -195,12 +195,12 @@ struct WorldReadingsTests {
     )
         -> WorldReadings {
         WorldReadings(
-            engine: Engine(
-                readCheckout: CheckoutFixture().read,
-                readWorktrees: worktrees,
-                readWorkspace: workspace,
-                readLiveness: { live },
-            ),
+            engine: Engine(reads: .init(
+                checkout: CheckoutFixture().read,
+                worktrees: worktrees,
+                workspace: workspace,
+                liveness: { live },
+            )),
             repositoryURL: repository,
             sessions: { cwds.map { SessionActivity(cwd: $0, lastSeenAtMs: nowMs) } },
         )
