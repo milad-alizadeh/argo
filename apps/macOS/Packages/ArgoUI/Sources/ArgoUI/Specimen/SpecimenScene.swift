@@ -39,11 +39,10 @@ enum SpecimenScene {
     /// `FeedPreview` and not the deck shell: the fold is the reading's own state, and nothing above
     /// the reading seeds one.
     static func longPrompt(unfolded: Bool) -> some View {
-        let rows = FeedProjection.previewLongPromptRows
-        var preview = FeedPreview(rows: rows)
-        preview
-            .opensUnfolded = unfolded ?
-            Set([FeedProjection.previewLongPromptID].compactMap(\.self)) : []
+        var preview = FeedPreview(rows: FeedProjection.previewLongPromptRows)
+        if unfolded, let prompt = FeedProjection.previewLongPromptID {
+            preview.opensUnfolded = [prompt]
+        }
         return preview
     }
 

@@ -26,11 +26,11 @@ struct FeedPromptFoldTests {
     private static let short = "Run the visual contract suite and tell me what broke."
 
     /// The bubble's height, asked for the way the table asks for a row's.
-    private func height(of text: String, expanded: Bool) -> CGFloat {
+    private func height(of text: String, expanded: Bool, shots: [FeedShot] = []) -> CGFloat {
         let ruler = NSHostingController(rootView: AnyView(EmptyView()))
         ruler.sizingOptions = []
         ruler.rootView = AnyView(
-            FeedPrompt(text: text, shots: [], open: { _ in }, isExpanded: .constant(expanded))
+            FeedPrompt(text: text, shots: shots, open: { _ in }, isExpanded: .constant(expanded))
                 .frame(width: Self.measure)
                 .argoAppearance(),
         )
@@ -62,8 +62,11 @@ struct FeedPromptFoldTests {
         ProseMetrics.lay(out: Self.long, across: Self.inside).lines
     }
 
-    /// SwiftUI does not lay text out to the same sub-point on every machine, and a row height is
-    /// rounded up to a whole point before the table uses it.
+    /// How far a drawn height may sit from the arithmetic and still be the same layout. SwiftUI
+    /// does not lay text out to the same sub-point on every machine — `MinimapBlockHeightTests`
+    /// meets two engines, one keeping the font's fractional metrics and one paying `ceil` per run —
+    /// and a row height is rounded up again before the table uses it. Far under what any claim here
+    /// turns on: the smallest of them, the control's own row, is above 20 points.
     private static let slack: CGFloat = 3
 
     @Test
@@ -86,6 +89,27 @@ struct FeedPromptFoldTests {
         let lines = wholeLines
         let fold = ArgoFeedRow.collapsedPromptLines
         #expect(lines > fold)
+    }
+
+    @Test
+    func `a picture pasted in with the words is measured inside the bubble too`() {
+        let shots = Array(FeedProjection.previewShots.prefix(1))
+        let withShot = height(of: Self.long, expanded: false, shots: shots)
+        let wordsOnly = height(of: Self.long, expanded: false)
+        // The gallery's own row, and nothing else: the words still fold at six lines and the
+        // control still stands under them.
+        #expect(withShot > wordsOnly + ArgoFeedRow.shotHeight)
+    }
+
+    @Test
+    func `a prompt that is only a picture folds nothing and offers nothing`() {
+        let shots = Array(FeedProjection.previewShots.prefix(1))
+        let folded = height(of: "", expanded: false, shots: shots)
+        let unfolded = height(of: "", expanded: true, shots: shots)
+        #expect(folded == unfolded)
+        // No words is no fold, so the control takes no room — the bubble is the gallery and its
+        // insets, with nothing between them.
+        #expect(folded < ArgoFeedRow.bubbleInsetY * 2 + ArgoFeedRow.shotHeight * 2)
     }
 
     /// The same claim where the reader actually meets it: the height the TABLE caches for the row,

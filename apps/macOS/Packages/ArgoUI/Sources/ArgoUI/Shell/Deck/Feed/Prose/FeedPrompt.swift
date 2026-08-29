@@ -19,8 +19,8 @@ struct FeedPrompt: View {
     @Binding var isExpanded: Bool
 
     /// Whether the layout gave the control a box to stand in. Read back AFTER the pass that decided
-    /// it, which is safe for exactly this: a screen reader's tree is not laid out, so a fact that
-    /// settles a frame late costs nothing here — where the same lateness in a SIZE is #946 itself.
+    /// it, and used for NOTHING that lays out: that is what makes it safe here and makes the same
+    /// lateness in a size #946 itself — a late fact the row's cached height never sees.
     @State private var isOffered = false
 
     var body: some View {
@@ -28,9 +28,10 @@ struct FeedPrompt: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
-    /// The bubble's ceiling, its insets and its fold are all `PromptBubbleLayout`'s, decided from
-    /// the proposal in the pass that makes it — see that type for why none of the three may be
-    /// learned through `@State` (#946).
+    /// The bubble's ceiling, its insets, and whether there is more of the prompt than the fold
+    /// shows are all `PromptBubbleLayout`'s, decided from the proposal in the pass that makes it —
+    /// see that type for why none of the three may be learned through `@State` (#946). WHICH state
+    /// the reader has it in stays here, as the line limit on the words below.
     private var bubble: some View {
         PromptBubbleLayout(text: text) {
             VStack(alignment: .trailing, spacing: ArgoSpacing.snug) {
@@ -80,9 +81,9 @@ struct FeedPrompt: View {
             )
             .clipped()
             .onGeometryChange(for: Bool.self) { $0.size.height > 0 } action: { isOffered = $0 }
-            // Stated rather than left to the empty box: whether a screen reader vends a control of
-            // no size is not something a package test here can settle, and a bubble with nothing
-            // to unfold must not offer to unfold it in a tree no still can see.
+            // Stated rather than left to the empty box the layout gave it. What a screen reader
+            // makes of a control of no size is not something a package test here can settle, so
+            // the control says for itself that it is not on offer.
             .accessibilityHidden(!isOffered)
     }
 
