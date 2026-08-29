@@ -6,6 +6,10 @@ import SwiftUI
 /// the selection.
 ///
 /// **In memory only, and deliberately**: a draft survives a switch, not a restart.
+///
+/// `@MainActor` so `binding(for:)`'s `@Sendable` closures may capture it: a main-actor class is
+/// `Sendable`.
+@MainActor
 @Observable
 final class ComposerDrafts {
     private var drafts: [String: ComposerDraft]

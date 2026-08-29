@@ -43,9 +43,13 @@ struct ComposerUnavailable: View {
     /// under it — two `Text`s in an `HStack` would break at the dash on a narrow deck and leave the
     /// word stranded on a line of its own.
     private var sentence: some View {
-        (word + Text(" — " + reason.detail).foregroundStyle(argo.color.text.tertiary))
+        Text("\(word)\(why)")
             .argoText(ArgoTypography.body)
             .lineLimit(2)
+    }
+
+    private var why: Text {
+        Text(" — " + reason.detail).foregroundStyle(argo.color.text.tertiary)
     }
 
     /// The reading itself, so it survives a glance that reads nothing else on the row.
