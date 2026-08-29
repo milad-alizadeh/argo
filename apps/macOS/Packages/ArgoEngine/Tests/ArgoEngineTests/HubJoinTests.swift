@@ -153,44 +153,67 @@ struct HubJoinTests {
     /// The claim the whole change is for, in the one shape that survives a change of machine
     /// (ADR-0028 Rule 3): a child's batch costs what it costs, whatever else is on the roster.
     /// Rebuilding every Session and the chain graph for it would make this ratio the size of the
-    /// working set — 200 batches cost 0.12 ms of CPU over 200 transcripts and 0.13 ms over four,
-    /// where rebuilding cost 281 ms against 6.0 ms (debug build, Apple silicon laptop). The
-    /// figures live here until #953 gives the recorded ones one file.
+    /// working set — restoring `rebuild()` in the Subagent path fails this at 37x.
+    ///
+    /// The threshold is UNCHANGED at 1.3, and it is the measurement under it that moved. Over 140
+    /// readings — half on an idle laptop, half with every core spinning — the ratio came out 1.01
+    /// with a standard deviation of 0.021 and never above 1.11, so 1.3 is fourteen spreads out. The
+    /// same 1.3 over the old 0.12 ms arms was four, and the tail of that reached 2.33 under load,
+    /// which is how CI came to fail at 1.313 (#977). Each arm is 2.4 ms now. The figures live here
+    /// until #953 gives the recorded ones one file.
     @Test
     func `a Subagent's reading does not cost more as the roster grows`() {
-        let small = Self.leastCostOfReading(across: 4)
-
-        let large = Self.leastCostOfReading(across: 200)
-
-        #expect(large < small * 13 / 10)
+        #expect(Self.costRatioOfReading() < 1.3)
     }
 
-    /// What 200 Subagent batches cost against a settled roster of `count` transcripts, in CPU time
-    /// rather than wall clock. Noise is one-sided, so the least of three trials is the honest
-    /// reading (ADR-0028 Rule 7).
-    private static func leastCostOfReading(across count: Int) -> Duration {
+    /// Enough batches that one arm is milliseconds rather than fractions of one: a scheduler
+    /// artefact that was a third of the old 0.12 ms reading is a rounding error against 2.4 ms.
+    private static let batches = 4000
+    /// Fifteen, not three. A minimum converges on the intrinsic cost from above, so trials buy
+    /// accuracy directly, and cheaply — going the other way and putting the same work in three
+    /// trials of 20 000 left the spread twice as wide.
+    private static let trials = 15
+
+    /// What 4 000 Subagent batches cost against a settled roster of 200 transcripts, over what
+    /// the same batches cost against one of four. In CPU time rather than wall clock, and the
+    /// least of `trials` for each arm, because noise is one-sided (ADR-0028 Rule 7).
+    ///
+    /// The two arms are measured turn by turn rather than one after the other: a laptop stepping
+    /// its clock, or a CI box picking up a neighbour, drifts over the run and would otherwise land
+    /// on whichever arm was in flight when it did. Interleaved, that drift is in both minima.
+    private static func costRatioOfReading() -> Double {
+        var small = settledRoster(of: 4)
+        var large = settledRoster(of: 200)
+        let costs = (0 ..< trials).map { _ in
+            (small: costOfBatches(against: &small), large: costOfBatches(against: &large))
+        }
+        return (costs.map(\.large).min() ?? 0) / (costs.map(\.small).min() ?? 1)
+    }
+
+    private static func settledRoster(of count: Int) -> HubJoin {
         var join = HubJoin()
         for index in 0 ..< count {
             join.add(hubTestObservation(id: "session-\(index)", events: []))
             join.apply([.title("Session \(index)")], to: "session-\(index)")
         }
+        return join
+    }
+
+    private static func costOfBatches(against join: inout HubJoin) -> Double {
         let read = [said]
-        return (0 ..< 3).map { _ in
-            let started = threadCPUTime()
-            for batch in 0 ..< 200 {
-                join.apply(read, ofSubagent: "agent-\(batch % 4)", to: "session-0")
-            }
-            return threadCPUTime() - started
+        let started = threadCPUSeconds()
+        for batch in 0 ..< batches {
+            join.apply(read, ofSubagent: "agent-\(batch % 4)", to: "session-0")
         }
-        .min() ?? .zero
+        return threadCPUSeconds() - started
     }
 
     /// The CPU this thread has burned. Wall clock would measure whatever else the machine is
     /// doing, which on a laptop running the rest of this suite is most of it.
-    private static func threadCPUTime() -> Duration {
+    private static func threadCPUSeconds() -> Double {
         var spent = timespec()
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &spent)
-        return .seconds(spent.tv_sec) + .nanoseconds(spent.tv_nsec)
+        return Double(spent.tv_sec) + Double(spent.tv_nsec) / 1e9
     }
 
     /// One transcript, read and published.
