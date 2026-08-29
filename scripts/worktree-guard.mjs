@@ -7,7 +7,8 @@
 // Gated on an agent marker (CLAUDECODE, or ARGO_HOOK_AGENT injected for markerless
 // harnesses like Codex) so it never touches the human's own workflow.
 // decide() is pure path logic (no fs) and unit-tested in worktree-guard.test.mjs;
-// resolveRoots() below is the only part that reads the disk.
+// resolveRoots() below is the only part that reads the disk. The stdin/stdout plumbing is
+// shared with the other guards in hook-io.mjs. Naming a worktree: worktree-name-guard.mjs.
 // Env-neutral by design: the project root comes from CLAUDE_PROJECT_DIR when
 // present, else `git rev-parse --show-toplevel`, so the projection registers this
 // same script under Codex without a rewrite.
@@ -15,6 +16,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isAgent, runGuard } from './hook-io.mjs'
 
 const WORKTREE_SEGMENT = `${path.sep}.claude${path.sep}worktrees${path.sep}`
 // Argo's own layout. A consumer whose product lives elsewhere overrides it in hooks.json
@@ -84,46 +86,17 @@ function resolveProjectDir(cwd) {
   }
 }
 
-async function readStdin() {
-  const chunks = []
-  for await (const chunk of process.stdin) chunks.push(chunk)
-  return Buffer.concat(chunks).toString('utf8')
-}
-
-async function main() {
-  let payload = {}
-  try {
-    payload = JSON.parse((await readStdin()) || '{}')
-  } catch {
-    // Malformed payload — fail open, never wedge the session.
-  }
-
-  const cwd = payload.cwd || process.cwd()
-  // Claude sends tool_input.file_path; Codex sends toolInput.file_path (camelCase).
-  const filePath = payload.tool_input?.file_path ?? payload.toolInput?.file_path
-  const projectDir = resolveProjectDir(cwd)
-  const decision = decide({
-    filePath,
-    cwd,
-    projectDir,
-    isAgent: Boolean(process.env.CLAUDECODE || process.env.ARGO_HOOK_AGENT),
-    roots: resolveRoots(projectDir),
-  })
-
-  if (decision.block) {
-    process.stdout.write(
-      JSON.stringify({
-        hookSpecificOutput: {
-          hookEventName: 'PreToolUse',
-          permissionDecision: 'deny',
-          permissionDecisionReason: decision.reason,
-        },
-      }),
-    )
-  }
-  process.exit(0)
-}
-
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  await main()
+  await runGuard((payload) => {
+    const cwd = payload.cwd || process.cwd()
+    const projectDir = resolveProjectDir(cwd)
+    return decide({
+      // Claude sends tool_input.file_path; Codex sends toolInput.file_path (camelCase).
+      filePath: payload.tool_input?.file_path ?? payload.toolInput?.file_path,
+      cwd,
+      projectDir,
+      isAgent: isAgent(),
+      roots: resolveRoots(projectDir),
+    })
+  })
 }

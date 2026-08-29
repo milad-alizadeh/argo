@@ -39,6 +39,23 @@ check('every script hooks.json invokes is copied by scaffold', () => {
   assert.deepEqual(missing, [], `hooks.json invokes scripts scaffold never copies: ${missing}`)
 })
 
+// The check above only sees the scripts a *command* names. A hook script that imports a
+// sibling (the guards share hook-io.mjs) ships a copied file whose import resolves to nothing in
+// the consumer's repo — the same failure one level down, and invisible from hooks.json alone.
+check('every module a copied hook script imports is copied too', () => {
+  const block = assets.match(/const HOOK_ASSETS = \[(.*?)\]/s)
+  const copied = [...block[1].matchAll(/'([^']+)'/g)].map(([, rel]) => rel)
+
+  const missing = []
+  for (const rel of copied.filter((r) => r.startsWith('scripts/') && r.endsWith('.mjs'))) {
+    const source = readFileSync(path.join(HERE, '..', rel), 'utf8')
+    for (const [, sibling] of source.matchAll(/from '\.\/([\w.-]+\.mjs)'/g)) {
+      if (!copied.includes(`scripts/${sibling}`)) missing.push(`${rel} -> ${sibling}`)
+    }
+  }
+  assert.deepEqual(missing, [], `hook scripts import modules scaffold never copies: ${missing}`)
+})
+
 check('claude-code: known, targets .claude/settings.json', () => {
   const r = project(descriptor, 'claude-code')
   assert.equal(r.known, true)
@@ -80,12 +97,12 @@ check('non-agentGated command is byte-identical across harnesses', () => {
 // matcher / timeout / statusMessage; session-end carries no matcher.
 check('projects PascalCase event keys with the right group shapes', () => {
   const b = project(descriptor, 'codex').hooksBlock
-  assert.equal(b.PreToolUse.length, 2)
+  assert.equal(b.PreToolUse.length, 3)
   // Matchers, not just the count: widening one is what a token-cost regression looks like,
   // and every count-based assertion here stays green through it.
   assert.deepEqual(
     b.PreToolUse.map((g) => g.matcher),
-    ['Edit|Write', 'Write'],
+    ['Edit|Write', 'Bash|EnterWorktree', 'Write'],
   )
   assert.equal(b.SessionEnd.length, 1)
   const end = b.SessionEnd[0]
