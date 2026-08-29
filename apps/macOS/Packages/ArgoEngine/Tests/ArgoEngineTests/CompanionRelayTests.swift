@@ -17,7 +17,7 @@ struct CompanionRelayTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
         let relay = try Self.relay(to: fixture, claim: claim)
-        defer { relay.terminate() }
+        defer { relay.process.terminate() }
 
         try Self.send(
             CompanionClient.toolCall(
@@ -35,7 +35,7 @@ struct CompanionRelayTests {
     /// `nc` invoked exactly as the materialized `.mcp.json` says to invoke it — read back off the
     /// file rather than repeated here, so a change to the declaration fails this test.
     private static func relay(to fixture: SpawnFixture, claim: SessionOwnership.ClaimID) throws
-        -> Process {
+        -> Relay {
         let declaration = try String(
             contentsOf: fixture.companionRoot
                 .appending(path: claim.value)
@@ -47,15 +47,25 @@ struct CompanionRelayTests {
         let relay = Process()
         relay.executableURL = try URL(fileURLWithPath: #require(argo.stringField("command")))
         relay.arguments = argo["args"]?.array.compactMap(\.string)
-        relay.standardInput = Pipe()
-        relay.standardOutput = Pipe()
+        let input = try OwnedPipe()
+        let output = try OwnedPipe()
+        relay.standardInput = input.reading
+        relay.standardOutput = output.writing
         try relay.run()
-        return relay
+        input.release(input.reading)
+        output.release(output.writing)
+        return Relay(process: relay, input: input)
     }
 
-    private static func send(_ message: [String: Any], through relay: Process) throws {
+    private static func send(_ message: [String: Any], through relay: Relay) throws {
         let line = try #require(CompanionResponse.line(message))
-        let input = try #require(relay.standardInput as? Pipe)
-        try input.fileHandleForWriting.write(contentsOf: Data((line + "\n").utf8))
+        try relay.input.writing.write(contentsOf: Data((line + "\n").utf8))
     }
+}
+
+/// The relay process and the end of its stdin the test writes down. Held together because the
+/// pipes are `OwnedPipe`s: nothing else keeps them alive for as long as the process needs them.
+private struct Relay {
+    let process: Process
+    let input: OwnedPipe
 }

@@ -11,7 +11,7 @@ import Foundation
 @MainActor
 final class CodexProcessHost: AgentProcessHost {
     func start(_ launch: AgentLaunch, events: AgentProcessEvents) throws -> AgentProcess {
-        let process = CodexServerProcess(events: events)
+        let process = try CodexServerProcess(events: events)
         try process.start(launch)
         return process
     }
@@ -22,14 +22,18 @@ final class CodexProcessHost: AgentProcessHost {
 final class CodexServerProcess: AgentProcess {
     private let events: AgentProcessEvents
     private let process = Process()
-    private let input = Pipe()
-    private let output = Pipe()
+    /// `OwnedPipe` and never `Foundation.Pipe`, for the stray close that one leaves behind on a
+    /// descriptor number the kernel has since given to something else (#936).
+    private let input: OwnedPipe
+    private let output: OwnedPipe
     /// So an exit is reported once: a termination handler and Argo's own `terminate` can both
     /// arrive, and the owner retires the row on the first.
     private var hasExited = false
 
-    init(events: AgentProcessEvents) {
+    init(events: AgentProcessEvents) throws {
         self.events = events
+        self.input = try OwnedPipe()
+        self.output = try OwnedPipe()
     }
 
     func start(_ launch: AgentLaunch) throws {
@@ -37,8 +41,8 @@ final class CodexServerProcess: AgentProcess {
         process.arguments = launch.arguments
         process.currentDirectoryURL = URL(fileURLWithPath: launch.cwd)
         process.environment = launch.environment
-        process.standardInput = input
-        process.standardOutput = output
+        process.standardInput = input.reading
+        process.standardOutput = output.writing
         // The server's own diagnostics are not JSON-RPC, so they are not fed to the parser. They go
         // to Argo's stderr rather than to a pipe nobody drains, which would stall the child.
         process.standardError = FileHandle.standardError
@@ -49,6 +53,10 @@ final class CodexServerProcess: AgentProcess {
         } catch {
             throw AgentSpawnError.hostRefused(detail: "\(launch.executablePath) would not start")
         }
+        // The child holds its own copies; the parent's copies of the ends it gave away go now, or
+        // the server's exit would never reach the reader as EOF.
+        input.release(input.reading)
+        output.release(output.writing)
     }
 
     /// One JSON-RPC line.
@@ -59,7 +67,7 @@ final class CodexServerProcess: AgentProcess {
     func write(_ text: String) {
         guard process.isRunning, let data = text.data(using: .utf8) else { return }
         do {
-            try input.fileHandleForWriting.write(contentsOf: data)
+            try input.writing.write(contentsOf: data)
         } catch {
             // No code: the child was never reaped here, and absent is the honest answer for an
             // exit Argo inferred from a broken descriptor rather than watched happen.
@@ -76,7 +84,7 @@ final class CodexServerProcess: AgentProcess {
     }
 
     private func drainOutput() {
-        output.fileHandleForReading.readabilityHandler = { [weak self] handle in
+        output.reading.readabilityHandler = { [weak self] handle in
             let chunk = [UInt8](handle.availableData)
             guard !chunk.isEmpty else { return }
             Task { @MainActor [weak self] in self?.events.onData(chunk) }
@@ -93,7 +101,7 @@ final class CodexServerProcess: AgentProcess {
     private func reportExit(_ code: Int32?) {
         guard !hasExited else { return }
         hasExited = true
-        output.fileHandleForReading.readabilityHandler = nil
+        output.reading.readabilityHandler = nil
         events.onExit(code)
     }
 }

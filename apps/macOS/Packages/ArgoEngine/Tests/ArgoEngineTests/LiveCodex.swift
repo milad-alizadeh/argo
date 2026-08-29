@@ -54,11 +54,12 @@ struct LiveCodex {
         let codex = Process()
         codex.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         codex.arguments = ["codex", "--version"]
-        let output = Pipe()
-        codex.standardOutput = output
+        let output = try OwnedPipe()
+        codex.standardOutput = output.writing
         try codex.run()
+        output.release(output.writing)
         let said = String(
-            data: output.fileHandleForReading.readDataToEndOfFile(),
+            data: (try? output.reading.readToEnd()) ?? Data(),
             encoding: .utf8,
         ) ?? ""
         codex.waitUntilExit()
