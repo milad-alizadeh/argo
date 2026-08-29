@@ -26,7 +26,9 @@ extension MermaidCompartmented {
         MermaidGraph(
             direction: direction,
             nodes: boxes.map {
-                MermaidGraph.Node(name: $0.name, size: $0.compartments.size)
+                // A compartmented box IS a rect, so an end may stand anywhere along its face —
+                // which is what lets two differently-marked ends on one box both be seen (#920).
+                MermaidGraph.Node(name: $0.name, size: $0.compartments.size, fillsBox: true)
             },
             edges: relations.map {
                 MermaidGraph.Edge(

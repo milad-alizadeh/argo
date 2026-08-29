@@ -28,7 +28,11 @@ extension MermaidState {
         MermaidGraph(
             direction: direction,
             nodes: nodes.map {
-                MermaidGraph.Node(name: $0.name, size: $0.figure.box(of: $0.label, on: direction))
+                MermaidGraph.Node(
+                    name: $0.name,
+                    size: $0.figure.box(of: $0.label, on: direction),
+                    fillsBox: $0.figure.fillsBox,
+                )
             },
             edges: transitions.map {
                 MermaidGraph.Edge(
@@ -84,6 +88,13 @@ extension MermaidState.Figure {
         case .fork: .bar
         case .note: .rect
         }
+    }
+
+    /// A state, a note and a fork bar are the box they are drawn in; a dot and a choice diamond
+    /// touch it at the middle of a face and nowhere else, so nothing may be fanned along theirs
+    /// (#920). The bar above all: a fork exists to be the point many transitions leave from.
+    var fillsBox: Bool {
+        self == .state || self == .note || self == .fork
     }
 
     /// A note is said ABOUT the machine rather than in it, so it takes the quiet role every

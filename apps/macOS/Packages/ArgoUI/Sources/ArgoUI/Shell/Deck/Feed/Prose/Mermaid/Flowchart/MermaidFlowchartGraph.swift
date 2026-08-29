@@ -10,7 +10,11 @@ extension MermaidFlowchart {
     @MainActor var graph: MermaidGraph {
         MermaidGraph(
             direction: direction,
-            nodes: nodes.map { MermaidGraph.Node(name: $0.name, size: Self.box(of: $0)) },
+            nodes: nodes.map {
+                MermaidGraph.Node(
+                    name: $0.name, size: Self.box(of: $0), fillsBox: Self.fills($0.shape),
+                )
+            },
             edges: edges.map {
                 MermaidGraph.Edge(
                     from: $0.from, to: $0.to,
@@ -31,6 +35,16 @@ extension MermaidFlowchart {
         case .diamond: return MermaidWords.inscribed(words)
         case .hexagon, .flag: return MermaidWords.pointed(words)
         case .rect, .rounded, .stadium, .subroutine, .cylinder: return words
+        }
+    }
+
+    /// Which shapes really reach the whole of the box they are drawn in — the ones a fanned end
+    /// may stand anywhere along. Every other shape here touches its box at the middle of a face
+    /// and falls away from it, so an end moved along that face would hang off nothing (#920).
+    private static func fills(_ shape: Shape) -> Bool {
+        switch shape {
+        case .rect, .rounded, .subroutine: true
+        case .circle, .diamond, .stadium, .hexagon, .flag, .cylinder: false
         }
     }
 }

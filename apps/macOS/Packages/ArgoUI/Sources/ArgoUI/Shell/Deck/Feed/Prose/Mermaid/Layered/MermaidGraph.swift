@@ -30,6 +30,17 @@ struct MermaidGraph: Equatable, Sendable {
     struct Node: Equatable, Sendable {
         let name: String
         let size: CGSize
+        /// Whether the figure drawn in this box really reaches the whole of it.
+        ///
+        /// The pass places every end on a box's own FACE and never sees the figure inside it, so
+        /// this is the reader's answer to the one question that costs: a diamond and a circle
+        /// touch their box at the middle of each face and nowhere else, and an end fanned off that
+        /// middle would stand in the air beside the shape. A box that is not filled keeps the
+        /// midpoint for every end, which is what every box did before there was a fan (#920).
+        ///
+        /// `false` by default on the model's own terms — a reader that has not answered gets the
+        /// quieter drawing rather than a stem hanging off nothing.
+        var fillsBox = false
     }
 
     /// One connector. How it is stroked and what finishes each of its ends, because the pass draws

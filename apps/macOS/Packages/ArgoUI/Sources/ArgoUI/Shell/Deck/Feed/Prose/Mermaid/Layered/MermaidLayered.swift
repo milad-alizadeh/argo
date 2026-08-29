@@ -27,7 +27,9 @@ extension MermaidLayered {
         let ranked = graph.ranking()
         let rows = MermaidOrdering.rows(of: graph, ranked: ranked)
         let placement = MermaidPlacement.of(graph, rows: rows)
-        let routing = MermaidRouting(placement: placement, reversed: ranked.reversed)
+        let routing = MermaidRouting(
+            graph: graph, placement: placement, reversed: ranked.reversed,
+        )
         return MermaidLayered(
             boxes: placement.boxes,
             routes: graph.edges.enumerated().map { routing.drawn($1, at: $0) },
