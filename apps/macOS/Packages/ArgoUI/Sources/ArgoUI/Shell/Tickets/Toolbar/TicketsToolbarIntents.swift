@@ -7,16 +7,10 @@ import ArgoEngine
 /// writes through `TicketWriter`, `Start` spawns a Session seeded with the open ticket, and the
 /// two link verbs open the address `TicketAddress` derives from the Binding.
 ///
-/// One value rather than five closures, because the cap is three parameters and these travel
-/// together anyway.
+/// One value rather than four closures, because the cap is three parameters and these travel
+/// together anyway. Every slot is assigned in `ticketsIntents`; a slot nothing assigns is what let
+/// the funnel draw live and do nothing (#900).
 struct TicketsToolbarIntents {
-    /// The list's own: re-group it. Inert by design, and the reason is on `ticketsIntents` — the
-    /// menu states the grouping in force rather than offering a choice nothing can answer yet.
-    ///
-    /// **There is no `narrowing` beside it (#900).** It was the funnel's, and the funnel was a mark
-    /// bound to `{}` in the shipping app; a slot nothing assigns is what let it draw live and do
-    /// nothing, so the slot goes with the mark.
-    var grouping: () -> Void = {}
     /// The call-to-action, which belongs to no ticket — it makes one, through a provider. So it is
     /// this room's one provider-port write control, and the verb travels with what the control
     /// renders (#275).
@@ -48,6 +42,7 @@ struct TicketsToolbarIntents {
         @MainActor static let inert = Verbs()
     }
 
-    /// A toolbar that draws every control and performs none, for a `#Preview` and a specimen.
+    /// A toolbar whose controls perform nothing, for a `#Preview` and a specimen. Not a state the
+    /// app ships: `ticketsIntents` assigns every slot.
     @MainActor static let inert = TicketsToolbarIntents()
 }

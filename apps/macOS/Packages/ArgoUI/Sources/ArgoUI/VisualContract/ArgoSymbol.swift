@@ -45,9 +45,6 @@ public enum ArgoSymbol {
     /// Re-ordering the backlog. A MENU and not a mark of its own: Mail keeps sort and group inside
     /// the ellipsis beside its filter, and the banded-rows glyph that stood here was invented for
     /// an act the platform already has a home for (#836).
-    ///
-    /// **No funnel (#900).** `line.3.horizontal.decrease` was named here for a control bound to an
-    /// empty closure; deleting the name is what stops one being drawn again with nothing behind it.
     public static let backlogMenu = projectMenu
     public static let searchBacklog = "magnifyingglass"
     /// Starting a Session on the open ticket — the verb the room is for. A play triangle rather

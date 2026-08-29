@@ -4,8 +4,8 @@ import SwiftUI
 ///
 /// **One row, not three.** The controls were split across two per-pane bands under #836, one over
 /// each column, so a reader met the same row of marks at three different heights — the scope chips
-/// and search in the window's row, filter and the ordering menu over the list, compose and the
-/// ticket's verbs over the ticket. Nothing about a filter mark says which column it acts on, so the
+/// and search in the window's row, the list's own marks over the list, compose and the ticket's
+/// verbs over the ticket. Nothing about a list-scoped mark says which column it acts on, so the
 /// split bought placement nobody could read and cost the room a line of height in both panes.
 ///
 /// Order is the row's argument, read left to right: the list's own controls, then the one thing
@@ -27,7 +27,7 @@ struct TicketsToolbar: ToolbarContent {
             // act on, so an empty backlog loses them where New ticket survives.
             if reading.narrows {
                 ToolbarItem(placement: .primaryAction) {
-                    BacklogControls(grouping: intents.grouping)
+                    BacklogControls()
                 }
                 .sharedBackgroundVisibility(.hidden)
             }

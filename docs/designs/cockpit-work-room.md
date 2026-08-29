@@ -267,7 +267,7 @@ four more over the ticket — and read three unrelated rows rather than one row 
 placement was legible only to somebody who already knew the rule. It also cost both panes a 44pt
 band, which is the height a room this dense can least spare.
 
-**So the controls are back in the window's one row, in scope order left to right**: the list's two,
+**So the controls are back in the window's one row, in scope order left to right**: the list's own,
 then the one thing the window creates, then the open ticket's verbs, then search at the trailing
 edge. That is Mail's own row read literally, and it is the arrangement #836 set out to reach before
 `.primaryAction`'s geometry defeated it — reached now by giving up the column boundary rather than
@@ -373,8 +373,14 @@ drawing it. `ArgoSymbol.filterBacklog` is deleted with it, so nothing can draw t
 without first naming what it filters by, here.
 
 **What the room keeps is the two narrowings above**, which do compose and are both live. **The
-renders in `work-room/` predate this and still show the funnel** — as with the Mode menu #872 cut,
-the render is superseded on this one mark and is the spec for everything else in the frame.
+renders in `work-room/` and `cockpit-work-room.html` predate this and still draw the funnel** — as
+with the Mode menu #872 cut, they are superseded on this one mark and remain the spec for
+everything else in the frame.
+
+**Its neighbour was made a stated row in the same pass.** `Group by priority` was a `Button` over a
+closure the shell never assigned — the funnel's fault one level down, inside the menu rather than
+on the row. With one grouping there is no choice to offer, so the menu draws it as text: the state
+in force, said once. It becomes buttons when a port reads a second thing to group by (#388).
 
 ### `Start` starts — there is no rung to choose
 

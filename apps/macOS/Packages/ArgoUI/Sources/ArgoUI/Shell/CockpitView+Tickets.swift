@@ -54,11 +54,9 @@ extension CockpitView {
     /// spec decides whether it may be pressed, and the panel it points at on a dead token is the
     /// same one the unbound page's `Connect a provider…` opens.
     ///
-    /// `grouping` stays inert, deliberately: `BacklogMenu` states the one grouping in force rather
-    /// than offering a choice nothing can answer, and it becomes a menu when a port reads a second
-    /// thing to group by (#388). It is the ONLY one — every other slot on the intents is assigned
-    /// here, and `BacklogControlsTests` fails if a slot is added and this method does not grow a
-    /// line for it. That is what the funnel's `narrowing` never had (#900).
+    /// Every slot is assigned here. `TicketsToolbarIntentTests` pins the set, so a slot added to
+    /// the intents fails until somebody looks at this method and decides what drives it — which is
+    /// what the funnel's `narrowing` never had (#900).
     func ticketsIntents(_ start: TicketStart) -> TicketsToolbarIntents {
         var intents = TicketsToolbarIntents.inert
         intents.creation.control = ticketWriteControl
