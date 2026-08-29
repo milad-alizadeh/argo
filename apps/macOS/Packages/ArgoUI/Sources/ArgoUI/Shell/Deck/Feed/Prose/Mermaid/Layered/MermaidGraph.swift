@@ -40,6 +40,19 @@ struct MermaidGraph: Equatable, Sendable {
         ///
         /// `false` by default on the model's own terms — a reader that has not answered gets the
         /// quieter drawing rather than a stem hanging off nothing.
+        ///
+        /// Asked ONCE for all four faces, and the pass fans a different pair of them per
+        /// direction — the ends across the ranks in `TD`, the sides in `LR`, the flank for a back
+        /// edge either way. So a figure flat along only two of its faces, like a capsule or a
+        /// hexagon, has to answer `false` and gives up a fan it would have been safe to have in
+        /// half the directions. Deliberate while the answer is a Bool: the fix is a figure saying
+        /// how much of each face it really reaches, which is a SPAN, and no shape here needs one
+        /// yet. A wider Bool would only move the lie.
+        ///
+        /// `true` claims the whole face, corners included, which a rounded rect does not quite
+        /// keep: its corner arc is `nodeRadius`, and a narrow box carrying enough edges puts the
+        /// outermost end within that arc. The fan reserves a whole mark inside the face against
+        /// exactly that, and the arc is a fraction of the mark.
         var fillsBox = false
     }
 

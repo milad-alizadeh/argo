@@ -73,6 +73,53 @@ struct MermaidExitFanTests {
         #expect(Set(starts.map(\.y)).count == 6)
     }
 
+    /// Every direction fans the face its own ranks leave by, along its own axis. `BT` and `RL`
+    /// run the ranks backwards, so the face an edge leaves by is the one at the other end of the
+    /// box — a single inverted flag, and nothing else in the suite would catch it turned over.
+    @Test(arguments: [
+        ("TD", false, true), ("BT", false, false), ("LR", true, true), ("RL", true, false),
+    ])
+    func `each direction fans the face its ranks leave by`(
+        direction: String,
+        isHorizontal: Bool,
+        isForward: Bool,
+    ) {
+        let plan = MermaidLayoutTests.plan("graph \(direction)\nA --> B\nA --> C")
+        let starts = Self.starts(of: plan)
+
+        guard let box = MermaidLayoutTests.boxes(of: plan).first, starts.count == 2 else {
+            return #expect(Bool(false), "the box and both connectors were drawn")
+        }
+        let face = isHorizontal
+            ? (isForward ? box.maxX : box.minX)
+            : (isForward ? box.maxY : box.minY)
+        #expect(starts.allSatisfy { abs((isHorizontal ? $0.x : $0.y) - face) < 1 })
+        // Fanned ACROSS the ranks, which is the other axis from the one they grow along.
+        #expect(Set(starts.map { isHorizontal ? $0.y : $0.x }).count == 2)
+    }
+
+    /// A crowded face gives up the STEP and never the face. The marks at either end of a fan have
+    /// to stand on the box, so what the gaps share is the span less one whole mark — an entity
+    /// with three relationships off one narrow face is exactly the case that used to overlap them.
+    @Test
+    func `a narrow face keeps its outermost marks on the box`() {
+        // A two-letter name, so the box stands at the NARROWEST a box is drawn — the case the old
+        // arithmetic gave a step of 11 to and drew three 12-wide marks overlapping. No members, so
+        // the only paths the plan holds are the three connectors themselves.
+        let plan = MermaidCompartmentedLayoutTests
+            .plan("classDiagram\nAx --> One\nAx --> Two\nAx --> Six")
+        let starts = Self.starts(of: plan).sorted { $0.x < $1.x }
+
+        guard let hub = MermaidCompartmentedLayoutTests.boxes(of: plan).first, starts.count == 3
+        else {
+            return #expect(Bool(false), "the class and all three lines were drawn")
+        }
+        let steps = zip(starts, starts.dropFirst()).map { $1.x - $0.x }
+        #expect(steps.allSatisfy { $0 >= MermaidMeasure.footWidth })
+        #expect(starts[0].x - MermaidMeasure.footWidth / 2 >= hub.minX - 0.5)
+        #expect(starts[2].x + MermaidMeasure.footWidth / 2 <= hub.maxX + 0.5)
+    }
+
     /// A figure that does not fill its box keeps the middle of its face for every end. A diamond
     /// touches its box at the midpoint of a face and falls away either side, so a fanned stem
     /// would start in the air beside the shape — which is what the render showed, and no test

@@ -45,15 +45,35 @@ extension MermaidExits {
             let kinds: (MermaidFace.Kind, MermaidFace.Kind) = around.contains(at)
                 ? (.flank, .flank)
                 : (.exit, .entry)
+            let places = kinds.0 == .flank
+                ? (Self.place(of: at, in: around), Self.place(of: at, in: around))
+                : (fan.far(of: to, on: kinds.0), fan.far(of: from, on: kinds.1))
             faces[MermaidFace(name: edge.from, kind: kinds.0), default: []]
-                .append(MermaidEnd(edge: at, isHead: false, far: fan.far(of: to, on: kinds.0)))
+                .append(MermaidEnd(edge: at, isHead: false, far: places.0))
             faces[MermaidFace(name: edge.to, kind: kinds.1), default: []]
-                .append(MermaidEnd(edge: at, isHead: true, far: fan.far(of: from, on: kinds.1)))
+                .append(MermaidEnd(edge: at, isHead: true, far: places.1))
         }
         return MermaidExits(
             ends: fan.dealt(faces, over: graph.edges.count, in: placement.boxes),
             around: around,
         )
+    }
+
+    /// Which lane a back edge runs in, counted out from the ranks — one step further out than the
+    /// back edge before it. ONE definition, read both by the fan that places its ends and by the
+    /// routing that draws its lane: the two are the same fact, and a flank ordered on anything
+    /// else lets the outer lane cut across the inner one on its way in.
+    ///
+    /// Negative, so the OUTERMOST lane takes the slot at the leading end of the face. Its
+    /// horizontal run is the longest, so it has to turn in past every vertical inside it — and it
+    /// crosses none of them only if it arrives beyond where they all begin.
+    static func place(of index: Int, in around: Set<Int>) -> CGFloat {
+        -CGFloat(around.count { $0 < index } + 1)
+    }
+
+    /// How far out of the ranks one back edge is drawn.
+    func lane(of index: Int) -> CGFloat {
+        MermaidMeasure.backLane * Self.place(of: index, in: around)
     }
 }
 
@@ -136,9 +156,11 @@ private struct MermaidFan {
         return Self.isAlong(kind) ? grain.along(of: box.size) : grain.across(of: box.size)
     }
 
-    /// The ends of one face in the order they stand on it. The far end's own place decides it; two
-    /// ends reaching the same place — a self-loop's pair above all — fall back on the source's own
-    /// order, so the same diagram fans the same way every run.
+    /// The ends of one face in the order they stand on it. The far end's own place decides it —
+    /// where it stands across its rank for a face that looks up or down the ranks, and which lane
+    /// it runs in for a flank, which is the only place a back edge has. Two ends reaching the same
+    /// place — a self-loop's pair above all — fall back on the source's own order, so the same
+    /// diagram fans the same way every run.
     private static func ordered(_ ends: [MermaidEnd]) -> [MermaidEnd] {
         ends.sorted { left, right in
             guard left.far == right.far else { return left.far < right.far }
@@ -163,12 +185,17 @@ private struct MermaidFan {
     }
 
     /// How far off the middle one end stands. The ends spread symmetrically about the midpoint at
-    /// the step two terminal marks need to read as two — narrowed to fit where the face is too
-    /// short for that, so a fan never runs off the box it belongs to. ONE end takes no offset at
-    /// all, which is the whole of what the common case pays.
+    /// the step two terminal marks need to read as two. ONE end takes no offset at all, which is
+    /// the whole of what the common case pays.
+    ///
+    /// What a crowded face gives up is the STEP and never the face: the mark at either end of the
+    /// fan has to stand on the box, so what the gaps have to share is the span less one whole
+    /// mark. A face that cannot hold its marks even so — more of them than `footWidth` fits along
+    /// it — crowds them rather than drawing one off the edge of the box it belongs to, because a
+    /// mark standing beside its box says it belongs to a box that is not there.
     private static func offset(at: Int, of count: Int, over span: CGFloat) -> CGFloat {
         guard count > 1 else { return 0 }
-        let step = min(MermaidMeasure.exitFan, span / CGFloat(count + 1))
-        return (CGFloat(at) - CGFloat(count - 1) / 2) * step
+        let room = max(0, span - MermaidMeasure.footWidth) / CGFloat(count - 1)
+        return (CGFloat(at) - CGFloat(count - 1) / 2) * min(MermaidMeasure.exitFan, room)
     }
 }

@@ -24,7 +24,7 @@ extension MermaidRouting {
     func drawn(_ edge: MermaidGraph.Edge, at index: Int) -> MermaidRoute? {
         guard let attach = exits.ends[index] else { return nil }
         let points = exits.around.contains(index)
-            ? around(attach, lane: lane(of: index))
+            ? around(attach, lane: exits.lane(of: index))
             : between(attach)
         guard let ends = MermaidEnds.of(points, edge: edge) else { return nil }
         let middle = Self.mid(of: points)
@@ -53,6 +53,9 @@ extension MermaidRouting {
     /// An edge that runs BACK against the ranks — a cycle's own closing edge, or a self-loop. It
     /// leaves and re-enters by the flank and runs its length in a lane outside the diagram, so it
     /// never shares a line with the forward edges it is answering.
+    ///
+    /// A lane per edge and not one for all of them. Two edges closing the same loop share a lane
+    /// otherwise, and two lines drawn on top of each other read as one edge that is not there.
     private func around(_ ends: MermaidExits.Pair, lane: CGFloat) -> [CGPoint] {
         let grain = placement.grain
         let (start, end) = (ends.tail, ends.head)
@@ -62,16 +65,6 @@ extension MermaidRouting {
             grain.point(along: grain.along(of: end), across: lane),
             end,
         ]
-    }
-
-    /// The lane one back edge runs in: one step further out than the back edge before it, counted
-    /// off the leading edge of the whole diagram rather than off either box.
-    ///
-    /// A lane per edge and not one for all of them. Two edges closing the same loop share a lane
-    /// otherwise, and two lines drawn on top of each other read as one edge that is not there.
-    private func lane(of index: Int) -> CGFloat {
-        let ordinal = exits.around.count { $0 < index } + 1
-        return -MermaidMeasure.backLane * CGFloat(ordinal)
     }
 
     /// The connector, already stopped short of whatever finishes it, and the pass's own head at
