@@ -84,19 +84,28 @@ func spawnedSessionObservation(of fixture: SpawnFixture) -> TranscriptObservatio
 /// Observe a finite stream to its end — the shape every test that drives events by hand wants, and
 /// one no caller of the engine has, because a real transcript's stream never ends.
 @MainActor
-func hubObserveToEnd(_ hub: Hub, _ observation: TranscriptObservation) async {
+func hubObserveToEnd(
+    _ hub: Hub,
+    _ observation: TranscriptObservation,
+    at location: SourceLocation = #_sourceLocation,
+) async {
     await hub.startObserving(observation)
-    await hubTailEnded(hub, transcriptID: observation.id)
+    await hubTailEnded(hub, transcriptID: observation.id, at: location)
 }
 
 /// Wait until a transcript's tail is over, read off the Hub's own projection rather than a handle
 /// into its task table.
 @MainActor
-func hubTailEnded(_ hub: Hub, transcriptID: String) async {
-    let ended = await settle {
-        hub.observations.contains { $0.id == transcriptID && $0.state == .stopped }
-    }
-    #expect(ended, "the tail on \(transcriptID) never ended")
+func hubTailEnded(
+    _ hub: Hub,
+    transcriptID: String,
+    at location: SourceLocation = #_sourceLocation,
+) async {
+    await settle(
+        until: { hub.observations.contains { $0.id == transcriptID && $0.state == .stopped } },
+        message: "the tail on \(transcriptID) never ended",
+        at: location,
+    )
 }
 
 /// An observation whose stream stays open until the test closes it, which is the shape a live
@@ -121,9 +130,15 @@ func hubLiveObservation(
 /// read anything, and the roster is deliberately held back until they have — so a test asserting on
 /// `sessions` straight after one is reading the emptiness it was given, not the answer.
 @MainActor
-func hubSettle(until condition: () -> Bool) async {
-    let settled = await settle(until: condition)
-    #expect(settled, "the roster never reached the state the test is waiting for")
+func hubSettle(
+    until condition: () -> Bool,
+    at location: SourceLocation = #_sourceLocation,
+) async {
+    await settle(
+        until: condition,
+        message: "the roster never reached the state the test is waiting for",
+        at: location,
+    )
 }
 
 /// A transcript's real shape: a uuid-named file inside a per-Project record directory. What a suite
@@ -186,28 +201,56 @@ private func openDescriptors() -> [Int32] {
     return entries.prefix(Int(read / stride)).map(\.proc_fd)
 }
 
-/// Yield until a condition holds, up to a bound, and answer whether it did. Some work is detached
-/// and cannot be awaited from the call that triggered it; this waits for it without sleeping on a
-/// guessed duration, and gives up rather than hanging.
+/// Wait until a condition holds, and RECORD AN ISSUE if it never does.
 ///
-/// The bound is wall-clock rather than a count of turns, because the whole suite shares one main
-/// actor: a fixed number of yields is spent by whatever else is running, and the wait ends before
-/// the thing being waited for has had a turn at all.
+/// An expired wait is a FAILURE at the wait, never silence (#918). Almost every call site discards
+/// the answer, so before this the only trace of one running out was the assertion below it failing
+/// — or passing anyway, leaving the wait to spend its whole budget polling the shared main actor.
+///
+/// The bound is a HANG GUARD and not a budget: no caller asserts how FAST anything happens. The
+/// slowest real wait here is 0.8s idle and 2.3s under three concurrent clean compiles.
 ///
 /// It SLEEPS between checks rather than yielding, and that is load-bearing rather than a rounding
 /// of the same idea. What most of these waits are waiting on is a `DispatchSource` on the main
 /// QUEUE — a socket accepting a connection, a connection reading a line. `Task.yield()` re-enqueues
 /// on the main actor without ever leaving it, so a tight yield loop can spin out the whole bound
 /// while the queue's event handler never runs and the thing being waited for never happens.
+///
+/// ONE TRAP, and it cost most of #918 to find. Where a `#require` or `#expect` macro wraps one
+/// `settle` in a scope, a later trailing-closure `settle` over the same capture can be compiled to
+/// the MACRO's closure entity rather than its own: it re-runs the first condition and can never
+/// settle. Plain waits do not do this — `HubRelinquishTests` has three over one fixture — so it is
+/// the macro that does it. Binding the capture to a local at the second site turns it into a hard
+/// `function type mismatch`, which is how it was found. Where a macro wraps the first wait, give
+/// the second a NAMED condition; `CompanionChannelTests` has the worked example.
 @MainActor
 @discardableResult
-func settle(until condition: () -> Bool) async -> Bool {
-    let deadline = ContinuousClock.now + .seconds(5)
+func settle(
+    until condition: () -> Bool,
+    message: @autoclosure () -> String = "the wait never settled",
+    at location: SourceLocation = #_sourceLocation,
+)
+    async -> Bool {
+    let deadline = ContinuousClock.now + settleLimit
     while ContinuousClock.now < deadline {
         if condition() {
             return true
         }
         try? await Task.sleep(for: .milliseconds(1))
     }
-    return condition()
+    if condition() {
+        return true
+    }
+    Issue.record("\(message()) within \(settleLimit)", sourceLocation: location)
+    return false
 }
+
+/// The hang guard above, named so the message can state it.
+///
+/// Ten seconds is over four times the slowest wait measured here, which is outside anything a
+/// working machine produces — and a red run pays it once per expired wait, so a `.serialized` suite
+/// pays it per test. `ARGO_SETTLE_LIMIT_SECONDS` raises it for a box slower than any measured here,
+/// so a local red run does not pay for that possibility.
+let settleLimit: Duration = .seconds(
+    ProcessInfo.processInfo.environment["ARGO_SETTLE_LIMIT_SECONDS"].flatMap(Int.init) ?? 10,
+)

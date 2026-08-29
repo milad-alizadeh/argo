@@ -20,7 +20,7 @@
     "quality:duplication": "jscpd --config .jscpd.json apps packages scripts",
     "quality:swift": "sh scripts/swift-format.sh --check && sh scripts/swift-lint.sh && sh scripts/swift-boundaries.sh",
     "test": "turbo run test",
-    "test:hooks": "node scripts/worktree-guard.test.mjs && node scripts/placement-guard.test.mjs && node scripts/hooks-sync.test.mjs && node scripts/protect-owned-skills.test.mjs && node scripts/swift-tooling.test.mjs && node scripts/screenshot-scope.test.mjs && node scripts/swift-boundaries.test.mjs && node scripts/swift-boundaries.cap.test.mjs && node scripts/contract-readers.test.mjs",
+    "test:hooks": "node scripts/worktree-guard.test.mjs && node scripts/placement-guard.test.mjs && node scripts/hooks-sync.test.mjs && node scripts/protect-owned-skills.test.mjs && node scripts/swift-tooling.test.mjs && node scripts/load-burst.test.mjs && node scripts/screenshot-scope.test.mjs && node scripts/swift-boundaries.test.mjs && node scripts/swift-boundaries.cap.test.mjs && node scripts/contract-readers.test.mjs",
     "test:e2e": "turbo run test:e2e",
     "check:design-tokens": "sh scripts/check-design-tokens-swift.sh",
     "contract:sweep": "node scripts/contract-readers.mjs",

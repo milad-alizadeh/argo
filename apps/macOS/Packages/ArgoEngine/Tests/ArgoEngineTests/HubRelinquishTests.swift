@@ -20,7 +20,13 @@ struct HubRelinquishTests {
 
             fixture.host.endLastProcess(exitCode: 0)
 
-            await settle { fixture.hub.facts(forClaim: claim) == ClaimFacts() }
+            // Every GATE fact goes and the rung Argo set stays, which is the test below this one.
+            // `== ClaimFacts()` asked for the rung to go too, so it could never hold: unsatisfiable
+            // since #663 filed the spawn's rung under the claim, and waited on every run since
+            // because nothing read its answer (#918).
+            await settle { fixture.hub.facts(forClaim: claim).standing.isEmpty }
+            let rung = SessionModeSet(mode: .code, recordsWhenSet: 0)
+            #expect(fixture.hub.facts(forClaim: claim) == ClaimFacts(modeSet: rung))
         }
     }
 

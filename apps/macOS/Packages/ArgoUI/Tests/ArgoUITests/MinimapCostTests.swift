@@ -10,9 +10,13 @@ import Testing
 /// half shows up in a screenshot.
 ///
 /// The budgets are deliberately loose — an order of magnitude over what the machine does, so the
-/// suite fails on a REGRESSION rather than on a busy CI box. What matters is the shape: reading a
-/// session is linear in its rows and free of glyph work, and painting a band is bounded by the
-/// band.
+/// suite fails on a REGRESSION rather than on a busy CI box. Every figure below is the CPU the work
+/// SPENT rather than the seconds that passed, so a Mac with three other agents building on it reads
+/// the same as an idle one. The cold readings stay single runs: a first pass over a cold cache IS
+/// the measurement.
+///
+/// What matters is the shape: reading a session is linear in its rows and free of glyph work,
+/// and painting a band is bounded by the band.
 ///
 /// Measured on an M-series Mac over the 301-row `longRows`, for whoever is watching one of these
 /// creep: the feed's own measure pass 142ms, reading 0.6ms, a band 4.0ms cold and 1.5ms warm, sixty
@@ -33,18 +37,6 @@ struct MinimapCostTests {
     /// A real session's length. `FeedProjection.longRows` is what `feedAtScale` renders.
     private static let rows = FeedProjection.longRows
 
-    /// Seconds `work` took.
-    ///
-    /// BOTH components. A `Duration` is `(seconds, attoseconds)`, so reading the attoseconds alone
-    /// reports 2.4s as 0.4 — which is worse than no measurement, because every budget over a second
-    /// then passes whatever the machine did.
-    private static func elapsed(_ work: () -> Void) -> Double {
-        let started = ContinuousClock.now
-        work()
-        let taken = started.duration(to: ContinuousClock.now).components
-        return Double(taken.seconds) + Double(taken.attoseconds) / 1e18
-    }
-
     private static func laidOut() -> (table: FeedTableCoordinator, handle: FeedTableHandle) {
         let handle = FeedTableHandle()
         return (FeedTableFixture.laidOut(rows, in: Self.column, through: handle), handle)
@@ -61,7 +53,7 @@ struct MinimapCostTests {
     func `the feed's measure pass is not made slower by the lane's reporting`() {
         // Warm the prose caches so what is timed is the ruler rather than the first markdown parse.
         _ = Self.laidOut()
-        let cost = Self.elapsed { _ = Self.laidOut() }
+        let cost = cpuSeconds { _ = Self.laidOut() }
         #expect(cost < 4)
     }
 
@@ -73,7 +65,7 @@ struct MinimapCostTests {
         let laid = Self.laidOut()
         // Warm, so what is timed is the walk rather than the first parse of every string.
         _ = laid.table.reading()
-        let cost = Self.elapsed { _ = laid.table.reading() }
+        let cost = cpuSeconds { _ = laid.table.reading() }
         #expect(laid.table.reading()?.rows.count == Self.rows.count)
         #expect(cost < 0.05)
     }
@@ -90,8 +82,8 @@ struct MinimapCostTests {
         }
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: Self.column.height))
         let band = 0 ... Self.column.height
-        let cold = Self.elapsed { _ = lane.rects(in: band) }
-        let warm = Self.elapsed { _ = lane.rects(in: band) }
+        let cold = cpuSeconds { _ = lane.rects(in: band) }
+        let warm = cpuSeconds { _ = lane.rects(in: band) }
         #expect(!lane.rects(in: band).isEmpty)
         // Cold is the Core Text pass; warm comes off the cache and is the repaint the reader feels.
         #expect(cold < 0.2)
@@ -99,7 +91,7 @@ struct MinimapCostTests {
         // A band twice as far down the session costs the same: nothing above it is touched.
         let below = lane.miniatureHeight / 2 ... lane.miniatureHeight / 2 + Self.column.height
         _ = lane.rects(in: below)
-        #expect(Self.elapsed { _ = lane.rects(in: below) } < 0.02)
+        #expect(cpuSeconds { _ = lane.rects(in: below) } < 0.02)
     }
 
     /// A scroll inside the held band repaints the same rects over and over. Sixty of them is one
@@ -113,7 +105,7 @@ struct MinimapCostTests {
         }
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: Self.column.height))
         _ = lane.rects(in: 0 ... Self.column.height)
-        let cost = Self.elapsed {
+        let cost = cpuSeconds {
             for at in 0 ..< 60 {
                 _ = lane.rects(in: CGFloat(at) ... CGFloat(at) + Self.column.height)
             }
@@ -135,7 +127,7 @@ struct MinimapCostTests {
             Issue.record("the fixture laid out no reading")
             return
         }
-        let cost = Self.elapsed {
+        let cost = cpuSeconds {
             for at in 0 ..< 30 {
                 reading.columnWidth = 620 - CGFloat(at)
                 let lane = MinimapGeometry(
@@ -166,8 +158,8 @@ struct MinimapCostTests {
         }
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: Self.column.height))
         let band = 0 ... Self.column.height
-        let cold = Self.elapsed { _ = lane.rects(in: band) }
-        let warm = Self.elapsed { _ = lane.rects(in: band) }
+        let cold = cpuSeconds { _ = lane.rects(in: band) }
+        let warm = cpuSeconds { _ = lane.rects(in: band) }
         #expect(!lane.rects(in: band).isEmpty)
         #expect(cold < 0.2)
         #expect(warm < 0.05)
