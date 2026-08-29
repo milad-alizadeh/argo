@@ -30,3 +30,4 @@ apps/macOS/buildServer.json
 .agents/skills/
 .cursor/skills/
 .codex/skills/
+.rtk/.rtk

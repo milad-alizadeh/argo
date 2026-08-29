@@ -28,8 +28,16 @@ extension MinimapLaneView {
     /// rather than on the reading.
     private func paint(_ band: MinimapBand) {
         guard let palette else { return }
-        let rects = geometry.rects(in: band.range)
         let inks = FeedInk.allCases.map { ink($0, in: palette) }
+        // The rects come out of the geometry and nothing else, so a band already painted at this
+        // derivation IS what a fresh build would return. Building it anyway to compare cost 3.0 ms
+        // of every scrolled frame over a 301-row reading, against 0.02 ms for the comparison.
+        guard band != drawnBand || inks != inked || derivation != paintedAt else { return }
+        rectBuilds += 1
+        let rects = geometry.rects(in: band.range)
+        // Reached only when something under the pixels moved. A reading that grew BELOW the band
+        // derives afresh and still draws the same rects, which is the case this second guard keeps.
+        paintedAt = derivation
         guard band != drawnBand || rects != drawnRects || inks != inked else { return }
         rectRedraws += 1
         drawnBand = band

@@ -89,7 +89,12 @@ extension FeedTableCoordinator {
     /// Back to the end of the reading.
     func scrollToEnd(over pace: TimeInterval?) {
         guard let scroller, let reading = scroller.documentView else { return }
-        scroller.layoutSubtreeIfNeeded()
+        // The two geometries this needs — where the clip view sits, and how tall the reading is —
+        // and NOT a full layout of the reading, which realises a screenful of cells at whatever
+        // offset the reader is at BEFORE this moves them somewhere else. That screen is built,
+        // laid out and thrown away: 19 cells and 22 ms of a 50 ms room switch (#963).
+        scroller.tile()
+        table?.tile()
         let clip = scroller.contentView
         let end = reading.frame.height + scroller.contentInsets.bottom - clip.bounds.height
         let y = max(end, -scroller.contentInsets.top)

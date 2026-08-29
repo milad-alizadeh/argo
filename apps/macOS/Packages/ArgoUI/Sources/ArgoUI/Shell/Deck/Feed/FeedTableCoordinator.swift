@@ -5,8 +5,7 @@ import SwiftUI
 ///
 /// It decides nothing about WHERE the reading lands — that is `FeedScrollPolicy`'s, reached through
 /// the handle. What stays here is AppKit facts only: the scroll view, the table, the
-/// measured-height
-/// cache, the ruler, and the keyboard's focused row.
+/// measured-height cache, the rulers, and the keyboard's focused row.
 @MainActor final class FeedTableCoordinator: NSObject {
     var model: FeedTableModel?
     /// The shared scroll authority, which holds the policy this coordinator reports to.
@@ -62,6 +61,11 @@ import SwiftUI
     /// default, so a preview, a specimen and a suite each measure into one of their own.
     private(set) var geometry = FeedGeometry()
 
+    /// How many cells the table has been handed, ever. A cell is one SwiftUI tree built or diffed,
+    /// which is the interactive cost a scroll and a mount both pay — and unlike `measurements` it
+    /// is not saved by the height cache. What ADR-0028 Rule 1 is asked with, for the mount.
+    var exposures = 0
+
     /// How many rows have actually been measured, ever — every entry is one full SwiftUI layout
     /// pass. Not a statistic: it is what #856's claim is about, and the only honest way for a suite
     /// to ask what a re-measure COST rather than what it left behind.
@@ -83,13 +87,15 @@ import SwiftUI
         private(set) var paneCost = FeedPaneCost()
     #endif
 
-    /// The one view content is measured in — never installed in a window, reused per row, and
-    /// building no sizing constraints of its own: `sizeThatFits` is asked directly.
-    private let ruler: NSHostingController<AnyView> = {
-        let ruler = NSHostingController(rootView: AnyView(EmptyView()))
-        ruler.sizingOptions = []
-        return ruler
-    }()
+    /// The views content is measured in — never installed in a window, and building no sizing
+    /// constraints of their own: `sizeThatFits` is asked directly.
+    ///
+    /// One per `FeedRow.Content.Shape` — see that type, which states what the split costs and
+    /// why. Ten controllers is the ceiling, because `Shape` has ten cases: an enum key rather than
+    /// a cache, so nothing here needs evicting (ADR-0028 Rule 4).
+    /// Read and written only through `FeedTableCoordinator+Rulers`, which is where the reason for
+    /// keeping one per shape is stated.
+    var rulers: [FeedRow.Content.Shape: NSHostingController<AnyView>] = [:]
 
     /// One frame notification arrived — see `FeedPaneCost`.
     func notedPane() {
@@ -142,6 +148,9 @@ import SwiftUI
         if fresh.rows == stale {
             touchUp(against: fresh, from: staleEnvironment)
         } else {
+            // The reading boundary: the rulers still hold the last one's live rows, and this one
+            // is about to measure its own through them.
+            surrenderRulers()
             decide(.rowsChanged(from: stale, to: fresh.rows))
         }
         // The seam letting go is the moment the width is final: one full re-measure squares
@@ -178,6 +187,7 @@ import SwiftUI
         if let known = geometry.height(at: index, under: ground) {
             return known
         }
+        let ruler = ruler(for: model.rows[index].content.shape)
         ruler.rootView = model.content(at: index)
         // Rounded UP to a whole point: a non-integral row height still blurs baselines on
         // current macOS, and up rather than to-nearest so text is never clipped by rounding.
@@ -186,9 +196,6 @@ import SwiftUI
         ).height))
         geometry.record(height, at: index, under: ground)
         measurements += 1
-        // The ruler would otherwise keep the row's live view graph — tasks included — alive
-        // in a controller no window ever shows.
-        ruler.rootView = AnyView(EmptyView())
         return height
     }
 

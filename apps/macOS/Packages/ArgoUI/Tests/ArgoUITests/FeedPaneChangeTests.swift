@@ -113,13 +113,18 @@ struct FeedPaneChangeTests {
         #expect(table.paneCost.nestings == 0)
     }
 
-    /// The same guard against the thing that actually re-fires the notification: landing the
-    /// reading forces a layout, that layout resizes the clip view, and the notice it posts arrives
-    /// on the handler's own stack. Only a window server does that, so this is the local half of the
-    /// claim above — and `reentrances > 0` is the precondition that says the phenomenon really
-    /// happened, without which the rest would pass over an empty set.
+    /// A mount in a real window, which is where #955 saw the notification re-fire on the handler's
+    /// own stack: landing the reading forced a layout, that layout resized the clip view, and the
+    /// notice arrived inside the derivation that caused it.
+    ///
+    /// It no longer re-fires, and that is deliberate — `scrollToEnd` now reads the two geometries
+    /// it needs off `tile()` instead of laying the whole reading out, so nothing inside the
+    /// derivation resizes the clip view (#963). So this asserts what is left to assert: the mount
+    /// still converges on the size the clip view ended at, and still nests no derivation. The
+    /// guard itself is proved by the claim above, which posts the notice from inside a derivation
+    /// rather than waiting for a window server to.
     @Test(.enabled(if: WindowedTests.areAvailable))
-    func `a window mount re-fires the notification its own layout posted`() throws {
+    func `a window mount converges without nesting a derivation`() throws {
         // Built rather than taken from `laidOut()`: a mount is precisely the case where no pane has
         // been laid out yet, and it is the first derivation whose forced layout re-fires.
         let handle = FeedTableHandle()
@@ -135,11 +140,14 @@ struct FeedPaneChangeTests {
         window.contentView = feed.scroller
         window.layoutIfNeeded()
 
-        #expect(feed.table.paneCost.reentrances > 0)
         #expect(feed.table.paneCost.nestings == 0)
-        // And it converged: the reading stands laid out against the size the clip view ended at,
-        // which is the fact a swallowed or abandoned size would break.
+        // It converged: the reading stands laid out against the size the clip view ended at, which
+        // is the fact a swallowed or abandoned size would break.
         #expect(feed.table.laidOutPane == feed.scroller.contentView.bounds.size)
+        // And the reading really was laid out — a mount that derived nothing would also nest
+        // nothing, and pass the two claims above over an empty set.
+        #expect(feed.table.paneCost.derivations > 0)
+        #expect(feed.table.exposures > 0)
     }
 
     /// The coordinator holds its handle weakly — the deck owns it — so a resize can arrive with no
