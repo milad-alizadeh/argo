@@ -34,7 +34,9 @@ public enum ArgoSymbol {
     public static let allOpenView = "circle.fill"
     public static let unblockedView = "circle"
     public static let inProgressView = "diamond.fill"
-    public static let blockedView = "triangle"
+    /// Drawn by the sidebar view AND by a backlog row's blockage mark, which is why it is one
+    /// constant (#939). The prohibition sign, so the mark names the state rather than a shape.
+    public static let blockedView = "nosign"
 
     /// The Tickets room's chrome (`cockpit-work-room.md`), each mark named by what the control does
     /// rather than by its shape.

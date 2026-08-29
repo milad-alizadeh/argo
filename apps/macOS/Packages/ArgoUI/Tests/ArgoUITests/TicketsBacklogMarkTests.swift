@@ -73,6 +73,13 @@ struct TicketsBacklogMarkTests {
         }
     }
 
+    /// One concept, one mark. The row's mark and the sidebar's `Blocked` view name the same
+    /// glyph independently, so this is what stops a later edit moving one of them alone (#939).
+    @Test
+    func `the row's mark and the sidebar's Blocked view draw one glyph`() {
+        #expect(BlockageMark.symbol == TicketsView.blocked.symbol)
+    }
+
     /// …and the third state is in NEITHER, which is what keeps the two views a partition of the
     /// tickets whose edges were read rather than of every ticket.
     @Test
