@@ -49,7 +49,7 @@ up?" — with the detected recommendation marked, covering:
 | Module boundaries (dependency-cruiser) | `setup-module-boundaries` | monorepo / layered app |
 | Design infra (tokens, `docs/designs/`, check, render method) | `setup-design-infra` | project has UI |
 | Design foundations (the token *values*, blessed) | `setup-design-foundations` | project has UI and no settled scale |
-| Cross-CLI guardrail hooks (placement + worktree guard, reaper) | scaffolder `--hooks` | user runs git worktrees |
+| Cross-CLI guardrail hooks (placement, worktree edit and naming guards, reaper) | scaffolder `--hooks` | user runs git worktrees |
 | Audit what every session loads, and cut it | `audit-agent-context` | always — it reads rather than installs, and this run adds to the bill it measures |
 
 ## Phase 3 — dispatch in order

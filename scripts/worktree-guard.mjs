@@ -16,7 +16,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { isAgent, runGuard } from './hook-io.mjs'
+import { runGuard, underAgent } from './hook-io.mjs'
 
 const WORKTREE_SEGMENT = `${path.sep}.claude${path.sep}worktrees${path.sep}`
 // Argo's own layout. A consumer whose product lives elsewhere overrides it in hooks.json
@@ -95,7 +95,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       filePath: payload.tool_input?.file_path ?? payload.toolInput?.file_path,
       cwd,
       projectDir,
-      isAgent: isAgent(),
+      isAgent: underAgent(),
       roots: resolveRoots(projectDir),
     })
   })

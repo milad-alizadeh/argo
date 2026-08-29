@@ -92,7 +92,8 @@ also install them:
 npx github:milad-alizadeh/argo --hooks
 ```
 
-That copies the neutral `hooks.json` descriptor plus the two scripts it invokes into the
+That copies the neutral `hooks.json` descriptor plus the scripts it invokes (and the modules
+they import) into the
 target, then projects the descriptor into each agent listed in its own `agents` key:
 `claude-code` → `.claude/settings.json`, `codex` → `.codex/hooks.json` (unknown agents are
 skipped with a warning). One source of truth per hook, a thin per-harness registration. See
