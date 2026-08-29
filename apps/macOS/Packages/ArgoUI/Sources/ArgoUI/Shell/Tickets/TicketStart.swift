@@ -27,14 +27,18 @@ struct TicketStart {
             .flatMap { WorkCommand.resolving($0, designs: designs()) }
     }
 
-    /// `Code` is the rung work needs and the only one this room offers (`cockpit-work-room.md`,
-    /// "`Start` starts"). It stays changeable over the live Session, in the composer's `ModePicker`
-    /// — the one control that reads the rung back.
+    /// The rung is the mapping's and this room offers no other (`cockpit-work-room.md`, "`Start`
+    /// starts", amended #941). It stays changeable over the live Session, in the composer's
+    /// `ModePicker` — the one control that reads the rung back.
     ///
     /// A refusal moves nothing: it is reported by the app, and the reader is left looking at the
     /// list they were triaging rather than at a room with nothing in it.
     func run(on ticket: Int, in navigation: CockpitNavigationModel) async {
-        guard let fresh = await spawn(ticket, .code, command(on: ticket)?.opening(on: ticket))
+        guard let fresh = await spawn(
+            ticket,
+            WorkCommand.startingMode,
+            command(on: ticket)?.opening(on: ticket),
+        )
         else { return }
         navigation.session = fresh
         navigation.room = .sessions

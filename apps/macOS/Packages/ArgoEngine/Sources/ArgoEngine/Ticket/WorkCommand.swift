@@ -1,4 +1,5 @@
-/// The command a Session started on a Ticket opens on (#899), and the rule that picks it.
+/// What a Session started on a Ticket opens on — the rule that picks its command (#899), and
+/// the rung it stands on (#941).
 ///
 /// Five rules, FIRST MATCH WINS, and a sixth outcome that is no command at all. A Ticket matching
 /// nothing opens an empty composer, because a wrong `/implement` on a decision Ticket is a Session
@@ -11,6 +12,12 @@ public enum WorkCommand: String, Sendable {
     case wayfinder
     case prototype
     case implement
+
+    /// The rung a Session started FROM A TICKET opens on (#941). Argo's own choice for that one
+    /// Session, never filed as the rung last picked (#629), so a hand-started Session is untouched.
+    ///
+    /// Not per-case: a Ticket matching no rule gets no command and still needs a rung.
+    public static let startingMode: SessionMode = .auto
 
     /// How the command is written and spoken — the one place the leading slash is spelled.
     public var typed: String {
