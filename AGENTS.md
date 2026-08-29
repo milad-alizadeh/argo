@@ -160,12 +160,14 @@ running Argo, what the pixels are judged against, the specimen harness in full:
 **Always prefix shell commands with `rtk`** so output is filtered before it reaches context. The
 global Bash hook (rtk ≥ 0.45) auto-wraps `git`, `grep`, `gh`, `ls`, `find` and similar, and it
 rewrites inside compound commands too — `cd apps/macOS && swift test` is caught. This repo's own
-noisy entrypoints are covered by **`.rtk/filters.toml`** at the root: `swift test` (passes and
-build noise out, failures and the summary kept), `bun run test|quality|…` (turbo cache noise
-out), and `sh scripts/e2e-test.sh` (xcodebuild phases out).
+noisy entrypoints are covered by **`.rtk/filters.toml`** at the root: `swift build`, `swift test`,
+`bun run test|quality|…` and `sh scripts/e2e-test.sh`.
 
-The filters are inert until trusted: **run `rtk trust --yes` once per checkout**, and again after
-any edit to the file — trust is keyed to its hash. `rtk verify` runs the filters' inline tests.
+Two traps, both silent. rtk reads that file **from the working directory only**, so a new run
+location needs a `.rtk` symlink back to the root one or its commands are filtered by whatever
+else matches. And the filters are inert until **`rtk trust --yes`**, which keys on the file's
+hash — re-run it per checkout and after any edit. Neither failure prints a warning. Why, and the
+rule that these filters bound output from the tail and never the head: `docs/agents/rtk-filters.md`.
 
 ```bash
 rtk err bun run quality:swift       # SwiftFormat --check, SwiftLint, package boundaries

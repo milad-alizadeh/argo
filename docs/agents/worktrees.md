@@ -40,6 +40,10 @@ Enter a worktree first, unprompted, on the ticket branch:
   (`git branch -m argo/#<N>-<slug>`).
 - **Other harnesses:** `git worktree add -b argo/#<N>-<slug> .claude/worktrees/ticket-<N>-<slug>`.
 
+Then **`rtk trust --yes`** in the new worktree. rtk trusts `.rtk/filters.toml` by path, so a
+fresh worktree is untrusted and its filters are inert — silently, with no warning of any kind
+(`docs/agents/rtk-filters.md`).
+
 ## Resuming interrupted work — `/implement #<N>` is idempotent
 
 Because the names are a pure function of `<N>`, re-running `/implement #<N>` must land in the

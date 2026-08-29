@@ -4,12 +4,635 @@
 # file's hash, so re-run it after any edit. `rtk verify` runs the [[tests.*]] blocks.
 # A filter whose match_command never fires in your project is harmless — delete freely.
 #
+# rtk reads this file from the WORKING DIRECTORY only — never a parent, not even the git
+# root. A monorepo whose commands run inside package directories needs a `.rtk` symlink
+# back to this file in each of them, or these filters simply never apply there.
+#
+# Bound output with `tail_lines`, never `max_lines`. `max_lines` cuts from the head, so on a
+# build with more warnings than the cap it is the trailing compiler error that is dropped and
+# the run reads as clean; `tail_lines` keeps the end, where a build's diagnostics land, and
+# announces what it dropped. For the same reason `on_empty` must never say "ok" — a failing
+# run whose every line was stripped would then be reported as a success.
+#
+# The last swift-build case below is 520 lines long on purpose, and every filter you add that
+# can see a build wants one like it: a fixture that fits inside the cap cannot prove anything
+# about the cap, which is how a filter that hid every compiler error passed its own tests.
+#
 # One standing exemption: a code review's input diff must be read UNFILTERED
 # (`RTK_DISABLED=1 git diff …`) — a truncated diff makes review findings unfalsifiable.
 schema_version = 1
 
-# swift-testing prints one line per passing test; only failures, skips and the final
-# summary carry information. rtk ships swift-build but no swift-test filter.
+# rtk 0.45 has no named `swift build` filter, only a generic proxy that prints the head of
+# the run and truncates the rest to a tee file. A cold build reaches the broken file long
+# after that head, so the diagnostics were exactly the part thrown away.
+# Stripped here: build progress, package resolution, and the echoed source under a
+# diagnostic — the numbered source lines, the caret rules that carry no text, the `:`
+# elision marks and the diagnostic-group footnote links. The headline keeps its
+# file:line:column, and a caret line that carries a `note:` of its own is kept with it.
+[filters.swift-build]
+description = "Compact swift build output — strip progress and echoed source, keep every diagnostic"
+match_command = "^swift\\s+build\\b"
+strip_ansi = true
+filter_stderr = true
+strip_lines_matching = [
+  "^\\s*$",
+  "^Building for debugging",
+  "^\\[\\d+/\\d+\\]",
+  "^Planning build",
+  "^(Fetching|Fetched|Computing|Computed|Creating working copy|Working copy of|Resolved source packages) ",
+  "^\\s*\\d+ \\|",
+  "^\\s*\\|[\\s|`^~-]*$",
+  "^\\s*:\\s*$",
+  "^\\[#\\w+\\]: <https://",
+]
+tail_lines = 500
+on_empty = "(rtk: every line was filtered noise — read the tee log)"
+
+[[tests.swift-build]]
+name = "a build that worked collapses to its completion line"
+input = """
+Fetched https://github.com/apple/swift-argument-parser from cache (0.70s)
+Building for debugging...
+[0/1] Planning build
+[3/4] Compiling MyApp MermaidDiagram.swift
+Build complete! (0.50s)
+"""
+expected = "Build complete! (0.50s)"
+
+[[tests.swift-build]]
+name = "a diagnostic keeps its headline and the notes under it"
+input = """
+[10/293] Compiling MyApp FeedRow.swift
+/repo/MermaidDiagram.swift:118:1: error: expected declaration
+116 | }
+    |     `- note: in declaration of 'Broken'
+    :
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/x>
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+"""
+expected = "/repo/MermaidDiagram.swift:118:1: error: expected declaration\n    |     `- note: in declaration of 'Broken'\nerror: emit-module command failed with exit code 1 (use -v to see invocation)"
+
+[[tests.swift-build]]
+name = "a resolution failure keeps the reason under it"
+input = """
+Fetching https://github.com/apple/swift-argument-parser from cache
+Computing version for https://github.com/apple/swift-argument-parser
+error: Dependencies could not be resolved because root depends on 'swift-argument-parser' 9.0.0..<10.0.0.
+  'swift-argument-parser' >= 9.0.0 cannot be used because no versions of it match the requirement.
+"""
+expected = "error: Dependencies could not be resolved because root depends on 'swift-argument-parser' 9.0.0..<10.0.0.\n  'swift-argument-parser' >= 9.0.0 cannot be used because no versions of it match the requirement."
+
+[[tests.swift-build]]
+name = "a crash is reported as a crash, never as ok"
+input = """
+[10/293] Compiling MyApp FeedRow.swift
+Please submit a bug report (https://swift.org/contributing/#reporting-bugs)
+Stack dump:
+Segmentation fault: 11
+"""
+expected = "Please submit a bug report (https://swift.org/contributing/#reporting-bugs)\nStack dump:\nSegmentation fault: 11"
+
+[[tests.swift-build]]
+name = "a linker failure is not a compiler diagnostic and still survives"
+input = """
+[293/293] Linking MyApp
+ld: symbol(s) not found for architecture arm64
+"""
+expected = "ld: symbol(s) not found for architecture arm64"
+
+[[tests.swift-build]]
+name = "an error behind more warnings than any cap would allow still surfaces"
+input = """
+Building for debugging...
+[87/404] Compiling MyApp FeedRow.swift
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0
+/repo/MermaidDiagram.swift:118:1: error: expected declaration
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+"""
+expected = "... (22 lines omitted)\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/Deprecated.swift:1:1: warning: '+' was deprecated in macOS 26.0\n/repo/MermaidDiagram.swift:118:1: error: expected declaration\nerror: emit-module command failed with exit code 1 (use -v to see invocation)"
+
+# swift-testing prints one line per passing test; only failures, skips and the final summary
+# carry information. The build noise is stripped here too, because a suite that will not
+# compile is neither a pass nor a test failure and its diagnostics have to lead.
 # filter_stderr: swift's build phase (Building/Build complete!) arrives on stderr.
 [filters.swift-test]
 description = "Compact swift test output — strip passes and build noise, keep failures and the summary"
@@ -18,8 +641,6 @@ strip_ansi = true
 filter_stderr = true
 strip_lines_matching = [
   "^\\s*$",
-  "^Building for debugging",
-  "^\\[\\d+/\\d+\\]",
   "^Build complete!",
   "^Compiling ",
   "^Linking ",
@@ -30,8 +651,17 @@ strip_lines_matching = [
   "Target Platform:",
   "^Test Suite '.*' (started|passed)",
   "^\\s*Executed \\d+ tests?, with 0 failures",
+  "^Building for debugging",
+  "^\\[\\d+/\\d+\\]",
+  "^Planning build",
+  "^(Fetching|Fetched|Computing|Computed|Creating working copy|Working copy of|Resolved source packages) ",
+  "^\\s*\\d+ \\|",
+  "^\\s*\\|[\\s|`^~-]*$",
+  "^\\s*:\\s*$",
+  "^\\[#\\w+\\]: <https://",
 ]
-max_lines = 120
+tail_lines = 500
+on_empty = "(rtk: every line was filtered noise — read the tee log)"
 
 [[tests.swift-test]]
 name = "passing run collapses to the summary line"
@@ -42,7 +672,6 @@ Build complete! (2.1s)
 􀟈  Test run started.
 􀟈  Testing Library Version: 6.3
 􁁛  Test "a moved Project keeps its id" passed after 0.2 seconds.
-􁁛  Test "a head git answered for" with 4 test cases passed after 0.2 seconds.
 􁁛  Suite "Project registry" passed after 0.3 seconds.
 􁁛  Test run with 433 tests in 68 suites passed after 1.6 seconds.
 """
@@ -53,37 +682,47 @@ name = "failures survive with their location"
 input = """
 􁁛  Test "healthy case" passed after 0.1 seconds.
 􀢄  Test "broken case" recorded an issue at FooTests.swift:42:9: Expectation failed: x == 2
-􀢄  Test "broken case" failed after 0.1 seconds with 1 issue.
 􀢄  Test run with 2 tests in 1 suite failed after 0.2 seconds with 1 issue.
 """
-expected = "􀢄  Test \"broken case\" recorded an issue at FooTests.swift:42:9: Expectation failed: x == 2\n􀢄  Test \"broken case\" failed after 0.1 seconds with 1 issue.\n􀢄  Test run with 2 tests in 1 suite failed after 0.2 seconds with 1 issue."
+expected = "􀢄  Test \"broken case\" recorded an issue at FooTests.swift:42:9: Expectation failed: x == 2\n􀢄  Test run with 2 tests in 1 suite failed after 0.2 seconds with 1 issue."
 
-# `bun run <task>` fronts turbo, so rtk's built-in ^turbo filter never matches it.
-# Same idea: cache noise and per-test pass lines out, failures and summaries kept.
-# turbo's own `Tasks:` count line is kept — on a failing run it is the headline.
+# `bun run <task>` fronts turbo, so rtk's built-in ^turbo filter never matches it. Same idea:
+# cache noise and per-test pass lines out, failures and summaries kept. turbo's own `Tasks:`
+# count line is kept — on a failing run it is the headline.
+# `(\S+:\S+: )?` is turbo's per-task prefix (`@my/app:test: `): without it every
+# ^-anchored strip below is dead, which is how the build noise it should have dropped
+# survived to bury the diagnostics.
+# on_empty says only that nothing survived the filter. It must never say "ok": an exit-1 run
+# whose every line was stripped would then be reported as a success.
 [filters.bun-run]
 description = "Compact bun run output — strip turbo cache noise and per-test pass lines, keep failures"
 match_command = "^bun run (test|quality|format-and-lint|lint|build)\\b"
 strip_ansi = true
 filter_stderr = true
 strip_lines_matching = [
-  "^\\s*$",
+  "^(\\S+:\\S+: )?\\s*$",
   "cache (hit|miss|bypass)",
   "[Pp]ackages? in scope",
   "Running \\w+ in \\d+ packages",
   "^\\s*Duration:\\s+",
   "Remote caching (enabled|disabled)",
-  "^Building for debugging",
-  "^\\[\\d+/\\d+\\]",
-  "^Build complete!",
+  "^(\\S+:\\S+: )?Build complete!",
   "(Test|Suite) [\"“].*[\"”].* passed after",
   "started\\.$",
-  "^[􀟈◇] ",
+  "^(\\S+:\\S+: )?[􀟈◇] ",
   "Testing Library Version",
   "Target Platform:",
+  "^(\\S+:\\S+: )?Building for debugging",
+  "^(\\S+:\\S+: )?\\[\\d+/\\d+\\]",
+  "^(\\S+:\\S+: )?Planning build",
+  "^(\\S+:\\S+: )?(Fetching|Fetched|Computing|Computed|Creating working copy|Working copy of|Resolved source packages) ",
+  "^(\\S+:\\S+: )?\\s*\\d+ \\|",
+  "^(\\S+:\\S+: )?\\s*\\|[\\s|`^~-]*$",
+  "^(\\S+:\\S+: )?\\s*:\\s*$",
+  "^(\\S+:\\S+: )?\\[#\\w+\\]: <https://",
 ]
-max_lines = 120
-on_empty = "ok"
+tail_lines = 500
+on_empty = "(rtk: every line was filtered noise — read the tee log)"
 
 [[tests.bun-run]]
 name = "turbo noise stripped, summaries kept"
