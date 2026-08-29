@@ -33,6 +33,7 @@ import Testing
         #expect(field.draft.text == "send me")
 
         field.press([])
+        field.settle { field.input.string.isEmpty }
 
         #expect(field.sent == ["send me"])
         #expect(field.draft.text.isEmpty)
@@ -59,9 +60,8 @@ import Testing
             store.sent
         }
 
-        /// Return under `modifiers`, as the field's own `keyDown` sees it. Followed by a layout
-        /// pass,
-        /// which is when SwiftUI writes the answer back into the control.
+        /// Return under `modifiers`, as the field's own `keyDown` sees it, followed by a layout
+        /// pass — but a layout pass is not a promise, which is `settle`'s subject below.
         func press(_ modifiers: NSEvent.ModifierFlags) {
             guard let event = NSEvent.keyEvent(
                 with: .keyDown,
@@ -77,6 +77,22 @@ import Testing
             ) else { return }
             input.keyDown(with: event)
             host.layoutSubtreeIfNeeded()
+        }
+
+        /// Turn the run loop until the control reflects the state, and give up rather than hang.
+        ///
+        /// SwiftUI writes state back into a hosted AppKit control on a run-loop turn of its OWN, so
+        /// `layoutSubtreeIfNeeded` can return before the write-back has happened. Asserting
+        /// straight after it reads whichever side of that turn the machine happened to be on: under
+        /// load this suite saw the store hold the sent Turn and an empty draft while the text view
+        /// still showed what had been typed — the store right, the control stale, which is that gap
+        /// exactly (#918).
+        func settle(until settled: () -> Bool) {
+            let deadline = Date(timeIntervalSinceNow: 5)
+            while !settled(), Date() < deadline {
+                RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.001))
+                host.layoutSubtreeIfNeeded()
+            }
         }
     }
 
