@@ -104,6 +104,15 @@ extension SpecimenRegistry {
         SpecimenEntry("composerModeUnknown") {
             ComposerSpecimen(composer: ComposerSpecimen.unknownMode)
         },
+        // A rung picked mid-Turn (#940). The Turn is still running — the field invites a follow-up
+        // rather than a message — the picker is holding `≈ Auto` with nothing ticked, and the seam
+        // says both halves: that the port refused, and that the rung is held rather than dropped.
+        SpecimenEntry("composerModeHeld") {
+            ComposerSpecimen(
+                composer: ComposerSpecimen.running,
+                draft: ComposerSpecimen.modeHeld,
+            )
+        },
         // A rung the CLI did not take (#629). The picker is back on the rung the record reports,
         // and the seam says which one was asked for. What has to be true is that the pair reads
         // as ONE correction rather than as a control that lost the click.

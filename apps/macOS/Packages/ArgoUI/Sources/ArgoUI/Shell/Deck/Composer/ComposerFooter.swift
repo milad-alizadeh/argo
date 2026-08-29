@@ -24,6 +24,9 @@ struct ComposerFooter: View {
     /// What the `+` does, and `nil` for a Session whose adapter declares no attachments — which is
     /// what takes the control off the row entirely.
     var attach: (([SessionAttachment]) -> Void)?
+    /// A rung picked while a Turn was running, held for the boundary (#940). It is what the picker
+    /// draws while it waits, under `≈` — never as the rung the Session stands on.
+    var heldMode: SessionMode?
     /// Put the Session on a rung. Inert by default, for the reason `stop` is.
     var setMode: (SessionMode) -> Void = { _ in }
 
@@ -33,7 +36,7 @@ struct ComposerFooter: View {
                 AddButton(attach: attach)
             }
             Spacer()
-            ModePicker(reading: mode, setMode: setMode)
+            ModePicker(reading: mode, heldMode: heldMode, setMode: setMode)
             if let facts {
                 Text(facts)
                     .argoText(ArgoTypography.rowMeta)
@@ -94,6 +97,22 @@ struct ComposerFooter: View {
         isRunning: true,
         send: {},
         attach: { _ in },
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 640)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Composer footer — a rung held until the Turn ends") {
+    ComposerFooter(
+        mode: .exactly(.code, cli: "acceptEdits"),
+        facts: "Opus 5",
+        isSendable: false,
+        isRunning: true,
+        send: {},
+        attach: { _ in },
+        heldMode: .auto,
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)

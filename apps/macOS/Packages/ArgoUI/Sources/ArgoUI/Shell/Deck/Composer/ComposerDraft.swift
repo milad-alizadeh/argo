@@ -30,6 +30,13 @@ struct ComposerDraft: Equatable {
     /// When the field was last typed in, as the roster spells a time; `nil` for a draft nobody has
     /// touched.
     var editedAtMs: Int?
+    /// A rung picked while a Turn was running, waiting on the boundary to be walked (#940). It
+    /// sits here beside the queued follow-ups because it is the same kind of thing: an intent the
+    /// running Turn has to end before Argo can carry it out — and it lives exactly as long, which
+    /// is to say across a switch and not across a restart.
+    private(set) var heldMode: SessionMode?
+    /// Whether the walk for `heldMode` has begun, so no second boundary can start another (#653).
+    private(set) var isWalkingMode = false
 
     init(
         text: String = "",
@@ -38,6 +45,7 @@ struct ComposerDraft: Equatable {
         editedAtMs: Int? = nil,
         attachments: [SessionAttachment] = [],
         notice: String? = nil,
+        heldMode: SessionMode? = nil,
     ) {
         self.text = text
         self.refusal = refusal
@@ -45,6 +53,7 @@ struct ComposerDraft: Equatable {
         self.editedAtMs = editedAtMs
         self.attachments = attachments
         self.notice = notice
+        self.heldMode = heldMode
     }
 
     /// Whether there is anything to send, by the port's own rule. A tray with something on it IS a
@@ -53,9 +62,17 @@ struct ComposerDraft: Equatable {
         SessionTurn.isSendable(text) || !attachments.isEmpty
     }
 
-    /// Whether this draft holds anything at all — words, an attachment, a follow-up, or an unseen
-    /// refusal. What the store keys eviction on.
+    /// Whether this draft holds anything at all — anything Stop would clear, or a rung waiting on
+    /// the Turn. What the store keys eviction on: a draft evicted while it holds a rung is one
+    /// whose rung is never walked.
     var isEmpty: Bool {
+        isClear && heldMode == nil
+    }
+
+    /// Whether Stop has anything to take away. The held rung is NOT among it: a rung is about how
+    /// the Session works next rather than about the Turn that was killed, and it survives the
+    /// interrupt to be walked at the boundary the interrupt itself creates.
+    private var isClear: Bool {
         text.isEmpty && queued.isEmpty && attachments.isEmpty && refusal == nil && notice == nil
     }
 
@@ -123,7 +140,7 @@ struct ComposerDraft: Equatable {
         } catch {
             return refusal = error.localizedDescription
         }
-        guard !isEmpty else { return }
+        guard !isClear else { return }
         text = ""
         attachments = []
         queued = []
@@ -135,22 +152,53 @@ struct ComposerDraft: Equatable {
     /// asserts the reader was told and the vessel that tells them cannot come to disagree.
     static let cleared = "Turn stopped — the composer was cleared"
 
-    /// A rung asked for, and the port's reason where it refused (#545). A notice rather than a
+    /// The port's reason a rung did not land (#545), on the seam as a notice rather than a
     /// refusal: no words are at risk, so there is nothing for the seam's Retry to put back.
     ///
-    /// Given the outcome rather than the act, because the walk is `async` now (#653) and a
-    /// `mutating` method cannot hold a draft open across the wait.
-    mutating func modeAsked(refusedWith error: (any Error)?) {
-        guard let error else {
-            notice = nil
-            return
-        }
+    /// Given the outcome rather than the act, because the walk is `async` (#653) and a `mutating`
+    /// method cannot hold a draft open across the wait.
+    mutating func modeRefused(_ error: any Error) {
+        heldMode = nil
+        isWalkingMode = false
         notice = (error as? SessionDriveError)?.detail ?? error.localizedDescription
+    }
+
+    /// The rung landed. It takes back only the sentence IT put up — a notice about something else,
+    /// the Turn the reader stopped or the one the CLI never heard, is not this act's to erase.
+    mutating func modeLanded(_ mode: SessionMode) {
+        heldMode = nil
+        isWalkingMode = false
+        guard notice == Self.held(mode) else { return }
+        notice = nil
+    }
+
+    /// A rung the port refused because a Turn is running (#653, #940): kept for the boundary
+    /// rather than dropped, and said on the seam.
+    mutating func modeHeld(_ mode: SessionMode) {
+        heldMode = mode
+        isWalkingMode = false
+        notice = Self.held(mode)
+    }
+
+    /// The rung to walk now the Turn has ended, and `nil` where there is none or a walk is already
+    /// under way. MARKED rather than taken: the picker draws the held rung until the walk lands,
+    /// and a rung taken twice would be walked twice from a stance the first walk had left (#653).
+    mutating func beginModeWalk() -> SessionMode? {
+        guard let heldMode, !isWalkingMode else { return nil }
+        isWalkingMode = true
+        return heldMode
+    }
+
+    /// What the seam says about a rung Argo is holding: the port's own refusal first, verbatim,
+    /// then what Argo did with the intent. Both halves, because a reader who picked a rung needs
+    /// to know it was refused AND that it was not dropped.
+    static func held(_ mode: SessionMode) -> String {
+        "\(SessionDriveError.modeBusy.detail) — \(mode.label) is held until this Turn ends"
     }
 
     /// A Turn the CLI never heard, come back to the field it was typed in (#682).
     ///
-    /// Given the outcome rather than the act, for the reason `modeAsked(refusedWith:)` is: the news
+    /// Given the outcome rather than the act, for the reason `modeRefused(_:)` is: the news
     /// arrives seconds after the send returned, and a `mutating` method cannot hold a draft open
     /// across that wait.
     ///

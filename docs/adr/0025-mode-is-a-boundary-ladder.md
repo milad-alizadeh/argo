@@ -86,6 +86,12 @@ input**, because Mode is a *standing* stance — what it does while nobody is an
   cannot see, and everything outside that list fails rather than asking. Two sessions in `dontAsk`
   can sit at opposite ends of the ladder, so any rung would be a guess.
 
+**A rung picked mid-Turn is held, not walked** (#940). The walk is keystrokes, and mid-Turn they
+are not reliably the agent's to receive, so the port refuses. Argo keeps the intent and walks it at
+the Turn's boundary, and the control draws the held rung under `≈` in the meantime. That `≈` is
+**not** DIRECT — Argo has asked and does not know the Session is on it — which is why the held rung
+ticks nothing and the footnote names the rung the Session is still standing on.
+
 The mark is approximation, not a tier. The tier stays **DIRECT**, because Argo knows the fact
 exactly and only its vocabulary is coarser. Degrading a knowable value to `unknown` would discard
 something plainly observed, which is the opposite failure from the one degrade-down prevents —

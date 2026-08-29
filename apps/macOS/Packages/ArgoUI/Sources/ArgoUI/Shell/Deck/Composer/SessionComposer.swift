@@ -84,13 +84,19 @@ struct SessionComposer: View {
         .onChange(of: composer.sessionID, initial: true) { _, _ in
             enteredAtMs = WallClock.nowMs()
         }
-        // The Turn the queue was waiting on has ended, so what was held goes, in the order it was
-        // typed. `initial` is what makes it survive a switch: the composer is only on screen for
-        // the SELECTED Session, so a Turn that ends while the reader is looking elsewhere changes
-        // nothing here, and flushing on arrival delivers what was waiting.
+        // What was waiting on the Turn goes — `SessionComposer.turnEnded()` owns the order.
+        // `initial` is what makes it survive a switch: the composer is only on screen for the
+        // SELECTED Session, so a Turn that ends while the reader is looking elsewhere changes
+        // nothing here, and arriving is what delivers what was waiting, held rung included.
         .onChange(of: composer.isRunning, initial: true) { _, isRunning in
             guard !isRunning else { return }
-            draft.flush(via: sending)
+            turnEnded()
+        }
+        // A rung held against a Turn that ended between the pick and the port's answer has no
+        // boundary left to wait for, so the rung arriving is itself the trigger (#940).
+        .onChange(of: draft.heldMode) { _, held in
+            guard held != nil, !composer.isRunning else { return }
+            turnEnded()
         }
         // A Turn the CLI never heard, put back where it was typed (#682). `initial` for the reason
         // the flush above has it: the news lands while the reader may be looking at another
@@ -130,6 +136,7 @@ struct SessionComposer: View {
                 send: submit,
                 stop: interrupt,
                 attach: footerAttach,
+                heldMode: draft.heldMode,
                 setMode: ask,
             )
         }
@@ -155,20 +162,6 @@ struct SessionComposer: View {
             readWorkspace()
         }
         .onChange(of: menus.listing(on: line), initial: true) { _, _ in menus.settle(on: line) }
-    }
-
-    /// The footer's `+`, and `nil` where the adapter takes nothing — which is what takes the
-    /// control off the row rather than greying it (design decision 9).
-    private var footerAttach: (([SessionAttachment]) -> Void)? {
-        guard composer.canAttach else { return nil }
-        return { incoming in take(incoming) }
-    }
-
-    /// What a drop, a paste and the `+` all end in — one act, so the three gestures cannot come to
-    /// mean three different things. The capability is answered inside the draft rather than at each
-    /// gesture, which is what lets a refused drop say why.
-    private func take(_ incoming: [SessionAttachment]) {
-        draft.attach(incoming, canAttach: composer.canAttach)
     }
 
     /// Sent now, or queued behind the Turn in flight — `ComposerDraft` owns which, so the field
