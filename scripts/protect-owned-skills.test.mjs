@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-// Test for the owned-skill guard, run via `bun run test:hooks`.
-// Reproduces the real failure it exists for: a field-test install of the bundle into a
-// consumer repo replaced that repo's tracked `.claude/skills/ship/SKILL.md` with a symlink
-// into the vendored payload, and `git status` reported it as a plain deletion.
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import {
@@ -22,17 +18,11 @@ import {
   restoreOwnedSkills,
   snapshotOwnedSkills,
 } from '../packages/argo-skills/bin/protect-owned-skills.mjs'
-
-let failures = 0
-function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
+// Test for the owned-skill guard, run via `bun run test:hooks`.
+// Reproduces the real failure it exists for: a field-test install of the bundle into a
+// consumer repo replaced that repo's tracked `.claude/skills/ship/SKILL.md` with a symlink
+// into the vendored payload, and `git status` reported it as a plain deletion.
+import { check, report } from './check-harness.mjs'
 
 const git = (root, ...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
 
@@ -109,8 +99,4 @@ check('the warning names every restored file', () => {
 rmSync(repo, { recursive: true, force: true })
 assert.equal(existsSync(repo), false)
 
-if (failures) {
-  console.error(`\n${failures} owned-skill guard test(s) failed`)
-  process.exit(1)
-}
-console.log('  owned-skill guard: all checks passed')
+report('owned-skill guard')

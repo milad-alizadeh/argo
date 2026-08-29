@@ -6,23 +6,13 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { check, report } from './check-harness.mjs'
 import { decide } from './worktree-guard.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const HOOK = path.join(HERE, 'worktree-guard.mjs')
 const ROOT = '/repo'
 const WT = '/repo/.claude/worktrees/argo-42'
-
-let failures = 0
-function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
 
 const agent = (extra) => ({ cwd: ROOT, projectDir: ROOT, isAgent: true, ...extra })
 
@@ -121,8 +111,4 @@ check('script stays silent for an allowed edit', () => {
   assert.equal(out.trim(), '')
 })
 
-if (failures > 0) {
-  console.error(`\nworktree-guard: ${failures} check(s) failed`)
-  process.exit(1)
-}
-console.log('\nworktree-guard: all checks passed')
+report('worktree-guard')

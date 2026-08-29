@@ -7,20 +7,10 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { mergeHooks, project } from '../packages/argo-skills/bin/hooks-sync.mjs'
+import { check, report } from './check-harness.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const descriptor = JSON.parse(readFileSync(path.join(HERE, '..', 'hooks.json'), 'utf8'))
-
-let failures = 0
-function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
 
 const guardCmd = (block) =>
   block.PreToolUse.find((g) => g.matcher === 'Edit|Write').hooks[0].command
@@ -165,8 +155,4 @@ check('every script hooks.json invokes is a managed marker', () => {
   }
 })
 
-if (failures > 0) {
-  console.error(`\nhooks-sync: ${failures} check(s) failed`)
-  process.exit(1)
-}
-console.log('\nhooks-sync: all checks passed')
+report('hooks-sync')

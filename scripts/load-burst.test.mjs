@@ -1,24 +1,14 @@
 #!/usr/bin/env node
+import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 // The one thing `load-burst.sh` promises: a worker stops on its OWN deadline, so one
 // orphaned by a killed parent still stops. Diagnosing #918 left twelve unbounded spinners
 // saturating a machine for eight hours because a watchdog killed the shell before its
 // cleanup ran, and a deadline lifted back into the parent would read as a tidy-up — so the
 // invariant is held here rather than in the header alone.
-import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-let failures = 0
-function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
+import { check, report } from './check-harness.mjs'
 
 const SCRIPT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'load-burst.sh')
 const sh = (script, args) => spawnSync('/bin/sh', [script, ...args], { encoding: 'utf8' })
@@ -81,8 +71,4 @@ for (const [name, args, said] of [
   })
 }
 
-if (failures) {
-  console.error(`  load-burst: ${failures} check(s) failed`)
-  process.exit(1)
-}
-console.log('  load-burst: all checks passed')
+report('load-burst')

@@ -9,22 +9,12 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { check, report } from './check-harness.mjs'
 import { decide, findWorkspace } from './placement-guard.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const HOOK = path.join(HERE, 'placement-guard.mjs')
 const WS = '/repo/apps/desktop'
-
-let failures = 0
-function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
 
 const MAP = {
   modules: [
@@ -165,8 +155,4 @@ check('script stays silent for a file inside a sub-domain', () =>
 
 rmSync(ROOT, { recursive: true, force: true })
 
-if (failures > 0) {
-  console.error(`\nplacement-guard: ${failures} check(s) failed`)
-  process.exit(1)
-}
-console.log('\nplacement-guard: all checks passed')
+report('placement-guard')

@@ -4,6 +4,7 @@
 // The script under test is the shipped file itself, symlinked in so that `dirname "$0"` lands
 // here — a copy could drift, and a fake would prove nothing. Everything it calls is a stub, so
 // which process the script talks to is readable without building or launching Argo.
+
 import { spawnSync } from 'node:child_process'
 import {
   chmodSync,
@@ -18,25 +19,13 @@ import {
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { report as reportChecks } from './check-harness.mjs'
 
-let failures = 0
-export function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
-
+// The scratch tree is this fixture's to clean, so the shared report is wrapped rather than
+// called directly — a suite that exits 1 must not leave the tree behind either.
 export function report(suite) {
   rmSync(scratch, { recursive: true, force: true })
-  if (failures) {
-    console.error(`\n${failures} ${suite} test(s) failed`)
-    process.exit(1)
-  }
-  console.log(`  ${suite}: all checks passed`)
+  reportChecks(suite)
 }
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')

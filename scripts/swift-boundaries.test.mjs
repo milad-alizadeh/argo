@@ -7,8 +7,8 @@
 // as "nothing to report". Every case below is a way the projection can fall behind that must
 // still be loud. Edge 6's own cases are in `swift-boundaries.cap.test.mjs`.
 import assert from 'node:assert/strict'
+import { check, report } from './check-harness.mjs'
 import {
-  check,
   ENGINE,
   HUB_MODE,
   HUB_SESSION,
@@ -16,7 +16,6 @@ import {
   PROJECTION,
   projected,
   projection,
-  report,
   run,
   tree,
   withFact,

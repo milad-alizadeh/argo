@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-// Tests for the three Swift shell entrypoints, run via `bun run test:hooks`.
-//
-// They all skip when the toolchain is absent, which is right on a Linux runner and on a
-// TypeScript-only contributor's machine — and catastrophic in the macOS CI job, where a
-// missing binary would report Success without checking a line. `ARGO_REQUIRE_SWIFT_TOOLS`
-// is what turns each skip into a failure; these tests are the proof it does.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import {
@@ -20,17 +14,13 @@ import {
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-let failures = 0
-function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
+// Tests for the three Swift shell entrypoints, run via `bun run test:hooks`.
+//
+// They all skip when the toolchain is absent, which is right on a Linux runner and on a
+// TypeScript-only contributor's machine — and catastrophic in the macOS CI job, where a
+// missing binary would report Success without checking a line. `ARGO_REQUIRE_SWIFT_TOOLS`
+// is what turns each skip into a failure; these tests are the proof it does.
+import { check, report } from './check-harness.mjs'
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -185,8 +175,4 @@ check('swift-format.sh --check lints instead, over the whole app when given no p
 
 rmSync(scratch, { recursive: true, force: true })
 
-if (failures) {
-  console.error(`\n${failures} Swift tooling test(s) failed`)
-  process.exit(1)
-}
-console.log('  swift tooling: all checks passed')
+report('swift tooling')
