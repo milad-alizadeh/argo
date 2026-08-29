@@ -5,10 +5,12 @@ import Testing
 /// The `AccentColor` asset against the role it is supposed to carry.
 ///
 /// This exists because the two cannot be made one thing: the asset is the only route to the
-/// placements of the brand hue that read no palette — the rooms picker's selected segment, which
-/// `NSSegmentedControl` fills with it under Liquid Glass, and the system's own focus rings. D30
-/// recorded that the asset and the palette must agree, and left it to whoever edited one to
-/// remember the other. They drifted anyway. This is the gate.
+/// placements of the brand hue that read no palette — the system's own focus rings, and every
+/// stock accented control. D30 recorded that the asset and the palette must agree, and left it to
+/// whoever edited one to remember the other. They drifted anyway. This is the gate.
+///
+/// The rooms picker is NOT one of them: `NSSegmentedControl` would fill its selected segment from
+/// this asset, and #944 bezels it to a neutral instead. `RoomSegmentsTests` holds that end.
 ///
 /// It reads the file out of the repository rather than the built bundle: an `ArgoUI` test builds
 /// the package alone and cannot see an asset catalogue that belongs to the app target.
@@ -17,8 +19,8 @@ struct AccentAssetTests {
     @Test
     func `the shipped asset carries the palette's brand hue at full strength`() throws {
         let shipped = try Self.shippedAccent()
-        // Full strength, not `selectionGround`: what the asset reaches is the LOUD rung — a
-        // selected segment, a focus ring. The roster's quiet ground is drawn from the palette.
+        // Full strength, not `selectionGround`: what the asset reaches is the LOUD rung — a focus
+        // ring, an accented control. The roster's quiet ground is drawn from the palette.
         let role = ArgoPalette.graphite.interaction.accent
         // Whole 8-bit steps: the asset is written in them, so anything finer is a rounding
         // argument rather than a difference anybody can see.

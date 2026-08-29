@@ -12,20 +12,43 @@ import SwiftUI
 /// - **A mark AND a word on one segment.** `.segmented` draws one or the other on macOS; AppKit's
 ///   control draws both, which is what puts each room's own glyph back beside its name.
 ///
-/// It is the platform's control, not a restyle of it: arrow keys, focus, VoiceOver and the
-/// untinted glass the running system draws all come with it. The selection is deliberately NOT
-/// accent-filled — `selectedSegmentBezelColor` is ignored under Liquid Glass, and the raised glass
-/// capsule is what Tahoe draws for a selected segment.
+/// It is the platform's control, not a restyle of it: arrow keys, focus, VoiceOver and the glass
+/// the running system draws all come with it. One thing about its APPEARANCE is set, and both
+/// halves of why are AppKit behaviour measured on macOS 26.5.1 (#944):
+///
+/// - **Left alone, the control fills the selected segment from the `AccentColor` asset** — which
+///   carries Ion Blue at full strength. It does not draw an untinted capsule, and it does not read
+///   the system's `controlAccentColor`.
+/// - **`selectedSegmentBezelColor` is honoured under Liquid Glass.** Set it and the fill takes that
+///   colour, at every `segmentStyle`.
+///
+/// So the segment takes `surface.selected`, the neutral the contract reserves for a control that is
+/// current, and the brand hue stays on the roster's selected row alone (D30 as amended by #944).
 struct RoomSegments: NSViewRepresentable {
     @Binding var selection: CockpitRoom
 
+    @Environment(\.argo) private var argo
+
     func makeNSView(context: Context) -> NSSegmentedControl {
+        let control = Self.makeControl(palette: argo.color)
+        control.target = context.coordinator
+        control.action = #selector(Coordinator.pick(_:))
+        return control
+    }
+
+    /// Which role the fill takes, in the one place both the build and the update reach for it.
+    @MainActor static func bezel(_ control: NSSegmentedControl, from palette: ArgoPalette) {
+        control.selectedSegmentBezelColor = palette.surface.selected.nsColor
+    }
+
+    /// The control without its target, so a test can hold one — `makeNSView` alone is unreachable
+    /// from a test, because nothing can build a `Context`.
+    @MainActor static func makeControl(palette: ArgoPalette) -> NSSegmentedControl {
         let control = NSSegmentedControl()
         control.segmentCount = CockpitRoom.allCases.count
         control.trackingMode = .selectOne
         control.segmentDistribution = .fillEqually
-        control.target = context.coordinator
-        control.action = #selector(Coordinator.pick(_:))
+        bezel(control, from: palette)
         // Without this the control reports its fitting width as its ideal and SwiftUI hands it
         // exactly that, which is the same hugging the stock picker does.
         control.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -52,6 +75,7 @@ struct RoomSegments: NSViewRepresentable {
 
     func updateNSView(_ control: NSSegmentedControl, context: Context) {
         context.coordinator.selection = $selection
+        Self.bezel(control, from: argo.color)
         control.selectedSegment = CockpitRoom.allCases.firstIndex(of: selection) ?? 0
     }
 

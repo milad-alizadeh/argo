@@ -35,8 +35,8 @@ public struct ArgoColor: Sendable, Hashable {
         CGColor(srgbRed: red, green: green, blue: blue, alpha: opacity)
     }
 
-    /// The same colour again for the one thing that takes neither: an `NSAttributedString`, which
-    /// is how text is drawn into a bitmap rather than composed as a `Text`.
+    /// The same colour again for AppKit, which takes neither — an `NSAttributedString`, or a
+    /// property on a control reached through `NSViewRepresentable`.
     var nsColor: NSColor {
         NSColor(srgbRed: red, green: green, blue: blue, alpha: opacity)
     }
