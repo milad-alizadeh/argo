@@ -5,13 +5,20 @@ import Testing
 /// What the backlog reads off the CHILD EDGE (#814). The tree is derived from `Ticket.children`
 /// rather than written down nested, so a provider that reparents a ticket moves the row without
 /// anybody editing a literal — and the two ways an edge can lie (a second parent, a cycle) resolve
-/// to a root rather than to a vanished row.
+/// by a rule of Argo's own rather than by the order the provider's array happened to come in.
 @Suite("The backlog nests")
 struct TicketsBacklogTreeTests {
     /// #607, by its number rather than by its place in the list.
     private static var parent: TicketsRoomProjection.Row? {
         TicketsRoomProjection.room(from: TicketsFixture.reading).backlog.first { $0.id == 607 }
     }
+
+    /// #1 and #2 both claim #3, in that order.
+    private static let contested = [
+        Ticket(number: 1, title: "First", status: "Todo", closure: .open, children: [3]),
+        Ticket(number: 2, title: "Second", status: "Todo", closure: .open, children: [3]),
+        Ticket(number: 3, title: "Shared", status: "Todo", closure: .open),
+    ]
 
     @Test
     func `a parent draws its open children under it`() {
@@ -67,28 +74,26 @@ struct TicketsBacklogTreeTests {
     }
 
     /// Two parents claiming one child would draw that child twice, and a reader counting rows would
-    /// count it twice. The first edge served wins and the second is dropped.
-    @Test
-    func `a child claimed by two parents is drawn once`() {
-        let items = [
-            Ticket(number: 1, title: "First", status: "Todo", closure: .open, children: [3]),
-            Ticket(number: 2, title: "Second", status: "Todo", closure: .open, children: [3]),
-            Ticket(number: 3, title: "Shared", status: "Todo", closure: .open),
-        ]
-        let room = TicketsRoomProjection.room(from: TicketsFixture.reading(of: items))
+    /// count it twice. The lower-numbered parent wins and the other claim is dropped — reversed,
+    /// the array names #2 as the first claimant and the tree is the same one (#919).
+    @Test(arguments: [false, true])
+    func `a child claimed by two parents is drawn once, under the lower number`(reversed: Bool) {
+        let served = reversed ? Self.contested.reversed() : Self.contested
+        let room = TicketsRoomProjection.room(from: TicketsFixture.reading(of: Array(served)))
 
         #expect(TicketsRoomProjection.drawn(room.backlog, shut: []).map(\.id) == [2, 1, 3])
     }
 
     /// A provider that serves a cycle must not cost the reader the rows inside it. The edge that
     /// closes the loop is refused, and every item is still drawn exactly once.
-    @Test
-    func `a cycle in the child edge leaves every row drawn`() {
+    @Test(arguments: [false, true])
+    func `a cycle in the child edge leaves every row drawn`(reversed: Bool) {
         let items = [
             Ticket(number: 1, title: "First", status: "Todo", closure: .open, children: [2]),
             Ticket(number: 2, title: "Second", status: "Todo", closure: .open, children: [1]),
         ]
-        let room = TicketsRoomProjection.room(from: TicketsFixture.reading(of: items))
+        let served = reversed ? items.reversed() : items
+        let room = TicketsRoomProjection.room(from: TicketsFixture.reading(of: Array(served)))
 
         #expect(TicketsRoomProjection.drawn(room.backlog, shut: []).map(\.id) == [1, 2])
     }
