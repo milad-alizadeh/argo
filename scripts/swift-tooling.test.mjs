@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+// Tests for the three Swift shell entrypoints, run via `bun run test:hooks`.
+//
+// They all skip when the toolchain is absent, which is right on a Linux runner and on a
+// TypeScript-only contributor's machine — and catastrophic in the macOS CI job, where a
+// missing binary would report Success without checking a line. `ARGO_REQUIRE_SWIFT_TOOLS`
+// is what turns each skip into a failure; these tests are the proof it does.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import {
@@ -14,12 +20,6 @@ import {
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-// Tests for the three Swift shell entrypoints, run via `bun run test:hooks`.
-//
-// They all skip when the toolchain is absent, which is right on a Linux runner and on a
-// TypeScript-only contributor's machine — and catastrophic in the macOS CI job, where a
-// missing binary would report Success without checking a line. `ARGO_REQUIRE_SWIFT_TOOLS`
-// is what turns each skip into a failure; these tests are the proof it does.
 import { check, report } from './check-harness.mjs'
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -126,14 +126,14 @@ function swiftWriting(report, code = 0) {
   chmodSync(path.join(reportBin, 'swift'), 0o755)
 }
 
-for (const [cause, report, said] of [
+for (const [cause, reportXml, said] of [
   ['a failure', suite('errors="0" tests="9" failures="2"'), /2 failure\(s\) across 9/],
   ['an error', suite('errors="3" tests="9" failures="0"'), /3 failure\(s\)/],
   ['no report at all', '', /wrote no test report/],
   ['no tests', suite('errors="0" tests="0" failures="0"'), /reported 0 tests/],
 ]) {
   check(`swift-test.sh fails on ${cause}, though swift test exits 0`, () => {
-    swiftWriting(report)
+    swiftWriting(reportXml)
     const result = run(TEST, REPORTING)
     assert.equal(result.status, 1, result.output)
     assert.match(result.output, said)

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 // The one thing `load-burst.sh` promises: a worker stops on its OWN deadline, so one
 // orphaned by a killed parent still stops. Diagnosing #918 left twelve unbounded spinners
 // saturating a machine for eight hours because a watchdog killed the shell before its
 // cleanup ran, and a deadline lifted back into the parent would read as a tidy-up — so the
 // invariant is held here rather than in the header alone.
+import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { check, report } from './check-harness.mjs'
 
 const SCRIPT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'load-burst.sh')

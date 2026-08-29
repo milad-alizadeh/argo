@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+// Test for the owned-skill guard, run via `bun run test:hooks`.
+// Reproduces the real failure it exists for: a field-test install of the bundle into a
+// consumer repo replaced that repo's tracked `.claude/skills/ship/SKILL.md` with a symlink
+// into the vendored payload, and `git status` reported it as a plain deletion.
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import {
@@ -18,10 +22,6 @@ import {
   restoreOwnedSkills,
   snapshotOwnedSkills,
 } from '../packages/argo-skills/bin/protect-owned-skills.mjs'
-// Test for the owned-skill guard, run via `bun run test:hooks`.
-// Reproduces the real failure it exists for: a field-test install of the bundle into a
-// consumer repo replaced that repo's tracked `.claude/skills/ship/SKILL.md` with a symlink
-// into the vendored payload, and `git status` reported it as a plain deletion.
 import { check, report } from './check-harness.mjs'
 
 const git = (root, ...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
