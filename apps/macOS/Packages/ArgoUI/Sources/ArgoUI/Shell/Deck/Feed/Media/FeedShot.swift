@@ -10,8 +10,9 @@ struct FeedShot: Equatable, Sendable {
     /// The whole path, which is what the lightbox says.
     let address: String
     let media: MediaEvidence
-    /// Answering this costs a decode — it is partly the question of whether the bytes ARE a
-    /// picture — so it is settled once, here, rather than per layout pass.
+    /// Read off the file's signature, which is the only reading cheap enough: the projection
+    /// builds every shot again on every body pass, so a decode here is one per picture per pass
+    /// (ADR-0028 Rule 3).
     let provenance: MediaProvenance
 
     init(name: String, address: String, media: MediaEvidence) {

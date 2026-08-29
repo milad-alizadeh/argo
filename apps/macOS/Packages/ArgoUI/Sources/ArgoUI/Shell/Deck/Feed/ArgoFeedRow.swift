@@ -33,6 +33,10 @@ public enum ArgoFeedRow {
     public static let shotWidth: CGFloat = 168
     /// How tall its picture is. Fixed, so shots at different aspect ratios caption on ONE baseline.
     public static let shotHeight: CGFloat = 112
+    /// The box one shot's picture is drawn in, and so the size its bytes are decoded to — a
+    /// gallery draws hundreds of these and a lightbox one, which is the whole difference in what a
+    /// long session costs to hold (#962).
+    static let shotPlate = CGSize(width: shotWidth, height: shotHeight)
     /// Between two shots in a gallery. Tighter than the step between rows.
     public static let shotGap: CGFloat = ArgoSpacing.base
     /// Above and below a gallery run, on top of the feed's own step.

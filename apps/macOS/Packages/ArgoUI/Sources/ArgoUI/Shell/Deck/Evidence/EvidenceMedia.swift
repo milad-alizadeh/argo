@@ -11,6 +11,16 @@ struct EvidenceMedia: View {
 
     @State private var showing = MediaShowing.undecoded
 
+    /// The box the panel draws a picture in: as wide as the panel OPENS in the window Argo opens
+    /// at, and unbounded in height — the picture fits the column's width and the panel scrolls.
+    /// Dragged wider than that, a picture is drawn soft rather than decoded again: a decode per
+    /// frame of a seam drag is what this refuses to pay.
+    static let plate = CGSize(
+        width: (ArgoLayout.windowIdealWidth - ArgoLayout.sidebarIdealWidth)
+            * ArgoLayout.evidencePanelShare,
+        height: 0,
+    )
+
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             picture
@@ -20,7 +30,7 @@ struct EvidenceMedia: View {
         // The same breath the feed's gallery takes, over the panel's own text rhythm.
         .padding(.vertical, ArgoFeedRow.shotBreath)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .showing(media, in: $showing)
+        .showing(media, drawnIn: .plate(Self.plate), in: $showing)
     }
 
     /// A row with no bytes says so, never with a broken-image glyph: nothing failed to load,
