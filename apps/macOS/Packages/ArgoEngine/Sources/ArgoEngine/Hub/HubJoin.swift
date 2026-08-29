@@ -5,7 +5,10 @@ import Foundation
 /// in it, so dropping a whole Project's worth is `HubJoin()`.
 struct HubJoin {
     /// Rebuilt on mutation rather than on read: only the write side knows when it changed.
-    private(set) var sessions: [HubSession] = []
+    private var roster = HubRoster()
+    var sessions: [HubSession] {
+        roster.sessions
+    }
 
     /// In the order they joined the set, which is the order the observation projection renders and
     /// the one record ownership is resolved by.
@@ -13,6 +16,9 @@ struct HubJoin {
     /// Record uuid → the id of the transcript that owns it. Keyed by id and not by position:
     /// dropping one transcript renumbers every position after it.
     private var recordOwners: [String: String] = [:]
+    /// Transcript id to its position in `transcripts`. Held rather than scanned for: a Subagent's
+    /// tail asks this on every batch it delivers.
+    private var positions: [String: Int] = [:]
 
     var isEmpty: Bool {
         transcripts.isEmpty
@@ -22,12 +28,19 @@ struct HubJoin {
     /// claim, absent from the roster until its file has been read. Re-adding one already here
     /// changes nothing.
     mutating func add(_ observation: TranscriptObservation) {
-        guard !transcripts.contains(where: { $0.id == observation.id }) else { return }
+        guard positions[observation.id] == nil else { return }
+        positions[observation.id] = transcripts.count
         transcripts.append(HubTranscript(observation: observation))
+        // The set has moved and nothing has refolded the roster — this transcript can be a chain's
+        // new link or the second path onto one uuid, and which of those it is nobody knows until
+        // its file has been read.
+        roster.holdWrites()
     }
 
     mutating func remove(transcriptID: String) {
         transcripts.removeAll { $0.id == transcriptID }
+        // Every position after the one dropped has moved, so the table is taken again whole.
+        positions = Dictionary(transcripts.enumerated().map { ($1.id, $0) }) { first, _ in first }
         recordOwners = recordOwners.filter { $0.value != transcriptID }
         rebuild()
     }
@@ -64,7 +77,11 @@ struct HubJoin {
     ) {
         guard !read.isEmpty, let index = position(of: transcriptID) else { return }
         transcripts[index].session.apply(read, ofSubagent: agentID)
-        rebuild()
+        // Written THROUGH, to the transcript above and the published row here: the roster is a
+        // fold over the transcripts rather than a second copy of them, so a batch that reached
+        // only one of the two would be lost at the next rebuild or published twice by it. The
+        // transcript is the copy that keeps it; the roster takes it only where it can place it.
+        roster.apply(read, ofSubagent: agentID, from: transcriptID)
     }
 
     /// Settle a transcript whose tail ended without ever delivering a backfill — a file that could
@@ -85,14 +102,20 @@ struct HubJoin {
     }
 
     private func position(of transcriptID: String) -> Int? {
-        transcripts.firstIndex { $0.id == transcriptID }
+        positions[transcriptID]
     }
 
     /// Published only once every transcript in the set has settled. While a sweep admits a new
-    /// transcript the last published roster stands: briefly missing a row, never rewriting itself
-    /// under the reader.
+    /// transcript the roster keeps the rows it has, in the order it has them: briefly missing a
+    /// row, never rewriting itself under the reader. Nothing is written into it in place while it
+    /// is held back either — see `HubRoster.holdWrites`.
     private mutating func rebuild() {
-        guard transcripts.allSatisfy(\.isSettled) else { return }
-        sessions = HubSessionChain.sessions(from: transcripts, owners: recordOwners)
+        guard transcripts.allSatisfy(\.isSettled) else {
+            // Held back, so the facts have moved and the fold has not: the same staleness `add`
+            // opens, reached by the other path into it.
+            roster.holdWrites()
+            return
+        }
+        roster = HubSessionChain.roster(from: transcripts, owners: recordOwners)
     }
 }

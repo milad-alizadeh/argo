@@ -24,25 +24,38 @@ struct HubTranscript {
 }
 
 enum HubSessionChain {
-    static func sessions(
+    /// One published Session and the chain uuids folded into it, in the order they were folded.
+    struct Chained {
+        let session: HubSession
+        let chainIDs: [String]
+    }
+
+    static func roster(
         from transcripts: [HubTranscript],
         owners: [String: String],
     )
-        -> [HubSession] {
+        -> HubRoster {
         let graph = HubChainGraph(transcripts: transcripts, owners: owners)
         var claimed: Set<String> = []
-        var sessions: [HubSession] = []
+        var chained: [Chained] = []
         // Walked in the graph's own key, which is the chain uuid rather than the path: two paths
         // carrying one uuid are one Session, and the second of them is claimed by the first.
         for id in graph.roots + transcripts.map(\.sessionID) where !claimed.contains(id) {
             guard var session = graph.session(id) else { continue }
             claimed.insert(id)
+            var chainIDs = [id]
             for continuationID in graph.claimContinuations(of: id, into: &claimed) {
                 guard let continuation = graph.session(continuationID) else { continue }
                 session.mergeContinuation(continuation)
+                chainIDs.append(continuationID)
             }
-            sessions.append(session)
+            chained.append(Chained(session: session, chainIDs: chainIDs))
         }
+        return HubRoster(chained: published(chained), transcripts: transcripts)
+    }
+
+    /// The Sessions of those chains that the roster actually draws, in the order it draws them.
+    private static func published(_ chained: [Chained]) -> [Chained] {
         // A QUEUED prompt nothing has answered is not a Session. The CLI opens a transcript per
         // queued prompt, so a Session queued several leaves several files, each holding one copy of
         // the same words and no agent output — which the roster drew as that Session once per file.
@@ -53,17 +66,21 @@ enum HubSessionChain {
         //
         // Dropped at publication rather than at discovery: the file is still tailed, so if an agent
         // does pick the prompt up, its row appears without another sweep having to find it.
-        return ordered(sessions.filter { !$0.isQueued || $0.hasAgentActivity })
+        chained
+            .filter { !$0.session.isQueued || $0.session.hasAgentActivity }
+            .sorted { isAhead($0.session, $1.session) }
     }
 
     /// Newest activity first, with the id breaking a tie. A Session that can say nothing about when
     /// it ran sorts behind every one that can, never in front on a guessed zero.
     static func ordered(_ sessions: [HubSession]) -> [HubSession] {
-        sessions.sorted { first, second in
-            guard first.lastSeenAtMs != second.lastSeenAtMs else { return first.id < second.id }
-            guard let firstKey = first.lastSeenAtMs else { return false }
-            guard let secondKey = second.lastSeenAtMs else { return true }
-            return firstKey > secondKey
-        }
+        sessions.sorted(by: isAhead)
+    }
+
+    private static func isAhead(_ first: HubSession, _ second: HubSession) -> Bool {
+        guard first.lastSeenAtMs != second.lastSeenAtMs else { return first.id < second.id }
+        guard let firstKey = first.lastSeenAtMs else { return false }
+        guard let secondKey = second.lastSeenAtMs else { return true }
+        return firstKey > secondKey
     }
 }
