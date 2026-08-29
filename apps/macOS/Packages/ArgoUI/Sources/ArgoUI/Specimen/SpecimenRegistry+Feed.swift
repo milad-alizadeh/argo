@@ -47,6 +47,11 @@ extension SpecimenRegistry {
         SpecimenEntry("feedCommands") { SpecimenScene.sessions(FeedProjection.previewCommandRows) },
         SpecimenEntry("feedCommandFold") { SpecimenScene.sessions(FeedProjection.previewFoldRows) },
         SpecimenEntry("feedProse") { SpecimenScene.sessions(FeedProjection.previewProseRows) },
+        // The two states of one long prompt (#946). Rendered at the feed's own measure: the fold is
+        // a question about the column the bubble landed in, so a still taken at any other width
+        // settles nothing about it.
+        SpecimenEntry("feedPromptFolded") { SpecimenScene.longPrompt(unfolded: false) },
+        SpecimenEntry("feedPromptUnfolded") { SpecimenScene.longPrompt(unfolded: true) },
         SpecimenEntry("feedMarkdown") { MarkdownSpecimen() },
         // A table whose cells are mostly backticked. Render narrow as well as wide
         // (`ARGO_WINDOW_SIZE`): what it settles is that a row is placed at the height the mono

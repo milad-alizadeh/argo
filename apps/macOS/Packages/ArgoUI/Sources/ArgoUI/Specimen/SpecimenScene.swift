@@ -35,6 +35,18 @@ enum SpecimenScene {
         return preview
     }
 
+    /// A prompt long enough to fold, in one of its two states — the render #946 is judged from.
+    /// `FeedPreview` and not the deck shell: the fold is the reading's own state, and nothing above
+    /// the reading seeds one.
+    static func longPrompt(unfolded: Bool) -> some View {
+        let rows = FeedProjection.previewLongPromptRows
+        var preview = FeedPreview(rows: rows)
+        preview
+            .opensUnfolded = unfolded ?
+            Set([FeedProjection.previewLongPromptID].compactMap(\.self)) : []
+        return preview
+    }
+
     /// The New Session verb mid-spawn. Alone rather than on the bar, because the bar is
     /// `toolbarScope`'s render and what this settles is a swap inside one container: the wait must
     /// not resize the circle or move anything beside it.

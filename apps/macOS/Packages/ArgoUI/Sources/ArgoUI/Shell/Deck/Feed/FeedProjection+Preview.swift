@@ -175,6 +175,29 @@ extension FeedProjection {
         .prompt(text: "/clear", shots: []),
     ])
 
+    /// A prompt long enough to be folded, with the agent's answer under it. Its own fixture because
+    /// every prompt in the shipping preview stands whole, so none of them could reach the state
+    /// #946 was filed about — a bug nothing could render is a bug nothing can hold.
+    static let previewLongPromptRows = numbered([
+        .prompt(
+            text: "Read the whole anatomy study before you start, then take the feed's prompt "
+                + "bubble apart and tell me what decides its height. I want the two measurements "
+                + "named, where each of them is taken, and which of them the table caches — and if "
+                + "the answer is that one of them arrives a frame after the other, say so plainly "
+                + "rather than describing the code as though it agreed with its own comments. "
+                + "Then do the same for the control under the words: say what decides whether it "
+                + "is drawn at all, at which measure that is decided, and what the reader sees "
+                + "when the answer changes between the pass that measures the row and the pass "
+                + "that draws it. I would rather have the two numbers than a paragraph about "
+                + "them, so give me the numbers first and the account of them afterwards.",
+            shots: [],
+        ),
+        .message("The bubble's ceiling and its fold are both decided in the layout pass now."),
+    ])
+
+    /// That prompt's row, which a still opens unfolded.
+    static let previewLongPromptID = previewLongPromptRows.first { $0.kind.isPrompt }?.id
+
     /// Contents taken off the shipping feed, given their places back — only the gaps are new.
     private static func numbered(_ contents: [FeedRow.Content]) -> [FeedRow] {
         contents.enumerated().map { position, content in

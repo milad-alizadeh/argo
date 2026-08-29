@@ -110,9 +110,6 @@ public enum ArgoFeedRow {
     public static let workingThreadStillGlow: Double = 0.4
     /// How much of a long prompt stands before it is folded.
     public static let collapsedPromptLines = 6
-    /// How much taller than its folded self a prompt must measure before anything is claimed to be
-    /// hidden — layout answers in fractions of a point, so rounding noise must not offer a fold.
-    public static let foldTolerance: CGFloat = 1
 
     /// The extra leading that puts the body role on `lineHeight`. Floored at zero: a line height
     /// under the font's own is not something leading can express.

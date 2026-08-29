@@ -29,6 +29,10 @@ struct FeedView: View {
     /// `held` before this view exists.
     let table: FeedTableHandle
 
+    /// Which prompts the reading OPENS unfolded. A parameter for the reason `held` is one: a still
+    /// cannot press a control, and the unfolded state is otherwise unreachable.
+    var opensUnfolded: Set<FeedRow.ID> = []
+
     /// Which prompts the reader has unfolded. Held here so it survives the row being rebuilt when
     /// the projection hands the feed a newer copy of it.
     @State private var unfolded: Set<FeedRow.ID> = []
@@ -67,6 +71,12 @@ struct FeedView: View {
             waitStarted = wait == nil ? nil : Date()
         }
         .environment(\.argoWaitStarted, waitStarted)
+        // Seeded rather than given as the state's initial value: an explicit initialiser here would
+        // be one past the parameter cap, and the reader may refold what a still opened.
+        .task {
+            guard !opensUnfolded.isEmpty else { return }
+            unfolded = opensUnfolded
+        }
         // Cancellation IS the reset: a second send while the first wash stands re-keys
         // the task, and the fresh one times the fresh row.
         .task(id: washed) { await washExpired() }
