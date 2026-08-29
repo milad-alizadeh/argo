@@ -7,20 +7,18 @@ extension SessionOwnership {
     /// Record which claim owns an observed Session, now that its transcript exists.
     ///
     /// Returns the claim this Session JOINED, so the caller can retire whatever it published under
-    /// that claim's own id and re-point what it filed against the last one. `nil` otherwise — an
-    /// unowned Session, or a re-observation of one already bound.
+    /// that claim's own id. `nil` otherwise — an unowned Session, or a re-observation of one
+    /// already bound. It answers a second time for one claim where the file MOVED, and that answer
+    /// is the same Session under a new key rather than a second Session.
     ///
     /// `uuid` is the transcript's own id, and it must EQUAL what the claim named. Nothing weaker is
     /// enough: a folder and a start time also fit an agent Argo never started (#742).
-    ///
-    /// It answers TWICE for one claim where the file moved, because the second answer is the same
-    /// Session under a new key rather than a second Session.
     @discardableResult
     func bind(sessionID: String, uuid: String?) -> ClaimID? {
         guard boundSessions[sessionID] == nil, let uuid,
-              let id = claimNaming(uuid: uuid) ?? claimWhoseTranscriptMoved(to: uuid)
+              let id = claimNaming(uuid: uuid) ?? liveClaimWhoseTranscriptMoved(to: uuid)
         else { return nil }
-        forgetFormerPath(of: id)
+        closeFormerPath(of: id)
         claims[id]?.sessionID = sessionID
         boundSessions[sessionID] = id
         // The first moment the durable record CAN be written: until now Argo owned an agent, not a
@@ -29,26 +27,26 @@ extension SessionOwnership {
         return id
     }
 
-    /// The live claim whose named transcript is already bound under a DIFFERENT path: the CLI MOVES
-    /// the file into the worktree's own record directory when the Session enters one, and the
-    /// roster keys a Session by that path (#770, #942).
+    /// The claim whose named transcript is already bound under a DIFFERENT path: the CLI moves the
+    /// file into the worktree's own record directory when a Session enters one, and a Session is
+    /// keyed by that path (#770, #942).
     ///
-    /// One uuid under two paths is that move and nothing else. A resume writes a new uuid, and a
-    /// transcript no claim NAMED answers this no more than it answers `claimNaming` (#742) — so
-    /// following the file cannot widen ownership to an agent Argo did not start.
-    private func claimWhoseTranscriptMoved(to uuid: String) -> ClaimID? {
+    /// LIVE only, where `claimNaming` takes a claim whether or not its PTY has exited: re-keying a
+    /// released claim would open a ledger window for a process that is already gone.
+    private func liveClaimWhoseTranscriptMoved(to uuid: String) -> ClaimID? {
         issuedOrder.first { id in
             guard let claim = claims[id], claim.toMs == nil else { return false }
             return claim.namedUUID == uuid && claim.sessionID != nil
         }
     }
 
-    /// Let go of the path this claim was reachable under before the move, so one claim keys one
-    /// Session. Its ledger window is CLOSED rather than left open: an open window says Argo is
-    /// steering that Session now, and nothing steers a path that can never be written again.
-    private func forgetFormerPath(of id: ClaimID) {
+    /// Close the ledger window on the path this claim was reachable under before the move: Argo
+    /// holds no Session under a path that can never be written to again.
+    ///
+    /// The KEY stays, and that is what stops a re-observation of the abandoned path from walking
+    /// the claim back off the file it is steering and closing that file's window instead.
+    private func closeFormerPath(of id: ClaimID) {
         guard let former = claims[id]?.sessionID else { return }
-        boundSessions.removeValue(forKey: former)
         recordRelease(of: former)
     }
 

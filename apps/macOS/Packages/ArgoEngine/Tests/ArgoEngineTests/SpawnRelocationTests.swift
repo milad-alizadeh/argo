@@ -15,17 +15,30 @@ struct SpawnRelocationTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
-        await hubObserveToEnd(fixture.hub, Self.record(of: fixture, in: "-proj", atMs: 1000))
+        await hubObserveToEnd(fixture.hub, Self.record(of: fixture, at: Self.started, atMs: 1000))
 
-        await hubObserveToEnd(
-            fixture.hub,
-            Self.record(of: fixture, in: "-proj-worktree", atMs: 2000),
-        )
+        await hubObserveToEnd(fixture.hub, Self.record(of: fixture, at: Self.moved, atMs: 2000))
 
-        let moved = Self.url(in: "-proj-worktree").path
-        #expect(fixture.hub.sessions.map(\.id) == [moved])
+        #expect(fixture.hub.sessions.map(\.id) == [Self.moved.path])
         #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
-        #expect(fixture.hub.ownership.ownerOf(sessionID: moved) == claim)
+        #expect(fixture.hub.ownership.ownerOf(sessionID: Self.moved.path) == claim)
+    }
+
+    /// The path the file left cannot take the claim back. It is gone from disk, so this is the
+    /// stale batch rather than the ordinary case — and were it to re-bind, the ledger window on the
+    /// file Argo is steering RIGHT NOW would be the one closed.
+    @Test
+    func `the abandoned path does not take the claim back`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        await hubObserveToEnd(fixture.hub, Self.record(of: fixture, at: Self.started, atMs: 1000))
+        await hubObserveToEnd(fixture.hub, Self.record(of: fixture, at: Self.moved, atMs: 2000))
+
+        fixture.hub.ownership.bind(sessionID: Self.started.path, uuid: spawnedChainID)
+
+        #expect(fixture.hub.ownership.rowID(ofClaim: claim.value) == Self.moved.path)
+        #expect(fixture.hub.ownership.ownerOf(sessionID: Self.moved.path) == claim)
     }
 
     /// The pin on the other side: a move is only ever a move of a transcript Argo NAMED. Two paths
@@ -36,17 +49,22 @@ struct SpawnRelocationTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         _ = try await fixture.hub.spawnSession()
+        let stranger = Self.url(in: "-proj", uuid: Self.strangerUUID)
+        let strangerMoved = Self.url(in: "-proj-worktree", uuid: Self.strangerUUID)
 
-        await hubObserveToEnd(fixture.hub, Self.stranger(of: fixture, in: "-proj", atMs: 1000))
-        await hubObserveToEnd(
-            fixture.hub,
-            Self.stranger(of: fixture, in: "-proj-worktree", atMs: 2000),
-        )
+        await hubObserveToEnd(fixture.hub, Self.record(of: fixture, at: stranger, atMs: 1000))
+        await hubObserveToEnd(fixture.hub, Self.record(of: fixture, at: strangerMoved, atMs: 2000))
 
-        let moved = Self.url(in: "-proj-worktree", uuid: "somebody-elses-agent").path
-        #expect(fixture.hub.session(id: moved)?.provenance == .external)
-        #expect(fixture.hub.ownership.ownerOf(sessionID: moved) == nil)
+        #expect(fixture.hub.session(id: strangerMoved.path)?.provenance == .external)
+        #expect(fixture.hub.ownership.ownerOf(sessionID: strangerMoved.path) == nil)
     }
+
+    /// An agent nobody here started, running in the same folders Argo's own does (#742).
+    private static let strangerUUID = "somebody-elses-agent"
+    /// The transcript the spawn named, where the CLI first wrote it.
+    private static let started = url(in: "-proj")
+    /// The same file after the Session entered a worktree.
+    private static let moved = url(in: "-proj-worktree")
 
     /// A uuid-named file inside a per-Project record directory, which is the shape that makes the
     /// PATH and the chain uuid two different values.
@@ -54,30 +72,17 @@ struct SpawnRelocationTests {
         recordURL(project, uuid)
     }
 
-    /// The record the spawned CLI wrote, under one of the two directories it lives in over its
-    /// life. `atMs` is what decides which half the merged row reads — the live one is the later.
+    /// One transcript as the tail hands it over. `atMs` is what decides which half a merged row
+    /// reads — the live one is the later.
     private static func record(
         of fixture: SpawnFixture,
-        in project: String,
+        at url: URL,
         atMs: Int,
     )
         -> TranscriptObservation {
-        hubTestObservation(at: url(in: project), events: [
+        hubTestObservation(at: url, events: [
             .cwd(fixture.projectURL.path),
             .prompt(text: "First prompt", images: [], atMs: atMs),
-            .turnEnded(.endTurn),
-        ])
-    }
-
-    private static func stranger(
-        of fixture: SpawnFixture,
-        in project: String,
-        atMs: Int,
-    )
-        -> TranscriptObservation {
-        hubTestObservation(at: url(in: project, uuid: "somebody-elses-agent"), events: [
-            .cwd(fixture.projectURL.path),
-            .prompt(text: "Not ours", images: [], atMs: atMs),
             .turnEnded(.endTurn),
         ])
     }

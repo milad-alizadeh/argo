@@ -104,11 +104,10 @@ struct SessionOwnershipTests {
     /// claim's rather than the first's (#731). The first keeps the Session it already has.
     @Test
     func `a bound claim adopts no second claim's Session`() {
-        let (ownership, clock) = registry()
+        let (ownership, _) = registry()
         let first = ownership.claim(naming: uuid)
         let second = ownership.claim(naming: uuid)
         ownership.bind(sessionID: sessionID, uuid: uuid)
-        clock.nowMs = 3000
 
         #expect(ownership.bind(sessionID: movedSessionID, uuid: uuid) == second)
         #expect(ownership.ownerOf(sessionID: sessionID) == first)
@@ -121,16 +120,15 @@ struct SessionOwnershipTests {
     /// Session Argo is steering right now as one it never spawned.
     @Test
     func `a claim follows the transcript it named when the CLI moves it`() {
-        let (ownership, clock) = registry()
+        let (ownership, _) = registry()
         let claim = ownership.claim(naming: uuid)
         ownership.bind(sessionID: sessionID, uuid: uuid)
-        clock.nowMs = 3000
 
         #expect(ownership.bind(sessionID: movedSessionID, uuid: uuid) == claim)
         #expect(ownership.provenance(sessionID: movedSessionID) == .managed)
         #expect(ownership.ownerOf(sessionID: movedSessionID) == claim)
-        // One claim keys one Session: the path it left steers nothing, having been written for the
-        // last time the moment it moved.
-        #expect(ownership.ownerOf(sessionID: sessionID) == nil)
+        // The claim is reachable at the file it is steering, which is the id every channel keyed
+        // by the claim is looked up under.
+        #expect(ownership.rowID(ofClaim: claim.value) == movedSessionID)
     }
 }
