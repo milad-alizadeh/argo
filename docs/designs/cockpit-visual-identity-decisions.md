@@ -751,6 +751,64 @@ its approved study are authoritative for the replacement look and feel.
   ![The picker with keyboard focus, on the harness's own ground](renders/944-picker-focused.png)
 
   **Still not reopened, a third time:** the leading Ion Blue rail. Selection is the ground alone.
+- **Amended by [#922](https://github.com/milad-alizadeh/argo/issues/922) — 2026-08-29: the wash
+  never replaced the capsule, and `interaction.selectionGround` is now OPAQUE.** #875 recorded that
+  a `listRowBackground` "REPLACES the style's capsule rather than painting over it... the measured
+  render carries no grey capsule anywhere in the band". Measured again on the `roster` specimen,
+  active: it does not. The capsule is still drawn, opaque and near `#464646`, and the 0.10 wash
+  composites ONTO it — the selected band resolved to `#484E58`, a near-grey with a chromatic spread
+  of 0.06. That is the "two stacked highlights" the 2026-08-07 amendment ruled out, arriving by
+  accident and unnoticed because both layers are quiet.
+
+  **It is the capsule, not the accent, that made the ink illegible.** The contract measured
+  `text.tertiary` on `selectionGround` over `surface.base` and got 4.19:1; the render measured it
+  on `#484E58` and got 2.49:1. `text.secondary` was 3.75:1 there, which
+  `SelectionGroundTests` believed it had pinned at 4.5:1. The relative claim #875 wrote — every
+  voice reads at least as well as on the neutral wash — passed throughout, because it was asserted
+  against a ground the app never drew.
+
+  Two facts this document asserted are corrected here rather than left standing: the capsule is
+  not replaced, and `text.tertiary` is **not** a sub-AA voice on `surface.base` — #906 wrote that
+  it "is a sub-AA voice on `surface.base` already — the contract exempts it there". It measured
+  4.86:1 and `VisualContractTests` has always asserted 4.5:1 on it.
+
+  - **The floor is stated, and it is stated where the ramp is defined.**
+    `ArgoPalette.TextRoles.contrastFloor` — 4.5:1, WCAG AA for body text — and every voice a row is
+    set in clears it on both grounds the contract can name: `surface.base` and
+    `interaction.selectionGround`. An unselected sidebar row's ground is `.listStyle(.sidebar)`'s
+    own material, which no role names and no test can reach; `surface.base` stands in for it and is
+    LIGHTER than the rail renders, so it bounds that reading from the pessimistic side — 5.72:1
+    asserted against 5.97:1 measured. #922 exists because the ramp was chosen against one ground and
+    read on another. `SelectionGroundTests` pins both readings of all three voices, absolutely;
+    that REPLACES #875's relative claim, which cannot fail while the ground it names is not the
+    ground that is drawn.
+  - **`interaction.selectionGround` is opaque by contract**, and that is the whole fix. An opaque
+    ground covers the capsule, so what the contract asserts is what the row draws. It is
+    `interaction.accent` at 0.18 over `surface.sunken`, resolved to `#203146` and re-derived by a
+    test rather than left as a hex nobody can reproduce.
+  - **The weight went UP, from 0.10 to 0.18, and the third option #922 offered — darken or
+    desaturate the ground — is therefore not what was spent.** Covering the capsule already takes
+    the ground's luminance down to near the rail's own; the legibility that buys is spent on the
+    hue rather than banked. Measured on the render, the band went from a chromatic spread of 0.06
+    to 0.13, and from an inset capsule to the full-bleed wash #875 said it already was. Selection
+    reads *more* like a selection than before, which is the direction #906 asked for.
+  - **`text.tertiary` lifts once, everywhere: `#868D94` → `#929AA1`.** #922's first option — lift
+    it on a selected row only — was rejected because the ramp would become ground-dependent and the
+    3.61:1 unselected reading would stand; a rung of this ramp is a loudness, and a loudness that
+    changes with its ground is not one. Nine points of grey is the whole change, and it is the
+    cheapest half of the two.
+  - **The readings, before and after, off the render and not off the palette.** On a selected row:
+    `text.tertiary` 2.49:1 → 4.61:1, `text.secondary` 3.75:1 → 5.87:1, `text.primary` 7.60:1 →
+    11.92:1. On an unselected row: `text.tertiary` 5.07:1 → 5.97:1. The 3.61:1 #906 recorded for an
+    unselected row was read off `blockedTicketsView`, whose sidebar composites over the harness's
+    own far lighter ground — the artefact #944 already recorded for `selectedRow`. Neither is a
+    ground for an absolute reading; `roster` and `ticketsRoom` are.
+
+  **Judged on this** — the roster, ACTIVE, before on the left and after on the right.
+
+  ![The selected row before and after #922](renders/922-selection-contrast.png)
+
+  **Still not reopened, a fourth time:** the leading Ion Blue rail. Selection is the ground alone.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.

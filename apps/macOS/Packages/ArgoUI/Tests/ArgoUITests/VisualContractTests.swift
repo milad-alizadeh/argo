@@ -9,6 +9,7 @@ import Testing
 @Suite("Visual contract")
 struct VisualContractTests {
     static let palettes = ArgoPalette.all
+    static let floor = ArgoPalette.TextRoles.contrastFloor
     let palette = ArgoPalette.graphite
 
     // MARK: - The neutral ramp
@@ -64,7 +65,7 @@ struct VisualContractTests {
         // Inches apart on one swiped roster row, and two different claims — see `DiffRoles`.
         #expect(destructive.distance(to: appearance.palette.state.failure) > 0.25)
         // The mark on it is the row's own brightest ink, not the near-black Ion Blue takes.
-        #expect(appearance.palette.text.primary.contrastRatio(on: destructive) >= 4.5)
+        #expect(appearance.palette.text.primary.contrastRatio(on: destructive) >= Self.floor)
     }
 
     @Test(arguments: palettes)
@@ -120,8 +121,8 @@ struct VisualContractTests {
     ) {
         let base = appearance.palette.surface.base
         #expect(appearance.palette.text.primary.contrastRatio(on: base) >= 7)
-        #expect(appearance.palette.text.secondary.contrastRatio(on: base) >= 4.5)
-        #expect(appearance.palette.text.tertiary.contrastRatio(on: base) >= 4.5)
+        #expect(appearance.palette.text.secondary.contrastRatio(on: base) >= Self.floor)
+        #expect(appearance.palette.text.tertiary.contrastRatio(on: base) >= Self.floor)
     }
 
     @Test(arguments: palettes)
@@ -131,7 +132,7 @@ struct VisualContractTests {
         let base = appearance.palette.surface.base
         let inks = (appearance.palette.state.all + appearance.palette.diff.all).map(\.color)
         for ink in inks + [appearance.palette.interaction.accent] {
-            #expect(ink.contrastRatio(on: base) >= 4.5)
+            #expect(ink.contrastRatio(on: base) >= Self.floor)
         }
     }
 
@@ -189,7 +190,7 @@ struct VisualContractTests {
         for voice in [text.primary, text.secondary, text.tertiary] {
             for ground in [surface.base, surface.raised] {
                 let chip = surface.marked.composited(over: ground)
-                #expect(text.marked(on: voice).contrastRatio(on: chip) >= 4.5)
+                #expect(text.marked(on: voice).contrastRatio(on: chip) >= Self.floor)
             }
         }
     }
@@ -214,7 +215,7 @@ struct VisualContractTests {
     ) {
         #expect(
             appearance.palette.text.onAccent
-                .contrastRatio(on: appearance.palette.interaction.accent) >= 4.5,
+                .contrastRatio(on: appearance.palette.interaction.accent) >= Self.floor,
         )
     }
 }

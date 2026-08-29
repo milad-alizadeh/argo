@@ -205,29 +205,33 @@ placements, and only these:
 
 | Placement | Drawn by | Weight |
 |---|---|---|
-| A selected sidebar row — the roster's, and the Work room's view list | `interaction.selectionGround`, as a `listRowBackground`, via `.argoSelectedRowGround(isSelected:)` | a wash — `accent` at 0.10 |
+| A selected sidebar row — the roster's, and the Work room's view list | `interaction.selectionGround`, as a `listRowBackground`, via `.argoSelectedRowGround(isSelected:)` | `accent` at 0.18 over the rail, **resolved opaque** |
 | The rooms picker's selected segment | the `AccentColor` **asset**, which `NSSegmentedControl` fills with | full |
 | Focus rings and stock accented controls | the same asset | full |
 | The selection indicator on a tab | `interaction.selectionIndicator` | full |
 | A link, and the ink an interactive word takes | `interaction.accent` | full |
 
-One hue, two weights: full strength where a control is the loud rung, a low-alpha ground where a
-row is merely selected. The weight is not a taste — at any more alpha the roster's quietest voice
-falls below the legibility it had on the neutral wash, which `SelectionGroundTests` asserts, along
-with an absolute floor for the two voices a row is actually read in.
+One hue, two weights: full strength where a control is the loud rung, a quiet ground where a row
+is merely selected. The weight is not a taste — it is whatever leaves every voice a row is read
+in above `TextRoles.contrastFloor`, which `SelectionGroundTests` asserts absolutely on both of a
+row's grounds (#922). It replaced a relative claim against the neutral wash, which could not fail
+while the ground it named was not the ground drawn.
 
-`selectionGround` is DERIVED — a computed role, not a stored one — so the `Mirror` gate below
-cannot see it and `ContractSpecimen` draws it by hand, beside the full-strength rung so the two
-weights can be judged together. Any derived role owes the specimen the same.
+**`selectionGround` is OPAQUE by contract** (#922). The capsule below is still drawn under it, so
+a translucent value composites ONTO the capsule instead of replacing it — which is how a 0.10
+wash shipped as a near-grey `#484E58` and took `text.tertiary` to 2.49:1. An opaque ground covers
+it, so what the contract asserts is what the row draws. `ContractSpecimen` draws the role by hand
+beside the full-strength rung, so the two weights can be judged together.
 
 **The asset is app-wide and is the only route to the loud half.** It reads no palette, so
 `AccentAssetTests` is what keeps the shipped file and `interaction.accent` one value — they had
 already drifted once. Re-colouring it moves every stock accented control in the app at the same
 time; that is the intent, not a side effect.
 
-**The platform will not colour a sidebar's selection.** On macOS 26 the `.listStyle(.sidebar)`
-capsule is a fixed neutral: neither `.tint` nor the asset moves it. Draw the row's ground with
-`listRowBackground`, which REPLACES that capsule rather than stacking a second highlight on it.
+**The platform will not colour a sidebar's selection, and it will not stop drawing it either.**
+On macOS 26 the `.listStyle(.sidebar)` capsule is a fixed neutral: neither `.tint` nor the asset
+moves it. Draw the row's ground with `listRowBackground` — but that ground COVERS the capsule
+rather than replacing it, so it must be opaque or the second highlight is still under it (#922).
 Every sidebar, not just the roster (#906) — a new rail asks `.argoSelectedRowGround(isSelected:)`
 for its ground rather than growing a second copy of the same ternary.
 

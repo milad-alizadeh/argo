@@ -29,9 +29,9 @@ public extension ArgoPalette {
         text: TextRoles(
             primary: ArgoColor(hex: 0xF2F4F6),
             secondary: ArgoColor(hex: 0xA8AEB5),
-            // Lifted with the ramp: on the study's lighter deck the old value fell to
-            // 4.36:1, under the 4.5 floor the contract asserts.
-            tertiary: ArgoColor(hex: 0x868D94),
+            // The quietest voice, so the rung `TextRoles.contrastFloor` binds hardest on. It is
+            // read on three grounds, not just the deck, and clears the floor on each.
+            tertiary: ArgoColor(hex: 0x929AA1),
             disabled: ArgoColor(hex: 0x4E545A),
             onAccent: ArgoColor(hex: 0x05070A),
             // There is no `code` ink. A marked span is drawn on `surface.marked` and keeps the
@@ -52,6 +52,8 @@ public extension ArgoPalette {
             // Deeper and duller than the failure ink above it: this is a GROUND under a whole
             // block of a row, not an ink.
             destructive: ArgoColor(hex: 0xB3372F),
+            // `accent` at 0.18 over `sunken`, resolved — `SelectionGroundTests` re-derives it.
+            selectionGround: ArgoColor(hex: 0x203146),
         ),
         state: StateRoles(
             running: ArgoColor(hex: 0x46D3A8),

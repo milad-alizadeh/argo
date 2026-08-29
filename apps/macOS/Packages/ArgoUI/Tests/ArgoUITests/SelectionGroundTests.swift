@@ -10,6 +10,7 @@ import Testing
 @Suite("Selection ground")
 struct SelectionGroundTests {
     static let palettes = ArgoPalette.all
+    static let floor = ArgoPalette.TextRoles.contrastFloor
 
     /// D30's selection amendment reversed by #875: the one piece of state a reader tracks all day
     /// is where the identity has to be legible, so the ground under a selected row is the brand
@@ -19,45 +20,57 @@ struct SelectionGroundTests {
         _ appearance: (name: String, palette: ArgoPalette),
     ) {
         let palette = appearance.palette
-        let ground = palette.interaction.selectionGround.composited(over: palette.surface.base)
+        let ground = palette.interaction.selectionGround
         let neutral = palette.surface.selected.composited(over: palette.surface.base)
         #expect(ground.chromaticSpread > neutral.chromaticSpread * 3)
-        // And it reads as SELECTED, not merely as tinted: at least the separation the neutral wash
-        // it replaces had.
-        #expect(ground.distance(to: palette.surface.base) >= neutral
+        // And it reads as SELECTED, not merely tinted. Each ground is measured against the
+        // surface it is actually laid on — this one the rail, the wash it replaced the deck.
+        #expect(ground.distance(to: palette.surface.sunken) >= neutral
             .distance(to: palette.surface.base))
     }
 
-    /// The weight is the whole argument for `selectionGround` being a wash rather than the accent
-    /// at strength: a saturated Ion Blue row cannot carry this app's own inks. Measured against the
-    /// wash it replaces, because that is the legibility the roster already had.
+    /// #922: the platform still draws its capsule under this ground, so a translucent value is
+    /// composited onto it and every reading below is taken against a ground the app never draws.
     @Test(arguments: palettes)
-    func `every roster voice reads at least as well on the accent ground as on the neutral wash`(
+    func `the selected ground is opaque, so the platform's capsule cannot show through`(
         _ appearance: (name: String, palette: ArgoPalette),
     ) {
-        let palette = appearance.palette
-        let ground = palette.interaction.selectionGround.composited(over: palette.surface.base)
-        let neutral = palette.surface.selected.composited(over: palette.surface.base)
-        for voice in [palette.text.primary, palette.text.secondary, palette.text.tertiary] {
-            #expect(voice.contrastRatio(on: ground) >= voice.contrastRatio(on: neutral))
-        }
+        #expect(appearance.palette.interaction.selectionGround.opacity == 1)
     }
 
-    /// "Argo's own Ion Blue, not the system accent" is only worth saying if the value holds where
-    /// it is spent, and it is spent at both weights: as an INK at full strength on the deck, and
-    /// as the GROUND under a row. Both are asserted, because the amended rule names both.
+    /// The value re-derived rather than trusted: a resolved hex nobody can reproduce is a number
+    /// the next ground change edits by eye.
     @Test(arguments: palettes)
-    func `the brand hue holds against the graphite ground at AA, at either weight`(
+    func `the selected ground resolves the brand hue at 0.18 over the rail`(
         _ appearance: (name: String, palette: ArgoPalette),
     ) {
         let palette = appearance.palette
-        let ground = palette.interaction.selectionGround.composited(over: palette.surface.base)
-        #expect(palette.interaction.accent.contrastRatio(on: palette.surface.base) >= 4.5)
-        // The row's own two loudest voices, absolutely rather than only against the old wash —
-        // `text.tertiary` is exempt for the reason it is exempt on `surface.selected`, which it
-        // already fell under: the contract measures every ink against `base`.
-        #expect(palette.text.primary.contrastRatio(on: ground) >= 4.5)
-        #expect(palette.text.secondary.contrastRatio(on: ground) >= 4.5)
+        let resolved = palette.interaction.accent
+            .opacity(0.18)
+            .composited(over: palette.surface.sunken)
+        // Within a rounding step: the palette holds the resolved value as a hex, and a hex
+        // cannot spell the exact product of a 0.18 blend.
+        #expect(palette.interaction.selectionGround.distance(to: resolved) < 1 / 255)
+    }
+
+    /// #922's own criterion: both of a row's readings of every voice clear one stated floor. This
+    /// REPLACES #875's relative claim, which held each voice to what it read on the neutral wash —
+    /// a claim that passed while the render sat at 2.49:1, because a ground the app never draws
+    /// cannot fail it.
+    @Test(arguments: palettes)
+    func `every roster voice clears the ramp's floor on BOTH of a row's grounds`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let palette = appearance.palette
+        // `base` and not a rail token: an unselected row's ground is `.listStyle(.sidebar)`'s
+        // own material, which no role names. `base` is the ground the whole ramp is already
+        // measured on, and it is LIGHTER than the rail renders (`#1B1C1F`), so it bounds that
+        // reading from the pessimistic side — 5.72:1 asserted against 5.97:1 measured.
+        for ground in [palette.interaction.selectionGround, palette.surface.base] {
+            for voice in [palette.text.primary, palette.text.secondary, palette.text.tertiary] {
+                #expect(voice.contrastRatio(on: ground) >= Self.floor)
+            }
+        }
     }
 
     /// The role the accent ground REPLACED on the roster is still neutral, and still has to be:
