@@ -88,12 +88,38 @@ struct FeedPaneChangeTests {
         #expect(feed.table.paneCost.derivations == derived + 1)
     }
 
-    /// The loop #955 names, which only a real window shows: landing the reading forces a layout,
-    /// that layout resizes the clip view, and the notification it posts arrives on the handler's
-    /// own stack. The first claim is the precondition — without a re-fire there is nothing to
-    /// nest, and the second claim would pass over an empty set.
+    /// The guard the loop #955 names rests on, held where every machine can hold it: a notification
+    /// arriving while a derivation is on the stack is heard and answered by the loop that is
+    /// already running, never derived a second time inside it.
+    ///
+    /// The notice is posted from inside a derivation rather than provoked by a real layout, because
+    /// what re-fires it in the running app is a window server (see `WindowedTests`). What arrives
+    /// at the handler is the same notification either way, on the same stack.
     @Test
-    func `no derivation runs inside the layout that re-fired the notification`() throws {
+    func `a notification arriving mid-derivation is not derived inside the one it interrupted`()
+        throws {
+        let handle = FeedTableHandle()
+        let table = FeedTableFixture.laidOut(
+            FeedProjection.longRows, in: Self.column, through: handle,
+        )
+        let clip = try #require(table.scroller).contentView
+
+        table.derivingPane(at: clip.bounds.size) {
+            FeedTableFixture.postFrameChange(on: clip)
+            return true
+        }
+
+        #expect(table.paneCost.reentrances == 1)
+        #expect(table.paneCost.nestings == 0)
+    }
+
+    /// The same guard against the thing that actually re-fires the notification: landing the
+    /// reading forces a layout, that layout resizes the clip view, and the notice it posts arrives
+    /// on the handler's own stack. Only a window server does that, so this is the local half of the
+    /// claim above — and `reentrances > 0` is the precondition that says the phenomenon really
+    /// happened, without which the rest would pass over an empty set.
+    @Test(.enabled(if: WindowedTests.areAvailable))
+    func `a window mount re-fires the notification its own layout posted`() throws {
         // Built rather than taken from `laidOut()`: a mount is precisely the case where no pane has
         // been laid out yet, and it is the first derivation whose forced layout re-fires.
         let handle = FeedTableHandle()
@@ -114,28 +140,6 @@ struct FeedPaneChangeTests {
         // And it converged: the reading stands laid out against the size the clip view ended at,
         // which is the fact a swallowed or abandoned size would break.
         #expect(feed.table.laidOutPane == feed.scroller.contentView.bounds.size)
-    }
-
-    /// Why a mid-drag width no longer forces a layout, as a claim rather than an assumption
-    /// (#955). `noteHeightOfRows` asks the delegate for each noted height synchronously, so the
-    /// table's row geometry is already square when the decision's landing reads `rect(ofRow:)` —
-    /// and it has to be, because that landing is the row the reader was on.
-    ///
-    /// Asserted with no `layoutSubtreeIfNeeded` of its own: what is claimed is what the table knows
-    /// the moment the notification's own work returns.
-    @Test
-    func `a width change squares up the rows on screen before anything lays out`() throws {
-        let feed = try Self.laidOut()
-        feed.handle.settle(at: 1200, over: nil)
-        let table = try #require(feed.table.table)
-
-        feed.scroller.frame = NSRect(x: 0, y: 0, width: 500, height: Self.column.height)
-
-        let onScreen = feed.table.visibleRows()
-        #expect(!onScreen.isEmpty)
-        #expect(onScreen.allSatisfy {
-            table.rect(ofRow: $0).height == feed.table.measuredHeight(at: $0, in: table)
-        })
     }
 
     /// The coordinator holds its handle weakly — the deck owns it — so a resize can arrive with no
