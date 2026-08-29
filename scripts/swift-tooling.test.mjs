@@ -20,17 +20,7 @@ import {
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-let failures = 0
-function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
+import { check, report } from './check-harness.mjs'
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -136,14 +126,14 @@ function swiftWriting(report, code = 0) {
   chmodSync(path.join(reportBin, 'swift'), 0o755)
 }
 
-for (const [cause, report, said] of [
+for (const [cause, reportXml, said] of [
   ['a failure', suite('errors="0" tests="9" failures="2"'), /2 failure\(s\) across 9/],
   ['an error', suite('errors="3" tests="9" failures="0"'), /3 failure\(s\)/],
   ['no report at all', '', /wrote no test report/],
   ['no tests', suite('errors="0" tests="0" failures="0"'), /reported 0 tests/],
 ]) {
   check(`swift-test.sh fails on ${cause}, though swift test exits 0`, () => {
-    swiftWriting(report)
+    swiftWriting(reportXml)
     const result = run(TEST, REPORTING)
     assert.equal(result.status, 1, result.output)
     assert.match(result.output, said)
@@ -185,8 +175,4 @@ check('swift-format.sh --check lints instead, over the whole app when given no p
 
 rmSync(scratch, { recursive: true, force: true })
 
-if (failures) {
-  console.error(`\n${failures} Swift tooling test(s) failed`)
-  process.exit(1)
-}
-console.log('  swift tooling: all checks passed')
+report('swift tooling')

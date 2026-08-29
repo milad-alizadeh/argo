@@ -14,25 +14,6 @@ const SCRIPT = path.join(REPO_ROOT, 'scripts/swift-boundaries.sh')
 export const ENGINE = 'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub'
 export const SHELL = 'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell'
 
-let failures = 0
-export function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
-
-export function report(suite) {
-  if (failures) {
-    console.error(`\n${failures} ${suite} test(s) failed`)
-    process.exit(1)
-  }
-  console.log(`  ${suite}: all checks passed`)
-}
-
 // `internalOnly` is the trap: keyword-less at struct indentation, and internal to the engine, so
 // ArgoUI cannot see it and the gate must not demand it. `HubSession`'s own `resumeID` is this.
 export const HUB_SESSION = `public struct HubSession: Equatable {

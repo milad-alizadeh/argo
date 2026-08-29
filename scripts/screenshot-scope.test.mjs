@@ -7,8 +7,8 @@
 // checkable by watching which process the script talks to. The tree it talks to them in, and the
 // stubs that record them, are `screenshot-scope.fixture.mjs`.
 import assert from 'node:assert/strict'
+import { check } from './check-harness.mjs'
 import {
-  check,
   isRunning,
   launched,
   launchLine,

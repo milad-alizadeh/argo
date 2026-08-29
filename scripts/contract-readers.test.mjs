@@ -6,18 +6,8 @@ import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { check, report } from './check-harness.mjs'
 import { sweep } from './contract-readers.mjs'
-
-let failures = 0
-function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
 
 // One throwaway tree shaped like the real one: a contract directory inside a search root, so the
 // sweep reads its declarations out of the same corpus it searches. Removed however the case ends.
@@ -156,5 +146,4 @@ check('a declaration with no type around it is still a member', () => {
   assert.deepEqual(names(swept.unread), ['ArgoMotion.passReentry'])
 })
 
-console.log(failures === 0 ? '\ncontract-readers: all checks passed' : `\n${failures} failed`)
-process.exit(failures === 0 ? 0 : 1)
+report('contract-readers')

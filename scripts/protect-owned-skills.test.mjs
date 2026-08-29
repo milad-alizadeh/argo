@@ -22,17 +22,7 @@ import {
   restoreOwnedSkills,
   snapshotOwnedSkills,
 } from '../packages/argo-skills/bin/protect-owned-skills.mjs'
-
-let failures = 0
-function check(name, fn) {
-  try {
-    fn()
-    console.log(`  ok   ${name}`)
-  } catch (err) {
-    failures += 1
-    console.error(`  FAIL ${name}\n       ${err.message}`)
-  }
-}
+import { check, report } from './check-harness.mjs'
 
 const git = (root, ...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
 
@@ -109,8 +99,4 @@ check('the warning names every restored file', () => {
 rmSync(repo, { recursive: true, force: true })
 assert.equal(existsSync(repo), false)
 
-if (failures) {
-  console.error(`\n${failures} owned-skill guard test(s) failed`)
-  process.exit(1)
-}
-console.log('  owned-skill guard: all checks passed')
+report('owned-skill guard')

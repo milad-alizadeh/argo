@@ -6,7 +6,8 @@
 // cases below are the two ways that can go wrong: a default value carrying commas of its own, and
 // the ratchet going unread — which would leave the edge passing everything and saying so.
 import assert from 'node:assert/strict'
-import { check, report, run, SHELL, tree } from './swift-boundaries.fixture.mjs'
+import { check, report } from './check-harness.mjs'
+import { run, SHELL, tree } from './swift-boundaries.fixture.mjs'
 
 const ACTIONS = `${SHELL}/CockpitActions.swift`
 const wideInit = (count) =>
