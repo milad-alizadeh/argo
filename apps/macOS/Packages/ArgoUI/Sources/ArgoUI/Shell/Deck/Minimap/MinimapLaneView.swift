@@ -70,6 +70,17 @@ final class MinimapLaneView: NSView {
     /// the lane back onto the reading through the geometry a scrub froze.
     private(set) var geometry = MinimapGeometry(MinimapReading(), lane: .zero)
 
+    /// The reading height the lane has already answered a reshape at. The document view posts a
+    /// frame change for every `setFrame`, so this is what tells a reshape from a notice carrying
+    /// nothing.
+    var reshapedTo: CGFloat?
+
+    #if DEBUG
+        /// How many times the whole-document geometry has been derived — the counter ADR-0028
+        /// Rule 7 asks for, and what "no geometry rebuild across a scroll" is measured with (#955).
+        private(set) var geometryDerivations = 0
+    #endif
+
     /// How many times the rects have been rasterised — the instrument #402 asks for, to show that
     /// scrolling the feed inside a band repaints no content in the lane.
     var rectRedraws = 0
@@ -154,6 +165,12 @@ final class MinimapLaneView: NSView {
     /// otherwise re-scale the lane the hand is holding.
     func refresh() {
         guard grab == nil, let reading = feed?.reading() else { return }
+        #if DEBUG
+            geometryDerivations += 1
+        #endif
+        // Read off the same view the reshape notice carries, so the two cannot disagree about
+        // which height the lane has already answered.
+        reshapedTo = watched?.documentView?.frame.height
         geometry = MinimapGeometry(reading, lane: bounds.size)
         settleViewport()
     }

@@ -26,6 +26,10 @@ extension FeedTableCoordinator {
             dropMeasuredHeights()
             table.reloadData()
         }
+        // Only a SETTLED pass asks for its heights now. A per-frame one leaves them to the next
+        // layout pass: forcing one from inside a notification handler is work proportional to the
+        // document, and it can resize the clip view that posted the notification (#955).
+        guard scope.isSettled else { return }
         scroller.layoutSubtreeIfNeeded()
     }
 

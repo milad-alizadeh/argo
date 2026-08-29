@@ -195,7 +195,16 @@ extension MinimapLaneView {
         settleViewport()
     }
 
+    /// The reading changed shape — marked, never derived here.
+    ///
+    /// Two reasons. A notice carrying the same height is not a reshape at all, and `NSView` posts
+    /// one for every `setFrame`. And a reshape that IS real arrives in bursts, out of the feed's
+    /// measure tail — the one moment the geometry is known to be in flux — so the lane lets the
+    /// next layout pass derive it once for the whole burst (#955).
     @objc private func readingReshaped(_: Notification) {
-        refresh()
+        let reading = watched?.documentView?.frame.height
+        guard reading != reshapedTo else { return }
+        reshapedTo = reading
+        needsLayout = true
     }
 }

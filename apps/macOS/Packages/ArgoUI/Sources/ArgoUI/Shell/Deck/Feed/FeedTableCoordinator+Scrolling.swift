@@ -114,10 +114,27 @@ extension FeedTableCoordinator {
         reportFollowing()
     }
 
+    /// A notification carrying no resize is not a pane change. `NSView` posts one for every
+    /// `setFrame`, and a window's own layout posts several per mount — each of which used to read
+    /// the anchor and re-measure every row on screen (#955).
+    ///
+    /// The follow-on sizes are answered HERE rather than inside the derivation they interrupted:
+    /// landing the reading forces a layout, that layout resizes the clip view, and the notification
+    /// it posts arrives on this stack. Answering it in place derives the same reading twice.
     @objc private func paneChanged(_: Notification) {
-        guard let scroller else { return }
-        let clip = scroller.contentView.bounds
-        decide(.paneChanged(width: clip.width, height: clip.height, anchor: anchor()))
+        notedPane()
+        // The re-entry check comes FIRST: a nested notice that recorded its size would leave the
+        // loop below with nothing to answer, and the size it carried would never be laid out.
+        guard let scroller, !isDerivingPane,
+              resized(to: scroller.contentView.bounds.size) else { return }
+        var passes = Self.panePasses
+        repeat {
+            derivingPane {
+                let pane = scroller.contentView.bounds.size
+                decide(.paneChanged(width: pane.width, height: pane.height, anchor: anchor()))
+            }
+            passes -= 1
+        } while passes > 0 && resized(to: scroller.contentView.bounds.size)
     }
 
     /// One settle per burst: each width frame pushes the full pass back, and only the quiet after

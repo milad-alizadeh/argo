@@ -52,6 +52,15 @@ enum FeedRemeasure: Equatable {
     case visible
     case all
     case rebuild
+
+    /// Whether the pass runs on a width that is final. A settled pass may ask AppKit for its
+    /// heights synchronously; a per-frame one may not (#955).
+    var isSettled: Bool {
+        switch self {
+        case .none, .visible: false
+        case .all, .rebuild: true
+        }
+    }
 }
 
 /// Whether a second, later re-measure is wanted — a mid-drag change wants one now and one when the

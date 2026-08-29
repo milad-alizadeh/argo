@@ -61,6 +61,28 @@ import SwiftUI
     /// pass. Not a statistic: it is what #856's claim is about, and the only honest way for a suite
     /// to ask what a re-measure COST rather than what it left behind.
     private(set) var measurements = 0
+    /// The pane size the last frame notification was acted on at. An `NSView` posts a frame
+    /// change for every `setFrame`, equal size or not, so this is what tells a real RESIZE from a
+    /// notification carrying nothing at all.
+    private var actedOnPane: CGSize?
+
+    /// Whether a pane derivation is on the stack. Landing the reading forces a layout, and that
+    /// layout can resize the clip view — posting the notification that forced it.
+    private(set) var isDerivingPane = false
+
+    /// How many sizes one notification is followed through before the pane is left to settle by
+    /// itself. Three, because a mount converges in two and a runaway must not be a hang.
+    nonisolated static let panePasses = 3
+
+    #if DEBUG
+        /// What the pane's frame notification costs, counted rather than inferred (ADR-0028
+        /// Rule 7). Every notification, every derivation it led to, and every notice that arrived
+        /// while a derivation was still on the stack — the last IS the loop (#955).
+        private(set) var paneNotices = 0
+        private(set) var paneDerivations = 0
+        private(set) var paneReentrances = 0
+    #endif
+
     /// The one view content is measured in — never installed in a window, reused per row, and
     /// building no sizing constraints of its own: `sizeThatFits` is asked directly.
     private let ruler: NSHostingController<AnyView> = {
@@ -92,6 +114,34 @@ import SwiftUI
             return estimatedRowHeight
         }
         return height
+    }
+
+    /// One frame notification arrived — see the counters above.
+    func notedPane() {
+        #if DEBUG
+            paneNotices += 1
+            paneReentrances += isDerivingPane ? 1 : 0
+        #endif
+    }
+
+    /// Whether a frame notification carries a real resize.
+    ///
+    /// A handler decides; it does not compute (ADR-0028 Rule 2). This is the whole decision, and
+    /// it is made off the two numbers the notification already has.
+    func resized(to pane: CGSize) -> Bool {
+        guard pane != actedOnPane else { return false }
+        actedOnPane = pane
+        return true
+    }
+
+    /// One pane derivation, counted, with the re-entry flag held for the length of it.
+    func derivingPane(_ work: () -> Void) {
+        #if DEBUG
+            paneDerivations += 1
+        #endif
+        isDerivingPane = true
+        work()
+        isDerivingPane = false
     }
 
     deinit {
