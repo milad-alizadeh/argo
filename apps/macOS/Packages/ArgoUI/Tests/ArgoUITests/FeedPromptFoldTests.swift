@@ -18,12 +18,13 @@ struct FeedPromptFoldTests {
     /// leaves a row once the gutters are off it.
     private static let measure = ArgoFeedRow.column - ArgoFeedRow.inset * 2
     /// The words inside the bubble, which is the ceiling less its own insets.
-    private static let inside = measure * ArgoFeedRow.bubbleShare - ArgoFeedRow.bubbleInsetX * 2
+    private static let inside = ArgoFeedRow.bubbleInside(of: measure)
 
     private static let long = String(
         repeating: "Read the whole anatomy study before you start. ", count: 14,
     )
     private static let short = "Run the visual contract suite and tell me what broke."
+    private static let shots = Array(FeedProjection.previewShots.prefix(1))
 
     /// The bubble's height, asked for the way the table asks for a row's.
     private func height(of text: String, expanded: Bool, shots: [FeedShot] = []) -> CGFloat {
@@ -48,6 +49,20 @@ struct FeedPromptFoldTests {
             Text("Show more").argoText(ArgoTypography.caption).argoAppearance(),
         )
         return ArgoSpacing.snug + ruler.sizeThatFits(
+            in: NSSize(width: Self.inside, height: CGFloat.greatestFiniteMagnitude),
+        ).height
+    }
+
+    /// The gallery's own height inside the bubble, measured rather than assumed — a picture case
+    /// asserted against a bound loose enough to hold a control row would pass with one drawn.
+    private var gallery: CGFloat {
+        let ruler = NSHostingController(rootView: AnyView(EmptyView()))
+        ruler.sizingOptions = []
+        ruler.rootView = AnyView(
+            FeedGalleryRow(gallery: FeedGallery(shots: Self.shots), open: { _ in })
+                .argoAppearance(),
+        )
+        return ruler.sizeThatFits(
             in: NSSize(width: Self.inside, height: CGFloat.greatestFiniteMagnitude),
         ).height
     }
@@ -89,27 +104,30 @@ struct FeedPromptFoldTests {
         let lines = wholeLines
         let fold = ArgoFeedRow.collapsedPromptLines
         #expect(lines > fold)
+        // And the still can reach the state it is named for: a specimen that lost this id renders
+        // the FOLDED bubble under the unfolded name, which is evidence for the opposite claim.
+        #expect(FeedProjection.previewLongPromptID != nil)
     }
 
     @Test
-    func `a picture pasted in with the words is measured inside the bubble too`() {
-        let shots = Array(FeedProjection.previewShots.prefix(1))
-        let withShot = height(of: Self.long, expanded: false, shots: shots)
+    func `a picture pasted in with the words costs the gallery and its step, and no more`() {
+        let withShot = height(of: Self.long, expanded: false, shots: Self.shots)
         let wordsOnly = height(of: Self.long, expanded: false)
-        // The gallery's own row, and nothing else: the words still fold at six lines and the
-        // control still stands under them.
-        #expect(withShot > wordsOnly + ArgoFeedRow.shotHeight)
+        #expect(abs(withShot - wordsOnly - gallery - ArgoSpacing.snug) <= Self.slack)
     }
 
     @Test
-    func `a prompt that is only a picture folds nothing and offers nothing`() {
-        let shots = Array(FeedProjection.previewShots.prefix(1))
-        let folded = height(of: "", expanded: false, shots: shots)
-        let unfolded = height(of: "", expanded: true, shots: shots)
-        #expect(folded == unfolded)
-        // No words is no fold, so the control takes no room — the bubble is the gallery and its
-        // insets, with nothing between them.
-        #expect(folded < ArgoFeedRow.bubbleInsetY * 2 + ArgoFeedRow.shotHeight * 2)
+    func `a prompt that is only a picture is the gallery and the insets, and nothing else`() {
+        let drawn = height(of: "", expanded: false, shots: Self.shots)
+        // Exactly, not loosely: a bound with a control row's worth of headroom would pass with one
+        // drawn, which is the thing being denied.
+        #expect(abs(drawn - (ArgoFeedRow.bubbleInsetY * 2 + gallery)) <= Self.slack)
+    }
+
+    @Test
+    func `a prompt that is only a picture has no state to be in`() {
+        #expect(height(of: "", expanded: false, shots: Self.shots)
+            == height(of: "", expanded: true, shots: Self.shots))
     }
 
     /// The same claim where the reader actually meets it: the height the TABLE caches for the row,
@@ -152,11 +170,13 @@ struct FeedPromptFoldTests {
     }
 
     @Test
-    func `a prompt that stands whole is the same height either way, and offers no control`() {
+    func `a prompt that stands whole is its one line and the insets, with no control under it`() {
         let expected = ArgoFeedRow.bubbleInsetY * 2 + prose(lines: 1)
-        let folded = height(of: Self.short, expanded: false)
-        let unfolded = height(of: Self.short, expanded: true)
-        #expect(abs(folded - expected) <= Self.slack)
-        #expect(folded == unfolded)
+        #expect(abs(height(of: Self.short, expanded: false) - expected) <= Self.slack)
+    }
+
+    @Test
+    func `a prompt that stands whole is the same height either way`() {
+        #expect(height(of: Self.short, expanded: false) == height(of: Self.short, expanded: true))
     }
 }

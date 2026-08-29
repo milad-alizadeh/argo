@@ -68,20 +68,23 @@ struct PromptBubbleLayout: Layout {
     /// ideal size rather than about a column it landed in.
     private func inside(of proposal: ProposedViewSize) -> CGFloat? {
         guard let width = proposal.width, width.isFinite else { return nil }
-        return max(0, width * ArgoFeedRow.bubbleShare - ArgoFeedRow.bubbleInsetX * 2)
+        return ArgoFeedRow.bubbleInside(of: width)
     }
 
     /// What is given room, at the size it takes: the words, and the control under them where the
     /// prompt runs past the fold.
     ///
-    /// The control is asked at its OWN width and not at the bubble's, so a bubble still ends where
-    /// its widest line does. Asked across `inside` it would answer with the whole ceiling, and the
-    /// overview lane hugs (`MinimapRowShape.bubble`) — which is the drift this type exists to stop.
+    /// The control never widens the bubble: it is asked at its own width and then held to the
+    /// words'. Asked across `inside` it answers with the whole ceiling, and allowed its own it can
+    /// outrun a prompt that ran past the fold on line breaks rather than on wrapping — either way
+    /// the bubble would end somewhere the overview lane's miniature does not, since that hugs the
+    /// widest LINE (`MinimapRowShape.bubble`). That drift is what this type exists to stop.
     private func parts(of subviews: Subviews, across inside: CGFloat?) -> [CGSize] {
         guard let first = subviews.first else { return [] }
         let words = first.sizeThatFits(ProposedViewSize(width: inside, height: nil))
         guard subviews.count > 1, runsPastTheFold(across: inside) else { return [words] }
-        return [words, subviews[1].sizeThatFits(.unspecified)]
+        let control = subviews[1].sizeThatFits(.unspecified)
+        return [words, CGSize(width: min(control.width, words.width), height: control.height)]
     }
 
     /// Whether the prompt is longer than the fold shows — the question the CONTROL is offered on,

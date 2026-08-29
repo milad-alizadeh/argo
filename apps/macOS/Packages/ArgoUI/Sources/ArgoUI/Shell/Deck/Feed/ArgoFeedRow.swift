@@ -92,6 +92,14 @@ public enum ArgoFeedRow {
     /// The share of the COLUMN a prompt's bubble may take, as a ceiling.
     public static let bubbleShare: CGFloat = 0.78
 
+    /// The words' own measure inside that bubble, at a feed column of `measure`: the ceiling less
+    /// the bubble's own insets. Named here because the bubble's layout, the overview lane that
+    /// draws its miniature and the suite holding the two together must all ask at ONE number — the
+    /// arithmetic spelled out three times is how a bubble and its map come to wrap differently.
+    public static func bubbleInside(of measure: CGFloat) -> CGFloat {
+        max(0, measure * bubbleShare - bubbleInsetX * 2)
+    }
+
     /// The breathing room inside a bubble, above and below its words. Named here and not in the
     /// view because the overview lane subtracts it: a bubble's ground is spacing, and a lane that
     /// divided the whole row height by the line height drew a one-line prompt as two.
