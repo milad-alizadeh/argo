@@ -10,7 +10,7 @@ struct TicketsViewTests {
         #expect(TicketsView.allOpen.symbol == "circle.fill")
         #expect(TicketsView.unblocked.symbol == "circle")
         #expect(TicketsView.inProgress.symbol == "diamond.fill")
-        #expect(TicketsView.blocked.symbol == "triangle")
+        #expect(TicketsView.blocked.symbol == "nosign")
     }
 
     /// The mark is what a reader scans the rail by, so two views sharing one would be two rows told

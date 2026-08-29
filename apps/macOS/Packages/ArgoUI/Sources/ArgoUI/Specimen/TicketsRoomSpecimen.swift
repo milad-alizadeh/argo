@@ -133,6 +133,7 @@ struct DeliveryChipsSpecimen: View {
 /// Every reading the blockage mark draws, side by side — one digit, two digits, and the stranded
 /// ink. The two-digit case has no room render: the backlog's worst ticket waits on two, and a
 /// capsule that grew the wrong way at ten would not show up until somebody's real backlog did.
+/// It is also where the glyph is judged at true size, which is the only size that settles it.
 struct BlockageMarksSpecimen: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.section) {

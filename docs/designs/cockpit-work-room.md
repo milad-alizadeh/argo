@@ -136,6 +136,16 @@ caption: *can I start this*, rather than *what is this* or *how long has it sat*
 blocked and stale therefore draws both, and the count is a count rather than a flag — blocked by
 three and blocked by one are different distances from startable.
 
+**The mark leads with a glyph and carries the count second (amended #939).** The glyph says
+*blocked*; the number says *how* blocked. It shipped as a bare numeral in a capsule, which named
+nothing — a number in a circle is a count, and the only thing that said what it counted was a
+tooltip nobody hovers. Both facts survive the amendment; only the wordless numeral goes.
+
+**The glyph is the one the sidebar's `Blocked` view draws** — `ArgoSymbol.blockedView`, which
+#939 settled as `nosign` for both surfaces at once. The sidebar says "8 blocked" beside that mark
+and the rows are the 8 it counted, so two glyphs would be two concepts to a reader who has to learn
+they are the same one. One concept, one mark, and one edit moves both.
+
 **The caption holds exactly one fact, in this order.** First one present wins; the rest are not
 drawn.
 
@@ -613,7 +623,12 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | `indentStep` | `ArgoSpacing.loose` 16 | one level; a child's dot lands under its parent's id |
 | `indentDepthCap` | **2** | level three shares level two's inset |
 | `gap` | `ArgoSpacing.base` 8 | between dot, id, title and the trailing region |
-| `blockageMark` | **16**, a floor on both axes | at one digit a circle; a second digit grows the capsule sideways rather than shrinking the numeral (#896) |
+| `blockageMark` | **16**, a HEIGHT floor | the capsule's height. **Amended #939**: it was a floor on both axes, sized so one digit drew a circle. The mark holds a glyph and a count now, so its width is what those two set and there is no square to floor — the capsule grows sideways at a second digit rather than shrinking either half |
+
+The mark's glyph is drawn at `ArgoIconSize.inline` **10** — the contract's rung for "a mark on a
+line of text", beside the `machineCaption` 11 the count is set in, and the rung the sidebar draws
+the same glyph at (#939). It is not a row in the sheet above: the rung is passed at the call site
+and this sheet holds what `ArgoBacklogList` declares.
 
 ### `ArgoTicketsChrome` — `ArgoUI/Shell/Tickets/`
 
@@ -659,7 +674,7 @@ for; anything not listed is stock used directly.
 | `BacklogRow` | molecule | an `HStack` in a `List` row | `twist · dot · id · title · trailing` |
 | `BacklogTwist` | atom | `DisclosureGroup`'s chevron, drawn | drawn rather than inherited so it can carry its own hit target |
 | `DeliveryDot` | atom | `Circle` at `ArgoLayout.statusDotSize` | the five-state table above |
-| `BlockageMark` | atom | a count in a `Capsule().strokeBorder` | **Added #896**: how many blockers still stand, in the trailing region. Hollow rather than filled, so the numeral's contrast is the ink's own in both appearances |
+| `BlockageMark` | atom | an `ArgoGlyph` and a count in a `Capsule().strokeBorder` | **Added #896**: how many blockers still stand, in the trailing region. Hollow rather than filled, so the contrast is the ink's own in both appearances. **Amended #939**: the glyph leads and names the state, which the numeral alone never did; it is `BlockageMark.symbol`, the sidebar's `ArgoSymbol.blockedView` |
 | `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
 | `TicketsToolbar` | organism | `.toolbar { ToolbarItem }` per control | the window row, and **every control the room has**. Amended twice: #836 moved all but search into per-pane bands, and the bands are now gone — see the column question |
 | `BacklogControls` | molecule | a `ToolbarVessel` | filter and `BacklogMenu`, past a rule. Split out of `BacklogHeader` when the controls returned to the row |
@@ -694,7 +709,7 @@ prototype's numbers survive.
 | backlog id, mono 11 | `ArgoTypography.machineCaption` | exact |
 | backlog title, 12.5 | `ArgoTypography.body` | snapped UP to 13; the row height grew 28 → 30 to carry it |
 | roll-up / odd priority / age, mono 10–10.5 | `ArgoTypography.machineCaption` | snapped up to 11, matching the id beside it. The age joined the slot in #897 and takes the role already there — the caption is one column whatever fact is in it |
-| blockage count, mono | `ArgoTypography.machineCaption` | the same role again (#896), not `badge`: `badge`'s 0.6 tracking sets a numeral off-centre in a capsule, and a blocker count is a machine number like the roll-up beside it |
+| blockage count, mono | `ArgoTypography.machineCaption` | the same role again (#896), not `badge`: `badge`'s 0.6 tracking sets a numeral off-centre in a capsule, and a blocker count is a machine number like the roll-up beside it. The glyph that leads it since #939 is on the icon ladder, not this one |
 | `HIGH`, `BACKLOG`, section captions, 10 uppercase | `ArgoTypography.sectionLabel` | the role's documented job — "sidebar and rail group labels" |
 | view name, 12.5 | `ArgoTypography.rowMeta` | snapped DOWN to 11: a view name is chrome, and it must not compete with a ticket title beside it |
 | toolbar heading, 13 semibold | `ArgoTypography.windowTitle` | exact tuple |

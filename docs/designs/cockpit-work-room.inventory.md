@@ -686,7 +686,7 @@ what was considered and refused.
 
 | Name | Kind | Built from | Note |
 |---|---|---|---|
-| `BlockageMark` | atom | `Text` in a `Capsule().strokeBorder` | the count, in the Route's own waiting/dead-end inks |
+| `BlockageMark` | atom | `ArgoGlyph` + `Text` in a `Capsule().strokeBorder` | the glyph then the count, in the Route's own waiting/dead-end inks. **Amended #939**: it was the count alone |
 | `TicketAge` | — | pure `Date` arithmetic, no view | one rounded unit; not `AgePhrase`, which words the same distance as prose for a sentence to carry |
 
 `Drawn.caption(asOf:)` is the one place the three-way precedence is CODED; the design's table
@@ -696,6 +696,20 @@ with a document rather than with a second copy of itself.
 `TicketsRoomProjection.blockage(of:)` is the nil-returning seam that withholds the mark —
 `TicketState.filing(beside:)`'s shape (#893), for the same reason: a view handed a value it must
 know not to draw is a view that will eventually draw it.
+
+`BlockageMark.symbol` is the second seam, added by #939: the row and the sidebar's `Blocked` view
+each name the glyph in their own code, and `TicketsBacklogMarkTests` asserts the two agree. Not a
+comment, because a comment does not fail when somebody moves one of them — the same reason the
+mark's presence is CHECKED against `TicketsView.blocked.admits` rather than asserted in prose.
+The glyph itself is `ArgoSymbol.blockedView`, so the two surfaces follow from one edit; #939
+changed it from `triangle`, a shape with no meaning attached, to `nosign`.
+
+Candidates rendered at true size before that choice: `triangle` and `octagon` are shapes and name
+nothing; `hand.raised` goes to mush at the 10pt rung; `exclamationmark.octagon` and `xmark.octagon`
+read as an error, which is the emergency the Route's ink is spent avoiding; `minus.circle` is
+already `ArgoSymbol.removeProject` and `exclamationmark.triangle` already `refused`, so both would
+have made one glyph mean two things; `circle.slash` is `nosign` with a thinner slash that fades
+first. `nosign` is also the reference the user gave — Linear's blocking-relation mark.
 
 ## What was refused
 
@@ -743,7 +757,7 @@ for that reason, on the pattern `unjoinedClaims` set at #894.
 - **#160 and #185 carry `blockedBy` edges the design says they do not have.** The sidebar section
   reads: *"Being held up is not the same as having an edge: #160 and #185 are decisions awaiting an
   answer, with nothing in `blockedBy` to show for it."* `TicketsFixture.items` gives both
-  `blockedBy: [272]`, so both now draw a blockage mark reading `1`. The disagreement is
+  `blockedBy: [272]`, so both now draw the blocked glyph and a count of `1`. The disagreement is
   **pre-existing** — the fixture has served those edges since #812, and it is what makes
   `Unblocked + Blocked` sum to `All open` in every render — but nothing on screen showed it until a
   row started drawing the count. Reconciling it moves two rows between two sidebar views and
