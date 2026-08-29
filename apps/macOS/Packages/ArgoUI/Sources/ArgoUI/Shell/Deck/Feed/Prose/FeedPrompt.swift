@@ -18,6 +18,11 @@ struct FeedPrompt: View {
     /// transcript grows, and a fold that lived in the row would quietly re-close behind the reader.
     @Binding var isExpanded: Bool
 
+    /// Whether the layout gave the control a box to stand in. Read back AFTER the pass that decided
+    /// it, which is safe for exactly this: a screen reader's tree is not laid out, so a fact that
+    /// settles a frame late costs nothing here — where the same lateness in a SIZE is #946 itself.
+    @State private var isOffered = false
+
     var body: some View {
         bubble
             .frame(maxWidth: .infinity, alignment: .trailing)
@@ -74,6 +79,11 @@ struct FeedPrompt: View {
                 alignment: .trailing,
             )
             .clipped()
+            .onGeometryChange(for: Bool.self) { $0.size.height > 0 } action: { isOffered = $0 }
+            // Stated rather than left to the empty box: whether a screen reader vends a control of
+            // no size is not something a package test here can settle, and a bubble with nothing
+            // to unfold must not offer to unfold it in a tree no still can see.
+            .accessibilityHidden(!isOffered)
     }
 
     private func prose(lineLimit: Int?) -> some View {

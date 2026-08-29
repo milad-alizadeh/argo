@@ -3,15 +3,14 @@ import AppKit
 import SwiftUI
 import Testing
 
-/// What a prompt's bubble stands at, measured the ONE way the feed ever measures a row: a single
-/// `sizeThatFits` against a detached hosting controller, exactly as `FeedTableCoordinator` does it.
+/// What a prompt's bubble stands at, asked the ONE way the feed ever asks: a single `sizeThatFits`
+/// against a detached hosting controller, which is the mechanism of
+/// `FeedTableCoordinator.measuredHeight`.
 ///
 /// That single pass is the whole suite. A bubble whose size needs a second one is a bubble the
-/// table
-/// caches at a height nobody ever drew — the reader sees a squashed bubble and a control clipped
-/// out
-/// of the row (#946) — so every claim here is checked against the first answer and never a settled
-/// one.
+/// table caches at a height nobody ever drew — a squashed bubble, and a control clipped out of the
+/// row (#946). So the claims below are checked against the first answer and never a settled one,
+/// and the last of them asks the real coordinator rather than the mechanism.
 @MainActor
 @Suite("Feed prompt fold")
 struct FeedPromptFoldTests {
@@ -87,6 +86,29 @@ struct FeedPromptFoldTests {
         let lines = wholeLines
         let fold = ArgoFeedRow.collapsedPromptLines
         #expect(lines > fold)
+    }
+
+    /// The same claim where the reader actually meets it: the height the TABLE caches for the row,
+    /// through the coordinator the deck builds. Applying a second model that names the prompt is
+    /// how the reader lets the fold out.
+    private func rowHeight(unfolded: Set<FeedRow.ID>) -> CGFloat {
+        let rows = [FeedRow(id: 0, content: .prompt(text: Self.long, shots: []))]
+        let handle = FeedTableHandle()
+        let coordinator = FeedTableFixture.laidOut(
+            rows,
+            in: CGSize(width: ArgoFeedRow.column, height: 800),
+            through: handle,
+        )
+        guard let table = coordinator.table else { return 0 }
+        coordinator.apply(FeedTableFixture.model(showing: rows, unfolded: unfolded))
+        return coordinator.tableView(table, heightOfRow: 0)
+    }
+
+    @Test
+    func `letting the fold out grows the row by exactly the lines it was hiding`() {
+        let hidden = prose(lines: wholeLines) - prose(lines: ArgoFeedRow.collapsedPromptLines)
+        let grew = rowHeight(unfolded: [0]) - rowHeight(unfolded: [])
+        #expect(abs(grew - hidden) <= Self.slack)
     }
 
     @Test
