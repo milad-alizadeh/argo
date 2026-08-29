@@ -4,8 +4,7 @@ import Foundation
 /// transcript owns each record, and the Sessions those two facts stitch into. A value with no tasks
 /// in it, so dropping a whole Project's worth is `HubJoin()`.
 struct HubJoin {
-    /// Rebuilt on mutation rather than on read: only the write side knows when it changed. A
-    /// Subagent's batch is written into it in place instead — see `apply(_:ofSubagent:to:)`.
+    /// Rebuilt on mutation rather than on read: only the write side knows when it changed.
     private var roster = HubRoster()
     var sessions: [HubSession] {
         roster.sessions
@@ -36,9 +35,8 @@ struct HubJoin {
 
     mutating func remove(transcriptID: String) {
         transcripts.removeAll { $0.id == transcriptID }
-        // Every position after the one dropped has moved, so the table is taken again rather than
-        // patched — a removal is a sweep's answer, not something a tail does.
-        positions = Dictionary(uniqueKeysWithValues: transcripts.enumerated().map { ($1.id, $0) })
+        // Every position after the one dropped has moved, so the table is taken again whole.
+        positions = Dictionary(transcripts.enumerated().map { ($1.id, $0) }) { first, _ in first }
         recordOwners = recordOwners.filter { $0.value != transcriptID }
         rebuild()
     }
@@ -75,10 +73,10 @@ struct HubJoin {
     ) {
         guard !read.isEmpty, let index = position(of: transcriptID) else { return }
         transcripts[index].session.apply(read, ofSubagent: agentID)
-        // Onto that Session's published row and nothing else: a child's bytes join no chain and
-        // move no sort key, so rebuilding the roster for them is work with a scope its cause does
-        // not have (ADR-0028 Rule 1). A transcript the roster was published without reaches
-        // nothing here, and its reading arrives with the rebuild that publishes it.
+        // Written THROUGH, to the transcript above and the published row here: the roster is a
+        // fold over the transcripts rather than a second copy of them, so a batch that reached
+        // only one of the two would be lost at the next rebuild or published twice by it. What
+        // the roster refuses to write in place it publishes at that rebuild instead.
         roster.apply(read, ofSubagent: agentID, from: transcriptID)
     }
 
@@ -104,8 +102,10 @@ struct HubJoin {
     }
 
     /// Published only once every transcript in the set has settled. While a sweep admits a new
-    /// transcript the last published roster stands: briefly missing a row, never rewriting itself
-    /// under the reader.
+    /// transcript the roster keeps the rows it has, in the order it has them: briefly missing a
+    /// row, never rewriting itself under the reader. What does move meanwhile is a published
+    /// Session's Subagent reading, which its own tail writes in place — no row joins, leaves or
+    /// changes place for it.
     private mutating func rebuild() {
         guard transcripts.allSatisfy(\.isSettled) else { return }
         roster = HubSessionChain.roster(from: transcripts, owners: recordOwners)

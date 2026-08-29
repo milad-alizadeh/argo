@@ -24,6 +24,12 @@ struct HubTranscript {
 }
 
 enum HubSessionChain {
+    /// One published Session and the chain uuids folded into it, in the order they were folded.
+    struct Chained {
+        let session: HubSession
+        let chainIDs: [String]
+    }
+
     static func roster(
         from transcripts: [HubTranscript],
         owners: [String: String],
@@ -31,7 +37,7 @@ enum HubSessionChain {
         -> HubRoster {
         let graph = HubChainGraph(transcripts: transcripts, owners: owners)
         var claimed: Set<String> = []
-        var chained: [HubChainedSession] = []
+        var chained: [Chained] = []
         // Walked in the graph's own key, which is the chain uuid rather than the path: two paths
         // carrying one uuid are one Session, and the second of them is claimed by the first.
         for id in graph.roots + transcripts.map(\.sessionID) where !claimed.contains(id) {
@@ -43,13 +49,13 @@ enum HubSessionChain {
                 session.mergeContinuation(continuation)
                 chainIDs.append(continuationID)
             }
-            chained.append(HubChainedSession(session: session, chainIDs: chainIDs))
+            chained.append(Chained(session: session, chainIDs: chainIDs))
         }
         return HubRoster(chained: published(chained), transcripts: transcripts)
     }
 
     /// The Sessions of those chains that the roster actually draws, in the order it draws them.
-    private static func published(_ chained: [HubChainedSession]) -> [HubChainedSession] {
+    private static func published(_ chained: [Chained]) -> [Chained] {
         // A QUEUED prompt nothing has answered is not a Session. The CLI opens a transcript per
         // queued prompt, so a Session queued several leaves several files, each holding one copy of
         // the same words and no agent output — which the roster drew as that Session once per file.
