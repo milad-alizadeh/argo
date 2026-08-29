@@ -30,6 +30,10 @@ extension MinimapLaneView {
         // key and a programmatic scroll alike, which the feed's own live-scroll notification does
         // not. The document view's frame is the reading's shape: it changes when a row arrives or
         // a re-wrap re-measures, and at no other time.
+        //
+        // Not collapsible into the feed's own frame observer, which #955 asked about: that one
+        // watches the CLIP view for the pane resizing, and a pane that did not move over a reading
+        // that grew is the routine case. Two events, not one view of one event.
         centre.addObserver(
             self, selector: #selector(readingMoved),
             name: NSView.boundsDidChangeNotification, object: scroller.contentView,
@@ -195,7 +199,17 @@ extension MinimapLaneView {
         settleViewport()
     }
 
+    /// The reading changed shape — marked, never derived here. A reshape arrives in bursts out of
+    /// the feed's measure tail, the one moment the geometry is known to be in flux, so the whole
+    /// burst costs one derivation at the next layout pass (#955).
+    ///
+    /// `reshapedTo` is `refresh`'s to write: a height consumed here would be a reshape a bailed
+    /// refresh could strand, with nothing left to re-arm it.
     @objc private func readingReshaped(_: Notification) {
-        refresh()
+        #if DEBUG
+            reshapeNotices += 1
+        #endif
+        guard watched?.documentView?.frame.height != reshapedTo else { return }
+        needsLayout = true
     }
 }

@@ -26,6 +26,9 @@ extension FeedTableCoordinator {
             dropMeasuredHeights()
             table.reloadData()
         }
+        // Forcing a layout from inside a notification handler is work proportional to the
+        // document, and it can resize the clip view that posted the notification (#955).
+        guard scope.forcesLayout else { return }
         scroller.layoutSubtreeIfNeeded()
     }
 
