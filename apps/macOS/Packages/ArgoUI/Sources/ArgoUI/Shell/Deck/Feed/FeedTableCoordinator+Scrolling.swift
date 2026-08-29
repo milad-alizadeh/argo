@@ -40,6 +40,12 @@ extension FeedTableCoordinator {
     /// `pace` is the way-back control's animation. Every other landing is instant, because a feed
     /// easing once per arriving line would be permanently in motion.
     func execute(_ decision: FeedScrollDecision, over pace: TimeInterval? = nil) {
+        // Memory, not correctness — a ground answers for its own row or for nothing. A reading
+        // that re-numbered leaves an entry per index that no question will ever match again, and
+        // nothing else would ever reclaim them (#858).
+        if decision.delta == .reload {
+            dropMeasuredHeights()
+        }
         insert(decision.delta)
         remeasure(decision.remeasure)
         land(decision.landing, over: pace)

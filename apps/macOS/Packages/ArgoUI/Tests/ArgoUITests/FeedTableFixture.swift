@@ -18,12 +18,32 @@ import SwiftUI
         through handle: FeedTableHandle,
     )
         -> FeedTableCoordinator {
+        laidOut(rows, in: size, keeping: Kept(handle: handle, geometry: FeedGeometry()))
+    }
+
+    /// What the shell holds across a table being destroyed and built again: the scroll authority
+    /// and the measured heights. One value because the deck hands the coordinator both, and
+    /// because a suite that kept only one of them would be measuring a case the app never has.
+    struct Kept {
+        let handle: FeedTableHandle
+        let geometry: FeedGeometry
+    }
+
+    /// The same table, opening onto whatever the shell was already holding — which is what a room
+    /// switch does: `FeedTable.bind(_:through:)` hands the heights in before the first `apply`.
+    static func laidOut(
+        _ rows: [FeedRow],
+        in size: CGSize,
+        keeping kept: Kept,
+    )
+        -> FeedTableCoordinator {
         let coordinator = FeedTableCoordinator()
         let scroller = coordinator.makeScrollView()
         scroller.frame = NSRect(origin: .zero, size: size)
         coordinator.table?.frame = scroller.frame
-        coordinator.handle = handle
-        handle.coordinator = coordinator
+        coordinator.handle = kept.handle
+        kept.handle.coordinator = coordinator
+        coordinator.keep(kept.geometry)
         coordinator.apply(model(showing: rows))
         scroller.layoutSubtreeIfNeeded()
         return coordinator

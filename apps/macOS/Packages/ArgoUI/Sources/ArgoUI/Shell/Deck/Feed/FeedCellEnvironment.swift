@@ -44,10 +44,21 @@ import SwiftUI
         self.askAnswering = values.feedAskAnswering
     }
 
-    /// Whether a cell drawn against the other one would ink differently — the two facts that
-    /// re-ink the whole reading and retire its measured heights.
+    /// The two facts that re-ink the whole reading and retire its measured heights, as one value —
+    /// so a store that has to remember what its heights were drawn under remembers two scalars
+    /// rather than the whole of this, which carries a palette and two closures (#858).
+    struct Ink: Equatable {
+        let colorScheme: ColorScheme
+        let dynamicTypeSize: DynamicTypeSize
+    }
+
+    var ink: Ink {
+        Ink(colorScheme: colorScheme, dynamicTypeSize: dynamicTypeSize)
+    }
+
+    /// Whether a cell drawn against the other one would ink differently.
     func reInks(against other: FeedCellEnvironment?) -> Bool {
-        colorScheme != other?.colorScheme || dynamicTypeSize != other?.dynamicTypeSize
+        ink != other?.ink
     }
 }
 

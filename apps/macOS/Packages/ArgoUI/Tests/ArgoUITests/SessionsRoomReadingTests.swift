@@ -2,10 +2,10 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// The Sessions deck now stays mounted in every room rather than being torn down and rebuilt on
-/// each switch (#858). That removes the one thing that used to guarantee freshness — a deck built
-/// from nothing every time it appeared — so these state the guarantee directly: the reading is
-/// taken from the presentation it is handed, on every pass, and nothing about it is remembered.
+/// The deck is torn down and rebuilt on each room switch, and its measured heights no longer are
+/// (#858) — and a reading remembered beside them would draw the transcript as it stood when the
+/// reader last looked at it. These state the guarantee directly: the reading is
+/// taken from the presentation it is handed, on every pass, and nothing about it is kept.
 @Suite("Sessions room reading")
 @MainActor
 struct SessionsRoomReadingTests {

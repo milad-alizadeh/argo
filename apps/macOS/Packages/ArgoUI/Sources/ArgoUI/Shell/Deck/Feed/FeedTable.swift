@@ -26,21 +26,27 @@ struct FeedTable: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSScrollView {
         let view = context.coordinator.makeScrollView()
-        bind(context.coordinator)
+        bind(context.coordinator, through: context.environment)
         context.coordinator.apply(model(in: context))
         return view
     }
 
     func updateNSView(_: NSScrollView, context: Context) {
-        bind(context.coordinator)
+        bind(context.coordinator, through: context.environment)
         context.coordinator.apply(model(in: context))
     }
 
     /// The two halves of one authority: the handle reaches the table through the coordinator, and
     /// the coordinator reaches the policy through the handle.
-    private func bind(_ coordinator: FeedTableCoordinator) {
+    ///
+    /// The measured heights come the other way. They are the shell's where the shell holds them,
+    /// because this representable is destroyed on every room switch and they must not be (#858).
+    private func bind(_ coordinator: FeedTableCoordinator, through values: EnvironmentValues) {
         handle.coordinator = coordinator
         coordinator.handle = handle
+        if let geometry = values.argoFeedGeometry {
+            coordinator.keep(geometry)
+        }
     }
 
     private func model(in context: Context) -> FeedTableModel {

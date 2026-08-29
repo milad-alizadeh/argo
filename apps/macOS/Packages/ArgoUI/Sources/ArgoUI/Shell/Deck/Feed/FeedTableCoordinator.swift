@@ -48,14 +48,19 @@ import SwiftUI
     /// `remeasureEverything`.
     var tailing: Task<Void, Never>?
 
-    /// Measured row heights, by row index — the cache behind `heightOfRow`.
+    /// Measured row heights, by row index — the store behind `heightOfRow`.
     ///
     /// Manual heights rather than `usesAutomaticRowHeights`, and that is the scroll's frame
     /// budget: automatic heights answer through the constraint engine, where an `NSHostingView`
     /// runs THREE full SwiftUI layout passes per row scrolled in (its min, ideal and max size
     /// constraints). Profiled, not surmised — the stutter was that tower. A delegate height is
     /// one `sizeThatFits` against the ruler below, paid once per row per width.
-    private var heights: [Int: CGFloat] = [:]
+    ///
+    /// A reference, and OUTLIVING this coordinator wherever the shell hands one in: the deck is
+    /// destroyed and rebuilt on a room switch, and heights held here alone were measured again
+    /// every time the reader came back to a reading nothing had changed about (#858). Its own by
+    /// default, so a preview, a specimen and a suite each measure into one of their own.
+    private(set) var geometry = FeedGeometry()
 
     /// How many rows have actually been measured, ever — every entry is one full SwiftUI layout
     /// pass. Not a statistic: it is what #856's claim is about, and the only honest way for a suite
@@ -130,6 +135,9 @@ import SwiftUI
         let staleEnvironment = model?.environment
         model = fresh
         shown = fresh.rows
+        surrenderMovedChip()
+        // A reading that shrank leaves an entry per lost index that nothing can ever match.
+        geometry.dropBeyond(fresh.rows.count)
         guard table != nil else { return }
         if fresh.rows == stale {
             touchUp(against: fresh, from: staleEnvironment)
@@ -156,14 +164,19 @@ import SwiftUI
         place()
     }
 
-    /// One `sizeThatFits` against the ruler, cached — see `heights`.
+    /// One `sizeThatFits` against the ruler, kept — see `geometry`.
     func measuredHeight(at index: Int, in table: NSTableView) -> CGFloat {
-        if let known = heights[index] {
-            return known
-        }
         let width = table.bounds.width
         guard let model, shown.indices.contains(index), width > 0 else {
             return Self.estimatedRowHeight
+        }
+        // The pass's facts once, then the row's own with the question. A height kept under either
+        // is not an answer to this one, which is what lets the store outlive the table that filled
+        // it (#858).
+        geometry.settle(at: width, in: model.environment)
+        let ground = FeedGeometry.Ground(at: index, of: model)
+        if let known = geometry.height(at: index, under: ground) {
+            return known
         }
         ruler.rootView = model.content(at: index)
         // Rounded UP to a whole point: a non-integral row height still blurs baselines on
@@ -171,7 +184,7 @@ import SwiftUI
         let height = Self.usableHeight(ceil(ruler.sizeThatFits(
             in: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude),
         ).height))
-        heights[index] = height
+        geometry.record(height, at: index, under: ground)
         measurements += 1
         // The ruler would otherwise keep the row's live view graph — tasks included — alive
         // in a controller no window ever shows.
@@ -181,10 +194,30 @@ import SwiftUI
 
     /// Measured heights surrendered — all of them for a re-wrap, or the rows named.
     func dropMeasuredHeights(_ rows: IndexSet? = nil) {
-        guard let rows else { return heights.removeAll() }
-        for row in rows {
-            heights[row] = nil
-        }
+        geometry.drop(rows)
+    }
+
+    /// Where the reading's measured heights are kept, when the shell keeps them somewhere that
+    /// survives this coordinator. Taken before anything is measured — `FeedTable.bind(_:through:)`
+    /// runs ahead of the first `apply` — so nothing already known is ever thrown away by the swap.
+    /// The chip the arriving rows moved, and the row it moved off — both measured with a chip they
+    /// no longer have, or without one they now do.
+    ///
+    /// The one height a ground cannot judge: `FeedTableModel.content(at:)` asks
+    /// `FeedCopy.chipOffer(of:at:)`, which reads the row's whole Turn, where a ground reads the row
+    /// and the row above it. Only the reading's LAST message can gain or lose one — every chip
+    /// above it is inside a Turn an arrival cannot reach (`FeedTableDelta.chipRow`) — so this is
+    /// two rows on the passes that move it and nothing at all on every other.
+    private func surrenderMovedChip() {
+        let moved = shown.lastIndex { $0.kind.isMessage }
+        guard moved != geometry.chipRow else { return }
+        geometry.drop(IndexSet([geometry.chipRow, moved].compactMap(\.self)))
+        geometry.chipRow = moved
+    }
+
+    func keep(_ geometry: FeedGeometry) {
+        guard geometry !== self.geometry else { return }
+        self.geometry = geometry
     }
 
     /// Re-draws and, when asked, re-measures the named rows. Cells exist only for realised rows,

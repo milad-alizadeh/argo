@@ -20,10 +20,12 @@ extension FeedTableCoordinator {
         case .all:
             remeasureEverything(on: table)
         case .rebuild:
-            // A row measured against an interim launch width is cached too tall, and a reload
-            // re-asking that cache re-seats every row on the stale answer.
+            // No drop of its own. A row measured against an interim launch width is cached too
+            // tall, and a reload re-asking that store would re-seat every row on the stale answer —
+            // but a width is part of `FeedGeometry.Ground` now, and rows that re-numbered were
+            // dropped by `execute` before this ran. Emptying it here as well is what made every
+            // return to the Sessions room re-measure a reading nothing had changed about (#858).
             tailing?.cancel()
-            dropMeasuredHeights()
             table.reloadData()
         }
         // Forcing a layout from inside a notification handler is work proportional to the
