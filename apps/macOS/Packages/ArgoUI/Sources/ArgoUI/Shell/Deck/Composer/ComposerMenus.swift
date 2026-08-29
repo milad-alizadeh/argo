@@ -3,12 +3,23 @@ import ArgoEngine
 /// Which menu the composer's line has open, where the keyboard is in it, and what each event does
 /// to both — `/` and `@` (#685, #687, #752).
 ///
-/// A value holds no `Task`, so both reads stay the view's: `commands` arrives per event, and the
-/// `@` tree comes back through `workspaceAnswered`.
+/// A value holds no `Task`, so both reads stay the view's: each is ASKED FOR by the event that
+/// opens a menu and comes back through an `answered` method (#961).
 struct ComposerMenus {
-    /// The catalog as the last open read it, so a skill installed while the Session was up lands in
-    /// the very next list. No watcher, no restart.
-    private var catalog = CommandCatalog.empty
+    /// What a line change asks to be read again. Both halves are asked for on the OPENING of their
+    /// menu and never on the keystrokes after it: neither the skills on disk nor the Workspace tree
+    /// changes while a word is being typed into the line (#961).
+    struct Reads: Equatable {
+        var commands = false
+        var files = false
+    }
+
+    /// The catalog as the last `/` OPENING read it, and `nil` before it has answered at all — the
+    /// `@` tree's rule, for the `@` tree's reason: "no skill matches" is a statement about a
+    /// catalog, and there is none here to have looked in. A skill installed while the Session was
+    /// up lands in the very next list, because opening the menu is what re-reads. No watcher, no
+    /// restart, and nothing on the keystrokes between.
+    private var catalog: CommandCatalog?
     /// The Workspace tree as the last `@` read answered, and `nil` before it has answered at all.
     /// The read is asynchronous, so the two must not be one value: `[]` is a tree that was looked
     /// in and holds nothing, and "no file matches" may only be said about a tree that was read.
@@ -71,31 +82,38 @@ struct ComposerMenus {
         return isDismissed
     }
 
-    /// Re-read whatever the line has just opened, and say whether the Workspace tree must be read
-    /// again — the caller owns that await, and the answer comes back through `workspaceAnswered`.
+    /// What the line has just opened, and what that asks to be read again — the caller owns both
+    /// awaits, and the answers come back through `commandsAnswered` and `workspaceAnswered`.
     ///
-    /// The `@` read is asked for on the token OPENING rather than on every keystroke, because the
-    /// tree does not change while a word is being typed into it.
+    /// Each read is asked for on the token OPENING rather than on every keystroke, because neither
+    /// the Workspace tree nor the skills on disk changes while a word is being typed into the line.
+    /// The `/` half is what #961 was: every character of a command name walked the skills
+    /// directories and decoded two JSON files, on the thread that draws the caret.
     @discardableResult mutating func lineChanged(
         from was: String,
         to line: ComposerMenuLine,
-        commands: () -> CommandCatalog,
     )
-        -> Bool {
+        -> Reads {
         isDismissed = false
-        catalog = opensCommands(line) ? commands() : CommandCatalog.empty
-        return ComposerMenu.mention(in: line.text) != nil && ComposerMenu.mention(in: was) == nil
+        return Reads(
+            commands: opensCommands(line) && ComposerMenu.command(in: was) == nil,
+            files: ComposerMenu.mention(in: line.text) != nil
+                && ComposerMenu.mention(in: was) == nil,
+        )
     }
 
-    /// The composer has been pointed at another Session, whose Workspace this one knows nothing
-    /// about — so the tree goes, and the line is opened afresh against the new one.
-    @discardableResult mutating func sessionChanged(
-        to line: ComposerMenuLine,
-        commands: () -> CommandCatalog,
-    )
-        -> Bool {
+    /// The composer has been pointed at another Session, whose Workspace and skills this one knows
+    /// nothing about — so both go, and the line is opened afresh against the new one.
+    @discardableResult mutating func sessionChanged(to line: ComposerMenuLine) -> Reads {
         workspaceFiles = nil
-        return lineChanged(from: "", to: line, commands: commands)
+        catalog = nil
+        return lineChanged(from: "", to: line)
+    }
+
+    /// The `/` read has answered, with whatever the skills directories held at the moment the menu
+    /// opened.
+    mutating func commandsAnswered(_ read: CommandCatalog) {
+        catalog = read
     }
 
     /// The `@` read has answered. The tree is prepared here rather than by the caller, so the cost
@@ -110,9 +128,10 @@ struct ComposerMenus {
         listing(on: line)?.rows.map(\.id) ?? []
     }
 
-    /// `nil` for an adapter that declares no command surface, or a line that is not a command.
+    /// `nil` for an adapter that declares no command surface, a line that is not a command, or a
+    /// catalog that has not answered yet — `fileListing`'s rule, and its reason.
     private func commandListing(on line: ComposerMenuLine) -> ComposerMenu.Listing? {
-        guard line.canRunCommands else { return nil }
+        guard line.canRunCommands, let catalog else { return nil }
         return ComposerMenu.commands(for: line.text, in: catalog)
     }
 

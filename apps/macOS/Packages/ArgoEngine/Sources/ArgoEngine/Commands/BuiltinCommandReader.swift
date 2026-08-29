@@ -16,6 +16,11 @@ public final class BuiltinCommandReader {
     /// harness passes — `OwnedStateFile`'s rule.
     public static let defaultFileURL: URL? = BuiltinCommandStore.defaultFileURL
 
+    /// The skills half of the catalog, off this actor (#961). A stored property and not an
+    /// initialiser parameter: the init is at the cap `swift-boundaries.sh` edge 6 holds it to, and
+    /// nothing about this reader varies with it.
+    private let installed = SkillReading()
+
     private let store: BuiltinCommandStore
     private let session: HelpPanelSession
     private let version: AgentVersionReading
@@ -74,8 +79,11 @@ public final class BuiltinCommandReader {
     /// The same catalog for one Project, reading its skills here rather than at the call site. The
     /// join is the only thing the app layer was doing with either half, and a derivation in the app
     /// target is one no test can reach (ADR-0022).
-    public func catalog(forProjectAt projectURL: URL) -> CommandCatalog {
-        catalog(joining: SkillCatalog(projectURL: projectURL).skills())
+    ///
+    /// `async` because the skills half is a directory walk and this class is the main actor
+    /// (#961, ADR-0028 Rule 6). The join itself stays here, where it has always been.
+    public func catalog(forProjectAt projectURL: URL) async -> CommandCatalog {
+        await catalog(joining: installed.skills(forProjectAt: projectURL))
     }
 
     private func reading(inProjectAt projectURL: URL) async {

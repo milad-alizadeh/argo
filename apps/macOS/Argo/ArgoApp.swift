@@ -181,9 +181,12 @@ struct ArgoApp: App {
             // The Hub's own folder rather than the registry's record: an unregistered folder is
             // still a checkout with `.claude/skills` in it.
             //
+            // "Every call" is once per `/` menu OPENING and never per keystroke, and the walk
+            // itself happens on `SkillReading`'s actor rather than here (#961).
+            //
             // The CLI's own built-ins are NOT re-read here (#686). They are keyed to a version
             // rather than to a moment, and asking again would mean a hidden `claude` per keystroke.
-            skills: { cockpit.builtins.catalog(forProjectAt: projectURL) },
+            skills: { await cockpit.builtins.catalog(forProjectAt: projectURL) },
             // The Session's OWN folder, not the Project's: a Session running in a worktree names
             // files in that worktree, and nothing outside it (#687). Read on every open, so a file
             // written while the Session was running is in the very next list.

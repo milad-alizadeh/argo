@@ -26,9 +26,11 @@ struct SessionComposer: View {
     /// and the seam is where the port's reason goes. Async besides, because the walk along the
     /// ring is (#653).
     var setMode: (SessionMode) async throws -> Void = { _ in }
-    /// Every skill installed for this Project, read afresh each time the `/` menu opens (#685).
-    /// The view holds only what this last answered, so no view reads the filesystem.
-    var commands: () -> CommandCatalog = { CommandCatalog.empty }
+    /// Every skill installed for this Project, read afresh each time the `/` menu OPENS and never
+    /// on the keystrokes after it (#685, #961). ASYNC for the reason `files` is, and for one more:
+    /// it walks directories and decodes, and the actor that draws the caret does neither
+    /// (ADR-0028 Rule 6). The view holds only what this last answered.
+    var commands: () async -> CommandCatalog = { CommandCatalog.empty }
     /// Every file in this Session's Workspace, read afresh each time the `@` menu opens (#687).
     /// ASYNC where `commands` is not: this one shells out to git over a tree that can hold a
     /// hundred thousand paths, and the composer must not wait on it.
@@ -52,7 +54,7 @@ struct SessionComposer: View {
         lostTurnSeen: @escaping () -> Void = {},
         stop: @escaping () throws -> Void = {},
         setMode: @escaping (SessionMode) async throws -> Void = { _ in },
-        commands: @escaping ()
+        commands: @escaping () async
             -> CommandCatalog = { CommandCatalog.empty },
         files: @escaping () async -> [String] = { [] },
         draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
@@ -157,9 +159,7 @@ struct SessionComposer: View {
         .onExitCommand { menus.dismissed(on: line) }
         .onChange(of: draft.text) { was, _ in lineChanged(from: was) }
         .onChange(of: composer.sessionID, initial: true) { _, _ in
-            let mustRead = menus.sessionChanged(to: line, commands: commands)
-            guard mustRead else { return }
-            readWorkspace()
+            read(menus.sessionChanged(to: line))
         }
         .onChange(of: menus.listing(on: line), initial: true) { _, _ in menus.settle(on: line) }
     }
@@ -207,14 +207,18 @@ struct SessionComposer: View {
     }
 
     private func lineChanged(from was: String) {
-        let mustRead = menus.lineChanged(from: was, to: line, commands: commands)
-        guard mustRead else { return }
-        readWorkspace()
+        read(menus.lineChanged(from: was, to: line))
     }
 
-    /// Launched and never waited on, so a hundred-thousand-path tree lists behind a composer that
-    /// stayed typeable throughout.
-    private func readWorkspace() {
-        Task { await menus.workspaceAnswered(files()) }
+    /// Whatever the line has just opened, asked for and never waited on — so a hundred-thousand
+    /// path tree lists behind a composer that stayed typeable throughout, and the skills walk
+    /// happens somewhere other than the thread drawing the caret.
+    private func read(_ reads: ComposerMenus.Reads) {
+        if reads.commands {
+            Task { await menus.commandsAnswered(commands()) }
+        }
+        if reads.files {
+            Task { await menus.workspaceAnswered(files()) }
+        }
     }
 }
