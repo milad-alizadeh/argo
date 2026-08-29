@@ -29,6 +29,12 @@ import SwiftUI
         return coordinator
     }
 
+    /// A frame change as AppKit posts it — the seam both of the deck's frame observers are
+    /// registered at, the feed's on the clip view and the lane's on the document view.
+    static func postFrameChange(on view: NSView) {
+        NotificationCenter.default.post(name: NSView.frameDidChangeNotification, object: view)
+    }
+
     /// The model the table is applied, with everything the deck owns left inert: these suites open
     /// no row, fold nothing and follow nothing. Also the way a suite grows the reading under a
     /// table that is already laid out.

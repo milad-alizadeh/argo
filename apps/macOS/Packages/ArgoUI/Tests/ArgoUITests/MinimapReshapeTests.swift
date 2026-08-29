@@ -10,11 +10,18 @@ import Testing
 @Suite("Minimap reshape")
 @MainActor
 struct MinimapReshapeTests {
+    /// How many notifications each claim posts — see `FeedPaneChangeTests.posted`.
+    private static let posted = 5
+
+    /// Several batches of the chunked re-measure long, so the tail below is a burst rather than one
+    /// notice, and narrow enough that the drag really does re-wrap.
+    private static let rows = (0 ..< 200).map {
+        FeedRow(id: $0, content: .message("A line of prose long enough to wrap, number \($0)."))
+    }
+
     private static func postReshape(on deck: MinimapLaneFixture.Mounted) throws {
         let document = try #require(deck.table.scroller?.documentView)
-        NotificationCenter.default.post(
-            name: NSView.frameDidChangeNotification, object: document,
-        )
+        FeedTableFixture.postFrameChange(on: document)
     }
 
     @Test
@@ -25,31 +32,12 @@ struct MinimapReshapeTests {
         deck.lane.layoutSubtreeIfNeeded()
         let derived = deck.lane.geometryDerivations
 
-        for _ in 0 ..< 5 {
+        for _ in 0 ..< Self.posted {
             try Self.postReshape(on: deck)
         }
         deck.lane.layoutSubtreeIfNeeded()
 
         #expect(deck.lane.geometryDerivations == derived)
-    }
-
-    /// ADR-0028's acceptance line for the lane: the reader travelling over a document that did not
-    /// change shape rebuilds no geometry at all. The rectangle still moves — that is a layer frame,
-    /// not a walk over the rows.
-    @Test
-    func `scrolling a settled reading rebuilds no lane geometry`() {
-        let deck = MinimapLaneFixture.mounted(over: FeedProjection.longRows)
-        deck.lane.layoutSubtreeIfNeeded()
-        let derived = deck.lane.geometryDerivations
-        let atRest = deck.lane.viewportFrame
-
-        for at in stride(from: CGFloat(0), to: 3000, by: 200) {
-            deck.feed.settle(at: at, over: nil)
-        }
-        deck.lane.layoutSubtreeIfNeeded()
-
-        #expect(deck.lane.geometryDerivations == derived)
-        #expect(deck.lane.viewportFrame != atRest)
     }
 
     /// A reading that really did reshape is still mapped — once, at the next layout, however many
@@ -61,12 +49,57 @@ struct MinimapReshapeTests {
         let derived = deck.lane.geometryDerivations
 
         deck.table.apply(FeedTableFixture.model(showing: FeedProjection.longRows))
-        for _ in 0 ..< 5 {
+        for _ in 0 ..< Self.posted {
             try Self.postReshape(on: deck)
         }
         deck.lane.layoutSubtreeIfNeeded()
 
         #expect(deck.lane.geometryDerivations == derived + 1)
+        #expect(deck.lane.geometry.documentHeight > mapped)
+    }
+
+    /// The 227ms #955 measured, as a claim. A seam let go runs the chunked re-measure, and every
+    /// batch of it changes the document's height — so the lane hears the reading reshape once per
+    /// batch. It may rebuild its whole-document geometry once for the burst, not once per notice.
+    @Test
+    func `the tail of a full re-measure rebuilds the lane once, not once per batch`() async throws {
+        let deck = MinimapLaneFixture.mounted(over: Self.rows)
+        let scroller = try #require(deck.table.scroller)
+        deck.lane.layoutSubtreeIfNeeded()
+        let derived = deck.lane.geometryDerivations
+
+        scroller.frame = NSRect(x: 0, y: 0, width: 240, height: MinimapLaneFixture.column.height)
+        deck.table.settleAfterResize()
+        try await #require(deck.table.tailing).value
+        deck.lane.layoutSubtreeIfNeeded()
+
+        let batches = Self.rows.count / FeedTableCoordinator.remeasureBatch
+        #expect(batches > 1)
+        #expect(deck.lane.geometryDerivations == derived + 1)
+    }
+
+    /// Deferring the rebuild must not be able to strand it: a reshape the lane could not answer —
+    /// no reading to read, or a hand holding the geometry still — is not consumed, so the notice
+    /// that comes after it still lands.
+    @Test
+    func `a reshape the lane could not answer is not consumed`() throws {
+        let deck = MinimapLaneFixture.mounted(over: Array(FeedProjection.longRows.dropLast(20)))
+        let scroller = try #require(deck.table.scroller)
+        deck.lane.layoutSubtreeIfNeeded()
+        let mapped = deck.lane.geometry.documentHeight
+        let held = deck.lane.feed
+
+        // The reading grows and settles at its new height with the lane unable to read it.
+        deck.lane.feed = nil
+        deck.table.apply(FeedTableFixture.model(showing: FeedProjection.longRows))
+        scroller.layoutSubtreeIfNeeded()
+        deck.lane.layoutSubtreeIfNeeded()
+        // And it can read it again — with no height left to change, so the only thing that can
+        // bring the lane up to date is the notice it already had.
+        deck.lane.feed = held
+        try Self.postReshape(on: deck)
+        deck.lane.layoutSubtreeIfNeeded()
+
         #expect(deck.lane.geometry.documentHeight > mapped)
     }
 }

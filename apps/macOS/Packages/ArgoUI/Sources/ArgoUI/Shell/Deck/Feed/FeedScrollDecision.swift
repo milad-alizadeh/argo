@@ -53,12 +53,15 @@ enum FeedRemeasure: Equatable {
     case all
     case rebuild
 
-    /// Whether the pass runs on a width that is final. A settled pass may ask AppKit for its
-    /// heights synchronously; a per-frame one may not (#955).
-    var isSettled: Bool {
+    /// Whether the pass asks AppKit for its heights now rather than at the next layout.
+    ///
+    /// Only the full settled pass does, and it is reached from a notification only through the
+    /// 250ms settle timer. Everything else — a per-frame width, and the reload the first real
+    /// width earns — leaves the layout to the pass that was going to happen anyway (#955).
+    var forcesLayout: Bool {
         switch self {
-        case .none, .visible: false
-        case .all, .rebuild: true
+        case .none, .visible, .rebuild: false
+        case .all: true
         }
     }
 }

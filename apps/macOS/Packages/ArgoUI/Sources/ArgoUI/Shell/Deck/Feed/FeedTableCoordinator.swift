@@ -61,26 +61,21 @@ import SwiftUI
     /// pass. Not a statistic: it is what #856's claim is about, and the only honest way for a suite
     /// to ask what a re-measure COST rather than what it left behind.
     private(set) var measurements = 0
-    /// The pane size the last frame notification was acted on at. An `NSView` posts a frame
-    /// change for every `setFrame`, equal size or not, so this is what tells a real RESIZE from a
-    /// notification carrying nothing at all.
-    private var actedOnPane: CGSize?
+    /// The pane size the reading was last laid out against. Written when a derivation RUNS rather
+    /// than when a notification arrives, so it can only ever name a size that was laid out.
+    private(set) var laidOutPane: CGSize?
 
     /// Whether a pane derivation is on the stack. Landing the reading forces a layout, and that
     /// layout can resize the clip view — posting the notification that forced it.
     private(set) var isDerivingPane = false
 
-    /// How many sizes one notification is followed through before the pane is left to settle by
-    /// itself. Three, because a mount converges in two and a runaway must not be a hang.
+    /// How many sizes one notification is followed through before the pane is left to the settle
+    /// timer. Three, because a mount converges in two and a runaway must not be a hang.
     nonisolated static let panePasses = 3
 
     #if DEBUG
-        /// What the pane's frame notification costs, counted rather than inferred (ADR-0028
-        /// Rule 7). Every notification, every derivation it led to, and every notice that arrived
-        /// while a derivation was still on the stack — the last IS the loop (#955).
-        private(set) var paneNotices = 0
-        private(set) var paneDerivations = 0
-        private(set) var paneReentrances = 0
+        /// See `FeedPaneCost`.
+        private(set) var paneCost = FeedPaneCost()
     #endif
 
     /// The one view content is measured in — never installed in a window, reused per row, and
@@ -91,57 +86,30 @@ import SwiftUI
         return ruler
     }()
 
-    /// What an unmeasured row is assumed to stand at — a few lines of prose. An estimate close
-    /// to the truth keeps the table from speculatively realising twice the rows a wheel tick
-    /// will actually show, which is work thrown away at frame rate.
-    nonisolated static let estimatedRowHeight: CGFloat = ArgoFeedRow.lineHeight * 3
-
-    /// How many rows one batch of the chunked full re-measure takes on. Each is a full SwiftUI
-    /// layout, so the batch is what a frame can afford rather than what the table would like.
-    nonisolated static let remeasureBatch = 50
-
-    /// The tallest a single row may claim to be. Far above any real one, and far below AppKit's
-    /// ±2^45 geometry window, which `NSTableView` leaves once summed origins pass it.
-    nonisolated static let maxRowHeight: CGFloat = 100_000
-
-    /// A measured height, or the estimate when it is one no row could truly stand at.
-    ///
-    /// Row content that flexes vertically takes the whole proposal, and the ruler proposes an
-    /// unbounded one — a row measured at 1.2e308 turns the table's origin arithmetic into NaN and
-    /// kills the window.
-    nonisolated static func usableHeight(_ height: CGFloat) -> CGFloat {
-        guard height.isFinite, height >= 0, height <= maxRowHeight else {
-            return estimatedRowHeight
-        }
-        return height
-    }
-
-    /// One frame notification arrived — see the counters above.
+    /// One frame notification arrived — see `FeedPaneCost`.
     func notedPane() {
         #if DEBUG
-            paneNotices += 1
-            paneReentrances += isDerivingPane ? 1 : 0
+            paneCost.notices += 1
+            paneCost.reentrances += isDerivingPane ? 1 : 0
         #endif
     }
 
-    /// Whether a frame notification carries a real resize.
-    ///
-    /// A handler decides; it does not compute (ADR-0028 Rule 2). This is the whole decision, and
-    /// it is made off the two numbers the notification already has.
-    func resized(to pane: CGSize) -> Bool {
-        guard pane != actedOnPane else { return false }
-        actedOnPane = pane
-        return true
+    /// Whether the reading already stands laid out against this pane. A handler decides; it does
+    /// not compute (ADR-0028 Rule 2), and this is the whole decision.
+    func hasLaidOut(_ pane: CGSize) -> Bool {
+        pane == laidOutPane
     }
 
-    /// One pane derivation, counted, with the re-entry flag held for the length of it.
-    func derivingPane(_ work: () -> Void) {
+    /// One pane derivation, against the size it is derived for.
+    func derivingPane(at pane: CGSize, _ work: () -> Void) {
         #if DEBUG
-            paneDerivations += 1
+            paneCost.derivations += 1
+            paneCost.nestings += isDerivingPane ? 1 : 0
         #endif
+        laidOutPane = pane
         isDerivingPane = true
+        defer { isDerivingPane = false }
         work()
-        isDerivingPane = false
     }
 
     deinit {

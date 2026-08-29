@@ -114,27 +114,28 @@ extension FeedTableCoordinator {
         reportFollowing()
     }
 
-    /// A notification carrying no resize is not a pane change. `NSView` posts one for every
-    /// `setFrame`, and a window's own layout posts several per mount — each of which used to read
-    /// the anchor and re-measure every row on screen (#955).
+    /// A notification carrying no resize is not a pane change: `NSView` posts one for every
+    /// `setFrame`, and a window's own layout posts several per mount (#955).
     ///
-    /// The follow-on sizes are answered HERE rather than inside the derivation they interrupted:
+    /// The follow-on sizes are answered here rather than inside the derivation they interrupted —
     /// landing the reading forces a layout, that layout resizes the clip view, and the notification
-    /// it posts arrives on this stack. Answering it in place derives the same reading twice.
+    /// it posts arrives on this stack.
     @objc private func paneChanged(_: Notification) {
         notedPane()
-        // The re-entry check comes FIRST: a nested notice that recorded its size would leave the
-        // loop below with nothing to answer, and the size it carried would never be laid out.
-        guard let scroller, !isDerivingPane,
-              resized(to: scroller.contentView.bounds.size) else { return }
+        guard let scroller, !isDerivingPane else { return }
         var passes = Self.panePasses
-        repeat {
-            derivingPane {
-                let pane = scroller.contentView.bounds.size
+        var pane = scroller.contentView.bounds.size
+        while passes > 0, !hasLaidOut(pane) {
+            derivingPane(at: pane) {
                 decide(.paneChanged(width: pane.width, height: pane.height, anchor: anchor()))
             }
             passes -= 1
-        } while passes > 0 && resized(to: scroller.contentView.bounds.size)
+            pane = scroller.contentView.bounds.size
+        }
+        // Out of passes with the clip still moving: nothing else will post for the size it is at
+        // now, so the settle timer is what lays the reading out against it.
+        guard !hasLaidOut(pane) else { return }
+        settleSoon()
     }
 
     /// One settle per burst: each width frame pushes the full pass back, and only the quiet after
