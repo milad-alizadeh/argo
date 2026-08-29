@@ -54,12 +54,24 @@ struct FeedGeometryTests {
     func `the reading comes back at the height it was measured at`() throws {
         let kept = Self.kept()
         let opened = try Self.entered(kept)
-        let stood = try #require(opened.table.table).frame.height
+        let stood = try Self.rowHeights(of: opened)
 
         let returned = try Self.entered(kept)
 
-        #expect(stood > 0)
-        #expect(try #require(returned.table.table).frame.height == stood)
+        // Real heights, not the fallback: a table answering from an empty store would agree with
+        // itself across the switch and stand every row at the estimate.
+        #expect(stood.contains { $0 != FeedTableCoordinator.estimatedRowHeight })
+        #expect(try Self.rowHeights(of: returned) == stood)
+    }
+
+    /// Every row's height, asked for. NOT the table's frame: a table lays out only as far as it
+    /// must to show what it shows, so its frame is a mix of the rows it measured and the estimate
+    /// standing in for the rest — 301 of these 400 rows measured and 99 at `estimatedRowHeight`,
+    /// which is a number that moves with how much the mount happened to realise. Asking for all of
+    /// them makes the comparison one between two readings rather than between two lazinesses.
+    private static func rowHeights(of entered: Entered) throws -> [CGFloat] {
+        let table = try #require(entered.table.table)
+        return (0 ..< table.numberOfRows).map { table.rect(ofRow: $0).height }
     }
 
     /// A height is a fact about a row's content AT A WIDTH. The reader who drags the sidebar while
