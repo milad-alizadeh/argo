@@ -42,6 +42,17 @@ struct ArgoApp: App {
     }
 
     var body: some Scene {
+        // The window's whole projection, resolved ONCE for the pass and handed to all four readers
+        // below — the shell, the ticket-naming observer and the two command menus. Read through a
+        // computed property instead, each of them rebuilt the roster and every projection behind
+        // it, at two `realpath` calls per Session a time (#959).
+        //
+        // The Ticket Binding folded in is the Accounts coordinator's, so no surface below can build
+        // a second projection that answers differently.
+        let presentation = cockpit.presentation(accounts.connections)
+        // Handed on for the same reason, and read three times for the same three readers.
+        let actions = actions
+
         Window("Argo", id: "cockpit") {
             Group {
                 if let specimen {
@@ -113,12 +124,6 @@ struct ArgoApp: App {
             // In the slot Preferences would have taken, because there is no app-global one.
             ProjectSettingsCommands(presentation: presentation, actions: actions)
         }
-    }
-
-    /// The window's whole projection. The Ticket Binding folded in here is the Accounts
-    /// coordinator's, so no surface below can build a second projection that answers differently.
-    private var presentation: CockpitPresentation {
-        cockpit.presentation(accounts.connections)
     }
 
     private var connectSurface: ConnectSurface {

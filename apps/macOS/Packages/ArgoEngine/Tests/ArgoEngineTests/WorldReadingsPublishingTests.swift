@@ -159,4 +159,4 @@ private let startedAtMs = 1_700_000_000_000
 /// The one folder every case turns on, already resolved — `lsof` answers with the symlinks
 /// followed, so an unresolved path would never match. Outside the suite because the reads above are
 /// handed to an `Engine` and run off the main actor.
-private let repository = resolvedPath("/tmp/argo-world")
+private let repository = resolvedTestPath("/tmp/argo-world")

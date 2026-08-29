@@ -139,7 +139,7 @@ struct SpawnFixture {
     /// The resolved project path — what a claim is keyed by, and what the CLI would record. The
     /// two differ before resolution on any Mac, because `NSTemporaryDirectory` is under `/var`.
     var resolvedProjectPath: String {
-        resolvedPath(projectURL.path)
+        resolvedTestPath(projectURL.path)
     }
 
     func remove() {

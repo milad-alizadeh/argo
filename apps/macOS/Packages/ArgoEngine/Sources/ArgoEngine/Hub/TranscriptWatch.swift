@@ -16,7 +16,11 @@ final class TranscriptWatch {
 
     /// What must run once a batch has landed in the join. Reconciliation is the Hub's answer and
     /// not this type's, but it may only happen after the join has been written.
-    @ObservationIgnored var onApplied: @MainActor () -> Void = {}
+    ///
+    /// `async` because the Hub also spells the folders the batch has just named, which is a
+    /// file-system read (ADR-0028 Rule 6). Awaited rather than started and forgotten, so a caller
+    /// that has awaited a batch has awaited everything that follows from it.
+    @ObservationIgnored var onApplied: @MainActor () async -> Void = {}
 
     private var join = HubJoin()
     /// The rosters of the Projects this watch has been pointed at, kept across a switch. The sweep
@@ -216,7 +220,7 @@ final class TranscriptWatch {
             join.apply(events, to: observation.id)
             // After the join, never before: reconciliation retires a spawned Session's own row, and
             // it may only do that once the observed row it is standing in for is published.
-            onApplied()
+            await onApplied()
         }
         // A tail that ended without delivering a backfill — an unopenable file, or one stopped
         // mid-read — still has to settle, or the roster waits on a transcript that never speaks.

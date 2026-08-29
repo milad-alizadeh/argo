@@ -28,6 +28,16 @@ extension Hub {
         sessions.first { $0.id == id }
     }
 
+    /// What follows a batch landing in the join: the spawned rows it may retire, and the folders it
+    /// has just named.
+    ///
+    /// The folders are taken off the JOIN rather than off the roster below — the roster is a fold
+    /// over these same readings, and asking it here would rebuild it on every batch.
+    func applied() async {
+        reconcileSpawns()
+        await readings.spell(watch.sessions.compactMap(\.cwd))
+    }
+
     /// One Session as the roster publishes it: what its transcript said, plus what Argo established
     /// about the process behind it and its own claim on it.
     func observed(_ session: HubSession) -> HubSession {

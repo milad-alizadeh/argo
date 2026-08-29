@@ -7,6 +7,7 @@ public struct Engine: Sendable {
     private let readWorktrees: WorktreeEnumerationRead
     private let readWorkspace: WorkspaceRead
     private let readLiveness: LivenessRead
+    private let readPaths: PathResolutionRead
 
     /// The `git`- and `ps`-backed reads are the app's adapters; a caller with no repository and no
     /// process table to read supplies its own.
@@ -15,11 +16,13 @@ public struct Engine: Sendable {
         readWorktrees: @escaping WorktreeEnumerationRead = gitWorktreeEnumerationRead,
         readWorkspace: @escaping WorkspaceRead = gitWorkspaceRead,
         readLiveness: @escaping LivenessRead = processLivenessRead,
+        readPaths: @escaping PathResolutionRead = realpathResolutionRead,
     ) {
         self.readCheckout = readCheckout
         self.readWorktrees = readWorktrees
         self.readWorkspace = readWorkspace
         self.readLiveness = readLiveness
+        self.readPaths = readPaths
     }
 
     public func observeTranscript(at url: URL) throws -> TranscriptObservation {
@@ -117,5 +120,12 @@ public struct Engine: Sendable {
     /// The working directories a live CLI is running in, right now.
     public func liveCwds() async -> Set<String> {
         await readLiveness()
+    }
+
+    /// How the file system spells each of these paths. A read like the four above and for their
+    /// reason: it opens the file system, so it happens here rather than wherever the answer is
+    /// wanted (ADR-0028 Rule 6).
+    public func resolvedPaths(_ paths: [String]) async -> [String: String] {
+        await readPaths(paths)
     }
 }
