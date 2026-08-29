@@ -36,6 +36,9 @@ extension CockpitView {
         // reason above: the rows are hosted per table cell, and this is where the Session the
         // answer addresses is known.
         .environment(\.feedAskAnswering, answer(on: reading.asking.live))
+        // Injected from ABOVE the deck, which is the whole point of it: the room switch below
+        // destroys the table that measured them (#858).
+        .environment(\.argoFeedGeometry, feedGeometry)
         .overlay(alignment: .topLeading) {
             ConnectionChips(
                 connection: presentation.connection,
