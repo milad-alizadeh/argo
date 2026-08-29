@@ -20,11 +20,15 @@ struct SessionRowsSpecimen: View {
 /// The sidebar with a row SELECTED and a room picked — the one render that shows where #875 put
 /// the identity, and the only one that can.
 ///
-/// It has to be an app-target specimen and it has to be this view: the selection capsule is
+/// It has to be an app-target specimen and it has to be this view: what the accent reaches is
 /// coloured from the `AccentColor` asset, which an `ArgoUI` preview builds without and draws in the
-/// OS accent instead (D30). The rooms strip is in the same frame deliberately — the segmented
-/// control's selected segment is the second placement of the same hue, and two weights of one
-/// colour can only be judged side by side.
+/// OS accent instead (D30). The rooms strip is in the same frame deliberately — it is the one other
+/// thing in this pane that can draw a selection, and #944 is the record of what happens when it
+/// does. The claim this render carries is that only ONE of the two draws one.
+///
+/// A ring around the WHOLE picker is keyboard focus rather than selection, and whichever view this
+/// harness focuses first is free to change. The ground here is the harness's own and sits far
+/// lighter than the app's, so the two selections are judged on `roster` (#944), not on this.
 struct SelectedRowSpecimen: View {
     @State private var selection = CockpitPresentation.preview.sessions.first?.id
     @State private var room = CockpitRoom.sessions

@@ -657,8 +657,10 @@ its approved study are authoritative for the replacement look and feel.
     asset, and fills the selected segment with it outright. So finding 2 of #875 closes on the
     app-wide asset alone, with no hand-rolled control — and one hue now reads at two weights, full
     on the segment and a wash on the row. `AccentAssetTests` fails the build if asset and palette
-    ever part again. Every stock accented control and focus ring in the app moved with it, which is
-    the intent and not a side effect — and which was **looked at**, not assumed: the Connect
+    ever part again. **[Reversed for the segment by #944 — see the amendment below. The picker is
+    no longer a placement of the hue, and the `selectedSegmentBezelColor` claim was wrong.]** Every
+    stock accented control and focus ring in the app moved with it, which is the intent and not a
+    side effect — and which was **looked at**, not assumed: the Connect
     panel's `Create project` and the composer's Send are the two prominent controls that took it,
     both rendered and judged (`connectChoosing`, `composerTyping`), along with `projectSettings`,
     `ticketsChrome` and `selectedRow`. Both now carry the identity where they were graphite, which is
@@ -694,6 +696,61 @@ its approved study are authoritative for the replacement look and feel.
     change to the accent weight or to the ramp, which reopens #875 rather than extending it.
   - **Still not reopened, again:** the leading Ion Blue rail. Neither rail draws an edge of any
     kind, in the code or in this document.
+- **Amended by [#944](https://github.com/milad-alizadeh/argo/issues/944) — 2026-08-29: one
+  selected state per surface, and the row keeps it.** #875 spent the hue in two places in the same
+  pane and read that as a feature — "one hue at two weights, full on the segment and a wash on the
+  row". On the running app it is not one idea drawn twice, it is two selections competing: the eye
+  meets a saturated fill on `Sessions` and a quiet wash three rows down and cannot tell which one
+  names where it is. **The segment gives.** The roster's ground is untouched, and #906's reach across
+  every sidebar stands.
+
+  **#944's own diagnosis is half wrong, and the true half is the one that matters.** It reads the
+  two as different blues — "the segment takes the SYSTEM accent, while the row takes Argo's own
+  `interaction.accent`" — and describes the asset as still graphite `#2B2D31`. Neither holds: the
+  asset has been Ion Blue since #875, and the segment reads that asset, so the two are ONE hue at
+  two weights exactly as #875 intended. They compete anyway. The fault was never that the hues
+  disagreed; it is that a full-strength fill and a 0.10 wash are not read as one idea, and the
+  louder of them is on the control that is not the subject.
+
+  Two platform claims that this document and `RoomSegments` both carried were measured on
+  macOS 26.5.1 and both are wrong:
+
+  - **`NSSegmentedControl` does not draw a neutral capsule for a selected segment.** It fills it
+    from the app's `AccentColor` asset. #857 wrote the opposite while that asset was graphite
+    `#2B2D31`, so the accent fill it saw *was* a neutral and nothing distinguished the two
+    readings. Proved by swapping the asset for a scarlet and re-rendering `selectedRow`: the
+    segment went scarlet, so it reads the app's asset and not the system's `controlAccentColor`.
+  - **`selectedSegmentBezelColor` is NOT ignored under Liquid Glass.** Set it and the fill takes
+    that colour, at every `segmentStyle`. That is what makes the fix one property rather than a
+    hand-rolled picker, and the third option #944 held open — Argo drawing the room picker itself,
+    at the cost of arrow keys, focus ring, VoiceOver and the glass — is not spent. This one is
+    kept as a test rather than as prose (`RoomSegmentsTests`), because it is the platform's
+    behaviour and not Argo's: a macOS that stops honouring the property takes the fix with it, and
+    nothing else here would notice. It compares two draws in different bezel colours rather than
+    measuring one against a threshold — how strongly the glass composites the bezel depends on
+    whether a window server is drawing the material, so only the DIRECTION is a claim about the
+    property rather than about the renderer.
+
+  **How it is drawn now.** The selected segment is bezelled in `surface.selected`, the neutral wash
+  the contract already reserves for a control that is pressed, open or current — which is what the
+  room picker is. `RoomSegmentsTests` holds it, because the fill is the platform's and a regression
+  would be an absence of code rather than a wrong line of it.
+
+  **Judged on this** — the whole window, ACTIVE, which is the only state in which either selection
+  draws at all. `Sessions` is picked and the top row is selected, and the row is now the louder of
+  the two.
+
+  ![The sidebar with a row selected and a room selected](renders/944-one-selection.png)
+
+  **The focus ring stays accented.** It says keyboard focus rather than selection — it rings the
+  whole control, not one segment. The `selectedRow` specimen below has the picker focused and so
+  shows one. Read the picker there and nothing else: a specimen is `ShellSidebar` alone in a frame,
+  so the sidebar's vibrancy composites over the harness rather than the app's ground and the whole
+  pane sits far too light. It supersedes `875-selection-and-rooms.png`, which is deleted.
+
+  ![The picker with keyboard focus, on the harness's own ground](renders/944-picker-focused.png)
+
+  **Still not reopened, a third time:** the leading Ion Blue rail. Selection is the ground alone.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.

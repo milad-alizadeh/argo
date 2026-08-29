@@ -700,7 +700,7 @@ for; anything not listed is stock used directly.
 |---|---|---|---|
 | `TicketsRoom` | organism | the shell's existing `NavigationSplitView` slots | supplies sidebar and detail; it does not own a split of its own |
 | `TicketsSidebar` | organism | `List(selection:)` with two `Section`s | views, not tickets |
-| `RoomStrip` | atom | `Picker(.segmented)` | `Sessions \| Tickets \| Code`, at the head of EVERY room's sidebar (#805). #816 deleted the titlebar's `RoomsVessel`, so this is the window's only rooms picker and it lives in `Shell/Sidebar/` rather than under `Tickets/` |
+| `RoomStrip` | atom | `NSSegmentedControl`, via `RoomSegments` | `Sessions \| Tickets \| Code`, at the head of EVERY room's sidebar (#805). AppKit's control since #857, for `segmentDistribution` and for a mark beside a word; its selected segment is bezelled to a neutral (#944). #816 deleted the titlebar's `RoomsVessel`, so this is the window's only rooms picker and it lives in `Shell/Sidebar/` rather than under `Tickets/` |
 | `ViewRow` | molecule | an `HStack` in a `List` row | glyph · name · count, at `viewRowHeight` as a floor |
 | `ProviderFoot` | atom | an `HStack` above a `Divider` | the bound provider, at the sidebar's foot |
 | `NextUpCard` | molecule | a `VStack` on `surface.raised` | the hero; carries the ticket or an empty-tier sentence |

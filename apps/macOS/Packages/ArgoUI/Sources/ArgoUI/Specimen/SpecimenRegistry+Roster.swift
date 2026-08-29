@@ -10,9 +10,10 @@ extension SpecimenRegistry {
         // nobody has looked at on the ground half the readers will see it on.
         SpecimenEntry("flatContract") { ContractSpecimen().argoWithoutTransparency() },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
-        // Where the identity is spent (#875): the selection capsule and the rooms picker's own
-        // selected segment, in one frame and on an ACTIVE window — an inactive one draws selection
-        // in the system's neutral grey whatever the accent says.
+        // Where the identity is spent (#875, narrowed by #944): the roster's selected row and the
+        // rooms picker, in one frame and on an ACTIVE window — an inactive one draws selection in
+        // the system's neutral grey whatever the accent says, so an inactive render here proves
+        // nothing about either.
         SpecimenEntry("selectedRow") { SelectedRowSpecimen() },
         SpecimenEntry("turnClock") { TurnClockRosterSpecimen() },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
