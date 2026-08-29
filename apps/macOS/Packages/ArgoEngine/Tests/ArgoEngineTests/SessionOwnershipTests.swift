@@ -9,6 +9,9 @@ struct SessionOwnershipTests {
     /// The transcript a spawn is told to write, and the id the roster carries for that file.
     private let uuid = "11111111-2222-3333-4444-555555555555"
     private let sessionID = "/tmp/argo/11111111-2222-3333-4444-555555555555.jsonl"
+    /// The same uuid under the worktree's own record directory — one file, moved.
+    private let movedSessionID =
+        "/tmp/argo-elsewhere/11111111-2222-3333-4444-555555555555.jsonl"
 
     /// A clock the test moves by hand, so a claim's window is a fact rather than a race.
     private final class Clock {
@@ -97,17 +100,35 @@ struct SessionOwnershipTests {
         #expect(ownership.ownerOf(sessionID: sessionID) == claim)
     }
 
-    /// One claim is one agent, so the second Session to answer to a claim's name is not its (#731).
-    /// Reachable only by two spawns minting the same uuid, and the rule holds rather than races.
+    /// One claim is one agent, so a Session that answers to a name TWO claims minted is the second
+    /// claim's rather than the first's (#731). The first keeps the Session it already has.
     @Test
-    func `a bound claim adopts no second Session`() {
-        let (ownership, clock) = registry()
-        _ = ownership.claim(naming: uuid)
+    func `a bound claim adopts no second claim's Session`() {
+        let (ownership, _) = registry()
+        let first = ownership.claim(naming: uuid)
+        let second = ownership.claim(naming: uuid)
         ownership.bind(sessionID: sessionID, uuid: uuid)
-        clock.nowMs = 3000
 
-        let second = "/tmp/argo-elsewhere/11111111-2222-3333-4444-555555555555.jsonl"
-        #expect(ownership.bind(sessionID: second, uuid: uuid) == nil)
-        #expect(ownership.provenance(sessionID: second) == .external)
+        #expect(ownership.bind(sessionID: movedSessionID, uuid: uuid) == second)
+        #expect(ownership.ownerOf(sessionID: sessionID) == first)
+        #expect(ownership.ownerOf(sessionID: movedSessionID) == second)
+    }
+
+    /// The same two paths with ONE claim are not two agents: the CLI MOVES the transcript it was
+    /// told to write into the worktree's own record directory when the Session enters one, and the
+    /// roster keys a Session by that path (#770, #942). A claim that stayed behind would render the
+    /// Session Argo is steering right now as one it never spawned.
+    @Test
+    func `a claim follows the transcript it named when the CLI moves it`() {
+        let (ownership, _) = registry()
+        let claim = ownership.claim(naming: uuid)
+        ownership.bind(sessionID: sessionID, uuid: uuid)
+
+        #expect(ownership.bind(sessionID: movedSessionID, uuid: uuid) == claim)
+        #expect(ownership.provenance(sessionID: movedSessionID) == .managed)
+        #expect(ownership.ownerOf(sessionID: movedSessionID) == claim)
+        // The claim is reachable at the file it is steering, which is the id every channel keyed
+        // by the claim is looked up under.
+        #expect(ownership.rowID(ofClaim: claim.value) == movedSessionID)
     }
 }
