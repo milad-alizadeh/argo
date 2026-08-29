@@ -53,7 +53,9 @@ verdict() {
     echo "swift-test: $1 reported $bad failure(s) across $tests tests" >&2
     return 1
   fi
-  echo "swift-test: $1 passed $tests tests"
+  # "reported" rather than "ran": a skipped suite is in neither the report nor this number,
+  # so it sits BELOW the count in `swift test`'s own summary line.
+  echo "swift-test: $1 clean, 0 failures across $tests reported tests"
 }
 
 # Both packages, not just the engine: ArgoUI carries the visual contract's tests (#375), and
@@ -63,9 +65,11 @@ for package in ArgoEngine ArgoUI; do
   status=0
   (cd "$APP_DIR/Packages/$package" && swift test --xunit-output "$REPORT_DIR/$package.xml") ||
     status=$?
-  verdict "$package"
+  # The STATUS first. A compile failure or a signalled `swift` never reaches a report, and
+  # `verdict`'s "wrote no test report" would bury the reason it did not.
   if [ "$status" -ne 0 ]; then
     echo "swift-test: $package exited $status" >&2
     exit "$status"
   fi
+  verdict "$package"
 done

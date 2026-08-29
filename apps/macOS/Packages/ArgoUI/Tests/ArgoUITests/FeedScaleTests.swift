@@ -11,17 +11,13 @@ struct FeedScaleTests {
     /// Cost has to grow with the record, not with the square of it: the pass that tells two
     /// same-named files apart can easily ask every path about every other one.
     ///
-    /// A RATIO and not a stopwatch — an absolute budget on a shared runner measures the runner.
-    /// The 40x is UNCHANGED from #757, and it is not a tolerance to widen when this goes red: it is
-    /// the gap between the ~10x a linear pass costs at tenfold the events and the ~100x a quadratic
-    /// one does, and the whole claim is that the answer sits well below the middle of it. It reads
-    /// 9.1-9.9 on this machine, loaded or idle.
+    /// A RATIO, and 40x is not a tolerance to widen when this goes red: it is the gap between the
+    /// ~10x a linear pass costs at tenfold the events and the ~100x a quadratic one does. It reads
+    /// 9.1-9.9 here, loaded or idle.
     ///
-    /// What #918 changed is the MEASURE, never the bound. Wall clock made this a reading of how
-    /// busy the Mac was: it failed at 0.1946s against 0.1854s, a 5% miss, on a tree whose feed
-    /// nobody had touched — three other agents were building at the time. Both sides are now the
-    /// CPU the pass SPENT rather than the seconds that passed, taken as the cheapest of several
-    /// runs, so a thread the scheduler puts down costs nothing and neither side moves under load.
+    /// Both sides are the CPU the pass SPENT rather than the seconds that passed, taken as the
+    /// cheapest of several runs — a wall clock on a shared machine measures the machine, and noise
+    /// is one-sided, so the minimum is the estimate that holds under load.
     @Test
     func `ten times the events costs nothing like a hundred times the work`() {
         let once = TranscriptFixtures.longTranscript

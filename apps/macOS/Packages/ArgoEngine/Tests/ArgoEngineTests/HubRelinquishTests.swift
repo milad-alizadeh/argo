@@ -20,13 +20,13 @@ struct HubRelinquishTests {
 
             fixture.host.endLastProcess(exitCode: 0)
 
-            // Every GATE fact goes. The rung Argo set is not one of them and survives the PTY that
-            // carried it, which is what the test below this one says — so `== ClaimFacts()` asked
-            // for a state that cannot exist, and had been waiting five seconds for it on the shared
-            // main actor every run since #629 gave a New Session a rung at the spawn (#918).
+            // Every GATE fact goes and the rung Argo set stays, which is the test below this one.
+            // `== ClaimFacts()` asked for the rung to go too, so it could never hold: unsatisfiable
+            // since #663 filed the spawn's rung under the claim, and waited on every run since
+            // because nothing read its answer (#918).
             await settle { fixture.hub.facts(forClaim: claim).standing.isEmpty }
-            let left = fixture.hub.facts(forClaim: claim)
-            #expect(left == ClaimFacts(modeSet: left.modeSet))
+            let rung = SessionModeSet(mode: .code, recordsWhenSet: 0)
+            #expect(fixture.hub.facts(forClaim: claim) == ClaimFacts(modeSet: rung))
         }
     }
 

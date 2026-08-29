@@ -101,9 +101,11 @@ func hubTailEnded(
     transcriptID: String,
     at location: SourceLocation = #_sourceLocation,
 ) async {
-    await settle(until: {
-        hub.observations.contains { $0.id == transcriptID && $0.state == .stopped }
-    }, at: location)
+    await settle(
+        until: { hub.observations.contains { $0.id == transcriptID && $0.state == .stopped } },
+        message: "the tail on \(transcriptID) never ended",
+        at: location,
+    )
 }
 
 /// An observation whose stream stays open until the test closes it, which is the shape a live
@@ -132,7 +134,11 @@ func hubSettle(
     until condition: () -> Bool,
     at location: SourceLocation = #_sourceLocation,
 ) async {
-    await settle(until: condition, at: location)
+    await settle(
+        until: condition,
+        message: "the roster never reached the state the test is waiting for",
+        at: location,
+    )
 }
 
 /// A transcript's real shape: a uuid-named file inside a per-Project record directory. What a suite
@@ -195,22 +201,14 @@ private func openDescriptors() -> [Int32] {
     return entries.prefix(Int(read / stride)).map(\.proc_fd)
 }
 
-/// Wait until a condition holds, and RECORD AN ISSUE if it never does. Some work is detached and
-/// cannot be awaited from the call that triggered it; this waits for it without sleeping on a
-/// guessed duration, and gives up rather than hanging.
+/// Wait until a condition holds, and RECORD AN ISSUE if it never does.
 ///
 /// An expired wait is a FAILURE at the wait, never silence (#918). Almost every call site discards
-/// the answer, so before this the only trace of a wait that ran out was the assertion below it
-/// failing — or passing anyway, leaving the wait to burn its whole budget unnoticed on the shared
-/// main actor. That is what made a red run mean nothing under load: which tests lost was decided by
-/// where the scheduler happened to be when a fixed clock ran out, and every expired wait made the
-/// contention that decided it worse.
+/// the answer, so before this the only trace of one running out was the assertion below it failing
+/// — or passing anyway, leaving the wait to spend its whole budget polling the shared main actor.
 ///
-/// The bound is a HANG GUARD and not a budget. No caller asserts how FAST anything happens, so the
-/// number only has to exceed what a working machine can take: the slowest real wait here is 0.8s
-/// idle and 2.3s under three concurrent clean compiles, so thirty seconds is over ten times the
-/// loaded worst case and still far inside any CI job's own limit. A machine slower than that makes
-/// the suite SLOW rather than red, which is the direction #826 set.
+/// The bound is a HANG GUARD and not a budget: no caller asserts how FAST anything happens. The
+/// slowest real wait here is 0.8s idle and 2.3s under three concurrent clean compiles.
 ///
 /// It SLEEPS between checks rather than yielding, and that is load-bearing rather than a rounding
 /// of the same idea. What most of these waits are waiting on is a `DispatchSource` on the main
@@ -218,16 +216,18 @@ private func openDescriptors() -> [Int32] {
 /// on the main actor without ever leaving it, so a tight yield loop can spin out the whole bound
 /// while the queue's event handler never runs and the thing being waited for never happens.
 ///
-/// ONE TRAP, and it cost most of #918 to find: two waits in one scope, both trailing-closure calls
-/// over the same capture, can be compiled to a SINGLE closure entity — the second call then runs
-/// the FIRST one's body and can never settle. Binding the capture to a local at the second site
-/// turns it into a hard `function type mismatch` from the compiler, which is how it was caught.
-/// Where a test needs two waits over one fixture, give the second a NAMED condition
-/// (`CompanionChannelTests` has the worked example) so the two cannot be unified.
+/// ONE TRAP, and it cost most of #918 to find. Where a `#require` or `#expect` macro wraps one
+/// `settle` in a scope, a later trailing-closure `settle` over the same capture can be compiled to
+/// the MACRO's closure entity rather than its own: it re-runs the first condition and can never
+/// settle. Plain waits do not do this — `HubRelinquishTests` has three over one fixture — so it is
+/// the macro that does it. Binding the capture to a local at the second site turns it into a hard
+/// `function type mismatch`, which is how it was found. Where a macro wraps the first wait, give
+/// the second a NAMED condition; `CompanionChannelTests` has the worked example.
 @MainActor
 @discardableResult
 func settle(
     until condition: () -> Bool,
+    message: @autoclosure () -> String = "the wait never settled",
     at location: SourceLocation = #_sourceLocation,
 )
     async -> Bool {
@@ -241,9 +241,16 @@ func settle(
     if condition() {
         return true
     }
-    Issue.record("the wait never settled within \(settleLimit)", sourceLocation: location)
+    Issue.record("\(message()) within \(settleLimit)", sourceLocation: location)
     return false
 }
 
 /// The hang guard above, named so the message can state it.
-let settleLimit: Duration = .seconds(30)
+///
+/// Ten seconds is over four times the slowest wait measured here, which is outside anything a
+/// working machine produces — and a red run pays it once per expired wait, so a `.serialized` suite
+/// pays it per test. `ARGO_SETTLE_LIMIT_SECONDS` raises it for a box slower than any measured here,
+/// so a local red run does not pay for that possibility.
+let settleLimit: Duration = .seconds(
+    ProcessInfo.processInfo.environment["ARGO_SETTLE_LIMIT_SECONDS"].flatMap(Int.init) ?? 10,
+)

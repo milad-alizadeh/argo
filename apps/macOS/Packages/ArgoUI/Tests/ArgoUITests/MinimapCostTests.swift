@@ -10,10 +10,10 @@ import Testing
 /// half shows up in a screenshot.
 ///
 /// The budgets are deliberately loose — an order of magnitude over what the machine does, so the
-/// suite fails on a REGRESSION rather than on a busy CI box. Since #918 they are also spent in the
-/// right currency: every figure below is the CPU the work SPENT rather than the seconds that passed
-/// while it ran, so a Mac with three other agents building on it reads the same as an idle one. The
-/// cold readings stay single runs, because a first pass over a cold cache IS the measurement.
+/// suite fails on a REGRESSION rather than on a busy CI box. Every figure below is the CPU the work
+/// SPENT rather than the seconds that passed, so a Mac with three other agents building on it reads
+/// the same as an idle one. The cold readings stay single runs: a first pass over a cold cache IS
+/// the measurement.
 ///
 /// What matters is the shape: reading a session is linear in its rows and free of glyph work,
 /// and painting a band is bounded by the band.

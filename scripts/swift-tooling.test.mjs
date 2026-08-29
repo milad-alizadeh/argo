@@ -119,20 +119,20 @@ check('swift-test.sh fails there instead under ARGO_REQUIRE_SWIFT_TOOLS', () => 
 })
 
 // `swift test` EXITS 0 ON A FAILED RUN (#918), so swift-test.sh may believe only the xUnit
-// report. These stubs are a `swift` that writes whichever report is asked for and exits 0 —
-// exactly the trap — plus a `uname` saying Darwin, so the checks below run on any host.
+// report. The `swift` stub below is exactly that trap; `uname` says Darwin so these run anywhere.
 const reportBin = path.join(scratch, 'report-bin')
 mkdirSync(reportBin, { recursive: true })
 writeFileSync(path.join(reportBin, 'uname'), '#!/bin/sh\nprintf Darwin\n')
 chmodSync(path.join(reportBin, 'uname'), 0o755)
 const REPORTING = { pathValue: `${reportBin}:/usr/bin:/bin` }
-const suite = (counts) => `<testsuites><testsuite name="T" ${counts}></testsuite></testsuites>`
-
-// `report` is the XML the stub writes, or '' to write none at all.
-function swiftWriting(report) {
-  const write = report ? `printf '%s' '${report}' > "\${out%.xml}-swift-testing.xml"\n` : ''
-  const scan = 'out=""\nprev=""\nfor a in "$@"; do\n  [ "$prev" = --xunit-output ] && out=$a\n'
-  writeFileSync(path.join(reportBin, 'swift'), `#!/bin/sh\n${scan}  prev=$a\ndone\n${write}`)
+const suite = (n) => `<testsuites><testsuite name="T" ${n}></testsuite></testsuites>`
+// An empty `report` writes none at all, which is a run that never got that far.
+function swiftWriting(report, code = 0) {
+  // `$3` is the path, because the script invokes `swift test --xunit-output <path>` — so a
+  // reordering of those flags breaks this stub loudly rather than silently writing nowhere.
+  // SwiftPM appends a per-harness suffix to the name asked for, and so does this.
+  const write = report ? `printf '%s' '${report}' > "\${3%.xml}-swift-testing.xml"\n` : ''
+  writeFileSync(path.join(reportBin, 'swift'), `#!/bin/sh\n${write}exit ${code}\n`)
   chmodSync(path.join(reportBin, 'swift'), 0o755)
 }
 
@@ -150,12 +150,20 @@ for (const [cause, report, said] of [
   })
 }
 
+check('swift-test.sh surfaces a non-zero swift exit rather than the missing report', () => {
+  swiftWriting('', 3)
+  const result = run(TEST, REPORTING)
+  assert.equal(result.status, 3, result.output)
+  assert.match(result.output, /exited 3/)
+  assert.doesNotMatch(result.output, /wrote no test report/)
+})
+
 check('swift-test.sh passes on a clean report, for both packages', () => {
   swiftWriting(suite('errors="0" tests="9" failures="0"'))
   const result = run(TEST, REPORTING)
   assert.equal(result.status, 0, result.output)
-  assert.match(result.output, /ArgoEngine passed 9 tests/)
-  assert.match(result.output, /ArgoUI passed 9 tests/)
+  assert.match(result.output, /ArgoEngine clean, 0 failures across 9 reported tests/)
+  assert.match(result.output, /ArgoUI clean, 0 failures/)
 })
 
 check('swift-format.sh rewrites in place by default', () => {
