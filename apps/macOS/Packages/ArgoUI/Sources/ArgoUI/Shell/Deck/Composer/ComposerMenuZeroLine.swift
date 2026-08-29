@@ -15,11 +15,7 @@ struct ComposerMenuZeroLine: View {
     let sigil: ComposerMenu.Sigil
 
     var body: some View {
-        (Text(sigil.nothingMatched)
-            + Text("\(sigil.mark)\(query)")
-            .foregroundStyle(argo.color.text.primary.color)
-            .fontWeight(.semibold)
-            + Text(Self.tail))
+        Text("\(sigil.nothingMatched)\(typed)\(Self.tail)")
             .argoText(ArgoTypography.rowMeta)
             .foregroundStyle(argo.color.text.tertiary)
             .lineLimit(1)
@@ -28,6 +24,14 @@ struct ComposerMenuZeroLine: View {
             .frame(height: ArgoComposerVessel.commandRowHeight, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
+    }
+
+    /// What the reader typed, sigil and all. `String(_:)` because `Character` has no `Text`
+    /// interpolation of its own, and the generic one that catches it is deprecated.
+    private var typed: Text {
+        Text(String(sigil.mark) + query)
+            .foregroundStyle(argo.color.text.primary.color)
+            .fontWeight(.semibold)
     }
 
     /// The reassurance is half the line's job: nothing is broken and nothing is blocked.

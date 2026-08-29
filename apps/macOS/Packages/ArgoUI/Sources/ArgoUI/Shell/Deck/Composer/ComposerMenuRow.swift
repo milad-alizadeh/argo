@@ -34,13 +34,10 @@ struct ComposerMenuRow: View {
         .accessibilityAddTraits(isCurrent ? [.isSelected, .isButton] : .isButton)
     }
 
-    /// What the row is, with the characters the reader typed inked in the accent.
+    /// What the row is, with the characters the reader typed inked in the accent. An interpolated
+    /// `Text` keeps its own styling; the plain runs around it take the outer one.
     private var lead: some View {
-        (Text(part(before: row.matched))
-            + Text(part(in: row.matched))
-            .foregroundStyle(argo.color.interaction.accentBright.color)
-            .fontWeight(.semibold)
-            + Text(part(after: row.matched)))
+        Text("\(part(before: row.matched))\(matched)\(part(after: row.matched))")
             .argoText(ArgoTypography.machine)
             .foregroundStyle(argo.color.text.primary)
             .lineLimit(1)
@@ -49,6 +46,13 @@ struct ComposerMenuRow: View {
             // word on the row that distinguishes it. The `/` menu's description is the same case:
             // it is the row's content, but the command is what the reader is picking.
             .layoutPriority(1)
+    }
+
+    /// The characters the reader typed, which are the only part of the lead that lifts.
+    private var matched: Text {
+        Text(part(in: row.matched))
+            .foregroundStyle(argo.color.interaction.accentBright.color)
+            .fontWeight(.semibold)
     }
 
     @ViewBuilder private var detail: some View {
