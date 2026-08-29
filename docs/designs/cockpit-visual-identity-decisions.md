@@ -726,7 +726,10 @@ its approved study are authoritative for the replacement look and feel.
     at the cost of arrow keys, focus ring, VoiceOver and the glass — is not spent. This one is
     kept as a test rather than as prose (`RoomSegmentsTests`), because it is the platform's
     behaviour and not Argo's: a macOS that stops honouring the property takes the fix with it, and
-    nothing else here would notice.
+    nothing else here would notice. It compares two draws in different bezel colours rather than
+    measuring one against a threshold — how strongly the glass composites the bezel depends on
+    whether a window server is drawing the material, so only the DIRECTION is a claim about the
+    property rather than about the renderer.
 
   **How it is drawn now.** The selected segment is bezelled in `surface.selected`, the neutral wash
   the contract already reserves for a control that is pressed, open or current — which is what the
