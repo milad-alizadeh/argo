@@ -66,13 +66,16 @@ struct TicketStartTests {
         #expect(spawn.asked?.opening == nil)
     }
 
-    /// `Code` is the rung work needs, and the only one this room offers (#872).
-    @Test func `a Session started on a ticket stands on the Code rung`() async {
+    /// Every ticket-started Session, whatever its ticket resolves to (#941): `/implement`, the
+    /// design route, and the ticket that asks for no command — that one was still started on a
+    /// ticket.
+    @Test(arguments: [899, 609, 607])
+    func `a Session started on a ticket stands on the Auto rung`(ticket: Int) async {
         let spawn = Spawn()
 
-        await start(spawn).run(on: 899, in: CockpitNavigationModel())
+        await start(spawn).run(on: ticket, in: CockpitNavigationModel())
 
-        #expect(spawn.asked?.mode == .code)
+        #expect(spawn.asked?.mode == .auto)
     }
 
     /// The reversal #899 is about: a Start that begins real work has its answer in the other room,

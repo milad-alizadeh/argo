@@ -102,6 +102,24 @@ struct SpawnModeTests {
         #expect(try Self.rung(of: fixture, launch: 1) == "acceptEdits")
     }
 
+    /// A rung the SEED named is Argo's choice for one Session, so it is not filed as the rung last
+    /// picked — only a rung the user chose on a live Session is (#629). This is what keeps a
+    /// ticket-started `Auto` (#941) off the next hand-started New Session.
+    @Test
+    func `a seeded rung is not the one the next New Session opens on`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        try await fixture.hub.driver.setMode(.readOnly, for: claim.value)
+
+        _ = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .auto, ticket: 941))
+        _ = try await fixture.hub.spawnSession()
+
+        // The seeded launch too: with the seed ignored, the pick surviving would prove nothing.
+        #expect(try Self.rung(of: fixture, launch: 1) == "auto")
+        #expect(try Self.rung(of: fixture, launch: 2) == "plan")
+    }
+
     /// The value the launch stands on, read off argv the way the CLI reads it: the word after the
     /// flag, not merely somewhere on the line.
     private static func rung(of fixture: SpawnFixture, launch index: Int = 0) throws -> String? {

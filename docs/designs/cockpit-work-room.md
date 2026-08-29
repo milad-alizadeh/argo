@@ -407,6 +407,17 @@ that reasoning held for a Start whose only visible answer was the backlog row go
 Start that begins real work has its answer in the other room. A refused spawn moves nothing. The
 gallery is `start-command.png`, from the `ticketStart` specimen.
 
+**Amended #941: the rung a ticket starts on is `Auto`, not `Code`.** `Code` asks before anything
+leaves the Workspace, so a ticket-started Session met a Permission on its first command outside it
+— a question the reader had already answered by pressing `Start` on that ticket. The rung is
+`WorkCommand.startingMode`, beside the mapping that resolves the command, because "what does this
+ticket start as" is one question with two halves and one home. It applies to every ticket-started
+Session, including the one that resolves to no command and opens an empty composer: it was still
+started on a ticket.
+
+**A Session the user starts BY HAND is untouched.** It opens on the rung last picked (#629), and a
+ticket's `Auto` is never filed as a pick — only a rung chosen on a live Session is.
+
 The two link verbs that would otherwise have hidden in that ellipsis — open on the code host,
 copy link — are icons beside `Start`, past a hairline. Nothing in this room is behind an unlabelled
 control.
@@ -684,7 +695,7 @@ for; anything not listed is stock used directly.
 | `ToolbarVessel` | atom | `GlassEffectContainer` + `Capsule` | groups icon buttons; no border, no shadow |
 | `ToolbarIcon` | atom | `Button(.plain)` with a `Label(.iconOnly)` | one glyph at `iconSize` |
 | `NewTicketButton` | atom | `ToolbarIcon` in its own `ToolbarVessel` | the call-to-action; survives the empty backlog |
-| `StartControl` | molecule | `Button` in one vessel, with the two link icons | the verb, spawning in `Code`. **Amended #872**: it was `Button` + `Menu`, and the chevron is gone |
+| `StartControl` | molecule | `Button` in one vessel, with the two link icons | the verb, spawning in `Auto` (**amended #941**). **Amended #872**: it was `Button` + `Menu`, and the chevron is gone |
 | ~~`ModeMenu`~~ | — | **gone (#872)** | the four Mode rungs. The rung is the composer's, over a live Session (#608) |
 | `BacklogSearchField` | atom | `.searchable` field | searches the list; sits at the trailing edge |
 | `TicketDetail` | organism | a `ScrollView` | one column; no inner split |
