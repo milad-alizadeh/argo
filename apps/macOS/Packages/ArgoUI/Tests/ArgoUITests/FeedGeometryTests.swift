@@ -60,6 +60,15 @@ struct FeedGeometryTests {
 
         let back = try #require(returned.table.table).frame.height
         let screens = NSScreen.screens.map { "\($0.frame.size) @\($0.backingScaleFactor)" }
+        let firstTable = try #require(opened.table.table)
+        let backTable = try #require(returned.table.table)
+        let firstRects = (0 ..< firstTable.numberOfRows).map { firstTable.rect(ofRow: $0).height }
+        let backRects = (0 ..< backTable.numberOfRows).map { backTable.rect(ofRow: $0).height }
+        let firstOdd = firstRects.enumerated().filter { $0.element != $0.element.rounded() }
+        let backOdd = backRects.enumerated().filter { $0.element != $0.element.rounded() }
+        print(
+            "CIPROBE2 rowsFirst=\(firstTable.numberOfRows) sumFirst=\(firstRects.reduce(0, +)) sumBack=\(backRects.reduce(0, +)) spacing=\(firstTable.intercellSpacing) estimated=\(FeedTableCoordinator.estimatedRowHeight) firstFractional=\(firstOdd.prefix(5).map { "\($0.offset):\($0.element)" }) backFractional=\(backOdd.prefix(5).map { "\($0.offset):\($0.element)" }) differing=\(zip(firstRects, backRects).enumerated().filter { $0.element.0 != $0.element.1 }.prefix(5).map { "\($0.offset):\($0.element.0)vs\($0.element.1)" })",
+        )
         print(
             "CIPROBE stood=\(stood) back=\(back) firstMeasurements=\(opened.table.measurements) returnMeasurements=\(returned.table.measurements) keptCount=\(kept.geometry.count) rows=\(Self.rows.count) firstLayouts=\(String(describing: opened.table.table?.layouts)) backLayouts=\(String(describing: returned.table.table?.layouts)) firstDoc=\(opened.scroller.documentView?.frame.height ?? -1) backDoc=\(returned.scroller.documentView?.frame.height ?? -1) screens=\(screens)",
         )
