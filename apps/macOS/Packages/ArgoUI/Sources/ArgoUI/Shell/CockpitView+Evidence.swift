@@ -10,9 +10,6 @@ import SwiftUI
 extension CockpitView {
     /// The step goes with the row: a panel opened on a different call has no business resuming at
     /// whichever result the last one was showing.
-    ///
-    /// Takes the decision the control was DRAWN from rather than resolving it afresh, so a press
-    /// can never open on rows the reader is not looking at.
     func toggleEvidence(_ toggling: EvidenceToggling) {
         openEvidence = toggling.next
         evidenceStep = nil
@@ -30,12 +27,12 @@ extension CockpitView {
     /// The toggle, in the room that has a panel and `nil` in the others. It is handed to
     /// `ShellToolbar` rather than declared beside it — see the note on `ShellToolbar.evidence`.
     ///
-    /// Takes the pass's own reading rather than `CockpitView.reading`, which is `private` for that
-    /// reason: the toggle opens what is ON SCREEN, so it reads the rows the deck's zones were
-    /// handed rather than asking the same question a second time (#957).
+    /// The rows are `DeckContentRow.reading`'s question, asked of the pass's own reading: the
+    /// toggle opens what is ON SCREEN, so it has to read the rows the deck's zones draw (#875).
     func evidenceControl(in reading: SessionsRoomReading) -> EvidenceToggle? {
         guard navigation.room == .sessions else { return nil }
-        let toggling = EvidenceToggling(feed: reading.rows(under: feedScope), open: openEvidence)
+        let rows = reading.readings.reading(of: reading.feed, under: feedScope)
+        let toggling = EvidenceToggling(feed: rows, open: openEvidence)
         return EvidenceToggle(toggling: toggling) { toggleEvidence(toggling) }
     }
 }

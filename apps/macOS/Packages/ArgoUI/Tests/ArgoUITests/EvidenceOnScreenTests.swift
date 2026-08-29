@@ -13,19 +13,19 @@ struct EvidenceOnScreenTests {
         let agent = try #require(FeedAgents.all(in: reading.feed)
             .first { reading.readings.rows(of: $0) != nil })
 
-        let scoped = reading.rows(under: .subagent(agent.id))
+        let scoped = reading.readings.reading(of: reading.feed, under: .subagent(agent.id))
         let opened = try #require(Self.opened(by: EvidenceToggling(feed: scoped, open: nil)))
 
         #expect(opened.steps.first?.address == .filed(Self.subagentRead))
     }
 
-    /// The other half of the same claim: with no chip lit the toggle reads the Session's own rows,
-    /// so one reading answers both scopes with different evidence.
+    /// The other half of the same claim: under `FeedScope.session` the toggle reads the root
+    /// Agent's own rows, so one reading answers both scopes with different evidence.
     @Test
-    func `an unscoped feed opens the newest evidence in the session's own rows`() throws {
+    func `a feed scoped to the session opens the newest evidence in its own rows`() throws {
         let reading = Self.reading
 
-        let rows = reading.rows(under: .session)
+        let rows = reading.readings.reading(of: reading.feed, under: .session)
         let opened = try #require(Self.opened(by: EvidenceToggling(feed: rows, open: nil)))
 
         #expect(opened.steps.first?.address == .filed(Self.sessionRead))

@@ -70,24 +70,6 @@ public struct CockpitView: View {
         self.ticketAddress = ticketAddress
     }
 
-    /// The selected Session's reading in the room that DRAWS a transcript, and nothing at all in
-    /// the other two — the projection walks the whole event stream, and `body` runs in every room.
-    ///
-    /// Gated rather than cached: the presentation is a value the Hub rebuilds as the transcript
-    /// grows, and a memoised reading would show it as it stood when the reader last clicked. That
-    /// guarantee is what `SessionsRoomReadingTests` holds.
-    ///
-    /// The gate is a cost that was measured, not assumed (#858). Mounting the deck across rooms so
-    /// a switch need not rebuild it means this may not collapse — and an ungated reading cost a
-    /// 100-230 ms main-thread stall on every transcript batch in the rooms that draw no transcript,
-    /// where a gated one costs nothing at all.
-    /// `private`, which is what stops a second one being taken: `body` resolves it and hands it
-    /// on, so no extension of this type can reach the property at all (#957).
-    private var reading: SessionsRoomReading {
-        guard navigation.room == .sessions else { return .none }
-        return SessionsRoomReading(presentation: presentation, sessionID: navigation.session)
-    }
-
     /// What is in the deck's one slot for the selected Session — the composer, the Permission
     /// displacing it, the line saying there is nothing to steer, or nothing at all. One decision,
     /// made in `DeckVessel` where a test can reach it.
@@ -130,10 +112,6 @@ public struct CockpitView: View {
         // visibility, the sidebar, the toolbar row and the deck. `nil` outside the Tickets room,
         // which is also what keeps the projection from running at all in the other two.
         let tickets = navigation.room == .tickets ? ticketsRoom : nil
-        // The same for the reading, which the deck draws and the toolbar's evidence toggle
-        // resolves against: two readers each taking their own walked the whole event stream twice
-        // in one pass.
-        let reading = reading
 
         NavigationSplitView(columnVisibility: sidebarColumn(for: tickets)) {
             sidebar(tickets: tickets)
@@ -143,7 +121,11 @@ public struct CockpitView: View {
                     max: ArgoLayout.sidebarMaximumWidth,
                 )
         } detail: {
-            detail(tickets: tickets, reading: reading)
+            detail(
+                tickets: tickets,
+                // The pass's ONE reading, handed on rather than asked for again (#957).
+                reading: .taken(in: navigation.room, of: presentation, for: navigation.session),
+            )
         }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")
         // Hidden, so the icons sit on the window's own ground — and the canopy directly below is
