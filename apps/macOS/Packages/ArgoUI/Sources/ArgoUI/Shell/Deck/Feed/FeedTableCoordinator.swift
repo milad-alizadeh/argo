@@ -61,6 +61,11 @@ import SwiftUI
     /// default, so a preview, a specimen and a suite each measure into one of their own.
     private(set) var geometry = FeedGeometry()
 
+    /// How many cells the table has been handed, ever. A cell is one SwiftUI tree built or diffed,
+    /// which is the interactive cost a scroll and a mount both pay — and unlike `measurements` it
+    /// is not saved by the height cache. What ADR-0028 Rule 1 is asked with, for the mount.
+    var exposures = 0
+
     /// How many rows have actually been measured, ever — every entry is one full SwiftUI layout
     /// pass. Not a statistic: it is what #856's claim is about, and the only honest way for a suite
     /// to ask what a re-measure COST rather than what it left behind.

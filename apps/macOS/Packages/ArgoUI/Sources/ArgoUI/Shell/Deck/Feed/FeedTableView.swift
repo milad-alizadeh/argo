@@ -24,6 +24,17 @@ final class FeedTableView: NSTableView {
     /// and to grey Edit ▸ Copy out over a reading with nothing selectable in it.
     var focusedWords: (() -> String?)?
 
+    /// How many times the reading has been laid out. One layout pass realises and sizes every
+    /// cell on screen, so this is the one honest count of what a mount or a landing COST — see
+    /// `FeedMountCostTests`. Not DEBUG-only: it is one increment on a path that already lays out
+    /// a screenful of SwiftUI.
+    private(set) var layouts = 0
+
+    override func layout() {
+        layouts += 1
+        super.layout()
+    }
+
     /// How the reader is working. The app's one reader by default; a suite hands the table its own
     /// rather than share a mutable global between cases.
     var reader = ArgoFocusVisibility.shared

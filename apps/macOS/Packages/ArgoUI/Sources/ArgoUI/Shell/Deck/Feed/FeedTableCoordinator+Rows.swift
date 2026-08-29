@@ -20,6 +20,7 @@ extension FeedTableCoordinator: NSTableViewDataSource, NSTableViewDelegate {
         ) as? FeedRowCell
             ?? FeedRowCell(shape: shape)
         cell.host.rootView = model.content(at: index, hasCursor: index == cursorRow)
+        exposures += 1
         return cell
     }
 
