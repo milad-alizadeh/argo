@@ -158,6 +158,16 @@ public extension ArgoPalette {
         /// `text.primary`.
         public let destructive: ArgoColor
 
+        /// The brand hue laid under a whole row as a GROUND rather than drawn as an ink — the one
+        /// selection a reader tracks all day (#875 finding 1, amending D30). One hue, two weights:
+        /// `accent` at full strength where a control is the loud rung, this where a row is merely
+        /// selected.
+        ///
+        /// OPAQUE by contract (#922): `.listStyle(.sidebar)` still draws its own capsule under
+        /// this, so a translucent value composites onto that capsule rather than replacing it and
+        /// the ground the contract measures is not the ground the row gets.
+        public let selectionGround: ArgoColor
+
         public init(
             accent: ArgoColor,
             accentBright: ArgoColor,
@@ -165,6 +175,7 @@ public extension ArgoPalette {
             selectionIndicator: ArgoColor,
             focusRing: ArgoColor,
             destructive: ArgoColor,
+            selectionGround: ArgoColor,
         ) {
             self.accent = accent
             self.accentBright = accentBright
@@ -172,30 +183,15 @@ public extension ArgoPalette {
             self.selectionIndicator = selectionIndicator
             self.focusRing = focusRing
             self.destructive = destructive
+            self.selectionGround = selectionGround
         }
 
         public var all: [(name: String, color: ArgoColor)] {
             [
                 ("accent", accent), ("accentBright", accentBright), ("accentDeep", accentDeep),
                 ("selectionIndicator", selectionIndicator), ("focusRing", focusRing),
-                ("destructive", destructive),
+                ("destructive", destructive), ("selectionGround", selectionGround),
             ]
-        }
-
-        /// The brand hue laid under a whole row as a GROUND rather than drawn as an ink — the one
-        /// selection a reader tracks all day (#875 finding 1, amending D30). One hue, two weights:
-        /// `accent` at full strength where a control is the loud rung, this where a row is merely
-        /// selected.
-        ///
-        /// The weight is not a taste: at any more alpha the roster's own quietest voice falls below
-        /// the legibility it has on `surface.selected`, which is the wash this replaces. The
-        /// contract asserts exactly that.
-        ///
-        /// It is drawn by `SessionNavigator` as a row background, not by the platform: a macOS 26
-        /// sidebar's selection capsule is a fixed neutral that neither `.tint` nor the
-        /// `AccentColor` asset moves by a value.
-        public var selectionGround: ArgoColor {
-            accent.opacity(0.10)
         }
     }
 

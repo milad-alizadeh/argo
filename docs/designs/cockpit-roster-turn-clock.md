@@ -57,7 +57,7 @@ more. It never takes `state.running` ink: mint on a derived reading would render
 | Placement | the age slot: secondary line, leading edge | `SessionRow.secondaryLine` — the slot exists; only its content changes |
 | Type role | `ArgoTypography.rowMeta` with monospaced digits | the slot's existing role; monospaced digits so a tick never wobbles the row (**new modifier, not a new token**) |
 | Live ink | `state.running` `#46D3A8` | the dot's own ink as a figure; the one running-ink text in the sidebar |
-| Derived + seen ink | `text.tertiary` `#868D94` | the secondary line's existing ink |
+| Derived + seen ink | `text.tertiary` `#929AA1` | the secondary line's existing ink |
 | Format, under a minute | `42s` | |
 | Format, under an hour | `4m 12s` — seconds padded to two digits | |
 | Format, past an hour | `1h 04m` — minutes padded, no seconds | an hour-long turn is not read to the second |

@@ -42,11 +42,11 @@ enum ArgoTicketDetail {
     /// grounds are rationed here.
     static let labelGroundWash = 0.16
     static let labelEdgeWash = 0.38
-    /// What the word must read at against the surface under it — WCAG AA for body text. A label
-    /// set against a tracker's white page routinely lands below this on the deck; GitHub's own
-    /// `000000` is a real label. Measured rather than assumed, so a hue already clear of the
-    /// ground is drawn exactly as the provider set it.
-    static let labelWordContrast = 4.5
+    /// What the word must read at against the surface under it — the ramp's own floor, because a
+    /// provider's word is read like any other. A label set against a tracker's white page
+    /// routinely lands below it on the deck; GitHub's own `000000` is a real label. Measured
+    /// rather than assumed, so a hue already clear of the ground is drawn as the provider set it.
+    static let labelWordContrast = ArgoPalette.TextRoles.contrastFloor
 
     // MARK: - A Delivery chip
 

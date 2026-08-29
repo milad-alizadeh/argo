@@ -98,9 +98,9 @@ struct ContractSpecimen: View {
         }
     }
 
-    /// The hue's OTHER weight (#875). Derived rather than stored, so the `Mirror` gate over each
-    /// group's `all` array cannot see it — which is exactly why it is drawn here by hand: a role
-    /// the specimen skips is a colour that ships without ever being looked at.
+    /// The hue's OTHER weight (#875), resolved OPAQUE (#922) so the platform's selection capsule
+    /// cannot show through it. Drawn by hand because `interaction.all` is catalogued by the
+    /// `Mirror` gate but rendered by no loop, so a role in it can still ship unlooked-at.
     ///
     /// Both rungs side by side, because that is the only way two weights of one hue can be judged,
     /// and the row's own quietest voice on it, because that is what set the weight.

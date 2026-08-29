@@ -16,6 +16,15 @@ public extension ArgoPalette {
         /// On an Ion Blue fill.
         public let onAccent: ArgoColor
 
+        /// WCAG AA for body text. Every voice a row is SET in — `primary`, `secondary`,
+        /// `tertiary` — clears it on `surface.base` AND on `interaction.selectionGround`, which
+        /// are the two grounds a row is read on that the contract can name; an unselected
+        /// sidebar row takes the platform's own material, so `base` stands in for it and the
+        /// render is what checks the stand-in. `disabled` is an absence rather than a voice and
+        /// `onAccent` exists only on a fill, so neither is held to it here. Stated because #922
+        /// was a ramp chosen against ONE ground and read on another.
+        static let contrastFloor = 4.5
+
         public init(
             primary: ArgoColor,
             secondary: ArgoColor,

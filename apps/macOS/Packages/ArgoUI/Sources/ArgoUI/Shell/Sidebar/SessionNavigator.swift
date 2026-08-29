@@ -41,8 +41,8 @@ struct SessionNavigator: View {
         // for a styled list. What it does NOT carry is a selection this app can colour: on macOS
         // 26 the style's capsule is a fixed neutral, and neither `.tint` nor the `AccentColor`
         // asset moves it by a value — both measured off a render with a scarlet probe (#875,
-        // amending D30, which recorded the asset as the route). The ground is `listRowBackground`
-        // below, which REPLACES the capsule rather than painting over it.
+        // amending D30, which recorded the asset as the route). Nor does the style stop drawing
+        // it: the ground below COVERS the capsule, which is why it is opaque (#922).
         .listStyle(.sidebar)
         // Over the whole list, not the chevron alone: dropping the section's `isExpanded:` gave up
         // the system's own expansion, so the rows arrive on this instead of in the click's frame.
