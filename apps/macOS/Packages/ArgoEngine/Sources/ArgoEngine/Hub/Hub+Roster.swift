@@ -15,8 +15,12 @@ public extension Hub {
     /// The roster, with what Argo knows from OUTSIDE the transcripts folded in as it is published.
     /// Spawned Sessions share the list and the sort key: their rows exist before any transcript
     /// does (#361) and stand down once the record they turned out to be is bound to their claim.
+    ///
+    /// Folded once per move of `rosterStamp` rather than once per read: the fold is every Session
+    /// decorated and then sorted, and the app reads this several times a scene pass (ADR-0028
+    /// Rule 1).
     var sessions: [HubSession] {
-        HubSessionChain.ordered(watch.sessions.map(observed) + provisionalSessions)
+        roster.sessions(at: rosterStamp, folding: folded)
     }
 }
 
@@ -25,7 +29,32 @@ extension Hub {
     /// One Session by id, off that same roster — so a caller reading one row and a caller reading
     /// the list can never disagree about it.
     func session(id: String) -> HubSession? {
-        sessions.first { $0.id == id }
+        roster.session(id: id, at: rosterStamp, folding: folded)
+    }
+
+    /// The fold itself, run only where the stamp below says an input has moved.
+    private func folded() -> [HubSession] {
+        HubSessionChain.ordered(watch.sessions.map(observed) + provisionalSessions)
+    }
+
+    /// Every input the fold reads, and all of them: the join it folds, the three ledgers and the
+    /// world readings `observed(_:)` decorates each row from, and the two the Hub holds itself.
+    /// The one thing the fold reads that is absent is `discovery.cli`, which is a `let`.
+    ///
+    /// Reading the four observed counters here is also what keeps the cockpit redrawing — a memo
+    /// hit touches no other observed property, so this is where a view's dependency on the roster
+    /// is registered. `ownership` is not observed and never was: what a claim changes about a row
+    /// has always arrived beside a spawn or a claim-ledger publish.
+    private var rosterStamp: HubRosterStamp {
+        HubRosterStamp(
+            join: watch.joinRevision,
+            readings: readings.revision,
+            claims: claims.revision,
+            ownership: ownership.revision,
+            handoff: handoff.revision,
+            spawns: spawns,
+            project: project,
+        )
     }
 
     /// What follows a batch landing in the join: the spawned rows it may retire, and the folders it

@@ -37,6 +37,10 @@ public final class Hub {
     /// rung Argo put it on (#634). One key and one publish rule, where there were five of each.
     let claims = ClaimLedger()
 
+    /// The folded roster, held for as long as every input behind it stands still. Not observed: it
+    /// is what `sessions` ANSWERS with, and what a reader observes is the stamp's own inputs.
+    @ObservationIgnored let roster = HubRosterMemo()
+
     /// Which Sessions this Argo process owns a PTY for, and — through its ledger — which ones any
     /// Argo ever did. Empty of claims until something spawns or resumes one.
     public let ownership: SessionOwnership

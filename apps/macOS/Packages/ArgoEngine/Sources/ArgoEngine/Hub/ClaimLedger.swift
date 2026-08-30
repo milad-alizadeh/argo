@@ -9,6 +9,10 @@ import Observation
 @Observable
 final class ClaimLedger {
     private var byClaim: [SessionOwnership.ClaimID: ClaimFacts] = [:]
+    /// Bumped by the one write below, which every publish here goes through — the roster's memo is
+    /// keyed by it (`HubRosterMemo`), and a fact filed without moving it would be a fact the
+    /// cockpit never draws.
+    private(set) var revision = 0
 
     /// What is known about one claim, or nothing — including for a Session that has no claim at
     /// all, which is every external one.
@@ -97,5 +101,6 @@ final class ClaimLedger {
         var facts = byClaim[claim] ?? ClaimFacts()
         change(&facts)
         byClaim[claim] = facts.isEmpty ? nil : facts
+        revision += 1
     }
 }

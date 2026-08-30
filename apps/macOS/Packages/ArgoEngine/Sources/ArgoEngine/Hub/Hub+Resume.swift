@@ -13,7 +13,7 @@ public extension Hub {
         guard ownership.ownerOf(sessionID: sessionID) == nil else { return }
         guard !ownership.isHeldElsewhere(sessionID: sessionID)
         else { throw SessionResumeError.heldByAnotherWindow }
-        guard let session = sessions.first(where: { $0.id == sessionID })
+        guard let session = session(id: sessionID)
         else { throw SessionResumeError.unknownSession }
         guard session.provenance == .orphaned else { throw SessionResumeError.notArgosToResume }
         guard let resumeID = session.resumeID, let cwd = session.cwd
