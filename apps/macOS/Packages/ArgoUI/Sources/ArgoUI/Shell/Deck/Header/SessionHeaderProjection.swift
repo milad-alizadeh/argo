@@ -190,8 +190,17 @@ enum SessionHeaderProjection {
         }
     }
 
-    static func header(from session: CockpitPresentation.Session) -> Header {
-        Header(
+    /// `worked` is the one figure below that walks the whole event stream, handed in by a caller
+    /// that has already taken it at a known stamp (`SessionsRoomReadingCache`) and read here
+    /// otherwise. It is the only header fact a remembered reading may carry: everything else moves
+    /// with no event appended.
+    static func header(
+        from session: CockpitPresentation.Session,
+        worked: Worked? = nil,
+    )
+        -> Header {
+        let worked = worked ?? .read(across: session.events)
+        return Header(
             // The same chain the roster row reads, through the same function (#502, story 19).
             title: SessionTitle.resolved(for: session),
             state: SessionState.reading(for: session.status),
@@ -201,9 +210,9 @@ enum SessionHeaderProjection {
             agent: agent(cli: session.cli, model: session.model),
             issue: row(for: session.ticket),
             context: context(tokens: session.contextTokens),
-            spend: spend(from: session),
+            spend: spend(from: session, worked: worked),
             handoff: handoff(from: session),
-            facts: facts(from: session),
+            facts: facts(from: session, worked: worked),
         )
     }
 

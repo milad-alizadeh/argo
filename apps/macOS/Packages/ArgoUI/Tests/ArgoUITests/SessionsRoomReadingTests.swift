@@ -4,13 +4,15 @@ import Testing
 
 /// The deck is torn down and rebuilt on each room switch, and its measured heights no longer are
 /// (#858) — and a reading remembered beside them would draw the transcript as it stood when the
-/// reader last looked at it. These state the guarantee directly: the reading is
-/// taken from the presentation it is handed, on every pass, and nothing about it is kept.
+/// reader last looked at it. These state the guarantee directly: the reading answers for the
+/// presentation it is handed, on every pass. What `SessionsRoomReadingCache` remembers is held to
+/// exactly that by a stamp of the inputs — `SessionsRoomReadingCostTests` holds the other half.
 @Suite("Sessions room reading")
 @MainActor
 struct SessionsRoomReadingTests {
-    /// The claim a memoised feed would break: a transcript that grew while the reader was in
-    /// another room reads as it is NOW, not as it was when they last looked at it.
+    /// The claim a memoised feed would break, and the one the stamp exists to keep: a transcript
+    /// that grew while the reader was in another room reads as it is NOW, not as it was when they
+    /// last looked at it.
     @Test
     func `a transcript that grew reads as it stands now`() {
         let opening = Self.reading(events: Array(Self.transcript.prefix(3)))

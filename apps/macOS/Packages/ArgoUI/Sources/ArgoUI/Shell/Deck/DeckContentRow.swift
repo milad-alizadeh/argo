@@ -60,7 +60,7 @@ struct DeckContentRow: View {
     /// Who else is working, read off the SESSION's rows — never off `reading`, which is what the
     /// rail may have scoped away.
     private var agents: [FeedAgent] {
-        FeedAgents.all(in: feed)
+        rail.readings.agents(in: feed)
     }
 
     /// The rows the reading zones actually draw: the Session's own, or the selected Subagent's.
@@ -71,7 +71,12 @@ struct DeckContentRow: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let zoning = zoning(in: proxy.size.width)
+            // Bound ONCE for the pass, the way `CockpitView.detail` binds its vessel: a
+            // `GeometryReader` body re-runs on every size change — every frame of a seam drag — and
+            // three zones below asked these two questions three times each.
+            let agents = agents
+            let reading = reading
+            let zoning = zoning(in: proxy.size.width, feed: reading, agents: agents)
 
             HStack(spacing: ArgoSpacing.flush) {
                 if zoning.showsRail {
@@ -113,10 +118,10 @@ struct DeckContentRow: View {
         }
     }
 
-    private func zoning(in deck: CGFloat) -> DeckZoning {
+    private func zoning(in deck: CGFloat, feed: [FeedRow], agents: [FeedAgent]) -> DeckZoning {
         DeckZoning(
             deck: deck,
-            feed: reading,
+            feed: feed,
             agents: agents,
             open: selection.open,
             seams: seams,

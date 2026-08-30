@@ -7,11 +7,27 @@ import ArgoEngine
 /// delegate nothing, and Codex writes no such record at all.
 struct FeedAgentReadings: Equatable, Sendable {
     private let events: [String: [TranscriptEvent]]
+    /// Which version of the Session's record these came from, and `nil` for a value nobody stamped
+    /// — a specimen, a `#Preview`, a suite. The two derivations below are memoised under it, so the
+    /// deck's zones and the toolbar's evidence toggle ask the same question once (#875, ADR-0028
+    /// Rule 1). Unstamped simply derives, which is what it did before.
+    private let stamp: SessionsRoomReadingCache.Stamp?
 
     static let none = FeedAgentReadings()
 
-    init(events: [String: [TranscriptEvent]] = [:]) {
+    init(
+        events: [String: [TranscriptEvent]] = [:],
+        stamp: SessionsRoomReadingCache.Stamp? = nil,
+    ) {
         self.events = events
+        self.stamp = stamp
+    }
+
+    /// The RECORD, never the stamp: the stamp moves on facts these rows are not made of — a
+    /// Session that started running, a Permission that expired — and a value the deck diffs must
+    /// compare unequal only when what it draws has changed.
+    static func == (lhs: FeedAgentReadings, rhs: FeedAgentReadings) -> Bool {
+        lhs.events == rhs.events
     }
 
     /// One Subagent's rows, or `nil` where Argo does not have its record.
@@ -46,7 +62,21 @@ struct FeedAgentReadings: Equatable, Sendable {
     /// The same question asked with the Session's rows alone, which is the only thing two of the
     /// three callers have: the deck's zones read it per layout pass, and the shell reads it to
     /// resolve what the toolbar's evidence toggle opens on (#875). One decision, spelled once.
-    func reading(of feed: [FeedRow], under scope: FeedScope) -> [FeedRow] {
-        rows(under: scope, of: FeedAgents.all(in: feed), otherwise: feed)
+    @MainActor func reading(of feed: [FeedRow], under scope: FeedScope) -> [FeedRow] {
+        guard let stamp else { return derived(of: feed, under: scope) }
+        return SessionsRoomReadingCache.scoped(at: stamp, under: scope) {
+            derived(of: feed, under: scope)
+        }
+    }
+
+    @MainActor private func derived(of feed: [FeedRow], under scope: FeedScope) -> [FeedRow] {
+        rows(under: scope, of: agents(in: feed), otherwise: feed)
+    }
+
+    /// Who else is working, off the Session's own rows. Here rather than at `FeedAgents` so the
+    /// rail, the deck's zoning and the scope above share ONE walk of the reading.
+    @MainActor func agents(in feed: [FeedRow]) -> [FeedAgent] {
+        guard let stamp else { return FeedAgents.all(in: feed) }
+        return SessionsRoomReadingCache.agents(at: stamp) { FeedAgents.all(in: feed) }
     }
 }

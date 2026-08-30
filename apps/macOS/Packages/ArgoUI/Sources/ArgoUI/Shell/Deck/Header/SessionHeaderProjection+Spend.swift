@@ -14,9 +14,25 @@ extension SessionHeaderProjection {
         static let awayGapMs = 5 * 60 * 1000
     }
 
+    /// The one figure the header WALKS the whole event stream for — a compact and a sort over every
+    /// moment in it, taken twice, once for the line and once for the ⓘ panel's rows. A caller that
+    /// is already holding a reading at a known stamp has paid for it and hands it over instead.
+    struct Worked: Equatable, Sendable {
+        let milliseconds: Int?
+
+        static func read(across events: [TranscriptEvent]) -> Worked {
+            Worked(milliseconds: SessionHeaderProjection.worked(across: events))
+        }
+    }
+
     /// The composed line, and `nil` when there is nothing to compose it from — the line COLLAPSES
     /// rather than leaving the separators of facts it does not have.
-    static func spend(from session: CockpitPresentation.Session) -> String? {
+    static func spend(
+        from session: CockpitPresentation.Session,
+        worked: Worked? = nil,
+    )
+        -> String? {
+        let read = worked ?? .read(across: session.events)
         let parts = [
             // Cache split off the spend, not summed into it: every request re-reads the whole
             // conversation from cache, so one figure would read tens of millions as fresh spend.
@@ -25,7 +41,7 @@ extension SessionHeaderProjection {
             // Said as a spend, not as a count: `4.1M subagents` reads as four million of them.
             session.subagentTokens.map { "\(TokenCount.short($0)) in subagents" },
             ran(from: session).map { "started \(ElapsedTime.phrase(milliseconds: $0)) ago" },
-            worked(across: session.events).map(worked(for:)),
+            read.milliseconds.map(Self.worked(for:)),
         ].compactMap(\.self)
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
