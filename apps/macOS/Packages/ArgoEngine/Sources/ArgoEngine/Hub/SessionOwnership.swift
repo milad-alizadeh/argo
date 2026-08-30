@@ -39,17 +39,37 @@ public final class SessionOwnership {
     /// without promising the concurrency checker anything about a value only this actor touches.
     let now: () -> Int
     /// What every Argo before this one owned, and the file it came out of.
-    var ledger: SessionOwnershipLedger
+    var ledger: SessionOwnershipLedger {
+        didSet { revision += 1 }
+    }
+
     let ledgerStore: SessionOwnershipLedgerStore
     /// Which registry this is, written into every ledger window it opens, so another cockpit window
     /// reading the file can tell that Session is already being steered.
     let owner: SessionOwnershipLedger.Owner
-    var claims: [ClaimID: Claim] = [:]
+    var claims: [ClaimID: Claim] = [:] {
+        didSet { revision += 1 }
+    }
+
     /// The order claims were issued in, which is the order `claimNaming` reads them in — a
     /// dictionary has none to ask.
-    var issuedOrder: [ClaimID] = []
-    var boundSessions: [String: ClaimID] = [:]
+    var issuedOrder: [ClaimID] = [] {
+        didSet { revision += 1 }
+    }
+
+    var boundSessions: [String: ClaimID] = [:] {
+        didSet { revision += 1 }
+    }
+
     private var issued = 0
+    /// Bumped by every write to the four stored facts above, through their own observers rather
+    /// than by hand — so a claim opened, bound, released or written down cannot reach the ledger
+    /// without reaching the roster's memo too (`HubRosterMemo`).
+    ///
+    /// Not `@Observable`, because this type is not: what a claim changes about a row has always
+    /// arrived at the cockpit alongside a spawn or a claim-ledger publish, and the memo keeps it
+    /// that way rather than growing a second way in.
+    private(set) var revision = 0
 
     /// A store with no file remembers nothing, which is the honest default for a test and for the
     /// render harness: neither may read or write the machine's own ledger.

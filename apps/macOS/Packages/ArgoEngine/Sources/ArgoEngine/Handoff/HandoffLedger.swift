@@ -14,8 +14,18 @@ import Observation
 final class HandoffLedger {
     /// The handoffs this process made: the Session that handed over → the claim the fresh row was
     /// published under.
-    private var live: [String: SessionOwnership.ClaimID] = [:]
-    private var chain: HandoffChain
+    private var live: [String: SessionOwnership.ClaimID] = [:] {
+        didSet { revision += 1 }
+    }
+
+    private var chain: HandoffChain {
+        didSet { revision += 1 }
+    }
+
+    /// Bumped by every write to the two halves above, through their own observers rather than by
+    /// hand — the roster's memo is keyed by it (`HubRosterMemo`), and an edge recorded without
+    /// moving it would be a handoff no reading ever shows.
+    private(set) var revision = 0
     @ObservationIgnored private let store: HandoffChainStore
 
     /// The chain is read at construction rather than lazily: the roster is published before

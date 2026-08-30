@@ -45,14 +45,8 @@ extension WorldReadings {
         let spelling = paths.reduce(into: [String: String]()) { table, path in
             table[path] = read[path] ?? held[path]
         }
-        publish(extent.forgetsTheRest ? spelling : resolved.merging(spelling) { _, new in new })
-    }
-
-    /// Written only where a spelling moved, for `publish(workspaces:)`'s reason: the table is
-    /// observed, so a folder spelled for the first time re-renders the row that reads it — and
-    /// where git said the same thing as last time, nothing else would.
-    private func publish(_ table: [String: String]) {
-        guard table != resolved else { return }
-        resolved = table
+        publish(resolved: extent.forgetsTheRest
+            ? spelling
+            : resolved.merging(spelling) { _, new in new })
     }
 }

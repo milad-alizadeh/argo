@@ -23,6 +23,10 @@ final class TranscriptWatch {
     @ObservationIgnored var onApplied: @MainActor () async -> Void = {}
 
     private var join = HubJoin()
+    /// Bumped by `mutate` and by nothing else — the roster's memo is keyed by it
+    /// (`HubRosterMemo`), so a batch that landed in the join without going through the one write
+    /// below would be a Session the cockpit never redraws.
+    private(set) var joinRevision = 0
     /// The rosters of the Projects this watch has been pointed at, kept across a switch. The sweep
     /// still re-runs and the tails still re-read on re-entry.
     @ObservationIgnored private var retained = HubJoinCache()
@@ -79,7 +83,7 @@ final class TranscriptWatch {
     /// Take back the join retained for a Project, or start a fresh one. Keyed by the RESOLVED
     /// Project, which is the key it was retained under.
     func restore(for key: String) {
-        join = retained.take(for: key) ?? HubJoin()
+        mutate { $0 = retained.take(for: key) ?? HubJoin() }
     }
 
     /// Keep this Project's join, before the tails are torn down — which is what empties it.
@@ -125,7 +129,7 @@ final class TranscriptWatch {
 
     /// Stop one tail and drop its transcript from the join, leaving the rest tailing.
     func stopObserving(transcriptID: String) async {
-        join.remove(transcriptID: transcriptID)
+        mutate { $0.remove(transcriptID: transcriptID) }
         await pauseObserving(transcriptID: transcriptID)
     }
 
@@ -148,7 +152,7 @@ final class TranscriptWatch {
         await subagents.stopAll()
         let stopped = Array(tails.values)
         tails = [:]
-        join = HubJoin()
+        mutate { $0 = HubJoin() }
         // A failure is a claim about what could not be read, and nothing is being read now. The one
         // caller that wants it standing — `observeNamed` — sets it AFTER this returns.
         failureMessage = nil
@@ -167,7 +171,7 @@ final class TranscriptWatch {
     /// records it authored. A tail re-reads from the start of the file.
     private func startTailing(_ observation: TranscriptObservation) async {
         await pauseObserving(transcriptID: observation.id)
-        join.add(observation)
+        mutate { $0.add(observation) }
         // A connection reading `failed` over a live source is a stale claim.
         failureMessage = nil
         tails[observation.id] = Task { [weak self] in await self?.drain(observation) }
@@ -209,22 +213,30 @@ final class TranscriptWatch {
         await pauseObserving(transcriptID: transcript.id)
     }
 
+    /// The ONE write to the join. In place, so a batch costs no copy of the transcripts it lands
+    /// in, and revision-stamped, so no write can reach the join without reaching the memo folded
+    /// off it (ADR-0028 Rule 1).
+    private func mutate(_ change: (inout HubJoin) -> Void) {
+        change(&join)
+        joinRevision += 1
+    }
+
     private func makeSubagentTails() -> SubagentTails {
         SubagentTails(engine: engine) { [weak self] read in
-            self?.join.apply(read.events, ofSubagent: read.agentID, to: read.transcriptID)
+            self?.mutate { $0.apply(read.events, ofSubagent: read.agentID, to: read.transcriptID) }
         }
     }
 
     private func drain(_ observation: TranscriptObservation) async {
         for await events in observation.events {
-            join.apply(events, to: observation.id)
+            mutate { $0.apply(events, to: observation.id) }
             // After the join, never before: reconciliation retires a spawned Session's own row, and
             // it may only do that once the observed row it is standing in for is published.
             await onApplied()
         }
         // A tail that ended without delivering a backfill — an unopenable file, or one stopped
         // mid-read — still has to settle, or the roster waits on a transcript that never speaks.
-        join.settle(transcriptID: observation.id)
+        mutate { $0.settle(transcriptID: observation.id) }
         // Clearing by id is safe: every path that re-registers an id awaits the previous tail to
         // completion first, so no later tail can be holding the key by the time this runs.
         tails.removeValue(forKey: observation.id)
