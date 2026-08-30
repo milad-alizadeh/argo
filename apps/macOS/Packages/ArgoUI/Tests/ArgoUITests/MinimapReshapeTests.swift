@@ -63,7 +63,24 @@ struct MinimapReshapeTests {
     /// batch. It may rebuild its whole-document geometry once for the burst, not once per notice.
     @Test
     func `the tail of a full re-measure rebuilds the lane once, not once per batch`() async throws {
-        let deck = MinimapLaneFixture.mounted(over: Self.rows)
+        #expect(try await Self.derivationsAcrossAReMeasure(over: Self.rows) == 1)
+    }
+
+    /// The same claim said as a shape rather than as a number (ADR-0028 Rule 2): a re-measure posts
+    /// a notice per batch, so a lane deriving per notice costs O(rows / batch). Four times the rows
+    /// is four times the batches and still one derivation.
+    @Test
+    func `a re-measure four times as long derives the lane no more often`() async throws {
+        let long = (0 ..< 800).map {
+            FeedRow(id: $0, content: .message("A line of prose long enough to wrap, number \($0)."))
+        }
+
+        #expect(try await Self.derivationsAcrossAReMeasure(over: long) == 1)
+    }
+
+    /// One seam let go over `rows`, and what the lane derived for the burst it made.
+    private static func derivationsAcrossAReMeasure(over rows: [FeedRow]) async throws -> Int {
+        let deck = MinimapLaneFixture.mounted(over: rows)
         let scroller = try #require(deck.table.scroller)
         deck.lane.layoutSubtreeIfNeeded()
         let derived = deck.lane.geometryDerivations
@@ -74,10 +91,36 @@ struct MinimapReshapeTests {
         try await #require(deck.table.tailing).value
         deck.lane.layoutSubtreeIfNeeded()
 
-        // The burst was real — more than one notice arrived — which is what makes the count below
-        // a claim rather than an observation over nothing.
         #expect(deck.lane.reshapeNotices - noticed > 1)
-        #expect(deck.lane.geometryDerivations == derived + 1)
+        return deck.lane.geometryDerivations - derived
+    }
+
+    /// The risk in coalescing, and the only one that matters: a burst whose LAST notice is dropped
+    /// leaves the lane drawing a document that is not there any more, permanently and silently.
+    ///
+    /// So the pixels are compared — what the burst left against what an unconditional rebuild
+    /// draws, and against a lane that never saw the old reading at all.
+    @Test
+    func `the rects a coalesced burst leaves are the rects a full rebuild draws`() throws {
+        let deck = MinimapLaneFixture.mounted(over: Array(FeedProjection.longRows.dropLast(20)))
+        deck.lane.layoutSubtreeIfNeeded()
+
+        deck.table.apply(FeedTableFixture.model(showing: FeedProjection.longRows))
+        for _ in 0 ..< Self.posted {
+            try Self.postReshape(on: deck)
+        }
+        deck.lane.layoutSubtreeIfNeeded()
+        let coalesced = deck.lane.drawnRects
+
+        // Derived again with nothing deferred, which is what a lane answering every notice would be
+        // showing — and then against a lane opened on the grown reading from nothing.
+        deck.lane.refresh()
+        let fresh = MinimapLaneFixture.mounted(over: FeedProjection.longRows)
+        fresh.lane.layoutSubtreeIfNeeded()
+
+        #expect(!coalesced.isEmpty)
+        #expect(deck.lane.drawnRects == coalesced)
+        #expect(fresh.lane.drawnRects == coalesced)
     }
 
     /// Deferring the rebuild must not be able to strand it. A reshape the lane could not answer —
