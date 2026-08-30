@@ -26,13 +26,13 @@ struct HubRosterCostTests {
         let hub = await Self.hub(sessions: 32)
         // The mutation is what makes each trial COLD, and it is what a fold costs that is being
         // measured: bumping one claim is orders of magnitude below the fold beside it.
-        let fold = CostMeasure.leastCPUSeconds {
+        let fold = leastCPUSeconds {
             hub.claims.setLostTurn(nil, for: Self.probe)
             _ = hub.sessions
         }
         _ = hub.sessions
 
-        let read = CostMeasure.leastCPUSeconds {
+        let read = leastCPUSeconds {
             for _ in 0 ..< 200 {
                 _ = hub.sessions
             }
@@ -61,7 +61,7 @@ struct HubRosterCostTests {
 
     private static func lookups(of id: String, in hub: Hub) -> Double {
         _ = hub.sessions
-        return CostMeasure.leastCPUSeconds {
+        return leastCPUSeconds {
             for _ in 0 ..< 500 {
                 _ = hub.session(id: id)
             }

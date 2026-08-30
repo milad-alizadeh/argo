@@ -11,12 +11,19 @@ struct HubRoster {
     /// Transcript id — a PATH — to the row it may be written into directly. Absent for the two
     /// kinds of transcript below, whose readings wait for the rebuild that can place them.
     private var writableRow: [String: Int] = [:]
+    /// The narrower map the Session's OWN batch is written through: the transcripts whose row is
+    /// that transcript and nothing else. Narrower because a Session's batch changes the row's
+    /// derived facts as well as its stream, and only where the fold merged nothing is replacing
+    /// the row with the transcript's own Session identical to what the fold would have built.
+    private var soloRow: [String: Int] = [:]
 
     init() {}
 
     init(chained: [HubSessionChain.Chained], transcripts: [HubTranscript]) {
         self.sessions = chained.map(\.session)
-        self.writableRow = Self.writableRows(of: chained, transcripts: transcripts)
+        let writable = Self.writableRows(of: chained, transcripts: transcripts)
+        self.writableRow = writable
+        self.soloRow = Self.soloRows(of: chained, transcripts: transcripts, within: writable)
     }
 
     /// Stop writing in place until the roster is folded again. What every rejection below decides
@@ -25,6 +32,15 @@ struct HubRoster {
     /// encodes, and an answer it gives then is a guess.
     mutating func holdWrites() {
         writableRow = [:]
+        soloRow = [:]
+    }
+
+    /// One Session's own batch, as the whole row it is published as. Answers whether it landed:
+    /// everything this map does not name waits for the fold that can place it.
+    mutating func replace(_ session: HubSession, from transcriptID: String) -> Bool {
+        guard let row = soloRow[transcriptID] else { return false }
+        sessions[row] = session
+        return true
     }
 
     /// One Subagent's own reading, onto the published row its transcript may be written into.
@@ -67,6 +83,23 @@ struct HubRoster {
         return transcripts.reduce(into: [:]) { rows, transcript in
             guard paths[transcript.sessionID] == 1 else { return }
             rows[transcript.id] = rowByChain[transcript.sessionID]
+        }
+    }
+
+    /// Of those, the rows a fold MERGED nothing into. Everything a chain of one link excludes is
+    /// exactly what would make the transcript's own Session a different value from its row: no
+    /// continuation to append behind it, no sibling whose merge order its times could flip, and —
+    /// with the single path `writable` already demands — no other half of a moved file to lose to.
+    private static func soloRows(
+        of chained: [HubSessionChain.Chained],
+        transcripts: [HubTranscript],
+        within writable: [String: Int],
+    )
+        -> [String: Int] {
+        let solo = Set(chained.filter { $0.chainIDs.count == 1 }.flatMap(\.chainIDs))
+        return transcripts.reduce(into: [:]) { rows, transcript in
+            guard solo.contains(transcript.sessionID) else { return }
+            rows[transcript.id] = writable[transcript.id]
         }
     }
 }

@@ -208,14 +208,6 @@ struct HubJoinTests {
         return threadCPUSeconds() - started
     }
 
-    /// The CPU this thread has burned. Wall clock would measure whatever else the machine is
-    /// doing, which on a laptop running the rest of this suite is most of it.
-    private static func threadCPUSeconds() -> Double {
-        var spent = timespec()
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &spent)
-        return Double(spent.tv_sec) + Double(spent.tv_nsec) / 1e9
-    }
-
     /// One transcript, read and published.
     private func settledJoin() -> HubJoin {
         var join = HubJoin()
