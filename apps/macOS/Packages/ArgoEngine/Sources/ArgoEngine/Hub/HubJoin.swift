@@ -6,8 +6,12 @@ import Foundation
 struct HubJoin {
     /// Rebuilt on mutation rather than on read: only the write side knows when it changed.
     private var roster = HubRoster()
+    /// Whether the roster is still in the order a fold left it in. A batch written in place moves
+    /// its row's sort key without moving the row, so the order is restored on READ instead — the
+    /// same comparator, over the same rows, which is the same answer a refold would have given.
+    private var isOrdered = true
     var sessions: [HubSession] {
-        roster.sessions
+        isOrdered ? roster.sessions : HubSessionChain.ordered(roster.sessions)
     }
 
     /// In the order they joined the set, which is the order the observation projection renders and
@@ -19,6 +23,11 @@ struct HubJoin {
     /// Transcript id to its position in `transcripts`. Held rather than scanned for: a Subagent's
     /// tail asks this on every batch it delivers.
     private var positions: [String: Int] = [:]
+    /// The uuids the transcripts in the set resume FROM. Held so a batch can ask in O(batch)
+    /// whether the record identities it claimed can have re-parented anything: the chain graph
+    /// reads record ownership through `headLeafUUID` alone, so a claim on any other uuid is
+    /// invisible to it. Retaken by every fold, and a `headLeafUUID` that moves forces one.
+    private var chainKeys: Set<String> = []
 
     var isEmpty: Bool {
         transcripts.isEmpty
@@ -50,14 +59,25 @@ struct HubJoin {
     /// what its file already held. A batch for a transcript no longer in the set applies nothing.
     mutating func apply(_ events: [TranscriptEvent], to transcriptID: String) {
         guard let index = position(of: transcriptID) else { return }
+        let before = HubJoinFacts(of: transcripts[index].session)
+        // A backfill is a transcript joining the published set, which is a move of the set itself.
+        var moved = !transcripts[index].isSettled
         for event in events {
             transcripts[index].session.apply(event)
             if case let .recordIdentity(uuid) = event {
-                rememberOwner(of: uuid, transcriptID: transcriptID)
+                moved = rememberOwner(of: uuid, transcriptID: transcriptID) || moved
             }
         }
         transcripts[index].isSettled = true
-        rebuild()
+        moved = moved || HubJoinFacts(of: transcripts[index].session) != before
+        // Written THROUGH for the same reason the Subagent path is, and under a stricter test: the
+        // row must BE this transcript, so the whole Session replaces the row and no merge is
+        // reproduced by hand. Anything else — a chain, a duplicated uuid, a held roster — refolds.
+        guard !moved, roster.replace(transcripts[index].session, from: transcriptID) else {
+            rebuild()
+            return
+        }
+        isOrdered = false
     }
 
     /// One Subagent's own reading, applied to the Session that ran it.
@@ -93,12 +113,16 @@ struct HubJoin {
 
     /// The earliest transcript to claim a record keeps it: a resume chain is walked from its root,
     /// and a later file re-reporting an inherited record is not its author.
-    private mutating func rememberOwner(of uuid: String, transcriptID: String) {
-        guard let claimant = position(of: transcriptID) else { return }
+    ///
+    /// Answers whether the claim can have moved the graph, which is only where the uuid is one
+    /// some transcript resumes FROM.
+    private mutating func rememberOwner(of uuid: String, transcriptID: String) -> Bool {
+        guard let claimant = position(of: transcriptID) else { return false }
         if let holder = recordOwners[uuid], let held = position(of: holder), held <= claimant {
-            return
+            return false
         }
         recordOwners[uuid] = transcriptID
+        return chainKeys.contains(uuid)
     }
 
     private func position(of transcriptID: String) -> Int? {
@@ -110,6 +134,8 @@ struct HubJoin {
     /// row, never rewriting itself under the reader. Nothing is written into it in place while it
     /// is held back either — see `HubRoster.holdWrites`.
     private mutating func rebuild() {
+        chainKeys = Set(transcripts.compactMap(\.session.headLeafUUID))
+        isOrdered = true
         guard transcripts.allSatisfy(\.isSettled) else {
             // Held back, so the facts have moved and the fold has not: the same staleness `add`
             // opens, reached by the other path into it.

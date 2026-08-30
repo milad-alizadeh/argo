@@ -67,8 +67,14 @@ enum HubSessionChain {
         // Dropped at publication rather than at discovery: the file is still tailed, so if an agent
         // does pick the prompt up, its row appears without another sweep having to find it.
         chained
-            .filter { !$0.session.isQueued || $0.session.hasAgentActivity }
+            .filter { isPublished($0.session) }
             .sorted { isAhead($0.session, $1.session) }
+    }
+
+    /// The filter above, named so a join deciding whether a batch moved the roster's MEMBERSHIP
+    /// asks the same question the fold answers rather than a copy of it.
+    static func isPublished(_ session: HubSession) -> Bool {
+        !session.isQueued || session.hasAgentActivity
     }
 
     /// Newest activity first, with the id breaking a tie. A Session that can say nothing about when
