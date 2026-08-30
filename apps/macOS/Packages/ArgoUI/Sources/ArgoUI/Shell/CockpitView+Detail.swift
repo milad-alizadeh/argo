@@ -38,7 +38,7 @@ extension CockpitView {
         .environment(\.feedAskAnswering, answer(on: reading.asking.live))
         // Injected from ABOVE the deck, which is the whole point of it: the room switch below
         // destroys the table that measured them (#858).
-        .environment(\.argoFeedGeometry, feedGeometry)
+        .environment(\.argoFeedGeometries, feedGeometries)
         .overlay(alignment: .topLeading) {
             ConnectionChips(
                 connection: presentation.connection,

@@ -33,6 +33,14 @@ import SwiftUI
         policy.isOpeningOwed
     }
 
+    /// Another reading in the same table — see `FeedScrollPolicy.reopen(on:held:)`. Called by the
+    /// coordinator rather than by a view, because the reset has to be true BEFORE the fresh rows
+    /// are diffed and landed, and a SwiftUI `onChange` fires after that pass.
+    func reopen(on rows: [FeedRow], held: FeedRow.ID?) {
+        policy.reopen(on: rows, held: held)
+        publish()
+    }
+
     func resolve(_ event: FeedScrollEvent) -> FeedScrollDecision {
         let decision = policy.resolve(event)
         publish()

@@ -11,6 +11,9 @@ import SwiftUI
 /// cells, measures rows lazily, and keeps the reading still through a re-wrap, none of which this
 /// layer has to re-implement. The rows themselves stay SwiftUI, hosted per cell.
 struct FeedTable: NSViewRepresentable {
+    /// Which reading this is, so the coordinator can tell another Session's rows from this one's
+    /// next batch — see `FeedReading`.
+    let reading: FeedReading
     let rows: [FeedRow]
     let selection: FeedRowSelection
     let held: FeedRow.ID?
@@ -44,13 +47,14 @@ struct FeedTable: NSViewRepresentable {
     private func bind(_ coordinator: FeedTableCoordinator, through values: EnvironmentValues) {
         handle.coordinator = coordinator
         coordinator.handle = handle
-        if let geometry = values.argoFeedGeometry {
-            coordinator.keep(geometry)
-        }
+        // Per READING and not per shell: one store shared across Sessions is overwritten by
+        // whichever was looked at last, so coming back re-measures. See `FeedGeometries`.
+        coordinator.keep(values.argoFeedGeometries?.geometry(for: reading))
     }
 
     private func model(in context: Context) -> FeedTableModel {
         FeedTableModel(
+            reading: reading,
             rows: rows,
             selection: selection,
             held: held,

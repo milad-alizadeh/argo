@@ -45,17 +45,17 @@ extension FeedTableCoordinator {
     /// The full re-measure, chunked so it yields.
     ///
     /// `noteHeightOfRows` makes AppKit ask the delegate for each noted height synchronously, and a
-    /// height with no cached answer is a full SwiftUI layout. So the drop moves with the noting
-    /// rather than emptying the cache ahead of it: the rows on screen are surrendered and noted at
-    /// once, and every other row keeps the height it rode the drag on until the batch that squares
-    /// it up. A stale height is what the reader already sees, and it costs nothing to ask for.
+    /// height with no cached answer is a full SwiftUI layout. So this NOTES rather than drops: the
+    /// `Ground` a height was kept under already answers `nil` for a row that changed, and the width
+    /// and the ink are the store's own — a re-wrap has retired every height before this runs
+    /// (`FeedGeometry.settle(at:in:)`). Dropping on top of that made a `.all` pass over an
+    /// UNCHANGED reading re-pay every layout in it, and `.all` is what every settle fires.
     ///
     /// The tail may not be dropped for lazy scroll-in measurement, however tempting — see
     /// `measureTail`.
     private func remeasureEverything(on table: NSTableView) {
         tailing?.cancel()
         let visible = visibleRows()
-        dropMeasuredHeights(visible)
         note(visible, on: table)
         let tail = IndexSet(shown.indices).subtracting(visible)
         guard !tail.isEmpty else { return }
@@ -80,7 +80,8 @@ extension FeedTableCoordinator {
             // Resolved against the anchor read BEFORE the batch and landed after it — that pair IS
             // the holding.
             let held = handle?.resolve(.rowsMeasured(anchor: anchor()))
-            dropMeasuredHeights(batch)
+            // Noted, never dropped, for `remeasureEverything`'s reason: a height still true of its
+            // row is re-used, and one that is not was already unfindable.
             note(batch, on: table)
             // Laid out inside the batch on purpose. A note alone only marks the rows; the heights
             // are asked for at the next layout, and leaving that to whenever one happens would pile

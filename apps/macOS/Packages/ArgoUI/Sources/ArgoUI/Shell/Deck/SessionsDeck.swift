@@ -8,6 +8,10 @@ import SwiftUI
 /// The canopy shares the stack's top edge with the row rather than sitting above it in a column —
 /// the reading has to reach the deck's top edge to pass under the glass.
 struct SessionsDeck: View {
+    /// Which Session is being read, as an IDENTITY — nothing here draws it. Half of `FeedReading`;
+    /// the rail's scope is the other half. `nil` in a preview and a specimen, where nothing
+    /// switches.
+    var session: CockpitPresentation.Session.ID?
     /// The selected Session's reading, projected above the deck.
     let feed: [FeedRow]
     /// What the top zone names. Absent when nothing is selected: the zone keeps its height and
@@ -56,6 +60,12 @@ struct SessionsDeck: View {
     /// space, so focus can come back out of the two that cover it. See `FeedFocus`.
     @FocusState private var focus: FeedFocus?
 
+    /// What the zones below are showing, as one value — see `FeedReading`. This is what the deck's
+    /// `.id(session)` used to say by destroying everything under it (ADR-0028 Rule 5).
+    private var reading: FeedReading {
+        FeedReading(session: session, scope: scope.wrappedValue)
+    }
+
     var body: some View {
         // The canopy is declared FIRST and lifted by `zIndex`, not laid over the row as an overlay:
         // a stack is read in declaration order, so an overlay would put the Session's title after
@@ -79,9 +89,12 @@ struct SessionsDeck: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .argoLightbox(selection, in: feed)
-        // A panel and a lightbox are opened on a ROW, and a scope switch replaces every row under
-        // them. Left open they would show one reading's evidence over another's feed.
-        .onChange(of: scope.wrappedValue) { _, _ in
+        // A panel and a lightbox are opened on a ROW, and another reading — a Session switch or a
+        // scope switch — replaces every row under them. Left open they would show one reading's
+        // evidence over another's feed. `CockpitView.forgetEvidence()` clears the same two from
+        // above on a Session switch, because the toolbar reaches them; the lightbox is only ever
+        // this view's, so this is the one place that puts it out.
+        .onChange(of: reading) { _, _ in
             open.wrappedValue = nil
             step.wrappedValue = nil
             lit = nil
@@ -91,6 +104,7 @@ struct SessionsDeck: View {
     private var zones: some View {
         VStack(spacing: ArgoSpacing.flush) {
             DeckContentRow(
+                reading: reading,
                 feed: feed,
                 showing: showing,
                 selection: selection,
