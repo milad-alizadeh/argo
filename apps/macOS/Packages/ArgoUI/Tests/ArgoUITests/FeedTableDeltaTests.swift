@@ -76,4 +76,16 @@ struct FeedTableDeltaTests {
         let delta = FeedTableDelta.between(Self.reading, and: Array(Self.reading.dropLast()))
         #expect(delta == .reload)
     }
+
+    /// An EMPTY table filling is an append, not a reload — every row of it arrived and none of them
+    /// was rewritten. Worth stating, because the whole of #858 turns on it: `execute` surrenders
+    /// every measured height on a `.reload`, so a fresh coordinator opening onto heights the shell
+    /// kept would throw all of them away if this answered the other way.
+    @Test
+    func `a table with nothing in it filling is an append`() {
+        #expect(
+            FeedTableDelta.between([], and: Self.reading)
+                == .append(arrived: 0 ..< Self.reading.count, rewritten: IndexSet()),
+        )
+    }
 }

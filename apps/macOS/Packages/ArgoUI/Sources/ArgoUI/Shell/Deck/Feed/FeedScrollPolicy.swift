@@ -35,6 +35,22 @@ struct FeedScrollPolicy {
         self.leftAt = held
     }
 
+    /// Another reading arrived in the same table — a Session switch, or the rail scoped onto a
+    /// Subagent. Every latch here is about rows that are no longer on screen, so all of them go:
+    /// a follow latch carried across says the reader is at the end of a reading they have never
+    /// seen, and `leftAt` names a row of the one they left.
+    ///
+    /// `paneWidth` is the one fact kept, because it is a fact about the DECK and not about the
+    /// reading — surrendering it would make the next pane notice read as a first width and rebuild
+    /// the table for nothing.
+    mutating func reopen(on rows: [FeedRow], held: FeedRow.ID?) {
+        self.rows = rows
+        isFollowing = held == nil
+        leftAt = held
+        hasPlaced = false
+        isOpeningLive = true
+    }
+
     mutating func resolve(_ event: FeedScrollEvent) -> FeedScrollDecision {
         switch event {
         case let .rowsChanged(stale, fresh):

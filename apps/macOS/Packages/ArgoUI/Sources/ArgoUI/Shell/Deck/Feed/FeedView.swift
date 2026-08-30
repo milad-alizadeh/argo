@@ -12,6 +12,9 @@ struct FeedView: View {
     /// for exactly that long.
     @Environment(\.deckIsResizing) private var isResizing
 
+    /// Which reading these rows are — see `FeedReading`. Every piece of per-reading state below is
+    /// keyed on it, which is what the deck's `.id(session)` used to do by destroying the lot.
+    var reading = FeedReading.unattached
     let rows: [FeedRow]
     /// What the deck has open and where the keyboard is. Owned by the deck: opening a row resizes
     /// the column this view is drawn in. Already routed through
@@ -33,15 +36,35 @@ struct FeedView: View {
     /// cannot press a control, and the unfolded state is otherwise unreachable.
     var opensUnfolded: Set<FeedRow.ID> = []
 
-    /// Which prompts the reader has unfolded. Held here so it survives the row being rebuilt when
-    /// the projection hands the feed a newer copy of it. `nil` until the reader has folded
-    /// anything, which is what lets `opensUnfolded` stand from the FIRST frame — a still seeded a
-    /// frame later renders the folded state and calls it the unfolded one.
-    @State private var unfolded: Set<FeedRow.ID>?
+    /// Which prompts the reader has unfolded, and WHICH READING they unfolded them in. Held here
+    /// so it survives the row being rebuilt when the projection hands the feed a newer copy of it.
+    /// `nil` until the reader has folded anything, which is what lets `opensUnfolded` stand from
+    /// the FIRST frame — a still seeded a frame later renders the folded state and calls it the
+    /// unfolded one.
+    @State private var unfolded: FeedFact<Set<FeedRow.ID>>?
 
     /// The reader's folds, or what the reading was opened on while they have made none.
+    ///
+    /// The reading is compared HERE rather than cleared in an `onChange`: a fold is a row position,
+    /// so one carried into another Session unfolds whatever now sits there — and an `onChange`
+    /// fires after the pass that already handed those folds to the table.
     private var folds: Binding<Set<FeedRow.ID>> {
-        Binding(get: { unfolded ?? opensUnfolded }, set: { unfolded = $0 })
+        Binding(
+            get: { Self.folds(unfolded, of: reading, opening: opensUnfolded) },
+            set: { unfolded = FeedFact(reading: reading, value: $0) },
+        )
+    }
+
+    /// The folds the reader made in THIS reading, or what it opens on. Out of the binding so a
+    /// suite can ask it: a fold is a row position, so folds carried into another Session unfold
+    /// whatever now sits where they were.
+    static func folds(
+        _ held: FeedFact<Set<FeedRow.ID>>?,
+        of reading: FeedReading,
+        opening: Set<FeedRow.ID>,
+    )
+        -> Set<FeedRow.ID> {
+        held.flatMap { $0.reading == reading ? $0.value : nil } ?? opening
     }
 
     /// The row the user's own words just landed on, while the accent wash stands over it.
@@ -54,6 +77,7 @@ struct FeedView: View {
 
     var body: some View {
         FeedTable(
+            reading: reading,
             rows: rows,
             selection: selection,
             held: held,
@@ -70,13 +94,19 @@ struct FeedView: View {
             guard case let .row(id) = focus else { return }
             table.focus(onto: id)
         }
-        .onChange(of: rows.count) { was, now in
+        // Keyed on the reading as well as the count: another Session's rows arriving is not an
+        // arrival, and washing whatever prompt is last in them says the reader sent it.
+        .onChange(of: FeedFact(reading: reading, value: rows.count)) { was, now in
             washArrived(between: was, and: now)
         }
         // The age of the wait is counted from here. Stamped on the CHANGE, so a row arriving
-        // mid-think does not restart a wait that never stopped.
-        .onChange(of: FeedWait.showing(in: rows), initial: true) { _, wait in
-            waitStarted = wait == nil ? nil : Date()
+        // mid-think does not restart a wait that never stopped — and on the reading too, so two
+        // Sessions showing the same wait in a row are two waits rather than one that never did.
+        .onChange(
+            of: FeedFact(reading: reading, value: FeedWait.showing(in: rows)),
+            initial: true,
+        ) {
+            waitStarted = $1.value == nil ? nil : Date()
         }
         .environment(\.argoWaitStarted, waitStarted)
         // Cancellation IS the reset: a second send while the first wash stands re-keys

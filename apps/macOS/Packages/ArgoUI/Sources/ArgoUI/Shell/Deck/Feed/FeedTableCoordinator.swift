@@ -13,11 +13,12 @@ import SwiftUI
     /// What the table currently draws, diffed against each fresh model — the table is not a
     /// SwiftUI view, so nothing re-renders it on a change.
     private(set) var shown: [FeedRow] = []
-    private var folds: Set<FeedRow.ID> = []
-    /// The open row the visible cells were last drawn against.
-    private var drawnOpen: FeedRow.ID?
-    /// The washed row they were last drawn against — see `FeedTableModel.washed`.
-    private var drawnWashed: FeedRow.ID?
+    /// What the visible cells were last drawn against. Not `private`, because the opening half
+    /// re-seats all three when another reading arrives — see `FeedTableCoordinator+Opening`.
+    var folds: Set<FeedRow.ID> = []
+    var drawnOpen: FeedRow.ID?
+    /// See `FeedTableModel.washed`.
+    var drawnWashed: FeedRow.ID?
     /// Whether the last model arrived mid seam-drag — the edge off it is when the full
     /// re-measure runs.
     private var wasResizing = false
@@ -139,13 +140,19 @@ import SwiftUI
     func apply(_ fresh: FeedTableModel) {
         let stale = shown
         let staleEnvironment = model?.environment
+        // Asked of the model that stands, before it is replaced. `model != nil` and not the reading
+        // alone: the FIRST apply is a mount, not a switch, and it takes the append path below into
+        // an empty table the way it always has.
+        let switched = model != nil && model?.reading != fresh.reading
         model = fresh
         shown = fresh.rows
         surrenderMovedChip()
         // A reading that shrank leaves an entry per lost index that nothing can ever match.
         geometry.dropBeyond(fresh.rows.count)
         guard table != nil else { return }
-        if fresh.rows == stale {
+        if switched {
+            openAfresh()
+        } else if fresh.rows == stale {
             touchUp(against: fresh, from: staleEnvironment)
         } else {
             // The reading boundary: the rulers still hold the last one's live rows, and this one
@@ -222,8 +229,9 @@ import SwiftUI
         geometry.chipRow = moved
     }
 
-    func keep(_ geometry: FeedGeometry) {
-        guard geometry !== self.geometry else { return }
+    /// `nil` where nothing above holds any — a preview, a specimen — which leaves this one its own.
+    func keep(_ geometry: FeedGeometry?) {
+        guard let geometry, geometry !== self.geometry else { return }
         self.geometry = geometry
     }
 

@@ -53,11 +53,13 @@ public struct CockpitView: View {
     /// Which Agent the feed is scoped to. Beside the two above, and for their reason: what the
     /// toggle opens on is the newest evidence in the rows this names.
     @State var feedScope = FeedScope.session
-    /// The selected Session's measured row heights. Held HERE because this is the one view above
-    /// `InstrumentDeckShell`'s room `switch`, which destroys the feed's table whole — the heights
-    /// are the same measurement on the way back, and are only dropped by what actually changes one
-    /// — a width, a re-ink, or the reading being another Session's. See `FeedGeometry` (#858).
-    @State var feedGeometry = FeedGeometry()
+    /// Every recently-read Session's measured row heights, one store per reading. Held HERE because
+    /// this is the one view above `InstrumentDeckShell`'s room `switch`, which destroys the feed's
+    /// table whole — the heights are the same measurement on the way back, and are only dropped by
+    /// what actually changes one: a width or a re-ink. Per reading and not one store shared, or the
+    /// Session looked at last overwrites the one the reader is coming back to. See `FeedGeometries`
+    /// (#858).
+    @State var feedGeometries = FeedGeometries()
 
     public init(
         presentation: CockpitPresentation,

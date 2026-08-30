@@ -1,7 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// Measured row heights, held above every view identity a switch destroys.
+/// Measured row heights for ONE reading, held above every view identity a switch destroys.
+///
+/// Which reading's heights these are is `FeedGeometries`', which holds one of these per
+/// `FeedReading`.
 ///
 /// A height is a full SwiftUI layout against the ruler — see `FeedTableCoordinator.measuredHeight`
 /// — and `InstrumentDeckShell` draws each room in its own `switch` arm, so leaving the Sessions
@@ -100,11 +103,4 @@ import SwiftUI
         let height: CGFloat
         let ground: Ground
     }
-}
-
-extension EnvironmentValues {
-    /// Where the deck's feed keeps its measured heights, injected by the one view above every
-    /// switch that would otherwise destroy them — see `CockpitView.detail(tickets:reading:)`.
-    /// `nil` in a preview and in a specimen, where each table owns its own and nothing switches.
-    @Entry var argoFeedGeometry: FeedGeometry?
 }
