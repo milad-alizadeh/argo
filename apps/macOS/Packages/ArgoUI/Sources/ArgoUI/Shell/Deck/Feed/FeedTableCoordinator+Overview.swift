@@ -9,6 +9,10 @@ extension FeedTableCoordinator {
     /// put a mark where the row it stands for is not.
     func reading() -> MinimapReading? {
         guard let table, let scroller else { return nil }
+        // This is the whole-document walk `ProseCache` derives its ceiling from: every prose row
+        // below asks `ProseReading.structure(of:)`, so a store smaller than the reading would be
+        // emptied before the walk reached its end and hit nothing on the next one.
+        ProseReading.holding(rows: shown.count)
         return MinimapReading(
             rows: shown.indices.map { MinimapRow(
                 shown[$0],
