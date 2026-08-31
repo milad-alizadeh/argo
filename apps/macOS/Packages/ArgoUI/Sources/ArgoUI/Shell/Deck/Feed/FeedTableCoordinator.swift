@@ -44,6 +44,15 @@ import SwiftUI
 
     /// The full re-measure waiting for a width burst to go quiet — see `FeedSettle`.
     var settling: Task<Void, Never>?
+    /// How many deferred measure passes are IN FLIGHT — the quiet-wait a width burst pushes
+    /// back, and the chunked pass behind it. Neither `settling` nor `tailing` can answer that: a
+    /// `Task` property is assigned once and never cleared, so a finished pass looks exactly like
+    /// a running one. Written by the two passes themselves, in `+Scrolling` and `+Remeasure`.
+    ///
+    /// Read by the overview lane, the one caller that walks the WHOLE document: while a pass is
+    /// in flight every measured height is provisional, and a walk would re-measure the document
+    /// at burst rate — the work these passes are sliced up to avoid.
+    var deferredPasses = 0
     /// The rows nobody can see, measured a batch at a time behind the visible ones — see
     /// `remeasureEverything`.
     var tailing: Task<Void, Never>?

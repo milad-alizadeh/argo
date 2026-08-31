@@ -63,6 +63,8 @@ extension FeedTableCoordinator {
         note(visible, on: table)
         let tail = IndexSet(shown.indices).subtracting(visible)
         guard !tail.isEmpty else { return }
+        // Owed from here rather than from when the body starts — see `settleSoon()`.
+        deferredPasses += 1
         tailing = Task { [weak self] in await self?.measureTail(tail) }
     }
 
@@ -77,6 +79,8 @@ extension FeedTableCoordinator {
     /// under them. Read fresh each time rather than held, so a reader who scrolls mid-tail is
     /// followed rather than yanked back.
     private func measureTail(_ tail: IndexSet) async {
+        // Owed for the whole tail, and paid back however it ends — see `deferredPasses`.
+        defer { deferredPasses -= 1 }
         var pending = tail
         while !pending.isEmpty {
             guard !Task.isCancelled, let table else { return }

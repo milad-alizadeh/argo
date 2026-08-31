@@ -156,12 +156,24 @@ extension FeedTableCoordinator {
     /// the last one runs it. `settleAfterResize` retires this timer.
     private func settleSoon() {
         settling?.cancel()
-        settling = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(250))
-            guard !Task.isCancelled, let self else { return }
-            let live = model?.isResizing == true || table?.inLiveResize == true
-            decide(.settleElapsed(stillLive: live, anchor: anchor()))
-        }
+        // Owed from the moment it is ARMED rather than from when its body first runs, a turn of
+        // the run loop later — a whole-document reader that caught the burst in that gap would
+        // read heights the pass is about to move as settled (see `deferredPasses`).
+        deferredPasses += 1
+        settling = Task { [weak self] in await self?.settleWhenQuiet() }
+    }
+
+    /// The quiet after the last width frame, and the full pass it was waiting for.
+    ///
+    /// Owed for the whole of its length, the wait included: a height measured while a burst is
+    /// still arriving is a height against a width that is about to move. Cancelling it still
+    /// runs this body, which is what pays the count back.
+    private func settleWhenQuiet() async {
+        defer { deferredPasses -= 1 }
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        let live = model?.isResizing == true || table?.inLiveResize == true
+        decide(.settleElapsed(stillLive: live, anchor: anchor()))
     }
 
     /// The rows the fresh reading added, and the ones it invalidated. Appends are the live case
