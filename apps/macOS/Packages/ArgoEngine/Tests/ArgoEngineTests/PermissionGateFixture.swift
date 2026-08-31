@@ -29,8 +29,15 @@ enum PermissionGate {
         try await body(fixture, claim, client)
     }
 
-    static func path(_ fixture: SpawnFixture, _ claim: SessionOwnership.ClaimID) -> String {
-        fixture.companionRoot.appending(path: "\(claim.value).gate.sock").path
+    @MainActor
+    static func path(
+        _ fixture: SpawnFixture,
+        _ claim: SessionOwnership.ClaimID,
+        of hub: Hub? = nil,
+    )
+        -> String {
+        (hub ?? fixture.hub).companionScope.root
+            .appending(path: "\(claim.value).gate.sock").path
     }
 
     /// A second hook dialling the same gate while the first is still up — what a Session with more

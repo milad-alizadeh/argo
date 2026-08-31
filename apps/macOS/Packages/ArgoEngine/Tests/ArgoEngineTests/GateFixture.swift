@@ -31,7 +31,11 @@ final class GateFixture {
         let token = String(UUID().uuidString.prefix(8))
         self.root = URL(fileURLWithPath: "/tmp/argo-g-\(token)", isDirectory: true)
         let observed = observed
-        self.channel = PermissionChannel(root: root, ledger: ledger, rung: { _ in observed.rung })
+        self.channel = PermissionChannel(
+            scope: CompanionScope(under: root),
+            ledger: ledger,
+            rung: { _ in observed.rung },
+        )
         self.socketPath = try channel.grant(claim)
     }
 

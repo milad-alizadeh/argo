@@ -136,6 +136,17 @@ struct SpawnFixture {
         Hub(projectURL: projectURL, engine: engine, spawnServices: services)
     }
 
+    /// The plugin directory one claim of a Hub of this fixture wrote — under that HUB's corner of
+    /// the companion root, never the root itself (#987).
+    func pluginRoot(_ claim: SessionOwnership.ClaimID, of hub: Hub? = nil) -> URL {
+        (hub ?? self.hub).companionScope.root.appending(path: claim.value)
+    }
+
+    /// Where one claim's companion socket is; its gate's is `PermissionGate.path`.
+    func companionSocketPath(_ claim: SessionOwnership.ClaimID) -> String {
+        hub.companionScope.root.appending(path: "\(claim.value).sock").path
+    }
+
     /// The resolved project path — what a claim is keyed by, and what the CLI would record. The
     /// two differ before resolution on any Mac, because `NSTemporaryDirectory` is under `/var`.
     var resolvedProjectPath: String {

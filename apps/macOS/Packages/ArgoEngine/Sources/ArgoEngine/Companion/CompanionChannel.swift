@@ -7,7 +7,8 @@ import Foundation
 /// gets a client is still `managed` — Argo owns its PTY — with nothing at that tier to show.
 @MainActor
 public final class CompanionChannel {
-    /// Where the per-claim sockets and plugin directories live.
+    /// The root every Hub takes its own corner of (`CompanionScope`), one per-claim socket and
+    /// plugin directory deep.
     ///
     /// Short and under `/tmp`, not in Application Support, because a `sockaddr_un` path is 103
     /// bytes
@@ -18,7 +19,7 @@ public final class CompanionChannel {
         isDirectory: true,
     )
 
-    private let root: URL
+    private let scope: CompanionScope
     private let onFact: (SessionOwnership.ClaimID, CompanionFact) -> Void
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
     /// The last invite that failed, in its refusal's own words; cleared by the next success.
@@ -41,10 +42,10 @@ public final class CompanionChannel {
     }
 
     init(
-        root: URL = CompanionChannel.defaultRoot,
+        scope: CompanionScope,
         onFact: @escaping (SessionOwnership.ClaimID, CompanionFact) -> Void,
     ) {
-        self.root = root
+        self.scope = scope
         self.onFact = onFact
     }
 
@@ -71,15 +72,11 @@ public final class CompanionChannel {
         gatedBy permissionSocketPath: String?,
     ) throws
         -> CompanionInvitation {
-        try FileManager.default.createDirectory(
-            at: root,
-            withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700],
-        )
-        let socketPath = root.appending(path: "\(claim.value).sock").path
+        try scope.createDirectory()
+        let socketPath = scope.root.appending(path: "\(claim.value).sock").path
         let invitation = try CompanionPlugin.materialize(
             forClaim: claim,
-            under: root,
+            under: scope.root,
             socketPath: socketPath,
             gatedBy: permissionSocketPath,
         )
@@ -99,6 +96,6 @@ public final class CompanionChannel {
     /// with it. Ownership does not come back, and neither does this.
     func withdraw(_ claim: SessionOwnership.ClaimID) {
         sockets.removeValue(forKey: claim)?.close()
-        CompanionPlugin.remove(forClaim: claim, under: root)
+        CompanionPlugin.remove(forClaim: claim, under: scope.root)
     }
 }

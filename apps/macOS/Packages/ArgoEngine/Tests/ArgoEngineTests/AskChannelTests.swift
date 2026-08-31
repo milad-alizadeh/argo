@@ -29,9 +29,7 @@ extension PermissionChannelTests {
 
             let claim = try await fixture.hub.spawnSession()
             let hooks = try String(
-                contentsOf: fixture.companionRoot
-                    .appending(path: claim.value)
-                    .appending(path: "hooks/hooks.json"),
+                contentsOf: fixture.pluginRoot(claim).appending(path: "hooks/hooks.json"),
                 encoding: .utf8,
             )
 

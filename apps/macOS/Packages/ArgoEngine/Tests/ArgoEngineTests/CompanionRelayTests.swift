@@ -37,9 +37,7 @@ struct CompanionRelayTests {
     private static func relay(to fixture: SpawnFixture, claim: SessionOwnership.ClaimID) throws
         -> Process {
         let declaration = try String(
-            contentsOf: fixture.companionRoot
-                .appending(path: claim.value)
-                .appending(path: ".mcp.json"),
+            contentsOf: fixture.pluginRoot(claim).appending(path: ".mcp.json"),
             encoding: .utf8,
         )
         let server = try #require(JSONValue.record(fromLine: declaration))

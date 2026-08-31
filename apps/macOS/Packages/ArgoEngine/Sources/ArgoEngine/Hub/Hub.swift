@@ -80,6 +80,9 @@ public final class Hub {
     @ObservationIgnored let modeStore: SessionModeStore
 
     @ObservationIgnored let spawnServices: SpawnServices
+    /// This Hub's own corner of the shared companion root: two Hubs mint the same claim ids, so
+    /// the corner is what keeps their socket paths apart (#987).
+    @ObservationIgnored let companionScope: CompanionScope
     @ObservationIgnored var companion: CompanionChannel?
     @ObservationIgnored var permissions: PermissionChannel?
 
@@ -109,6 +112,7 @@ public final class Hub {
         self.ownership = SessionOwnership(
             ledgerStore: SessionOwnershipLedgerStore(fileURL: spawnServices.ownershipFileURL),
         )
+        self.companionScope = CompanionScope(under: spawnServices.companionRoot)
         openCompanionChannel()
     }
 

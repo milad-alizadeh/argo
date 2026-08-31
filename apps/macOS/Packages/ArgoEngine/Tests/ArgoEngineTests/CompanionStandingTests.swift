@@ -8,7 +8,7 @@ import Testing
 struct CompanionStandingTests {
     @Test
     func `this build ships the plugin, so the channel reads included with spawns`() {
-        let channel = CompanionChannel(root: Self.root()) { _, _ in }
+        let channel = CompanionChannel(scope: CompanionScope(under: Self.root())) { _, _ in }
 
         #expect(CompanionPlugin.shipsResources)
         #expect(channel.standing == .includedWithSpawns)
@@ -26,7 +26,7 @@ struct CompanionStandingTests {
     func `a plugin write that failed is remembered with its reason`() {
         let root = Self.root()
         defer { try? FileManager.default.removeItem(at: root) }
-        let channel = CompanionChannel(root: root) { _, _ in }
+        let channel = CompanionChannel(scope: CompanionScope(under: root)) { _, _ in }
 
         #expect(throws: AgentSpawnError.self) {
             try channel.invite(Self.claim(length: 90))
@@ -43,7 +43,7 @@ struct CompanionStandingTests {
     func `a spawn that writes its plugin clears the remembered failure`() throws {
         let root = Self.root()
         defer { try? FileManager.default.removeItem(at: root) }
-        let channel = CompanionChannel(root: root) { _, _ in }
+        let channel = CompanionChannel(scope: CompanionScope(under: root)) { _, _ in }
 
         #expect(throws: AgentSpawnError.self) {
             try channel.invite(Self.claim(length: 90))
@@ -60,7 +60,7 @@ struct CompanionStandingTests {
     func `a re-pointed channel forgets the failure it remembered`() {
         let root = Self.root()
         defer { try? FileManager.default.removeItem(at: root) }
-        let channel = CompanionChannel(root: root) { _, _ in }
+        let channel = CompanionChannel(scope: CompanionScope(under: root)) { _, _ in }
 
         #expect(throws: AgentSpawnError.self) {
             try channel.invite(Self.claim(length: 90))
