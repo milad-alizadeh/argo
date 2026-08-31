@@ -8,6 +8,36 @@ import Testing
 struct SessionDiscoveryTests {
     private static let wellOutsideTheWindow = SessionDiscovery.workingSetWindow * 2
 
+    /// The number itself, pinned. It was a day until #1000 and is a WEEK now, and the reason it can
+    /// be is that the launch no longer reads what the window admits: every transcript in it is
+    /// opened on a bounded read of its two ends (`TranscriptExcerpt`), gated by
+    /// `TranscriptReadCostTests`. A change to this line is a change to what the reader sees on
+    /// launch, so it fails the build rather than being noticed later.
+    @Test
+    func `the working set is a week wide`() {
+        #expect(SessionDiscovery.workingSetWindow == 7 * 24 * 60 * 60)
+    }
+
+    /// The behaviour the number is for: three days ago is still work in hand. Under the old
+    /// day-wide
+    /// window this transcript was history, and the roster it belonged to had three rows where the
+    /// week has hundreds.
+    @Test
+    func `a transcript written three days ago is still in the working set`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
+        let recent = try fixture.write(FixtureTranscript(
+            name: "three-days-ago",
+            cwd: projectURL.path,
+            modifiedAgo: 3 * 24 * 60 * 60,
+        ))
+
+        let discovered = await SessionDiscovery(store: fixture.store).workingSet(for: projectURL)
+
+        #expect(discovered == [recent.standardizedFileURL])
+    }
+
     @Test
     func `the working set is this Project's recently written transcripts`() async throws {
         let fixture = try RecordDirectoryFixture()

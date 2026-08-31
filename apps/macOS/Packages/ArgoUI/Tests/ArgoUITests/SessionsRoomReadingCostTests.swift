@@ -36,7 +36,7 @@ struct SessionsRoomReadingCostTests {
         #expect(again < cold / Self.repeat480)
     }
 
-    /// Clicking away and back — the case the cache holds four entries for.
+    /// Clicking away and back — the case the cache holds its entries for.
     @Test
     func `browsing between Sessions and back reads each of them once`() {
         SessionsRoomReadingCache.forget()
@@ -47,6 +47,23 @@ struct SessionsRoomReadingCostTests {
         }
 
         #expect(SessionsRoomReadingCache.cost.bodies == 2)
+    }
+
+    /// The number the cache holds, as behaviour rather than as a literal: a reader who visits every
+    /// one of them and comes back to the first has re-derived nothing. It was four while the roster
+    /// was a day wide and three rows long, and a week-wide roster is browsed across far more.
+    @Test
+    func `browsing every Session the cache holds re-reads none of them`() {
+        SessionsRoomReadingCache.forget()
+        let held = SessionsRoomReadingCache.capacity
+        let ids = (0 ..< held).map { "session-\($0)" }
+        let presentation = Self.presentation(events: Self.long, ids: ids)
+
+        for sessionID in ids + ids {
+            _ = SessionsRoomReading(presentation: presentation, sessionID: sessionID)
+        }
+
+        #expect(SessionsRoomReadingCache.cost.bodies == held)
     }
 
     /// The other half, and the one that matters more: the cache may not mask a stream that grew.

@@ -14,10 +14,15 @@ import SwiftUI
 ///
 /// NOT `@Observable`, for `FeedGeometry`'s reason — nothing renders from it.
 @MainActor final class FeedGeometries {
-    /// Four, the number `SessionsRoomReadingCache` holds for the same browsing: a reader moving
-    /// between a handful of readings touches all of them on every pass, so a smaller number
-    /// evicts the one they are about to come back to.
-    static let capacity = 4
+    /// Twenty, the number `SessionsRoomReadingCache` holds for the same browsing: a reader moving
+    /// between readings touches all of them on every pass, so a smaller number evicts the one they
+    /// are about to come back to. It was four while the roster was a day wide and three rows long;
+    /// a week-wide roster is browsed across far more than four.
+    ///
+    /// Bounded by COUNT alone, unlike the two ceilings on the readings themselves: a geometry holds
+    /// one measured height per row, so twenty of the longest readings on the machine this was sized
+    /// against is under a megabyte. A byte ceiling here would be a gate that can never fire.
+    static let capacity = 20
 
     private var kept: [(reading: FeedReading, geometry: FeedGeometry)] = []
 

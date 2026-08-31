@@ -64,4 +64,12 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// explicit event, so "nothing happened" stays distinguishable from "I could not read what
     /// happened"; the raw text rides along.
     case unreadableLine(raw: String)
+    /// The reading skipped a stretch of the file here — the seam a BOUNDED read leaves between a
+    /// transcript's two ends (`TranscriptExcerpt`), which is what a launch sweep takes.
+    ///
+    /// An explicit event, in its own place in the sequence, because every fact folded out of the
+    /// stream afterwards is a fact about a reading with a hole in it. A sum is the honesty
+    /// question: `HubSession.transcriptExtent` is what this sets, and what keeps a partial total
+    /// from being rendered as a whole one (`CONTEXT.md` Honesty tier).
+    case excerpted
 }

@@ -74,6 +74,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// than compared.
     private(set) var observedModeCount = 0
     public private(set) var headLeafUUID: String?
+    /// How much of the record this Session was read from — see `SessionTranscriptExtent`. `whole`
+    /// by default because that is what a spawn and a full drain both are; only the seam a bounded
+    /// read leaves can move it, and it never moves back.
+    public private(set) var transcriptExtent: SessionTranscriptExtent = .whole
     /// The session id this chain started as. Internal, and read by `HubSessionChain` alone: it is a
     /// join key, not a fact any surface renders.
     private(set) var originSessionID: String?
@@ -198,6 +202,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // does not count either — the reading below it is where the activity shows up.
         case .unreadableLine, .skillLoaded:
             break
+        case .excerpted:
+            // One way only: reading the missing stretch means reading the file again, and that
+            // arrives as a fresh Session rather than as more events on this one.
+            transcriptExtent = .excerpt
         }
     }
 
@@ -222,9 +230,16 @@ public struct HubSession: Equatable, Identifiable, Sendable {
 
     /// The latest time wins, and an absent one says nothing: a record with no timestamp is not a
     /// Session that ran at the epoch.
+    ///
+    /// The EARLIEST is only taken while the reading is still whole. A moment read after a bounded
+    /// read's seam sits behind a stretch nobody opened, so it cannot be the earliest one the file
+    /// holds — and an unread start is unknown rather than "the oldest thing this happened to see"
+    /// (`SessionTranscriptExtent`). The roster sorts on the latest, which a tail always reads, so
+    /// what this withholds costs no row its place.
     private mutating func observeActivity(_ atMs: Int?) {
         guard let atMs else { return }
         lastActivityAtMs = max(lastActivityAtMs ?? atMs, atMs)
+        guard transcriptExtent == .whole else { return }
         startedAtMs = min(startedAtMs ?? atMs, atMs)
     }
 
@@ -255,6 +270,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // where the root named none.
         ticket = continuation.ticket ?? ticket
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
+        // A chain is read whole only where every link was: one bounded link leaves the joined
+        // reading with a hole in it, and its totals are as partial as that link's.
+        if continuation.transcriptExtent == .excerpt {
+            transcriptExtent = .excerpt
+        }
         // The tip moves with the chain, unlike `sourceURL`: a resume continues the last link, and
         // the last link is whatever was merged in most recently.
         chainTipURL = continuation.chainTipURL ?? chainTipURL

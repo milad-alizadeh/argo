@@ -94,7 +94,8 @@ public actor TranscriptReader {
             MediaLocation(transcript: $0, line: line.text, byteOffset: line.byteOffset)
         }
         defer { location = nil }
-        return events(of: line.text)
+        let seam: [TranscriptEvent] = line.followsGap ? [.excerpted] : []
+        return seam + events(of: line.text)
     }
 
     private func events(of line: String) -> [TranscriptEvent] {

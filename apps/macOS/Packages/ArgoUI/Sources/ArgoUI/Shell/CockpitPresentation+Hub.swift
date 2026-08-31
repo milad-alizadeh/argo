@@ -109,6 +109,10 @@ extension CockpitPresentation.Session {
     /// not-projected: hasAgentActivity — the roster admission test, already applied upstream: a
     ///   Session that fails it never reaches this projection at all.
     /// not-projected: isQueued — the other half of that same admission test.
+    /// not-projected: transcriptExtent — how much of the record was read. It reaches no surface
+    ///   because nothing below the shell has to know: every fact a bounded reading cannot state is
+    ///   withheld by the engine itself (`HubSession+Spend`), which is degrade-down at the source
+    ///   rather than a flag each surface would have to remember to ask about.
     ///
     /// Edge 5 also requires each fact below to land on the slot of its own name, unless a
     /// `renamed:` line here says otherwise (ADR-0027, amended by #755).

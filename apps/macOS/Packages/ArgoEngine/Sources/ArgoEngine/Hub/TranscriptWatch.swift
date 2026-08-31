@@ -8,7 +8,10 @@ import Foundation
 @MainActor
 @Observable
 final class TranscriptWatch {
-    @ObservationIgnored private let engine: Engine
+    /// Internal rather than private, with the two below it: the reading half of this watch — what
+    /// it is reading and at what extent — is `TranscriptWatch+Reading.swift`, and `private` in
+    /// Swift is file-scoped. Every write to the join still goes through `mutate` alone.
+    @ObservationIgnored let engine: Engine
     @ObservationIgnored private let sweep: WorkingSetSweep
     /// Built lazily because the batches it reads land in the join below, and stored because a
     /// Subagent tail has to outlive the call that started it.
@@ -22,7 +25,7 @@ final class TranscriptWatch {
     /// that has awaited a batch has awaited everything that follows from it.
     @ObservationIgnored var onApplied: @MainActor () async -> Void = {}
 
-    private var join = HubJoin()
+    private(set) var join = HubJoin()
     /// Bumped by `mutate` and by nothing else — the roster's memo is keyed by it
     /// (`HubRosterMemo`), so a batch that landed in the join without going through the one write
     /// below would be a Session the cockpit never redraws.
@@ -32,7 +35,13 @@ final class TranscriptWatch {
     @ObservationIgnored private var retained = HubJoinCache()
     /// The running tail per transcript id. A tail's presence in the table IS its liveness, so there
     /// is no second number to fall out of step.
-    private var tails: [String: Task<Void, Never>] = [:]
+    private(set) var tails: [String: Task<Void, Never>] = [:]
+    /// The transcripts held on a WHOLE reading, and the ceiling on holding them — see
+    /// `WholeReadings`. Written only by `TranscriptWatch+Reading.swift`.
+    @ObservationIgnored var whole = WholeReadings()
+    /// How many transcripts this watch has opened, at each extent — see
+    /// `TranscriptWatch.observe(_:reading:)`.
+    @ObservationIgnored var reads = TranscriptWatchReads()
     private var failureMessage: String?
     private var isConnecting = false
 
@@ -44,17 +53,6 @@ final class TranscriptWatch {
     /// The Sessions the tails have read, in the order the join holds them.
     var sessions: [HubSession] {
         join.sessions
-    }
-
-    /// What is being read, per transcript, in the order the transcripts joined the set.
-    var observations: [HubObservation] {
-        join.transcripts.map { transcript in
-            HubObservation(
-                id: transcript.id,
-                sourceURL: transcript.sourceURL,
-                state: tails[transcript.id] == nil ? .stopped : .live,
-            )
-        }
     }
 
     /// "Connected" is a claim about a live source, and a Project with no tail running has none.
@@ -129,6 +127,8 @@ final class TranscriptWatch {
 
     /// Stop one tail and drop its transcript from the join, leaving the rest tailing.
     func stopObserving(transcriptID: String) async {
+        // Not an eviction: the transcript is going, so there is no bounded reading to fall back to.
+        whole.drop(transcriptID)
         mutate { $0.remove(transcriptID: transcriptID) }
         await pauseObserving(transcriptID: transcriptID)
     }
@@ -152,6 +152,7 @@ final class TranscriptWatch {
         await subagents.stopAll()
         let stopped = Array(tails.values)
         tails = [:]
+        whole = WholeReadings()
         mutate { $0 = HubJoin() }
         // A failure is a claim about what could not be read, and nothing is being read now. The one
         // caller that wants it standing — `observeNamed` — sets it AFTER this returns.
@@ -170,8 +171,18 @@ final class TranscriptWatch {
     /// paused resume-chain root would put it behind its own continuation and re-attribute the
     /// records it authored. A tail re-reads from the start of the file.
     private func startTailing(_ observation: TranscriptObservation) async {
+        await tail(observation) { $0.add(observation) }
+    }
+
+    /// Start a tail for one transcript, under the one join write that admits its reading —
+    /// `HubJoin.add` for a transcript joining the set, `HubJoin.reread` for one being read again at
+    /// a different extent (`TranscriptWatch+Reading.swift`).
+    func tail(
+        _ observation: TranscriptObservation,
+        joining admit: (inout HubJoin) -> Void,
+    ) async {
         await pauseObserving(transcriptID: observation.id)
-        mutate { $0.add(observation) }
+        mutate(admit)
         // A connection reading `failed` over a live source is a stale claim.
         failureMessage = nil
         tails[observation.id] = Task { [weak self] in await self?.drain(observation) }
@@ -192,7 +203,10 @@ final class TranscriptWatch {
             // A file the sweep saw a moment ago can be gone by the time it is opened. Skipping it
             // is the honest answer: nobody named this file, and the next sweep sees it again if it
             // comes back — where a named transcript that cannot be read is a failed connection.
-            guard let observation = try? engine.observeTranscript(at: url) else { continue }
+            // BOUNDED: a sweep reads the two ends of every transcript it admits and nothing
+            // between them, which is what makes a week-wide working set affordable
+            // (`TranscriptExcerpt`). The whole file is read on the click that selects it.
+            guard let observation = try? observe(url, reading: .excerpt) else { continue }
             await startTailing(observation)
         }
         // Every sweep, not only the ones that moved a tail: a fan-out's files appear beside a

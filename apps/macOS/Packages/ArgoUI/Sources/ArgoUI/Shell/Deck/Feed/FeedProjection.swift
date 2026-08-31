@@ -94,7 +94,7 @@ enum FeedProjection {
         case .prompt, .message, .thought, .toolCall, .recordIdentity, .headLeaf, .originSession,
              .title, .cwd,
              .model, .branch, .mode, .turnEnded, .plan, .compaction, .queued, .unreadableLine,
-             .skillLoaded: nil
+             .skillLoaded, .excerpted: nil
         }
     }
 
@@ -160,6 +160,9 @@ enum FeedProjection {
         // The stance is one of these too, and pointedly: Mode is standing rather than something
         // that
         // happened, so it belongs on the composer's footer and not as a row in the reading.
+        // The seam of a bounded read, drawn where it happened: everything above it is older than
+        // everything below it, with a stretch of the record missing between the two.
+        case .excerpted: .mark(.excerpted)
         case .toolCallOutcome, .usage, .recordIdentity, .headLeaf, .originSession, .title, .cwd,
              .model, .branch, .mode, .plan, .queued: nil
         }

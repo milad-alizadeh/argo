@@ -7,9 +7,15 @@ public struct TranscriptLine: Sendable, Equatable {
     public let text: String
     /// Where the line's first byte sits in the file.
     public let byteOffset: Int
+    /// Whether the reading SKIPPED a stretch of the file in front of this line — the seam a
+    /// bounded read leaves between a transcript's two ends (`TranscriptExcerpt`). Carried on the
+    /// line because the seam has a PLACE: the events read after it are later than the ones before
+    /// it, with a hole between, and a marker put anywhere else would say less than that.
+    public let followsGap: Bool
 
-    public init(text: String, byteOffset: Int) {
+    public init(text: String, byteOffset: Int, followsGap: Bool = false) {
         self.text = text
         self.byteOffset = byteOffset
+        self.followsGap = followsGap
     }
 }

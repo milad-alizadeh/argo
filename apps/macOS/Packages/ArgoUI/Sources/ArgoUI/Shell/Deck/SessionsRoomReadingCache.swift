@@ -56,9 +56,17 @@ enum SessionsRoomReadingCache {
         let worked: SessionHeaderProjection.Worked
     }
 
-    /// Four, so browsing between a handful of Sessions is free. Held oldest-first and evicted from
-    /// the front — a reader moving between two Sessions touches both on every pass.
-    static let capacity = 4
+    /// Twenty, so browsing a week-wide roster is free. Held oldest-first and evicted from the
+    /// front — a reader moving between two Sessions touches both on every pass. It was four while
+    /// the roster was a day wide and three rows long, and at four a reader who visited six Sessions
+    /// re-derived two of them.
+    static let capacity = 20
+    /// And a ROW ceiling under the count, because twenty readings are not a fixed size (ADR-0028
+    /// Rule 4): a reading holds roughly one row per event, and over the week this was measured
+    /// against — 137 transcripts, 458 MB — the whole working set is 197 876 events. A hundred
+    /// thousand rows is half of that, so on an ordinary set of twenty readings, which measured
+    /// nearer 29 000, the count is what binds and this never fires.
+    static let rowCapacity = 100_000
 
     #if DEBUG
         /// What the cache did not save, counted rather than inferred (ADR-0028 Rule 7). DEBUG-only,
@@ -85,9 +93,7 @@ enum SessionsRoomReadingCache {
         counted(\.bodies)
         entries.removeAll { $0.stamp.sessionID == stamp.sessionID }
         entries.append(Entry(stamp: stamp, body: body))
-        if entries.count > capacity {
-            entries.removeFirst(entries.count - capacity)
-        }
+        evictOldest()
         return body
     }
 
@@ -137,6 +143,18 @@ enum SessionsRoomReadingCache {
         #if DEBUG
             cost = SessionsRoomReadingCost()
         #endif
+    }
+
+    /// Oldest first, one at a time, until both ceilings hold — never `removeAll` (ADR-0028 Rule 4).
+    /// The reading just taken is never evicted: dropping it would derive it again on the next pass.
+    private static func evictOldest() {
+        while entries.count > capacity || rowsHeld() > rowCapacity, entries.count > 1 {
+            entries.removeFirst()
+        }
+    }
+
+    private static func rowsHeld() -> Int {
+        entries.reduce(0) { $0 + $1.body.feed.count }
     }
 
     private static func index(of stamp: Stamp) -> Int? {

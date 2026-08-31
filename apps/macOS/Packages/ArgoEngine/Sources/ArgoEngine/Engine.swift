@@ -11,10 +11,23 @@ public struct Engine: Sendable {
         self.reads = reads
     }
 
+    /// One transcript read WHOLE — what selecting a Session takes, and what the feed is drawn
+    /// from.
     public func observeTranscript(at url: URL) throws -> TranscriptObservation {
         let sourceURL = url.standardizedFileURL
         try validateTranscript(at: sourceURL)
-        return observation(at: sourceURL)
+        return observation(at: sourceURL, reading: .whole)
+    }
+
+    /// One transcript read BOUNDED — the two ends and a tail from there (`TranscriptExcerpt`).
+    ///
+    /// What a launch sweep takes for every transcript in the working set. A roster row is made of
+    /// facts written at one end of a file or the other, and reading the middle of a week's worth is
+    /// the 458 MB ADR-0008 re-measured itself against.
+    public func surveyTranscript(at url: URL) throws -> TranscriptObservation {
+        let sourceURL = url.standardizedFileURL
+        try validateTranscript(at: sourceURL)
+        return observation(at: sourceURL, reading: .excerpt)
     }
 
     /// Validates the whole collection before starting any long-lived file observations.
@@ -23,7 +36,7 @@ public struct Engine: Sendable {
         for sourceURL in sourceURLs {
             try validateTranscript(at: sourceURL)
         }
-        return sourceURLs.map(observation)
+        return sourceURLs.map { observation(at: $0, reading: .whole) }
     }
 
     /// Which Subagents were written beside one Session's record.
@@ -68,17 +81,30 @@ public struct Engine: Sendable {
         }
     }
 
-    private func observation(at url: URL) -> TranscriptObservation {
+    private func observation(
+        at url: URL,
+        reading extent: SessionTranscriptExtent,
+    )
+        -> TranscriptObservation {
         TranscriptObservation(
             id: url.path,
             sourceURL: url,
             modifiedAt: modifiedAt(of: url),
-            events: transcriptEvents(
-                at: url,
-                readImage: diskImageReader,
-                readSkill: diskSkillReader,
-            ),
+            events: events(at: url, reading: extent),
         )
+    }
+
+    private func events(
+        at url: URL,
+        reading extent: SessionTranscriptExtent,
+    )
+        -> AsyncStream<[TranscriptEvent]> {
+        switch extent {
+        case .whole:
+            transcriptEvents(at: url, readImage: diskImageReader, readSkill: diskSkillReader)
+        case .excerpt:
+            transcriptExcerptEvents(at: url, readImage: diskImageReader, readSkill: diskSkillReader)
+        }
     }
 
     /// The file's own last-write time, or nothing. Read once at observation rather than re-statted,

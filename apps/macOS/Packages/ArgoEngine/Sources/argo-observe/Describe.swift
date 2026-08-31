@@ -77,6 +77,8 @@ func describe(_ event: TranscriptEvent) -> String {
         "usage       \(usage.inputTokens) in, \(usage.outputTokens) out"
     case .queued:
         "queued      a prompt queued rather than run"
+    case .excerpted:
+        "excerpt     a stretch of the file was not read"
     case .compaction:
         "compaction  history condensed here"
     case let .unreadableLine(raw):

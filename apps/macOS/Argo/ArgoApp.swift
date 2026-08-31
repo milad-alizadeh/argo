@@ -81,6 +81,13 @@ struct ArgoApp: App {
                         // this: the shell it lands in has no Project to act on.
                         await accounts.openIfUnstarted(registry: cockpit.registry)
                     }
+                    // Selecting a Session is what makes Argo read its record WHOLE: a sweep
+                    // admits every transcript on a bounded read of its two ends, and the feed
+                    // needs the stretch that read skipped (`TranscriptExcerpt`). `initial: true`
+                    // because launch reconciles onto the first row, and that row is on screen.
+                    .onChange(of: navigation.session, initial: true) { _, id in
+                        Task { await cockpit.hub.readSelected(sessionID: id) }
+                    }
                     // Observed once here because a change of active Project is ONE event:
                     // registering, switching, relocating and removing all end in it.
                     .onChange(of: cockpit.activeRecord?.id, initial: true) { _, _ in

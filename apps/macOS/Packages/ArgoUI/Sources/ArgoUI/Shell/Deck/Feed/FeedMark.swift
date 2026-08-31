@@ -27,6 +27,12 @@ enum FeedMark: Equatable, Sendable {
     /// already happened, which is also why it is the one that comes and goes: it stands at the foot
     /// of the reading while the wait lasts and is gone the moment the record answers.
     case working
+    /// A stretch of the record was not read — the seam a bounded read leaves between a transcript's
+    /// two ends (`TranscriptExcerpt`). Drawn rather than skipped, because a feed that stitches a
+    /// head to a tail with nothing between them reads as one continuous conversation and is not one
+    /// (`CONTEXT.md` Honesty tier). Selecting the Session reads the file whole, which is what makes
+    /// this mark short-lived.
+    case excerpted
 }
 
 extension FeedMark {
@@ -36,7 +42,8 @@ extension FeedMark {
     var ink: FeedInk {
         switch self {
         case .permissionExpired: .attention
-        case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .working: .boundary
+        case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .working, .excerpted:
+            .boundary
         }
     }
 
@@ -67,6 +74,8 @@ extension FeedMark {
         // The one live mark, and the one with nothing to say: `FeedWorkingThread` draws it as an
         // ion crossing the measure rather than as a caption let into a rule.
         case .working: nil
+        // What is missing and why, in the reader's terms rather than the mechanism's.
+        case .excerpted: "earlier records not read yet"
         }
     }
 
@@ -78,7 +87,7 @@ extension FeedMark {
     var endsTurn: Bool {
         switch self {
         case .turnEnded, .interrupted: true
-        case .compacted, .spent, .handedOff, .permissionExpired, .working: false
+        case .compacted, .spent, .handedOff, .permissionExpired, .working, .excerpted: false
         }
     }
 
@@ -108,6 +117,9 @@ extension FeedMark {
         // A sentence rather than the caption, for the reason the expiry gets one: "working…" read
         // out is a word and an ellipsis, and the ellipsis is where the whole meaning was.
         case .working: FeedWorking.spoken
+        // A sentence, for the reason the two above get one, and it names what is being waited on:
+        // the records are on disk and about to be read, not gone.
+        case .excerpted: "Earlier records in this Session have not been read yet"
         }
     }
 }

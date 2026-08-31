@@ -90,7 +90,7 @@ extension SessionHeaderProjection {
             // prompt beside it, and that prompt's own timestamp is already counted.
             case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .branch, .mode,
                  .message, .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine,
-                 .skillLoaded: nil
+                 .skillLoaded, .excerpted: nil
             }
         }
         .sorted()

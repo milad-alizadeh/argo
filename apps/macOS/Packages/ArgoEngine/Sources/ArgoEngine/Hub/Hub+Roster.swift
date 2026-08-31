@@ -25,6 +25,24 @@ public extension Hub {
 }
 
 @MainActor
+public extension Hub {
+    /// Read one Session's record WHOLE, because it has been selected.
+    ///
+    /// The sweep admitted every transcript on a bounded read of its two ends, which is what draws
+    /// the roster (`TranscriptExcerpt`); the feed needs the stretch that read skipped. Held
+    /// afterwards, so coming back to a Session is a lookup and never a second drain of its file
+    /// (`WholeReadings`).
+    ///
+    /// Safe to call on every click, including a second click on the row already open: a Session
+    /// already held reads nothing. Takes the selection AS THE COCKPIT HOLDS IT, optional and all —
+    /// nothing selected reads nothing, and a caller should not have to spell that.
+    func readSelected(sessionID: String?) async {
+        guard let sessionID else { return }
+        await watch.readWhole(rowID: sessionID)
+    }
+}
+
+@MainActor
 extension Hub {
     /// One Session by id, off that same roster — so a caller reading one row and a caller reading
     /// the list can never disagree about it.

@@ -30,7 +30,10 @@ public final class CockpitNavigationModel {
 
     /// The Session on screen. Every write but reconciliation's is somebody picking a row, which is
     /// why the setter records one.
-    var session: CockpitPresentation.Session.ID? {
+    ///
+    /// Public because the app target reads it, like `room` above: selecting a Session is what makes
+    /// Argo read its record whole, and the Hub is the app's to touch (`Hub.readSelected`).
+    public var session: CockpitPresentation.Session.ID? {
         get { pointedSession }
         set {
             pointedSession = newValue

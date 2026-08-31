@@ -13,7 +13,15 @@ import Foundation
 public actor SessionDiscovery {
     /// Running + recently active. A Session quiet for longer than this is history: still on disk to
     /// be opened deliberately, but not what the cockpit is watching.
-    public static let workingSetWindow: TimeInterval = 24 * 60 * 60
+    ///
+    /// A WEEK, and it was a day until #1000. A day is where the reader had left off yesterday, and
+    /// on the machine this was measured on it was three transcripts against the hundreds the week
+    /// actually held — a roster that answered "where is the rest of my work" with almost none of
+    /// it. What made a day the number was cost, not meaning: ADR-0008 kept the window small so the
+    /// launch would never read the full history. That constraint now belongs to the BOUNDED read
+    /// every sweep takes (`TranscriptExcerpt`) and to the gate on it, so the window is free to be
+    /// the span the reader actually works in.
+    public static let workingSetWindow: TimeInterval = 7 * 24 * 60 * 60
 
     /// Which CLI the swept records belong to. `nonisolated` so the Hub can read it synchronously
     /// while publishing the roster.

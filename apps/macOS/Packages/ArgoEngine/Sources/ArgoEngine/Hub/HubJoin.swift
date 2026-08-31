@@ -33,6 +33,27 @@ struct HubJoin {
         transcripts.isEmpty
     }
 
+    /// Every transcript folded into the row under this id, the row's own first.
+    ///
+    /// A row is a resume CHAIN (`CONTEXT.md` L2), so reading one Session whole means reading every
+    /// link of it: draining the root alone would leave the NEWEST half of the reading — the half
+    /// the feed opens on — still an excerpt.
+    func chainedTranscriptIDs(of rowID: String) -> [String] {
+        guard let row = transcripts.first(where: { $0.id == rowID }) else { return [] }
+        var claimed: Set<String> = [row.sessionID]
+        let graph = HubChainGraph(transcripts: transcripts, owners: recordOwners)
+        let chain = Set([row.sessionID] + graph.claimContinuations(
+            of: row.sessionID,
+            into: &claimed,
+        ))
+        return transcripts.filter { chain.contains($0.sessionID) }.map(\.id)
+    }
+
+    /// How many events each transcript's reading holds — what `WholeReadings` bounds itself by.
+    func eventsHeld() -> [String: Int] {
+        Dictionary(transcripts.map { ($0.id, $0.session.events.count) }) { first, _ in first }
+    }
+
     /// Admit a transcript to the working set, unsettled — present for the records it is about to
     /// claim, absent from the roster until its file has been read. Re-adding one already here
     /// changes nothing.
@@ -43,6 +64,21 @@ struct HubJoin {
         // The set has moved and nothing has refolded the roster — this transcript can be a chain's
         // new link or the second path onto one uuid, and which of those it is nobody knows until
         // its file has been read.
+        roster.holdWrites()
+    }
+
+    /// Read one transcript again from the beginning, keeping its place in the set and the row it
+    /// already has.
+    ///
+    /// What selecting a Session takes: the sweep admitted it on a BOUNDED reading of its two ends,
+    /// and the feed needs the whole file (`TranscriptExcerpt`). The first reading is dropped rather
+    /// than added to, so nothing it saw is counted twice — and the row on screen stands, stale
+    /// rather than absent, until the new one settles.
+    mutating func reread(_ observation: TranscriptObservation) {
+        guard let index = position(of: observation.id) else { return }
+        transcripts[index] = HubTranscript(observation: observation)
+        // The reading under one row has been thrown away and no fold has been retaken: the same
+        // staleness `add` opens, reached by a third path into it.
         roster.holdWrites()
     }
 
@@ -129,19 +165,20 @@ struct HubJoin {
         positions[transcriptID]
     }
 
-    /// Published only once every transcript in the set has settled. While a sweep admits a new
-    /// transcript the roster keeps the rows it has, in the order it has them: briefly missing a
-    /// row, never rewriting itself under the reader. Nothing is written into it in place while it
-    /// is held back either — see `HubRoster.holdWrites`.
+    /// Folded over the transcripts that have been READ, which is the whole set once a sweep has
+    /// finished and a prefix of it while one is running (`HubJoinPublishable`). A row not folded
+    /// yet
+    /// is missing; a row already folded keeps its place and its order, because the comparator and
+    /// the keys are the same ones that put it there.
+    ///
+    /// While the fold is partial nothing may be written into the roster in place either — see
+    /// `HubRoster.holdWrites`, whose every rejection is a fact about the whole set.
     private mutating func rebuild() {
         chainKeys = Set(transcripts.compactMap(\.session.headLeafUUID))
         isOrdered = true
-        guard transcripts.allSatisfy(\.isSettled) else {
-            // Held back, so the facts have moved and the fold has not: the same staleness `add`
-            // opens, reached by the other path into it.
-            roster.holdWrites()
-            return
-        }
-        roster = HubSessionChain.roster(from: transcripts, owners: recordOwners)
+        let publishable = HubJoinPublishable(of: transcripts, owners: recordOwners)
+        roster = HubSessionChain.roster(from: publishable.transcripts, owners: recordOwners)
+        guard !publishable.isComplete else { return }
+        roster.holdWrites()
     }
 }
