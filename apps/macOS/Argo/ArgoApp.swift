@@ -106,6 +106,8 @@ struct ArgoApp: App {
             // review has to be the state that ships, and a ring only the real app draws is a
             // difference no screenshot could report.
             .focusEffectDisabled()
+            // Inert unless ARGO_FRAME_PROBE=1 — the measurement rig's only foothold in the app.
+            .frameProbe()
         }
         .defaultSize(width: ArgoLayout.windowIdealWidth, height: ArgoLayout.windowIdealHeight)
         // Hidden title bar so the deck's content extends beneath the toolbar region. The chrome
