@@ -90,20 +90,14 @@ extension TicketsRoomProjection {
         items.sorted { $0.number > $1.number }
     }
 
-    /// The order the edges are RESOLVED in, stated on the same terms as the order they are drawn
-    /// in: lowest number first, so a child two parents both claim hangs under the lower-numbered of
-    /// them rather than under whichever the provider's array happened to name first (#919).
-    private static func oldest(_ items: [Ticket]) -> [Ticket] {
-        items.sorted { $0.number < $1.number }
-    }
-
     /// Which shown item owns each shown child. Built once for the whole set rather than asked per
     /// node, because the answer for one child depends on every other edge served — and in a stated
-    /// order, so a contested edge and a refused cycle resolve the same way on every poll.
+    /// order — `Ticket.oldestFirst` — so a contested edge and a refused cycle resolve the same way
+    /// on every poll.
     static func parentEdges(of shown: [Ticket]) -> [Int: Int] {
         let numbers = Set(shown.map(\.number))
         var parents: [Int: Int] = [:]
-        for item in oldest(shown) {
+        for item in Ticket.oldestFirst(shown) {
             for child in item.children
                 where numbers.contains(child) && parents[child] == nil && child != item.number
                 && !wouldCycle(adding: child, under: item.number, given: parents) {

@@ -54,8 +54,12 @@ extension TicketsReading {
 
     /// The PRD-shaped parent this pick hangs under, which is the chip's `next in #607`. The
     /// sidebar no longer lists these (#844); `isChartShaped` is read here and nowhere else.
+    ///
+    /// Where two charts both claim the pick the LOWER-NUMBERED one names it, on the same tie-break
+    /// the backlog tree resolves a contested edge by (#985) — the predicate is this surface's own,
+    /// the tie-break is not.
     private func chart(holding number: Int) -> String? {
-        items
+        Ticket.oldestFirst(items)
             .first { $0.isChartShaped && $0.children.contains(number) }
             .map { "#\($0.number)" }
     }
