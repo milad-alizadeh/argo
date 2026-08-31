@@ -1,6 +1,7 @@
 import AppKit
 @testable import ArgoUI
 import SwiftUI
+import Testing
 
 /// A real feed table, laid out and measured, for the suites whose claim is about geometry rather
 /// than about a projection. Nothing here is a stand-in: the coordinator, its scroll view and its
@@ -69,10 +70,17 @@ import SwiftUI
         }
     }
 
-    /// A frame change as AppKit posts it — the seam both of the deck's frame observers are
-    /// registered at, the feed's on the clip view and the lane's on the document view.
+    /// A frame change as AppKit posts it — the seam the deck's ONE frame observer is registered
+    /// at, the feed's on the clip view.
     static func postFrameChange(on view: NSView) {
         NotificationCenter.default.post(name: NSView.frameDidChangeNotification, object: view)
+    }
+
+    /// The reading reporting its own frame, from the seam AppKit reports it at — what the lane's
+    /// second frame observer used to hear as a notification (#971).
+    static func reportReshape(on coordinator: FeedTableCoordinator) throws {
+        let reshaped = try #require(coordinator.table?.reshaped)
+        reshaped()
     }
 
     /// The model the table is applied, with everything the deck owns left inert: these suites open

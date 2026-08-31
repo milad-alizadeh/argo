@@ -24,6 +24,15 @@ extension FeedTableCoordinator {
         )
     }
 
+    /// The reading changed shape, passed on to whoever is mapping it.
+    ///
+    /// The lane used to hear this as a frame observer of its own on the document view. Same
+    /// decision, made in the same place — see `MinimapLaneView` — but reached over the handle, so
+    /// the deck registers one frame observer rather than two (#971).
+    func notedReshape() {
+        handle?.readingReshaped?()
+    }
+
     /// The shape of the reading — every row's measured height and the gutters around them.
     ///
     /// The heights are the table's OWN, not a second measure: a lane summing anything else would

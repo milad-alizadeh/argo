@@ -18,6 +18,14 @@ import SwiftUI
     /// The last row present when following broke — what `FeedTail.newMessages` counts from.
     private(set) var leftAt: FeedRow.ID?
 
+    /// What the overview lane does when the reading changes SHAPE, set by the lane as it attaches.
+    ///
+    /// A callback out rather than a fact anything renders, so it is not observable. It is on the
+    /// handle because the lane's reshape decision and the feed's own pane decision are two
+    /// decisions about one kind of event, and #971 asked for them to be reached from one
+    /// registration — see `FeedTableCoordinator.notedReshape()`.
+    @ObservationIgnored var readingReshaped: (() -> Void)?
+
     /// Seeded with the row the reading opens held at, so both facts are already true before the
     /// first frame — which is what lets a still show the detached state without anybody scrolling.
     init(held: FeedRow.ID? = nil) {

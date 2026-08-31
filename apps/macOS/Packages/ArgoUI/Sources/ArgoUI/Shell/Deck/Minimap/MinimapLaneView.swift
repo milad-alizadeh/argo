@@ -70,9 +70,8 @@ final class MinimapLaneView: NSView {
     /// the lane back onto the reading through the geometry a scrub froze.
     private(set) var geometry = MinimapGeometry(MinimapReading(), lane: .zero)
 
-    /// The reading height the lane has already answered a reshape at. The document view posts a
-    /// frame change for every `setFrame`, so this is what tells a reshape from a notice carrying
-    /// nothing.
+    /// The reading height the lane has already answered a reshape at. The reading reports every
+    /// `setFrame` on itself, so this is what tells a reshape from a report carrying nothing.
     var reshapedTo: CGFloat?
 
     /// The document the lane last read, and the stamp it was true at.

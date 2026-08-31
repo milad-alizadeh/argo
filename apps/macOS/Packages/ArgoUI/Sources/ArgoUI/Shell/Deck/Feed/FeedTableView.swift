@@ -16,6 +16,10 @@ final class FeedTableView: NSTableView {
     var keyScrolled: (() -> Void)?
     /// The window's live resize ending — the moment the deferred full re-measure runs.
     var liveResizeEnded: (() -> Void)?
+    /// The reading's own frame changing — its SHAPE, which the clip view's frame cannot say. A
+    /// closure and not a second frame observer, so the pair of decisions the deck makes about a
+    /// frame is reached from one registration (#971).
+    var reshaped: (() -> Void)?
     /// Whether the reading is where the keyboard is, in the sense the row cursor is drawn on: the
     /// keyboard is here AND the keyboard is what the reader is working with (#533).
     var keyboardMoved: ((Bool) -> Void)?
@@ -100,6 +104,15 @@ final class FeedTableView: NSTableView {
     override func viewDidEndLiveResize() {
         super.viewDidEndLiveResize()
         liveResizeEnded?()
+    }
+
+    /// Every route AppKit resizes this view by ends here, which is what makes it the seam the
+    /// document's own frame notification used to be. Reported unconditionally, for the reason that
+    /// notification was: a size that did not move is the routine case, and the decision about it
+    /// belongs to whoever is mapping the reading.
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        reshaped?()
     }
 
     private func isActivation(_ event: NSEvent) -> Bool {

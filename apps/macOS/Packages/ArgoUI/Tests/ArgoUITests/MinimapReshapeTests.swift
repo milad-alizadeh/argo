@@ -4,9 +4,12 @@ import Testing
 
 /// What the reading changing shape costs the lane beside it.
 ///
-/// The lane's geometry is a walk over every row, and the document view posts a frame change for
-/// every `setFrame` — including the burst a measure tail makes, which is exactly when the geometry
-/// is known to be in flux. A handler decides; it does not compute (#955, ADR-0028 Rule 2).
+/// The lane's geometry is a walk over every row, and the reading reports every `setFrame` on
+/// itself — including the burst a measure tail makes, which is exactly when the geometry is known
+/// to be in flux. A handler decides; it does not compute (#955, ADR-0028 Rule 2).
+///
+/// The report arrives over the handle rather than as a frame observer of the lane's own (#971), so
+/// each claim below drives the seam AppKit drives: `FeedTableView.reshaped`.
 @Suite("Minimap reshape")
 @MainActor
 struct MinimapReshapeTests {
@@ -20,8 +23,7 @@ struct MinimapReshapeTests {
     }
 
     private static func postReshape(on deck: MinimapLaneFixture.Mounted) throws {
-        let document = try #require(deck.table.scroller?.documentView)
-        FeedTableFixture.postFrameChange(on: document)
+        try FeedTableFixture.reportReshape(on: deck.table)
     }
 
     @Test
