@@ -14,11 +14,9 @@ extension MinimapLaneView {
     /// since the next update of the deck calls this again.
     func attach(to feed: FeedTableHandle, within turns: Int = 3) {
         self.feed = feed
-        // The one change no notification of the feed's carries: a rail chip scoping the reading
-        // onto a Subagent replaces the table, the scroll view and the coordinator under this same
-        // handle, and the deck's update that starts it runs BEFORE the replacement exists. Both
-        // captures are weak — the handle holds this closure, and it belongs to the deck above both
-        // of these views.
+        // The one change no notification of the feed's carries — see `FeedTableHandle.coordinator`.
+        // Both captures are weak: the handle holds this closure, and it belongs to the deck above
+        // both of these views.
         feed.tableChanged = { [weak self, weak feed] in
             guard let feed else { return }
             self?.attach(to: feed)

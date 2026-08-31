@@ -16,9 +16,15 @@ import SwiftUI
         _ rows: [FeedRow],
         in size: CGSize,
         through handle: FeedTableHandle,
+        held: FeedRow.ID? = nil,
     )
         -> FeedTableCoordinator {
-        laidOut(rows, in: size, keeping: Kept(handle: handle, geometry: FeedGeometry()))
+        laidOut(
+            rows,
+            in: size,
+            keeping: Kept(handle: handle, geometry: FeedGeometry()),
+            held: held,
+        )
     }
 
     /// What the shell holds across a table being destroyed and built again: the scroll authority
@@ -35,6 +41,7 @@ import SwiftUI
         _ rows: [FeedRow],
         in size: CGSize,
         keeping kept: Kept,
+        held: FeedRow.ID? = nil,
     )
         -> FeedTableCoordinator {
         let coordinator = FeedTableCoordinator()
@@ -44,7 +51,7 @@ import SwiftUI
         coordinator.handle = kept.handle
         kept.handle.coordinator = coordinator
         coordinator.keep(kept.geometry)
-        coordinator.apply(model(showing: rows))
+        coordinator.apply(model(showing: rows, held: held))
         scroller.layoutSubtreeIfNeeded()
         return coordinator
     }
@@ -59,7 +66,12 @@ import SwiftUI
     /// no row and follow nothing. Also the way a suite grows the reading under a table that is
     /// already laid out — and `unfolded` is the one thing they do drive, because applying a second
     /// model that names a prompt IS how the reader lets its fold out.
-    static func model(showing rows: [FeedRow], unfolded: Set<FeedRow.ID> = []) -> FeedTableModel {
+    static func model(
+        showing rows: [FeedRow],
+        unfolded: Set<FeedRow.ID> = [],
+        held: FeedRow.ID? = nil,
+    )
+        -> FeedTableModel {
         let focus = FocusState<FeedFocus?>()
         return FeedTableModel(
             rows: rows,
@@ -67,7 +79,7 @@ import SwiftUI
                 open: .constant(nil), step: .constant(nil), lit: .constant(nil),
                 focus: focus.projectedValue,
             ),
-            held: nil,
+            held: held,
             isResizing: false,
             isUnderComposer: false,
             washed: nil,
