@@ -67,4 +67,84 @@ struct FeedRemeasureCostTests {
         #expect(laid.coordinator.measurements - before == 2)
         #expect(laid.coordinator.measuredHeight(at: Self.rewritten, in: table) > was)
     }
+
+    /// The forced synchronous layout a re-measure does NOT pay for (#955, ADR-0028 Rule 2).
+    ///
+    /// `scroller.layoutSubtreeIfNeeded()` used to run on every scope, and a clip-view frame notice
+    /// fires one per frame of a seam drag — the 1 530 ms half of #955, and the largest single
+    /// figure in it. Counted in the table's own layout passes, which is what a forced layout IS:
+    /// one pass realises and sizes every cell on screen (`FeedTableView.layouts`).
+    ///
+    /// `.visible` and `.rebuild` each leave a pass owing that the next layout pays for, so each of
+    /// them reads one with the guard removed. `.none` reads zero either way — it is held by the
+    /// early return rather than by the guard — and is here because removing that return is the same
+    /// defect. The case below is what says the counter can see a forced layout at all.
+    ///
+    /// Mounted in a real window, because a windowless table lays nothing out for `.rebuild`: its
+    /// `reloadData` marks and defers.
+    @Test(arguments: [FeedRemeasure.none, .visible, .rebuild])
+    func `a re-measure short of the settled pass forces no layout`(scope: FeedRemeasure) throws {
+        let mounted = try Self.mounted()
+        let before = try mounted.layouts
+
+        mounted.coordinator.remeasure(scope)
+
+        #expect(try mounted.layouts == before)
+    }
+
+    /// The one scope that does force a layout, and the control on the case above: `.all` is reached
+    /// from a notification only through the 250 ms settle timer, and it is the pass that asks
+    /// AppKit for its heights NOW rather than at the next layout. Exactly one, not merely more than
+    /// none — the whole complaint was a pass per frame.
+    @Test
+    func `the settled re-measure forces one layout and no more`() throws {
+        let mounted = try Self.mounted()
+        let before = try mounted.layouts
+
+        mounted.coordinator.remeasure(.all)
+        // The tail is another suite's claim, and one left running measures rows under the next.
+        mounted.coordinator.tailing?.cancel()
+
+        #expect(try mounted.layouts == before + 1)
+    }
+
+    /// A reading long enough that most of it is off screen, every row wrapping the pane.
+    private static let wrapping = (0 ..< 400).map {
+        FeedRow(id: $0, content: .message("A line of prose long enough to wrap, number \($0)."))
+    }
+
+    /// A reading laid out in a real window, which is where a forced layout can be seen at all. The
+    /// window and the two values the shell keeps come back with the coordinator: the coordinator
+    /// holds its scroll view weakly, and the window is what holds the table.
+    private static func mounted() throws -> Mounted {
+        let kept = FeedTableFixture.Kept(handle: FeedTableHandle(), geometry: FeedGeometry())
+        let coordinator = FeedTableFixture.laidOut(
+            Self.wrapping, in: FeedSwitchDeck.pane, keeping: kept,
+        )
+        let scroller = try #require(coordinator.scroller)
+        let window = NSWindow(
+            contentRect: scroller.frame, styleMask: [.titled], backing: .buffered, defer: false,
+        )
+        window.contentView = scroller
+        // Laid out until the COUNT stops moving, rather than until `needsLayout` clears: a mount
+        // leaves passes owing below the table as well as on it, and a case that started there would
+        // credit the scope under test with the mount's own.
+        let table = try #require(coordinator.table)
+        var settled = -1
+        while settled != table.layouts {
+            settled = table.layouts
+            scroller.layoutSubtreeIfNeeded()
+        }
+        return Mounted(window: window, kept: kept, coordinator: coordinator)
+    }
+
+    @MainActor private struct Mounted {
+        let window: NSWindow
+        let kept: FeedTableFixture.Kept
+        let coordinator: FeedTableCoordinator
+
+        var layouts: Int {
+            get throws { try #require(coordinator.table).layouts }
+        }
+    }
 }
