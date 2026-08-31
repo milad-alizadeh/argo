@@ -115,9 +115,7 @@ private final class RelayHook {
     ) throws
         -> RelayHook {
         let hook = RelayHook()
-        let script = fixture.companionRoot
-            .appending(path: claim.value)
-            .appending(path: "permission-hook.sh")
+        let script = fixture.pluginRoot(claim).appending(path: "permission-hook.sh")
         hook.process.executableURL = URL(fileURLWithPath: "/bin/sh")
         hook.process.arguments = [script.path]
         let stdin = Pipe()

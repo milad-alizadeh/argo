@@ -13,7 +13,7 @@ struct CompanionChannelTests {
         defer { fixture.remove() }
 
         let claim = try await fixture.hub.spawnSession()
-        let pluginRoot = fixture.companionRoot.appending(path: claim.value)
+        let pluginRoot = fixture.pluginRoot(claim)
         let mcpConfig = pluginRoot.appending(path: ".mcp.json")
         let manifest = pluginRoot.appending(path: ".claude-plugin/plugin.json")
         let declaration = try String(contentsOf: mcpConfig, encoding: .utf8)
@@ -181,7 +181,7 @@ struct CompanionChannelTests {
         _ claim: SessionOwnership.ClaimID,
     )
         -> String {
-        fixture.companionRoot.appending(path: "\(claim.value).sock").path
+        fixture.companionSocketPath(claim)
     }
 
     /// Let the server's run loop turn, then read its answer. The socket is served on the main

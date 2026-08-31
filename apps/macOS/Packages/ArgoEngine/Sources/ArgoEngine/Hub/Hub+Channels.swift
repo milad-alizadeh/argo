@@ -15,12 +15,11 @@ extension Hub {
     /// be a second thing that could fail at the moment an agent starts — which is the one moment
     /// there is nothing useful to say about it.
     func openCompanionChannel() {
-        let root = spawnServices.companionRoot
-        companion = CompanionChannel(root: root) { [weak self] claim, fact in
+        companion = CompanionChannel(scope: companionScope) { [weak self] claim, fact in
             self?.claims.record(fact, for: claim)
         }
         permissions = PermissionChannel(
-            root: root,
+            scope: companionScope,
             patience: spawnServices.permissionPatience,
             ledger: claims,
             rung: { [weak self] claim in self?.rung(ofClaim: claim) },
