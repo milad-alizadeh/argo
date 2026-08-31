@@ -15,9 +15,20 @@ import Testing
 /// fails
 /// on the ratio whatever machine it runs on, which is what Rule 3 asks of a per-body path.
 ///
+/// The ratio's two halves are the same KIND of work over the same memory profile — one comparison
+/// of one presentation, at two transcript lengths — which is what Rule 3's two-fixture shape is
+/// for and what makes the quotient a fact about the code (`cpuSeconds`, `MinimapWalkCostTests`).
+/// What it lacked was RESOLUTION. A pass costs about 1.8 µs, and the block under the clock was 100
+/// of them: 185 µs, inside which one frequency step or one stall lands whole. Measured over three
+/// readings each: at 100 passes the ratio read 0.975 to 0.998, and it failed a 1.3 bound once at
+/// load average 130; at 5 000 passes — 9 ms a block — it reads 0.997 to 1.002. The bound is
+/// unchanged and the instrument is 48x coarser than the thing it was asked to see, which is the
+/// only honest way to fix a budget that fails at the clock's floor.
+///
 /// Recorded on an Apple silicon laptop, debug, `swift test`, over 4 Sessions of 5 824 events each:
 /// an equal comparison whose buffers were reallocated cost 5.48 ms before this and 3.9 µs after
-/// (1 400x), and the ratio it is gated by fell from about 19 to 1.0.
+/// (1 400x), and the ratio it is gated by fell from about 19 to 1.0. A pass now reads 1.8 µs, the
+/// difference being that a pass is timed inside a 5 000-pass block rather than a 100-pass one.
 @Suite("Cockpit presentation cost", .serialized)
 @MainActor
 struct CockpitPresentationCostTests {
@@ -52,8 +63,10 @@ struct CockpitPresentationCostTests {
     /// Rule 3's own number, spent on a path that must now be flat in the transcript's length. Not
     /// 1.0: the two fixtures allocate differently and the clock has a floor.
     private static let flat = 1.3
-    /// Enough repeats that a comparison is timed rather than the clock's own resolution.
-    private static let passes = 100
+    /// Enough repeats that the block under the clock is MILLISECONDS of work rather than
+    /// microseconds — see the suite comment for why that is what made this sound. 5 000 of them is
+    /// about 9 ms a block.
+    private static let passes = 5000
 
     private static func perPass(_ work: () -> Void) -> Double {
         leastCPUSeconds(trials: 20) { for _ in 0 ..< passes {

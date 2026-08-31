@@ -22,17 +22,28 @@ enum ProseMetrics {
     private static var lays: [CGFloat: ProseCache<ProseLay>] = [:]
     private static let measuresHeld = 8
 
+    #if DEBUG
+        /// Every Core Text pass this has ever paid for, cache misses only — the glyph work itself.
+        ///
+        /// It lives out here rather than on the stores because `lays` is dropped whole when the
+        /// measure moves, and a counter dropped with it could not say what a seam drag cost. What
+        /// lets the overview lane's budgets be COUNTS instead of the seconds literals ADR-0028
+        /// Rule 7 forbids: a count is exactly the same idle and loaded, and glyph work is the whole
+        /// of what those budgets were ever about.
+        private(set) static var typesets = 0
+    #endif
+
     /// How wide `text` would run on one line, its inline marks read and taken off.
     static func width(of text: String, in face: ProseFace = .body) -> CGFloat {
         widths.reading(of: keyed(text, in: face)) { _ in
-            measured(ProseReading.marked(text), in: face)
+            counted { measured(ProseReading.marked(text), in: face) }
         }
     }
 
     /// How wide its widest unbreakable word runs — the floor under a column holding it.
     static func word(in text: String, face: ProseFace = .body) -> CGFloat {
         words.reading(of: keyed(text, in: face)) { _ in
-            widestWord(in: ProseReading.marked(text), face: face)
+            counted { widestWord(in: ProseReading.marked(text), face: face) }
         }
     }
 
@@ -45,7 +56,7 @@ enum ProseMetrics {
         }
         var store = lays[measure] ?? ProseCache<ProseLay>()
         let lay = store.reading(of: keyed(text, in: face)) { _ in
-            laid(out: text, across: measure, in: face)
+            counted { laid(out: text, across: measure, in: face) }
         }
         lays[measure] = store
         return lay
@@ -55,6 +66,15 @@ enum ProseMetrics {
     /// face, and a store keyed on the text alone would answer a heading with a paragraph's width.
     private static func keyed(_ text: String, in face: ProseFace) -> String {
         "\(face.key)\u{0}\(text)"
+    }
+
+    /// One Core Text pass, counted. Wrapped around the read rather than the ask, so what it counts
+    /// is the work paid for and never an answer the store already held.
+    private static func counted<Value>(_ typeset: () -> Value) -> Value {
+        #if DEBUG
+            typesets += 1
+        #endif
+        return typeset()
     }
 
     private static func measured(_ marked: AttributedString, in face: ProseFace) -> CGFloat {

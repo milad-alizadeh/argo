@@ -58,7 +58,11 @@ struct FeedRowsCompareCostTests {
     }
 
     private static let flat = 1.3
-    private static let passes = 100
+    /// Enough repeats that the block under the clock is MILLISECONDS of work. 100 of them is 30-50
+    /// µs, inside which one frequency step or one stall lands whole, and a 1.3 bound on that is a
+    /// bound at the instrument's floor: it failed 2 of 25 full-suite runs on unchanged code. 20 000
+    /// is 6-10 ms a block (ADR-0028 Rule 8).
+    private static let passes = 20000
 
     /// What one comparison costs, over `passes` of them: at half a microsecond, one clock reading
     /// measures the clock's granularity rather than the work.
