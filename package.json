@@ -25,6 +25,7 @@
     "check:design-tokens": "sh scripts/check-design-tokens-swift.sh",
     "contract:sweep": "node scripts/contract-readers.mjs",
     "worktrees:gc": "sh scripts/worktree-gc.sh",
+    "load:orphans": "sh scripts/load-burst.sh --orphans",
     "hooks:sync": "node packages/argo-skills/bin/hooks-sync.mjs",
     "screenshot": "turbo run screenshot",
     "scaffold": "node packages/argo-skills/bin/scaffold.mjs",

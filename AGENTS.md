@@ -151,6 +151,13 @@ permission or the PNG is silently blank, and **an e2e run holds the real keyboar
 its whole length — say so and wait before starting one**, because it takes the machine out from
 under whoever is at it.
 
+The same shape, and it costs more: **never hand-roll a load generator — use `sh
+scripts/load-burst.sh <workers> <seconds>`**, because spinners orphaned by a dying shell hold no
+deadline of their own and run until a human notices (five times now, once for 7h54m). Cleanup is
+scoped to what you started — stop a run early with `--reap <token>`, the token it prints, and
+never a bare `pkill -f load-burst.sh`, which is another session's outage; `bun run load:orphans`
+names ownerless CPU hogs and kills nothing.
+
 The commands (whole-app, one specimen, e2e) and everything else — why the script quits a
 running Argo, what the pixels are judged against, the specimen harness in full:
 `docs/agents/visual-verification.md`.
