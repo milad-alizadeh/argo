@@ -183,9 +183,28 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
 
 - **The `macos` job gets slower.** The suite gains a 2 000-row fixture and cold cases. That is the
   point: the 301-row warmed fixture is why Rule 4's defect stayed invisible.
-- **The figures must be re-recorded on `macos-26`, in release, before the budgets bind.** Until
-  then Rule 7's multiplier is applied to numbers nobody should trust. This is the epic's first
-  ticket and it blocks the rest.
+- **The figures must be re-recorded on `macos-26`, in release, before the budgets bind — but only
+  the ones made of SECONDS.** #991 established the split, and it is narrower than this bullet first
+  assumed. A COUNT is control flow: a ruler measure, a Core Text pass, a whole-document walk, a
+  geometry derivation, a cache miss and a retained byte happen the same number of times under
+  `-Onone` and under `-O`, so debug costs those claims nothing and Rule 8's sweep is what made that
+  most of the suite. Ten claims are CPU quotients and they are what a release run re-records:
+  `HubJoinCostTests`, `HubRosterCostTests` (2), `CockpitPresentationCostTests` (2),
+  `FeedRowsCompareCostTests` (2), `SessionsRoomReadingCostTests` (2), `ProseCacheCostTests` (1).
+  All ten hold unchanged optimised, and so does every count beside them: `ArgoEngine` 1 222 tests
+  and `ArgoUI` 2 035 tests pass in release with no budget touched.
+- **A release run is `ARGO_TEST_CONFIGURATION=release`, and it defines DEBUG on purpose** (#991).
+  What blocked release was never an instrument. Every counter the count claims read is `#if DEBUG`,
+  so `swift test -c release` failed to COMPILE `ArgoUITests` — exiting 0 as it did, the #918 hazard
+  again — and took the seven CPU quotients in that target down with the count assertions that share
+  the module. Defining DEBUG in the optimised build is honest exactly while every `#if DEBUG` under
+  `Packages/*/Sources` stays additive: 18 sites in 7 files today, not one with an `#else`. An
+  `#else` added there would make a release run measure debug behaviour, and nothing checks for one.
+- **Release is not on the `macos` job.** Cold on the machine this was written on, both packages:
+  289.6 s optimised against 106.3 s in debug, 2.7x, for the same 3 257 tests — whole-module `-O`
+  re-optimises ArgoUI entire on every change. It is a re-recording tool, run when a seconds-side
+  figure is written or challenged. The counts, which are most of the suite, gate on every push
+  already, and they are the half a debug build cannot get wrong.
 - **Rule 3's ratio can be gamed by making both ends slow.** It catches regressions in *scaling*, not
   in constants; Rule 7's recorded figures are what hold the constants.
 - **Rule 1 will bite legitimate work.** Some rebuilds genuinely must span everything —
