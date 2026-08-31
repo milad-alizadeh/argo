@@ -12,8 +12,7 @@ enum FeedMark: Equatable, Sendable {
     /// What the Session has spent, as the record reported it.
     case spent(Usage)
     /// The work left here for a fresh Session, and where it went — see `FeedHandoff`. The feed's
-    /// one
-    /// row that is a way out of the reading rather than a part of it.
+    /// one row that is a way out of the reading rather than a part of it.
     case handedOff(FeedHandoff)
     /// A Turn somebody stopped (#541), read off the entry the CLI writes for it. The record files
     /// the sentence on the USER side and names no one: the composer's Stop and an `ESC` typed into
@@ -57,16 +56,14 @@ extension FeedMark {
         // turn, what the rule already says.
         case .turnEnded(.endTurn): nil
         // Every OTHER reason keeps its word: a turn cut off by a token ceiling or ended in a
-        // refusal
-        // is not the same event as one that finished.
+        // refusal is not the same event as one that finished.
         case let .turnEnded(reason): "turn ended · \(reason.rawValue)"
         case let .spent(usage): "session · \(FeedSpend.words(usage))"
         // One word where the record has five: the rule it is let into already says a turn ended
         // here, so `[Request interrupted by user]` would restate the feed's own punctuation.
         case .interrupted: "interrupted"
         // Named, rather than "handed off" alone: the destination's own title is what the roster
-        // will
-        // show the reader when they get there.
+        // will show the reader when they get there.
         case let .handedOff(handoff): "handed off to \(handoff.title)"
         // Both halves, unshortened: `denied` alone would credit a decision nobody made, and
         // `expired` alone would leave what became of the tool call unsaid (#573).
@@ -100,9 +97,8 @@ extension FeedMark {
     }
 
     /// What a screen reader is told the mark is — a rule with no words is a shape, and a shape does
-    /// not carry.
-    /// Switched exhaustively with no `default`, so a mark added to this enum has to say what it
-    /// SOUNDS like rather than inheriting a fallback written for turn boundaries.
+    /// not carry. Switched exhaustively with no `default`, so a mark added to this enum has to say
+    /// what it SOUNDS like rather than inheriting a fallback written for turn boundaries.
     var spoken: String {
         switch self {
         case .compacted, .turnEnded, .spent, .handedOff: words ?? "Turn ended"

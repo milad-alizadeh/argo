@@ -38,8 +38,7 @@ struct EvidenceMedia: View {
     }
 
     /// A row with no bytes says so, never with a broken-image glyph: nothing failed to load,
-    /// nothing
-    /// was ever recorded.
+    /// nothing was ever recorded.
     @ViewBuilder private var picture: some View {
         if let image = showing.picture?.image {
             Image(nsImage: image)

@@ -36,8 +36,8 @@ struct FeedView: View {
     /// cannot press a control, and the unfolded state is otherwise unreachable.
     var opensUnfolded: Set<FeedRow.ID> = []
 
-    /// Which prompts the reader has unfolded, and WHICH READING they unfolded them in. Held here
-    /// so it survives the row being rebuilt when the projection hands the feed a newer copy of it.
+    /// Which prompts the reader has unfolded, and WHICH READING they unfolded them in. Held here so
+    /// it survives the row being rebuilt when the projection hands the feed a newer copy of it.
     /// `nil` until the reader has folded anything, which is what lets `opensUnfolded` stand from
     /// the FIRST frame — a still seeded a frame later renders the folded state and calls it the
     /// unfolded one.

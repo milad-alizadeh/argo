@@ -7,9 +7,8 @@ final class FeedTableView: NSTableView {
     /// One row up or down. Consumes the arrows whether or not a row is focused yet — the move
     /// itself scrolls the landing row into view, so the keys still move the reading.
     var stepFocus: ((Int) -> Void)?
-    /// Return and Space, both — what a focused control answers to on this platform. Answers
-    /// whether the row took it; a key an inert row refused falls through to the table's own
-    /// handling.
+    /// Return and Space, both — what a focused control answers to on this platform. Answers whether
+    /// the row took it; a key an inert row refused falls through to the table's own handling.
     var activateFocused: (() -> Bool)?
     /// A key the table's own handling scrolled by — Space paging, Home, End. Reported so the
     /// follow latch reads the landing; a paged scroll is the reader's as much as a wheel's.
@@ -24,8 +23,7 @@ final class FeedTableView: NSTableView {
     /// keyboard is here AND the keyboard is what the reader is working with (#533).
     var keyboardMoved: ((Bool) -> Void)?
     /// The focused row's own words, or `nil` when there are none to take. Read twice — to answer
-    /// ⌘C,
-    /// and to grey Edit ▸ Copy out over a reading with nothing selectable in it.
+    /// ⌘C, and to grey Edit ▸ Copy out over a reading with nothing selectable in it.
     var focusedWords: (() -> String?)?
 
     /// How many times the reading has been laid out. One layout pass realises and sizes every
@@ -93,8 +91,7 @@ final class FeedTableView: NSTableView {
     ///
     /// The responder action rather than a key in `keyDown`, because the menu item claims ⌘C before
     /// the event reaches a view. Reaching for it is keyboard work, so the cursor comes back onto
-    /// the
-    /// row being taken — a copy off a row with no cursor drawn would be a paste from nowhere.
+    /// the row being taken — a copy off a row with no cursor drawn would be a paste from nowhere.
     @objc func copy(_: Any?) {
         guard let words = focusedWords?() else { return }
         keyboardMoved?(true)

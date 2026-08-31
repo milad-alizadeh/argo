@@ -19,9 +19,8 @@ struct SessionDiscoveryTests {
     }
 
     /// The behaviour the number is for: three days ago is still work in hand. Under the old
-    /// day-wide
-    /// window this transcript was history, and the roster it belonged to had three rows where the
-    /// week has hundreds.
+    /// day-wide window this transcript was history, and the roster it belonged to had three rows
+    /// where the week has hundreds.
     @Test
     func `a transcript written three days ago is still in the working set`() async throws {
         let fixture = try RecordDirectoryFixture()

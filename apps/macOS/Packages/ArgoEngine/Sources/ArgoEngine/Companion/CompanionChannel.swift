@@ -11,9 +11,8 @@ public final class CompanionChannel {
     /// plugin directory deep.
     ///
     /// Short and under `/tmp`, not in Application Support, because a `sockaddr_un` path is 103
-    /// bytes
-    /// and "Library/Application Support/Argo/companion" plus a home directory spends most of them.
-    /// The directory is the user's alone (0700) and each socket inside it is theirs (0600).
+    /// bytes and "Library/Application Support/Argo/companion" plus a home directory spends most of
+    /// them. The directory is the user's alone (0700) and each socket inside it is theirs (0600).
     public static let defaultRoot = URL(
         fileURLWithPath: "/tmp/argo-companion-\(getuid())",
         isDirectory: true,

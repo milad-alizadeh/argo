@@ -62,8 +62,7 @@ struct TranscriptExcerptTests {
     }
 
     /// A bounded opening read is still a LIVE reading: the cursor is left at the end of the file,
-    /// so
-    /// what an agent appends next arrives without the middle being read to reach it.
+    /// so what an agent appends next arrives without the middle being read to reach it.
     @Test(.timeLimit(.minutes(1)))
     func `what is appended after the excerpt still arrives`() async throws {
         let fixture = try RecordDirectoryFixture()

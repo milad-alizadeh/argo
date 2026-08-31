@@ -41,8 +41,7 @@ struct FeedRemeasureCostTests {
 
     /// The other half of the claim, and the reason the drop is not needed: a row whose words
     /// changed answers `nil` to the height question by itself, so a reading that came back
-    /// rewritten
-    /// is re-measured where it moved and nowhere else.
+    /// rewritten is re-measured where it moved and nowhere else.
     ///
     /// Two rows, exactly: the one that was rewritten, and the one BELOW it — `FeedGeometry.Ground`
     /// carries the row above, because the gap above a row is inside that row's height.

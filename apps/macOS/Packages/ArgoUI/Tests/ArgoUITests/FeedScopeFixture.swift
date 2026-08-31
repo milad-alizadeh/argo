@@ -114,8 +114,7 @@ enum FeedScopeFixture {
     }
 
     /// The feed's own table, found by type rather than held: the deck builds it, and the whole
-    /// point
-    /// of the claim is that nothing here reaches inside the deck to make one.
+    /// point of the claim is that nothing here reaches inside the deck to make one.
     var table: FeedTableView {
         get throws {
             try #require(Self.table(in: host), "The hosted deck built no feed table.")

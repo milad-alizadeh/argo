@@ -11,8 +11,7 @@ public struct Engine: Sendable {
         self.reads = reads
     }
 
-    /// One transcript read WHOLE — what selecting a Session takes, and what the feed is drawn
-    /// from.
+    /// One transcript read WHOLE — what selecting a Session takes, and what the feed is drawn from.
     public func observeTranscript(at url: URL) throws -> TranscriptObservation {
         let sourceURL = url.standardizedFileURL
         try validateTranscript(at: sourceURL)

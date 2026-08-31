@@ -8,8 +8,7 @@ import Testing
 ///
 /// `CockpitPresentation.Session` compares its whole decoded stream by a stamp rather than by
 /// walking it, and a stamp that stands still while the stream moves is a stale cockpit rather than
-/// a
-/// slow one. So each case here drives the ENGINE — one batch, one Subagent read, one resume — and
+/// a slow one. So each case here drives the ENGINE — one batch, one Subagent read, one resume — and
 /// asserts the projection reports the change, which is what SwiftUI reads.
 ///
 /// Every other fact a Session renders is compared by value, by the synthesised equality this
@@ -124,8 +123,7 @@ struct CockpitPresentationStampTests {
     }
 
     /// And the guard that makes that sound where it matters: two Sessions can share a stamp, and
-    /// the
-    /// id above the transcript is what stops them ever comparing equal because of it.
+    /// the id above the transcript is what stops them ever comparing equal because of it.
     @Test
     func `two Sessions sharing a stamp are still two Sessions`() {
         let events: [TranscriptEvent] = [.message(markdown: "said")]

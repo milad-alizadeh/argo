@@ -50,12 +50,11 @@ struct SessionsRoomReadingCostTests {
     }
 
     /// The number the cache holds, as behaviour rather than as a literal: a reader who visits every
-    /// one of them and comes back to the first has re-derived nothing. It was four while the roster
-    /// was a day wide and three rows long, and a week-wide roster is browsed across far more.
+    /// one of them and comes back to the first has re-derived nothing.
     @Test
     func `browsing every Session the cache holds re-reads none of them`() {
         SessionsRoomReadingCache.forget()
-        let held = SessionsRoomReadingCache.capacity
+        let held = ReadingCeilings.readings
         let ids = (0 ..< held).map { "session-\($0)" }
         let presentation = Self.presentation(events: Self.long, ids: ids)
 

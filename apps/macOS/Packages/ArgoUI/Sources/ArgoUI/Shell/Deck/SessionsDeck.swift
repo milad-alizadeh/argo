@@ -14,8 +14,8 @@ struct SessionsDeck: View {
     var session: CockpitPresentation.Session.ID?
     /// The selected Session's reading, projected above the deck.
     let feed: [FeedRow]
-    /// What the top zone names. Absent when nothing is selected: the zone keeps its height and
-    /// says nothing.
+    /// What the top zone names. Absent when nothing is selected: the zone keeps its height and says
+    /// nothing.
     var header: SessionHeaderProjection.Header?
     /// Hand the shown Session's work to a fresh one. Inert by default so a specimen draws the
     /// button without spawning anything.

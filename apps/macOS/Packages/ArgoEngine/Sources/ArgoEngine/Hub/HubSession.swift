@@ -24,8 +24,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// degrade, only the tier having nothing to say yet.
     public internal(set) var convention: CompanionReport?
     /// DIRECT: the blocked hook and the channel its answer goes down are both Argo's own. Absent
-    /// for
-    /// every external Session (unobservable there, per ADR-0024).
+    /// for every external Session (unobservable there, per ADR-0024).
     public internal(set) var permission: PermissionRequest?
     /// The question this Session is blocked on (#712) — DIRECT, and absent for every Session whose
     /// gate is not Argo's own. A live handle with an id, unlike the `Ask` the feed reads out of the
@@ -129,11 +128,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     ///
     /// Its id IS the claim's — the only handle the spawn and the terminal share until the CLI picks
     /// one. Idle, not running: a spawn IS a Turn boundary, and rendering it DIRECT keeps the row
-    /// off
-    /// `unknown` until the liveness poll catches up. A PTY that goes without a record ever
-    /// appearing
-    /// closes that Turn `cancelled`; the `ended` the roster then shows comes from the orphaned
-    /// provenance, never from a reason invented here.
+    /// off `unknown` until the liveness poll catches up. A PTY that goes without a record ever
+    /// appearing closes that Turn `cancelled`; the `ended` the roster then shows comes from the
+    /// orphaned provenance, never from a reason invented here.
     init(spawn: AgentSpawn) {
         self.id = spawn.claim.value
         self.sourceURL = nil
@@ -262,8 +259,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         spend.merge(continuation.spend)
         branch = continuation.branch ?? branch
         // A resume is a fresh `claude` with its own flag, so the later half's stance is the live
-        // one
-        // — and a file that has not stated one yet does not un-state the root's.
+        // one — and a file that has not stated one yet does not un-state the root's.
         observedMode = continuation.observedMode ?? observedMode
         modeSet = continuation.modeSet ?? modeSet
         // A resume continues the work the root was started on, so the later half only adds a ticket

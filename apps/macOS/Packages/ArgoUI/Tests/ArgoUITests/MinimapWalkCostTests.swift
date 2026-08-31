@@ -15,14 +15,13 @@ import Testing
 /// app pays per batch. `pumping` is what the app has: a layout pass every turn of the run loop, for
 /// as long as the pass behind it is measuring.
 ///
-/// Recorded on an M-series Mac, debug, over the 1000-row reading below, before → after: a mount
-/// 2 → 1 walks at 1000 ruler measures either way; a full `.all` re-measure 7 → 1 walks; a 30-notice
+/// Recorded on an M-series Mac, debug, over the 1000-row reading below, before → after: a mount 2 →
+/// 1 walks at 1000 ruler measures either way; a full `.all` re-measure 7 → 1 walks; a 30-notice
 /// reshape burst carrying no reshape 0 → 0 walks; a 30-frame width burst 29 → 1 walks, 29 000 → 1
-/// 420
-/// ruler measures, 13.7 s → 0.9 s of thread CPU. The mount's own CPU is unchanged — its second walk
-/// was a warm one. Those seconds are a recorded figure and nothing here gates on them: every gate
-/// below is a COUNT, which is the only figure that is exactly the same idle and loaded — see the
-/// width-burst case for the ratio that was tried here and why it could not be made sound.
+/// 420 ruler measures, 13.7 s → 0.9 s of thread CPU. The mount's own CPU is unchanged — its second
+/// walk was a warm one. Those seconds are a recorded figure and nothing here gates on them: every
+/// gate below is a COUNT, which is the only figure that is exactly the same idle and loaded — see
+/// the width-burst case for the ratio that was tried here and why it could not be made sound.
 @Suite("Minimap walk cost")
 @MainActor
 struct MinimapWalkCostTests {

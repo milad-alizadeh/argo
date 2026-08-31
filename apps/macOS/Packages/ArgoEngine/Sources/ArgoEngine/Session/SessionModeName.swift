@@ -5,8 +5,8 @@
 ///
 /// Spelled here rather than derived from the enum's case names, so renaming a case cannot quietly
 /// change what is already on disk. Two files read it — the rung last picked (#629) and the
-/// ownership ledger's starting rung (#966) — which is why it is one mapping rather than each
-/// file's own.
+/// ownership ledger's starting rung (#966) — which is why it is one mapping rather than each file's
+/// own.
 enum SessionModeName {
     static func of(_ mode: SessionMode) -> String {
         switch mode {

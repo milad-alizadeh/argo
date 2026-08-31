@@ -2,8 +2,8 @@ import AppKit
 @testable import ArgoUI
 import Testing
 
-/// What the reading stores actually hold while a whole-document walk crosses them (ADR-0028
-/// Rule 4).
+/// What the reading stores actually hold while a whole-document walk crosses them (ADR-0028 Rule
+/// 4).
 ///
 /// The lane's geometry is one such walk — `FeedTableCoordinator.reading()` asks
 /// `ProseReading.structure(of:)` for every prose row — and a store emptied whole at a literal under
@@ -49,13 +49,12 @@ struct ProseCacheCostTests {
         #expect(cold.misses - opening.misses == Self.rows.count)
         // And the warm pass reads nothing at all — the rate the walk achieved rather than a
         // threshold under it, because the whole defect was a rate of zero.
-        #expect(warm.hitRate(since: cold) == 1)
-        // What that rate is worth, said as a ratio against the walk that earned it rather than as
-        // seconds (ADR-0028 Rule 7). RE-RECORDED with `FeedRowMeasure`: 99 ms cold, 2.5 ms warm, a
-        // 39th of it. It was 350 ms and a 145th when a cold walk paid a full SwiftUI layout for
-        // every prose row's height — the COLD side got 3.5× cheaper and the warm side did not move,
-        // so the ratio narrowed by the change working. Gated at 20, which is inside Rule 7's 3×.
-        #expect(warmCPU < coldCPU / 20, "cold \(coldCPU)s warm \(warmCPU)s")
+        //
+        // The two counts are the whole gate, and the seconds ride along as figures: 99 ms cold,
+        // 2.5 ms warm, a 39th of it. Their quotient is NOT a budget (ADR-0028 Rule 8) — its halves
+        // are a Core Text typeset walk and a dictionary hit, unlike enough that 3.8× of the 39 is
+        // the machine rather than the cache, and the counts say the same thing exactly.
+        #expect(warm.hitRate(since: cold) == 1, "cold \(coldCPU)s warm \(warmCPU)s")
     }
 
     /// The bound the hit rate is bought with. A reading longer than the cap is held to the cap, so

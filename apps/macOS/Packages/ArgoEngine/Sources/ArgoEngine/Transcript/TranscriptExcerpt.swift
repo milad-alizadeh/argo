@@ -4,8 +4,7 @@ import Foundation
 ///
 /// What a roster row is made of — a title, the two times, a Turn's state, a chain link — is written
 /// either in a transcript's opening records or in its newest ones. The middle is the feed's, and
-/// the
-/// feed is only ever drawn for the Session on screen. So reading the middle at launch buys the
+/// the feed is only ever drawn for the Session on screen. So reading the middle at launch buys the
 /// roster nothing and costs it the bytes that made a week-wide working set unaffordable: over the
 /// week ADR-0008 was re-measured against — 137 transcripts, 458 MB — the two ends are 16 MB.
 struct TranscriptExcerpt {
@@ -28,8 +27,8 @@ struct TranscriptExcerpt {
     let isWhole: Bool
     /// Bytes actually asked of the file system. What bounds a launch sweep: whatever the file's
     /// length, this is at most the two ends plus the one partial record the tail read begins on,
-    /// and
-    /// it is the count `TranscriptReadCostTests` gates rather than a duration (ADR-0028 Rule 8).
+    /// and it is the count `TranscriptReadCostTests` gates rather than a duration (ADR-0028 Rule
+    /// 8).
     let bytesRead: Int
 
     /// Read one open file's two ends, leaving the handle wherever it finished. `nil` for a file

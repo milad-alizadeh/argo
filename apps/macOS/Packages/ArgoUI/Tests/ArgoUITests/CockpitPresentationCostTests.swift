@@ -7,27 +7,25 @@ import Testing
 /// SwiftUI diffs the presentation field by field, so this runs once per Session per body pass, and
 /// the presentation carries every Session's whole decoded event stream. The identical-buffer fast
 /// path in `Array.==` covered the warm case and nothing else: a roster refold reallocates the
-/// stream
-/// of every chained Session, and the pass after one deep-compared all of it.
+/// stream of every chained Session, and the pass after one deep-compared all of it.
 ///
 /// RATIOS, never durations: each case measures the same comparison over a short transcript and a
 /// long one and asserts the cost did not follow the length. A comparison that walks the stream
-/// fails
-/// on the ratio whatever machine it runs on, which is what Rule 3 asks of a per-body path.
+/// fails on the ratio whatever machine it runs on, which is what Rule 3 asks of a per-body path.
 ///
 /// The ratio's two halves are the same KIND of work over the same memory profile — one comparison
-/// of one presentation, at two transcript lengths — which is what Rule 3's two-fixture shape is
-/// for and what makes the quotient a fact about the code (`cpuSeconds`, `MinimapWalkCostTests`).
-/// What it lacked was RESOLUTION. A pass costs about 1.8 µs, and the block under the clock was 100
-/// of them: 185 µs, inside which one frequency step or one stall lands whole. Measured over three
+/// of one presentation, at two transcript lengths — which is what Rule 3's two-fixture shape is for
+/// and what makes the quotient a fact about the code (`cpuSeconds`, `MinimapWalkCostTests`). What
+/// it lacked was RESOLUTION. A pass costs about 1.8 µs, and the block under the clock was 100 of
+/// them: 185 µs, inside which one frequency step or one stall lands whole. Measured over three
 /// readings each: at 100 passes the ratio read 0.975 to 0.998, and it failed a 1.3 bound once at
 /// load average 130; at 5 000 passes — 9 ms a block — it reads 0.997 to 1.002. The bound is
 /// unchanged and the instrument is 48x coarser than the thing it was asked to see, which is the
 /// only honest way to fix a budget that fails at the clock's floor.
 ///
 /// Recorded on an Apple silicon laptop, debug, `swift test`, over 4 Sessions of 5 824 events each:
-/// an equal comparison whose buffers were reallocated cost 5.48 ms before this and 3.9 µs after
-/// (1 400x), and the ratio it is gated by fell from about 19 to 1.0. A pass now reads 1.8 µs, the
+/// an equal comparison whose buffers were reallocated cost 5.48 ms before this and 3.9 µs after (1
+/// 400x), and the ratio it is gated by fell from about 19 to 1.0. A pass now reads 1.8 µs, the
 /// difference being that a pass is timed inside a 5 000-pass block rather than a 100-pass one.
 @Suite("Cockpit presentation cost", .serialized)
 @MainActor

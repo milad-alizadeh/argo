@@ -124,8 +124,7 @@ struct HubJoin {
     ///
     /// A read carrying nothing applies nothing, so a file that exists and has said nothing yet is a
     /// Subagent with no reading rather than one with an empty reading — degrade-down, and what
-    /// keeps
-    /// its chip quiet instead of making it a control that empties the feed.
+    /// keeps its chip quiet instead of making it a control that empties the feed.
     mutating func apply(
         _ read: [TranscriptEvent],
         ofSubagent agentID: String,
@@ -167,9 +166,8 @@ struct HubJoin {
 
     /// Folded over the transcripts that have been READ, which is the whole set once a sweep has
     /// finished and a prefix of it while one is running (`HubJoinPublishable`). A row not folded
-    /// yet
-    /// is missing; a row already folded keeps its place and its order, because the comparator and
-    /// the keys are the same ones that put it there.
+    /// yet is missing; a row already folded keeps its place and its order, because the comparator
+    /// and the keys are the same ones that put it there.
     ///
     /// While the fold is partial nothing may be written into the roster in place either — see
     /// `HubRoster.holdWrites`, whose every rejection is a fact about the whole set.

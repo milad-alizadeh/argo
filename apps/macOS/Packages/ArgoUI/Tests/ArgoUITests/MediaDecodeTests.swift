@@ -170,8 +170,8 @@ struct MediaDecodeTests {
     }
 
     /// What settling one shot's provenance costs, in CPU time rather than wall clock, fifty times
-    /// over. Noise is one-sided, so the least of three trials is the honest reading (ADR-0028
-    /// Rule 7).
+    /// over. Noise is one-sided, so the least of three trials is the honest reading (ADR-0028 Rule
+    /// 7).
     private static func leastCostOfSettling(_ bytes: MediaBytes) -> Duration {
         (0 ..< 3).map { _ in
             let started = threadCPUTime()

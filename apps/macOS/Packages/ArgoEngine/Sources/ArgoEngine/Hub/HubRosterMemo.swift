@@ -36,6 +36,12 @@ final class HubRosterMemo {
     /// and a caller reading the list can never disagree about it.
     private var byID: [String: HubSession] = [:]
 
+    #if DEBUG
+        /// How many folds this memo did NOT save, counted rather than timed (ADR-0028 Rule 8).
+        /// Per instance, because a static one would be shared by every suite running beside this.
+        private(set) var folds = 0
+    #endif
+
     func sessions(at stamp: HubRosterStamp, folding fold: () -> [HubSession]) -> [HubSession] {
         refold(at: stamp, folding: fold)
         return folded
@@ -54,6 +60,9 @@ final class HubRosterMemo {
     private func refold(at stamp: HubRosterStamp, folding fold: () -> [HubSession]) {
         guard self.stamp != stamp else { return }
         let sessions = fold()
+        #if DEBUG
+            folds += 1
+        #endif
         folded = sessions
         // First wins, which is the row the list draws: the fold publishes at most one row per id,
         // and a duplicate could only come of a spawn standing beside the record it turned out to

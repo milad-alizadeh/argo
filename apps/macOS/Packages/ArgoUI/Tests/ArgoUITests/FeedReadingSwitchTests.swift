@@ -1,4 +1,5 @@
 import AppKit
+import ArgoEngine
 @testable import ArgoUI
 import Testing
 
@@ -46,11 +47,11 @@ struct FeedReadingSwitchTests {
     func `the height stores are held for a handful of readings and no more`() {
         let geometries = FeedGeometries()
 
-        for session in 0 ... FeedGeometries.capacity {
+        for session in 0 ... ReadingCeilings.readings {
             _ = geometries.geometry(for: FeedReading(session: "session \(session)"))
         }
 
-        #expect(geometries.count == FeedGeometries.capacity)
+        #expect(geometries.count == ReadingCeilings.readings)
     }
 
     /// A scope switch is another reading of the same Session — the rail scoped onto a Subagent —

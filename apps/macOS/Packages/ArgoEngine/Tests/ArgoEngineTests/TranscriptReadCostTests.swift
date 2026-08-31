@@ -6,24 +6,21 @@ import Testing
 ///
 /// This is the gate that lets ADR-0008's window be a week. The window was a day because the launch
 /// read every transcript it admitted, and reading a week of them whole is 458 MB on the machine
-/// this
-/// was measured on. The constraint the narrow window was protecting — never the full history at
-/// launch — is held here instead, by two counts and a byte bound:
+/// this was measured on. The constraint the narrow window was protecting — never the full history
+/// at launch — is held here instead, by two counts and a byte bound:
 ///
 /// - a launch sweep opens NOTHING whole, however many transcripts the week admits;
 /// - one bounded open reads at most the file's two ends, whatever the file's length; and
 /// - selecting one Session opens its file exactly ONCE, however many times it is clicked and
-///   however many other Sessions are visited in between, up to `WholeReadings.capacity`.
+///   however many other Sessions are visited in between, up to `ReadingCeilings.readings`.
 ///
 /// Every figure is a count of opens or of bytes asked of the file system, so none of them moves
-/// with
-/// what else is running on the box. They are read off the watch's own tally rather than a
+/// with what else is running on the box. They are read off the watch's own tally rather than a
 /// process-wide one, so a suite running beside this cannot inflate them.
 @Suite("Transcript read cost")
 struct TranscriptReadCostTests {
     /// Long enough that its two ends do not meet, so a bounded reading and a whole one are
-    /// different
-    /// values.
+    /// different values.
     private static let longEnough = 400
 
     @Test(.timeLimit(.minutes(1)))
@@ -38,9 +35,8 @@ struct TranscriptReadCostTests {
     }
 
     /// The bound the sweep's bytes come from: whatever a transcript's length, one bounded open
-    /// reads
-    /// its two ends and the partial record the second of them begins on. Everything else about a
-    /// sweep's cost is that figure times the count above.
+    /// reads its two ends and the partial record the second of them begins on. Everything else
+    /// about a sweep's cost is that figure times the count above.
     @Test
     func `a bounded open reads the two ends and nothing else`() throws {
         let fixture = try RecordDirectoryFixture()
@@ -76,7 +72,7 @@ struct TranscriptReadCostTests {
     }
 
     /// The claim the reader will notice: browsing away and back is a lookup. Held for
-    /// `WholeReadings.capacity` Sessions, which is why nineteen others in between still cost
+    /// `ReadingCeilings.readings` Sessions, which is why nineteen others in between still cost
     /// nothing.
     @Test(.timeLimit(.minutes(1)))
     @MainActor
@@ -102,7 +98,7 @@ struct TranscriptReadCostTests {
     func `past the ceiling the oldest reading is the one that drains again`() async throws {
         let fixture = try RecordDirectoryFixture()
         defer { fixture.remove() }
-        let held = WholeReadings.capacity
+        let held = ReadingCeilings.readings
         let hub = try await Self.connected(to: fixture, transcripts: held + 1, fillerRecords: 0)
         let rows = hub.sessions.map(\.id)
 

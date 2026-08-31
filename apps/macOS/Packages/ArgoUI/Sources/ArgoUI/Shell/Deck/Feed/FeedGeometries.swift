@@ -1,29 +1,19 @@
+import ArgoEngine
 import SwiftUI
 
 /// One `FeedGeometry` per reading, held above every view identity a switch destroys.
 ///
-/// A single store shared across readings is not enough, and the reason is the whole of #858's
-/// remaining half. A height is kept under a `Ground` that names the row it is a fact about, so
-/// showing another Session's rows through one store does not answer them WRONG — every question
-/// simply misses. But the miss overwrites: reading B measures its rows into the indices A's were
-/// at, so coming back to A finds B's grounds and measures A all over again. A → B → A cost two
-/// full readings, which is what a reader browsing the roster actually does.
+/// A height is kept under a `Ground` that names the row it is a fact about, so a single store
+/// shared across readings answers no question WRONG — but the miss overwrites: reading B measures
+/// its rows into the indices A's were at, so A → B → A costs two full readings, which is what a
+/// reader browsing the roster actually does (#858).
 ///
 /// Keyed by `FeedReading` and bounded, evicted oldest-first (ADR-0028 Rule 4): a store per Session
-/// the window has ever shown is an unbounded cache of held rows.
-///
-/// NOT `@Observable`, for `FeedGeometry`'s reason — nothing renders from it.
+/// the window has ever shown is an unbounded cache of held rows. Bounded by COUNT alone, unlike
+/// the readings themselves — a geometry holds one measured height per row, so
+/// `ReadingCeilings.readings` of the longest readings here is under a megabyte, and a byte ceiling
+/// would be a gate that can never fire.
 @MainActor final class FeedGeometries {
-    /// Twenty, the number `SessionsRoomReadingCache` holds for the same browsing: a reader moving
-    /// between readings touches all of them on every pass, so a smaller number evicts the one they
-    /// are about to come back to. It was four while the roster was a day wide and three rows long;
-    /// a week-wide roster is browsed across far more than four.
-    ///
-    /// Bounded by COUNT alone, unlike the two ceilings on the readings themselves: a geometry holds
-    /// one measured height per row, so twenty of the longest readings on the machine this was sized
-    /// against is under a megabyte. A byte ceiling here would be a gate that can never fire.
-    static let capacity = 20
-
     private var kept: [(reading: FeedReading, geometry: FeedGeometry)] = []
 
     /// This reading's heights, made on first sight. Touching the LRU order is the whole of the
@@ -39,8 +29,8 @@ import SwiftUI
         }
         let geometry = FeedGeometry()
         kept.append((reading: reading, geometry: geometry))
-        if kept.count > Self.capacity {
-            kept.removeFirst(kept.count - Self.capacity)
+        if kept.count > ReadingCeilings.readings {
+            kept.removeFirst(kept.count - ReadingCeilings.readings)
         }
         return geometry
     }

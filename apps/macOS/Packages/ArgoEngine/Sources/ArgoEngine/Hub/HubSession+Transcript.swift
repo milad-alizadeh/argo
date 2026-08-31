@@ -19,8 +19,8 @@ public extension HubSession {
         transcript.subagentEvents
     }
 
-    /// Which version of the two streams above this is, as one small value. Moves whenever either
-    /// of them is written to, and is the ONLY thing the cockpit compares them by — see
+    /// Which version of the two streams above this is, as one small value. Moves whenever either of
+    /// them is written to, and is the ONLY thing the cockpit compares them by — see
     /// `CockpitPresentation.Session.Transcript.Streams`.
     var transcriptStamp: TranscriptStamp {
         transcript.stamp

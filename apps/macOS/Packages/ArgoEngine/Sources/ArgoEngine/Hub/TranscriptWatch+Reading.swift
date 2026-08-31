@@ -5,8 +5,7 @@ import Foundation
 /// A sweep opens every transcript in the working set on a bounded read of its two ends
 /// (`TranscriptExcerpt`); everything the feed draws lives in the stretch that read skips. So the
 /// whole file is read on the click that selects the Session, and it stays read afterwards —
-/// clicking
-/// back is a lookup rather than a second drain (`WholeReadings`).
+/// clicking back is a lookup rather than a second drain (`WholeReadings`).
 @MainActor
 extension TranscriptWatch {
     /// What is being read, per transcript, in the order the transcripts joined the set.
@@ -23,9 +22,8 @@ extension TranscriptWatch {
     /// Read the chain under this row whole, and hold it.
     ///
     /// Idempotent, which is the whole claim: a Session already held costs nothing however many
-    /// times
-    /// it is clicked, and however many others are visited in between up to
-    /// `WholeReadings.capacity`.
+    /// times it is clicked, and however many others are visited in between up to
+    /// `ReadingCeilings.readings`.
     func readWhole(rowID: String) async {
         let chain = join.chainedTranscriptIDs(of: rowID)
         guard !chain.isEmpty, !chain.allSatisfy(isReadWhole(transcriptID:)) else { return }

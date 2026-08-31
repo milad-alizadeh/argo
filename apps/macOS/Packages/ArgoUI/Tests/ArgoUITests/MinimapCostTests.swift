@@ -9,12 +9,9 @@ import Testing
 /// budget here. A lane that is correct and drops frames is not a lane anybody wants, and neither
 /// half shows up in a screenshot.
 ///
-/// **Every budget here used to be a bare seconds literal, which is the thing ADR-0028 exists to
-/// replace** — its own Context names this suite: 142 ms measured and `#expect(cost < 4)` asserted,
-/// 28x looser than the thing it measured, green through a twentyfold regression. Rule 7 forbids the
-/// shape outright. The repair is not a tighter literal, because a tighter literal is a claim about
-/// this laptop; it is the same move `MinimapWalkCostTests` made, from seconds to COUNTS. A count is
-/// exactly the same idle and loaded, where thread CPU is only approximately so (`cpuSeconds`).
+/// COUNTS, never a seconds literal (ADR-0028 Rule 7, whose Context names this suite): a count is
+/// exactly the same idle and loaded, where thread CPU is only approximately so (`cpuSeconds`), and
+/// a tighter literal would only be a claim about this laptop.
 ///
 /// The claim survives the change of unit intact, because what those seconds were made of is
 /// countable. `FeedTableCoordinator.measurements` is one ruler measure — one full SwiftUI layout

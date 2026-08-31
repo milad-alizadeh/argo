@@ -188,10 +188,12 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   assumed. A COUNT is control flow: a ruler measure, a Core Text pass, a whole-document walk, a
   geometry derivation, a cache miss and a retained byte happen the same number of times under
   `-Onone` and under `-O`, so debug costs those claims nothing and Rule 8's sweep is what made that
-  most of the suite. Ten claims are CPU quotients and they are what a release run re-records:
-  `HubJoinCostTests`, `HubRosterCostTests` (2), `CockpitPresentationCostTests` (2),
-  `FeedRowsCompareCostTests` (2), `SessionsRoomReadingCostTests` (2), `ProseCacheCostTests` (1).
-  All ten hold unchanged optimised, and so does every count beside them: `ArgoEngine` 1 222 tests
+  most of the suite. Eight claims are CPU quotients and they are what a release run re-records:
+  `HubJoinCostTests`, `HubRosterCostTests` (1), `CockpitPresentationCostTests` (2),
+  `FeedRowsCompareCostTests` (2), `SessionsRoomReadingCostTests` (2). Two more were quotients when
+  #991 swept and are now counts, because Rule 8's first instruction had a count available in both:
+  the roster memo's own fold count, and the prose store's hit rate. All eight hold unchanged
+  optimised, and so does every count beside them: `ArgoEngine` 1 222 tests
   and `ArgoUI` 2 035 tests pass in release with no budget touched.
 - **A release run is `ARGO_TEST_CONFIGURATION=release`, and it defines DEBUG on purpose** (#991).
   What blocked release was never an instrument. Every counter the count claims read is `#if DEBUG`,

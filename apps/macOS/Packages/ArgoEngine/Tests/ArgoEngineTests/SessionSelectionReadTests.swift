@@ -26,8 +26,7 @@ struct SessionSelectionReadTests {
 
     /// A total over part of a file is not the total, and a number that is wrong is worse than no
     /// number: the three spend readings degrade DOWN to absent, which every surface already draws
-    /// as
-    /// unread (`CONTEXT.md` Honesty tier).
+    /// as unread (`CONTEXT.md` Honesty tier).
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `a bounded reading states no total it could not add up`() async throws {
@@ -43,8 +42,7 @@ struct SessionSelectionReadTests {
         await hubSettle { hub.session(id: excerpted.id)?.transcriptExtent == .whole }
 
         // The fixture prices nothing, so the honest answer stays absent — what changed is that it
-        // is
-        // now absent because nothing was reported rather than because nothing was read.
+        // is now absent because nothing was reported rather than because nothing was read.
         let whole = try #require(hub.session(id: excerpted.id))
         #expect(whole.transcriptExtent == .whole)
         await hub.disconnect()
@@ -71,8 +69,7 @@ struct SessionSelectionReadTests {
     }
 
     /// The row on screen while the drain runs is the STALE one, never an absent one: the roster
-    /// keeps
-    /// what it has published until the new reading settles (`HubJoin.reread`).
+    /// keeps what it has published until the new reading settles (`HubJoin.reread`).
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `the row stands while its record is being read again`() async throws {

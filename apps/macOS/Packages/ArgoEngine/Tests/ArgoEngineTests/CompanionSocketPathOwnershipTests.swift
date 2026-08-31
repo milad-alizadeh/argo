@@ -7,6 +7,9 @@ import Testing
 ///
 /// Checkable rather than argued: the socket that created a path is the only thing that may remove
 /// it, so a second socket on that path is refused at `open` and its `close` is not an unlink.
+///
+/// Both sockets here are in ONE process, which is the scope of the guard — across processes the
+/// paths cannot collide at all, because `CompanionScope` names each Hub's directory by pid.
 @Suite("A socket's own path")
 @MainActor
 struct CompanionSocketPathOwnershipTests {

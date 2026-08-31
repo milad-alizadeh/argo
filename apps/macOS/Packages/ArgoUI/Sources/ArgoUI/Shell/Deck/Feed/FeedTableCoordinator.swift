@@ -19,8 +19,8 @@ import SwiftUI
     var drawnOpen: FeedRow.ID?
     /// See `FeedTableModel.washed`.
     var drawnWashed: FeedRow.ID?
-    /// Whether the last model arrived mid seam-drag — the edge off it is when the full
-    /// re-measure runs.
+    /// Whether the last model arrived mid seam-drag — the edge off it is when the full re-measure
+    /// runs.
     private var wasResizing = false
 
     weak var table: FeedTableView?

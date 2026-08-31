@@ -5,10 +5,9 @@ import Testing
 /// The reason `permission-hook.sh` gives when it never reached the gate at all.
 private let gateUnreachableReason = "Argo could not be reached to ask"
 
-/// The gate driven through the REAL hook script rather than a test client (#543). The relay's
-/// `nc` half-closes the socket the moment its payload pipe ends, and a gate that reads that as
-/// the hook dying refuses nothing and records nothing — the one failure only the shipped script
-/// can show.
+/// The gate driven through the REAL hook script rather than a test client (#543). The relay's `nc`
+/// half-closes the socket the moment its payload pipe ends, and a gate that reads that as the hook
+/// dying refuses nothing and records nothing — the one failure only the shipped script can show.
 ///
 /// Nested inside `PermissionChannelTests` for `Expiry`'s reason: one serial scope over the
 /// main-queue socket waits.
@@ -62,9 +61,9 @@ extension PermissionChannelTests {
         /// The only cover the script's fail-closed branch has, and the one place its reason is a
         /// passing answer.
         ///
-        /// Removing the socket file reaches that branch by a different route than #936 did — a
-        /// dial refused rather than a path with nothing on it — and `[ -z "$decision" ]` is where
-        /// both arrive.
+        /// Removing the socket file reaches that branch by a different route than #936 did — a dial
+        /// refused rather than a path with nothing on it — and `[ -z "$decision" ]` is where both
+        /// arrive.
         @Test
         func `a hook that cannot reach the gate denies the call rather than letting it run`()
             async throws {

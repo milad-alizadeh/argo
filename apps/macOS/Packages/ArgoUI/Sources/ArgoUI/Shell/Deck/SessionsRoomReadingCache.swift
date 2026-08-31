@@ -7,6 +7,10 @@ import ArgoEngine
 /// publishes, and each pass took the whole projection again — a click on a roster row and a click
 /// back onto the row before it cost two identical walks of two whole transcripts.
 ///
+/// Held oldest-first and evicted from the front, bounded by the same two ceilings the readings
+/// themselves are (`ReadingCeilings`): a reader moving between two Sessions touches both on every
+/// pass, and a reading holds roughly one row per event.
+///
 /// Keyed by a STAMP rather than by a Session, because a remembered reading must never draw a
 /// transcript as it stood when the reader last looked at it. The stamp is sound because the streams
 /// are append-only within a Session — `HubSession.apply` only ever appends, and a resume merges by
@@ -55,18 +59,6 @@ enum SessionsRoomReadingCache {
         /// event appended, so a remembered header would go stale where a remembered feed cannot.
         let worked: SessionHeaderProjection.Worked
     }
-
-    /// Twenty, so browsing a week-wide roster is free. Held oldest-first and evicted from the
-    /// front — a reader moving between two Sessions touches both on every pass. It was four while
-    /// the roster was a day wide and three rows long, and at four a reader who visited six Sessions
-    /// re-derived two of them.
-    static let capacity = 20
-    /// And a ROW ceiling under the count, because twenty readings are not a fixed size (ADR-0028
-    /// Rule 4): a reading holds roughly one row per event, and over the week this was measured
-    /// against — 137 transcripts, 458 MB — the whole working set is 197 876 events. A hundred
-    /// thousand rows is half of that, so on an ordinary set of twenty readings, which measured
-    /// nearer 29 000, the count is what binds and this never fires.
-    static let rowCapacity = 100_000
 
     #if DEBUG
         /// What the cache did not save, counted rather than inferred (ADR-0028 Rule 7). DEBUG-only,
@@ -148,7 +140,8 @@ enum SessionsRoomReadingCache {
     /// Oldest first, one at a time, until both ceilings hold — never `removeAll` (ADR-0028 Rule 4).
     /// The reading just taken is never evicted: dropping it would derive it again on the next pass.
     private static func evictOldest() {
-        while entries.count > capacity || rowsHeld() > rowCapacity, entries.count > 1 {
+        while entries.count > ReadingCeilings.readings
+            || rowsHeld() > ReadingCeilings.events, entries.count > 1 {
             entries.removeFirst()
         }
     }

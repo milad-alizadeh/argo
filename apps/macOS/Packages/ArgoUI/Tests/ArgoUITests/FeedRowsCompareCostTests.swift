@@ -8,20 +8,17 @@ import Testing
 /// `updateNSView` — every frame of a seam drag included. Where the two share a buffer `Array.==` is
 /// already O(1); where they do not, and the reading differs at its END, it walked all of it to find
 /// out. A live Session differs at its last row more often than anywhere else: the row a running
-/// call
-/// rewrites as it is answered.
+/// call rewrites as it is answered.
 ///
 /// RATIOS, never durations — the same comparison over a short reading and a long one.
 ///
 /// Recorded on an Apple silicon laptop, debug, `swift test`, at 4 000 rows: a reading whose last
-/// row
-/// was rewritten cost 771 µs before this and 0.50 µs after (1 500x), and a reload decided at the
-/// seam 1.21 ms before and 0.29 µs after (4 200x).
+/// row was rewritten cost 771 µs before this and 0.50 µs after (1 500x), and a reload decided at
+/// the seam 1.21 ms before and 0.29 µs after (4 200x).
 ///
 /// One case is deliberately NOT gated: `FeedTableDelta.between` on a genuine append still walks the
 /// whole prefix, because a prefix is only a prefix if all of it matches. 1.21 ms at 4 000 rows,
-/// paid
-/// once per arriving batch rather than once per frame.
+/// paid once per arriving batch rather than once per frame.
 @Suite("Feed rows compare cost", .serialized)
 struct FeedRowsCompareCostTests {
     /// The live-streaming case: same length, last row rewritten.
@@ -35,8 +32,7 @@ struct FeedRowsCompareCostTests {
     }
 
     /// The reload case: a reading that changed just inside its seam, which `starts(with:)` proved
-    /// by
-    /// walking everything in front of the change.
+    /// by walking everything in front of the change.
     @Test
     func `a reload is decided without walking the reading`() {
         let small = Self.perPass { Self.short.seam.extends(Self.short.stale) }
@@ -76,9 +72,8 @@ struct FeedRowsCompareCostTests {
     private static let long = Reading(rows: 4000)
 
     /// One reading and the two ways a fresh one differs from it at the end — the last row
-    /// rewritten,
-    /// and the row inside the seam rewritten. Neither shares a buffer with `stale`, which is the
-    /// case a fresh projection hands the coordinator.
+    /// rewritten, and the row inside the seam rewritten. Neither shares a buffer with `stale`,
+    /// which is the case a fresh projection hands the coordinator.
     private struct Reading {
         let stale: [FeedRow]
         let rewritten: [FeedRow]

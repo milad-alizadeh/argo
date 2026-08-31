@@ -68,7 +68,13 @@ extension SessionHeaderProjection {
     /// `nil` where the record carries fewer than two moments — there is no gap to measure, and a
     /// zero would say a Session worked none of the time it ran. A real zero is reachable and does
     /// render: every gap above the cutoff is a Session that was left alone all day.
+    ///
+    /// Also `nil` on a BOUNDED reading, which is the same withholding the spend totals get
+    /// (`HubSession+Spend`): the stretch a launch sweep skipped reads here as one gap above the
+    /// cutoff, so a sum over the two ends understates the work and would render as a whole figure.
+    /// Read off the seam's own event rather than off the extent, which no surface is handed.
     static func worked(across events: [TranscriptEvent]) -> Int? {
+        guard !events.contains(.excerpted) else { return nil }
         let moments = moments(in: events)
         guard moments.count > 1 else { return nil }
         return zip(moments, moments.dropFirst()).reduce(0) { worked, pair in
@@ -87,7 +93,8 @@ extension SessionHeaderProjection {
             case let .toolCallOutcome(outcome): outcome.endedAtMs
             case let .compaction(atMs): atMs
             // A skill load carries no moment of its own: the CLI expands a body as part of the
-            // prompt beside it, and that prompt's own timestamp is already counted.
+            // prompt beside it, and that prompt's own timestamp is already counted. The seam is
+            // handled above, where it withholds the figure entire.
             case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .branch, .mode,
                  .message, .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine,
                  .skillLoaded, .excerpted: nil

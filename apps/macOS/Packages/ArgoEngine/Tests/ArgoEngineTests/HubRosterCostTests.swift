@@ -13,33 +13,32 @@ import Testing
 /// one memoised read 0.56 µs, one `session(id:)` 0.68 µs at both 8 rows and 64. Before the memo a
 /// read cost 75 µs and a `session(id:)` cost 18 µs at 8 rows and 163 µs at 64.
 ///
-/// Every budget below is a RATIO of two figures taken on the same machine in the same run, so
-/// none of them carries those numbers (ADR-0028 Rule 7): a seconds literal would record the laptop
-/// it was written on, and would go green through a twentyfold regression on a faster one.
+/// Those figures are gated by nothing. What binds is a COUNT of folds and a RATIO of two figures
+/// taken on the same machine in the same run (ADR-0028 Rule 7 and Rule 8): a seconds literal would
+/// record the laptop it was written on, and would go green through a twentyfold regression on a
+/// faster one.
 @Suite("Hub roster cost")
 @MainActor
 struct HubRosterCostTests {
     private static let projectURL = URL(fileURLWithPath: "/tmp/argo-roster-cost")
 
+    /// The COUNT rather than the quotient the seconds above make (ADR-0028 Rule 8): a fold is 32
+    /// whole Sessions decorated and sorted, a read with nothing moving is one stamp compare, and
+    /// two unlike halves can move by 3.8x on the machine alone.
     @Test
-    func `a read with nothing moving costs a hundredth of a fold`() async {
+    func `a read with nothing moving folds nothing`() async {
         let hub = await Self.hub(sessions: 32)
-        // The mutation is what makes each trial COLD, and it is what a fold costs that is being
-        // measured: bumping one claim is orders of magnitude below the fold beside it.
-        let fold = leastCPUSeconds {
-            hub.claims.setLostTurn(nil, for: Self.probe)
+        _ = hub.sessions
+        let folded = hub.roster.folds
+
+        for _ in 0 ..< 200 {
             _ = hub.sessions
         }
+        // The stamp MOVING still folds, so the count is a memo and not a frozen roster.
+        hub.claims.setLostTurn(nil, for: Self.probe)
         _ = hub.sessions
 
-        let read = leastCPUSeconds {
-            for _ in 0 ..< 200 {
-                _ = hub.sessions
-            }
-        } / 200
-
-        // A read with nothing moving is the stamp and nothing else: under a hundredth of a fold.
-        #expect(read < fold / 100)
+        #expect(hub.roster.folds == folded + 1)
     }
 
     @Test

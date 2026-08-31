@@ -3,13 +3,13 @@ import AppKit
 import SwiftUI
 import Testing
 
-/// What recycling by shape buys, and the claim that it is still being done (ADR-0028 Rules 1
-/// and 7).
+/// What recycling by shape buys, and the claim that it is still being done (ADR-0028 Rules 1 and
+/// 7).
 ///
 /// A hosting view handed a different view tree tears its own down and builds the new one; handed
 /// the same tree with fresh values it diffs. The reading's rows alternate between shapes
-/// constantly, so a single pool hands almost every recycled cell the wrong tree — and that build
-/// is what a scroll pays per row it exposes, and what the ruler pays per row on every re-measure.
+/// constantly, so a single pool hands almost every recycled cell the wrong tree — and that build is
+/// what a scroll pays per row it exposes, and what the ruler pays per row on every re-measure.
 ///
 /// Both halves of the split get a claim here, because they are separate mechanisms that fail
 /// separately: the cells recycle by shape, and the rulers are kept by shape.

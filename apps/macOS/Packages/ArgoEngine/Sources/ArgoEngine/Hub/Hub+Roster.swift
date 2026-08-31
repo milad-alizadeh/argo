@@ -17,8 +17,8 @@ public extension Hub {
     /// does (#361) and stand down once the record they turned out to be is bound to their claim.
     ///
     /// Folded once per move of `rosterStamp` rather than once per read: the fold is every Session
-    /// decorated and then sorted, and the app reads this several times a scene pass (ADR-0028
-    /// Rule 1).
+    /// decorated and then sorted, and the app reads this several times a scene pass (ADR-0028 Rule
+    /// 1).
     var sessions: [HubSession] {
         roster.sessions(at: rosterStamp, folding: folded)
     }

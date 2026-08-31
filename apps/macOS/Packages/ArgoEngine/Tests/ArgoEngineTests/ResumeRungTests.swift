@@ -44,18 +44,23 @@ struct ResumeRungTests {
 
     /// A Session with no Start of its own to honour is exactly as it was: the store answers, which
     /// is the one defensible rung for it (#629).
+    ///
+    /// `Auto` rather than `Read Only`, because `ClaudePermissionMode` spells Read Only and Plan
+    /// alike: a rung the CLI cannot tell from its neighbour cannot say WHICH answer the resume
+    /// took. `auto` is also not the baseline the store falls back to, so the flag can only have
+    /// come from the pick.
     @Test
     func `a resumed hand-started Session still opens on the rung last picked`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         _ = try await fixture.hub.spawnSession()
         await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
-        try await fixture.hub.driver.setMode(.readOnly, for: sessionID)
+        try await fixture.hub.driver.setMode(.auto, for: sessionID)
         let relaunched = try await Self.relaunch(fixture)
 
         try await relaunched.resumeSession(sessionID: sessionID)
 
-        #expect(fixture.launchedRung(1) == "plan")
+        #expect(fixture.launchedRung(1) == "auto")
     }
 
     /// The rung a resume honours is Argo's answer for ONE Session, so it is not filed as the rung

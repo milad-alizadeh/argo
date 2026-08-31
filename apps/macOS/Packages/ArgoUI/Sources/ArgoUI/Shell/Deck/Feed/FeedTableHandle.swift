@@ -4,11 +4,9 @@ import SwiftUI
 /// one, so the two surfaces cannot come to disagree about where it is or whether it is following.
 ///
 /// It owns `FeedScrollPolicy`, which is where every landing rule lives, and the imperative verbs
-/// the
-/// SwiftUI half still has over the table. The verbs are the shape of `ScrollViewProxy`, for the
-/// same
-/// reason: a scroll is an act, not a state, and modelling one as state means inventing a token that
-/// changes whenever the act should happen.
+/// the SwiftUI half still has over the table. The verbs are the shape of `ScrollViewProxy`, for the
+/// same reason: a scroll is an act, not a state, and modelling one as state means inventing a token
+/// that changes whenever the act should happen.
 @MainActor @Observable final class FeedTableHandle {
     /// The table this handle drives. Replaced wholesale when the rail scopes the feed onto a
     /// Subagent: `FeedColumn` is keyed to that scope, so the table, its scroll view and its
