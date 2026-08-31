@@ -240,17 +240,35 @@ fi
 
 # 6. The parameter cap reaches initializers. SwiftLint's `function_parameter_count` visits FUNCTION
 #    declarations only, so an `init` is invisible to it — which is how a 27-parameter init sat under
-#    a cap of 4 for as long as it did (#755). The number is the ratchet recorded in
-#    .swiftlint.yml beside the rule it extends, so one cap is read in one place.
+#    a cap of 4 for as long as it did (#755). The number is SwiftLint's OWN, read off the rule this
+#    edge extends, so there is no second figure to sit above it — a ratchet of 18 beside a stated
+#    cap of 4 is a gate nothing anyone writes can fail (#992).
+#
+#    What is grandfathered is a NAMED list beside that rule, and the list may only shrink: an init
+#    over the cap fails unless it is named, and a name matching no init over the cap fails too.
 INIT_CAP=$(
-  sed -nE 's/^[[:space:]]*#[[:space:]]*RATCHET initializer-parameter-count:[[:space:]]*([0-9]+).*/\1/p' \
-    "$SWIFTLINT_CONFIG" 2>/dev/null | head -1
+  awk '
+    /^function_parameter_count:/ { inrule = 1; next }
+    inrule && /^[^ #]/ { exit }
+    inrule && $1 == "error:" { print $2; exit }
+  ' "$SWIFTLINT_CONFIG" 2>/dev/null
+)
+# One grandfathered init per line, `# INIT: <file> <count> — <why>`. The reason is required by the
+# pattern: an entry with nothing said about it is not read, so it grandfathers nothing.
+export INIT_EXEMPT
+INIT_EXEMPT=$(
+  sed -nE 's/^[[:space:]]*#[[:space:]]*INIT:[[:space:]]*([^[:space:]]+\.swift)[[:space:]]+([0-9]+)[[:space:]]+—.*/\1 \2/p' \
+    "$SWIFTLINT_CONFIG" 2>/dev/null
 )
 if [ -z "$INIT_CAP" ]; then
-  report "edge 6 cannot find its cap — no \`RATCHET initializer-parameter-count: <N>\` in $SWIFTLINT_CONFIG" \
-    "The number lives beside \`function_parameter_count\`, which is the rule this edge extends to" \
-    "the shape SwiftLint cannot see. Without it this edge checks nothing and says so."
+  report "edge 6 cannot find its cap — no \`function_parameter_count:\` with an \`error:\` in $SWIFTLINT_CONFIG" \
+    "That is the rule this edge extends to the shape SwiftLint cannot see, and this edge reads its" \
+    "number rather than carrying one of its own. Without it the edge checks nothing and says so."
 else
+  # Printed on every run, pass or fail: a cap nothing says out loud is a cap "quality passed" can be
+  # read as having held (#992).
+  echo "swift-boundaries: edge 6 — initializer cap $INIT_CAP parameters, SwiftLint's own; \
+$(printf '%s\n' "$INIT_EXEMPT" | awk 'NF' | wc -l | tr -d ' ') grandfathered by name in $SWIFTLINT_CONFIG"
   # Depth-counted rather than pattern-matched: a default value may itself hold commas and parens,
   # and a list wide enough to matter is always wrapped one parameter per line.
   hits=$(
@@ -283,12 +301,54 @@ else
         ' "$file"
       done
   )
+  # Matched by file and count rather than by line, because a line number moves under every edit
+  # above it and a list that churns is a list nobody reads. Two inits of the same width in one file
+  # take one entry each; two FILES of one name would make an entry ambiguous, and that is reported
+  # rather than resolved — an entry may only ever cover the init it was written for.
+  verdict=$(
+    # The list reaches awk through the environment: `-v` mangles a value holding newlines, and BSD
+    # awk refuses one outright.
+    printf '%s\n' "$hits" | awk '
+      BEGIN {
+        lines = split(ENVIRON["INIT_EXEMPT"], entry, "\n")
+        for (i = 1; i <= lines; i++)
+          if (entry[i] ~ /[^ ]/) { allowed[entry[i]]++; named[++total] = entry[i] }
+      }
+      /[^ ]/ {
+        path = $1; sub(/:[0-9]+:$/, "", path)
+        base = path; sub(/.*\//, "", base)
+        key = base " " $(NF - 1)
+        if ((key in allowed) && where[key] != "" && where[key] != path)
+          print "ambiguous|" key " — " where[key] " and " path
+        where[key] = path
+        if (allowed[key]-- > 0) next
+        print "over|" $0
+      }
+      END {
+        for (i = 1; i <= total; i++)
+          if (allowed[named[i]] > 0) { allowed[named[i]]--; print "stale|" named[i] }
+      }
+    '
+  )
+  hits=$(printf '%s\n' "$verdict" | sed -n 's/^over|//p')
   if [ -n "$hits" ]; then
-    report "these initializers are over the $INIT_CAP-parameter ratchet (rules/code-style.md, #755)" \
+    report "these initializers are over the $INIT_CAP-parameter cap (rules/code-style.md, #755)" \
       "$hits" \
       "Group the list by the reading each parameter comes from and pass one value per reading, the" \
-      "way CockpitPresentation.Session does. Lower the ratchet in $SWIFTLINT_CONFIG as each one" \
-      "goes; 4 is the number, and it is never raised to fit an init."
+      "way CockpitPresentation.Session does. Nothing here is grandfathered by being new: the list" \
+      "in $SWIFTLINT_CONFIG names what predates the gate, and $INIT_CAP is never raised to fit an init."
+  fi
+  hits=$(printf '%s\n' "$verdict" | sed -n 's/^stale|//p')
+  if [ -n "$hits" ]; then
+    report "the grandfathered list names an init that is not over the cap any more" "$hits" \
+      "Delete the line. An entry left standing for an init that was grouped goes on authorising the" \
+      "next one written to that width, which is how a ratchet stops descending."
+  fi
+  hits=$(printf '%s\n' "$verdict" | sed -n 's/^ambiguous|//p')
+  if [ -n "$hits" ]; then
+    report "a grandfathered entry cannot say which init it means" "$hits" \
+      "Two files of one name, both over the cap at the same width. Group one of them, or the entry" \
+      "covers whichever the gate reads first."
   fi
 fi
 

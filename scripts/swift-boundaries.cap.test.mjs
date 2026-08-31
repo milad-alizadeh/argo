@@ -7,24 +7,82 @@
 // the ratchet going unread — which would leave the edge passing everything and saying so.
 import assert from 'node:assert/strict'
 import { check, report } from './check-harness.mjs'
-import { run, SHELL, tree } from './swift-boundaries.fixture.mjs'
+import { ENGINE, run, SHELL, swiftlint, tree } from './swift-boundaries.fixture.mjs'
 
 const ACTIONS = `${SHELL}/CockpitActions.swift`
+const CONFIG = 'apps/macOS/.swiftlint.yml'
 const wideInit = (count) =>
   `struct CockpitActions {\n    init(\n${Array.from(
     { length: count },
     (_, i) => `        slot${i}: Int,\n`,
   ).join('')}    ) {}\n}\n`
 
-check('edge 6 passes an init at the ratchet', () => {
+check('edge 6 passes an init at the cap', () => {
   const result = run(tree({ [ACTIONS]: wideInit(4) }))
   assert.equal(result.status, 0, result.output)
 })
 
-check('edge 6 fails on the parameter past the ratchet', () => {
+check('edge 6 fails on the parameter past the cap', () => {
   const result = run(tree({ [ACTIONS]: wideInit(5) }))
   assert.equal(result.status, 1, `a fifth slot passed: ${result.output}`)
-  assert.match(result.output, /over the 4-parameter ratchet/)
+  assert.match(result.output, /over the 4-parameter cap/)
+  assert.match(result.output, /init takes 5 parameters/)
+})
+
+// The cap in force is stated on every run. Until #992 the script named a ratchet of 18 above a
+// stated cap of 4, and nothing said which was enforced — so "quality passed" read as "the cap
+// held", and did not mean it.
+check('edge 6 states the cap it is enforcing', () => {
+  const result = run(tree({ [ACTIONS]: wideInit(4) }))
+  assert.match(result.output, /initializer cap 4 parameters/)
+  assert.match(result.output, /0 grandfathered by name/)
+})
+
+// The grandfather list, which is the ratchet: what predates the gate is named, one line each, and
+// nothing else over the cap passes. A NUMBER wide enough for the widest of them covers every init
+// anyone is likely to write next, which is the bug #992 is.
+check('edge 6 passes an init the list names at its own width', () => {
+  const config = swiftlint('CockpitActions.swift 9 — a fixture of nine slots')
+  const result = run(tree({ [ACTIONS]: wideInit(9), [CONFIG]: config }))
+  assert.equal(result.status, 0, result.output)
+  assert.match(result.output, /1 grandfathered by name/)
+})
+
+// An entry covers the width it names: a file once named is not a file with no cap.
+check('edge 6 fails an init wider than the entry naming its file', () => {
+  const config = swiftlint('CockpitActions.swift 9 — a fixture of nine slots')
+  const result = run(tree({ [ACTIONS]: wideInit(10), [CONFIG]: config }))
+  assert.equal(result.status, 1, `a tenth slot passed on a 9-slot entry: ${result.output}`)
+  assert.match(result.output, /init takes 10 parameters/)
+})
+
+// The list may only shrink: an entry for an init that was grouped is deleted, not left to authorise
+// the next one written to that width — the placement gates fail on a stale entry too.
+check('edge 6 fails a grandfathered entry that names nothing', () => {
+  const config = swiftlint('Grouped.swift 9 — grouped in a ticket that forgot this line')
+  const result = run(tree({ [ACTIONS]: wideInit(4), [CONFIG]: config }))
+  assert.equal(result.status, 1, `a stale entry passed: ${result.output}`)
+  assert.match(result.output, /not over the cap any more/)
+  assert.match(result.output, /Grouped\.swift 9/)
+})
+
+// A second file of one name at one width would be covered by the same entry — reported, not
+// resolved: an entry may only cover the init it was written for.
+check('edge 6 fails when an entry cannot say which init it means', () => {
+  const config = swiftlint('CockpitActions.swift 9 — a fixture of nine slots')
+  const elsewhere = `${ENGINE}/CockpitActions.swift`
+  const result = run(tree({ [ACTIONS]: wideInit(9), [elsewhere]: wideInit(9), [CONFIG]: config }))
+  assert.equal(result.status, 1, `two files of one name shared an entry: ${result.output}`)
+  assert.match(result.output, /cannot say which init it means/)
+})
+
+// A reason is what makes the list read as debt rather than as configuration, so the pattern
+// requires one: an entry with nothing said about it grandfathers nothing.
+check('edge 6 does not read a grandfathered entry with no reason', () => {
+  const result = run(
+    tree({ [ACTIONS]: wideInit(5), [CONFIG]: swiftlint('CockpitActions.swift 5') }),
+  )
+  assert.equal(result.status, 1, `a reasonless entry passed: ${result.output}`)
   assert.match(result.output, /init takes 5 parameters/)
 })
 
@@ -100,10 +158,8 @@ check('edge 6 counts declarations and not calls', () => {
 })
 
 // The gate's own fail-open: no number, no check, and nothing else in the repo would notice.
-check('edge 6 fails when its ratchet is not recorded', () => {
-  const result = run(
-    tree({ 'apps/macOS/.swiftlint.yml': 'function_parameter_count:\n  error: 4\n' }),
-  )
+check('edge 6 fails when the rule it extends states no cap', () => {
+  const result = run(tree({ [CONFIG]: 'file_length:\n  error: 175\n' }))
   assert.equal(result.status, 1, `a missing cap passed: ${result.output}`)
   assert.match(result.output, /cannot find its cap/)
 })

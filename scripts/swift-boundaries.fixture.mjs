@@ -45,11 +45,15 @@ export const PROJECTED = `public extension CockpitPresentation {
     }
 }
 `
-// Edge 6 reads its ratchet off the SwiftLint config, so the config is one of its subjects.
+// Edge 6 reads its cap off the SwiftLint config, so the config is one of its subjects. It reads the
+// rule's OWN `error:`, and grandfathers only what a `# INIT:` line beside it names.
 export const SWIFTLINT = `function_parameter_count:
-  # RATCHET initializer-parameter-count: 4
+  # RATCHET initializer-parameter-count — the list is the ratchet; the cap is the number below.
   error: 4
 `
+// The same config with grandfathered entries added, one per line.
+export const swiftlint = (...entries) =>
+  SWIFTLINT + entries.map((entry) => `  # INIT: ${entry}\n`).join('')
 
 // A fresh tree per case: the cases mutate it, and a leaked mutation would make the next one lie.
 export function tree(files = {}) {
