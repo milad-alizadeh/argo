@@ -148,8 +148,6 @@ by clicking.
 
 ## Measuring frames
 
-Three pieces, and each does one thing.
-
 **The probe** (`ArgoUI/Perf/`) samples the cockpit window's real presentation cadence through a
 `CADisplayLink`, and is inert unless `ARGO_FRAME_PROBE=1`. It writes a JSON summary — the display's
 own maximum fps, effective fps, interval percentiles, the frames that ran over 1x/2x/4x of the
@@ -157,33 +155,21 @@ budget, and a stamp per frame — to `ARGO_FRAME_PROBE_OUT`, on SIGINT, on app e
 `ARGO_FRAME_PROBE_SECONDS`. The ceiling is READ, never assumed: this machine's Studio Display is
 60 Hz, and the same figures have to stay comparable on a 120 Hz panel.
 
-**The driver** (`scripts/perf-drive.sh`, three Swift files behind it) acts on a running Argo with synthetic input and no hand
-on the trackpad. It enumerates the roster by real titles through the Accessibility API and clicks a
-named one, switches rooms, and scrolls at three cadences — `steady`, `aggressive`, and a `fling` of
-decaying bursts. Every act prints one line stamped on the same clock the probe stamps frames with,
-which is the whole join.
-
-**The harness** (`scripts/perf-measure.sh`) runs one scenario end to end:
-
 ```bash
-ARGO_PERF_ROW="Debug layout gaps" sh scripts/perf-measure.sh scroll-long
-ARGO_PERF_ROW="…" ARGO_PERF_ROW_B="…" sh scripts/perf-measure.sh roster-switch
-ARGO_PERF_ROW="…" sh scripts/perf-measure.sh room-switch
+ARGO_FRAME_PROBE=1 ARGO_FRAME_PROBE_OUT=/tmp/frames.json open -a Argo
 ```
 
-It stages real transcripts as fresh Sessions (`perf-stage.mjs` shifts their timestamps, so the
-roster opens on them), launches the bundle with the probe on, drives, interrupts, and reports
-(`perf-report.mjs`).
+It measures whoever is scrolling, which is a person. **There is no driver**: a harness that posted
+synthetic scrolls and clicks was built and then removed, because taking the pointer and keyboard out
+from under whoever is at the machine is not a thing this repo does. The scroll figures in #963 came
+from that harness before it went, and are the last of their kind — a future comparison is measured
+by scrolling the feed by hand with the probe on.
 
-Two figures, because they answer different questions. **Cadence** is when the frame intervals
-return to idle — whether the main thread stalled. **Surface** is when the cockpit's accessibility
-tree stops changing — whether the reading has actually arrived. A switch that takes twenty seconds
-to put content up drops almost no frames while it does, so cadence alone would call it instant. The
-surface figure is polled through AX, which is served on the app's main thread, so it is an upper
-bound that includes the asking.
-
-It takes the pointer and the keyboard for the whole run, the way the e2e suite does. Say so before
-starting one. Posting events needs Accessibility permission for the terminal running it.
+Two figures answer different questions, and the probe gives only the first. **Cadence** is when the
+frame intervals return to idle: whether the main thread stalled. **Surface** is when the reading has
+actually arrived. A switch that takes twenty seconds to put content up drops almost no frames while
+it does, so cadence alone would call it instant. Nothing on CI renders a view, so the surface half
+is a human looking at the screen (see `docs/agents/visual-verification.md`).
 
 ## Deployment target
 
