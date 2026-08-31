@@ -42,7 +42,9 @@ struct SessionNavigator: View {
         // 26 the style's capsule is a fixed neutral, and neither `.tint` nor the `AccentColor`
         // asset moves it by a value — both measured off a render with a scarlet probe (#875,
         // amending D30, which recorded the asset as the route). Nor does the style stop drawing
-        // it: the ground below COVERS the capsule, which is why it is opaque (#922).
+        // it: the ground below COVERS the capsule, which is why it is opaque (#922) — on the row
+        // THIS view calls selected, and only there. The platform draws its fill on whichever row
+        // its own selection names, so the two must never be allowed to name different rows.
         .listStyle(.sidebar)
         // Over the whole list, not the chevron alone: dropping the section's `isExpanded:` gave up
         // the system's own expansion, so the rows arrive on this instead of in the click's frame.
@@ -78,9 +80,12 @@ struct SessionNavigator: View {
     }
 
     /// The one answer to "is the foot open", read by the rows and by the chevron alike — a mark
-    /// drawn from a second reading can report the wrong state.
+    /// drawn from a second reading can report the wrong state. The harness's override is the
+    /// view's; everything else is the roster's own, stated where a test can reach it.
     private var isArchiveOpen: Bool {
-        isArchiveShowing || isArchiveRevealed
+        isArchiveRevealed || SessionRosterProjection.isArchiveOpen(
+            showing: isArchiveShowing, selection: selection, in: archived,
+        )
     }
 
     /// `.swipeActions` gives the system's reveal, spring back, close-when-another-opens and
@@ -101,7 +106,9 @@ struct SessionNavigator: View {
         )
         .previewSafeListRow()
         // Holds its colour while the list is not first responder, where the platform greys its
-        // own selection out: this is the one piece of state a reader tracks all day.
+        // own selection out: this is the one piece of state a reader tracks all day. First
+        // responder, the platform's own fill is the `AccentColor` asset at full strength, so a
+        // row this misses is not a quiet miss — it is a saturated blue row (D30, 2026-08-31).
         .argoSelectedRowGround(isSelected: row.id == selection)
         .tag(row.id)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {

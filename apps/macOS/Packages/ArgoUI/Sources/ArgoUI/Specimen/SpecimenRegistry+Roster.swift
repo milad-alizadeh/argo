@@ -24,6 +24,11 @@ extension SpecimenRegistry {
         SpecimenEntry("archivedRoster") { ArchivedRosterSpecimen() },
         // Reachable only by clicking the foot.
         SpecimenEntry("openArchivedRoster") { ArchivedRosterSpecimen(isRevealed: true) },
+        // The foot open because it HOLDS the selection, with nothing having clicked it: the state
+        // archiving the row being read lands in, and the one the foot may not be shut in.
+        SpecimenEntry("archivedSelectionRoster") {
+            ArchivedRosterSpecimen(selection: "archived-old")
+        },
         // The one entry whose point is the CLICK: driven, so New Session must land a row.
         SpecimenEntry("spawningRoster") { SpawningRosterSpecimen() },
         SpecimenEntry("renamedRoster") { RenamedRosterSpecimen() },

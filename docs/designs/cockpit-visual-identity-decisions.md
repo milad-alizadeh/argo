@@ -809,6 +809,33 @@ its approved study are authoritative for the replacement look and feel.
   ![The selected row before and after #922](renders/922-selection-contrast.png)
 
   **Still not reopened, a fourth time:** the leading Ion Blue rail. Selection is the ground alone.
+- **Amended — 2026-08-31: the ground covers the platform's capsule only on the row the app calls
+  selected, so a visible platform fill is never a colour defect.** #922 closed on "an opaque ground
+  covers the capsule, so what the contract asserts is what the row draws", and that is still true —
+  re-measured on `roster`, active: the selected band reads `#243144` and no capsule survives
+  anywhere in it. What #922 did not say is the boundary of the claim: the ground is drawn per ROW,
+  from `selection`, and the platform draws its own fill on whichever row **its** selection names.
+  While those two agree there is one highlight. While they disagree there are two, and the second
+  one is uncovered.
+
+  So a saturated blue roster row is a **selection divergence, not a wash that failed**: it is the
+  platform's fill on a row Argo does not consider selected, and it is loud because emphasised —
+  a sidebar list that is first responder draws its selection from the app's `AccentColor` asset,
+  which has carried Ion Blue at FULL strength since #875, where an unfocused one draws the neutral
+  `#464646` every earlier render here measured. Every render this decision was ever judged on had
+  focus on the rooms picker (#944) or nowhere at all, so the emphasised state had never been looked
+  at — which is why nothing recorded the boundary.
+
+  **Whose job that is.** The palette's, never: no weight of `interaction.selectionGround` can cover
+  a fill on a row it is not applied to. It is the roster's, and the claim is stated as behaviour
+  rather than as colour — `RosterMarksTheShownSessionTests`: the roster draws a current row for the
+  Session the deck renders, and for no other.
+
+  **The emphasised state has no PNG, and cannot have one.** It was tried: a specimen that gives the
+  `List` keyboard focus through `@FocusState` renders identically to the unfocused one, because
+  `.focused()` does not make a sidebar's `NSTableView` first responder in a still frame. So this
+  goes the way the swiped row went — it is an XCUITest claim, not a render (`ArgoE2ETests`), and
+  the specimen was not kept. `roster` remains the frame the ground itself is judged on.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.
