@@ -77,9 +77,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// The session id this chain started as. Internal, and read by `HubSessionChain` alone: it is a
     /// join key, not a fact any surface renders.
     private(set) var originSessionID: String?
-    /// Everything the transcript said, in the order it said it. The facts above are a lossy fold
+    /// Everything the transcript said, in the order it said it, and the two Subagent halves beside
+    /// it — held together, with the stamp that stands for both. The facts above are a lossy fold
     /// over this stream, which is why it is retained whole for the surfaces that read it.
-    public private(set) var events: [TranscriptEvent] = []
+    ///
+    /// Written only from here and read through `HubSession+Transcript.swift`: the stamp is honest
+    /// because `TranscriptStream` holds the two collections privately, so no write anywhere can
+    /// reach either of them without going through the observers that restamp.
+    private(set) var transcript = TranscriptStream()
     /// How full the Session's context is: the tokens the LATEST reported spend was made against,
     /// not a sum — every request re-sends the whole conversation, so summing would count the same
     /// context once per turn. Falls as well as rises: the reading after a compaction is the
@@ -88,13 +93,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// Every spend the records reported, at both grains — see `SessionSpend`, which owns the
     /// arithmetic and the three token readings the header draws from it.
     private(set) var spend = SessionSpend()
-    /// Each Subagent's own reading, keyed by the CLI's id for it (#711).
-    ///
-    /// Beside `events` rather than in it, and that is the whole point: a child's records are the
-    /// child's, and folding them into the Session's stream would put a delegate's rows in the
-    /// parent's feed. Empty is the ordinary case — most Sessions delegate nothing, and Codex writes
-    /// no such record at all.
-    public private(set) var subagentEvents: [String: [TranscriptEvent]] = [:]
     public private(set) var lastActivityAtMs: Int?
     /// The oldest moment the records report. The roster's sort key, and no longer any part of
     /// ownership: a claim names its Session rather than matching a window (#742).
@@ -151,7 +149,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     }
 
     mutating func apply(_ event: TranscriptEvent) {
-        events.append(event)
+        transcript.append(event)
         switch event {
         case .recordIdentity:
             break
@@ -236,12 +234,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         hasAgentActivity = hasAgentActivity || continuation.hasAgentActivity
         isQueued = isQueued || continuation.isQueued
         // Appended, not merged: a resume chain is walked root-first, so the continuation's stream
-        // is the later half of one reading and belongs behind what came before it.
-        events += continuation.events
-        // Unioned by agent id, and appended where both halves read the same one: a Subagent's file
-        // sits beside the link that ran it, so a resumed chain's fan-outs are spread across the
-        // chain rather than gathered under its root.
-        subagentEvents.merge(continuation.subagentEvents) { $0 + $1 }
+        // is the later half of one reading and belongs behind what came before it. The Subagent
+        // halves are unioned by agent id and appended where both read the same one — a Subagent's
+        // file sits beside the link that ran it, so a resumed chain's fan-outs are spread across
+        // the chain rather than gathered under its root. See `TranscriptStream.merge`.
+        transcript.merge(continuation.transcript)
         cwd = continuation.cwd ?? cwd
         model = continuation.model ?? model
         // The later half of the chain wins where it read one, and says nothing where it did not: a
@@ -271,6 +268,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// by the delegating call: the file is named for the id, and the call that reports it may not
     /// have come back yet.
     mutating func apply(_ read: [TranscriptEvent], ofSubagent agentID: String) {
-        subagentEvents[agentID, default: []] += read
+        transcript.append(read, ofSubagent: agentID)
     }
 }

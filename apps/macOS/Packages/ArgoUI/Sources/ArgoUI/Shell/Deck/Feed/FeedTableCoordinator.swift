@@ -152,7 +152,7 @@ import SwiftUI
         guard table != nil else { return }
         if switched {
             openAfresh()
-        } else if fresh.rows == stale {
+        } else if fresh.rows.isSameReading(as: stale) {
             touchUp(against: fresh, from: staleEnvironment)
         } else {
             // The reading boundary: the rulers still hold the last one's live rows, and this one

@@ -13,7 +13,7 @@ enum FeedTableDelta: Equatable {
     case reload
 
     static func between(_ stale: [FeedRow], and fresh: [FeedRow]) -> FeedTableDelta {
-        guard fresh.count >= stale.count, fresh.starts(with: stale.dropLast()) else {
+        guard fresh.count >= stale.count, fresh.extends(stale) else {
             return .reload
         }
         return .append(arrived: stale.count ..< fresh.count, rewritten: rewritten(stale, fresh))
@@ -39,5 +39,29 @@ enum FeedTableDelta: Equatable {
     /// arrival cannot reach.
     private static func chipRow(_ rows: [FeedRow]) -> Int? {
         rows.lastIndex { $0.kind.isMessage }
+    }
+}
+
+extension [FeedRow] {
+    /// Whether these rows are the same reading as `other` — the question `FeedTableCoordinator`
+    /// asks on every `updateNSView`, which is every frame of a seam drag.
+    ///
+    /// Length and TAIL first. Two readings of a live Session differ at the last row far more often
+    /// than anywhere else — the row a running call rewrites as it is answered — and a plain `==`
+    /// walks all of it to find that out. Where the two share a buffer `==` is already O(1), so this
+    /// costs nothing there and saves the whole walk where they do not.
+    func isSameReading(as other: [FeedRow]) -> Bool {
+        count == other.count && last == other.last && self == other
+    }
+
+    /// Whether this reading extends `stale` bar its last row — see `FeedTableDelta.between`.
+    ///
+    /// The seam is asked first, for the reason the tail is above: a reading that changed near its
+    /// end reloads, and proving that by walking the whole prefix is a walk with a known answer. An
+    /// append genuinely has to be walked, because a prefix is only a prefix if all of it matches.
+    func extends(_ stale: [FeedRow]) -> Bool {
+        let seam = stale.count - 2
+        guard seam < 0 || self[seam] == stale[seam] else { return false }
+        return starts(with: stale.dropLast())
     }
 }
