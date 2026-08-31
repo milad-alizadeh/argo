@@ -75,8 +75,14 @@ struct FeedAgentReadings: Equatable, Sendable {
 
     /// Who else is working, off the Session's own rows. Here rather than at `FeedAgents` so the
     /// rail, the deck's zoning and the scope above share ONE walk of the reading.
+    ///
+    /// `feed` is walked only where the reading is unstamped — a specimen, a `#Preview`, a suite. A
+    /// stamped one answers with the list the cache derived from its OWN rows, which is what keeps
+    /// the answer a fact about the reading rather than about whoever asked first.
     @MainActor func agents(in feed: [FeedRow]) -> [FeedAgent] {
-        guard let stamp else { return FeedAgents.all(in: feed) }
-        return SessionsRoomReadingCache.agents(at: stamp) { FeedAgents.all(in: feed) }
+        guard let stamp, let known = SessionsRoomReadingCache.agents(at: stamp) else {
+            return FeedAgents.all(in: feed)
+        }
+        return known
     }
 }

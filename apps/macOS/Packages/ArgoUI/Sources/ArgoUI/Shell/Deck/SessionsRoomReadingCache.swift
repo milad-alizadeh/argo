@@ -91,15 +91,21 @@ enum SessionsRoomReadingCache {
         return body
     }
 
-    /// Who else is working, off the Session's own rows — the walk `DeckContentRow` and the deck's
-    /// zoning both need, taken once for the pass.
-    static func agents(at stamp: Stamp, otherwise derive: () -> [FeedAgent]) -> [FeedAgent] {
-        guard let found = index(of: stamp) else { return derive() }
+    /// Who else is working — the walk `DeckContentRow` and the deck's zoning both need, taken once
+    /// for the pass. `nil` where nothing is held at this stamp, which leaves the caller to walk.
+    ///
+    /// Derived from the ENTRY's own rows and never from rows a caller passed in. The list is a fact
+    /// about the reading, and a memo keyed on the stamp that forwarded the caller's rows would let
+    /// the first caller's answer stand for every later one — a rail answered with no agents drops
+    /// the feed's scope on the floor, because `FeedAgentReadings.rows(under:of:otherwise:)` falls
+    /// back the moment nothing in the list is running.
+    static func agents(at stamp: Stamp) -> [FeedAgent]? {
+        guard let found = index(of: stamp) else { return nil }
         let at = entries.touch(found)
         if let agents = entries[at].agents {
             return agents
         }
-        let agents = derive()
+        let agents = FeedAgents.all(in: entries[at].body.feed)
         counted(\.agents)
         entries[at].agents = agents
         return agents
