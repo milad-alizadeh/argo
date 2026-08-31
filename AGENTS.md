@@ -56,9 +56,12 @@ holding one, so every public engine fact must land in the mapping or be named on
 why not. Adding a public fact to `HubSession` fails the build until you say which it is; swapping
 two same-typed facts between slots fails it too.
 
-The sixth extends the parameter cap to initializers, which SwiftLint's own rule cannot see. Its
-ratchet is recorded in `.swiftlint.yml` beside the rule it extends, and the script reads it from
-there — one cap, one place.
+The sixth extends the parameter cap to initializers, which SwiftLint's own rule cannot see. It
+reads `function_parameter_count`'s own `error:` out of `.swiftlint.yml` — one cap, one place, and
+no second number to drift above it. The ratchet is the **named list** of grandfathered inits
+beside that rule: an init over the cap fails unless a `# INIT: <file> <count> — <why>` line names
+it, and a line naming an init that is no longer over the cap fails too, so the list can only
+shrink. The script prints the cap in force on every run.
 
 The JS/TS boundary gates are dormant — no subject since ADR-0023 retired the Electron
 cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-0021, ADR-0023.
