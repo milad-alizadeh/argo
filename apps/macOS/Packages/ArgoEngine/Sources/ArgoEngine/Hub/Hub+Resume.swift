@@ -20,12 +20,28 @@ public extension Hub {
         else { throw SessionResumeError.noChainToResume }
         try await spawnSession(cli: cli, seed: SessionSeed(
             cwd: cwd,
-            // The rung the record last stated, and the rung a New Session takes where it stated
-            // none (ADR-0025, #629). Nothing is recorded as a set: Argo is matching what it read
-            // rather than moving the Session.
-            mode: session.mode.rung,
+            mode: rung(resuming: session),
             resuming: SessionResumeTarget(chainID: resumeID, sessionID: sessionID),
         ))
+    }
+
+    /// Which rung a resumed Session comes back on — stated here rather than left to a fall-through,
+    /// because three facts can answer and they disagree (#966).
+    ///
+    /// 1. The rung the RECORD last stated, where it states one. The user may have moved this
+    ///    Session down the ladder mid-build, and a resume that overrode that would drag them back
+    ///    up. Argo is matching what it read rather than moving the Session.
+    /// 2. Otherwise the rung this Session was STARTED on, where a Start named one — a Session
+    ///    started from a Ticket (#941). It is the same piece of work either side of the orphaning,
+    ///    so the friction #941 removed must not come back with the next process.
+    /// 3. Otherwise nothing, and the spawn takes the rung last picked (#629) — the only defensible
+    ///    answer for a Session with no Start of its own to honour. A resume never WRITES that
+    ///    store: what the next New Session opens on is the user's pick, not a resume's arithmetic.
+    ///
+    /// Every answer is a rung Argo then starts the CLI on, so the row states a rung Argo owns —
+    /// DIRECT either way, and no guess is dressed up as one.
+    private func rung(resuming session: HubSession) -> SessionMode? {
+        session.mode.rung ?? ownership.startingRung(ofSessionID: session.id)
     }
 }
 

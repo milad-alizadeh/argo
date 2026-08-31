@@ -46,6 +46,11 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
         /// established it — without it a relaunch has the branch guess alone. Absent for every
         /// Session nobody named a number for, which is every external one.
         var ticket: Int?
+        /// The rung Argo STARTED this Session on, where the Start named one of its own — a Session
+        /// started from a Ticket (#941). Spelled by `SessionModeName`, and absent for a Session
+        /// that opened on the rung last picked, which is nobody's choice for this Session in
+        /// particular. Read by a resume (#966), which honours it where the record states no stance.
+        var startingRung: String?
     }
 
     /// Keyed by the Session id the roster carries, never by a claim: a claim dies with the process
@@ -76,19 +81,27 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
         let held = windows[sessionID]
         let opened = Window(
             fromMs: held?.fromMs ?? atMs, toMs: nil, owner: owner, ticket: held?.ticket,
+            startingRung: held?.startingRung,
         )
         guard windows[sessionID] != opened else { return false }
         windows[sessionID] = opened
         return true
     }
 
-    /// The Ticket a spawn named for this Session. Written onto the window rather than beside it,
-    /// so the two facts about one Session are dropped together or not at all.
+    /// One fact a spawn named about this Session, written onto its window rather than beside it, so
+    /// every fact about one Session is dropped together or not at all.
     ///
-    /// Answers whether anything moved, on the same ground `open` does.
-    mutating func note(ticket: Int, sessionID: String) -> Bool {
-        guard var window = windows[sessionID], window.ticket != ticket else { return false }
-        window.ticket = ticket
+    /// Answers whether anything moved, on the same ground `open` does. By key path because the
+    /// facts differ only in which slot they fill, and two of these written out would be one shape
+    /// said twice.
+    mutating func note<Value: Equatable>(
+        _ value: Value,
+        at fact: WritableKeyPath<Window, Value?>,
+        sessionID: String,
+    )
+        -> Bool {
+        guard var window = windows[sessionID], window[keyPath: fact] != value else { return false }
+        window[keyPath: fact] = value
         windows[sessionID] = window
         return true
     }
@@ -96,6 +109,17 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
     /// What a previous Argo was told this Session was started on, and `nil` where none was.
     func ticket(sessionID: String) -> Int? {
         windows[sessionID]?.ticket
+    }
+
+    /// The rung a Start named for this Session, spelled the way this file spells one — so the
+    /// mapping and the reading below are the same type's business (#966).
+    mutating func note(startingRung rung: SessionMode, sessionID: String) -> Bool {
+        note(SessionModeName.of(rung), at: \.startingRung, sessionID: sessionID)
+    }
+
+    /// The rung a previous Argo started this Session on, and `nil` where the Start named none.
+    func startingRung(sessionID: String) -> SessionMode? {
+        windows[sessionID]?.startingRung.flatMap(SessionModeName.rung(named:))
     }
 
     /// And no longer does. An id no window was opened for is left alone: the PTY that ran under it

@@ -33,6 +33,8 @@ public final class SessionOwnership {
         /// The Ticket the spawn named for this claim (#894). Here rather than straight in the
         /// ledger because a fresh CLI has no Session id yet, and the file is keyed by one.
         var ticket: Int?
+        /// The rung the spawn named for this claim (#966), here for the reason the Ticket is.
+        var startingRung: SessionMode?
     }
 
     /// Main-actor isolated like the registry itself, so a test can hand it a clock it moves by hand
