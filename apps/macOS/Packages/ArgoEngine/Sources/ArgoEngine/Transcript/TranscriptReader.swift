@@ -32,6 +32,12 @@ public actor TranscriptReader {
     private var context = TranscriptContextCursor()
     let readImage: ImageReader
     private let readSkill: SkillReader
+    /// The file being read, where there is one, and where in it the line in hand starts. Set by
+    /// `read(_:)` and read by the media reading alone: it is what lets a picture be addressed
+    /// instead of held (`MediaLocation`). Absent for a reader handed a bare string, which is why a
+    /// fixture's pictures are the one place bytes are still carried in an event.
+    private(set) var location: MediaLocation?
+    private let source: String?
     /// Whose record this is reading. Every guard it decides goes through `attributes(_:)`.
     private let subject: TranscriptSubject
 
@@ -40,6 +46,18 @@ public actor TranscriptReader {
         readImage: @escaping ImageReader = noImageReader,
         readSkill: @escaping SkillReader = noSkillReader,
     ) {
+        self.init(source: nil, subject: subject, readImage: readImage, readSkill: readSkill)
+    }
+
+    /// The reader a tail builds: it knows which file it is reading, and so can address the pictures
+    /// in it rather than retaining them.
+    public init(
+        source: URL?,
+        subject: TranscriptSubject = .session,
+        readImage: @escaping ImageReader = noImageReader,
+        readSkill: @escaping SkillReader = noSkillReader,
+    ) {
+        self.source = source?.path
         self.subject = subject
         self.readImage = readImage
         self.readSkill = readSkill
@@ -60,7 +78,26 @@ public actor TranscriptReader {
     ///
     /// Zero events is an ordinary answer, not a failure: a `system` record means nothing to this
     /// reader, and a record that is only plumbing has nothing to say.
+    ///
+    /// A bare string says nothing about where it sits, so this reading HOLDS its pictures rather
+    /// than addressing them, whether or not the reader knows a file (`MediaLocation`) — an offset
+    /// guessed at is an address pointing somewhere else.
     public func read(line: String) -> [TranscriptEvent] {
+        location = nil
+        return events(of: line)
+    }
+
+    /// One line, at its place in the file — the face a tail reads through, and the only one whose
+    /// pictures can be addressed.
+    public func read(_ line: TranscriptLine) -> [TranscriptEvent] {
+        location = source.map {
+            MediaLocation(transcript: $0, line: line.text, byteOffset: line.byteOffset)
+        }
+        defer { location = nil }
+        return events(of: line.text)
+    }
+
+    private func events(of line: String) -> [TranscriptEvent] {
         // A blank line is the file's own punctuation — the trailing newline every writer leaves —
         // and reporting it as unreadable would put noise in front of every real one.
         guard !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
@@ -109,6 +146,11 @@ public actor TranscriptReader {
         lines.flatMap { read(line: $0) }
     }
 
+    /// Every line of one read, at its place in the file.
+    public func read(_ lines: [TranscriptLine]) -> [TranscriptEvent] {
+        lines.flatMap { read($0) }
+    }
+
     private func userEvents(_ message: MessageRecord) -> [TranscriptEvent] {
         // A compact summary is the condensed history itself. Read as a prompt it would open a turn
         // titled with the summary of everything before it.
@@ -136,7 +178,7 @@ public actor TranscriptReader {
             return reported(report, in: message)
         }
 
-        return message.isMeta ? metaEvents(message) : promptEvents(message)
+        return message.isMeta ? metaEvents(message) : promptEvents(message, in: location)
     }
 
     /// The CLI talking to itself. Almost all of it means nothing to a reader — but a skill's

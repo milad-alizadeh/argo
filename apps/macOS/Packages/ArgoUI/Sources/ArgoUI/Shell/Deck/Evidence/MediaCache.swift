@@ -1,17 +1,22 @@
 import AppKit
+import ArgoEngine
 
 /// Decoded pictures, held between the surfaces that draw them and bounded by what a window can
 /// show (ADR-0028 Rule 4).
 ///
 /// The working set is the thumbnails one window can hold at once, and one window of scrollback
 /// behind it so a scroll up and back re-draws rather than re-decodes. No whole-feed walk reaches
-/// this — a shot settles its provenance off the file's signature (`MediaDecode.isPicture`), which
-/// decodes nothing and holds nothing — so the working set is what is actually drawn, and the
-/// ceiling derives from the window and the display rather than from a count of entries.
+/// this — a shot settles its provenance off its signature (`MediaDecode.isPicture`), which reads
+/// nothing and holds nothing — so the working set is what is actually drawn, and the ceiling
+/// derives from the window and the display rather than from a count of entries.
 ///
-/// On the main actor rather than trusting `NSCache`'s own thread safety, which covers the
-/// container and says nothing about a value crossing domains. Every surface that draws a picture
-/// is a view; the one thing that is not — a shot settling its provenance — no longer comes here.
+/// This is now the ONLY place a picture's pixels live. The event stream holds an address
+/// (`MediaBytes`), so what a Session's pictures cost is what this cache is allowed to hold, whether
+/// one Session is being read or thirty (#989).
+///
+/// On the main actor rather than trusting `NSCache`'s own thread safety, which covers the container
+/// and says nothing about a value crossing domains. Every surface that draws a picture is a view;
+/// the one thing that is not — a shot settling its provenance — no longer comes here.
 @MainActor
 final class MediaCache {
     /// The one the app draws through. Tests build their own, because a process-wide cache shared
@@ -28,13 +33,12 @@ final class MediaCache {
         entries.totalCostLimit
     }
 
-    /// The picture for one byte run — decoded where none is held, or where what is held is too
-    /// coarse for the box asking.
+    /// The picture for one run — held where what is held is dense enough for the box asking, and
+    /// otherwise read off the file and decoded off the main actor.
     ///
-    /// The lookup is by the bytes and BEFORE the base64 decode, so a hit pays for neither. Only
-    /// plates are held: `.full` is the largest bitmap in the app and the one surface that wants it
-    /// has a single picture open at a time.
-    func bitmap(for bytes: String, in box: MediaBox) -> MediaBitmap? {
+    /// Only plates are held: `.full` is the largest bitmap in the app and the one surface that
+    /// wants it has a single picture open at a time.
+    func bitmap(for bytes: MediaBytes, in box: MediaBox) async -> MediaBitmap? {
         let held = held(bytes)
         if let held, held.box.covers(box) {
             return held
@@ -43,33 +47,37 @@ final class MediaCache {
         // the other and share one key, so a decode for the box alone would evict the surface it
         // was standing beside (`MediaBox.union`).
         let wanted = held.map { $0.box.union(box) } ?? box
-        guard let data = Data(base64Encoded: bytes),
-              let bitmap = MediaDecode.bitmap(from: data, in: wanted, scale: MediaScale.display)
-        else { return nil }
+        // Two surfaces asking for one picture in the same frame both miss and both decode, where
+        // the synchronous version could not. One extra plate, once, against an in-flight table
+        // that would have to be reaped: a plate is about a millisecond and the full frame — the
+        // 25 ms one — has a single surface with one picture open at a time.
+        guard let bitmap = await Self.decoded(bytes, in: wanted) else { return nil }
         if case .plate = wanted {
-            entries.setObject(bitmap, forKey: bytes as NSString, cost: bitmap.cost)
+            entries.setObject(bitmap, forKey: bytes.identity as NSString, cost: bitmap.cost)
         }
         return bitmap
     }
 
-    /// Whatever is already held for one byte run, at whatever box it was made for, decoding
-    /// nothing. What the lightbox draws while its own full frame is still being made.
-    func held(_ bytes: String) -> MediaBitmap? {
-        entries.object(forKey: bytes as NSString)
+    /// Whatever is already held for one run, at whatever box it was made for, reading and decoding
+    /// nothing. What a surface can draw the frame it appears in, and what the lightbox stands in
+    /// while its own full frame is being made.
+    func held(_ bytes: MediaBytes) -> MediaBitmap? {
+        entries.object(forKey: bytes.identity as NSString)
     }
 
-    /// A full frame, off the main actor and never held. 25 ms for a 2560 × 1600 capture, measured,
-    /// which is a frame and a half of the lightbox's fade — run on the main thread it stalled the
-    /// fade's first frames and read as a flash.
+    /// One picture read and decoded, off the main actor and held by nobody. 25 ms for a 2560 × 1600
+    /// capture, measured, which is a frame and a half of the lightbox's fade — run on the main
+    /// thread it stalled the fade's first frames and read as a flash. The READ in front of it is
+    /// one seek and the picture's own bytes, which is why it is not worth a budget of its own.
     ///
     /// `nonisolated` and nothing else. In Swift 6 language mode without
     /// `NonisolatedNonsendingByDefault` that already runs on the generic executor, so the
     /// `Task.detached` this used to wrap bought no thread and cost the one thing that mattered:
     /// a detached child inherits no cancellation, so a lightbox dismissed mid-decode went on
     /// holding the whole `Data` and the full `NSImage` until the decode finished.
-    nonisolated static func fullBitmap(for bytes: String) async -> MediaBitmap? {
-        guard !Task.isCancelled, let data = Data(base64Encoded: bytes) else { return nil }
-        return MediaDecode.bitmap(from: data, in: .full, scale: MediaScale.display)
+    nonisolated static func decoded(_ bytes: MediaBytes, in box: MediaBox) async -> MediaBitmap? {
+        guard !Task.isCancelled, let data = mediaData(at: bytes) else { return nil }
+        return MediaDecode.bitmap(from: data, in: box, scale: MediaScale.display)
     }
 
     /// What one pixel of a decoded picture costs: 8-bit RGBA.
@@ -80,11 +88,9 @@ final class MediaCache {
     /// What the cache may hold, in bytes: every pixel of the window Argo opens at, `windowfuls`
     /// times over, at the density the display draws them.
     ///
-    /// Only the BITMAPS are counted. `NSCache` retains its keys, but bridging a native Swift
-    /// `String` to `NSString` hands over the same `__StringStorage` object rather than a copy, and
-    /// the base64 is already held for the life of the session by the event stream's own
-    /// `MediaEvidence.bytes` (#989) — so charging an entry for its key would measure memory no
-    /// eviction can reclaim, and shrink the usable cache about sevenfold doing it.
+    /// Only the BITMAPS are counted. `NSCache` retains its keys, and a key is now an address rather
+    /// than a picture — a path, an offset and a length — so charging an entry for one would shrink
+    /// the usable cache to account for bytes no eviction could reclaim and none of it is a picture.
     nonisolated static func costLimit(scale: CGFloat) -> Int {
         let pixels = ArgoLayout.windowIdealWidth * scale * ArgoLayout.windowIdealHeight * scale
         return Int(pixels) * bytesPerPixel * windowfuls

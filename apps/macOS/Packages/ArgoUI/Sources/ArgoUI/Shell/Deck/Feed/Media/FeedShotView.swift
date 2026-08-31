@@ -17,13 +17,13 @@ struct FeedShotView: View {
     var body: some View {
         Button { open(shot) } label: { plate }
             .buttonStyle(.plain)
-            .disabled(showing.picture == nil)
+            .disabled(!showing.provenance.showsPicture)
             .help(shot.address)
             .frame(width: ArgoFeedRow.shotWidth, alignment: .leading)
             .showing(shot.media, drawnIn: .plate(ArgoFeedRow.shotPlate), in: $showing)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(spoken)
-            .accessibilityHint(showing.picture == nil ? "" : "Opens this image full size")
+            .accessibilityHint(showing.provenance.showsPicture ? "Opens this image full size" : "")
     }
 
     /// The picture cropped to the shot's own box. Drawn as an overlay on a clear frame rather than
@@ -43,14 +43,28 @@ struct FeedShotView: View {
                 .background(isMounted ? argo.color.surface.overlay : argo.color.surface.raised)
                 .clipShape(.rect(cornerRadius: ArgoRadius.control))
                 .overlay { frame }
+        } else if showing.isPending {
+            waiting
         } else {
             absence
         }
     }
 
+    /// A picture that is COMING, in the plate it will fill: read off the file and decoded off the
+    /// main actor, so a shot appearing for the first time has a frame or two with nothing to draw.
+    /// Wordless — the absence sentence over a picture on its way is the one thing this must not
+    /// say, and a shot is too small to say anything else in.
+    private var waiting: some View {
+        Rectangle()
+            .fill(argo.color.surface.sunken)
+            .frame(width: ArgoFeedRow.shotWidth, height: ArgoFeedRow.shotHeight)
+            .clipShape(.rect(cornerRadius: ArgoRadius.control))
+            .overlay { frame }
+    }
+
     /// A shot with no picture says so where the picture would have been, as an empty plate.
     private var absence: some View {
-        Text(MediaProvenance.absence)
+        Text(showing.provenance.instead)
             .argoText(ArgoTypography.caption)
             .foregroundStyle(argo.color.text.disabled)
             .multilineTextAlignment(.leading)
@@ -79,7 +93,7 @@ struct FeedShotView: View {
         [
             shot.name,
             showing.picture?.spokenSize,
-            showing.provenance.words ?? MediaProvenance.absence,
+            showing.provenance.words ?? showing.provenance.instead,
         ]
         .compactMap(\.self)
         .joined(separator: ", ")

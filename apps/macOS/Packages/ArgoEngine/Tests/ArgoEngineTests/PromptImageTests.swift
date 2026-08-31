@@ -23,7 +23,7 @@ struct PromptImageTests {
         // DIRECT: these are the bytes the record carried, not a re-read of a path.
         #expect(images.first?.tier == .direct)
         #expect(images.first?.mediaType == "image/png")
-        #expect(images.first?.bytes == "HEADER-BYTES")
+        #expect(images.first?.bytes == .held("HEADER-BYTES"))
     }
 
     @Test
@@ -32,7 +32,7 @@ struct PromptImageTests {
 
         #expect(text == "compare against")
         #expect(images.map(\.mediaType) == ["image/png", "image/jpeg"])
-        #expect(images.map(\.bytes) == ["BEFORE-BYTES", "AFTER-BYTES"])
+        #expect(images.map(\.bytes) == [.held("BEFORE-BYTES"), .held("AFTER-BYTES")])
     }
 
     @Test
@@ -68,7 +68,7 @@ struct PromptImageTests {
         let (text, images) = try await prompts("promptImages")[5]
 
         #expect(text.isEmpty)
-        #expect(images.map(\.bytes) == ["WORDLESS-BYTES"])
+        #expect(images.map(\.bytes) == [.held("WORDLESS-BYTES")])
     }
 
     @Test

@@ -48,7 +48,7 @@ extension TranscriptFixtures {
                 result: .media(MediaEvidence(
                     tier: shot.tier,
                     mediaType: "image/png",
-                    bytes: shot.bytes.map(unwrapped),
+                    bytes: shot.bytes.map { .held(unwrapped($0)) },
                 )),
                 endedAtMs: nil,
                 usage: nil,
@@ -75,7 +75,7 @@ extension TranscriptFixtures {
 
     /// DIRECT for all of them: a pasted picture is bytes the record carried.
     private static func picture(_ wrapped: String) -> MediaEvidence {
-        MediaEvidence(tier: .direct, mediaType: "image/png", bytes: unwrapped(wrapped))
+        MediaEvidence(tier: .direct, mediaType: "image/png", bytes: .held(unwrapped(wrapped)))
     }
 
     /// The cockpit at rest, as the agent captured it.
