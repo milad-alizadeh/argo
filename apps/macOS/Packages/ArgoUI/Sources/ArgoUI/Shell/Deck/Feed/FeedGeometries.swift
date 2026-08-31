@@ -24,6 +24,10 @@ import SwiftUI
     /// This reading's heights, made on first sight. Touching the LRU order is the whole of the
     /// write, which is why a `body` may ask: nothing observes this, so nothing re-renders for it.
     func geometry(for reading: FeedReading) -> FeedGeometry {
+        #if DEBUG
+            Self.reach.lookups += 1
+            Self.reach.stores.insert(ObjectIdentifier(self))
+        #endif
         if let found = kept.firstIndex(where: { $0.reading == reading }) {
             kept.append(kept.remove(at: found))
             return kept[kept.count - 1].geometry
@@ -39,6 +43,32 @@ import SwiftUI
     /// How many readings are held, for the suite that asks what the ceiling does.
     var count: Int {
         kept.count
+    }
+
+    #if DEBUG
+        /// See `FeedGeometriesReach`.
+        static var reach = FeedGeometriesReach()
+    #endif
+}
+
+/// Which stores the shell has actually handed a table, and how many times — the gate on #858's
+/// WIRING rather than on its mechanism.
+///
+/// The identity is the whole of it. Every claim about what one store remembers is satisfied by a
+/// store MADE PER PASS, and a reader coming back to a reading still pays for all of it, because
+/// the table was bound to a different store each time. That is what injecting a fresh
+/// `FeedGeometries()` at `CockpitView.detail(tickets:reading:)` does, and nothing that drives a
+/// store directly can see it.
+struct FeedGeometriesReach {
+    /// One entry per store a table was bound to. A set, because the claim is about how MANY
+    /// distinct stores reached a table over a run of body passes, not about the order.
+    var stores: Set<ObjectIdentifier> = []
+    var lookups = 0
+
+    @MainActor static func forget() {
+        #if DEBUG
+            FeedGeometries.reach = FeedGeometriesReach()
+        #endif
     }
 }
 

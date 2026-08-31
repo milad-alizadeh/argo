@@ -38,8 +38,16 @@ struct SessionsRoomReading {
     )
         -> SessionsRoomReading {
         guard room == .sessions else { return .none }
+        #if DEBUG
+            tally.taken += 1
+        #endif
         return SessionsRoomReading(presentation: presentation, sessionID: sessionID)
     }
+
+    #if DEBUG
+        /// See `SessionsRoomReadingTally`.
+        @MainActor static var tally = SessionsRoomReadingTally()
+    #endif
 
     private init() {
         self.feed = []
@@ -50,6 +58,9 @@ struct SessionsRoomReading {
     }
 
     @MainActor init(presentation: CockpitPresentation, sessionID: CockpitPresentation.Session.ID?) {
+        #if DEBUG
+            Self.tally.constructed += 1
+        #endif
         // Resolved once and handed to all five: the roster moves under an id, and two lookups in
         // one pass could answer with two different Sessions.
         let session = presentation.session(sessionID)
@@ -85,5 +96,28 @@ struct SessionsRoomReading {
         // move with no event appended — spend, context, what the roster calls the Session — so
         // remembering the whole of it would draw them as they stood when the reader last looked.
         self.header = session.map { SessionHeaderProjection.header(from: $0, worked: body.worked) }
+    }
+}
+
+/// How many readings a pass TOOK against how many were BUILT in it — the gate on #957.
+///
+/// A construction is one `SessionsRoomReading(presentation:sessionID:)`, whether or not
+/// `SessionsRoomReadingCache` answered it out of what it already held. That distinction is the
+/// whole reason this counter exists rather than the cache's: the second reading of a pass is a
+/// cache HIT, so it walks no stream and `SessionsRoomReadingCache.cost` stays at one while the
+/// shell builds two. What is expensive about the second reading is not the walk — it is the
+/// selection lookup, the ask projection and the header walk that no stamp remembers.
+///
+/// `taken` counts only where it actually takes one, so both numbers are zero in a room that draws
+/// no transcript.
+struct SessionsRoomReadingTally {
+    var taken = 0
+    var constructed = 0
+
+    /// Everything counted, dropped. For a suite that needs to count one pass rather than a run.
+    @MainActor static func forget() {
+        #if DEBUG
+            SessionsRoomReading.tally = SessionsRoomReadingTally()
+        #endif
     }
 }
