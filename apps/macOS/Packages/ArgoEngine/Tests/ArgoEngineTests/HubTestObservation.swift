@@ -244,8 +244,14 @@ func settle(
 ///
 /// Ten seconds is over four times the slowest wait measured here, which is outside anything a
 /// working machine produces — and a red run pays it once per expired wait, so a `.serialized` suite
-/// pays it per test. `ARGO_SETTLE_LIMIT_SECONDS` raises it for a box slower than any measured here,
-/// so a local red run does not pay for that possibility.
+/// pays it per test.
+///
+/// The queue those waits are waiting ON has its own margin: enqueuing from a background queue onto
+/// the main one through five loaded full-suite runs, the worst delivery in 4,327 samples was 328ms.
+/// So a wait that expires here is a thing that never happened, not a queue that was busy (#936).
+///
+/// `ARGO_SETTLE_LIMIT_SECONDS` raises it for a box slower than any measured here, so a local red
+/// run does not pay for that possibility.
 let settleLimit: Duration = .seconds(
     ProcessInfo.processInfo.environment["ARGO_SETTLE_LIMIT_SECONDS"].flatMap(Int.init) ?? 10,
 )
