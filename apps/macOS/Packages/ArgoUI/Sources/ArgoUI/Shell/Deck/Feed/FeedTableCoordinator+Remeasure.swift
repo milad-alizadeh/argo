@@ -55,6 +55,10 @@ extension FeedTableCoordinator {
     /// `measureTail`.
     private func remeasureEverything(on table: NSTableView) {
         tailing?.cancel()
+        // A prose row is measured off its markdown structure now (`FeedRowMeasure`), which makes
+        // this pass a second whole-document walk through the same store the lane's is — so it holds
+        // the store to the document for the same reason `reading()` does.
+        ProseReading.holding(rows: shown.count)
         let visible = visibleRows()
         note(visible, on: table)
         let tail = IndexSet(shown.indices).subtracting(visible)

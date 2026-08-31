@@ -67,10 +67,14 @@ import SwiftUI
     /// is not saved by the height cache. What ADR-0028 Rule 1 is asked with, for the mount.
     var exposures = 0
 
-    /// How many rows have actually been measured, ever — every entry is one full SwiftUI layout
-    /// pass. Not a statistic: it is what #856's claim is about, and the only honest way for a suite
-    /// to ask what a re-measure COST rather than what it left behind.
+    /// How many rows have actually been measured, ever. Not a statistic: it is what #856's claim is
+    /// about, and the only honest way for a suite to ask what a re-measure COST rather than what it
+    /// left behind.
     private(set) var measurements = 0
+    /// How many of those were a full SwiftUI layout against a ruler rather than a Core Text
+    /// typeset — see `FeedRowMeasure`. The two counts are the whole of what the routing claims.
+    private(set) var layouts = 0
+
     /// The pane size the reading was last laid out against. Written when a derivation RUNS rather
     /// than when a notification arrives, so it can only ever name a size that was laid out.
     private(set) var laidOutPane: CGSize?
@@ -97,6 +101,13 @@ import SwiftUI
     /// Read and written only through `FeedTableCoordinator+Rulers`, which is where the reason for
     /// keeping one per shape is stated.
     var rulers: [FeedRow.Content.Shape: NSHostingController<AnyView>] = [:]
+
+    /// One measurement paid for, and whether a layout pass is what paid. Here rather than beside
+    /// `measuredHeight` because a `private(set)` is writable in this file alone.
+    func noted(layout: Bool) {
+        measurements += 1
+        layouts += layout ? 1 : 0
+    }
 
     /// One frame notification arrived — see `FeedPaneCost`.
     func notedPane() {
@@ -178,32 +189,6 @@ import SwiftUI
         // scrollbar, so the platform's own would draw a second one between the reading and its map.
         scroller?.hasVerticalScroller = false
         place()
-    }
-
-    /// One `sizeThatFits` against the ruler, kept — see `geometry`.
-    func measuredHeight(at index: Int, in table: NSTableView) -> CGFloat {
-        let width = table.bounds.width
-        guard let model, shown.indices.contains(index), width > 0 else {
-            return Self.estimatedRowHeight
-        }
-        // The pass's facts once, then the row's own with the question. A height kept under either
-        // is not an answer to this one, which is what lets the store outlive the table that filled
-        // it (#858).
-        geometry.settle(at: width, in: model.environment)
-        let ground = FeedGeometry.Ground(at: index, of: model)
-        if let known = geometry.height(at: index, under: ground) {
-            return known
-        }
-        let ruler = ruler(for: model.rows[index].content.shape)
-        ruler.rootView = model.content(at: index)
-        // Rounded UP to a whole point: a non-integral row height still blurs baselines on
-        // current macOS, and up rather than to-nearest so text is never clipped by rounding.
-        let height = Self.usableHeight(ceil(ruler.sizeThatFits(
-            in: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude),
-        ).height))
-        geometry.record(height, at: index, under: ground)
-        measurements += 1
-        return height
     }
 
     /// Measured heights surrendered — all of them for a re-wrap, or the rows named.
