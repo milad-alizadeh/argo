@@ -17,9 +17,15 @@ import Testing
         _ rows: [FeedRow],
         in size: CGSize,
         through handle: FeedTableHandle,
+        held: FeedRow.ID? = nil,
     )
         -> FeedTableCoordinator {
-        laidOut(rows, in: size, keeping: Kept(handle: handle, geometry: FeedGeometry()))
+        laidOut(
+            rows,
+            in: size,
+            keeping: Kept(handle: handle, geometry: FeedGeometry()),
+            held: held,
+        )
     }
 
     /// What the shell holds across a table being destroyed and built again: the scroll authority
@@ -36,6 +42,7 @@ import Testing
         _ rows: [FeedRow],
         in size: CGSize,
         keeping kept: Kept,
+        held: FeedRow.ID? = nil,
     )
         -> FeedTableCoordinator {
         let coordinator = FeedTableCoordinator()
@@ -45,7 +52,7 @@ import Testing
         coordinator.handle = kept.handle
         kept.handle.coordinator = coordinator
         coordinator.keep(kept.geometry)
-        coordinator.apply(model(showing: rows))
+        coordinator.apply(model(showing: rows, held: held))
         scroller.layoutSubtreeIfNeeded()
         return coordinator
     }
@@ -91,6 +98,7 @@ import Testing
         showing rows: [FeedRow],
         unfolded: Set<FeedRow.ID> = [],
         of reading: FeedReading = .unattached,
+        held: FeedRow.ID? = nil,
     )
         -> FeedTableModel {
         let focus = FocusState<FeedFocus?>()
@@ -101,7 +109,7 @@ import Testing
                 open: .constant(nil), step: .constant(nil), lit: .constant(nil),
                 focus: focus.projectedValue,
             ),
-            held: nil,
+            held: held,
             isResizing: false,
             isUnderComposer: false,
             washed: nil,
