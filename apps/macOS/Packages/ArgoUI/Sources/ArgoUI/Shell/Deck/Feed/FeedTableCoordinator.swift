@@ -137,6 +137,9 @@ import SwiftUI
     /// on each of those re-rendered every visible cell at drag rate, which was the jitter the
     /// seam had and the window's own resize did not.
     func apply(_ fresh: FeedTableModel) {
+        // Before anything is resolved against it: a table that replaced another under this handle
+        // is a fresh reading, and the policy answering it is the last one's.
+        handle?.reopenIfOwed(held: fresh.held)
         let stale = shown
         let staleEnvironment = model?.environment
         model = fresh
