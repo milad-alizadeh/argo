@@ -20,8 +20,9 @@ import Testing
 /// reshape burst carrying no reshape 0 → 0 walks; a 30-frame width burst 29 → 1 walks, 29 000 → 1
 /// 420
 /// ruler measures, 13.7 s → 0.9 s of thread CPU. The mount's own CPU is unchanged — its second walk
-/// was a warm one — and every gate below is a count or a ratio of two figures taken in the same run
-/// (ADR-0028 Rule 7).
+/// was a warm one. Those seconds are a recorded figure and nothing here gates on them: every gate
+/// below is a COUNT, which is the only figure that is exactly the same idle and loaded — see the
+/// width-burst case for the ratio that was tried here and why it could not be made sound.
 @Suite("Minimap walk cost")
 @MainActor
 struct MinimapWalkCostTests {
@@ -110,18 +111,33 @@ struct MinimapWalkCostTests {
     /// deferring the rest — so a lane that read the whole document per frame re-measured all of it
     /// per frame.
     ///
-    /// Stated as counts and as a ratio of two figures from this same run, never as seconds.
+    /// Three counts, and deliberately no CPU figure. This case used to divide the burst's thread
+    /// CPU by one cold reading's and gate the quotient at 3x. Over 24 runs of unchanged code that
+    /// quotient read 1.85 to 3.14 and failed 1 in 10 under load, while every count below stayed
+    /// EXACT — 1 420 measures and 1 derivation, every run, idle or loaded.
+    ///
+    /// It could not be tightened either, because nothing was wrong with the coverage: all 1 420
+    /// measures already fell inside the timed blocks. The measure itself was unsound. Thread CPU
+    /// drops the time the scheduler took the thread away but still counts the cycles it stalled
+    /// while on-core, so it is load-independent only for compute-bound work at a steady clock — see
+    /// `cpuSeconds`. The burst is thirty fragments of AppKit layout, each resumed after a run-loop
+    /// turn; the cold reading is one continuous streaming walk. Different memory profiles,
+    /// different core and clock, so the halves inflate by uncorrelated factors and the QUOTIENT
+    /// moves while the work does not. A ratio needs its halves to do the same KIND of work, which
+    /// is what Rule 3's two-fixture shape gives and this never had.
+    ///
+    /// So the CPU half went and a count took its place. The claim it was making is the first count
+    /// below; the claim it was standing in for is the third.
     @Test
     func `a width burst re-measures less than one document`() async throws {
-        let one = await Self.oneColdReading()
         let deck = await Self.settled(over: Self.long)
         let scroller = try #require(deck.table.scroller)
         let walked = deck.lane.readingWalks
         let measured = deck.table.measurements
+        let derived = deck.lane.geometryDerivations
 
-        var burst = 0.0
         for at in 0 ..< Self.frames {
-            burst += cpuSeconds { Self.narrow(deck, scroller, by: at) }
+            Self.narrow(deck, scroller, by: at)
             // A frame of a drag is a turn of the run loop. Without one, the deferred pass the feed
             // arms never starts and the burst is not the burst the app has.
             try await Task.sleep(for: .milliseconds(1))
@@ -133,8 +149,11 @@ struct MinimapWalkCostTests {
         // design chooses to pay. Recorded at 1 420; three documents is under 3x of that (Rule 7).
         #expect(deck.table.measurements - measured < 3 * Self.long.count)
         #expect(deck.lane.readingWalks - walked <= 1)
-        // And the burst costs less than the ONE cold reading it used to take per frame.
-        #expect(burst < 3 * one)
+        // And the geometry is derived once for the whole burst, not once a frame. This is the half
+        // no other count here can see: a derivation is arithmetic over rows already read, so a lane
+        // that rebuilt whole-document geometry every frame would move neither of the two counts
+        // above. Recorded at 1 over thirty frames.
+        #expect(deck.lane.geometryDerivations - derived <= 1)
     }
 
     /// One frame of the seam moving: the lane narrows and the reading beside it widens by the same
@@ -152,15 +171,6 @@ struct MinimapWalkCostTests {
             height: scroller.bounds.height,
         ))
         deck.lane.layoutSubtreeIfNeeded()
-    }
-
-    /// What ONE whole-document reading costs with no height known — a `MinimapRow` per row and a
-    /// ruler measure per row. The unit the burst above is counted in, taken on this machine in this
-    /// run, which is what makes the ratio a gate rather than a seconds literal.
-    private static func oneColdReading() async -> Double {
-        let deck = await Self.settled(over: Self.long)
-        deck.table.dropMeasuredHeights()
-        return cpuSeconds { _ = deck.table.reading() }
     }
 
     /// The lane resizing on its own — a seam let go, a panel settled — re-derives the geometry off
