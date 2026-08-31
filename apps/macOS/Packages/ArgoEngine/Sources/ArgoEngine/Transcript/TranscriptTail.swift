@@ -12,14 +12,17 @@ import Foundation
 private actor FileCursor {
     private let handle: FileHandle
     private var carry = Data()
+    /// Where `carry`'s first byte sits in the file. Advanced by exactly the bytes handed out, so a
+    /// line's offset is the file's own and not the batch's.
+    private var carryOffset = 0
 
     init?(url: URL) {
         guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
         self.handle = handle
     }
 
-    /// Every complete line appended since the last drain.
-    func drain() -> [String] {
+    /// Every complete line appended since the last drain, each with its place in the file.
+    func drain() -> [TranscriptLine] {
         rewindIfTruncated()
         guard let chunk = try? handle.readToEnd(), !chunk.isEmpty else { return [] }
         carry.append(chunk)
@@ -39,6 +42,7 @@ private actor FileCursor {
         if end < offset {
             try? handle.seek(toOffset: 0)
             carry.removeAll()
+            carryOffset = 0
         } else {
             try? handle.seek(toOffset: offset)
         }
@@ -46,12 +50,24 @@ private actor FileCursor {
 
     /// Split what has accumulated on newlines, keeping the tail behind: the last element is only a
     /// line if the data ended on a newline, otherwise it is a record still being written.
-    private func takeCompleteLines() -> [String] {
+    /// The offset is taken from the RAW parts, before any of them is turned into a `String`: a
+    /// line that is not UTF-8 is still bytes the file counted, and dropping it from the tally would
+    /// mis-address every picture after it.
+    private func takeCompleteLines() -> [TranscriptLine] {
         var parts = carry.split(separator: UInt8(ascii: "\n"), omittingEmptySubsequences: false)
         guard parts.count > 1 else { return [] }
         let remainder = parts.removeLast()
+        var offset = carryOffset
+        var lines: [TranscriptLine] = []
+        for part in parts {
+            if let text = String(data: Data(part), encoding: .utf8) {
+                lines.append(TranscriptLine(text: text, byteOffset: offset))
+            }
+            offset += part.count + 1
+        }
         carry = Data(remainder)
-        return parts.compactMap { String(data: Data($0), encoding: .utf8) }
+        carryOffset = offset
+        return lines
     }
 }
 
@@ -63,7 +79,7 @@ private actor FileCursor {
 /// has a backfill too.
 ///
 /// The stream does not finish on its own; cancelling the consuming task closes the file.
-public func transcriptLines(at url: URL) -> AsyncStream<[String]> {
+public func transcriptLines(at url: URL) -> AsyncStream<[TranscriptLine]> {
     AsyncStream { continuation in
         guard let cursor = FileCursor(url: url) else {
             continuation.finish()

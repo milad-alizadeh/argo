@@ -15,6 +15,7 @@ public func transcriptEvents(
 )
     -> AsyncStream<[TranscriptEvent]> {
     let reader = TranscriptReader(
+        source: url,
         subject: subject,
         readImage: readImage,
         readSkill: readSkill,
@@ -24,7 +25,7 @@ public func transcriptEvents(
             var isBackfill = true
             for await lines in transcriptLines(at: url) {
                 guard !Task.isCancelled else { break }
-                let events = await reader.read(lines: lines)
+                let events = await reader.read(lines)
                 // A later read that meant nothing is not news, and a consumer folding it in would
                 // rebuild for a `system` record. The backfill is yielded whatever it holds: it is
                 // what says the file has been read at all.

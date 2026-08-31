@@ -3,8 +3,9 @@ import ArgoEngine
 /// Where a picture came from, as the cockpit says it out loud — read by every surface that shows
 /// an image: the evidence panel, the feed's gallery, the lightbox.
 ///
-/// Four values over a three-valued honesty tier: "the record kept no bytes" is a provenance too,
-/// reachable as a state rather than discovered as a `nil` when a view was about to draw.
+/// Five values over a three-valued honesty tier: the two that are not tiers are the ways there is
+/// no picture to draw, each reachable as a state rather than discovered as a `nil` when a view was
+/// about to draw. They are not the same thing and must not read as each other.
 enum MediaProvenance: Equatable, Sendable {
     /// The transcript's OWN embedded bytes — what the agent actually looked at, and the one
     /// reading a later edit to the file cannot invalidate.
@@ -18,6 +19,13 @@ enum MediaProvenance: Equatable, Sendable {
     /// There is no picture to show. Never a broken-image glyph — that would be the system claiming
     /// a failure to LOAD where what happened is that nothing usable was written down.
     case absent
+    /// A picture WAS written down and can no longer be read: a transcript rewritten under the
+    /// address it was addressed by, a file deleted since the call that showed it (`MediaBytes`).
+    ///
+    /// Its own state because the pixels stopped being retained (#989): with the bytes read where
+    /// they are drawn, "gone since" became a thing that can happen, and saying "the record kept no
+    /// image" about a record that kept one is the lie a reader cannot check.
+    case unreadable
 
     /// `showing` is whether the bytes actually became an image, which is a different question from
     /// whether there were any: a record can carry bytes that do not decode, and a surface drawing
@@ -49,7 +57,7 @@ enum MediaProvenance: Equatable, Sendable {
         switch self {
         case .captured: .bleeding
         case .rendered: .mounted
-        case .current, .absent: .broken
+        case .current, .absent, .unreadable: .broken
         }
     }
 
@@ -60,15 +68,23 @@ enum MediaProvenance: Equatable, Sendable {
         case .captured: "as the agent saw it"
         case .current: "the file as it stands now"
         case .rendered: "reported by the plugin"
-        case .absent: nil
+        case .absent, .unreadable: nil
         }
     }
 
-    /// What a surface draws INSTEAD of a picture.
-    static let absence = "The record kept no image for this call"
+    /// What a surface draws INSTEAD of a picture, which of the two things happened.
+    var instead: String {
+        self == .unreadable ? Self.gone : Self.absence
+    }
 
-    /// Whether there is anything to show — and so whether anything can be opened.
+    /// Nothing usable was ever written down.
+    static let absence = "The record kept no image for this call"
+    /// Something was, and it is gone.
+    static let gone = "This image can no longer be read"
+
+    /// Whether there is anything to show — and so whether anything can be opened. A picture that
+    /// has gone is not a control either, however sure the record is that it existed.
     var showsPicture: Bool {
-        self != .absent
+        self != .absent && self != .unreadable
     }
 }

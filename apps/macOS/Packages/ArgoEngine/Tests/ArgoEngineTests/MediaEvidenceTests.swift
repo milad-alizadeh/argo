@@ -29,7 +29,7 @@ struct MediaEvidenceTests {
 
         #expect(media.tier == .direct)
         #expect(media.mediaType == "image/png")
-        #expect(media.bytes == "BEFORE-BYTES")
+        #expect(media.bytes == .held("BEFORE-BYTES"))
     }
 
     @Test
@@ -39,19 +39,19 @@ struct MediaEvidenceTests {
         let before = try #require(try await media("media", "shot-1"))
         let after = try #require(try await media("media", "shot-2"))
 
-        #expect(before.bytes == "BEFORE-BYTES")
-        #expect(after.bytes == "AFTER-BYTES")
+        #expect(before.bytes == .held("BEFORE-BYTES"))
+        #expect(after.bytes == .held("AFTER-BYTES"))
     }
 
     @Test
     func `A record that embedded nothing falls back to the file, at the LOWER tier`() async throws {
         let media = try #require(
-            try await media("mediaTiers", "disk-1", readImage: { _ in "FROM-DISK" }),
+            try await media("mediaTiers", "disk-1", readImage: fixedImageReader("FROM-DISK")),
         )
 
         #expect(media.tier == .derived)
         #expect(media.mediaType == "image/png")
-        #expect(media.bytes == "FROM-DISK")
+        #expect(media.bytes == .held("FROM-DISK"))
     }
 
     @Test
@@ -76,7 +76,8 @@ struct MediaEvidenceTests {
     @Test
     func `A failed image read shows the error, never a picture of the file as it stands now`(
     ) async throws {
-        let outcomes = try await Fixture.events("media", readImage: { _ in "FROM-DISK" }).outcomes()
+        let outcomes = try await Fixture.events("media", readImage: fixedImageReader("FROM-DISK"))
+            .outcomes()
         let failed = try #require(outcomes["shot-3"])
 
         #expect(failed.status == .failed)
@@ -89,7 +90,8 @@ struct MediaEvidenceTests {
 
     @Test
     func `An SVG handed back as source stays text, and is not rendered as a picture`() async throws {
-        let outcomes = try await Fixture.events("media", readImage: { _ in "FROM-DISK" }).outcomes()
+        let outcomes = try await Fixture.events("media", readImage: fixedImageReader("FROM-DISK"))
+            .outcomes()
         // `.svg` is in the disk-fallback table, so only the "result carried text of its own" gate
         // keeps this a read of source rather than a render of the file.
         guard case let .output(output) = try #require(outcomes["vector-1"]).result else {

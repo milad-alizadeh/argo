@@ -74,7 +74,10 @@ struct DiffEvidenceTests {
         // `.svg` is in the disk-fallback table and a reader is handed over, so only the routing
         // that reads an edit as its patch keeps this a diff rather than a picture of the file as it
         // now stands.
-        let diff = try #require(try await diff("edit-svg", readImage: { _ in "FROM-DISK" }))
+        let diff = try #require(try await diff(
+            "edit-svg",
+            readImage: fixedImageReader("FROM-DISK"),
+        ))
 
         #expect(diff.change == .create)
         #expect(diff.added == 1)

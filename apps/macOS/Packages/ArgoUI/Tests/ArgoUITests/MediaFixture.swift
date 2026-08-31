@@ -37,12 +37,18 @@ enum MediaFixture {
         try MediaEvidence(
             tier: .direct,
             mediaType: "image/png",
-            bytes: png(width: width, height: height).base64EncodedString(),
+            bytes: .held(png(width: width, height: height).base64EncodedString()),
         )
     }
 
     static func base64(width: Int, height: Int) throws -> String {
         try png(width: width, height: height).base64EncodedString()
+    }
+
+    /// One run, HELD rather than addressed: the cache and decode suites are about pixels, and a
+    /// fixture has no transcript to be a byte range of.
+    static func bytes(width: Int, height: Int) throws -> MediaBytes {
+        try .held(base64(width: width, height: height))
     }
 
     /// A picture that does NOT compress: a cleared plane encodes to a few kilobytes whatever its

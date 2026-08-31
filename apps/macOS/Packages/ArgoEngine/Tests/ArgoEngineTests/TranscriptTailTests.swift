@@ -39,7 +39,7 @@ struct TranscriptTailTests {
             group.addTask {
                 var lines: [String] = []
                 for await batch in transcriptLines(at: url) {
-                    lines.append(contentsOf: batch)
+                    lines.append(contentsOf: batch.map(\.text))
                     if lines.count >= count {
                         return lines
                     }
@@ -75,7 +75,7 @@ struct TranscriptTailTests {
 
         var batches: [[String]] = []
         for await batch in transcriptLines(at: file.url) {
-            batches.append(batch)
+            batches.append(batch.map(\.text))
             break
         }
 

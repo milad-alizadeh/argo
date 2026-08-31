@@ -54,7 +54,11 @@ enum RowKindFixture {
         FeedShot(
             name: "shot.png",
             address: "/tmp/shot.png",
-            media: MediaEvidence(tier: .direct, mediaType: "image/png", bytes: bytes),
+            media: MediaEvidence(
+                tier: .direct,
+                mediaType: "image/png",
+                bytes: bytes.map { .held($0) },
+            ),
         )
     }
 

@@ -70,7 +70,7 @@ enum FeedFixture {
     /// The bytes are a real one-pixel PNG rather than an arbitrary string, because half of what
     /// the gallery does with a shot depends on the image decoding at all.
     static func shot(_ tier: Tier, bytes: String? = onePixelPNG) -> ToolResult {
-        .media(MediaEvidence(tier: tier, mediaType: "image/png", bytes: bytes))
+        .media(MediaEvidence(tier: tier, mediaType: "image/png", bytes: bytes.map { .held($0) }))
     }
 
     /// The smallest thing that is genuinely a PNG: one opaque pixel.

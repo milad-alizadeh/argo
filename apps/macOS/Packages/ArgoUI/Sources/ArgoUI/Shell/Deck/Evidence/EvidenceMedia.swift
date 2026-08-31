@@ -21,6 +21,10 @@ struct EvidenceMedia: View {
         height: 0,
     )
 
+    /// How tall a picture that has not arrived yet is drawn, against the plate's width. Two thirds
+    /// is about what a window capture is, which is most of what the panel shows.
+    static let waitingShare: CGFloat = 2.0 / 3.0
+
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             picture
@@ -43,8 +47,17 @@ struct EvidenceMedia: View {
                 .scaledToFit()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .clipShape(.rect(cornerRadius: ArgoRadius.control))
+        } else if showing.isPending {
+            // A picture on its way, in a plate the shape a capture roughly is. The file's own
+            // dimensions are not known until it is decoded, so the panel does settle once when the
+            // picture lands — a reflow of one row, against the alternative of stating an absence
+            // that is about to be contradicted.
+            Rectangle()
+                .fill(argo.color.surface.sunken)
+                .frame(height: Self.plate.width * Self.waitingShare)
+                .clipShape(.rect(cornerRadius: ArgoRadius.control))
         } else {
-            Text(MediaProvenance.absence)
+            Text(showing.provenance.instead)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.disabled)
         }

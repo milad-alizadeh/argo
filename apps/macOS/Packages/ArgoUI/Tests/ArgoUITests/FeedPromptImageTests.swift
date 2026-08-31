@@ -11,7 +11,7 @@ struct FeedPromptImageTests {
     /// Real PNG bytes, because half of what a shot does depends on the image decoding at all — a
     /// shot with nothing behind it is not a control, so it is not what the key press cases mean.
     private static func media(_ bytes: String? = FeedFixture.onePixelPNG) -> MediaEvidence {
-        MediaEvidence(tier: .direct, mediaType: "image/png", bytes: bytes)
+        MediaEvidence(tier: .direct, mediaType: "image/png", bytes: bytes.map { .held($0) })
     }
 
     private static func rows(_ text: String, _ images: [MediaEvidence]) -> [FeedRow] {

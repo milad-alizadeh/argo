@@ -179,7 +179,8 @@ private func promptText(_ content: [ContentBlock], carrying images: Int) -> Stri
 ///
 /// The output comes back as a Tool Call rather than as prose: a command ran and printed something,
 /// which is exactly what a Tool Call is.
-func promptEvents(_ message: MessageRecord) -> [TranscriptEvent] {
+func promptEvents(_ message: MessageRecord, in location: MediaLocation?)
+    -> [TranscriptEvent] {
     if let printed = localCommandOutput(message.content) {
         let id = message.uuid ?? "local-command"
         return [
@@ -202,7 +203,7 @@ func promptEvents(_ message: MessageRecord) -> [TranscriptEvent] {
             )),
         ]
     }
-    let images = embeddedMedia(message.content)
+    let images = embeddedMedia(message.content, in: location)
     guard let text = promptText(message.content, carrying: images.count) else { return [] }
     return [.prompt(text: text, images: images, atMs: message.timestampMs)]
 }
