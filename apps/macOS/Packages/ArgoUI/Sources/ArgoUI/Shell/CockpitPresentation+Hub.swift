@@ -169,11 +169,21 @@ extension CockpitPresentation.Session {
                 // back to (#502, story 20).
                 explicitName: readings.annotations.explicitName(session.id),
             ),
-            transcript: Transcript(
-                events: session.events,
-                subagentEvents: session.subagentEvents,
-                lostTurn: session.lostTurn,
-            ),
+            transcript: Transcript(observed: session),
+        )
+    }
+}
+
+extension CockpitPresentation.Session.Transcript {
+    /// What the transcript said, with the ENGINE's own stamp for it rather than one derived here:
+    /// the stamp counts writes as well as lengths, and nothing on this side of the seam can see a
+    /// write. It is what the cockpit compares two readings of a stream by — see `Streams`.
+    init(observed session: HubSession) {
+        self.init(
+            events: session.events,
+            subagentEvents: session.subagentEvents,
+            transcriptStamp: session.transcriptStamp,
+            lostTurn: session.lostTurn,
         )
     }
 }
