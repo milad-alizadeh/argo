@@ -30,9 +30,13 @@ struct ProseCacheCostTests {
     /// literal a 900-row reading walks past.
     @Test
     func `a whole-document walk past the old ceiling hits everything on its second pass`() {
+        // Sampled BEFORE the table is built, because building it measures every row and a prose
+        // row's height is read off its markdown structure now (`FeedRowMeasure`) — so the store is
+        // already partly filled by the time the lane's own walk runs. The claim is the same either
+        // way: over the two walks together, each distinct text is read once.
+        let opening = ProseReading.structureCost
         let handle = FeedTableHandle()
         let table = FeedTableFixture.laidOut(Self.rows, in: Self.column, through: handle)
-        let opening = ProseReading.structureCost
 
         // Cold is a single sample, because a first pass over an empty store IS the measurement.
         let coldCPU = cpuSeconds { _ = table.reading() }
@@ -47,10 +51,11 @@ struct ProseCacheCostTests {
         // threshold under it, because the whole defect was a rate of zero.
         #expect(warm.hitRate(since: cold) == 1)
         // What that rate is worth, said as a ratio against the walk that earned it rather than as
-        // seconds (ADR-0028 Rule 7). Measured on an M-series Mac in debug over the 900 rows above:
-        // 350 ms cold, 2.4 ms warm — a 145th of it — against a store emptied at 512, which read
-        // every row again for 8.2 ms and a hit rate of zero.
-        #expect(warmCPU < coldCPU / 40)
+        // seconds (ADR-0028 Rule 7). RE-RECORDED with `FeedRowMeasure`: 99 ms cold, 2.5 ms warm, a
+        // 39th of it. It was 350 ms and a 145th when a cold walk paid a full SwiftUI layout for
+        // every prose row's height — the COLD side got 3.5× cheaper and the warm side did not move,
+        // so the ratio narrowed by the change working. Gated at 20, which is inside Rule 7's 3×.
+        #expect(warmCPU < coldCPU / 20, "cold \(coldCPU)s warm \(warmCPU)s")
     }
 
     /// The bound the hit rate is bought with. A reading longer than the cap is held to the cap, so

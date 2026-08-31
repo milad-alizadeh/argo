@@ -26,12 +26,22 @@ enum FeedCopy {
     /// of them (#767). The prompt is the reader's own words and a Turn routinely contradicts its
     /// own reasoning, so neither belongs in what the chip takes.
     static func chipOffer(of rows: [FeedRow], at index: Int) -> FeedRow.CopyOffer? {
-        guard rows.indices.contains(index), rows[index].kind.isMessage,
+        guard drawsChip(of: rows, at: index),
               let span = TurnExtents.span(holding: index, of: reading(rows)),
-              span.last(where: { rows[$0].kind.isMessage }) == index,
               let words = joined(span.compactMap(messageWords(of: rows)))
         else { return nil }
         return FeedRow.CopyOffer(words: words, label: chipLabel)
+    }
+
+    /// Whether this row draws that chip — the same rule, without the words. What a HEIGHT asks:
+    /// the chip takes the same room whatever it hands over, and resolving what it hands over joins
+    /// every message of the Turn into one string (`FeedRowMeasure`).
+    ///
+    /// Asked of the rows BELOW this one rather than of the Turn, because a whole-document measure
+    /// asks it per row — see `TurnExtents.anyBelow`.
+    static func drawsChip(of rows: [FeedRow], at index: Int) -> Bool {
+        guard rows.indices.contains(index), rows[index].kind.isMessage else { return false }
+        return !TurnExtents.anyBelow(index, of: reading(rows)) { rows[$0].kind.isMessage }
     }
 
     /// The feed's rows as the Turn rule reads them: a prompt opens, the feed's own punctuation

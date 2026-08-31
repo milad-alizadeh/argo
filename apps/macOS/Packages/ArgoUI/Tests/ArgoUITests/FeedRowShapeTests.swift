@@ -66,15 +66,30 @@ struct FeedRowShapeTests {
 
     /// The ruler half, which no assertion about heights can make: a reading measured through one
     /// controller lands on exactly the same heights and costs twice as much.
+    ///
+    /// One ruler per shape the reading LAYS OUT, which since `FeedRowMeasure` is no longer every
+    /// shape it holds: a prose row is typeset from Core Text, so it builds no tree and needs no
+    /// controller. Named as the shapes Core Text declined rather than as a count, so a shape that
+    /// quietly stopped being recycled fails here, and so does one that quietly started being
+    /// typeset without a height claim beside it.
     @Test
-    func `a reading is measured through one ruler per shape it holds`() {
+    func `a reading is measured through one ruler per shape it lays out`() {
         let rows = FeedProjection.longRows
         let handle = FeedTableHandle()
         let coordinator = FeedTableFixture.laidOut(rows, in: Self.column, through: handle)
+        let measure = FeedRowMeasure.measure(atWidth: Self.column.width)
+        let laidOut = Set(
+            rows
+                .filter {
+                    FeedRowMeasure.height(of: $0.content, chip: false, across: measure) == nil
+                }
+                .map(\.content.shape),
+        )
 
-        // The fixture measures every row on the way in, so every shape present has been measured.
-        #expect(coordinator.rulerShapes == Set(rows.map(\.content.shape)))
-        #expect(coordinator.rulerShapes.count >= 5)
+        // The fixture measures every row on the way in, so every shape it lays out has a ruler.
+        #expect(coordinator.rulerShapes == laidOut)
+        #expect(Set(rows.map(\.content.shape)).subtracting(laidOut) == [.message, .thought])
+        #expect(coordinator.rulerShapes.count >= 4)
     }
 
     /// The cost, as a RATIO between two arms measured in the same run — a wall-clock budget would
