@@ -123,6 +123,52 @@ struct MinimapReshapeTests {
         #expect(fresh.lane.drawnRects == coalesced)
     }
 
+    /// The same risk for the other coalescing the lane does, and the sharper of the two: a width
+    /// burst is waited out entirely, so for its length the lane is drawing the miniature it read
+    /// BEFORE the burst. Everything then rests on the settle at the end bringing it up to date.
+    ///
+    /// So the rects the burst LEFT are compared with the rects an unconditional walk draws, over
+    /// the whole miniature rather than one band. A lane holding a reading of the pre-burst widths
+    /// would differ in every rect on the lane.
+    @Test
+    func `the rects a width burst leaves are the rects an unconditional walk draws`() async throws {
+        let deck = MinimapLaneFixture.mounted(over: Self.rows)
+        let scroller = try #require(deck.table.scroller)
+        deck.lane.layoutSubtreeIfNeeded()
+
+        for at in 0 ..< Self.posted {
+            deck.lane.setFrameSize(CGSize(
+                width: MinimapLaneFixture.width - CGFloat(at * 4),
+                height: deck.lane.bounds.height,
+            ))
+            scroller.setFrameSize(CGSize(
+                width: MinimapLaneFixture.column.width - CGFloat(at * 8),
+                height: scroller.bounds.height,
+            ))
+            deck.lane.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        try await Self.quiet(deck)
+
+        let walked = try #require(deck.table.reading())
+        let unconditional = MinimapGeometry(walked, lane: deck.lane.bounds.size)
+        let whole = 0 ... unconditional.miniatureHeight
+        #expect(!unconditional.rects(in: whole).isEmpty)
+        #expect(deck.lane.geometry.rects(in: whole) == unconditional.rects(in: whole))
+    }
+
+    /// The reading left until the feed says its own heights are final, the lane laid out on every
+    /// turn of the wait as it is in the app. Bounded, so a count that never came back fails rather
+    /// than hangs.
+    private static func quiet(_ deck: MinimapLaneFixture.Mounted) async throws {
+        for _ in 0 ..< 2000 where deck.table.deferredPasses > 0 {
+            deck.lane.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        deck.lane.layoutSubtreeIfNeeded()
+        #expect(deck.table.deferredPasses == 0)
+    }
+
     /// Deferring the rebuild must not be able to strand it. A reshape the lane could not answer —
     /// no reading to read, or a hand holding the geometry still — leaves the height unrecorded, so
     /// the next notice at that same height still lands.

@@ -75,6 +75,17 @@ final class MinimapLaneView: NSView {
     /// nothing.
     var reshapedTo: CGFloat?
 
+    /// The document the lane last read, and the stamp it was true at.
+    ///
+    /// Held because the two halves of `refresh` have wildly different costs: re-deriving the
+    /// geometry for a lane that merely resized is arithmetic over rows already read, and re-READING
+    /// the document is a `ProseReading.structure` per row plus a ruler measure for every height the
+    /// feed does not already know. See `MinimapReadingStamp` for why a height is not a sound stamp.
+    private var read: MinimapReading?
+    private var readAt: MinimapReadingStamp?
+    /// Whether a pass has already asked for another one — see `waitForSettle()`.
+    private var isWaiting = false
+
     #if DEBUG
         /// How many times the whole-document geometry has been derived — the counter ADR-0028
         /// Rule 7 asks for, and what "no geometry rebuild across a scroll" is measured with (#955).
@@ -84,6 +95,11 @@ final class MinimapLaneView: NSView {
         /// made over rather than assuming one happened. Written by the pointer half, like the two
         /// redraw counts below it.
         var reshapeNotices = 0
+        /// How many WHOLE-DOCUMENT readings were taken — a `MinimapRow` per row of the document,
+        /// each one a `ProseReading.structure`, and a ruler measure for every row whose height is
+        /// not already known. A derivation is not a walk: the geometry is re-derived for a lane
+        /// that merely resized, off a reading that has not moved.
+        private(set) var readingWalks = 0
     #endif
 
     /// How many times the rects have been BUILT, which the rasterise count cannot say: the whole
@@ -180,7 +196,8 @@ final class MinimapLaneView: NSView {
     /// Never on a scroll. Mid-scrub it does nothing at all: rows arriving under a hand would
     /// otherwise re-scale the lane the hand is holding.
     func refresh() {
-        guard grab == nil, let reading = feed?.reading() else { return }
+        guard grab == nil, let stamp = feed?.readingStamp() else { return }
+        guard let reading = reading(at: stamp) else { return }
         #if DEBUG
             geometryDerivations += 1
         #endif
@@ -190,6 +207,52 @@ final class MinimapLaneView: NSView {
         geometry = MinimapGeometry(reading, lane: bounds.size)
         derivation += 1
         settleViewport()
+    }
+
+    /// The document as it stands — walked only where the stamp says a walk would find something
+    /// different from what is held.
+    ///
+    /// Two reasons to answer nothing, and neither of them draws: a feed with no table to read, and
+    /// a feed whose heights are provisional. The second is the burst case: a width frame retires
+    /// every measured height, so a walk taken inside one re-measures the whole document, once per
+    /// frame, while the feed itself is deliberately measuring only what the reader can see. What
+    /// the lane holds stands until the burst settles — but only ever a reading of THIS document,
+    /// and only where it has one: with nothing held it walks, burst or no burst.
+    private func reading(at stamp: MinimapReadingStamp) -> MinimapReading? {
+        if let read, readAt == stamp {
+            return read
+        }
+        if read != nil, stamp.isProvisional, readAt?.isOfSameDocument(as: stamp) == true {
+            return waitForSettle()
+        }
+        #if DEBUG
+            readingWalks += 1
+        #endif
+        guard let walked = feed?.reading(at: stamp) else { return nil }
+        read = walked
+        // Stamped AFTER the walk. The walk measures every height it did not find, so the count it
+        // set out from is already stale by the time it returns — and what it returns is true of the
+        // heights it took, not of the ones it went looking for. Nothing else in a stamp can move
+        // under a walk, which is why re-taking it is a record rather than a second question.
+        readAt = feed?.readingStamp() ?? stamp
+        return walked
+    }
+
+    /// Nothing this pass, and another pass next turn of the run loop.
+    ///
+    /// A burst ends without announcing it, so the lane asks again rather than waiting to be told —
+    /// one stamp a turn instead of one whole document a turn. The re-arm is what stops the wait
+    /// being permanent, and it is asked for on the NEXT turn because AppKit is inside this view's
+    /// layout right now. `reshapedTo` is left alone by this path, so a reshape the wait swallowed
+    /// still lands.
+    private func waitForSettle() -> MinimapReading? {
+        guard !isWaiting else { return nil }
+        isWaiting = true
+        DispatchQueue.main.async { [weak self] in
+            self?.isWaiting = false
+            self?.needsLayout = true
+        }
+        return nil
     }
 
     /// Both layers moved to where the reading now sits. No implicit animation — a rectangle easing
