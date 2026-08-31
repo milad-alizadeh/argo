@@ -146,19 +146,44 @@ Not a CI gate. Driving the real app needs a macOS runner, the most expensive min
 and the suite is a handful of clicks; run it locally when you touch a surface that is only reachable
 by clicking.
 
-## Scrolling a running feed
+## Measuring frames
+
+Three pieces, and each does one thing.
+
+**The probe** (`ArgoUI/Perf/`) samples the cockpit window's real presentation cadence through a
+`CADisplayLink`, and is inert unless `ARGO_FRAME_PROBE=1`. It writes a JSON summary — the display's
+own maximum fps, effective fps, interval percentiles, the frames that ran over 1x/2x/4x of the
+budget, and a stamp per frame — to `ARGO_FRAME_PROBE_OUT`, on SIGINT, on app exit, or after
+`ARGO_FRAME_PROBE_SECONDS`. The ceiling is READ, never assumed: this machine's Studio Display is
+60 Hz, and the same figures have to stay comparable on a 120 Hz panel.
+
+**The driver** (`scripts/perf-drive.sh`, three Swift files behind it) acts on a running Argo with synthetic input and no hand
+on the trackpad. It enumerates the roster by real titles through the Accessibility API and clicks a
+named one, switches rooms, and scrolls at three cadences — `steady`, `aggressive`, and a `fling` of
+decaying bursts. Every act prints one line stamped on the same clock the probe stamps frames with,
+which is the whole join.
+
+**The harness** (`scripts/perf-measure.sh`) runs one scenario end to end:
 
 ```bash
-swift scripts/ScrollDriver.swift            # Argo, 8s, 60 ticks/s, 12px a tick
-swift scripts/ScrollDriver.swift Argo 4 60 24
+ARGO_PERF_ROW="Debug layout gaps" sh scripts/perf-measure.sh scroll-long
+ARGO_PERF_ROW="…" ARGO_PERF_ROW_B="…" sh scripts/perf-measure.sh roster-switch
+ARGO_PERF_ROW="…" sh scripts/perf-measure.sh room-switch
 ```
 
-Scrolls a running Argo's feed at a fixed cadence, so "is scrolling smooth" is asked of a repeatable
-input rather than of a hand on a trackpad — a hand cannot scroll the same way twice, and a
-smoothness judgement is only worth comparing against another one taken the same way. It refuses to
-post anything if another window is over the point it aims at, because a scroll goes to whatever is
-under the pointer and that failure otherwise reads as a completed run. Posting events needs
-Accessibility permission for the terminal running it.
+It stages real transcripts as fresh Sessions (`perf-stage.mjs` shifts their timestamps, so the
+roster opens on them), launches the bundle with the probe on, drives, interrupts, and reports
+(`perf-report.mjs`).
+
+Two figures, because they answer different questions. **Cadence** is when the frame intervals
+return to idle — whether the main thread stalled. **Surface** is when the cockpit's accessibility
+tree stops changing — whether the reading has actually arrived. A switch that takes twenty seconds
+to put content up drops almost no frames while it does, so cadence alone would call it instant. The
+surface figure is polled through AX, which is served on the app's main thread, so it is an upper
+bound that includes the asking.
+
+It takes the pointer and the keyboard for the whole run, the way the e2e suite does. Say so before
+starting one. Posting events needs Accessibility permission for the terminal running it.
 
 ## Deployment target
 
