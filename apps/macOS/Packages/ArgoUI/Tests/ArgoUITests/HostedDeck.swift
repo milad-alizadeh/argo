@@ -52,7 +52,9 @@ import Testing
     /// point of the claim is that nothing here reaches inside the deck to make one.
     var table: FeedTableView {
         get throws {
-            try #require(Self.table(in: host), "The hosted deck built no feed table.")
+            try #require(
+                Self.find(FeedTableView.self, in: host), "The hosted deck built no feed table.",
+            )
         }
     }
 
@@ -118,10 +120,6 @@ import Testing
             RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.002))
             host.layoutSubtreeIfNeeded()
         }
-    }
-
-    private static func table(in view: NSView) -> FeedTableView? {
-        find(FeedTableView.self, in: view)
     }
 
     /// The first view of a kind under `view`. The deck builds all of these for itself, so a suite

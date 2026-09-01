@@ -73,7 +73,7 @@ public enum ArgoFeedRow {
     /// rung and not `ArgoTypography.machine`'s: the feed draws its mono as
     /// `.system(.body, design: .monospaced)`, which keeps the BODY's line box and changes only the
     /// advances, so the chrome role's `callout` is a box nothing in the feed stands in (#1026).
-    public static let machineRung: ArgoTypeScale = proseRung
+    static let machineRung: ArgoTypeScale = proseRung
 
     /// The gutter a patch's line numbers sit in. Wide enough for four digits.
     public static let diffGutterWidth: CGFloat = 32

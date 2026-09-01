@@ -31,8 +31,9 @@ struct SkillLoadedMarker: View {
             Text(Self.label)
                 .argoText(ArgoTypography.rowMeta)
                 .foregroundStyle(verdict ?? argo.color.text.tertiary)
+            // The label's own rung in the machine face, as every machine string the feed sets.
             Text(skill.load.name)
-                .argoText(ArgoTypography.machine)
+                .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(verdict ?? argo.color.text.primary)
             disclosure
         }

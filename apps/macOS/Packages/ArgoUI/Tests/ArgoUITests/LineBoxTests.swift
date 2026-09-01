@@ -66,22 +66,39 @@ struct LineBoxTests {
         #expect(ArgoTypography.body.nominalLineBox != ArgoTypeScale.body.drawnLineBox)
     }
 
-    /// Inverted from the shortfall it used to pin (#1026): the feed's leading now comes off the
-    /// box the face is DRAWN at, so a line stands at exactly the rhythm its name promises. Exact
-    /// equality, because both sides read the one measure — a tolerance here would let the nominal
-    /// number back in on the machine where the two are less than a point apart.
+    /// Which box the leading is worked out from, which is the whole of #1026 and the one thing
+    /// here a machine cannot decide: the drawn box and the nominal one differ at every rung, so a
+    /// step taken off the nominal number is a different step wherever the fix is undone.
+    ///
+    /// Stated as the inequality it is. Asserting the step's VALUE proves nothing — the rhythm's
+    /// literal is on both sides of that equation, and it holds for any number put there.
     @Test
-    func `the feed's prose stands at the rhythm it names`() {
-        #expect(ProseFace.body.step == ArgoFeedRow.lineHeight)
+    func `the feed's prose leading is not worked out from the nominal box`() {
+        #expect(ProseFace.body.step != Self.stepLeading(ProseFace.body, off: Self.nominal(.body)))
     }
 
-    /// And the mono stands at its own, off the rung it is DRAWN at rather than the chrome role's:
-    /// `.system(.body, design: .monospaced)` keeps the body's line box. Also #1026.
+    /// The mono's own, off the chrome role's nominal box — the second half of the same bug, which
+    /// took its leading from a rung the feed does not draw at.
     @Test
-    func `the feed's mono stands at its own rhythm, from the rung it is drawn at`() {
-        #expect(ProseFace.machine.step == ArgoFeedRow.machineLineHeight)
+    func `the feed's mono leading is not worked out from the chrome's box`() {
+        let chrome = ArgoTypography.machine.nominalLineBox
+        #expect(ProseFace.machine.step != Self.stepLeading(ProseFace.machine, off: chrome))
+    }
+
+    /// And it is measured in the box it is DRAWN in rather than the chrome role's:
+    /// `.system(.body, design: .monospaced)` keeps the body's line box and moves only the
+    /// advances. Also #1026.
+    @Test
+    func `the feed's mono is boxed at the rung it is drawn at`() {
         #expect(
             ProseFace.machine.lineBox(under: .fractional) == ArgoFeedRow.machineRung.drawnLineBox,
         )
+    }
+
+    /// Where a line would stand if the leading came off `box` rather than the box the face is
+    /// drawn at — at the face's own rhythm either way, as `ProseFace.leading` picks it.
+    private static func stepLeading(_ face: ProseFace, off box: CGFloat) -> CGFloat {
+        let rhythm = face.isMachine ? ArgoFeedRow.machineLineHeight : ArgoFeedRow.lineHeight
+        return face.lineBox(under: .fractional) + max(0, rhythm - box)
     }
 }
