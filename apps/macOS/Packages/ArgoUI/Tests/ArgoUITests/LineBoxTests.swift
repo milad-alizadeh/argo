@@ -5,10 +5,11 @@ import Testing
 /// A line's box is read off the face the platform RESOLVES, and everything measuring a line it
 /// also draws reads the same one.
 ///
-/// The drawn box and the ladder's nominal number differ at every rung at the setting these run
-/// at — `caption1` is 12.1 against 13.78 — which is what lets the cases below fail rather than
-/// restate their subject. Nothing in a test process can move an Accessibility text setting, so
-/// what is pinned is the source each measure reads, at whatever setting the run is at.
+/// The drawn box and the ladder's nominal number differ at every rung, which is what lets the
+/// cases below fail rather than restate their subject. Only that they differ: WHICH is larger is
+/// a property of the machine, and asserting a direction reds on CI — `body` resolves to 17.31
+/// against 15.73 nominal on one box and to 15.31 on another. Nothing in a test process can move an
+/// Accessibility text setting either, so what is pinned is the source each measure reads.
 @MainActor
 @Suite("What a line of type occupies")
 struct LineBoxTests {
@@ -25,8 +26,8 @@ struct LineBoxTests {
 
     /// The bug. `MinimapLaneView+Annotations` fills the label's ground at `labelHeight` and insets
     /// its text by `labelPadding`, so the inset rect has to hold the glyphs of one line in the font
-    /// that annotation file names — and it was being given the nominal number, 1.68pt short of them
-    /// at `caption1`.
+    /// that annotation file names — and it was being given the nominal number, which is a different
+    /// number and on this machine a smaller one.
     @Test
     func `a minimap label's text rect holds the glyphs drawn in it`() {
         let drawn = NSFont.preferredFont(forTextStyle: ArgoMinimapLane.labelRung.appKitStyle)
@@ -56,29 +57,32 @@ struct LineBoxTests {
         #expect(abs((bold.ascender - bold.descender) - rung.drawnLineBox) < 0.001)
     }
 
-    /// The chrome's number is a different quantity and keeps a different name. It is short of the
-    /// drawn line and nothing there clips, because a badge asks for a `minHeight` and the `/`
-    /// menu's rows carry 12pt of padding — slack absorbs it, and the design approved these.
+    /// The chrome's number is a different quantity and keeps a different name. Nothing there clips
+    /// on either side of the difference, because a badge asks for a `minHeight` and the `/` menu's
+    /// rows carry 12pt of padding — slack absorbs it, and the design approved these.
     @Test
-    func `the ladder's nominal box is short of the drawn one`() {
+    func `the ladder's nominal box is not the drawn one`() {
         #expect(ArgoTypography.body.nominalLineBox == Self.nominal(.body))
-        #expect(ArgoTypography.body.nominalLineBox < ArgoTypeScale.body.drawnLineBox)
+        #expect(ArgoTypography.body.nominalLineBox != ArgoTypeScale.body.drawnLineBox)
     }
 
     /// Pinned so it cannot be lost: the feed's leading takes the nominal box off and `ProseFace`
-    /// adds it to the drawn one, so prose stands over the rhythm its name promises. Correcting it
+    /// adds it to the drawn one, so prose misses the rhythm its name promises by exactly the gap
+    /// between the two boxes — in whichever direction this machine has them. Correcting it
     /// re-spaces every line of the feed and belongs to the design — #1026.
     @Test
-    func `the feed's prose stands over the rhythm it names`() {
-        let over = ProseFace.body.step - ArgoFeedRow.lineHeight
+    func `the feed's prose misses the rhythm it names by the gap between the boxes`() {
+        let missed = ProseFace.body.step - ArgoFeedRow.lineHeight
+        let gap = ArgoTypeScale.body.drawnLineBox - Self.nominal(.body)
 
-        #expect(abs(over - (ArgoTypeScale.body.drawnLineBox - Self.nominal(.body))) < 0.001)
+        #expect(abs(missed - gap) < 0.001)
     }
 
-    /// And the mono for a second reason too: `ArgoTypography.machine`'s rung is not the rung the
-    /// feed draws its mono at. Also #1026.
+    /// And the mono misses for a second reason too: `ArgoTypography.machine`'s rung is not the rung
+    /// the feed draws its mono at. Also #1026.
     @Test
-    func `the feed's mono stands over the rhythm it names`() {
-        #expect(ProseFace.machine.step > ArgoFeedRow.machineLineHeight)
+    func `the feed's mono misses it for a second reason as well`() {
+        #expect(ProseFace.machine.step != ArgoFeedRow.machineLineHeight)
+        #expect(ArgoTypography.machine.rung != ArgoFeedRow.proseRung)
     }
 }

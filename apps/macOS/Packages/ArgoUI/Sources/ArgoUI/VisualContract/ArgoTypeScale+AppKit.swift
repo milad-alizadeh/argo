@@ -25,10 +25,10 @@ extension ArgoTypeScale {
 
     /// What one line of this rung occupies AS DRAWN, off the face the platform resolves.
     ///
-    /// Not `size * naturalLineHeightRatio`, which is a different number twice over: at `body` the
-    /// product is 15.73 where TextKit sets the line at 17.31, and `size` is a constant where the
-    /// resolved face is not, so the two part further once an Accessibility text setting moves the
-    /// platform's ladder. `ArgoTextStyle.nominalLineBox` is that other number, under its own name.
+    /// Not `size * naturalLineHeightRatio`. That product is a different number and by an amount
+    /// with no fixed SIGN: at `body` it stands 1.58pt under this on one machine and 0.42pt over it
+    /// on another, because `size` is a constant where the resolved face answers to the platform and
+    /// its text setting. `ArgoTextStyle.nominalLineBox` is that other number, under its own name.
     ///
     /// `@MainActor` is not the compiler's requirement — `preferredFont` is `nonisolated`. It is
     /// this repo's: the setting behind the answer is app-wide live state, and `ProseFace.font`
