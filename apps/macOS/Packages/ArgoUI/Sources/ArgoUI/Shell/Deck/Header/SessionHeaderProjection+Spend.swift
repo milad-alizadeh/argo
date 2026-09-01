@@ -5,7 +5,7 @@ import ArgoEngine
 ///
 /// The line is built from the facts that are PRESENT, so a fact nothing reported disappears rather
 /// than rendering as a zero. Every CLI in use today reports nothing for subagent spend, and
-/// `0 subagents` would claim none ran.
+/// `0 in background agents` would claim none ran.
 extension SessionHeaderProjection {
     enum SpendPolicy {
         /// Longer than this between two moments and nobody was at the keyboard: a gap that size is
@@ -38,8 +38,8 @@ extension SessionHeaderProjection {
             // conversation from cache, so one figure would read tens of millions as fresh spend.
             session.spentTokens.map { "\(TokenCount.short($0)) tokens spent" },
             session.cachedTokens.map { "\(TokenCount.short($0)) cached" },
-            // Said as a spend, not as a count: `4.1M subagents` reads as four million of them.
-            session.subagentTokens.map { "\(TokenCount.short($0)) in subagents" },
+            // The reader's word, never the model's (#1014); said as a spend, not as a count.
+            session.subagentTokens.map { "\(TokenCount.short($0)) in background agents" },
             ran(from: session).map { "started \(ElapsedTime.phrase(milliseconds: $0)) ago" },
             read.milliseconds.map(Self.worked(for:)),
         ].compactMap(\.self)

@@ -9,16 +9,16 @@ struct SessionHeaderSpendTests {
 
     /// `nil` is a fact nobody reported; a zero is a fact somebody reported — opposite claims.
     @Test
-    func `an unreported subagent spend leaves the line, while a reported zero renders`() throws {
+    func `an unreported background agents spend leaves the line, a reported zero renders`() throws {
         let unreported = try #require(spend(subagentTokens: nil))
         let zero = try #require(spend(subagentTokens: 0))
 
-        #expect(!unreported.contains("subagents"))
-        #expect(zero.contains("0 in subagents"))
+        #expect(!unreported.contains("background agents"))
+        #expect(zero.contains("0 in background agents"))
         // The absence takes its own separator with it, not leaving `cache ·  · started`.
         #expect(unreported == "1.83M tokens spent · 28.1M cached · started 2h ago · worked 20m")
-        #expect(zero
-            == "1.83M tokens spent · 28.1M cached · 0 in subagents · started 2h ago · worked 20m")
+        #expect(zero == "1.83M tokens spent · 28.1M cached · 0 in background agents "
+            + "· started 2h ago · worked 20m")
     }
 
     @Test
