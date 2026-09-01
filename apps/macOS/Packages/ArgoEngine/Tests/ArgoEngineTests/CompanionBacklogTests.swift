@@ -29,7 +29,7 @@ struct CompanionBacklogTests {
         var dialled: [CompanionClient] = []
         defer { dialled.forEach { $0.close() } }
         for _ in 0 ..< Self.burst {
-            guard let client = CompanionClient(socketPath: socketPath) else { break }
+            guard let client = CompanionClient.dialledOnce(socketPath) else { break }
             dialled.append(client)
         }
 
@@ -49,7 +49,7 @@ struct CompanionBacklogTests {
         var dialled: [CompanionClient] = []
         defer { dialled.forEach { $0.close() } }
         for index in 0 ..< Self.burst {
-            let client = try #require(CompanionClient(socketPath: socketPath))
+            let client = try #require(CompanionClient.dialledOnce(socketPath))
             client.sendLine("call-\(index)")
             dialled.append(client)
         }

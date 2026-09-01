@@ -19,6 +19,8 @@ struct LiveCodex {
     let root: URL
     let projectURL: URL
     let hub: Hub
+    /// Held so `remove` takes it with the rest — it is outside `root`, being short.
+    private let companionRoot: URL
     private var claim: SessionOwnership.ClaimID?
 
     /// The patience is a parameter for the one test about it running out. Everywhere else it is a
@@ -28,6 +30,11 @@ struct LiveCodex {
         self.root = URL(fileURLWithPath: NSTemporaryDirectory())
             .appending(path: "argo-codex-\(token)", directoryHint: .isDirectory)
         self.projectURL = root.appending(path: "project", directoryHint: .isDirectory)
+        // Its OWN root, never `CompanionChannel.defaultRoot`: claim ids restart at `claim-1` in
+        // every Hub, so two fixtures on the shared root bind and unlink one another's sockets — and
+        // the real app's, on the machine running the test (#915). Short, because `sun_path` is 103
+        // bytes.
+        self.companionRoot = URL(fileURLWithPath: "/tmp/argo-c-\(token)", isDirectory: true)
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
         self.hub = Hub(
             projectURL: projectURL,
@@ -35,7 +42,11 @@ struct LiveCodex {
                 checkout: CheckoutFixture().read,
                 liveness: noLiveProcesses,
             )),
-            spawnServices: SpawnServices(host: FakeProcessHost(), permissionPatience: patience),
+            spawnServices: SpawnServices(
+                host: FakeProcessHost(),
+                companionRoot: companionRoot,
+                permissionPatience: patience,
+            ),
         )
     }
 
@@ -117,5 +128,6 @@ struct LiveCodex {
     func remove() {
         hub.endOwnedSessions()
         try? FileManager.default.removeItem(at: root)
+        try? FileManager.default.removeItem(at: companionRoot)
     }
 }

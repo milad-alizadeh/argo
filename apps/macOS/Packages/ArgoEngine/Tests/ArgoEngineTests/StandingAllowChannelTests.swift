@@ -31,7 +31,7 @@ struct StandingAllowChannelTests {
             #expect(fixture.hub.sessions.first?.standingAllows.map(\.toolName) == ["Bash"])
 
             // And the next call to that tool never becomes a prompt at all.
-            let second = try PermissionGate.dial(fixture, claim)
+            let second = try await PermissionGate.dial(fixture, claim)
             defer { second.close() }
             second.sendLine(PermissionGate.bashCall)
 
@@ -47,7 +47,7 @@ struct StandingAllowChannelTests {
         try await PermissionGate.withGate { fixture, claim, client in
             try await Self.stand(on: fixture, claim, answering: client)
 
-            let other = try PermissionGate.dial(fixture, claim)
+            let other = try await PermissionGate.dial(fixture, claim)
             defer { other.close() }
             other.sendLine(Self.editCall)
             await settle { fixture.hub.sessions.first?.permission != nil }
@@ -65,7 +65,7 @@ struct StandingAllowChannelTests {
             try fixture.hub.driver.revokeStandingAllow("Bash", for: claim.value)
             #expect(fixture.hub.sessions.first?.standingAllows.isEmpty == true)
 
-            let second = try PermissionGate.dial(fixture, claim)
+            let second = try await PermissionGate.dial(fixture, claim)
             defer { second.close() }
             second.sendLine(PermissionGate.bashCall)
             await settle { fixture.hub.sessions.first?.permission != nil }
