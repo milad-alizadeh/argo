@@ -58,7 +58,7 @@ struct ProjectMenu: View {
                 if row.isReachable {
                     actions.projects.select(row.id)
                 } else {
-                    actions.projects.locate(row.id)
+                    ProjectRepair(projectID: row.id, actions: actions).locate()
                 }
             },
         )

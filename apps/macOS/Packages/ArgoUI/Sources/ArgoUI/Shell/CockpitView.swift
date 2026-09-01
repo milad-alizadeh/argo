@@ -120,7 +120,38 @@ public struct CockpitView: View {
         )
     }
 
+    /// The whole window, or the one error state that replaces it. A Project whose folder is not at
+    /// the recorded path is disabled WHOLE (failure spec §6), so the branch is here rather than
+    /// inside a room: there is no half of this window that could be honestly lit.
+    ///
+    /// The toolbar stays, because it is the way to another Project — a reader trapped on the error
+    /// state of one Project could not switch to a Project that is fine.
     public var body: some View {
+        if let reading = ProjectDisabledReading(presentation: presentation) {
+            ProjectDisabledScreen(
+                reading: reading,
+                repair: ProjectRepair(projectID: reading.projectID, actions: actions),
+            )
+            .frame(
+                minWidth: ArgoLayout.windowMinimumWidth,
+                minHeight: ArgoLayout.windowMinimumHeight,
+            )
+            .argoAppearance()
+            .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+            .toolbar {
+                // Scope alone: New Session is refused in a folder that is not there, and there is
+                // no room open for an evidence panel to belong to.
+                ShellToolbar(
+                    scope: ScopeVessel(presentation: presentation, actions: actions),
+                    spawn: nil,
+                )
+            }
+        } else {
+            rooms
+        }
+    }
+
+    @ViewBuilder private var rooms: some View {
         @Bindable var navigation = navigation
         // Assembled ONCE for the whole pass and handed to all four readers — the column's
         // visibility, the sidebar, the toolbar row and the deck. `nil` outside the Tickets room,

@@ -61,6 +61,7 @@ struct SpecimenRegistryTests {
             SpecimenRegistry.commands,
             SpecimenRegistry.mentions,
             SpecimenRegistry.connect,
+            SpecimenRegistry.project,
             SpecimenRegistry.tickets,
         ]
 

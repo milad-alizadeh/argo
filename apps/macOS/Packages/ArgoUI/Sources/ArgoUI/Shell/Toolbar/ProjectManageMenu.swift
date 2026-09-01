@@ -22,12 +22,18 @@ struct ProjectManageMenu: View {
                 actions.projects.openPanel(row.id)
             }
             Divider()
-            Button("Remove from Argo", systemImage: ArgoSymbol.removeProject) {
-                actions.projects.remove(row.id)
+            // The same verb the disabled-Project state offers, spelled once (`ProjectRepair`):
+            // one repair cannot have two vocabularies.
+            Button(ProjectRepair.remove, systemImage: ArgoSymbol.removeProject) {
+                repair(row.id).forget()
             }
-            .help("Removes Argo's registration only. The folder on disk is not touched.")
+            .help(ProjectRepair.removeHelp)
         }
         .accessibilityLabel("Manage \(row.name)")
+    }
+
+    private func repair(_ projectID: String) -> ProjectRepair {
+        ProjectRepair(projectID: projectID, actions: actions)
     }
 }
 
