@@ -74,7 +74,7 @@ extension CockpitView {
 
     /// The Connect panel on the active Project, which is where both of the room's repairs land.
     var openProjectPanel: @MainActor () -> Void {
-        { actions.openProjectPanel(presentation.activeProjectID) }
+        { actions.projects.openPanel(presentation.activeProjectID) }
     }
 
     /// The Tickets room with nothing bound hides its half of the split view WHOLE (#818). Hidden
@@ -112,8 +112,8 @@ extension CockpitView {
                 presentation: presentation,
                 selection: $navigation.session,
                 room: $navigation.room,
-                archive: actions.setSessionArchived,
-                rename: actions.setSessionName,
+                archive: actions.sessions.setArchived,
+                rename: actions.sessions.setName,
                 renamingSessionID: $renamingSessionID,
             )
         }

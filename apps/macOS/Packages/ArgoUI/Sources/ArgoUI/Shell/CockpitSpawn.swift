@@ -26,7 +26,7 @@ struct CockpitSpawn {
     /// The refusal is checked here as well as drawn, because a shortcut reaches the action without
     /// passing the button that is disabled.
     func run() async {
-        guard offer.isLaunchable, let fresh = await actions.spawnSession() else { return }
+        guard offer.isLaunchable, let fresh = await actions.sessions.spawn() else { return }
         navigation.session = fresh
     }
 
@@ -34,7 +34,7 @@ struct CockpitSpawn {
     /// (#546). `offer` is not consulted: what that check refuses is a spawn with no reachable
     /// Project folder to run in, and this one brings its own.
     func run(beside sessionID: String) async {
-        guard let fresh = await actions.spawnSessionBeside(sessionID) else { return }
+        guard let fresh = await actions.sessions.spawnBeside(sessionID) else { return }
         navigation.session = fresh
     }
 }

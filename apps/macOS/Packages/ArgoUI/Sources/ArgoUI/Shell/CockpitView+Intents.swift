@@ -21,7 +21,7 @@ extension CockpitView {
             stop: stop(driven),
             setMode: setMode(driven),
             spawnBeside: spawnBeside,
-            commands: actions.skills,
+            commands: actions.composer.skills,
             files: files(in: vessel.composer?.workspaceRoot),
             draft: draft(for: driven),
         )
@@ -31,7 +31,7 @@ extension CockpitView {
     /// records have never said where that is — a tree Argo cannot name is one it must not list.
     private func files(in root: String?) -> () async -> [String] {
         guard let root else { return { [] } }
-        return { await actions.workspaceFiles(root) }
+        return { await actions.composer.workspaceFiles(root) }
     }
 
     /// The composer's one intent, bound to the Session the composer addresses.
@@ -45,7 +45,7 @@ extension CockpitView {
     /// to have put anything back into.
     private func lostTurnSeen(_ sessionID: String?) -> () -> Void {
         guard let sessionID else { return {} }
-        return { actions.clearLostTurn(sessionID) }
+        return { actions.sessions.clearLostTurn(sessionID) }
     }
 
     /// Stopping the Turn that Session is running (#541), bound the way `send` is.
@@ -110,8 +110,8 @@ extension CockpitView {
     var handOff: () async -> Void {
         guard let session = presentation.session(navigation.session) else { return {} }
         return {
-            guard let fresh = await actions.handOffSession(session.id, session.ticket.link?.number)
-            else { return }
+            let issue = session.ticket.link?.number
+            guard let fresh = await actions.sessions.handOff(session.id, issue) else { return }
             navigation.session = fresh
         }
     }
@@ -125,7 +125,7 @@ extension CockpitView {
     func resumeIfSelectionIsDead(_ pick: CockpitNavigationModel.Pick) {
         guard let dead = SessionResumeProjection.resumable(pick.session, in: presentation)
         else { return }
-        Task { await actions.resumeSession(dead) }
+        Task { await actions.sessions.resume(dead) }
     }
 
     /// The exit the undriveable line offers: a fresh Session in the shown one's folder, which then
@@ -148,7 +148,7 @@ extension CockpitView {
         guard let session = presentation.session(navigation.session) else { return nil }
         return SessionCommands(
             rename: { renamingSessionID = session.id },
-            archive: { actions.setSessionArchived(session.id, !session.isArchived) },
+            archive: { actions.sessions.setArchived(session.id, !session.isArchived) },
             isArchived: session.isArchived,
         )
     }

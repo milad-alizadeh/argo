@@ -14,16 +14,16 @@ struct ProjectManageMenu: View {
             // Disabled, not hidden, on a folder that is not there: Finder has nothing to open,
             // and the verb going quiet would read as the click having missed.
             Button("Reveal in Finder", systemImage: ArgoSymbol.revealInFinder) {
-                actions.revealProject(row.id)
+                actions.projects.reveal(row.id)
             }
             .disabled(!row.isReachable)
             // The other route to the same panel, `⌘K` being the first.
             Button(ProjectSettingsCommands.label, systemImage: ArgoSymbol.projectSettings) {
-                actions.openProjectPanel(row.id)
+                actions.projects.openPanel(row.id)
             }
             Divider()
             Button("Remove from Argo", systemImage: ArgoSymbol.removeProject) {
-                actions.removeProject(row.id)
+                actions.projects.remove(row.id)
             }
             .help("Removes Argo's registration only. The folder on disk is not touched.")
         }

@@ -19,7 +19,7 @@ struct ScopeVessel: View {
             DeckSeparator()
                 .frame(height: ArgoToolbarVessel.scopeDividerHeight)
                 .accessibilityHidden(true)
-            GitVessel(reading: checkout, refresh: actions.refreshCheckout)
+            GitVessel(reading: checkout, refresh: actions.retry.checkout)
         }
         // The toolbar draws the glass but not the room inside it. Without this the folder mark sat
         // ~3.5pt off its own rim while the Rooms vessel next to it breathed at 8.5 — two capsules

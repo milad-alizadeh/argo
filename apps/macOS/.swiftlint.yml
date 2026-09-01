@@ -70,7 +70,6 @@ function_parameter_count:
   # pass one value per reading, the way CockpitPresentation.Session does, then delete the line.
   # Matched by file and width, so no line number churns; #992 found these 34 all passing silently.
   #
-  # INIT: CockpitActions.swift 18 — one closure per cockpit action, the widest left
   # INIT: SessionRosterProjection.swift 14 — one roster row, a field per rendered fact
   # INIT: Ticket.swift 12 — a provider's whole ticket record, field for field
   # INIT: SessionHeaderProjection.swift 11 — the header's readings, one per zone

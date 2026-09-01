@@ -31,7 +31,7 @@ struct ProjectMenu: View {
         Divider()
         // **Add Project…**, not "Register a Project": registration is the domain term, not the
         // label.
-        Button("Add Project…", systemImage: ArgoSymbol.addProject, action: actions.addProject)
+        Button("Add Project…", systemImage: ArgoSymbol.addProject, action: actions.projects.add)
         if !registered.isEmpty {
             Divider()
             Menu("Manage") {
@@ -56,9 +56,9 @@ struct ProjectMenu: View {
             set: { picked in
                 guard let row = rows.first(where: { $0.id == picked }) else { return }
                 if row.isReachable {
-                    actions.selectProject(row.id)
+                    actions.projects.select(row.id)
                 } else {
-                    actions.locateProject(row.id)
+                    actions.projects.locate(row.id)
                 }
             },
         )

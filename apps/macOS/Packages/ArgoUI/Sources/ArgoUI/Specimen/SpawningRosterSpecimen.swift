@@ -23,21 +23,9 @@ struct SpawningRosterSpecimen: View {
     }
 
     private var actions: CockpitActions {
-        CockpitActions(
-            refreshCheckout: {},
-            retryConnection: {},
-            selectProject: { _ in },
-            addProject: {},
-            locateProject: { _ in },
-            revealProject: { _ in },
-            removeProject: { _ in },
-            openProjectPanel: { _ in },
-            spawnSession: publish,
-            setSessionArchived: { _, _ in },
-            setSessionName: { _, _ in },
-            handOffSession: { _, _ in nil },
-            drive: InMemorySessionDriver(),
-        )
+        var actions = CockpitActions(drive: InMemorySessionDriver())
+        actions.sessions.spawn = publish
+        return actions
     }
 
     /// A row on the roster and its id back, which is the whole of what the spawn path answers the

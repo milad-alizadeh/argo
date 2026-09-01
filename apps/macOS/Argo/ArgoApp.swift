@@ -170,51 +170,39 @@ struct ArgoApp: App {
         )
     }
 
+    /// Every act wired to the coordinator that owns it, one group at a time. The Project acts are
+    /// the cockpit's except the panel, which is the Accounts coordinator's on the Project the id
+    /// names (ADR-0015); the Tickets room's two provider acts split the same way (#872).
     private var cockpitActions: CockpitActions {
         let projectURL = cockpit.hub.project.url
-        var actions = CockpitActions(
-            refreshCheckout: { Task { await cockpit.refreshCheckout() } },
-            retryConnection: { Task { await cockpit.retryConnection() } },
-            selectProject: { id in Task { await cockpit.select(projectID: id) } },
-            addProject: { Task { await cockpit.addProject() } },
-            locateProject: { id in Task { await cockpit.locateProject(projectID: id) } },
-            revealProject: { id in cockpit.revealProject(projectID: id) },
-            removeProject: { id in Task { await cockpit.removeProject(projectID: id) } },
-            openProjectPanel: { id in
-                Task { await accounts.open(on: id.flatMap(cockpit.registry.project(id:))) }
-            },
-            spawnSession: { await cockpit.spawnSession() },
-            resumeSession: { id in await cockpit.resumeSession(sessionID: id) },
-            spawnSessionBeside: { id in await cockpit.spawnSession(beside: id) },
-            setSessionArchived: { id, isArchived in
-                Task { await cockpit.setArchived(isArchived, sessionID: id) }
-            },
-            setSessionName: { id, name in
-                Task { await cockpit.setName(name, sessionID: id) }
-            },
-            clearLostTurn: { id in cockpit.hub.clearLostTurn(for: id) },
-            handOffSession: { id, issue in await cockpit.handOff(sessionID: id, issue: issue) },
-            drive: cockpit.hub.driver,
-            // The skills are read on every call, off the Project the window is pointed at — which
-            // is what puts a skill installed while a Session is open in the very next list (#685).
-            // The Hub's own folder rather than the registry's record: an unregistered folder is
-            // still a checkout with `.claude/skills` in it.
-            //
-            // "Every call" is once per `/` menu OPENING and never per keystroke, and the walk
-            // itself happens on `SkillReading`'s actor rather than here (#961).
-            //
-            // The CLI's own built-ins are NOT re-read here (#686). They are keyed to a version
-            // rather than to a moment, and asking again would mean a hidden `claude` per keystroke.
-            skills: { await cockpit.builtins.catalog(forProjectAt: projectURL) },
-            // The Session's OWN folder, not the Project's: a Session running in a worktree names
-            // files in that worktree, and nothing outside it (#687). Read on every open, so a file
-            // written while the Session was running is in the very next list.
-            workspaceFiles: { root in
-                await gitWorkspaceFileRead(URL(fileURLWithPath: root))
-            },
-        )
-        // The Tickets room's two provider acts, split across the coordinators that own them the way
-        // the Connect panel's are: the create is a Binding act, and the spawn is the Hub's (#872).
+        var actions = CockpitActions(drive: cockpit.hub.driver)
+        actions.projects.select = { id in Task { await cockpit.select(projectID: id) } }
+        actions.projects.add = { Task { await cockpit.addProject() } }
+        actions.projects.locate = { id in Task { await cockpit.locateProject(projectID: id) } }
+        actions.projects.reveal = { id in cockpit.revealProject(projectID: id) }
+        actions.projects.remove = { id in Task { await cockpit.removeProject(projectID: id) } }
+        actions.projects.openPanel = { id in
+            Task { await accounts.open(on: id.flatMap(cockpit.registry.project(id:))) }
+        }
+        actions.retry.checkout = { Task { await cockpit.refreshCheckout() } }
+        actions.retry.connection = { Task { await cockpit.retryConnection() } }
+        actions.sessions.spawn = { await cockpit.spawnSession() }
+        actions.sessions.resume = { id in await cockpit.resumeSession(sessionID: id) }
+        actions.sessions.spawnBeside = { id in await cockpit.spawnSession(beside: id) }
+        actions.sessions.setArchived = { id, archived in
+            Task { await cockpit.setArchived(archived, sessionID: id) }
+        }
+        actions.sessions.setName = { id, name in
+            Task { await cockpit.setName(name, sessionID: id) }
+        }
+        actions.sessions.clearLostTurn = { id in cockpit.hub.clearLostTurn(for: id) }
+        actions.sessions.handOff = { id, issue in
+            await cockpit.handOff(sessionID: id, issue: issue)
+        }
+        actions.composer.skills = { await cockpit.builtins.catalog(forProjectAt: projectURL) }
+        actions.composer.workspaceFiles = { root in
+            await gitWorkspaceFileRead(URL(fileURLWithPath: root))
+        }
         actions.tickets.createTicket = { await accounts.createTicket($0) }
         actions.tickets.startSession = { await cockpit.spawnSession(on: $0, mode: $1, opening: $2) }
         actions.tickets.designedScreens = DesignedScreens(projectURL: projectURL).screens
