@@ -184,7 +184,15 @@ Every other value in the table above is an existing token, and nothing in the re
 3. **Subagent spend is not attributable.** Checked in both places `CONTEXT.md` says it lives —
    `message.usage` on sidechain records, and `toolUseResult.usage` on the delegating call — and
    every real session reports zero. The ⓘ panel therefore omits the figure rather than rendering
-   `0 subagents`, which would claim none ran.
+   `0 in background agents`, which would claim none ran.
+
+   **The words changed, the reasoning did not** (amended in build). The zero this point refuses was
+   written `0 subagents`, and the line it would have sat on said `4.1M in subagents`. #1014 settled
+   that drawn copy takes the reader's word for a delegated Agent — `Background Agents`, the rail's
+   word (`C3a.1b` in `cockpit-session-interior-decisions.md`) — and left the header's line behind;
+   it was brought over afterwards, so the line now reads `4.1M in background agents` and the zero it
+   still refuses reads as above. `Subagent` stays the model's word, here and everywhere the panel is
+   not being quoted.
 4. **`ran` and `worked` differ by 5–8× on a long session** (9h 25m against 1h 35m). Either
    number alone is read as the other, so the demoted telemetry line shows both.
 

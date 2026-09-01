@@ -25,10 +25,16 @@ a re-render proves it changed only what it meant to. `perm.png` and `perm-edit.p
 `external.png` and `orphaned.png` in not changing: the prompt takes the composer's slot, so there
 is no footer in them to hold the control.
 
-Two exceptions, named so nothing downstream reads them as drift. `perm.png` and `perm-edit.png`
-still draw the fuse and `denies in 0:43` that **decision 6 has since dropped**, and the standing
-option they draw on the footer's trailing edge reads *Always allow Bash **here***, which
-**decision 11 has since rewritten** — the option is back, saying its scope in full. Everything
+**Not re-rendered for #875**, which took the Mode control back to stock. Every render that draws a
+footer therefore draws a Mode pill with a ground, a stroke and a hand-drawn chevron the app no
+longer has; `run-modemenu.png` draws that pill open. The rungs, their marks, the width that hugs
+the selected one and everything else in those renders stands — see *Controls are stock, not
+bespoke*, which is where the revert is recorded.
+
+Two further exceptions, named so nothing downstream reads them as drift. `perm.png` and
+`perm-edit.png` still draw the fuse and `denies in 0:43` that **decision 6 has since dropped**, and
+the standing option they draw on the footer's trailing edge reads *Always allow Bash **here***,
+which **decision 11 has since rewritten** — the option is back, saying its scope in full. Everything
 else in those two renders stands.
 
 The study itself lives on the throwaway branch `prototype/536-composer`
@@ -92,16 +98,25 @@ grows by — then scrolls inside itself. The feed above is never squeezed.
 **The footer row** — `base` (8) gap, `base` (8) top padding. Controls left to right: `+` (26pt),
 spacer, `ModePicker`, `RunFactsButton`, `SendButton` (26pt circle).
 
-**`ModePicker`'s closed control** — 20pt high, radius `control` (6), `snug` (6) padding each side
-and `snug` (6) between mark, word and chevron. **Mark and chevron both at `ArgoIconSize.inline`
-(10)**: neither is the thing being pointed at, the word is. The chevron takes `text.secondary`
-while the word takes `text.primary`, so it names the gesture without competing with the value.
-Measured off `composer/rest.png`, where the pill is 77pt wide at `Code` against the 88pt the
-pinned width gave it — the 11pt difference is the whitespace decision 1 now refuses.
+**`ModePicker`'s closed control** — **the platform's, measured by nobody here** (amended in build,
+#875). It was 20pt high, radius `control` (6), `snug` (6) padding each side and `snug` (6) between
+mark, word and chevron, mark and chevron both at `ArgoIconSize.inline` (10), the chevron in
+`text.secondary` against the word's `text.primary`. Every one of those numbers described a ground
+this control no longer draws, and none of them is spec any more — `ArgoComposerVessel.modeHeight`
+went with them and is in no Swift file. What is left to state is the **label**: mark and word at
+`ArgoTypography.control`, sized by font rather than by ink height, and the whole control `.tint`ed
+`text.primary`, because a `Menu` paints its label with the accent and reads the tint rather than a
+`foregroundStyle` set around it. The indicator is the system's and takes the system's ink.
 
-> The renders draw the four marks at **12**, two over the rung. They are hand-drawn SVG
-> stand-ins, and a multi-element one smudges to a blob at 10 where SF's own small-size variant
-> stays legible. 10 is the number to build to; the render is there to say which mark sits where.
+The one measurement that survives the revert is the **width**, because it is a decision and not a
+box: `.fixedSize()`, so the control hugs the selected rung. Measured off `composer/rest.png`, where
+the pill is 77pt wide at `Code` against the 88pt the pinned width gave it — the 11pt difference is
+the whitespace decision 1 refuses.
+
+> The renders draw the four marks at **12**, two over the rung they were built to. They are
+> hand-drawn SVG stand-ins, and a multi-element one smudges to a blob at 10 where SF's own
+> small-size variant stays legible. The rung is now `ArgoTypography.control`'s own, since the label
+> style sizes the mark by font; the render is there to say which mark sits where.
 
 **`SendButton`'s Stop state** — the same 26pt circle in the same place, ground `state.attention`,
 and a **7pt square** in `text.onAccent` where the arrow was. Added in build (#541), measured off
@@ -140,13 +155,14 @@ anything.
 | In the study | In the app |
 |---|---|
 | `.seg` (Effort) | `Picker(…).pickerStyle(.segmented).controlSize(.small)` |
-| `.modemenu` (Mode) | **a bespoke `Menu`** — see the note under this table |
+| `.modemenu` (Mode) | `Menu`, indicator and all — bespoke from #608, stock again since #875 |
 | the field | **`NSTextView` behind an `NSViewRepresentable`** (#734) — see the note under this table |
 | `.picklist` (Model) | `Picker(…).pickerStyle(.inline)` |
 | `.runpanel` | `.popover(…)` with `.presentationBackground(.regularMaterial)` |
 | the popover's groups | `Form` sections, each with its own header |
 
-**Two exceptions now, and each was forced by something the stock control cannot do.**
+**One exception now, and it was forced by something the stock control cannot do.** There were two
+until #875 gave the second one back.
 
 **The field, in #734.** Return submits a Turn here, so Shift-Return is the only way to a second
 line — and breaking a line needs a caret, which an `NSTextField` does not expose. The same
@@ -154,10 +170,24 @@ replacement is what made the 1.5 line height above reachable. Nothing else about
 changed: no ring of its own, plain text only, the platform's own undo, and the substitutions off
 because a draft is a line about to be handed to a CLI.
 
-**Mode, in #608.** It began as
+**Mode, in #608 — and back to stock in #875** (amended in build). It began as
 `Picker(…).pickerStyle(.menu)`, which macOS draws through `NSPopUpButton`. Three things this
 screen wants are things that control cannot do: one chevron instead of the stepper pair, a width
 that follows the selected rung, and a mark in each row. Decision 1 records what each is worth.
+
+None of the three needed a control of its own, which is what #608 spent. SwiftUI's `Menu` gives all
+three away, so the ground, the `edge.subtle` stroke at `ArgoRadius.control`, the pinned height and
+the drawn chevron were four decisions spent arriving at what `Menu` draws by itself — and the
+hand-drawn half put this pull-down's press, focus and hover on a different footing from every other
+one the reader meets. **#875 took the drawing back and kept the three wins**: `ModePicker` is a
+`Menu` whose ground, capsule and indicator are the system's, its label a `Label` at
+`ArgoTypography.control`, `.tint`ed to `text.primary` and `.fixedSize()`d so it still hugs the
+rung. `GitVessel` was reverted in the same ticket, off the same argument.
+
+So this table is now what its own heading says. The Mode row was the exception the heading did not
+allow, and every row above is a stock control but the field. (The heading is about controls, not
+about every mark on the footer: `SendButton`'s Stop is still a drawn square and the attachment
+chips are still drawn, both for reasons stated where they are measured.)
 
 ## Decisions the renders encode
 
@@ -196,12 +226,15 @@ that follows the selected rung, and a mark in each row. Decision 1 records what 
    | Code | `chevron.left.forwardslash.chevron.right` | `ArgoSymbol.programSource`, the code room's own mark |
    | Auto | `bolt` | no boundary, so the loudest mark of the four |
 
-   The closed control is **mark · word · one `chevron.down`**, the chevron at
-   `ArgoIconSize.inline` and quieter than the word: it names the gesture, not the value. One
-   chevron rather than the stock pair because this drops a list — the stepper pair says *cycle
-   through values*, which is a different control. It goes **beside** the label and never inside
-   it: a `Menu` re-synthesises its label from icon and title alone, so a chevron in there never
-   draws at all (`GitVessel` learned this first).
+   **The closed control is mark · word · the `Menu`'s own indicator** (amended in build, #875). It
+   was drawn as mark · word · one `chevron.down` of the composer's own, at `ArgoIconSize.inline`
+   and quieter than the word, placed **beside** the label and never inside it — a `Menu`
+   re-synthesises its label from icon and title alone, so a chevron put in there never draws at all
+   (`GitVessel` learned this first). What that chevron was arguing for is what `Menu` already
+   draws: one indicator rather than the stepper pair, because this drops a list and a stepper pair
+   says *cycle through values*, which is a different control. Drawn a second time it was a second
+   mark for a job the platform had done, so **#875 kept the argument and dropped the drawing**. The
+   framework fact stands and is why nothing may be put inside a `Menu`'s label.
 
    **A reading that is not an exact rung ticks nothing** (amended in build, #545). The study drew
    one selected rung and no other case, because it was drawn before the control had a Session

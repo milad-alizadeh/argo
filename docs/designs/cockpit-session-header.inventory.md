@@ -51,8 +51,10 @@ the zero that means "none of it" cannot come out two ways. Two of those needed w
 comes off the projection rather than off a string the panel unpicks.
 
 **What the block does not carry:** the checkout kind and subagent spend. Both are on the hover, and
-the design's *The ⓘ panel explains, and then reports* says why each stays off — `subagent spend
-stays on the line and off the block` is the test that holds it.
+the design's *The ⓘ panel explains, and then reports* says why each stays off — `background agents
+spend stays on the header line and off the block` is the test that holds it. It was
+`subagent spend stays on the line and off the block` until the line took the rail's drawn word
+(#1014's decision, applied to the header afterwards).
 
 **Isolated states:** `contextGuide` renders the full panel from the new `SessionHeaderFixture.
 guided`, the fixture `header/guide.png` is drawn from. `contextGuideUnread` renders the same panel

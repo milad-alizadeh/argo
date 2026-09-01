@@ -82,7 +82,7 @@ struct SessionSpendTests {
     }
 
     /// An ordinary call reports no usage of its own, which must leave the subagent line ABSENT
-    /// rather than at zero — `0 subagents` on the header would claim none ran.
+    /// rather than at zero — `0 in background agents` on the header would claim none ran.
     @Test
     @MainActor
     func `a call that reported no spend leaves the subagent line absent, never zero`() async throws {

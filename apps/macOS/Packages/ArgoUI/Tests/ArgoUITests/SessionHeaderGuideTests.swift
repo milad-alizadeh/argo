@@ -75,12 +75,13 @@ struct SessionHeaderGuideTests {
     /// The one fact on the hover that the block does not say. It is `nil` on every CLI in use, so
     /// the row would be absent from every real Session — see the design's own note on it.
     @Test
-    func `subagent spend stays on the line and off the block`() throws {
+    func `background agents spend stays on the header line and off the block`() throws {
         let session = fullSession(subagentTokens: 4_100_000)
         let header = SessionHeaderProjection.header(from: session)
 
-        #expect(try #require(header.spend).contains("4.1M in subagents"))
-        #expect(!header.facts.map(\.term).contains("Subagents"))
+        #expect(try #require(header.spend).contains("4.1M in background agents"))
+        // Under either word: the row is absent from the block, not renamed into it.
+        #expect(!header.facts.contains { $0.term.lowercased().contains("agents") })
     }
 
     /// The block reports and the legend explains: nothing per-Session is in the legend's words.

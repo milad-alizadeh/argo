@@ -215,6 +215,39 @@ Amends C3a.1 on two points; everything else in it stands.
   and **one** scroll-spy anchor. Both panes read one derivation, which makes the parity an assertion
   rather than a comparison of two components.
 
+### C3a.1b — AMENDMENT (#1013/#1014): the section is drawn as `Background Agents`, and the Session's own reading heads it
+Amends C3a.1 on what the section SAYS and what sits at the top of it. Everything else in it stands,
+C3a.1a included: two sections, one header style, flat rows, no cards, detail pane driven by the
+selection.
+
+- **The label and the header sketch take the reader's word, not the model's.** C3a.1's label
+  ~~`Subagents`~~ and its header ~~`SUBAGENTS · Verify · 3 running`~~ are the domain term on
+  screen. The rail draws **`Background Agents`**, and its header line is
+  **`Background Agents · 3 running`** — the count is of what is RUNNING, which is the question the
+  rail is glanced at to answer. The group name (`Verify`) is **not drawn**: it was sketched as
+  shown "only when the subagents have one", and nothing in the record supplies one, so a slot for
+  it would be a separator waiting on a fact. The mirrored-header rule itself is untouched — this is
+  still the Timeline header's own treatment, set in `ArgoTypography.sectionLabel`.
+- **`Subagent` stays everywhere it is not drawn** — code, comments, `CONTEXT.md` L3 · Subagent,
+  `docs/domain/`, and this document's own prose above and below. A deliberate departure of
+  interface copy from the model's word rather than a rename (#1014): `Subagent` is precise about
+  the runtime tree, and `Background Agents` is what the reader is looking at beside the reading.
+  Every drawn line is a value on `AgentsRailCopy` so a suite can reach it, and
+  `AgentsRailCopyTests` fails if the model's word is put back on screen.
+- **`Main` heads the list** (#1013). The Session's own reading is the first entry, lit whenever the
+  scope is the Session, and selecting it scopes back from anywhere. Before it, the way out of an
+  agent was clicking the already-lit chip — a control spelled only as *click the selected thing
+  again*, which is one a reader is told about rather than finds. `Main` and not `Session`: the
+  entry names one of the readings this Session has, and the reader is already inside the Session.
+  The collapsed strip carries it too, as `ArgoSymbol.sessionReading` where the agents have a state
+  dot, or the way back vanishes the moment the column is collapsed.
+- **Consistent with D33**, which is the constraint this amendment is held to: the words change and
+  the weight does not. `Main` is a chip like the ones under it — not a card, not a back button, and
+  not a second focal plane against the feed.
+- **The Session header's spend line takes the same word**, since it is drawn copy in the same app:
+  `4.1M in background agents`. #1014 scoped itself to the rail and left that line saying
+  `in subagents`; it was brought over afterwards, and `cockpit-session-header.md` records it there.
+
 ### C1.3 — Header has NO actions at all
 - **Decision:** The header carries no action buttons and no `⋯` menu. It is glance-only: title · spec line · ctx arc, plus the inline `intent ↗` / branch links. Every action that a menu might have held is either not a header concern or not a thing:
   - **Rename** → done in the terminal (or by editing the linked ticket); not a header control.

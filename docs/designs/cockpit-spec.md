@@ -182,13 +182,14 @@ Detail: `cockpit-onboarding-spec.md`; Project Settings in `cockpit-app-shell-spe
   (current task + plan `N/M`) in its header row. Live-process state is visible across tabs without
   its own strip. **You steer by typing at the Dock's prompt and stop with Ctrl-C** — there is no
   separate steer widget and no Stop button.
-- **Activity is two-pane master–detail** — left holds a `Subagents` group above a `Timeline` step
+- **Activity is two-pane master–detail** — left holds a `Background Agents` group (drawn copy since
+  #1014; `Subagent` stays the model's word everywhere it is not on screen) above a `Timeline` step
   list, right holds the selected item's detail. Thirty subagents render as a **dense row list**
   (`dot · name · target · status`) inside one collapsible group — never interleaved into the
   timeline, never as cards — and clicking one shows that agent's live feed in the detail pane
   without leaving the session.
 - **The subagent blueprint degrades honestly per CLI** — full phased blueprint for Claude Code, a
-  labelled tree for Codex, flat "N subagents running" for bare. The cockpit never invents a phase
+  labelled tree for Codex, flat `Background Agents · N running` for bare. The cockpit never invents a phase
   a CLI did not report.
 - **Compaction markers render in the turn sequence with the resume chain stitched across them**,
   so a condensed history reads as continuous.
