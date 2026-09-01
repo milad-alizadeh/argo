@@ -41,6 +41,27 @@ func leastCPUSeconds(trials: Int = 5, of work: () -> Void) -> Double {
     (0 ..< trials).map { _ in cpuSeconds(work) }.min() ?? 0
 }
 
+/// Two ways of doing the same job, measured against each other trial by trial.
+///
+/// Interleaved rather than timed one after the other, and warmed before either is counted: a
+/// machine drifts over the length of a run — thermally, and as the other suites land on it — so
+/// arms measured in blocks are compared across that drift as well as against each other. Alternated
+/// they ride it together, and each PAIR is a comparison the drift cannot reach.
+///
+/// The pairs are returned rather than a verdict, because how much of a saving is honest to demand
+/// is the caller's question and the answer is not the same on two machines. What survives the move
+/// is the SIGN of each pair — see `FeedRowShapeTests`.
+func pairedCPUSeconds(
+    trials: Int = 7,
+    _ first: () -> Void,
+    against second: () -> Void,
+)
+    -> [(first: Double, second: Double)] {
+    first()
+    second()
+    return (0 ..< trials).map { _ in (first: cpuSeconds(first), second: cpuSeconds(second)) }
+}
+
 private func threadCPUSeconds() -> Double {
     var spec = timespec()
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &spec)

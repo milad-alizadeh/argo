@@ -92,12 +92,23 @@ struct FeedRowShapeTests {
         #expect(coordinator.rulerShapes.count >= 4)
     }
 
-    /// The cost, as a RATIO between two arms measured in the same run — a wall-clock budget would
-    /// measure the machine (see `CostMeasure`), and the arms move together on any box.
+    /// The cost, as a comparison between two arms measured in the same run — a wall-clock budget
+    /// would measure the machine (see `CostMeasure`), and the arms move together on any box.
     ///
     /// This one measures the framework rather than the feed: it is what says the split is worth
     /// keeping at all, and `a reading is measured through one ruler per shape it holds` is what
-    /// says the feed is still taking it. Recorded on the shipping fixture at 1.81; gated at 1.4.
+    /// says the feed is still taking it.
+    ///
+    /// **How much** it saves does NOT survive a change of machine, and a gate written to one
+    /// machine's figure is a gate that fails on the other. The same fixture, warmed, least of
+    /// several trials: **1.85× on an M-series laptop, 1.19× on the `macos-26` CI runner** — the
+    /// saving is a rebuilt SwiftUI tree against a diffed one, and how those two compare is the
+    /// framework's business on that box. The arms' own noise is ~1.05 on both, so the spread is
+    /// hardware and not measurement.
+    ///
+    /// What DOES survive is the sign. So the claim is made twice, and neither half carries a figure
+    /// this suite recorded on one machine: every interleaved pair goes the same way, and the least
+    /// of them clears a floor far under both readings and far over the noise.
     @Test
     func `measuring by shape costs less than measuring through one ruler`() {
         let rows = FeedProjection.longRows
@@ -113,17 +124,16 @@ struct FeedRowShapeTests {
                 in: NSSize(width: Self.column.width, height: .greatestFiniteMagnitude),
             )
         }
-
-        // One controller for the whole reading — what the feed did before the split.
-        let shared = leastCPUSeconds(trials: 3) {
+        /// One controller for the whole reading — what the feed did before the split.
+        func throughOne() {
             let one = ruler()
             for index in rows.indices {
                 one.rootView = model.content(at: index)
                 fit(one)
             }
         }
-        // One per shape, which is what `FeedTableCoordinator` now keeps.
-        let split = leastCPUSeconds(trials: 3) {
+        /// One per shape, which is what `FeedTableCoordinator` now keeps.
+        func byShape() {
             var rulers: [FeedRow.Content.Shape: NSHostingController<AnyView>] = [:]
             for index in rows.indices {
                 let shape = rows[index].content.shape
@@ -134,7 +144,15 @@ struct FeedRowShapeTests {
             }
         }
 
+        let trials = pairedCPUSeconds(throughOne, against: byShape)
+        let shared = trials.map(\.first).min() ?? 0
+        let split = trials.map(\.second).min() ?? 0
+        let told = "one ruler \(shared)s, one per shape \(split)s, over \(trials.count) pairs"
+
         #expect(split > 0)
-        #expect(shared / split >= 1.4, "one ruler \(shared)s, one per shape \(split)s")
+        // A split that stopped paying leaves two arms doing the same work, and a run of pairs that
+        // all fall the same way is then worth about one chance in a hundred.
+        #expect(trials.allSatisfy { $0.second < $0.first }, "A pair went the other way: \(told)")
+        #expect(shared / split >= 1.1, "\(told)")
     }
 }
