@@ -2,9 +2,11 @@
 import Foundation
 import Testing
 
-/// The permission gate end to end: a spawn installs the hook, a gated call blocks the agent and
-/// raises a Permission in the roster, and the user's answer goes back down the same socket as the
-/// hook's decision.
+/// A gated call over a real hook: it blocks the agent and raises a Permission in the roster, and
+/// the user's answer goes back down the same socket the hook asked on.
+///
+/// Every case here drives a live relay. What the spawn INSTALLS before any of that, and what the
+/// driver refuses with nothing waiting, are `PermissionGateWiringTests` — neither needs a socket.
 ///
 /// Serialized because every test here drives a `DispatchSource` on the MAIN queue and waits on the
 /// main actor for it to fire; in parallel they are a dozen waits sharing one runloop, and a wait
@@ -12,32 +14,6 @@ import Testing
 @Suite("Permission channel", .serialized)
 @MainActor
 struct PermissionChannelTests {
-    @Test
-    func `a spawn installs the hook and loads the plugin that registers it`() async throws {
-        let fixture = try SpawnFixture()
-        defer { fixture.remove() }
-
-        let claim = try await fixture.hub.spawnSession()
-        let pluginRoot = fixture.pluginRoot(claim)
-        let hooks = try String(
-            contentsOf: pluginRoot.appending(path: "hooks/hooks.json"),
-            encoding: .utf8,
-        )
-        let hook = try String(
-            contentsOf: pluginRoot.appending(path: "permission-hook.sh"),
-            encoding: .utf8,
-        )
-
-        let launch = try #require(fixture.host.launches.first)
-        // `--plugin-dir` and not `--settings`: a hook declared in a settings file passed on argv
-        // is never registered, and an unregistered gate fails silently open.
-        #expect(launch.arguments.contains("--plugin-dir"))
-        #expect(hooks.contains("permission-hook.sh"))
-        #expect(hooks.contains("\"timeout\": \(PermissionPatience.hookTimeoutSeconds)"))
-        #expect(hook.contains("\(claim.value).gate.sock"))
-        #expect(!hook.contains("__ARGO_PERMISSION_SOCKET__"))
-    }
-
     @Test
     func `a gated call raises a Permission and the Session reads it DIRECT`() async throws {
         try await PermissionGate.withGate { fixture, _, client in
@@ -180,17 +156,6 @@ struct PermissionChannelTests {
 
             #expect(answer == "deny")
             #expect(fixture.hub.sessions.first?.permission == nil)
-        }
-    }
-
-    @Test
-    func `a decision with nothing waiting is refused in the seam's words`() async throws {
-        let fixture = try SpawnFixture()
-        defer { fixture.remove() }
-        let claim = try await fixture.hub.spawnSession()
-
-        #expect(throws: SessionDriveError.nothingPending) {
-            try fixture.hub.driver.decide(.allow, answering: "permission-1", for: claim.value)
         }
     }
 

@@ -2,7 +2,12 @@
 import Foundation
 import Testing
 
-/// What a Project's installed skills are, read the way the CLI reads them (#685).
+/// Which skills a Project has, and where each row comes from (#685): the three origins, the
+/// settings that decide whether a plugin's skills are reachable at all, and which copy wins when
+/// two roots carry the same name.
+///
+/// What one directory on disk reads as, once the walk has found it, is
+/// `SkillDirectoryReadingTests`.
 @Suite("Skill catalog")
 struct SkillCatalogTests {
     let machine: SkillCatalogFixture
@@ -115,60 +120,6 @@ struct SkillCatalogTests {
             skills: [FixtureSkill(directory: "scoped", name: "scoped")],
         )])
         #expect(machine.catalog.skills().map(\.command) == ["/ours:scoped"])
-    }
-
-    @Test
-    func `lists a skill that states no description by its name alone`() throws {
-        try machine.write(
-            FixtureSkill(directory: "terse", name: "terse"),
-            into: machine.projectSkills,
-        )
-        let skill = try #require(machine.catalog.skills().first)
-        #expect(skill.name == "terse")
-        #expect(skill.description == nil)
-    }
-
-    /// A skill whose frontmatter states no name is still invocable, because the CLI knows it by the
-    /// directory it sits in — so the directory is what the row reads rather than nothing at all.
-    @Test
-    func `falls back to the directory when the frontmatter states no name`() throws {
-        try machine.write(
-            FixtureSkill(directory: "nameless", description: "Words but no name."),
-            into: machine.projectSkills,
-        )
-        #expect(machine.catalog.skills().map(\.name) == ["nameless"])
-    }
-
-    /// Two things under the skills directory that are not skills. Neither is a row, and neither
-    /// stops the skill beside it being read.
-    @Test(arguments: [
-        FixtureSkill(directory: "unfenced", markdown: "Just prose, no frontmatter.\n"),
-        FixtureSkill(directory: "empty", markdown: ""),
-    ])
-    func `reads no skill from a directory that carries none`(broken: FixtureSkill) throws {
-        try machine.write(broken, into: machine.projectSkills)
-        try machine.write(
-            FixtureSkill(directory: "real", name: "real"),
-            into: machine.projectSkills,
-        )
-        #expect(machine.catalog.skills().map(\.name) == ["real"])
-    }
-
-    @Test
-    func `reads no skill from a directory holding no SKILL_md`() throws {
-        try machine.writeEmptyDirectory(named: "hollow", into: machine.projectSkills)
-        #expect(machine.catalog.skills().isEmpty)
-    }
-
-    /// This repo installs its own skills as symlinks into `.agents/skills`, so a reader stopping at
-    /// the link would find nothing in the one Project that most needs the picker.
-    @Test
-    func `follows a skill directory that is a symlink`() throws {
-        try machine.link(
-            FixtureSkill(directory: "linked", name: "linked", description: "Elsewhere on disk."),
-            into: machine.projectSkills,
-        )
-        #expect(machine.catalog.skills().map(\.description) == ["Elsewhere on disk."])
     }
 
     /// The nearer origin wins and the shadowed copy is not listed at all — the CLI would never run

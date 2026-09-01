@@ -1,8 +1,5 @@
 import Foundation
 
-/// The host's word for "I stopped to call a tool" — a pause inside a Turn, not its end.
-private let continuingStopReason = "tool_use"
-
 /// One transcript's lines → the events they mean.
 ///
 /// Stateful, and only just: a `tool_result` is read against the call it answers, which was declared
@@ -10,13 +7,17 @@ private let continuingStopReason = "tool_use"
 ///
 /// An `actor` because a live reader is fed from a file-watching stream while a caller consumes its
 /// output, which under Swift 6 is a compile error unless something serialises it.
+///
+/// This file holds the reader's state and the routing. The readings themselves are three extension
+/// files, split by the record each reads: `+Assistant`, `+Outcome` for the record answering a call,
+/// and `+Report` for the one a background agent files.
 public actor TranscriptReader {
     /// What a call needs to be remembered by until its result lands: the kind decides which
     /// evidence its result is read as, and the target is the path a disk fallback would re-read.
     ///
-    /// This and the three members below it are internal rather than `private` only because the
-    /// reader's own extension files read them, and `private` in Swift is file-scoped. The
-    /// actor's isolation is what protects them; nothing outside this type touches either.
+    /// This, and every member marked internal below, is internal rather than `private` only
+    /// because the reader's own extension files read it, and `private` in Swift is file-scoped.
+    /// The actor's isolation is what protects them; nothing outside this type touches any of it.
     struct OpenCall {
         let kind: ToolCallKind
         /// The host's own name, kept because one reading is gated on it rather than on the kind:
@@ -28,7 +29,7 @@ public actor TranscriptReader {
     var openCalls: [String: OpenCall] = [:]
     /// The reader's second memory, and for the same reason as its first: a host that writes its
     /// plan one entry at a time leaves the list itself nowhere in the record.
-    private var planLedger = PlanLedger()
+    var planLedger = PlanLedger()
     private var context = TranscriptContextCursor()
     let readImage: ImageReader
     private let readSkill: SkillReader
@@ -188,88 +189,5 @@ public actor TranscriptReader {
     private func metaEvents(_ message: MessageRecord) -> [TranscriptEvent] {
         guard let directory = skillDirectory(message.content) else { return [] }
         return [.skillLoaded(skillLoad(at: directory, read: readSkill))]
-    }
-
-    private func assistantEvents(_ message: MessageRecord) -> [TranscriptEvent] {
-        contentEvents(message) + spent(in: message) + turnEnd(of: message)
-    }
-
-    /// What this record reported spending, where it reported anything.
-    ///
-    /// A sidechain record is skipped for the same reason its turn boundary is: the spend is the
-    /// child's, and the delegating call's result already carries it whole. Counted here as well,
-    /// every delegated token would be in the Session's total twice.
-    private func spent(in message: MessageRecord) -> [TranscriptEvent] {
-        guard attributes(message), let usage = message.usage else { return [] }
-        return [.usage(usage)]
-    }
-
-    /// The Turn boundary a record reports, or nothing.
-    ///
-    /// `tool_use` is the reason a working agent stops to call something, and every call carries it
-    /// — so it is the one word that must NOT be read as an end. A subagent's record is skipped for
-    /// the same reason one level up: its turn is the child's, and closing the root's on it would
-    /// report a Session as quiet while its delegate is still working.
-    private func turnEnd(of message: MessageRecord) -> [TranscriptEvent] {
-        guard attributes(message) else { return [] }
-        guard let reported = message.stopReason, reported != continuingStopReason else { return [] }
-        return [.turnEnded(StopReason(reported: reported))]
-    }
-
-    private func contentEvents(_ message: MessageRecord) -> [TranscriptEvent] {
-        message.content.flatMap { block -> [TranscriptEvent] in
-            switch block {
-            case let .text(text):
-                return said(text).map { [.message(markdown: $0)] } ?? []
-            case let .thinking(text):
-                return said(text).map { [.thought(markdown: $0)] } ?? []
-            case let .toolUse(use):
-                return callEvents(use, in: message)
-            case .toolResult, .image, .unreadable:
-                return []
-            }
-        }
-    }
-
-    /// Prose with something in it, held verbatim, or nothing.
-    ///
-    /// Blank is nothing said rather than an empty thing said — and it is not a rare edge: a real
-    /// Claude Code record carries every redacted thought as `"thinking": ""` beside an encrypted
-    /// signature, so a reader that emits those fills a live feed with silent rows.
-    private func said(_ text: String) -> String? {
-        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : text
-    }
-
-    private func callEvents(_ use: ToolUseBlock, in message: MessageRecord) -> [TranscriptEvent] {
-        let kind = toolCallKind(use.name)
-        openCalls[use.id] = OpenCall(kind: kind, name: use.name, target: toolCallTarget(use.input))
-        let call = ToolCall(
-            id: use.id,
-            name: use.name,
-            kind: kind,
-            target: toolCallTarget(use.input),
-            narration: toolCallNarration(use.input),
-            atMs: message.timestampMs,
-            // Gated on the tool's own name: `AskUserQuestion` is how a record distinguishes a
-            // question that BLOCKS from one the agent merely typed into a message.
-            ask: use.name == ToolCall.askUserQuestion ? ask(from: use.input) : nil,
-        )
-        // Both are emitted: the call is what happened, the plan is what it said.
-        guard let written = planWritten(by: use, in: message) else { return [.toolCall(call)] }
-        return [.toolCall(call), .plan(written)]
-    }
-
-    /// The whole list after this call, whichever way the host writes one — `TodoWrite` hands it
-    /// over entire, and the `Task` tools write an entry at a time into the ledger. Either way what
-    /// leaves here is one whole list, so nothing downstream knows which host it was reading.
-    ///
-    /// A SIDECHAIN record writes nothing, the same guard `.usage` and the turn end already carry:
-    /// the Plan is Session-scoped (ADR-0020), and a delegate's own to-do list folded into its
-    /// parent's would put a subagent's steps on the Session's pill — permanently, since an
-    /// incremental list is never replaced whole by the next write.
-    private func planWritten(by use: ToolUseBlock, in message: MessageRecord) -> Plan? {
-        guard attributes(message) else { return nil }
-        guard use.name != planTool else { return plan(from: use.input) }
-        return planLedger.written(by: use)
     }
 }

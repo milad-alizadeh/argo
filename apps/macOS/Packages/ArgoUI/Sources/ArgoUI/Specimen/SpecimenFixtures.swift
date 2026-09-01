@@ -61,7 +61,7 @@ enum SpecimenFixtures {
             symbol: "terminal",
             prose: "Ran the visual contract suite",
             at: "13:04:38",
-            evidence: "swift test --filter VisualContractTests\n19 tests passed in 0.001s",
+            evidence: "swift test --filter VisualContract\n18 tests passed in 0.001s",
         ),
         FeedEntry(
             symbol: "doc.badge.plus",

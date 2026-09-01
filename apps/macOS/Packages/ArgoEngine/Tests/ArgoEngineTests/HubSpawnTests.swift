@@ -2,8 +2,11 @@
 import Foundation
 import Testing
 
-/// Argo starting a Session of its own: the row it publishes before any transcript exists, the one
-/// row that row becomes when the record turns up, and what happens to it when the PTY dies.
+/// Argo starting a Session of its own: the row it publishes before any transcript exists, and the
+/// one row that row becomes when the record turns up.
+///
+/// What happens to that row when the process behind it refuses to start, is lost, or is ended is
+/// `HubSpawnProcessTests`.
 @Suite("Hub spawn")
 @MainActor
 struct HubSpawnTests {
@@ -47,7 +50,7 @@ struct HubSpawnTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
-        await hubObserveToEnd(fixture.hub, Self.observedSpawn(of: fixture))
+        await hubObserveToEnd(fixture.hub, fixture.observedSpawn())
 
         #expect(fixture.hub.sessions.map(\.id) == ["session-from-cli"])
         #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
@@ -93,57 +96,12 @@ struct HubSpawnTests {
 
         await hubObserveToEnd(
             fixture.hub,
-            Self.observedSpawn(of: fixture, cwd: fixture.resolvedProjectPath),
+            fixture.observedSpawn(cwd: fixture.resolvedProjectPath),
         )
 
         #expect(fixture.hub.sessions.count == 1)
         #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
         #expect(fixture.hub.spawns[claim] == nil)
-    }
-
-    @Test
-    func `losing the PTY demotes the Session to orphaned`() async throws {
-        let fixture = try SpawnFixture()
-        defer { fixture.remove() }
-        _ = try await fixture.hub.spawnSession()
-        await hubObserveToEnd(fixture.hub, Self.observedSpawn(of: fixture))
-        #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
-
-        fixture.host.endLastProcess(exitCode: 0)
-
-        // Observation survives the PTY; steering does not, and neither does `managed`.
-        #expect(fixture.hub.sessions.map(\.provenance) == [.orphaned])
-        #expect(fixture.hub.ownership.ownerOf(sessionID: "session-from-cli") == nil)
-        #expect(fixture.hub.terminals.attach(to: .init(value: "claim-1")) { _ in } == nil)
-    }
-
-    /// The one row no observation can reach: the CLI never wrote a record, so no sweep corrects it.
-    @Test
-    func `a spawn whose PTY dies before any record says so and ends`() async throws {
-        let fixture = try SpawnFixture()
-        defer { fixture.remove() }
-        _ = try await fixture.hub.spawnSession()
-
-        fixture.host.endLastProcess(exitCode: 127)
-
-        #expect(fixture.hub.sessions.map(\.title) == ["claude exited (code 127)"])
-        #expect(fixture.hub.sessions.map(\.provenance) == [.orphaned])
-        #expect(fixture.hub.sessions.map(\.status) == [.ended])
-    }
-
-    @Test
-    func `a spawn the host refuses publishes no row and keeps no claim`() async throws {
-        let fixture = try SpawnFixture()
-        defer { fixture.remove() }
-        fixture.host.refusal = .hostRefused(detail: "no pty")
-
-        await #expect(throws: AgentSpawnError.hostRefused(detail: "no pty")) {
-            try await fixture.hub.spawnSession()
-        }
-
-        #expect(fixture.hub.sessions.isEmpty)
-        // The claim is released.
-        #expect(fixture.hub.ownership.liveClaims.isEmpty)
     }
 
     /// The spawns outlive a Project switch; what they must not do is follow you into another one.
@@ -190,48 +148,9 @@ struct HubSpawnTests {
         defer { fixture.remove() }
         _ = try await fixture.hub.spawnSession(seed: SessionSeed(ticket: 872))
 
-        await hubObserveToEnd(fixture.hub, Self.observedSpawn(of: fixture))
+        await hubObserveToEnd(fixture.hub, fixture.observedSpawn())
 
         #expect(fixture.hub.sessions.map(\.id) == ["session-from-cli"])
         #expect(fixture.hub.sessions.map(\.ticket) == [872])
-    }
-
-    @Test
-    func `a Hub with no process host cannot spawn`() async {
-        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp"))
-
-        await #expect(throws: AgentSpawnError.self) {
-            try await hub.spawnSession()
-        }
-    }
-
-    @Test
-    func `ending owned Sessions kills every PTY and closes every claim`() async throws {
-        let fixture = try SpawnFixture()
-        defer { fixture.remove() }
-        _ = try await fixture.hub.spawnSession()
-        _ = try await fixture.hub.spawnSession()
-
-        fixture.hub.endOwnedSessions()
-
-        #expect(fixture.host.started.filter(\.isTerminated).count == 2)
-        #expect(fixture.hub.ownership.liveClaims.isEmpty)
-    }
-
-    /// The record a spawned CLI writes: its own id, the folder it ran in, and a moment inside the
-    /// claim's window.
-    private static func observedSpawn(
-        of fixture: SpawnFixture,
-        cwd: String? = nil,
-    )
-        -> TranscriptObservation {
-        hubTestObservation(
-            id: "session-from-cli",
-            events: [
-                .cwd(cwd ?? fixture.projectURL.path),
-                .prompt(text: "First prompt", images: [], atMs: Date().epochMs),
-                .turnEnded(.endTurn),
-            ],
-        )
     }
 }

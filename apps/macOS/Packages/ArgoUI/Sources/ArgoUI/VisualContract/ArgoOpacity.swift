@@ -9,7 +9,7 @@ public enum ArgoOpacity {
     public static let full: Double = 1
     /// A surface the user cannot drive: an observed Session's roster row.
     ///
-    /// `VisualContractTests` holds it above the ramp's own `disabled` rung, the floor for ink that
+    /// `VisualContractLegibilityTests` holds it above the ramp's own `disabled` rung, the floor for
     /// is inert rather than absent.
     public static let ghosted: Double = 0.6
 

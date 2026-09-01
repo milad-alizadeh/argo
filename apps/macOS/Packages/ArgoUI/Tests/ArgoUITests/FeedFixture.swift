@@ -112,6 +112,11 @@ enum FeedFixture {
         ]
     }
 
+    /// A run of such pairs, one per path — the shape a gallery folds out of.
+    static func looked(at paths: [String]) -> [TranscriptEvent] {
+        paths.flatMap { looked(at: $0, shot(.direct)) }
+    }
+
     /// Every call a stream produced, in order. Reaches INSIDE a folded run of looking; whether a
     /// call got a line of its own is `surveys(in:)`'s claim.
     static func calls(in events: [TranscriptEvent]) -> [FeedCall] {

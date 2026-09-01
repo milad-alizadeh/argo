@@ -13,7 +13,7 @@ import Testing
 /// would pass this claim without proving it. The chip's write arrives through `asked` instead, and
 /// the deck sees a state binding.
 ///
-/// The precedent for hosting at all is `ComposerFieldKeyTests.Hosted`: a claim about the seam
+/// The precedent for hosting at all is `ComposerFieldHost`: a claim about the seam
 /// between a SwiftUI tree and the AppKit view under it cannot be made from either side alone.
 @MainActor final class HostedDeck {
     /// What the reader asked for, as the click leaves the rail. Read by the wrapper below and
