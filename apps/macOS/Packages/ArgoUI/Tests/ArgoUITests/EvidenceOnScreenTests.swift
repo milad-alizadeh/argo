@@ -12,9 +12,9 @@ struct EvidenceOnScreenTests {
     func `a scoped feed opens the newest evidence in the subagent's rows`() throws {
         let reading = Self.reading
         let agent = try #require(FeedAgents.all(in: reading.feed)
-            .first { reading.readings.rows(of: $0) != nil })
+            .first { Self.readings.hasReading(of: $0) })
 
-        let scoped = reading.readings.reading(of: reading.feed, under: .subagent(agent.id))
+        let scoped = Self.readings.reading(of: reading.feed, under: .subagent(agent.id))
         let opened = try #require(Self.opened(by: EvidenceToggling(feed: scoped, open: nil)))
 
         #expect(opened.steps.first?.address == .filed(Self.subagentRead))
@@ -26,7 +26,7 @@ struct EvidenceOnScreenTests {
     func `a feed scoped to the session opens the newest evidence in its own rows`() throws {
         let reading = Self.reading
 
-        let rows = reading.readings.reading(of: reading.feed, under: .session)
+        let rows = Self.readings.reading(of: reading.feed, under: .session)
         let opened = try #require(Self.opened(by: EvidenceToggling(feed: rows, open: nil)))
 
         #expect(opened.steps.first?.address == .filed(Self.sessionRead))
@@ -38,6 +38,10 @@ struct EvidenceOnScreenTests {
     private static let subagentRead = "subagent.swift"
     /// The CLI's id for the one Subagent this suite holds a reading of.
     private static let subagent = "a-back"
+
+    /// The Subagent reading the shell is handed beside the presentation, which is where it lives
+    /// since #858 — the projection carries no child's events.
+    private static let readings = FeedAgentReader(events: [subagent: read(subagentRead)])
 
     private static func opened(by toggling: EvidenceToggling) -> FeedEvidence? {
         toggling.feed.first { $0.id == toggling.next }?.content.opened
@@ -66,7 +70,6 @@ struct EvidenceOnScreenTests {
             status: .idle,
             transcript: .init(
                 events: FeedFixture.handedOver(subagent: subagent) + read(sessionRead),
-                subagentEvents: [subagent: read(subagentRead)],
             ),
         )
     }

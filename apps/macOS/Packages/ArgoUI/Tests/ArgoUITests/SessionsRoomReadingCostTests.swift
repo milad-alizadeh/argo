@@ -78,17 +78,26 @@ struct SessionsRoomReadingCostTests {
         #expect(opening.feed.count < grown.feed.count)
     }
 
-    /// A Subagent's own record grows under a Session whose stream has not moved — the fan-out case
-    /// the stamp carries per-Agent counts for.
+    /// A Subagent's own record grows under a Session whose stream has not moved. Since #858 the
+    /// room's reading is NOT retaken for it — the feed, the plan and the header hold no child's
+    /// bytes, and retaking them for a lane that may not even be on screen is the cost that ticket
+    /// removed. What IS retaken is the rows the scope draws, which is why `Scoping` carries the
+    /// Agent's own length beside the stamp: keyed on the stamp alone, a scoped feed would freeze
+    /// while the Agent it is scoped onto went on writing.
     @Test
-    func `a subagent's record growing is a fresh reading too`() {
+    func `a subagent's record growing takes the scoped rows again and nothing else`() {
         SessionsRoomReadingCache.forget()
         let read = FeedFixture.handedOver(subagent: Self.subagent)
+        let scope = FeedScope.subagent(1)
 
-        _ = Self.scoped(events: read, subagent: Array(Self.long.prefix(3)))
-        _ = Self.scoped(events: read, subagent: Self.long)
+        let opening = Self.scoped(events: read, subagent: Array(Self.long.prefix(3)))
+        let first = opening.reader.reading(of: opening.reading.feed, under: scope)
+        let grown = Self.scoped(events: read, subagent: Self.long)
+        let second = grown.reader.reading(of: grown.reading.feed, under: scope)
 
-        #expect(SessionsRoomReadingCache.cost.bodies == 2)
+        #expect(SessionsRoomReadingCache.cost.bodies == 1)
+        #expect(SessionsRoomReadingCache.cost.scopes == 2)
+        #expect(first.count < second.count)
     }
 
     /// The second derivation #875 left behind: the deck's zones and the toolbar's evidence toggle
@@ -96,12 +105,12 @@ struct SessionsRoomReadingCostTests {
     @Test
     func `the scoped rows are derived once a pass, not once a reader`() {
         SessionsRoomReadingCache.forget()
-        let reading = Self.scoped(events: Self.handOff, subagent: Self.long)
+        let scoped = Self.scoped(events: Self.handOff, subagent: Self.long)
         let scope = FeedScope.subagent(1)
 
         // The deck's `DeckContentRow`, then `CockpitView.evidenceControl` above it.
-        let deck = reading.readings.reading(of: reading.feed, under: scope)
-        let toolbar = reading.readings.reading(of: reading.feed, under: scope)
+        let deck = scoped.reader.reading(of: scoped.reading.feed, under: scope)
+        let toolbar = scoped.reader.reading(of: scoped.reading.feed, under: scope)
 
         #expect(deck == toolbar)
         #expect(!deck.isEmpty)
@@ -112,15 +121,17 @@ struct SessionsRoomReadingCostTests {
     /// And what that saves, since a counter says only that it happened once.
     @Test
     func `the second reader of the scoped rows walks nothing`() {
-        let reading = Self.scoped(events: Self.handOff, subagent: Self.long)
+        let scoped = Self.scoped(events: Self.handOff, subagent: Self.long)
         let scope = FeedScope.subagent(1)
 
         let first = leastCPUSeconds {
             SessionsRoomReadingCache.forget()
-            _ = Self.scoped(events: Self.handOff, subagent: Self.long)
-                .readings.reading(of: reading.feed, under: scope)
+            let cold = Self.scoped(events: Self.handOff, subagent: Self.long)
+            _ = cold.reader.reading(of: cold.reading.feed, under: scope)
         }
-        let second = Self.perPass { _ = reading.readings.reading(of: reading.feed, under: scope) }
+        let second = Self.perPass {
+            _ = scoped.reader.reading(of: scoped.reading.feed, under: scope)
+        }
 
         #expect(second < first / Self.scoped4000)
     }
@@ -148,19 +159,21 @@ struct SessionsRoomReadingCostTests {
         SessionsRoomReading(presentation: presentation(events: events), sessionID: "one")
     }
 
+    /// A reading of a Session that delegated, and the reader the shell hands down beside it — the
+    /// Subagent's records are the reader's since #858, not the projection's.
     private static func scoped(
         events: [TranscriptEvent],
         subagent read: [TranscriptEvent],
     )
-        -> SessionsRoomReading {
+        -> (reading: SessionsRoomReading, reader: FeedAgentReader) {
         let session = CockpitPresentation.Session(
             id: "one",
             title: "one",
             access: .managed,
             status: .running,
-            transcript: .init(events: events, subagentEvents: [subagent: read]),
+            transcript: .init(events: events),
         )
-        return SessionsRoomReading(
+        let reading = SessionsRoomReading(
             presentation: CockpitPresentation(
                 projects: [],
                 activeProjectID: nil,
@@ -170,6 +183,7 @@ struct SessionsRoomReadingCostTests {
             ),
             sessionID: "one",
         )
+        return (reading, FeedAgentReader(events: [subagent: read]).stamped(reading.stamp))
     }
 
     private static func presentation(

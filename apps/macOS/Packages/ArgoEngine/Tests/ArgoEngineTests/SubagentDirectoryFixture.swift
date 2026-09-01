@@ -1,5 +1,6 @@
 @testable import ArgoEngine
 import Foundation
+import Testing
 
 /// A Session's record laid down the way Claude Code lays one down: the parent transcript, and each
 /// Subagent in its own file under a directory named for the parent.
@@ -54,4 +55,16 @@ func writeSubagent(
     let url = directoryURL.appending(path: "agent-\(agentID).jsonl")
     try Data(lines.joined(separator: "\n").utf8).write(to: url)
     return url
+}
+
+/// One Session on the roster, read from a real record directory — the shape every test here
+/// starts from, because a Subagent is found from its parent's own URL.
+@MainActor
+func connectedSubagentHub(_ fixture: RecordDirectoryFixture) async throws -> Hub {
+    let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
+    try fixture.write(FixtureTranscript(name: "delegating", cwd: projectURL.path))
+    let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
+    await hub.connect(to: LaunchConfiguration(projectURL: projectURL, transcriptURLs: []))
+    await hubSettle { !hub.sessions.isEmpty }
+    return hub
 }

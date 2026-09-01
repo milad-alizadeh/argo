@@ -19,13 +19,17 @@ import ArgoEngine
 enum SessionsRoomReadingCache {
     /// The version of a Session's record a reading was taken at.
     ///
-    /// Everything `FeedProjection`, `PlanProjection` and `FeedAgentReadings` read is here: the two
-    /// streams by length, and the four small facts by VALUE, since none of them is append-only.
-    /// The header is deliberately absent — see `SessionsRoomReading.init`.
+    /// Everything `FeedProjection` and `PlanProjection` read is here: the stream by length, and the
+    /// four small facts by VALUE, since none of them is append-only. The header is deliberately
+    /// absent — see `SessionsRoomReading.init`.
+    ///
+    /// A Subagent's reading is absent too, and that is #858 rather than an omission: a child's
+    /// bytes are in none of the three derivations below, so a stamp that moved for them would take
+    /// the whole reading again for a lane that is not even on screen. What the SCOPED rows depend
+    /// on is carried beside this — see `Scoping`.
     struct Stamp: Equatable, Sendable {
         let sessionID: String?
         let events: Int
-        let subagentEvents: [String: Int]
         let asking: FeedAskProjection.Asking
         let handedOff: FeedHandoff?
         let expired: [PermissionExpiry]
@@ -40,7 +44,6 @@ enum SessionsRoomReadingCache {
         ) {
             self.sessionID = session?.id
             self.events = session?.events.count ?? 0
-            self.subagentEvents = (session?.subagentEvents ?? [:]).mapValues(\.count)
             self.asking = asking
             self.handedOff = handedOff
             self.expired = session?.expiredPermissions ?? []
@@ -53,7 +56,6 @@ enum SessionsRoomReadingCache {
     struct Body {
         let feed: [FeedRow]
         let showing: PlanShowing
-        let readings: FeedAgentReadings
         /// The header's one event-stream walk — see `SessionHeaderProjection.header(from:worked:)`.
         /// The rest of the header is not here, and must not be: spend and context move with no
         /// event appended, so a remembered header would go stale where a remembered feed cannot.
@@ -66,11 +68,22 @@ enum SessionsRoomReadingCache {
         static var cost = SessionsRoomReadingCost()
     #endif
 
+    /// What the rows a scope draws are a function of, beyond the stamp: which Agent the feed is
+    /// scoped onto, and how much of that Agent Argo had read. The second half is why this is a
+    /// value rather than the scope alone — the stamp above stops at the Session's own stream, so a
+    /// growing Subagent moves nothing else here (#858).
+    struct Scoping: Hashable {
+        let scope: FeedScope
+        /// How many events the scoped Agent's reading held. `nil` for the Session's own rows, and
+        /// for a scope naming an Agent nothing has read.
+        let read: Int?
+    }
+
     private struct Entry {
         let stamp: Stamp
         let body: Body
         var agents: [FeedAgent]?
-        var scoped: [FeedScope: [FeedRow]] = [:]
+        var scoped: [Scoping: [FeedRow]] = [:]
     }
 
     private static var entries: [Entry] = []
@@ -95,7 +108,7 @@ enum SessionsRoomReadingCache {
     /// Derived from the ENTRY's own rows and never from rows a caller passed in. The list is a fact
     /// about the reading, and a memo keyed on the stamp that forwarded the caller's rows would let
     /// the first caller's answer stand for every later one — a rail answered with no agents drops
-    /// the feed's scope on the floor, because `FeedAgentReadings.rows(under:of:otherwise:)` falls
+    /// the feed's scope on the floor, because `FeedAgentReader.rows(under:of:otherwise:)` falls
     /// back the moment nothing in the list is running.
     static func agents(at stamp: Stamp) -> [FeedAgent]? {
         guard let found = index(of: stamp) else { return nil }
@@ -109,22 +122,23 @@ enum SessionsRoomReadingCache {
         return agents
     }
 
-    /// The rows a scope actually draws. Memoised per scope because the second reader of it is the
-    /// toolbar, a whole view tree away from the deck that drew them (#875).
+    /// The rows a scope actually draws. Memoised per `Scoping` because the second reader of them
+    /// is the toolbar, a whole view tree away from the deck that drew them (#875) — and because a
+    /// Subagent that has written since is a different question with the same scope.
     static func scoped(
         at stamp: Stamp,
-        under scope: FeedScope,
+        drawing scoping: Scoping,
         otherwise derive: () -> [FeedRow],
     )
         -> [FeedRow] {
         guard let found = index(of: stamp) else { return derive() }
         let at = entries.touch(found)
-        if let rows = entries[at].scoped[scope] {
+        if let rows = entries[at].scoped[scoping] {
             return rows
         }
         let rows = derive()
         counted(\.scopes)
-        entries[at].scoped[scope] = rows
+        entries[at].scoped[scoping] = rows
         return rows
     }
 

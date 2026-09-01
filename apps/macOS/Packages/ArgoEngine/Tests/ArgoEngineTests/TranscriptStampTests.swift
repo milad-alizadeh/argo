@@ -5,9 +5,16 @@ import Testing
 /// The stamp the cockpit compares a Session's whole decoded stream BY, and the one thing that can
 /// make it a rendered lie: standing still while the stream moved (`CONTEXT.md` Honesty tier).
 ///
-/// One case per way a stream can change, and the list is complete because the two collections are
-/// private to `TranscriptStream` — every write to either goes through one of the three mutators
-/// below, and each of those is a `didSet` away from the restamp.
+/// One case per way a stream can change, and the list is complete because the records are private
+/// to `TranscriptStream` — every write goes through one of the two mutators below, and each is a
+/// `didSet` away from the restamp.
+///
+/// One case LEFT this suite with #858, and its absence is the honest record of what changed: a
+/// continuation rewritten at the same length used to be buildable by growing it under a Subagent
+/// while its own stream stood still. A Subagent's file is not in this stream any more, and with one
+/// append-only stream every write moves the length — so that case cannot be built through a live
+/// Session at all. `TranscriptStamp.writes` stays for the reason its own comment gives: it is what
+/// stops append-only being an invariant somebody has to keep.
 @Suite("Transcript stamp")
 @MainActor
 struct TranscriptStampTests {
@@ -31,29 +38,6 @@ struct TranscriptStampTests {
         let before = session.transcriptStamp
 
         session.apply(.unreadableLine(raw: "{"))
-
-        #expect(session.transcriptStamp != before)
-    }
-
-    /// A Subagent's own file, which grows under a Session whose own stream stands still.
-    @Test
-    func `a subagent's read moves the stamp`() {
-        var session = Self.session(id: "root")
-        let before = session.transcriptStamp
-
-        session.apply([.message(markdown: "child")], ofSubagent: "a-one")
-
-        #expect(session.transcriptStamp != before)
-    }
-
-    /// Two Subagents, same batch each: the second must not land on the stamp the first gave it.
-    @Test
-    func `a second subagent's read moves the stamp again`() {
-        var session = Self.session(id: "root")
-        session.apply([.message(markdown: "child")], ofSubagent: "a-one")
-        let before = session.transcriptStamp
-
-        session.apply([.message(markdown: "child")], ofSubagent: "a-two")
 
         #expect(session.transcriptStamp != before)
     }
@@ -85,23 +69,6 @@ struct TranscriptStampTests {
         grown.mergeContinuation(continuation)
 
         #expect(grown.transcriptStamp != short.transcriptStamp)
-    }
-
-    /// The same case with the LENGTH held still, which is what makes the write count load-bearing:
-    /// the continuation read the same number of events under a Subagent instead of its own stream,
-    /// so both halves of the merged length are unchanged.
-    @Test
-    func `a continuation rewritten at the same length restamps the chain too`() {
-        var continuation = Self.session(id: "second")
-        continuation.apply([.message(markdown: "child")], ofSubagent: "a-one")
-        var once = Self.session(id: "root")
-        once.mergeContinuation(continuation)
-
-        continuation.apply([], ofSubagent: "a-one")
-        var twice = Self.session(id: "root")
-        twice.mergeContinuation(continuation)
-
-        #expect(twice.transcriptStamp != once.transcriptStamp)
     }
 
     /// The inverse, and the claim the cockpit rests on: a Session nothing wrote to keeps its stamp,

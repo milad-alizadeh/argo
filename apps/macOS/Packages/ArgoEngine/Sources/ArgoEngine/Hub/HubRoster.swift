@@ -2,28 +2,26 @@ import Foundation
 
 /// The roster as published, and beside it which transcripts may be written into it directly.
 ///
-/// A child's file joins no chain and moves no sort key, so the walk that built this must not run
-/// again for its bytes (ADR-0028 Rule 1). What it must not do instead is publish them anywhere a
-/// rebuild would not, so a transcript is only written in place where appending IS what the next
-/// rebuild does.
+/// A Session's own batch changes the row it is published as and nothing else, so the walk that
+/// built this must not run again for it (ADR-0028 Rule 1). What it must not do instead is publish
+/// anywhere a rebuild would not, so a transcript is only written in place where replacing the row
+/// IS what the next rebuild does.
 struct HubRoster {
     private(set) var sessions: [HubSession] = []
-    /// Transcript id — a PATH — to the row it may be written into directly. Absent for the two
-    /// kinds of transcript below, whose readings wait for the rebuild that can place them.
-    private var writableRow: [String: Int] = [:]
-    /// The narrower map the Session's OWN batch is written through: the transcripts whose row is
-    /// that transcript and nothing else. Narrower because a Session's batch changes the row's
-    /// derived facts as well as its stream, and only where the fold merged nothing is replacing
-    /// the row with the transcript's own Session identical to what the fold would have built.
+    /// Transcript id — a PATH — to the row a Session's OWN batch may be written into directly.
+    /// Absent for every transcript whose row a rebuild would build differently, which is what
+    /// `writableRows` and `soloRows` between them decide.
     private var soloRow: [String: Int] = [:]
 
     init() {}
 
     init(chained: [HubSessionChain.Chained], transcripts: [HubTranscript]) {
         self.sessions = chained.map(\.session)
-        let writable = Self.writableRows(of: chained, transcripts: transcripts)
-        self.writableRow = writable
-        self.soloRow = Self.soloRows(of: chained, transcripts: transcripts, within: writable)
+        self.soloRow = Self.soloRows(
+            of: chained,
+            transcripts: transcripts,
+            within: Self.writableRows(of: chained, transcripts: transcripts),
+        )
     }
 
     /// Stop writing in place until the roster is folded again. What every rejection below decides
@@ -31,7 +29,6 @@ struct HubRoster {
     /// set that has moved without the fold being retaken leaves this map older than the facts it
     /// encodes, and an answer it gives then is a guess.
     mutating func holdWrites() {
-        writableRow = [:]
         soloRow = [:]
     }
 
@@ -43,21 +40,7 @@ struct HubRoster {
         return true
     }
 
-    /// One Subagent's own reading, onto the published row its transcript may be written into.
-    /// Everything else — a transcript this roster was built without, one held back above, and the
-    /// two rejected below — reaches nothing here. Those readings are published by the next
-    /// rebuild, except where that rebuild drops the transcript's whole reading with it: the frozen
-    /// half of a moved file is not carried by any roster, before this change or after it.
-    mutating func apply(
-        _ read: [TranscriptEvent],
-        ofSubagent agentID: String,
-        from transcriptID: String,
-    ) {
-        guard let row = writableRow[transcriptID] else { return }
-        sessions[row].apply(read, ofSubagent: agentID)
-    }
-
-    /// Two rejections, both of bytes a rebuild would put somewhere else.
+    /// Two rejections, both of a row a rebuild would build differently.
     ///
     /// A link with a continuation merged BEHIND it: the chain folds root-first, so that link's
     /// reading is appended in front of the continuation's, where writing in place lands at the

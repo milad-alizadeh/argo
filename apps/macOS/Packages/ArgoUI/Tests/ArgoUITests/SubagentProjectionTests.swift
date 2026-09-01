@@ -3,23 +3,25 @@ import ArgoEngine
 import Foundation
 import Testing
 
-/// The last leg of the join #711 builds: a Subagent's file on disk, read by the Hub, restated by
-/// the
-/// projection, and keyed the way the rail scopes.
+/// The last leg of the join #711 builds: a Subagent's file on disk, read by the Hub, and reaching
+/// the rail through the reading it asks for — not through the projection, which carries no child's
+/// events since #858.
 @Suite("Subagent projection")
 @MainActor
 struct SubagentProjectionTests {
     @Test
-    func `a Session's Subagent reading crosses the projection`() async throws {
+    func `a Session's Subagent reading crosses to the shell`() async throws {
         let fixture = try SubagentFixture()
         defer { fixture.remove() }
         try fixture.write(agent: "a1")
         let hub = Hub(projectURL: fixture.rootURL)
+        let readings = Self.readings(of: hub)
 
         await hub.startObserving(fixture.observation)
 
-        let session = try #require(await settled(hub) { !$0.subagentEvents.isEmpty })
-        #expect(session.subagentEvents["a1"]?.contains(.message(markdown: fixture.said)) == true)
+        #expect(await settled(readings, until: { $0.rows(of: agent(named: "a1")) != nil }))
+        #expect(hub.subagentReading(of: "a1")?
+            .contains(.message(markdown: fixture.said)) == true)
         await hub.disconnect()
     }
 
@@ -31,10 +33,9 @@ struct SubagentProjectionTests {
         defer { fixture.remove() }
         try fixture.write(agent: "a1")
         let hub = Hub(projectURL: fixture.rootURL)
+        let readings = Self.readings(of: hub)
         await hub.startObserving(fixture.observation)
-        let session = try #require(await settled(hub) { !$0.subagentEvents.isEmpty })
-
-        let readings = FeedAgentReadings(events: session.subagentEvents)
+        #expect(await settled(readings, until: { $0.rows(of: agent(named: "a1")) != nil }))
 
         #expect(readings.rows(of: agent(named: "a1")) != nil)
         // A running chip: the id arrives with the delegating call's result, so there is nothing yet
@@ -46,25 +47,54 @@ struct SubagentProjectionTests {
         #expect(readings.rows(of: agent(named: "never-written")) == nil)
     }
 
+    /// The guarantee `SessionsRoomReading` states for the Session's own feed, for the half that
+    /// left it (#858): a reader is asked on every pass, so a Subagent's file that grew while the
+    /// reader was looking at it reads as it stands NOW. It was a value copied into the projection
+    /// before, and the thing that made that safe was the projection being rebuilt per pass — the
+    /// reader has to be at least as fresh, and nothing about it may be kept.
+    @Test
+    func `a reader asked again sees what the file has said since`() async throws {
+        let fixture = try SubagentFixture()
+        defer { fixture.remove() }
+        try fixture.write(agent: "a1")
+        let hub = Hub(projectURL: fixture.rootURL)
+        let readings = Self.readings(of: hub)
+        await hub.startObserving(fixture.observation)
+        #expect(await settled(readings, until: { $0.rows(of: agent(named: "a1")) != nil }))
+        let opening = try #require(readings.rows(of: agent(named: "a1"))).count
+
+        try fixture.append(agent: "a1")
+
+        #expect(await settled(readings, until: {
+            ($0.rows(of: agent(named: "a1"))?.count ?? 0) > opening
+        }))
+        await hub.disconnect()
+    }
+
     private func agent(named subagentID: String?) -> FeedAgent {
         FeedAgent(id: 0, label: "Review", isRunning: false, spend: nil, subagentID: subagentID)
     }
 
-    /// The projected row once the Hub has read what the test wrote, or nothing — the tails run off
-    /// this actor's own turns, so there is nothing to await but the answer they produce.
+    /// The reading the shell is handed — the same closure `ArgoApp` builds, so what this suite
+    /// asserts is the path that ships.
+    private static func readings(of hub: Hub) -> FeedAgentReader {
+        FeedAgentReader(asking: hub) { hub.subagentReading(of: $0) }
+    }
+
+    /// Whether the Hub has read what the test wrote — the tails run off this actor's own turns, so
+    /// there is nothing to await but the answer they produce.
     private func settled(
-        _ hub: Hub,
-        until applied: (CockpitPresentation.Session) -> Bool,
+        _ readings: FeedAgentReader,
+        until read: (FeedAgentReader) -> Bool,
     ) async
-        -> CockpitPresentation.Session? {
+        -> Bool {
         for _ in 0 ..< 500 {
-            let projected = CockpitPresentation(projects: [], activeProjectID: nil, hub: hub)
-            if let session = projected.sessions.first, applied(session) {
-                return session
+            if read(readings) {
+                return true
             }
             try? await Task.sleep(for: .milliseconds(1))
         }
-        return nil
+        return false
     }
 }
 
@@ -103,17 +133,32 @@ private struct SubagentFixture {
         let directoryURL = parentURL.deletingPathExtension()
             .appending(path: "subagents", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
-        let record = """
-        {"type":"assistant","isSidechain":true,"agentId":"\(agentID)","uuid":"own-1",\
-        "message":{"role":"assistant","content":[{"type":"text","text":"\(said)"}]}}
-        """
         // Terminated, because an unterminated last line is a record still being written — which is
         // what a tail treats it as, and it would never be read.
-        try Data("\(record)\n".utf8)
+        try Data("\(Self.record(agentID, saying: said))\n".utf8)
             .write(to: directoryURL.appending(path: "agent-\(agentID).jsonl"))
+    }
+
+    /// A second record on the same Subagent's file, the way a live one grows.
+    func append(agent agentID: String) throws {
+        let url = parentURL.deletingPathExtension()
+            .appending(path: "subagents", directoryHint: .isDirectory)
+            .appending(path: "agent-\(agentID).jsonl")
+        let handle = try FileHandle(forWritingTo: url)
+        defer { try? handle.close() }
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data("\(Self.record(agentID, saying: "And again."))\n".utf8))
     }
 
     func remove() {
         try? FileManager.default.removeItem(at: rootURL)
+    }
+
+    private static func record(_ agentID: String, saying words: String) -> String {
+        """
+        {"type":"assistant","isSidechain":true,"agentId":"\(agentID)","uuid":"\(UUID()
+            .uuidString)",\
+        "message":{"role":"assistant","content":[{"type":"text","text":"\(words)"}]}}
+        """
     }
 }

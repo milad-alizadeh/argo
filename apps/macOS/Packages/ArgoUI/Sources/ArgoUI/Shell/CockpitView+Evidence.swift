@@ -31,7 +31,7 @@ extension CockpitView {
     /// toggle opens what is ON SCREEN, so it has to read the rows the deck's zones draw (#875).
     func evidenceControl(in reading: SessionsRoomReading) -> EvidenceToggle? {
         guard navigation.room == .sessions else { return nil }
-        let rows = reading.readings.reading(of: reading.feed, under: feedScope)
+        let rows = subagents.stamped(reading.stamp).reading(of: reading.feed, under: feedScope)
         let toggling = EvidenceToggling(feed: rows, open: openEvidence)
         return EvidenceToggle(toggling: toggling) { toggleEvidence(toggling) }
     }

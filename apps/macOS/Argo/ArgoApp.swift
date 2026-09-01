@@ -16,24 +16,20 @@ struct ArgoApp: App {
     private let specimen: SpecimenEntry?
 
     init() {
-        let currentDirectoryURL = URL(
-            fileURLWithPath: FileManager.default.currentDirectoryPath,
-            isDirectory: true,
-        )
-        let configuration = LaunchConfiguration(
-            arguments: CommandLine.arguments,
-            currentDirectoryURL: currentDirectoryURL,
-        )
         // Settled before anything else is built, and the process may end on it: `specimens.sh`
         // asks the app what it can render rather than parsing Swift source for a list, and a name
-        // nothing answers to stops here rather than drawing the cockpit under it.
-        let launch = SpecimenLaunch(configuration)
+        // nothing answers to stops here rather than drawing the cockpit under it. The launch reads
+        // its own arguments, so what this target does with them is dispatch (ADR-0022).
+        let launch = SpecimenLaunch(
+            arguments: CommandLine.arguments,
+            currentDirectoryPath: FileManager.default.currentDirectoryPath,
+        )
         if let code = launch.ending?.stated() {
             exit(code)
         }
         self.specimen = launch.entry
         let projects = ProjectRegistryStore()
-        let cockpit = CockpitCoordinator(configuration: configuration, store: projects)
+        let cockpit = CockpitCoordinator(configuration: launch.configuration, store: projects)
         let accounts = AccountsCoordinator(projects: projects)
         // The row's fact is the Hub's, read at every panel rebuild rather than copied once.
         accounts.companionStanding = { ConnectCompanion(standing: cockpit.hub.companionStanding) }
@@ -69,9 +65,11 @@ struct ArgoApp: App {
                         presentation: presentation,
                         actions: actions,
                         connect: connectSurface,
-                        health: accounts.connections,
-                        tickets: accounts.tickets,
-                        ticketAddress: accounts.ticketAddress,
+                        readings: ShellReadings(
+                            health: accounts.connections,
+                            tickets: accounts.tickets,
+                            ticketAddress: accounts.ticketAddress,
+                        ),
                     )
                     .environment(navigation)
                     .task {

@@ -202,11 +202,7 @@ public extension CockpitPresentation {
 /// below the shell already asks for.
 public extension CockpitPresentation.Session {
     var events: [TranscriptEvent] {
-        transcript.streams.events
-    }
-
-    var subagentEvents: [String: [TranscriptEvent]] {
-        transcript.streams.subagentEvents
+        transcript.stream.events
     }
 
     /// The last Turn typed at this Session that the CLI never heard, verbatim (#682), and `nil` for

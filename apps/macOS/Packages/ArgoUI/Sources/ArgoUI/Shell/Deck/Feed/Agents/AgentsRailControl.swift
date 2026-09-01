@@ -11,7 +11,7 @@ struct AgentsRailControl {
     /// Held ABOVE the deck's per-Session identity, beside the seam widths: keyed to the Session it
     /// would spring open again on every switch, and a reader who collapsed the rail meant the rail.
     @Binding var isCollapsed: Bool
-    var readings = FeedAgentReadings.none
+    var readings = FeedAgentReader.unread
 
     /// A rail nothing has scoped and nobody can collapse — what a specimen of some other zone gets,
     /// so it draws the rail without holding state for it.

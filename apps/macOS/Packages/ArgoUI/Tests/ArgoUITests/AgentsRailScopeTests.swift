@@ -9,6 +9,7 @@ import Testing
 /// What a chip SAYS is `FeedAgentsTests` — the projection's claims stay there, so the two suites do
 /// not both own the same fact.
 @Suite("Agents rail scope")
+@MainActor
 struct AgentsRailScopeTests {
     @Test
     func `an agent whose reading Argo holds is scoped onto its own rows`() throws {
@@ -105,7 +106,7 @@ struct AgentsRailScopeTests {
     private static let read = "a-back"
     private static let said = "The fold holds."
 
-    private let readings = FeedAgentReadings(
+    private let readings = FeedAgentReader(
         events: [read: [.message(markdown: said)]],
     )
 

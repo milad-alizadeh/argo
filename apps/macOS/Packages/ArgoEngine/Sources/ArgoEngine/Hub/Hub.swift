@@ -15,7 +15,7 @@ public final class Hub {
     /// The tails, the join they feed, the sweep that moves them, and the Subagent files read
     /// beside them. Built lazily because its reconciliation hook reads this Hub.
     @ObservationIgnored lazy var watch: TranscriptWatch = {
-        let watch = TranscriptWatch(engine: engine, discovery: discovery)
+        let watch = TranscriptWatch(engine: engine, discovery: discovery, readings: subagents)
         watch.onApplied = { [weak self] in await self?.didApply() }
         return watch
     }()
@@ -32,6 +32,11 @@ public final class Hub {
             self?.sessions.map { SessionActivity(cwd: $0.cwd, lastSeenAtMs: $0.lastSeenAtMs) } ?? []
         },
     )
+
+    /// Each Subagent's own reading, published beside the roster rather than inside it, so a child's
+    /// bytes reach no surface that does not draw one (#858). Read through `subagentReading(of:)`,
+    /// which the cockpit asks only where a lane is actually drawn.
+    let subagents = SubagentReadings()
 
     /// Everything Argo knows per claim: what the agent said, what its gate is holding, and the
     /// rung Argo put it on (#634). One key and one publish rule, where there were five of each.

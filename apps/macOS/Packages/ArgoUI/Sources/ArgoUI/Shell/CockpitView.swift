@@ -12,18 +12,11 @@ public struct CockpitView: View {
     /// The Connect panel, when it is up. Closed by default so every preview and specimen of the
     /// shell renders the shell rather than a sheet nobody asked for.
     private let connect: ConnectSurface
-    /// How the active Project's provider Bindings are reading. Beside the presentation rather than
-    /// inside it because it is not a Hub fact: the cockpit is a projection of the Hub, and Accounts
-    /// and Bindings are registry facts the Hub has never heard of.
-    let health: ConnectionHealthReading
-    /// The active Project's Tickets as the last poll that finished read them (#820). Beside the
-    /// presentation for the same reason `health` is: a listing is read through a Binding, and the
-    /// Hub has never heard of one.
-    let tickets: [Ticket]
-    /// Where this Project's Tickets can be READ, on the provider's own site (#872). Beside the
-    /// listing for the reason it is: an address is the Binding's, and the Hub has never heard of
-    /// one. `nil` where the port is bound to nothing, which disables the row's two link verbs.
-    let ticketAddress: TicketAddress?
+    /// Everything the shell draws that the projection does not carry — see `ShellReadings`. Four
+    /// facts under one name: three the Hub never heard of, and the one it holds that is asked for
+    /// rather than carried.
+    let readings: ShellReadings
+
     @Environment(CockpitNavigationModel.self) var navigation
     @Environment(\.openURL) var openURL
     /// Which roster row has its name field open. Held here rather than in the sidebar because the
@@ -65,16 +58,30 @@ public struct CockpitView: View {
         presentation: CockpitPresentation,
         actions: CockpitActions,
         connect: ConnectSurface = .closed,
-        health: ConnectionHealthReading = .quiet,
-        tickets: [Ticket] = [],
-        ticketAddress: TicketAddress? = nil,
+        readings: ShellReadings = .none,
     ) {
         self.presentation = presentation
         self.actions = actions
         self.connect = connect
-        self.health = health
-        self.tickets = tickets
-        self.ticketAddress = ticketAddress
+        self.readings = readings
+    }
+
+    /// The three read by name below and in the extensions, so grouping them at the seam did not
+    /// spell `readings.` through the shell.
+    var health: ConnectionHealthReading {
+        readings.health
+    }
+
+    var tickets: [Ticket] {
+        readings.tickets
+    }
+
+    var ticketAddress: TicketAddress? {
+        readings.ticketAddress
+    }
+
+    var subagents: FeedAgentReader {
+        presentation.subagents
     }
 
     /// What is in the deck's one slot for the selected Session — the composer, the Permission

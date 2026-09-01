@@ -12,8 +12,22 @@ public struct SpecimenLaunch {
     public let entry: SpecimenEntry?
     /// What this launch answers and stops on, and `nil` where it goes on to build a window.
     public let ending: Ending?
+    /// What the window is pointed at, held so the app target reads the process's own launch once
+    /// rather than building the configuration itself and handing it back in (ADR-0022: a
+    /// derivation in the app target is one no test can reach).
+    public let configuration: LaunchConfiguration
+
+    /// The process's own launch. The folder is a PATH rather than a URL because that is what
+    /// `FileManager` answers with, and turning it into one is this side's job.
+    public init(arguments: [String], currentDirectoryPath: String) {
+        self.init(LaunchConfiguration(
+            arguments: arguments,
+            currentDirectoryURL: URL(fileURLWithPath: currentDirectoryPath, isDirectory: true),
+        ))
+    }
 
     public init(_ configuration: LaunchConfiguration) {
+        self.configuration = configuration
         if configuration.listsSpecimens {
             self.ending = Ending(
                 // One name per line on STDOUT, which is where `scripts/specimens.sh` reads the

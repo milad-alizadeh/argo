@@ -40,17 +40,6 @@ struct CockpitPresentationStampTests {
         #expect(Self.projected(session) != opening)
     }
 
-    /// A Subagent's own file growing under a Session whose own stream stood still (#711).
-    @Test
-    func `a subagent's read is a fresh Session`() {
-        var session = Self.observed()
-        let opening = Self.projected(session)
-
-        session.apply([.message(markdown: "child")], ofSubagent: "a-one")
-
-        #expect(Self.projected(session) != opening)
-    }
-
     /// The later half of a resume chain, which is the input a write count alone would miss.
     @Test
     func `a resume whose continuation grew is a fresh Session`() {
@@ -114,7 +103,7 @@ struct CockpitPresentationStampTests {
     /// reaches this, because every live stream carries the engine's own write count.
     @Test
     func `equality is the stamp and not the events`() {
-        let stamp = TranscriptStamp(events: [.message(markdown: "one")], subagentEvents: [:])
+        let stamp = TranscriptStamp(events: [.message(markdown: "one")])
         let said = Self.session(events: [.message(markdown: "said")], stamp: stamp)
         let other = Self.session(events: [.message(markdown: "different")], stamp: stamp)
 

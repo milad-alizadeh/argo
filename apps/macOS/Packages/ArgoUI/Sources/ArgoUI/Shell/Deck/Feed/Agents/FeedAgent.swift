@@ -18,7 +18,7 @@ struct FeedAgent: Equatable, Sendable, Identifiable {
     /// read (`TranscriptReader.swift`), so a finished async chip honestly has no spend to draw.
     let spend: Usage?
     /// The CLI's own id for this subagent, which is what its reading is keyed by — see
-    /// `FeedAgentReadings`. Synchronously it arrives with the result, so a running chip has nothing
+    /// `FeedAgentReader`. Synchronously it arrives with the result, so a running chip has nothing
     /// to key a reading by and is the UNSELECTABLE one; a backgrounded launch names `agentId` in
     /// the receipt, so a running async chip has its id from the start.
     var subagentID: String?
