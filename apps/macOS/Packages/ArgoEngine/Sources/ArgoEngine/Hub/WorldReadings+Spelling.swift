@@ -39,10 +39,18 @@ extension WorldReadings {
 
     /// Spell these folders, asking the file system in ONE batch and off the main actor.
     func spell(_ paths: [String], settling extent: Spelling) async {
+        // The pointed Project's own root is in EVERY batch, whoever the caller is: the roster
+        // compares a spawn's folder against it, and a root the table cannot answer for would
+        // degrade to the string a registration carried while the folder beside it is resolved —
+        // two spellings of one directory, and no provisional row inside it (#363).
+        var named = paths
+        if let root = repositoryURL()?.path {
+            named.append(root)
+        }
         let held = extent.reusesWhatIsHeld ? resolved : [:]
-        let unspelled = Set(paths.filter { held[$0] == nil })
+        let unspelled = Set(named.filter { held[$0] == nil })
         let read = unspelled.isEmpty ? [:] : await engine.resolvedPaths(Array(unspelled))
-        let spelling = paths.reduce(into: [String: String]()) { table, path in
+        let spelling = named.reduce(into: [String: String]()) { table, path in
             table[path] = read[path] ?? held[path]
         }
         publish(extent.forgetsTheRest ? spelling : resolved.merging(spelling) { _, new in new })

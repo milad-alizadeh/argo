@@ -29,6 +29,28 @@ struct HubSpawnPathTests {
     }
 }
 
+/// #363: the folder is reached through a symlink, so the Project's own root and the folder the
+/// row carries are two spellings of one directory. The row is still in the roster the Hub publishes
+/// for that Project — an agent Argo owns and does not draw is the worst of both tiers.
+@Suite("Hub spawn symlinked folders")
+@MainActor
+struct HubSpawnSymlinkTests {
+    @Test
+    func `a spawn in a folder reached through a symlink is in the Project's roster`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let worktree = fixture.projectURL.appending(path: "worktree", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: worktree, withIntermediateDirectories: true)
+        let link = fixture.projectURL.appending(path: "link", directoryHint: .isDirectory)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: worktree)
+
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(cwd: link.path))
+
+        #expect(fixture.hub.sessions.map(\.id) == [claim.value])
+        #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
+    }
+}
+
 /// The process table for one case, settable after the fixture has picked its folders. Behind a
 /// `Mutex` because the read runs off the main actor.
 private final class SpawnedProcesses: Sendable {

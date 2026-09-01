@@ -19,7 +19,9 @@ final class WorldReadings {
     /// The repository to enumerate worktrees of. Supplied rather than held for the reason the
     /// folders below are: the Hub re-points, and a held URL would go on answering for the Project
     /// it was pointed at first.
-    @ObservationIgnored private let repositoryURL: @MainActor () -> URL?
+    ///
+    /// Not `private`: `WorldReadings+Spelling` names it in every batch it spells.
+    @ObservationIgnored let repositoryURL: @MainActor () -> URL?
     /// The observed Sessions. Supplied rather than held, because the answer is read off the roster
     /// and the roster is read off these readings.
     @ObservationIgnored private let sessions: @MainActor () -> [SessionActivity]

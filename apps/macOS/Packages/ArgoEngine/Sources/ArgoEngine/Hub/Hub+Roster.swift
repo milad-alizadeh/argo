@@ -95,8 +95,13 @@ extension Hub {
     /// The spawned rows belonging to the Project this Hub is currently on. Spawns outlive a
     /// Project switch and keep their PTYs, so they need scoping the re-pointed join gives the rest.
     private var provisionalSessions: [HubSession] {
-        spawns.values
-            .filter { ProjectScope.contains(cwd: $0.cwd, projectURL: project.url) }
+        // Both sides through the readings' table, which is the one spelling the main actor may ask
+        // for: a spawn's folder and the Project's root reach here as the strings a launch and a
+        // registration happened to carry, and under a symlink those are two names for one directory
+        // (#363).
+        let root = readings.spelled(project.url.path)
+        return spawns.values
+            .filter { ProjectScope.contains(cwd: readings.spelled($0.cwd), projectRoot: root) }
             .map { observed(HubSession(spawn: $0)) }
     }
 }
