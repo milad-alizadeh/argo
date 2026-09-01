@@ -9,4 +9,6 @@ struct PlanShowing: Equatable {
     var plan: PlanReading?
     /// Whether the list is open with nothing pointed at. A specimen's seam; see `PlanPill`.
     var isRevealed = false
+    /// Whether the keyboard is on the pill. A specimen's seam beside `isRevealed`; see `PlanPill`.
+    var isCursored = false
 }

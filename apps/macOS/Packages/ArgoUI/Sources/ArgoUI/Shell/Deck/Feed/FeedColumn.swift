@@ -38,7 +38,7 @@ struct FeedColumn: View {
     /// there is none. Lifted clear of the vessel when one floats under it.
     @ViewBuilder private var pill: some View {
         if let plan = showing.plan {
-            PlanPill(plan: plan, isRevealed: showing.isRevealed)
+            PlanPill(plan: plan, isRevealed: showing.isRevealed, isCursored: showing.isCursored)
                 .padding(
                     .bottom,
                     vessel.isFloating ? ArgoComposerVessel.feedClearance : ArgoPlanPill.lift,

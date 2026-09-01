@@ -22,6 +22,11 @@ extension SpecimenRegistry {
         SpecimenEntry("openPlanPill") {
             PlanSpecimen(plan: PlanFixture.working, isRevealed: true)
         },
+        // The pill's ring (#713). The pointer's version of this state is `planPill` above: focus
+        // reaches nothing but the ring, so a reader working the pointer sees that render exactly.
+        SpecimenEntry("cursoredPlanPill") {
+            PlanSpecimen(plan: PlanFixture.working, isCursored: true)
+        },
         SpecimenEntry("unstartedPlanPill") {
             PlanSpecimen(plan: PlanFixture.unstarted, isRevealed: true)
         },
