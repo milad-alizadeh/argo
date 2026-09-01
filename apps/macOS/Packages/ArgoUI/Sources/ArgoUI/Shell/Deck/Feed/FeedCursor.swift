@@ -45,7 +45,7 @@ private struct FeedCursor: ViewModifier {
     /// Around the claimed shape, or the row's own bounds when nothing claimed one.
     private func ring(_ shape: FeedCursorShape?, in proxy: GeometryProxy) -> some View {
         let bounds = shape.map { proxy[$0.bounds] } ?? CGRect(origin: .zero, size: proxy.size)
-        return ArgoFocusRing(radius: shape?.radius ?? ArgoRadius.control)
+        return ArgoFocusRing(.rect(cornerRadius: shape?.radius ?? ArgoRadius.control))
             .frame(width: bounds.width, height: bounds.height)
             .position(x: bounds.midX, y: bounds.midY)
     }

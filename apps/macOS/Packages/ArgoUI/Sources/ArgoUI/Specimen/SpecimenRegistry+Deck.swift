@@ -22,6 +22,14 @@ extension SpecimenRegistry {
         SpecimenEntry("openPlanPill") {
             PlanSpecimen(plan: PlanFixture.working, isRevealed: true)
         },
+        // The pair #713 is about, and it takes both: the ring is the keyboard's alone, so the
+        // click that focuses the same pill is the render that proves one is not drawn.
+        SpecimenEntry("cursoredPlanPill") {
+            PlanSpecimen(plan: PlanFixture.working, arrival: .key)
+        },
+        SpecimenEntry("clickedPlanPill") {
+            PlanSpecimen(plan: PlanFixture.working, arrival: .click)
+        },
         SpecimenEntry("unstartedPlanPill") {
             PlanSpecimen(plan: PlanFixture.unstarted, isRevealed: true)
         },

@@ -18,10 +18,6 @@ struct ArgoFocusRing<Edge: InsettableShape>: View {
         self.edge = edge
     }
 
-    init(radius: CGFloat = ArgoRadius.control) where Edge == RoundedRectangle {
-        self.edge = RoundedRectangle(cornerRadius: radius)
-    }
-
     var body: some View {
         edge.strokeBorder(argo.color.interaction.focusRing, lineWidth: ArgoStroke.focus)
     }
@@ -44,15 +40,9 @@ extension View {
     /// The keyboard cursor around this view, on only while the keyboard is what the reader is
     /// working with. `ArgoApp` turns the system effect off for the whole window, so pair this with
     /// `focusEffectDisabled()` only where a `#Preview` has to draw the same state.
-    @MainActor func argoFocusRing(
-        _ isFocused: Bool,
-        radius: CGFloat = ArgoRadius.control,
-    )
-        -> some View {
-        argoFocusRing(isFocused, in: RoundedRectangle(cornerRadius: radius))
-    }
-
-    /// The same cursor around a control that is not a rounded rectangle.
+    ///
+    /// A shape and never a radius, so the ring traces the control whatever it is: a rounded
+    /// rectangle is `.rect(cornerRadius:)`, a pill `.capsule`.
     @MainActor func argoFocusRing(
         _ isFocused: Bool,
         in edge: some InsettableShape,
