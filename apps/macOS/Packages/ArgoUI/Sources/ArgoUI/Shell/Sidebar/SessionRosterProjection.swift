@@ -44,37 +44,29 @@ enum SessionRosterProjection {
         /// the dialog can never name something other than the line that was clicked.
         let rename: SessionRenameProjection.Rename
 
-        /// `fileprivate`, so `rows(from:)` is the only way a Row comes into being.
+        /// `fileprivate`, so `rows(from:)` is the only way a Row comes into being. Taken as one
+        /// value per reading (`SessionRosterProjection+RowValues.swift`) and unpacked onto the flat
+        /// slots above, which is the shape every surface draws a row through.
         fileprivate init(
-            id: String,
-            title: String,
-            location: String?,
-            worktree: String?,
-            runKind: String?,
-            branch: String?,
-            isReadOnly: Bool,
-            lock: String?,
-            clock: Clock?,
-            spokenClock: String?,
-            state: ArgoOperationalState?,
-            stateWord: String?,
-            isArchived: Bool,
-            rename: SessionRenameProjection.Rename,
+            identity: Identity,
+            work: Work,
+            activity: Activity,
+            availability: Availability,
         ) {
-            self.id = id
-            self.title = title
-            self.location = location
-            self.worktree = worktree
-            self.runKind = runKind
-            self.branch = branch
-            self.isReadOnly = isReadOnly
-            self.lock = lock
-            self.clock = clock
-            self.spokenClock = spokenClock
-            self.state = state
-            self.stateWord = stateWord
-            self.isArchived = isArchived
-            self.rename = rename
+            self.id = identity.id
+            self.title = identity.title
+            self.rename = identity.rename
+            self.location = work.location
+            self.worktree = work.worktree
+            self.runKind = work.runKind
+            self.branch = work.branch
+            self.isReadOnly = availability.isReadOnly
+            self.lock = availability.lock
+            self.isArchived = availability.isArchived
+            self.clock = activity.clock
+            self.spokenClock = activity.spokenClock
+            self.state = activity.state
+            self.stateWord = activity.stateWord
         }
 
         /// What a screen reader hears: the same `stateWord` the row draws, plus the read-only
@@ -157,22 +149,30 @@ enum SessionRosterProjection {
             .map { session, worktree in
                 let clock = clock(for: session, nowMs: nowMs)
                 return Row(
-                    id: session.id,
-                    // The name the user set, ahead of the issue's and the derived one
-                    // (#502, story 19).
-                    title: SessionTitle.resolved(for: session),
-                    location: session.workspaceLocation,
-                    worktree: worktree,
-                    runKind: runKind(for: session),
-                    branch: session.workspace?.branch,
-                    isReadOnly: isReadOnly(session.access),
-                    lock: lock(for: session.access),
-                    clock: clock,
-                    spokenClock: spokenClock(clock, nowMs: nowMs),
-                    state: SessionState.role(for: session.status),
-                    stateWord: SessionState.word(for: session.status),
-                    isArchived: session.isArchived,
-                    rename: SessionRenameProjection.rename(for: session),
+                    identity: Row.Identity(
+                        id: session.id,
+                        // The name the user set, ahead of the issue's and the derived one
+                        // (#502, story 19).
+                        title: SessionTitle.resolved(for: session),
+                        rename: SessionRenameProjection.rename(for: session),
+                    ),
+                    work: Row.Work(
+                        location: session.workspaceLocation,
+                        worktree: worktree,
+                        branch: session.workspace?.branch,
+                        runKind: runKind(for: session),
+                    ),
+                    activity: Row.Activity(
+                        state: SessionState.role(for: session.status),
+                        stateWord: SessionState.word(for: session.status),
+                        clock: clock,
+                        spokenClock: spokenClock(clock, nowMs: nowMs),
+                    ),
+                    availability: Row.Availability(
+                        isReadOnly: isReadOnly(session.access),
+                        lock: lock(for: session.access),
+                        isArchived: session.isArchived,
+                    ),
                 )
             }
     }

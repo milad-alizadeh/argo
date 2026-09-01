@@ -117,30 +117,25 @@ enum SessionHeaderProjection {
         /// screenshot both have, which `tooltip` above is not (#694).
         let facts: [Fact]
 
-        /// `fileprivate`, so `header(from:)` is the only way a header comes into being.
+        /// `fileprivate`, so `header(from:)` is the only way a header comes into being. Taken as
+        /// one value per zone (`SessionHeaderProjection+HeaderValues.swift`) and unpacked onto the
+        /// flat slots above, which is the shape every surface draws a header through.
         fileprivate init(
-            title: String,
+            identity: Identity,
             state: SessionState.Reading?,
-            access: AccessMark?,
-            checkout: Checkout?,
-            marks: [Mark],
-            agent: String?,
-            issue: IssueRow?,
-            context: Context,
-            spend: String?,
-            handoff: Handoff?,
+            telemetry: Telemetry,
             facts: [Fact],
         ) {
-            self.title = title
+            self.title = identity.title
+            self.agent = identity.agent
+            self.issue = identity.issue
+            self.checkout = identity.checkout
+            self.marks = identity.marks
+            self.access = identity.access
             self.state = state
-            self.access = access
-            self.checkout = checkout
-            self.marks = marks
-            self.agent = agent
-            self.issue = issue
-            self.context = context
-            self.spend = spend
-            self.handoff = handoff
+            self.context = telemetry.context
+            self.spend = telemetry.spend
+            self.handoff = telemetry.handoff
             self.facts = facts
         }
 
@@ -201,17 +196,21 @@ enum SessionHeaderProjection {
         -> Header {
         let worked = worked ?? .read(across: session.events)
         return Header(
-            // The same chain the roster row reads, through the same function (#502, story 19).
-            title: SessionTitle.resolved(for: session),
+            identity: Header.Identity(
+                // The same chain the roster row reads, through the same function (#502, story 19).
+                title: SessionTitle.resolved(for: session),
+                agent: agent(cli: session.cli, model: session.model),
+                issue: row(for: session.ticket),
+                checkout: checkout(for: session.workspace),
+                marks: marks(for: session.workspace),
+                access: mark(for: session.access),
+            ),
             state: SessionState.reading(for: session.status),
-            access: mark(for: session.access),
-            checkout: checkout(for: session.workspace),
-            marks: marks(for: session.workspace),
-            agent: agent(cli: session.cli, model: session.model),
-            issue: row(for: session.ticket),
-            context: context(tokens: session.contextTokens),
-            spend: spend(from: session, worked: worked),
-            handoff: handoff(from: session),
+            telemetry: Header.Telemetry(
+                context: context(tokens: session.contextTokens),
+                spend: spend(from: session, worked: worked),
+                handoff: handoff(from: session),
+            ),
             facts: facts(from: session, worked: worked),
         )
     }
