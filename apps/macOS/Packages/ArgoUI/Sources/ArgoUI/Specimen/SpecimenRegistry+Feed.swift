@@ -91,6 +91,9 @@ extension SpecimenRegistry {
         // The selected chip's legibility and the re-scoped feed in one still — the two claims the
         // discarded attempt satisfied in prose and failed in pixels (#378).
         SpecimenEntry("agentsRailScoped") { AgentsRailSpecimen(subject: .scoped) },
+        // The same reading arrived at by the CLICK rather than opened on: the state #1012 lives in,
+        // and the one nothing rendered until now (#1003's "Not covered").
+        SpecimenEntry("agentsRailRescoped") { AgentsRailSpecimen(subject: .rescoped) },
         SpecimenEntry("agentsRailCollapsed") { AgentsRailSpecimen(subject: .collapsed) },
         // A session at the length a real one reaches. Render narrow too (`ARGO_WINDOW_SIZE`).
         SpecimenEntry("feedAtScale") { SpecimenScene.sessions(FeedProjection.longRows) },

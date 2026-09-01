@@ -15,11 +15,21 @@ struct AgentsRailSpecimen: View {
         /// legible beside the ones that are not, and that the SAME feed changed rather than a
         /// second one appearing.
         case scoped
+        /// The same feed RE-SCOPED after it was drawn: the Session's reading replaced under one
+        /// handle, which is the state a rail chip actually leads to and the one `scoped` cannot
+        /// show. It opens on the Session and is scoped a pass later, so what this renders is the
+        /// switch's result rather than a deck mounted onto the destination — the row heights are
+        /// this reading's and the lane maps this document, or neither is (#1012).
+        case rescoped
         /// The rail as its dot strip, with the feed taking the width back.
         case collapsed
     }
 
     let subject: Subject
+
+    /// The scope as the SHELL owns it — see `CockpitView.feedScope`. A `@State` and not a constant,
+    /// because a constant renders a deck that opened scoped and never one that was re-scoped.
+    @State private var live = FeedScope.session
 
     var body: some View {
         InstrumentDeckShell(
@@ -27,9 +37,13 @@ struct AgentsRailSpecimen: View {
             feed: feed,
             header: SessionHeaderFixture.header(for: .managed),
             readings: AgentsRailFixture.readings,
-            scope: .constant(scope),
+            scope: subject == .rescoped ? $live : .constant(scope),
             isRailCollapsed: subject == .collapsed,
         )
+        .onAppear {
+            guard subject == .rescoped else { return }
+            live = .subagent(2)
+        }
     }
 
     private var feed: [FeedRow] {
@@ -51,6 +65,12 @@ struct AgentsRailSpecimen: View {
 
 #Preview("Agents rail — the feed scoped onto one Agent") {
     AgentsRailSpecimen(subject: .scoped)
+        .frame(width: 1000, height: 620)
+        .argoAppearance()
+}
+
+#Preview("Agents rail — the feed re-scoped onto one Agent by a chip") {
+    AgentsRailSpecimen(subject: .rescoped)
         .frame(width: 1000, height: 620)
         .argoAppearance()
 }

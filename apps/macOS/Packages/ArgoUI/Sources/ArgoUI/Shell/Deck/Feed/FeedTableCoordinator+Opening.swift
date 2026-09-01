@@ -26,6 +26,9 @@ extension FeedTableCoordinator {
         tailing?.cancel()
         settling?.cancel()
         handle?.reopen(on: shown, held: model?.held)
+        // Said out loud, because nothing else says it: the reading is replaced under a table whose
+        // frame may not move, and the lane beside it answers a frame report by its height.
+        handle?.readingReplaced?()
         table?.reloadData()
         // A full pass straight after the reload, because a reload alone leaves the table with no
         // row geometry at all — and `place()` lands this reading off the document height in the

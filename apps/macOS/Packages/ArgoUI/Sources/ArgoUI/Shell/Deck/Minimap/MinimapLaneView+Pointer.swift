@@ -46,6 +46,7 @@ extension MinimapLaneView {
         // case. Two events, not one view of one event. What #971 changed is where the decision is
         // registered, not the decision: two of them, one registration.
         feed.readingReshaped = { [weak self] in self?.readingReshaped() }
+        feed.readingReplaced = { [weak self] in self?.readingReplaced() }
         watched = scroller
         refresh()
     }
@@ -215,6 +216,17 @@ extension MinimapLaneView {
             reshapeNotices += 1
         #endif
         guard watched?.documentView?.frame.height != reshapedTo else { return }
+        needsLayout = true
+    }
+
+    /// Another reading opened under this feed — see `FeedTableHandle.readingReplaced`.
+    ///
+    /// Re-read whatever the height says, because a height this lane has already answered says
+    /// nothing about a document whose every row was replaced. That height is forgotten as well as
+    /// the layout asked for, so the reshape the fresh reading is about to report is not swallowed
+    /// by the last one's.
+    private func readingReplaced() {
+        reshapedTo = nil
         needsLayout = true
     }
 }
