@@ -9,13 +9,8 @@
 # The condition is the certificate, not the runner, because a contributor without one is the
 # same case. A machine that has an identity builds exactly as Xcode does.
 #
-# `ARGO_BUILD_CONFIGURATION` picks the configuration — `debug` (the default) or `release`. It is
-# the same shape as `ARGO_TEST_CONFIGURATION` on `swift-test.sh` (#991) and for the same reason:
-# a debug build is what a contributor wants on every run, and the optimised one is a deliberate
-# ask. Release is the only configuration that names `-O`, so it is the only one whose figures say
-# anything about the app anybody ships — see `docs/agents/build-configurations.md` (#998).
-# Anything else is refused rather than guessed: a typo that silently built Debug would report an
-# optimised figure that was never measured.
+# `ARGO_BUILD_CONFIGURATION` picks the configuration — `debug` (the default) or `release`, and
+# nothing else, for the reasons in `docs/agents/build-configurations.md` (#998).
 set -eu
 
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
