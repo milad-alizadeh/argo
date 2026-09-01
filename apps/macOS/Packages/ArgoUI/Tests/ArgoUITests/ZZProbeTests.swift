@@ -7,7 +7,7 @@ import Testing
 @Suite("ZZ probe")
 struct ZZProbeTests {
     @Test
-    func `metrics`() {
+    func metrics() {
         for face in [ProseFace.body, ProseFace.machine, ProseFace.heading(level: 2)] {
             let font = face.font
             print(
@@ -18,6 +18,15 @@ struct ZZProbeTests {
                     + "boundingRect=\(font.boundingRectForFont) lineBox=\(face.lineBox)",
             )
         }
+        print("PROBE engine \(ProseEngine.inForce)")
+        for engine in [ProseEngine.fractional, .wholePoint] {
+            let face = ProseFace.body
+            print(
+                "PROBE under \(engine) box=\(face.lineBox(under: engine)) "
+                    + "step=\(face.step) "
+                    + "three=\(face.height(ofLines: 3, under: engine))",
+            )
+        }
         print(
             "PROBE spacing prose=\(ArgoFeedRow.proseLineSpacing) "
                 + "machine=\(ArgoFeedRow.machineLineSpacing) "
@@ -26,7 +35,10 @@ struct ZZProbeTests {
                 + "rungSize=\(ArgoFeedRow.proseRung.size) "
                 + "ratio=\(ArgoTypeScale.naturalLineHeightRatio)",
         )
+    }
 
+    @Test
+    func rows() {
         let rows = FeedTypesetHeightTests.rows()
         let model = FeedTableFixture.model(showing: rows)
         let ruler = NSHostingController(rootView: AnyView(EmptyView()))

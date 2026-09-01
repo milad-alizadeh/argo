@@ -62,13 +62,16 @@ extension ProseFace {
     /// `.system(.body, design: .monospaced)` is the BODY text style in another design, so it keeps
     /// the body's line height and only its advances change.
     @MainActor var lineBox: CGFloat {
-        let font = ProseFace(rung: rung, isBold: isBold).font
-        return font.ascender - font.descender
+        lineBox(under: .inForce)
     }
 
-    /// From one line's top to the next line's top.
+    /// From one line's top to the next line's top. The same under either engine, and off the
+    /// FRACTIONAL box: a snapping engine rounds the BOX its lines stand in, not the distance
+    /// between two of them. Measured: a body block of eight lines draws at 154 where snapped
+    /// advances would put it at 156, and a `## heading` of one line draws at its rounded box
+    /// rather than at its box plus its leading.
     @MainActor var step: CGFloat {
-        lineBox + leading
+        lineBox(under: .fractional) + leading
     }
 
     /// Where a line's box starts, counted down from the run's top.
@@ -78,12 +81,28 @@ extension ProseFace {
 
     /// How tall `lines` of this face stand together.
     ///
-    /// `n` boxes and `n − 1` gaps, not `n` of each: SwiftUI's `lineSpacing` is the leading BETWEEN
-    /// lines, so a run's last line adds no trailing gap. Multiplying the step by the line count
-    /// instead overstates every wrapped paragraph and every table row by one gap.
+    /// One box and `n − 1` advances, not `n` of each: SwiftUI's `lineSpacing` is the leading
+    /// BETWEEN lines, so a run's last line adds no trailing gap. Multiplying the step by the line
+    /// count instead overstates every wrapped paragraph and every table row by one gap.
     @MainActor func height(ofLines lines: Int) -> CGFloat {
+        height(ofLines: lines, under: .inForce)
+    }
+
+    /// The box and the run under a NAMED engine, which is what makes the rule this machine is NOT
+    /// running testable at all — see `ProseEngine`.
+    @MainActor func lineBox(under engine: ProseEngine) -> CGFloat {
+        let font = ProseFace(rung: rung, isBold: isBold).font
+        switch engine {
+        case .fractional: return font.ascender - font.descender
+        // Out at BOTH ends: an ascent and a descent are measured from the baseline in opposite
+        // directions, so a box that holds them both rounds each away from it.
+        case .wholePoint: return ceil(font.ascender) - floor(font.descender)
+        }
+    }
+
+    @MainActor func height(ofLines lines: Int, under engine: ProseEngine) -> CGFloat {
         guard lines > 0 else { return 0 }
-        return CGFloat(lines) * lineBox + CGFloat(lines - 1) * leading
+        return lineBox(under: engine) + CGFloat(lines - 1) * step
     }
 
     /// The extra leading the feed sets this face at — the machine's own for the mono, prose's
