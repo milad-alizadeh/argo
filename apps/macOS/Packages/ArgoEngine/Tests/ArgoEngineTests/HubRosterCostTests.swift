@@ -41,29 +41,47 @@ struct HubRosterCostTests {
         #expect(hub.roster.folds == folded + 1)
     }
 
+    /// The arms are `lookups` deep and INTERLEAVED, which is what makes the quotient readable at
+    /// all. At 500 lookups each arm was ~0.35 ms here and the ratio 1.00, while the CI runner —
+    /// where every other suite is on the box at once — read the same flat lookup as 1.89 and failed
+    /// (#1005). A tenth-millisecond arm is a cache-contention reading with a lookup somewhere in
+    /// it; a ~15 ms one is the lookup, and each pair rides the runner's drift together.
     @Test
     func `one Session by id costs the same whatever the roster holds`() async {
         let small = await Self.hub(sessions: 8)
         let large = await Self.hub(sessions: 64)
         let wanted = "cost-7"
+        _ = small.sessions
+        _ = large.sessions
 
-        let overEight = Self.lookups(of: wanted, in: small)
-        let overSixtyFour = Self.lookups(of: wanted, in: large)
+        func overEightRows() {
+            Self.lookUp(wanted, in: small)
+        }
+        func overSixtyFourRows() {
+            Self.lookUp(wanted, in: large)
+        }
+
+        let trials = pairedCPUSeconds(overEightRows, against: overSixtyFourRows)
+        let overEight = trials.map(\.first).min() ?? 0
+        let overSixtyFour = trials.map(\.second).min() ?? 0
 
         #expect(small.session(id: wanted) != nil)
         #expect(large.session(id: wanted) != nil)
         // Rule 3's ratio: an eightfold roster may not cost more than 1.3x to look one row up in.
-        #expect(overSixtyFour < overEight * 1.3)
+        #expect(
+            overSixtyFour < overEight * 1.3,
+            "eight rows \(overEight)s, sixty-four \(overSixtyFour)s, over \(trials.count) pairs",
+        )
     }
 
     private static let probe = SessionOwnership.ClaimID(value: "roster-cost-probe")
 
-    private static func lookups(of id: String, in hub: Hub) -> Double {
-        _ = hub.sessions
-        return leastCPUSeconds {
-            for _ in 0 ..< 500 {
-                _ = hub.session(id: id)
-            }
+    /// Deep enough that the reading is the lookup rather than the machine — see the case above.
+    private static let lookups = 20000
+
+    private static func lookUp(_ id: String, in hub: Hub) {
+        for _ in 0 ..< lookups {
+            _ = hub.session(id: id)
         }
     }
 

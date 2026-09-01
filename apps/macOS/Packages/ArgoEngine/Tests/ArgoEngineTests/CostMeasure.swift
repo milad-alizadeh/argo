@@ -51,3 +51,24 @@ func leastCPUSeconds(trials: Int = 7, of work: () -> Void) -> Double {
     }
     return least
 }
+
+/// The same job done two ways, measured against each other trial by trial.
+///
+/// Interleaved rather than timed in blocks, and warmed before either is counted: a machine drifts
+/// over the length of a run — thermally, and as the suites running beside this one land on it — so
+/// arms timed one after the other are compared across that drift as well as against each other.
+/// Alternated, each PAIR rides it together.
+///
+/// The pairs are returned rather than a verdict: what a caller may honestly demand of the quotient
+/// is the caller's question. Both arms must still be big enough to read — a pair of tenth-
+/// millisecond arms is two cache-contention readings, whichever way they are taken.
+func pairedCPUSeconds(
+    trials: Int = 7,
+    _ first: () -> Void,
+    against second: () -> Void,
+)
+    -> [(first: Double, second: Double)] {
+    first()
+    second()
+    return (0 ..< trials).map { _ in (first: cpuSeconds(first), second: cpuSeconds(second)) }
+}

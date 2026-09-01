@@ -96,7 +96,7 @@ struct FeedRowShapeTests {
     /// would measure the machine (see `CostMeasure`), and the arms move together on any box.
     ///
     /// This one measures the framework rather than the feed: it is what says the split is worth
-    /// keeping at all, and `a reading is measured through one ruler per shape it holds` is what
+    /// keeping at all, and `a reading is measured through one ruler per shape it lays out` is what
     /// says the feed is still taking it.
     ///
     /// **How much** it saves does NOT survive a change of machine, and a gate written to one
