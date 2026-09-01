@@ -26,6 +26,23 @@ final class CompanionSocket {
     private var source: DispatchSourceRead?
     private var connections: [Int: CompanionConnection] = [:]
     private var accepted = 0
+    /// Which live socket bound which path, so the unlink below can only ever remove a file THIS
+    /// socket created (#987). Main-actor isolated with the rest of the type, which is what makes an
+    /// unsynchronised `static var` sound: every read and write of it is on the one actor, and the
+    /// compiler refuses any other caller.
+    ///
+    /// Process-LOCAL, and that is the whole of what it covers: nothing here can see another Argo's
+    /// sockets, so the assertion is about two sockets of one process. Across processes the
+    /// guarantee is structural instead — `CompanionScope` names each Hub's directory by pid, so no
+    /// two live processes ever offer the same path for this map to compare (`CompanionScopeTests`).
+    ///
+    /// Weakly held: a socket dropped without a `close` leaves no entry standing in the way of the
+    /// next bind, and the stale file it left is the case the unlink before bind is for.
+    private static var boundPaths: [String: WeakSocket] = [:]
+
+    private struct WeakSocket {
+        weak var socket: CompanionSocket?
+    }
 
     /// The full shape: each line arrives with the peer it came down and a reply that can be held
     /// open across a decision; `endsAfterReply` makes the first reply also the last, and
@@ -56,6 +73,9 @@ final class CompanionSocket {
         guard path.utf8.count <= unixSocketPathLimit else {
             throw AgentSpawnError.hostRefused(detail: "Companion socket path is too long")
         }
+        guard Self.boundPaths[path]?.socket == nil else {
+            throw AgentSpawnError.hostRefused(detail: "Companion socket path is already bound")
+        }
         unlink(path)
         let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
         guard descriptor >= 0 else {
@@ -63,6 +83,7 @@ final class CompanionSocket {
         }
         self.descriptor = descriptor
         try bindAndListen(descriptor)
+        Self.boundPaths[path] = WeakSocket(socket: self)
         // 0600 before anything connects: the capability is the file, so its mode is the whole
         // access control story.
         chmod(path, 0o600)
@@ -79,6 +100,10 @@ final class CompanionSocket {
         for connection in closing {
             connection.close()
         }
+        // Only the socket that bound the path may unlink it: an unlink for a path another live
+        // socket owns would take that channel's file, and a channel with no file is unreachable.
+        guard Self.boundPaths[path]?.socket === self else { return }
+        Self.boundPaths[path] = nil
         unlink(path)
     }
 

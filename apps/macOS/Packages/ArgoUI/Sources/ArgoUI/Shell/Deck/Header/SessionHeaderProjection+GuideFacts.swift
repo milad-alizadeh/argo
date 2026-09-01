@@ -19,9 +19,13 @@ extension SessionHeaderProjection {
     }
 
     /// The block, in the design's order.
-    static func facts(from session: CockpitPresentation.Session) -> [Fact] {
+    static func facts(
+        from session: CockpitPresentation.Session,
+        worked: Worked? = nil,
+    )
+        -> [Fact] {
         [Fact(term: "Context", value: context(tokens: session.contextTokens).reading)]
-            + telemetry(from: session)
+            + telemetry(from: session, worked: worked ?? .read(across: session.events))
             + [
                 agent(cli: session.cli, model: session.model)
                     .map { Fact(term: "Agent", value: $0) },
@@ -35,14 +39,18 @@ extension SessionHeaderProjection {
     /// What the Session has spent and how long it has been going, one fact per row. Subagent spend
     /// is the one the spend line carries and this does not: it is `nil` on every CLI in use, and a
     /// row that is always absent is a column of terms nobody ever sees.
-    private static func telemetry(from session: CockpitPresentation.Session) -> [Fact] {
+    private static func telemetry(
+        from session: CockpitPresentation.Session,
+        worked: Worked,
+    )
+        -> [Fact] {
         [
             session.spentTokens.map { Fact(term: "Tokens spent", value: TokenCount.short($0)) },
             session.cachedTokens.map { Fact(term: "Cached", value: TokenCount.short($0)) },
             ran(from: session).map {
                 Fact(term: "Started", value: "\(ElapsedTime.phrase(milliseconds: $0)) ago")
             },
-            worked(across: session.events).map { Fact(term: "Worked", value: workedReading($0)) },
+            worked.milliseconds.map { Fact(term: "Worked", value: workedReading($0)) },
         ].compactMap(\.self)
     }
 

@@ -127,8 +127,8 @@ struct MediaDecodeTests {
         // exactly: 5.6 ms per body pass over twenty 1.1 MB captures against 0.015 ms for the
         // signature — a debug build on an Apple silicon laptop.
         #expect(large.utf8.count > small.utf8.count * 100)
-        let cheap = Self.leastCostOfSettling(small)
-        let dear = Self.leastCostOfSettling(large)
+        let cheap = Self.leastCostOfSettling(.held(small))
+        let dear = Self.leastCostOfSettling(.held(large))
 
         #expect(dear < cheap * 4)
     }
@@ -140,7 +140,7 @@ struct MediaDecodeTests {
         let bytes = try #require(media.bytes)
         #expect(MediaCache.shared.held(bytes) == nil)
 
-        let showing = MediaShowing.atOnce(media, drawnIn: .full)
+        let showing = MediaShowing.atOnce(media)
 
         // A bounded cache cannot promise the plate is still there, so reading the claim off the
         // absence drops "as the agent saw it" for the 25 ms the full frame takes, and the caption
@@ -151,7 +151,11 @@ struct MediaDecodeTests {
 
     @Test
     func `bytes that are not a picture show none`() {
-        let media = MediaEvidence(tier: .direct, mediaType: "image/png", bytes: "bm90IGEgcG5n")
+        let media = MediaEvidence(
+            tier: .direct,
+            mediaType: "image/png",
+            bytes: .held("bm90IGEgcG5n"),
+        )
 
         #expect(media.provenance == .absent)
     }
@@ -166,9 +170,9 @@ struct MediaDecodeTests {
     }
 
     /// What settling one shot's provenance costs, in CPU time rather than wall clock, fifty times
-    /// over. Noise is one-sided, so the least of three trials is the honest reading (ADR-0028
-    /// Rule 7).
-    private static func leastCostOfSettling(_ bytes: String) -> Duration {
+    /// over. Noise is one-sided, so the least of three trials is the honest reading (ADR-0028 Rule
+    /// 7).
+    private static func leastCostOfSettling(_ bytes: MediaBytes) -> Duration {
         (0 ..< 3).map { _ in
             let started = threadCPUTime()
             for _ in 0 ..< 50 {

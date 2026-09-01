@@ -13,13 +13,14 @@ import SwiftUI
     /// What the table currently draws, diffed against each fresh model — the table is not a
     /// SwiftUI view, so nothing re-renders it on a change.
     private(set) var shown: [FeedRow] = []
-    private var folds: Set<FeedRow.ID> = []
-    /// The open row the visible cells were last drawn against.
-    private var drawnOpen: FeedRow.ID?
-    /// The washed row they were last drawn against — see `FeedTableModel.washed`.
-    private var drawnWashed: FeedRow.ID?
-    /// Whether the last model arrived mid seam-drag — the edge off it is when the full
-    /// re-measure runs.
+    /// What the visible cells were last drawn against. Not `private`, because the opening half
+    /// re-seats all three when another reading arrives — see `FeedTableCoordinator+Opening`.
+    var folds: Set<FeedRow.ID> = []
+    var drawnOpen: FeedRow.ID?
+    /// See `FeedTableModel.washed`.
+    var drawnWashed: FeedRow.ID?
+    /// Whether the last model arrived mid seam-drag — the edge off it is when the full re-measure
+    /// runs.
     private var wasResizing = false
 
     weak var table: FeedTableView?
@@ -43,6 +44,15 @@ import SwiftUI
 
     /// The full re-measure waiting for a width burst to go quiet — see `FeedSettle`.
     var settling: Task<Void, Never>?
+    /// How many deferred measure passes are IN FLIGHT — the quiet-wait a width burst pushes
+    /// back, and the chunked pass behind it. Neither `settling` nor `tailing` can answer that: a
+    /// `Task` property is assigned once and never cleared, so a finished pass looks exactly like
+    /// a running one. Written by the two passes themselves, in `+Scrolling` and `+Remeasure`.
+    ///
+    /// Read by the overview lane, the one caller that walks the WHOLE document: while a pass is
+    /// in flight every measured height is provisional, and a walk would re-measure the document
+    /// at burst rate — the work these passes are sliced up to avoid.
+    var deferredPasses = 0
     /// The rows nobody can see, measured a batch at a time behind the visible ones — see
     /// `remeasureEverything`.
     var tailing: Task<Void, Never>?
@@ -66,10 +76,14 @@ import SwiftUI
     /// is not saved by the height cache. What ADR-0028 Rule 1 is asked with, for the mount.
     var exposures = 0
 
-    /// How many rows have actually been measured, ever — every entry is one full SwiftUI layout
-    /// pass. Not a statistic: it is what #856's claim is about, and the only honest way for a suite
-    /// to ask what a re-measure COST rather than what it left behind.
+    /// How many rows have actually been measured, ever. Not a statistic: it is what #856's claim is
+    /// about, and the only honest way for a suite to ask what a re-measure COST rather than what it
+    /// left behind.
     private(set) var measurements = 0
+    /// How many of those were a full SwiftUI layout against a ruler rather than a Core Text
+    /// typeset — see `FeedRowMeasure`. The two counts are the whole of what the routing claims.
+    private(set) var layouts = 0
+
     /// The pane size the reading was last laid out against. Written when a derivation RUNS rather
     /// than when a notification arrives, so it can only ever name a size that was laid out.
     private(set) var laidOutPane: CGSize?
@@ -96,6 +110,13 @@ import SwiftUI
     /// Read and written only through `FeedTableCoordinator+Rulers`, which is where the reason for
     /// keeping one per shape is stated.
     var rulers: [FeedRow.Content.Shape: NSHostingController<AnyView>] = [:]
+
+    /// One measurement paid for, and whether a layout pass is what paid. Here rather than beside
+    /// `measuredHeight` because a `private(set)` is writable in this file alone.
+    func noted(layout: Bool) {
+        measurements += 1
+        layouts += layout ? 1 : 0
+    }
 
     /// One frame notification arrived — see `FeedPaneCost`.
     func notedPane() {
@@ -142,13 +163,19 @@ import SwiftUI
         handle?.reopenIfOwed(held: fresh.held)
         let stale = shown
         let staleEnvironment = model?.environment
+        // Asked of the model that stands, before it is replaced. `model != nil` and not the reading
+        // alone: the FIRST apply is a mount, not a switch, and it takes the append path below into
+        // an empty table the way it always has.
+        let switched = model != nil && model?.reading != fresh.reading
         model = fresh
         shown = fresh.rows
         surrenderMovedChip()
         // A reading that shrank leaves an entry per lost index that nothing can ever match.
         geometry.dropBeyond(fresh.rows.count)
         guard table != nil else { return }
-        if fresh.rows == stale {
+        if switched {
+            openAfresh()
+        } else if fresh.rows.isSameReading(as: stale) {
             touchUp(against: fresh, from: staleEnvironment)
         } else {
             // The reading boundary: the rulers still hold the last one's live rows, and this one
@@ -176,32 +203,6 @@ import SwiftUI
         place()
     }
 
-    /// One `sizeThatFits` against the ruler, kept — see `geometry`.
-    func measuredHeight(at index: Int, in table: NSTableView) -> CGFloat {
-        let width = table.bounds.width
-        guard let model, shown.indices.contains(index), width > 0 else {
-            return Self.estimatedRowHeight
-        }
-        // The pass's facts once, then the row's own with the question. A height kept under either
-        // is not an answer to this one, which is what lets the store outlive the table that filled
-        // it (#858).
-        geometry.settle(at: width, in: model.environment)
-        let ground = FeedGeometry.Ground(at: index, of: model)
-        if let known = geometry.height(at: index, under: ground) {
-            return known
-        }
-        let ruler = ruler(for: model.rows[index].content.shape)
-        ruler.rootView = model.content(at: index)
-        // Rounded UP to a whole point: a non-integral row height still blurs baselines on
-        // current macOS, and up rather than to-nearest so text is never clipped by rounding.
-        let height = Self.usableHeight(ceil(ruler.sizeThatFits(
-            in: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude),
-        ).height))
-        geometry.record(height, at: index, under: ground)
-        measurements += 1
-        return height
-    }
-
     /// Measured heights surrendered — all of them for a re-wrap, or the rows named.
     func dropMeasuredHeights(_ rows: IndexSet? = nil) {
         geometry.drop(rows)
@@ -225,8 +226,9 @@ import SwiftUI
         geometry.chipRow = moved
     }
 
-    func keep(_ geometry: FeedGeometry) {
-        guard geometry !== self.geometry else { return }
+    /// `nil` where nothing above holds any — a preview, a specimen — which leaves this one its own.
+    func keep(_ geometry: FeedGeometry?) {
+        guard let geometry, geometry !== self.geometry else { return }
         self.geometry = geometry
     }
 

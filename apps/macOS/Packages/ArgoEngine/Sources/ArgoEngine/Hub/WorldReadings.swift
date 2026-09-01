@@ -33,6 +33,10 @@ final class WorldReadings {
     /// in (#259). Resolved on the way IN, so a lookup costs one `realpath` rather than one per
     /// worktree per Session per poll.
     private var workspaces: [String: WorkspaceProjection] = [:]
+    /// The keys of `workspaces`, longest first — which is DEEPEST first, so the first one holding a
+    /// folder is the one that wins. Held rather than taken per lookup: the roster asks once per
+    /// Session per read, and `Array(workspaces.keys)` was allocated and scanned for each of them.
+    private var deepestFirst: [String] = []
     /// How the file system spells each folder these readings answer about, keyed by the path as
     /// written. Filled by the sweep and never by a read: `realpath` is a file-system call, and no
     /// `@MainActor` type makes one (#959, ADR-0028 Rule 6).
@@ -41,9 +45,13 @@ final class WorldReadings {
     /// life of the Session — but the resolution of a SYMLINK, and a symlink can be repointed while
     /// the app runs, so the sweep asks the whole table again rather than answering from memory.
     /// `WorldReadings+Spelling` is where that is settled.
-    /// Not `private`: `WorldReadings+Spelling` is the one thing that reads or writes it.
+    /// Not `private`: `WorldReadings+Spelling` spells the folders, through the publish below.
     var resolved: [String: String] = [:]
     @ObservationIgnored private var polling: Task<Void, Never>?
+    /// Bumped wherever a read published here MOVED, and nowhere else — the roster's memo is keyed
+    /// by it, and a write that skipped it would leave the cockpit drawing a poll it has replaced
+    /// (`HubRosterMemo`). Every write to the four properties above goes through a publish below.
+    private(set) var revision = 0
 
     init(
         engine: Engine,
@@ -76,8 +84,11 @@ final class WorldReadings {
     /// `.claude/worktrees/` sits inside the primary checkout, so the shallowest match would answer
     /// every Session in the repository with the repository's own branch.
     func workspace(inCwd cwd: String?) -> WorkspaceProjection? {
-        guard let cwd,
-              let path = Self.deepest(of: Array(workspaces.keys), holding: spelled(cwd).value)
+        guard let cwd else { return nil }
+        let folder = spelled(cwd).value
+        // Longest first, so the first match IS the deepest: two worktrees of the same path length
+        // cannot both hold one folder unless they are the same worktree.
+        guard let path = deepestFirst.first(where: { Self.folder($0, holds: folder) })
         else { return nil }
         return workspaces[path]
     }
@@ -129,6 +140,7 @@ final class WorldReadings {
         guard publishes(read, over: published, for: observed) else { return }
         liveCwds = read.cwds
         readAtMs = read.atMs
+        revision += 1
     }
 
     /// One poll's answer: which folders were found running an agent, and the clock it was found at.
@@ -203,11 +215,27 @@ final class WorldReadings {
         publish(workspaces: read)
     }
 
+    /// Written only where a spelling moved: the table is observed, so a folder spelled for the
+    /// first time re-renders the row that reads it — and where the file system spelled it the same
+    /// way as last time, nothing else would.
+    ///
+    /// Here rather than beside the rest of the spelling, so that every write to the four published
+    /// readings — and so every move of `revision` — is in the one file that declares them.
+    func publish(resolved table: [String: String]) {
+        guard table != resolved else { return }
+        resolved = table
+        revision += 1
+    }
+
     /// Written only where git answered something new. The property is observed, so a sweep that
-    /// found every worktree exactly as it left it would re-render the whole cockpit (#858).
+    /// found every worktree exactly as it left it would re-render the whole cockpit (#858). The
+    /// deepest-first keys are taken again here, and only here, so the lookup order can never
+    /// describe a table git has replaced.
     private func publish(workspaces read: [String: WorkspaceProjection]) {
         guard read != workspaces else { return }
         workspaces = read
+        deepestFirst = read.keys.sorted { $0.count > $1.count }
+        revision += 1
     }
 
     /// How many Agents are in each worktree, each counted once. A linked worktree sits INSIDE the
@@ -240,7 +268,8 @@ final class WorldReadings {
         polling = nil
         liveCwds = []
         readAtMs = nil
-        workspaces = [:]
-        resolved = [:]
+        publish(workspaces: [:])
+        publish(resolved: [:])
+        revision += 1
     }
 }

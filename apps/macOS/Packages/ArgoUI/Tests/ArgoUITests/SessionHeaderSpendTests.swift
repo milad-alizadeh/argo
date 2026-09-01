@@ -71,6 +71,19 @@ struct SessionHeaderSpendTests {
         )) == "worked none of it")
     }
 
+    /// A bounded reading withholds the figure entire, exactly as the spend totals are withheld: the
+    /// stretch a launch sweep skipped reads as one gap above the cutoff, so a sum over the two ends
+    /// would render a partial figure as a whole one.
+    @Test
+    func `worked is withheld where the reading has a seam in it`() {
+        let ends = calls(at: [0, minute]) + [.excerpted] + calls(at: [400 * minute, 401 * minute])
+
+        #expect(SessionHeaderProjection.worked(across: ends) == nil)
+        #expect(SessionHeaderProjection.spend(from: session(events: ends)) == nil)
+        // The same two ends WITHOUT the seam are a figure, so it is the marker doing this.
+        #expect(SessionHeaderProjection.worked(across: calls(at: [0, minute])) == minute)
+    }
+
     /// A resume chain is stitched from more than one file, so the moments arrive out of order.
     @Test
     func `moments out of order are put in order before the gaps are taken`() {

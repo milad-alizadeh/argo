@@ -17,6 +17,10 @@ Nothing here is optimised by default: `bun run build` is Debug unless asked othe
 configuration names, how to build the optimised app, and what that is worth:
 `docs/agents/build-configurations.md`.
 
+Running the suites optimised is how a seconds-side cost budget gets re-recorded against code the
+optimiser has seen (ADR-0028). It is deliberately not on CI: the counts are the half a debug build
+cannot get wrong, and they gate every push.
+
 Biome's escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries) are TypeScript-only and
 so have no subject since ADR-0023. Dormant, like the boundary gates — the per-file caps still
 apply to every tracked `.mjs`.
@@ -31,7 +35,7 @@ apply to that category) or **RATCHET** (debt; the list may only shrink):
 | `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
 | `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
 | the module map's `placement` block | the folder rules — `allow`/`ratchet`/`exclude`, each value its own reason |
-| `.swiftlint.yml` | the Swift caps, ratchets inline — including the initializer cap that `swift-boundaries.sh` edge 6 reads from there and SwiftLint itself cannot check |
+| `.swiftlint.yml` | the Swift caps, ratchets inline — including the initializer cap that `swift-boundaries.sh` edge 6 reads from there and SwiftLint itself cannot check. That one's ratchet is a named list, not a number: `# INIT: <file> <count> — <why>`, one line per grandfathered init, and edge 6 fails a stale line as well as an unnamed init (#992) |
 
 The placement gates fail on a **stale** exemption too: an entry naming no file is deleted, not
 left to re-authorise a future breach.

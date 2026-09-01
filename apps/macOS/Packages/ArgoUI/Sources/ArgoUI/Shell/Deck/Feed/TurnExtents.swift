@@ -46,6 +46,18 @@ enum TurnExtents {
         return head(from: row, of: reading) ... foot(from: row, of: reading)
     }
 
+    /// Whether any row BELOW `row` and inside its Turn answers `matching`. What a fact about the
+    /// last of something in a Turn is asked with.
+    ///
+    /// Not `span` and a search over what it returns. A reading whose rows carry no boundary at
+    /// all — a run of messages with no prompt and no stop reason — makes `span` walk the whole
+    /// document for every row, so a whole-document pass over one costs its length squared. This
+    /// stops at the first match instead, which is one row into that reading.
+    static func anyBelow(_ row: Int, of reading: Reading, matching: (Int) -> Bool) -> Bool {
+        let stopped = foot(from: row, of: reading, stopping: matching)
+        return stopped != row && matching(stopped)
+    }
+
     /// Up to the prompt that opened this Turn, or to the row after the one that closed the last.
     private static func head(from row: Int, of reading: Reading) -> Int {
         var head = row
@@ -55,13 +67,20 @@ enum TurnExtents {
         return head
     }
 
-    /// Down to the stop reason that closed this Turn, or to the row before the next prompt.
-    private static func foot(from row: Int, of reading: Reading) -> Int {
+    /// Down to the stop reason that closed this Turn, or to the row before the next prompt — or to
+    /// the first row on the way that `stopping` claims, which is what `anyBelow` walks with, and
+    /// what keeps that question off the length of the whole Turn.
+    private static func foot(
+        from row: Int,
+        of reading: Reading,
+        stopping: (Int) -> Bool = { _ in false },
+    )
+        -> Int {
         guard !reading.endsTurn(row) else { return row }
         var foot = row
         while foot + 1 < reading.count, !reading.opensTurn(foot + 1) {
             foot += 1
-            if reading.endsTurn(foot) {
+            if stopping(foot) || reading.endsTurn(foot) {
                 return foot
             }
         }

@@ -24,7 +24,7 @@ extension MinimapLaneView {
         // Already watching this one. Deliberately no refresh: this runs on every update of the deck
         // above, a seam drag included, and re-reading the whole reading per frame is the cost the
         // feed's own coordinator learned to avoid. What the rects are drawn against changes only
-        // when the reading reshapes or the lane resizes, and both post their own notification.
+        // when the reading reshapes or the lane resizes, and both are reported on their own.
         guard watched !== feed.scroller else { return }
         guard let scroller = feed.scroller else {
             guard turns > 0 else { return }
@@ -35,20 +35,17 @@ extension MinimapLaneView {
         centre.removeObserver(self)
         // The clip view's bounds are where the reading sits — this fires for a wheel, a flick, a
         // key and a programmatic scroll alike, which the feed's own live-scroll notification does
-        // not. The document view's frame is the reading's shape: it changes when a row arrives or
-        // a re-wrap re-measures, and at no other time.
-        //
-        // Not collapsible into the feed's own frame observer, which #955 asked about: that one
-        // watches the CLIP view for the pane resizing, and a pane that did not move over a reading
-        // that grew is the routine case. Two events, not one view of one event.
+        // not.
         centre.addObserver(
             self, selector: #selector(readingMoved),
             name: NSView.boundsDidChangeNotification, object: scroller.contentView,
         )
-        centre.addObserver(
-            self, selector: #selector(readingReshaped),
-            name: NSView.frameDidChangeNotification, object: scroller.documentView,
-        )
+        // The reading's SHAPE, over the handle. Still the lane's own decision, and still not
+        // collapsible into the feed's — #955 settled that: the feed watches the CLIP view for the
+        // pane resizing, and a pane that did not move over a reading that grew is the routine
+        // case. Two events, not one view of one event. What #971 changed is where the decision is
+        // registered, not the decision: two of them, one registration.
+        feed.readingReshaped = { [weak self] in self?.readingReshaped() }
         watched = scroller
         refresh()
     }
@@ -208,11 +205,12 @@ extension MinimapLaneView {
 
     /// The reading changed shape — marked, never derived here. A reshape arrives in bursts out of
     /// the feed's measure tail, the one moment the geometry is known to be in flux, so the whole
-    /// burst costs one derivation at the next layout pass (#955).
+    /// burst costs one derivation at the next layout pass (#955). Over the handle since #971, and
+    /// still one report per `setFrame` on the reading, carrying no height.
     ///
     /// `reshapedTo` is `refresh`'s to write: a height consumed here would be a reshape a bailed
     /// refresh could strand, with nothing left to re-arm it.
-    @objc private func readingReshaped(_: Notification) {
+    private func readingReshaped() {
         #if DEBUG
             reshapeNotices += 1
         #endif

@@ -12,14 +12,26 @@ import Foundation
 private actor FileCursor {
     private let handle: FileHandle
     private var carry = Data()
+    /// Where `carry`'s first byte sits in the file. Advanced by exactly the bytes handed out, so a
+    /// line's offset is the file's own and not the batch's.
+    private var carryOffset = 0
+    /// How much of each end the FIRST drain reads, or nothing to read the file whole from its
+    /// start. Cleared once taken, so everything after the opening read is an ordinary tail either
+    /// way — see `TranscriptExcerpt`.
+    private var excerptSideLimit: Int?
 
-    init?(url: URL) {
+    init?(url: URL, excerptSideLimit: Int? = nil) {
         guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
         self.handle = handle
+        self.excerptSideLimit = excerptSideLimit
     }
 
-    /// Every complete line appended since the last drain.
-    func drain() -> [String] {
+    /// Every complete line appended since the last drain, each with its place in the file.
+    func drain() -> [TranscriptLine] {
+        if let sideLimit = excerptSideLimit {
+            excerptSideLimit = nil
+            return excerpt(sideLimit: sideLimit)
+        }
         rewindIfTruncated()
         guard let chunk = try? handle.readToEnd(), !chunk.isEmpty else { return [] }
         carry.append(chunk)
@@ -39,19 +51,31 @@ private actor FileCursor {
         if end < offset {
             try? handle.seek(toOffset: 0)
             carry.removeAll()
+            carryOffset = 0
         } else {
             try? handle.seek(toOffset: offset)
         }
     }
 
-    /// Split what has accumulated on newlines, keeping the tail behind: the last element is only a
-    /// line if the data ended on a newline, otherwise it is a record still being written.
-    private func takeCompleteLines() -> [String] {
-        var parts = carry.split(separator: UInt8(ascii: "\n"), omittingEmptySubsequences: false)
-        guard parts.count > 1 else { return [] }
-        let remainder = parts.removeLast()
-        carry = Data(remainder)
-        return parts.compactMap { String(data: Data($0), encoding: .utf8) }
+    /// The bounded opening read, with the cursor left at its end: everything appended after this
+    /// moment arrives as an ordinary tail, so a row that is excerpted still goes live.
+    private func excerpt(sideLimit: Int) -> [TranscriptLine] {
+        guard let excerpt = TranscriptExcerpt(reading: handle, sideLimit: sideLimit) else {
+            return []
+        }
+        carry = Data()
+        carryOffset = excerpt.endOffset
+        try? handle.seek(toOffset: UInt64(excerpt.endOffset))
+        return excerpt.lines
+    }
+
+    /// Split what has accumulated on newlines, keeping the record still being written behind —
+    /// `TranscriptLineSplit`, which the excerpt above cuts on too.
+    private func takeCompleteLines() -> [TranscriptLine] {
+        let split = TranscriptLineSplit(of: carry, at: carryOffset)
+        carry = split.remainder
+        carryOffset = split.remainderOffset
+        return split.lines
     }
 }
 
@@ -63,9 +87,13 @@ private actor FileCursor {
 /// has a backfill too.
 ///
 /// The stream does not finish on its own; cancelling the consuming task closes the file.
-public func transcriptLines(at url: URL) -> AsyncStream<[String]> {
+public func transcriptLines(
+    at url: URL,
+    excerptSideLimit: Int? = nil,
+)
+    -> AsyncStream<[TranscriptLine]> {
     AsyncStream { continuation in
-        guard let cursor = FileCursor(url: url) else {
+        guard let cursor = FileCursor(url: url, excerptSideLimit: excerptSideLimit) else {
             continuation.finish()
             return
         }

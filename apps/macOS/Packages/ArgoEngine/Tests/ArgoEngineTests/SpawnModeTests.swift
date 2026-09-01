@@ -18,7 +18,7 @@ struct SpawnModeTests {
 
         _ = try await fixture.hub.spawnSession()
 
-        #expect(try Self.rung(of: fixture) == "acceptEdits")
+        #expect(fixture.launchedRung() == "acceptEdits")
     }
 
     @Test
@@ -28,7 +28,7 @@ struct SpawnModeTests {
 
         _ = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .auto))
 
-        #expect(try Self.rung(of: fixture) == "auto")
+        #expect(fixture.launchedRung() == "auto")
     }
 
     /// The opening prompt is a POSITIONAL, so a flag pair arriving after it would be read as more
@@ -44,7 +44,7 @@ struct SpawnModeTests {
 
         let launch = try #require(fixture.host.launches.first)
         #expect(launch.arguments.last == "Continue the review")
-        #expect(try Self.rung(of: fixture) == "plan")
+        #expect(fixture.launchedRung() == "plan")
     }
 
     /// A New Session names no rung, so it takes the one the user last picked — not the baseline it
@@ -58,7 +58,7 @@ struct SpawnModeTests {
 
         _ = try await fixture.hub.spawnSession()
 
-        #expect(try Self.rung(of: fixture, launch: 1) == "auto")
+        #expect(fixture.launchedRung(1) == "auto")
     }
 
     /// And it outlives the app: the second Hub over the same file is the next launch, which is the
@@ -72,7 +72,7 @@ struct SpawnModeTests {
 
         _ = try await fixture.restarted().spawnSession()
 
-        #expect(try Self.rung(of: fixture, launch: 1) == "plan")
+        #expect(fixture.launchedRung(1) == "plan")
     }
 
     /// A rung the port refused is a rung the Session never stood on, so it is not the one the next
@@ -99,7 +99,7 @@ struct SpawnModeTests {
 
         _ = try await fixture.hub.spawnSession()
 
-        #expect(try Self.rung(of: fixture, launch: 1) == "acceptEdits")
+        #expect(fixture.launchedRung(1) == "acceptEdits")
     }
 
     /// A rung the SEED named is Argo's choice for one Session, so it is not filed as the rung last
@@ -116,20 +116,8 @@ struct SpawnModeTests {
         _ = try await fixture.hub.spawnSession()
 
         // The seeded launch too: with the seed ignored, the pick surviving would prove nothing.
-        #expect(try Self.rung(of: fixture, launch: 1) == "auto")
-        #expect(try Self.rung(of: fixture, launch: 2) == "plan")
-    }
-
-    /// The value the launch stands on, read off argv the way the CLI reads it: the word after the
-    /// flag, not merely somewhere on the line.
-    private static func rung(of fixture: SpawnFixture, launch index: Int = 0) throws -> String? {
-        let launches = fixture.host.launches
-        try #require(launches.indices.contains(index))
-        let arguments = launches[index].arguments
-        guard let flag = arguments.firstIndex(of: "--permission-mode"),
-              arguments.indices.contains(flag + 1)
-        else { return nil }
-        return arguments[flag + 1]
+        #expect(fixture.launchedRung(1) == "auto")
+        #expect(fixture.launchedRung(2) == "plan")
     }
 
     /// Argo set it, so Argo knows it — the row states the rung before the CLI has written a word.

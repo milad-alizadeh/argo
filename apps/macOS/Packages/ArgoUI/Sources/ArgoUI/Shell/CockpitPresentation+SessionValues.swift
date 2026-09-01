@@ -111,22 +111,6 @@ public extension CockpitPresentation.Session {
         }
     }
 
-    /// What the transcript said, undigested — never the Transcript file itself (`CONTEXT.md` L2),
-    /// which this projection does not carry. `lostTurn` sits here as the one Turn that never
-    /// reached it.
-    struct Transcript: Equatable, Sendable {
-        public let events: [TranscriptEvent]
-        public let subagentEvents: [String: [TranscriptEvent]]
-        public let lostTurn: String?
-
-        public init(
-            events: [TranscriptEvent] = [],
-            subagentEvents: [String: [TranscriptEvent]] = [:],
-            lostTurn: String? = nil,
-        ) {
-            self.events = events
-            self.subagentEvents = subagentEvents
-            self.lostTurn = lostTurn
-        }
-    }
+    // `Transcript` is the sixth, and lives in `CockpitPresentation+Transcript.swift` — it is the
+    // one of the six that a Session STORES, because it carries the stamp its equality rests on.
 }

@@ -18,7 +18,7 @@ struct PermissionChannelTests {
         defer { fixture.remove() }
 
         let claim = try await fixture.hub.spawnSession()
-        let pluginRoot = fixture.companionRoot.appending(path: claim.value)
+        let pluginRoot = fixture.pluginRoot(claim)
         let hooks = try String(
             contentsOf: pluginRoot.appending(path: "hooks/hooks.json"),
             encoding: .utf8,

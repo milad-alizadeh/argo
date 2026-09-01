@@ -12,8 +12,7 @@ enum FeedMark: Equatable, Sendable {
     /// What the Session has spent, as the record reported it.
     case spent(Usage)
     /// The work left here for a fresh Session, and where it went — see `FeedHandoff`. The feed's
-    /// one
-    /// row that is a way out of the reading rather than a part of it.
+    /// one row that is a way out of the reading rather than a part of it.
     case handedOff(FeedHandoff)
     /// A Turn somebody stopped (#541), read off the entry the CLI writes for it. The record files
     /// the sentence on the USER side and names no one: the composer's Stop and an `ESC` typed into
@@ -27,6 +26,12 @@ enum FeedMark: Equatable, Sendable {
     /// already happened, which is also why it is the one that comes and goes: it stands at the foot
     /// of the reading while the wait lasts and is gone the moment the record answers.
     case working
+    /// A stretch of the record was not read — the seam a bounded read leaves between a transcript's
+    /// two ends (`TranscriptExcerpt`). Drawn rather than skipped, because a feed that stitches a
+    /// head to a tail with nothing between them reads as one continuous conversation and is not one
+    /// (`CONTEXT.md` Honesty tier). Selecting the Session reads the file whole, which is what makes
+    /// this mark short-lived.
+    case excerpted
 }
 
 extension FeedMark {
@@ -36,7 +41,8 @@ extension FeedMark {
     var ink: FeedInk {
         switch self {
         case .permissionExpired: .attention
-        case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .working: .boundary
+        case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .working, .excerpted:
+            .boundary
         }
     }
 
@@ -50,16 +56,14 @@ extension FeedMark {
         // turn, what the rule already says.
         case .turnEnded(.endTurn): nil
         // Every OTHER reason keeps its word: a turn cut off by a token ceiling or ended in a
-        // refusal
-        // is not the same event as one that finished.
+        // refusal is not the same event as one that finished.
         case let .turnEnded(reason): "turn ended · \(reason.rawValue)"
         case let .spent(usage): "session · \(FeedSpend.words(usage))"
         // One word where the record has five: the rule it is let into already says a turn ended
         // here, so `[Request interrupted by user]` would restate the feed's own punctuation.
         case .interrupted: "interrupted"
         // Named, rather than "handed off" alone: the destination's own title is what the roster
-        // will
-        // show the reader when they get there.
+        // will show the reader when they get there.
         case let .handedOff(handoff): "handed off to \(handoff.title)"
         // Both halves, unshortened: `denied` alone would credit a decision nobody made, and
         // `expired` alone would leave what became of the tool call unsaid (#573).
@@ -67,6 +71,8 @@ extension FeedMark {
         // The one live mark, and the one with nothing to say: `FeedWorkingThread` draws it as an
         // ion crossing the measure rather than as a caption let into a rule.
         case .working: nil
+        // What is missing and why, in the reader's terms rather than the mechanism's.
+        case .excerpted: "earlier records not read yet"
         }
     }
 
@@ -78,7 +84,7 @@ extension FeedMark {
     var endsTurn: Bool {
         switch self {
         case .turnEnded, .interrupted: true
-        case .compacted, .spent, .handedOff, .permissionExpired, .working: false
+        case .compacted, .spent, .handedOff, .permissionExpired, .working, .excerpted: false
         }
     }
 
@@ -91,9 +97,8 @@ extension FeedMark {
     }
 
     /// What a screen reader is told the mark is — a rule with no words is a shape, and a shape does
-    /// not carry.
-    /// Switched exhaustively with no `default`, so a mark added to this enum has to say what it
-    /// SOUNDS like rather than inheriting a fallback written for turn boundaries.
+    /// not carry. Switched exhaustively with no `default`, so a mark added to this enum has to say
+    /// what it SOUNDS like rather than inheriting a fallback written for turn boundaries.
     var spoken: String {
         switch self {
         case .compacted, .turnEnded, .spent, .handedOff: words ?? "Turn ended"
@@ -108,6 +113,9 @@ extension FeedMark {
         // A sentence rather than the caption, for the reason the expiry gets one: "working…" read
         // out is a word and an ellipsis, and the ellipsis is where the whole meaning was.
         case .working: FeedWorking.spoken
+        // A sentence, for the reason the two above get one, and it names what is being waited on:
+        // the records are on disk and about to be read, not gone.
+        case .excerpted: "Earlier records in this Session have not been read yet"
         }
     }
 }

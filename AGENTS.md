@@ -56,9 +56,12 @@ holding one, so every public engine fact must land in the mapping or be named on
 why not. Adding a public fact to `HubSession` fails the build until you say which it is; swapping
 two same-typed facts between slots fails it too.
 
-The sixth extends the parameter cap to initializers, which SwiftLint's own rule cannot see. Its
-ratchet is recorded in `.swiftlint.yml` beside the rule it extends, and the script reads it from
-there — one cap, one place.
+The sixth extends the parameter cap to initializers, which SwiftLint's own rule cannot see. It
+reads `function_parameter_count`'s own `error:` out of `.swiftlint.yml` — one cap, one place, and
+no second number to drift above it. The ratchet is the **named list** of grandfathered inits
+beside that rule: an init over the cap fails unless a `# INIT: <file> <count> — <why>` line names
+it, and a line naming an init that is no longer over the cap fails too, so the list can only
+shrink. The script prints the cap in force on every run.
 
 The JS/TS boundary gates are dormant — no subject since ADR-0023 retired the Electron
 cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-0021, ADR-0023.
@@ -150,6 +153,13 @@ Two things that bite before you have read anything: a screenshot needs Screen Re
 permission or the PNG is silently blank, and **an e2e run holds the real keyboard and mouse for
 its whole length — say so and wait before starting one**, because it takes the machine out from
 under whoever is at it.
+
+The same shape, and it costs more: **never hand-roll a load generator — use `sh
+scripts/load-burst.sh <workers> <seconds>`**, because spinners orphaned by a dying shell hold no
+deadline of their own and run until a human notices (five times now, once for 7h54m). Cleanup is
+scoped to what you started — stop a run early with `--reap <token>`, the token it prints, and
+never a bare `pkill -f load-burst.sh`, which is another session's outage; `bun run load:orphans`
+names ownerless CPU hogs and kills nothing.
 
 The commands (whole-app, one specimen, e2e) and everything else — why the script quits a
 running Argo, what the pixels are judged against, the specimen harness in full:

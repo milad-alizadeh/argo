@@ -3,21 +3,14 @@ import AppKit
 // What the overview lane reads off the feed, and the one verb it has over it (#402).
 
 extension FeedTableCoordinator {
-    /// The shape of the reading — every row's measured height and the gutters around them.
-    ///
-    /// The heights are the table's OWN, not a second measure: a lane summing anything else would
-    /// put a mark where the row it stands for is not.
-    func reading() -> MinimapReading? {
+    /// What a reading would be taken AGAINST, without taking one — see `MinimapReadingStamp`.
+    /// The lane asks this every pass and walks only when the answer moved.
+    func readingStamp() -> MinimapReadingStamp? {
         guard let table, let scroller else { return nil }
-        return MinimapReading(
-            rows: shown.indices.map { MinimapRow(
-                shown[$0],
-                height: measuredHeight(at: $0, in: table),
-                under: $0 > 0 ? shown[$0 - 1] : nil,
-                // The reader's own fold, which is the one state that changes a row's SHAPE rather
-                // than only its height. Read off the model the cells are drawn from.
-                isFolded: !(model?.unfolding(shown[$0].id).wrappedValue ?? false),
-            ) },
+        return MinimapReadingStamp(
+            rows: shown,
+            unfolded: model?.unfolded.wrappedValue ?? [],
+            measurements: measurements,
             // What the rows are actually DRAWN across, which stops at the reading measure however
             // wide the zone gets — a miniature of the zone would keep compressing past the point
             // where the reading itself stopped widening. It is also the measure a row's shapes are
@@ -26,6 +19,50 @@ extension FeedTableCoordinator {
             viewportHeight: scroller.contentView.bounds.height,
             topInset: scroller.contentInsets.top,
             bottomInset: scroller.contentInsets.bottom,
+            // The feed's own statement that its heights are not final — see `deferredPasses`.
+            isProvisional: deferredPasses > 0,
+        )
+    }
+
+    /// The reading changed shape, passed on to whoever is mapping it.
+    ///
+    /// The lane used to hear this as a frame observer of its own on the document view. Same
+    /// decision, made in the same place — see `MinimapLaneView` — but reached over the handle, so
+    /// the deck registers one frame observer rather than two (#971).
+    func notedReshape() {
+        handle?.readingReshaped?()
+    }
+
+    /// The shape of the reading — every row's measured height and the gutters around them.
+    ///
+    /// The heights are the table's OWN, not a second measure: a lane summing anything else would
+    /// put a mark where the row it stands for is not.
+    func reading() -> MinimapReading? {
+        readingStamp().flatMap(reading(at:))
+    }
+
+    /// The same reading, against a stamp the caller already holds — so a reader that decided to
+    /// walk walks against the very facts it made the decision on.
+    func reading(at stamp: MinimapReadingStamp) -> MinimapReading? {
+        guard let table else { return nil }
+        // This is the whole-document walk `ProseCache` derives its ceiling from: every prose row
+        // below asks `ProseReading.structure(of:)`, so a store smaller than the reading would be
+        // emptied before the walk reached its end and hit nothing on the next one.
+        ProseReading.holding(rows: stamp.rows.count)
+        return MinimapReading(
+            rows: stamp.rows.indices.map { MinimapRow(
+                stamp.rows[$0],
+                height: measuredHeight(at: $0, in: table),
+                under: $0 > 0 ? stamp.rows[$0 - 1] : nil,
+                // The reader's own fold, which is the one state that changes a row's SHAPE rather
+                // than only its height. Off the stamp, which took it from the model the cells are
+                // drawn from — a `Binding` per row was a closure pair per row for one `contains`.
+                isFolded: !stamp.unfolded.contains(stamp.rows[$0].id),
+            ) },
+            columnWidth: stamp.columnWidth,
+            viewportHeight: stamp.viewportHeight,
+            topInset: stamp.topInset,
+            bottomInset: stamp.bottomInset,
         )
     }
 

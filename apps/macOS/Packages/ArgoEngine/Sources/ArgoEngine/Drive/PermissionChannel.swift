@@ -25,7 +25,7 @@ final class PermissionChannel {
         }
     }
 
-    private let root: URL
+    private let scope: CompanionScope
     /// Written into directly rather than mirrored back through callbacks (#634): all three readings
     /// this channel owns land under one claim key, so there is nothing left for a caller to route.
     private let ledger: ClaimLedger
@@ -41,12 +41,12 @@ final class PermissionChannel {
     private var standing = StandingAllowTable()
 
     init(
-        root: URL,
+        scope: CompanionScope,
         patience: PermissionPatience = .default,
         ledger: ClaimLedger,
         rung: @escaping (SessionOwnership.ClaimID) -> SessionMode?,
     ) {
-        self.root = root
+        self.scope = scope
         self.ledger = ledger
         self.rung = rung
         self.asks = AskGate(patience: patience, ledger: ledger)
@@ -72,12 +72,8 @@ final class PermissionChannel {
 
     /// Open this claim's gate and say where its hook should dial.
     func grant(_ claim: SessionOwnership.ClaimID) throws -> String {
-        try FileManager.default.createDirectory(
-            at: root,
-            withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700],
-        )
-        let path = root.appending(path: "\(claim.value).gate.sock").path
+        try scope.createDirectory()
+        let path = scope.root.appending(path: "\(claim.value).gate.sock").path
         let socket = CompanionSocket(
             path: path,
             endsAfterReply: true,

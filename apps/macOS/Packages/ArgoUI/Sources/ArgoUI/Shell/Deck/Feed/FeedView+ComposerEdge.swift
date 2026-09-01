@@ -23,10 +23,32 @@ extension FeedView {
 
     /// The user's own words coming back as a row — the echo that is the send's acceptance, marked
     /// with the accent wash. Only a prompt among the ARRIVING rows takes it.
-    func washArrived(between was: Int, and now: Int) {
-        guard now > was else { return }
-        guard let echoed = rows[was ..< now].last(where: \.kind.isPrompt) else { return }
-        washed = echoed.id
+    func washArrived(between was: FeedFact<Int>, and now: FeedFact<Int>) {
+        switch Self.wash(from: was, to: now, in: rows) {
+        case .keep: return
+        case .clear: washed = nil
+        case let .onto(row): washed = row
+        }
+    }
+
+    /// What the wash does about a change in the row count. A decision out of the view, because the
+    /// view cannot be asked one: `washed` is `@State`.
+    ///
+    /// Another READING is never an arrival, however many rows it brought: the wash means *what you
+    /// just sent landed*, and one drawn on a Session the reader has only opened is a lie. So it
+    /// leaves with the reading that earned it.
+    static func wash(
+        from was: FeedFact<Int>,
+        to now: FeedFact<Int>,
+        in rows: [FeedRow],
+    )
+        -> FeedWash {
+        guard was.reading == now.reading else { return .clear }
+        guard now.value > was.value, now.value <= rows.count else { return .keep }
+        guard let echoed = rows[was.value ..< now.value].last(where: \.kind.isPrompt) else {
+            return .keep
+        }
+        return .onto(echoed.id)
     }
 
     /// The wash's whole lifetime: it stands for the hold and leaves.
@@ -40,4 +62,13 @@ extension FeedView {
         guard !Task.isCancelled else { return }
         washed = nil
     }
+}
+
+/// What a change in the reading's row count does to the accent wash.
+enum FeedWash: Equatable {
+    /// Nothing arrived that the reader sent, so whatever stands goes on standing.
+    case keep
+    /// Another reading — the wash belonged to the one that left.
+    case clear
+    case onto(FeedRow.ID)
 }

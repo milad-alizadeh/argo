@@ -23,39 +23,18 @@ public final class SessionModeStore {
     /// What a spawn that names no rung opens on. `Code` where nothing has been picked, which is the
     /// ladder's baseline and the rung Argo spawned on before this file existed (ADR-0025).
     func lastPicked() -> SessionMode {
-        Self.rung(named: file.load(orEmpty: Remembered(rung: "")).rung) ?? .code
+        SessionModeName.rung(named: file.load(orEmpty: Remembered(rung: "")).rung) ?? .code
     }
 
     /// Keep a pick. Called where the pick LANDED, so a rung the port refused is not the one the
     /// next Session opens on.
     func remember(_ mode: SessionMode) {
-        file.write(Remembered(rung: Self.name(of: mode)))
+        file.write(Remembered(rung: SessionModeName.of(mode)))
     }
 
-    /// The file's shape, owned here so the format is pinned in one place rather than following the
-    /// domain enum's case names wherever they go.
+    /// The file's shape, owned here so the format is pinned in one place. Its rung is spelled by
+    /// `SessionModeName`, which is the same vocabulary the ownership ledger writes (#966).
     private struct Remembered: Codable, Sendable {
         let rung: String
-    }
-
-    /// The file's own vocabulary, and never `ClaudePermissionMode`'s: that one answers `plan` for
-    /// two rungs, so a preference written through it would forget which of them was picked.
-    private static func name(of mode: SessionMode) -> String {
-        switch mode {
-        case .readOnly: "readOnly"
-        case .plan: "plan"
-        case .code: "code"
-        case .auto: "auto"
-        }
-    }
-
-    private static func rung(named name: String) -> SessionMode? {
-        switch name {
-        case "readOnly": .readOnly
-        case "plan": .plan
-        case "code": .code
-        case "auto": .auto
-        default: nil
-        }
     }
 }

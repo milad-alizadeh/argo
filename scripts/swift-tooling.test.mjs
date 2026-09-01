@@ -10,7 +10,7 @@ import assert from 'node:assert/strict'
 import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { check, report } from './check-harness.mjs'
-import { BARE, MISSING, run, STRICT, STUBBED, scratch } from './swift-tooling.harness.mjs'
+import { ARGV_LOG, BARE, MISSING, run, STRICT, STUBBED, scratch } from './swift-tooling.harness.mjs'
 
 const LINT = 'scripts/swift-lint.sh'
 const FORMAT = 'scripts/swift-format.sh'
@@ -59,11 +59,13 @@ const REPORTING = { pathValue: `${reportBin}:/usr/bin:/bin` }
 const suite = (n) => `<testsuites><testsuite name="T" ${n}></testsuite></testsuites>`
 // An empty `report` writes none at all, which is a run that never got that far.
 function swiftWriting(report, code = 0) {
-  // `$3` is the path, because the script invokes `swift test --xunit-output <path>` — so a
-  // reordering of those flags breaks this stub loudly rather than silently writing nowhere.
-  // SwiftPM appends a per-harness suffix to the name asked for, and so does this.
+  // `$3` is the path, because the script invokes `swift test --xunit-output <path>` ahead of
+  // any configuration flags — so a reordering of those breaks this stub loudly rather than
+  // silently writing nowhere. SwiftPM appends a per-harness suffix to the name asked for, and
+  // so does this. The argv line is what lets a test assert on the flags themselves.
   const write = report ? `printf '%s' '${report}' > "\${3%.xml}-swift-testing.xml"\n` : ''
-  writeFileSync(path.join(reportBin, 'swift'), `#!/bin/sh\n${write}exit ${code}\n`)
+  const head = `#!/bin/sh\nprintf '%s\\n' "$@" >> '${ARGV_LOG}'\n`
+  writeFileSync(path.join(reportBin, 'swift'), `${head}${write}exit ${code}\n`)
   chmodSync(path.join(reportBin, 'swift'), 0o755)
 }
 
@@ -89,12 +91,33 @@ check('swift-test.sh surfaces a non-zero swift exit rather than the missing repo
   assert.doesNotMatch(result.output, /wrote no test report/)
 })
 
-check('swift-test.sh passes on a clean report, for both packages', () => {
+// The debug row also stands for the default: no `ARGO_TEST_CONFIGURATION` in the environment
+// at all, and the script adds no configuration flag of its own.
+//
+// `-DDEBUG` in the release row is not decoration. Every counter ADR-0028's budgets read is
+// `#if DEBUG`, so without it the test target does not COMPILE in release (#991) — and a count
+// is the same either side of `-O`, so it is the seconds a release run re-records.
+for (const [configuration, environment, flags] of [
+  ['debug', {}, []],
+  ['release', { ARGO_TEST_CONFIGURATION: 'release' }, ['-c', 'release', '-Xswiftc', '-DDEBUG']],
+]) {
+  check(`swift-test.sh runs ${configuration} on a clean report, for both packages`, () => {
+    swiftWriting(suite('errors="0" tests="9" failures="0"'))
+    const result = run(TEST, { ...REPORTING, env: environment })
+    assert.equal(result.status, 0, result.output)
+    assert.match(result.output, new RegExp(`ArgoEngine \\(${configuration}\\)`))
+    assert.match(result.output, /ArgoUI clean, 0 failures across 9 reported tests/)
+    // Both invocations in order: the report path, then whatever flags the configuration adds.
+    const passed = result.argv.filter((arg) => arg !== 'test' && !arg.endsWith('.xml'))
+    assert.deepEqual(passed, ['--xunit-output', ...flags, '--xunit-output', ...flags])
+  })
+}
+
+check('swift-test.sh refuses a configuration it does not carry', () => {
   swiftWriting(suite('errors="0" tests="9" failures="0"'))
-  const result = run(TEST, REPORTING)
-  assert.equal(result.status, 0, result.output)
-  assert.match(result.output, /ArgoEngine clean, 0 failures across 9 reported tests/)
-  assert.match(result.output, /ArgoUI clean, 0 failures/)
+  const result = run(TEST, { ...REPORTING, env: { ARGO_TEST_CONFIGURATION: 'fastest' } })
+  assert.equal(result.status, 1, result.output)
+  assert.match(result.output, /debug or release/)
 })
 
 check('swift-format.sh rewrites in place by default', () => {

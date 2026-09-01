@@ -143,17 +143,11 @@ public extension CockpitPresentation {
         /// reading (#629). `mode` above has already snapped to the real rung, so this is the only
         /// thing that can say why the control moved without the user touching it.
         public let modeDidNotTake: SessionMode?
-        /// The last Turn typed at this Session that the CLI never heard, verbatim (#682), and
-        /// `nil` for every Turn that arrived. The composer cleared when the keystrokes were
-        /// written, so this is the only thing that can put the words back.
-        public let lostTurn: String?
-        /// Everything the Session's transcript said, in order — the feed's whole input. The
-        /// engine's own events, undigested; `FeedProjection` is what draws them.
-        public let events: [TranscriptEvent]
-        /// Each Subagent's own reading, keyed by the CLI's id for it (#711) — what the rail scopes
-        /// the one feed onto. Undigested for the reason `events` is, and empty for the Session that
-        /// delegated nothing, which is most of them.
-        public let subagentEvents: [String: [TranscriptEvent]]
+        /// Everything the transcript said, and the stamp the cockpit compares it by — see
+        /// `Transcript`. Stored whole rather than unpacked into three fields, so this Session's
+        /// synthesised equality answers about the stream in an integer comparison: unpacked, one
+        /// body pass deep-compared every Session's whole decoded stream (ADR-0028 Rule 1).
+        public let transcript: Transcript
 
         /// Grouped by the reading each fact comes from (#755). The four ungrouped parameters are
         /// the four no default can supply; every value below defaults, so a fixture still names
@@ -199,9 +193,26 @@ public extension CockpitPresentation {
             self.modeDidNotTake = autonomy.modeDidNotTake
             self.isArchived = annotations.isArchived
             self.explicitName = annotations.explicitName
-            self.events = transcript.events
-            self.subagentEvents = transcript.subagentEvents
-            self.lostTurn = transcript.lostTurn
+            self.transcript = transcript
         }
+    }
+}
+
+/// The three transcript facts, read off the one value that holds them — the shape every surface
+/// below the shell already asks for.
+public extension CockpitPresentation.Session {
+    var events: [TranscriptEvent] {
+        transcript.streams.events
+    }
+
+    var subagentEvents: [String: [TranscriptEvent]] {
+        transcript.streams.subagentEvents
+    }
+
+    /// The last Turn typed at this Session that the CLI never heard, verbatim (#682), and `nil` for
+    /// every Turn that arrived. The composer cleared when the keystrokes were written, so this is
+    /// the only thing that can put the words back.
+    var lostTurn: String? {
+        transcript.lostTurn
     }
 }

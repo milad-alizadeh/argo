@@ -114,11 +114,12 @@ public struct MediaEvidence: Sendable, Equatable {
     /// The image's own type as the record declared it, or as its extension implies for a disk read.
     /// What a row names when it has no pixels to show.
     public let mediaType: String
-    /// The image, base64, exactly as it was read. `nil` where there are none to show: a row with no
-    /// bytes says so, and never renders a broken-image glyph.
-    public let bytes: String?
+    /// WHERE the image's bytes are, and the head of them — see `MediaBytes`, which is the whole
+    /// reason this is an address and not a base64 blob. `nil` where there are none to show: a row
+    /// with no bytes says so, and never renders a broken-image glyph.
+    public let bytes: MediaBytes?
 
-    public init(tier: Tier, mediaType: String, bytes: String?) {
+    public init(tier: Tier, mediaType: String, bytes: MediaBytes?) {
         self.tier = tier
         self.mediaType = mediaType
         self.bytes = bytes

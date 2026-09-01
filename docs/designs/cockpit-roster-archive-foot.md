@@ -111,6 +111,20 @@ composes it, and the count is how many are behind the row.
 | Shut (launch, and whenever the archive comes back) | `ArgoDisclosure(.beside)`, 0° | Nothing |
 | Open | `ArgoDisclosure(.below)`, rotated 90° | The archived rows |
 | Pointer over the header | either, ink `text.secondary` over `ArgoMotion.stateChange` | Unchanged |
+| Holding the selected Session | as Open | The archived rows, including the selected one |
+
+**The one state the foot does not get to be shut in — added 2026-08-31.** The archive holds the
+Session the deck is rendering. It is reached by archiving the row being read: an archived Session is
+still in the presentation, so nothing repoints the selection, and the deck goes on drawing it. With
+the foot shut the roster then draws NO row for the Session on screen beside it — the roster and the
+feed name two different Sessions, which `CONTEXT.md` Honesty tier forbids, and the platform's own
+selection is left uncovered on whatever row it was last pointed at (see D30's 2026-08-31 amendment).
+
+So the foot is open whenever it holds the selection, and that OUTRANKS the reader's toggle: a
+selection behind a shut foot is not a preference the roster can honour. It does not weaken "shut on
+launch" — a fresh window's selection is a kept row — and it does not open the foot for anything else.
+The rule is `SessionRosterProjection.isArchiveOpen(showing:selection:in:)`, one answer the chevron
+and the rows both read, and `RosterMarksTheShownSessionTests` is what holds it.
 
 **Motion.** `ArgoMotion.reveal` (0.22s easeOut) drives the rotation and the rows arriving, one
 animation over the open value so they move together. It sits on the whole `List`, because dropping

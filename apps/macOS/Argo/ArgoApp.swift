@@ -50,6 +50,12 @@ struct ArgoApp: App {
         // The Ticket Binding folded in is the Accounts coordinator's, so no surface below can build
         // a second projection that answers differently.
         let presentation = cockpit.presentation(accounts.connections)
+        // A rename is the whole of what holds it, and that is not an oversight: no suite can reach
+        // this fold. It is a `Scene` body in the app target, which has no unit-test bundle, and it
+        // cannot move into ArgoUI — what it folds reads live Hub state, which exactly one file in
+        // ArgoUI may do and that file is the projection, not a view (ADR-0022 edge 1). A boundary
+        // edge is the only mechanism left for it (#960); see #997 gap 4.
+        //
         // Handed on for the same reason, to three of the same readers. Named apart from the
         // property it is read from, so a rename there cannot quietly put the three rebuilds back.
         let actions = cockpitActions
@@ -74,6 +80,13 @@ struct ArgoApp: App {
                         // A machine that has registered nothing has no path forward without
                         // this: the shell it lands in has no Project to act on.
                         await accounts.openIfUnstarted(registry: cockpit.registry)
+                    }
+                    // Selecting a Session is what makes Argo read its record WHOLE: a sweep
+                    // admits every transcript on a bounded read of its two ends, and the feed
+                    // needs the stretch that read skipped (`TranscriptExcerpt`). `initial: true`
+                    // because launch reconciles onto the first row, and that row is on screen.
+                    .onChange(of: navigation.session, initial: true) { _, id in
+                        Task { await cockpit.hub.readSelected(sessionID: id) }
                     }
                     // Observed once here because a change of active Project is ONE event:
                     // registering, switching, relocating and removing all end in it.
@@ -106,6 +119,8 @@ struct ArgoApp: App {
             // review has to be the state that ships, and a ring only the real app draws is a
             // difference no screenshot could report.
             .focusEffectDisabled()
+            // Inert unless ARGO_FRAME_PROBE=1 — the measurement rig's only foothold in the app.
+            .frameProbe()
         }
         .defaultSize(width: ArgoLayout.windowIdealWidth, height: ArgoLayout.windowIdealHeight)
         // Hidden title bar so the deck's content extends beneath the toolbar region. The chrome

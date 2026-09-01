@@ -9,6 +9,11 @@ struct InstrumentDeckShell: View {
     /// Which Session the deck is reading, as an IDENTITY rather than as content — nothing below
     /// draws it. `FeedRow.ID` is a dense POSITION, so a pane keyed on the rows reads one Session as
     /// a continuation of the last and opens the new reading mid-scroll.
+    ///
+    /// Handed DOWN as a value, never spent as `.id(session)`. A view id destroys the whole subtree
+    /// to reset four row-keyed facts, and the subtree is an `NSTableView`, ten measuring
+    /// controllers, a minimap and every measured height — ADR-0028 Rule 5 forbids it. `FeedReading`
+    /// is where the four facts are named instead.
     var session: CockpitPresentation.Session.ID?
     /// The selected Session's reading, already projected. Rooms with no feed ignore it.
     var feed: [FeedRow] = []
@@ -70,6 +75,7 @@ struct InstrumentDeckShell: View {
         switch room {
         case .sessions:
             SessionsDeck(
+                session: session,
                 feed: feed,
                 header: header,
                 handOff: handOff,
@@ -85,11 +91,6 @@ struct InstrumentDeckShell: View {
                 readings: readings,
                 scope: scope,
             )
-            // SwiftUI discards a view's whole state when its id changes. On the DECK and not the
-            // feed alone: the panel and the lightbox are keyed to rows too, and an open panel
-            // carried across reopens on whatever call now sits at that position. Everything under
-            // this has to be per-Session, which is why the seams above are held outside it.
-            .id(session)
         case .tickets:
             tickets?.deck
         case .code:

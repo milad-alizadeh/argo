@@ -29,9 +29,7 @@ extension PermissionChannelTests {
 
             let claim = try await fixture.hub.spawnSession()
             let hooks = try String(
-                contentsOf: fixture.companionRoot
-                    .appending(path: claim.value)
-                    .appending(path: "hooks/hooks.json"),
+                contentsOf: fixture.pluginRoot(claim).appending(path: "hooks/hooks.json"),
                 encoding: .utf8,
             )
 
@@ -49,8 +47,7 @@ extension PermissionChannelTests {
                 #expect(ask.ask.questions.first?.text == "Which ticket should I implement?")
                 #expect(ask.ask.questions.first?.options.map(\.label) == ["#712", "#713"])
                 // It is a question, never a Permission: the two are answered by different acts and
-                // the
-                // composer's slot must not fill with a prompt nobody can answer.
+                // the composer's slot must not fill with a prompt nobody can answer.
                 #expect(session.permission == nil)
             }
         }
@@ -119,8 +116,7 @@ extension PermissionChannelTests {
         }
 
         /// The top rung asks nothing about a Bash call, but an ask is not a boundary being crossed
-        /// —
-        /// it is the agent wanting to know something, and `Auto` does not answer questions on the
+        /// — it is the agent wanting to know something, and `Auto` does not answer questions on the
         /// user's behalf.
         @Test
         func `a question is put even on Auto, where a gated call would be waved through`(
@@ -150,8 +146,7 @@ extension PermissionChannelTests {
         }
 
         /// The hook went while Argo was still willing to wait, so its turn was cancelled: the
-        /// question
-        /// goes without a word, exactly as a Permission does (#573).
+        /// question goes without a word, exactly as a Permission does (#573).
         @Test
         func `a hook that goes unanswered takes its question with it`() async throws {
             try await PermissionGate.withGate { fixture, _, client in
@@ -166,9 +161,8 @@ extension PermissionChannelTests {
         }
 
         /// A call NAMED `AskUserQuestion` whose input carried no readable question is not one
-        /// anybody
-        /// can answer, so it falls through to the gate's ordinary reading rather than raising a
-        /// blank.
+        /// anybody can answer, so it falls through to the gate's ordinary reading rather than
+        /// raising a blank.
         @Test
         func `an AskUserQuestion with no question in it is a Permission like any other`(
         ) async throws {

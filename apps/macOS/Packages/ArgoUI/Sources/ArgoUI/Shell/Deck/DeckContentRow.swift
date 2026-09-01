@@ -11,6 +11,9 @@ import SwiftUI
 /// seams: a hairline reaching the window's top edge behind the glass is the rule the canopy
 /// replaced, drawn again.
 struct DeckContentRow: View {
+    /// Which reading the zones are showing — see `FeedReading`. Assembled above, because a scope
+    /// is half of it and the rail's scope is the deck's.
+    var reading = FeedReading.unattached
     let feed: [FeedRow]
     let showing: PlanShowing
     let selection: FeedRowSelection
@@ -31,6 +34,7 @@ struct DeckContentRow: View {
 
     /// Seeds the handle with `held`, which has to be true before the first frame.
     init(
+        reading: FeedReading = .unattached,
         feed: [FeedRow],
         showing: PlanShowing,
         selection: FeedRowSelection,
@@ -40,6 +44,7 @@ struct DeckContentRow: View {
         seams: DeckSeams,
         rail: AgentsRailControl = .inert,
     ) {
+        self.reading = reading
         self.feed = feed
         self.showing = showing
         self.selection = selection
@@ -57,21 +62,26 @@ struct DeckContentRow: View {
         selection.homing(onto: table)
     }
 
-    /// Who else is working, read off the SESSION's rows — never off `reading`, which is what the
+    /// Who else is working, read off the SESSION's rows — never off `scoped`, which is what the
     /// rail may have scoped away.
     private var agents: [FeedAgent] {
-        FeedAgents.all(in: feed)
+        rail.readings.agents(in: feed)
     }
 
     /// The rows the reading zones actually draw: the Session's own, or the selected Subagent's.
     /// Every fallback, and why each one exists, is `FeedAgentReadings.rows(under:of:otherwise:)`.
-    private var reading: [FeedRow] {
+    private var scoped: [FeedRow] {
         rail.readings.reading(of: feed, under: rail.scope)
     }
 
     var body: some View {
         GeometryReader { proxy in
-            let zoning = zoning(in: proxy.size.width)
+            // Bound ONCE for the pass, the way `CockpitView.detail` binds its vessel: a
+            // `GeometryReader` body re-runs on every size change — every frame of a seam drag — and
+            // three zones below asked these two questions three times each.
+            let agents = agents
+            let scoped = scoped
+            let zoning = zoning(in: proxy.size.width, feed: scoped, agents: agents)
 
             HStack(spacing: ArgoSpacing.flush) {
                 if zoning.showsRail {
@@ -79,8 +89,13 @@ struct DeckContentRow: View {
                         .frame(width: zoning.railWidth)
                     railEdge(zoning)
                 }
+                // NO `.id(rail.scope)`: destroying the column to re-key its state took the
+                // table, the ten rulers and every measured height with it. What a scope switch
+                // actually invalidates is named instead — `reading` carries the scope, and
+                // everything keyed on a row position resets on it (`FeedReading`).
                 FeedColumn(
-                    feed: reading,
+                    reading: reading,
+                    feed: scoped,
                     showing: showing,
                     selection: routed,
                     held: held,
@@ -88,12 +103,6 @@ struct DeckContentRow: View {
                     intents: intents,
                     table: table,
                 )
-                // The reading's own state is keyed to WHAT is being read: `FeedRow.ID` is a dense
-                // position, so a scope switch would otherwise leave the scroll and the open panel
-                // pointing at whatever row now sits where they were — the same hazard
-                // `.id(session)`
-                // answers one level up.
-                .id(rail.scope)
                 DeckSeparator()
                     .argoUnderCanopy()
                 MinimapLane(feed: table)
@@ -113,10 +122,10 @@ struct DeckContentRow: View {
         }
     }
 
-    private func zoning(in deck: CGFloat) -> DeckZoning {
+    private func zoning(in deck: CGFloat, feed: [FeedRow], agents: [FeedAgent]) -> DeckZoning {
         DeckZoning(
             deck: deck,
-            feed: reading,
+            feed: feed,
             agents: agents,
             open: selection.open,
             seams: seams,
@@ -150,7 +159,7 @@ struct DeckContentRow: View {
     /// — and that makes the rail's chip the second way back rather than the only one.
     private func dismissTopmost() {
         if routed.lit != nil {
-            routed.darken(returningInto: reading)
+            routed.darken(returningInto: scoped)
         } else if routed.open != nil {
             routed.close()
         } else {

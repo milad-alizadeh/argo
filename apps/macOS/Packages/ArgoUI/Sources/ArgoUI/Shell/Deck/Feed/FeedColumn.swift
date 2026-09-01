@@ -5,6 +5,9 @@ import SwiftUI
 /// the deck (C4.1). The deck's bottom edge carries no Dock seam any more — it belongs to the
 /// reading, and the vessel floats over it (#403, closed by #536).
 struct FeedColumn: View {
+    /// Which reading the column is drawing — see `FeedReading`. Passed on down; nothing here reads
+    /// it.
+    var reading = FeedReading.unattached
     let feed: [FeedRow]
     let showing: PlanShowing
     let selection: FeedRowSelection
@@ -19,6 +22,7 @@ struct FeedColumn: View {
 
     var body: some View {
         FeedView(
+            reading: reading,
             rows: feed,
             selection: selection,
             held: held,

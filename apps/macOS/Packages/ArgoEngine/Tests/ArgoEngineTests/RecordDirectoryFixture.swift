@@ -7,6 +7,11 @@ struct FixtureTranscript {
     var name = "session"
     var cwd: String?
     var modifiedAgo: TimeInterval = 0
+    /// How many filler records to lay between the opening record and the closing one, each about a
+    /// kilobyte. What makes a fixture longer than a bounded read's two ends
+    /// (`TranscriptExcerpt.sideByteLimit`), so a whole reading of it and an excerpt are different
+    /// values. Zero writes the one-line record every other suite here expects.
+    var fillerRecords = 0
 }
 
 /// A CLI record directory built on disk: a directory per project, holding transcripts whose `cwd`
@@ -78,6 +83,25 @@ struct RecordDirectoryFixture {
     /// transcript whose opening records name no working directory.
     private static func record(for transcript: FixtureTranscript) -> String {
         guard let cwd = transcript.cwd else { return "{\"type\":\"user\"}\n" }
-        return "{\"type\":\"user\",\"cwd\":\"\(cwd)\"}\n"
+        let opening = "{\"type\":\"user\",\"cwd\":\"\(cwd)\"}"
+        guard transcript.fillerRecords > 0 else { return opening + "\n" }
+        let filler = (0 ..< transcript.fillerRecords)
+            .map { said("\(fillerPrefix)\($0) " + padding) }
+        return ([opening] + filler + [said(closingWords, stopping: true)]).joined(separator: "\n")
+            + "\n"
     }
+
+    /// One assistant record carrying a line of prose, and optionally the reason its Turn ended.
+    private static func said(_ words: String, stopping: Bool = false) -> String {
+        let stop = stopping ? ",\"stop_reason\":\"end_turn\"" : ""
+        return "{\"type\":\"assistant\",\"message\":{\"role\":\"assistant\","
+            + "\"content\":[{\"type\":\"text\",\"text\":\"\(words)\"}]\(stop)}}"
+    }
+
+    private static let padding = String(repeating: "x", count: 1024)
 }
+
+/// What a filler record says, so a test can ask whether the middle of a file was read.
+let fillerPrefix = "filler "
+/// What the LAST record of a filled fixture says — the one only a tail read reaches.
+let closingWords = "The closing message"

@@ -7,12 +7,16 @@ struct ArchivedRosterSpecimen: View {
     /// Whether the foot is drawn open. Reachable only by clicking it, so the open state needs a way
     /// in that is not a pointer.
     var isRevealed = false
+    /// Which Session is selected. A row BEHIND the foot is the state the foot may not be shut in —
+    /// the deck renders the selection, so the roster has to go on drawing a row for it
+    /// (`cockpit-roster-archive-foot.md`, 2026-08-31).
+    var selection: String?
 
     var body: some View {
         SessionNavigator(
             rows: Self.rows,
             archived: Self.archived,
-            selection: .constant(nil),
+            selection: .constant(selection),
             isArchiveRevealed: isRevealed,
         )
         .frame(width: ArgoLayout.sidebarIdealWidth)

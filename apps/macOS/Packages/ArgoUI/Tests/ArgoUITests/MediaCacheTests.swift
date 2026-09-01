@@ -28,17 +28,22 @@ struct MediaCacheTests {
     }
 
     @Test
-    func `a picture costs its pixels, and the bytes it is filed under cost nothing`() throws {
-        let bytes = try MediaFixture.base64(width: 1200, height: 900)
-        let data = try #require(Data(base64Encoded: bytes))
+    func `a picture costs its pixels, and the address it is filed under costs nothing`() throws {
+        let base64 = try MediaFixture.base64(width: 1200, height: 900)
+        let data = try #require(Data(base64Encoded: base64))
         let bitmap = try #require(MediaDecode.bitmap(from: data, in: .plate(Self.plate), scale: 2))
         let store = MediaStore(costLimit: Self.plateCost * 4)
 
         #expect(bitmap.cost == Self.plateCost)
-        // The key is charged nothing. A native Swift `String` held twice is one storage object
-        // rather than a copy, and the base64 is already held for the session by
-        // `MediaEvidence.bytes`, so charging for it would measure memory no eviction can reclaim.
-        store.set(bitmap, for: bytes)
+        // A key is now an ADDRESS — a path, an offset and a length — so the pixels are the whole
+        // of what an entry weighs and nothing an eviction cannot reclaim is charged for.
+        let addressed = MediaBytes(
+            address: .run(transcript: "/Users/x/.claude/projects/x/session.jsonl", at: 4_291_004),
+            base64: base64,
+        )
+        #expect(addressed.retainedBytes < bitmap.cost / 100)
+        // And the store charges for the picture alone, never for the address it is filed under.
+        store.set(bitmap, for: addressed.identity)
         #expect(store.totalCost == bitmap.cost)
     }
 
@@ -56,11 +61,11 @@ struct MediaCacheTests {
     }
 
     @Test
-    func `a cache walked past its ceiling holds no more pixels than its ceiling`() throws {
+    func `a cache walked past its ceiling holds no more pixels than its ceiling`() async throws {
         let cache = MediaCache(costLimit: Self.plateCost * 4)
-        let runs = try (0 ..< 40).map { try MediaFixture.base64(width: 1200 + $0, height: 900) }
+        let runs = try (0 ..< 40).map { try MediaFixture.bytes(width: 1200 + $0, height: 900) }
         for bytes in runs {
-            _ = cache.bitmap(for: bytes, in: .plate(Self.plate))
+            _ = await cache.bitmap(for: bytes, in: .plate(Self.plate))
         }
 
         // Resident PIXELS, counted here rather than through `MediaBitmap.cost`, so a cost that
@@ -70,27 +75,27 @@ struct MediaCacheTests {
         // a ceiling with room for them all are all still there.
         let roomy = MediaCache(costLimit: Self.plateCost * 80)
         for bytes in runs {
-            _ = roomy.bitmap(for: bytes, in: .plate(Self.plate))
+            _ = await roomy.bitmap(for: bytes, in: .plate(Self.plate))
         }
         #expect(runs.count { roomy.held($0) != nil } == runs.count)
     }
 
     @Test
-    func `one byte run is decoded once for the plate that draws it`() throws {
+    func `one byte run is decoded once for the plate that draws it`() async throws {
         let cache = MediaCache(costLimit: Self.plateCost * 4)
-        let bytes = try MediaFixture.base64(width: 1245, height: 905)
-        let first = try #require(cache.bitmap(for: bytes, in: .plate(Self.plate)))
-        let second = try #require(cache.bitmap(for: bytes, in: .plate(Self.plate)))
+        let bytes = try MediaFixture.bytes(width: 1245, height: 905)
+        let first = try #require(await cache.bitmap(for: bytes, in: .plate(Self.plate)))
+        let second = try #require(await cache.bitmap(for: bytes, in: .plate(Self.plate)))
 
         #expect(first === second)
     }
 
     @Test
-    func `a held plate is never handed to the surface asking for full pixels`() throws {
+    func `a held plate is never handed to the surface asking for full pixels`() async throws {
         let cache = MediaCache(costLimit: Self.plateCost * 4)
-        let bytes = try MediaFixture.base64(width: 1246, height: 906)
-        let plate = try #require(cache.bitmap(for: bytes, in: .plate(Self.plate)))
-        let full = try #require(cache.bitmap(for: bytes, in: .full))
+        let bytes = try MediaFixture.bytes(width: 1246, height: 906)
+        let plate = try #require(await cache.bitmap(for: bytes, in: .plate(Self.plate)))
+        let full = try #require(await cache.bitmap(for: bytes, in: .full))
 
         #expect(full !== plate)
         #expect(full.drawn == CGSize(width: 1246, height: 906))
@@ -100,12 +105,12 @@ struct MediaCacheTests {
     }
 
     @Test
-    func `a held decode too coarse for a larger plate is decoded again`() throws {
+    func `a held decode too coarse for a larger plate is decoded again`() async throws {
         let cache = MediaCache(costLimit: Self.plateCost * 40)
-        let bytes = try MediaFixture.base64(width: 1247, height: 907)
-        let small = try #require(cache.bitmap(for: bytes, in: .plate(Self.plate)))
+        let bytes = try MediaFixture.bytes(width: 1247, height: 907)
+        let small = try #require(await cache.bitmap(for: bytes, in: .plate(Self.plate)))
         let large = try #require(
-            cache.bitmap(for: bytes, in: .plate(CGSize(width: 600, height: 400))),
+            await cache.bitmap(for: bytes, in: .plate(CGSize(width: 600, height: 400))),
         )
 
         #expect(large.drawn.width > small.drawn.width)
@@ -125,29 +130,29 @@ struct MediaCacheTests {
     }
 
     @Test
-    func `one byte run shown in both plates stops re-decoding after the second`() throws {
+    func `one byte run shown in both plates stops re-decoding after the second`() async throws {
         let cache = MediaCache(costLimit: Self.plateCost * 40)
-        let bytes = try MediaFixture.base64(width: 1248, height: 908)
+        let bytes = try MediaFixture.bytes(width: 1248, height: 908)
         let column = MediaBox.plate(EvidenceMedia.plate)
         let shot = MediaBox.plate(ArgoFeedRow.shotPlate)
 
-        _ = try #require(cache.bitmap(for: bytes, in: column))
-        let both = try #require(cache.bitmap(for: bytes, in: shot))
+        _ = try #require(await cache.bitmap(for: bytes, in: column))
+        let both = try #require(await cache.bitmap(for: bytes, in: shot))
 
         // The second decode is made for the box covering BOTH, so the alternation settles. Filed
         // under the box asked for instead, each miss overwrites the other's entry and every
         // alternation is a fresh decode.
-        #expect(try #require(cache.bitmap(for: bytes, in: column)) === both)
-        #expect(try #require(cache.bitmap(for: bytes, in: shot)) === both)
+        #expect(try #require(await cache.bitmap(for: bytes, in: column)) === both)
+        #expect(try #require(await cache.bitmap(for: bytes, in: shot)) === both)
     }
 
     @Test
     func `a full frame nobody is waiting for any more is never decoded`() async throws {
-        let bytes = try MediaFixture.base64(width: 1249, height: 909)
+        let bytes = try MediaFixture.bytes(width: 1249, height: 909)
 
         // `Task.detached` inherited no cancellation, so a lightbox dismissed mid-decode went on
         // holding the whole `Data` and the full `NSImage` until the decode finished.
-        let decode = Task { await MediaCache.fullBitmap(for: bytes) }
+        let decode = Task { await MediaCache.decoded(bytes, in: .full) }
         decode.cancel()
 
         #expect(await decode.value == nil)
@@ -168,7 +173,7 @@ struct MediaCacheTests {
     }
 
     /// What the surviving entries actually occupy, from their own pixel counts.
-    private static func residentPixelBytes(of runs: [String], in cache: MediaCache) -> Int {
+    private static func residentPixelBytes(of runs: [MediaBytes], in cache: MediaCache) -> Int {
         runs.compactMap { cache.held($0) }
             .map { Int($0.drawn.width * $0.drawn.height) * 4 }
             .reduce(0, +)

@@ -6,6 +6,7 @@ import Testing
 /// ALREADY took (#957). The constraint #875 established is the one under test: the toggle opens
 /// what is ON SCREEN, so a scoped feed is what it reads.
 @Suite("Evidence on screen")
+@MainActor
 struct EvidenceOnScreenTests {
     @Test
     func `a scoped feed opens the newest evidence in the subagent's rows`() throws {

@@ -151,19 +151,30 @@ Not a CI gate. Driving the real app needs a macOS runner, the most expensive min
 and the suite is a handful of clicks; run it locally when you touch a surface that is only reachable
 by clicking.
 
-## Scrolling a running feed
+## Measuring frames
+
+**The probe** (`ArgoUI/Perf/`) samples the cockpit window's real presentation cadence through a
+`CADisplayLink`, and is inert unless `ARGO_FRAME_PROBE=1`. It writes a JSON summary — the display's
+own maximum fps, effective fps, interval percentiles, the frames that ran over 1x/2x/4x of the
+budget, and a stamp per frame — to `ARGO_FRAME_PROBE_OUT`, on SIGINT, on app exit, or after
+`ARGO_FRAME_PROBE_SECONDS`. The ceiling is READ, never assumed: this machine's Studio Display is
+60 Hz, and the same figures have to stay comparable on a 120 Hz panel.
 
 ```bash
-swift scripts/ScrollDriver.swift            # Argo, 8s, 60 ticks/s, 12px a tick
-swift scripts/ScrollDriver.swift Argo 4 60 24
+ARGO_FRAME_PROBE=1 ARGO_FRAME_PROBE_OUT=/tmp/frames.json open -a Argo
 ```
 
-Scrolls a running Argo's feed at a fixed cadence, so "is scrolling smooth" is asked of a repeatable
-input rather than of a hand on a trackpad — a hand cannot scroll the same way twice, and a
-smoothness judgement is only worth comparing against another one taken the same way. It refuses to
-post anything if another window is over the point it aims at, because a scroll goes to whatever is
-under the pointer and that failure otherwise reads as a completed run. Posting events needs
-Accessibility permission for the terminal running it.
+It measures whoever is scrolling, which is a person. **There is no driver**: a harness that posted
+synthetic scrolls and clicks was built and then removed, because taking the pointer and keyboard out
+from under whoever is at the machine is not a thing this repo does. The scroll figures in #963 came
+from that harness before it went, and are the last of their kind — a future comparison is measured
+by scrolling the feed by hand with the probe on.
+
+Two figures answer different questions, and the probe gives only the first. **Cadence** is when the
+frame intervals return to idle: whether the main thread stalled. **Surface** is when the reading has
+actually arrived. A switch that takes twenty seconds to put content up drops almost no frames while
+it does, so cadence alone would call it instant. Nothing on CI renders a view, so the surface half
+is a human looking at the screen (see `docs/agents/visual-verification.md`).
 
 ## Deployment target
 

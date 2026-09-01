@@ -1,4 +1,5 @@
 import AppKit
+import ArgoEngine
 import ImageIO
 
 /// Turning a media result's bytes into a bitmap at the size the surface asking will draw it.
@@ -32,19 +33,20 @@ enum MediaDecode {
         }
     }
 
-    /// Whether the bytes are a picture at all, from the file's SIGNATURE — the first few bytes of
-    /// the base64 and nothing else.
+    /// Whether the bytes are a picture at all, from the file's SIGNATURE — the 32 base64 characters
+    /// the address carries and nothing else.
     ///
     /// What the projection asks — a shot with no picture is not a control — and it is asked for
     /// every shot on every re-projection, so its cost may not scale with the picture (ADR-0028
-    /// Rule 3). Decoding the whole base64 to read a header cost 5.6 ms per body pass over twenty
-    /// 1.1 MB captures; this costs 0.015 ms for the same twenty, and reaches the same answer.
+    /// Rule 3). It is also the whole reason an address carries a signature: with the bytes read
+    /// only where they are drawn, this is the one question about a picture that must be answerable
+    /// with no read at all.
     ///
     /// It answers whether the bytes ARE one of these formats, not whether every byte after the
     /// signature is intact. A truncated capture is caught where it is drawn — `MediaShowing` reads
     /// its provenance off the decode itself — and this only ever offers the click.
-    static func isPicture(_ bytes: String) -> Bool {
-        let prefix = String(bytes.prefix(signatureBase64Length))
+    static func isPicture(_ bytes: MediaBytes) -> Bool {
+        let prefix = String(bytes.signature.prefix(signatureBase64Length))
         guard prefix.utf8.count.isMultiple(of: 4), let head = Data(base64Encoded: prefix)
         else { return false }
         return signatures.contains { runs in

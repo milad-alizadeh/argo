@@ -81,7 +81,8 @@ extension TranscriptReader {
             toolUseResult: reported,
         )
         return diffEvidence(of: resolved).map(ToolResult.diff)
-            ?? mediaEvidence(of: resolved, readImage: readImage).map(ToolResult.media)
+            ?? mediaEvidence(of: resolved, readImage: readImage, in: location)
+            .map(ToolResult.media)
             ?? outputEvidence(of: resolved).map(ToolResult.output)
     }
 }

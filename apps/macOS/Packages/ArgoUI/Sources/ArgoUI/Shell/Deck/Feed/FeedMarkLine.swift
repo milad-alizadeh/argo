@@ -21,7 +21,8 @@ struct FeedMarkLine: View {
     var body: some View {
         switch mark {
         case .working: FeedWorkingThread()
-        case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .permissionExpired:
+        case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .permissionExpired,
+             .excerpted:
             punctuation
         }
     }

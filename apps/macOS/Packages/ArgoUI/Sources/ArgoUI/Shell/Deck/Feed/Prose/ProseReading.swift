@@ -46,4 +46,20 @@ enum ProseReading {
     static func plan(of diagram: MermaidDiagram) -> MermaidPlan {
         plans.reading(of: diagram.source) { _ in diagram.laid }
     }
+
+    /// The stores a whole-document walk reaches, held to the document it is about to cross — see
+    /// `ProseCache`. Only these two: `structure(of:)` is what a prose row is asked for, and a miss
+    /// there is a miss in `scans` behind it.
+    static func holding(rows: Int) {
+        structures.hold(atLeast: rows)
+        scans.hold(atLeast: rows)
+    }
+
+    #if DEBUG
+        /// What the whole-document store hit and missed, so the working set is measured rather than
+        /// asserted. DEBUG for the reason `FeedPaneCost` states.
+        static var structureCost: ProseCacheCost {
+            structures.cost
+        }
+    #endif
 }

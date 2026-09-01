@@ -20,6 +20,28 @@ if ! command -v swift >/dev/null 2>&1; then
   swift_unavailable "no Swift toolchain" "install Xcode to run the suites"
 fi
 
+# `ARGO_TEST_CONFIGURATION=release` runs the same suites against the optimiser. Debug is
+# `-Onone`, so a cost budget recorded there bounds code nobody ships (#991) — and a release run
+# is the only way to re-record one, which ADR-0028's Consequences require before the seconds-side
+# budgets bind.
+#
+# It defines DEBUG anyway, and that is not a contradiction: every counter the budgets read is
+# `#if DEBUG`, so without it the test target does not COMPILE in release — and a count is
+# identical under `-Onone` and `-O`, being control flow. The only thing `-O` moves is the
+# seconds, which is the whole point of running it. What makes the flag honest is that all 18
+# `#if DEBUG` blocks under `Packages/*/Sources` are additive — not one has an `#else` — so
+# defining it adds counters and changes no behaviour. An `#else` added there would break that,
+# and nothing checks it.
+CONFIGURATION=${ARGO_TEST_CONFIGURATION:-debug}
+case "$CONFIGURATION" in
+  debug) CONFIGURATION_FLAGS='' ;;
+  release) CONFIGURATION_FLAGS='-c release -Xswiftc -DDEBUG' ;;
+  *)
+    echo "swift-test: ARGO_TEST_CONFIGURATION is debug or release, not $CONFIGURATION" >&2
+    exit 1
+    ;;
+esac
+
 REPORT_DIR=$(mktemp -d)
 trap 'rm -rf "$REPORT_DIR"' EXIT INT TERM
 
@@ -61,9 +83,13 @@ verdict() {
 # Both packages, not just the engine: ArgoUI carries the visual contract's tests (#375), and
 # a `test` script that silently covered one of the two would be worse than none.
 for package in ArgoEngine ArgoUI; do
-  echo "swift-test: $package"
+  echo "swift-test: $package ($CONFIGURATION)"
   status=0
-  (cd "$APP_DIR/Packages/$package" && swift test --xunit-output "$REPORT_DIR/$package.xml") ||
+  # The report path stays third, ahead of the configuration flags: swift-tooling.test.mjs stubs
+  # `swift` positionally, and a stub that wrote nowhere would pass by reporting nothing.
+  # shellcheck disable=SC2086 # CONFIGURATION_FLAGS is a word list, not one argument.
+  (cd "$APP_DIR/Packages/$package" &&
+    swift test --xunit-output "$REPORT_DIR/$package.xml" $CONFIGURATION_FLAGS) ||
     status=$?
   # The STATUS first. A compile failure or a signalled `swift` never reaches a report, and
   # `verdict`'s "wrote no test report" would bury the reason it did not.

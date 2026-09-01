@@ -24,8 +24,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// degrade, only the tier having nothing to say yet.
     public internal(set) var convention: CompanionReport?
     /// DIRECT: the blocked hook and the channel its answer goes down are both Argo's own. Absent
-    /// for
-    /// every external Session (unobservable there, per ADR-0024).
+    /// for every external Session (unobservable there, per ADR-0024).
     public internal(set) var permission: PermissionRequest?
     /// The question this Session is blocked on (#712) — DIRECT, and absent for every Session whose
     /// gate is not Argo's own. A live handle with an id, unlike the `Ask` the feed reads out of the
@@ -74,12 +73,21 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// than compared.
     private(set) var observedModeCount = 0
     public private(set) var headLeafUUID: String?
+    /// How much of the record this Session was read from — see `SessionTranscriptExtent`. `whole`
+    /// by default because that is what a spawn and a full drain both are; only the seam a bounded
+    /// read leaves can move it, and it never moves back.
+    public private(set) var transcriptExtent: SessionTranscriptExtent = .whole
     /// The session id this chain started as. Internal, and read by `HubSessionChain` alone: it is a
     /// join key, not a fact any surface renders.
     private(set) var originSessionID: String?
-    /// Everything the transcript said, in the order it said it. The facts above are a lossy fold
+    /// Everything the transcript said, in the order it said it, and the two Subagent halves beside
+    /// it — held together, with the stamp that stands for both. The facts above are a lossy fold
     /// over this stream, which is why it is retained whole for the surfaces that read it.
-    public private(set) var events: [TranscriptEvent] = []
+    ///
+    /// Written only from here and read through `HubSession+Transcript.swift`: the stamp is honest
+    /// because `TranscriptStream` holds the two collections privately, so no write anywhere can
+    /// reach either of them without going through the observers that restamp.
+    private(set) var transcript = TranscriptStream()
     /// How full the Session's context is: the tokens the LATEST reported spend was made against,
     /// not a sum — every request re-sends the whole conversation, so summing would count the same
     /// context once per turn. Falls as well as rises: the reading after a compaction is the
@@ -88,13 +96,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// Every spend the records reported, at both grains — see `SessionSpend`, which owns the
     /// arithmetic and the three token readings the header draws from it.
     private(set) var spend = SessionSpend()
-    /// Each Subagent's own reading, keyed by the CLI's id for it (#711).
-    ///
-    /// Beside `events` rather than in it, and that is the whole point: a child's records are the
-    /// child's, and folding them into the Session's stream would put a delegate's rows in the
-    /// parent's feed. Empty is the ordinary case — most Sessions delegate nothing, and Codex writes
-    /// no such record at all.
-    public private(set) var subagentEvents: [String: [TranscriptEvent]] = [:]
     public private(set) var lastActivityAtMs: Int?
     /// The oldest moment the records report. The roster's sort key, and no longer any part of
     /// ownership: a claim names its Session rather than matching a window (#742).
@@ -127,11 +128,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     ///
     /// Its id IS the claim's — the only handle the spawn and the terminal share until the CLI picks
     /// one. Idle, not running: a spawn IS a Turn boundary, and rendering it DIRECT keeps the row
-    /// off
-    /// `unknown` until the liveness poll catches up. A PTY that goes without a record ever
-    /// appearing
-    /// closes that Turn `cancelled`; the `ended` the roster then shows comes from the orphaned
-    /// provenance, never from a reason invented here.
+    /// off `unknown` until the liveness poll catches up. A PTY that goes without a record ever
+    /// appearing closes that Turn `cancelled`; the `ended` the roster then shows comes from the
+    /// orphaned provenance, never from a reason invented here.
     init(spawn: AgentSpawn) {
         self.id = spawn.claim.value
         self.sourceURL = nil
@@ -151,7 +150,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     }
 
     mutating func apply(_ event: TranscriptEvent) {
-        events.append(event)
+        transcript.append(event)
         switch event {
         case .recordIdentity:
             break
@@ -200,6 +199,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // does not count either — the reading below it is where the activity shows up.
         case .unreadableLine, .skillLoaded:
             break
+        case .excerpted:
+            // One way only: reading the missing stretch means reading the file again, and that
+            // arrives as a fresh Session rather than as more events on this one.
+            transcriptExtent = .excerpt
         }
     }
 
@@ -224,9 +227,16 @@ public struct HubSession: Equatable, Identifiable, Sendable {
 
     /// The latest time wins, and an absent one says nothing: a record with no timestamp is not a
     /// Session that ran at the epoch.
+    ///
+    /// The EARLIEST is only taken while the reading is still whole. A moment read after a bounded
+    /// read's seam sits behind a stretch nobody opened, so it cannot be the earliest one the file
+    /// holds — and an unread start is unknown rather than "the oldest thing this happened to see"
+    /// (`SessionTranscriptExtent`). The roster sorts on the latest, which a tail always reads, so
+    /// what this withholds costs no row its place.
     private mutating func observeActivity(_ atMs: Int?) {
         guard let atMs else { return }
         lastActivityAtMs = max(lastActivityAtMs ?? atMs, atMs)
+        guard transcriptExtent == .whole else { return }
         startedAtMs = min(startedAtMs ?? atMs, atMs)
     }
 
@@ -236,12 +246,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         hasAgentActivity = hasAgentActivity || continuation.hasAgentActivity
         isQueued = isQueued || continuation.isQueued
         // Appended, not merged: a resume chain is walked root-first, so the continuation's stream
-        // is the later half of one reading and belongs behind what came before it.
-        events += continuation.events
-        // Unioned by agent id, and appended where both halves read the same one: a Subagent's file
-        // sits beside the link that ran it, so a resumed chain's fan-outs are spread across the
-        // chain rather than gathered under its root.
-        subagentEvents.merge(continuation.subagentEvents) { $0 + $1 }
+        // is the later half of one reading and belongs behind what came before it. The Subagent
+        // halves are unioned by agent id and appended where both read the same one — a Subagent's
+        // file sits beside the link that ran it, so a resumed chain's fan-outs are spread across
+        // the chain rather than gathered under its root. See `TranscriptStream.merge`.
+        transcript.merge(continuation.transcript)
         cwd = continuation.cwd ?? cwd
         model = continuation.model ?? model
         // The later half of the chain wins where it read one, and says nothing where it did not: a
@@ -250,14 +259,18 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         spend.merge(continuation.spend)
         branch = continuation.branch ?? branch
         // A resume is a fresh `claude` with its own flag, so the later half's stance is the live
-        // one
-        // — and a file that has not stated one yet does not un-state the root's.
+        // one — and a file that has not stated one yet does not un-state the root's.
         observedMode = continuation.observedMode ?? observedMode
         modeSet = continuation.modeSet ?? modeSet
         // A resume continues the work the root was started on, so the later half only adds a ticket
         // where the root named none.
         ticket = continuation.ticket ?? ticket
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
+        // A chain is read whole only where every link was: one bounded link leaves the joined
+        // reading with a hole in it, and its totals are as partial as that link's.
+        if continuation.transcriptExtent == .excerpt {
+            transcriptExtent = .excerpt
+        }
         // The tip moves with the chain, unlike `sourceURL`: a resume continues the last link, and
         // the last link is whatever was merged in most recently.
         chainTipURL = continuation.chainTipURL ?? chainTipURL
@@ -271,6 +284,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// by the delegating call: the file is named for the id, and the call that reports it may not
     /// have come back yet.
     mutating func apply(_ read: [TranscriptEvent], ofSubagent agentID: String) {
-        subagentEvents[agentID, default: []] += read
+        transcript.append(read, ofSubagent: agentID)
     }
 }

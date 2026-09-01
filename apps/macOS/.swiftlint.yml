@@ -59,14 +59,51 @@ function_parameter_count:
   #
   # This rule visits FUNCTION declarations only — an initializer is invisible to it, which is how
   # a 27-parameter init sat under a cap of 4 for as long as it did (#755). `swift-boundaries.sh`
-  # edge 6 applies the same cap to `init` and reads its number off the line below, so both halves
-  # of one cap are stated in one place.
-  #
-  # RATCHET initializer-parameter-count: 18 — CockpitActions' every-callback init is the widest
-  # left, with SessionRosterProjection.Row's 14 behind it. 4 is the number: lower this as each one
-  # is grouped, never raise it to fit an init.
+  # edge 6 applies THIS number to `init`, so the cap is stated once and no second figure can drift
+  # above it: the 18 that used to sit here as a ratchet was a gate nothing anyone writes could
+  # fail (#992).
   error: 4
   warning: 4
+  # RATCHET initializer-parameter-count — the LIST is the ratchet, not a wider number. Edge 6 fails
+  # any init over the cap above that is not named here, and fails a name that is not over the cap
+  # any more, so the list can only shrink. Group the parameters by the reading each comes from and
+  # pass one value per reading, the way CockpitPresentation.Session does, then delete the line.
+  # Matched by file and width, so no line number churns; #992 found these 34 all passing silently.
+  #
+  # INIT: CockpitActions.swift 18 — one closure per cockpit action, the widest left
+  # INIT: SessionRosterProjection.swift 14 — one roster row, a field per rendered fact
+  # INIT: Ticket.swift 12 — a provider's whole ticket record, field for field
+  # INIT: SessionHeaderProjection.swift 11 — the header's readings, one per zone
+  # INIT: Ticket+Copy.swift 10 — Ticket's memberwise copy, one slot per field it carries
+  # INIT: CockpitPresentation+Session.swift 10 — the projected Session, one group per reading
+  # INIT: SessionComposer.swift 10 — the composer's callbacks beside its draft
+  # INIT: ArgoPalette.swift 10 — one ground per surface layer
+  # INIT: SpawnServices.swift 9 — the Hub's spawn collaborators and the files they own
+  # INIT: ConnectReading.swift 9 — the connect panel's whole reading
+  # INIT: DeckContentRow.swift 9 — the deck row's readings beside its intents
+  # INIT: ConnectPanelActions.swift 8 — one closure per connect step
+  # INIT: WorkspaceProjection.swift 7 — one git fact per slot
+  # INIT: ToolCall.swift 7 — a call as the transcript declares it
+  # INIT: ToolCall.swift 7 — its outcome, which is a later record and not an edit to the first
+  # INIT: ComposerDraft.swift 7 — what the composer holds between sends
+  # INIT: ArgoPalette.swift 7 — the palette's role groups, one per family
+  # INIT: ArgoPalette.swift 7 — one colour per interaction role
+  # INIT: DeliveryPullRequest.swift 6 — the PR's own fields; its git facts are grouped already
+  # INIT: Evidence.swift 6 — a diff result's counts beside its tier
+  # INIT: CockpitPresentation.swift 6 — one project row, a field per column
+  # INIT: CockpitPresentation+SessionValues.swift 6 — the autonomy reading, one fact per rung
+  # INIT: CockpitView.swift 6 — the cockpit's inputs and the ticket address
+  # INIT: GitHubDeviceChallenge.swift 5 — the device-flow response as GitHub documents it
+  # INIT: SessionAttachment.swift 5 — an attachment's own facts
+  # INIT: LaunchConfiguration.swift 5 — the launch arguments as parsed
+  # INIT: SessionSignals.swift 5 — the signals one transcript record carries
+  # INIT: SessionSeed.swift 5 — what a New Session opens with
+  # INIT: TicketPoll.swift 5 — the poll's port, its clock and its sink
+  # INIT: LiveClaudeFixture.swift 5 — a live-CLI fixture's collaborators
+  # INIT: CockpitPresentation.swift 5 — the cockpit reading's parts
+  # INIT: CockpitPresentation+SessionValues.swift 5 — which CLI is running, and since when
+  # INIT: ComposerSpecimen.swift 5 — the composer specimen's inputs
+  # INIT: TextRoles.swift 5 — one colour per text role
 
 cyclomatic_complexity:
   # biome gates cognitive complexity at 15; SwiftLint measures cyclomatic. Same ceiling,

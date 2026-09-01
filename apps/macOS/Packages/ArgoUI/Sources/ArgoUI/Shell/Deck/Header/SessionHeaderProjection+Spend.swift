@@ -14,9 +14,25 @@ extension SessionHeaderProjection {
         static let awayGapMs = 5 * 60 * 1000
     }
 
+    /// The one figure the header WALKS the whole event stream for — a compact and a sort over every
+    /// moment in it, taken twice, once for the line and once for the ⓘ panel's rows. A caller that
+    /// is already holding a reading at a known stamp has paid for it and hands it over instead.
+    struct Worked: Equatable, Sendable {
+        let milliseconds: Int?
+
+        static func read(across events: [TranscriptEvent]) -> Worked {
+            Worked(milliseconds: SessionHeaderProjection.worked(across: events))
+        }
+    }
+
     /// The composed line, and `nil` when there is nothing to compose it from — the line COLLAPSES
     /// rather than leaving the separators of facts it does not have.
-    static func spend(from session: CockpitPresentation.Session) -> String? {
+    static func spend(
+        from session: CockpitPresentation.Session,
+        worked: Worked? = nil,
+    )
+        -> String? {
+        let read = worked ?? .read(across: session.events)
         let parts = [
             // Cache split off the spend, not summed into it: every request re-reads the whole
             // conversation from cache, so one figure would read tens of millions as fresh spend.
@@ -25,7 +41,7 @@ extension SessionHeaderProjection {
             // Said as a spend, not as a count: `4.1M subagents` reads as four million of them.
             session.subagentTokens.map { "\(TokenCount.short($0)) in subagents" },
             ran(from: session).map { "started \(ElapsedTime.phrase(milliseconds: $0)) ago" },
-            worked(across: session.events).map(worked(for:)),
+            read.milliseconds.map(Self.worked(for:)),
         ].compactMap(\.self)
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
@@ -52,7 +68,13 @@ extension SessionHeaderProjection {
     /// `nil` where the record carries fewer than two moments — there is no gap to measure, and a
     /// zero would say a Session worked none of the time it ran. A real zero is reachable and does
     /// render: every gap above the cutoff is a Session that was left alone all day.
+    ///
+    /// Also `nil` on a BOUNDED reading, which is the same withholding the spend totals get
+    /// (`HubSession+Spend`): the stretch a launch sweep skipped reads here as one gap above the
+    /// cutoff, so a sum over the two ends understates the work and would render as a whole figure.
+    /// Read off the seam's own event rather than off the extent, which no surface is handed.
     static func worked(across events: [TranscriptEvent]) -> Int? {
+        guard !events.contains(.excerpted) else { return nil }
         let moments = moments(in: events)
         guard moments.count > 1 else { return nil }
         return zip(moments, moments.dropFirst()).reduce(0) { worked, pair in
@@ -71,10 +93,11 @@ extension SessionHeaderProjection {
             case let .toolCallOutcome(outcome): outcome.endedAtMs
             case let .compaction(atMs): atMs
             // A skill load carries no moment of its own: the CLI expands a body as part of the
-            // prompt beside it, and that prompt's own timestamp is already counted.
+            // prompt beside it, and that prompt's own timestamp is already counted. The seam is
+            // handled above, where it withholds the figure entire.
             case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .branch, .mode,
                  .message, .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine,
-                 .skillLoaded: nil
+                 .skillLoaded, .excerpted: nil
             }
         }
         .sorted()

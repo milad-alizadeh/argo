@@ -131,6 +131,13 @@ public extension Hub {
             ownership.record(ticket: ticket, ofClaim: plan.claim)
         }
         guard plan.seed.resuming == nil else { return }
+        // The rung this Session was STARTED on, into the ledger for the reason the ticket goes
+        // there: a resume runs in a later process, and only the file crosses that gap (#966).
+        // Only a rung the SEED named — a spawn that took the rung last picked started on nobody's
+        // choice for this Session, and a resume must not read an old pick as one.
+        if let rung = plan.seed.mode {
+            ownership.record(startingRung: rung, ofClaim: plan.claim)
+        }
         spawns[plan.claim] = AgentSpawn(spawning: plan, atMs: Date().epochMs)
     }
 

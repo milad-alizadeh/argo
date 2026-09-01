@@ -109,6 +109,10 @@ extension CockpitPresentation.Session {
     /// not-projected: hasAgentActivity — the roster admission test, already applied upstream: a
     ///   Session that fails it never reaches this projection at all.
     /// not-projected: isQueued — the other half of that same admission test.
+    /// not-projected: transcriptExtent — how much of the record was read. It reaches no surface
+    ///   because nothing below the shell has to know: every fact a bounded reading cannot state is
+    ///   withheld by the engine itself (`HubSession+Spend`), which is degrade-down at the source
+    ///   rather than a flag each surface would have to remember to ask about.
     ///
     /// Edge 5 also requires each fact below to land on the slot of its own name, unless a
     /// `renamed:` line here says otherwise (ADR-0027, amended by #755).
@@ -169,11 +173,21 @@ extension CockpitPresentation.Session {
                 // back to (#502, story 20).
                 explicitName: readings.annotations.explicitName(session.id),
             ),
-            transcript: Transcript(
-                events: session.events,
-                subagentEvents: session.subagentEvents,
-                lostTurn: session.lostTurn,
-            ),
+            transcript: Transcript(observed: session),
+        )
+    }
+}
+
+extension CockpitPresentation.Session.Transcript {
+    /// What the transcript said, with the ENGINE's own stamp for it rather than one derived here:
+    /// the stamp counts writes as well as lengths, and nothing on this side of the seam can see a
+    /// write. It is what the cockpit compares two readings of a stream by — see `Streams`.
+    init(observed session: HubSession) {
+        self.init(
+            events: session.events,
+            subagentEvents: session.subagentEvents,
+            transcriptStamp: session.transcriptStamp,
+            lostTurn: session.lostTurn,
         )
     }
 }

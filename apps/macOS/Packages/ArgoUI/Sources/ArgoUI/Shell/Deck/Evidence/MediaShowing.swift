@@ -15,41 +15,63 @@ struct MediaShowing {
         self.provenance = MediaProvenance(media, showing: showing)
     }
 
-    /// What a surface can draw the moment it appears. A plate is decoded here — it is a cache hit
-    /// for anything already on screen. A full frame is not: the lightbox stands in the plate the
-    /// gallery already made until `lit` lands, so the fade opens on a picture rather than on a gap.
-    @MainActor
-    static func atOnce(_ media: MediaEvidence, drawnIn box: MediaBox) -> MediaShowing {
-        guard let bytes = media.bytes else { return MediaShowing(media, nil, showing: false) }
-        switch box {
-        case .plate:
-            // The decode is the answer: a plate that drew nothing must not also be a control.
-            let bitmap = MediaCache.shared.bitmap(for: bytes, in: box)
-            return MediaShowing(media, bitmap, showing: bitmap != nil)
-        case .full:
-            // A bounded cache cannot promise the plate is still held — it may have been evicted,
-            // or the row may never have drawn one. So the claim comes off the file's signature
-            // rather than off the absence, or the caption drops "as the agent saw it" for the
-            // 25 ms the full frame takes and reflows under the reader mid-fade.
-            let held = MediaCache.shared.held(bytes)
-            return MediaShowing(media, held, showing: held != nil || MediaDecode.isPicture(bytes))
-        }
+    private init(_ provenance: MediaProvenance) {
+        self.picture = nil
+        self.provenance = provenance
     }
 
-    /// Every pixel the file has, decoded off the main actor. `nil` where there is nothing to show,
-    /// which leaves whatever stood in for it standing.
+    /// Whether a picture is on its way rather than absent. The pixels are read off the file and
+    /// decoded off the main actor, so there is a frame — and after an eviction, another one — where
+    /// a surface knows there IS a picture and has none to draw. That is a wait, and a surface must
+    /// draw it as one: "the record kept no image" over a picture that is coming is a lie the reader
+    /// cannot tell from the truth.
+    var isPending: Bool {
+        picture == nil && provenance.showsPicture
+    }
+
+    /// What a surface can draw the moment it appears, holding nothing up: whatever the cache
+    /// already has, and otherwise a wait.
     ///
-    /// Cancelled is also nothing to show. The decode itself does not observe cancellation, so the
-    /// ANSWER has to: without this a lightbox moved from one shot to the next takes the older
-    /// decode on top of the newer one when it finally lands.
-    static func lit(_ media: MediaEvidence) async -> MediaShowing? {
-        guard let bytes = media.bytes,
-              let bitmap = await MediaCache.fullBitmap(for: bytes),
-              !Task.isCancelled else { return nil }
-        return MediaShowing(media, bitmap, showing: true)
+    /// The BOX is not asked for. What is held is held at whatever box made it, and drawing a
+    /// coarser plate for the moment a finer decode takes is what the surface wants; a box here
+    /// would only let this refuse to draw one.
+    ///
+    /// A held plate too coarse for this box is drawn anyway — soft for the moment the decode takes,
+    /// which is the better of the two wrong pictures against a gap.
+    ///
+    /// The CLAIM comes off the signature rather than off the decode, because a bounded cache cannot
+    /// promise a picture is still held: it may have been evicted, or the row may never have drawn
+    /// one. A byte run that passes its signature and then fails to decode reads as a picture for
+    /// the length of one decode and settles as an absence, which is the same compromise the
+    /// lightbox has always made.
+    @MainActor
+    static func atOnce(_ media: MediaEvidence) -> MediaShowing {
+        guard let bytes = media.bytes else { return MediaShowing(media, nil, showing: false) }
+        let held = MediaCache.shared.held(bytes)
+        return MediaShowing(media, held, showing: held != nil || MediaDecode.isPicture(bytes))
     }
 
-    /// Before the decode has run. A view holds this for the one frame between appearing and its
+    /// The picture read and decoded at the size this box draws it — or the news that it can no
+    /// longer be read, which is a state and not a silence.
+    ///
+    /// Cancelled is nothing to show, and leaves whatever stood in for it standing. The decode does
+    /// not observe cancellation, so the ANSWER has to: without this a lightbox moved from one shot
+    /// to the next takes the older decode on top of the newer one when it finally lands.
+    @MainActor
+    static func decoded(_ media: MediaEvidence, drawnIn box: MediaBox) async -> MediaShowing? {
+        guard let bytes = media.bytes else { return nil }
+        let bitmap = await MediaCache.shared.bitmap(for: bytes, in: box)
+        guard !Task.isCancelled else { return nil }
+        if let bitmap {
+            return MediaShowing(media, bitmap, showing: true)
+        }
+        // A picture the signature promised and the file no longer has. Settled rather than left
+        // pending, or a deleted capture waits forever; `absent` rather than `unreadable` where the
+        // signature never promised one, which is what `atOnce` already said.
+        return MediaDecode.isPicture(bytes) ? MediaShowing(.unreadable) : nil
+    }
+
+    /// Before anything has been read. A view holds this for the one frame between appearing and its
     /// `onChange`, and an absence is the honest thing to hold: nothing has been established yet.
     private init() {
         self.picture = nil
@@ -60,34 +82,29 @@ struct MediaShowing {
 }
 
 extension View {
-    /// Decode a media result ONCE, into the view that draws it, at the size it draws it.
+    /// Read and decode a media result ONCE, into the view that draws it, at the size it draws it.
     ///
-    /// Decoding base64 into an `NSImage` is work and a SwiftUI `body` runs whenever anything near
-    /// it changes, so a surface that decoded inside its own `body` would re-decode every picture on
+    /// Decoding into an `NSImage` is work and a SwiftUI `body` runs whenever anything near it
+    /// changes, so a surface that decoded inside its own `body` would re-decode every picture on
     /// every layout pass. Every surface that shows an image reaches for this rather than spelling
-    /// the `@State` and the `onChange` again.
+    /// the `@State`, the `onChange` and the task again.
     ///
-    /// The plate lands in the update, so a gallery never draws its absence text for a frame first.
-    /// The full frame lands from a task, because decoding one on the main thread stalled the
-    /// lightbox's fade and read as a flash — and the task is attached only where there is one to
-    /// run, rather than on every plate in the feed for the sake of an immediate return.
-    @ViewBuilder
+    /// The update lands whatever the cache already holds, so a picture already drawn once is drawn
+    /// again with no wait at all. The task is what reads the file, and it is attached to every box
+    /// now rather than to the lightbox alone: a plate's pixels are no longer sitting in memory
+    /// waiting to be decoded, and a read may not happen on the main actor (ADR-0028 Rule 6).
     func showing(
         _ media: MediaEvidence,
         drawnIn box: MediaBox,
         in showing: Binding<MediaShowing>,
     )
         -> some View {
-        let plated = onChange(of: media, initial: true) {
-            showing.wrappedValue = MediaShowing.atOnce(media, drawnIn: box)
+        onChange(of: media, initial: true) {
+            showing.wrappedValue = MediaShowing.atOnce(media)
         }
-        if box.isFull {
-            plated.task(id: media) {
-                guard let lit = await MediaShowing.lit(media) else { return }
-                showing.wrappedValue = lit
-            }
-        } else {
-            plated
+        .task(id: media) {
+            guard let decoded = await MediaShowing.decoded(media, drawnIn: box) else { return }
+            showing.wrappedValue = decoded
         }
     }
 }

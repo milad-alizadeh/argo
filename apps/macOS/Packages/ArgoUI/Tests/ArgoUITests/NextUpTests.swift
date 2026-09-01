@@ -72,6 +72,17 @@ struct NextUpTests {
         try #expect(pick(in: room).reasons == [.next(chart: "#607")])
     }
 
+    /// Two charts both claiming the pick: the chip names the LOWER-NUMBERED of them, and names the
+    /// same one when the provider serves them the other way round — the chip's parent is Argo's
+    /// answer rather than the array's (#985). Reversed, #999 is the first claimant served.
+    @Test(arguments: [false, true])
+    func `a pick two charts both claim names the lower-numbered one`(reversed: Bool) throws {
+        let served = reversed ? Self.contested.reversed() : Self.contested
+        let room = TicketsRoomProjection.room(from: TicketsFixture.reading(of: Array(served)))
+
+        try #expect(pick(in: room).reasons == [.next(chart: "#607")])
+    }
+
     /// Work happens at leaves, so a parent is never what the hero offers — even when it is the
     /// first unblocked thing the provider served.
     @Test
@@ -198,4 +209,17 @@ struct NextUpTests {
     private var leaf: Ticket {
         Ticket(number: 273, title: "The planner", status: "Todo", closure: .open)
     }
+
+    /// #607 and #999 are both PRD-shaped and both claim #273, in that order.
+    private static let contested = [
+        Ticket(
+            number: 607, title: "Wayfinder", status: "Todo", closure: .open, type: "PRD",
+            children: [273],
+        ),
+        Ticket(
+            number: 999, title: "Later plan", status: "Todo", closure: .open, type: "PRD",
+            children: [273],
+        ),
+        Ticket(number: 273, title: "The planner", status: "Todo", closure: .open),
+    ]
 }

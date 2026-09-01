@@ -4,9 +4,12 @@ import Testing
 
 /// What the reading changing shape costs the lane beside it.
 ///
-/// The lane's geometry is a walk over every row, and the document view posts a frame change for
-/// every `setFrame` — including the burst a measure tail makes, which is exactly when the geometry
-/// is known to be in flux. A handler decides; it does not compute (#955, ADR-0028 Rule 2).
+/// The lane's geometry is a walk over every row, and the reading reports every `setFrame` on
+/// itself — including the burst a measure tail makes, which is exactly when the geometry is known
+/// to be in flux. A handler decides; it does not compute (#955, ADR-0028 Rule 2).
+///
+/// The report arrives over the handle rather than as a frame observer of the lane's own (#971), so
+/// each claim below drives the seam AppKit drives: `FeedTableView.reshaped`.
 @Suite("Minimap reshape")
 @MainActor
 struct MinimapReshapeTests {
@@ -20,8 +23,7 @@ struct MinimapReshapeTests {
     }
 
     private static func postReshape(on deck: MinimapLaneFixture.Mounted) throws {
-        let document = try #require(deck.table.scroller?.documentView)
-        FeedTableFixture.postFrameChange(on: document)
+        try FeedTableFixture.reportReshape(on: deck.table)
     }
 
     @Test
@@ -63,7 +65,24 @@ struct MinimapReshapeTests {
     /// batch. It may rebuild its whole-document geometry once for the burst, not once per notice.
     @Test
     func `the tail of a full re-measure rebuilds the lane once, not once per batch`() async throws {
-        let deck = MinimapLaneFixture.mounted(over: Self.rows)
+        #expect(try await Self.derivationsAcrossAReMeasure(over: Self.rows) == 1)
+    }
+
+    /// The same claim said as a shape rather than as a number (ADR-0028 Rule 2): a re-measure posts
+    /// a notice per batch, so a lane deriving per notice costs O(rows / batch). Four times the rows
+    /// is four times the batches and still one derivation.
+    @Test
+    func `a re-measure four times as long derives the lane no more often`() async throws {
+        let long = (0 ..< 800).map {
+            FeedRow(id: $0, content: .message("A line of prose long enough to wrap, number \($0)."))
+        }
+
+        #expect(try await Self.derivationsAcrossAReMeasure(over: long) == 1)
+    }
+
+    /// One seam let go over `rows`, and what the lane derived for the burst it made.
+    private static func derivationsAcrossAReMeasure(over rows: [FeedRow]) async throws -> Int {
+        let deck = MinimapLaneFixture.mounted(over: rows)
         let scroller = try #require(deck.table.scroller)
         deck.lane.layoutSubtreeIfNeeded()
         let derived = deck.lane.geometryDerivations
@@ -74,10 +93,82 @@ struct MinimapReshapeTests {
         try await #require(deck.table.tailing).value
         deck.lane.layoutSubtreeIfNeeded()
 
-        // The burst was real — more than one notice arrived — which is what makes the count below
-        // a claim rather than an observation over nothing.
         #expect(deck.lane.reshapeNotices - noticed > 1)
-        #expect(deck.lane.geometryDerivations == derived + 1)
+        return deck.lane.geometryDerivations - derived
+    }
+
+    /// The risk in coalescing, and the only one that matters: a burst whose LAST notice is dropped
+    /// leaves the lane drawing a document that is not there any more, permanently and silently.
+    ///
+    /// So the pixels are compared — what the burst left against what an unconditional rebuild
+    /// draws, and against a lane that never saw the old reading at all.
+    @Test
+    func `the rects a coalesced burst leaves are the rects a full rebuild draws`() throws {
+        let deck = MinimapLaneFixture.mounted(over: Array(FeedProjection.longRows.dropLast(20)))
+        deck.lane.layoutSubtreeIfNeeded()
+
+        deck.table.apply(FeedTableFixture.model(showing: FeedProjection.longRows))
+        for _ in 0 ..< Self.posted {
+            try Self.postReshape(on: deck)
+        }
+        deck.lane.layoutSubtreeIfNeeded()
+        let coalesced = deck.lane.drawnRects
+
+        // Derived again with nothing deferred, which is what a lane answering every notice would be
+        // showing — and then against a lane opened on the grown reading from nothing.
+        deck.lane.refresh()
+        let fresh = MinimapLaneFixture.mounted(over: FeedProjection.longRows)
+        fresh.lane.layoutSubtreeIfNeeded()
+
+        #expect(!coalesced.isEmpty)
+        #expect(deck.lane.drawnRects == coalesced)
+        #expect(fresh.lane.drawnRects == coalesced)
+    }
+
+    /// The same risk for the other coalescing the lane does, and the sharper of the two: a width
+    /// burst is waited out entirely, so for its length the lane is drawing the miniature it read
+    /// BEFORE the burst. Everything then rests on the settle at the end bringing it up to date.
+    ///
+    /// So the rects the burst LEFT are compared with the rects an unconditional walk draws, over
+    /// the whole miniature rather than one band. A lane holding a reading of the pre-burst widths
+    /// would differ in every rect on the lane.
+    @Test
+    func `the rects a width burst leaves are the rects an unconditional walk draws`() async throws {
+        let deck = MinimapLaneFixture.mounted(over: Self.rows)
+        let scroller = try #require(deck.table.scroller)
+        deck.lane.layoutSubtreeIfNeeded()
+
+        for at in 0 ..< Self.posted {
+            deck.lane.setFrameSize(CGSize(
+                width: MinimapLaneFixture.width - CGFloat(at * 4),
+                height: deck.lane.bounds.height,
+            ))
+            scroller.setFrameSize(CGSize(
+                width: MinimapLaneFixture.column.width - CGFloat(at * 8),
+                height: scroller.bounds.height,
+            ))
+            deck.lane.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        try await Self.quiet(deck)
+
+        let walked = try #require(deck.table.reading())
+        let unconditional = MinimapGeometry(walked, lane: deck.lane.bounds.size)
+        let whole = 0 ... unconditional.miniatureHeight
+        #expect(!unconditional.rects(in: whole).isEmpty)
+        #expect(deck.lane.geometry.rects(in: whole) == unconditional.rects(in: whole))
+    }
+
+    /// The reading left until the feed says its own heights are final, the lane laid out on every
+    /// turn of the wait as it is in the app. Bounded, so a count that never came back fails rather
+    /// than hangs.
+    private static func quiet(_ deck: MinimapLaneFixture.Mounted) async throws {
+        for _ in 0 ..< 2000 where deck.table.deferredPasses > 0 {
+            deck.lane.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        deck.lane.layoutSubtreeIfNeeded()
+        #expect(deck.table.deferredPasses == 0)
     }
 
     /// Deferring the rebuild must not be able to strand it. A reshape the lane could not answer —
