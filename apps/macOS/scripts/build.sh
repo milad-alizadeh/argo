@@ -8,10 +8,28 @@
 #
 # The condition is the certificate, not the runner, because a contributor without one is the
 # same case. A machine that has an identity builds exactly as Xcode does.
+#
+# `ARGO_BUILD_CONFIGURATION` picks the configuration — `debug` (the default) or `release`. It is
+# the same shape as `ARGO_TEST_CONFIGURATION` on `swift-test.sh` (#991) and for the same reason:
+# a debug build is what a contributor wants on every run, and the optimised one is a deliberate
+# ask. Release is the only configuration that names `-O`, so it is the only one whose figures say
+# anything about the app anybody ships — see `docs/agents/build-configurations.md` (#998).
+# Anything else is refused rather than guessed: a typo that silently built Debug would report an
+# optimised figure that was never measured.
 set -eu
 
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 cd "$APP_DIR"
+
+case "${ARGO_BUILD_CONFIGURATION:-debug}" in
+  debug) configuration=Debug ;;
+  release) configuration=Release ;;
+  *)
+    echo "build: ARGO_BUILD_CONFIGURATION must be debug or release," \
+      "got '$ARGO_BUILD_CONFIGURATION'" >&2
+    exit 1
+    ;;
+esac
 
 if security find-identity -p codesigning -v 2>/dev/null | grep -q "Apple Development"; then
   signing=""
@@ -21,5 +39,5 @@ else
 fi
 
 # shellcheck disable=SC2086 # $signing is a deliberate argument list, empty when signing stays on.
-exec xcodebuild -project Argo.xcodeproj -scheme Argo -configuration Debug \
+exec xcodebuild -project Argo.xcodeproj -scheme Argo -configuration "$configuration" \
   -derivedDataPath build build $signing

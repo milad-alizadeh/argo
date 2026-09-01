@@ -12,6 +12,11 @@ the build and the swift-testing suites. Linux CI runs biome, duplication and `te
 only executable suite there. Pre-commit runs lint-staged: biome, then SwiftFormat, SwiftLint,
 boundaries and the design-token gate over staged Swift.
 
+Neither the build nor the suites are optimised by default: `bun run build` is Debug, and
+`swift-test.sh` is `-Onone` unless `ARGO_TEST_CONFIGURATION=release` (#991). What each
+configuration names, how to build the optimised app, and what it costs:
+`docs/agents/build-configurations.md`.
+
 Biome's escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries) are TypeScript-only and
 so have no subject since ADR-0023. Dormant, like the boundary gates — the per-file caps still
 apply to every tracked `.mjs`.
