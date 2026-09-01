@@ -33,6 +33,11 @@ enum ProseEngine: CaseIterable {
 /// `box + leading` on every face on both machines, and only the first line's box was ever in doubt.
 enum ProseLineBox {
     @MainActor static func of(_ face: ProseFace) -> CGFloat {
+        let epoch = ProseTextSize.epoch()
+        if epoch != readAt {
+            read.removeAll()
+            readAt = epoch
+        }
         if let known = read[face.key] {
             return known
         }
@@ -48,9 +53,22 @@ enum ProseLineBox {
 
     @MainActor private static var read: [String: CGFloat] = [:]
 
+    /// The setting those boxes were drawn at. A box is the RESOLVED face's ascent over its descent,
+    /// so it moves with the Accessibility text size and the face's key does not say which (#1027).
+    @MainActor private static var readAt = ProseTextSize.epoch()
+
+    #if DEBUG
+        /// Every ruler pass this has paid for — three hosting measures each, and the count that
+        /// holds the claim above to something a test can see rather than reason about.
+        @MainActor private(set) static var rulings = 0
+    #endif
+
     /// Falls to the fractional box where no candidate accounts for every count, which is the box
     /// the module took before any of this and the one that cannot overlap the row below.
     @MainActor private static func measured(_ face: ProseFace) -> CGFloat {
+        #if DEBUG
+            rulings += 1
+        #endif
         let heights = Self.counts.map { drawn(face, lines: $0) }
         let step = face.step
         for engine in ProseEngine.allCases {
