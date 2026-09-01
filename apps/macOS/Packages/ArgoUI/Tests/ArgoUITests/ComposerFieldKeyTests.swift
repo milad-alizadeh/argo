@@ -43,12 +43,9 @@ import Testing
 
     /// The clear after a send reaches the field on every Turn, not only the first (#1000).
     ///
-    /// A keystroke and the Return that sends it land in ONE run-loop turn: the draft goes from
-    /// empty to the line and back to empty with nothing rendered between. SwiftUI is handed the
-    /// value it already drew, so `updateNSView` — the only writer `ComposerTextView` has — is
-    /// never reached, and a line that was sent stays sitting in the field. Five Turns rather than
-    /// two because the first one is the one that used to work: it is the SECOND send in a process
-    /// that went stale, which is how this landed on other people's branches as a 10 s settle.
+    /// Five Turns rather than two because the first one is the one that always worked: a send
+    /// leaves the field stale only once something has already rendered at that value, so the
+    /// staleness — and the line it concatenates onto the next Turn — begins at the second.
     @Test
     func `every Turn sent empties the field, not only the first`() throws {
         let field = try Self.hosted()
@@ -63,11 +60,29 @@ import Testing
         #expect(field.sent == (1 ... 5).map { "turn \($0)" })
     }
 
+    /// The field grew onto a second line and has to come back off it: the clear a send leaves
+    /// arrives without a SwiftUI pass of its own, and a field emptied at two lines' height would
+    /// hold a gap over the feed until some later layout happened to close it (#1000).
+    @Test
+    func `a multi-line draft sent takes the field back to one line`() throws {
+        let field = try Self.hosted()
+
+        let atRest = field.height
+
+        field.input.insertText("first", replacementRange: field.input.selectedRange())
+        field.press(.shift)
+        field.input.insertText("second", replacementRange: field.input.selectedRange())
+        field.settle { field.height > atRest }
+        #expect(field.height > atRest)
+
+        field.press([])
+        field.settle { field.input.string.isEmpty }
+
+        #expect(field.height == atRest)
+    }
+
     /// Two composers hosted at once, which IS a legitimate arrangement — the app draws one per
     /// cockpit window, and `ComposerField`'s own preview draws three (#1000).
-    ///
-    /// The older one is the half that broke: a second composer is more work on the main actor, so
-    /// the update pass that used to slip between the keystroke and the send stopped arriving.
     @Test
     func `a second hosted composer leaves the first one's field working`() throws {
         let first = try Self.hosted()
@@ -100,6 +115,11 @@ import Testing
             self.host = host
             self.input = input
             self.store = store
+        }
+
+        /// What the field is asking the vessel for, which is what a grown line costs the feed.
+        var height: CGFloat {
+            input.enclosingScrollView?.frame.height ?? 0
         }
 
         var draft: ComposerDraft {
