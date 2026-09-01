@@ -5,8 +5,9 @@
 ///
 ///     Recorded: <what> · <machine> · <configuration> · <sampling>
 ///
-/// - **Machine** — `M4 Pro` (12 cores, 48 GB, macOS 26.5.1, Swift 6.3.3), or `Apple silicon
-///   laptop` where that is the whole of what is known about a figure predating this file.
+/// - **Machine** — two spellings, and no third. `M4 Pro` is 12 cores, 48 GB, macOS 26.5.1, Swift
+///   6.3.3. `Apple silicon laptop` is the whole of what is known about a figure predating this
+///   file — including one that said "M4 MacBook Pro", probably this machine and never verified.
 /// - **Configuration** — `debug` is `-Onone`. A census of bytes reads the same in any build and
 ///   says `either`.
 /// - **Sampling** — `least of N` for warm work, because CPU noise is one-sided (`CostMeasure`);
@@ -28,7 +29,8 @@ enum PerfBudgets {
 
     /// `HubRosterCostTests` — one `session(id:)` may not cost more as the roster grows.
     ///
-    /// Recorded: 0.68 µs at both 8 rows and 64, over 32 observed Sessions · M4 MacBook Pro · debug
+    /// Recorded: 0.68 µs at both 8 rows and 64, over 32 observed Sessions · Apple silicon laptop ·
+    /// debug
     /// · least of N over 500 lookups. Before the memo the same lookup cost 18 µs at 8 rows and
     /// 163 µs at 64 — a quotient of 9, against the 1.0 it reads now. Rule 3's 1.3, as above.
     ///

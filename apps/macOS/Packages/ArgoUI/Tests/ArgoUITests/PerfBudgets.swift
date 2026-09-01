@@ -10,9 +10,10 @@
 ///
 ///     Recorded: <what> · <machine> · <configuration> · <sampling>
 ///
-/// - **Machine** — `M4 Pro` (12 cores, 48 GB, macOS 26.5.1, Swift 6.3.3) is what #953 recorded on.
-///   `Apple silicon laptop` is the whole of what is known about a figure that predates this file:
-///   read one of those as a shape, never as a number.
+/// - **Machine** — two spellings, and no third. `M4 Pro` (12 cores, 48 GB, macOS 26.5.1, Swift
+///   6.3.3) is what #953 recorded on. `Apple silicon laptop` is the whole of what is known about a
+///   figure that predates this file — including one that said "M4 MacBook Pro", which is probably
+///   this machine and was never verified to be. Read one of those as a shape, never as a number.
 /// - **Configuration** — `debug` is `-Onone`; `release` is `-O` with `wholemodule`. A count reads
 ///   the same in both and says `either`.
 /// - **Sampling** — `least of N` for warm work, because CPU noise is one-sided (`CostMeasure`).
@@ -90,7 +91,8 @@ enum PerfBudgets {
     /// `MinimapWalkCostTests` — thirty frames of a width burst re-measure less than one document.
     ///
     /// Recorded: 1 420 ruler measures over the 1 000-row reading, against 29 000 before the fix —
-    /// one document a frame · M-series laptop · debug · exact, idle and loaded. Three documents is
+    /// one document a frame · Apple silicon laptop · debug · exact, idle and loaded. Three
+    /// documents is
     /// 2.1x the reading. The same run's seconds, 13.7 s → 0.9 s of thread CPU, gate nothing: its
     /// two halves are unlike work, which is the CPU quotient that suite rejects.
     ///
