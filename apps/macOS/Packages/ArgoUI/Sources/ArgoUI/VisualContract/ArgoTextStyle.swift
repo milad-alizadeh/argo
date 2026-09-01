@@ -43,14 +43,10 @@ public struct ArgoTextStyle: Sendable {
         rung.size
     }
 
-    /// The role's NOMINAL line box: the documented size at the ladder's ratio. What the chrome is
-    /// sized from — a badge, a menu row — and what the design studies behind those numbers were
-    /// reconciled against.
-    ///
-    /// It is not what a line of this role is DRAWN at; `ArgoTypeScale.lineBox` is, and it runs
-    /// about a point and a half taller at `body`. Anything measuring a line it also draws reads
-    /// that one, and reading this instead is the mismatch #766 was.
-    public var lineBox: CGFloat {
+    /// The documented size at the ladder's ratio, which the chrome is sized from. About a point
+    /// and a half under what a line of this role is DRAWN at — `ArgoTypeScale.drawnLineBox` — so
+    /// the surfaces reading it carry padding that absorbs the difference (#766).
+    public var nominalLineBox: CGFloat {
         rung.size * ArgoTypeScale.naturalLineHeightRatio
     }
 

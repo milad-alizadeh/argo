@@ -32,10 +32,12 @@ extension MinimapAnnotation {
         inside laneHeight: CGFloat,
     )
         -> [MinimapAnnotation] {
+        // Read once: this now resolves a font, and `legible` runs on every pointer move.
+        let labelHeight = ArgoMinimapLane.labelHeight
         var lastLabel: CGFloat?
         return annotations.reduce(into: []) { kept, annotation in
             let y = annotation.labelY(inside: laneHeight)
-            let crowded = lastLabel.map { y - $0 < ArgoMinimapLane.labelHeight } ?? false
+            let crowded = lastLabel.map { y - $0 < labelHeight } ?? false
             guard annotation.words != nil, !crowded else {
                 return kept.append(MinimapAnnotation(span: annotation.span, words: nil))
             }

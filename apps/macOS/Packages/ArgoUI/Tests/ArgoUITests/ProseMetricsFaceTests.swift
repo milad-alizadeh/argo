@@ -66,12 +66,13 @@ struct ProseMetricsFaceTests {
         #expect(backtickedAsk.floor > plainAsk.floor)
     }
 
-    /// #766's remaining triage question. Against the PLATFORM and not against the sans: both faces
-    /// now come from the same `preferredFont` call, so comparing them to each other could not fail,
-    /// where comparing the mono to what the platform resolves for the rung can.
+    /// #766's remaining triage question, named against the PLATFORM rather than against the sans —
+    /// both faces come from one `preferredFont` call now, so comparing them to each other says
+    /// nothing at all.
     ///
-    /// It still cannot MOVE Dynamic Type in process, so what it pins is the source the size is read
-    /// from, at whatever setting the run is at.
+    /// This says which source the size is read from and no more. It cannot MOVE Dynamic Type in
+    /// process, and at the default setting the documented number equals the resolved one, so a
+    /// mono rebuilt on the constant would pass this too.
     @Test(arguments: ArgoTypeScale.allCases)
     func `the mono takes the size the platform resolves for the rung`(rung: ArgoTypeScale) {
         let resolved = NSFont.preferredFont(forTextStyle: rung.appKitStyle).pointSize

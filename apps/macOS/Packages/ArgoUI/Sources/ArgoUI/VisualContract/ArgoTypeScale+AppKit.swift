@@ -23,15 +23,17 @@ extension ArgoTypeScale {
         }
     }
 
-    /// What one line of this rung OCCUPIES, read off the face the platform resolves rather than
-    /// worked out from `size`.
+    /// What one line of this rung occupies AS DRAWN, off the face the platform resolves.
     ///
-    /// `size` is the HIG's documented number and `naturalLineHeightRatio` a ratio over it, and the
-    /// product is not the box: at `body` it reports 15.73 where TextKit sets the line at 17.31.
-    /// Worse, `size` is a constant and the resolved face is not, so the two part entirely once an
-    /// Accessibility text setting moves the platform's ladder. Anything measuring a line it also
-    /// DRAWS reads this; the ratio stays for working a stated rhythm back into a `lineSpacing`.
-    @MainActor var lineBox: CGFloat {
+    /// Not `size * naturalLineHeightRatio`, which is a different number twice over: at `body` the
+    /// product is 15.73 where TextKit sets the line at 17.31, and `size` is a constant where the
+    /// resolved face is not, so the two part further once an Accessibility text setting moves the
+    /// platform's ladder. `ArgoTextStyle.nominalLineBox` is that other number, under its own name.
+    ///
+    /// `@MainActor` is not the compiler's requirement — `preferredFont` is `nonisolated`. It is
+    /// this repo's: the setting behind the answer is app-wide live state, and `ProseFace.font`
+    /// already reads it from the main actor.
+    @MainActor var drawnLineBox: CGFloat {
         let font = NSFont.preferredFont(forTextStyle: appKitStyle)
         return font.ascender - font.descender
     }

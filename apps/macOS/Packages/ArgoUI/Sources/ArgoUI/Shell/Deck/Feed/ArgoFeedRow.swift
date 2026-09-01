@@ -137,7 +137,7 @@ public enum ArgoFeedRow {
 
     /// The same rhythm for machine output. Tighter than prose.
     public static var machineLineSpacing: CGFloat {
-        max(0, machineLineHeight - ArgoTypography.machine.lineBox)
+        max(0, machineLineHeight - ArgoTypography.machine.nominalLineBox)
     }
 
     /// What a line of output is set at, inside the evidence panel.
