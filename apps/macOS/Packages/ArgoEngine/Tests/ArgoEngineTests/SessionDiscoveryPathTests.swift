@@ -59,6 +59,32 @@ struct SessionDiscoveryPathTests {
         #expect(await SessionDiscovery(store: fixture.store).workingSet(for: projectURL).isEmpty)
     }
 
+    /// A `cwd` nothing could resolve is compared as WRITTEN, and a relative one is then a path with
+    /// its leading separator missing — the separator the comparison splits on. Compared as
+    /// components it would sit inside a root it has never been under, so it is inside nothing.
+    @Test
+    func `a relative working directory is inside no Project`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        try fixture.write(FixtureTranscript(name: "relative", cwd: "checkout/deep"))
+
+        let projectURL = URL(fileURLWithPath: "/checkout")
+
+        #expect(await SessionDiscovery(store: fixture.store).workingSet(for: projectURL).isEmpty)
+    }
+
+    /// And a `..` in one walks back out of the Project rather than counting as a component of it.
+    @Test
+    func `a working directory that walks back out of the Project is outside it`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        try fixture.write(FixtureTranscript(name: "upward", cwd: "/checkout/../elsewhere"))
+
+        let projectURL = URL(fileURLWithPath: "/checkout")
+
+        #expect(await SessionDiscovery(store: fixture.store).workingSet(for: projectURL).isEmpty)
+    }
+
     /// The observer is handed a resolver that answers nothing at all — a permission bite on every
     /// folder it asks about. The sweep still answers, on the strings it was given.
     @Test

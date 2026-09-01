@@ -35,7 +35,6 @@ struct RecordDirectoryFixture {
     }
 
     /// A folder that really exists, for a case whose subject is what the file system says about it.
-    @discardableResult
     func directory(_ name: String) throws -> URL {
         let url = rootURL.appending(path: name, directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

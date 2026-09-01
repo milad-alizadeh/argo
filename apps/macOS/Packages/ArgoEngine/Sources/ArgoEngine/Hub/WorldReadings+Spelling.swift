@@ -9,8 +9,8 @@ extension WorldReadings {
     /// gets wrong silently if it is left to a name, so it is a parameter.
     enum Spelling {
         /// Every folder named is asked about again, and every folder not named is forgotten. For
-        /// the caller that names them all — the worktree sweep, which sees both the repository and
-        /// the roster. Asking again is what keeps a repointed symlink from being answered out of a
+        /// the caller that names them all — the worktree sweep, which sees the roster and every
+        /// worktree. Asking again is what keeps a repointed symlink from being answered out of a
         /// table that has no other reason to change.
         case theWholeTable
         /// Only folders nothing has spelled yet are asked about, and the rest of the table stands.
@@ -33,16 +33,16 @@ extension WorldReadings {
     /// Degrade-down: an unspelled folder matches no live process and no worktree, which is the
     /// quieter answer. Nothing should reach it in practice — every way a folder joins the roster
     /// spells it — and the callers that close those windows are named on `Spelling` above.
-    func spelled(_ path: String) -> String {
-        resolved[path] ?? path
+    func spelled(_ path: String) -> SpelledPath {
+        resolved.spelling(of: path)
     }
 
-    /// Spell these folders, asking the file system in ONE batch and off the main actor.
-    func spell(_ paths: [String], settling extent: Spelling) async {
-        // The pointed Project's own root is in EVERY batch, whoever the caller is: the roster
-        // compares a spawn's folder against it, and a root the table cannot answer for would
-        // degrade to the string a registration carried while the folder beside it is resolved —
-        // two spellings of one directory, and no provisional row inside it (#363).
+    /// Spell the pointed Project's root and these folders, asking the file system in ONE batch and
+    /// off the main actor.
+    ///
+    /// The root is in every batch because the roster compares a folder against it, and one side
+    /// spelled while the other is not is the whole of #363.
+    func spell(theProjectRootAnd paths: [String], settling extent: Spelling) async {
         var named = paths
         if let root = repositoryURL()?.path {
             named.append(root)

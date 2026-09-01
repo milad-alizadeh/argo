@@ -29,22 +29,22 @@ struct HubSpawnPathTests {
     }
 }
 
-/// #363: the folder is reached through a symlink, so the Project's own root and the folder the
-/// row carries are two spellings of one directory. The row is still in the roster the Hub publishes
-/// for that Project — an agent Argo owns and does not draw is the worst of both tiers.
-@Suite("Hub spawn symlinked folders")
+/// The Project root and the folder a Session records are two spellings of one directory (#363):
+/// the Project was registered at `/var/folders/…` and the CLI reports `/private/var/folders/…`.
+@Suite("Hub spawn symlinked roots")
 @MainActor
-struct HubSpawnSymlinkTests {
+struct HubSpawnSymlinkedRootTests {
+    /// The row is in the roster the Hub publishes for that Project and it is `managed` — an agent
+    /// Argo owns and does not draw is the worst of both tiers.
     @Test
-    func `a spawn in a folder reached through a symlink is in the Project's roster`() async throws {
+    func `a spawn recorded under the resolved root is in the Project's roster`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        let worktree = fixture.projectURL.appending(path: "worktree", directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: worktree, withIntermediateDirectories: true)
-        let link = fixture.projectURL.appending(path: "link", directoryHint: .isDirectory)
-        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: worktree)
+        #expect(fixture.resolvedProjectPath != fixture.projectURL.path)
 
-        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(cwd: link.path))
+        let claim = try await fixture.hub.spawnSession(
+            seed: SessionSeed(cwd: fixture.resolvedProjectPath),
+        )
 
         #expect(fixture.hub.sessions.map(\.id) == [claim.value])
         #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
