@@ -20,8 +20,8 @@ struct InstrumentDeckShell: View {
     /// The same Session's plan, which is standing state rather than a row.
     var showing = PlanShowing()
     /// Which call's evidence the panel is showing. A BINDING since #875: the toolbar's toggle
-    /// writes it and the toolbar is above this view. A specimen still seeds it with `.constant`,
-    /// which is how a screenshot renders the panel open without a click.
+    /// writes it and the toolbar is above this view. A specimen holds it as state and passes that
+    /// (`SessionsDeckSpecimen`): under `.constant` the panel renders open but no click opens one.
     var open: Binding<FeedRow.ID?> = .constant(nil)
     /// Which result inside that row the panel is showing. Beside `open` and for its reason.
     var step: Binding<Int?> = .constant(nil)

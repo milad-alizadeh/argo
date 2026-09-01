@@ -70,9 +70,11 @@ enum SpecimenScene {
     }
 
     /// The Sessions room with a reading in it — the shell and not `SessionsDeck`, because what is
-    /// being judged is the assembled container.
+    /// being judged is the assembled container. It HOLDS the evidence selection rather than seeding
+    /// a constant one, so a click on a row opens the panel: see `SessionsDeckSpecimen`.
     static func sessions(
         _ feed: [FeedRow],
+        showing: PlanShowing = PlanShowing(),
         open: FeedRow.ID? = nil,
         step: Int? = nil,
         lit: FeedShot? = nil,
@@ -81,21 +83,15 @@ enum SpecimenScene {
         access: CockpitPresentation.Session.Access = .managed,
     )
         -> some View {
-        // Named, because a deck whose top zone says nothing is the no-Session-selected state, and
-        // every entry below has a Session in it.
-        InstrumentDeckShell(
-            room: .sessions,
+        SessionsDeckSpecimen(
             feed: feed,
-            // A prompt in the composer's slot IS the Session's status, so the band above it is read
-            // off the same fact rather than named per entry.
-            header: vessel.prompt == nil
-                ? SessionHeaderFixture.header(for: access)
-                : SessionHeaderFixture.needsInput,
-            open: .constant(open),
-            step: .constant(step),
+            showing: showing,
+            open: open,
+            step: step,
             lit: lit,
             held: held,
             vessel: vessel,
+            access: access,
         )
     }
 }
