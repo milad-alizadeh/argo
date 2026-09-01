@@ -22,14 +22,10 @@ extension SpecimenRegistry {
         SpecimenEntry("openPlanPill") {
             PlanSpecimen(plan: PlanFixture.working, isRevealed: true)
         },
-        // The pair #713 is about, and it takes both: `isFocused` reaches nothing but the ring, so
-        // the pointer entry renders pixel-identical to `planPill` above. It is evidence only beside
-        // the keyboard one, where the ring appearing is what proves the seam fired at all.
+        // The pill's ring (#713). The pointer's version of this state is `planPill` above: focus
+        // reaches nothing but the ring, so a reader working the pointer sees that render exactly.
         SpecimenEntry("cursoredPlanPill") {
-            PlanSpecimen(plan: PlanFixture.working, arrival: .key)
-        },
-        SpecimenEntry("pointerFocusedPlanPill") {
-            PlanSpecimen(plan: PlanFixture.working, arrival: .pointer)
+            PlanSpecimen(plan: PlanFixture.working, isCursored: true)
         },
         SpecimenEntry("unstartedPlanPill") {
             PlanSpecimen(plan: PlanFixture.unstarted, isRevealed: true)

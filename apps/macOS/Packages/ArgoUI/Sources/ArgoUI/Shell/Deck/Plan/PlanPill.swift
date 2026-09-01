@@ -11,7 +11,7 @@ struct PlanPill: View {
     /// cannot be reached from a screenshot.
     var isRevealed = false
     /// Whether the pill starts with the keyboard on it, beside `isRevealed` and for its reason. It
-    /// draws no ring by itself: `ArgoFocusVisibility` still has to say the reader arrived by key.
+    /// draws no ring alone: `ArgoFocusVisibility` still has to say the reader arrived by key.
     var isCursored = false
 
     /// Opened by a click and by nothing else: the list stands over the middle of the reading, so a
@@ -76,9 +76,9 @@ struct PlanPill: View {
             .onKeyPress(.space) { pressed() }
             .onKeyPress(.return) { pressed() }
             .onExitCommand { isOpen = false }
-            // The focus a Tab would have placed. Which of this and the specimen's own event note
-            // runs first does not matter — the ring reads the visibility as an `@Observable`.
-            .task {
+            // The focus a Tab would have placed. Order against the specimen's own event note does
+            // not matter: the ring reads the visibility as an `@Observable`.
+            .onAppear {
                 if isCursored {
                     isFocused = true
                 }

@@ -7,39 +7,32 @@ import SwiftUI
 /// sits: a render of the pill on a bare ground would show a chip, and what is being judged is a
 /// chip floating above a dock, over a column of prose that no longer carries the list.
 struct PlanSpecimen: View {
-    /// What the focus on the pill arrived by. The ring is gated on the LAST EVENT the app saw, so
-    /// the pointer case is a focused pill with no ring (#713). The focus a gesture leaves and never
-    /// the gesture itself: a real click also opens the list, and that state is `openPlanPill`.
-    enum Arrival {
-        case key
-        case pointer
-
-        var event: NSEvent.EventType {
-            switch self {
-            case .key: .keyDown
-            case .pointer: .leftMouseDown
-            }
-        }
-    }
-
     let plan: PlanReading
     /// Whether the list is already open. Hover cannot be reached from a screenshot, so the state
     /// that carries the plan itself needs a way in that is not a gesture.
     var isRevealed = false
-    /// How the pill came to be focused, or `nil` for the pill nothing has reached.
-    var arrival: Arrival?
+    /// Whether the keyboard is on the pill, ring and all — see `PlanPill.isCursored`.
+    var isCursored = false
+
+    /// What the reader said before this specimen spoke for it. `ArgoFocusVisibility.shared` is
+    /// process-wide, so a host rendering a second entry after this one inherits whatever it left.
+    @State private var wasOn: Bool?
 
     var body: some View {
         InstrumentDeckShell(
             room: .sessions,
             feed: FeedProjection.previewRows,
-            showing: PlanShowing(plan: plan, isRevealed: isRevealed, isCursored: arrival != nil),
+            showing: PlanShowing(plan: plan, isRevealed: isRevealed, isCursored: isCursored),
         )
-        // The app's one reader, told the event a still cannot show happening.
-        .task {
-            if let arrival {
-                ArgoFocusVisibility.shared.note(arrival.event)
-            }
+        // The app's one reader, told the key a still cannot show being pressed.
+        .onAppear {
+            guard isCursored else { return }
+            wasOn = ArgoFocusVisibility.shared.isOn
+            ArgoFocusVisibility.shared.note(.keyDown)
+        }
+        .onDisappear {
+            guard let wasOn else { return }
+            ArgoFocusVisibility.shared.note(wasOn ? .keyDown : .leftMouseDown)
         }
     }
 }
@@ -57,13 +50,7 @@ struct PlanSpecimen: View {
 }
 
 #Preview("Plan specimen — the keyboard on the pill") {
-    PlanSpecimen(plan: PlanFixture.working, arrival: .key)
-        .frame(width: 1000, height: 620)
-        .argoAppearance()
-}
-
-#Preview("Plan specimen — the pointer left the focus on the pill") {
-    PlanSpecimen(plan: PlanFixture.working, arrival: .pointer)
+    PlanSpecimen(plan: PlanFixture.working, isCursored: true)
         .frame(width: 1000, height: 620)
         .argoAppearance()
 }
