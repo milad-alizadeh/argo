@@ -1,0 +1,1571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PROTOTYPE — Project Atlas, one path top to bottom</title>
+<!--
+  THROWAWAY PROTOTYPE for #650 (map #643). Three treatments of the Project Atlas, switchable
+  via ?variant=A|B|C, the floating bar, or ←/→.
+
+  It answers: does this content model teach the system, does it read aloud, and is the drill
+  step the right size? The atlas content is hand-written for Argo itself — nine domains, one
+  path down to a leaf Area with real file:line exits, two Flows, seven Concepts.
+
+  Every colour, radius, spacing step, elevation and duration is transcribed from
+  apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ — GraphitePalette, ArgoRadius,
+  ArgoSpacing, ArgoElevation, ArgoMotion, ArgoTypeScale. Type is San Francisco throughout;
+  the contract has no serif. Values marked INVENTED below are prototype-only material
+  stand-ins the contract does not name.
+
+  What it deliberately does NOT do, per the settled spec: no boxes-and-lines diagram (#648),
+  no meaningful card position (#648), no provenance badge or tier chip (#649), no graded
+  freshness (#649), no progress or seen-tracking (#648), no tour mode (#648), no global next
+  (#648), no jump list (#648), no per-Claim expand and no third prose length (#647), no edit
+  surface (#673), no file viewer (#648).
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift — surface */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --glass-tint: rgba(255,255,255,.06);
+    --hover:      rgba(255,255,255,.045);
+    --control:    rgba(255,255,255,.06);
+    --selected:   rgba(255,255,255,.058);
+    --marked:     rgba(255,255,255,.07);
+    --scrim:      rgba(11,12,14,.90);
+
+    /* text */
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #929AA1;   /* post-#922 tertiary. The older prototypes carry #868D94; that is drift. */
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    /* edge */
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+    --glass-rim: rgba(255,255,255,.30);
+
+    /* interaction + state */
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    --accent-deep: #1E6FD4;
+    --selection-ground: #203146;
+    --running:   #46D3A8;
+    --idle:      #868E96;
+    --attention: #E8B24A;
+    --failure:   #F2555C;
+
+    /* ArgoRadius.swift */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px; --r-deck: 0px;
+    /* ArgoSpacing.swift */
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px; --s-region: 32px;
+    /* ArgoElevation.swift — popover 18/8/.34, dragged 24/10/.40, bloom 4/0/.60 */
+    --e-popover: 0 8px 18px rgba(0,0,0,.34);
+    --e-dragged: 0 10px 24px rgba(0,0,0,.40);
+    /* ArgoMotion.swift */
+    --m-selection: 140ms; --m-state: 180ms; --m-reveal: 220ms; --m-resettle: 280ms;
+    --ease-out: cubic-bezier(.2,.7,.3,1);
+
+    /* ArgoTypeScale.swift — the macOS HIG rungs, natural line height 1.21 */
+    --t-large-title: 26px; --t-title1: 22px; --t-title2: 17px; --t-title3: 15px;
+    --t-body: 13px; --t-callout: 12px; --t-subheadline: 11px; --t-footnote: 10px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+
+    /* INVENTED — prototype-only material stand-ins. The contract names no blur radius. */
+    --glass-blur: 28px; --glass-sat: 180%;
+    --rail-blur: 34px;  --rail-sat: 140%;
+    --desktop: #0d0e10;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--desktop);
+    color: var(--text-1);
+    font: var(--t-body)/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* ---------- shared atoms ---------- */
+  .mono { font-family: var(--mono); }
+  /* surface.marked — the one ground specified to hold its rise on whatever it lands on. */
+  code, .mk {
+    font: 11.5px/1.4 var(--mono);
+    background: var(--marked); border-radius: var(--r-marker);
+    padding: 1px 4px; color: inherit;
+  }
+  .altitude {
+    font: 600 var(--t-footnote)/1 var(--mono);
+    letter-spacing: .09em; text-transform: uppercase; color: var(--text-3);
+  }
+  /* A kind is told by its word and the rule under it — never by a hue. Ion Blue is
+     selection, focus and links only, and the four state colours are semantic. */
+  .kindword {
+    font: 600 var(--t-footnote)/1 var(--mono); letter-spacing: .09em;
+    text-transform: uppercase; color: var(--text-3);
+    padding-bottom: 3px; border-bottom: 1px solid var(--subtle);
+  }
+  .kindword.flow    { border-bottom-style: dashed; }
+  .kindword.concept { border-bottom-style: dotted; }
+
+  /* The stale mark. Binary, never graded — no age, no count, no gradient (#649).
+     state.attention on a `muted` ground (0.16) with a `rim` edge (0.5), holding one word. */
+  .stale {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    font: 600 var(--t-footnote)/1 var(--sans); letter-spacing: .02em;
+    color: var(--attention); background: rgba(232,178,74,.16);
+    border: 1px solid rgba(232,178,74,.5); border-radius: var(--r-marker);
+    padding: 3px var(--s-snug); white-space: nowrap;
+  }
+  .stale button {
+    border: none; background: none; cursor: pointer; color: var(--attention);
+    font: 600 var(--t-footnote)/1 var(--sans); text-decoration: underline; padding: 0;
+  }
+  .reason { color: var(--text-3); font-size: var(--t-subheadline); font-style: normal; }
+
+  /* An exit, marked as one (#647). Never a viewer. */
+  .exits { border-top: 1px solid var(--hairline); margin-top: var(--s-section); padding-top: var(--s-comfortable); }
+  .exits h4 { font: 600 var(--t-callout)/1.3 var(--sans); color: var(--text-2); margin-bottom: var(--s-tight); }
+  .exits p.said { color: var(--text-3); font-size: var(--t-callout); margin-bottom: var(--s-base); }
+  .anchor {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    background: var(--hover); border: 1px solid var(--hairline); border-radius: var(--r-control);
+    padding: var(--s-snug) var(--s-base); margin-bottom: var(--s-snug);
+    transition: background var(--m-selection) var(--ease-out);
+  }
+  .anchor:hover { background: var(--selected); border-color: var(--subtle); }
+  .anchor .p { font: 11.5px/1.4 var(--mono); color: var(--accent-bright); }
+  .anchor .w { display: block; color: var(--text-3); font-size: var(--t-subheadline); margin-top: 1px; }
+
+  /* ---------- switcher (not part of the design under evaluation) ---------- */
+  .switch {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 90;
+    display: flex; align-items: center; gap: 2px;
+    background: #fff; color: #111; border-radius: 999px; padding: 4px 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55); font: 600 12px/1 var(--sans);
+  }
+  .switch button { border: none; background: none; cursor: pointer; width: 26px; height: 26px; border-radius: 999px; font-size: 15px; }
+  .switch button:hover { background: rgba(0,0,0,.08); }
+  .switch span { padding: 0 var(--s-base); white-space: nowrap; }
+  body.render .switch { display: none; }
+
+  /* ---------- the two controls every variant carries ---------- */
+  /* Breadcrumb is containment and names the altitude out loud; back retraces actual moves. */
+  .ctl {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    background: var(--control); border: 1px solid var(--hairline);
+    border-radius: var(--r-control); padding: var(--s-tight) var(--s-base);
+    cursor: pointer; color: var(--text-2);
+    font: 500 var(--t-callout)/1 var(--sans); white-space: nowrap;
+    transition: background var(--m-selection) var(--ease-out), color var(--m-selection) var(--ease-out);
+  }
+  .ctl:hover { background: var(--selected); color: var(--text-1); }
+  .ctl[disabled] { opacity: .38; cursor: default; }
+  .ctl.on { background: var(--selection-ground); border-color: var(--accent-deep); color: var(--text-1); }
+  .crumb { display: flex; align-items: center; gap: var(--s-tight); flex-wrap: wrap; }
+  .crumb button {
+    border: none; background: none; cursor: pointer; padding: 2px var(--s-tight);
+    border-radius: var(--r-marker); color: var(--text-3);
+    font: 500 var(--t-callout)/1.2 var(--sans);
+  }
+  .crumb button:hover { color: var(--text-1); background: var(--hover); }
+  .crumb button.here { color: var(--text-1); font-weight: 600; }
+  .crumb .sep { color: var(--text-off); font-size: var(--t-callout); }
+  .crumb .alt { color: var(--text-off); font: 600 var(--t-footnote)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="toast" role="status"></div>
+
+<div class="switch">
+  <button onclick="cycle(-1)" aria-label="Previous variant">‹</button>
+  <span id="switch-label"></span>
+  <button onclick="cycle(1)" aria-label="Next variant">›</button>
+</div>
+<script>
+/* ============================================================================
+   THE ATLAS CONTENT — hand-written for Argo itself, #650.
+
+   Every path and line number is real, read out of apps/macOS on 2026-09-01. The prose is
+   what a model would have to produce: a Claim like any other, Tier C, and the thing this
+   prototype exists to be judged on.
+
+   Node shape follows #647: what is inside it, the edges among those things, the edges that
+   leave it, and a paragraph over all of that. Two prose lengths, short and long, one control
+   for the whole card. `stale` names which Claims are stale; nothing renders provenance.
+   ========================================================================== */
+
+const A = {}; // id → node
+
+/* ---------------------------------------------------------------- PROJECT -- */
+A.argo = {
+  kind: 'area', altitude: 'Project', name: 'Argo',
+  line: 'A macOS cockpit that watches coding agents work, and lets you steer the ones it started.',
+  short: [
+    `Argo watches coding agents work. It reads the record a CLI leaves on disk, folds every
+     transcript belonging to one repository into a single live picture, and renders that as a
+     cockpit you can steer from. Nine domains do the work.`,
+    `Three of them only read: they find the files, turn lines into typed events, and join those
+     events per Session. Two write: they send a Turn to a running agent and answer the permission
+     it asks for. Two reach outside Argo entirely, to the code host and the ticket provider. One
+     holds the small set of facts Argo owns rather than observes. And one is a seam — the single
+     file allowed to read live state, so that every view below it takes a value instead.`,
+    `One rule cuts across all nine. Every rendered fact carries how Argo knows it, and ambiguity
+     always resolves downward, so Argo never claims something it merely guessed.`,
+  ],
+  long: [
+    `Argo watches coding agents work. It reads the record a CLI leaves on disk, folds every
+     transcript belonging to one repository into a single live picture, and renders that as a
+     cockpit you can steer from. Nine domains do the work.`,
+    `Three of them only read. <b>Finding the sessions</b> decides which files on this machine
+     belong to this Project. <b>Reading the record</b> turns one growing JSONL file into typed
+     events. <b>The join</b> folds those events into one Session per resume-chain and publishes
+     the roster. Everything else hangs off that spine.`,
+    `Two of them write. <b>Driving a session</b> is what Argo can do <i>to</i> an agent rather
+     than read from it — send a Turn, interrupt, answer a permission, walk the Mode ladder. <b>The
+     companion channel</b> is a Unix socket per managed Session, and the only place a fact arrives
+     that never existed in a transcript.`,
+    `Two reach outside. <b>Accounts, tickets and delivery</b> talks to GitHub and Linear over
+     HTTP, and the join has deliberately never heard of any of it — those facts travel beside the
+     projection rather than through it. <b>What Argo owns</b> is the opposite corner: a handful of
+     small files under this machine's application support, holding what Argo asserts rather than
+     observes.`,
+    `Two are structure. <b>The cockpit projection</b> is one file, and it is the only file in the
+     view layer permitted to read live state; it restates a Session as a plain value. <b>The feed
+     and the roster</b> are the two reading surfaces built from that value. A shell script fails
+     the build if any other view reaches past the seam, which is why the layering is a gate and
+     not a review note.`,
+    `One rule cuts across all nine. Every rendered fact carries how Argo knows it — DIRECT when
+     Argo owns it, DERIVED when it was observed from outside, CONVENTION when it arrived over the
+     companion channel — and ambiguity always resolves downward. Argo never renders a false
+     DIRECT, so a fact it cannot establish honestly is shown as unknown instead.`,
+    `The code is Swift, in three layers: an engine that links no UI framework and runs from the
+     command line, a view package that takes values, and an app target small enough to be checked
+     by line count. Read the domains in the order below and each one makes the next make sense.`,
+  ],
+  inside: ['find', 'read', 'join', 'project', 'surfaces', 'drive', 'companion', 'ports', 'owned'],
+  among: [
+    `The first five are a pipeline and read best in order: files, then events, then the join, then
+     the seam, then the surfaces. <b>Driving a session</b> and <b>the companion channel</b> attach
+     to the join from the side — both publish their facts into the same ledger the join folds, so
+     neither had to be threaded through the pipeline.`,
+    `<b>Accounts, tickets and delivery</b> touches the join at exactly one point, and joins on a
+     branch name rather than a Session id. <b>What Argo owns</b> is injected into everything else
+     as file URLs, each named in exactly one place.`,
+  ],
+  leaving: [
+    `A Project is the scope of one window, so nothing above this node exists inside Argo. What
+     leaves the Project leaves the machine: two CLIs' record directories on disk, two providers
+     over HTTP, and a git checkout read through the shell.`,
+  ],
+  flows: ['flow-line', 'flow-turn'],
+  concepts: ['c-session', 'c-tier', 'c-turn', 'c-plan', 'c-ask', 'c-workspace', 'c-person'],
+  stale: {
+    order: {
+      what: 'the order these nine are read in',
+      reason: null,
+    },
+  },
+};
+
+/* ------------------------------------------------------- DOMAINS (level 2) -- */
+A.find = {
+  kind: 'area', altitude: 'Domain', name: 'Finding the sessions', parent: 'argo',
+  line: 'Decides which transcript files on this machine belong to this Project, and keeps that set moving while the app runs.',
+  short: [
+    `A CLI writes one directory per project and one file per session, and it does not tell anyone
+     which repository a file belongs to. This domain answers that question, cheaply, and then keeps
+     answering it as files appear.`,
+    `Two filters run in cost order. A modified-time window decides what is worth opening at all;
+     whatever survives is opened head-only, just far enough to read the working directory it was
+     started in. Only files that pass both are read in full and tailed. The order is the whole
+     design: opening every transcript in a busy home directory is the expensive mistake.`,
+  ],
+  inside: [], // hand-written to one level for this study
+  among: [],
+  leaving: [
+    `It hands the join a list of file URLs and nothing else. Paths are spelled through one shared
+     resolver, because a symlinked checkout and its real path are the same Project and must not
+     become two.`,
+  ],
+  concepts: ['c-session', 'c-workspace'],
+};
+
+A.read = {
+  kind: 'area', altitude: 'Domain', name: 'Reading the record', parent: 'argo',
+  line: 'Turns one growing JSONL file into typed events, in record order, live or from a fixture.',
+  short: [
+    `This domain has one job and does it in one direction: a line of JSON arrives at the end of a
+     file, and a typed event comes out the other end. Nothing here knows about a window, and
+     nothing here decides what a Session is — that judgement belongs to the join next door.`,
+    `Five areas, in the order they run. Bytes become complete lines. A line becomes a record. A
+     stateful reader turns records into events. A tool call is paired with the record that answered
+     it. And the vocabulary those events are spoken in is an area of its own, because two layers
+     depend on it and neither may change it alone.`,
+  ],
+  long: [
+    `This domain has one job and does it in one direction: a line of JSON arrives at the end of a
+     file, and a typed event comes out the other end. Nothing here knows about a window, and
+     nothing here decides what a Session is — that judgement belongs to the join next door.`,
+    `Five areas, in the order they run. Bytes become complete lines. A line becomes a record. A
+     stateful reader turns records into events. A tool call is paired with the record that answered
+     it. And the vocabulary those events are spoken in is an area of its own, because two layers
+     depend on it and neither may change it alone.`,
+    `Three properties are worth knowing before you read any of it. <b>Nothing here throws on bad
+     input.</b> A transcript is written by someone else's program while you are reading it, so a
+     line that will not parse is reported as unreadable rather than failing the read — and a record
+     whose <code>type</code> Argo does not recognise keeps its bytes instead of being dropped.`,
+    `<b>The batch is preserved, not flattened.</b> Events come out as arrays, because the join
+     folds a whole read at once, and because the first batch is what tells it the file has been
+     read at all. An empty first batch and no first batch mean different things.`,
+    `<b>Live and replay are the same code.</b> The only difference between tailing a running
+     session and reading a finished one is where the file cursor starts, which is why the reader's
+     state is kept as small as it is: state is the one thing that could make the two disagree.`,
+  ],
+  inside: ['read-lines', 'read-record', 'read-reader', 'read-outcome', 'read-vocab'],
+  among: [
+    `The five are a chain, and each one only knows the next. Lines feed the record parser; records
+     feed the reader; the reader asks the outcome resolver whenever a record answers a call it is
+     still holding. All four speak the vocabulary, and the vocabulary knows about none of them.`,
+    `Only one of the five remembers anything between lines. The other four are pure, which is what
+     makes a fixture and a live tail interchangeable.`,
+  ],
+  leaving: [
+    `Three edges leave, and one of them is unusual. The ordinary one is the join: a batch of events
+     lands there and the transcript is marked settled. The second is a pair of closures handed in
+     from outside — one to read image bytes off disk, one to read a skill's own files — so this
+     domain never touches the file system for anything but the transcript.`,
+    `The unusual one is that the event vocabulary crosses the package boundary <i>whole</i>. The
+     view layer's feed projection switches over the same enum, with no default case, so adding an
+     event kind fails the build until the feed says what it looks like. That is deliberate, and it
+     is the only place a view depends on an engine type this directly.`,
+  ],
+  concepts: ['c-turn', 'c-plan', 'c-ask', 'c-tier'],
+};
+
+A.join = {
+  kind: 'area', altitude: 'Domain', name: 'The join', parent: 'argo',
+  line: 'The only live state in the app: a rebuildable in-memory picture of every Session in the Project.',
+  short: [
+    `Everything Argo knows about a Session at this instant lives here, and nowhere else. The join
+     holds one entry per tailed transcript, folds each batch of events into it, and then rebuilds a
+     roster: one Session per resume-chain, since resuming a session writes a new file rather than
+     appending to the old one.`,
+    `It also folds in what is not in any transcript. Whether a process is alive, what the companion
+     channel reported, which permission is outstanding, what the git workspace says, which Mode the
+     user set — each arrives from a different domain, keyed by ownership rather than by Session id,
+     and is attached as the roster is published. The join is rebuildable on purpose: it is a
+     picture, not a record, and nothing in it is written to disk.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [
+    `Exactly one file above it is allowed to read it, and that file turns it into values. Below it,
+     it reads the working set, the event stream, the claim ledger and the world — git, process
+     liveness, path spelling.`,
+  ],
+  concepts: ['c-session', 'c-tier', 'c-workspace'],
+};
+
+A.project = {
+  kind: 'area', altitude: 'Domain', name: 'The cockpit projection', parent: 'argo',
+  line: 'The one seam between live state and views: it restates a Session as a plain value.',
+  short: [
+    `One file reads the join. Everything else in the view layer takes a value, and a build gate
+     enforces it by grepping for the type name across the whole package with a single exemption.`,
+    `The projection <i>restates</i> rather than wraps. Every public fact on the engine's Session
+     must appear in the mapping under a slot of its own name, or carry a line beside it saying why
+     it is not projected. Adding a fact to the engine fails the build until someone says which it
+     is, and landing a fact on a slot of another name fails it too. The cost is a long file that
+     looks like duplication; the benefit is that no view can ever hold a reference to something
+     that is still moving.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [`Upward: one value per pass, resolved once. Downward: the join, and the small readings Argo owns.`],
+  concepts: ['c-session', 'c-tier'],
+};
+
+A.surfaces = {
+  kind: 'area', altitude: 'Domain', name: 'The feed and the roster', parent: 'argo',
+  line: 'The two reading surfaces, both built from values, neither able to reach live state.',
+  short: [
+    `The roster answers "which Session", the feed answers "what happened in it". Both are
+     projections in their own right: a list of rows computed once per pass, then drawn.`,
+    `The feed's projection is where a transcript becomes something readable — calls paired with
+     their outcomes, runs of small calls folded into one row, a gallery of images folded into
+     another. It switches over the engine's event enum with no default case, so the compiler is
+     what keeps the feed honest about new kinds of event. Below the projection the rows are drawn
+     by an AppKit table rather than a SwiftUI list, because the feed has to hold its scroll
+     position while rows arrive at the bottom.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [`It takes one reading per pass and issues intents back. It never reads the join.`],
+  concepts: ['c-turn', 'c-plan', 'c-ask'],
+};
+
+A.drive = {
+  kind: 'area', altitude: 'Domain', name: 'Driving a session', parent: 'argo',
+  line: 'What Argo can do to a Session rather than read from it: send a Turn, interrupt, answer a permission, walk the Mode ladder.',
+  short: [
+    `Reading a transcript is most of Argo; this is the part that writes. One protocol names
+     everything Argo can ask of a running agent, and two adapters implement it — one per CLI —
+     because the two disagree about almost everything except that they are agents.`,
+    `Refusals are a closed set of cases, each carrying the sentence a person reads. That is the
+     honest shape for a domain where most failures are not bugs: the session is not managed, the
+     Turn is already running, the CLI does not support the rung you asked for. A Mode the user
+     picks mid-Turn is held rather than sent, and walked at the Turn's boundary, because keystrokes
+     into a running agent are not something anyone can promise arrive.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [
+    `It publishes into the same ledger the join folds, so a drive fact reaches the roster the way
+     every other fact does. The terminal it drives lives in a package of its own, because the
+     terminal emulator links AppKit and the engine must run with no window.`,
+  ],
+  concepts: ['c-turn', 'c-session'],
+};
+
+A.companion = {
+  kind: 'area', altitude: 'Domain', name: 'The companion channel', parent: 'argo',
+  line: 'One Unix socket per managed Session, and the only source of a fact that never existed in a transcript.',
+  short: [
+    `A bundled plugin points the CLI at a socket Argo is listening on, and the agent then reports
+     things no transcript carries: what it is doing right now, that it is about to ask for a
+     permission, which tool it has been allowed to use without asking again.`,
+    `The socket is the capability. Its directory is created private to this user and the socket
+     itself is readable only by them, so the file's permissions are the whole of the access
+     control. Paths live under a short temporary directory because the operating system caps a
+     socket address at 103 bytes, and the listen backlog is set as high as the system allows —
+     a refused dial is not a dropped message, it is an agent's tool call left waiting.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [`One closure into the claim ledger, keyed by ownership. Nothing here knows what a roster is.`],
+  concepts: ['c-tier', 'c-session'],
+};
+
+A.ports = {
+  kind: 'area', altitude: 'Domain', name: 'Accounts, tickets and delivery', parent: 'argo',
+  line: 'Everything read through an external provider, which the join deliberately knows nothing about.',
+  short: [
+    `Two ports, each with adapters: a ticket provider and a code host. An Account is one
+     authenticated identity, its token in the keychain; a Binding is this Project's use of one
+     Account through one port. Delivery is the product in flight, derived per branch from git plus
+     the code host, and never persisted — a branch that no longer exists should stop being claimed.`,
+    `These facts travel <i>beside</i> the projection rather than inside it. The window takes them
+     as separate parameters, because the join is a projection over observed Sessions and a
+     registered Account is not one. The seam they do share is a branch name.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [`Two providers over HTTP, the keychain, and the git checkout.`],
+  concepts: ['c-workspace'],
+};
+
+A.owned = {
+  kind: 'area', altitude: 'Domain', name: 'What Argo owns', parent: 'argo',
+  line: 'The small set of facts Argo asserts rather than observes; per-machine files, never committed.',
+  short: [
+    `Almost nothing. A registry of Projects, a name and an archived flag a person set on a Session,
+     which chain a handoff belongs to, which Mode was chosen, which Accounts exist. Each is one
+     small file, read and written whole, and a nil location means remember nothing at all — which
+     is how the tests run.`,
+    `The rule behind the size is that observed facts are never persisted. Anything Argo can read
+     again from the record is read again, so the durable state is only what would otherwise be
+     lost. It lives under this machine's application support, never in the repository.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [`It is injected everywhere as file URLs, each named in exactly one place.`],
+  concepts: ['c-session'],
+};
+/* Eight of the nine domains are hand-written to one level only. #650 asks for ONE path top to
+   bottom; the prototype says so on the card rather than faking depth. */
+['find', 'join', 'project', 'surfaces', 'drive', 'companion', 'ports', 'owned']
+  .forEach(id => { A[id].unwritten = true; });
+
+/* --------------------------------------------------------- AREAS (level 3) -- */
+A['read-lines'] = {
+  kind: 'area', altitude: 'Area', name: 'Lines out of a growing file', parent: 'read',
+  line: 'Reads from the last offset, carries a half-written record, and rewinds when the file is truncated.',
+  short: [
+    `A transcript is being appended to by another process while Argo reads it, so a read can land
+     mid-record. This area keeps a cursor, hands back only complete lines, and holds the trailing
+     fragment until the rest of it arrives.`,
+    `It also handles the file getting shorter, which happens when a CLI rewrites a transcript
+     rather than appending: the cursor rewinds to the start instead of reading garbage from the
+     middle. It drains once, unprompted, when it starts — otherwise a file that never changes again
+     would never be read at all.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [`Complete lines, in order, to the record parser. Below it, one file handle and one file-system watch.`],
+  anchors: [
+    ['ArgoEngine/Transcript/TranscriptTail.swift', 66, 'transcriptLines(at:) — the stream of complete lines'],
+    ['ArgoEngine/Transcript/TranscriptTail.swift', 22, 'FileCursor.drain() — reads from the last offset'],
+    ['ArgoEngine/Transcript/TranscriptTail.swift', 96, 'the per-file watch: extend, write, delete, rename'],
+  ],
+  concepts: [],
+};
+
+A['read-record'] = {
+  kind: 'area', altitude: 'Area', name: 'One line into one record', parent: 'read',
+  line: 'Parsing that never throws: a strange line is nothing, and an unrecognised record keeps its bytes.',
+  short: [
+    `One function, and its signature is the decision: parsing a line returns a record or nothing,
+     and never throws. A line that is not an object at all is nothing, and the caller reports the
+     file as unreadable at that point rather than abandoning the read.`,
+    `A record whose shape is recognisable but whose type is not becomes an unknown case that keeps
+     its original bytes. That costs memory and buys the ability to render something honest about a
+     record written by a newer CLI than this build knows about.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [`Records to the reader. It depends on nothing but a JSON value.`],
+  anchors: [
+    ['ArgoEngine/Transcript/TranscriptRecord.swift', 39, 'TranscriptRecord — the record and its cases'],
+    ['ArgoEngine/Transcript/TranscriptRecord.swift', 61, 'parse(line:) — never throws; unknown keeps its bytes'],
+  ],
+  concepts: [],
+};
+
+A['read-reader'] = {
+  kind: 'area', altitude: 'Area', name: 'The reader that keeps state', parent: 'read',
+  line: 'The actor that turns records into events, and the only thing in this domain that remembers anything.',
+  short: [
+    `An actor with four pieces of memory, and no more. It holds the tool calls it has seen but not
+     yet seen answered, because a call and its result are separate records and can be hundreds of
+     lines apart. It holds a plan ledger, because one host writes a plan an entry at a time rather
+     than whole, so the reader accumulates what the CLI will not.`,
+    `It holds a context cursor, since only some records restate the token usage and the rest inherit
+     the last reading. And it holds the subject — whose transcript this is — which decides, at four
+     separate gates, whether the line belongs to a Subagent. Everything else is a pure function of
+     the record in hand.`,
+    `That balance is the design. State here is the only thing that could make a live tail and a
+     replay of the same file disagree, so there is just enough of it to be correct and no more.`,
+  ],
+  long: [
+    `An actor with four pieces of memory, and no more. It holds the tool calls it has seen but not
+     yet seen answered, because a call and its result are separate records and can be hundreds of
+     lines apart. It holds a plan ledger, because one host writes a plan an entry at a time rather
+     than whole, so the reader accumulates what the CLI will not.`,
+    `It holds a context cursor, since only some records restate the token usage and the rest inherit
+     the last reading. And it holds the subject — whose transcript this is — which decides, at four
+     separate gates, whether the line belongs to a Subagent. A sidechain record is otherwise
+     indistinguishable from a main-line one, and the same question asked at four gates is cheaper
+     than a wrong answer at one.`,
+    `Everything else is a pure function of the record in hand. That balance is the design: state
+     here is the only thing that could make a live tail and a replay of the same file disagree, so
+     there is just enough of it to be correct and no more.`,
+    `Two of its outputs are worth knowing about before you read the code. A record carrying a tool
+     call can produce <i>two</i> events — the call itself, and a plan, when the tool being called is
+     the one a CLI uses to write its to-do list. And a question put to the user is recognised here
+     by the tool it arrives as, which is why the feed can render an answerable question at all: the
+     transcript has no notion of a question, only of a tool call with a particular name.`,
+    `It is an actor rather than a struct because a single reader is shared by the batch loop, and
+     because it is the one place in this domain where a second concurrent read would produce a
+     different answer.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [
+    `Upward it emits events in batches. Sideways it asks the outcome resolver whenever a record
+     answers a call it is holding. Downward it depends on the record parser and on nothing else.`,
+  ],
+  anchors: [
+    ['ArgoEngine/Transcript/TranscriptReader.swift', 13, 'TranscriptReader — the actor'],
+    ['ArgoEngine/Transcript/TranscriptReader.swift', 28, 'openCalls — calls seen but not yet answered'],
+    ['ArgoEngine/Transcript/TranscriptReader.swift', 29, 'the plan ledger, for a host that writes a plan an entry at a time'],
+    ['ArgoEngine/Transcript/TranscriptReader.swift', 63, 'read(line:) — parse, then dispatch'],
+    ['ArgoEngine/Transcript/TranscriptSubject.swift', 8, 'the four sidechain guards'],
+  ],
+  concepts: ['c-turn', 'c-plan', 'c-ask'],
+  bottom: true,
+  stale: {
+    leaving: {
+      what: 'the edges leaving this Area',
+      reason: `This Claim was established by resolving types across the package, and the last
+               attempt found no build for this checkout.`,
+    },
+  },
+};
+
+A['read-outcome'] = {
+  kind: 'area', altitude: 'Area', name: 'Pairing a call with its outcome', parent: 'read',
+  line: 'Finds the record that answered a tool call, and picks its evidence in a fixed order.',
+  short: [
+    `A tool call is written when it starts and answered later, sometimes much later, sometimes never
+     — the agent was interrupted, or the process died. This area resolves the answering record into
+     an outcome, and leaves a call unresolved rather than guessing.`,
+    `Evidence is picked in one fixed order — a diff, then media, then output — so two readers of the
+     same call always see the same thing. One rule is subtler than it looks: a call that was
+     launched in the background reports a receipt rather than a result, and that receipt keeps the
+     call <i>in progress</i> instead of completing it. Without that rule every backgrounded
+     delegation would read as finished the moment it started.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [`Outcomes back to the reader, and three evidence readers beside it.`],
+  anchors: [
+    ['ArgoEngine/Transcript/TranscriptReader+Outcome.swift', 36, 'the background-receipt rule'],
+    ['ArgoEngine/Transcript/TranscriptReader+Outcome.swift', 83, 'evidence order: diff, then media, then output'],
+  ],
+  concepts: [],
+};
+
+A['read-vocab'] = {
+  kind: 'area', altitude: 'Area', name: 'The event vocabulary', parent: 'read',
+  line: 'The twenty cases every layer above speaks in, and the one engine type a view depends on directly.',
+  short: [
+    `One enum with twenty cases, and the values they carry: a message, a thought, a tool call and
+     its result, a plan, a question, a compaction marker, a usage reading. The names are the
+     domain's names, and the file cites the model it came from.`,
+    `It is an area of its own rather than a detail of the reader because two layers depend on it.
+     The join folds these events into a Session; the feed switches over the same enum with no
+     default case, so adding a kind of event fails the build until the feed says what it looks
+     like. That is the one place a view is allowed to depend on an engine type this closely, and it
+     is a deliberate trade: a compiler error instead of a silently missing row.`,
+  ],
+  inside: [],
+  among: [],
+  leaving: [`Two layers depend on it. It depends on nothing.`],
+  anchors: [
+    ['ArgoEngine/Session/TranscriptEvent.swift', 4, 'TranscriptEvent — twenty cases'],
+    ['ArgoEngine/Session/ToolCall.swift', 32, 'ToolCall, its kind, its status'],
+    ['ArgoEngine/Session/Evidence.swift', 129, 'ToolResult — diff, media or output'],
+  ],
+  concepts: ['c-turn', 'c-plan', 'c-ask'],
+};
+
+/* -------------------------------------------------------------- FLOWS ------ */
+/* A Flow is ONE card with every step visible (#648). It is not descended into and not paged. */
+A['flow-line'] = {
+  kind: 'flow', altitude: 'Flow', name: 'A line lands, and becomes a row', parent: 'argo',
+  line: 'Nine steps from a CLI appending JSON to a row drawn in the feed. It crosses six domains.',
+  short: [
+    `This is the path everything else in Argo hangs off. Follow it once and the shape of the app is
+     no longer a mystery: the code is a pipeline with a join in the middle, a seam three quarters of
+     the way up, and a view that only ever draws values.`,
+  ],
+  steps: [
+    ['The CLI appends a line, and the file system wakes Argo',
+     `A watch over the record directory yields once per burst of changes, coalesced so a chatty
+      agent does not wake the app on every token. A file already being tailed has its own watch and
+      skips straight to step four.`,
+     ['ArgoEngine/Discovery/RecordDirectoryWatcher.swift', 22]],
+    ['The working set is swept again',
+     `The sweep re-runs the two filters — the modified-time window, then a head-read for the working
+      directory — and produces the list of files that belong to this Project right now.`,
+     ['ArgoEngine/Discovery/SessionDiscovery.swift', 44]],
+    ['A tail starts, or the existing one continues',
+     `Whatever is new is opened through the engine facade and added to the join; a file that vanished
+      between the sweep and the open is skipped rather than raised.`,
+     ['ArgoEngine/Hub/TranscriptWatch.swift', 182]],
+    ['Bytes become complete lines',
+     `The cursor reads from its last offset, carries any half-written record forward, and rewinds if
+      the file got shorter.`,
+     ['ArgoEngine/Transcript/TranscriptTail.swift', 22]],
+    ['Lines become typed events',
+     `The reader parses each line and dispatches it, holding open calls until the record that
+      answers them arrives. The batch is kept whole.`,
+     ['ArgoEngine/Transcript/TranscriptReader.swift', 63]],
+    ['The batch is folded into the Session',
+     `The join applies the events to the Session they belong to, appends them, updates the lossy
+      fold beside them, and marks the transcript settled.`,
+     ['ArgoEngine/Hub/HubJoin.swift', 51]],
+    ['The roster is refolded, once every transcript has settled',
+     `Resume chains are merged so one logical Session with four transcript files is one row, and a
+      file queued but not yet read is left out rather than shown empty.`,
+     ['ArgoEngine/Hub/HubSessionChain.swift', 33]],
+    ['The Hub publishes, folding in what no transcript carries',
+     `Liveness, provenance, which CLI, the git workspace, and every claim-keyed fact — the
+      companion report, an outstanding permission, a standing allow, a drive status — are attached
+      as the roster is read.`,
+     ['ArgoEngine/Hub/Hub+Roster.swift', 53]],
+    ['The seam turns it into a value, and the feed draws rows',
+     `One file restates each Session as a plain value, once per pass. The feed projection pairs
+      calls with outcomes, folds runs and galleries, and maps each event to a row; an AppKit table
+      draws them, so the scroll position survives rows arriving at the bottom.`,
+     ['ArgoUI/Shell/Deck/Feed/FeedProjection.swift', 122]],
+  ],
+  concepts: ['c-session', 'c-turn', 'c-tier'],
+};
+
+A['flow-turn'] = {
+  kind: 'flow', altitude: 'Flow', name: 'You send a Turn, and the agent asks permission', parent: 'argo',
+  line: 'Five steps in the other direction — the only direction in which Argo writes.',
+  short: [
+    `Reading is most of Argo. This is the path that writes, and it exists only for a Session Argo
+     started: an agent someone else launched can be read, but not steered.`,
+  ],
+  steps: [
+    ['The prompt reaches the driver',
+     `One protocol names everything Argo can ask of a running agent — send, interrupt, answer,
+      change Mode — and refuses in a closed set of cases, each carrying the sentence a person reads.`,
+     ['ArgoEngine/Drive/SessionDriver.swift', 7]],
+    ['The adapter for that CLI does it its own way',
+     `Two adapters implement the protocol. What they share is the vocabulary; almost nothing else.`,
+     ['ArgoEngine/Drive/SessionDriver.swift', 106]],
+    ['The agent hits a tool it needs permission for, and dials the socket',
+     `The companion plugin reports the pending permission over a Unix socket private to this user.
+      The dial is never refused if Argo can help it — a refused dial leaves a tool call waiting.`,
+     ['ArgoEngine/Companion/CompanionChannel.swift', 54]],
+    ['The fact lands in the ledger, keyed by ownership',
+     `It arrives as a fact rather than an event, because it never existed in a transcript. This is
+      the whole of the CONVENTION tier.`,
+     ['ArgoEngine/Hub/ClaimLedger.swift', 20]],
+    ['The roster shows a Session waiting on you',
+     `The published Session carries the permission, its status resolves to the quieter reading if
+      anything is ambiguous, and your answer travels back down the same socket.`,
+     ['ArgoEngine/Hub/Hub+Roster.swift', 73]],
+  ],
+  concepts: ['c-turn', 'c-tier', 'c-session'],
+};
+
+/* ------------------------------------------------------------ CONCEPTS ----- */
+/* A Concept sits at Project level, does not nest, and drills into its evidence (#647). */
+A['c-session'] = {
+  kind: 'concept', altitude: 'Concept', name: 'Session', parent: 'argo',
+  line: 'One logical resume-chain, and the root agent in it.',
+  short: [
+    `A Session is not a file. Resuming an agent writes a <i>new</i> transcript, so one Session is a
+     chain of files folded together, and the id that survives is the chain's.`,
+    `It is also the term the code spells in the most places, which is why it is worth knowing early
+     and why no directory holds it: the name appears across two hundred of the four hundred and
+     eighty-four source files, and ten of them are in the directory called Session. A map drawn
+     from folders would put this concept in the wrong place, so the atlas does not draw one.`,
+  ],
+  evidence: [
+    ['ArgoEngine/Hub/HubSession.swift', 4, 'the joined Session, as the Hub holds it'],
+    ['ArgoUI/Shell/CockpitPresentation+Session.swift', 5, 'the same Session, restated as a value'],
+    ['ArgoEngine/Hub/HubSessionChain.swift', 26, 'the resume-chain fold — why a Session is not a file'],
+    ['ArgoEngine/Discovery/SessionDiscovery.swift', 13, 'how a Session is found in the first place'],
+  ],
+};
+
+A['c-tier'] = {
+  kind: 'concept', altitude: 'Concept', name: 'Honesty tier', parent: 'argo',
+  line: 'A property of each rendered fact: how Argo knows it.',
+  short: [
+    `Three rungs. DIRECT is a fact Argo owns — a process it started, a Mode it set. DERIVED is
+     observed from outside, whether inferred from a signal or read verbatim from an external
+     authority. CONVENTION arrived over the companion channel and never existed in a transcript.`,
+    `The rule that matters is what happens when a fact is ambiguous: it resolves to the lower tier
+     and the quieter state. Argo never renders a false DIRECT. That is why every tier-gated value
+     has an explicit unknown, and why a Session whose liveness cannot be established honestly
+     reads as unknown rather than idle.`,
+  ],
+  evidence: [
+    ['ArgoEngine/Session/Honesty.swift', 5, 'the three rungs, as a type'],
+    ['ArgoEngine/Hub/HubSession+Status.swift', 26, 'tier precedence when two readings disagree'],
+    ['ArgoEngine/Session/SessionStatus.swift', 48, 'degrade-down, at one of the places it is applied'],
+  ],
+};
+
+A['c-turn'] = {
+  kind: 'concept', altitude: 'Concept', name: 'Turn', parent: 'argo',
+  line: 'One exchange: a prompt in, a stop reason out.',
+  short: [
+    `A Turn is the unit a Session is made of, and it ends for a reason — the agent finished, or it
+     ran out of tokens, or it refused. The stop reason is why the roster says <i>stopped</i> rather
+     than <i>failed</i>: stopping short is not crashing.`,
+    `The word is spelled in two places for two purposes: the state of the Turn as read out of a
+     transcript, and the delivery of a Turn Argo is sending. Both are real and they are not the
+     same object.`,
+  ],
+  evidence: [
+    ['ArgoEngine/Session/SessionTurnState.swift', 1, 'the Turn as observed'],
+    ['ArgoEngine/Drive/TurnDelivery.swift', 1, 'the Turn as sent'],
+    ['ArgoEngine/Session/StopReason.swift', 1, 'why it ended'],
+  ],
+};
+
+A['c-plan'] = {
+  kind: 'concept', altitude: 'Concept', name: 'Plan', parent: 'argo',
+  line: "The agent's live to-do list. Session-scoped, and replaced whole.",
+  short: [
+    `A Plan belongs to the Session, not to the Turn that happened to write it, and a Turn carries
+     only a snapshot. That is why the feed can show a plan that was written three Turns ago and
+     still call it current.`,
+    `One CLI writes a plan whole and one writes it an entry at a time, which is the reason the
+     reader keeps a ledger at all — the concept exists in both hosts, but only one of them hands it
+     over in one piece.`,
+  ],
+  evidence: [
+    ['ArgoEngine/Session/Plan.swift', 19, 'the Plan, its entries and their statuses'],
+    ['ArgoEngine/Transcript/PlanLedger.swift', 1, 'the accumulation a host with no whole plan forces'],
+  ],
+};
+
+A['c-ask'] = {
+  kind: 'concept', altitude: 'Concept', name: 'Ask', parent: 'argo',
+  line: 'A structured question put to the person — and, separately, the live handle that answers it.',
+  short: [
+    `Two types, deliberately not one. One is the question as it appears in the record: readable in
+     any Session, including one Argo never started. The other is a live, answerable handle, and it
+     exists only for a managed Session.`,
+    `Collapsing them would produce a question you can see and cannot answer, wearing the same type
+     as one you can — which is exactly the false promise the honesty tier exists to prevent.`,
+  ],
+  evidence: [
+    ['ArgoEngine/Session/Ask.swift', 1, 'the question, as read'],
+    ['ArgoEngine/Drive/SessionAsk.swift', 1, 'the question, as answerable'],
+    ['ArgoEngine/Session/ToolCall.swift', 73, 'the tool call a question actually arrives as'],
+  ],
+  stale: {
+    evidence: {
+      what: 'one of the three places this Concept is spelled',
+      reason: null,
+      anchorGone: true,
+    },
+  },
+};
+
+A['c-workspace'] = {
+  kind: 'concept', altitude: 'Concept', name: 'Workspace', parent: 'argo',
+  line: 'The git working context. It holds the branch, which is the join key.',
+  short: [
+    `A Workspace is where an agent is working: a checkout or a worktree, with a branch. The branch
+     is load-bearing beyond its own domain — it is the key on which delivery facts from the code
+     host are joined to a Session, because nothing else the two sides know is the same.`,
+  ],
+  evidence: [
+    ['ArgoEngine/Repository/WorkspaceProjection.swift', 6, 'the projection, and the branch it carries'],
+    ['ArgoEngine/Repository/WorkspaceProjection.swift', 15, 'branch as the join key'],
+  ],
+};
+
+A['c-person'] = {
+  kind: 'concept', altitude: 'Concept', name: 'Person', parent: 'argo',
+  line: 'me or other. None found in the code.',
+  short: [
+    `The model names a Person — <code>me</code> or <code>other</code> — and the code does not spell
+     it. There is no such type: authorship is carried where it is needed and nowhere in general.`,
+    `<b>None found</b> is not the same as <i>there is none</i>. Absence can only be claimed where
+     something declares it, and nothing here declares the set of types this Project has. So this
+     card says what was looked for and what came back, and stops there.`,
+  ],
+  evidence: [],
+  noneFound: `Searched the engine's declarations for a Person type and found no match. The nearest
+              thing is the holders of a Workspace, which is a different question.`,
+};
+/* ============================================================================
+   ENGINE — state, URL, and the pieces every variant shares.
+   Shared: prose, the stale mark, exits, evidence. NOT shared: layout. Each variant is free
+   to throw the layout out, which is the point of a variant.
+   ========================================================================== */
+
+const NAMES = {
+  A: 'Enclosure — you stand inside the parent',
+  B: 'Spine — the atlas reads like an essay',
+  C: 'Room — the atlas as a cockpit room',
+};
+const KEYS = ['A', 'B', 'C'];
+
+const state = { node: 'argo', len: 'short', trail: [], refreshed: {} };
+
+function variant() {
+  const v = (new URLSearchParams(location.search).get('variant') || 'A').toUpperCase();
+  return KEYS.includes(v) ? v : 'A';
+}
+function readURL() {
+  const q = new URLSearchParams(location.search);
+  const n = q.get('n');
+  if (n && A[n]) state.node = n;
+  state.len = q.get('len') === 'long' ? 'long' : 'short';
+}
+function writeURL() {
+  const q = new URLSearchParams();
+  q.set('variant', variant());
+  if (state.node !== 'argo') q.set('n', state.node);
+  if (state.len === 'long') q.set('len', 'long');
+  if (location.search.includes('render=1')) q.set('render', '1');
+  history.replaceState(null, '', '?' + q.toString());
+}
+function cycle(d) {
+  const q = new URLSearchParams(location.search);
+  q.set('variant', KEYS[(KEYS.indexOf(variant()) + d + KEYS.length) % KEYS.length]);
+  history.replaceState(null, '', '?' + q.toString());
+  render();
+}
+
+const node = id => A[id];
+function containment(id) {          // the breadcrumb: containment, not history
+  const out = [];
+  let n = A[id];
+  while (n) { out.unshift(n); n = n.parent ? A[n.parent] : null; }
+  return out;
+}
+function children(n) { return (n.inside || []).map(node); }
+function siblingsOf(id) {
+  const n = A[id];
+  if (!n || !n.parent) return [];
+  return (A[n.parent].inside || []);
+}
+function nextSibling(id) {
+  const s = siblingsOf(id);
+  const i = s.indexOf(id);
+  return i >= 0 && i < s.length - 1 ? s[i + 1] : null;
+}
+function hasLong(n) { return Array.isArray(n.long); }
+function prose(n) { return (state.len === 'long' && n.long) ? n.long : n.short; }
+
+/* Staleness. Per Claim, binary. The node rolls up; the prose inherits (#649). */
+function staleClaim(n, claim) {
+  const s = n.stale && n.stale[claim];
+  if (!s) return null;
+  const key = n.name + '/' + claim;
+  return state.refreshed[key] ? null : s;
+}
+function nodeStale(n) { return !!(n.stale && Object.keys(n.stale).some(k => staleClaim(n, k))); }
+
+/* ---- moves ---------------------------------------------------------------- */
+function go(id, remember = true) {
+  if (!A[id]) return;
+  if (remember && id !== state.node) state.trail.push(state.node);
+  state.node = id;
+  state.len = 'short';        // a move always lands on the short length
+  render();
+}
+function back() {
+  if (!state.trail.length) return;
+  state.node = state.trail.pop();
+  state.len = 'short';
+  render();
+}
+function toggleLen() { state.len = state.len === 'long' ? 'short' : 'long'; render(); }
+function refresh(nodeName, claim) {
+  const n = A[state.node];
+  const s = n.stale && n.stale[claim];
+  if (s && s.reason) { s.tried = true; render(); return; }   // a refresh that cannot run says so
+  state.refreshed[nodeName + '/' + claim] = true;
+  render();
+}
+function exitTo(path, line) {
+  const t = document.getElementById('toast');
+  t.textContent = 'Argo opens ' + path + ':' + line + ' in this Project’s editor. It never renders the file.';
+  t.classList.add('on');
+  clearTimeout(exitTo._t);
+  exitTo._t = setTimeout(() => t.classList.remove('on'), 2600);
+}
+
+/* ---- shared fragments ----------------------------------------------------- */
+const esc = s => String(s).replace(/\s+/g, ' ').trim();
+
+function proseHTML(n) {
+  return prose(n).map(p => `<p>${esc(p)}</p>`).join('');
+}
+function staleHTML(n, claim) {
+  const s = staleClaim(n, claim);
+  if (!s) return '';
+  const word = s.anchorGone ? 'anchor gone' : 'stale';
+  const reason = s.reason && s.tried
+    ? `<div class="reason">Could not refresh: ${esc(s.reason)}</div>` : '';
+  return `<div class="stalewrap"><span class="stale">${word} · ${esc(s.what)}
+    <button onclick="refresh('${n.name}','${claim}')">Refresh</button></span>${reason}</div>`;
+}
+function anchorsHTML(n) {
+  if (!n.anchors) return '';
+  return `<div class="exits">
+    <h4>The bottom of the atlas here</h4>
+    <p class="said">Below this there is only the code. These are the five places worth opening,
+      and the atlas is saying so rather than thinning out.</p>
+    ${n.anchors.map(([p, l, w]) => `<button class="anchor" onclick="exitTo('${p}',${l})">
+      <span class="p">${p}:${l}</span><span class="w">${esc(w)}</span></button>`).join('')}
+  </div>`;
+}
+function evidenceHTML(n) {
+  if (n.noneFound) {
+    return `<div class="exits">
+      <h4>None found</h4>
+      <p class="said">${esc(n.noneFound)}</p></div>`;
+  }
+  if (!n.evidence || !n.evidence.length) return '';
+  return `<div class="exits">
+    <h4>Where the code spells it</h4>
+    <p class="said">A Concept drills into its evidence. Each of these opens in your editor.</p>
+    ${n.evidence.map(([p, l, w]) => `<button class="anchor" onclick="exitTo('${p}',${l})">
+      <span class="p">${p}:${l}</span><span class="w">${esc(w)}</span></button>`).join('')}
+    ${staleHTML(n, 'evidence')}
+  </div>`;
+}
+function conceptRefsHTML(n) {
+  if (!n.concepts || !n.concepts.length) return '';
+  return `<div class="region">
+    <div class="altitude">Concepts this ${n.altitude.toLowerCase()} spells</div>
+    <div class="chips">${n.concepts.map(id =>
+      `<button class="chip" onclick="go('${id}')">${A[id].name}</button>`).join('')}</div>
+  </div>`;
+}
+function stepsHTML(n) {
+  return `<ol class="steps">${n.steps.map(([t, p, [f, l]], i) => `<li>
+      <span class="n mono">${String(i + 1).padStart(2, '0')}</span>
+      <div class="s">
+        <h4>${t}</h4><p>${esc(p)}</p>
+        <button class="anchor" onclick="exitTo('${f}',${l})">
+          <span class="p">${f}:${l}</span></button>
+      </div></li>`).join('')}</ol>`;
+}
+function expandCtl(n) {
+  if (!hasLong(n)) return '';
+  return `<button class="ctl ${state.len === 'long' ? 'on' : ''}" onclick="toggleLen()">
+    ${state.len === 'long' ? 'Shorter' : 'Longer'}</button>`;
+}
+function nextCtl(id) {
+  const nx = nextSibling(id);
+  if (!nx) return '';
+  return `<button class="ctl" onclick="go('${nx}')">Next in ${A[A[id].parent].name} · ${A[nx].name} →</button>`;
+}
+function backCtl() {
+  return `<button class="ctl" onclick="back()" ${state.trail.length ? '' : 'disabled'}>← Back</button>`;
+}
+function crumbHTML(id) {
+  const chain = containment(id);
+  return `<nav class="crumb">${chain.map((n, i) => `
+    <span class="alt">${n.altitude}</span>
+    <button class="${i === chain.length - 1 ? 'here' : ''}" onclick="go('${idOf(n)}')">${n.name}</button>
+    ${i < chain.length - 1 ? '<span class="sep">›</span>' : ''}`).join('')}</nav>`;
+}
+function idOf(n) { return Object.keys(A).find(k => A[k] === n); }
+</script>
+
+<style>
+  /* ---------- fragments every variant reuses ---------- */
+  .region { margin-top: var(--s-section); }
+  .region > .altitude { display: block; margin-bottom: var(--s-base); }
+  .stalewrap { margin-top: var(--s-base); }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--s-snug); }
+  .chip {
+    border: 1px solid var(--hairline); background: var(--control); cursor: pointer;
+    border-radius: var(--r-control); padding: var(--s-tight) var(--s-base);
+    font: 500 var(--t-callout)/1.2 var(--sans); color: var(--text-2);
+    transition: background var(--m-selection) var(--ease-out), color var(--m-selection) var(--ease-out);
+  }
+  .chip:hover { background: var(--selected); color: var(--text-1); }
+
+  .steps { list-style: none; }
+  .steps li { display: grid; grid-template-columns: 26px 1fr; gap: var(--s-comfortable); padding: var(--s-comfortable) 0; border-top: 1px solid var(--hairline); }
+  .steps li:first-child { border-top: none; }
+  .steps .n { color: var(--text-off); font: 600 var(--t-subheadline)/1.6 var(--mono); }
+  .steps h4 { font: 600 var(--t-body)/1.3 var(--sans); color: var(--text-1); margin-bottom: var(--s-tight); }
+  .steps p { color: var(--text-2); font-size: var(--t-callout); line-height: 1.55; margin-bottom: var(--s-snug); }
+  .steps .anchor { margin-bottom: 0; }
+
+  .unwritten {
+    color: var(--text-off); font-size: var(--t-subheadline);
+    border-top: 1px dashed var(--hairline); margin-top: var(--s-base); padding-top: var(--s-snug);
+  }
+
+  #toast {
+    position: fixed; bottom: 62px; left: 50%; transform: translateX(-50%) translateY(6px);
+    z-index: 80; max-width: 640px; text-align: center;
+    background: var(--overlay); border: 1px solid var(--subtle); border-radius: var(--r-control);
+    box-shadow: var(--e-popover); padding: var(--s-base) var(--s-comfortable);
+    font: var(--t-callout)/1.4 var(--sans); color: var(--text-2);
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--m-reveal) var(--ease-out), transform var(--m-reveal) var(--ease-out);
+  }
+  #toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ==========================================================================
+     VARIANT A — ENCLOSURE. Descending zooms into a card and the parent stays
+     literally around it: one nested frame per altitude, the ramp stepping down
+     as you go in. Position carries nothing; containment carries everything.
+     ========================================================================== */
+  .a-root { height: 100%; padding: var(--s-section) var(--s-section) 76px; }
+  .a-frame {
+    height: 100%; display: flex; flex-direction: column; overflow: hidden;
+    border: 1px solid var(--hairline); border-radius: var(--r-popover);
+    animation: settle var(--m-reveal) var(--ease-out);
+  }
+  .a-frame.d0 { background: var(--sunken); }
+  .a-frame.d1 { background: var(--base); }
+  @keyframes settle { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: none; } }
+  .a-rim {
+    display: flex; align-items: baseline; gap: var(--s-base); cursor: pointer;
+    padding: var(--s-base) var(--s-comfortable); border-bottom: 1px solid var(--hairline);
+    color: var(--text-3); transition: background var(--m-selection) var(--ease-out);
+  }
+  .a-rim:hover { background: var(--hover); }
+  .a-rim:hover .rname, .a-rim:hover .zoom { color: var(--text-1); }
+  .a-rim .rname { font: 600 var(--t-body)/1.2 var(--sans); color: var(--text-2); }
+  .a-rim .rline { flex: 1; font-size: var(--t-subheadline); color: var(--text-off);
+                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .a-rim .zoom { font: 500 var(--t-footnote)/1.2 var(--sans); color: var(--text-off); white-space: nowrap; }
+  .a-inner { flex: 1; min-height: 0; padding: var(--s-comfortable); }
+
+  .a-card {
+    height: 100%; overflow-y: auto; background: var(--raised);
+    border: 1px solid var(--subtle); border-radius: var(--r-control);
+    padding: var(--s-section) var(--s-region) var(--s-region);
+  }
+  /* The card is as wide as its enclosure; the reading measure is not. */
+  .a-mid { max-width: 980px; margin: 0 auto; }
+  .a-mid.wide { max-width: 1360px; }
+  .a-top { display: flex; align-items: center; gap: var(--s-base); flex-wrap: wrap; margin-bottom: var(--s-loose); }
+  .a-top .grow { flex: 1; }
+  .a-card h1 { font: 600 var(--t-title1)/1.2 var(--sans); letter-spacing: -.2px; }
+  .a-card .line { color: var(--text-2); font-size: var(--t-title3); margin-top: var(--s-snug); max-width: 68ch; }
+  .a-prose { margin-top: var(--s-loose); max-width: 74ch; }
+  .a-prose p { font: var(--t-body)/var(--lh-prose, 20px) var(--sans); color: var(--text-1); margin-bottom: var(--s-comfortable); }
+  .a-prose p:last-child { margin-bottom: 0; }
+  .a-two { display: grid; grid-template-columns: minmax(0, 920px) 300px; gap: var(--s-region);
+           align-items: start; justify-content: space-between; }
+  .a-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: var(--s-comfortable); }
+  .a-child {
+    text-align: left; cursor: pointer; background: var(--hover);
+    border: 1px solid var(--hairline); border-radius: var(--r-control);
+    padding: var(--s-comfortable); color: inherit;
+    transition: background var(--m-selection) var(--ease-out), border-color var(--m-selection) var(--ease-out);
+  }
+  .a-child:hover { background: var(--selected); border-color: var(--subtle); }
+  .a-child h3 { font: 600 var(--t-body)/1.3 var(--sans); margin-bottom: var(--s-tight); }
+  .a-child p { font-size: var(--t-subheadline); line-height: 1.5; color: var(--text-2); }
+  .a-child .go { display: block; margin-top: var(--s-base); font: 500 var(--t-footnote)/1 var(--sans); color: var(--text-off); }
+  .a-child:hover .go { color: var(--accent-bright); }
+  .a-band { border: 1px solid var(--hairline); border-radius: var(--r-control); padding: var(--s-comfortable); }
+  .a-band + .a-band { margin-top: var(--s-comfortable); }
+  .a-band ul { list-style: none; }
+  .a-band li + li { border-top: 1px solid var(--hairline); }
+  .a-band button.row {
+    display: block; width: 100%; text-align: left; cursor: pointer; background: none; border: none;
+    padding: var(--s-base) var(--s-snug); border-radius: var(--r-marker);
+  }
+  .a-band button.row:hover { background: var(--hover); }
+  .a-band .nm { font: 500 var(--t-body)/1.3 var(--sans); color: var(--text-1); }
+  .a-band .ln { display: block; font-size: var(--t-subheadline); line-height: 1.45; color: var(--text-3); margin-top: 2px; }
+  .a-sec { margin-top: var(--s-section); max-width: 74ch; }
+  .a-sec p { color: var(--text-2); font: var(--t-body)/1.6 var(--sans); margin-top: var(--s-snug); }
+  .a-foot { margin-top: var(--s-region); padding-top: var(--s-comfortable); border-top: 1px solid var(--hairline); }
+</style>
+
+<script>
+/* ---------------------------------------------------------------- VARIANT A -- */
+/* Enclosure: one frame per ancestor, the current card inside them all. */
+function renderA() {
+  const chain = containment(state.node);
+  let html = cardA(A[state.node]);
+  for (let i = chain.length - 2; i >= 0; i--) html = frameA(chain[i], html, i);
+  return `<div class="a-root">${html}</div>`;
+}
+function frameA(n, inner, depth) {
+  return `<section class="a-frame d${depth}">
+    <header class="a-rim" onclick="go('${idOf(n)}')" title="Zoom out to ${n.name}">
+      <span class="altitude">${n.altitude}</span>
+      <span class="rname">${n.name}</span>
+      <span class="rline">${esc(n.line)}</span>
+      <span class="zoom">zoom out</span>
+    </header>
+    <div class="a-inner">${inner}</div>
+  </section>`;
+}
+function cardA(n) {
+  const id = idOf(n);
+  const body = n.kind === 'flow'
+    ? `<div class="region"><div class="altitude">Every step, at once</div>${stepsHTML(n)}</div>`
+    : n.kind === 'concept'
+      ? evidenceHTML(n)
+      : insideA(n) + sectionsA(n) + anchorsHTML(n);
+
+  const rail = id === 'argo' ? railA() : '';
+  const main = `
+    <div class="a-top">
+      ${crumbHTML(id)}<span class="grow"></span>
+      ${nodeStale(n) ? '<span class="stale">stale · something under this node</span>' : ''}
+      ${expandCtl(n)} ${backCtl()}
+    </div>
+    ${n.kind === 'area' ? '' : `<div style="margin-bottom:var(--s-base)">
+      <span class="kindword ${n.kind}">${n.kind}</span></div>`}
+    <h1>${n.name}</h1>
+    <p class="line">${esc(n.line)}</p>
+    <div class="a-prose">${proseHTML(n)}</div>
+    ${body}
+    ${n.kind === 'area' ? conceptRefsHTML(n) : ''}
+    <div class="a-foot">${nextCtl(id)}</div>`;
+
+  return `<article class="a-card"><div class="a-mid ${rail ? 'wide' : ''}">${
+    rail ? `<div class="a-two"><div>${main}</div><aside>${rail}</aside></div>` : main
+  }</div></article>`;
+}
+function insideA(n) {
+  const kids = children(n);
+  if (!kids.length) {
+    return n.unwritten ? `<div class="region"><div class="altitude">Inside it</div>
+      <p class="unwritten">Not hand-written for this study. #650 asks for one path top to bottom, and
+      that path goes through <b>Reading the record</b>. In the real atlas this card would carry its
+      own Areas.</p></div>` : '';
+  }
+  return `<div class="region">
+    <div class="altitude">Inside it · ${kids.length} ${n.altitude === 'Project' ? 'domains' : 'areas'}, in the order they teach best</div>
+    ${staleHTML(n, 'order')}
+    <div class="a-grid" style="margin-top:var(--s-comfortable)">
+      ${kids.map(k => `<button class="a-child" onclick="go('${idOf(k)}')">
+        <h3>${k.name}</h3><p>${esc(k.line)}</p>
+        <span class="go">Descend →</span></button>`).join('')}
+    </div>
+  </div>`;
+}
+function sectionsA(n) {
+  let out = '';
+  if (n.among && n.among.length) {
+    out += `<div class="a-sec"><div class="altitude">How they talk to each other</div>
+      ${n.among.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
+  }
+  if (n.leaving && n.leaving.length) {
+    out += `<div class="a-sec"><div class="altitude">What leaves it</div>
+      ${n.leaving.map(p => `<p>${esc(p)}</p>`).join('')}${staleHTML(n, 'leaving')}</div>`;
+  }
+  return out;
+}
+function railA() {
+  const p = A.argo;
+  return `
+    <div class="a-band">
+      <div class="altitude" style="margin-bottom:var(--s-base)"><span class="kindword flow">Flows</span></div>
+      <ul>${p.flows.map(id => `<li><button class="row" onclick="go('${id}')">
+        <span class="nm">${A[id].name}</span><span class="ln">${esc(A[id].line)}</span></button></li>`).join('')}</ul>
+    </div>
+    <div class="a-band">
+      <div class="altitude" style="margin-bottom:var(--s-base)"><span class="kindword concept">Concepts</span></div>
+      <ul>${p.concepts.map(id => `<li><button class="row" onclick="go('${id}')">
+        <span class="nm">${A[id].name}</span><span class="ln">${esc(A[id].line)}</span></button></li>`).join('')}</ul>
+    </div>`;
+}
+</script>
+
+<style>
+  /* ==========================================================================
+     VARIANT B — SPINE. No canvas and no cards: one reading column, set for
+     saying out loud. The parent stays visible as a rib pinned above the column,
+     one rib per altitude, so containment is a stack rather than a nesting.
+     Body type is larger here than anywhere in the app on purpose — this variant
+     is asking whether the atlas is a reading surface first.
+     ========================================================================== */
+  .b-root { height: 100%; overflow-y: auto; background: var(--sunken); padding-bottom: 96px; }
+  .b-ribs {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--sunken) 88%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--subtle);
+  }
+  .b-rib {
+    display: flex; align-items: baseline; gap: var(--s-base); width: 100%; cursor: pointer;
+    background: none; border: none; text-align: left; color: var(--text-3);
+    padding: var(--s-snug) var(--s-section);
+    transition: background var(--m-selection) var(--ease-out);
+  }
+  .b-rib + .b-rib { border-top: 1px solid var(--hairline); }
+  .b-rib:hover { background: var(--hover); }
+  .b-rib:hover .nm { color: var(--text-1); }
+  .b-rib .nm { font: 500 var(--t-body)/1.3 var(--sans); color: var(--text-2); }
+  .b-rib .ln { flex: 1; font-size: var(--t-subheadline); color: var(--text-off);
+               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .b-bar { display: flex; align-items: center; gap: var(--s-base); padding: var(--s-base) var(--s-section);
+           border-top: 1px solid var(--hairline); }
+  .b-bar .grow { flex: 1; }
+
+  .b-col { max-width: 74ch; margin: 0 auto; padding: var(--s-region) var(--s-section) 0; }
+  .b-col h1 { font: 600 26px/1.18 var(--sans); letter-spacing: -.4px; margin-bottom: var(--s-comfortable); }
+  .b-lede { font: 400 17px/1.6 var(--sans); color: var(--text-2); margin-bottom: var(--s-section); max-width: 60ch; }
+  .b-prose p { font: 400 15px/1.68 var(--sans); color: var(--text-1); margin-bottom: var(--s-loose); }
+  .b-prose p:last-child { margin-bottom: 0; }
+  .b-h { display: block; margin: var(--s-region) 0 var(--s-comfortable); }
+  .b-sec p { font: 400 var(--t-title3)/1.62 var(--sans); color: var(--text-2); margin-bottom: var(--s-comfortable); }
+
+  /* the spine: ordinals hang on one hairline, and nothing is a card */
+  .b-list { list-style: none; border-left: 1px solid var(--subtle); }
+  .b-list li { position: relative; }
+  .b-list button {
+    display: grid; grid-template-columns: 34px 1fr; gap: var(--s-comfortable);
+    width: 100%; text-align: left; cursor: pointer; background: none; border: none;
+    padding: var(--s-loose) var(--s-comfortable) var(--s-loose) 0; color: inherit;
+    border-bottom: 1px solid var(--hairline);
+    transition: background var(--m-selection) var(--ease-out);
+  }
+  .b-list li:last-child button { border-bottom: none; }
+  .b-list button:hover { background: var(--hover); }
+  .b-list .ord {
+    font: 600 var(--t-subheadline)/1.9 var(--mono); color: var(--text-off);
+    text-align: right; padding-right: var(--s-base);
+    margin-left: -1px; border-left: 2px solid transparent;
+  }
+  .b-list button:hover .ord { color: var(--accent-bright); border-left-color: var(--accent); }
+  .b-list h3 { font: 600 var(--t-title3)/1.35 var(--sans); margin-bottom: var(--s-snug); }
+  .b-list p { font: 400 var(--t-body)/1.55 var(--sans); color: var(--text-2); max-width: 58ch; }
+  .b-foot { max-width: 74ch; margin: var(--s-region) auto 0; padding: var(--s-comfortable) var(--s-section) 0;
+            border-top: 1px solid var(--hairline); }
+</style>
+
+<script>
+/* ---------------------------------------------------------------- VARIANT B -- */
+function renderB() {
+  const n = A[state.node];
+  const id = idOf(n);
+  const chain = containment(id).slice(0, -1);
+  const ribs = chain.map(a => `<button class="b-rib" onclick="go('${idOf(a)}')">
+      <span class="altitude">${a.altitude}</span>
+      <span class="nm">${a.name}</span>
+      <span class="ln">${esc(a.line)}</span>
+      <span class="altitude">zoom out</span></button>`).join('');
+
+  const body = n.kind === 'flow'
+    ? `<span class="altitude b-h">Every step, at once</span>${stepsHTML(n)}`
+    : n.kind === 'concept'
+      ? evidenceHTML(n)
+      : insideB(n) + sectionsB(n) + anchorsHTML(n) + (id === 'argo' ? projectRailB() : '');
+
+  return `<div class="b-root">
+    <div class="b-ribs">
+      ${ribs}
+      <div class="b-bar">
+        ${crumbHTML(id)}<span class="grow"></span>
+        ${nodeStale(n) ? '<span class="stale">stale · something under this node</span>' : ''}
+        ${expandCtl(n)} ${backCtl()}
+      </div>
+    </div>
+    <div class="b-col">
+      ${n.kind === 'area' ? '' : `<div style="margin-bottom:var(--s-comfortable)"><span class="kindword ${n.kind}">${n.kind}</span></div>`}
+      <h1>${n.name}</h1>
+      <p class="b-lede">${esc(n.line)}</p>
+      <div class="b-prose">${proseHTML(n)}</div>
+      ${body}
+      ${n.kind === 'area' ? conceptRefsHTML(n) : ''}
+    </div>
+    <div class="b-foot">${nextCtl(id)}</div>
+  </div>`;
+}
+function insideB(n) {
+  const kids = children(n);
+  if (!kids.length) {
+    return n.unwritten ? `<span class="altitude b-h">Inside it</span>
+      <p class="unwritten">Not hand-written for this study — the one path #650 asks for runs through
+      <b>Reading the record</b>.</p>` : '';
+  }
+  return `<span class="altitude b-h">Inside it · read in this order</span>
+    ${staleHTML(n, 'order')}
+    <ol class="b-list" style="margin-top:var(--s-loose)">
+      ${kids.map((k, i) => `<li><button onclick="go('${idOf(k)}')">
+        <span class="ord">${String(i + 1).padStart(2, '0')}</span>
+        <span><h3>${k.name}</h3><p>${esc(k.line)}</p></span></button></li>`).join('')}
+    </ol>`;
+}
+function sectionsB(n) {
+  let out = '';
+  if (n.among && n.among.length) {
+    out += `<div class="b-sec"><span class="altitude b-h">How they talk to each other</span>
+      ${n.among.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
+  }
+  if (n.leaving && n.leaving.length) {
+    out += `<div class="b-sec"><span class="altitude b-h">What leaves it</span>
+      ${n.leaving.map(p => `<p>${esc(p)}</p>`).join('')}${staleHTML(n, 'leaving')}</div>`;
+  }
+  return out;
+}
+function projectRailB() {
+  const p = A.argo;
+  const list = (ids, kind, label, note) => `
+    <span class="altitude b-h"><span class="kindword ${kind}">${label}</span></span>
+    <p class="unwritten" style="border:none;margin:0 0 var(--s-comfortable);color:var(--text-3)">${note}</p>
+    <ol class="b-list">${ids.map(id => `<li><button onclick="go('${id}')">
+      <span class="ord">·</span>
+      <span><h3>${A[id].name}</h3><p>${esc(A[id].line)}</p></span></button></li>`).join('')}</ol>`;
+  return list(p.flows, 'flow', 'Flows', 'A path through the code, crossing whatever domains it crosses.')
+       + list(p.concepts, 'concept', 'Concepts', 'A term the code spells, and where that meaning holds.');
+}
+</script>
+
+<style>
+  /* ==========================================================================
+     VARIANT C — ROOM. The atlas as a cockpit room rather than a canvas:
+     containment lives in the sidebar as an indented stack, and the card sits in
+     the deck at the feed's own measure. It asks whether the zoom is needed at
+     all, and it is the only variant that shows the atlas beside the rest of Argo.
+     ========================================================================== */
+  .c-root { height: 100%; padding: var(--s-section) var(--s-section) 76px; }
+  .window {
+    height: 100%; min-width: var(--win-min-w, 960px); overflow: hidden;
+    border-radius: 10px; border: 1px solid var(--subtle);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6); background: var(--base);
+    display: grid; grid-template-columns: 320px minmax(0,1fr);
+  }
+  .rail {
+    position: relative; overflow-y: auto;
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    backdrop-filter: blur(var(--rail-blur)) saturate(var(--rail-sat));
+    border-right: 1px solid var(--hairline);
+    padding-top: 78px;   /* the titlebar paints no ground; the rail runs full height */
+  }
+  /* not tokens — the platform's own chrome, at its literal hexes */
+  .lights { position: absolute; top: 13px; left: 13px; display: flex; gap: 8px; }
+  .lights i { width: 12px; height: 12px; border-radius: 999px; display: block; }
+  .scope {
+    position: absolute; top: 40px; left: var(--s-base);
+    display: flex; align-items: center; gap: var(--s-snug);
+    background: var(--glass-tint); border-radius: var(--r-control);
+    padding: var(--s-tight) var(--s-base);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px rgba(255,255,255,.05);
+    font: 600 var(--t-body)/1.2 var(--sans);
+  }
+  .rail h4 {
+    font: 600 var(--t-subheadline)/1 var(--sans); letter-spacing: var(--tracking-label, .6px);
+    color: var(--text-3); padding: var(--s-loose) var(--s-comfortable) var(--s-snug);
+  }
+  .rail button.r {
+    display: block; width: 100%; text-align: left; cursor: pointer; background: none; border: none;
+    padding: var(--s-snug) var(--s-comfortable); color: var(--text-2);
+    font: 500 var(--t-body)/1.35 var(--sans);
+    transition: background var(--m-selection) var(--ease-out), color var(--m-selection) var(--ease-out);
+  }
+  .rail button.r:hover { background: var(--hover); color: var(--text-1); }
+  /* selection is the ground alone — no leading accent rule (D30) */
+  .rail button.r.here { background: var(--selection-ground); color: var(--text-1); }
+  .rail button.r .alt { display: block; font: 600 var(--t-footnote)/1.6 var(--mono);
+                        letter-spacing: .08em; text-transform: uppercase; color: var(--text-off); }
+  .rail button.r.here .alt { color: var(--accent-bright); }
+  .rail .d1 { padding-left: var(--s-section); }
+  .rail .d2 { padding-left: calc(var(--s-section) + var(--s-loose)); }
+
+  .deck { display: flex; flex-direction: column; min-width: 0; background: var(--base); }
+  .canopy {
+    height: 56px; flex: none; display: flex; align-items: center; gap: var(--s-base);
+    padding: 0 var(--s-comfortable) 0 var(--s-loose);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .canopy .grow { flex: 1; }
+  .c-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--s-region) 0 var(--s-region); }
+  .c-col { max-width: 720px; margin: 0 auto; padding: 0 var(--s-section); }
+  .c-col h1 { font: 600 var(--t-title2)/1.25 var(--sans); }
+  .c-col .line { color: var(--text-2); font-size: var(--t-body); margin-top: var(--s-snug); }
+  .c-prose { margin-top: var(--s-loose); }
+  .c-prose p { font: var(--t-body)/20px var(--sans); color: var(--text-1); margin-bottom: var(--s-comfortable); }
+  .c-rows { border-top: 1px solid var(--hairline); }
+  .c-rows button {
+    display: grid; grid-template-columns: 18px 1fr; gap: var(--s-base);
+    width: 100%; text-align: left; cursor: pointer; background: none; border: none;
+    border-bottom: 1px solid var(--hairline); color: inherit;
+    padding: var(--s-comfortable) var(--s-snug);
+    transition: background var(--m-selection) var(--ease-out);
+  }
+  .c-rows button:hover { background: var(--hover); }
+  .c-rows .marker { color: var(--text-off); font: var(--t-callout)/1.5 var(--mono); }
+  .c-rows button:hover .marker { color: var(--accent-bright); }
+  .c-rows .nm { font: 500 var(--t-body)/1.35 var(--sans); }
+  .c-rows .ln { display: block; font-size: var(--t-subheadline); line-height: 1.5; color: var(--text-3); margin-top: 2px; }
+  .c-sec { margin-top: var(--s-section); }
+  .c-sec p { color: var(--text-2); font: var(--t-body)/1.6 var(--sans); margin-top: var(--s-snug); }
+  .c-foot { margin-top: var(--s-section); padding-top: var(--s-comfortable); border-top: 1px solid var(--hairline); }
+</style>
+
+<script>
+/* ---------------------------------------------------------------- VARIANT C -- */
+function renderC() {
+  const n = A[state.node];
+  const id = idOf(n);
+  const chain = containment(id);
+
+  const stack = chain.map((a, i) => `<button class="r d${i} ${idOf(a) === id ? 'here' : ''}"
+      onclick="go('${idOf(a)}')"><span class="alt">${a.altitude}</span>${a.name}</button>`).join('');
+  const listing = (ids) => ids.map(x => `<button class="r ${x === id ? 'here' : ''}"
+      onclick="go('${x}')">${A[x].name}</button>`).join('');
+
+  const body = n.kind === 'flow'
+    ? `<div class="c-sec"><div class="altitude">Every step, at once</div>${stepsHTML(n)}</div>`
+    : n.kind === 'concept'
+      ? evidenceHTML(n)
+      : insideC(n) + sectionsC(n) + anchorsHTML(n);
+
+  return `<div class="c-root"><div class="window">
+    <aside class="rail">
+      <div class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></div>
+      <div class="scope">Argo</div>
+      <h4>Containment</h4>${stack}
+      <h4>Flows</h4>${listing(A.argo.flows)}
+      <h4>Concepts</h4>${listing(A.argo.concepts)}
+    </aside>
+    <section class="deck">
+      <header class="canopy">
+        ${crumbHTML(id)}<span class="grow"></span>
+        ${nodeStale(n) ? '<span class="stale">stale</span>' : ''}
+        ${expandCtl(n)} ${backCtl()}
+      </header>
+      <div class="c-body"><div class="c-col">
+        ${n.kind === 'area' ? '' : `<div style="margin-bottom:var(--s-base)"><span class="kindword ${n.kind}">${n.kind}</span></div>`}
+        <h1>${n.name}</h1>
+        <p class="line">${esc(n.line)}</p>
+        <div class="c-prose">${proseHTML(n)}</div>
+        ${body}
+        ${n.kind === 'area' ? conceptRefsHTML(n) : ''}
+        <div class="c-foot">${nextCtl(id)}</div>
+      </div></div>
+    </section>
+  </div></div>`;
+}
+function insideC(n) {
+  const kids = children(n);
+  if (!kids.length) {
+    return n.unwritten ? `<div class="c-sec"><div class="altitude">Inside it</div>
+      <p class="unwritten">Not hand-written for this study — the one path runs through
+      <b>Reading the record</b>.</p></div>` : '';
+  }
+  return `<div class="c-sec">
+    <div class="altitude">Inside it · in the order they teach best</div>
+    ${staleHTML(n, 'order')}
+    <div class="c-rows" style="margin-top:var(--s-comfortable)">
+      ${kids.map(k => `<button onclick="go('${idOf(k)}')">
+        <span class="marker">›</span>
+        <span><span class="nm">${k.name}</span><span class="ln">${esc(k.line)}</span></span>
+      </button>`).join('')}
+    </div>
+  </div>`;
+}
+function sectionsC(n) {
+  let out = '';
+  if (n.among && n.among.length) {
+    out += `<div class="c-sec"><div class="altitude">How they talk to each other</div>
+      ${n.among.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
+  }
+  if (n.leaving && n.leaving.length) {
+    out += `<div class="c-sec"><div class="altitude">What leaves it</div>
+      ${n.leaving.map(p => `<p>${esc(p)}</p>`).join('')}${staleHTML(n, 'leaving')}</div>`;
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------- BOOT --- */
+const RENDER = { A: renderA, B: renderB, C: renderC };
+function render() {
+  const v = variant();
+  document.body.dataset.v = v;
+  document.getElementById('switch-label').textContent = v + ' — ' + NAMES[v];
+  document.getElementById('root').innerHTML = RENDER[v]();
+  writeURL();
+}
+addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (e.key === 'ArrowLeft') cycle(-1);
+  if (e.key === 'ArrowRight') cycle(1);
+  if (e.key === 'Escape') back();
+});
+if (location.search.includes('render=1')) document.body.classList.add('render');
+readURL();
+render();
+</script>
+</body>
+</html>
