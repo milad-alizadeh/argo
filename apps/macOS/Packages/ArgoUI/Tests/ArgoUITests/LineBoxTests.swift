@@ -66,23 +66,22 @@ struct LineBoxTests {
         #expect(ArgoTypography.body.nominalLineBox != ArgoTypeScale.body.drawnLineBox)
     }
 
-    /// Pinned so it cannot be lost: the feed's leading takes the nominal box off and `ProseFace`
-    /// adds it to the drawn one, so prose misses the rhythm its name promises by exactly the gap
-    /// between the two boxes — in whichever direction this machine has them. Correcting it
-    /// re-spaces every line of the feed and belongs to the design — #1026.
+    /// Inverted from the shortfall it used to pin (#1026): the feed's leading now comes off the
+    /// box the face is DRAWN at, so a line stands at exactly the rhythm its name promises. Exact
+    /// equality, because both sides read the one measure — a tolerance here would let the nominal
+    /// number back in on the machine where the two are less than a point apart.
     @Test
-    func `the feed's prose misses the rhythm it names by the gap between the boxes`() {
-        let missed = ProseFace.body.step - ArgoFeedRow.lineHeight
-        let gap = ArgoTypeScale.body.drawnLineBox - Self.nominal(.body)
-
-        #expect(abs(missed - gap) < 0.001)
+    func `the feed's prose stands at the rhythm it names`() {
+        #expect(ProseFace.body.step == ArgoFeedRow.lineHeight)
     }
 
-    /// And the mono misses for a second reason too: `ArgoTypography.machine`'s rung is not the rung
-    /// the feed draws its mono at. Also #1026.
+    /// And the mono stands at its own, off the rung it is DRAWN at rather than the chrome role's:
+    /// `.system(.body, design: .monospaced)` keeps the body's line box. Also #1026.
     @Test
-    func `the feed's mono misses it for a second reason as well`() {
-        #expect(ProseFace.machine.step != ArgoFeedRow.machineLineHeight)
-        #expect(ArgoTypography.machine.rung != ArgoFeedRow.proseRung)
+    func `the feed's mono stands at its own rhythm, from the rung it is drawn at`() {
+        #expect(ProseFace.machine.step == ArgoFeedRow.machineLineHeight)
+        #expect(
+            ProseFace.machine.lineBox(under: .fractional) == ArgoFeedRow.machineRung.drawnLineBox,
+        )
     }
 }

@@ -107,7 +107,7 @@ extension ProseFace {
     /// The extra leading the feed sets this face at — the machine's own for the mono, prose's
     /// otherwise, which is exactly the pair `FeedProseText` and `FeedMarkdownFence` apply, and so
     /// the one `ProseLineBox` sets its own probe at.
-    var leading: CGFloat {
+    @MainActor var leading: CGFloat {
         isMachine ? ArgoFeedRow.machineLineSpacing : ArgoFeedRow.proseLineSpacing
     }
 
