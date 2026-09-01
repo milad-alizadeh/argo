@@ -13,8 +13,48 @@ import Foundation
 /// idempotent — so neither end of it leaks and neither end of it closes twice.
 @MainActor
 final class CompanionClient {
+    /// Why a dial that kept trying never landed: the errno of the last attempt and whether the
+    /// socket file was even there. A bare `→ nil` named no cause, and three CI failures were spent
+    /// guessing at one (#915).
+    struct DialFailure: Error, CustomStringConvertible {
+        let description: String
+    }
+
     /// Readable so a test can name the number this client holds; `-1` once it has been released.
     private(set) var descriptor: Int32
+
+    /// A dial that WAITS for the listener instead of assuming one attempt is enough (#915).
+    ///
+    /// Everything expecting a live socket comes through here. The one-shot `init?` below stays for
+    /// the suites that are ABOUT a refusal: a withdrawn socket has to read gone at once rather than
+    /// after a hang guard, and the backlog burst has to fill the queue without the main actor
+    /// turning between dials.
+    ///
+    /// It SLEEPS between attempts for `settle`'s reason — the listener accepts on the main QUEUE,
+    /// so a yield loop never leaves the actor that would open it.
+    /// `within` is `settle`'s own hang guard everywhere but the one test ABOUT a dial that is never
+    /// answered, which would otherwise spend the whole guard to prove it.
+    static func dialled(
+        _ socketPath: String,
+        within bound: Duration = settleLimit,
+    ) async throws
+        -> CompanionClient {
+        let deadline = ContinuousClock.now + bound
+        while true {
+            if let client = CompanionClient(socketPath: socketPath) {
+                return client
+            }
+            let refusal = String(cString: strerror(errno))
+            guard ContinuousClock.now < deadline else {
+                throw DialFailure(description: """
+                no listener on \(socketPath) (\(socketPath.utf8.count) bytes) within \
+                \(bound): \(refusal), and the socket file is \
+                \(FileManager.default.fileExists(atPath: socketPath) ? "there" : "not there")
+                """)
+            }
+            try? await Task.sleep(for: .milliseconds(1))
+        }
+    }
 
     init?(socketPath: String) {
         // Bounded like the server's own copy: `sun_path` is 104 bytes, and a path longer than that

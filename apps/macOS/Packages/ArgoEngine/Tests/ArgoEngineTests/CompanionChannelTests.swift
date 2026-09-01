@@ -161,7 +161,7 @@ struct CompanionChannelTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
-        let client = try #require(CompanionClient(socketPath: socketPath(fixture, claim)))
+        let client = try await CompanionClient.dialled(socketPath(fixture, claim))
         defer { client.close() }
         try await body(fixture, client)
     }

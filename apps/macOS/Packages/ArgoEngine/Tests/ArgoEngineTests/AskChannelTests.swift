@@ -108,7 +108,7 @@ extension PermissionChannelTests {
                 )
                 _ = try await PermissionGate.decision(read: client)
 
-                let second = try PermissionGate.dial(fixture, claim)
+                let second = try await PermissionGate.dial(fixture, claim)
                 defer { second.close() }
                 second.sendLine(Self.askCall)
                 await settle { fixture.hub.sessions.first?.ask != nil }

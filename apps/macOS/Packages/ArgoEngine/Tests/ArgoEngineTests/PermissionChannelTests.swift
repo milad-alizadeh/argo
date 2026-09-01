@@ -85,7 +85,7 @@ struct PermissionChannelTests {
     func `a rung the Session walks to is the one the next call is judged by`() async throws {
         let gate = try GateFixture()
         defer { gate.remove() }
-        let asking = try #require(CompanionClient(socketPath: gate.socketPath))
+        let asking = try await CompanionClient.dialled(gate.socketPath)
         defer { asking.close() }
 
         asking.sendLine(PermissionGate.bashCall)
@@ -93,7 +93,7 @@ struct PermissionChannelTests {
         #expect(!gate.facts.waiting.isEmpty)
 
         gate.rung = .auto
-        let allowed = try #require(CompanionClient(socketPath: gate.socketPath))
+        let allowed = try await CompanionClient.dialled(gate.socketPath)
         defer { allowed.close() }
         allowed.sendLine(PermissionGate.bashCall)
 
@@ -147,7 +147,7 @@ struct PermissionChannelTests {
 
             // A plain allow is spent on the call it was given for; the standing answer is
             // `allowAlways` (#572).
-            let second = try PermissionGate.dial(fixture, claim)
+            let second = try await PermissionGate.dial(fixture, claim)
             defer { second.close() }
             second.sendLine(PermissionGate.bashCall)
             await settle { fixture.hub.sessions.first?.permission != nil }
@@ -203,7 +203,7 @@ struct PermissionChannelTests {
 
             // A second call arrives behind the first, then the first's hook goes with its own
             // turn — the window in which a positional answer would spend Allow on the newcomer.
-            let second = try PermissionGate.dial(fixture, claim)
+            let second = try await PermissionGate.dial(fixture, claim)
             defer { second.close() }
             second.sendLine(PermissionGate.bashCall)
             client.close()
