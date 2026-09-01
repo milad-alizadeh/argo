@@ -111,8 +111,11 @@ extension ProseFace {
         isMachine ? ArgoFeedRow.machineLineSpacing : ArgoFeedRow.proseLineSpacing
     }
 
-    /// What this face is called in a cache key. No resolved size in it, so `ProseMetrics` goes on
-    /// answering at the old one after an Accessibility text change — #1027.
+    /// What this face is called in a cache key.
+    ///
+    /// No resolved size in it, deliberately: the size is one number for every face, and a store
+    /// that drops what it holds when that number moves is cheaper than a key that carries it — see
+    /// `ProseTextSize` and `ProseMetrics.atCurrentSize()` (#1027).
     var key: String {
         "\(rung)\u{0}\(isBold)\u{0}\(isMachine)"
     }

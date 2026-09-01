@@ -100,6 +100,23 @@ enum PerfBudgets {
     /// reads them, and an unread constant here would be debt rather than a record.
     static let walkBurstDocuments = 3
 
+    /// `ProseTextSizeCostTests` — what #1027's freshness check costs the warm ask it guards.
+    ///
+    /// Recorded: 0.115–0.117 — 89 ns of clock read against a 762 ns warm ask · M4 Pro · debug ·
+    /// least of 9 interleaved, over 100 000-pass blocks. Rule 7's 3x on the recorded figure, and it
+    /// has room to spare for what it is there to catch: a check that went back to asking
+    /// `NSFont.preferredFont` every ask reads 4.21 µs against the same 762 ns, or 5.6 — a multiple
+    /// of the ask rather than a fraction of it, and 16x this bound.
+    static let textSizeCheckShare = 0.117 * 3
+
+    /// `ProseTextSizeCostTests` — what the design this was chosen over would have cost: a resolved
+    /// size in every cache key, which is an `NSFont.preferredFont` read per key construction.
+    ///
+    /// Recorded: 5.55–5.59x — a warm ask 753 ns against 4.21 µs with the size read in front of it ·
+    /// M4 Pro · debug · least of 9 interleaved, over 20 000-pass blocks. A third of that gap is
+    /// the gate, as `repeatReadingFold` above; never rounded down to fit a red run.
+    static let keyedTextSizeFold = 5.55 / 3
+
     /// The seconds `MinimapFigureRecording` re-records, one entry a figure it prints.
     ///
     /// Recorded: over the 301-row reading · M4 Pro, **loaded**, load average 125–164 on 12 cores ·

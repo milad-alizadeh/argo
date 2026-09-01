@@ -22,6 +22,9 @@ enum ProseMetrics {
     private static var lays: [CGFloat: ProseCache<ProseLay>] = [:]
     private static let measuresHeld = 8
 
+    /// The setting the stores were filled at — see `atCurrentSize()`.
+    private static var readAt = ProseTextSize.epoch()
+
     #if DEBUG
         /// Every Core Text pass this has ever paid for, cache misses only — the glyph work itself.
         ///
@@ -35,14 +38,16 @@ enum ProseMetrics {
 
     /// How wide `text` would run on one line, its inline marks read and taken off.
     static func width(of text: String, in face: ProseFace = .body) -> CGFloat {
-        widths.reading(of: keyed(text, in: face)) { _ in
+        atCurrentSize()
+        return widths.reading(of: keyed(text, in: face)) { _ in
             counted { measured(ProseReading.marked(text), in: face) }
         }
     }
 
     /// How wide its widest unbreakable word runs — the floor under a column holding it.
     static func word(in text: String, face: ProseFace = .body) -> CGFloat {
-        words.reading(of: keyed(text, in: face)) { _ in
+        atCurrentSize()
+        return words.reading(of: keyed(text, in: face)) { _ in
             counted { widestWord(in: ProseReading.marked(text), face: face) }
         }
     }
@@ -51,6 +56,7 @@ enum ProseMetrics {
     static func lay(out text: String, across measure: CGFloat, in face: ProseFace = .body)
         -> ProseLay {
         guard measure > 0 else { return ProseLay() }
+        atCurrentSize()
         if lays[measure] == nil, lays.count >= measuresHeld {
             lays.removeAll()
         }
@@ -60,6 +66,25 @@ enum ProseMetrics {
         }
         lays[measure] = store
         return lay
+    }
+
+    /// Drops what was measured at a size the reader has since moved off (#1027).
+    ///
+    /// Every answer held here came through a font the Accessibility text setting decides, and the
+    /// key says which FACE it was measured in but not at which size. Dropped rather than keyed for
+    /// two reasons: a resolved size in the key would put an `NSFont.preferredFont` read on every
+    /// ask, which costs 5.6x the warm ask it would be part of (`ProseTextSizeCostTests`), and it
+    /// would leave every entry taken at the old size resident until the ceiling reached it.
+    ///
+    /// The ceiling survives the drop — it is a fact about the DOCUMENT being walked, which a text
+    /// size does not change.
+    private static func atCurrentSize() {
+        let epoch = ProseTextSize.epoch()
+        guard epoch != readAt else { return }
+        readAt = epoch
+        widths = ProseCache(ceiling: widths.ceiling, cap: widths.cap)
+        words = ProseCache(ceiling: words.ceiling, cap: words.cap)
+        lays.removeAll()
     }
 
     /// One cache key. The face is part of it because the same words measure differently at every
