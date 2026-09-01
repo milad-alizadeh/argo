@@ -10,10 +10,8 @@ struct PlanPill: View {
     /// Whether the list is showing before anybody opened it — a specimen's seam, since a click
     /// cannot be reached from a screenshot.
     var isRevealed = false
-    /// Whether the pill starts with the keyboard on it — the other half of the same seam, since a
-    /// still cannot press Tab. Whether a RING is then drawn is still `ArgoFocusVisibility`'s
-    /// answer, which is what makes the clicked state a render of its own rather than the same
-    /// picture.
+    /// Whether the pill starts with the keyboard on it, beside `isRevealed` and for its reason. It
+    /// draws no ring by itself: `ArgoFocusVisibility` still has to say the reader arrived by key.
     var isCursored = false
 
     /// Opened by a click and by nothing else: the list stands over the middle of the reading, so a
@@ -78,8 +76,8 @@ struct PlanPill: View {
             .onKeyPress(.space) { pressed() }
             .onKeyPress(.return) { pressed() }
             .onExitCommand { isOpen = false }
-            // A seam and not a back door: this is the focus a Tab would have placed, stated by the
-            // one view that owns the pill's `@FocusState`.
+            // The focus a Tab would have placed. Which of this and the specimen's own event note
+            // runs first does not matter — the ring reads the visibility as an `@Observable`.
             .task {
                 if isCursored {
                     isFocused = true

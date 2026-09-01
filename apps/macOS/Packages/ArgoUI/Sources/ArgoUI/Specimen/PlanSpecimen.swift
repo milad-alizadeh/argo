@@ -7,18 +7,17 @@ import SwiftUI
 /// sits: a render of the pill on a bare ground would show a chip, and what is being judged is a
 /// chip floating above a dock, over a column of prose that no longer carries the list.
 struct PlanSpecimen: View {
-    /// How the keyboard got onto the pill, when it is on it. Both halves of the state have to be
-    /// stated, because the ring is gated on the LAST EVENT the app saw: a still of the focused pill
-    /// draws a ring only for a reader who arrived by key, and the clicked case is the render that
-    /// proves it (#713).
+    /// What the focus on the pill arrived by. The ring is gated on the LAST EVENT the app saw, so
+    /// the pointer case is a focused pill with no ring (#713). The focus a gesture leaves and never
+    /// the gesture itself: a real click also opens the list, and that state is `openPlanPill`.
     enum Arrival {
         case key
-        case click
+        case pointer
 
         var event: NSEvent.EventType {
             switch self {
             case .key: .keyDown
-            case .click: .leftMouseDown
+            case .pointer: .leftMouseDown
             }
         }
     }
@@ -36,8 +35,7 @@ struct PlanSpecimen: View {
             feed: FeedProjection.previewRows,
             showing: PlanShowing(plan: plan, isRevealed: isRevealed, isCursored: arrival != nil),
         )
-        // The app's own reader, told what a still cannot show it happening — the same way
-        // `FeedPreview` seeds the feed's cursor.
+        // The app's one reader, told the event a still cannot show happening.
         .task {
             if let arrival {
                 ArgoFocusVisibility.shared.note(arrival.event)
@@ -64,8 +62,8 @@ struct PlanSpecimen: View {
         .argoAppearance()
 }
 
-#Preview("Plan specimen — the pill clicked") {
-    PlanSpecimen(plan: PlanFixture.working, arrival: .click)
+#Preview("Plan specimen — the pointer left the focus on the pill") {
+    PlanSpecimen(plan: PlanFixture.working, arrival: .pointer)
         .frame(width: 1000, height: 620)
         .argoAppearance()
 }
