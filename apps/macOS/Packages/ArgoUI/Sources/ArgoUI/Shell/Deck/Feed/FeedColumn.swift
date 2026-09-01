@@ -58,18 +58,8 @@ struct FeedColumn: View {
             PermissionPrompt(prompt: prompt, decide: intents.decide, revoke: intents.revoke)
                 .modifier(FloatingVessel())
         case let .composer(composer):
-            SessionComposer(
-                composer: composer,
-                send: intents.send,
-                revoke: intents.revoke,
-                lostTurnSeen: intents.lostTurnSeen,
-                stop: intents.stop,
-                setMode: intents.setMode,
-                commands: intents.commands,
-                files: intents.files,
-                draft: intents.draft,
-            )
-            .modifier(FloatingVessel())
+            SessionComposer(composer: composer, intents: intents)
+                .modifier(FloatingVessel())
         case .unavailable, .none:
             EmptyView()
         }

@@ -37,6 +37,11 @@ struct ComposerSpecimen: View {
         self.files = files
     }
 
+    /// A send that goes nowhere, and the two menus reading the fixtures this case was built with.
+    private var intents: DeckIntents {
+        DeckIntents(send: { _, _ in }, commands: { commands }, files: { files }, draft: $held)
+    }
+
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
             Color.clear
@@ -44,16 +49,9 @@ struct ComposerSpecimen: View {
                 .focusable()
                 .focused($parked)
                 .focusEffectDisabled()
-            SessionComposer(
-                composer: composer,
-                send: { _, _ in },
-                commands: { commands },
-                files: { files },
-                draft: $held,
-                isDropTargeted: isDropTargeted,
-            )
-            .padding(.horizontal, ArgoSpacing.section)
-            .padding(.bottom, ArgoSpacing.loose)
+            SessionComposer(composer: composer, intents: intents, isDropTargeted: isDropTargeted)
+                .padding(.horizontal, ArgoSpacing.section)
+                .padding(.bottom, ArgoSpacing.loose)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .argoDeckSurface()

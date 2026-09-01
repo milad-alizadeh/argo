@@ -203,8 +203,10 @@ import Testing
         let store = Store()
         let composer = SessionComposer(
             composer: ComposerSpecimen.composer,
-            send: { text, _ in store.sent.append(text) },
-            draft: Binding(get: { store.draft }, set: { store.draft = $0 }),
+            intents: DeckIntents(
+                send: { text, _ in store.sent.append(text) },
+                draft: Binding(get: { store.draft }, set: { store.draft = $0 }),
+            ),
         )
         let host = NSHostingView(rootView: AnyView(composer.argoAppearance()))
         host.frame = NSRect(x: 0, y: 0, width: 640, height: 200)

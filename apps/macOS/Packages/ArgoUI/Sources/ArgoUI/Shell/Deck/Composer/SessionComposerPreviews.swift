@@ -47,12 +47,15 @@ import SwiftUI
 #Preview("Composer — the Reduce Transparency fallback") {
     @Previewable @State var draft = ComposerDraft()
 
-    SessionComposer(composer: ComposerSpecimen.composer, send: { _, _ in }, draft: $draft)
-        .padding(ArgoSpacing.section)
-        .frame(width: 760)
-        .argoWithoutTransparency()
-        .argoDeckSurface()
-        .argoAppearance()
+    SessionComposer(
+        composer: ComposerSpecimen.composer,
+        intents: DeckIntents(send: { _, _ in }, draft: $draft),
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 760)
+    .argoWithoutTransparency()
+    .argoDeckSurface()
+    .argoAppearance()
 }
 
 /// The frame every composer preview draws in.
@@ -64,9 +67,7 @@ private struct ComposerPreview: View {
     var body: some View {
         SessionComposer(
             composer: composer,
-            send: { _, _ in },
-            commands: commands,
-            draft: $draft,
+            intents: DeckIntents(send: { _, _ in }, commands: commands, draft: $draft),
         )
         .padding(ArgoSpacing.section)
         .frame(width: 760)
