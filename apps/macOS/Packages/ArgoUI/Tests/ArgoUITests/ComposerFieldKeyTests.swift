@@ -41,6 +41,51 @@ import Testing
         #expect(field.input.string.isEmpty)
     }
 
+    /// The clear after a send reaches the field on every Turn, not only the first (#1000).
+    ///
+    /// A keystroke and the Return that sends it land in ONE run-loop turn: the draft goes from
+    /// empty to the line and back to empty with nothing rendered between. SwiftUI is handed the
+    /// value it already drew, so `updateNSView` — the only writer `ComposerTextView` has — is
+    /// never reached, and a line that was sent stays sitting in the field. Five Turns rather than
+    /// two because the first one is the one that used to work: it is the SECOND send in a process
+    /// that went stale, which is how this landed on other people's branches as a 10 s settle.
+    @Test
+    func `every Turn sent empties the field, not only the first`() throws {
+        let field = try Self.hosted()
+
+        for turn in 1 ... 5 {
+            field.input.insertText("turn \(turn)", replacementRange: field.input.selectedRange())
+            field.press([])
+            field.settle { field.input.string.isEmpty }
+            #expect(field.input.string.isEmpty)
+        }
+
+        #expect(field.sent == (1 ... 5).map { "turn \($0)" })
+    }
+
+    /// Two composers hosted at once, which IS a legitimate arrangement — the app draws one per
+    /// cockpit window, and `ComposerField`'s own preview draws three (#1000).
+    ///
+    /// The older one is the half that broke: a second composer is more work on the main actor, so
+    /// the update pass that used to slip between the keystroke and the send stopped arriving.
+    @Test
+    func `a second hosted composer leaves the first one's field working`() throws {
+        let first = try Self.hosted()
+        let second = try Self.hosted()
+
+        second.input.insertText("theirs", replacementRange: second.input.selectedRange())
+        second.press([])
+        second.settle { second.input.string.isEmpty }
+
+        first.input.insertText("mine", replacementRange: first.input.selectedRange())
+        first.press([])
+        first.settle { first.input.string.isEmpty }
+
+        #expect(first.input.string.isEmpty)
+        #expect(first.sent == ["mine"])
+        #expect(second.sent == ["theirs"])
+    }
+
     /// A composer hosted for real, holding what it was sent and what it holds.
     ///
     /// Stated `@MainActor` because a nested type inherits the suite's isolation on some toolchains
@@ -96,8 +141,9 @@ import Testing
         /// It turns the run loop rather than sleeping, because the write-back is queued ON this
         /// thread's run loop.
         ///
-        /// It has never engaged on the machine it was written on: over six full ArgoUI runs under
-        /// a twelve-worker load burst, all twelve waits settled on their first check, under 7µs.
+        /// Most waits settle on their first check. The ones that do not are the reconciliation
+        /// `ComposerTextView` schedules a turn after the field reports a change (#1000), which
+        /// needs a turn of this loop to arrive and lands in single-digit milliseconds.
         func settle(
             until settled: () -> Bool,
             at location: SourceLocation = #_sourceLocation,

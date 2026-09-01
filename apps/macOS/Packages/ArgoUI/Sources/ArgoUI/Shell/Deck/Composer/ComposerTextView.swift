@@ -98,6 +98,35 @@ struct ComposerTextView: NSViewRepresentable {
         func textDidChange(_ notification: Notification) {
             guard let input = notification.object as? NSTextView else { return }
             text.wrappedValue = input.string
+            NSObject.cancelPreviousPerformRequests(
+                withTarget: self,
+                selector: #selector(reconcile),
+                object: input,
+            )
+            perform(#selector(reconcile), with: input, afterDelay: 0)
+        }
+
+        /// The draft's last word over the field, one run-loop turn after the field reported a
+        /// change (#1000).
+        ///
+        /// `updateNSView` is the only other writer, and SwiftUI reaches it when the DRAFT it
+        /// renders differs from the draft it last rendered — never when the FIELD differs from the
+        /// draft. A keystroke and the Return that sends it land in one turn: the draft goes from
+        /// empty to the line and back to empty with no update pass between, so SwiftUI is handed
+        /// the value it already drew, skips the field, and leaves a sent line sitting in it.
+        ///
+        /// A turn later rather than now, because at the moment the field reports a change the two
+        /// agree by construction — what may follow in the same turn is a writer that puts the
+        /// draft back where it was.
+        ///
+        /// It writes nothing in the ordinary case, so the caret is not moved by typing: the two
+        /// disagree only where a draft went somewhere the field was not told about. A marked
+        /// composition is left alone for `updateNSView`'s own reason — a Pinyin or dead-key
+        /// sequence cut off at the first keystroke.
+        @MainActor @objc private func reconcile(_ input: NSTextView) {
+            let draft = text.wrappedValue
+            guard input.string != draft, !input.hasMarkedText() else { return }
+            input.string = draft
         }
     }
 }
