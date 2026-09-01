@@ -86,8 +86,8 @@ enum SpecimenScene {
         SessionsDeckSpecimen(
             feed: feed,
             showing: showing,
-            open: open,
-            step: step,
+            opensOn: open,
+            opensAt: step,
             lit: lit,
             held: held,
             vessel: vessel,

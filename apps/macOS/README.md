@@ -47,6 +47,11 @@ configured transcript is consumed through the same typed stream as `argo-observe
 Turbo does not cache the build: `xcodebuild` keeps its own incremental state in
 `build/` (DerivedData), and handing hundreds of megabytes to a second cache buys nothing.
 
+That incremental state can go stale in one way worth knowing, because it does not look like a
+build failure: after a file was ADDED to `Packages/ArgoUI`, an incremental build succeeded and
+the app then died at launch inside `initializeWithCopy` — the app and the package dylib
+disagreeing about a struct's layout. `rm -rf build/Build` and a full build was the whole fix.
+
 ## The engine, without a window
 
 `ArgoEngine` builds and tests on its own, with no Xcode and no app:

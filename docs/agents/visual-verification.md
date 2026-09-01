@@ -87,9 +87,9 @@ Mac happens to have on it.
 Four conditions decide whether a red case is a regression or the weather. A red baseline cannot
 tell a bug from a toggle, so check these before believing a failure (#764).
 
-- **System Settings › Keyboard › Keyboard navigation must be ON.** With it off no plain
-  `Button` on macOS is a Tab stop, so every case that walks the deck by Tab —
-  `DeckKeyboardE2ETests`, `PlanPillE2ETests` — fails on a machine where the product is
+- **Full Keyboard Access must be on** — `rules/ui-components.md` owns the setting and its
+  name. With it off no plain `Button` is a Tab stop, so every case that walks the deck by
+  Tab — `DeckKeyboardE2ETests`, `PlanPillE2ETests` — fails on a machine where the product is
   perfect. DeckKeyboard's failure text says so and prints the ring it walked; PlanPill's
   only says the keyboard never reached the pill.
 - **A hover is not a gesture this suite has.** `XCUIElement.hover()` warps the cursor
@@ -114,10 +114,7 @@ equivalent to that process alone.
 
 None of it moves the pointer or takes the keyboard, so it is the way to settle "does this
 publish the label the test addresses, and does pressing it open what the test waits for"
-while somebody else is using the machine. It is not a substitute for the run: it cannot say
-whether Tab arrives, and it drives AppKit's press rather than a click.
-
-One trap that looks like a product crash: **adding a file to `Packages/ArgoUI` and building
-incrementally left the app and the package dylib disagreeing about a struct's layout**, and
-the next launch died in `initializeWithCopy` with no message. `rm -rf build/Build` and a full
-build was the whole fix.
+while somebody else is using the machine. It is not a substitute for the run, and #764 paid to
+learn where the line is: it cannot say whether Tab arrives, it drives AppKit's press rather than
+a click, and a key delivered by `postToPid` skips every layer between the keyboard and the
+process — so it proves a shortcut FIRES, never that the key reaches the app in the first place.
