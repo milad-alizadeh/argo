@@ -1,0 +1,151 @@
+{
+  "argo": {
+    "id": "argo",
+    "kind": "part",
+    "depth": 0,
+    "parent": null,
+    "name": "Argo",
+    "lines": 74640,
+    "line": "A macOS window that starts coding agents, watches them work, and talks back to them.",
+    "short": [
+      "Argo runs coding agents for one git repository. It starts an agent as a real child process, and it keeps the pseudo-terminal that process reads from. The user types into Argo, and Argo types into the agent.",
+      "The agent also writes a record of its own work to a file on disk. Argo tails that file, turns each line into a typed event, and folds every transcript of the repository into one live picture. The window draws that picture.",
+      "So the program has two directions. One direction observes. It reads the record files the `claude` CLI writes, and only the ones whose working directory sits inside this repository. The other direction steers, and it reaches only the agents Argo started itself."
+    ],
+    "long": [
+      "Argo runs coding agents for one git repository. It starts an agent as a real child process, and it keeps the pseudo-terminal that process reads from. The user types into a field at the foot of the window, and those words arrive at the agent as keystrokes.",
+      "The agent writes a record of its own work to a file on disk as it goes. Argo finds those files without being told where they are, tails each one, and turns each line into a typed event. It folds every transcript of the repository into one live picture, and the window draws that picture.",
+      "Five build targets carry the work. The engine holds everything that does not draw, and it links no user-interface framework at all. The shell draws, and exactly one file in it may read live engine state. One small target holds the pseudo-terminal, because the terminal library links AppKit and the engine may not. A command-line target runs the engine with no window over it. The app target is the only place all of them meet, and a build gate keeps it under 600 lines.",
+      "Two things are worth holding while you read the rest. An agent Argo did not start can be read but never written to, and that boundary is drawn by one function. A permission the agent asks for is never answered by typing, because the answer travels down a socket to a hook that is blocked and waiting.",
+      "This atlas covers the five targets of the macOS app. The repository also carries a skills package and about 55,000 lines of tests, and no node here describes them."
+    ],
+    "inside": ["engine", "ui", "terminal", "app", "observe"],
+    "among": [
+      ["app", "ui", "one presentation value, and five more the Hub never heard of"],
+      ["app", "engine", "the live picture, and the acts the window asks for"],
+      ["app", "terminal", "two terminal hosts: one for agents, one for the hidden help session"],
+      ["ui", "engine", "every engine type it draws, and live Hub state in one file only"],
+      ["terminal", "engine", "a running process, in the shape the engine asked for"],
+      ["observe", "engine", "one transcript, with no window over it"]
+    ],
+    "leaving": [
+      ["argo", "the agent's own process", "its argv, its environment, and every keystroke after that"],
+      ["argo", "two sockets per claude agent", "what the agent reports, and the answer to what it asks"],
+      ["argo", "the record directory on disk", "a tail on every transcript that belongs to this repository"],
+      ["argo", "GitHub and Linear over HTTP", "tickets and deliveries, read and written"],
+      ["argo", "the keychain", "one token for each signed-in identity"],
+      ["argo", "the browser, and a port on 127.0.0.1", "the sign-in that comes back as a redirect"],
+      ["argo", "the git checkout", "branch, head, and what the working tree holds"],
+      ["argo", "the process table", "whether an agent Argo can see is still alive"],
+      ["argo", "Application Support", "the few facts Argo owns and nobody else states"]
+    ],
+    "claims": {
+      "inside": { "sha": "e2e22fb4", "paths": ["apps/macOS/Packages/ArgoEngine/Package.swift", "apps/macOS/Packages/ArgoUI/Package.swift", "apps/macOS/Argo"] }
+    }
+  },
+
+  "terminal": {
+    "id": "terminal",
+    "kind": "part",
+    "depth": 1,
+    "parent": "argo",
+    "name": "ArgoTerminal",
+    "lines": 140,
+    "line": "Two files that own a real pseudo-terminal, kept apart because the terminal library links AppKit.",
+    "short": [
+      "This target starts an agent on a real pseudo-terminal, and it paints raw bytes back into rows of text. It is two files and 140 lines.",
+      "It exists as its own target for one reason. The engine may link no user-interface framework, and the terminal library links AppKit on macOS. So the one adapter that cannot obey that rule was moved out, and the engine keeps its rule.",
+      "It is not the only way Argo holds an agent. A `codex` agent runs on plain pipes instead, and that host stays inside the engine."
+    ],
+    "long": [
+      "This target starts an agent on a real pseudo-terminal, and it paints raw bytes back into rows of text. It is two files and 140 lines.",
+      "It exists as its own target for one reason. The engine may link no user-interface framework, and the terminal library links AppKit on macOS. So the one adapter that cannot obey that rule was moved out. The engine names the shape it wants, and this target is the only thing that fills it with a real process.",
+      "One object holds one agent's pseudo-terminal. Output arrives as raw bytes and is handed on undecoded, because the engine decides what the bytes mean. An exit is reported once, by hand, because killing the process tells nobody on its own."
+    ],
+    "inside": [],
+    "leaving": [
+      ["terminal", "engine", "a live process wearing the three verbs the engine asked for"],
+      ["terminal", "the agent's own process", "the bytes of every keystroke Argo sends"]
+    ],
+    "concepts": ["c-drive-port"],
+    "bottom": true,
+    "anchors": [
+      ["apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift", 12, "the host that starts an agent on a pseudo-terminal"],
+      ["apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift", 26, "one agent's pseudo-terminal, and the delegate that reads it"],
+      ["apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift", 46, "the process, started on the main queue so output never reorders"],
+      ["apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermScreen.swift", 11, "raw bytes painted into rows of text"],
+      ["apps/macOS/Packages/ArgoEngine/Package.swift", 34, "the target, and why it depends on the terminal library"]
+    ],
+    "claims": {
+      "leaving": { "sha": "e2e22fb4", "paths": ["apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal"] }
+    }
+  },
+
+  "observe": {
+    "id": "observe",
+    "kind": "part",
+    "depth": 1,
+    "parent": "argo",
+    "name": "argo-observe",
+    "lines": 131,
+    "line": "A command that points the engine at one transcript and prints what each record means.",
+    "short": [
+      "This is the engine with no window over it. Give the command a transcript file, and it prints one line for every event the engine makes out of it.",
+      "It reads a real agent's own output rather than a fixture. A record whose shape the engine gets wrong is visible in one line of terminal, instead of three surfaces later."
+    ],
+    "inside": [],
+    "leaving": [
+      ["observe", "engine", "one transcript path, and every event that comes back"]
+    ],
+    "concepts": ["c-transcript-event"],
+    "bottom": true,
+    "anchors": [
+      ["apps/macOS/Packages/ArgoEngine/Sources/argo-observe/main.swift", 4, "why it exists, in the file's own words"],
+      ["apps/macOS/Packages/ArgoEngine/Sources/argo-observe/main.swift", 11, "the argument it takes"],
+      ["apps/macOS/Packages/ArgoEngine/Package.swift", 35, "the executable target"]
+    ],
+    "claims": {
+      "leaving": { "sha": "e2e22fb4", "paths": ["apps/macOS/Packages/ArgoEngine/Sources/argo-observe"] }
+    }
+  },
+
+  "app": {
+    "id": "app",
+    "kind": "part",
+    "depth": 1,
+    "parent": "argo",
+    "name": "The app target",
+    "lines": 943,
+    "line": "Nine files that open one window and hold the three boxes everything else hangs from.",
+    "short": [
+      "This is the only place the engine, the shell and the pseudo-terminal meet. It opens one window with no app delegate, and it holds three long-lived boxes.",
+      "One box knows what the window is looking at, and holds the live picture for that repository. One holds the signed-in identities and the ticket reads and writes. One holds where the window has navigated to.",
+      "It derives nothing and it declares no view. A build gate fails if a view appears here, and a second gate fails if the target passes 600 lines of code."
+    ],
+    "long": [
+      "This is the only place the engine, the shell and the pseudo-terminal meet. It opens one window with no app delegate, and it holds three long-lived boxes that outlive any single screen.",
+      "One box knows which repository the window is pointed at, holds the live picture built over it, and starts agents. One holds the signed-in identities, the scope each identity can see, and the one-at-a-time ticket reads and writes. A third holds where the window has navigated to, and it travels down as an environment value. All three are observable, so the window redraws when they move.",
+      "It derives nothing and it declares no view. Two build gates keep it that way: one fails if a view is declared here, and one fails if the target passes 600 lines of code. That cap is what stops the app target from quietly becoming a third place where decisions live."
+    ],
+    "inside": [],
+    "leaving": [
+      ["app", "ui", "one presentation value, five more beside it, and where the window has got to"],
+      ["app", "engine", "the repository it is pointed at, and every act the user asks for"],
+      ["app", "terminal", "two terminal hosts, and the screen that paints raw bytes into rows"]
+    ],
+    "concepts": ["c-cockpit-presentation"],
+    "bottom": true,
+    "anchors": [
+      ["apps/macOS/Argo/ArgoApp.swift", 8, "the whole app: one window, no app delegate"],
+      ["apps/macOS/Argo/CockpitCoordinator.swift", 11, "what the window is looking at, and the live picture over it"],
+      ["apps/macOS/Argo/AccountsCoordinator.swift", 14, "the identities, their scopes, and the ticket writes"],
+      ["apps/macOS/Argo/ArgoApp.swift", 13, "where the window has navigated to, held for the life of the app"],
+      ["apps/macOS/Argo/CockpitCoordinator.swift", 57, "the terminal host the agents run on"],
+      ["apps/macOS/Argo/CockpitCoordinator.swift", 73, "a second host, for the hidden session that reads the CLI's own commands"],
+      ["scripts/swift-boundaries.sh", 105, "the line cap this target is held to"]
+    ],
+    "claims": {
+      "leaving": { "sha": "e2e22fb4", "paths": ["apps/macOS/Argo"] }
+    }
+  }
+}

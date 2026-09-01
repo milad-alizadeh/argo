@@ -1,694 +1,6425 @@
-/* ============================================================================
-   THE ATLAS CONTENT — hand-written for Argo itself, #650.
-
-   Every path and line number is real. They were read out of apps/macOS on 2026-09-01. The
-   prose is what a model must produce. It is a Claim like any other, and it is the thing this
-   prototype exists to be judged on.
-
-   The prose obeys Simplified Technical English: descriptive text, one new fact per sentence,
-   25 words per sentence, one topic per paragraph, active voice, no semicolons.
-
-   Node shape follows #647. A node holds what is inside it, the edges among those things, the
-   edges that leave it, and a paragraph over all of that. There are two prose lengths and one
-   control for the whole card. `stale` names which Claims are stale. Nothing shows provenance.
-   ========================================================================== */
-
-const A = {}; // id → node
-
-/* ---------------------------------------------------------------- PROJECT -- */
-A.argo = {
-  kind: 'area', altitude: 'Project', name: 'Argo',
-  line: 'A macOS cockpit that watches coding agents work, and steers the ones it started.',
-  short: [
-    `Argo watches coding agents work. A CLI leaves a record on disk. Argo reads that record,
-     folds every transcript of one repository into one live picture, and shows it as a cockpit.
-     Nine domains do the work.`,
-    `Three domains only read. They find the files, turn lines into typed events, and join those
-     events per Session. Two domains write. They send a Turn to a running agent, and they answer
-     the permission that the agent asks for.`,
-    `Two domains reach outside Argo, to the code host and the ticket provider. One domain holds
-     the small set of facts that Argo owns. One domain is a seam. It is the only file that can
-     read live state, so every view below it takes a value.`,
-    `One rule crosses all nine. Every shown fact carries how Argo knows it. When a fact is
-     ambiguous, Argo takes the lower rung. So Argo never claims something that it only guessed.`,
-  ],
-  long: [
-    `Argo watches coding agents work. A CLI leaves a record on disk. Argo reads that record,
-     folds every transcript of one repository into one live picture, and shows it as a cockpit.
-     Nine domains do the work.`,
-    `Three domains only read. <b>Finding the sessions</b> decides which files on this machine
-     belong to this Project. <b>Reading the record</b> turns one growing JSONL file into typed
-     events. <b>The join</b> folds those events into one Session per resume-chain. Everything
-     else hangs off that spine.`,
-    `Two domains write. <b>Driving a session</b> is what Argo does <i>to</i> an agent. It sends a
-     Turn, interrupts, answers a permission, and walks the Mode ladder. <b>The companion
-     channel</b> is one Unix socket per managed Session. It is the only place where a fact
-     arrives that no transcript carries.`,
-    `Two domains reach outside. <b>Accounts, tickets and delivery</b> talks to GitHub and Linear
-     over HTTP. The join knows nothing about any of it, because those facts travel beside the
-     projection. <b>What Argo owns</b> is the opposite corner. It holds a few small files that
-     record what Argo asserts.`,
-    `Two domains are structure. <b>The cockpit projection</b> is one file, and it is the only
-     file in the view layer that can read live state. It restates a Session as a plain value.
-     <b>The feed and the roster</b> are the two reading surfaces built from that value.`,
-    `A shell script fails the build when another view reaches past the seam. The layering is a
-     gate, not a review note.`,
-    `The code is Swift, in three layers. The engine links no UI framework and runs from the
-     command line. The view package takes values. The app target is small enough to check by
-     line count. Read the domains in the order below. Each one makes the next one clear.`,
-  ],
-  inside: ['find', 'read', 'join', 'project', 'surfaces', 'drive', 'companion', 'ports', 'owned'],
-  among: [
-    `The first five domains are a pipeline. They read best in this order: files, then events,
-     then the join, then the seam, then the surfaces.`,
-    `<b>Driving a session</b> and <b>the companion channel</b> attach to the join from the side.
-     Both publish their facts into the same ledger that the join folds. So neither one goes
-     through the pipeline.`,
-    `<b>Accounts, tickets and delivery</b> touches the join at one point only. It joins on a
-     branch name, not on a Session id. <b>What Argo owns</b> goes into all the others as file
-     URLs, and each URL is named in one place.`,
-  ],
-  leaving: [
-    `A Project is the scope of one window. Nothing above this node exists inside Argo. What
-     leaves the Project leaves the machine: two record directories on disk, two providers over
-     HTTP, and one git checkout read through the shell.`,
-  ],
-  flows: ['flow-line', 'flow-turn'],
-  concepts: ['c-session', 'c-tier', 'c-turn', 'c-plan', 'c-ask', 'c-workspace', 'c-person'],
-  stale: {
-    order: {
-      what: 'the order these nine are read in',
-      reason: null,
+/* GENERATED by build-content.mjs from nodes/*.json. Do not edit by hand. */
+window.ATLAS = {
+  "engine": {
+    "id": "engine",
+    "kind": "part",
+    "depth": 1,
+    "parent": "argo",
+    "name": "ArgoEngine",
+    "line": "The part of Argo with no window: it reads what agents write, drives the agents it started, and talks to GitHub and Linear.",
+    "lines": 20622,
+    "short": [
+      "ArgoEngine does every job that does not draw a pixel. It tails the JSONL records two coding CLIs append to, and folds them into one live picture per repository. It also starts those CLIs itself, and carries a turn and a permission decision back to each. Nothing here imports AppKit, so `swift test` exercises all of it from the command line."
+    ],
+    "long": [
+      "ArgoEngine holds twenty-one folders and about twenty thousand lines of Swift. The reading side finds transcript files, turns each appended line into a typed event, and folds those events into one row per session. The Hub is where that fold happens, and it is the largest folder here. The edges below are read as data flow, not as import direction.",
+      "The writing side reaches two CLIs by two mechanisms. For claude, Argo runs a pseudo-terminal, writes bracketed-paste keystrokes, and installs a companion plugin that dials a unix socket to answer each permission. For codex, Argo runs the app server on plain pipes and speaks JSON-RPC for both the turn and the approval. A separate reader learns the CLI's own slash commands, by typing `/help` into a hidden session.",
+      "A third group reaches off the machine. It signs into GitHub and Linear, and keeps each token in the keychain. A Binding joins one repository to one account per port, so a fully connected repository holds two. Git and the process table are read by running the commands and parsing what they print."
+    ],
+    "inside": [
+      "e-transcript",
+      "e-session",
+      "e-discovery",
+      "e-hub",
+      "e-drive",
+      "e-spawn",
+      "e-commands",
+      "e-companion",
+      "e-codex",
+      "e-handoff",
+      "e-account",
+      "e-binding",
+      "e-ticket",
+      "e-delivery",
+      "e-repository",
+      "e-project",
+      "e-skills",
+      "e-annotation",
+      "e-health",
+      "e-storage",
+      "e-launch"
+    ],
+    "among": [
+      [
+        "e-discovery",
+        "e-transcript",
+        "the head of a file, parsed only far enough to find its working directory"
+      ],
+      [
+        "e-transcript",
+        "e-session",
+        "one typed event per record line, in the vocabulary Session declares"
+      ],
+      [
+        "e-transcript",
+        "e-skills",
+        "the SKILL.md under a directory a load record only named"
+      ],
+      [
+        "e-discovery",
+        "e-hub",
+        "which transcript files belong to this repository, re-swept on every change"
+      ],
+      [
+        "e-transcript",
+        "e-hub",
+        "batches of typed events, in record order, as each tailed file grows"
+      ],
+      [
+        "e-hub",
+        "e-session",
+        "the signals one status word is read from, and the remembered rung"
+      ],
+      [
+        "e-hub",
+        "e-spawn",
+        "a spawn plan, and the one call that adopts either kind of process"
+      ],
+      [
+        "e-hub",
+        "e-repository",
+        "the branch, the dirty count and the worktree list git reported"
+      ],
+      [
+        "e-hub",
+        "e-drive",
+        "the permission channel, the two adapters, and the turn nobody has heard yet"
+      ],
+      [
+        "e-drive",
+        "e-spawn",
+        "the keystrokes for one turn, paced as two writes into the claim's terminal"
+      ],
+      [
+        "e-drive",
+        "e-codex",
+        "a turn as a JSON-RPC line, and an approval decision as a response"
+      ],
+      [
+        "e-drive",
+        "e-session",
+        "the rung a call is judged by, and the stance an adapter reports back"
+      ],
+      [
+        "e-drive",
+        "e-companion",
+        "the unix socket object that accepts the claude hook's decision"
+      ],
+      [
+        "e-spawn",
+        "e-companion",
+        "the socket path and plugin directory folded into a claude agent's argv"
+      ],
+      [
+        "e-commands",
+        "e-spawn",
+        "one hidden launch, started only to read the built-in list off its screen"
+      ],
+      [
+        "e-ticket",
+        "e-account",
+        "the live grant each provider read is handed"
+      ],
+      [
+        "e-hub",
+        "e-handoff",
+        "which session handed its work to which, keyed by claim"
+      ],
+      [
+        "e-binding",
+        "e-account",
+        "the account record and the live token every read goes out with"
+      ],
+      [
+        "e-ticket",
+        "e-binding",
+        "one resolved binding, carrying the grant, the scope and the provider"
+      ],
+      [
+        "e-ticket",
+        "e-health",
+        "whether that read landed, filed against the binding it went through"
+      ],
+      [
+        "e-delivery",
+        "e-repository",
+        "the branch each worktree is on, which is the join key"
+      ],
+      [
+        "e-ticket",
+        "e-annotation",
+        "the resolved ticket title, saved against the session id"
+      ],
+      [
+        "e-launch",
+        "e-project",
+        "the folders this launch named, resolved to repository roots"
+      ],
+      [
+        "e-hub",
+        "e-storage",
+        "the session-ownership ledger, written whole as one JSON file"
+      ]
+    ],
+    "leaving": [
+      [
+        "engine",
+        "terminal",
+        "the AgentProcessHost protocol, which ArgoTerminal fills with a real SwiftTerm pseudo-terminal"
+      ],
+      [
+        "engine",
+        "terminal",
+        "the TerminalScreen protocol, which paints raw terminal bytes into text rows"
+      ],
+      [
+        "engine",
+        "ui",
+        "one HubSession value per session, restated by the one cockpit file allowed to read live state"
+      ],
+      [
+        "engine",
+        "observe",
+        "the event stream, printed one line per event by the argo-observe command"
+      ],
+      [
+        "engine",
+        "app",
+        "the registry, the Hub, the ticket resolver and the pointing, composed into one window"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Engine.swift",
+        5,
+        "Engine, the small facade the app composes its reads from"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Engine.swift",
+        14,
+        "observeTranscript(at:) hands back a live observation of one file"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/EngineReads.swift",
+        14,
+        "EngineReads, the git and process-table reads passed in as one value"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Package.swift",
+        32,
+        "the companion plugin directory, shipped inside the target as a resource"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift",
+        12,
+        "SwiftTermProcessHost, the real pseudo-terminal the engine only names"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermScreen.swift",
+        11,
+        "SwiftTermScreen, the emulator that renders bytes into rows"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
+        51,
+        "the one line in the cockpit that reads hub.sessions and restates each row"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/argo-observe/main.swift",
+        33,
+        "the engine with no UI on it, printing every event as the file grows"
+      ],
+      [
+        "apps/macOS/Argo/CockpitCoordinator.swift",
+        45,
+        "the app target wiring engine pieces together into one window"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionAdapters.swift",
+        8,
+        "the one port both CLIs are steered through, chosen per session"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine",
+          "apps/macOS/Packages/ArgoEngine/Package.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentCLI.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/ProjectBindings.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/argo-observe",
+          "apps/macOS/Argo/CockpitCoordinator.swift"
+        ]
+      }
     },
+    "concepts": [
+      "c-session-provenance",
+      "c-honesty-tier",
+      "c-turn",
+      "c-drive-port",
+      "c-cockpit-presentation"
+    ]
   },
-};
-
-/* ------------------------------------------------------- DOMAINS (level 2) -- */
-A.find = {
-  kind: 'area', altitude: 'Domain', name: 'Finding the sessions', parent: 'argo',
-  line: 'Decides which transcript files on this machine belong to this Project, and keeps that set current.',
-  short: [
-    `A CLI writes one directory per project and one file per session. It does not say which
-     repository a file belongs to. This domain answers that question cheaply, and it answers it
-     again as new files appear.`,
-    `Two filters run in cost order. A modified-time window decides which files are worth opening.
-     Each file that passes is opened at the head only, far enough to read the working directory.`,
-    `Only a file that passes both filters is read in full and tailed. The order is the whole
-     design. To open every transcript in a busy home directory is the expensive mistake.`,
-  ],
-  inside: [], // hand-written to one level for this study
-  among: [],
-  leaving: [
-    `It hands the join a list of file URLs, and nothing else. One shared resolver spells every
-     path. A symlinked checkout and its real path are the same Project, and they must not become
-     two.`,
-  ],
-  concepts: ['c-session', 'c-workspace'],
-};
-
-A.read = {
-  kind: 'area', altitude: 'Domain', name: 'Reading the record', parent: 'argo',
-  line: 'Turns one growing JSONL file into typed events, in record order, live or from a fixture.',
-  short: [
-    `This domain has one job, and it runs in one direction. A line of JSON arrives at the end of
-     a file, and a typed event comes out. Nothing here knows about a window. Nothing here decides
-     what a Session is. That judgement belongs to the join.`,
-    `Five areas run in order. Bytes become complete lines. A line becomes a record. A stateful
-     reader turns records into events. A tool call is paired with the record that answered it.`,
-    `The vocabulary of those events is an area of its own. Two layers depend on it, and neither
-     layer can change it alone.`,
-  ],
-  long: [
-    `This domain has one job, and it runs in one direction. A line of JSON arrives at the end of
-     a file, and a typed event comes out. Nothing here knows about a window. Nothing here decides
-     what a Session is. That judgement belongs to the join.`,
-    `Five areas run in order. Bytes become complete lines. A line becomes a record. A stateful
-     reader turns records into events. A tool call is paired with the record that answered it.
-     The vocabulary of those events is an area of its own.`,
-    `<b>Nothing here throws on bad input.</b> Another program writes the transcript while you
-     read it. A line that does not parse is reported as unreadable. A record with a
-     <code>type</code> that Argo does not know keeps its bytes.`,
-    `<b>The batch stays whole.</b> Events come out as arrays, because the join folds one whole
-     read at once. The first batch also tells the join that the file was read. An empty first
-     batch and no first batch mean different things.`,
-    `<b>Live and replay are the same code.</b> The only difference is where the file cursor
-     starts. This is why the reader keeps so little state. State is the one thing that can make
-     the two disagree.`,
-  ],
-  inside: ['read-lines', 'read-record', 'read-reader', 'read-outcome', 'read-vocab'],
-  among: [
-    `The five areas are a chain, and each one knows only the next one. Lines feed the record
-     parser. Records feed the reader. The reader asks the outcome resolver when a record answers
-     an open call.`,
-    `All four speak the vocabulary, and the vocabulary knows none of them. Only one of the five
-     remembers anything between lines. The other four are pure. That is what makes a fixture and
-     a live tail interchangeable.`,
-  ],
-  leaving: [
-    `Three edges leave this domain, and one of them is unusual. The ordinary edge is the join. A
-     batch of events lands there, and the transcript is marked as settled.`,
-    `The second edge is a pair of closures handed in from outside. One reads image bytes off
-     disk. One reads the files of a skill. So this domain touches no file except the transcript.`,
-    `The unusual edge is the event vocabulary, which crosses the package boundary <i>whole</i>.
-     The feed projection switches over the same enum with no default case. A new event kind fails
-     the build until the feed says what it looks like.`,
-  ],
-  concepts: ['c-turn', 'c-plan', 'c-ask', 'c-tier'],
-};
-
-A.join = {
-  kind: 'area', altitude: 'Domain', name: 'The join', parent: 'argo',
-  line: 'The only live state in the app: an in-memory picture of every Session in the Project.',
-  short: [
-    `Everything that Argo knows about a Session at this instant lives here. The join holds one
-     entry per tailed transcript and folds each batch of events into it.`,
-    `The join then rebuilds a roster of one Session per resume-chain. A resumed session writes a
-     new file, so one Session can be four files.`,
-    `The join also folds in what no transcript carries. Process liveness, the companion report,
-     an open permission, the git workspace, and the chosen Mode all arrive from other domains.
-     Each one is keyed by ownership, not by Session id.`,
-    `The join is rebuildable by design. It is a picture, not a record, and nothing in it is
-     written to disk.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `One file above the join can read it, and that file turns it into values. Below the join, it
-     reads the working set, the event stream, the claim ledger, and the world. The world means
-     git, process liveness, and path spelling.`,
-  ],
-  concepts: ['c-session', 'c-tier', 'c-workspace'],
-};
-
-A.project = {
-  kind: 'area', altitude: 'Domain', name: 'The cockpit projection', parent: 'argo',
-  line: 'The one seam between live state and views. It restates a Session as a plain value.',
-  short: [
-    `One file reads the join. Everything else in the view layer takes a value. A build gate
-     enforces this rule. The gate greps for the type name across the whole package and allows one
-     exemption.`,
-    `The projection <i>restates</i> the Session. It does not wrap it. Every public fact on the
-     engine Session must appear in the mapping, in a slot of its own name. A fact that is not
-     projected must carry a line that says why.`,
-    `A new fact on the engine fails the build until someone says which case it is. A fact that
-     lands in a slot of another name also fails the build. The cost is a long file that looks
-     like duplication. The benefit is that no view holds a reference to something that moves.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `Upward it sends one value per pass, resolved once. Downward it reads the join, and the small
-     set of readings that Argo owns.`,
-  ],
-  concepts: ['c-session', 'c-tier'],
-};
-
-A.surfaces = {
-  kind: 'area', altitude: 'Domain', name: 'The feed and the roster', parent: 'argo',
-  line: 'The two reading surfaces. Both take values, and neither can reach live state.',
-  short: [
-    `The roster answers "which Session". The feed answers "what happened in it". Both are
-     projections of their own. Each one computes a list of rows once per pass, and then draws
-     them.`,
-    `The feed projection turns a transcript into something readable. It pairs calls with their
-     outcomes, folds a run of small calls into one row, and folds images into a gallery.`,
-    `The feed switches over the event enum of the engine with no default case. The compiler keeps
-     the feed honest about a new kind of event.`,
-    `An AppKit table draws the rows, not a SwiftUI list. The feed must hold its scroll position
-     while new rows arrive at the bottom.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `It takes one reading per pass, and it sends intents back. It never reads the join.`,
-  ],
-  concepts: ['c-turn', 'c-plan', 'c-ask'],
-};
-
-A.drive = {
-  kind: 'area', altitude: 'Domain', name: 'Driving a session', parent: 'argo',
-  line: 'What Argo does to a Session: send a Turn, interrupt, answer a permission, walk the Mode ladder.',
-  short: [
-    `To read a transcript is most of Argo. This domain is the part that writes. One protocol
-     names everything that Argo can ask of a running agent. Two adapters implement it, one per
-     CLI, because the two CLIs agree on almost nothing.`,
-    `Refusals are a closed set of cases. Each case carries the sentence that a person reads. Most
-     failures here are not bugs. The session is not managed, or the Turn already runs, or the CLI
-     does not support the rung that you asked for.`,
-    `A Mode that you pick during a Turn is held, not sent. Argo walks it at the boundary of the
-     Turn. Nobody can promise that a keystroke into a running agent arrives.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `It publishes into the same ledger that the join folds. A drive fact reaches the roster the
-     way every other fact does.`,
-    `The terminal that it drives lives in its own package. The terminal emulator links AppKit,
-     and the engine must run with no window.`,
-  ],
-  concepts: ['c-turn', 'c-session'],
-};
-
-A.companion = {
-  kind: 'area', altitude: 'Domain', name: 'The companion channel', parent: 'argo',
-  line: 'One Unix socket per managed Session, and the only source of a fact that no transcript carries.',
-  short: [
-    `A bundled plugin points the CLI at a socket that Argo listens on. The agent then reports
-     what no transcript carries. It reports what it does at this moment, that it is about to ask
-     for a permission, and which tool it can use without asking again.`,
-    `The socket is the capability. Its directory is private to this user, and only this user can
-     read the socket. The file permissions are the whole of the access control.`,
-    `The paths live under a short temporary directory, because the operating system caps a socket
-     address at 103 bytes. The listen backlog is as high as the system allows. A refused dial is
-     not a dropped message. It is a tool call left waiting.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `One closure into the claim ledger, keyed by ownership. Nothing here knows what a roster is.`,
-  ],
-  concepts: ['c-tier', 'c-session'],
-};
-
-A.ports = {
-  kind: 'area', altitude: 'Domain', name: 'Accounts, tickets and delivery', parent: 'argo',
-  line: 'Everything read through an external provider, which the join knows nothing about.',
-  short: [
-    `Two ports carry adapters: a ticket provider and a code host. An Account is one authenticated
-     identity, and its token lives in the keychain. A Binding is the use of one Account by this
-     Project, through one port.`,
-    `Delivery is the product in flight. Argo derives it per branch, from git and from the code
-     host, and never stores it. A branch that no longer exists must stop being claimed.`,
-    `These facts travel <i>beside</i> the projection, not inside it. The window takes them as
-     separate parameters. The join is a projection over observed Sessions, and a registered
-     Account is not one. The seam that they share is a branch name.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `Two providers over HTTP, the keychain, and the git checkout.`,
-  ],
-  concepts: ['c-workspace'],
-};
-
-A.owned = {
-  kind: 'area', altitude: 'Domain', name: 'What Argo owns', parent: 'argo',
-  line: 'The small set of facts that Argo asserts. Per-machine files, never committed.',
-  short: [
-    `Almost nothing. A registry of Projects. A name and an archived flag that a person set on a
-     Session. The chain that a handoff belongs to. The chosen Mode. The Accounts that exist.`,
-    `Each one is one small file, read and written whole. A nil location means that Argo remembers
-     nothing at all, and that is how the tests run.`,
-    `The rule behind the size is that Argo never stores an observed fact. Argo reads again
-     anything that the record still holds. The durable state is only what it would otherwise
-     lose. It lives under the application support of this machine, never in the repository.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `It goes into every other domain as file URLs, and each URL is named in one place.`,
-  ],
-  concepts: ['c-session'],
-};
-/* Eight of the nine domains are hand-written to one level only. #650 asks for ONE path top to
-   bottom, so the prototype says so on the card rather than faking depth. */
-['find', 'join', 'project', 'surfaces', 'drive', 'companion', 'ports', 'owned']
-  .forEach(id => { A[id].unwritten = true; });
-
-/* --------------------------------------------------------- AREAS (level 3) -- */
-A['read-lines'] = {
-  kind: 'area', altitude: 'Area', name: 'Lines out of a growing file', parent: 'read',
-  line: 'Reads from the last offset, carries a half-written record, and rewinds when the file gets shorter.',
-  short: [
-    `Another process appends to the transcript while Argo reads it. A read can land in the middle
-     of a record. This area keeps a cursor, hands back complete lines only, and holds the last
-     fragment until the rest arrives.`,
-    `It also handles a file that gets shorter. A CLI sometimes rewrites a transcript instead of
-     appending to it. The cursor rewinds to the start, so it never reads garbage from the middle.`,
-    `It drains once when it starts, with no prompt. Without that first drain, a file that never
-     changes again is never read.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `Complete lines, in order, to the record parser. Below it there is one file handle and one
-     file-system watch.`,
-  ],
-  anchors: [
-    ['ArgoEngine/Transcript/TranscriptTail.swift', 66, 'transcriptLines(at:) — the stream of complete lines'],
-    ['ArgoEngine/Transcript/TranscriptTail.swift', 22, 'FileCursor.drain() — reads from the last offset'],
-    ['ArgoEngine/Transcript/TranscriptTail.swift', 96, 'the per-file watch: extend, write, delete, rename'],
-  ],
-  concepts: [],
-};
-
-A['read-record'] = {
-  kind: 'area', altitude: 'Area', name: 'One line into one record', parent: 'read',
-  line: 'Parsing that never throws. A strange line is nothing, and an unknown record keeps its bytes.',
-  short: [
-    `One function, and its signature is the decision. To parse a line returns a record or
-     nothing, and it never throws. A line that is not an object at all is nothing. The caller
-     reports the file as unreadable at that point, and the read continues.`,
-    `A record with a known shape and an unknown type becomes an unknown case that keeps its
-     original bytes. That costs memory. It buys the ability to show something honest about a
-     record that a newer CLI wrote.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `Records to the reader. It depends on nothing but a JSON value.`,
-  ],
-  anchors: [
-    ['ArgoEngine/Transcript/TranscriptRecord.swift', 39, 'TranscriptRecord — the record and its cases'],
-    ['ArgoEngine/Transcript/TranscriptRecord.swift', 61, 'parse(line:) — never throws; unknown keeps its bytes'],
-  ],
-  concepts: [],
-};
-
-A['read-reader'] = {
-  kind: 'area', altitude: 'Area', name: 'The reader that keeps state', parent: 'read',
-  line: 'The actor that turns records into events. It is the only thing here that remembers anything.',
-  short: [
-    `An actor with four pieces of memory, and no more. It holds the tool calls that it saw and
-     that nothing answered yet. A call and its result are separate records, and they can be
-     hundreds of lines apart.`,
-    `It holds a plan ledger. One host writes a plan one entry at a time, not whole, so the reader
-     accumulates what that CLI does not give.`,
-    `It holds a context cursor. Only some records restate the token usage, and the rest inherit
-     the last reading. It holds the subject, which is the owner of this transcript. The subject
-     decides at four gates whether a line belongs to a Subagent.`,
-    `Everything else is a pure function of the record in hand. That balance is the design. State
-     is the one thing that can make a live tail and a replay disagree, so there is just enough of
-     it to be correct.`,
-  ],
-  long: [
-    `An actor with four pieces of memory, and no more. It holds the tool calls that it saw and
-     that nothing answered yet. A call and its result are separate records, and they can be
-     hundreds of lines apart.`,
-    `It holds a plan ledger. One host writes a plan one entry at a time, not whole, so the reader
-     accumulates what that CLI does not give.`,
-    `It holds a context cursor. Only some records restate the token usage, and the rest inherit
-     the last reading. It holds the subject, which is the owner of this transcript.`,
-    `The subject decides at four gates whether a line belongs to a Subagent. A sidechain record
-     looks the same as a main-line record. To ask the same question at four gates costs less than
-     one wrong answer.`,
-    `Two of its outputs are worth knowing before you read the code. A record that carries a tool
-     call can produce <i>two</i> events. It produces the call, and it produces a plan when the
-     tool is the one that a CLI uses for its to-do list.`,
-    `A question to the user is recognised here by the tool that carries it. The transcript has no
-     notion of a question. It has a tool call with a particular name. That is why the feed can
-     show a question that you can answer.`,
-    `It is an actor, not a struct. The batch loop shares one reader. This is the one place in the
-     domain where a second concurrent read gives a different answer.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `Upward it emits events in batches. Sideways it asks the outcome resolver when a record
-     answers an open call. Downward it depends on the record parser, and on nothing else.`,
-  ],
-  anchors: [
-    ['ArgoEngine/Transcript/TranscriptReader.swift', 13, 'TranscriptReader — the actor'],
-    ['ArgoEngine/Transcript/TranscriptReader.swift', 28, 'openCalls — calls seen but not yet answered'],
-    ['ArgoEngine/Transcript/TranscriptReader.swift', 29, 'the plan ledger, for a host that writes a plan an entry at a time'],
-    ['ArgoEngine/Transcript/TranscriptReader.swift', 63, 'read(line:) — parse, then dispatch'],
-    ['ArgoEngine/Transcript/TranscriptSubject.swift', 8, 'the four sidechain guards'],
-  ],
-  concepts: ['c-turn', 'c-plan', 'c-ask'],
-  bottom: true,
-  stale: {
-    leaving: {
-      what: 'the edges leaving this Area',
-      reason: `A type resolution across the package established this Claim. The last attempt found
-               no build for this checkout.`,
+  "e-transcript": {
+    "id": "e-transcript",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Turning record lines into events",
+    "line": "It reads the JSONL file the CLI appends to, and turns each line into a typed event.",
+    "lines": 1778,
+    "bottom": true,
+    "short": [
+      "The `claude` CLI appends one JSON object per line to a transcript file. `transcriptLines(at:)` tails that file and yields batches of raw lines, the backfill first and new writes after. `TranscriptRecord.parse(line:)` decodes one line into a `MessageRecord` or one of the smaller record kinds. `TranscriptReader` then fans each record out into zero or more typed events."
+    ],
+    "long": [
+      "Reading is stateful, because a transcript never repeats itself. `TranscriptReader` is an actor that remembers every open tool call by its id, so a later `tool_result` line is read against the call it answers. It also keeps a plan ledger, because some hosts write a to-do list one entry at a time.",
+      "Two readings reach past the line in hand. Media reading follows an image path and loads the picture the record only names. Skill reading opens the `SKILL.md` under the directory a load record cites. Both arrive as injected closures, so a test supplies fixtures instead of a disk.",
+      "Nothing here decides what a session is. This code produces events in record order and stops. The fold into one row per resume chain belongs to the Hub, and the words those events are spoken in are declared beside them."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-transcript",
+        "e-session",
+        "one typed event per record line, in the vocabulary Session declares"
+      ],
+      [
+        "e-transcript",
+        "e-skills",
+        "the SKILL.md under a directory a load record only named"
+      ],
+      [
+        "e-transcript",
+        "e-hub",
+        "batches of events, in record order, as the tailed file grows"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptTail.swift",
+        66,
+        "transcriptLines(at:) tails the file and yields batches of raw lines"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptRecord.swift",
+        39,
+        "TranscriptRecord, the kinds one decoded line can turn out to be"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptRecord.swift",
+        2,
+        "MessageRecord, the fields a message line carries"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptReader.swift",
+        13,
+        "TranscriptReader, the actor that holds open tool calls between lines"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptReader.swift",
+        63,
+        "read(line:) turns one record into zero or more events"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptEvents.swift",
+        10,
+        "transcriptEvents composes the tail and the reader into one stream"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/ContentBlock.swift",
+        30,
+        "ContentBlock, the pieces a message body is made of"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/MediaReading.swift",
+        11,
+        "ImageReader, the injected closure that loads a picture off disk"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/SkillLoadReading.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubJoin.swift"
+        ]
+      }
     },
+    "concepts": [
+      "c-transcript-event"
+    ]
   },
-};
-
-A['read-outcome'] = {
-  kind: 'area', altitude: 'Area', name: 'Pairing a call with its outcome', parent: 'read',
-  line: 'Finds the record that answered a tool call, and picks its evidence in a fixed order.',
-  short: [
-    `A tool call is written when it starts. The answer comes later, sometimes much later, and
-     sometimes never. The agent was interrupted, or the process died. This area resolves the
-     answering record into an outcome, and it leaves a call open rather than guess.`,
-    `Evidence is picked in one fixed order: a diff, then media, then output. Two readers of the
-     same call always see the same thing.`,
-    `One rule is harder to see. A call that started in the background reports a receipt, not a
-     result. That receipt keeps the call <i>in progress</i>. Without this rule, every background
-     delegation reads as finished at the moment it starts.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `Outcomes back to the reader, and three evidence readers beside it.`,
-  ],
-  anchors: [
-    ['ArgoEngine/Transcript/TranscriptReader+Outcome.swift', 36, 'the background-receipt rule'],
-    ['ArgoEngine/Transcript/TranscriptReader+Outcome.swift', 83, 'evidence order: diff, then media, then output'],
-  ],
-  concepts: [],
-};
-
-A['read-vocab'] = {
-  kind: 'area', altitude: 'Area', name: 'The event vocabulary', parent: 'read',
-  line: 'The twenty cases that every layer above speaks, and the one engine type a view depends on.',
-  short: [
-    `One enum with twenty cases, and the values that they carry. A message, a thought, a tool
-     call and its result, a plan, a question, a compaction marker, and a usage reading. The names
-     are the names of the domain, and the file cites the model that they came from.`,
-    `It is an area of its own, not a detail of the reader, because two layers depend on it. The
-     join folds these events into a Session. The feed switches over the same enum with no default
-     case.`,
-    `A new kind of event fails the build until the feed says what it looks like. This is the one
-     place where a view depends on an engine type this closely. The trade is deliberate: a
-     compiler error instead of a row that quietly goes missing.`,
-  ],
-  inside: [],
-  among: [],
-  leaving: [
-    `Two layers depend on it. It depends on nothing.`,
-  ],
-  anchors: [
-    ['ArgoEngine/Session/TranscriptEvent.swift', 4, 'TranscriptEvent — twenty cases'],
-    ['ArgoEngine/Session/ToolCall.swift', 32, 'ToolCall, its kind, its status'],
-    ['ArgoEngine/Session/Evidence.swift', 129, 'ToolResult — diff, media or output'],
-  ],
-  concepts: ['c-turn', 'c-plan', 'c-ask'],
-};
-
-/* -------------------------------------------------------------- FLOWS ------ */
-/* A Flow is ONE card with every step visible (#648). Nobody descends into it, and it is not paged. */
-A['flow-line'] = {
-  kind: 'flow', altitude: 'Flow', name: 'A line lands, and becomes a row', parent: 'argo',
-  line: 'Nine steps, from a CLI that appends JSON to a row drawn in the feed.',
-  short: [
-    `Everything else in Argo hangs off this path. Follow it once, and the shape of the app is
-     clear. The code is a pipeline with a join in the middle, a seam near the top, and a view
-     that only draws values.`,
-  ],
-  steps: [
-    ['The CLI appends a line, and the file system wakes Argo',
-     `A watch over the record directory yields once per burst of changes. The bursts are
-      coalesced, so a chatty agent does not wake the app on every token. A file that Argo already
-      tails has its own watch, and it skips to step four.`,
-     ['ArgoEngine/Discovery/RecordDirectoryWatcher.swift', 22]],
-    ['The working set is swept again',
-     `The sweep runs the two filters again: the modified-time window, then a head-read for the
-      working directory. It produces the list of files that belong to this Project at this time.`,
-     ['ArgoEngine/Discovery/SessionDiscovery.swift', 44]],
-    ['A tail starts, or the existing tail continues',
-     `Each new file is opened through the engine facade and added to the join. A file that
-      vanished between the sweep and the open is skipped, not raised as an error.`,
-     ['ArgoEngine/Hub/TranscriptWatch.swift', 182]],
-    ['Bytes become complete lines',
-     `The cursor reads from its last offset. It carries a half-written record forward, and it
-      rewinds when the file got shorter.`,
-     ['ArgoEngine/Transcript/TranscriptTail.swift', 22]],
-    ['Lines become typed events',
-     `The reader parses each line and dispatches it. It holds open calls until the record that
-      answers them arrives. The batch stays whole.`,
-     ['ArgoEngine/Transcript/TranscriptReader.swift', 63]],
-    ['The batch is folded into the Session',
-     `The join applies the events to the Session that owns them. It appends them, updates the
-      lossy fold beside them, and marks the transcript as settled.`,
-     ['ArgoEngine/Hub/HubJoin.swift', 51]],
-    ['The roster is refolded, after every transcript settles',
-     `Resume chains merge, so one Session with four transcript files is one row. A file that is
-      queued but not yet read is left out, not shown empty.`,
-     ['ArgoEngine/Hub/HubSessionChain.swift', 33]],
-    ['The Hub publishes, and folds in what no transcript carries',
-     `Liveness, provenance, the CLI, and the git workspace are attached as the roster is read.
-      Every claim-keyed fact joins them: the companion report, an open permission, a standing
-      allow, and a drive status.`,
-     ['ArgoEngine/Hub/Hub+Roster.swift', 53]],
-    ['The seam makes a value, and the feed draws rows',
-     `One file restates each Session as a plain value, once per pass. The feed projection pairs
-      calls with outcomes, folds runs and galleries, and maps each event to a row. An AppKit
-      table draws them, so the scroll position survives new rows.`,
-     ['ArgoUI/Shell/Deck/Feed/FeedProjection.swift', 122]],
-  ],
-  concepts: ['c-session', 'c-turn', 'c-tier'],
-};
-
-A['flow-turn'] = {
-  kind: 'flow', altitude: 'Flow', name: 'You send a Turn, and the agent asks permission', parent: 'argo',
-  line: 'Five steps in the other direction. This is the only direction in which Argo writes.',
-  short: [
-    `To read is most of Argo. This path writes, and it exists only for a Session that Argo
-     started. Argo can read an agent that someone else launched, but it cannot steer one.`,
-  ],
-  steps: [
-    ['The prompt reaches the driver',
-     `One protocol names everything that Argo can ask of a running agent: send, interrupt,
-      answer, and change Mode. It refuses in a closed set of cases, and each case carries the
-      sentence that a person reads.`,
-     ['ArgoEngine/Drive/SessionDriver.swift', 7]],
-    ['The adapter for that CLI does it its own way',
-     `Two adapters implement the protocol. They share the vocabulary, and almost nothing else.`,
-     ['ArgoEngine/Drive/SessionDriver.swift', 106]],
-    ['The agent meets a tool that needs permission, and dials the socket',
-     `The companion plugin reports the pending permission over a Unix socket that is private to
-      this user. Argo never refuses the dial when it can help it. A refused dial leaves a tool
-      call waiting.`,
-     ['ArgoEngine/Companion/CompanionChannel.swift', 54]],
-    ['The fact lands in the ledger, keyed by ownership',
-     `It arrives as a fact, not as an event, because it never existed in a transcript. This is
-      the whole of the CONVENTION rung.`,
-     ['ArgoEngine/Hub/ClaimLedger.swift', 20]],
-    ['The roster shows a Session that waits on you',
-     `The published Session carries the permission. Its status takes the quieter reading when
-      anything is ambiguous. Your answer travels back down the same socket.`,
-     ['ArgoEngine/Hub/Hub+Roster.swift', 73]],
-  ],
-  concepts: ['c-turn', 'c-tier', 'c-session'],
-};
-
-/* ------------------------------------------------------------ CONCEPTS ----- */
-/* A Concept sits at Project level, does not nest, and drills into its evidence (#647). */
-A['c-session'] = {
-  kind: 'concept', altitude: 'Concept', name: 'Session', parent: 'argo',
-  line: 'One logical resume-chain, and the root agent in it.',
-  short: [
-    `A Session is not a file. To resume an agent writes a <i>new</i> transcript. One Session is a
-     chain of files folded together, and the id that survives is the id of the chain.`,
-    `The code spells this word in more places than any other. The name appears in two hundred of
-     the four hundred and eighty-four source files. Ten of those files are in the directory
-     called Session.`,
-    `A map drawn from folders puts this concept in the wrong place. That is why the atlas does
-     not draw one.`,
-  ],
-  evidence: [
-    ['ArgoEngine/Hub/HubSession.swift', 4, 'the joined Session, as the Hub holds it'],
-    ['ArgoUI/Shell/CockpitPresentation+Session.swift', 5, 'the same Session, restated as a value'],
-    ['ArgoEngine/Hub/HubSessionChain.swift', 26, 'the resume-chain fold — why a Session is not a file'],
-    ['ArgoEngine/Discovery/SessionDiscovery.swift', 13, 'how a Session is found in the first place'],
-  ],
-};
-
-A['c-tier'] = {
-  kind: 'concept', altitude: 'Concept', name: 'Honesty tier', parent: 'argo',
-  line: 'A property of each shown fact: how Argo knows it.',
-  short: [
-    `Three rungs. DIRECT is a fact that Argo owns, such as a process that it started or a Mode
-     that it set. DERIVED is observed from outside. CONVENTION arrived over the companion
-     channel, and it never existed in a transcript.`,
-    `The rule that matters is what happens when a fact is ambiguous. It takes the lower rung and
-     the quieter state. Argo never shows a false DIRECT.`,
-    `That is why every tier-gated value has an explicit unknown. A Session whose liveness Argo
-     cannot establish honestly reads as unknown, not as idle.`,
-  ],
-  evidence: [
-    ['ArgoEngine/Session/Honesty.swift', 5, 'the three rungs, as a type'],
-    ['ArgoEngine/Hub/HubSession+Status.swift', 26, 'tier precedence when two readings disagree'],
-    ['ArgoEngine/Session/SessionStatus.swift', 48, 'degrade-down, at one of the places it is applied'],
-  ],
-};
-
-A['c-turn'] = {
-  kind: 'concept', altitude: 'Concept', name: 'Turn', parent: 'argo',
-  line: 'One exchange: a prompt in, a stop reason out.',
-  short: [
-    `A Turn is the unit that a Session is made of, and it ends for a reason. The agent finished,
-     or it ran out of tokens, or it refused.`,
-    `The stop reason is why the roster says <i>stopped</i> and not <i>failed</i>. To stop short
-     is not to crash.`,
-    `The code spells the word in two places, for two purposes. One is the state of the Turn as
-     read out of a transcript. One is the delivery of a Turn that Argo sends. Both are real, and
-     they are not the same object.`,
-  ],
-  evidence: [
-    ['ArgoEngine/Session/SessionTurnState.swift', 1, 'the Turn as observed'],
-    ['ArgoEngine/Drive/TurnDelivery.swift', 1, 'the Turn as sent'],
-    ['ArgoEngine/Session/StopReason.swift', 1, 'why it ended'],
-  ],
-};
-
-A['c-plan'] = {
-  kind: 'concept', altitude: 'Concept', name: 'Plan', parent: 'argo',
-  line: "The live to-do list of the agent. It belongs to the Session, and it is replaced whole.",
-  short: [
-    `A Plan belongs to the Session, not to the Turn that wrote it. A Turn carries a snapshot
-     only. That is why the feed can show a plan from three Turns ago and still call it current.`,
-    `One CLI writes a plan whole. One CLI writes it an entry at a time. That is why the reader
-     keeps a ledger. The concept exists in both hosts, but only one host gives it in one piece.`,
-  ],
-  evidence: [
-    ['ArgoEngine/Session/Plan.swift', 19, 'the Plan, its entries and their statuses'],
-    ['ArgoEngine/Transcript/PlanLedger.swift', 1, 'the accumulation a host with no whole plan forces'],
-  ],
-};
-
-A['c-ask'] = {
-  kind: 'concept', altitude: 'Concept', name: 'Ask', parent: 'argo',
-  line: 'A structured question put to the person, and the live handle that answers it.',
-  short: [
-    `Two types, and they are deliberately not one. The first is the question as it appears in the
-     record. It is readable in any Session, including one that Argo never started.`,
-    `The second is a live handle that you can answer. It exists only for a managed Session.`,
-    `To collapse the two gives you a question that you can see and cannot answer, in the same
-     type as one that you can. That is the false promise that the honesty tier prevents.`,
-  ],
-  evidence: [
-    ['ArgoEngine/Session/Ask.swift', 1, 'the question, as read'],
-    ['ArgoEngine/Drive/SessionAsk.swift', 1, 'the question, as answerable'],
-    ['ArgoEngine/Session/ToolCall.swift', 73, 'the tool call a question actually arrives as'],
-  ],
-  stale: {
-    evidence: {
-      what: 'one of the three places this Concept is spelled',
-      reason: null,
-      anchorGone: true,
+  "e-session": {
+    "id": "e-session",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "The words a session is described in",
+    "line": "It declares the event, tool call, plan, mode and status types every other part speaks, and reads a status out of them.",
+    "lines": 872,
+    "bottom": true,
+    "short": [
+      "This folder opens no file and makes no network call. It declares `TranscriptEvent`, the enum every reader produces and every consumer matches on. It declares `ToolCall`, `Plan`, `Usage`, `StopReason` and `SessionMode`, the four-rung autonomy ladder. `SessionStatus` is then a pure function from gathered signals to one of seven words."
+    ],
+    "long": [
+      "One value ties it together. `SessionSignals` bundles what is known about a session at one moment. That means where the facts came from, whether a process is alive, whether a turn is open, the last stop reason, and any pending question.",
+      "`SessionStatus` reads that bundle and answers running, permission, asking, idle, stopped, ended or unknown. The rule is to degrade down, so an ambiguous reading resolves to the quieter word rather than the louder one.",
+      "`SessionModeStore` is the one part here that touches a file. It remembers the rung the user last picked, through the same owned-file helper the other small stores use. Nothing else in this folder calls into another folder of the engine."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-session",
+        "e-storage",
+        "the last-picked mode rung, written whole as one JSON file"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/TranscriptEvent.swift",
+        4,
+        "TranscriptEvent, the enum every reader produces"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionSignals.swift",
+        3,
+        "SessionSignals, everything known about a session at one moment"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionStatus.swift",
+        4,
+        "SessionStatus, the seven words a session can be in"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionMode.swift",
+        4,
+        "SessionMode, the four rungs of the autonomy ladder"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/ToolCall.swift",
+        32,
+        "ToolCall, one observable action the agent took"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/Plan.swift",
+        19,
+        "Plan, the agent's live to-do list"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/Usage.swift",
+        2,
+        "Usage, the token and cost telemetry a record reports"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionModeStore.swift",
+        17,
+        "the owned file the remembered mode rung is written to"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionModeStore.swift"
+        ]
+      }
     },
+    "concepts": [
+      "c-session-provenance",
+      "c-honesty-tier",
+      "c-turn",
+      "c-transcript-event"
+    ]
   },
-};
-
-A['c-workspace'] = {
-  kind: 'concept', altitude: 'Concept', name: 'Workspace', parent: 'argo',
-  line: 'The git working context. It holds the branch, which is the join key.',
-  short: [
-    `A Workspace is where an agent works. It is a checkout or a worktree, with a branch.`,
-    `The branch carries weight beyond this domain. It is the key that joins delivery facts from
-     the code host to a Session. Nothing else that the two sides know is the same.`,
-  ],
-  evidence: [
-    ['ArgoEngine/Repository/WorkspaceProjection.swift', 6, 'the projection, and the branch it carries'],
-    ['ArgoEngine/Repository/WorkspaceProjection.swift', 15, 'branch as the join key'],
-  ],
-};
-
-A['c-person'] = {
-  kind: 'concept', altitude: 'Concept', name: 'Person', parent: 'argo',
-  line: 'me or other. None found in the code.',
-  short: [
-    `The model names a Person, which is <code>me</code> or <code>other</code>. The code does not
-     spell it. There is no such type. Authorship travels where it is needed, and nowhere in
-     general.`,
-    `<b>None found</b> is not the same as <i>there is none</i>. Argo can claim an absence only
-     where something declares the set. Nothing here declares the set of types of this Project.`,
-    `So this card says what it looked for, and what came back. Then it stops.`,
-  ],
-  evidence: [],
-  noneFound: `A search of the engine declarations for a Person type found no match. The nearest
-              thing is the holders of a Workspace, and that is a different question.`,
+  "e-discovery": {
+    "id": "e-discovery",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Finding which records belong here",
+    "line": "It decides which transcript files on this machine belong to this repository, and notices new ones.",
+    "lines": 584,
+    "bottom": true,
+    "short": [
+      "The CLI writes one directory per project and never says which repository a file belongs to. `SessionDiscovery` answers that cheaply. It first drops every file outside a modified-time window. It then opens each survivor at the head only, reads its working directory, and keeps the ones sitting inside the project root."
+    ],
+    "long": [
+      "The order is the whole design. Opening every transcript in a busy home directory is the expensive mistake, so the cheap filter runs first. `TranscriptOrigin` reuses the line parser to pull one field out of a file's head, without building any events.",
+      "`ProjectScope.contains(cwd:projectRoot:)` matches on whole path segments, after one shared resolver has spelled both paths. A symlinked checkout and its real path are one repository, and they must not become two.",
+      "Two more readers sit here. `ProcessLivenessReader` runs `ps` and answers the set of working directories a live CLI is in. `SubagentTranscripts.beside(_:)` walks the folder next to a parent transcript and lists the child agents' own files."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-discovery",
+        "e-transcript",
+        "the first lines of a file, parsed only for its working directory"
+      ],
+      [
+        "e-discovery",
+        "e-spawn",
+        "which CLI wrote the record directory being walked"
+      ],
+      [
+        "e-discovery",
+        "e-hub",
+        "the set of transcript files this repository owns, re-swept on every change"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/SessionDiscovery.swift",
+        13,
+        "SessionDiscovery, the sweep that decides the working set"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/TranscriptOrigin.swift",
+        46,
+        "the head-only read that pulls cwd out with the transcript parser"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/ProjectScope.swift",
+        2,
+        "ProjectScope, the path-segment test for belonging"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/ProcessLivenessReader.swift",
+        7,
+        "ProcessLivenessReader, which shells out to ps for live working directories"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/SubagentTranscripts.swift",
+        18,
+        "SubagentTranscripts, which lists a parent's child-agent files"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/TranscriptRecordStore.swift",
+        7,
+        "TranscriptRecordStore, the record root and what it lists"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/RecordDirectoryWatcher.swift",
+        9,
+        "RecordDirectoryWatcher, the file-system ticks that trigger a re-sweep"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/SessionDiscovery.swift",
+        20,
+        "the AgentCLI whose record directory this sweep walks"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/TranscriptOrigin.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub.swift"
+        ]
+      }
+    }
+  },
+  "e-hub": {
+    "id": "e-hub",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Assembling the live picture",
+    "line": "It folds every tailed transcript into one row per session, and stamps in everything Argo separately knows.",
+    "lines": 3043,
+    "bottom": true,
+    "short": [
+      "`Hub` is the observable object the cockpit reads. It holds the tails and the join over them. It also holds the ledger of what spawned agents reported, the pseudo-terminals Argo owns, and the drivers that steer them. Its `sessions` property hands out one `HubSession` per resume chain, ready to draw."
+    ],
+    "long": [
+      "`HubJoin` does the fold. It keeps one entry per tailed file, plus a map from record id to the file that first claimed it. That map is what keeps a resumed chain from being counted twice. `HubSession` is then a pure fold over events into title, working directory, model, branch, mode, spend and turn state.",
+      "Two clocks drive it. `WorkingSetSweep` re-asks discovery whenever the record directory changes. `WorldReadings` polls for live process working directories and git state, because a process that exits writes nothing Argo could watch for.",
+      "The Hub also publishes rows no transcript has yet. When Argo starts an agent itself, the spawn writes a provisional row straight away. That row retires once a real record binds to the same claim. The roster then stamps each row with liveness, workspace, pending permissions, standing allows and the handoff target."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-hub",
+        "e-discovery",
+        "which transcript files belong to this repository, re-swept on every change"
+      ],
+      [
+        "e-hub",
+        "e-transcript",
+        "one live event stream per tailed file, started and cancelled here"
+      ],
+      [
+        "e-hub",
+        "e-repository",
+        "the branch, the dirty count and the worktree list git reported"
+      ],
+      [
+        "e-hub",
+        "e-companion",
+        "one socket per claim, and every fact the plugin reports over it"
+      ],
+      [
+        "e-hub",
+        "e-drive",
+        "the permission channel, the two drivers, and the turn nobody has heard yet"
+      ],
+      [
+        "e-hub",
+        "e-spawn",
+        "a spawn plan, and the table of pseudo-terminals it fills"
+      ],
+      [
+        "e-hub",
+        "e-handoff",
+        "which session handed its work to which, keyed by claim"
+      ],
+      [
+        "e-hub",
+        "e-launch",
+        "the repository and transcripts to point at, on connect and on every re-point"
+      ],
+      [
+        "e-hub",
+        "e-project",
+        "the registry file location, and the scope test for a spawn's directory"
+      ],
+      [
+        "e-hub",
+        "e-session",
+        "the remembered mode rung a spawned session starts at"
+      ],
+      [
+        "e-hub",
+        "e-storage",
+        "the session-ownership ledger, written whole as one JSON file"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub.swift",
+        9,
+        "Hub, the observable object the cockpit reads"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub.swift",
+        115,
+        "connect(to:) points the Hub at a repository and starts the tails"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubJoin.swift",
+        6,
+        "HubJoin, which holds one entry per tailed file"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift",
+        4,
+        "HubSession, one row per resume chain"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSessionChain.swift",
+        26,
+        "HubSessionChain, which merges a resumed chain into one session"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/TranscriptWatch.swift",
+        121,
+        "startObserving, which drains one file's events into the join"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/WorldReadings.swift",
+        12,
+        "WorldReadings, the polled readings of git and the process table"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/WorkingSetSweep.swift",
+        9,
+        "WorkingSetSweep, which re-asks discovery on a directory change"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/ClaimLedger.swift",
+        10,
+        "ClaimLedger, where the gates and the companion publish their facts"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership.swift",
+        15,
+        "SessionOwnership, the claim ids for terminals this process owns"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
+        16,
+        "spawnSession, which publishes a provisional row before any record exists"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Channels.swift",
+        19,
+        "the companion channel opened at connect, one socket per claim"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Roster.swift",
+        103,
+        "the scope test that keeps a provisional spawn in this repository"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SubagentTails.swift",
+        27,
+        "SubagentTails, which tails a session's child agents too"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Channels.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Drive.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Handoff.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Roster.swift"
+        ]
+      }
+    },
+    "concepts": [
+      "c-session-provenance",
+      "c-claim",
+      "c-honesty-tier",
+      "c-turn",
+      "c-transcript-event"
+    ]
+  },
+  "e-drive": {
+    "id": "e-drive",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Typing at the agent and answering it",
+    "line": "It carries a turn and a permission decision to a running agent, by a different mechanism for each of the two CLIs.",
+    "lines": 2243,
+    "bottom": true,
+    "short": [
+      "This is the half of Argo that acts on an agent rather than watching one. `SessionAdapters` routes every act to one of two adapters, chosen per session. For claude, a turn becomes bracketed-paste keystrokes in a pseudo-terminal, and a permission is answered on a unix socket. For codex, that same turn is a JSON-RPC line on the server's stdin, and an approval is a JSON-RPC response."
+    ],
+    "long": [
+      "The claude keystrokes are literal. `ClaudeTurn` wraps the text in the escape sequences that start and end a bracketed paste. It then sends Return as a carriage return, in a second write. `TurnDelivery` then watches the record, because that Return can be eaten in silence and the failure looks like nothing.",
+      "The claude gate is a real server. `grant(_:)` creates a `.gate.sock` file named for the claim, and the spawned CLI's hook dials that path. `PermissionReply` builds the exact hook JSON the CLI expects. `PermissionChannel` calls itself the claude adapter's channel, and the codex adapter uses none of it.",
+      "Two pieces serve both adapters. A shared patience table times each unanswered prompt out, and Argo's own clock refuses it rather than waiting. `AttachmentStore` writes a pasted picture outside the checkout, so a turn has a path it can name."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-drive",
+        "e-spawn",
+        "the paced keystrokes for one turn, written into the claim's terminal"
+      ],
+      [
+        "e-drive",
+        "e-companion",
+        "the socket object that does the accept, the read and the write"
+      ],
+      [
+        "e-drive",
+        "e-codex",
+        "a turn and an approval decision, handed to the thread that speaks JSON-RPC"
+      ],
+      [
+        "e-drive",
+        "e-session",
+        "the rung a call is judged by, and the stance the adapter reports back"
+      ],
+      [
+        "e-drive",
+        "e-hub",
+        "the claim id, the current rung, and the waiting permission published to the ledger"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionAdapters.swift",
+        8,
+        "SessionAdapters, which routes each act to the right adapter"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeSessionDriver.swift",
+        35,
+        "send(_:to:) turns a turn into keystrokes for one session"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeSessionDriver.swift",
+        40,
+        "the write of those keystrokes into the claim's terminal"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeTurn.swift",
+        12,
+        "keystrokes(for:) builds the paste burst and the Return"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeTurn.swift",
+        22,
+        "the literal bracketed-paste start sequence"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/CodexSessionDriver.swift",
+        37,
+        "send, which puts a turn on the app server's stdin instead"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/CodexSessionDriver.swift",
+        81,
+        "decide, which answers an approval as a JSON-RPC response"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/TurnDelivery.swift",
+        20,
+        "TurnDelivery, the watch that catches a Return nobody heard"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/AttachmentStore.swift",
+        14,
+        "AttachmentStore, which keeps a pasted picture out of the checkout"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+        3,
+        "the line naming this the claude adapter's channel, and no other"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+        17,
+        "PermissionChannel, the gate the CLI's hook dials into"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+        80,
+        "the .gate.sock path built for one claim"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+        108,
+        "decide, which answers a waiting permission down the same connection"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionReply.swift",
+        7,
+        "PermissionReply, the hook JSON written back as the decision"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/Permission.swift",
+        6,
+        "PermissionRequest, read out of the hook's raw line"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionDriver.swift",
+        7,
+        "SessionDriver, the port both CLIs are steered through"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeSessionDriver.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/CodexSessionDriver.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionAdapters.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift"
+        ]
+      }
+    }
+  },
+  "e-spawn": {
+    "id": "e-spawn",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Starting and holding the agent's terminal",
+    "line": "It resolves the CLI, builds its argv and environment, and keeps every agent process Argo started.",
+    "lines": 788,
+    "bottom": true,
+    "short": [
+      "`AgentLauncher` finds the CLI executable and the login shell's PATH, then assembles one launch value. A host turns that into a real process, on a pseudo-terminal for claude and on plain pipes for codex. `AgentTerminals` adopts both kinds by claim, and drains the bytes into a bounded replay buffer. It also offers the two write paths every keystroke takes."
+    ],
+    "long": [
+      "The fork itself does not happen here. `AgentProcessHost` is a protocol with one method, and two implementations fill it in production. The SwiftTerm pseudo-terminal links AppKit and lives in a sibling target. The codex pipe host links nothing and stays inside the engine.",
+      "Two writes exist, and the difference is timing. A plain write sends one burst. A paced write sends two bursts with a gap between them. That gap is what a bracketed paste followed by Return needs, in order to land as a submitted turn.",
+      "`AgentSpawnPlan` describes one spawn before it happens: which CLI, which directory, which rung, which claim. `AgentSpawn` is the roster row Argo puts up before that CLI has written anything. `SpawnServices` bundles what the Hub needs, including both host slots and the files that remember ownership, chain and rung."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-spawn",
+        "e-companion",
+        "the socket path and plugin directory folded into a claude agent's argv"
+      ],
+      [
+        "e-spawn",
+        "e-codex",
+        "the launch value, started on plain pipes by the second host implementation"
+      ],
+      [
+        "e-spawn",
+        "e-hub",
+        "the claim id every adopted process is keyed by"
+      ],
+      [
+        "e-spawn",
+        "e-handoff",
+        "the seed a freshly started session is opened on"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentLauncher.swift",
+        8,
+        "AgentLauncher, which resolves the executable and the login-shell PATH"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentLauncher.swift",
+        41,
+        "the companion's own arguments, folded into the launch"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentProcessHost.swift",
+        8,
+        "AgentProcess, the whole verb set: write, resize, terminate"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentProcessHost.swift",
+        39,
+        "AgentProcessHost, the port that forks the real pseudo-terminal"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentTerminals.swift",
+        9,
+        "AgentTerminals, the table of live processes keyed by claim"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentTerminals.swift",
+        111,
+        "the paced two-write path a submitted turn takes"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/PacedKeystrokes.swift",
+        11,
+        "PacedKeystrokes, two bursts and the gap between them"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentSpawnPlan.swift",
+        5,
+        "AgentSpawnPlan, one spawn described before it happens"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentSpawn.swift",
+        6,
+        "AgentSpawn, the roster row put up before the CLI writes anything"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/SpawnServices.swift",
+        11,
+        "the second host slot, for the codex server rather than a terminal"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/SpawnServices.swift",
+        14,
+        "companionRoot, where the plugin and sockets are written"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexProcessHost.swift",
+        3,
+        "the other production host: plain pipes, no pseudo-terminal"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
+        98,
+        "the one adoption call, taking either kind of process"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Drive.swift",
+        44,
+        "where the pipe host is chosen for a codex session"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentCLI.swift",
+        7,
+        "AgentCLI, which of the two CLIs a spawn or a record belongs to"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexProcessHost.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Drive.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentLauncher.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/SpawnServices.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentTerminals.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift"
+        ]
+      }
+    },
+    "concepts": [
+      "c-claim",
+      "c-drive-port"
+    ]
+  },
+  "e-commands": {
+    "id": "e-commands",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Reading the CLI's own slash commands",
+    "line": "It starts a hidden claude process, types /help into it, and reads the built-in command list off the screen.",
+    "lines": 478,
+    "bottom": true,
+    "short": [
+      "The CLI publishes its built-in commands nowhere Argo can read. So `HelpPanelSession` starts a second, throwaway process on its own pseudo-terminal, resizes it, and types `/help`, Return and Tab. The raw bytes are painted into text rows, and `HelpPanel.commands(on:)` parses those rows by indentation."
+    ],
+    "long": [
+      "This is the second place in the engine that starts a process and writes keystrokes into it. It never joins the shared terminal table, because nobody should ever see this session. It calls the process host directly and writes to the process directly.",
+      "Painting the bytes needs a terminal emulator, which the engine does not link. `TerminalScreen` is the protocol for it, and a sibling target supplies the real one.",
+      "The read is expensive, so it happens once per CLI version. `BuiltinCommandStore` caches the answer in a file keyed by that version. `CommandCatalog` then joins the curated built-ins with the skills read off disk, which is what the slash-command picker draws."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-commands",
+        "e-spawn",
+        "one launch, started and typed into without joining the shared terminal table"
+      ],
+      [
+        "e-commands",
+        "e-skills",
+        "the skills read off disk, joined with the built-ins into one list"
+      ],
+      [
+        "e-commands",
+        "e-storage",
+        "the read command list, cached against the CLI version"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/HelpPanelSession.swift",
+        8,
+        "HelpPanelSession, the hidden claude process used only to read /help"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/HelpPanelSession.swift",
+        21,
+        "rows(inProjectAt:) starts the process and returns painted rows"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/HelpPanelSession.swift",
+        57,
+        "type(at:), the literal /help, Return and Tab keystrokes"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/HelpPanel.swift",
+        9,
+        "commands(on:) parses the built-in list out of the painted rows"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/TerminalScreen.swift",
+        7,
+        "TerminalScreen, the emulator port a sibling target fills"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/BuiltinCommandReader.swift",
+        14,
+        "BuiltinCommandReader, which reads, caches and joins the catalog"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/BuiltinCommandReader.swift",
+        23,
+        "the skill reader whose commands are joined with the built-ins"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/CommandCatalog.swift",
+        8,
+        "CommandCatalog, what the slash-command picker draws"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/HelpPanelSession.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/BuiltinCommandReader.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/BuiltinCommandStore.swift"
+        ]
+      }
+    }
+  },
+  "e-companion": {
+    "id": "e-companion",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "The socket the agent calls back on",
+    "line": "It runs a small JSON-RPC server on a unix socket, and ships the plugin that makes a claude agent dial it.",
+    "lines": 932,
+    "bottom": true,
+    "short": [
+      "All of this serves claude only. `CompanionPlugin` writes a real plugin directory for a spawned claude agent. Its `mcp.json` points the CLI at `/usr/bin/nc -U <socket>`, so the agent's own tool calls arrive on a socket Argo owns. `CompanionEndpoint` answers `initialize`, `tools/list` and `tools/call` as JSON-RPC, one object per line."
+    ],
+    "long": [
+      "Three tools are offered, and they carry facts no transcript holds: report a status, ask the user, and report an outcome. Each call becomes a fact and folds into a report. This is the convention tier, arriving over the plugin rather than read out of a file.",
+      "The same directory carries the permission hook. `hooks.json` registers a pre-tool hook over Bash, Edit, Write, MultiEdit, NotebookEdit, WebFetch and AskUserQuestion. `CompanionInvitation` records why both `--mcp-config` and `--plugin-dir` go on argv. A `--settings` file was tried first and registered nothing, and an unregistered hook fails silently open.",
+      "The default is to refuse. When the socket answers nothing, the script prints a deny decision reading that Argo could not be reached to ask. None of this reaches codex, because `takesCompanionPlugin` is false for it. A codex spawn gets no plugin, no socket and no hook, and raises its approvals over its own protocol."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-companion",
+        "e-hub",
+        "the claim id each socket is keyed by, and every fact reported on it"
+      ],
+      [
+        "e-companion",
+        "e-session",
+        "the status word a report call names"
+      ],
+      [
+        "e-companion",
+        "e-drive",
+        "the hook timeout, taken from the gate's own patience"
+      ],
+      [
+        "e-companion",
+        "e-spawn",
+        "a refusal, when the socket or the plugin cannot be created"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionPlugin.swift",
+        9,
+        "CompanionPlugin, which writes the plugin directory for a spawn"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionPlugin.swift",
+        75,
+        "the hook timeout substituted into hooks.json"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionEndpoint.swift",
+        7,
+        "CompanionEndpoint, which answers initialize, tools/list and tools/call"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionTool.swift",
+        5,
+        "CompanionTool, the three tools the agent is offered"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionChannel.swift",
+        9,
+        "CompanionChannel, one socket per claim under a shared root"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionSocket.swift",
+        20,
+        "CompanionSocket, the raw accept and listen loop"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionConnection.swift",
+        9,
+        "CompanionConnection, which frames one peer's bytes on newlines"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionInvitation.swift",
+        20,
+        "the MCP config path, and why that flag rather than --plugin-dir"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionInvitation.swift",
+        30,
+        "the hooks path, and why --settings was abandoned for it"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentCLI.swift",
+        52,
+        "takesCompanionPlugin, false for codex, which is the whole gate"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentSpawnPlan+Launch.swift",
+        16,
+        "where a codex spawn is handed no invitation at all"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/Plugin/mcp.json",
+        5,
+        "the nc command the CLI runs to reach Argo's socket"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/Plugin/hooks.json",
+        5,
+        "the tools the pre-tool permission hook matches on"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/Plugin/permission-hook.sh",
+        26,
+        "the hook piping its payload to Argo's gate socket"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/Plugin/permission-hook.sh",
+        29,
+        "the deny printed when Argo cannot be reached"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentCLI.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/Plugin",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentCLI.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentSpawnPlan+Launch.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionChannel.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionTool.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionPlugin.swift"
+        ]
+      }
+    }
+  },
+  "e-codex": {
+    "id": "e-codex",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Driving the codex server",
+    "line": "It runs codex as a pipe subprocess and speaks JSON-RPC to start threads, send turns and answer approvals.",
+    "lines": 1068,
+    "bottom": true,
+    "short": [
+      "The second CLI is driven differently. `CodexProcessHost` starts the codex app server on plain pipes rather than a pseudo-terminal, and `CodexLineBuffer` reassembles its bytes into lines. `CodexServerMessage` sorts each line into an answer, a failure, a request or a notification, by which JSON-RPC fields it carries."
+    ],
+    "long": [
+      "`CodexThread` is the state machine for one claim. It sends an initialize, then a thread start, then a turn start or a turn interrupt. Turns typed before the thread is ready are queued, and status notifications are read into a session status.",
+      "`CodexApprovals` is this CLI's permission gate. The server asks before running a command or changing a file, and Argo replies with a JSON-RPC result naming accept or decline.",
+      "A file-change approval arrives without its diff. `CodexPatch` joins the patch notifications onto the waiting approval by item id, so the user sees what they are approving. The server keeps no clock, so an unanswered approval is declined by Argo's own patience table."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-codex",
+        "e-drive",
+        "an approval turned into a permission, and the decision that answers it"
+      ],
+      [
+        "e-codex",
+        "e-spawn",
+        "the launch value, started as a pipe process rather than a terminal"
+      ],
+      [
+        "e-codex",
+        "e-hub",
+        "the claim id each thread is keyed by"
+      ],
+      [
+        "e-codex",
+        "e-session",
+        "the rung a thread starts under, and the status a notification sets"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexProcessHost.swift",
+        12,
+        "CodexProcessHost, the pipe-backed host filling the same spawn port"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexLineBuffer.swift",
+        8,
+        "CodexLineBuffer, which reassembles bytes into whole lines"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexServerMessage.swift",
+        13,
+        "CodexServerMessage, the four shapes one line can be"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexRPC.swift",
+        13,
+        "CodexRPC, which builds the requests sent down the pipe"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexThread.swift",
+        14,
+        "CodexThread, the handshake and turn state for one claim"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexThreads.swift",
+        9,
+        "CodexThreads, the table of threads keyed by claim"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexApprovals.swift",
+        19,
+        "CodexApprovals, which answers the server's approval requests"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexAsk.swift",
+        10,
+        "CodexAsk, the two approval kinds the server raises"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexApprovals.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexProcessHost.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexThreads.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexStance.swift"
+        ]
+      }
+    }
+  },
+  "e-handoff": {
+    "id": "e-handoff",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Passing work to a fresh session",
+    "line": "It types a handoff command into a running session, waits for the brief file, and starts a new session on it.",
+    "lines": 353,
+    "bottom": true,
+    "short": [
+      "The handoff runs in three acts. `SessionHandoff.run` types a handoff command with an absolute brief path into the live session's terminal. It then polls for that markdown file until the file is not empty or the deadline passes. Only then does it start a fresh session opened on the brief."
+    ],
+    "long": [
+      "The order is deliberate. The new session is spawned last, and the original is marked as handed off only after that spawn succeeds. A failed handoff leaves the first session untouched.",
+      "`HandoffLedger` records the edge in two halves. A live link is keyed by claim the moment the spawn returns. A durable chain of links is written whole as JSON. A claim-only link gets the CLI's real session id once the new agent's first record lands.",
+      "`HandoffHost` is only a protocol here. Typing, polling and spawning all reach real machinery that is supplied from outside this folder."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-handoff",
+        "e-spawn",
+        "the seed value the fresh session is started from"
+      ],
+      [
+        "e-handoff",
+        "e-hub",
+        "the claim id each link is keyed by, and the folder the chain file sits beside"
+      ],
+      [
+        "e-handoff",
+        "e-storage",
+        "the handoff chain, written whole as one JSON file"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff/SessionHandoff.swift",
+        9,
+        "SessionHandoff, the type, wait and spawn sequence"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff/HandoffHost.swift",
+        6,
+        "HandoffHost, the steer, brief and spawn verbs it needs"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff/HandoffScript.swift",
+        11,
+        "HandoffScript, which spells the command and the brief path"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff/HandoffLedger.swift",
+        14,
+        "HandoffLedger, the live links and the durable chain"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff/HandoffChain.swift",
+        13,
+        "HandoffChain, the persisted list of from-and-to links"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff/HandoffChainStore.swift",
+        13,
+        "the owned file the chain is written to"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff/SessionHandoff.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff/HandoffLedger.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff/HandoffChainStore.swift"
+        ]
+      }
+    }
+  },
+  "e-account": {
+    "id": "e-account",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Signing in and holding the token",
+    "line": "It runs the sign-in flow for GitHub and Linear, keeps the token in the keychain, and makes the HTTP calls.",
+    "lines": 1966,
+    "bottom": true,
+    "short": [
+      "Two flows exist, one per provider. GitHub uses the device flow, posting for a device code and then polling for a token until one arrives. Linear uses authorization code with a proof key, and claims a local redirect listener before the browser is sent anywhere."
+    ],
+    "long": [
+      "Identity is confirmed with a real read, never assumed. GitHub answers a user request, and Linear answers a viewer query. The resulting `AccountRecord` is keyed by the provider's own stable id rather than by the login, which can change.",
+      "The token and the record are stored apart. `KeychainGrantStore` puts the access token in the macOS login keychain, one item per account. `AccountRegistryStore` writes only the non-secret records to a JSON file in application support, and holds no token at all.",
+      "Day-to-day reads split by shape. `GitHubCall` makes REST requests and decodes snake case. `LinearCall` makes one GraphQL post, where a refusal arrives as a success with an errors body. Both go out through one transport protocol, so a test never opens a socket."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-account",
+        "e-binding",
+        "which projects still use an account, asked before that account is removed"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/ProviderAuthorization.swift",
+        12,
+        "ProviderAuthorization, which routes begin and complete per provider"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/GitHub/GitHubDeviceFlow.swift",
+        10,
+        "GitHubDeviceFlow, the device-code request, poll and identify"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/GitHub/GitHubOAuthApp.swift",
+        8,
+        "the client id and endpoints the GitHub flow uses"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/Linear/LinearOAuthFlow.swift",
+        8,
+        "LinearOAuthFlow, the authorize, exchange and identify steps"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/Linear/LinearCall.swift",
+        8,
+        "LinearCall, the single GraphQL post and its errors-first read"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/AccountGrant.swift",
+        12,
+        "AccountGrant, the token, scopes and expiry"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/AccountGrant.swift",
+        41,
+        "AccountGrantLifetime, the non-expiring and refreshable split"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/KeychainGrantStore.swift",
+        9,
+        "KeychainGrantStore, the only thing that writes a token"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/AccountRegistryStore.swift",
+        11,
+        "AccountRegistryStore, which owns the non-secret records file"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/AccountRecord.swift",
+        11,
+        "AccountRecord, one authenticated identity"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/HTTP/HTTPTransport.swift",
+        54,
+        "HTTPTransport, the one seam every provider call goes through"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/AccountRemoval.swift",
+        23,
+        "AccountBindingIndex, the who-still-uses-this question before removal"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/AccountRemoval.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/ProjectBindingIndex.swift"
+        ]
+      }
+    }
+  },
+  "e-binding": {
+    "id": "e-binding",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Pointing a project at an account",
+    "line": "It joins one repository to one account through one port, and proves the token can see the scope before saving it.",
+    "lines": 673,
+    "bottom": true,
+    "short": [
+      "A `ProjectBinding` is a port, an account id and a provider-side scope such as an owner and repository, or a Linear team. `ProjectBindings.bind` does not save one on trust. It loads the account, fetches its grant, and asks a provider check whether that grant can actually see the scope."
+    ],
+    "long": [
+      "The two checks are one request each. `GitHubScopeCheck` asks for the repository and treats a decodable answer as visible. `LinearScopeCheck` asks for the team by id and reads a null team as not visible.",
+      "`resolve(port:for:)` is the read-time half. It answers unbound, broken or ready. A ready answer is a `ResolvedBinding` carrying the binding, the account record and the live grant together, which is what every provider read is handed.",
+      "No token is cached here. Every resolve re-reads the keychain through the account store, so a revoked grant fails at the next read rather than at the next launch."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-binding",
+        "e-account",
+        "the account record and the live grant, re-read on every resolve"
+      ],
+      [
+        "e-binding",
+        "e-project",
+        "the bindings stored on each project record, loaded and written back"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/ProjectBinding.swift",
+        14,
+        "ProjectBinding, a port, an account id and a scope"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/ProjectBindings.swift",
+        9,
+        "ProjectBindings, the only bind, unbind and resolve surface"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/ProjectBindings.swift",
+        29,
+        "bind, which checks visibility before writing anything"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/ProjectBindings.swift",
+        83,
+        "resolve, which turns a stored binding into a live grant"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/BindingResolution.swift",
+        6,
+        "ResolvedBinding, the binding, account and grant together"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/BindingResolution.swift",
+        27,
+        "BindingResolution, the unbound, ready and broken answers"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/BindingScopeCheck.swift",
+        51,
+        "BindingScopeCheck, the bind-time seam each provider fills"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/GitHubScopeCheck.swift",
+        14,
+        "the GitHub visibility check, one repository request"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/LinearScopeCheck.swift",
+        10,
+        "the Linear visibility check, one team query"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/PortReadTarget.swift",
+        7,
+        "PortReadTarget, what one poll or write is aimed at"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/ProjectBindings.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/ProjectBindingIndex.swift"
+        ]
+      }
+    }
+  },
+  "e-ticket": {
+    "id": "e-ticket",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Reading and writing tickets",
+    "line": "It lists, fetches, creates and edits tickets on GitHub or Linear, through whichever binding the repository holds.",
+    "lines": 2732,
+    "bottom": true,
+    "short": [
+      "`Ticket` is a provider-agnostic value that is never saved, and is rebuilt on every poll. `GitHubTickets` fills it over REST, listing a repository's issues and then reading sub-issue and blocked-by edges per issue, several at a time. `LinearTickets` fills it over GraphQL, paging a team-issues query."
+    ],
+    "long": [
+      "Every call is keyed off a resolved binding, so a GitHub token can never reach Linear. `ProviderTickets` routes reads by provider, and the writes side builds a writer for one binding.",
+      "There are no webhooks, so `TicketPoll` re-reads on a repeating interval. `TicketWriter` applies a write and adopts the result into the in-memory ledger a room draws from. It then files the success or the failure against that binding's health.",
+      "Two small readers derive intent. `WorkCommand` decides which slash command a session should open a ticket with, and at which rung. `DesignedScreens` reads the designs folder off the checkout, to know whether a screen already has a design."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-ticket",
+        "e-binding",
+        "one resolved binding, carrying the grant, the scope and the provider"
+      ],
+      [
+        "e-ticket",
+        "e-health",
+        "whether the read or the write landed, filed against that binding"
+      ],
+      [
+        "e-ticket",
+        "e-annotation",
+        "the resolved ticket title, saved against the session id"
+      ],
+      [
+        "e-ticket",
+        "e-session",
+        "the rung a work command starts a session at"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/Ticket.swift",
+        12,
+        "Ticket, the read-through value that is never persisted"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/TicketPort.swift",
+        7,
+        "TicketPort, the list and fetch seam each provider fills"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/ProviderTickets.swift",
+        12,
+        "ProviderTickets, which routes a read to the right provider"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/GitHubTickets.swift",
+        7,
+        "GitHubTickets, the REST issue listing and its edge reads"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/LinearTickets.swift",
+        8,
+        "LinearTickets, the paged GraphQL team-issues read"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/TicketWriter.swift",
+        10,
+        "TicketWriter, which applies a write and files its health"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/TicketPoll.swift",
+        8,
+        "TicketPoll, the repeating read that stands in for webhooks"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/TicketAddress.swift",
+        13,
+        "TicketAddress, the browse URL derived from provider and scope"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/WorkCommand.swift",
+        20,
+        "the rung a session opened on a ticket starts at"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/TicketTitleResolver.swift",
+        5,
+        "TicketTitleResolver, which turns each issue number into words"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/ProviderTickets.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/TicketWriter.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/TicketTitleResolver.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/WorkCommand.swift"
+        ]
+      }
+    }
+  },
+  "e-delivery": {
+    "id": "e-delivery",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "The branch's pull request, checks and reviews",
+    "line": "It assembles what the code host holds for each branch, and joins it to local git on the branch name.",
+    "lines": 686,
+    "bottom": true,
+    "short": [
+      "A `Delivery` is derived per branch and never saved. `GitHubDeliveries` reads it over REST. It lists the open pull requests for what is in flight, and asks per branch for one that may already be merged. It carries the host's own words for state, check names and review verdicts, unrenamed."
+    ],
+    "long": [
+      "`DeliveryDerivation` does the join. The local half comes from the workspace readings git already produced, and never from a second git read. Two readers of one fact are two chances to disagree about it.",
+      "The branch is the join key, and a delivery holds no sessions. A teammate's pull request has zero of them by construction, and still appears in the room.",
+      "`DeliveryLedger` holds the current answer in memory. `DeliveryAssertionStore` is the one exception that is written down, because it records what Argo itself asserted rather than what it observed."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-delivery",
+        "e-repository",
+        "the branch each worktree is on, which is the join key"
+      ],
+      [
+        "e-delivery",
+        "e-account",
+        "the live grant every code-host read goes out with"
+      ],
+      [
+        "e-delivery",
+        "e-health",
+        "whether the host read landed, filed against the binding"
+      ],
+      [
+        "e-delivery",
+        "e-storage",
+        "the assertions Argo made, written whole as one JSON file"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/Delivery.swift",
+        8,
+        "Delivery, the branch-keyed value that is never persisted"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/CodeHostPort.swift",
+        7,
+        "CodeHostPort, the seam every delivery fact is read through"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/CodeHostPort.swift",
+        10,
+        "inFlight, which takes the grant the read goes out with"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/GitHubDeliveries.swift",
+        14,
+        "the open pull request listing for one repository"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/DeliveryDerivation.swift",
+        8,
+        "DeliveryDerivation, the git and host join"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/DeliveryDerivation.swift",
+        15,
+        "the health ledger every read result is filed into"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/DeliveryDerivation.swift",
+        40,
+        "the workspace readings the local half is taken from"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/DeliveryLedger.swift",
+        8,
+        "DeliveryLedger, the in-memory current answer"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/DeliveryCheck.swift",
+        7,
+        "DeliveryCheck, one CI check named as the host names it"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/DeliveryAssertionStore.swift",
+        15,
+        "the owned file the assertions are written to"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/DeliveryDerivation.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/CodeHostPort.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/DeliveryAssertionStore.swift"
+        ]
+      }
+    }
+  },
+  "e-repository": {
+    "id": "e-repository",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Asking git about the checkout",
+    "line": "It runs git commands and turns their output into the branch, the dirty count and the worktree list.",
+    "lines": 497,
+    "bottom": true,
+    "short": [
+      "Three readers, three commands. `CheckoutReader` runs `git rev-parse` for the top level, the branch and the short SHA. `WorkspaceReader` runs `git status --porcelain` and asks for the upstream head. `WorktreeEnumerationReader` runs `git worktree list --porcelain` and parses the entries."
+    ],
+    "long": [
+      "Each reader is exposed as a closure type rather than as a class. `CheckoutRead`, `WorkspaceRead` and `WorktreeEnumerationRead` are the shapes, and the engine is composed from one value holding all of them.",
+      "A test supplies its own closures and needs no repository on disk. Production supplies the git-backed ones, and nothing else in the engine shells out to git.",
+      "The output values are plain data. `CheckoutProjection` carries the head, `WorkspaceProjection` carries the working context including the branch, and `WorktreeEntry` names one working tree. No code in this folder calls into another folder of the engine."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository/CheckoutReader.swift",
+        15,
+        "the rev-parse that finds the repository top level"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository/WorkspaceReader.swift",
+        40,
+        "the porcelain status read behind the dirty count"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository/WorktreeEnumerationReader.swift",
+        14,
+        "the worktree list read, in git's own order"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository/CheckoutProjection.swift",
+        4,
+        "CheckoutProjection, what a folder's checkout looks like"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository/WorkspaceProjection.swift",
+        6,
+        "WorkspaceProjection, the git working context holding the branch"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository/WorktreeEntry.swift",
+        7,
+        "WorktreeEntry, one working tree of a repository"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository/CheckoutReading.swift",
+        9,
+        "CheckoutRead, the closure shape the engine is composed from"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/EngineReads.swift",
+        19,
+        "where the git-backed readers are wired in as defaults"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/EngineReads.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository"
+        ]
+      }
+    }
+  },
+  "e-project": {
+    "id": "e-project",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "The registry of known repositories",
+    "line": "It holds the per-machine list of registered repositories, and decides which one a launch opens into.",
+    "lines": 553,
+    "bottom": true,
+    "short": [
+      "`ProjectRegistryStore` is an actor owning the registry file in application support, and the only thing that writes it. A `ProjectRecord` has a stable id and a mutable path, so a folder that moves re-points the project it already was. Each record carries at most one binding per port."
+    ],
+    "long": [
+      "`LaunchProject.resolve` decides where a launch points. An explicit override wins, then the active registered project, then the folder the process started in. Pointing is not registering, because registration is a deliberate act rather than a side effect.",
+      "A registry that cannot be read is an empty one. Launching into an empty strip is recoverable, and refusing to launch is not.",
+      "`CockpitPointing` is the value the window strip is drawn from and moved by. Its acts describe a gesture, and a move says what the registry and the Hub should each do about it."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-project",
+        "e-binding",
+        "the bindings stored on each project record"
+      ],
+      [
+        "e-project",
+        "e-repository",
+        "the git top level a folder sits in, asked through the engine"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project/ProjectRegistryStore.swift",
+        8,
+        "ProjectRegistryStore, the only writer of the registry file"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project/ProjectRegistryStore.swift",
+        10,
+        "the application-support path the registry lives at"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project/ProjectRegistryStore.swift",
+        15,
+        "the engine this store asks for a folder's git root"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project/ProjectRecord.swift",
+        8,
+        "ProjectRecord, a stable id, a mutable path and its bindings"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project/ProjectRegistry.swift",
+        7,
+        "ProjectRegistry, the whole known set and which one is active"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project/LaunchProject.swift",
+        14,
+        "resolve, the override-then-active-then-cwd precedence"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project/CockpitPointing.swift",
+        5,
+        "CockpitPointing, what the window strip is drawn from"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project/ProjectRecord.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project/ProjectRegistryStore.swift"
+        ]
+      }
+    }
+  },
+  "e-skills": {
+    "id": "e-skills",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Listing the skills a session can load",
+    "line": "It walks the skill folders on disk, reads each SKILL.md frontmatter, and answers one command per skill.",
+    "lines": 502,
+    "bottom": true,
+    "short": [
+      "`SkillReading.skills(forProjectAt:)` walks the skill directories for one repository and for the user's own folder. `SkillCatalog` opens a `SKILL.md` per skill plus two JSON files, and `SkillFrontmatter` reads the name and description out of each. The answer is a list of commands the picker draws."
+    ],
+    "long": [
+      "It is an actor because the walk is disk work and its caller draws the caret. Nothing is cached, because when to walk again belongs to the caller, which is the only place that knows what a stale list would cost.",
+      "Plugins are read from the CLI's own record. `InstalledPlugins` decodes the installed-plugins file under the user's home, and `EnabledPlugins` reads the settings that say which of them are on.",
+      "`SkillLoad` faces the other way. A transcript record names only a directory, so the reader opens the `SKILL.md` under it and returns what it found, or why it could not. No code here calls into another folder of the engine."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills/SkillReading.swift",
+        14,
+        "SkillReading, the actor that keeps the walk off the main actor"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills/SkillReading.swift",
+        23,
+        "skills(forProjectAt:), the whole public surface"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills/SkillCatalog.swift",
+        13,
+        "SkillCatalog, the directory walk itself"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills/SkillFrontmatter.swift",
+        8,
+        "SkillFrontmatter, the name and description read from a SKILL.md"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills/Command.swift",
+        6,
+        "Command, one slash command the picker can draw"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills/SkillLoad.swift",
+        5,
+        "SkillLoad, one skill a session was handed"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills/InstalledPlugins.swift",
+        52,
+        "the installed-plugins file the CLI keeps under the home folder"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills"
+        ]
+      }
+    }
+  },
+  "e-annotation": {
+    "id": "e-annotation",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "What the user said about a session",
+    "line": "It holds the archived flag, the name and the ticket a person attached to a session, and writes them to one file.",
+    "lines": 268,
+    "bottom": true,
+    "short": [
+      "This is the only thing Argo records about a session by hand rather than by observation. `SessionAnnotations` is keyed by the session's stable chain id and holds three fields: archived, an explicit name, and the last resolved ticket title. Empty annotations are dropped, so absence stays the honest default."
+    ],
+    "long": [
+      "`SessionAnnotationStore` is an actor owning one JSON file in application support. Every mutation loads, transitions and writes the whole set in one hop, so two windows archiving at once cannot lose each other's decision.",
+      "Archiving is the only act that ever clears a row off the roster. Nothing derived from a transcript, a branch or a merge calls it.",
+      "A file that cannot be read annotates nothing, and the roster then draws every session. That is a state one gesture recovers from, and refusing to draw the roster is not."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-annotation",
+        "e-ticket",
+        "the resolved ticket title held on one annotation"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Annotation/SessionAnnotations.swift",
+        14,
+        "SessionAnnotations, the whole hand-made set keyed by chain id"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Annotation/SessionAnnotations.swift",
+        25,
+        "the ticket title an annotation carries"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Annotation/SessionAnnotations.swift",
+        76,
+        "annotation(for:), which answers empty rather than nothing"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Annotation/SessionAnnotationStore.swift",
+        6,
+        "SessionAnnotationStore, the only writer of the annotations file"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Annotation/SessionAnnotationStore.swift",
+        30,
+        "setArchived, the one act that clears a row off the roster"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Annotation"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Annotation"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Annotation/SessionAnnotations.swift"
+        ]
+      }
+    }
+  },
+  "e-health": {
+    "id": "e-health",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Whether a connection is landing",
+    "line": "It records why a read through a binding failed, and answers healthy, stale or needs-reconnect.",
+    "lines": 307,
+    "bottom": true,
+    "short": [
+      "`ConnectionHealthLedger` is an actor holding what Argo has observed about each binding's connection. A read that lands clears the binding's own fault and the account's refusal too, because proof outranks the record of a refusal. `BindingHealth` turns a fault and a last-success date into one of three words."
+    ],
+    "long": [
+      "Nothing here is saved, and nothing here holds fetched data. Health is rebuilt by the next poll, so a launch never opens on a failure it has not observed since. A failed poll also cannot blank a ticket list this type has never seen.",
+      "The two levels are stored the way they fail. A binding-level cause is filed under the binding it happened to. An account-level refusal is filed under the account once, and every binding naming that account derives the damage by asking.",
+      "`ProviderFetchError` maps both providers' transport errors into one vocabulary: offline, unreachable and rate-limited. Two ports failing the same way must reach the ledger as one word."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-health",
+        "e-binding",
+        "the binding and repository id a reading is filed under"
+      ],
+      [
+        "e-health",
+        "e-account",
+        "the transport error a provider read failed with"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health/ConnectionHealthLedger.swift",
+        19,
+        "ConnectionHealthLedger, the one place that answers how a port is doing"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health/ConnectionHealthLedger.swift",
+        71,
+        "health(of:in:), the read the chip is drawn from"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health/BindingHealth.swift",
+        9,
+        "ConnectionState, the three words a connection renders as"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health/BindingHealth.swift",
+        24,
+        "BindingHealth, one binding's connection as of a moment"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health/ConnectionFault.swift",
+        25,
+        "ConnectionFault, the account-level and binding-level split"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health/ProviderFetchError.swift",
+        10,
+        "ProviderFetchError, the one failure vocabulary both ports use"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health/ConnectionHealthLedger.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health/ProviderFetchError.swift"
+        ]
+      }
+    }
+  },
+  "e-storage": {
+    "id": "e-storage",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "Reading and writing one owned file",
+    "line": "One helper that loads and writes a whole JSON file of Argo's own per-machine state.",
+    "lines": 41,
+    "bottom": true,
+    "short": [
+      "`OwnedStateFile` is forty-one lines and does one thing. It decodes a whole JSON file into a value, or answers the empty value when it cannot. It encodes and writes atomically, and drops a failed write in silence, because the value the caller already holds is the answer either way."
+    ],
+    "long": [
+      "Its file URL is optional, and nothing there means remember nothing. A test or a render harness that named no folder must not read or write the machine's real state.",
+      "It is synchronous and main-actor rather than an actor, because its callers are main-actor methods that cannot await. Every mutation reads, transitions and writes in one hop, so two windows changing the same state lose nothing of each other's.",
+      "Five other folders build on it: the handoff chain, the delivery assertions, the built-in command cache, the session-ownership ledger and the remembered mode rung. It calls into none of them."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Storage/OwnedStateFile.swift",
+        13,
+        "OwnedStateFile, the whole type"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Storage/OwnedStateFile.swift",
+        17,
+        "load(orEmpty:), which degrades to empty on any failure"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Storage/OwnedStateFile.swift",
+        27,
+        "write, which is atomic and silent when it fails"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Storage"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Storage/OwnedStateFile.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff/HandoffChainStore.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/DeliveryAssertionStore.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/BuiltinCommandStore.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnershipLedgerStore.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionModeStore.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Storage"
+        ]
+      }
+    }
+  },
+  "e-launch": {
+    "id": "e-launch",
+    "kind": "part",
+    "depth": 2,
+    "parent": "engine",
+    "name": "What this process was started against",
+    "line": "One value holding the folder the process started in, the repository override, and the transcripts a harness named.",
+    "lines": 117,
+    "bottom": true,
+    "short": [
+      "`LaunchConfiguration` carries five things: where the process started, an optional repository override, a list of transcript URLs, a specimen name and a list-specimens flag. One initializer parses them from raw process arguments with a small hand-written flag walk."
+    ],
+    "long": [
+      "The override does not register anything. It points the Hub for this launch only, because registration is a deliberate act and not a side effect of a screenshot script.",
+      "`resolvingRoots(through:)` resolves both folders to the repository root each sits in. The registry holds roots, and a launch may name any folder inside one. Without this step, a launch inside a registered repository draws that repository twice."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "e-launch",
+        "e-project",
+        "both launch folders, resolved to the repository roots the registry holds"
+      ],
+      [
+        "e-launch",
+        "e-hub",
+        "the repository and transcripts to point at, on connect and on every re-point"
+      ]
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Launch/LaunchConfiguration.swift",
+        4,
+        "LaunchConfiguration, the external sources this process was launched against"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Launch/LaunchConfiguration.swift",
+        60,
+        "resolvingRoots, which resolves both folders to repository roots"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Launch/LaunchConfiguration.swift",
+        74,
+        "the hand-written walk over the process arguments"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub.swift",
+        115,
+        "connect(to:), where this value points the Hub"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Launch"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Launch"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Launch/LaunchConfiguration.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub.swift"
+        ]
+      }
+    },
+    "concepts": [
+      "c-specimen"
+    ]
+  },
+  "f-read": {
+    "id": "f-read",
+    "kind": "flow",
+    "depth": 0,
+    "parent": "argo",
+    "name": "A written line becomes a drawn row",
+    "line": "An agent appends one line to its transcript file, and Argo turns that line into a row on screen.",
+    "short": [
+      "Argo does not talk to the agents it watches. It reads the files they write.",
+      "This path runs from a file-system event to a drawn row, and every step on it is a read."
+    ],
+    "long": [
+      "A coding agent writes its whole account of itself to a file on disk, one JSON record per line.",
+      "Argo watches the directory holding those files, follows each file from where it last stopped, and types every line it reads.",
+      "The typed events fold into one in-memory reading per Session, which the cockpit restates as values and draws as rows.",
+      "Nothing on this path writes to an agent. A Session Argo never started is read exactly the same way as one it spawned."
+    ],
+    "parts": [
+      "e-discovery",
+      "e-hub",
+      "e-transcript",
+      "u-shell",
+      "u-deck",
+      "u-feed"
+    ],
+    "concepts": [
+      "c-transcript-event",
+      "c-honesty-tier",
+      "c-cockpit-presentation"
+    ],
+    "steps": [
+      [
+        "The record directory wakes Argo",
+        "A coding agent appends a line to its transcript file. An FSEvents watch over the whole record directory reports the change, coalesced into one wake per second. The watch is recursive because a Session started while Argo runs is a new file, in a folder that may also be new.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/RecordDirectoryWatcher.swift",
+          22
+        ]
+      ],
+      [
+        "The wake reaches a sweep",
+        "One task sits on the watcher's stream and re-runs the sweep on every burst. The Project it sweeps for is captured once, so an answer arriving after a switch is dropped.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/WorkingSetSweep.swift",
+          37
+        ]
+      ],
+      [
+        "The sweep picks the files that belong here",
+        "The sweep keeps transcripts written in the last 24 hours whose working directory sits under this Project's root. Anything quieter than that is history, still on disk to be opened deliberately. A transcript whose folder cannot be read belongs to no Project here.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/SessionDiscovery.swift",
+          44
+        ]
+      ],
+      [
+        "The tail hands over whole lines only",
+        "One read cursor per file reads from where it stopped. A record can be half written when the watcher fires, so a trailing partial line stays in a carry buffer until the rest arrives.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptTail.swift",
+          49
+        ]
+      ],
+      [
+        "One line becomes one typed record",
+        "Each line parses into a record named by its own `type` field. A line whose type nothing recognises becomes `.unknown` and keeps its raw bytes, so an unread record is a value and never a silent drop.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptRecord.swift",
+          68
+        ]
+      ],
+      [
+        "The reader remembers every open call",
+        "A tool call declares an id. The reader files the call's kind, name and target under that id, because the result answering it arrives in a record written later.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptReader.swift",
+          202
+        ]
+      ],
+      [
+        "The result is read against the call it answers",
+        "When a result lands, the reader looks up the call that opened it. The call's kind decides whether the result reads as a patch, a picture or printed output. A result quoting an id this file never opened is left alone.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptReader+Outcome.swift",
+          71
+        ]
+      ],
+      [
+        "One read's worth of events folds into the join",
+        "The tail delivers batches, not single lines. The join applies a whole batch and rebuilds once for it, and the first batch is the backfill of what the file already held.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/TranscriptWatch.swift",
+          220
+        ]
+      ],
+      [
+        "Each event moves one fact about the Session",
+        "The Session applies every event in order. A prompt opens a Turn, a stop reason ends it, and a usage record moves the spend. The events are kept as well, because the feed is drawn from them.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift",
+          153
+        ]
+      ],
+      [
+        "Live state becomes values, in one file only",
+        "One file in the cockpit may read live Hub state, and this is it. The initialiser here restates every public fact of a Session as a value. A fact with no slot must be named on a `not-projected:` line beside it.",
+        [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
+          119
+        ]
+      ],
+      [
+        "The event stream becomes rows",
+        "One pass over the events builds the feed. It pairs each call with the outcome that answered it, and folds a run of looking into one survey line. Every character goes on untouched.",
+        [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/SessionsRoomReading.swift",
+          57
+        ]
+      ],
+      [
+        "The row is drawn as what it is",
+        "Each row switches on its own content. A prompt, a message, a thought and a call each draw as a different view. The table cell holding one is recycled by row shape.",
+        [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRowView.swift",
+          13
+        ]
+      ]
+    ],
+    "claims": {
+      "steps": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/RecordDirectoryWatcher.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/WorkingSetSweep.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/SessionDiscovery.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptTail.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptRecord.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptReader.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptReader+Outcome.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/TranscriptWatch.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/SessionsRoomReading.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRowView.swift"
+        ]
+      }
+    }
+  },
+  "f-write": {
+    "id": "f-write",
+    "kind": "flow",
+    "depth": 0,
+    "parent": "argo",
+    "name": "A typed message reaches an agent",
+    "line": "The user types a message in the cockpit, and it arrives at the agent as keystrokes at a real terminal prompt.",
+    "short": [
+      "There is no API on the other end of a claude Session. The agent is a terminal program reading a descriptor.",
+      "So a message is delivered as a bracketed paste and a Return, and Argo then checks that the agent heard it."
+    ],
+    "long": [
+      "Argo owns the pseudo-terminal of every agent it spawned, and never draws it.",
+      "A message travels from the composer's field, through the draft, to the one port that says what Argo may do to a Session.",
+      "The adapter behind that port turns the message into the keystrokes a person would have typed, and writes them to the descriptor.",
+      "Typing is not hearing. The adapter starts a watch on the Session's own record count, and types another Return where nothing was written back.",
+      "A codex Session takes none of this. Its adapter sends a JSON-RPC line to the server's own input, with no keystrokes and nothing to retype."
+    ],
+    "parts": [
+      "u-composer",
+      "u-shell",
+      "e-drive",
+      "e-spawn"
+    ],
+    "concepts": [
+      "c-drive-port",
+      "c-claim",
+      "c-turn",
+      "c-session-provenance"
+    ],
+    "steps": [
+      [
+        "The key lands on the field",
+        "The composer's field is an `NSTextView`. Its `keyDown` reads each key as an intent, and a plain Return calls the submit closure rather than inserting a newline.",
+        [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerTextInput.swift",
+          23
+        ]
+      ],
+      [
+        "Every keystroke writes the draft back",
+        "The delegate copies the field's string into the draft on every change. The draft is the truth, and the field is written back only when the two disagree, so a caret mid-sentence stays where it is.",
+        [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerTextView.swift",
+          98
+        ]
+      ],
+      [
+        "The draft decides now or later",
+        "A submit sends at once when the Session is free. A Session already running a Turn takes the words into a queue instead, so two messages never arrive as one.",
+        [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerDraft.swift",
+          92
+        ]
+      ],
+      [
+        "A held message rejoins the path when the turn ends",
+        "A message the draft queued waits for the turn in flight to finish. A held autonomy rung is walked first, and then the queue goes, oldest first.",
+        [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/SessionComposer+Turn.swift",
+          78
+        ]
+      ],
+      [
+        "The intent is bound to one Session",
+        "The shell hands the composer a closure that already names the selected Session. No view holds a driver, and a composer with nothing selected is handed a closure that does nothing.",
+        [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift",
+          40
+        ]
+      ],
+      [
+        "Files go first, then the words that name them",
+        "Attachments are written down and their absolute paths come back. The message names those paths, so the agent's own read pulls the bytes in. Both halves share one throwing path.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionDriver+Turn.swift",
+          13
+        ]
+      ],
+      [
+        "The port says what Argo may do to a Session",
+        "`send` is one member of the drive port, beside interrupt, decide and answer. It is synchronous and throwing, because a keystroke either reaches a descriptor or it does not.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionDriver.swift",
+          13
+        ]
+      ],
+      [
+        "The adapter finds the live terminal",
+        "The claude adapter asks the claim registry which live claim owns this Session. A Session whose process has gone has no live claim, so the send refuses instead of writing nowhere.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeSessionDriver.swift",
+          40
+        ]
+      ],
+      [
+        "The message is spelled as keystrokes",
+        "The text goes as a bracketed paste, and the Return that submits it goes after it. A bare newline at that prompt submits, so a multi-line message written straight through would arrive as one message per line.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeTurn.swift",
+          12
+        ]
+      ],
+      [
+        "Two writes, with a pause between them",
+        "The terminal table writes the paste and then the Return, with a gap of 150 milliseconds between them. A terminal program handles one read as one batch, and an `@` inside the paste can otherwise swallow the Return. A message typed while another is still being typed waits for it whole.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentTerminals.swift",
+          111
+        ]
+      ],
+      [
+        "The bytes reach the descriptor",
+        "The process host turns the text into UTF-8 bytes and sends them to the pseudo-terminal the spawn opened. This is the last point on the path where the message is Argo's.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift",
+          61
+        ]
+      ],
+      [
+        "Written is not heard",
+        "The adapter starts a watch on the Session's record count. Three seconds of silence buys another Return, twice over, and after that the message is filed as lost and given back to the composer.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/TurnDelivery.swift",
+          59
+        ]
+      ]
+    ],
+    "claims": {
+      "steps": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerTextInput.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerTextView.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerDraft.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/SessionComposer+Turn.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionDriver+Turn.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionDriver.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeSessionDriver.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeTurn.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentTerminals.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/TurnDelivery.swift"
+        ]
+      }
+    }
+  },
+  "f-permission": {
+    "id": "f-permission",
+    "kind": "flow",
+    "depth": 0,
+    "parent": "argo",
+    "name": "A blocked tool call waits for an answer",
+    "line": "A spawned claude agent tries to use a tool. Its hook blocks on a socket Argo listens to, and the user's answer goes back down it.",
+    "short": [
+      "The claude agent's own permission dialog sits in a terminal nobody is looking at.",
+      "So Argo installs a hook that asks Argo instead, and the cockpit answers for the person."
+    ],
+    "long": [
+      "Every claude Session Argo spawns is given a plugin that registers a `PreToolUse` hook over the gated tools.",
+      "The hook sends the call's payload down a Unix socket that belongs to that one Session, and blocks on one reply line.",
+      "Argo decides. The top autonomy rung and a standing allow both let a call through without troubling anyone.",
+      "Everything else becomes a prompt in the cockpit, and the reply vocabulary going back has two words only, `allow` and `deny`.",
+      "Argo's own clock is shorter than the hook's, so a call nobody answers is refused by Argo and said to be Argo's refusal.",
+      "A codex Session has no plugin and no socket. Its approval is a request the server blocks on, answered with a response on the adapter's own clock."
+    ],
+    "parts": [
+      "e-companion",
+      "e-drive",
+      "e-hub",
+      "u-composer"
+    ],
+    "concepts": [
+      "c-claim",
+      "c-honesty-tier",
+      "c-drive-port",
+      "c-session-provenance"
+    ],
+    "steps": [
+      [
+        "Argo binds one socket per claim, at spawn",
+        "The gate opens with the spawn, long before any tool is called. The socket sits in a directory only this user can open, and its path goes to exactly one agent.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionSocket.swift",
+          55
+        ]
+      ],
+      [
+        "The plugin puts a gate on the tool",
+        "The companion plugin registers a `PreToolUse` hook over the gated tool names, pointed at that socket. The CLI runs the hook before every matching call and obeys what it prints.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/Plugin/hooks.json",
+          9
+        ]
+      ],
+      [
+        "The hook dials Argo and blocks",
+        "The hook collapses the payload to one line, sends it down the socket, and reads one reply line back. Every failure to reach Argo denies, because a gate that fails open is worse than no gate at all.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/Plugin/permission-hook.sh",
+          26
+        ]
+      ],
+      [
+        "The gate takes the line",
+        "One handler answers every line that arrives on that claim's socket. It is where the permission policy lives, above the waiting.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+          154
+        ]
+      ],
+      [
+        "A question is routed away first",
+        "The same hook matcher catches `AskUserQuestion`. A question goes to its own table and never becomes a Permission. The rung and the standing allows below wave a boundary through, and answer nothing.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+          162
+        ]
+      ],
+      [
+        "Two ways a call never becomes a prompt",
+        "The top autonomy rung asks nothing, and Argo's gate honours that. A tool this Session has already granted a standing allow is let through on the next check down.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+          174
+        ]
+      ],
+      [
+        "The waiting prompt is published under its claim",
+        "A call that survives both checks is minted as a request with an id, and published. The claim is the key, because a fresh CLI has not written a record yet and has no Session id to be filed under.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/ClaimLedger.swift",
+          28
+        ]
+      ],
+      [
+        "The person is offered three answers",
+        "The prompt draws Allow, Deny, and a standing allow for that tool. Return allows and Escape denies.",
+        [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/PermissionPromptFooter.swift",
+          13
+        ]
+      ],
+      [
+        "The answer is routed back to the claim",
+        "The adapter turns the Session id into its live claim and names the request being answered. A request that is no longer waiting raises `nothingPending` rather than spending the answer on its neighbour.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeSessionDriver.swift",
+          102
+        ]
+      ],
+      [
+        "A standing allow releases what is already waiting",
+        "The grant is recorded against the claim, and every call already waiting for that same tool is allowed on the same word. The grant can be taken back later, and the next call to that tool simply asks again.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+          135
+        ]
+      ],
+      [
+        "Two words go back down the socket",
+        "The reply is `allow` or `deny`, and never `ask`. An `ask` would fall through to the CLI's own dialog, which is hidden and has no reader.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionReply.swift",
+          14
+        ]
+      ],
+      [
+        "Or nobody answers, and Argo refuses instead",
+        "This is the other way out, never a step after the one above. Argo waits a day and the hook is told to wait a minute longer. An unanswered call is denied by Argo, and published as an expiry.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+          148
+        ]
+      ]
+    ],
+    "claims": {
+      "steps": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionSocket.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/Plugin/hooks.json",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/Plugin/permission-hook.sh",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/ClaimLedger.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/PermissionPromptFooter.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeSessionDriver.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionReply.swift"
+        ]
+      }
+    }
+  },
+  "f-spawn": {
+    "id": "f-spawn",
+    "kind": "flow",
+    "depth": 0,
+    "parent": "argo",
+    "name": "Argo starts an agent of its own",
+    "line": "Argo opens a claim, writes the plugin for it, then resolves the program and the environment. The transcript the agent writes binds back to that claim.",
+    "short": [
+      "This is the one path where Argo is not observing.",
+      "It ends with a process Argo owns and a record on disk that names it."
+    ],
+    "long": [
+      "An app launched from Finder inherits almost no environment, so Argo asks the user's login shell what their real `PATH` is.",
+      "The program is resolved to an absolute path before the fork, which turns the commonest failure into a sentence the cockpit can repeat.",
+      "A claim opens first. It is one act of ownership, and the roster carries a row under the claim's own id before any transcript exists.",
+      "Argo mints the transcript id a fresh claude CLI is told to write, so the claim and the command line name one file.",
+      "The companion plugin is written out per claim with that claim's sockets baked in, and the file appearing later is what binds the two."
+    ],
+    "parts": [
+      "e-hub",
+      "e-drive",
+      "e-companion",
+      "e-spawn"
+    ],
+    "concepts": [
+      "c-claim",
+      "c-session-provenance",
+      "c-drive-port",
+      "c-honesty-tier"
+    ],
+    "steps": [
+      [
+        "The window is asked for a new agent",
+        "The Hub checks it has a process host at all, and that the working directory is a folder. Both refusals carry words fit to repeat to the user.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
+          16
+        ]
+      ],
+      [
+        "Argo mints the transcript a fresh claude must write",
+        "A claude spawn mints a transcript id here. Codex picks its own, so nothing is minted for it. The claim and the command line then name one file, and the row can never bind to an agent somebody else started.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
+          32
+        ]
+      ],
+      [
+        "The claim opens",
+        "A claim is one act of ownership, with an id of its own. It waits for exactly the transcript it named, rather than for whatever file appears next.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership.swift",
+          76
+        ]
+      ],
+      [
+        "The gate's socket is granted first",
+        "Opening this claim's gate creates its socket and answers the path. The grant is minted with the invitation, because the hook is the only thing that carries it.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+          74
+        ]
+      ],
+      [
+        "The plugin is written out for this claim",
+        "The bundle is materialized under a folder named for the claim, and only a CLI that takes the plugin is invited at all. The one thing it must say is which socket to talk down, which is not known until the claim exists.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionPlugin.swift",
+          29
+        ]
+      ],
+      [
+        "Only then is the launch built",
+        "The invitation goes into the launcher, which is why it is made first. What comes back is the program, the folder, the argv and the environment, as one value the process host can execute.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentSpawnPlan+Launch.swift",
+          17
+        ]
+      ],
+      [
+        "The user's real search path is read from their shell",
+        "Argo runs the login shell, interactive and login both, and takes the last line it prints. Reading only one of the two startup files is the same failure with a different cause.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/LoginShellPath.swift",
+          20
+        ]
+      ],
+      [
+        "The program is resolved to an absolute path",
+        "The host execs an absolute path, so the lookup happens here and not inside the forked child. A missing CLI becomes a refusal instead of a child that dies without a word.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentExecutable.swift",
+          11
+        ]
+      ],
+      [
+        "The environment is inherited, then corrected",
+        "The agent gets this process's whole environment, less what this CLI must not inherit. The shell's search path and a real terminal type go over the top, and the invitation made above adds its own variables.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentLauncher.swift",
+          59
+        ]
+      ],
+      [
+        "The command line is built in one fixed order",
+        "The companion's flags come first, then the flags that pick the CLI's surface — none for claude, `app-server` for codex. The autonomy rung follows, then the chain to resume or the transcript to name. An opening prompt goes last, because a positional before a flag would be read as its value.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentSpawnPlan+Launch.swift",
+          18
+        ]
+      ],
+      [
+        "The process starts and the table adopts it",
+        "The host turns the launch into a live pseudo-terminal. The terminal table adopts it under the claim, which is what makes the Session steerable from this moment on.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
+          94
+        ]
+      ],
+      [
+        "The row goes onto the roster",
+        "Publishing happens the moment the process exists, because a claude CLI writes no record until its first prompt. The row carries the rung the spawn picked and the ticket it named, both filed under the claim.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
+          47
+        ]
+      ],
+      [
+        "The transcript appears and the claim binds",
+        "The file turns up under the id the spawn named, and the claim takes that Session as its own. This is the first moment the durable record of ownership can be written, because until now Argo owned an agent and not a Session.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership+Binding.swift",
+          17
+        ]
+      ],
+      [
+        "The provisional row stands down",
+        "Reconciliation runs after the reading is applied and binds every observed Session it can. A claim that binds loses the row published for it at spawn, so the agent is drawn once rather than twice.",
+        [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
+          190
+        ]
+      ]
+    ],
+    "claims": {
+      "steps": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership+Binding.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionPlugin.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentSpawnPlan+Launch.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/LoginShellPath.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentExecutable.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentLauncher.swift"
+        ]
+      }
+    }
+  },
+  "c-session-provenance": {
+    "id": "c-session-provenance",
+    "kind": "concept",
+    "depth": 0,
+    "parent": "argo",
+    "name": "managed, orphaned, external",
+    "line": "Whether Argo started a Session, and whether it still holds the process, is the only thing a Session stores about itself.",
+    "short": [
+      "Every Session is observed from its file. This word says what is laid on top of that.",
+      "`managed` still has a live process. `orphaned` was Argo's and lost it. `external` was never Argo's."
+    ],
+    "long": [
+      "Argo shares its folders with agents nobody in Argo started, so it must never claim one of those as its own.",
+      "The question is narrow on purpose. A Session is `managed` or `orphaned` only when a claim names it, and closeness in time or folder counts for nothing.",
+      "`orphaned` survives a restart because the record of past ownership is written to a file. The process does not survive, so an orphaned Session cannot be steered until it is resumed.",
+      "The word decides what the cockpit may offer. Sending a message, answering a permission, and walking the autonomy rung all need a live claim."
+    ],
+    "evidence": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionProvenance.swift",
+        3,
+        "The three cases, and the note that this is the only classification a Session stores"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership.swift",
+        107,
+        "`provenance(sessionID:)` — a live claim gives `managed`, a closed one `orphaned`, no claim `external`"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership+Binding.swift",
+        55,
+        "`ownerOf` answers only for a claim whose process still lives"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeSessionDriver.swift",
+        39,
+        "The send refuses on that same fact rather than on a second rule of its own"
+      ]
+    ],
+    "claims": {
+      "evidence": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionProvenance.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership+Binding.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeSessionDriver.swift"
+        ]
+      }
+    }
+  },
+  "c-claim": {
+    "id": "c-claim",
+    "kind": "concept",
+    "depth": 0,
+    "parent": "argo",
+    "name": "the claim",
+    "line": "One claim is one act of ownership: it ties a process Argo started to the Session that process turns out to be.",
+    "short": [
+      "A spawned agent exists before its transcript does, so Argo needs a handle that is older than the Session id.",
+      "That handle is the claim, and almost everything Argo owns about a live agent is keyed by it."
+    ],
+    "long": [
+      "A claim opens at spawn, with an id of its own. The roster shows a row under that id straight away, so a new agent is visible before it has written anything.",
+      "Argo tells a fresh CLI which transcript to write, and the claim names the same file. When the file appears, the claim binds to it and the provisional row stands down.",
+      "The match is on that name and nothing weaker. A folder and a start time also fit an agent Argo never started.",
+      "The terminal, the permission gate, the standing allows and the plugin folder are all keyed by claim. The claim outlives every re-keying the Session goes through.",
+      "The claim closes when the process exits. Nothing can be steered afterwards, and the durable record of ownership is what later grades that Session `orphaned`."
+    ],
+    "evidence": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership.swift",
+        18,
+        "`ClaimID` — its value is also the id the roster carries before a transcript exists"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership.swift",
+        76,
+        "`claim(naming:)` — a claim that waits for exactly the transcript Argo named"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership+Binding.swift",
+        17,
+        "`bind` — the transcript id must equal what the claim named, and nothing weaker is enough"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentTerminals.swift",
+        26,
+        "The live terminals, keyed by claim"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/ClaimLedger.swift",
+        11,
+        "The waiting permissions, the standing allows and the companion's reports, all under one claim key"
+      ]
+    ],
+    "claims": {
+      "evidence": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership+Binding.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentTerminals.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/ClaimLedger.swift"
+        ]
+      }
+    }
+  },
+  "c-honesty-tier": {
+    "id": "c-honesty-tier",
+    "kind": "concept",
+    "depth": 0,
+    "parent": "argo",
+    "name": "how we know a fact",
+    "line": "Every fact on screen says how Argo knows it: `direct` for Argo's own act, `derived` for an outside reading, `convention` for the companion channel.",
+    "short": [
+      "One Session mixes all three, so the tier belongs to the fact and never to the Session.",
+      "Where two readings disagree, the lower tier wins. Argo never draws a false `direct`."
+    ],
+    "long": [
+      "Argo mostly watches files other programs wrote, and a watcher that overstates what it knows is worse than one that says less.",
+      "`direct` is reserved for Argo's own acts. Argo chose the program, so the agent name is direct. Argo's clock refused a permission, so the expiry is direct.",
+      "`derived` covers everything read from outside. It is either inferred from a signal or quoted verbatim from an outside authority, and a verbatim reading is never reworded.",
+      "`convention` covers what the companion plugin reported. It never existed in a transcript, and only a Session Argo spawned can produce one.",
+      "The rule has teeth in the timing as well as the wording. Argo's permission clock is shorter than the hook's, which is what makes an unanswered call Argo's own refusal rather than a guess."
+    ],
+    "evidence": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/Honesty.swift",
+        5,
+        "The three tiers, and the rule that ambiguity resolves downward"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/Honesty.swift",
+        12,
+        "`convention` — arrived over the companion channel, and available for spawned Sessions only"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift",
+        141,
+        "A spawned Session's agent name marked direct, because Argo chose the program"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionPatience.swift",
+        7,
+        "Two clocks ordered so an expiry is a fact Argo owns rather than one it would have to guess"
+      ]
+    ],
+    "claims": {
+      "evidence": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/Honesty.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionPatience.swift"
+        ]
+      }
+    }
+  },
+  "c-turn": {
+    "id": "c-turn",
+    "kind": "concept",
+    "depth": 0,
+    "parent": "argo",
+    "name": "the turn",
+    "line": "One turn is one exchange, from the prompt that opened it to the stop reason that ended it.",
+    "short": [
+      "A Session has at most one turn in flight, which is why stopping needs nothing else named.",
+      "A turn also bounds attention: a question only waits while the turn that asked it is open."
+    ],
+    "long": [
+      "The record does not label turns. Argo opens one on a prompt and ends it on a stop reason read from the agent's own record.",
+      "The word `tool_use` is a pause inside a turn and never its end, because the agent stopped to call a tool and will speak again.",
+      "A delegated subagent writes into the same file. Those records do not open or close the root Session's turn, because the work is the child's.",
+      "Ending a turn drops every question that turn had waiting, answered or not. Three facts move together under that one rule.",
+      "The composer reads the same fact. A message typed while a turn runs is queued rather than sent, so two messages never arrive as one."
+    ],
+    "evidence": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionTurnState.swift",
+        5,
+        "The turn in flight, the last stop reason, and the questions it is still holding"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift",
+        174,
+        "A prompt opens the turn as the events are applied"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift",
+        178,
+        "A stop reason ends it"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeTurn.swift",
+        12,
+        "One turn spelled as the keystrokes an interactive CLI would have received from a person"
+      ]
+    ],
+    "claims": {
+      "evidence": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionTurnState.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeTurn.swift"
+        ]
+      }
+    }
+  },
+  "c-drive-port": {
+    "id": "c-drive-port",
+    "kind": "concept",
+    "depth": 0,
+    "parent": "argo",
+    "name": "the drive port and its adapters",
+    "line": "One protocol states everything Argo can do to a Session, and the adapter behind it is chosen per Session.",
+    "short": [
+      "Everything else in the engine observes a Session. This is the one thing that acts on one.",
+      "Two CLIs sit behind it, and neither one is named by any view."
+    ],
+    "long": [
+      "The port has eight members: send, interrupt, decide, answer, set the rung, declare the surface, attach files, and revoke a standing allow.",
+      "Every member is keyed by Session, and the router picks the adapter from that key. A joint answer would refuse one CLI the moment the other became reachable.",
+      "One member states rather than acts. The surface declares what this adapter can do, so a control the adapter cannot serve is never drawn.",
+      "The same shape appears again under the adapter. Starting a process is a port too, because the real host links a windowing framework and the spawn has to be provable without a window.",
+      "The pattern is what lets Argo test a spawn, a message and a permission answer with no terminal anywhere in the test."
+    ],
+    "evidence": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionDriver.swift",
+        7,
+        "The protocol: what Argo can do TO a Session, as against everything else, which observes one"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionAdapters.swift",
+        8,
+        "The router that picks claude or codex per Session and satisfies the same protocol"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentProcessHost.swift",
+        39,
+        "The second port: an `AgentLaunch` turned into a live process"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift",
+        12,
+        "The real adapter for that port, in the only target that links the terminal library"
+      ]
+    ],
+    "claims": {
+      "evidence": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionDriver.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionAdapters.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentProcessHost.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift"
+        ]
+      }
+    }
+  },
+  "c-cockpit-presentation": {
+    "id": "c-cockpit-presentation",
+    "kind": "concept",
+    "depth": 0,
+    "parent": "argo",
+    "name": "the cockpit presentation",
+    "line": "Everything one cockpit window draws is one value, restated from live state in exactly one place.",
+    "short": [
+      "No view reaches past this value to the state behind it.",
+      "The restatement must be total: a fact with no slot has to be named and explained."
+    ],
+    "long": [
+      "The cockpit takes a value and draws it. That makes every reading testable without a window, and makes a screen reproducible from a fixture.",
+      "One initialiser reads live state, and only one. That single file is checked by a build gate rather than by review.",
+      "The restatement is total by another gate. Adding a public fact to the Session fails the build until that fact lands on a slot of its own name. A `not-projected:` line with a reason is the other way past it.",
+      "Swapping two facts of the same type between slots fails as well, so the check is about identity and not about types lining up.",
+      "The cost of this rule is a long comment block. What it buys is that nothing on screen can quietly stop tracking the state it claims to show."
+    ],
+    "evidence": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation.swift",
+        5,
+        "The whole input of the shell, as values"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
+        51,
+        "The one read of live state: each observed Session restated"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
+        119,
+        "`init(observed:)`, with the `not-projected:` and `renamed:` lines the gate reads"
+      ],
+      [
+        "scripts/swift-boundaries.sh",
+        17,
+        "The gate naming the single file in the view package allowed to read live state"
+      ],
+      [
+        "scripts/swift-boundaries.sh",
+        116,
+        "The rule that the restatement is total, and how a missing fact fails the build"
+      ]
+    ],
+    "claims": {
+      "evidence": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
+          "scripts/swift-boundaries.sh"
+        ]
+      }
+    }
+  },
+  "c-transcript-event": {
+    "id": "c-transcript-event",
+    "kind": "concept",
+    "depth": 0,
+    "parent": "argo",
+    "name": "the transcript event",
+    "line": "One thing a transcript said, typed — the single vocabulary everything downstream of the file reads.",
+    "short": [
+      "A file becomes a stream of these, in the order the records were written.",
+      "Nothing above this point ever parses JSON again."
+    ],
+    "long": [
+      "The reader turns each line into a record, and each record into the events it carried. Zero events is an ordinary answer for a line that is only plumbing.",
+      "A line nothing recognises still becomes a value that keeps its raw bytes, so an unknown record can be counted rather than lost.",
+      "Text the agent wrote travels verbatim. A message and a thought are separate events, because a final message routinely contradicts its own reasoning.",
+      "Events arrive in batches, and the batch is carried through rather than flattened. The first batch is what says the file has been read at all.",
+      "Folding these into turns, plans and subagents happens above, where the whole Session is in memory."
+    ],
+    "evidence": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/TranscriptEvent.swift",
+        4,
+        "The event vocabulary: identity, title, working directory, prompt, message, thought, calls, usage"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptRecord.swift",
+        39,
+        "The typed record behind it, with `.unknown` carrying the raw line"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptEvents.swift",
+        10,
+        "The stream: backfill first, then every batch appended later"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift",
+        153,
+        "Each event moving exactly one fact about the Session"
+      ]
+    ],
+    "claims": {
+      "evidence": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/TranscriptEvent.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptRecord.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptEvents.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift"
+        ]
+      }
+    }
+  },
+  "c-specimen": {
+    "id": "c-specimen",
+    "kind": "concept",
+    "depth": 0,
+    "parent": "argo",
+    "name": "the specimen",
+    "line": "One named state the app can be launched straight into and photographed, without anybody driving it there by hand.",
+    "short": [
+      "Most screens here cannot be reached in an ordinary checkout, because there are no Sessions in it.",
+      "A specimen names the state and supplies the fixture, so the app can be told to draw it."
+    ],
+    "long": [
+      "An entry is one value holding a name and the view that name draws. It cannot be half written: no name without a rendering, and no rendering nothing can address.",
+      "The registry lists every entry, grouped in the order a reader meets the app. A name it does not know resolves to nothing rather than to somebody else's state.",
+      "The app answers a `--list-specimens` flag off that registry, so the render script asks the app for the list rather than parsing the source.",
+      "This is how a visual change is checked at all. Nothing on the build machine renders a view, so a screen has to be photographed on purpose."
+    ],
+    "evidence": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenEntry.swift",
+        7,
+        "One renderable state: the name the harness passes and what it draws, as one value"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenRegistry.swift",
+        16,
+        "Every entry, grouped in the order a reader meets the app"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenRegistry.swift",
+        28,
+        "What `--list-specimens` answers with"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Launch/LaunchConfiguration.swift",
+        88,
+        "The flag being read at launch"
+      ],
+      [
+        "apps/macOS/scripts/specimens.sh",
+        29,
+        "The render script asking the built app for the names"
+      ]
+    ],
+    "claims": {
+      "evidence": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenEntry.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenRegistry.swift",
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Launch/LaunchConfiguration.swift",
+          "apps/macOS/scripts/specimens.sh"
+        ]
+      }
+    }
+  },
+  "argo": {
+    "id": "argo",
+    "kind": "part",
+    "depth": 0,
+    "parent": null,
+    "name": "Argo",
+    "lines": 74640,
+    "line": "A macOS window that starts coding agents, watches them work, and talks back to them.",
+    "short": [
+      "Argo runs coding agents for one git repository. It starts an agent as a real child process, and it keeps the pseudo-terminal that process reads from. The user types into Argo, and Argo types into the agent.",
+      "The agent also writes a record of its own work to a file on disk. Argo tails that file, turns each line into a typed event, and folds every transcript of the repository into one live picture. The window draws that picture.",
+      "So the program has two directions. One direction observes. It reads the record files the `claude` CLI writes, and only the ones whose working directory sits inside this repository. The other direction steers, and it reaches only the agents Argo started itself."
+    ],
+    "long": [
+      "Argo runs coding agents for one git repository. It starts an agent as a real child process, and it keeps the pseudo-terminal that process reads from. The user types into a field at the foot of the window, and those words arrive at the agent as keystrokes.",
+      "The agent writes a record of its own work to a file on disk as it goes. Argo finds those files without being told where they are, tails each one, and turns each line into a typed event. It folds every transcript of the repository into one live picture, and the window draws that picture.",
+      "Five build targets carry the work. The engine holds everything that does not draw, and it links no user-interface framework at all. The shell draws, and exactly one file in it may read live engine state. One small target holds the pseudo-terminal, because the terminal library links AppKit and the engine may not. A command-line target runs the engine with no window over it. The app target is the only place all of them meet, and a build gate keeps it under 600 lines.",
+      "Two things are worth holding while you read the rest. An agent Argo did not start can be read but never written to, and that boundary is drawn by one function. A permission the agent asks for is never answered by typing, because the answer travels down a socket to a hook that is blocked and waiting.",
+      "This atlas covers the five targets of the macOS app. The repository also carries a skills package and about 55,000 lines of tests, and no node here describes them."
+    ],
+    "inside": [
+      "engine",
+      "ui",
+      "terminal",
+      "app",
+      "observe"
+    ],
+    "among": [
+      [
+        "app",
+        "ui",
+        "one presentation value, and five more the Hub never heard of"
+      ],
+      [
+        "app",
+        "engine",
+        "the live picture, and the acts the window asks for"
+      ],
+      [
+        "app",
+        "terminal",
+        "two terminal hosts: one for agents, one for the hidden help session"
+      ],
+      [
+        "ui",
+        "engine",
+        "every engine type it draws, and live Hub state in one file only"
+      ],
+      [
+        "terminal",
+        "engine",
+        "a running process, in the shape the engine asked for"
+      ],
+      [
+        "observe",
+        "engine",
+        "one transcript, with no window over it"
+      ]
+    ],
+    "leaving": [
+      [
+        "argo",
+        "the agent's own process",
+        "its argv, its environment, and every keystroke after that"
+      ],
+      [
+        "argo",
+        "two sockets per claude agent",
+        "what the agent reports, and the answer to what it asks"
+      ],
+      [
+        "argo",
+        "the record directory on disk",
+        "a tail on every transcript that belongs to this repository"
+      ],
+      [
+        "argo",
+        "GitHub and Linear over HTTP",
+        "tickets and deliveries, read and written"
+      ],
+      [
+        "argo",
+        "the keychain",
+        "one token for each signed-in identity"
+      ],
+      [
+        "argo",
+        "the browser, and a port on 127.0.0.1",
+        "the sign-in that comes back as a redirect"
+      ],
+      [
+        "argo",
+        "the git checkout",
+        "branch, head, and what the working tree holds"
+      ],
+      [
+        "argo",
+        "the process table",
+        "whether an agent Argo can see is still alive"
+      ],
+      [
+        "argo",
+        "Application Support",
+        "the few facts Argo owns and nobody else states"
+      ]
+    ],
+    "claims": {
+      "inside": {
+        "sha": "e2e22fb4",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Package.swift",
+          "apps/macOS/Packages/ArgoUI/Package.swift",
+          "apps/macOS/Argo"
+        ]
+      }
+    }
+  },
+  "terminal": {
+    "id": "terminal",
+    "kind": "part",
+    "depth": 1,
+    "parent": "argo",
+    "name": "ArgoTerminal",
+    "lines": 140,
+    "line": "Two files that own a real pseudo-terminal, kept apart because the terminal library links AppKit.",
+    "short": [
+      "This target starts an agent on a real pseudo-terminal, and it paints raw bytes back into rows of text. It is two files and 140 lines.",
+      "It exists as its own target for one reason. The engine may link no user-interface framework, and the terminal library links AppKit on macOS. So the one adapter that cannot obey that rule was moved out, and the engine keeps its rule.",
+      "It is not the only way Argo holds an agent. A `codex` agent runs on plain pipes instead, and that host stays inside the engine."
+    ],
+    "long": [
+      "This target starts an agent on a real pseudo-terminal, and it paints raw bytes back into rows of text. It is two files and 140 lines.",
+      "It exists as its own target for one reason. The engine may link no user-interface framework, and the terminal library links AppKit on macOS. So the one adapter that cannot obey that rule was moved out. The engine names the shape it wants, and this target is the only thing that fills it with a real process.",
+      "One object holds one agent's pseudo-terminal. Output arrives as raw bytes and is handed on undecoded, because the engine decides what the bytes mean. An exit is reported once, by hand, because killing the process tells nobody on its own."
+    ],
+    "inside": [],
+    "leaving": [
+      [
+        "terminal",
+        "engine",
+        "a live process wearing the three verbs the engine asked for"
+      ],
+      [
+        "terminal",
+        "the agent's own process",
+        "the bytes of every keystroke Argo sends"
+      ]
+    ],
+    "concepts": [
+      "c-drive-port"
+    ],
+    "bottom": true,
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift",
+        12,
+        "the host that starts an agent on a pseudo-terminal"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift",
+        26,
+        "one agent's pseudo-terminal, and the delegate that reads it"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift",
+        46,
+        "the process, started on the main queue so output never reorders"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermScreen.swift",
+        11,
+        "raw bytes painted into rows of text"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Package.swift",
+        34,
+        "the target, and why it depends on the terminal library"
+      ]
+    ],
+    "claims": {
+      "leaving": {
+        "sha": "e2e22fb4",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal"
+        ]
+      }
+    }
+  },
+  "observe": {
+    "id": "observe",
+    "kind": "part",
+    "depth": 1,
+    "parent": "argo",
+    "name": "argo-observe",
+    "lines": 131,
+    "line": "A command that points the engine at one transcript and prints what each record means.",
+    "short": [
+      "This is the engine with no window over it. Give the command a transcript file, and it prints one line for every event the engine makes out of it.",
+      "It reads a real agent's own output rather than a fixture. A record whose shape the engine gets wrong is visible in one line of terminal, instead of three surfaces later."
+    ],
+    "inside": [],
+    "leaving": [
+      [
+        "observe",
+        "engine",
+        "one transcript path, and every event that comes back"
+      ]
+    ],
+    "concepts": [
+      "c-transcript-event"
+    ],
+    "bottom": true,
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/argo-observe/main.swift",
+        4,
+        "why it exists, in the file's own words"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Sources/argo-observe/main.swift",
+        11,
+        "the argument it takes"
+      ],
+      [
+        "apps/macOS/Packages/ArgoEngine/Package.swift",
+        35,
+        "the executable target"
+      ]
+    ],
+    "claims": {
+      "leaving": {
+        "sha": "e2e22fb4",
+        "paths": [
+          "apps/macOS/Packages/ArgoEngine/Sources/argo-observe"
+        ]
+      }
+    }
+  },
+  "app": {
+    "id": "app",
+    "kind": "part",
+    "depth": 1,
+    "parent": "argo",
+    "name": "The app target",
+    "lines": 943,
+    "line": "Nine files that open one window and hold the three boxes everything else hangs from.",
+    "short": [
+      "This is the only place the engine, the shell and the pseudo-terminal meet. It opens one window with no app delegate, and it holds three long-lived boxes.",
+      "One box knows what the window is looking at, and holds the live picture for that repository. One holds the signed-in identities and the ticket reads and writes. One holds where the window has navigated to.",
+      "It derives nothing and it declares no view. A build gate fails if a view appears here, and a second gate fails if the target passes 600 lines of code."
+    ],
+    "long": [
+      "This is the only place the engine, the shell and the pseudo-terminal meet. It opens one window with no app delegate, and it holds three long-lived boxes that outlive any single screen.",
+      "One box knows which repository the window is pointed at, holds the live picture built over it, and starts agents. One holds the signed-in identities, the scope each identity can see, and the one-at-a-time ticket reads and writes. A third holds where the window has navigated to, and it travels down as an environment value. All three are observable, so the window redraws when they move.",
+      "It derives nothing and it declares no view. Two build gates keep it that way: one fails if a view is declared here, and one fails if the target passes 600 lines of code. That cap is what stops the app target from quietly becoming a third place where decisions live."
+    ],
+    "inside": [],
+    "leaving": [
+      [
+        "app",
+        "ui",
+        "one presentation value, five more beside it, and where the window has got to"
+      ],
+      [
+        "app",
+        "engine",
+        "the repository it is pointed at, and every act the user asks for"
+      ],
+      [
+        "app",
+        "terminal",
+        "two terminal hosts, and the screen that paints raw bytes into rows"
+      ]
+    ],
+    "concepts": [
+      "c-cockpit-presentation"
+    ],
+    "bottom": true,
+    "anchors": [
+      [
+        "apps/macOS/Argo/ArgoApp.swift",
+        8,
+        "the whole app: one window, no app delegate"
+      ],
+      [
+        "apps/macOS/Argo/CockpitCoordinator.swift",
+        11,
+        "what the window is looking at, and the live picture over it"
+      ],
+      [
+        "apps/macOS/Argo/AccountsCoordinator.swift",
+        14,
+        "the identities, their scopes, and the ticket writes"
+      ],
+      [
+        "apps/macOS/Argo/ArgoApp.swift",
+        13,
+        "where the window has navigated to, held for the life of the app"
+      ],
+      [
+        "apps/macOS/Argo/CockpitCoordinator.swift",
+        57,
+        "the terminal host the agents run on"
+      ],
+      [
+        "apps/macOS/Argo/CockpitCoordinator.swift",
+        73,
+        "a second host, for the hidden session that reads the CLI's own commands"
+      ],
+      [
+        "scripts/swift-boundaries.sh",
+        105,
+        "the line cap this target is held to"
+      ]
+    ],
+    "claims": {
+      "leaving": {
+        "sha": "e2e22fb4",
+        "paths": [
+          "apps/macOS/Argo"
+        ]
+      }
+    }
+  },
+  "ui": {
+    "id": "ui",
+    "kind": "part",
+    "depth": 1,
+    "parent": "argo",
+    "name": "ArgoUI",
+    "line": "Every view the cockpit window draws, built from values, with exactly one file reading live Hub state.",
+    "lines": 52804,
+    "short": [
+      "ArgoUI draws the whole macOS cockpit. It reads one Hub and turns it into a plain value called `CockpitPresentation`. That value goes down to the roster, the deck, the toolbar and the Tickets room. The user types into a composer, and those words reach a running agent process through the engine's `SessionDriver`."
+    ],
+    "long": [
+      "The window is a split view. On the leading side the roster lists Sessions. On the trailing side an opaque deck fills the pane, and which room the window is in decides what the deck holds. The Sessions room puts four zones across that deck — the rail, the reading, the overview lane and the evidence panel. A glass canopy floats over the top edge, and one glass vessel sits at the foot.",
+      "Almost nothing here holds state. `CockpitPresentation+Hub.swift` is the single file allowed to read a live Hub. A build script fails the build if any other file here names one. Every surface below takes values and closures. The same view renders from a live Session, from a fixture, or from a preview.",
+      "The cockpit is not a viewer. `CockpitActions.drive` is the engine's `SessionDriver`, and the composer's send closure calls it with the text and the attachments the user assembled. The permission prompt answers a blocked agent the same way, and the mode picker walks the autonomy ladder one rung at a time. Three smaller sets sit beside all of that. They are the fixtures every specimen is built from, the Binding health that gates a provider write, and the focus reader behind every ring."
+    ],
+    "inside": [
+      "u-shell",
+      "u-sidebar",
+      "u-toolbar",
+      "u-connect",
+      "u-tickets",
+      "u-deck",
+      "u-header",
+      "u-composer",
+      "u-feed",
+      "u-agents",
+      "u-ask",
+      "u-call",
+      "u-media",
+      "u-prose",
+      "u-mermaid",
+      "u-evidence",
+      "u-minimap",
+      "u-plan",
+      "u-atoms",
+      "u-contract",
+      "u-specimen"
+    ],
+    "among": [
+      [
+        "u-shell",
+        "u-sidebar",
+        "the Session rows and the id the window has selected"
+      ],
+      [
+        "u-shell",
+        "u-deck",
+        "the selected Session, its feed rows, and the closures that drive it"
+      ],
+      [
+        "u-shell",
+        "u-toolbar",
+        "the active Project, the checkout head and the connection chip reading"
+      ],
+      [
+        "u-shell",
+        "u-tickets",
+        "the Project's ticket listing and the ticket number the room is open on"
+      ],
+      [
+        "u-shell",
+        "u-connect",
+        "the Connect panel's reading and whether the panel is up"
+      ],
+      [
+        "u-deck",
+        "u-feed",
+        "the rows to draw, and which row the reader opened"
+      ],
+      [
+        "u-feed",
+        "u-composer",
+        "the vessel the feed column builds, and the clearance under it"
+      ],
+      [
+        "u-deck",
+        "u-composer",
+        "which vessel to draw, plus the send, stop and mode closures"
+      ],
+      [
+        "u-deck",
+        "u-header",
+        "the header value for the Session above the reading"
+      ],
+      [
+        "u-deck",
+        "u-minimap",
+        "the feed's table handle, which carries the measured row heights"
+      ],
+      [
+        "u-deck",
+        "u-evidence",
+        "the tool results kept for the row the reader opened"
+      ],
+      [
+        "u-deck",
+        "u-plan",
+        "the newest plan the record carries"
+      ],
+      [
+        "u-feed",
+        "u-agents",
+        "the delegation calls the rail lists as chips"
+      ],
+      [
+        "u-feed",
+        "u-ask",
+        "a question, and whether Argo's gate still holds it open"
+      ],
+      [
+        "u-feed",
+        "u-call",
+        "one tool call as a line, or a run of quiet calls folded into a survey"
+      ],
+      [
+        "u-feed",
+        "u-media",
+        "a run of pictures folded into one gallery row"
+      ],
+      [
+        "u-feed",
+        "u-prose",
+        "a message or a thought, measured and drawn at the reading width"
+      ],
+      [
+        "u-prose",
+        "u-mermaid",
+        "a mermaid fence, read into a plan and laid out once per source"
+      ],
+      [
+        "u-minimap",
+        "u-prose",
+        "the wrapped line widths a paragraph's miniature rects are drawn from"
+      ],
+      [
+        "u-media",
+        "u-evidence",
+        "the decoded picture state and the bounded bitmap cache behind it"
+      ],
+      [
+        "u-tickets",
+        "u-connect",
+        "whether the bound port admits a write, and why it does not"
+      ],
+      [
+        "u-specimen",
+        "u-shell",
+        "a fixture presentation, so a named state renders with no Hub behind it"
+      ],
+      [
+        "u-contract",
+        "u-atoms",
+        "the palette, the type roles and the spacing every control reads"
+      ],
+      [
+        "u-atoms",
+        "u-deck",
+        "the chrome bar material and the focus ring the zones draw with"
+      ]
+    ],
+    "leaving": [
+      [
+        "ui",
+        "engine",
+        "one Turn of text and attachments, put to a Session over SessionDriver"
+      ],
+      [
+        "ui",
+        "engine",
+        "a permission decision, an ask answer and a mode change, all keyed by Session id"
+      ],
+      [
+        "ui",
+        "engine",
+        "the Hub's Sessions, checkout head and connection, read in one file only"
+      ],
+      [
+        "ui",
+        "engine",
+        "TranscriptEvent values, which the feed and the plan both project into rows"
+      ],
+      [
+        "ui",
+        "app",
+        "the intents the shell raises — add a Project, reveal it, spawn a Session"
+      ],
+      [
+        "ui",
+        "app",
+        "the specimen a launch names, so the render harness draws one state and stops"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation.swift",
+        5,
+        "`public struct CockpitPresentation` — the shell's whole input, as values"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
+        51,
+        "`hub.sessions.map` — the only place in ArgoUI that reads live Hub state"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitActions.swift",
+        106,
+        "`public let drive: any SessionDriver` — what the shell asks a Session to do"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView.swift",
+        9,
+        "`public struct CockpitView: View` — the production window"
+      ],
+      [
+        "scripts/swift-boundaries.sh",
+        18,
+        "`PROJECTION_FILE` — the build gate naming the one file allowed to read a Hub"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitActions.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckContentRow.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift",
+          "scripts/swift-boundaries.sh",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Fixtures/TranscriptFixtures.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connection/ConnectionHealthReading.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Focus/ArgoFocusVisibility.swift"
+        ]
+      },
+      "among": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckContentRow.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckIntents.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedShotView.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapProse+Rects.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenSurfaces.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedColumn.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitActions.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenLaunch.swift"
+        ]
+      }
+    }
+  },
+  "u-shell": {
+    "id": "u-shell",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The cockpit window",
+    "line": "It reads one Hub and turns it into the single value every other surface draws from.",
+    "lines": 2546,
+    "bottom": true,
+    "short": [
+      "This is where a window starts. `CockpitPresentation` carries the Projects, the Sessions, the git head and the connection state as plain values. `CockpitPresentation+Hub.swift` builds that value, and it is the only file in ArgoUI permitted to read live Hub state. Everything below takes the value and never reaches past it."
+    ],
+    "long": [
+      "The window's whole input is one struct. It lists the registered Projects, the Session the Hub reports, the checkout head and the connection. A build script enforces the seam. No other file in this target may name the Hub, and the projection must account for every public fact `HubSession` carries or the build fails.",
+      "Beside the value sits `CockpitActions`, the closures the shell raises. Adding a Project, revealing a folder and writing the registry are all the app target's work, so a view only says what it wants. One field is different. `drive` is the engine's `SessionDriver`. `CockpitView+Intents.swift` binds its `send` to the Session the composer addresses. A user's typing reaches a live agent this way.",
+      "`CockpitNavigationModel` holds ids and nothing else — the room, the selected Session, the open ticket, the seam widths. Restoration reads a stale id and repoints rather than resurrecting a Session. `CockpitView` is the one view that reads that model, and `SessionState` fixes the single word and colour each status is worth. The menu bar's items are published from here too. `NavigateCommands` moves the room, and `SessionCommands` renames or archives whatever the roster has selected."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-shell",
+        "u-sidebar",
+        "the projected Session rows and the id the window selected"
+      ],
+      [
+        "u-shell",
+        "u-deck",
+        "the selected Session, its rows, and the send, stop and decide closures"
+      ],
+      [
+        "u-shell",
+        "u-toolbar",
+        "the active Project, the checkout head and the connection chip reading"
+      ],
+      [
+        "u-shell",
+        "u-tickets",
+        "the Project's ticket listing and the ticket the deck is open on"
+      ],
+      [
+        "u-shell",
+        "u-connect",
+        "the panel reading, and the port health that qualifies it"
+      ],
+      [
+        "u-shell",
+        "engine",
+        "one Turn of text and attachments, put to a Session over SessionDriver"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation.swift",
+        5,
+        "`public struct CockpitPresentation` — the value no view reaches past"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
+        15,
+        "`init(pointing:hub:readings:)` — the projection's entry, on the file that may read a Hub"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
+        51,
+        "`hub.sessions.map { Session(observed:) }` — live state becoming values"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Session.swift",
+        5,
+        "`struct Session` — one Session as the cockpit renders it"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitActions.swift",
+        106,
+        "`public let drive: any SessionDriver` — the port the shell acts through"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift",
+        40,
+        "`actions.drive.send($0, attaching: $1, to: sessionID)` — the composer's send, bound"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitNavigationModel.swift",
+        10,
+        "`public final class CockpitNavigationModel` — the ids one window is pointing at"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/SessionState.swift",
+        19,
+        "`static func role(for status:)` — one status, one word, one colour"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitSpawn.swift",
+        11,
+        "`struct CockpitSpawn` — start an agent, then point the roster at it"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/NavigateCommands.swift",
+        8,
+        "`public struct NavigateCommands: Commands` — one menu item per room"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/SessionCommands.swift",
+        10,
+        "`public struct SessionCommands` — what the menu bar does to the selected Session"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+SessionValues.swift",
+        9,
+        "the readings a `Session` is assembled from, checked by the boundary script"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitActions.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitNavigationModel.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/SessionState.swift",
+          "scripts/swift-boundaries.sh",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/NavigateCommands.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/SessionCommands.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+SessionValues.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Detail.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift"
+        ]
+      }
+    }
+  },
+  "u-sidebar": {
+    "id": "u-sidebar",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The session roster",
+    "line": "It lists the Sessions on the sidebar and holds their order still while somebody is reading.",
+    "lines": 1333,
+    "bottom": true,
+    "short": [
+      "The roster is the window's leading pane. It projects each Session into a row carrying a title, a worktree label, a state word and a clock. The list sits under the rooms strip. It also decides the published order, because the Hub sorts by newest activity and that key moves every time either agent writes."
+    ],
+    "long": [
+      "`SessionRosterProjection` turns a `CockpitPresentation.Session` into a `Row`. The row carries the title, the slash command it opened with, and the state word. It also carries the shortest worktree suffix that tells this Session apart from its neighbours. Archived Sessions go to a second list behind the foot, which is a decision the projection makes rather than the view.",
+      "`RosterListing` runs that projection and then publishes the rows in the order `RosterOrder` is holding. `ShellSidebar` freezes that order for as long as the window is front, and lets it re-settle while the window is not. A roster that re-sorted under the pointer would move the row the reader was about to click.",
+      "`SessionNavigator` draws the list. Archiving and renaming are closures with inert defaults, so a preview or a specimen draws the gesture with no store wired behind it. The renaming row is held above the rows, because the menu bar's Rename opens it too."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-sidebar",
+        "u-shell",
+        "the selected Session id, written back through a binding"
+      ],
+      [
+        "u-sidebar",
+        "u-shell",
+        "archive and rename requests, keyed by chain id"
+      ],
+      [
+        "u-sidebar",
+        "u-atoms",
+        "the state dot, the badge and the selected row ground"
+      ],
+      [
+        "u-sidebar",
+        "u-contract",
+        "the palette and the type roles a row is set in"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/ShellSidebar.swift",
+        12,
+        "`struct ShellSidebar: View` — the pane, and where published order is decided"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionRosterProjection.swift",
+        4,
+        "`enum SessionRosterProjection` — a Session becoming a row"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/RosterListing.swift",
+        8,
+        "`struct RosterListing` — project, then publish in the held order"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/RosterOrder.swift",
+        9,
+        "`struct RosterOrder` — the order a front window refuses to re-sort"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionNavigator.swift",
+        4,
+        "`struct SessionNavigator: View` — the list itself, with inert verbs by default"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionRow.swift",
+        7,
+        "`struct SessionRow: View` — one row, two lines"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/ShellSidebar.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionRosterProjection.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/RosterListing.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/RosterOrder.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionNavigator.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionNavigator.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionRow.swift"
+        ]
+      }
+    }
+  },
+  "u-toolbar": {
+    "id": "u-toolbar",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The window toolbar",
+    "line": "It puts scope, the New Session verb and the exception chips in the window's leading region.",
+    "lines": 979,
+    "bottom": true,
+    "short": [
+      "The toolbar states where the window is pointed and what is wrong. One glass capsule holds the scope controls — the Project drawer, the checkout and the connection chip. New Session sits beside it with a small glass of its own. Each room adds its own row on top of this."
+    ],
+    "long": [
+      "`ShellToolbar` declares the items. Everything here is `.navigation`, which is the window's leading region over the sidebar. The Session title is deliberately absent, because the `.principal` slot parked it against the scope vessel and pushed the rooms picker into an overflow menu.",
+      "`ConnectionChip` is a factual exception chip. A healthy connection draws nothing at all. One chip serves two subjects. It reports Argo's own observation of the checkout, and the health of the active Project's provider Bindings. A second failure chrome would be a second failure language for the same reader.",
+      "`ProjectMenuProjection` turns the registered set into menu rows, so the menu's honesty claims are values a test can hold. An unreachable folder keeps its place and says `folder not found` in words. A Project nothing has observed carries no Session count rather than a zero."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-toolbar",
+        "u-shell",
+        "select, add, locate, reveal and forget a Project, as raised intents"
+      ],
+      [
+        "u-toolbar",
+        "u-connect",
+        "the port health reading the chip rolls up, and the panel it opens"
+      ],
+      [
+        "u-toolbar",
+        "u-deck",
+        "the evidence panel toggle, which the deck owns as a binding"
+      ],
+      [
+        "u-toolbar",
+        "u-atoms",
+        "the badge, the glyph and the chrome bar material"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ShellToolbar.swift",
+        22,
+        "`struct ShellToolbar: ToolbarContent` — every room's shared toolbar row"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ScopeVessel.swift",
+        7,
+        "`struct ScopeVessel: View` — one capsule holding the scope controls"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ProjectVessel.swift",
+        13,
+        "`struct ProjectVessel: View` — the Project drawer in that capsule"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ProjectMenuProjection.swift",
+        10,
+        "`enum ProjectMenuProjection` — the registered set as menu rows"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ConnectionChip.swift",
+        9,
+        "`struct ConnectionChip: View` — the chip a healthy connection does not draw"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/EvidenceToggle.swift",
+        10,
+        "`struct EvidenceToggle: View` — the control that opens the deck's outboard panel"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ShellToolbar.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ScopeVessel.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ShellToolbar.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ConnectionChip.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ProjectMenuProjection.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ProjectVessel.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/EvidenceToggle.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ConnectionChips.swift"
+        ]
+      }
+    }
+  },
+  "u-connect": {
+    "id": "u-connect",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "Connecting a project",
+    "line": "It sets a Project up against its providers and says whether a write may be attempted.",
+    "lines": 2171,
+    "bottom": true,
+    "short": [
+      "This is the panel a new Project is created in, and the panel Project Settings re-enters. Three rows in a fixed order — a folder, the two ports, and the companion plugin — completable in any order. It also reads how each Binding is doing, and folds that into the one toolbar chip and into every write control."
+    ],
+    "long": [
+      "`ConnectPanel` renders `ConnectReading` through a projection, so its honesty claims are values rather than view code. A folder alone makes a Project, and it is the floor everything else unlocks. `WelcomeScreen` says what Argo does in three benefit rows before anything is asked of the user, with no honesty tiers on screen.",
+      "A grant hands back its challenge before it starts waiting, and `DeviceCodeCard` draws that wait. GitHub's challenge carries a code to type. Linear's is a redirect and carries none, so the code row is simply absent rather than filled with something to look at.",
+      "`ConnectionHealthReading` pairs each port with the Account it reads through and that Binding's health. `WriteAdmission` answers the one question a control needs. Attempt it, refuse it and name this identity, or draw nothing where there is no Binding. `WriteControlState` folds that with where the last attempt got to, and nothing here auto-retries."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-connect",
+        "u-toolbar",
+        "the rolled-up chip reading, and nothing when every Binding is healthy"
+      ],
+      [
+        "u-connect",
+        "u-tickets",
+        "whether the ticket port admits a write, and the refusal's own words"
+      ],
+      [
+        "u-connect",
+        "u-shell",
+        "the readings that qualify a Session — whether a ticket provider is bound"
+      ],
+      [
+        "u-connect",
+        "engine",
+        "a grant to start, a scope set to save, and the Account records read back"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect/ConnectPanel.swift",
+        9,
+        "`public struct ConnectPanel: View` — set-up and settings, one panel"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect/ConnectPanelProjection.swift",
+        6,
+        "`enum ConnectPanelProjection` — the panel's rows as values"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect/ConnectReading.swift",
+        7,
+        "`public struct ConnectReading` — the panel's whole input"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect/DeviceCodeCard.swift",
+        10,
+        "`struct DeviceCodeCard: View` — a grant while it waits"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect/WelcomeScreen.swift",
+        8,
+        "`struct WelcomeScreen: View` — what Argo does, before anything is asked"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connection/ConnectionHealthReading.swift",
+        9,
+        "`public struct PortConnection` — a port, its Account, and that Binding's health"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connection/WriteAdmission.swift",
+        4,
+        "`public enum WriteAdmission` — admitted, refused, or no Binding at all"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Write/WriteControlState.swift",
+        5,
+        "`enum WriteControlState` — what one write control renders"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect/ConnectPanel.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connection/ConnectionHealthProjection.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect/ConnectPanelProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect/WelcomeScreen.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect/DeviceCodeCard.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connection/WriteAdmission.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Write/WriteControlState.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connection/ConnectionHealthProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitReadings.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect/ConnectPanelActions.swift"
+        ]
+      }
+    }
+  },
+  "u-tickets": {
+    "id": "u-tickets",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The tickets room",
+    "line": "It draws the backlog beside one open ticket, and starts a Session on the ticket you pick.",
+    "lines": 4859,
+    "bottom": true,
+    "short": [
+      "The Tickets room fills both halves of the window's split view. The sidebar carries the saved views and the Next-up hero. The deck carries the backlog list on the left and one ticket on the right. Starting a ticket spawns a Session, seeds its first turn with the command the ticket asks for, and takes the window to the Sessions room."
+    ],
+    "long": [
+      "`TicketsReading` is the room's whole input — the provider's items, which of them a Session has claimed, and whether every live Session's link was read. `TicketsRoomProjection` folds that into one `Room` value. The sidebar's counts are arithmetic over the same list the deck draws, computed once, so a rail can never disagree with the rows beside it.",
+      "`BacklogList` is the leading pane, banded by priority over the tree's roots. `TicketDetail` is the trailing pane, one scrolling column with no inner split. At the ideal window it is about 480 points wide. A second column inside it would leave neither half readable. The facts sit in a strip under the title instead.",
+      "`TicketsToolbar` puts every control the room has on the window's one row, read left to right. `NextUp` states one ticket worth picking up, or which of three reasons there is none. `TicketStart` resolves the command from the ticket's labels and the designs this checkout has settled, then hands the seeded turn to the spawn."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-tickets",
+        "u-shell",
+        "a Start intent — spawn a Session, seed its first turn, switch room"
+      ],
+      [
+        "u-tickets",
+        "u-connect",
+        "the write admission that greys the compose control, and its refusal words"
+      ],
+      [
+        "u-tickets",
+        "u-atoms",
+        "the label chips, the delivery dot and the disclosure twist"
+      ],
+      [
+        "u-tickets",
+        "engine",
+        "Ticket values, delivery facts and the one ticket a link asks to be read"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/TicketsRoom.swift",
+        13,
+        "`struct TicketsRoom` — the pair of views the split view's slots take"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/TicketsRoomProjection.swift",
+        10,
+        "`enum TicketsRoomProjection` — the room as one value, counted once"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/TicketsReading.swift",
+        11,
+        "`struct TicketsReading` — the provider's items plus Argo's own claims"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/TicketStart.swift",
+        12,
+        "`struct TicketStart` — resolve the command, seed the turn, change room"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/NextUp.swift",
+        3,
+        "`enum NextUp` — one pick, or the reason there is none"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Backlog/BacklogList.swift",
+        9,
+        "`struct BacklogList: View` — the deck's leading pane, banded by priority"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Detail/TicketDetail.swift",
+        10,
+        "`struct TicketDetail: View` — one scrolling column, no inner split"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Sidebar/TicketsSidebar.swift",
+        7,
+        "`struct TicketsSidebar: View` — saved views and the Next-up hero"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Toolbar/TicketsToolbar.swift",
+        17,
+        "`struct TicketsToolbar: ToolbarContent` — every room control on one row"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/TicketsRoom.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/TicketStart.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/TicketsReading.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/TicketsRoomProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Backlog/BacklogList.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Detail/TicketDetail.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Toolbar/TicketsToolbar.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/NextUp.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/TicketStart.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Toolbar/TicketsToolbarIntents.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Toolbar/NewTicketComposer.swift"
+        ]
+      }
+    }
+  },
+  "u-deck": {
+    "id": "u-deck",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The deck and its zones",
+    "line": "It is the opaque plane filling the detail pane, and it decides which zones open at this width.",
+    "lines": 1203,
+    "bottom": true,
+    "short": [
+      "The deck is one surface, flush to the window. `InstrumentDeckShell` paints it and switches on the room. In the Sessions room, `DeckContentRow` lays the zones across it — rail, reading, overview lane, then the evidence panel outboard. A glass canopy floats over the top edge, and one glass vessel sits at the foot."
+    ],
+    "long": [
+      "`DeckZoning` decides which zones exist at a given width and how wide each one opens. It is rebuilt from the width `GeometryReader` reports on every layout pass, so it holds no state. `DeckSeams` carries the widths the reader dragged, passed in from above. The zone tree is rebuilt on every Session switch, and a seam owned inside it would lose its drag.",
+      "The slot at the bottom is singular. `DeckVessel` is an enum with four cases — the composer, a pending permission prompt, a reason there is no field, or nothing selected. `resolve` fixes the order. An undriveable Session outranks everything, because a prompt whose gate died with the process answers nothing.",
+      "`DeckIntents` carries what that vessel does, beside the value that says what it draws. Send, decide, revoke, stop and set-mode are all closures with inert defaults. That split lets a specimen render the vessel with no terminal behind it. The same view draws a live agent and a screenshot."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-deck",
+        "u-feed",
+        "the rows, the open row, and whether a seam is being dragged"
+      ],
+      [
+        "u-deck",
+        "u-composer",
+        "the resolved vessel case, and the closures that reach the Session"
+      ],
+      [
+        "u-deck",
+        "u-header",
+        "the header value the canopy and the tab line draw"
+      ],
+      [
+        "u-deck",
+        "u-minimap",
+        "the feed's table handle, which the lane maps without touching the rows"
+      ],
+      [
+        "u-deck",
+        "u-evidence",
+        "the kept results of the row the reader opened"
+      ],
+      [
+        "u-deck",
+        "u-plan",
+        "the plan in force, drawn as a pill floating over the vessel"
+      ],
+      [
+        "u-deck",
+        "u-agents",
+        "the Session's Subagents, and which one the feed is scoped to"
+      ],
+      [
+        "u-deck",
+        "u-tickets",
+        "the two views the Tickets room fills the split view's slots with"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/InstrumentDeckShell.swift",
+        7,
+        "`struct InstrumentDeckShell: View` — the opaque plane, switched by room"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/SessionsDeck.swift",
+        10,
+        "`struct SessionsDeck: View` — the Sessions room's zone layout"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckContentRow.swift",
+        13,
+        "`struct DeckContentRow: View` — rail, reading, lane, panel, in that order"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckZoning.swift",
+        7,
+        "`struct DeckZoning` — which zones open at this width"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckSeams.swift",
+        6,
+        "`struct DeckSeams` — the drag widths, held above the tree that rebuilds"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckVessel.swift",
+        6,
+        "`enum DeckVessel` — one slot, holding whichever question is live"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckIntents.swift",
+        7,
+        "`struct DeckIntents` — what that vessel does, all inert by default"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckCanopy.swift",
+        10,
+        "`struct DeckCanopy: View` — the glass over the deck's top edge"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/InstrumentDeckShell.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckContentRow.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/SessionsDeck.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckZoning.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckSeams.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckVessel.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckIntents.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckContentRow.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/SessionsDeck.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/InstrumentDeckShell.swift"
+        ]
+      }
+    }
+  },
+  "u-header": {
+    "id": "u-header",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The session header",
+    "line": "It states which Session the deck is showing, what it is running on, and how full its context is.",
+    "lines": 1256,
+    "bottom": true,
+    "short": [
+      "Above the reading, the canopy names the Session and the tab line carries its instruments. `SessionHeaderProjection` builds one `Header` value with the branch, the access mark, the elapsed time, the model name and the spend. The context bar under it shows how much of the window is held, with both policy thresholds standing as ticks."
+    ],
+    "long": [
+      "Every fact is optional where Argo has not read it. The checkout kind is `nil` until git has been read, because a mark is a claim that the folder is a worktree. The access mark says whether Argo can steer this Session at all. Managed, external and orphaned each carry their word and colour together.",
+      "`ContextBar` measures its own width before drawing, because the fill and both ticks are fractions of the track. The ticks let a reader judge the reading before it changes colour, which is the point of drawing thresholds rather than only a state.",
+      "`SessionHeaderProjection` is split across files by subject — the facts, the context, the guide, the handoff and the spend. `SessionHandoffButton` hands the shown Session's work to a fresh one. Its closure is inert by default, so a specimen draws the button without spawning anything."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-header",
+        "u-deck",
+        "the header value the canopy and the tab line render"
+      ],
+      [
+        "u-header",
+        "u-shell",
+        "the handoff request, performed as a spawn by the app"
+      ],
+      [
+        "u-header",
+        "u-contract",
+        "the operational colour a state word is set in"
+      ],
+      [
+        "u-header",
+        "engine",
+        "the Session's usage totals, model name and workspace branch"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/SessionHeaderProjection.swift",
+        3,
+        "`enum SessionHeaderProjection` — what the header zone says"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/SessionHeaderProjection.swift",
+        13,
+        "`struct Checkout` — the branch, and no kind mark where Argo has not read git"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/SessionHeaderProjection+Context.swift",
+        5,
+        "`extension SessionHeaderProjection` — the context reading and its thresholds"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/ContextBar.swift",
+        6,
+        "`struct ContextBar: View` — the held-context bar with both policy ticks"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/SessionTabLine.swift",
+        5,
+        "`struct SessionTabLine: View` — the deck's one chrome row"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/SessionHeaderProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/ContextBar.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/SessionHeaderProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/ContextBar.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/SessionHandoffButton.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/SessionTabLine.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/SessionHeaderProjection+Handoff.swift"
+        ]
+      }
+    }
+  },
+  "u-composer": {
+    "id": "u-composer",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The composer",
+    "line": "It is the field the user speaks to an agent through, and its keystrokes reach a real process.",
+    "lines": 4723,
+    "bottom": true,
+    "short": [
+      "The composer is the glass vessel at the foot of the deck. It holds the field, the attachment tray, the queued turns, the mode picker and the seam that repeats a refusal. Pressing Return calls a send closure that ends at the engine's `SessionDriver`, which puts the text to the agent's own prompt. Acceptance draws nothing here — the words come back as the user's row in the feed."
+    ],
+    "long": [
+      "The field is an `NSTextView` built by hand, wrapped in `ComposerTextView`. TextKit 1 is chosen for the measurement. `usedRect` counts the empty fragment a trailing newline leaves, which is the line Shift-Return just made. `ComposerKeyIntent` decides what a keystroke means before the text view acts, keyed on virtual codes so a Dvorak layout changes nothing.",
+      "What the user typed lives in `ComposerDrafts`, keyed by Session, so leaving and coming back finds the draft where it was. `ComposerDraft` carries the words, the attachment order, the queued follow-ups and the reason the last send was refused. The attachment order is the contract, because it is the order the Turn names the paths in. `ComposerDrop` and `ComposerPasteboard` turn a dropped or pasted thing into an attachment on the tray. Both take pixels as well as a file URL, because a screenshot dragged from the macOS preview has no file yet.",
+      "`ComposerMenus` runs the `/` and `@` pickers. Each list is read once when its menu opens, and never on the keystrokes after. Neither the installed skills nor the workspace tree changes while a word is typed. When the agent blocks on a decision, `PermissionPrompt` replaces the field in the same slot. Where a Session cannot be driven at all, `ComposerUnavailable` takes the slot as a row and says why in one line."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-composer",
+        "u-deck",
+        "the send, stop, decide and set-mode closures the vessel was handed"
+      ],
+      [
+        "u-composer",
+        "u-shell",
+        "the resolved Turn, which `CockpitView+Intents` binds to a Session id"
+      ],
+      [
+        "u-composer",
+        "u-atoms",
+        "the focus ring, the glyphs and the floating glass the vessel sits on"
+      ],
+      [
+        "u-composer",
+        "engine",
+        "text plus attachments, a permission decision, and a mode rung"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/SessionComposer.swift",
+        12,
+        "`struct SessionComposer: View` — the vessel the user speaks through"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerDraft.swift",
+        9,
+        "`typealias ComposerSend` — words and attachments leave as one act"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerDraft.swift",
+        13,
+        "`struct ComposerDraft` — the field, the tray, the queue and the refusal"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerDrafts.swift",
+        14,
+        "`final class ComposerDrafts` — one draft per Session, kept across switches"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerTextView.swift",
+        11,
+        "`struct ComposerTextView: NSViewRepresentable` — the growing AppKit field"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerKeyIntent.swift",
+        8,
+        "`enum ComposerKeyIntent` — what a keystroke means, before the field acts"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerMenus.swift",
+        8,
+        "`struct ComposerMenus` — the `/` and `@` pickers, read once per opening"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/PermissionPrompt.swift",
+        7,
+        "`struct PermissionPrompt: View` — the field replaced while the agent waits"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ModePicker.swift",
+        16,
+        "`struct ModePicker: View` — the autonomy rung control"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerDrop.swift",
+        13,
+        "`struct ComposerDrop: Transferable` — a dropped thing read as an attachment"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/AttachmentTray.swift",
+        13,
+        "`struct AttachmentTray: View` — what is waiting above the field"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerUnavailable.swift",
+        8,
+        "`struct ComposerUnavailable: View` — the row where there is no field at all"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/SessionComposer.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerDraft.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerTextView.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerKeyIntent.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerDrafts.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerMenus.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/PermissionPrompt.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerDrop.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerPasteboard.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/AttachmentTray.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerUnavailable.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckIntents.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift"
+        ]
+      }
+    }
+  },
+  "u-feed": {
+    "id": "u-feed",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The feed table",
+    "line": "It turns a transcript stream into rows and scrolls them in an AppKit table that measures every row.",
+    "lines": 4768,
+    "bottom": true,
+    "short": [
+      "The feed is the reading surface. `FeedProjection` walks the engine's transcript events and emits `FeedRow` values in the stream's own order, pairing each tool call with the outcome that answered it. `FeedTable` draws those rows in an `NSTableView`, because the row heights must be measured rather than estimated. Nothing is sorted and no character is edited."
+    ],
+    "long": [
+      "A row carries its own payload rather than a shared text field. A prompt keeps its verbatim words and any pasted images. A message and a thought keep the agent's characters untouched. Runs of quiet looking fold into a survey row, and runs of pictures fold into a gallery row. A Turn in flight is in no record, so `FeedWorking` arrives beside the stream and `FeedIonLoop` drives the one moving pass on screen.",
+      "`FeedTableCoordinator` is the AppKit half. It holds the scroll view, the table, the measured-height cache, the rulers and the keyboard's focused row. It also keeps the rows it has drawn, the two re-measure tasks, and the counts a suite asks a re-measure's cost with. Where the reading lands is not its decision. `FeedScrollPolicy` owns that, because five places used to answer the question and disagreed.",
+      "`FeedGeometry` keeps measured heights above every view identity a Session switch destroys. Each height is stored with the whole of what it describes. A height that is no longer true simply stops being found. There is no invalidation order to get right. `FeedTableHandle` is the shared authority the overview lane reads the same geometry through."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-feed",
+        "u-composer",
+        "the vessel the feed column builds, and the clearance the rows leave under it"
+      ],
+      [
+        "u-feed",
+        "u-prose",
+        "a message or a thought, with the measured width it must wrap to"
+      ],
+      [
+        "u-feed",
+        "u-call",
+        "one call, or a run of quiet calls to fold into a survey line"
+      ],
+      [
+        "u-feed",
+        "u-media",
+        "a run of picture results, folded into one gallery row"
+      ],
+      [
+        "u-feed",
+        "u-ask",
+        "a question row, and whether Argo can still answer it"
+      ],
+      [
+        "u-feed",
+        "u-agents",
+        "the delegation calls the rail turns into chips"
+      ],
+      [
+        "u-feed",
+        "u-minimap",
+        "the table handle carrying measured heights, gutters and the offset"
+      ],
+      [
+        "u-feed",
+        "u-evidence",
+        "the results kept on the row the reader opened"
+      ],
+      [
+        "u-feed",
+        "engine",
+        "TranscriptEvent values, plus the usage totals a row reports"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedProjection.swift",
+        7,
+        "`enum FeedProjection` — the transcript stream, as rows to draw"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRow.swift",
+        2,
+        "`struct FeedRow` — one drawable line and the claim it makes"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedView.swift",
+        8,
+        "`struct FeedView: View` — the reading, taking rows and no Session"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedTable.swift",
+        13,
+        "`struct FeedTable: NSViewRepresentable` — the AppKit table SwiftUI hosts"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedTableCoordinator.swift",
+        9,
+        "`final class FeedTableCoordinator` — the table's AppKit facts, and nothing else"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedScrollPolicy.swift",
+        17,
+        "`struct FeedScrollPolicy` — the one owner of where the reading lands"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedGeometry.swift",
+        4,
+        "measured row heights, held above the view identity a switch destroys"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedTableHandle.swift",
+        12,
+        "`final class FeedTableHandle` — the shared scroll and geometry authority"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedTableModel.swift",
+        7,
+        "`struct FeedTableModel` — what the table is asked to draw this pass"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedWorking.swift",
+        18,
+        "`enum FeedWorking` — a Turn in flight, which no record carries"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedIonLoop.swift",
+        12,
+        "`struct FeedIonLoop` — the one moving pass, driven a pass at a time"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedColumn.swift",
+        57,
+        "`SessionComposer(` — the feed column building the vessel below the rows"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedView.swift",
+        115,
+        "`ArgoComposerVessel.feedClearance` — the gutter the rows leave under the vessel"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedTable.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRow.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRow.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedTableCoordinator.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedScrollPolicy.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedGeometry.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedTableHandle.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedWorking.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedIonLoop.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRowView.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRowCell.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedColumn.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedView.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedView+ComposerEdge.swift"
+        ]
+      }
+    }
+  },
+  "u-agents": {
+    "id": "u-agents",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The agents rail",
+    "line": "It lists who else is working, and selecting one re-scopes the single feed onto that Subagent.",
+    "lines": 612,
+    "bottom": true,
+    "short": [
+      "The rail sits inboard of the reading. `FeedAgents` reads the delegation calls out of the rows on screen, one chip per Subagent, in handover order. Clicking a chip does not open a second feed. It re-scopes the one feed, and Escape comes back to the Session's own reading."
+    ],
+    "long": [
+      "The rail is a list of chips rather than cards. A fan-out is the state it exists for, and it must hold about thirty. A grid of cards dies at that width. The rail is navigation and the feed stays the reading surface, which is why a chip re-scopes rather than duplicating.",
+      "One row is one child. A delegation is never collapsed into another, so two agents handed the same brief keep two chips, two endings and two spends. `FeedScope` addresses a Subagent by the delegation that started it, and not by the CLI's own id.",
+      "The rail's visibility and its chips are one reading, so a count cannot disagree with the list it counts. The deck still decides whether the rail appears at all, from the same reading the chips came from. `AgentMeter` and `AgentsRailStrip` draw the collapsed dot form when the seam is dragged narrow."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-agents",
+        "u-feed",
+        "the scope the feed filters its rows down to, and Escape back to the Session"
+      ],
+      [
+        "u-agents",
+        "u-deck",
+        "whether there is anything to show, which decides if the zone opens"
+      ],
+      [
+        "u-agents",
+        "u-atoms",
+        "the chip ground, the badge and the state dot"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents/FeedAgents.swift",
+        7,
+        "`enum FeedAgents` — the Subagents read off the rows already on screen"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents/FeedAgents.swift",
+        13,
+        "`static func all(in rows:)` — one chip per delegation, in handover order"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents/FeedScope.swift",
+        6,
+        "`enum FeedScope` — the whole Session, or one Subagent"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents/AgentsRail.swift",
+        12,
+        "`struct AgentsRail: View` — the chips, flat and subordinate to the feed"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents/AgentChip.swift",
+        10,
+        "`struct AgentChip: View` — one Subagent as a row"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents/FeedAgents.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents/FeedScope.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents/AgentsRail.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents/FeedAgents.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents/AgentsRailStrip.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents/FeedScope.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckZoning.swift"
+        ]
+      }
+    }
+  },
+  "u-ask": {
+    "id": "u-ask",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "Questions in the feed",
+    "line": "It draws a question the agent put to somebody, and answers it where Argo's gate still holds it.",
+    "lines": 1077,
+    "bottom": true,
+    "short": [
+      "An ask row is the feed's one attention state. `FeedAsk` holds the engine's `Ask` whole, plus whether the record answered it and what came back. A pending question is the only attention-coloured thing on the reading surface. An answered one is history and resolves quiet."
+    ],
+    "long": [
+      "Pendingness is read from the existence of a result, not from its content. A question answered with an unreadable payload is settled, and the degrade-down rule says it must resolve quietly. That is why `isAnswered` and `answer` are separate fields rather than one optional.",
+      "`FeedAskProjection` answers two things the row cannot see for itself. Is the row on screen the question the gate is actually holding open, and can this Session be driven at all. Their absences mean opposite things, so `Asking` keeps them apart.",
+      "`FeedAskOfferList` draws the offered choices and `FeedAskAnswerRow` draws what was chosen. The answer travels keyed by the roster's Session id and by the gate's ask id. A Session with two questions up cannot otherwise say which one is on screen."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-ask",
+        "u-feed",
+        "the ask row the projection places in the stream's own order"
+      ],
+      [
+        "u-ask",
+        "u-shell",
+        "the chosen answer, keyed by Session id and ask id together"
+      ],
+      [
+        "u-ask",
+        "u-contract",
+        "the attention colour a pending question is set in"
+      ],
+      [
+        "u-ask",
+        "engine",
+        "the `Ask` value verbatim, and the answer put back through the gate"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask/FeedAsk.swift",
+        7,
+        "`struct FeedAsk` — the question, what was offered, and which way it went"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask/FeedAsk.swift",
+        12,
+        "`let isAnswered: Bool` — settledness, apart from the answer's text"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask/FeedAskProjection.swift",
+        9,
+        "`enum FeedAskProjection` — is this the live question, and can it be answered"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask/FeedAskProjection.swift",
+        11,
+        "`struct Live` — both ids, so the answer reaches the words on screen"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask/FeedAskCard.swift",
+        10,
+        "`struct FeedAskCard: ViewModifier` — the ground every pressable thing in a waiting ask row stands on"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask/FeedAsk.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask/FeedAsk.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask/FeedAskProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask/FeedAskOfferList.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask/FeedAskAnswerRow.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask/FeedAskProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift"
+        ]
+      }
+    }
+  },
+  "u-call": {
+    "id": "u-call",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "Tool calls as sentences",
+    "line": "It reads one tool call as a sentence, and folds a run of quiet looking into a single counted line.",
+    "lines": 1276,
+    "bottom": true,
+    "short": [
+      "A call row is a mark, a verb, the subject it named, and what it produced. `FeedCall` is deliberately sentence-shaped rather than tabular. Columns and a right-hand rail turned an earlier attempt into a log table. The row has no slot for a timestamp, and no field a renderer must reserve width for."
+    ],
+    "long": [
+      "`FeedSurveyFold` gathers consecutive quiet calls into one survey row. The run breaks at every loud row, so a fold never reaches across a mutation. That rule is what keeps the fold honest — a reader scanning collapsed lines can still see every change the agent made.",
+      "`FeedCall.Churn` carries what a mutation did in lines, but only where the record actually carried a patch to count. `Ending` says how the call finished. Results are held as a list, because one row can stand for a run of calls, and only results with something in them are kept.",
+      "`FeedCallLine` and `FeedCommandLine` draw the line. `FeedQuietCommand` decides which shell calls are quiet enough to fold. `FeedCallLineIon` carries the running treatment while a call is still in flight."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-call",
+        "u-feed",
+        "the call and survey rows the projection emits into the stream"
+      ],
+      [
+        "u-call",
+        "u-evidence",
+        "the kept results a row hands the panel when it is opened"
+      ],
+      [
+        "u-call",
+        "u-agents",
+        "the delegation calls the rail reads its chips from"
+      ],
+      [
+        "u-call",
+        "engine",
+        "the tool call and its outcome, paired by id"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCall.swift",
+        9,
+        "`struct FeedCall` — a mark, a verb, a subject, and what it produced"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCall.swift",
+        13,
+        "`let churn: Churn?` — lines changed, only where a patch was carried"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedSurveyFold.swift",
+        3,
+        "`enum FeedSurveyFold` — a run of looking, broken at every loud row"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedSurveyFold.swift",
+        4,
+        "`static func folded(_:)` — the fold itself, one pass over the contents"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCallLine.swift",
+        11,
+        "`struct FeedCallLine: View` — the sentence, drawn"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCall.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedSurveyFold.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCall.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCallLine.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedQuietCommand.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/FeedEvidence.swift"
+        ]
+      }
+    }
+  },
+  "u-media": {
+    "id": "u-media",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "Pictures in the feed",
+    "line": "It folds a run of picture results into one row of thumbnails, and opens any of them full size.",
+    "lines": 422,
+    "bottom": true,
+    "short": [
+      "Screenshots are the one kind of result that gets worse the smaller it is drawn. `FeedGallery` folds a run of them into a single row of thumbnails. Six filenames say only that six reads happened, while six thumbnails say what the agent was looking at. Clicking one opens `FeedLightbox` over the whole deck."
+    ],
+    "long": [
+      "A run of one is still a gallery, and that is the difference from the survey fold. Collapsing a single read loses an address and saves nothing, while one thumbnail is a picture where there was a filename. The treatment does not change with the count.",
+      "`FeedShot` settles whether a result is a picture from the file's own signature, which decodes nothing and holds nothing. Decoding happens only where a picture is actually drawn, through `MediaShowing` and the bounded cache behind it.",
+      "The lightbox covers the whole deck rather than the feed column, because a deck-width screenshot does not fit in a reading measure. Everything is a way out — the scrim is the button, and Escape answers. Its caption carries the whole path and the provenance, which is more than the thumbnail said."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-media",
+        "u-feed",
+        "the gallery row the fold produces, in the stream's own order"
+      ],
+      [
+        "u-media",
+        "u-evidence",
+        "the decoded picture state and the bounded bitmap cache behind it"
+      ],
+      [
+        "u-media",
+        "u-deck",
+        "the lightbox, which covers the whole plane rather than one zone"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedGallery.swift",
+        11,
+        "`struct FeedGallery` — a run of pictures, read as one row"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedShot.swift",
+        7,
+        "`struct FeedShot` — one picture result and where it came from"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedShotView.swift",
+        15,
+        "`@State private var showing = MediaShowing.undecoded` — decode on draw"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedLightbox.swift",
+        7,
+        "`struct FeedLightbox: View` — one picture, opened over the whole deck"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedGalleryFold.swift",
+        9,
+        "`enum FeedGalleryFold` — the last pass, gathering a run of pictures"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedGallery.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedLightbox.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedGallery.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedShot.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedShotView.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/MediaCache.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedShotView.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedLightbox.swift"
+        ]
+      }
+    }
+  },
+  "u-prose": {
+    "id": "u-prose",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "Markdown in the feed",
+    "line": "It reads the markdown an agent writes and measures every line with Core Text before drawing it.",
+    "lines": 1764,
+    "bottom": true,
+    "short": [
+      "A message and a thought are the same shape, and only the ink moves. `FeedMarkdown` breaks the text into blocks — paragraphs, lists, fences and pipe tables. `ProseMetrics` asks Core Text what those words actually measure, because both the feed and the overview lane need widths a character count cannot give."
+    ],
+    "long": [
+      "`MarkedProse` gives each inline mark the treatment it earns. A code span gets a ground rather than a hue, so the ink stays the voice's. A marked run inside a thought stays quieter than one inside a message. It reads the agent's own backticks and never guesses at a language inside them.",
+      "`MarkdownTable` reads a pipe table, and what makes it a table is the delimiter row. One line of pipes on its own is a sentence with pipes in it. `MarkdownTableLayout` then places real `Text` views on rects the widths decided, because only the layout system can do that.",
+      "Every measurement is cached, since callers ask per row and per cell. `ProseCache` empties whole at its ceiling rather than evicting by age, because a miss costs one parse of one string. The wrapped answers are dropped when the reading measure moves, which is the seam under the reader's finger."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-prose",
+        "u-feed",
+        "a measured block of prose at the row's reading width"
+      ],
+      [
+        "u-prose",
+        "u-mermaid",
+        "a mermaid fence, handed on to be read and laid out"
+      ],
+      [
+        "u-prose",
+        "u-minimap",
+        "the wrapped line widths the lane draws its paragraph rects from"
+      ],
+      [
+        "u-prose",
+        "u-contract",
+        "the type roles and the span ground a marked run is set in"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/FeedProse.swift",
+        7,
+        "`struct FeedProse: View` — one view for a message and for a thought"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/FeedMarkdown.swift",
+        7,
+        "`struct FeedMarkdown: View` — the blocks a message breaks into"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/MarkdownBlock.swift",
+        6,
+        "`enum MarkdownBlock` — paragraph, list, fence or table"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/MarkedProse.swift",
+        11,
+        "`enum MarkedProse` — inline marks, given a ground and not a hue"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/MarkdownTable.swift",
+        9,
+        "`struct MarkdownTable` — a pipe table, found by its delimiter row"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/ProseMetrics.swift",
+        14,
+        "`enum ProseMetrics` — what the words measure, asked of Core Text"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/ProseCache.swift",
+        7,
+        "`struct ProseCache` — bounded readings, emptied whole at the ceiling"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/FeedProse.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/FeedMarkdown.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/ProseMetrics.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/MarkedProse.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/MarkdownTable.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/MarkdownTableLayout.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/ProseCache.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/ProseReading.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapProse+Rects.swift"
+        ]
+      }
+    }
+  },
+  "u-mermaid": {
+    "id": "u-mermaid",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "Mermaid diagrams",
+    "line": "It reads a mermaid fence with its own parser and draws the result on a canvas, with no browser.",
+    "lines": 9274,
+    "bottom": true,
+    "short": [
+      "Argo draws mermaid itself. `MermaidScan` walks a source line left to right, because such a line cannot be split on any single character. Each type has its own reader, and every reader produces the same `MermaidPlan`. `MermaidView` draws a plan and knows nothing about what read it."
+    ],
+    "long": [
+      "Eleven mermaid types have a reader here — flowchart, sequence, mindmap, pie, state, quadrant, journey, timeline, class, entity and gantt. `MermaidDiagram.read` asks each in turn, and the first that recognises the header answers. `Kind` carries ten cases and not eleven. A class diagram and an entity diagram both land on `compartmented`, because compartmented boxes joined by annotated relationships describe both.",
+      "Fourteen directories and 101 files sit below the top level of `Mermaid/`. Three readers — `MermaidFlowchart`, `MermaidSequence` and `MermaidPie` — sit at that top level, with their parsing and placement in the matching directories. The atlas stops at three depths, so the anchors below are a way into that work rather than a map of it.",
+      "The laid-out plan is cached on the diagram's source text. The renderer and the overview lane must read one layout, and the text is the only key both hold. `MermaidLayout` answers the same size at every proposal, since the plan behind it does not change with width. A diagram wider than the prose column scrolls, because shrinking it would take the words down with it."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-mermaid",
+        "u-prose",
+        "the laid-out plan a fence becomes, cached on its source text"
+      ],
+      [
+        "u-mermaid",
+        "u-minimap",
+        "the same plan's rects, so the lane maps a diagram it never re-lays"
+      ],
+      [
+        "u-mermaid",
+        "u-contract",
+        "the diagram ink roles and the type the captions are set in"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidDiagram.swift",
+        11,
+        "`struct MermaidDiagram` — the model, and the source it was read from"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidDiagram.swift",
+        15,
+        "`enum Kind` — one case per diagram type Argo can draw"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidScan.swift",
+        8,
+        "`struct MermaidScan` — a left-to-right cursor over one source line"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidPlan.swift",
+        8,
+        "`struct MermaidPlan` — the drawable result every reader produces"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidView.swift",
+        13,
+        "`struct MermaidView: View` — one view for every diagram type"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidLayout.swift",
+        13,
+        "`struct MermaidLayout: Layout` — captions placed on measured rects"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidFlowchart.swift",
+        9,
+        "`struct MermaidFlowchart` — one type's reader, as an example of the shape"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Layered/MermaidLayered.swift",
+        15,
+        "`struct MermaidLayered` — the shared layered placement several types reuse"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidDiagram.swift",
+        28,
+        "`case compartmented(MermaidCompartmented)` — one case for two mermaid types"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidDiagram.swift",
+        38,
+        "`static func read(_ source: String)` — every reader asked in turn"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Entity/MermaidEntity.swift",
+        9,
+        "`static func read(_ source: String) -> MermaidCompartmented?` — the entity reader's model"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidScan.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidPlan.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidView.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidDiagram.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Entity/MermaidEntity.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidFlowchart.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidSequence.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidPie.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidLayout.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/MermaidView.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/ProseReading.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapMermaid+Rects.swift"
+        ]
+      }
+    }
+  },
+  "u-evidence": {
+    "id": "u-evidence",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The evidence panel",
+    "line": "It shows what an opened call produced — patches, output and pictures — beside the feed that named it.",
+    "lines": 2250,
+    "bottom": true,
+    "short": [
+      "The panel sits outboard of everything else on the deck. It takes evidence values, never a Session and never a selection, because the deck owns which row is open. A patch can be read two ways where it is markdown — the diff itself, or the document that patch made."
+    ],
+    "long": [
+      "`FeedEvidence` gathers what a row's calls kept. `EvidenceDiff` draws hunks with the host's own line numbers on both sides. `EvidenceOutput` draws command output, and `EvidenceMedia` draws pictures. Only markdown offers the second reading, because every other language already is its source.",
+      "Syntax colouring runs through `SyntaxHighlight`, which loads highlight.js into one JavaScript context for the whole app. A hunk is highlighted whole and then cut back into lines. A line on its own is not a parse — the middle of a block comment reads as code. Every failure returns nothing and the characters are drawn plain.",
+      "`SyntaxColouring.Reading` is the only thing a surface may draw from, and one function makes one. That turns the narrowing rule into a compiler check rather than a test. `MediaCache` holds decoded pictures, bounded by what a window can actually show. It lives on the main actor, because every surface that draws one is a view."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-evidence",
+        "u-deck",
+        "the panel's own width, and Escape closing it back to the reading"
+      ],
+      [
+        "u-evidence",
+        "u-feed",
+        "the row id the panel is showing, resolved against the live rows"
+      ],
+      [
+        "u-evidence",
+        "u-media",
+        "the decoded bitmap and the showing state a thumbnail draws through"
+      ],
+      [
+        "u-evidence",
+        "u-prose",
+        "the rendered document a markdown patch is read as"
+      ],
+      [
+        "u-evidence",
+        "engine",
+        "the tool results the engine kept, addressed by call id"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/EvidencePanel.swift",
+        6,
+        "`struct EvidencePanel: View` — evidence in, no Session, no selection"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/FeedEvidence.swift",
+        5,
+        "`struct FeedEvidence` — what an opened row's calls kept"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/EvidenceReading.swift",
+        9,
+        "`enum EvidenceReading` — the patch, or the document it made"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/EvidenceDiff.swift",
+        9,
+        "`struct EvidenceDiff: View` — hunks with the host's own line numbers"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/Syntax/SyntaxHighlight.swift",
+        13,
+        "`enum SyntaxHighlight` — a hunk coloured whole, then cut into lines"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/Syntax/SyntaxColouring.swift",
+        9,
+        "`struct SyntaxColouring` — the only value a surface may draw colours from"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/MediaCache.swift",
+        16,
+        "`final class MediaCache` — decoded pictures, bounded by what a window shows"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/MediaDecode.swift",
+        9,
+        "`enum MediaDecode` — is this a picture, settled from the file signature"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/EvidencePanel.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/EvidenceReading.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/FeedEvidence.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/EvidenceDiff.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/Syntax/SyntaxHighlight.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/Syntax/SyntaxColouring.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/MediaCache.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/EvidencePanel.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/MediaShowing.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/EvidenceDocument.swift"
+        ]
+      }
+    }
+  },
+  "u-minimap": {
+    "id": "u-minimap",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The overview lane",
+    "line": "It draws the whole reading as a proportionate miniature, and maps a click back onto the scroll.",
+    "lines": 2176,
+    "bottom": true,
+    "short": [
+      "The lane is pinned to the feed it maps, and nothing may come between them. It takes the feed's table handle rather than the rows, because everything it draws is geometry the table already measured. A lane that summed anything else would put a rect where its row is not."
+    ],
+    "long": [
+      "`MinimapGeometry` is the arithmetic. Row starts are a prefix sum, so a row's position is a lookup rather than a walk. The miniature is taller than the lane at any real session length. Its scale comes from the widths, and not from what would fit vertically. The lane therefore shows a window onto it.",
+      "`MinimapGeometry` holds no scroll offset at all. Everything in it is still. The lane can freeze one geometry for a whole drag, and repaint nothing while the reader scrolls.",
+      "`MinimapLaneView` draws in three separate Core Animation planes over the deck. The rects are a bitmap of one band, rasterised only when that band's content changes. The viewport rectangle is a second plane, moved inside a `CATransaction` with actions disabled. The annotations are a third, and the only one a pointer moving over the lane touches."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-minimap",
+        "u-feed",
+        "a scroll target, written through the shared table handle"
+      ],
+      [
+        "u-minimap",
+        "u-feed",
+        "the measured heights and gutters it reads back through that handle"
+      ],
+      [
+        "u-minimap",
+        "u-prose",
+        "the wrapped line widths a paragraph's rects are drawn at"
+      ],
+      [
+        "u-minimap",
+        "u-mermaid",
+        "the diagram plan's rects, so the lane never lays a diagram out again"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapLane.swift",
+        9,
+        "`struct MinimapLane: NSViewRepresentable` — the lane, taking the feed's handle"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapGeometry.swift",
+        12,
+        "`struct MinimapGeometry` — the miniature's arithmetic, holding no offset"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapGeometry.swift",
+        15,
+        "`let starts: [CGFloat]` — a prefix sum, so a position is a lookup"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapLaneView.swift",
+        11,
+        "`final class MinimapLaneView: NSView` — three planes, only two of them moving"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapRow.swift",
+        8,
+        "`struct MinimapRow` — one feed row as the shape the lane paints"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapProse+Rects.swift",
+        72,
+        "`ProseMetrics.lay(out:across:in:)` — the lane measuring the same words the feed did"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapLane.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckContentRow.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapGeometry.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapLaneView.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapLaneView.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapProse+Rects.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapMermaid+Rects.swift"
+        ]
+      }
+    }
+  },
+  "u-plan": {
+    "id": "u-plan",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The plan pill",
+    "line": "It reads the newest to-do list out of the record and floats it above the composer as one line.",
+    "lines": 518,
+    "bottom": true,
+    "short": [
+      "A plan is standing state, not a moment. `PlanProjection` reads the last `.plan` event the record carries and nothing else, because the agent delivers its complete list every time. `PlanPill` draws it as one floating line saying where the agent is and how far along."
+    ],
+    "long": [
+      "The read walks the events in reverse and stops at the first plan it finds. A long transcript therefore does not collect every plan on the way to keeping one. This is the sibling of the feed's own projection over the same events. The feed reads a sequence of moments, and this reads one standing fact.",
+      "The pill sits on a standing surface above the dock rather than in the feed. A plan in the stream would appear again on every revision, and the reader would have to work out which entry is current. `PlanStepList` opens the whole list when the pill is expanded.",
+      "`PlanShowing` carries whether the list is revealed and whether the keyboard is on it. Both are parameters rather than internal state, because a screenshot cannot click and those states are otherwise unreachable in a render."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-plan",
+        "u-deck",
+        "the plan reading, drawn beside the rows and never among them"
+      ],
+      [
+        "u-plan",
+        "u-atoms",
+        "the floating glass and the focus ring the pill draws"
+      ],
+      [
+        "u-plan",
+        "engine",
+        "the transcript's plan events and their entries"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanProjection.swift",
+        6,
+        "`enum PlanProjection` — the stream, as the one plan standing at its end"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanProjection.swift",
+        12,
+        "`events.reversed().lazy.compactMap` — stop at the newest plan"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanReading.swift",
+        6,
+        "`struct PlanReading` — the entries and how far along they are"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanPill.swift",
+        6,
+        "`struct PlanPill: View` — one line floating above the dock"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanStepList.swift",
+        6,
+        "`struct PlanStepList: View` — every step, revealed over the pill"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanPill.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanProjection.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanPill.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanShowing.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/SessionsDeck.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanProjection.swift"
+        ]
+      }
+    }
+  },
+  "u-atoms": {
+    "id": "u-atoms",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "Small shared controls",
+    "line": "It holds the small pieces every surface reuses — badges, glyphs, rules, grounds and focus rings.",
+    "lines": 793,
+    "bottom": true,
+    "short": [
+      "These are the pieces no single surface owns. A badge carries a count and a glyph draws a symbol at a contract size. A chrome bar applies the window's material, and a focus ring draws the keyboard cursor. Each one reads the visual contract and takes no colour of its own choosing."
+    ],
+    "long": [
+      "`ArgoBadge` is the pattern for all of them. It takes no hue, because a badge marks a kind of fact and not one of the four operational states. It is a capsule and not a circle, so a number is never cut. Its minimum width equals its height, so one digit still reads as a disc.",
+      "`ArgoFocusVisibility` answers a question SwiftUI cannot. There is no `:focus-visible` on this platform, and a view is focused whether a key or a click put it there. This watches the last event the app saw. Every surface drawing its own ring asks first, so a pointer user never sees a keyboard cursor.",
+      "`ArgoChromeBar` gives the window toolbar and the deck canopy the same material. One material across both is what makes them read as one bar rather than as two surfaces meeting."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-atoms",
+        "u-contract",
+        "the palette, the type roles, the spacing and the icon sizes it reads"
+      ],
+      [
+        "u-atoms",
+        "u-deck",
+        "the chrome bar material the canopy and the toolbar share"
+      ],
+      [
+        "u-atoms",
+        "u-sidebar",
+        "the selected row ground, the state label and the badge"
+      ],
+      [
+        "u-atoms",
+        "u-composer",
+        "the focus ring and the floating glass the vessel is drawn on"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoBadge.swift",
+        9,
+        "`struct ArgoBadge: View` — a count on a control, taking no hue"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoGlyph.swift",
+        9,
+        "`struct ArgoGlyph: View` — a symbol at a contract size"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoChromeBar.swift",
+        23,
+        "`struct ArgoChromeBar: ViewModifier` — the one chrome material"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoFocusRing.swift",
+        12,
+        "`struct ArgoFocusRing` — the keyboard cursor a surface draws itself"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Focus/ArgoFocusVisibility.swift",
+        12,
+        "`final class ArgoFocusVisibility` — was the keyboard what put focus here"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/PreviewSafeListRow.swift",
+        8,
+        "`func previewSafeListRow()` — the Xcode canvas workaround for List rows"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoBadge.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoGlyph.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoChromeBar.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoBadge.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Focus/ArgoFocusVisibility.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckCanopy.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoBadge.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoSelectedRowGround.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoFloatingGlass.swift"
+        ]
+      }
+    }
+  },
+  "u-contract": {
+    "id": "u-contract",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "The visual contract",
+    "line": "It names every colour, type role, spacing step and motion the cockpit is allowed to draw with.",
+    "lines": 1750,
+    "bottom": true,
+    "short": [
+      "Nothing in this target picks a colour or a size by hand. `ArgoTheme` carries the palette in force and reaches every view through the `\\.argo` environment value. `ArgoTypography` names the handful of text roles, and `ArgoSpacing` names the rhythm. Argo ships one appearance — graphite, near-black, with Ion Blue."
+    ],
+    "long": [
+      "Only colour changes between appearances. Type, geometry, elevation and motion do not, which is why `ArgoTheme` carries a palette and a colour scheme together and nothing else. A light palette under a dark scheme is a mismatch no palette value can fix.",
+      "`GraphitePalette` was sampled from the approved study rather than chosen. The comments say so at the values, and every text and state ink is measured for contrast against the base surface. Re-sampling is the instruction before any of them moves.",
+      "`ArgoOperationalState` is the small set of state colours — running, attention, idle and failure. There is no colour for `unknown`, and the absence is the honest rendering. `ArgoTypeScale` maps each role onto one of Apple's macOS text styles, so nothing here carries a fixed point size."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-contract",
+        "u-atoms",
+        "the palette, the type roles and the spacing, through the environment"
+      ],
+      [
+        "u-contract",
+        "u-deck",
+        "the layout tokens the zone widths and seam floors are read from"
+      ],
+      [
+        "u-contract",
+        "u-specimen",
+        "the appearance a rendered specimen is wrapped in"
+      ]
+    ],
+    "concepts": [],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoTheme.swift",
+        5,
+        "`public struct ArgoTheme` — the appearance in force, colour only"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoTheme.swift",
+        21,
+        "`@Entry var argo: ArgoTheme = .graphite` — how every view reaches it"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/GraphitePalette.swift",
+        4,
+        "`static let graphite` — the one implemented appearance, sampled not chosen"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoPalette.swift",
+        3,
+        "`public struct ArgoPalette` — the colour roles a surface may ask for"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoTypography.swift",
+        5,
+        "`public enum ArgoTypography` — the named text roles, none carrying a size"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoSpacing.swift",
+        4,
+        "`public enum ArgoSpacing` — the spacing rhythm, dense by design"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoOperationalState.swift",
+        7,
+        "`public enum ArgoOperationalState` — the four state colours, and no more"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoTheme.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/GraphitePalette.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoTypography.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoTheme.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/GraphitePalette.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoOperationalState.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoTypeScale.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoTheme.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoLayout.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenScreen.swift"
+        ]
+      }
+    }
+  },
+  "u-specimen": {
+    "id": "u-specimen",
+    "kind": "part",
+    "depth": 2,
+    "parent": "ui",
+    "name": "Renderable states and fixtures",
+    "line": "It names states the app can be launched straight into, so a screenshot needs no human driving it.",
+    "lines": 7054,
+    "bottom": true,
+    "short": [
+      "Nothing on CI renders a view, and most cockpit states cannot be reached by hand. The app launched against an ordinary checkout shows no Sessions at all. `SpecimenRegistry` addresses every judged state by a name the command line can pass. `TranscriptFixtures` supplies the transcripts those states are built from."
+    ],
+    "long": [
+      "`SpecimenEntry` pairs a name with what that name draws, as one value. An entry cannot be half-written — there is no name without a rendering, and no rendering nothing can address. The content closure is built on demand, so one launch runs one fixture rather than the whole catalog.",
+      "`SpecimenLaunch` settles the launch arguments before any window is built, and the app target dispatches on the result rather than deciding it. That keeps the decision inside a package a test can reach. `scripts/specimens.sh` asks the running app for the list rather than parsing this source.",
+      "`TranscriptFixtures` is one name for a catalog spread over files by subject — the work, the long run, the folded stretch of looking, the shots. Every shard is an extension on the same enum, and the builders are shared because Swift's `private` inside an extension is file-scoped."
+    ],
+    "inside": [],
+    "among": [],
+    "leaving": [
+      [
+        "u-specimen",
+        "u-shell",
+        "a fixture presentation and inert actions, so a window draws with no Hub"
+      ],
+      [
+        "u-specimen",
+        "u-feed",
+        "fixture transcript events, projected into rows the same way live ones are"
+      ],
+      [
+        "u-specimen",
+        "u-contract",
+        "the appearance every rendered specimen is wrapped in"
+      ],
+      [
+        "u-specimen",
+        "app",
+        "the entry a launch names, and the ending that stops before drawing"
+      ]
+    ],
+    "concepts": [
+      "c-specimen"
+    ],
+    "anchors": [
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenRegistry.swift",
+        13,
+        "`public enum SpecimenRegistry` — the named states the harness can render"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenEntry.swift",
+        7,
+        "`public struct SpecimenEntry` — a name and its rendering, as one value"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenLaunch.swift",
+        9,
+        "`public struct SpecimenLaunch` — the launch arguments, settled in the package"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenScreen.swift",
+        5,
+        "`public struct SpecimenScreen: View` — one entry filling the window"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenSurfaces.swift",
+        51,
+        "`CockpitView(presentation:actions:)` — the real window, with inert actions"
+      ],
+      [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Fixtures/TranscriptFixtures.swift",
+        13,
+        "`enum TranscriptFixtures` — the transcripts the cockpit is judged against"
+      ]
+    ],
+    "claims": {
+      "short": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenRegistry.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Fixtures/TranscriptFixtures.swift"
+        ]
+      },
+      "long": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenEntry.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenLaunch.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenRegistry.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Fixtures/TranscriptFixtures.swift"
+        ]
+      },
+      "leaving": {
+        "sha": "e2e22fb4dc0f53b02b7de76d6ac6bf0fda8b3050",
+        "paths": [
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenSurfaces.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenScreen.swift",
+          "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenLaunch.swift"
+        ]
+      }
+    }
+  }
 };
