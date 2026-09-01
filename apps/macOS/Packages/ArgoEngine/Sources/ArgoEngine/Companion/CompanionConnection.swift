@@ -11,7 +11,9 @@ final class CompanionConnection {
     /// called later for one that waits on a decision.
     typealias Reply = @MainActor (String) -> Void
 
-    private let descriptor: Int32
+    /// `-1` once `close` has handed the number to the read source's cancel handler, so nothing
+    /// here reads, writes or closes a number the kernel may already have reissued.
+    private var descriptor: Int32
     private let respond: (String, @escaping Reply) -> Void
     private let onClose: () -> Void
     /// Whether the first reply ends the connection — the hook channel's one-exchange lifecycle,
@@ -42,9 +44,9 @@ final class CompanionConnection {
         source.setEventHandler { [weak self] in
             MainActor.assumeIsolated { self?.readAvailable() }
         }
-        // The descriptor is closed HERE and nowhere else. `cancel` is asynchronous, so closing
-        // beside it would free a number GCD is still watching — and the next `accept` hands that
-        // same number to another claim's connection.
+        // Once a source holds the number it is closed HERE and nowhere else. `cancel` is
+        // asynchronous, so closing beside it would free a number GCD is still watching — and the
+        // next `accept` hands that same number to another claim's connection.
         let closing = descriptor
         source.setCancelHandler { Darwin.close(closing) }
         source.resume()
@@ -56,6 +58,23 @@ final class CompanionConnection {
         writeSource = nil
         source?.cancel()
         source = nil
+        descriptor = -1
+    }
+
+    /// The half of the lifetime no caller spells. A connection dropped without a `close` still owns
+    /// its descriptor: an activated source is retained by GCD, so the cancel that releases the
+    /// number has to be asked for here or it never comes.
+    ///
+    /// Nothing is closed by hand while a source holds the number — `open` arranged for exactly one
+    /// closer, and a second one here would be the double close that arrangement exists to avoid.
+    deinit {
+        guard descriptor >= 0 else { return }
+        guard let source else {
+            Darwin.close(descriptor)
+            return
+        }
+        writeSource?.cancel()
+        source.cancel()
     }
 
     private func readAvailable() {

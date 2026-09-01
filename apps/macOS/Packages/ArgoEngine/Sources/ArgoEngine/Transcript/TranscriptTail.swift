@@ -101,6 +101,11 @@ public func transcriptLines(
             let lines = await cursor.drain()
             continuation.yield(lines)
         }
+        guard let watcher else {
+            Task { await cursor.close() }
+            continuation.finish()
+            return
+        }
         continuation.onTermination = { _ in
             watcher.cancel()
             Task { await cursor.close() }
@@ -118,8 +123,12 @@ private final class FileWatcher: Sendable {
     private let source: any DispatchSourceFileSystemObject
     private let onChange: @Sendable () async -> Void
 
-    init(url: URL, onChange: @escaping @Sendable () async -> Void) {
+    /// `nil` where the file could not be opened for events, the same refusal `FileCursor` makes
+    /// of the same path: a descriptor that failed to open is `-1`, and handing that to a source
+    /// arms a cancel handler that closes a number this process never had.
+    init?(url: URL, onChange: @escaping @Sendable () async -> Void) {
         let descriptor = open(url.path, O_EVTONLY)
+        guard descriptor >= 0 else { return nil }
         self.onChange = onChange
         self.source = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: descriptor,
@@ -138,6 +147,14 @@ private final class FileWatcher: Sendable {
     }
 
     func cancel() {
+        source.cancel()
+    }
+
+    /// The half of the lifetime no caller spells. An activated source is retained by GCD, so a
+    /// watcher dropped without a `cancel` holds its descriptor for the life of the process — and
+    /// cancelling is what releases it, because the cancel handler above is the only thing that
+    /// closes it. Cancelling twice is not closing twice: the handler runs once.
+    deinit {
         source.cancel()
     }
 }
