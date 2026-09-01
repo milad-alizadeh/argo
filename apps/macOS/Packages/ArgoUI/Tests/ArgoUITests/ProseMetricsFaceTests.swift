@@ -52,4 +52,33 @@ struct ProseMetricsFaceTests {
 
         #expect(table.heights(on: [column])[1] > oneLine)
     }
+
+    /// Why the cell reached the wrap boundary at all: the column is dealt width from `asks`, and a
+    /// code-dense column has to ask for the mono's room. Asking in the sans is what pushed the cell
+    /// onto the line the row was not tall enough for.
+    @Test
+    func `a code dense column asks for more room than the same characters unbacked`() {
+        let backed = MarkdownTable(header: ["check"], rows: [[Self.backticked]]).asks[0]
+        let plain = MarkdownTable(header: ["check"], rows: [[Self.plain]]).asks[0]
+
+        #expect(backed.ideal > plain.ideal)
+        #expect(backed.floor > plain.floor)
+    }
+
+    /// #766's remaining triage question. The mono is the sans' rung in another design, so the two
+    /// are one size at every rung and only the advances differ.
+    ///
+    /// This pins the invariant at the setting the run is at; it cannot MOVE Dynamic Type in
+    /// process, so it would not by itself have caught the mono being built at `rung.size` — the
+    /// HIG's documented number, which equals the platform's resolved size at the default setting
+    /// and stands still when that one moves. The reason to read the sans' size instead is that the
+    /// agreement is then structural rather than a coincidence this test cannot see past.
+    @Test(arguments: ArgoTypeScale.allCases)
+    func `the mono is the same point size as the sans at every rung`(rung: ArgoTypeScale) {
+        let sans = ProseFace(rung: rung)
+        let mono = sans.monospaced
+
+        #expect(mono.font.pointSize == sans.font.pointSize)
+        #expect(mono.font.isFixedPitch)
+    }
 }
