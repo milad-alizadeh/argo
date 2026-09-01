@@ -65,7 +65,8 @@ struct HubRosterCostTests {
 
         #expect(small.session(id: wanted) != nil)
         #expect(large.session(id: wanted) != nil)
-        // Rule 3's ratio: an eightfold roster may not cost more to look one row up in.
+        // Rule 3's ratio: an eightfold roster may cost the slack and no more to look one row up
+        // in, where walking it cost nine times.
         #expect(
             overSixtyFour < overEight * PerfBudgets.rosterLookupFlat,
             "eight rows \(overEight)s, sixty-four \(overSixtyFour)s, over \(trials.count) pairs",

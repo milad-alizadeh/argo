@@ -25,44 +25,7 @@ import Testing
 @MainActor
 @Suite("Minimap cost", .serialized)
 struct MinimapCostTests {
-    private static let column = CGSize(width: 620, height: 800)
-    private static let lane = CGSize(width: 112, height: 800)
-
-    /// A session of the projection's own rows, every text made distinct — the stores are static and
-    /// shared, so a fixture reusing another's strings would be handed a warm cache and measure
-    /// nothing. The tag is what keeps each case's cold pass cold.
-    private static func rows(_ count: Int, tag: String) -> [FeedRow] {
-        let base = FeedProjection.longRows
-        return (0 ..< count).map { at in
-            let row = base[at % base.count]
-            guard case let .message(text) = row.content else {
-                return FeedRow(id: at, content: row.content)
-            }
-            return FeedRow(id: at, content: .message("\(text) [\(tag)/\(at)]"))
-        }
-    }
-
-    private static func laid(_ rows: [FeedRow]) -> FeedTableCoordinator {
-        ProseReading.holding(rows: rows.count)
-        return FeedTableFixture.laidOut(rows, in: column, through: FeedTableHandle())
-    }
-
-    /// A lane over a session, and the geometry it holds still.
-    ///
-    /// `atWidth` is the column the prose wrapped across, and it is what `ProseMetrics` keys its
-    /// wrapped store by. Those stores are static and shared with the two thousand other tests in
-    /// this process, so a case counting what came OFF one takes a width of its OWN — at the shared
-    /// 620 its entries can be evicted mid-case by whatever measured there before it, which is a
-    /// fact about the suite and not about the lane. Caught as a 1-in-19 flake in exactly that case.
-    private static func geometry(over rows: [FeedRow], atWidth width: CGFloat = column.width)
-        throws -> MinimapGeometry {
-        var reading = try #require(Self.laid(rows).reading())
-        reading.columnWidth = width
-        return MinimapGeometry(reading, lane: Self.lane)
-    }
-
-    /// The band the lane holds as pixels: its own height, from the head of the miniature.
-    private static let band: ClosedRange<CGFloat> = 0 ... Self.lane.height
+    private typealias Fixture = MinimapCostFixture
 
     /// How many rows a band spans — the exact range `rects(in:)` walks, which is the whole of what
     /// "bounded by the band rather than by the session" claims.
@@ -81,9 +44,9 @@ struct MinimapCostTests {
     /// back.
     @Test
     func `the feed's measure pass costs one ruler measure a row`() {
-        let rows = Self.rows(301, tag: "measure")
+        let rows = Fixture.rows(301, tag: "measure")
 
-        #expect(Self.laid(rows).measurements == rows.count)
+        #expect(Fixture.laid(rows).measurements == rows.count)
     }
 
     /// Reading the whole session, which happens on every reshape. It walks every row, so it must
@@ -91,8 +54,8 @@ struct MinimapCostTests {
     /// measured until the lane asks for a band.
     @Test
     func `reading a session at length costs no glyph work`() throws {
-        let rows = Self.rows(301, tag: "read")
-        let table = Self.laid(rows)
+        let rows = Fixture.rows(301, tag: "read")
+        let table = Fixture.laid(rows)
         // Warm, so what is counted is the walk rather than the first parse of every string.
         _ = table.reading()
         let typeset = ProseMetrics.typesets
@@ -114,14 +77,14 @@ struct MinimapCostTests {
     /// on are of their own heights. The two readings are `PerfBudgets.bandPositionSlack`.
     @Test
     func `painting a band is bounded by the band rather than by the session`() throws {
-        let short = try Self.geometry(over: Self.rows(301, tag: "band"))
-        let long = try Self.geometry(over: Self.rows(1204, tag: "wide"))
+        let short = try Fixture.geometry(over: Fixture.rows(301, tag: "band"))
+        let long = try Fixture.geometry(over: Fixture.rows(1204, tag: "wide"))
 
-        #expect(Self.rowsIn(Self.band, of: long) == Self.rowsIn(Self.band, of: short))
-        #expect(Self.rowsIn(Self.band, of: long) < 1204)
-        let below = long.miniatureHeight / 2 ... long.miniatureHeight / 2 + Self.lane.height
+        #expect(Self.rowsIn(Fixture.band, of: long) == Self.rowsIn(Fixture.band, of: short))
+        #expect(Self.rowsIn(Fixture.band, of: long) < 1204)
+        let below = long.miniatureHeight / 2 ... long.miniatureHeight / 2 + Fixture.lane.height
         #expect(Self.rowsIn(below, of: long)
-            < PerfBudgets.bandPositionSlack * Self.rowsIn(Self.band, of: long))
+            < PerfBudgets.bandPositionSlack * Self.rowsIn(Fixture.band, of: long))
     }
 
     /// The repaint the reader feels: the second look at a band the lane already painted comes off
@@ -136,15 +99,15 @@ struct MinimapCostTests {
     /// and the fraction they buy are `PerfBudgets.repaintOffCachesFraction`.
     @Test
     func `a band already painted is repainted off the caches`() throws {
-        let geometry = try Self.geometry(over: Self.rows(301, tag: "repaint"), atWidth: 617)
+        let geometry = try Fixture.geometry(over: Fixture.rows(301, tag: "repaint"), atWidth: 617)
         let typeset = ProseMetrics.typesets
-        #expect(!geometry.rects(in: Self.band).isEmpty)
+        #expect(!geometry.rects(in: Fixture.band).isEmpty)
         let cold = ProseMetrics.typesets - typeset
 
         let warm = ProseMetrics.typesets
-        _ = geometry.rects(in: Self.band)
+        _ = geometry.rects(in: Fixture.band)
 
-        #expect(cold <= Self.rowsIn(Self.band, of: geometry))
+        #expect(cold <= Self.rowsIn(Fixture.band, of: geometry))
         #expect((ProseMetrics.typesets - warm) * PerfBudgets.repaintOffCachesFraction <= cold)
     }
 
@@ -159,14 +122,14 @@ struct MinimapCostTests {
     /// the repaint case above describes; the readings are `PerfBudgets.repaintOffCachesFraction`.
     @Test
     func `a second of scrolling inside one band comes off the caches`() throws {
-        let geometry = try Self.geometry(over: Self.rows(301, tag: "scroll"), atWidth: 611)
+        let geometry = try Fixture.geometry(over: Fixture.rows(301, tag: "scroll"), atWidth: 611)
         let first = ProseMetrics.typesets
-        _ = geometry.rects(in: Self.band)
+        _ = geometry.rects(in: Fixture.band)
         let cold = ProseMetrics.typesets - first
         let typeset = ProseMetrics.typesets
 
         for at in 0 ..< 60 {
-            _ = geometry.rects(in: CGFloat(at) ... CGFloat(at) + Self.column.height)
+            _ = geometry.rects(in: CGFloat(at) ... CGFloat(at) + Fixture.column.height)
         }
 
         #expect(cold > 0)
@@ -185,8 +148,8 @@ struct MinimapCostTests {
     /// than equality, are `PerfBudgets.seamOverSessionSlack`.
     @Test
     func `dragging the seam re-measures the band and not the session`() throws {
-        let short = try Self.dragged(over: Self.rows(301, tag: "seam"))
-        let long = try Self.dragged(over: Self.rows(1204, tag: "seamwide"))
+        let short = try Self.dragged(over: Fixture.rows(301, tag: "seam"))
+        let long = try Self.dragged(over: Fixture.rows(1204, tag: "seamwide"))
 
         #expect(short.typesets < Self.frames * short.rows)
         #expect(long.typesets < PerfBudgets.seamOverSessionSlack * short.typesets)
@@ -200,15 +163,15 @@ struct MinimapCostTests {
 
     /// One seam let go over a session, and the glyph work the lane paid for the burst.
     private static func dragged(over rows: [FeedRow]) throws -> (typesets: Int, rows: Int) {
-        var reading = try #require(Self.laid(rows).reading())
+        var reading = try #require(Fixture.laid(rows).reading())
         reading.columnWidth = Self.dragFrom
-        let held = MinimapGeometry(reading, lane: Self.lane)
+        let held = MinimapGeometry(reading, lane: Fixture.lane)
         let typeset = ProseMetrics.typesets
         for at in 0 ..< Self.frames {
             reading.columnWidth = Self.dragFrom - CGFloat(at)
-            _ = MinimapGeometry(reading, lane: Self.lane).rects(in: Self.band)
+            _ = MinimapGeometry(reading, lane: Fixture.lane).rects(in: Fixture.band)
         }
-        return (ProseMetrics.typesets - typeset, Self.rowsIn(Self.band, of: held))
+        return (ProseMetrics.typesets - typeset, Self.rowsIn(Fixture.band, of: held))
     }
 
     /// The worst reading the design has: every row a long markdown message, so every row in the
@@ -220,19 +183,19 @@ struct MinimapCostTests {
         let heavy = (0 ..< 300).map { at in
             FeedRow(id: at, content: .message("## Turn \(at)\n\n\(MinimapText.paragraph) [\(at)]"))
         }
-        let geometry = try Self.geometry(over: heavy, atWidth: 613)
+        let geometry = try Fixture.geometry(over: heavy, atWidth: 613)
         let typeset = ProseMetrics.typesets
-        #expect(!geometry.rects(in: Self.band).isEmpty)
+        #expect(!geometry.rects(in: Fixture.band).isEmpty)
         let cold = ProseMetrics.typesets - typeset
 
         let warm = ProseMetrics.typesets
-        _ = geometry.rects(in: Self.band)
+        _ = geometry.rects(in: Fixture.band)
 
         // A heading and a paragraph a row, so a row is worth more than one pass — and still it is
         // the band's rows it is worth, not the session's. The readings are
         // `PerfBudgets.markdownPassesPerRow`, and the repaint's a quarter for the reason the
         // repaint case above sets out.
-        #expect(cold <= PerfBudgets.markdownPassesPerRow * Self.rowsIn(Self.band, of: geometry))
+        #expect(cold <= PerfBudgets.markdownPassesPerRow * Self.rowsIn(Fixture.band, of: geometry))
         #expect((ProseMetrics.typesets - warm) * PerfBudgets.repaintOffCachesFraction <= cold)
     }
 }

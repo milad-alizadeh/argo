@@ -204,6 +204,18 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   the roster memo's own fold count, and the prose store's hit rate. All eight hold unchanged
   optimised, and so does every count beside them: `ArgoEngine` 1 222 tests
   and `ArgoUI` 2 035 tests pass in release with no budget touched.
+- **What `-O` is actually worth on these paths: 1.0x to 1.3x on six of the seven measured, and
+  3.7x on the seventh** (#953, and #998 for the same seven against `main`). So the whole epic being
+  sized in debug did not inflate its figures by an order of magnitude, and the fixes it justified
+  are not artefacts of the build. The exception is the rule's reason. Six of the seven are mostly
+  **not this app's code** — a ruler measure is SwiftUI hosting plus Core Text, a band paint is Core
+  Text, and framework code is optimised in both configurations, so `-Onone` inflates only Argo's
+  own share of the pass. The seventh, a warm whole-session walk, is almost entirely Argo's own
+  Swift: every row visited over warm caches, exactly where retain/release traffic and bounds checks
+  are the whole cost. **A 1.2x average is therefore not a licence to size the next budget in
+  debug** — the next hot path that is pure Swift will read 3x, which is why Rule 3 asserts a ratio
+  and Rule 7 demands the figures. The per-path figures are `ArgoUITests/PerfBudgets`, still
+  provisional until they are taken on `macos-26` (#1024).
 - **A release run is `ARGO_TEST_CONFIGURATION=release`, and it defines DEBUG on purpose** (#991).
   What blocked release was never an instrument. Every counter the count claims read is `#if DEBUG`,
   so `swift test -c release` failed to COMPILE `ArgoUITests` — exiting 0 as it did, the #918 hazard

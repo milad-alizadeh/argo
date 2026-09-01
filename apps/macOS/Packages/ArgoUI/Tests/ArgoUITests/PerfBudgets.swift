@@ -1,52 +1,41 @@
 /// Every figure this package's cost suites were RECORDED at, and the bound each gate derives from
 /// one (ADR-0028 Rule 7, #953).
 ///
-/// ONE FILE, because a figure kept beside the assertion it justifies is a figure nobody re-reads.
-/// `MinimapCostTests` recorded 142 ms in its own header and asserted `cost < 4` — 28x looser than
-/// the thing it measured, and green through a twentyfold regression in the path it was written to
-/// hold. Gathered here, a bound that has drifted from its figure is visible by looking, and so is a
-/// figure with no bound.
+/// **PROVISIONAL — these are a loaded laptop's figures, not `macos-26`'s (#1024).** ADR-0028's
+/// Consequences require re-recording on `macos-26`, in release, BEFORE the seconds-side budgets
+/// bind, and that has not happened. Nothing here goes red or green on a second today — every gate
+/// in the suite is a count — but the block ADR-0028 names is still up.
 ///
-/// Every entry carries the same provenance, because a figure without it is a number:
+/// Every entry reads the same way, and an entry that cannot fill the shape does not belong here:
 ///
 ///     Recorded: <what> · <machine> · <configuration> · <sampling>
 ///
-/// **Machines.** `M4 Pro` is Apple M4 Pro, 12 cores, 48 GB, macOS 26.5.1, Swift 6.3.3.
-/// `Apple silicon laptop` is the whole of what is known about a figure taken before this file
-/// existed — read one of those as a shape and never as a number.
+/// - **Machine** — `M4 Pro` (12 cores, 48 GB, macOS 26.5.1, Swift 6.3.3) is what #953 recorded on.
+///   `Apple silicon laptop` is the whole of what is known about a figure that predates this file:
+///   read one of those as a shape, never as a number.
+/// - **Configuration** — `debug` is `-Onone`; `release` is `-O` with `wholemodule`. A count reads
+///   the same in both and says `either`.
+/// - **Sampling** — `least of N` for warm work, because CPU noise is one-sided (`CostMeasure`).
+///   `cold` where a first pass IS the measurement. `exact` for a count that does not vary.
+/// - **loaded** — other agents were building while it was taken. An upper bound, nothing better.
 ///
-/// **Configurations.** `debug` is `-Onone`. `release` is `-O` with `wholemodule`, which is what
-/// `ARGO_TEST_CONFIGURATION=release` builds (#991) and what the app itself is built with (#998).
-/// A COUNT reads the same in both, which is most of this suite; a seconds figure does not, and
-/// every one below says which configuration it came from.
-///
-/// **Sampling.** `least of N` for warm work, because CPU noise is one-sided and a minimum
-/// converges on the intrinsic cost from above (`CostMeasure`). `cold` for a first pass over an
-/// empty store, which IS the measurement and cannot honestly be repeated.
-///
-/// **A loaded box.** Where an entry says `loaded`, other agents were building on the machine while
-/// it was taken — load average in the low hundreds on a 12-core box. Such a figure is an upper
-/// bound on that machine and nothing better, which is exactly why nothing here gates on seconds.
-///
-/// Two files rather than one, and for `CostMeasure`'s reason: `ArgoEngine` and `ArgoUI` are
-/// separate packages with no test target between them, and sharing would mean a third package
-/// existing so that a list of numbers could be imported twice.
+/// What the optimiser is worth on these paths, and why it is small, is ADR-0028's Consequences.
 enum PerfBudgets {
     /// `CockpitPresentationCostTests` — one presentation comparison may not scale with the
     /// transcript it carries.
     ///
-    /// Recorded: 0.997–1.002 over three readings, a pass 1.8 µs inside a 5 000-pass block, over 4
-    /// Sessions of 5 824 events · Apple silicon laptop · debug · least of 20. Before the fix an
-    /// equal comparison of reallocated buffers cost 5.48 ms against 3.9 µs after, and this quotient
-    /// read about 19.
+    /// Recorded: 0.997–1.002, a pass 1.8 µs inside a 5 000-pass block over 4 Sessions of 5 824
+    /// events · Apple silicon laptop · debug · least of 20. Before the fix an equal comparison of
+    /// reallocated buffers cost 5.48 ms against 3.9 µs after, and this quotient read about 19.
+    /// Rule 7's 3x would allow 3.0; 1.3 is Rule 3's own number and the tighter of the two.
     static let presentationCompareFlat = 1.3
 
     /// `FeedRowsCompareCostTests` — asking whether the fresh rows are the reading that stands may
     /// not scale with the reading.
     ///
-    /// Recorded: at 4 000 rows a rewritten last row costs 0.50 µs against 771 µs before, and a
-    /// reload decided at the seam 0.29 µs against 1.21 ms · Apple silicon laptop · debug · least of
-    /// 20 over 20 000-pass blocks.
+    /// Recorded: 0.99–1.01 at 300 rows against 4 000 · Apple silicon laptop · debug · least of 20
+    /// over 20 000-pass blocks. A rewritten last row costs 0.50 µs against 771 µs before the fix,
+    /// and a reload decided at the seam 0.29 µs against 1.21 ms. Rule 3's 1.3, as above.
     static let rowsCompareFlat = 1.3
 
     /// `SessionsRoomReadingCostTests` — how much cheaper a repeat reading at the same stamp is than
@@ -66,72 +55,65 @@ enum PerfBudgets {
     /// `MinimapCostTests` — a band far down the miniature is worth a BAND and not a position. Not
     /// equality, because the rows it lands on are of their own heights.
     ///
-    /// Recorded: 107 rows in the band at the head and 109 half a session down, over the 301-row and
-    /// 1 204-row readings · M4 Pro · a count, so configuration-free.
+    /// Recorded: 107 rows in the band at the head, 109 half a session down, over the 301-row and
+    /// 1 204-row readings · M4 Pro · either · exact. Twice is Rule 8's slack on a count, not Rule
+    /// 7's on a duration: the two readings differ by 2 rows and a band that had started costing the
+    /// session would read 1 204.
     static let bandPositionSlack = 2
 
     /// `MinimapCostTests` — a repaint of a band already painted comes off the caches, as a fraction
     /// of the first paint rather than as nothing.
     ///
-    /// Recorded: 0 Core Text passes of 32 idle, and 2 of 32 when `ProseMetrics`' eight-measure drop
-    /// lands mid-paint — which the suite's own comment explains and which cost a 1-in-20 flake to
-    /// find · M4 Pro · a count. A quarter is the gate; a repaint that had stopped coming off the
-    /// caches would cost all 32.
+    /// Recorded: 0 Core Text passes of 32 idle, 2 of 32 when `ProseMetrics`' eight-measure drop
+    /// lands mid-paint · M4 Pro · either · exact per run, both readings seen. A quarter, which is
+    /// 4x the worse reading — Rule 8's slack on a count and deliberately not Rule 7's 3x, because
+    /// which of the two readings a run gets is decided by test ordering rather than by the lane. A
+    /// repaint that had stopped coming off the caches costs all 32.
     static let repaintOffCachesFraction = 4
 
     /// `MinimapCostTests` — a seam drag re-measures the band and not the session, so a session four
     /// times as long costs the same burst.
     ///
-    /// Recorded: 841 Core Text passes over the 301-row session and 840 over the 1 204-row one ·
-    /// M4 Pro · a count. Twice rather than equality because the frames change the scale, so the
-    /// band's last row is a boundary the two sessions can fall either side of; a drag paying for
-    /// the session would cost 4x.
+    /// Recorded: 841 Core Text passes over the 301-row session, 840 over the 1 204-row one ·
+    /// M4 Pro · either · exact. Twice rather than equality because the frames change the scale, so
+    /// the band's last row is a boundary the two sessions can fall either side of; a drag paying
+    /// for the session would cost 4x.
     static let seamOverSessionSlack = 2
 
     /// `MinimapCostTests` — a session of nothing but long markdown still pays only for the band. A
     /// heading and a paragraph a row, so a row is worth more than one pass.
     ///
-    /// Recorded: 66 Core Text passes over 34 band rows, and the repaint 0 of those 66 · M4 Pro · a
-    /// count. 1.9 passes a row measured, 3 gated.
+    /// Recorded: 66 Core Text passes over 34 band rows — 1.9 a row — and the repaint 0 of those 66
+    /// · M4 Pro · either · exact. 3 gated, which is Rule 8's slack on a count.
     static let markdownPassesPerRow = 3
 
     /// `MinimapWalkCostTests` — thirty frames of a width burst re-measure less than one document.
     ///
     /// Recorded: 1 420 ruler measures over the 1 000-row reading, against 29 000 before the fix —
-    /// one document per frame · M-series Mac · debug · a count, exact idle and loaded. Three
-    /// documents is 2.1x the reading (Rule 7). The seconds from that run are a figure and gate
-    /// nothing: 13.7 s → 0.9 s of thread CPU, and the CPU quotient the suite's own comment rejects.
+    /// one document a frame · M-series laptop · debug · exact, idle and loaded. Three documents is
+    /// 2.1x the reading. The same run's seconds, 13.7 s → 0.9 s of thread CPU, gate nothing: its
+    /// two halves are unlike work, which is the CPU quotient that suite rejects.
+    ///
+    /// Its other counts stay in that suite's header, with `FeedTypesetCostTests`' µs: no constant
+    /// reads them, and an unread constant here would be debt rather than a record.
     static let walkBurstDocuments = 3
 
     /// The seconds `MinimapFigureRecording` re-records, one entry a figure it prints.
     ///
-    /// Recorded: over the 301-row reading · M4 Pro (12 cores, 48 GB, macOS 26.5.1, Swift 6.3.3) ·
-    /// both configurations · each figure the LEAST of five rounds, cold or least-of-N inside a
-    /// round as its own case describes.
+    /// Recorded: over the 301-row reading · M4 Pro, **loaded**, load average 125–164 on 12 cores ·
+    /// both, as the two halves · the least of five interleaved rounds, each figure cold or
+    /// least-of-N inside a round as its case describes.
     ///
-    /// **The machine was LOADED** — other agents building throughout, load average 125 to 164 on
-    /// 12 cores. Every millisecond below is therefore an upper bound on this machine and a quiet
-    /// one reads lower. The two configurations were measured **interleaved**, debug then release,
-    /// round by round, because a box picking up a neighbour drifts over a run: three debug passes
-    /// followed by three release ones read the measure pass as SLOWER optimised, purely because
-    /// the load average had gone from 131 to 215 in between (#998). Interleaved, the drift is in
-    /// both minima.
+    /// Interleaved because a box picking up a neighbour drifts over a run: five debug rounds
+    /// followed by five release ones read the measure pass as SLOWER optimised, purely because the
+    /// load average went from 131 to 215 in between (#998).
     ///
-    /// Nothing gates on these. A seconds gate on a shared laptop reads the box (`CostMeasure`) and
-    /// every gate in this suite is a count; what these are for is the question no count can answer
-    /// — what the app that SHIPS costs, and so whether a count is worth paying for at all (#998).
-    ///
-    /// **What the optimiser is worth here: 1.0x to 1.3x on six of the seven, and 3.7x on the
-    /// seventh.** So the whole #963 epic being sized in debug did not inflate its figures by an
-    /// order of magnitude — but the exception says why the rule still matters. Six of these paths
-    /// are mostly NOT Argo's code: a ruler measure is SwiftUI hosting plus Core Text, a band paint
-    /// is Core Text, and framework code is optimised in both configurations, so `-Onone` inflates
-    /// only Argo's own share. The seventh, the warm whole-session walk, is almost entirely Argo's
-    /// own Swift — every row visited over warm caches, exactly where retain/release traffic and
-    /// bounds checks are the whole cost. The next hot path that is pure Swift will read 3x too.
+    /// Nothing gates on these — a seconds gate on a shared laptop reads the box (`CostMeasure`).
+    /// What they are for is the question no count can answer: what the app that SHIPS costs
+    /// (ADR-0028 Consequences, and #998).
     static let feedMeasurePass = Figure(debug: 158.76, release: 154.97)
-    /// A warm walk of the whole session, which happens on every reshape. The one path here where
-    /// the optimiser is worth more than a rounding error.
+    /// A warm walk of the whole session, which happens on every reshape. The one path here the
+    /// optimiser is worth more than a rounding error on, and ADR-0028 says why.
     static let sessionReading = Figure(debug: 1.08, release: 0.29)
     /// One band painted cold — the Core Text pass.
     static let bandPaintCold = Figure(debug: 4.36, release: 3.61)
@@ -144,10 +126,8 @@ enum PerfBudgets {
     /// A band of nothing but long markdown, cold — the ceiling.
     static let markdownBandCold = Figure(debug: 8.46, release: 7.82)
 
-    /// One recorded figure in milliseconds, in each of the two configurations.
-    ///
-    /// Both halves rather than one, because the gap IS the finding: until #953 every figure in the
-    /// epic was a `-Onone` number, and nobody knew what the shipped app costs.
+    /// One recorded figure in milliseconds, in each of the two configurations. Both halves, because
+    /// the gap is the finding: until #953 every figure in the epic was a `-Onone` number.
     struct Figure {
         let debug: Double
         let release: Double

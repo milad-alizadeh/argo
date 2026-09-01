@@ -15,40 +15,14 @@ import Testing
 /// ARGO_RECORD_FIGURES=1 ARGO_TEST_CONFIGURATION=release sh apps/macOS/scripts/swift-test.sh
 /// ```
 ///
-/// Run it on a QUIET machine, in both configurations, and copy what it prints into `PerfBudgets`
-/// with the machine and configuration beside it (ADR-0028 Rule 7).
+/// Run it on a QUIET machine — `macos-26`, which is what ADR-0028's Consequences ask for and what
+/// #1024 is open to do — in both configurations, interleaved, and copy what it prints into
+/// `PerfBudgets` with the machine and configuration beside it (ADR-0028 Rule 7).
 @MainActor
 @Suite("Minimap figures", .serialized, .enabled(if: ProcessInfo.processInfo
         .environment["ARGO_RECORD_FIGURES"] != nil))
 struct MinimapFigureRecording {
-    private static let column = CGSize(width: 620, height: 800)
-    private static let lane = CGSize(width: 112, height: 800)
-    private static let band: ClosedRange<CGFloat> = 0 ... Self.lane.height
-
-    /// Distinct text per fixture, for the reason `MinimapCostTests.rows(_:tag:)` states: the prose
-    /// stores are static and shared, so a fixture reusing another's strings measures a warm cache.
-    private static func rows(_ count: Int, tag: String) -> [FeedRow] {
-        let base = FeedProjection.longRows
-        return (0 ..< count).map { at in
-            let row = base[at % base.count]
-            guard case let .message(text) = row.content else {
-                return FeedRow(id: at, content: row.content)
-            }
-            return FeedRow(id: at, content: .message("\(text) [\(tag)/\(at)]"))
-        }
-    }
-
-    private static func laid(_ rows: [FeedRow]) -> FeedTableCoordinator {
-        ProseReading.holding(rows: rows.count)
-        return FeedTableFixture.laidOut(rows, in: column, through: FeedTableHandle())
-    }
-
-    private static func geometry(over rows: [FeedRow], atWidth width: CGFloat) throws
-        -> MinimapGeometry {
-        var reading = try #require(Self.laid(rows).reading())
-        reading.columnWidth = width
-        return MinimapGeometry(reading, lane: Self.lane)
-    }
+    private typealias Fixture = MinimapCostFixture
 
     /// One figure against what `PerfBudgets` has it recorded at, so a run says whether the file is
     /// still true and not only what the machine did today. `ms` rather than seconds because every
@@ -64,11 +38,11 @@ struct MinimapFigureRecording {
     /// cold prose cache IS the measurement.
     @Test
     func `the feed's measure pass, cold`() {
-        let rows = Self.rows(301, tag: "figure-measure")
+        let rows = Fixture.rows(301, tag: "figure-measure")
         Self.record(
             "feed measure pass, 301 rows cold",
             PerfBudgets.feedMeasurePass,
-            cpuSeconds { _ = Self.laid(rows) },
+            cpuSeconds { _ = Fixture.laid(rows) },
         )
     }
 
@@ -76,7 +50,7 @@ struct MinimapFigureRecording {
     /// walk is honest, because the walk is what runs on every reshape after the first.
     @Test
     func `reading a session, warm`() {
-        let table = Self.laid(Self.rows(301, tag: "figure-read"))
+        let table = Fixture.laid(Fixture.rows(301, tag: "figure-read"))
         _ = table.reading()
         Self.record(
             "session reading, 301 rows warm",
@@ -89,27 +63,33 @@ struct MinimapFigureRecording {
     /// definition; the repaint is the least of N.
     @Test
     func `painting a band, cold and warm`() throws {
-        let geometry = try Self.geometry(over: Self.rows(301, tag: "figure-band"), atWidth: 619)
+        let geometry = try Fixture.geometry(
+            over: Fixture.rows(301, tag: "figure-band"),
+            atWidth: 619,
+        )
         Self.record(
             "band paint, cold",
             PerfBudgets.bandPaintCold,
-            cpuSeconds { _ = geometry.rects(in: Self.band) },
+            cpuSeconds { _ = geometry.rects(in: Fixture.band) },
         )
         Self.record(
             "band paint, warm",
             PerfBudgets.bandPaintWarm,
-            leastCPUSeconds { _ = geometry.rects(in: Self.band) },
+            leastCPUSeconds { _ = geometry.rects(in: Fixture.band) },
         )
     }
 
     /// One second of reading at frame rate inside the band the lane holds.
     @Test
     func `sixty scrolled frames`() throws {
-        let geometry = try Self.geometry(over: Self.rows(301, tag: "figure-scroll"), atWidth: 618)
-        _ = geometry.rects(in: Self.band)
+        let geometry = try Fixture.geometry(
+            over: Fixture.rows(301, tag: "figure-scroll"),
+            atWidth: 618,
+        )
+        _ = geometry.rects(in: Fixture.band)
         Self.record("sixty scrolled frames", PerfBudgets.sixtyScrolledFrames, leastCPUSeconds {
             for at in 0 ..< 60 {
-                _ = geometry.rects(in: CGFloat(at) ... CGFloat(at) + Self.column.height)
+                _ = geometry.rects(in: CGFloat(at) ... CGFloat(at) + Fixture.column.height)
             }
         })
     }
@@ -118,11 +98,11 @@ struct MinimapFigureRecording {
     /// fresh measure and the wrapped store turns over. The worst case the design has.
     @Test
     func `thirty seam frames`() throws {
-        var reading = try #require(Self.laid(Self.rows(301, tag: "figure-seam")).reading())
+        var reading = try #require(Fixture.laid(Fixture.rows(301, tag: "figure-seam")).reading())
         Self.record("thirty seam frames", PerfBudgets.thirtySeamFrames, leastCPUSeconds {
             for at in 0 ..< 30 {
                 reading.columnWidth = 700 - CGFloat(at)
-                _ = MinimapGeometry(reading, lane: Self.lane).rects(in: Self.band)
+                _ = MinimapGeometry(reading, lane: Fixture.lane).rects(in: Fixture.band)
             }
         })
     }
@@ -133,11 +113,11 @@ struct MinimapFigureRecording {
         let heavy = (0 ..< 300).map { at in
             FeedRow(id: at, content: .message("## Turn \(at)\n\n\(MinimapText.paragraph) [f\(at)]"))
         }
-        let geometry = try Self.geometry(over: heavy, atWidth: 616)
+        let geometry = try Fixture.geometry(over: heavy, atWidth: 616)
         Self.record(
             "markdown band paint, cold",
             PerfBudgets.markdownBandCold,
-            cpuSeconds { _ = geometry.rects(in: Self.band) },
+            cpuSeconds { _ = geometry.rects(in: Fixture.band) },
         )
     }
 }
