@@ -25,15 +25,11 @@ struct ProjectManageMenu: View {
             // The same verb the disabled-Project state offers, spelled once (`ProjectRepair`):
             // one repair cannot have two vocabularies.
             Button(ProjectRepair.remove, systemImage: ArgoSymbol.removeProject) {
-                repair(row.id).forget()
+                ProjectRepair(projectID: row.id, actions: actions).forget()
             }
             .help(ProjectRepair.removeHelp)
         }
         .accessibilityLabel("Manage \(row.name)")
-    }
-
-    private func repair(_ projectID: String) -> ProjectRepair {
-        ProjectRepair(projectID: projectID, actions: actions)
     }
 }
 

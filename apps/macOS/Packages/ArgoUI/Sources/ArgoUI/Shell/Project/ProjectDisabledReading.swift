@@ -16,8 +16,6 @@ struct ProjectDisabledReading: Equatable {
     let state: String
     /// What is wrong, why the window is dark, and what to do, in that order.
     let detail: String
-    /// Everything the screen states, spoken. State is never left to the mark.
-    let announcement: String
 }
 
 extension ProjectDisabledReading {
@@ -32,14 +30,12 @@ extension ProjectDisabledReading {
     /// to re-point or to forget, so neither verb this state exists to offer would do anything.
     init?(project: CockpitPresentation.Project?) {
         guard let project, project.isRegistered, !project.isReachable else { return nil }
-        let state = ProjectMenuProjection.unreachable
         self.init(
             projectID: project.id,
             name: project.name,
-            state: state,
+            state: ProjectMenuProjection.unreachable,
             detail: "Argo has no folder at \(project.location). "
                 + "This Project is disabled until you say where the folder went, or remove it.",
-            announcement: "Project, \(project.name), \(state)",
         )
     }
 }

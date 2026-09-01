@@ -2,12 +2,21 @@
 import Testing
 
 /// What a folder that is not at the recorded path does to the window (failure spec §6): the whole
-/// Project is disabled, it says so in the registered word, and the two repairs are offered on it.
+/// Project is disabled, and it says so in the registered word.
 @Suite("A missing folder disables the Project")
 struct ProjectDisabledTests {
-    @Test
-    func `a Project on a folder that is there leaves the window lit`() {
-        #expect(ProjectDisabledReading(presentation: .preview) == nil)
+    /// Every Project the window is NOT disabled by, and why each is left alone. One table rather
+    /// than a case each: the claim is identical, and it is the reasons that differ.
+    static let lit: [(why: String, presentation: CockpitPresentation)] = [
+        ("its folder is where it was registered", .preview),
+        ("nothing is registered on this machine", .unregisteredPreview),
+    ]
+
+    @Test(arguments: lit)
+    func `a Project the window can act in leaves it lit`(
+        _ project: (why: String, presentation: CockpitPresentation),
+    ) {
+        #expect(ProjectDisabledReading(presentation: project.presentation) == nil)
     }
 
     @Test
@@ -25,7 +34,6 @@ struct ProjectDisabledTests {
         let reading = ProjectDisabledReading(presentation: .unreachablePreview)
 
         #expect(reading?.state == ProjectMenuProjection.unreachable)
-        #expect(reading?.announcement == "Project, penumbra, folder not found")
     }
 
     /// The path is what the reader has to recognise to know which folder moved.
@@ -36,8 +44,10 @@ struct ProjectDisabledTests {
         #expect(reading?.detail.contains("/Users/milad/Developer/penumbra") == true)
     }
 
-    /// `.preview` holds an unreachable Project that is NOT the active one, which is a menu row's
-    /// state and not this window's.
+    /// `.preview` holds a Project whose folder is gone that is NOT the active one — a menu row's
+    /// state, and no reason to darken a window pointed somewhere else. The same record is asked
+    /// about twice on purpose: what makes the second answer mean anything is that the first one is
+    /// a disabling Project.
     @Test
     func `another Project's missing folder does not disable this window`() {
         #expect(ProjectDisabledReading(project: Self.moved) != nil)
@@ -49,11 +59,6 @@ struct ProjectDisabledTests {
     @Test
     func `a folder nobody registered is not a disabled Project`() {
         #expect(ProjectDisabledReading(project: Self.unregistered) == nil)
-    }
-
-    @Test
-    func `a machine that has registered nothing is not a disabled Project`() {
-        #expect(ProjectDisabledReading(presentation: .unregisteredPreview) == nil)
     }
 
     private static let moved = CockpitPresentation.Project(

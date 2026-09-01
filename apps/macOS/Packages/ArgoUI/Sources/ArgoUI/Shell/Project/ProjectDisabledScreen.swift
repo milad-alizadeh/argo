@@ -3,15 +3,14 @@ import SwiftUI
 /// The whole window when the active Project's folder is not at the recorded path: one error state,
 /// and the two verbs that repair it (failure spec §6).
 ///
-/// It REPLACES the rooms rather than sitting over them. The folder is the Project's scope
-/// (ADR-0015), so with the folder gone there is no room left that could be honestly lit — the
-/// roster, the checkout and the Code room all read the same missing folder. A per-room split was
-/// proposed and rejected.
+/// The platform's own unavailable state, restyled through the contract exactly as
+/// `TicketsRoomVacancy` does it — this is a title, a sentence and the actions on them, which is
+/// what `ContentUnavailableView` is, and a hand-built stack of the same three would lose the
+/// keyboard and accessibility behaviour that comes with it.
 ///
-/// Said in WORDS, with no mark above them. The icon ladder tops out at a control's own rung
-/// (`ArgoIconSize`), and a 13pt folder over a whole window reads as a speck rather than as a state
-/// — so the failure ink on the status word is the only second reading here, and `folder not found`
-/// is on the screen whatever the palette does.
+/// Said in WORDS, with no mark over them. The icon ladder tops out at a control's own rung
+/// (`ArgoIconSize`), and a 13pt folder above a whole window reads as a speck rather than as a
+/// state, so the failure ink on the status word is the only second reading here.
 struct ProjectDisabledScreen: View {
     @Environment(\.argo) private var argo
 
@@ -19,44 +18,46 @@ struct ProjectDisabledScreen: View {
     let repair: ProjectRepair
 
     var body: some View {
-        VStack(spacing: ArgoSpacing.section) {
-            said
-            verbs
-        }
-        .frame(maxWidth: ArgoProjectDisabled.readingWidth)
-        .padding(ArgoSpacing.region)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(argo.color.surface.sunken)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(reading.announcement)
-    }
-
-    private var said: some View {
-        VStack(spacing: ArgoSpacing.base) {
-            Text(reading.name)
-                .argoText(ArgoTypography.identityHeading)
-                .foregroundStyle(argo.color.text.primary)
-            Text(reading.state)
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(ArgoOperationalState.failure.tint(in: argo.color))
+        ContentUnavailableView {
+            VStack(spacing: ArgoSpacing.tight) {
+                Text(reading.name)
+                    .argoText(ArgoTypography.identityHeading)
+                    .foregroundStyle(argo.color.text.primary)
+                Text(reading.state)
+                    .argoText(ArgoTypography.rowMeta)
+                    .foregroundStyle(ArgoOperationalState.failure.tint(in: argo.color))
+            }
+            .frame(maxWidth: ArgoProjectDisabled.readingWidth)
+        } description: {
             Text(reading.detail)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.secondary)
-                .multilineTextAlignment(.center)
+                // On the Text: `ContentUnavailableView` sizes its description to a measure of its
+                // own, and a frame outside it never reaches the line breaks.
+                .frame(width: ArgoProjectDisabled.readingWidth)
+        } actions: {
+            verbs
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(argo.color.surface.sunken)
     }
 
     /// Relocate takes the default action: it is the repair that keeps the Project, and removing one
-    /// by pressing Return is not a thing this screen may do.
+    /// by pressing Return is not a thing this screen may do. Remove takes the quiet style beside
+    /// it, so the accent stays on the one control the screen is asking for.
     private var verbs: some View {
         HStack(spacing: ArgoSpacing.base) {
             Button(ProjectRepair.relocate, action: repair.locate)
                 .argoText(ArgoTypography.control)
                 .keyboardShortcut(.defaultAction)
             Button(ProjectRepair.remove, action: repair.forget)
-                .argoText(ArgoTypography.control)
+                .buttonStyle(.quiet)
                 .help(ProjectRepair.removeHelp)
         }
+        // `ContentUnavailableView` lays its actions out to a measure of its own and truncates what
+        // will not fit — which cut `Remove from Argo` to `Remove from…`, a verb that reads as
+        // opening something. A repair's label is the one thing here that may not be abbreviated.
+        .fixedSize(horizontal: true, vertical: false)
     }
 }
 

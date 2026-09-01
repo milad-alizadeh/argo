@@ -1,8 +1,7 @@
 import SwiftUI
 
 /// What the window becomes when the Project itself has gone bad. One state, because a missing
-/// folder disables the Project whole (failure spec §6) — there is no per-room variant of this to
-/// render.
+/// folder disables the Project whole (failure spec §6).
 extension SpecimenRegistry {
     static let project: [SpecimenEntry] = [
         // The WHOLE window, through the same view the app builds, rather than the error state on

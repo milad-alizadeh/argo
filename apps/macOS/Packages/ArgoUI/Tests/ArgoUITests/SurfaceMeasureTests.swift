@@ -1,7 +1,7 @@
 @testable import ArgoUI
 import Testing
 
-/// What a measure sheet beside its surface claims about that surface. None of the five here names
+/// What a measure sheet beside its surface claims about that surface. Not one of them names
 /// a step of `ArgoSpacing` — every member is a slot sized to the sentence it holds — so
 /// `RhythmTests`' ladder assertion has nothing to hold them to. What holds a slot honest is the
 /// reason on its declaration, and these are those reasons made assertable.
@@ -76,6 +76,14 @@ struct SurfaceMeasureTests {
     @Test
     func `the Connect panel fits the narrowest window`() {
         #expect(ArgoConnectPanel.width < ArgoLayout.windowMinimumWidth)
+    }
+
+    /// A ceiling on the disabled Project's prose, not a panel — it is set on the window's own
+    /// ground, so the narrowest window the app allows is what bounds it, the same way it bounds
+    /// the Connect panel above.
+    @Test
+    func `the disabled Project's reading fits the narrowest window`() {
+        #expect(ArgoProjectDisabled.readingWidth < ArgoLayout.windowMinimumWidth)
     }
 
     /// The dot is not a rung of the icon scale: a filled disc puts every point of its size on the

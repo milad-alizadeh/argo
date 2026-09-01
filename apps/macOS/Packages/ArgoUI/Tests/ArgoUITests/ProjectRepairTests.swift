@@ -41,16 +41,23 @@ struct ProjectRepairTests {
         #expect(recorder.located.isEmpty)
     }
 
-    /// One repair, one vocabulary: the disabled window and the Manage submenu offer the SAME two
-    /// words, and neither promises to touch the folder on disk.
+    /// Removal takes Argo's registration and nothing else, so the label and the sentence under it
+    /// must not read as deleting the folder. Held here because both surfaces that offer the verb
+    /// read these two constants.
     @Test
-    func `the verbs are spelled once for every surface that offers them`() {
-        #expect(ProjectRepair.relocate == "Relocate…")
+    func `removing promises the folder on disk is not touched`() {
         #expect(ProjectRepair.remove == "Remove from Argo")
         #expect(
             ProjectRepair.removeHelp
                 == "Removes Argo's registration only. The folder on disk is not touched.",
         )
+    }
+
+    /// The ellipsis is the platform's promise that a picker follows, and it is the one thing about
+    /// this label a reader acts on before pressing it.
+    @Test
+    func `relocating says a folder picker follows`() {
+        #expect(ProjectRepair.relocate.hasSuffix("…"))
     }
 
     /// The state word belongs to the registry of status words; the verbs must not borrow it or

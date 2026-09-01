@@ -33,7 +33,8 @@ struct ScopeVessel: View {
 }
 
 extension ScopeVessel {
-    /// The one place on the bar a presentation is projected.
+    /// Where THIS vessel projects a presentation. The disabled window's narrower bar has its own
+    /// (`ProjectDisabledToolbar`), because it draws no checkout half.
     init(presentation: CockpitPresentation, actions: CockpitActions) {
         self.init(
             project: ProjectVesselReading(presentation: presentation),
