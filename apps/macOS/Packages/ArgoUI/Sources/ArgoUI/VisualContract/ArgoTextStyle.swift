@@ -43,8 +43,11 @@ public struct ArgoTextStyle: Sendable {
         rung.size
     }
 
-    /// What one line of this role occupies, before any leading is added to it.
-    public var lineBox: CGFloat {
+    /// The documented size at the ladder's ratio, which the chrome is sized from. Not what a line
+    /// of this role is DRAWN at — `ArgoTypeScale.drawnLineBox` is, and which of the two is larger
+    /// depends on the machine — so the surfaces reading it carry padding that absorbs the
+    /// difference either way (#766).
+    public var nominalLineBox: CGFloat {
         rung.size * ArgoTypeScale.naturalLineHeightRatio
     }
 

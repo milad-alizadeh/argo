@@ -1,3 +1,4 @@
+import AppKit
 @testable import ArgoUI
 import Foundation
 import Testing
@@ -65,17 +66,23 @@ struct ProseMetricsFaceTests {
         #expect(backtickedAsk.floor > plainAsk.floor)
     }
 
-    /// #766's remaining triage question.
+    /// #766's remaining triage question, named against the PLATFORM rather than against the sans —
+    /// both faces come from one `preferredFont` call now, so comparing them to each other says
+    /// nothing at all.
     ///
-    /// This pins the invariant at the setting the run is at; it cannot MOVE Dynamic Type in
-    /// process, so it would not by itself have caught the mono being built at `rung.size`, which
-    /// equals the platform's resolved size at the default setting.
+    /// This says which source the size is read from and no more. It cannot MOVE Dynamic Type in
+    /// process, and at the default setting the documented number equals the resolved one, so a
+    /// mono rebuilt on the constant would pass this too.
     @Test(arguments: ArgoTypeScale.allCases)
-    func `the mono is the same point size as the sans at every rung`(rung: ArgoTypeScale) {
-        let sans = ProseFace(rung: rung)
-        let mono = sans.monospaced
+    func `the mono takes the size the platform resolves for the rung`(rung: ArgoTypeScale) {
+        let resolved = NSFont.preferredFont(forTextStyle: rung.appKitStyle).pointSize
 
-        #expect(mono.font.pointSize == sans.font.pointSize)
-        #expect(mono.font.isFixedPitch)
+        #expect(ProseFace(rung: rung).monospaced.font.pointSize == resolved)
+    }
+
+    @Test
+    func `the machine face is a monospaced one`() {
+        #expect(ProseFace.machine.font.isFixedPitch)
+        #expect(!ProseFace.body.font.isFixedPitch)
     }
 }

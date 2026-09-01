@@ -12,7 +12,7 @@ struct RhythmTests {
     @Test
     func `prose is set more openly than the rest of the cockpit is packed`() {
         // A feed is read rather than scanned, so its line height clears the shell's dense default.
-        #expect(ArgoFeedRow.lineHeight > ArgoTypography.body.lineBox)
+        #expect(ArgoFeedRow.lineHeight > ArgoTypography.body.nominalLineBox)
         #expect(ArgoFeedRow.proseLineSpacing > 0)
     }
 

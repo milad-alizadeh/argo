@@ -20,7 +20,7 @@ struct ArgoBadge: View {
     /// One line of that type plus the inset either side, DERIVED rather than sampled: a number
     /// written down here goes wrong the moment the type role under it moves.
     static var height: CGFloat {
-        insetY * 2 + type.lineBox.rounded(.up)
+        insetY * 2 + type.nominalLineBox.rounded(.up)
     }
 
     let count: Int

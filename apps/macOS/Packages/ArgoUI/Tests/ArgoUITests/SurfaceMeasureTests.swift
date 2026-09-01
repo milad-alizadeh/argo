@@ -122,7 +122,8 @@ struct SurfaceMeasureTests {
     /// did not clear both would crop the half that stops the title lying about the filter.
     @Test
     func `the band clears the two lines it is drawn for`() {
-        let lines = ArgoTypography.windowTitle.lineBox + ArgoTypography.rowMeta.lineBox
+        let lines = ArgoTypography.windowTitle.nominalLineBox
+            + ArgoTypography.rowMeta.nominalLineBox
 
         #expect(ArgoBacklogList.bandHeight > lines)
     }
@@ -140,8 +141,8 @@ struct SurfaceMeasureTests {
     @Test
     func `a backlog row is floored taller than a sidebar view row`() {
         #expect(ArgoBacklogList.rowHeight > ArgoTicketsSidebar.viewRowHeight)
-        #expect(ArgoBacklogList.rowHeight > ArgoTypography.body.lineBox)
-        #expect(ArgoTicketsSidebar.viewRowHeight > ArgoTypography.rowMeta.lineBox)
+        #expect(ArgoBacklogList.rowHeight > ArgoTypography.body.nominalLineBox)
+        #expect(ArgoTicketsSidebar.viewRowHeight > ArgoTypography.rowMeta.nominalLineBox)
     }
 
     /// The glyph column exists so every view name starts on one vertical, which it can only do if
@@ -188,7 +189,7 @@ struct SurfaceMeasureTests {
     /// than the taller of the two words it separates, or it reads as a break in the column.
     @Test
     func `the status pair's rule is shorter than the words it parts`() {
-        #expect(ArgoTicketDetail.statusDividerHeight < ArgoTypography.control.lineBox * 2)
+        #expect(ArgoTicketDetail.statusDividerHeight < ArgoTypography.control.nominalLineBox * 2)
         #expect(ArgoTicketDetail.statusDividerHeight > 0)
     }
 

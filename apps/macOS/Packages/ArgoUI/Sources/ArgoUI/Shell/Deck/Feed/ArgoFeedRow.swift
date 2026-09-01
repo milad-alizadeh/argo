@@ -125,13 +125,19 @@ public enum ArgoFeedRow {
 
     /// The extra leading that puts the body role on `lineHeight`. Floored at zero: a line height
     /// under the font's own is not something leading can express.
+    ///
+    /// Both of these take the NOMINAL box off, and `ProseFace.step` adds them to the drawn one, so
+    /// neither line lands on the height its name promises — and which way it misses depends on the
+    /// machine. The mono misses for a second reason too: `ArgoTypography.machine`'s rung is not the
+    /// rung the feed draws its mono at. Left alone here on purpose: correcting them re-spaces every
+    /// line of the feed, which the design has to see rather than take as a rider — #1026.
     public static var proseLineSpacing: CGFloat {
         max(0, lineHeight - proseRung.size * ArgoTypeScale.naturalLineHeightRatio)
     }
 
     /// The same rhythm for machine output. Tighter than prose.
     public static var machineLineSpacing: CGFloat {
-        max(0, machineLineHeight - ArgoTypography.machine.lineBox)
+        max(0, machineLineHeight - ArgoTypography.machine.nominalLineBox)
     }
 
     /// What a line of output is set at, inside the evidence panel.

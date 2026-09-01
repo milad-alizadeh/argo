@@ -103,14 +103,14 @@ public enum ArgoComposerVessel {
     /// name's own type with `snug` either side. The study measured 26 and the derivation is 27 —
     /// the shape `ArgoBadge.height` uses, and the design took the derivation.
     public static var commandRowHeight: CGFloat {
-        ArgoTypography.machine.lineBox.rounded(.up) + ArgoSpacing.snug * 2
+        ArgoTypography.machine.nominalLineBox.rounded(.up) + ArgoSpacing.snug * 2
     }
 
     /// How tall an origin header in that menu stands. Asymmetric on purpose: it belongs to the rows
     /// UNDER it, and the gap above is the only thing separating one origin from the last one's
     /// rows — the header draws no ground of its own.
     public static var commandSectionHeight: CGFloat {
-        ArgoTypography.sectionLabel.lineBox.rounded(.up)
+        ArgoTypography.sectionLabel.nominalLineBox.rounded(.up)
             + ArgoSpacing.comfortable
             + ArgoSpacing.tight
     }
