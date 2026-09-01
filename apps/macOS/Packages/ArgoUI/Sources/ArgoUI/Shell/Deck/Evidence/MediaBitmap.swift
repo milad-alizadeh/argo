@@ -47,7 +47,7 @@ final class MediaBitmap: Sendable {
         )
     }
 
-    /// What holding this costs, as `NSCache` counts costs: 8-bit RGBA, which is what a decoded
+    /// What holding this costs, as `MediaStore` counts costs: 8-bit RGBA, which is what a decoded
     /// picture is kept as. Never zero — an entry accounted free is one eviction can never choose.
     var cost: Int {
         max(1, Int(drawn.width * drawn.height) * MediaCache.bytesPerPixel)

@@ -9,23 +9,26 @@ import AppKit
 /// decodes nothing and holds nothing — so the working set is what is actually drawn, and the
 /// ceiling derives from the window and the display rather than from a count of entries.
 ///
-/// On the main actor rather than trusting `NSCache`'s own thread safety, which covers the
-/// container and says nothing about a value crossing domains. Every surface that draws a picture
-/// is a view; the one thing that is not — a shot settling its provenance — no longer comes here.
+/// On the main actor, so the store needs no locking of its own and no value crosses a domain to
+/// reach it. Every surface that draws a picture is a view; the one thing that is not — a shot
+/// settling its provenance — no longer comes here.
+///
+/// The store is `MediaStore` and not `NSCache`, which holds nothing it has promised to hold
+/// (#1001).
 @MainActor
 final class MediaCache {
     /// The one the app draws through. Tests build their own, because a process-wide cache shared
     /// between parallel cases is a cache each of them can evict the others out of.
     static let shared = MediaCache(costLimit: costLimit(scale: MediaScale.display))
 
-    private let entries = NSCache<NSString, MediaBitmap>()
+    private let entries: MediaStore
 
     init(costLimit: Int) {
-        entries.totalCostLimit = costLimit
+        self.entries = MediaStore(costLimit: costLimit)
     }
 
     var costLimit: Int {
-        entries.totalCostLimit
+        entries.costLimit
     }
 
     /// The picture for one byte run — decoded where none is held, or where what is held is too
@@ -47,7 +50,7 @@ final class MediaCache {
               let bitmap = MediaDecode.bitmap(from: data, in: wanted, scale: MediaScale.display)
         else { return nil }
         if case .plate = wanted {
-            entries.setObject(bitmap, forKey: bytes as NSString, cost: bitmap.cost)
+            entries.set(bitmap, for: bytes)
         }
         return bitmap
     }
@@ -55,7 +58,7 @@ final class MediaCache {
     /// Whatever is already held for one byte run, at whatever box it was made for, decoding
     /// nothing. What the lightbox draws while its own full frame is still being made.
     func held(_ bytes: String) -> MediaBitmap? {
-        entries.object(forKey: bytes as NSString)
+        entries.object(for: bytes)
     }
 
     /// A full frame, off the main actor and never held. 25 ms for a 2560 × 1600 capture, measured,
@@ -80,11 +83,11 @@ final class MediaCache {
     /// What the cache may hold, in bytes: every pixel of the window Argo opens at, `windowfuls`
     /// times over, at the density the display draws them.
     ///
-    /// Only the BITMAPS are counted. `NSCache` retains its keys, but bridging a native Swift
-    /// `String` to `NSString` hands over the same `__StringStorage` object rather than a copy, and
-    /// the base64 is already held for the life of the session by the event stream's own
-    /// `MediaEvidence.bytes` (#989) — so charging an entry for its key would measure memory no
-    /// eviction can reclaim, and shrink the usable cache about sevenfold doing it.
+    /// Only the BITMAPS are counted. The store's keys are the byte runs themselves, and a native
+    /// Swift `String` held twice is one `__StringStorage` object rather than a copy — the base64 is
+    /// already held for the life of the session by the event stream's own `MediaEvidence.bytes`
+    /// (#989), so charging an entry for its key would measure memory no eviction can reclaim, and
+    /// shrink the usable cache about sevenfold doing it.
     nonisolated static func costLimit(scale: CGFloat) -> Int {
         let pixels = ArgoLayout.windowIdealWidth * scale * ArgoLayout.windowIdealHeight * scale
         return Int(pixels) * bytesPerPixel * windowfuls
