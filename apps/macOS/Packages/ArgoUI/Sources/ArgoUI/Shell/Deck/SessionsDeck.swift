@@ -49,8 +49,8 @@ struct SessionsDeck: View {
     var isRailCollapsed = Binding.constant(false)
     /// Each Subagent's own reading, for the rail's chips to be scoped onto. Empty until the engine
     /// reads them (#711). A specimen passes fixtures, so the scoped feed is a state somebody has
-    /// looked at. See `FeedAgentReadings`.
-    var readings = FeedAgentReadings.none
+    /// looked at. See `FeedAgentReader`.
+    var readings = FeedAgentReader.unread
     /// Which Agent's work the feed is reading. Held above this view since #875, beside `open`: the
     /// toolbar's toggle opens the newest evidence in the rows ON SCREEN, and which rows those are
     /// is this. A scope still names a delegation of THIS Session's and must not survive a switch —

@@ -9,7 +9,11 @@ import ArgoUI
 @MainActor
 extension CockpitCoordinator {
     func presentation(_ health: ConnectionHealthReading) -> CockpitPresentation {
-        let readings = CockpitPresentation.Readings(annotations, over: health)
+        // The reader is a CLOSURE, so a Subagent's bytes are asked for by the lane that draws them
+        // rather than copied into the projection: building it reads nothing, which is the whole
+        // point — a batch invalidates whatever called it and not this scene (#858).
+        let reader = FeedAgentReader(asking: hub, read: hub.subagentReading(of:))
+        let readings = CockpitPresentation.Readings(annotations, over: health, asking: reader)
         return CockpitPresentation(pointing: pointing, hub: hub, readings: readings)
     }
 }

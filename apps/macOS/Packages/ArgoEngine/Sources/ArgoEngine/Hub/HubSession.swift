@@ -80,13 +80,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// The session id this chain started as. Internal, and read by `HubSessionChain` alone: it is a
     /// join key, not a fact any surface renders.
     private(set) var originSessionID: String?
-    /// Everything the transcript said, in the order it said it, and the two Subagent halves beside
-    /// it — held together, with the stamp that stands for both. The facts above are a lossy fold
-    /// over this stream, which is why it is retained whole for the surfaces that read it.
+    /// Everything the transcript said, in the order it said it, with the stamp that stands for it.
+    /// The facts above are a lossy fold over this stream, which is why it is retained whole for the
+    /// surfaces that read it. A Subagent's own reading is NOT here: it is the child's, and it is
+    /// published beside the roster rather than inside it (`SubagentReadings`, #858).
     ///
     /// Written only from here and read through `HubSession+Transcript.swift`: the stamp is honest
-    /// because `TranscriptStream` holds the two collections privately, so no write anywhere can
-    /// reach either of them without going through the observers that restamp.
+    /// because `TranscriptStream` holds the records privately, so no write anywhere can reach them
+    /// without going through the observer that restamps.
     private(set) var transcript = TranscriptStream()
     /// How full the Session's context is: the tokens the LATEST reported spend was made against,
     /// not a sum — every request re-sends the whole conversation, so summing would count the same
@@ -246,10 +247,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         hasAgentActivity = hasAgentActivity || continuation.hasAgentActivity
         isQueued = isQueued || continuation.isQueued
         // Appended, not merged: a resume chain is walked root-first, so the continuation's stream
-        // is the later half of one reading and belongs behind what came before it. The Subagent
-        // halves are unioned by agent id and appended where both read the same one — a Subagent's
-        // file sits beside the link that ran it, so a resumed chain's fan-outs are spread across
-        // the chain rather than gathered under its root. See `TranscriptStream.merge`.
+        // is the later half of one reading and belongs behind what came before it. See
+        // `TranscriptStream.merge`.
         transcript.merge(continuation.transcript)
         cwd = continuation.cwd ?? cwd
         model = continuation.model ?? model
@@ -278,12 +277,5 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         observeActivity(continuation.startedAtMs)
         recordedAtMs = continuation.recordedAtMs.map { max(recordedAtMs ?? $0, $0) } ?? recordedAtMs
         turn.merge(continuation.turn)
-    }
-
-    /// One Subagent's own reading, appended as its tail delivers it. Keyed by the CLI's id and not
-    /// by the delegating call: the file is named for the id, and the call that reports it may not
-    /// have come back yet.
-    mutating func apply(_ read: [TranscriptEvent], ofSubagent agentID: String) {
-        transcript.append(read, ofSubagent: agentID)
     }
 }

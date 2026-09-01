@@ -116,29 +116,6 @@ struct HubJoin {
         isOrdered = false
     }
 
-    /// One Subagent's own reading, applied to the Session that ran it.
-    ///
-    /// It does NOT settle the transcript, unlike the Session's own events: a child's file says
-    /// nothing about whether the parent's has been read, and settling on one would publish a roster
-    /// row for a Session whose own backfill has not landed.
-    ///
-    /// A read carrying nothing applies nothing, so a file that exists and has said nothing yet is a
-    /// Subagent with no reading rather than one with an empty reading — degrade-down, and what
-    /// keeps its chip quiet instead of making it a control that empties the feed.
-    mutating func apply(
-        _ read: [TranscriptEvent],
-        ofSubagent agentID: String,
-        to transcriptID: String,
-    ) {
-        guard !read.isEmpty, let index = position(of: transcriptID) else { return }
-        transcripts[index].session.apply(read, ofSubagent: agentID)
-        // Written THROUGH, to the transcript above and the published row here: the roster is a
-        // fold over the transcripts rather than a second copy of them, so a batch that reached
-        // only one of the two would be lost at the next rebuild or published twice by it. The
-        // transcript is the copy that keeps it; the roster takes it only where it can place it.
-        roster.apply(read, ofSubagent: agentID, from: transcriptID)
-    }
-
     /// Settle a transcript whose tail ended without ever delivering a backfill — a file that could
     /// not be opened, or a tail stopped mid-read. Without it the roster waits forever.
     mutating func settle(transcriptID: String) {

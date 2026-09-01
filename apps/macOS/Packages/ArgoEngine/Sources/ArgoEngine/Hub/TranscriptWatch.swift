@@ -13,6 +13,9 @@ final class TranscriptWatch {
     /// Swift is file-scoped. Every write to the join still goes through `mutate` alone.
     @ObservationIgnored let engine: Engine
     @ObservationIgnored private let sweep: WorkingSetSweep
+    /// Where a Subagent's bytes go — beside the join rather than into it, so a child's batch
+    /// invalidates the lane that draws it and not everything that draws a Session (#858).
+    @ObservationIgnored private let readings: SubagentReadings
     /// Built lazily because the batches it reads land in the join below, and stored because a
     /// Subagent tail has to outlive the call that started it.
     @ObservationIgnored private lazy var subagents = makeSubagentTails()
@@ -45,9 +48,10 @@ final class TranscriptWatch {
     private var failureMessage: String?
     private var isConnecting = false
 
-    init(engine: Engine, discovery: SessionDiscovery) {
+    init(engine: Engine, discovery: SessionDiscovery, readings: SubagentReadings) {
         self.engine = engine
         self.sweep = WorkingSetSweep(discovery: discovery)
+        self.readings = readings
     }
 
     /// The Sessions the tails have read, in the order the join holds them.
@@ -130,6 +134,9 @@ final class TranscriptWatch {
         // Not an eviction: the transcript is going, so there is no bounded reading to fall back to.
         whole.drop(transcriptID)
         mutate { $0.remove(transcriptID: transcriptID) }
+        // Surrendered before the tails go, and only here: a transcript DROPPED loses its Subagents'
+        // readings the way it loses its row, where a paused one keeps both.
+        readings.forget(claims: subagents.surrenderClaims(of: transcriptID))
         await pauseObserving(transcriptID: transcriptID)
     }
 
@@ -150,6 +157,7 @@ final class TranscriptWatch {
     /// any of it keeps a slow teardown from serialising behind the one in front of it.
     func stopAll() async {
         await subagents.stopAll()
+        readings.forgetAll()
         let stopped = Array(tails.values)
         tails = [:]
         whole = WholeReadings()
@@ -236,9 +244,7 @@ final class TranscriptWatch {
     }
 
     private func makeSubagentTails() -> SubagentTails {
-        SubagentTails(engine: engine) { [weak self] read in
-            self?.mutate { $0.apply(read.events, ofSubagent: read.agentID, to: read.transcriptID) }
-        }
+        SubagentTails(engine: engine, readings: readings)
     }
 
     private func drain(_ observation: TranscriptObservation) async {

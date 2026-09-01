@@ -41,8 +41,8 @@ struct InstrumentDeckShell: View {
     /// What that vessel's controls do. Inert by default, so a specimen renders the vessel with
     /// nothing behind it.
     var intents = DeckIntents.inert
-    /// Each Subagent's own reading, for the rail to scope the feed onto — see `FeedAgentReadings`.
-    var readings = FeedAgentReadings.none
+    /// Each Subagent's own reading, for the rail to scope the feed onto — see `FeedAgentReader`.
+    var readings = FeedAgentReader.unread
     /// Which Agent the feed is scoped to. A binding for the reason `open` is one: the toolbar's
     /// evidence toggle opens the newest evidence in the rows ON SCREEN, and this says which those
     /// are. Seeded rather than clicked, the way `open` above is.

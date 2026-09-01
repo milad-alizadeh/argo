@@ -9,6 +9,21 @@ import Testing
 @MainActor
 @Suite("Specimen launch")
 struct SpecimenLaunchTests {
+    /// The app target hands over its arguments and the folder it was started in, and reads the
+    /// configuration back off the launch — so what it does with them is dispatch rather than a
+    /// derivation no test can reach (ADR-0022, #858).
+    @Test
+    func `the launch reads the process's own arguments into a configuration`() {
+        let launch = SpecimenLaunch(
+            arguments: ["argo", "--project", "/tmp/somewhere"],
+            currentDirectoryPath: "/tmp",
+        )
+
+        #expect(launch.configuration.projectURL.path == "/tmp/somewhere")
+        #expect(launch.ending == nil)
+        #expect(launch.entry == nil)
+    }
+
     private static func launch(_ arguments: [String]) -> SpecimenLaunch {
         SpecimenLaunch(LaunchConfiguration(
             arguments: arguments, currentDirectoryURL: URL(fileURLWithPath: "/tmp"),

@@ -5,9 +5,9 @@ import Testing
 /// afterwards is the rows the scope names — never the ones it was showing before.
 ///
 /// Asked of a STAMPED reading, which is the only kind the running app has: an unstamped
-/// `FeedAgentReadings` derives every answer, so a suite that builds one by hand tests the
+/// `FeedAgentReader` derives every answer, so a suite that builds one by hand tests the
 /// derivation and not the memo the deck actually reads through
-/// (`SessionsRoomReadingCache.scoped(at:under:)`).
+/// (`SessionsRoomReadingCache.scoped(at:drawing:)`).
 @Suite("Feed scope switch", .serialized)
 @MainActor
 struct FeedScopeSwitchTests {
@@ -16,7 +16,10 @@ struct FeedScopeSwitchTests {
         let reading = FeedScopeFixture.fanOut()
         let one = try #require(FeedScopeFixture.chip("a-one", in: reading))
 
-        let scoped = reading.readings.reading(of: reading.feed, under: .subagent(one))
+        let scoped = FeedScopeFixture.reader(for: reading).reading(
+            of: reading.feed,
+            under: .subagent(one),
+        )
 
         #expect(scoped.map(\.content) == [.message(FeedScopeFixture.saidByOne)])
     }
@@ -27,8 +30,8 @@ struct FeedScopeSwitchTests {
         let reading = FeedScopeFixture.fanOut()
         let one = try #require(FeedScopeFixture.chip("a-one", in: reading))
 
-        _ = reading.readings.reading(of: reading.feed, under: .subagent(one))
-        let back = reading.readings.reading(of: reading.feed, under: .session)
+        _ = FeedScopeFixture.reader(for: reading).reading(of: reading.feed, under: .subagent(one))
+        let back = FeedScopeFixture.reader(for: reading).reading(of: reading.feed, under: .session)
 
         #expect(back == reading.feed)
     }
@@ -41,9 +44,18 @@ struct FeedScopeSwitchTests {
         let one = try #require(FeedScopeFixture.chip("a-one", in: reading))
         let two = try #require(FeedScopeFixture.chip("a-two", in: reading))
 
-        let first = reading.readings.reading(of: reading.feed, under: .subagent(one))
-        let second = reading.readings.reading(of: reading.feed, under: .subagent(two))
-        let again = reading.readings.reading(of: reading.feed, under: .subagent(one))
+        let first = FeedScopeFixture.reader(for: reading).reading(
+            of: reading.feed,
+            under: .subagent(one),
+        )
+        let second = FeedScopeFixture.reader(for: reading).reading(
+            of: reading.feed,
+            under: .subagent(two),
+        )
+        let again = FeedScopeFixture.reader(for: reading).reading(
+            of: reading.feed,
+            under: .subagent(one),
+        )
 
         #expect(first.map(\.content) == [.message(FeedScopeFixture.saidByOne)])
         #expect(second.map(\.content) == Array(
@@ -64,7 +76,7 @@ struct FeedScopeSwitchTests {
         let two = try #require(FeedScopeFixture.chip("a-two", in: reading))
 
         for scope in [FeedScope.session, .subagent(one), .subagent(two), .session] {
-            _ = reading.readings.reading(of: reading.feed, under: scope)
+            _ = FeedScopeFixture.reader(for: reading).reading(of: reading.feed, under: scope)
         }
 
         #expect(SessionsRoomReadingCache.cost.scopes == 3)
@@ -77,10 +89,13 @@ struct FeedScopeSwitchTests {
     func `the rail still lists every agent while the feed is scoped onto one`() throws {
         let reading = FeedScopeFixture.fanOut()
         let one = try #require(FeedScopeFixture.chip("a-one", in: reading))
-        let scoped = reading.readings.reading(of: reading.feed, under: .subagent(one))
+        let scoped = FeedScopeFixture.reader(for: reading).reading(
+            of: reading.feed,
+            under: .subagent(one),
+        )
 
-        #expect(reading.readings.agents(in: reading.feed).count == 3)
-        #expect(reading.readings.agents(in: scoped).count == 3)
+        #expect(FeedScopeFixture.reader(for: reading).agents(in: reading.feed).count == 3)
+        #expect(FeedScopeFixture.reader(for: reading).agents(in: scoped).count == 3)
     }
 
     /// The other memo's key. The list is a fact about the READING, so the cache derives it from the
@@ -90,8 +105,8 @@ struct FeedScopeSwitchTests {
     func `the agent list is derived from the reading and not from the rows asked with`() {
         let reading = FeedScopeFixture.fanOut()
 
-        #expect(reading.readings.agents(in: []).count == 3)
-        #expect(reading.readings.agents(in: reading.feed).count == 3)
+        #expect(FeedScopeFixture.reader(for: reading).agents(in: []).count == 3)
+        #expect(FeedScopeFixture.reader(for: reading).agents(in: reading.feed).count == 3)
     }
 
     // MARK: - the table the rows land in

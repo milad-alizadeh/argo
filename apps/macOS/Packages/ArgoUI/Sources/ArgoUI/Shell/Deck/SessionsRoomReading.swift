@@ -3,8 +3,8 @@ import ArgoEngine
 /// Everything the Sessions deck draws about the selected Session, projected in ONE pass — where
 /// five computed properties each resolved the selection and walked the event stream again.
 ///
-/// The three parts that WALK the streams are remembered by `SessionsRoomReadingCache`, under a
-/// stamp of the inputs they are a pure function of — the presentation is a value the Hub rebuilds
+/// The parts that WALK the stream are remembered by `SessionsRoomReadingCache`, under a stamp of
+/// the inputs they are a pure function of — the presentation is a value the Hub rebuilds
 /// as the transcript grows, so a reading remembered under anything weaker would draw the transcript
 /// as it stood when the reader last looked at it.
 /// `CockpitView.reading` decides WHETHER to take one; this decides only what it says.
@@ -12,9 +12,10 @@ struct SessionsRoomReading {
     let feed: [FeedRow]
     let header: SessionHeaderProjection.Header?
     let showing: PlanShowing
-    /// A fan-out's files grow while the reader is looking at one of them, so the Subagents are read
-    /// with the feed rather than once per selection.
-    let readings: FeedAgentReadings
+    /// Which version of the Session's record this reading was taken at, handed on so the Subagent
+    /// reader the shell carries can share the memos keyed by it (#858, #1005). Absent for the
+    /// reading a room that draws no transcript does not take.
+    let stamp: SessionsRoomReadingCache.Stamp?
     /// What the feed's ask rows are told about answering: the question Argo is holding open, and
     /// whether this Session can be driven at all (#546).
     let asking: FeedAskProjection.Asking
@@ -53,7 +54,7 @@ struct SessionsRoomReading {
         self.feed = []
         self.header = nil
         self.showing = PlanShowing()
-        self.readings = .none
+        self.stamp = nil
         self.asking = FeedAskProjection.asking(for: nil)
     }
 
@@ -72,6 +73,7 @@ struct SessionsRoomReading {
             asking: asking,
             handedOff: handedOff,
         )
+        self.stamp = stamp
         let body = SessionsRoomReadingCache.body(at: stamp) {
             SessionsRoomReadingCache.Body(
                 feed: FeedProjection.rows(
@@ -82,16 +84,11 @@ struct SessionsRoomReading {
                     asking: asking,
                 ),
                 showing: PlanShowing(plan: PlanProjection.reading(from: session?.events ?? [])),
-                readings: FeedAgentReadings(
-                    events: session?.subagentEvents ?? [:],
-                    stamp: stamp,
-                ),
                 worked: .read(across: session?.events ?? []),
             )
         }
         self.feed = body.feed
         self.showing = body.showing
-        self.readings = body.readings
         // Taken every pass, and only its one stream walk remembered: the header reads facts that
         // move with no event appended — spend, context, what the roster calls the Session — so
         // remembering the whole of it would draw them as they stood when the reader last looked.

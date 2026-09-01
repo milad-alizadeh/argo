@@ -90,7 +90,7 @@ struct AgentsRail: View {
     /// gets out of a Subagent as well as into one, so the way back is never a control they have to
     /// find somewhere else.
     private func select(_ agent: FeedAgent) -> (() -> Void)? {
-        guard control.readings.rows(of: agent) != nil else { return nil }
+        guard control.readings.hasReading(of: agent) else { return nil }
         return {
             control.scope = control.scope.agent == agent.id ? .session : .subagent(agent.id)
         }

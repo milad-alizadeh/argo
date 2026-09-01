@@ -11,11 +11,11 @@ enum AgentsRailFixture {
 
     /// The reading behind that one chip. The rest of the preview's delegations are unanswered, so
     /// they name no Subagent and stay unselectable — which is the honest shape of a live fan-out.
-    static let readings = FeedAgentReadings(events: [verifierID: verifier])
+    static let readings = FeedAgentReader(events: [verifierID: verifier])
 
     /// Every Agent in the wide fan-out read, so the many-Agent render shows a rail of controls
     /// rather than a rail of quiet rows.
-    static let fanOutReadings = FeedAgentReadings(
+    static let fanOutReadings = FeedAgentReader(
         events: Dictionary(
             uniqueKeysWithValues: AgentsFanOutFixture.agents.compactMap { agent in
                 agent.subagentID.map { ($0, verifier) }

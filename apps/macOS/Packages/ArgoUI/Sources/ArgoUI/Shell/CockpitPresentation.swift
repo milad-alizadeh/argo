@@ -56,6 +56,15 @@ public struct CockpitPresentation: Equatable, Sendable {
     public let sessions: [Session]
     public let checkout: Checkout
     public let connection: Connection
+    /// Where a Subagent's own reading is asked for — see `FeedAgentReader`. A reader rather than
+    /// the readings, so a child's bytes reach the lane that draws them and not this value (#858).
+    ///
+    /// Written after the init rather than through it, because the init's parameter cap only ever
+    /// descends (#755) and this is the one fact here that no caller but the Hub projection
+    /// supplies. `internal(set)` and not `private(set)`: the projection that fills it is a file of
+    /// its own, and a private setter in Swift is file-scoped. Read-only outside the package, which
+    /// is what every `let` beside it means here.
+    public internal(set) var subagents = FeedAgentReader.unread
 
     public var activeProject: Project? {
         projects.first { $0.id == activeProjectID }

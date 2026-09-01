@@ -25,7 +25,7 @@ extension CockpitView {
             step: $evidenceStep,
             vessel: vessel,
             intents: intents(for: vessel),
-            readings: reading.readings,
+            readings: subagents.stamped(reading.stamp),
             scope: $feedScope,
             tickets: tickets,
         )

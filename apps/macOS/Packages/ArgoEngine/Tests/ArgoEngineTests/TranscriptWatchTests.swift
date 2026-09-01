@@ -78,6 +78,7 @@ struct TranscriptWatchTests {
                 liveness: noLiveProcesses,
             )),
             discovery: SessionDiscovery(),
+            readings: SubagentReadings(),
         )
     }
 }

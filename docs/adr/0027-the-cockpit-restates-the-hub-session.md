@@ -1,6 +1,7 @@
 # 0027 · The cockpit's Session restates HubSession, and the projection is total
 
-Status: accepted · 2026-08-12 · init shape and gate strength amended (#755) · 2026-08-26
+Status: accepted · 2026-08-12 · init shape and gate strength amended (#755) · 2026-08-26 ·
+reader carve-out amended (#858) · 2026-09-01
 
 Closes #639. Binding on `CockpitPresentation.Session` and on `CockpitPresentation+Hub.swift`. It
 narrows ADR-0022's "everything else takes a value" from a phrasing that could be read two ways to
@@ -135,3 +136,40 @@ of the file — a gate that passes everything and reports success, which is the 
   accounted for when two slots trade places, which is exactly why the first one passes.
 - **Six values are a parameter object, not a projection of `HubSession`.** They exist to shape one
   call. Making them stored would be the shrink this ADR declined, at 170 read sites.
+
+## Amendment · A reader may cross the seam where a value would cost the frame (#858)
+
+Edge 1 forbids ArgoUI from naming the Hub, and edge 5 makes the projection total. Both are about
+what the cockpit HOLDS. `FeedAgentReader` holds neither a Hub nor a fact: it holds a `@MainActor`
+closure the app target built over `Hub.subagentReading(of:)`, and the views call it while they draw.
+It rides IN the projection — `CockpitPresentation.subagents`, off `Readings` — because a Subagent's
+reading is a Hub fact, and the only thing that changed about it is when the cockpit asks. Edge 1's
+grep is satisfied because ArgoUI never says `Hub`. That is a carve-out, and it is allowed under
+exactly these conditions, so the next one is made deliberately rather than by finding the same
+hole:
+
+1. **The fact moves faster than the surfaces that do not draw it can afford.** A Subagent's file
+   grows continuously and only one lane renders it; carried as a VALUE in the projection, every
+   batch invalidated the scene root, and after #1005 it also moved `TranscriptStamp` and
+   `SessionsRoomReadingCache.Stamp` — so the room's whole reading was retaken for rows that may not
+   be on screen. A fact that changes when the roster changes has no case here: it goes in the
+   projection as a value with the rest.
+2. **The reader is a value with an identity, not a store.** It is `Equatable` on the source it
+   asks, so a view holding one still compares; it exposes reads and never a mutation; and a
+   fixture-backed one renders the same surfaces from a dictionary, so every specimen and preview
+   stays reachable without an engine.
+3. **The engine still owns the answer, and the app target still composes it.** ArgoUI names no
+   engine type it did not already name, and the one call it reaches is `public` on `Hub` and
+   readonly. It is built in `CockpitCoordinator+Presentation.swift`, beside the projection it rides
+   in, and building it reads nothing — which is what keeps the scene body out of the dependency.
+4. **What a memo keyed on the room's stamp derives from it must key on the reading too.** The
+   stamp deliberately stops at the Session's own stream, so a scoped memo keyed on it alone would
+   freeze a feed while the Agent it is scoped onto went on writing —
+   `SessionsRoomReadingCache.Scoping` carries the Agent's own length for exactly that reason.
+5. **It is named in this list.** One reader exists today. A second one that cannot point at a
+   measured frame cost belongs in the projection as a value instead.
+
+Edge 1 cannot check any of that — a closure has no imports to grep — so this paragraph is the
+check, and a reviewer is the mechanism. That is weaker than the other five edges by design: the
+alternative was a value that made the whole cockpit rebuild on a Subagent's bytes, and the honest
+record of the trade is worth more than a gate that would have to understand SwiftUI to be right.

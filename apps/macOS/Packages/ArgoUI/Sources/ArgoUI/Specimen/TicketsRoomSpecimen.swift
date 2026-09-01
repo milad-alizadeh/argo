@@ -19,11 +19,13 @@ struct TicketsRoomSpecimen: View {
         CockpitView(
             presentation: .workingTheBacklog,
             actions: .inert,
-            health: .previewBound,
-            tickets: TicketsFixture.items,
-            // The Binding the foot above it names, addressed — without it the row's two link verbs
-            // render disabled, which is a different state from the one this shot is of (#872).
-            ticketAddress: TicketsFixture.address,
+            readings: ShellReadings(
+                health: .previewBound,
+                tickets: TicketsFixture.items,
+                // The Binding the foot above it names, addressed — without it the row's two link
+                // verbs render disabled, a different state from the one this shot is of (#872).
+                ticketAddress: TicketsFixture.address,
+            ),
         )
         .environment(navigation)
         .environment(\.backlogNow, TicketsFixture.asOf)

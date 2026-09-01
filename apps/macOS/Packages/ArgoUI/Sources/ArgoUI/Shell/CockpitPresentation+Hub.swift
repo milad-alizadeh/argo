@@ -56,6 +56,8 @@ public extension CockpitPresentation {
             checkout: hub.checkout,
             connection: hub.connection,
         )
+        // After the init and not through it — see the property.
+        self.subagents = readings.subagents
     }
 
     /// The live-session count is the Hub's roster, and the Hub observes ONE Project. Every other
@@ -181,11 +183,10 @@ extension CockpitPresentation.Session {
 extension CockpitPresentation.Session.Transcript {
     /// What the transcript said, with the ENGINE's own stamp for it rather than one derived here:
     /// the stamp counts writes as well as lengths, and nothing on this side of the seam can see a
-    /// write. It is what the cockpit compares two readings of a stream by — see `Streams`.
+    /// write. It is what the cockpit compares two readings of a stream by — see `Stream`.
     init(observed session: HubSession) {
         self.init(
             events: session.events,
-            subagentEvents: session.subagentEvents,
             transcriptStamp: session.transcriptStamp,
             lostTurn: session.lostTurn,
         )
