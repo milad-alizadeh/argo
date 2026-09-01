@@ -163,6 +163,28 @@ struct HostedFeedScopeSwitchTests {
         #expect(session > 2)
     }
 
+    /// Measured as ITSELF: every row the table has laid out stands at the height the coordinator
+    /// would answer for it now. A reading drawn at the heights AppKit cached for the one it
+    /// replaced comes up as short rows separated by the last reading's empty runs (#1012).
+    @Test(.enabled(if: WindowedTests.areAvailable))
+    func `a scoped reading is laid out at its own row heights`() throws {
+        let deck = HostedDeck()
+        for _ in 0 ..< 12 {
+            deck.grow()
+        }
+
+        for subagent in ["a-one", "a-two", "a-one"] {
+            try deck.scope(onto: subagent)
+            for (row, height) in try deck.heights().enumerated() {
+                #expect(height.drawn == height.asked, "Row \(row) of \(subagent) is drawn stale.")
+            }
+        }
+        deck.scopeBack()
+        for (row, height) in try deck.heights().enumerated() {
+            #expect(height.drawn == height.asked, "Row \(row) of the Session is drawn stale.")
+        }
+    }
+
     /// The live case, which is every case: the Session goes on talking while the reader is inside a
     /// Subagent. The stamp under which both readings are remembered moves on every line, and the
     /// scoped reading must neither follow the Session's growth nor be dropped by it.

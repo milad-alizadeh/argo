@@ -4,18 +4,19 @@ import Testing
 
 /// What survives the reading being REPLACED rather than grown.
 ///
-/// A rail chip scopes the feed onto a Subagent, and `FeedColumn` is keyed to that scope — so the
-/// table, its scroll view and its coordinator are all torn down and built again under one handle.
-/// Nothing about that arrives as a reshape: the lane's notifications are registered on views the
-/// switch discarded, and the deck's own update runs BEFORE the replacement table exists.
+/// A rail chip scopes the feed onto a Subagent, which replaces every row under one handle. Two
+/// shapes of that, and the lane is blind to both on its own. The table can be built again — the
+/// lane's notifications are then registered on views the switch discarded, and the deck's own
+/// update runs BEFORE the replacement exists (#1002). Or the table stands and only the reading is
+/// replaced, which reaches the lane as a frame report it answers by its height (#1012).
 @Suite("Minimap scope switch")
 @MainActor
 struct MinimapScopeSwitchTests {
     /// A Subagent's own reading. Shorter than the Session's by default, which is what makes a stale
     /// map visible at all.
-    private static func delegated(_ count: Int = 8) -> [FeedRow] {
+    private static func delegated(_ count: Int = 8, saying: String = "own") -> [FeedRow] {
         (0 ..< count).map {
-            FeedRow(id: $0, content: .message("The subagent's own line, number \($0)."))
+            FeedRow(id: $0, content: .message("The subagent's \(saying) line, number \($0)."))
         }
     }
 
@@ -132,6 +133,34 @@ struct MinimapScopeSwitchTests {
         #expect(handle.leftAt == 12)
     }
 
+    /// The document REPLACED under a table whose frame never moved (#1012).
+    ///
+    /// Two readings shorter than the pane stand at the same document height — the table is at least
+    /// as tall as its clip view — so the frame report the lane answers a reshape by carries
+    /// nothing, and the map of the reading that left stayed up. `MinimapReadingStamp` says why a
+    /// height cannot stand for a document; this is where not saying it costs the reader the map.
+    @Test
+    func `a reading replaced at the same document height is mapped afresh`() throws {
+        let deck = MinimapLaneFixture.mounted(over: Self.delegated(3))
+        deck.lane.layoutSubtreeIfNeeded()
+        let height = deck.table.scroller?.documentView?.frame.height
+
+        deck.table.keep(FeedGeometry())
+        deck.table.apply(FeedTableFixture.model(
+            showing: Self.delegated(2, saying: "other"),
+            of: FeedReading(session: "one", scope: .subagent(1)),
+        ))
+        deck.lane.layoutSubtreeIfNeeded()
+
+        // The precondition, stated: without it this suite would be asserting the reshape path.
+        #expect(deck.table.scroller?.documentView?.frame.height == height)
+        let reading = try #require(deck.feed.reading())
+        #expect(deck.lane.geometry.documentHeight == MinimapGeometry(
+            reading,
+            lane: deck.lane.bounds.size,
+        ).documentHeight)
+    }
+
     @Test
     func `a feed scoped onto a subagent is the reading the lane maps`() throws {
         let deck = MinimapLaneFixture.mounted(over: FeedProjection.longRows)
@@ -145,5 +174,35 @@ struct MinimapScopeSwitchTests {
             reading,
             lane: deck.lane.bounds.size,
         ).documentHeight)
+    }
+}
+
+/// The same claim through the REAL view tree, driven by the click that makes it: a rail chip, the
+/// deck's own lane, and the map read off the lane the deck built beside the feed it re-scoped.
+///
+/// The suite above holds the lane to its claim one applied model at a time, and every case in it
+/// could pass while the deck on screen went on drawing the map it had — #1003's own "Not covered"
+/// section says as much, and #1012 is the gap it named.
+@Suite("Minimap scope switch, hosted", .serialized)
+@MainActor
+struct HostedMinimapScopeSwitchTests {
+    /// A → B → A, which is the case a height cannot see: two Subagents' readings are both shorter
+    /// than the pane, so the document stands at exactly the same height for each of them.
+    @Test(.enabled(if: WindowedTests.areAvailable))
+    func `the lane beside a scoped feed maps that subagent's reading`() throws {
+        let deck = HostedDeck()
+        for _ in 0 ..< 12 {
+            deck.grow()
+        }
+
+        for subagent in ["a-one", "a-two", "a-one"] {
+            try deck.scope(onto: subagent)
+            let reading = try #require(deck.coordinator.reading())
+            let lane = try deck.lane
+            #expect(lane.geometry.documentHeight == MinimapGeometry(
+                reading,
+                lane: lane.bounds.size,
+            ).documentHeight, "The lane is not mapping \(subagent).")
+        }
     }
 }

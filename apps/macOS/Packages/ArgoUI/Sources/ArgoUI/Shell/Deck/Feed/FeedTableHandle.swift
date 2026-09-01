@@ -51,6 +51,17 @@ import SwiftUI
     /// registration — see `FeedTableCoordinator.notedReshape()`.
     @ObservationIgnored var readingReshaped: (() -> Void)?
 
+    /// Another reading opened in the SAME table — a Session switch, or the rail scoping onto a
+    /// Subagent. Set by the overview lane as it attaches, beside `readingReshaped`.
+    ///
+    /// A separate announcement because the reshape is not one: a replaced reading is reported to
+    /// the lane through the table's own `setFrameSize`, and the lane answers that by asking whether
+    /// the document's HEIGHT moved. Two readings that differ in every row can stand at the same
+    /// height — both shorter than the pane is the ordinary case — and the lane then goes on drawing
+    /// the map of the reading that left. `MinimapReadingStamp` says why a height cannot stand for a
+    /// document; this is the fact it cannot see.
+    @ObservationIgnored var readingReplaced: (() -> Void)?
+
     /// Seeded with the row the reading opens held at, so both facts are already true before the
     /// first frame — which is what lets a still show the detached state without anybody scrolling.
     init(held: FeedRow.ID? = nil) {
