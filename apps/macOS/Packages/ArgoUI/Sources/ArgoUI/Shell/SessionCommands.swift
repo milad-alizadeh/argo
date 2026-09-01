@@ -8,10 +8,8 @@ import SwiftUI
 ///
 /// Absent when nothing is selected, which is what greys the items out.
 public struct SessionCommands: Equatable, Sendable {
-    /// Which Session the two closures below were built for. Carried so that `==` can tell them
-    /// apart: the closures capture their Session, and nothing else here changes when the selection
-    /// moves from one unarchived Session to another (#806).
-    public let sessionID: String
+    /// Which Session the closures below were built for, and what `==` tells them apart by (#806).
+    let sessionID: String
     /// Open the selected row's name field — the same field a double-click opens, in the same row.
     public let rename: @MainActor () -> Void
     /// Clear the selected Session off the roster, or put it back if it is already behind the foot.
@@ -20,21 +18,21 @@ public struct SessionCommands: Equatable, Sendable {
     /// `SessionArchiveProjection`'s (#800).
     public let isArchived: Bool
 
-    public init(
-        sessionID: String,
-        rename: @escaping @MainActor () -> Void,
-        archive: @escaping @MainActor () -> Void,
-        isArchived: Bool,
+    /// The menu for ONE Session: the id `==` tells two menus apart by and the Session the closures
+    /// act on come off the same value here, so no caller can bind them to different Sessions.
+    init(
+        for session: CockpitPresentation.Session,
+        rename: @escaping @MainActor (String) -> Void,
+        archive: @escaping @MainActor (String, Bool) -> Void,
     ) {
-        self.sessionID = sessionID
-        self.rename = rename
-        self.archive = archive
-        self.isArchived = isArchived
+        self.sessionID = session.id
+        self.rename = { rename(session.id) }
+        self.archive = { archive(session.id, !session.isArchived) }
+        self.isArchived = session.isArchived
     }
 
     /// Closures are not `Equatable`, so they are compared through the Session they were built for
-    /// and the one drawn fact beside it. Two commands for one Session in one state are the same
-    /// menu; two for DIFFERENT Sessions never are, however alike they read (#806).
+    /// and the one drawn fact beside it (#806).
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.sessionID == rhs.sessionID && lhs.isArchived == rhs.isArchived
     }

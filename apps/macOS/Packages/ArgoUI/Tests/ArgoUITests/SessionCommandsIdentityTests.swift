@@ -5,9 +5,7 @@ import Testing
 ///
 /// `SessionCommands` reaches the menu as a `FocusedValue`, and SwiftUI keeps the value it already
 /// holds whenever the fresh one compares equal — so the menu's items go on calling the closures
-/// built for whichever Session was selected when they were last taken. `MenuBar` below is that
-/// keeping, and nothing else: SwiftUI is not ours to run in a test, and this is the only question
-/// it asks the conformance.
+/// built for whichever Session was selected when they were last taken.
 struct SessionCommandsIdentityTests {
     @MainActor
     @Test
@@ -35,15 +33,14 @@ struct SessionCommandsIdentityTests {
         #expect(acted.archived == "session-b")
     }
 
-    /// Built the way `CockpitView.sessionCommands` builds them: the selected Session is resolved
-    /// once and both closures capture it.
+    /// Through the shipped initializer, which is where the id and the closures are bound to one
+    /// Session — a menu naming one Session and acting on another is the defect itself.
     @MainActor
     private func commands(for session: String, acting acted: SessionsActedOn) -> SessionCommands {
         SessionCommands(
-            sessionID: session,
-            rename: { acted.renamed = session },
-            archive: { acted.archived = session },
-            isArchived: false,
+            for: .init(id: session, title: session, access: .managed, status: .idle),
+            rename: { acted.renamed = $0 },
+            archive: { id, _ in acted.archived = id },
         )
     }
 }
