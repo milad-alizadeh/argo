@@ -32,10 +32,16 @@ struct ProseFace: Hashable, Sendable {
 extension ProseFace {
     /// The font itself. AppKit's own preferred font for the rung, so this and the `Text` on screen
     /// read one table — see `ArgoTypeScale+AppKit`.
+    ///
+    /// The mono is built at the SANS' resolved size. `rung.size` is the HIG's documented number,
+    /// which stands still while the platform's own moves — see `lineBox` for why the two faces are
+    /// one size at all. Nothing here observes a text-size change, so `ProseMetrics`' caches survive
+    /// one and go on answering at the size they were asked at.
     @MainActor var font: NSFont {
+        let sans = NSFont.preferredFont(forTextStyle: rung.appKitStyle)
         let base = isMachine
-            ? NSFont.monospacedSystemFont(ofSize: rung.size, weight: .regular)
-            : NSFont.preferredFont(forTextStyle: rung.appKitStyle)
+            ? NSFont.monospacedSystemFont(ofSize: sans.pointSize, weight: .regular)
+            : sans
         guard isBold else { return base }
         return NSFontManager.shared.convert(base, toHaveTrait: .boldFontMask)
     }

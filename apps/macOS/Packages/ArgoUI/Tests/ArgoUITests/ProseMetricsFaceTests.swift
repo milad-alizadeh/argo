@@ -52,4 +52,30 @@ struct ProseMetricsFaceTests {
 
         #expect(table.heights(on: [column])[1] > oneLine)
     }
+
+    /// Why the cell reached the wrap boundary at all: the column is dealt width from `asks`, and a
+    /// code-dense column has to ask for the mono's room. Asking in the sans is what pushed the cell
+    /// onto the line the row was not tall enough for.
+    @Test
+    func `a code dense column asks for more room than the same characters unbacked`() {
+        let backtickedAsk = MarkdownTable(header: ["check"], rows: [[Self.backticked]]).asks[0]
+        let plainAsk = MarkdownTable(header: ["check"], rows: [[Self.plain]]).asks[0]
+
+        #expect(backtickedAsk.ideal > plainAsk.ideal)
+        #expect(backtickedAsk.floor > plainAsk.floor)
+    }
+
+    /// #766's remaining triage question.
+    ///
+    /// This pins the invariant at the setting the run is at; it cannot MOVE Dynamic Type in
+    /// process, so it would not by itself have caught the mono being built at `rung.size`, which
+    /// equals the platform's resolved size at the default setting.
+    @Test(arguments: ArgoTypeScale.allCases)
+    func `the mono is the same point size as the sans at every rung`(rung: ArgoTypeScale) {
+        let sans = ProseFace(rung: rung)
+        let mono = sans.monospaced
+
+        #expect(mono.font.pointSize == sans.font.pointSize)
+        #expect(mono.font.isFixedPitch)
+    }
 }
