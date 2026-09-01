@@ -11,8 +11,8 @@ final class CompanionConnection {
     /// called later for one that waits on a decision.
     typealias Reply = @MainActor (String) -> Void
 
-    /// `-1` once `close` has handed the number to the read source's cancel handler, so nothing
-    /// here reads, writes or closes a number the kernel may already have reissued.
+    /// `-1` once released, so a source handler still in flight neither reads nor writes a number
+    /// the kernel may already have reissued.
     private var descriptor: Int32
     private let respond: (String, @escaping Reply) -> Void
     private let onClose: () -> Void
@@ -53,28 +53,31 @@ final class CompanionConnection {
         self.source = source
     }
 
+    /// Cancelling is what releases a descriptor a source holds; one that never reached a source is
+    /// closed here, because nothing else will.
     func close() {
         writeSource?.cancel()
         writeSource = nil
-        source?.cancel()
-        source = nil
+        guard descriptor >= 0 else { return }
+        if let source {
+            source.cancel()
+            self.source = nil
+        } else {
+            Darwin.close(descriptor)
+        }
         descriptor = -1
     }
 
-    /// The half of the lifetime no caller spells. A connection dropped without a `close` still owns
-    /// its descriptor: an activated source is retained by GCD, so the cancel that releases the
-    /// number has to be asked for here or it never comes.
-    ///
-    /// Nothing is closed by hand while a source holds the number — `open` arranged for exactly one
-    /// closer, and a second one here would be the double close that arrangement exists to avoid.
+    /// An activated source is retained by GCD, so a connection dropped without a `close` holds its
+    /// descriptor for the life of the process unless the cancel is asked for here.
     deinit {
         guard descriptor >= 0 else { return }
-        guard let source else {
-            Darwin.close(descriptor)
-            return
-        }
         writeSource?.cancel()
-        source.cancel()
+        if let source {
+            source.cancel()
+        } else {
+            Darwin.close(descriptor)
+        }
     }
 
     private func readAvailable() {

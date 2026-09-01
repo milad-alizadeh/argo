@@ -28,9 +28,7 @@ private let gitCheckoutReader = CheckoutReader()
 /// it takes the whole process down. The throwing spelling hands back an error, and a read that
 /// produced nothing is exactly the `nil` this signature already carries for "git answered nothing".
 ///
-/// Kept after #588's stray closer was found: a test fixture that copied a raw descriptor and
-/// closed the same number twice, never anything in the app, fixed by ownership in #936/#981. The
-/// throwing spelling stays because it costs nothing and what it forecloses is the whole process.
+/// The stray closer it was hardened against was a test fixture's, never the app's (#936/#981).
 let gitCommand: GitCommand = { arguments, directoryURL in
     let process = Process()
     let output = Pipe()

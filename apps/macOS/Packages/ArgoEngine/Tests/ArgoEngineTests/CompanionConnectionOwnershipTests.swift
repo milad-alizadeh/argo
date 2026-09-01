@@ -12,9 +12,9 @@ import Testing
 @MainActor
 struct CompanionConnectionOwnershipTests {
     /// A connected pair, so the release is read off the FAR end as a hang-up rather than off the
-    /// number as a closed descriptor. These suites run in one process and in parallel, so a number
-    /// this test released is one another suite may already have been given — the very reuse #936
-    /// was about, and it makes "the number is closed" a claim that decays while a wait polls it.
+    /// number. These suites run in one process and in parallel, so a number this test released is
+    /// one another suite may already have been given — the very reuse #936 was about, and it makes
+    /// "the number is closed" a claim that decays while a wait is still polling it.
     private struct Pair {
         let near: Int32
         let far: Int32
@@ -27,8 +27,7 @@ struct CompanionConnectionOwnershipTests {
             _ = fcntl(far, F_SETFL, O_NONBLOCK)
         }
 
-        /// Whether the near end is gone: a stream socket reads 0 once its peer is released, and
-        /// `EAGAIN` while the peer is still there.
+        /// A stream socket reads 0 once its peer is released, and `EAGAIN` while it is still there.
         var isNearEndReleased: Bool {
             var byte: UInt8 = 0
             return read(far, &byte, 1) == 0
@@ -53,6 +52,19 @@ struct CompanionConnectionOwnershipTests {
         connection = nil
 
         #expect(pair.isNearEndReleased, "the dropped connection held its descriptor")
+    }
+
+    /// The descriptor never reached a source, so no cancel handler is standing to close it and
+    /// `close` has to do it itself — the leak a sentinel set on every path would hide.
+    @Test
+    func `a connection closed before it opened releases its descriptor`() throws {
+        let pair = try Pair()
+        defer { pair.dropFar() }
+
+        let connection = Self.connection(on: pair.near)
+        connection.close()
+
+        #expect(pair.isNearEndReleased, "the closed connection held its descriptor")
     }
 
     @Test
