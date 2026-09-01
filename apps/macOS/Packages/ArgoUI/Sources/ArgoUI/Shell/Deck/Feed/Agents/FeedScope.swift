@@ -14,6 +14,11 @@ enum FeedScope: Hashable, Sendable {
 }
 
 extension FeedScope {
+    /// Whether the Session's own reading is up — what lights the rail's Main entry (#1013).
+    var isSession: Bool {
+        agent == nil
+    }
+
     /// Which chip is lit, or `nil` while the Session's own reading is up.
     var agent: FeedAgent.ID? {
         switch self {

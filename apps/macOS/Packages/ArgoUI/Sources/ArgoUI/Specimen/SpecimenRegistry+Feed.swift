@@ -95,6 +95,11 @@ extension SpecimenRegistry {
         // and the one nothing rendered until now (#1003's "Not covered").
         SpecimenEntry("agentsRailRescoped") { AgentsRailSpecimen(subject: .rescoped) },
         SpecimenEntry("agentsRailCollapsed") { AgentsRailSpecimen(subject: .collapsed) },
+        // Collapsed AND scoped: the one state where the way back out of a Subagent could still go
+        // missing, since the strip has no room for the word Main (#1013).
+        SpecimenEntry("agentsRailCollapsedScoped") {
+            AgentsRailSpecimen(subject: .collapsedScoped)
+        },
         // A session at the length a real one reaches. Render narrow too (`ARGO_WINDOW_SIZE`).
         SpecimenEntry("feedAtScale") { SpecimenScene.sessions(FeedProjection.longRows) },
         // A row arriving at the end must not move the row somebody is looking at.

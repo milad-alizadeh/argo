@@ -20,3 +20,20 @@ struct AgentsRailControl {
         isCollapsed: .constant(false),
     )
 }
+
+extension AgentsRailControl {
+    /// What selecting one chip does, or `nil` where there is no reading to scope onto.
+    ///
+    /// Selecting the chip that is already lit scopes back to the Session. Since #1013 that is no
+    /// longer the only way back — the rail's Main entry is — but it stays, because taking it away
+    /// would break the gesture readers who found it already use.
+    @MainActor func select(_ agent: FeedAgent) -> (() -> Void)? {
+        guard readings.hasReading(of: agent) else { return nil }
+        return { scope = scope.agent == agent.id ? .session : .subagent(agent.id) }
+    }
+
+    /// Back to the Session's own reading, from wherever the feed is scoped.
+    func selectSession() {
+        scope = .session
+    }
+}
