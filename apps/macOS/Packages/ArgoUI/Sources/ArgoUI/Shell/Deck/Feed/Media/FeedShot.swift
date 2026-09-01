@@ -1,4 +1,5 @@
 import ArgoEngine
+import CoreGraphics
 
 /// One picture a call produced, as the feed shows it.
 ///
@@ -14,12 +15,32 @@ struct FeedShot: Equatable, Sendable {
     /// builds every shot again on every body pass, so a decode here is one per picture per pass
     /// (ADR-0028 Rule 3).
     let provenance: MediaProvenance
+    /// The picture's own width over its height, `nil` where its format does not say it inside the
+    /// signature (`MediaShape`). Read here for `provenance`'s reason and at the same cost: a shape
+    /// off the decode would arrive after the row, the ruler and the lane had all laid the gallery
+    /// out, and the reading would re-wrap under the reader as the pictures landed.
+    let ratio: CGFloat?
 
     init(name: String, address: String, media: MediaEvidence) {
         self.name = name
         self.address = address
         self.media = media
         self.provenance = media.provenance
+        self.ratio = media.bytes.flatMap(MediaShape.ratio)
+    }
+
+    /// How wide this shot is drawn: its own ratio at the gallery's fixed height, inside the band's
+    /// bounds. The one answer the row, the ruler and the lane all lay out from (#1015).
+    var drawnWidth: CGFloat {
+        Self.width(ofRatio: ratio)
+    }
+
+    static func width(ofRatio ratio: CGFloat?) -> CGFloat {
+        guard let ratio, ratio > 0 else { return ArgoFeedRow.shotWidth }
+        return min(
+            max(ArgoFeedRow.shotHeight * ratio, ArgoFeedRow.shotWidths.lowerBound),
+            ArgoFeedRow.shotWidths.upperBound,
+        )
     }
 
     /// Whether clicking this opens anything — a shot with no picture is not a control.

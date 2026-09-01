@@ -1,4 +1,4 @@
-import Foundation
+import CoreGraphics
 
 // What a row reports it drew. Called for the rows inside the lane's band and for no others, so its
 // cost is bounded by the lane's height rather than by the session's length.
@@ -18,8 +18,8 @@ extension MinimapRowShape {
             Self.bubble(text, shots: shots, isFolded: isFolded, across: measure)
         case let .line(parts, ink):
             Self.line(parts, ink: ink, across: measure)
-        case let .shots(count):
-            Self.shots(count, across: measure)
+        case let .shots(widths):
+            Self.shots(widths, across: measure)
         case let .card(card):
             Self.card(card, across: measure, height: height)
         case let .whole(ink):
@@ -29,20 +29,23 @@ extension MinimapRowShape {
 }
 
 extension MinimapRowShape {
-    /// A gallery's thumbnails, wrapped across the measure the way `FeedGalleryRow` wraps them
-    /// across the column. Drawn one frame per shot rather than one over the run, because the count
-    /// is the whole question a reader has about a turn that rendered something.
-    static func shots(_ count: Int, across measure: CGFloat) -> [MinimapRowRect] {
-        let step = ArgoFeedRow.shotWidth + ArgoFeedRow.shotGap
-        let columns = max(1, Int((max(measure, 1) + ArgoFeedRow.shotGap) / step))
-        return (0 ..< max(0, count)).map { shot in
-            let x = CGFloat(shot % columns) * step
-            return MinimapRowRect(
-                y: ArgoFeedRow.shotBreath
-                    + CGFloat(shot / columns) * (ArgoFeedRow.shotHeight + ArgoFeedRow.shotGap),
-                height: ArgoFeedRow.shotHeight,
-                from: x,
-                to: min(measure, x + ArgoFeedRow.shotWidth),
+    /// A gallery's thumbnails at the widths the row draws them, wrapped across the measure the way
+    /// `FeedGalleryRow` wraps them across the column. Drawn one frame per shot rather than one over
+    /// the run, because the count is the whole question a reader has about a turn that rendered
+    /// something.
+    ///
+    /// Through `WrapFlow`'s own arithmetic rather than a grid of its own: with a width per shot
+    /// there is no column to count, and a second wrap rule beside the row's is a lane that drifts
+    /// from the feed by a line the moment either one is touched.
+    static func shots(_ widths: [CGFloat], across measure: CGFloat) -> [MinimapRowRect] {
+        let sizes = widths.map { CGSize(width: $0, height: ArgoFeedRow.shotHeight) }
+        let gaps = WrapFlow.Gaps(along: ArgoFeedRow.shotGap, between: ArgoFeedRow.shotGap)
+        return WrapFlow.placements(of: sizes, in: measure, gaps: gaps).map { place in
+            MinimapRowRect(
+                y: ArgoFeedRow.shotBreath + place.minY,
+                height: place.height,
+                from: place.minX,
+                to: min(measure, place.maxX),
                 ink: .media,
             )
         }

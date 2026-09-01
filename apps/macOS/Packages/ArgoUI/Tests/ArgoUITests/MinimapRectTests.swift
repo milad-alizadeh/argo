@@ -43,14 +43,14 @@ struct MinimapRectTests {
         let folded = ArgoFeedRow.lineHeight * 2 + ArgoFeedRow.bubbleInsetY * 2
         let whole = MinimapRowShape.bubble(
             MinimapText.paragraph,
-            shots: 0,
+            shots: [],
             isFolded: true,
             across: 800 - ArgoFeedRow.inset * 2,
         )
         let lane = Self.geometry(Self.reading([
             MinimapRow(
                 height: folded,
-                shape: .bubble(text: MinimapText.paragraph, shots: 0, isFolded: true),
+                shape: .bubble(text: MinimapText.paragraph, shots: [], isFolded: true),
             ),
             MinimapRow(height: 400, shape: .oneLine),
         ]))
@@ -176,7 +176,10 @@ struct MinimapRectTests {
                 of: "# Big\n\n- one\n\n| a | b |\n|---|---|\n| 1 | 2 |", ink: .message,
             )),
             MinimapRow(height: 40, shape: .oneLine),
-            MinimapRow(height: 200, shape: .shots(count: 4)),
+            MinimapRow(
+                height: 200,
+                shape: .shots(widths: Array(repeating: ArgoFeedRow.shotWidth, count: 4)),
+            ),
         ]))
         let spans = lane.rects(in: 0 ... 600).map(\.span)
         #expect(!spans.isEmpty)

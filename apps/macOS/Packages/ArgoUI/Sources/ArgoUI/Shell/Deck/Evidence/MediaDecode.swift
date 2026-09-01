@@ -46,14 +46,21 @@ enum MediaDecode {
     /// signature is intact. A truncated capture is caught where it is drawn — `MediaShowing` reads
     /// its provenance off the decode itself — and this only ever offers the click.
     static func isPicture(_ bytes: MediaBytes) -> Bool {
-        let prefix = String(bytes.signature.prefix(signatureBase64Length))
-        guard prefix.utf8.count.isMultiple(of: 4), let head = Data(base64Encoded: prefix)
-        else { return false }
+        guard let head = head(of: bytes) else { return false }
         return signatures.contains { runs in
             runs.allSatisfy { head.count >= $0.at + $0.magic.count
                 && Array(head[$0.at ..< $0.at + $0.magic.count]) == $0.magic
             }
         }
+    }
+
+    /// The bytes an address carries in hand — the head of the run, decoded. What every question
+    /// answerable with no read at all is answered from: whether this is a picture, and what shape
+    /// it is (`MediaShape`).
+    static func head(of bytes: MediaBytes) -> Data? {
+        let prefix = String(bytes.signature.prefix(signatureBase64Length))
+        guard prefix.utf8.count.isMultiple(of: 4) else { return nil }
+        return Data(base64Encoded: prefix)
     }
 
     /// 32 base64 characters is 24 bytes, which is past the last offset any signature below reads.

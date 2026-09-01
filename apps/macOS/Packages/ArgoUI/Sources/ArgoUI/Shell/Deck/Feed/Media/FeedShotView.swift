@@ -19,16 +19,21 @@ struct FeedShotView: View {
             .buttonStyle(.plain)
             .disabled(!showing.provenance.showsPicture)
             .help(shot.address)
-            .frame(width: ArgoFeedRow.shotWidth, alignment: .leading)
+            .frame(width: shot.drawnWidth, alignment: .leading)
             .showing(shot.media, drawnIn: .plate(ArgoFeedRow.shotPlate), in: $showing)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(spoken)
             .accessibilityHint(showing.provenance.showsPicture ? "Opens this image full size" : "")
     }
 
-    /// The picture cropped to the shot's own box. Drawn as an overlay on a clear frame rather than
-    /// as a sized `Image`: `scaledToFill` reports the size it scaled TO, so a landscape shot in a
-    /// 3:2 box lays out wider than the box and the ground comes out offset from the picture.
+    /// The picture at its own ratio, drawn to the shot's own box. FITTED and not filled: the box
+    /// is already the picture's shape wherever the file said what that is, and where it did not,
+    /// a fit letterboxes it inside the fixed plate — which is the whole of #1015, since a fill
+    /// cuts the ends off a picture the caption then calls evidence.
+    ///
+    /// Drawn as an overlay on a clear frame rather than as a sized `Image`, because a scaled
+    /// `Image` reports the size it scaled TO: a fit inside the plate would hand the plate the
+    /// picture's own smaller box back, and the ground would come out short of the band.
     @ViewBuilder private var plate: some View {
         if let picture = showing.picture {
             Color.clear
@@ -36,9 +41,8 @@ struct FeedShotView: View {
                 .overlay {
                     Image(nsImage: picture.image)
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
                 }
-                .clipped()
                 .padding(mount)
                 .background(isMounted ? argo.color.surface.overlay : argo.color.surface.raised)
                 .clipShape(.rect(cornerRadius: ArgoRadius.control))
@@ -57,19 +61,22 @@ struct FeedShotView: View {
     private var waiting: some View {
         Rectangle()
             .fill(argo.color.surface.sunken)
-            .frame(width: ArgoFeedRow.shotWidth, height: ArgoFeedRow.shotHeight)
+            .frame(width: shot.drawnWidth, height: ArgoFeedRow.shotHeight)
             .clipShape(.rect(cornerRadius: ArgoRadius.control))
             .overlay { frame }
     }
 
-    /// A shot with no picture says so where the picture would have been, as an empty plate.
+    /// A shot with no picture says so where the picture would have been, as an empty plate. In the
+    /// shot's own box like every other state, which for a record that kept no bytes IS the fixed
+    /// one — there is no ratio to take a width from. A width that changed with what the decode
+    /// found would be geometry the lane and the ruler cannot see.
     private var absence: some View {
         Text(showing.provenance.instead)
             .argoText(ArgoTypography.caption)
             .foregroundStyle(argo.color.text.disabled)
             .multilineTextAlignment(.leading)
             .padding(ArgoSpacing.base)
-            .frame(width: ArgoFeedRow.shotWidth, height: ArgoFeedRow.shotHeight)
+            .frame(width: shot.drawnWidth, height: ArgoFeedRow.shotHeight)
             .background(argo.color.surface.sunken)
             .clipShape(.rect(cornerRadius: ArgoRadius.control))
             .overlay { frame }
@@ -112,7 +119,7 @@ struct FeedShotView: View {
     }
 
     private var pictureWidth: CGFloat {
-        ArgoFeedRow.shotWidth - mount * 2
+        shot.drawnWidth - mount * 2
     }
 
     private var pictureHeight: CGFloat {

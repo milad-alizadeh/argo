@@ -1,4 +1,4 @@
-import Foundation
+import CoreGraphics
 
 // A prompt as the lane draws it: whatever was pasted in, above the words, inside a bubble held
 // against the trailing edge — the shape `FeedPrompt` draws.
@@ -11,7 +11,7 @@ extension MinimapRowShape {
     /// A prompt's pictures and lines, in the row's own coordinates.
     @MainActor static func bubble(
         _ text: String,
-        shots: Int,
+        shots: [CGFloat],
         isFolded: Bool,
         across measure: CGFloat,
     )
@@ -19,7 +19,7 @@ extension MinimapRowShape {
         let inside = ArgoFeedRow.bubbleInside(of: measure)
         guard inside > 0 else { return [] }
         let lay = ProseMetrics.lay(out: text, across: inside)
-        let pictures = shots > 0 ? Self.shots(shots, across: inside) : []
+        let pictures = Self.shots(shots, across: inside)
         // Where the words start: the bubble hugs a short prompt, so its leading edge is its own
         // widest thing back from the trailing one rather than the ceiling it may grow to.
         let widest = max(lay.widths.max() ?? 0, pictures.map(\.to).max() ?? 0)

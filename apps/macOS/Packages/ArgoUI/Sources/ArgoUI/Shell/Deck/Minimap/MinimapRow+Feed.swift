@@ -37,7 +37,7 @@ private extension FeedRow.Content {
         // The prompt's pictures and lines, held against the trailing edge its bubble is drawn on.
         case let .prompt(text, shots): .bubble(
                 text: text,
-                shots: shots.count,
+                shots: shots.map(\.drawnWidth),
                 isFolded: isFolded,
             )
         case let .message(text): MinimapProseBlock.shape(of: text, ink: .message)
@@ -60,7 +60,7 @@ private extension FeedRow.Content {
         // Rows the lane draws as a shape rather than as words. Each asks its own type for its ink
         // rather than answering for it here: a question that has been answered goes quiet in the
         // row, and the lane has to go quiet with it.
-        case let .gallery(gallery): .shots(count: gallery.shots.count)
+        case let .gallery(gallery): .shots(widths: gallery.shots.map(\.drawnWidth))
         case let .ask(ask): .card(ask.card)
         case let .mark(mark): .whole(mark.ink)
         }

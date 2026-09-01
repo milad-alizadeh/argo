@@ -29,10 +29,10 @@ enum MediaBox: Sendable {
         }
     }
 
-    /// The smallest box covering both. Two plates of different shapes — the panel's 480-wide
-    /// column and the gallery's 168 × 112 shot — cover neither from the other, and both file under
-    /// the same bytes, so without this each miss overwrites the other's entry and a byte run shown
-    /// in both surfaces re-decodes on every alternation.
+    /// The smallest box covering both. The two plates the app draws bound opposite sides — the
+    /// panel's column bounds its width and the gallery's shot its height — so neither covers the
+    /// other, and both file under the same bytes: without this each miss overwrites the other's
+    /// entry and a byte run shown in both surfaces re-decodes on every alternation.
     func union(_ other: MediaBox) -> MediaBox {
         switch (self, other) {
         case (.full, _), (_, .full): .full

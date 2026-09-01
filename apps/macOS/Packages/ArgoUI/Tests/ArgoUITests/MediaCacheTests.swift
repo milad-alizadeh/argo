@@ -121,8 +121,8 @@ struct MediaCacheTests {
         let column = MediaBox.plate(EvidenceMedia.plate)
         let shot = MediaBox.plate(ArgoFeedRow.shotPlate)
 
-        // The panel bounds width alone and the gallery bounds both, so componentwise neither is
-        // the denser decode — which is why one key holding one of them is not enough.
+        // The panel bounds its width and the gallery its height, so componentwise neither is the
+        // denser decode — which is why one key holding one of them is not enough.
         #expect(!column.covers(shot))
         #expect(!shot.covers(column))
         #expect(column.union(shot).covers(column))
