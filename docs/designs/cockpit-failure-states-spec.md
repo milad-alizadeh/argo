@@ -177,6 +177,14 @@ The routing law stands; what changed is which rows the app can honestly reach.
   reader who cannot tell there is more has not been offered it.
 - **A tooltip is not a raw channel.** It survives only where the line IS the whole text — a
   sentence Argo worded itself, with no provider output behind it to open.
+- **Row three is spelled as a popover anchored at the affordance**, not as a panel that grows in
+  place. The first control to take the row is the Tickets room's New ticket, which lives in the
+  window's toolbar row and has no height to give; §4's *"no layout shift"* holds for the failure
+  as well as for the pending state. *Inline* binds the anchor, not the presentation.
+- **Git's stderr is still unrouted, and there is nothing yet to route.** Argo runs no git write —
+  #161's and #183's mechanical ops are unbuilt — and its four read paths send stderr to
+  `/dev/null` and collapse every failure to absence. The first git write must capture stderr as a
+  value, or this rule cannot reach the case it was written for.
 
 ## 6 · A missing folder disables the project
 

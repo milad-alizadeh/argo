@@ -1,13 +1,6 @@
 import SwiftUI
 
 /// The one gesture between the line at a control and everything the operation printed (§5).
-///
-/// It stands on EVERY failure that printed anything, not only the ones whose line looks cut:
-/// whether the line beside it was truncated is a question of the width it was given, which nothing
-/// here can answer — and a reader who cannot tell whether there is more has not been offered it.
-///
-/// A popover rather than a panel that grows in place: this rides a control in the window's toolbar
-/// row, which has no height to give, and §4's "no layout shift" holds for the failure too.
 struct RawOutputDisclosure: View {
     @Environment(\.argo) private var argo
 
@@ -19,6 +12,8 @@ struct RawOutputDisclosure: View {
     static let name = "see output"
 
     var body: some View {
+        // Opens rather than toggles, because the popover's own dismissal already closes it — a
+        // toggle would re-open on the click that dismissed it.
         Button { isOpen = true } label: {
             HStack(spacing: ArgoSpacing.tight) {
                 ArgoGlyph(ArgoSymbol.delegated, .inline)

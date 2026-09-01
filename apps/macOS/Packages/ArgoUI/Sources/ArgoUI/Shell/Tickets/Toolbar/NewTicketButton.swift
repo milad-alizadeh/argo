@@ -20,13 +20,7 @@ struct NewTicketButton: View {
             .disabled(!creation.control.isEnabled)
             // Beside the vessel, so the vessel's own geometry is untouched by either disabling or
             // failing — the whole of "in place, no layout shift".
-            if let reason = creation.control.reason {
-                WriteNote(
-                    reason: reason,
-                    output: creation.control.output,
-                    reconnect: creation.control.needsReconnect ? creation.reconnect : nil,
-                )
-            }
+            WriteNote(control: creation.control, reconnect: creation.reconnect)
         }
     }
 }

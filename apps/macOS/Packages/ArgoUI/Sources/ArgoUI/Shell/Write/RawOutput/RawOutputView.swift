@@ -1,24 +1,24 @@
 import SwiftUI
 
 /// Everything a failed operation printed, at the affordance that invoked it (§5).
-///
-/// Monospaced and unwrapped-by-Argo: git aligns its own output in columns, and re-flowing it into
-/// prose is a paraphrase by another route. Selectable, with a copy beside the name, because the
-/// next thing a reader does with a `hint:` is run it.
 struct RawOutputView: View {
     @Environment(\.argo) private var argo
 
     let output: RawOutput
 
+    /// The channel's own name, spoken and drawn from one string.
+    static let name = "Output"
+
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             header
+            // Scrolls both ways: git aligns its own output in columns, so wrapping it would be a
+            // paraphrase by another route.
             ScrollView([.horizontal, .vertical]) {
                 Text(output.text)
                     .argoMono(.body)
                     .foregroundStyle(argo.color.text.secondary)
                     .textSelection(.enabled)
-                    .frame(alignment: .topLeading)
             }
         }
         .padding(ArgoSpacing.comfortable)
@@ -27,9 +27,6 @@ struct RawOutputView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Self.name)
     }
-
-    /// The channel's own name, spoken and drawn from one string.
-    static let name = "Output"
 
     private var header: some View {
         HStack(spacing: ArgoSpacing.base) {

@@ -1,15 +1,11 @@
 import SwiftUI
 
-/// The one line a write control says beside itself, and the repair where §7 gives it one.
+/// The one line a write control says beside itself, the gesture onto what the operation printed
+/// (§5), and the repair where §7 gives it one.
 ///
 /// **Beside the control, never under it.** These bands are fixed-height rows, so a line below would
 /// resize the row the control is in. A dot and a line in the chip's ink, because this is the same
 /// failure the top bar reports.
-///
-/// The line truncates, and what the operation printed is one gesture away in the nearest raw
-/// channel §5's table admits (#850). In the Tickets room's toolbar that is neither a session's Dock
-/// nor the Code room's scratch terminal, so it is the table's third row: inline at the invoking
-/// affordance, error text verbatim.
 struct WriteNote: View {
     @Environment(\.argo) private var argo
 
@@ -26,13 +22,7 @@ struct WriteNote: View {
                 .fill(ink)
                 .frame(width: ArgoIconSize.statusDot, height: ArgoIconSize.statusDot)
                 .accessibilityHidden(true)
-            Text(reason)
-                .argoText(ArgoTypography.rowMeta)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                // Only where nothing stands behind the line: a tooltip is not a raw channel, and
-                // one beside the gesture would offer the same text by a route nobody can copy from.
-                .help(output == nil ? reason : "")
+            line
             if let output {
                 RawOutputDisclosure(output: output)
             }
@@ -47,18 +37,45 @@ struct WriteNote: View {
         .accessibilityLabel(reason)
     }
 
+    @ViewBuilder private var line: some View {
+        let text = Text(reason)
+            .argoText(ArgoTypography.rowMeta)
+            .lineLimit(1)
+            .truncationMode(.tail)
+        // A tooltip is not a raw channel (#850), so it survives only beside a line nothing stands
+        // behind — where it hands over the whole text rather than standing in for the output.
+        if output == nil {
+            text.help(reason)
+        } else {
+            text
+        }
+    }
+
     private var ink: ArgoColor {
         ArgoOperationalState.failure.tint(in: argo.color)
     }
 }
 
-#Preview("Write notes — a provider's own words, and a token that died") {
-    let refusal = WriteControlState.refused(.refused(WriteControlSpecimen.validationRefusal))
+extension WriteNote {
+    /// The note one write control's state asks for, and `nil` where it asks for none. Every part of
+    /// it comes off the one state, so the line can never disagree with the output behind it.
+    init?(control: WriteControlState, reconnect: @escaping () -> Void) {
+        guard let reason = control.reason else { return nil }
+        self.init(
+            reason: reason,
+            output: control.output,
+            reconnect: control.needsReconnect ? reconnect : nil,
+        )
+    }
+}
 
+#Preview("Write notes — a provider's own words, and a token that died") {
     VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-        WriteNote(reason: refusal.reason ?? "", output: refusal.output)
-        WriteNote(reason: "The write did not land — rate limited")
-        WriteNote(reason: "GitHub · milad-alizadeh · needs reconnect", reconnect: {})
+        WriteNote(
+            control: .refused(.refused(WriteControlSpecimen.validationRefusal)), reconnect: {},
+        )
+        WriteNote(control: .refused(.unreachable(.rateLimited)), reconnect: {})
+        WriteNote(control: .blocked(ConnectFixture.personal), reconnect: {})
     }
     .padding(ArgoSpacing.region)
     .argoAppearance()
