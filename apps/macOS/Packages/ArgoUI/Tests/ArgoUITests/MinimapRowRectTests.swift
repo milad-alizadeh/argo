@@ -108,7 +108,7 @@ struct MinimapRowRectTests {
     /// One bar per line, not one block over the row — a prompt reads as its words, like prose does.
     @Test
     func `a prompt is one line per line, against the trailing edge its bubble is drawn on`() {
-        let rects = Self.rects(.bubble(text: MinimapText.paragraph, shots: 0, isFolded: false))
+        let rects = Self.rects(.bubble(text: MinimapText.paragraph, shots: [], isFolded: false))
         #expect(rects.count > 1)
         #expect(rects.allSatisfy { $0.ink == .prompt })
         // The ground is its own longest line back from the trailing edge, plus its padding.
@@ -125,8 +125,8 @@ struct MinimapRowRectTests {
     @Test
     func `a folded prompt draws its first lines and an unfolded one draws them all`() {
         let long = String(repeating: "Read the whole anatomy study before you start. ", count: 14)
-        let folded = Self.rects(.bubble(text: long, shots: 0, isFolded: true))
-        let whole = Self.rects(.bubble(text: long, shots: 0, isFolded: false))
+        let folded = Self.rects(.bubble(text: long, shots: [], isFolded: true))
+        let whole = Self.rects(.bubble(text: long, shots: [], isFolded: false))
         #expect(folded.count == ArgoFeedRow.collapsedPromptLines)
         #expect(whole.count > folded.count)
         // The lines they share are the same lines, at the same places.
@@ -137,7 +137,7 @@ struct MinimapRowRectTests {
     /// bar most of the way across the lane.
     @Test
     func `a short prompt's bubble is as narrow as its words`() {
-        let rects = Self.rects(.bubble(text: "Fix it", shots: 0, isFolded: true))
+        let rects = Self.rects(.bubble(text: "Fix it", shots: [], isFolded: true))
         #expect(rects.count == 1)
         #expect(rects[0].from > Self.measure / 2)
     }
@@ -147,7 +147,9 @@ struct MinimapRowRectTests {
     @Test
     func `a gallery draws one frame per shot, wrapped as the row wraps them`() {
         // 400pt of column takes two 168pt shots to a line, whatever the contract's gap is.
-        let rects = MinimapRowShape.shots(5, across: 400)
+        let rects = MinimapRowShape.shots(
+            Array(repeating: ArgoFeedRow.shotWidth, count: 5), across: 400,
+        )
         #expect(rects.count == 5)
         #expect(rects.allSatisfy { $0.ink == .media })
         #expect(rects[1].y == rects[0].y)
@@ -158,7 +160,7 @@ struct MinimapRowRectTests {
 
     @Test
     func `a gallery of nothing draws nothing`() {
-        #expect(MinimapRowShape.shots(0, across: 400).isEmpty)
+        #expect(MinimapRowShape.shots([], across: 400).isEmpty)
     }
 
     @Test
@@ -171,7 +173,7 @@ struct MinimapRowRectTests {
 
     @Test
     func `a column not yet laid out reports nothing to draw`() {
-        #expect(MinimapRowShape.bubble(MinimapText.paragraph, shots: 0, isFolded: true, across: 0)
+        #expect(MinimapRowShape.bubble(MinimapText.paragraph, shots: [], isFolded: true, across: 0)
             .isEmpty)
         #expect(Self.prose(MinimapText.paragraph).rects(across: 0, height: 40).isEmpty)
     }

@@ -60,9 +60,15 @@ struct FeedPromptImageTests {
         #expect(shot.media.tier == .direct)
     }
 
+    /// Thumbnails at the width a picture whose shape is not known takes, which is what the fixed
+    /// plate now means — the widths themselves are `FeedShotShapeTests`'.
     private static func rects(_ text: String, shots: Int) -> [MinimapRowRect] {
-        MinimapRowShape.bubble(text: text, shots: shots, isFolded: true)
-            .rects(across: MinimapRowRectTests.measure, height: 1000)
+        MinimapRowShape.bubble(
+            text: text,
+            shots: Array(repeating: ArgoFeedRow.shotWidth, count: shots),
+            isFolded: true,
+        )
+        .rects(across: MinimapRowRectTests.measure, height: 1000)
     }
 
     @Test

@@ -29,14 +29,24 @@ public enum ArgoFeedRow {
     public static let markedSpanInsetX: CGFloat = 3
     public static let markedSpanInsetY: CGFloat = 1
 
-    /// How wide one shot in a gallery is drawn — four across the measure.
+    /// How wide one shot is drawn where its own shape is not known — four across the measure. The
+    /// box an absence keeps, having no picture to take a ratio from (#1015).
     public static let shotWidth: CGFloat = 168
-    /// How tall its picture is. Fixed, so shots at different aspect ratios caption on ONE baseline.
+    /// How tall its picture is. The FIXED side: shots at different ratios caption on ONE baseline,
+    /// and the width follows the picture instead — a shot centre-cropped into a box it never had
+    /// is the feed saying a picture is something it is not.
     public static let shotHeight: CGFloat = 112
-    /// The box one shot's picture is drawn in, and so the size its bytes are decoded to — a
-    /// gallery draws hundreds of these and a lightbox one, which is the whole difference in what a
-    /// long session costs to hold (#962).
-    static let shotPlate = CGSize(width: shotWidth, height: shotHeight)
+    /// The narrowest and widest a shot may be drawn, whatever its ratio: half its own height, and
+    /// two of the fixed plates. A picture outside them is FITTED into the bound rather than cut to
+    /// it — a panorama would otherwise take a whole line of the column on its own, and a
+    /// column-shaped capture would come out a sliver with nothing readable in it.
+    public static let shotWidths: ClosedRange<CGFloat> = shotHeight / 2 ... shotWidth * 2
+    /// The box one shot's picture is decoded to. Its HEIGHT and not its width, which is the pair
+    /// this file fixes: a plate bounding a side the gallery does not bound decodes a tall picture
+    /// finer than anything draws it. One box for every shot whatever its ratio, so a per-shot width
+    /// adds no distinct box under the same bytes (`MediaBox.union`) — and never more pixels than
+    /// the fixed plate asked for, which is what a long session costs to hold (#962).
+    static let shotPlate = CGSize(width: 0, height: shotHeight)
     /// Between two shots in a gallery. Tighter than the step between rows.
     public static let shotGap: CGFloat = ArgoSpacing.base
     /// Above and below a gallery run, on top of the feed's own step.

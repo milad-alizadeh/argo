@@ -14,6 +14,9 @@ extension TranscriptFixtures {
     /// What a turn that rendered something produced: four pictures back to back, and one call the
     /// record answered with no bytes at all. Every provenance the cockpit can tell apart is in
     /// here, because they are told apart by how they are DRAWN.
+    ///
+    /// Four SHAPES too — landscape, a wide chart, a square and a tall column. A gallery draws each
+    /// at its own ratio (#1015), so a set that was all one shape could not show the band doing it.
     static let shotsTaken: [TranscriptEvent] = [
         PreviewShot(
             id: "shot-rest", path: "docs/designs/renders/feed-at-rest.png",
@@ -94,42 +97,30 @@ extension TranscriptFixtures {
     JYABFsAASwADLAEMsASwBDDAEsAASwADLIABlgAGWAIYYAlggAUwwNLnah+Lc2HXnYThAAAAAElFTkSuQmCC
     """
 
-    /// The same shell a moment later, one row selected — two captures of the same surface.
+    /// The same shell a moment later, one row selected, cropped to the deck's own column — a TALL
+    /// capture, which the band draws narrow.
     private static let selectionCapture = """
-    iVBORw0KGgoAAAANSUhEUgAAAUAAAADICAIAAAAWZq/8AAACzElEQVR42u3csQmAMBRF0UwiFoqIKNhYOp6d
-    nZ3DaqlgK2KSA3eChNN9XhjGSVKkBU8gASwJYEkASwBLAlgSwJIAlgCWBLAkgCWAJQEsCWBJAEsASwJYEsCS
-    AJYAlgSwJIAlgCUBLAlgSQBLAEsCWNKbgOumzaGirKT0AlgCGGAJYIAlgAEWwABLAAMsAQywBLAEMMASwABL
-    AAMsgAGWAAZYAhhgCWCABTDAEsAASwADLAEsAQywBDDAEsAAC2CAHy3rpo/DEmCAAQYYYIABBhhgAQwwwAAL
-    YIABBhhgAQwwwAIYYIABBhhggAEG2CmlBDDAEsAAC2CAJYABlgAGWLoAz/txr+vHJPPTAhhgCWCAJYABlgCW
-    AAZYAhhgCWCABTDAEsAASwADLAEsAZwVYAM3Zm4ABhhgAQwwwAIYYIABBhhgAQwwwAIYYIABBhhggAEGGGAB
-    DDDAAtgppQAGWPonYMPuEsAASwADLAEMsAAGWAIYYAlggCWAJYABlgAGWAIYYAEMsAQwwBLAAEsAAyyAAZYA
-    jhWwMR1bPwADLIABBlgAAwwwwAADLIABBlgAAwwwwAADDDDAAAMsgAEGWAAD7JRSAAMsAQywBDDAEsASwABL
-    AAMsAQywAAZYAhhgCWCAJYD9tAAGWAIYYAlggCWAJYABlgAGWALYpI7dGYABBlgAAwywAAYYYAEMsAAGGGAB
-    DDDAAhhggAEGGGABDDDAAtgppQQwwAIYYAlggCWAAZYAlgAGWAIYYAlggAUwwBLAAEsAAywBDLAABlgCGGAJ
-    YIAlgCWAAZYABlgCGGABDLAEMMASwABLAPtsAQywBDDAEsAAC2CAJYABlgAGWAIYYAEMsAQwwBLAAEsASwAD
-    LAEMsAQwwAIYYAlggCWAAZYABlgAAywBDLAEMMASwBLAAEsAAywBDLAABlgCGGAJYIAlgAEWwABLv+sEanug
-    2Oh4vwkAAAAASUVORK5CYII=
+    iVBORw0KGgoAAAANSUhEUgAAAMgAAAGkBAMAAACGN3c4AAAAMFBMVEWGjZR/h415gIZzeoBscnhSVlxNUlc4O0A2OT4uMTYs
+    LzQrLTIlJiskJisgIiYeICS4CDg5AAABL0lEQVR42u3bwQnCMABA0UQyQN1Aikt468GjV1cQnMA1vDqLjqArOIK6gR48B6qk
+    KZT3r1IfpYUmaRpPYfhmAQKBQCAQCAQCgUAgEAgEAoFAIBBIpjSvgMRHDeTtwkMgEAgEAoFAIBAIBAKBQNKtAhLXQZIkTbBY
+    48VZ2nlxBoFAIBAIBAKBQCCQEZF0Kfdfy0VuYtqWm+NujrkzuZdDXu4uCAQCgUB6DSQKPuOb7C/nGqMVy+gQCAQCgUAgEAgE
+    AsnNGQ9T2akmSZKqV+WLs3gNdqNDIBAIBAKBQCAQCGQ8JG7/OGbfhcG3vMfVr8iz5LZzdxcEAoFAIH0ev/8MJLoKy+ixbSyj
+    QyAQCAQCgUAgEAgEAoFAIBAIBAKBQCAQCAQCgUAgEAgEAoFAIJBvH5zIF1tA6Cr5AAAAAElFTkSuQmCC
     """
 
-    /// Not a screenshot: an artifact the companion plugin drew and reported.
+    /// Not a screenshot: an artifact the companion plugin drew and reported. A chart is a WIDE
+    /// picture, and the band draws it wide.
     private static let renderedChart = """
-    iVBORw0KGgoAAAANSUhEUgAAASwAAAC0CAIAAAChXYa4AAAC0UlEQVR42u3TwQ2AIBBFQXry4gkKtU1DuEEL
-    miDBzSSvgv076TjL3O7aJD0vQShBKEEIoQShBCGEEoQShBBKEEoQQihBKEEIoQShBCGEEoQShBBKEEoQQihB
-    KEEIoQShBCGEEoQShBBKEEoQQihBKEEIoQShBCGEilC++vQglCA0rSCEUIJQghBCCUIJQgglCCUIIZQglCCE
-    UIJQghBCCUIJQgg93A4/ByGEEEIIoSCEEEIIIYRQEEIIIYQQQigIIYQQQgghFIQQQgghhBAKQgghhBBCCAUh
-    hBBCCCGEghBCCCGEEEJBCCGEEEIIoSCEEEIIIYRQEEIYAKGHgxBC94UQQgg9HIQQQgghhBB6OAghhBBCCCH0
-    cBBCCCGEEELo4SCEEEIIIYTQw7kJhBBCCCGEHs5NIIQQQk8CoYdzEwghhNCTQOjh3ARCCCH0JBB6ODeBEEII
-    IYTQw7kJhBBCCCGEHm7pTfaZBkIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGE
-    EEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCP+F0NIQQgghhBBCaGkIIYQQQggh
-    tDSEEEIIIYQQWhpCCCGEEEIILQ0hhBBCCCGEEEIIIYQQQgghhBBCCCGEpoEQQgghhBBC00AIIYQQQgihaSC0
-    dJiDmAZCS0MIIYQQmgZCS0MIIYQQmgZCS0MIIYQQmgZCS0MIIYQQmgZCS0MIoaUhNA2EloYQQktDaBoILQ0h
-    hJaG0DQQWhpCCC0NoWkgtDSEEFoaQtNAaGkIIbQ0hKaBEELTQGhpCE0DIYSmgdDSEJoGQghNA6GlITTNlwgl
-    vQpCCUIJQkkQShBKglCCUBKEEoSSIJQglAShBKEkCCUIJUEoQSgJQglCSRBKEEqCUIJQEoRSvAbTPsDx1ZH4
-    4wAAAABJRU5ErkJggg==
+    iVBORw0KGgoAAAANSUhEUgAAAeAAAACMBAMAAABWu2czAAAAMFBMVEX09vjz9vjs8vjp8Pjo8Pjd6/jG3/nDx8mZyfyZyPts
+    sv5Vpv9Kof8+m/87g88zOD8+32iaAAABLElEQVR42u3bMWoCQRQG4FkRxS4J2Ft4AMELWASrFLmAbUBstPIUnsAr2HkQy72C
+    jX0C6qa1eE2Mio7f380PM/CxM9VjiyoF+W6lG2bxGdblx18PapRhvZ6eLGrpyQIMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAx8
+    durnb20PorZaZQsezqL2mC+4eI3agzcMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDJweeiB+0xT9l6jebXIF1+YheDvK
+    9gu/daL6xxsGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGTv+ZD3+FbbXMFdych/Vh6UoDAwMDAwMDAwMDAwMDAwMDAwMD
+    AwMDAwMnw7RrZdyL2v0kW3D3PV3kp1BXGhgYGBgYGBgY+N7yCyQWGQ1y/qRTAAAAAElFTkSuQmCC
     """
 
     /// A re-read of a path that has already moved on. Its own picture, visibly unlike the two
-    /// captures.
+    /// captures, and SQUARE — the shape a fixed 3:2 plate cut the most off.
     private static let diskPlate = """
     iVBORw0KGgoAAAANSUhEUgAAAPAAAADwCAIAAACxN37FAAACKElEQVR42u3csQkAIAxFwayh4EpWVu4/SMBa
     xE6Qg5sgefWPUht8I5wAQYOgQdAgaAQNggZBg6BB0AgaBA2CBkGDoBE0CBoEDYIGQSNoEDQIGgQNgkbQIGgQ

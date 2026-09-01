@@ -63,7 +63,7 @@ struct MinimapRowTests {
     func `a prompt is a bubble rather than prose`() {
         #expect(Self.shape(.prompt(text: "Fix the seam", shots: [])) == .bubble(
             text: "Fix the seam",
-            shots: 0,
+            shots: [],
             isFolded: true,
         ))
     }
@@ -185,7 +185,7 @@ struct MinimapRowTests {
 
     @Test
     func `a run of pictures is one frame per shot rather than one over the run`() {
-        #expect(Self.shape(.gallery(FeedGallery(shots: []))) == .shots(count: 0))
+        #expect(Self.shape(.gallery(FeedGallery(shots: []))) == .shots(widths: []))
         #expect(FeedInk.media.shape == .frame)
     }
 

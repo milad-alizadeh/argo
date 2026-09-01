@@ -24,6 +24,18 @@ struct MediaDecodeTests {
         #expect(bitmap.drawn == CGSize(width: 336, height: 233))
     }
 
+    /// The gallery's own box (#1015). Its height is the fixed side and its width follows the
+    /// picture, so a plate that bounded the width too decoded a tall capture two and a half times
+    /// finer than anything draws it.
+    @Test
+    func `a shot that bounds only its height is decoded for that height alone`() throws {
+        let bytes = try MediaFixture.png(width: 900, height: 1600)
+        let plate = MediaBox.plate(ArgoFeedRow.shotPlate)
+        let bitmap = try #require(MediaDecode.bitmap(from: bytes, in: plate, scale: 1))
+
+        #expect(bitmap.drawn == CGSize(width: 63, height: 112))
+    }
+
     @Test
     func `a column that bounds only its width is decoded for that width alone`() throws {
         let bytes = try MediaFixture.png(width: 1301, height: 400)
