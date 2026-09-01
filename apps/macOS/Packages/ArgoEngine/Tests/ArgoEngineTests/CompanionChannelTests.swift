@@ -126,7 +126,7 @@ struct CompanionChannelTests {
         fixture.host.endLastProcess(exitCode: 0)
 
         #expect(!FileManager.default.fileExists(atPath: socketPath))
-        #expect(CompanionClient(socketPath: socketPath) == nil)
+        #expect(CompanionClient.dialledOnce(socketPath) == nil)
     }
 
     /// The whole point of retiring the reported status: a Session whose agent said `running` and

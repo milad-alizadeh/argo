@@ -13,27 +13,43 @@ import Foundation
 /// idempotent — so neither end of it leaks and neither end of it closes twice.
 @MainActor
 final class CompanionClient {
-    /// Why a dial that kept trying never landed: the errno of the last attempt and whether the
-    /// socket file was even there. A bare `→ nil` named no cause, and three CI failures were spent
-    /// guessing at one (#915).
+    /// Why a dial was refused, as facts rather than as a sentence: a caller that has to read the
+    /// cause out of prose reds when the prose is reworded (#915).
     struct DialFailure: Error, CustomStringConvertible {
-        let description: String
+        let socketPath: String
+        /// errno at the moment of the refusal, and `nil` where the path was rejected before any
+        /// syscall ran — there is no errno to read then, and a stale one names the wrong cause.
+        let refusal: Int32?
+        let isSocketFilePresent: Bool
+
+        var pathBytes: Int {
+            socketPath.utf8.count
+        }
+
+        var description: String {
+            let why = refusal.map { String(cString: strerror($0)) }
+                ?? "over sun_path's \(unixSocketPathLimit) bytes"
+            let file = isSocketFilePresent ? "there" : "not there"
+            return "no listener on \(socketPath) (\(pathBytes) bytes): \(why), "
+                + "and the socket file is \(file)"
+        }
+    }
+
+    /// One attempt, carrying the errno taken AT the call that failed. `close` and `FileManager`
+    /// both set errno, so a reading taken after the attempt returns names whichever ran last.
+    private enum Attempt {
+        case connected(Int32)
+        case refused(errno: Int32)
+        /// Refused before any syscall, so there is no errno to carry.
+        case pathTooLong
     }
 
     /// Readable so a test can name the number this client holds; `-1` once it has been released.
     private(set) var descriptor: Int32
 
-    /// A dial that WAITS for the listener instead of assuming one attempt is enough (#915).
+    /// A dial that waits for the listener rather than assuming one attempt is enough (#915).
     ///
-    /// Everything expecting a live socket comes through here. The one-shot `init?` below stays for
-    /// the suites that are ABOUT a refusal: a withdrawn socket has to read gone at once rather than
-    /// after a hang guard, and the backlog burst has to fill the queue without the main actor
-    /// turning between dials.
-    ///
-    /// It SLEEPS between attempts for `settle`'s reason — the listener accepts on the main QUEUE,
-    /// so a yield loop never leaves the actor that would open it.
-    /// `within` is `settle`'s own hang guard everywhere but the one test ABOUT a dial that is never
-    /// answered, which would otherwise spend the whole guard to prove it.
+    /// `within` is `settle`'s own hang guard everywhere but the test about a dial nothing answers.
     static func dialled(
         _ socketPath: String,
         within bound: Duration = settleLimit,
@@ -41,27 +57,64 @@ final class CompanionClient {
         -> CompanionClient {
         let deadline = ContinuousClock.now + bound
         while true {
-            if let client = CompanionClient(socketPath: socketPath) {
-                return client
+            switch attempt(on: socketPath) {
+            case let .connected(descriptor):
+                return CompanionClient(holding: descriptor)
+            // Waiting cannot change the length, so this one never spends the guard.
+            case .pathTooLong:
+                throw failure(socketPath, refusal: nil)
+            case let .refused(code):
+                guard ContinuousClock.now < deadline else {
+                    throw failure(socketPath, refusal: code)
+                }
+                // Sleeps rather than yields: the listener accepts on the main QUEUE, and a yield
+                // loop re-enqueues on the actor without ever leaving it.
+                try? await Task.sleep(for: .milliseconds(1))
             }
-            let refusal = String(cString: strerror(errno))
-            guard ContinuousClock.now < deadline else {
-                throw DialFailure(description: """
-                no listener on \(socketPath) (\(socketPath.utf8.count) bytes) within \
-                \(bound): \(refusal), and the socket file is \
-                \(FileManager.default.fileExists(atPath: socketPath) ? "there" : "not there")
-                """)
-            }
-            try? await Task.sleep(for: .milliseconds(1))
         }
     }
 
-    init?(socketPath: String) {
-        // Bounded like the server's own copy: `sun_path` is 104 bytes, and a path longer than that
-        // would overrun the struct rather than fail to connect.
-        guard socketPath.utf8.count <= unixSocketPathLimit else { return nil }
+    /// One dial and one answer, never a wait — for the suites that are ABOUT a refusal: a withdrawn
+    /// socket has to read gone at once rather than after the guard above, and the backlog burst has
+    /// to fill the listen queue without the main actor turning between dials.
+    ///
+    /// The only way to a single attempt, because the initializer is private: a fixture expecting a
+    /// LIVE socket can no longer reach one by writing the obvious constructor (#915).
+    static func dialledOnce(_ socketPath: String) -> CompanionClient? {
+        guard case let .connected(descriptor) = attempt(on: socketPath) else { return nil }
+        return CompanionClient(holding: descriptor)
+    }
+
+    private init(holding descriptor: Int32) {
+        self.descriptor = descriptor
+    }
+
+    private static func failure(_ socketPath: String, refusal: Int32?) -> DialFailure {
+        DialFailure(
+            socketPath: socketPath,
+            refusal: refusal,
+            isSocketFilePresent: FileManager.default.fileExists(atPath: socketPath),
+        )
+    }
+
+    private static func attempt(on socketPath: String) -> Attempt {
+        // `sun_path` is 104 bytes, and a longer path would overrun the struct rather than fail to
+        // connect.
+        guard socketPath.utf8.count <= unixSocketPathLimit else { return .pathTooLong }
         let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
-        guard descriptor >= 0 else { return nil }
+        guard descriptor >= 0 else { return .refused(errno: errno) }
+        guard connect(descriptor, to: socketPath) else {
+            let refusal = errno
+            Darwin.close(descriptor)
+            return .refused(errno: refusal)
+        }
+        // Non-blocking, because the server is served BY the main actor: a blocking read here holds
+        // the very run loop that would answer it, and the test would only ever pass on a timeout.
+        _ = fcntl(descriptor, F_SETFL, O_NONBLOCK)
+        return .connected(descriptor)
+    }
+
+    private static func connect(_ descriptor: Int32, to socketPath: String) -> Bool {
         var address = sockaddr_un()
         address.sun_family = sa_family_t(AF_UNIX)
         withUnsafeMutableBytes(of: &address.sun_path) { field in
@@ -70,19 +123,11 @@ final class CompanionClient {
             }
         }
         let size = socklen_t(MemoryLayout<sockaddr_un>.size)
-        let connected = withUnsafePointer(to: &address) { pointer in
+        return withUnsafePointer(to: &address) { pointer in
             pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                connect(descriptor, $0, size)
+                Darwin.connect(descriptor, $0, size)
             }
-        }
-        guard connected == 0 else {
-            Darwin.close(descriptor)
-            return nil
-        }
-        // Non-blocking, because the server is served BY the main actor: a blocking read here holds
-        // the very run loop that would answer it, and the test would only ever pass on a timeout.
-        _ = fcntl(descriptor, F_SETFL, O_NONBLOCK)
-        self.descriptor = descriptor
+        } == 0
     }
 
     func send(_ message: [String: Any]) {

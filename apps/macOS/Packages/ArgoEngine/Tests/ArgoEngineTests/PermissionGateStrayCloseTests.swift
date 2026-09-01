@@ -72,7 +72,7 @@ struct PermissionGateStrayCloseTests {
     /// Whether a dial is answered, spelled the way the hook's relay spells it: a refused connect is
     /// `nil`, which is what `/usr/bin/nc -U` reports as silence.
     private static func dials(_ path: String) -> Bool {
-        guard let dialled = CompanionClient(socketPath: path) else { return false }
+        guard let dialled = CompanionClient.dialledOnce(path) else { return false }
         dialled.close()
         return true
     }
