@@ -24,9 +24,9 @@ public struct MediaBytes: Sendable, Equatable, Hashable {
     }
 
     public let address: Address
-    /// The first 32 base64 characters, which is 24 bytes — past the last offset any image signature
-    /// is read at. What lets a picture be told from a byte run that is not one with no read at all
-    /// (`MediaDecode.isPicture`), which is the one question every projection asks of every shot.
+    /// The first 32 base64 characters, which is 24 bytes. What lets a picture be told from a byte
+    /// run that is not one with no read at all (`MediaDecode.isPicture`), and what says what shape
+    /// it is (`MediaShape`) — the two questions every projection asks of every shot.
     public let signature: String
     /// How long the whole run is. What a read is bounded by before it is made, and what a cost is
     /// predicted from before anything is decoded.
@@ -52,8 +52,10 @@ public struct MediaBytes: Sendable, Equatable, Hashable {
         MediaBytes(address: .held(base64: base64), base64: base64)
     }
 
-    /// 32 base64 characters is 24 bytes, which is a whole number of base64 quanta — so this prefix
-    /// is byte-for-byte the prefix of the whole run's own encoding, whichever end it is taken from.
+    /// 32 base64 characters is 24 bytes, a whole number of base64 quanta — so this prefix is
+    /// byte-for-byte the prefix of the whole run's own encoding. 24 is what a SHAPE needs and more
+    /// than a signature does: a PNG's IHDR height runs to index 23, where the last byte any
+    /// signature is matched at is WebP's `WEBP`, at index 11.
     public static let signatureLength = 32
 
     /// What holding this costs the event stream it sits in, counting only the characters: the

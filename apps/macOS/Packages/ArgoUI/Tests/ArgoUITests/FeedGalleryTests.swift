@@ -66,27 +66,35 @@ struct FeedGalleryTests {
     /// dropping it would be the fold reporting five renders where six were asked for.
     @Test
     func `a picture the record kept no bytes for is shown and opens nothing`() throws {
-        let rows = FeedProjection.rows(
-            from: FeedFixture.looked(at: "gone.png", FeedFixture.shot(.direct, bytes: nil)),
-        )
-        let shot = try #require(FeedFixture.galleries(in: rows).first?.shots.first)
+        let shot = try oneShot(of: nil)
 
         #expect(shot.isOpenable == false)
         #expect(shot.provenance.words == nil)
     }
 
-    /// Bytes are not a picture. A record can carry a string that decodes to nothing, and a shot
+    /// Bytes are not a picture. A record can carry a string that is no image at all, and a shot
     /// that read only "were there bytes" would draw an absence and offer a click onto it — the one
     /// combination the absent case exists to prevent.
     @Test
-    func `a picture whose bytes decode to nothing reads as an absence`() throws {
-        let rows = FeedProjection.rows(
-            from: FeedFixture.looked(at: "torn.png", FeedFixture.shot(.direct, bytes: "not-a-png")),
-        )
-        let shot = try #require(FeedFixture.galleries(in: rows).first?.shots.first)
+    func `a picture whose bytes are not one at all reads as an absence`() throws {
+        let shot = try oneShot(of: "not-a-png")
 
         #expect(shot.provenance == .absent)
         #expect(shot.isOpenable == false)
+    }
+
+    /// The other half of that case, and the one `not-a-png` never reaches: it fails the signature
+    /// check outright, where a capture cut short by a dying writer keeps a whole PNG header and
+    /// passes it. The projection reads the signature and nothing else, so it says picture here —
+    /// and the surface that tries to draw one settles it as `unreadable` (`MediaWaitTests`).
+    @Test
+    func `a picture cut short after its header reads as one until something draws it`() throws {
+        let shot = try oneShot(
+            of: MediaFixture.truncated(width: 900, height: 450).base64EncodedString(),
+        )
+
+        #expect(shot.provenance == .captured)
+        #expect(shot.isOpenable)
     }
 
     /// The frame is derived beside the words rather than decided inside the view that draws it.
@@ -213,6 +221,15 @@ struct FeedGalleryTests {
         #expect(FeedFixture.surveys(in: rows).isEmpty)
         #expect(FeedFixture.galleries(in: rows).isEmpty)
         #expect(rows.count == 2)
+    }
+
+    /// One picture a call answered with, through the whole projection — which is where a shot's
+    /// provenance is settled, and the only place the reading below is the one a reader sees.
+    private func oneShot(of bytes: String?) throws -> FeedShot {
+        let rows = FeedProjection.rows(
+            from: FeedFixture.looked(at: "shot.png", FeedFixture.shot(.direct, bytes: bytes)),
+        )
+        return try #require(FeedFixture.galleries(in: rows).first?.shots.first)
     }
 
     private func showing(_ paths: [String]) -> [TranscriptEvent] {

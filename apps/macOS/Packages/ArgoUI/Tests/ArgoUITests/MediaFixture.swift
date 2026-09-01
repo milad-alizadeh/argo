@@ -33,6 +33,25 @@ enum MediaFixture {
         ], as: .tiff)
     }
 
+    /// A real GIF, whose logical screen descriptor carries its size at byte 6 in the opposite
+    /// endianness to PNG's. Written by ImageIO rather than assembled here, so the reading is
+    /// checked against the format and not against a fixture that agreed with it.
+    static func gif(width: Int, height: Int) throws -> Data {
+        try encoded(width: width, height: height, [:], as: .gif)
+    }
+
+    static func jpeg(width: Int, height: Int) throws -> Data {
+        try encoded(width: width, height: height, [:])
+    }
+
+    static func bmp(width: Int, height: Int) throws -> Data {
+        try encoded(width: width, height: height, [:], as: .bmp)
+    }
+
+    static func tiff(width: Int, height: Int) throws -> Data {
+        try encoded(width: width, height: height, [:], as: .tiff)
+    }
+
     static func media(width: Int, height: Int) throws -> MediaEvidence {
         try MediaEvidence(
             tier: .direct,
@@ -43,6 +62,21 @@ enum MediaFixture {
 
     static func base64(width: Int, height: Int) throws -> String {
         try png(width: width, height: height).base64EncodedString()
+    }
+
+    /// A PNG cut off after its header, as a dying writer leaves one: every reading taken off the
+    /// signature alone gets it RIGHT, and every decode of it fails.
+    static func truncated(width: Int, height: Int) throws -> Data {
+        // 8 signature + 4 length + 4 "IHDR" + 13 IHDR data + 4 CRC. Nothing after it.
+        try png(width: width, height: height).prefix(33)
+    }
+
+    static func truncatedMedia(width: Int, height: Int) throws -> MediaEvidence {
+        try MediaEvidence(
+            tier: .direct,
+            mediaType: "image/png",
+            bytes: .held(truncated(width: width, height: height).base64EncodedString()),
+        )
     }
 
     /// One run, HELD rather than addressed: the cache and decode suites are about pixels, and a

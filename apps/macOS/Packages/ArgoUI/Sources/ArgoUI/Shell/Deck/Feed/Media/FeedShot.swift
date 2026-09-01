@@ -30,12 +30,10 @@ struct FeedShot: Equatable, Sendable {
     }
 
     /// How wide this shot is drawn: its own ratio at the gallery's fixed height, inside the band's
-    /// bounds. The one answer the row, the ruler and the lane all lay out from (#1015).
+    /// bounds, and the fixed box where the format did not say. The one answer the row, the ruler
+    /// and the lane all lay out from (#1015) — so it is read off the signature and never off a
+    /// decode, and it does not move when a decode later fails.
     var drawnWidth: CGFloat {
-        Self.width(ofRatio: ratio)
-    }
-
-    static func width(ofRatio ratio: CGFloat?) -> CGFloat {
         guard let ratio, ratio > 0 else { return ArgoFeedRow.shotWidth }
         return min(
             max(ArgoFeedRow.shotHeight * ratio, ArgoFeedRow.shotWidths.lowerBound),

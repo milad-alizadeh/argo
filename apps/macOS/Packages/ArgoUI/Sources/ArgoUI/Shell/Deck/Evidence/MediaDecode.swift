@@ -16,7 +16,12 @@ enum MediaDecode {
         let header = MediaHeader(of: source)
         switch box {
         case .full:
-            guard let image = NSImage(data: data) else { return nil }
+            // `NSImage(data:)` answers a cut-short capture with an image holding NO representations
+            // and a size of zero rather than with nil, and a zero-size picture filed as a picture
+            // opens the lightbox on a blank frame captioned "as the agent saw it".
+            guard let image = NSImage(data: data), !image.representations.isEmpty else {
+                return nil
+            }
             // A header that named no pixel dimensions leaves `points` at zero, and the lightbox
             // frames its picture by that number — so the decoded image's own size stands in.
             let framed = header.points == .zero
@@ -58,13 +63,10 @@ enum MediaDecode {
     /// answerable with no read at all is answered from: whether this is a picture, and what shape
     /// it is (`MediaShape`).
     static func head(of bytes: MediaBytes) -> Data? {
-        let prefix = String(bytes.signature.prefix(signatureBase64Length))
+        let prefix = String(bytes.signature.prefix(MediaBytes.signatureLength))
         guard prefix.utf8.count.isMultiple(of: 4) else { return nil }
         return Data(base64Encoded: prefix)
     }
-
-    /// 32 base64 characters is 24 bytes, which is past the last offset any signature below reads.
-    private static let signatureBase64Length = 32
 
     /// The file signatures ImageIO decodes for, as runs of bytes at fixed offsets — all of a row's
     /// runs must match. WebP is two because `RIFF` alone is also a sound file.

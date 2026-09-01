@@ -30,6 +30,20 @@ struct FeedShotShapeTests {
         #expect(MediaShape.ratio(of: bytes) == 2)
     }
 
+    /// The other format that says its size inside those 24 bytes, and it says it the other way
+    /// round: GIF writes the logical screen descriptor at byte 6 as two bytes LOW ONE FIRST, where
+    /// PNG writes IHDR at byte 16 big-endian. 1000 by 250 is the pair that tells the two readings
+    /// apart — read high byte first they come back 59395 by 64000, a picture drawn on its side
+    /// that nothing downstream can see is wrong, since every surface lays out from this one number.
+    @Test
+    func `a GIF's size is read low byte first, where a PNG's is read high byte first`() throws {
+        let gif = try MediaFixture.gif(width: 1000, height: 250)
+        let png = try MediaFixture.png(width: 1000, height: 250)
+
+        #expect(MediaShape.ratio(of: .held(gif.base64EncodedString())) == 4)
+        #expect(MediaShape.ratio(of: .held(png.base64EncodedString())) == 4)
+    }
+
     /// The formats that put their dimensions past the 24 bytes an address carries — JPEG, WebP,
     /// HEIC — say nothing this early, and a guess would be worse than the fixed box.
     @Test
@@ -75,6 +89,20 @@ struct FeedShotShapeTests {
 
         #expect(absent.ratio == nil)
         #expect(absent.drawnWidth == ArgoFeedRow.shotWidth)
+    }
+
+    /// A capture cut short by a dying writer keeps a whole header, so its shape reads exactly as an
+    /// intact file's does. A width that fell back to the fixed box on a failed decode would move
+    /// the band under the reader when the decode landed, and the lane would go on drawing the
+    /// width it was handed.
+    @Test
+    func `a picture cut short after its header is laid out at the shape its header says`(
+    ) throws {
+        let torn = try MediaFixture.truncatedMedia(width: 900, height: 450)
+        let cut = FeedShot(name: "capture.png", address: "docs/capture.png", media: torn)
+        let whole = try Self.shot(width: 900, height: 450)
+
+        #expect(cut.drawnWidth == whole.drawnWidth)
     }
 
     /// The whole point of the height being the fixed side: whatever a shot's width comes out at,
