@@ -23,6 +23,9 @@ struct AgentsRailSpecimen: View {
         case rescoped
         /// The rail as its dot strip, with the feed taking the width back.
         case collapsed
+        /// The strip while the feed is scoped onto an Agent — the state that proves the way back
+        /// survives collapsing (#1013), which the strip on the Session's own reading cannot.
+        case collapsedScoped
     }
 
     let subject: Subject
@@ -38,7 +41,7 @@ struct AgentsRailSpecimen: View {
             header: SessionHeaderFixture.header(for: .managed),
             readings: AgentsRailFixture.readings,
             scope: subject == .rescoped ? $live : .constant(scope),
-            isRailCollapsed: subject == .collapsed,
+            isRailCollapsed: subject == .collapsed || subject == .collapsedScoped,
         )
         .onAppear {
             guard subject == .rescoped else { return }
@@ -53,7 +56,7 @@ struct AgentsRailSpecimen: View {
     /// Index 2 is the preview transcript's one ANSWERED delegation, and so the only chip with a
     /// reading behind it — see `AgentsRailFixture`.
     private var scope: FeedScope {
-        subject == .scoped ? .subagent(2) : .session
+        subject == .scoped || subject == .collapsedScoped ? .subagent(2) : .session
     }
 }
 
@@ -77,6 +80,12 @@ struct AgentsRailSpecimen: View {
 
 #Preview("Agents rail — collapsed to dots, the feed taking the width") {
     AgentsRailSpecimen(subject: .collapsed)
+        .frame(width: 1000, height: 620)
+        .argoAppearance()
+}
+
+#Preview("Agents rail — collapsed while the feed is scoped onto an Agent") {
+    AgentsRailSpecimen(subject: .collapsedScoped)
         .frame(width: 1000, height: 620)
         .argoAppearance()
 }

@@ -108,6 +108,11 @@ public enum ArgoSymbol {
     /// Back to the newest thing in the feed, from wherever the reader scrolled to.
     public static let latest = "arrow.down"
 
+    /// The Session's own reading, at the head of the agents rail (#1013). The trunk its
+    /// delegations hang off, and deliberately not a back arrow: the entry is a chip like the ones
+    /// under it, not a way out of somewhere.
+    public static let sessionReading = "list.bullet.indent"
+
     /// The composer's send: an arrow and no word.
     public static let send = "arrow.up"
 

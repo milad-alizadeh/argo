@@ -19,12 +19,7 @@ struct AgentsRail: View {
 
     var body: some View {
         if control.isCollapsed {
-            AgentsRailStrip(
-                agents: agents,
-                scope: control.scope,
-                expand: { control.isCollapsed = false },
-                select: select(_:),
-            )
+            AgentsRailStrip(agents: agents, control: control)
         } else {
             full
         }
@@ -37,11 +32,12 @@ struct AgentsRail: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: ArgoSpacing.tight) {
                 header
+                MainChip(isSelected: control.scope.isSession, select: control.selectSession)
                 ForEach(agents) { agent in
                     AgentChip(
                         agent: agent,
                         isSelected: control.scope.agent == agent.id,
-                        scope: select(agent),
+                        scope: control.select(agent),
                     )
                 }
             }
@@ -51,19 +47,18 @@ struct AgentsRail: View {
         .argoScrollsUnderCanopy()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Subagents")
+        .accessibilityLabel(AgentsRailCopy.agents)
     }
 
-    /// The count is of what is RUNNING, which is the question the rail is being glanced at to
-    /// answer. The ones that have landed stay in the list because a subagent that finished is how
-    /// its spend is read at all.
+    /// The ones that have landed stay in the count line's list because a Subagent that finished is
+    /// how its spend is read at all. What the line SAYS is `AgentsRailCopy`.
     ///
     /// The line doubles as the way to collapse: a control of its own beside it would be a second
     /// thing at the top of a column whose whole job is to stay quiet.
     private var header: some View {
         Button { control.isCollapsed = true } label: {
             HStack(spacing: ArgoSpacing.snug) {
-                Text("Subagents · \(running) running")
+                Text(AgentsRailCopy.header(running: running))
                     .argoText(ArgoTypography.sectionLabel)
                     .foregroundStyle(argo.color.text.tertiary)
                     .lineLimit(1)
@@ -77,23 +72,11 @@ struct AgentsRail: View {
         // outweighs the selected chip's own wash, so the heading would beat the selection for the
         // eye. It also overrides the type ramp, which is what makes this line quiet.
         .buttonStyle(.plain)
-        .accessibilityLabel("Hide subagents")
+        .accessibilityLabel(AgentsRailCopy.hide)
     }
 
     private var running: Int {
         agents.filter(\.isRunning).count
-    }
-
-    /// What selecting one chip does, or `nil` where there is no reading to scope onto.
-    ///
-    /// Selecting the chip that is already lit scopes back to the Session — the rail is how a reader
-    /// gets out of a Subagent as well as into one, so the way back is never a control they have to
-    /// find somewhere else.
-    private func select(_ agent: FeedAgent) -> (() -> Void)? {
-        guard control.readings.hasReading(of: agent) else { return nil }
-        return {
-            control.scope = control.scope.agent == agent.id ? .session : .subagent(agent.id)
-        }
     }
 }
 
