@@ -32,13 +32,14 @@ struct MediaCacheTests {
         let bytes = try MediaFixture.base64(width: 1200, height: 900)
         let data = try #require(Data(base64Encoded: bytes))
         let bitmap = try #require(MediaDecode.bitmap(from: data, in: .plate(Self.plate), scale: 2))
+        let store = MediaStore(costLimit: Self.plateCost * 4)
 
         #expect(bitmap.cost == Self.plateCost)
-        // `NSCache` retains its keys, but bridging a native Swift `String` hands over the SAME
-        // storage rather than a copy — twice over gives one object — and the base64 is already
-        // held for the session by `MediaEvidence.bytes`. Charging an entry for its key would
-        // measure memory no eviction can reclaim.
-        #expect((bytes as NSString) === (bytes as NSString))
+        // The key is charged nothing. A native Swift `String` held twice is one storage object
+        // rather than a copy, and the base64 is already held for the session by
+        // `MediaEvidence.bytes`, so charging for it would measure memory no eviction can reclaim.
+        store.set(bitmap, for: bytes)
+        #expect(store.totalCost == bitmap.cost)
     }
 
     @Test
