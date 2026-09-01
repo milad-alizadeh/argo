@@ -29,6 +29,28 @@ struct HubSpawnPathTests {
     }
 }
 
+/// The Project root and the folder a Session records are two spellings of one directory (#363):
+/// the Project was registered at `/var/folders/…` and the CLI reports `/private/var/folders/…`.
+@Suite("Hub spawn symlinked roots")
+@MainActor
+struct HubSpawnSymlinkedRootTests {
+    /// The row is in the roster the Hub publishes for that Project and it is `managed` — an agent
+    /// Argo owns and does not draw is the worst of both tiers.
+    @Test
+    func `a spawn recorded under the resolved root is in the Project's roster`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        #expect(fixture.resolvedProjectPath != fixture.projectURL.path)
+
+        let claim = try await fixture.hub.spawnSession(
+            seed: SessionSeed(cwd: fixture.resolvedProjectPath),
+        )
+
+        #expect(fixture.hub.sessions.map(\.id) == [claim.value])
+        #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
+    }
+}
+
 /// The process table for one case, settable after the fixture has picked its folders. Behind a
 /// `Mutex` because the read runs off the main actor.
 private final class SpawnedProcesses: Sendable {

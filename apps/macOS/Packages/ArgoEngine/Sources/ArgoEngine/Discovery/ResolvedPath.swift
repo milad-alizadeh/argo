@@ -39,3 +39,23 @@ private func resolvedPath(_ path: String) -> String {
     defer { free(resolved) }
     return String(cString: resolved)
 }
+
+/// A path as the file system spells it — every symlink followed, or the path unchanged where it
+/// could not say. The only thing `ProjectScope` compares, so a caller that skipped the spelling
+/// step does not compile (#363). `init` is fileprivate: `spelling(of:)` below is the only mint.
+struct SpelledPath: Hashable, Sendable {
+    let value: String
+
+    fileprivate init(_ value: String) {
+        self.value = value
+    }
+}
+
+extension [String: String] {
+    /// How this batch spells one path, and the path AS WRITTEN where it holds no answer: a resolve
+    /// is I/O and fails for a folder that has been deleted, and an equal string is still the same
+    /// folder.
+    func spelling(of path: String) -> SpelledPath {
+        SpelledPath(self[path] ?? path)
+    }
+}

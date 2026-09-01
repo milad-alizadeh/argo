@@ -42,7 +42,10 @@ extension Hub {
     /// moment it is known.
     func didApply() async {
         reconcileSpawns()
-        await readings.spell(watch.sessions.compactMap(\.cwd), settling: .foldersNotYetSpelled)
+        await readings.spell(
+            theProjectRootAnd: watch.sessions.compactMap(\.cwd),
+            settling: .foldersNotYetSpelled,
+        )
     }
 
     /// One Session as the roster publishes it: what its transcript said, plus what Argo established
@@ -95,8 +98,9 @@ extension Hub {
     /// The spawned rows belonging to the Project this Hub is currently on. Spawns outlive a
     /// Project switch and keep their PTYs, so they need scoping the re-pointed join gives the rest.
     private var provisionalSessions: [HubSession] {
-        spawns.values
-            .filter { ProjectScope.contains(cwd: $0.cwd, projectURL: project.url) }
+        let root = readings.spelled(project.url.path)
+        return spawns.values
+            .filter { ProjectScope.contains(cwd: readings.spelled($0.cwd), projectRoot: root) }
             .map { observed(HubSession(spawn: $0)) }
     }
 }

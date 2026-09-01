@@ -28,9 +28,25 @@ struct RecordDirectoryFixture {
         TranscriptRecordStore(rootURL: rootURL, cli: .claude)
     }
 
-    /// A path under the fixture root, for a Project or a working directory the test names.
+    /// A path under the fixture root, for a Project or a working directory the test names. Named
+    /// rather than created: most cases care only about the string a transcript carries.
     func path(_ name: String) -> String {
         rootURL.appending(path: name, directoryHint: .isDirectory).path
+    }
+
+    /// A folder that really exists, for a case whose subject is what the file system says about it.
+    func directory(_ name: String) throws -> URL {
+        let url = rootURL.appending(path: name, directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
+    /// A folder reached through a symlink — a Project registered at a path that leads somewhere
+    /// else, which is every case of #363.
+    func symlink(_ name: String, to url: URL) throws -> URL {
+        let link = rootURL.appending(path: name, directoryHint: .isDirectory)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: url)
+        return link
     }
 
     @discardableResult
