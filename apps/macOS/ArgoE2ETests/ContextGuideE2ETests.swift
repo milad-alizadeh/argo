@@ -58,12 +58,12 @@ final class ContextGuideE2ETests: XCTestCase {
         // passing against a window that is already gone.
         XCTAssertEqual(app.state, .runningForeground)
 
-        // A second click on the mark leaves the panel UP. The control opens rather than toggling,
-        // so the way in cannot also be the way out — waited on rather than read, because the
-        // popover dismisses on a click outside itself and the mark is outside itself.
+        // A second click leaves the panel UP: the control opens rather than toggling. Asserted as
+        // a NON-disappearance, because the panel is already there and an existence wait would pass
+        // on its first evaluation whatever the click did.
         about.click()
-        XCTAssertTrue(
-            line.waitForExistence(timeout: 5),
+        XCTAssertFalse(
+            line.waitForNonExistence(timeout: 3),
             "Clicking the mark again closed the panel it had just opened.",
         )
 

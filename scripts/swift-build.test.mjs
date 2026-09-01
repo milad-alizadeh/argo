@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 // Tests for `apps/macOS/scripts/build.sh`, run via `bun run test:hooks`.
 //
-// One claim, in four shapes: the script builds the configuration it was ASKED for. Release is the
-// only configuration that names `-O` (#998), so a typo that silently built Debug would hand back a
-// figure presented as optimised and never measured — which is why the script refuses rather than
-// guesses, and why the refusal is a check here rather than a comment there.
+// One claim in four shapes: the script builds the configuration it was ASKED for, and refuses any
+// other. Why that matters: `docs/agents/build-configurations.md`.
 import assert from 'node:assert/strict'
 import { rmSync } from 'node:fs'
 import { check, report } from './check-harness.mjs'
@@ -12,19 +10,22 @@ import { run, STUBBED, scratch } from './swift-tooling.harness.mjs'
 
 const BUILD = 'apps/macOS/scripts/build.sh'
 
+const REFUSED = 'refused'
 const ASKED = [
   [undefined, 'Debug'],
   ['debug', 'Debug'],
   ['release', 'Release'],
-  ['Release', null],
+  // Xcode's own spelling, which the script deliberately does not accept.
+  ['Release', REFUSED],
 ]
 for (const [asked, expected] of ASKED) {
   check(
-    `build.sh ${expected ?? 'refuses'} for ARGO_BUILD_CONFIGURATION=${asked ?? '(unset)'}`,
+    `build.sh ${expected === REFUSED ? 'refuses' : `builds ${expected}`} for ` +
+      `ARGO_BUILD_CONFIGURATION=${asked ?? '(unset)'}`,
     () => {
       const env = asked ? { ARGO_BUILD_CONFIGURATION: asked } : {}
       const result = run(BUILD, { ...STUBBED, env })
-      if (!expected) {
+      if (expected === REFUSED) {
         assert.equal(result.status, 1, result.output)
         assert.match(result.output, /must be debug or release/)
         // And it refuses BEFORE reaching xcodebuild, rather than after starting a build.

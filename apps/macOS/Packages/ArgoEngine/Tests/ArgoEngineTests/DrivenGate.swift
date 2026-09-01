@@ -26,8 +26,16 @@ final class ClaudeHook {
     /// Cached, because the socket hands its line over exactly once and the suite polls.
     private var told: JSONValue?
 
-    init(_ fixture: SpawnFixture, _ claim: SessionOwnership.ClaimID) {
-        self.client = CompanionClient(socketPath: PermissionGate.path(fixture, claim))
+    /// A factory rather than an `init`, because the dial waits for the gate's listener (#915) and
+    /// an initialiser cannot.
+    static func dialled(
+        _ fixture: SpawnFixture,
+        _ claim: SessionOwnership.ClaimID,
+    ) async throws
+        -> ClaudeHook {
+        let hook = ClaudeHook()
+        hook.client = try await CompanionClient.dialled(PermissionGate.path(fixture, claim))
+        return hook
     }
 
     func raise() throws {

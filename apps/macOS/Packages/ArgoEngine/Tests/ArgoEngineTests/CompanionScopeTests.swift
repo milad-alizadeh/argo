@@ -23,9 +23,9 @@ struct CompanionScopeTests {
         let myGate = PermissionGate.path(fixture, mine)
         let theirGate = PermissionGate.path(fixture, theirs, of: other)
         #expect(myGate != theirGate, "so only the Hub's own corner keeps the paths apart")
-        let myHook = try #require(CompanionClient(socketPath: myGate))
+        let myHook = try await CompanionClient.dialled(myGate)
         defer { myHook.close() }
-        let theirHook = try #require(CompanionClient(socketPath: theirGate))
+        let theirHook = try await CompanionClient.dialled(theirGate)
         defer { theirHook.close() }
         myHook.sendLine(PermissionGate.bashCall)
         theirHook.sendLine(PermissionGate.bashCall)

@@ -41,6 +41,66 @@ import Testing
         #expect(field.input.string.isEmpty)
     }
 
+    /// The clear after a send reaches the field on every Turn, not only the first (#1000).
+    ///
+    /// Five Turns rather than two because the first one is the one that always worked: a send
+    /// leaves the field stale only once something has already rendered at that value, so the
+    /// staleness — and the line it concatenates onto the next Turn — begins at the second.
+    @Test
+    func `every Turn sent empties the field, not only the first`() throws {
+        let field = try Self.hosted()
+
+        for turn in 1 ... 5 {
+            field.input.insertText("turn \(turn)", replacementRange: field.input.selectedRange())
+            field.press([])
+            field.settle { field.input.string.isEmpty }
+            #expect(field.input.string.isEmpty)
+        }
+
+        #expect(field.sent == (1 ... 5).map { "turn \($0)" })
+    }
+
+    /// The field grew onto a second line and has to come back off it: the clear a send leaves
+    /// arrives without a SwiftUI pass of its own, and a field emptied at two lines' height would
+    /// hold a gap over the feed until some later layout happened to close it (#1000).
+    @Test
+    func `a multi-line draft sent takes the field back to one line`() throws {
+        let field = try Self.hosted()
+
+        let atRest = field.height
+
+        field.input.insertText("first", replacementRange: field.input.selectedRange())
+        field.press(.shift)
+        field.input.insertText("second", replacementRange: field.input.selectedRange())
+        field.settle { field.height > atRest }
+        #expect(field.height > atRest)
+
+        field.press([])
+        field.settle { field.input.string.isEmpty }
+
+        #expect(field.height == atRest)
+    }
+
+    /// Two composers hosted at once, which IS a legitimate arrangement — the app draws one per
+    /// cockpit window, and `ComposerField`'s own preview draws three (#1000).
+    @Test
+    func `a second hosted composer leaves the first one's field working`() throws {
+        let first = try Self.hosted()
+        let second = try Self.hosted()
+
+        second.input.insertText("theirs", replacementRange: second.input.selectedRange())
+        second.press([])
+        second.settle { second.input.string.isEmpty }
+
+        first.input.insertText("mine", replacementRange: first.input.selectedRange())
+        first.press([])
+        first.settle { first.input.string.isEmpty }
+
+        #expect(first.input.string.isEmpty)
+        #expect(first.sent == ["mine"])
+        #expect(second.sent == ["theirs"])
+    }
+
     /// A composer hosted for real, holding what it was sent and what it holds.
     ///
     /// Stated `@MainActor` because a nested type inherits the suite's isolation on some toolchains
@@ -55,6 +115,11 @@ import Testing
             self.host = host
             self.input = input
             self.store = store
+        }
+
+        /// What the field is asking the vessel for, which is what a grown line costs the feed.
+        var height: CGFloat {
+            input.enclosingScrollView?.frame.height ?? 0
         }
 
         var draft: ComposerDraft {
@@ -96,8 +161,9 @@ import Testing
         /// It turns the run loop rather than sleeping, because the write-back is queued ON this
         /// thread's run loop.
         ///
-        /// It has never engaged on the machine it was written on: over six full ArgoUI runs under
-        /// a twelve-worker load burst, all twelve waits settled on their first check, under 7µs.
+        /// Most waits settle on their first check. The ones that do not are the reconciliation
+        /// `ComposerTextView` schedules a turn after the field reports a change (#1000), which
+        /// needs a turn of this loop to arrive and lands in single-digit milliseconds.
         func settle(
             until settled: () -> Bool,
             at location: SourceLocation = #_sourceLocation,

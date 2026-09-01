@@ -24,7 +24,7 @@ enum PermissionGate {
         let fixture = try SpawnFixture(permissionPatience: patience)
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: mode))
-        let client = try #require(CompanionClient(socketPath: path(fixture, claim)))
+        let client = try await CompanionClient.dialled(path(fixture, claim))
         defer { client.close() }
         try await body(fixture, claim, client)
     }
@@ -46,9 +46,9 @@ enum PermissionGate {
     static func dial(
         _ fixture: SpawnFixture,
         _ claim: SessionOwnership.ClaimID,
-    ) throws
+    ) async throws
         -> CompanionClient {
-        try #require(CompanionClient(socketPath: path(fixture, claim)))
+        try await CompanionClient.dialled(path(fixture, claim))
     }
 
     /// The hook's decision object, unwrapped from the reply's envelope.

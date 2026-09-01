@@ -12,9 +12,9 @@ the build and the swift-testing suites. Linux CI runs biome, duplication and `te
 only executable suite there. Pre-commit runs lint-staged: biome, then SwiftFormat, SwiftLint,
 boundaries and the design-token gate over staged Swift.
 
-Neither the build nor the suites are optimised by default: `bun run build` is Debug, and
-`swift-test.sh` is `-Onone` unless `ARGO_TEST_CONFIGURATION=release` (#991). What each
-configuration names, how to build the optimised app, and what it costs:
+Nothing here is optimised by default: `bun run build` is Debug unless asked otherwise, and
+`swift-test.sh` takes no configuration at all, so every suite runs `-Onone`. What each
+configuration names, how to build the optimised app, and what that is worth:
 `docs/agents/build-configurations.md`.
 
 Running the suites optimised is how a seconds-side cost budget gets re-recorded against code the

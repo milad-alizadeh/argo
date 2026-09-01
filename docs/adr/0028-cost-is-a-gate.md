@@ -92,6 +92,15 @@ it, the comment says so and the ceiling derives from the document rather than fr
 the ceiling **cold**. *What it kills today:* the `ProseCache` cliff at 512 entries, and
 `MediaPicture`'s unbounded full-resolution bitmaps.
 
+> **Amendment — 2026-09-01 (#1001).** Rule 4's forbidden list was not enough. An `NSCache` *with*
+> a `totalCostLimit` is still not a cache anything may claim about: its removal policy is
+> documented as a hint, and on Darwin it empties itself wholesale on a memory-pressure
+> notification. The picture-plate suite asserted that a plate filed one statement ago was still
+> held, and it went red in 33 runs out of 40 on a quiet desk with no load generator anywhere.
+> **A cache whose behaviour any test asserts holds its entries in a store Argo owns, evicting by
+> its own stated policy.** Foundation's is for pixels nobody has promised anything about.
+> `MediaStore` is the first of them.
+
 **Rule 5 · A room or session switch destroys no measured geometry.** Forbidden: `.id(` on any view
 hosting an `NSViewRepresentable` under `Shell/Deck/`, and storing measured row heights in a type
 whose lifetime is a `switch` branch. The height store lives above every switch that does not

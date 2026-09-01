@@ -27,7 +27,7 @@ struct CompanionSocketPathOwnershipTests {
         rival.close()
 
         #expect(FileManager.default.fileExists(atPath: path), "the file the held socket bound")
-        let dialled = try #require(CompanionClient(socketPath: path), "still answers a dial")
+        let dialled = try #require(CompanionClient.dialledOnce(path), "still answers a dial")
         dialled.close()
     }
 
@@ -47,7 +47,7 @@ struct CompanionSocketPathOwnershipTests {
         try second.open()
         defer { second.close() }
 
-        let dialled = try #require(CompanionClient(socketPath: path))
+        let dialled = try #require(CompanionClient.dialledOnce(path))
         dialled.close()
     }
 

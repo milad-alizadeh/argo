@@ -45,7 +45,7 @@ struct InstrumentDeckShell: View {
     var readings = FeedAgentReadings.none
     /// Which Agent the feed is scoped to. A binding for the reason `open` is one: the toolbar's
     /// evidence toggle opens the newest evidence in the rows ON SCREEN, and this says which those
-    /// are. A screenshot still seeds it with `.constant` rather than clicking a chip.
+    /// are. Seeded rather than clicked, the way `open` above is.
     var scope: Binding<FeedScope> = .constant(.session)
     /// The Tickets room, already assembled — one value rather than the projection and its two
     /// selections apart, so the sidebar and this deck cannot be handed different ones. `nil` in

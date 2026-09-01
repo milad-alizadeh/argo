@@ -29,23 +29,19 @@ struct ComposerTextView: NSViewRepresentable {
 
     func updateNSView(_ scroller: NSScrollView, context: Context) {
         guard let input = scroller.documentView as? ComposerTextInput else { return }
-        // The draft is the truth, but only when it disagrees: writing it back on every update
-        // would drop the caret to the end of the line mid-sentence, and would cut a marked
-        // composition — a Pinyin or a dead-key sequence — off at the first keystroke.
-        //
-        // A write of its own leaves the caret at the END, which is where every writer there is
-        // wants it: a menu's insertion, a restored draft, a Turn put back (#682), and the clear
-        // after a send are each an append or a replacement of the whole line.
-        if input.string != text, !input.hasMarkedText() {
-            input.string = text
-        }
         input.setAccessibilityLabel(placeholder)
         Self.ink(input, argo: argo)
+        Self.write(text, into: input, argo: argo)
         input.submit = submit
         input.walk = walk
         input.dismiss = dismiss
         input.attach = attach
         context.coordinator.text = $text
+        context.coordinator.argo = argo
+    }
+
+    static func dismantleNSView(_: NSScrollView, coordinator: Coordinator) {
+        coordinator.cancelReconciliation()
     }
 
     /// What the field asks for: one line at rest, the content's own height as it grows, and the
@@ -72,11 +68,28 @@ struct ComposerTextView: NSViewRepresentable {
     /// stack built inside `makeNSView` is deallocated on the way out and the field has no text
     /// storage at all, and a draft written into it draws nothing. The coordinator is what SwiftUI
     /// keeps for the field's lifetime, and holding it from outside the chain leaves no cycle.
-    final class Coordinator: NSObject, NSTextViewDelegate {
+    @MainActor final class Coordinator: NSObject, NSTextViewDelegate {
         var text: Binding<String>
+        /// The theme the last update carried, so a reconciliation inks what it writes.
+        var argo: ArgoTheme = .graphite
 
         let storage = NSTextStorage()
         let container: NSTextContainer
+        /// The draft's last word over the field, taken a turn after the field reported a change
+        /// (#1000).
+        ///
+        /// `updateNSView` is the only other writer, and SwiftUI reaches it when the DRAFT it
+        /// renders differs from the draft it last rendered — never when the FIELD differs from
+        /// the draft. A keystroke and the Return that sends it land in one turn: the draft goes
+        /// from empty to the line and back to empty with no update pass between, so SwiftUI is
+        /// handed the value it already drew, skips the field, and a sent line stays in it — and
+        /// concatenates onto the next Turn.
+        ///
+        /// Scheduled in `.common` and not `.default`, so a draft that moved during event tracking
+        /// — a scroll, a seam drag, an open menu — reaches the field then rather than whenever the
+        /// tracking loop ends. Counted rather than held: `RunLoop` hands back no cancellable
+        /// token, so the generation the block was queued with is what tells a stale one to stop.
+        private var reconciliation = 0
 
         init(text: Binding<String>) {
             self.text = text
@@ -96,8 +109,20 @@ struct ComposerTextView: NSViewRepresentable {
         }
 
         func textDidChange(_ notification: Notification) {
-            guard let input = notification.object as? NSTextView else { return }
+            guard let input = notification.object as? ComposerTextInput else { return }
             text.wrappedValue = input.string
+            reconciliation += 1
+            let queued = reconciliation
+            RunLoop.main.perform(inModes: [.common]) { [weak self, weak input] in
+                guard let self, let input, queued == reconciliation else { return }
+                ComposerTextView.write(text.wrappedValue, into: input, argo: argo)
+            }
+        }
+
+        /// Retire whatever is queued, so a field taken down between the keystroke and the turn
+        /// after it is not written into on the way out.
+        func cancelReconciliation() {
+            reconciliation += 1
         }
     }
 }
@@ -127,6 +152,24 @@ private extension ComposerTextView {
         input.isAutomaticDashSubstitutionEnabled = false
         input.isAutomaticTextReplacementEnabled = false
         input.isAutomaticSpellingCorrectionEnabled = false
+    }
+
+    /// The draft into the field, and only where the two disagree: writing it back on every pass
+    /// would drop the caret to the end of the line mid-sentence, and would cut a marked
+    /// composition — a Pinyin or a dead-key sequence — off at the first keystroke.
+    ///
+    /// A write of its own leaves the caret at the END, which is where every writer there is wants
+    /// it: a menu's insertion, a restored draft, a Turn put back (#682), and the clear after a
+    /// send are each an append or a replacement of the whole line.
+    ///
+    /// It re-inks, because the attributes are held on the range they were applied to and a new
+    /// string carries none of them. The HEIGHT needs nothing of the sort: the field is
+    /// `isVerticallyResizable`, so TextKit resizes the document view under the write and AppKit
+    /// carries that up to the next layout pass.
+    static func write(_ draft: String, into input: ComposerTextInput, argo: ArgoTheme) {
+        guard input.string != draft, !input.hasMarkedText() else { return }
+        input.string = draft
+        ink(input, argo: argo)
     }
 
     /// The face and the two inks, reapplied on every update because the theme can turn under a

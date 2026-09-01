@@ -14,23 +14,26 @@ import ArgoEngine
 /// (`MediaBytes`), so what a Session's pictures cost is what this cache is allowed to hold, whether
 /// one Session is being read or thirty (#989).
 ///
-/// On the main actor rather than trusting `NSCache`'s own thread safety, which covers the container
-/// and says nothing about a value crossing domains. Every surface that draws a picture is a view;
-/// the one thing that is not — a shot settling its provenance — no longer comes here.
+/// On the main actor, so the store needs no locking of its own and no value crosses a domain to
+/// reach it. Every surface that draws a picture is a view; the one thing that is not — a shot
+/// settling its provenance — no longer comes here.
+///
+/// The store is `MediaStore` and not `NSCache`, which holds nothing it has promised to hold
+/// (#1001).
 @MainActor
 final class MediaCache {
     /// The one the app draws through. Tests build their own, because a process-wide cache shared
     /// between parallel cases is a cache each of them can evict the others out of.
     static let shared = MediaCache(costLimit: costLimit(scale: MediaScale.display))
 
-    private let entries = NSCache<NSString, MediaBitmap>()
+    private let entries: MediaStore
 
     init(costLimit: Int) {
-        entries.totalCostLimit = costLimit
+        self.entries = MediaStore(costLimit: costLimit)
     }
 
     var costLimit: Int {
-        entries.totalCostLimit
+        entries.costLimit
     }
 
     /// The picture for one run — held where what is held is dense enough for the box asking, and
@@ -53,7 +56,7 @@ final class MediaCache {
         // 25 ms one — has a single surface with one picture open at a time.
         guard let bitmap = await Self.decoded(bytes, in: wanted) else { return nil }
         if case .plate = wanted {
-            entries.setObject(bitmap, forKey: bytes.identity as NSString, cost: bitmap.cost)
+            entries.set(bitmap, for: bytes.identity)
         }
         return bitmap
     }
@@ -62,7 +65,7 @@ final class MediaCache {
     /// nothing. What a surface can draw the frame it appears in, and what the lightbox stands in
     /// while its own full frame is being made.
     func held(_ bytes: MediaBytes) -> MediaBitmap? {
-        entries.object(forKey: bytes.identity as NSString)
+        entries.object(for: bytes.identity)
     }
 
     /// One picture read and decoded, off the main actor and held by nobody. 25 ms for a 2560 × 1600
@@ -88,9 +91,9 @@ final class MediaCache {
     /// What the cache may hold, in bytes: every pixel of the window Argo opens at, `windowfuls`
     /// times over, at the density the display draws them.
     ///
-    /// Only the BITMAPS are counted. `NSCache` retains its keys, and a key is now an address rather
-    /// than a picture — a path, an offset and a length — so charging an entry for one would shrink
-    /// the usable cache to account for bytes no eviction could reclaim and none of it is a picture.
+    /// Only the BITMAPS are counted. A key is now an ADDRESS rather than a picture — a path, an
+    /// offset and a length (#989) — so charging an entry for one would shrink the usable cache to
+    /// account for bytes no eviction could reclaim, none of which is a picture.
     nonisolated static func costLimit(scale: CGFloat) -> Int {
         let pixels = ArgoLayout.windowIdealWidth * scale * ArgoLayout.windowIdealHeight * scale
         return Int(pixels) * bytesPerPixel * windowfuls

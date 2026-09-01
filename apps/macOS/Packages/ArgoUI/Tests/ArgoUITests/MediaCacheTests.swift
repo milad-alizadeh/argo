@@ -32,6 +32,7 @@ struct MediaCacheTests {
         let base64 = try MediaFixture.base64(width: 1200, height: 900)
         let data = try #require(Data(base64Encoded: base64))
         let bitmap = try #require(MediaDecode.bitmap(from: data, in: .plate(Self.plate), scale: 2))
+        let store = MediaStore(costLimit: Self.plateCost * 4)
 
         #expect(bitmap.cost == Self.plateCost)
         // A key is now an ADDRESS — a path, an offset and a length — so the pixels are the whole
@@ -41,6 +42,9 @@ struct MediaCacheTests {
             base64: base64,
         )
         #expect(addressed.retainedBytes < bitmap.cost / 100)
+        // And the store charges for the picture alone, never for the address it is filed under.
+        store.set(bitmap, for: addressed.identity)
+        #expect(store.totalCost == bitmap.cost)
     }
 
     @Test

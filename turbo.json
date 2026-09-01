@@ -12,7 +12,8 @@
       "cache": false
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "env": ["ARGO_TEST_CONFIGURATION"]
     },
     "test:e2e": {
       "cache": false

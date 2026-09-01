@@ -62,7 +62,7 @@ extension SpawnFixture {
     private func driveClaude() async throws -> DrivenSession {
         let claim = try await hub.spawnSession(cli: .claude)
         let process = try started()
-        let hook = ClaudeHook(self, claim)
+        let hook = try await ClaudeHook.dialled(self, claim)
         return DrivenSession(
             id: claim.value,
             turns: { Self.pastes(in: process.written.joined()) },
