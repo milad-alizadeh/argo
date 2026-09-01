@@ -22,4 +22,17 @@ extension ArgoTypeScale {
         case .caption2: .caption2
         }
     }
+
+    /// What one line of this rung OCCUPIES, read off the face the platform resolves rather than
+    /// worked out from `size`.
+    ///
+    /// `size` is the HIG's documented number and `naturalLineHeightRatio` a ratio over it, and the
+    /// product is not the box: at `body` it reports 15.73 where TextKit sets the line at 17.31.
+    /// Worse, `size` is a constant and the resolved face is not, so the two part entirely once an
+    /// Accessibility text setting moves the platform's ladder. Anything measuring a line it also
+    /// DRAWS reads this; the ratio stays for working a stated rhythm back into a `lineSpacing`.
+    @MainActor var lineBox: CGFloat {
+        let font = NSFont.preferredFont(forTextStyle: appKitStyle)
+        return font.ascender - font.descender
+    }
 }

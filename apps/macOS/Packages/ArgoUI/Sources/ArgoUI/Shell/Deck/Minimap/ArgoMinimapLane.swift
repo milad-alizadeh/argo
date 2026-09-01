@@ -56,8 +56,13 @@ public enum ArgoMinimapLane {
 
     /// How tall one label stands, ground and all. Also the closest two labels may be: under
     /// ⇧⌘ every Turn asks for one at once, and labels drawn on top of each other are none.
-    public static var labelHeight: CGFloat {
-        labelRung.size * ArgoTypeScale.naturalLineHeightRatio + labelPadding * 2
+    ///
+    /// The rung's RESOLVED box, because `MinimapLaneView+Annotations` draws these with
+    /// `preferredFont(forTextStyle:)`. Worked out from `size` instead, this was the shorter of the
+    /// two numbers at every text setting and a different number at most of them — so the spacing
+    /// that keeps two labels apart was measuring a line nobody drew, and the labels overlapped.
+    @MainActor public static var labelHeight: CGFloat {
+        labelRung.lineBox + labelPadding * 2
     }
 
     /// The floor under the viewport rectangle. A long reading compresses the visible range to a
