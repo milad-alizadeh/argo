@@ -4,6 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["ARGO_BUILD_CONFIGURATION"],
       "outputs": ["dist/**", "out/**"]
     },
     "//#format-and-lint": {},
