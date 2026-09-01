@@ -53,8 +53,12 @@ extension MinimapProseBlock {
         across measure: CGFloat,
     )
         -> (rects: [MinimapRowRect], height: CGFloat) {
+        // The face the label is DRAWN in, weight included: `FeedMarkdownFence` sets it at
+        // `ArgoTypography.sectionLabel`, which is semibold, and a weight changes the box its line
+        // stands in — see `ProseLineBox`.
         let label = hasInfo
-            ? ProseFace(rung: ArgoTypography.sectionLabel.rung).lineBox + ArgoSpacing.tight
+            ? ProseFace(rung: ArgoTypography.sectionLabel.rung, isBold: true).lineBox
+            + ArgoSpacing.tight
             : 0
         let height = ArgoSpacing.base * 2 + label + ProseFace.machine.height(ofLines: lines)
         return (

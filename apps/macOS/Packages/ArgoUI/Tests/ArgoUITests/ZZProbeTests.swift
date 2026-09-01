@@ -6,35 +6,52 @@ import Testing
 @MainActor
 @Suite("ZZ probe")
 struct ZZProbeTests {
+    private static let named: [(String, ProseFace)] = [
+        ("body", .body),
+        ("machine", .machine),
+        ("header", .header),
+        ("h1", .heading(level: 1)),
+        ("h2", .heading(level: 2)),
+        ("h3", .heading(level: 3)),
+        ("label", ProseFace(rung: ArgoTypography.sectionLabel.rung)),
+    ]
+
+    private static func drawn(_ face: ProseFace, lines: Int) -> CGFloat {
+        let words = Array(repeating: "A", count: lines).joined(separator: "\n")
+        let leading = face.isMachine
+            ? ArgoFeedRow.machineLineSpacing
+            : ArgoFeedRow.proseLineSpacing
+        let ruler = NSHostingController(rootView: AnyView(
+            Text(words)
+                .argoText(face.rung, face.isBold ? .semibold : nil)
+                .lineSpacing(leading),
+        ))
+        ruler.sizingOptions = []
+        let height = ruler.sizeThatFits(
+            in: NSSize(width: 400, height: CGFloat.greatestFiniteMagnitude),
+        ).height
+        ruler.rootView = AnyView(EmptyView())
+        return height
+    }
+
     @Test
-    func metrics() {
-        for face in [ProseFace.body, ProseFace.machine, ProseFace.heading(level: 2)] {
-            let font = face.font
+    func faces() {
+        for (name, face) in Self.named {
+            let font = ProseFace(rung: face.rung, isBold: face.isBold).font
             print(
-                "PROBE face rung=\(face.rung) bold=\(face.isBold) machine=\(face.isMachine) "
-                    + "name=\(font.fontName) size=\(font.pointSize) asc=\(font.ascender) "
+                "PROBE face=\(name) size=\(font.pointSize) asc=\(font.ascender) "
                     + "desc=\(font.descender) leading=\(font.leading) "
-                    + "capH=\(font.capHeight) xH=\(font.xHeight) "
-                    + "boundingRect=\(font.boundingRectForFont) lineBox=\(face.lineBox)",
+                    + "box=\(face.lineBox(under: .fractional)) step=\(face.step) "
+                    + "chose=\(face.lineBox)",
             )
+            for lines in [1, 2, 3, 8] {
+                print(
+                    "PROBE face=\(name) lines=\(lines) drawn=\(Self.drawn(face, lines: lines)) "
+                        + "frac=\(face.height(ofLines: lines, under: .fractional)) "
+                        + "snap=\(face.height(ofLines: lines, under: .wholePoint))",
+                )
+            }
         }
-        print("PROBE engine \(ProseEngine.inForce)")
-        for engine in [ProseEngine.fractional, .wholePoint] {
-            let face = ProseFace.body
-            print(
-                "PROBE under \(engine) box=\(face.lineBox(under: engine)) "
-                    + "step=\(face.step) "
-                    + "three=\(face.height(ofLines: 3, under: engine))",
-            )
-        }
-        print(
-            "PROBE spacing prose=\(ArgoFeedRow.proseLineSpacing) "
-                + "machine=\(ArgoFeedRow.machineLineSpacing) "
-                + "blockStep=\(ArgoFeedRow.blockStep) chipSide=\(ArgoFeedRow.copyChipSide) "
-                + "chipStep=\(ArgoFeedRow.copyChipStep) flush=\(ArgoSpacing.flush) "
-                + "rungSize=\(ArgoFeedRow.proseRung.size) "
-                + "ratio=\(ArgoTypeScale.naturalLineHeightRatio)",
-        )
     }
 
     @Test
@@ -53,7 +70,7 @@ struct ZZProbeTests {
             ) else { continue }
             ruler.rootView = model.content(at: at)
             let drawn = ruler.sizeThatFits(
-                in: NSSize(width: width, height: .greatestFiniteMagnitude),
+                in: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude),
             ).height
             let step = FeedRow.step(to: rows[at], from: at > 0 ? rows[at - 1] : nil)
             guard ceil(step + typeset) != ceil(drawn) else { continue }
@@ -76,7 +93,7 @@ struct ZZProbeTests {
 extension MinimapProseBlock {
     var kindName: String {
         switch self {
-        case let .prose(words): "prose lines=\(words.text.count)"
+        case let .prose(words): "prose chars=\(words.text.count)"
         case let .fence(lines, info): "fence lines=\(lines) info=\(info)"
         case .table: "table"
         case .diagram: "diagram"

@@ -62,7 +62,7 @@ extension ProseFace {
     /// `.system(.body, design: .monospaced)` is the BODY text style in another design, so it keeps
     /// the body's line height and only its advances change.
     @MainActor var lineBox: CGFloat {
-        lineBox(under: .inForce)
+        ProseLineBox.of(self)
     }
 
     /// From one line's top to the next line's top. The same under either engine, and off the
@@ -85,11 +85,12 @@ extension ProseFace {
     /// BETWEEN lines, so a run's last line adds no trailing gap. Multiplying the step by the line
     /// count instead overstates every wrapped paragraph and every table row by one gap.
     @MainActor func height(ofLines lines: Int) -> CGFloat {
-        height(ofLines: lines, under: .inForce)
+        guard lines > 0 else { return 0 }
+        return lineBox + CGFloat(lines - 1) * step
     }
 
-    /// The box and the run under a NAMED engine, which is what makes the rule this machine is NOT
-    /// running testable at all — see `ProseEngine`.
+    /// The candidate box under a NAMED rule — what `ProseLineBox` chooses between, and what makes
+    /// the rule this machine is NOT drawing through testable at all.
     @MainActor func lineBox(under engine: ProseEngine) -> CGFloat {
         let font = ProseFace(rung: rung, isBold: isBold).font
         switch engine {
@@ -106,8 +107,9 @@ extension ProseFace {
     }
 
     /// The extra leading the feed sets this face at — the machine's own for the mono, prose's
-    /// otherwise, which is exactly the pair `FeedProseText` and `FeedMarkdownFence` apply.
-    private var leading: CGFloat {
+    /// otherwise, which is exactly the pair `FeedProseText` and `FeedMarkdownFence` apply, and so
+    /// the one `ProseLineBox` sets its own probe at.
+    var leading: CGFloat {
         isMachine ? ArgoFeedRow.machineLineSpacing : ArgoFeedRow.proseLineSpacing
     }
 
