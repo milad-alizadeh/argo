@@ -9,6 +9,9 @@ import Testing
 struct RhythmTests {
     // MARK: - The feed's rhythm
 
+    /// `@MainActor` because the leading is read off the DRAWN box, and the setting behind that is
+    /// app-wide live state.
+    @MainActor
     @Test
     func `prose is set more openly than the rest of the cockpit is packed`() {
         // A feed is read rather than scanned, so its line height clears the shell's dense default.

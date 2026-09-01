@@ -59,6 +59,7 @@ struct TypeAndIconContractTests {
     }
 
     /// The feed's body is ONE size; prose and call lines are told apart by ink, measure and shape.
+    @MainActor
     @Test
     func `the feed sets its prose and its call lines on one rung`() {
         #expect(ArgoFeedRow.proseRung.size == ArgoTypography.body.size)
