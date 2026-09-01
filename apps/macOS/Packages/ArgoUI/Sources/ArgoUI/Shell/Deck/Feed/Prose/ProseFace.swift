@@ -33,12 +33,10 @@ extension ProseFace {
     /// The font itself. AppKit's own preferred font for the rung, so this and the `Text` on screen
     /// read one table — see `ArgoTypeScale+AppKit`.
     ///
-    /// The mono is built at the SANS' resolved size and not at `rung.size`, which is the HIG's
-    /// documented number and stands still while the platform's own moves. `.system(.body, design:
-    /// .monospaced)` is the body text style in another design, so the two agree on size at every
-    /// rung and only the advances differ; measuring the mono at a fixed 13 while the sans was drawn
-    /// at an Accessibility rung would under-report every `code` span, which is #766 over again one
-    /// setting away.
+    /// The mono is built at the SANS' resolved size. `rung.size` is the HIG's documented number,
+    /// which stands still while the platform's own moves — see `lineBox` for why the two faces are
+    /// one size at all. Nothing here observes a text-size change, so `ProseMetrics`' caches survive
+    /// one and go on answering at the size they were asked at.
     @MainActor var font: NSFont {
         let sans = NSFont.preferredFont(forTextStyle: rung.appKitStyle)
         let base = isMachine

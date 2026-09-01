@@ -58,21 +58,18 @@ struct ProseMetricsFaceTests {
     /// onto the line the row was not tall enough for.
     @Test
     func `a code dense column asks for more room than the same characters unbacked`() {
-        let backed = MarkdownTable(header: ["check"], rows: [[Self.backticked]]).asks[0]
-        let plain = MarkdownTable(header: ["check"], rows: [[Self.plain]]).asks[0]
+        let backtickedAsk = MarkdownTable(header: ["check"], rows: [[Self.backticked]]).asks[0]
+        let plainAsk = MarkdownTable(header: ["check"], rows: [[Self.plain]]).asks[0]
 
-        #expect(backed.ideal > plain.ideal)
-        #expect(backed.floor > plain.floor)
+        #expect(backtickedAsk.ideal > plainAsk.ideal)
+        #expect(backtickedAsk.floor > plainAsk.floor)
     }
 
-    /// #766's remaining triage question. The mono is the sans' rung in another design, so the two
-    /// are one size at every rung and only the advances differ.
+    /// #766's remaining triage question.
     ///
     /// This pins the invariant at the setting the run is at; it cannot MOVE Dynamic Type in
-    /// process, so it would not by itself have caught the mono being built at `rung.size` — the
-    /// HIG's documented number, which equals the platform's resolved size at the default setting
-    /// and stands still when that one moves. The reason to read the sans' size instead is that the
-    /// agreement is then structural rather than a coincidence this test cannot see past.
+    /// process, so it would not by itself have caught the mono being built at `rung.size`, which
+    /// equals the platform's resolved size at the default setting.
     @Test(arguments: ArgoTypeScale.allCases)
     func `the mono is the same point size as the sans at every rung`(rung: ArgoTypeScale) {
         let sans = ProseFace(rung: rung)
