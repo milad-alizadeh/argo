@@ -147,6 +147,7 @@ extension CockpitView {
     var sessionCommands: SessionCommands? {
         guard let session = presentation.session(navigation.session) else { return nil }
         return SessionCommands(
+            sessionID: session.id,
             rename: { renamingSessionID = session.id },
             archive: { actions.sessions.setArchived(session.id, !session.isArchived) },
             isArchived: session.isArchived,
