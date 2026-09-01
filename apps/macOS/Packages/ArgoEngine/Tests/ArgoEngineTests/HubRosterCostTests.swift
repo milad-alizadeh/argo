@@ -9,14 +9,12 @@ import Testing
 /// pure waste for one that did not — and it was being paid per scene pass, per drive poll, and once
 /// per Session inside the liveness poll's own callback.
 ///
-/// Recorded on an M4 MacBook Pro, `swift test` debug, over 32 observed Sessions: one fold 98 µs,
-/// one memoised read 0.56 µs, one `session(id:)` 0.68 µs at both 8 rows and 64. Before the memo a
-/// read cost 75 µs and a `session(id:)` cost 18 µs at 8 rows and 163 µs at 64.
+/// The figures — the fold, the memoised read, and one `session(id:)` at two roster lengths — are
+/// `PerfBudgets.rosterLookupFlat`, with every other recorded figure in this package (#953).
 ///
-/// Those figures are gated by nothing. What binds is a COUNT of folds and a RATIO of two figures
-/// taken on the same machine in the same run (ADR-0028 Rule 7 and Rule 8): a seconds literal would
-/// record the laptop it was written on, and would go green through a twentyfold regression on a
-/// faster one.
+/// What binds here is a COUNT of folds and a RATIO of two figures taken on the same machine in the
+/// same run (ADR-0028 Rule 7 and Rule 8): a seconds literal would record the laptop it was written
+/// on, and would go green through a twentyfold regression on a faster one.
 @Suite("Hub roster cost")
 @MainActor
 struct HubRosterCostTests {
@@ -67,9 +65,9 @@ struct HubRosterCostTests {
 
         #expect(small.session(id: wanted) != nil)
         #expect(large.session(id: wanted) != nil)
-        // Rule 3's ratio: an eightfold roster may not cost more than 1.3x to look one row up in.
+        // Rule 3's ratio: an eightfold roster may not cost more to look one row up in.
         #expect(
-            overSixtyFour < overEight * 1.3,
+            overSixtyFour < overEight * PerfBudgets.rosterLookupFlat,
             "eight rows \(overEight)s, sixty-four \(overSixtyFour)s, over \(trials.count) pairs",
         )
     }

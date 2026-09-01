@@ -11,13 +11,8 @@ import Testing
 @Suite("Media memory cost")
 struct MediaMemoryCostTests {
     /// The bound: everything a whole OBSERVED working set retains for its pictures is a rounding
-    /// error against what ONE of its Sessions would weigh held. Stated as a ratio rather than in
-    /// bytes, so it survives a change of fixture size (ADR-0028 Rule 7).
-    ///
-    /// A hundredfold, against a measured 2 300-fold: eight sessions of six 200 KB captures weigh
-    /// 9.6 MB of base64, of which one session is 1.2 MB, and the whole set retains 5 KB.
-    private static let selectedSessionShare = 100.0
-
+    /// error against what ONE of its Sessions would weigh held. A ratio rather than bytes, so it
+    /// survives a change of fixture size (ADR-0028 Rule 7, `PerfBudgets.retainedSessionShare`).
     @Test
     func `an observed working set retains no picture, whatever its pictures weigh`() async throws {
         let fixture = try MediaTranscriptFixture(
@@ -32,7 +27,7 @@ struct MediaMemoryCostTests {
 
         #expect(read.flatMap(mediaEvidence).count == fixture.pictures)
         #expect(payload > 0)
-        #expect(Double(retained) < Double(selected) / Self.selectedSessionShare)
+        #expect(Double(retained) < Double(selected) / PerfBudgets.retainedSessionShare)
     }
 
     /// The same claim from the other side: what is retained is per PICTURE and never per pixel, so
@@ -46,7 +41,7 @@ struct MediaMemoryCostTests {
         let fat = try await backfills(of: large.urls).reduce(0) { $0 + retainedMediaBytes(in: $1) }
 
         // Not equality: the two fixtures' own paths differ in length by a character or two.
-        #expect(Double(fat) / Double(thin) < 1.1)
+        #expect(Double(fat) / Double(thin) < PerfBudgets.retainedOverPictureSizeFlat)
     }
 
     /// The address is only worth anything if the picture comes BACK. Byte-for-byte, off the file,

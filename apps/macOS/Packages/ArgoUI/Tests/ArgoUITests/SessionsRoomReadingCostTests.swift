@@ -9,11 +9,11 @@ import Testing
 /// its transcript, and clicking BACK cost the identical walk a second time. Counters and RATIOS,
 /// never a duration: a seconds literal encodes the machine it was written on.
 ///
-/// Recorded on an Apple silicon laptop, debug, `swift test`, over the 400-event `longTranscript`:
-/// a cold reading costs 3.38 ms of thread CPU and a repeat at the same stamp 7.0 µs (480x); a cold
-/// scoped reading 3.04 ms and its second reader 0.75 µs (4 000x). Each budget below is the cold
-/// figure measured in the SAME run over 3x the warm figure recorded here, which is Rule 7's
-/// multiplier applied to a ratio rather than to a number that names this machine.
+/// The two recorded folds — a repeat reading against a cold one, and a second scoped reader
+/// against the first — are `PerfBudgets.repeatReadingFold` and `PerfBudgets.scopedReadingFold`
+/// (#953). Each budget below is the cold figure measured in the SAME run over 3x the warm figure
+/// recorded there, which is Rule 7's multiplier applied to a ratio rather than to a number that
+/// names this machine.
 ///
 /// The warm side is timed over `passes` repeats and divided: at a few hundred nanoseconds a pass,
 /// one `CLOCK_THREAD_CPUTIME_ID` reading measures the clock's granularity, not the work.
@@ -125,10 +125,10 @@ struct SessionsRoomReadingCostTests {
         #expect(second < first / Self.scoped4000)
     }
 
-    /// The two recorded ratios with Rule 7's 3x spent on them: a warm pass may cost three times
+    /// The two recorded folds with Rule 7's 3x spent on them: a warm pass may cost three times
     /// what it was recorded at, which is a third of the gap. Never rounded UP to fit a red run.
-    private static let repeat480 = 480.0 / 3
-    private static let scoped4000 = 4000.0 / 3
+    private static let repeat480 = PerfBudgets.repeatReadingFold
+    private static let scoped4000 = PerfBudgets.scopedReadingFold
     /// Enough repeats that a warm pass is timed rather than the clock's own resolution.
     private static let passes = 100
 
