@@ -9,12 +9,13 @@ import AppKit
 /// POLLED rather than observed, because there is nothing to observe: AppKit has no
 /// `didChangeScreenParametersNotification` sibling for type, and nothing in its headers names one.
 /// So the stores ask on the way in, and the ask has to be affordable — asking the platform every
-/// time turns a 762 ns warm measurement into 4.21 µs, 5.6x, which is the whole reason #1027 was not
-/// fixed alongside #766.
+/// time costs a MULTIPLE of the warm measurement it would be part of, which is the whole reason
+/// #1027 was not fixed alongside #766.
 ///
 /// Hence the frame. The platform is read at most once a frame and every ask in between reads a
-/// clock instead, which the same suite records at 89 ns — a ninth of the ask rather than five times
-/// it. See `ProseTextSizeCostTests`.
+/// clock instead, which is a FRACTION of the same ask. Both figures are recorded once, in
+/// `PerfBudgets` — `keyedTextSizeFold` and `textSizeCheckShare`, gating
+/// `ProseTextSizeCostTests` (ADR-0028 Rule 7).
 @MainActor
 enum ProseTextSize {
     /// How many times the setting has moved in this process.

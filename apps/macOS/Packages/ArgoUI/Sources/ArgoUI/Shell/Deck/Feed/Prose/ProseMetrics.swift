@@ -73,8 +73,9 @@ enum ProseMetrics {
     /// Every answer held here came through a font the Accessibility text setting decides, and the
     /// key says which FACE it was measured in but not at which size. Dropped rather than keyed for
     /// two reasons: a resolved size in the key would put an `NSFont.preferredFont` read on every
-    /// ask, which costs 5.6x the warm ask it would be part of (`ProseTextSizeCostTests`), and it
-    /// would leave every entry taken at the old size resident until the ceiling reached it.
+    /// ask, which costs a multiple of the warm ask it would be part of (`PerfBudgets`'
+    /// `keyedTextSizeFold`), and it would leave every entry taken at the old size resident until
+    /// the ceiling reached it.
     ///
     /// The ceiling survives the drop — it is a fact about the DOCUMENT being walked, which a text
     /// size does not change.

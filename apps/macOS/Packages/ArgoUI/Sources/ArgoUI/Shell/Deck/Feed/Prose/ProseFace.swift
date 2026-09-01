@@ -33,8 +33,9 @@ extension ProseFace {
     /// The font itself. AppKit's own preferred font for the rung, so this and the `Text` on screen
     /// read one table — see `ArgoTypeScale+AppKit`.
     ///
-    /// `rung.size` is the HIG's documented number, which stands still while the platform's own
-    /// moves — see `ArgoTypeScale.lineBox`.
+    /// The mono is built at the SANS' RESOLVED size, never at `rung.size`: that is the HIG's
+    /// documented number, which stands still while the platform's own moves with the Accessibility
+    /// text setting — see `ArgoTypeScale.drawnLineBox`.
     @MainActor var font: NSFont {
         let sans = NSFont.preferredFont(forTextStyle: rung.appKitStyle)
         let base = isMachine
