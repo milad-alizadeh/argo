@@ -23,6 +23,7 @@ struct NewTicketButton: View {
             if let reason = creation.control.reason {
                 WriteNote(
                     reason: reason,
+                    output: creation.control.output,
                     reconnect: creation.control.needsReconnect ? creation.reconnect : nil,
                 )
             }

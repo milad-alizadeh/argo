@@ -157,6 +157,27 @@ Paraphrase-only failure messages are the most reliable way a git GUI becomes wor
 The accepted cost — raw stderr is ugly, occasionally enormous, and leaks git's vocabulary into a
 surface that otherwise speaks Argo's — is confined to a channel you opened deliberately.
 
+### Landing note (#850) — two of the three rows have no surface
+
+The routing law stands; what changed is which rows the app can honestly reach.
+
+- **The Dock is gone.** #536 deleted the always-on Dock in favour of the floating composer
+  (`cockpit-session-composer.md` → *The Dock does not survive*), and the visible terminal it held
+  was re-pointed at #274's scratch Terminal, which is unbuilt — the Code room draws bare ground
+  (`InstrumentDeckShell`). So rows one and two name channels that do not exist, and until one is
+  built **every failure takes row three**: inline at the invoking affordance, verbatim.
+- **An `external` Session takes row three, and always will.** ADR-0026 makes *selection* the one
+  trigger that opens a steering channel, and only for a Session Argo owned; an `external` one is
+  somebody else's and is never resumed. Row one therefore reads as *in a session Argo is
+  steering* — a failure must never be the thing that spawns or re-points a terminal, because that
+  is the gesture ADR-0026 reserves for a deliberate selection. An `orphaned` Session takes row
+  three too, until the reader's own selection has resumed it into a `managed` one.
+- **The gesture stands on every failure that printed anything**, never only on a line that looks
+  cut: whether the summary was truncated is a question of the width the control was given, and a
+  reader who cannot tell there is more has not been offered it.
+- **A tooltip is not a raw channel.** It survives only where the line IS the whole text — a
+  sentence Argo worded itself, with no provider output behind it to open.
+
 ## 6 · A missing folder disables the project
 
 The folder **is** the project: ADR-0015 makes it the scope, #165 makes it the floor (folder alone

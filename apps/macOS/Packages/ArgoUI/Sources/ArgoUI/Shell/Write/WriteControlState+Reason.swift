@@ -14,6 +14,15 @@ extension WriteControlState {
         }
     }
 
+    /// The unabridged output §5 puts one gesture behind the line. Only a refusal has one: `pending`
+    /// says nothing yet, and a dead token is an Account fact Argo worded itself.
+    var output: RawOutput? {
+        switch self {
+        case .live, .pending, .blocked: nil
+        case let .refused(refusal): refusal.output
+        }
+    }
+
     /// §7 disables the control "pointing at the same `Reconnect`", so the note carries the act.
     /// Only the refused grant has one — a provider that answered "no" is not repaired by
     /// re-granting anything.

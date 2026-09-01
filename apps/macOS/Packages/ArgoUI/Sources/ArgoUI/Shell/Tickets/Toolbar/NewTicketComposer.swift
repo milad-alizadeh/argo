@@ -66,6 +66,7 @@ struct NewTicketComposer: View {
             if let reason = control.reason {
                 WriteNote(
                     reason: reason,
+                    output: control.output,
                     reconnect: control.needsReconnect ? reconnect : nil,
                 )
             }
