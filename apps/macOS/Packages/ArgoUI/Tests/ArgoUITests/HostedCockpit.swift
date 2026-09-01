@@ -17,7 +17,7 @@ import SwiftUI
 @MainActor final class HostedCockpit {
     let navigation = CockpitNavigationModel()
 
-    private let host: NSHostingView<AnyView>
+    let host: NSHostingView<AnyView>
 
     /// Opened in the Sessions room on a Session with a real transcript in it — the one room that
     /// takes a reading at all.
@@ -41,20 +41,19 @@ import SwiftUI
 
     private static let sessionID = "one"
 
-    /// Read through an EXTERNAL Session, which is the one thing here chosen against the app rather
-    /// than after it. A managed one puts a composer in the deck's vessel, and a second hosted
-    /// `ComposerTextView` in the process stops the first one's draft being written back into its
-    /// text view at all — `ComposerFieldKeyTests` then waits out its whole settle limit, 3 full
-    /// runs in 5. Neither claim below is about the vessel: both are about the reading the pass
-    /// takes and the store its table is bound to, and an external Session takes the same reading.
-    private static var presentation: CockpitPresentation {
+    /// Read through a MANAGED Session, which is what the app draws for a Session it spawned: the
+    /// deck's one slot resolves to a composer and the shell hosts the real `ComposerTextView`
+    /// under it, so a pass costed here is a pass of everything a running Session pays for.
+    /// `ComposerFieldKeyTests`' `a second hosted composer leaves the first one's field working`
+    /// is what keeps that arrangement legitimate (#1000).
+    static var presentation: CockpitPresentation {
         CockpitPresentation(
             projects: [],
             activeProjectID: nil,
             sessions: [CockpitPresentation.Session(
                 id: sessionID,
                 title: sessionID,
-                access: .external,
+                access: .managed,
                 status: .running,
                 transcript: .init(events: TranscriptFixtures.longTranscript),
             )],
