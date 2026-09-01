@@ -10,7 +10,7 @@ import assert from 'node:assert/strict'
 import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { check, report } from './check-harness.mjs'
-import { BARE, MISSING, run, STRICT, STUBBED, scratch } from './swift-tooling.harness.mjs'
+import { ARGV_LOG, BARE, MISSING, run, STRICT, STUBBED, scratch } from './swift-tooling.harness.mjs'
 
 const LINT = 'scripts/swift-lint.sh'
 const FORMAT = 'scripts/swift-format.sh'

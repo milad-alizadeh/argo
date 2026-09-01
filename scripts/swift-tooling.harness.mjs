@@ -38,7 +38,11 @@ for (const tool of ['uname', 'dirname']) {
 
 // A stub records the argv it was called with, so the tests can assert on the flags a script
 // builds without running the real formatter over the tree.
-const ARGV_LOG = path.join(scratch, 'argv.log')
+//
+// Exported because a test that writes a stub of its OWN — `swift`, made to answer with a report
+// the real one would not — has to append to the log `run` reads, or the argv it asserts on is
+// empty.
+export const ARGV_LOG = path.join(scratch, 'argv.log')
 export function stub(name) {
   const file = path.join(stubBin, name)
   writeFileSync(file, `#!/bin/sh\nprintf '%s\\n' "$@" >> '${ARGV_LOG}'\n`)
