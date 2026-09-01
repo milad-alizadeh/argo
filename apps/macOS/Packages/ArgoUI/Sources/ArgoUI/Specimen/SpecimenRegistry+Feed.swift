@@ -31,9 +31,8 @@ extension SpecimenRegistry {
 
     private static let rows: [SpecimenEntry] = [
         SpecimenEntry("feed") {
-            InstrumentDeckShell(
-                room: .sessions,
-                feed: FeedProjection.previewRows,
+            SpecimenScene.sessions(
+                FeedProjection.previewRows,
                 showing: PlanShowing(plan: PlanProjection.previewReading),
             )
         },
@@ -176,7 +175,7 @@ extension SpecimenRegistry {
 
     private static let shots: [SpecimenEntry] = [
         SpecimenEntry("feedGallery") {
-            InstrumentDeckShell(room: .sessions, feed: FeedProjection.previewCallRows)
+            SpecimenScene.sessions(FeedProjection.previewCallRows)
         },
         SpecimenEntry("feedSingleShot") {
             SpecimenScene.sessions(FeedProjection.previewSingleShotRows)
