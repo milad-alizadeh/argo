@@ -23,10 +23,8 @@ import Testing
 /// unchanged and the instrument is 48x coarser than the thing it was asked to see, which is the
 /// only honest way to fix a budget that fails at the clock's floor.
 ///
-/// Recorded on an Apple silicon laptop, debug, `swift test`, over 4 Sessions of 5 824 events each:
-/// an equal comparison whose buffers were reallocated cost 5.48 ms before this and 3.9 µs after (1
-/// 400x), and the ratio it is gated by fell from about 19 to 1.0. A pass now reads 1.8 µs, the
-/// difference being that a pass is timed inside a 5 000-pass block rather than a 100-pass one.
+/// The readings, and what the comparison cost before the fix, are
+/// `PerfBudgets.presentationCompareFlat` (#953).
 @Suite("Cockpit presentation cost", .serialized)
 @MainActor
 struct CockpitPresentationCostTests {
@@ -60,7 +58,7 @@ struct CockpitPresentationCostTests {
 
     /// Rule 3's own number, spent on a path that must now be flat in the transcript's length. Not
     /// 1.0: the two fixtures allocate differently and the clock has a floor.
-    private static let flat = 1.3
+    private static let flat = PerfBudgets.presentationCompareFlat
     /// Enough repeats that the block under the clock is MILLISECONDS of work rather than
     /// microseconds — see the suite comment for why that is what made this sound. 5 000 of them is
     /// about 9 ms a block.

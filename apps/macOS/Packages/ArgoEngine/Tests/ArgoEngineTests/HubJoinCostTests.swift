@@ -16,15 +16,11 @@ struct HubJoinCostTests {
     /// per batch shows up here as a ratio the size of the working set — restoring `rebuild()` on
     /// this path takes it to 36x.
     ///
-    /// The threshold is ADR-0028 Rule 3's own 1.3, which this is the second path to carry. Recorded
-    /// on an M-series laptop, debug configuration: six readings, three idle and three with ten
-    /// spinners on the box, came out between 0.97 and 1.01 — never above 1.02, and no wider loaded
-    /// than idle, which is what a thread-CPU clock buys. Each arm is 5.9 ms, so a scheduler
-    /// artefact is a rounding error rather than a third of the reading. The figures live here until
-    /// #953 gives the recorded ones one file.
+    /// The bound and the readings it derives from are `PerfBudgets.batchOverRosterFlat` (#953),
+    /// with every other recorded figure in this package.
     @Test
     func `a Session's own batch does not cost more as the roster grows`() {
-        #expect(Self.costRatioOfBatches() < 1.3)
+        #expect(Self.costRatioOfBatches() < PerfBudgets.batchOverRosterFlat)
     }
 
     /// Enough batches that one arm is milliseconds rather than fractions of one, and few enough

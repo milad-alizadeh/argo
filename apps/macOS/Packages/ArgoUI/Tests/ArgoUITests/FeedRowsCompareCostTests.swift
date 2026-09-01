@@ -12,9 +12,8 @@ import Testing
 ///
 /// RATIOS, never durations — the same comparison over a short reading and a long one.
 ///
-/// Recorded on an Apple silicon laptop, debug, `swift test`, at 4 000 rows: a reading whose last
-/// row was rewritten cost 771 µs before this and 0.50 µs after (1 500x), and a reload decided at
-/// the seam 1.21 ms before and 0.29 µs after (4 200x).
+/// The readings, and what each comparison cost before the fix, are `PerfBudgets.rowsCompareFlat`
+/// (#953).
 ///
 /// One case is deliberately NOT gated: `FeedTableDelta.between` on a genuine append still walks the
 /// whole prefix, because a prefix is only a prefix if all of it matches. 1.21 ms at 4 000 rows,
@@ -53,7 +52,7 @@ struct FeedRowsCompareCostTests {
         #expect(delta == .append(arrived: 4000 ..< 4001, rewritten: IndexSet(integer: 3999)))
     }
 
-    private static let flat = 1.3
+    private static let flat = PerfBudgets.rowsCompareFlat
     /// Enough repeats that the block under the clock is MILLISECONDS of work. 100 of them is 30-50
     /// µs, inside which one frequency step or one stall lands whole, and a 1.3 bound on that is a
     /// bound at the instrument's floor: it failed 2 of 25 full-suite runs on unchanged code. 20 000

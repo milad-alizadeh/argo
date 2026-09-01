@@ -15,13 +15,12 @@ import Testing
 /// app pays per batch. `pumping` is what the app has: a layout pass every turn of the run loop, for
 /// as long as the pass behind it is measuring.
 ///
-/// Recorded on an M-series Mac, debug, over the 1000-row reading below, before → after: a mount 2 →
-/// 1 walks at 1000 ruler measures either way; a full `.all` re-measure 7 → 1 walks; a 30-notice
-/// reshape burst carrying no reshape 0 → 0 walks; a 30-frame width burst 29 → 1 walks, 29 000 → 1
-/// 420 ruler measures, 13.7 s → 0.9 s of thread CPU. The mount's own CPU is unchanged — its second
-/// walk was a warm one. Those seconds are a recorded figure and nothing here gates on them: every
-/// gate below is a COUNT, which is the only figure that is exactly the same idle and loaded — see
-/// the width-burst case for the ratio that was tried here and why it could not be made sound.
+/// Recorded over the 1000-row reading below, before → after: a mount 2 → 1 walks at 1000 ruler
+/// measures either way; a full `.all` re-measure 7 → 1 walks; a 30-notice reshape burst carrying no
+/// reshape 0 → 0 walks. The width burst's own figures, and the seconds beside them, are
+/// `PerfBudgets.walkBurstDocuments` (#953). Every gate below is a COUNT, which is the only figure
+/// that is exactly the same idle and loaded — see the width-burst case for the ratio that was tried
+/// here and why it could not be made sound.
 @Suite("Minimap walk cost")
 @MainActor
 struct MinimapWalkCostTests {
@@ -145,8 +144,9 @@ struct MinimapWalkCostTests {
         // Thirty frames of drag cost under three documents' worth of ruler measures, where they
         // used to cost twenty-nine — one per frame. What is left is the feed's own pass over the
         // rows the reader can SEE, 47 of them a frame, which is the work the degrade-then-settle
-        // design chooses to pay. Recorded at 1 420; three documents is under 3x of that (Rule 7).
-        #expect(deck.table.measurements - measured < 3 * Self.long.count)
+        // design chooses to pay; the reading is `PerfBudgets.walkBurstDocuments`.
+        #expect(deck.table.measurements - measured
+            < PerfBudgets.walkBurstDocuments * Self.long.count)
         #expect(deck.lane.readingWalks - walked <= 1)
         // And the geometry is derived once for the whole burst, not once a frame. This is the half
         // no other count here can see: a derivation is arithmetic over rows already read, so a lane
