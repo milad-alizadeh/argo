@@ -18,7 +18,7 @@ public struct ProjectSettingsCommands: Commands {
         // Only a REGISTERED Project has settings: a launch pointed at a folder nobody registered
         // has no record to write a Binding into, so the panel opens on none and makes one.
         self.projectID = presentation.activeProject.flatMap { $0.isRegistered ? $0.id : nil }
-        self.open = actions.openProjectPanel
+        self.open = actions.projects.openPanel
     }
 
     public var body: some Commands {

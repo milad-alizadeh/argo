@@ -15,7 +15,7 @@ struct ConnectionChips: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             if let observation = ConnectionChipReading(observing: connection) {
-                ConnectionChip(reading: observation, act: actions.retryConnection)
+                ConnectionChip(reading: observation, act: actions.retry.connection)
             }
             if let providers = ConnectionHealthProjection.chip(from: health) {
                 rollUp(providers)
@@ -44,6 +44,6 @@ struct ConnectionChips: View {
     /// Project this reading is about. There is one reconnect in this app and this is a way to REACH
     /// it, not a second one.
     private func open() {
-        actions.openProjectPanel(projectID)
+        actions.projects.openPanel(projectID)
     }
 }

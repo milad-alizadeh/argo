@@ -11,30 +11,10 @@ import SwiftUI
 /// keyed by Session, so leaving and coming back finds it where it was.
 struct SessionComposer: View {
     let composer: SessionComposerProjection.Composer
-    /// One Turn to the Session, or a thrown `SessionDriveError` the seam repeats. A closure and
-    /// not a driver, so the vessel renders from a preview or a specimen with nothing behind it.
-    let send: ComposerSend
-    /// Take back a standing allow, by tool (#572). A closure for the reason `send` is.
-    let revoke: (String) -> Void
-    /// Say the Turn reported lost has been put back, so the news is not delivered twice (#682).
-    var lostTurnSeen: () -> Void = {}
-    /// Stop the Turn in flight (#541). A closure for the reason `send` is, and THROWING for the
-    /// reason it is: what the port refuses, the seam repeats — and a refused stop must leave the
-    /// vessel exactly as it found it.
-    var stop: () throws -> Void = {}
-    /// Put the Session on a rung (#545). Throwing, like `stop`: a refused rung changed nothing,
-    /// and the seam is where the port's reason goes. Async besides, because the walk along the
-    /// ring is (#653).
-    var setMode: (SessionMode) async throws -> Void = { _ in }
-    /// Every skill installed for this Project, read afresh each time the `/` menu opens and never
-    /// on the keystrokes after it (#685, #961). ASYNC because it walks directories and decodes,
-    /// and the actor that draws the caret does neither (ADR-0028 Rule 6). The view holds only what
-    /// this last answered.
-    var commands: () async -> CommandCatalog = { CommandCatalog.empty }
-    /// Every file in this Session's Workspace, read afresh each time the `@` menu opens (#687).
-    /// ASYNC where `commands` is not: this one shells out to git over a tree that can hold a
-    /// hundred thousand paths, and the composer must not wait on it.
-    var files: () async -> [String] = { [] }
+    /// What the vessel's controls do — the deck's own value, the one the feed already holds. The
+    /// composer reads the acts it draws a control for; `decide` and `spawnBeside` belong to the
+    /// other two vessels in the same slot.
+    let intents: DeckIntents
     @Binding var draft: ComposerDraft
     /// Holds the drag-over state open for a render — see `AttachmentDropTarget.isHeldOpen`.
     var isDropTargeted = false
@@ -49,26 +29,14 @@ struct SessionComposer: View {
 
     init(
         composer: SessionComposerProjection.Composer,
-        send: @escaping ComposerSend,
-        revoke: @escaping (String) -> Void = { _ in },
-        lostTurnSeen: @escaping () -> Void = {},
-        stop: @escaping () throws -> Void = {},
-        setMode: @escaping (SessionMode) async throws -> Void = { _ in },
-        commands: @escaping () async
-            -> CommandCatalog = { CommandCatalog.empty },
-        files: @escaping () async -> [String] = { [] },
-        draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
+        intents: DeckIntents = .inert,
         isDropTargeted: Bool = false,
     ) {
         self.composer = composer
-        self.send = send
-        self.revoke = revoke
-        self.lostTurnSeen = lostTurnSeen
-        self.stop = stop
-        self.setMode = setMode
-        self.commands = commands
-        self.files = files
-        _draft = draft
+        self.intents = intents
+        // The one binding among the intents, unwrapped so the vessel below reads and writes the
+        // draft the way every other SwiftUI surface does.
+        _draft = intents.draft
         self.isDropTargeted = isDropTargeted
     }
 
@@ -105,7 +73,7 @@ struct SessionComposer: View {
         // Session, and it is still theirs when they come back to this one.
         .onChange(of: composer.lostTurn, initial: true) { _, lost in
             guard let lost, draft.turnLost(lost) else { return }
-            lostTurnSeen()
+            intents.lostTurnSeen()
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Composer")
@@ -114,7 +82,7 @@ struct SessionComposer: View {
     private var vessel: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             if !composer.standingAllows.isEmpty {
-                StandingAllowTray(allows: composer.standingAllows, revoke: revoke)
+                StandingAllowTray(allows: composer.standingAllows, revoke: intents.revoke)
             }
             if !draft.attachments.isEmpty {
                 AttachmentTray(attachments: draft.attachments) { draft.remove($0) }
@@ -218,10 +186,10 @@ struct SessionComposer: View {
     /// or by a Session change lands nowhere.
     private func read(_ asks: ComposerMenus.Asks) {
         if asks.commands {
-            Task { await menus.commandsAnswered(commands(), to: asks.generation) }
+            Task { await menus.commandsAnswered(intents.commands(), to: asks.generation) }
         }
         if asks.files {
-            Task { await menus.workspaceAnswered(files()) }
+            Task { await menus.workspaceAnswered(intents.files()) }
         }
     }
 }

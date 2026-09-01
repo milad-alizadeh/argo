@@ -13,6 +13,7 @@ extension SessionComposer {
     /// They ride the attachment path and never `draft.attachments`, which is what keeps a mention
     /// out of the tray: it stays a word in the line, and only the Turn that goes names the file.
     var sending: ComposerSend {
+        let send = intents.send
         guard !composer.resolvesMentions else { return send }
         return { [composer, send] text, attachments in
             try send(text, ComposerMentions.attaching(
@@ -44,7 +45,7 @@ extension SessionComposer {
     /// flush the body watches for fires. Waiting for the status to turn would be waiting for the
     /// exact moment the queued follow-ups are released.
     func interrupt() {
-        draft.stopped(via: stop)
+        draft.stopped(via: intents.stop)
     }
 
     /// Ask the Session for a rung.
@@ -63,7 +64,7 @@ extension SessionComposer {
     /// waiting on a boundary that has already gone by.
     func walk(to mode: SessionMode) async {
         do {
-            try await setMode(mode)
+            try await intents.setMode(mode)
             draft.modeLanded(mode)
         } catch {
             guard (error as? SessionDriveError) == .modeBusy, composer.isRunning else {

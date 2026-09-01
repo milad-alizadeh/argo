@@ -14,24 +14,12 @@ struct NewSessionSpawnTests {
         var answer: String?
 
         func actions() -> CockpitActions {
-            CockpitActions(
-                refreshCheckout: {},
-                retryConnection: {},
-                selectProject: { _ in },
-                addProject: {},
-                locateProject: { _ in },
-                revealProject: { _ in },
-                removeProject: { _ in },
-                openProjectPanel: { _ in },
-                spawnSession: { [self] in
-                    requests += 1
-                    return answer
-                },
-                setSessionArchived: { _, _ in },
-                setSessionName: { _, _ in },
-                handOffSession: { _, _ in nil },
-                drive: InMemorySessionDriver(),
-            )
+            var actions = CockpitActions(drive: InMemorySessionDriver())
+            actions.sessions.spawn = { [self] in
+                requests += 1
+                return answer
+            }
+            return actions
         }
     }
 
