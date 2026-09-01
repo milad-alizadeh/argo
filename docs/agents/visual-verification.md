@@ -81,3 +81,43 @@ Two things about it that are not obvious: the first run on a machine answers a m
 authorisation prompt by hand, and a sleeping display fails the same way; and a test must
 launch onto a `--specimen`, never the machine's own registry, or it asserts whatever that
 Mac happens to have on it.
+
+### What the machine has to be, for that suite to mean anything
+
+Four conditions decide whether a red case is a regression or the weather. A red baseline cannot
+tell a bug from a toggle, so check these before believing a failure (#764).
+
+- **System Settings › Keyboard › Keyboard navigation must be ON.** With it off no plain
+  `Button` on macOS is a Tab stop, so every case that walks the deck by Tab —
+  `DeckKeyboardE2ETests`, `PlanPillE2ETests` — fails on a machine where the product is
+  perfect. DeckKeyboard's failure text says so and prints the ring it walked; PlanPill's
+  only says the keyboard never reached the pill.
+- **A hover is not a gesture this suite has.** `XCUIElement.hover()` warps the cursor
+  without producing the tracking-area crossing SwiftUI's `.onHover` answers to, so a case
+  asserting a hover-only path fails against a control that opens perfectly by hand. Assert
+  the click or the key instead, and cover the hover state with a render.
+- **`RosterOrderE2ETests` puts Finder in front and comes back**, several times. It needs a
+  display that can take a front-app switch, which is the same condition as the sleeping one
+  above.
+- **Accessibility permission** for whichever terminal runs the render: `ARGO_WINDOW_SIZE`
+  resizes through System Events, and the AX walk below reads through the same gate.
+
+### Reading the labels a test matches, without running the suite
+
+SwiftUI builds **no accessibility tree at all** in a process with no client attached, which
+is why every package test passed while the feed was silent (#777). Attaching a client is all
+it takes, and any process can: launch one state with `ARGO_KEEP_RUNNING=1 ARGO_SPECIMEN=<case>
+sh scripts/screenshot.sh out.png`, then walk `AXUIElementCreateApplication(pid)` over that pid
+and print each element's role and `AXDescription`. `AXUIElementPerformAction(…, kAXPressAction)`
+presses a control from there, and a `CGEvent` posted with `postToPid` delivers a key
+equivalent to that process alone.
+
+None of it moves the pointer or takes the keyboard, so it is the way to settle "does this
+publish the label the test addresses, and does pressing it open what the test waits for"
+while somebody else is using the machine. It is not a substitute for the run: it cannot say
+whether Tab arrives, and it drives AppKit's press rather than a click.
+
+One trap that looks like a product crash: **adding a file to `Packages/ArgoUI` and building
+incrementally left the app and the package dylib disagreeing about a struct's layout**, and
+the next launch died in `initializeWithCopy` with no message. `rm -rf build/Build` and a full
+build was the whole fix.

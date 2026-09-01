@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The plan's pill, over the feed it is deliberately not in.
@@ -10,13 +11,29 @@ struct PlanSpecimen: View {
     /// Whether the list is already open. Hover cannot be reached from a screenshot, so the state
     /// that carries the plan itself needs a way in that is not a gesture.
     var isRevealed = false
+    /// Whether the keyboard is on the pill, ring and all — see `PlanPill.isCursored`.
+    var isCursored = false
+
+    /// What the reader said before this specimen spoke for it. `ArgoFocusVisibility.shared` is
+    /// process-wide, so a host rendering a second entry after this one inherits whatever it left.
+    @State private var wasOn: Bool?
 
     var body: some View {
         InstrumentDeckShell(
             room: .sessions,
             feed: FeedProjection.previewRows,
-            showing: PlanShowing(plan: plan, isRevealed: isRevealed),
+            showing: PlanShowing(plan: plan, isRevealed: isRevealed, isCursored: isCursored),
         )
+        // The app's one reader, told the key a still cannot show being pressed.
+        .onAppear {
+            guard isCursored else { return }
+            wasOn = ArgoFocusVisibility.shared.isOn
+            ArgoFocusVisibility.shared.note(.keyDown)
+        }
+        .onDisappear {
+            guard let wasOn else { return }
+            ArgoFocusVisibility.shared.note(wasOn ? .keyDown : .leftMouseDown)
+        }
     }
 }
 
@@ -28,6 +45,12 @@ struct PlanSpecimen: View {
 
 #Preview("Plan specimen — the list open") {
     PlanSpecimen(plan: PlanFixture.working, isRevealed: true)
+        .frame(width: 1000, height: 620)
+        .argoAppearance()
+}
+
+#Preview("Plan specimen — the keyboard on the pill") {
+    PlanSpecimen(plan: PlanFixture.working, isCursored: true)
         .frame(width: 1000, height: 620)
         .argoAppearance()
 }

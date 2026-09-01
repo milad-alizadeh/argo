@@ -19,7 +19,7 @@ final class WorldReadings {
     /// The repository to enumerate worktrees of. Supplied rather than held for the reason the
     /// folders below are: the Hub re-points, and a held URL would go on answering for the Project
     /// it was pointed at first.
-    @ObservationIgnored private let repositoryURL: @MainActor () -> URL?
+    @ObservationIgnored let repositoryURL: @MainActor () -> URL?
     /// The observed Sessions. Supplied rather than held, because the answer is read off the roster
     /// and the roster is read off these readings.
     @ObservationIgnored private let sessions: @MainActor () -> [SessionActivity]
@@ -71,7 +71,7 @@ final class WorldReadings {
             // Both sides spelled the same way, because they arrive spelled differently: `lsof`
             // answers with the symlinks already followed and a transcript reports the path its
             // agent was launched with, which under `/tmp` is never the same string.
-            processMatch: cwd.map { liveCwds.contains(spelled($0)) } ?? false,
+            processMatch: cwd.map { liveCwds.contains(spelled($0).value) } ?? false,
             lastActivityAtMs: lastActivityAtMs,
             nowMs: readAtMs,
         )
@@ -85,7 +85,7 @@ final class WorldReadings {
     /// every Session in the repository with the repository's own branch.
     func workspace(inCwd cwd: String?) -> WorkspaceProjection? {
         guard let cwd else { return nil }
-        let folder = spelled(cwd)
+        let folder = spelled(cwd).value
         // Longest first, so the first match IS the deepest: two worktrees of the same path length
         // cannot both hold one folder unless they are the same worktree.
         guard let path = deepestFirst.first(where: { Self.folder($0, holds: folder) })
@@ -134,7 +134,7 @@ final class WorldReadings {
     func refreshLiveness(clock: () -> Int = { Date().epochMs }) async {
         let cwds = await engine.liveCwds()
         let observed = sessions()
-        await spell(observed.compactMap(\.cwd), settling: .foldersNotYetSpelled)
+        await spell(theProjectRootAnd: observed.compactMap(\.cwd), settling: .foldersNotYetSpelled)
         let read = Read(cwds: cwds, atMs: clock())
         let published = Read(cwds: liveCwds, atMs: readAtMs)
         guard publishes(read, over: published, for: observed) else { return }
@@ -172,7 +172,7 @@ final class WorldReadings {
         -> [SessionLiveness] {
         sessions.map { session in
             SessionLiveness.read(
-                processMatch: session.cwd.map { read.cwds.contains(spelled($0)) } ?? false,
+                processMatch: session.cwd.map { read.cwds.contains(spelled($0).value) } ?? false,
                 lastActivityAtMs: session.lastSeenAtMs,
                 nowMs: read.atMs,
             )
@@ -196,20 +196,20 @@ final class WorldReadings {
             // The roster's own folders stay spelled and the gone Project's worktrees do not: the
             // table answers about folders these readings can be ASKED about, and the roster
             // survives a Hub being let go where a repository's branches do not.
-            await spell(sessions().compactMap(\.cwd), settling: .theWholeTable)
+            await spell(theProjectRootAnd: sessions().compactMap(\.cwd), settling: .theWholeTable)
             return
         }
         let entries = await engine.worktrees(in: repositoryURL)
         let cwds = sessions().compactMap(\.cwd)
-        await spell(entries.map(\.path) + cwds, settling: .theWholeTable)
+        await spell(theProjectRootAnd: entries.map(\.path) + cwds, settling: .theWholeTable)
         let holders = Self.holders(
-            of: entries.map { spelled($0.path) },
-            amongst: cwds.map(spelled),
+            of: entries.map { spelled($0.path).value },
+            amongst: cwds.map { spelled($0).value },
         )
         var read: [String: WorkspaceProjection] = [:]
         for entry in entries {
             guard !Task.isCancelled else { return }
-            let path = spelled(entry.path)
+            let path = spelled(entry.path).value
             read[path] = await engine.workspace(of: entry)?.shared(by: holders[path] ?? 0)
         }
         publish(workspaces: read)

@@ -12,10 +12,14 @@ the build and the swift-testing suites. Linux CI runs biome, duplication and `te
 only executable suite there. Pre-commit runs lint-staged: biome, then SwiftFormat, SwiftLint,
 boundaries and the design-token gate over staged Swift.
 
-The swift-testing suites run debug by default. `ARGO_TEST_CONFIGURATION=release sh
-apps/macOS/scripts/swift-test.sh` runs the same suites optimised, which is how a seconds-side cost
-budget gets re-recorded against code the optimiser has seen (ADR-0028, #991). It is deliberately
-not on CI: the counts are the half a debug build cannot get wrong, and they gate every push.
+Neither the build nor the suites are optimised by default: `bun run build` is Debug, and
+`swift-test.sh` is `-Onone` unless `ARGO_TEST_CONFIGURATION=release` (#991). What each
+configuration names, how to build the optimised app, and what it costs:
+`docs/agents/build-configurations.md`.
+
+Running the suites optimised is how a seconds-side cost budget gets re-recorded against code the
+optimiser has seen (ADR-0028). It is deliberately not on CI: the counts are the half a debug build
+cannot get wrong, and they gate every push.
 
 Biome's escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries) are TypeScript-only and
 so have no subject since ADR-0023. Dormant, like the boundary gates — the per-file caps still

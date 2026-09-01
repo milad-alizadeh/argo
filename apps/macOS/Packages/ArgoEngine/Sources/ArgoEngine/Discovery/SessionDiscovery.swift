@@ -28,25 +28,36 @@ public actor SessionDiscovery {
     nonisolated let cli: AgentCLI
 
     private let store: TranscriptRecordStore
+    /// How the file system spells a folder — one of the two batches that mint a `SpelledPath`.
+    private let paths: PathResolutionRead
     /// Transcript path → the working directory read out of its head. Only successful reads are
     /// remembered: a file caught mid-first-record must be asked again on the next sweep, or caching
     /// the "no" hides that Session for the rest of the process's life.
     private var origins: [String: String] = [:]
 
-    public init(store: TranscriptRecordStore = .claudeCode) {
+    public init(
+        store: TranscriptRecordStore = .claudeCode,
+        paths: @escaping PathResolutionRead = realpathResolutionRead,
+    ) {
         self.store = store
+        self.paths = paths
         self.cli = store.cli
     }
 
     /// The transcripts to tail for one Project, newest first. A transcript whose working directory
     /// cannot be read belongs to no Project here (degrade-down).
-    public func workingSet(for projectURL: URL) -> [URL] {
+    ///
+    /// Every folder the answer turns on is spelled in ONE batch, off the main actor: the Project's
+    /// own root and the `cwd` of each transcript that survived the mtime window.
+    public func workingSet(for projectURL: URL) async -> [URL] {
         let oldest = Date().addingTimeInterval(-Self.workingSetWindow)
-        return store.transcripts()
+        let recent = store.transcripts()
             .filter { $0.modifiedAt >= oldest }
             .sorted { $0.modifiedAt > $1.modifiedAt }
             .map(\.url)
-            .filter { belongs($0, to: projectURL) }
+        let spelled = await paths([projectURL.path] + recent.compactMap { origin(of: $0) })
+        let root = spelled.spelling(of: projectURL.path)
+        return recent.filter { belongs($0, toRoot: root, spelled: spelled) }
     }
 
     /// One element per burst of writes under the record directory, so a Session started while Argo
@@ -55,9 +66,14 @@ public actor SessionDiscovery {
         RecordDirectoryWatcher(rootURL: store.rootURL).changes()
     }
 
-    private func belongs(_ transcriptURL: URL, to projectURL: URL) -> Bool {
+    private func belongs(
+        _ transcriptURL: URL,
+        toRoot root: SpelledPath,
+        spelled: [String: String],
+    )
+        -> Bool {
         guard let cwd = origin(of: transcriptURL) else { return false }
-        return ProjectScope.contains(cwd: cwd, projectURL: projectURL)
+        return ProjectScope.contains(cwd: spelled.spelling(of: cwd), projectRoot: root)
     }
 
     private func origin(of transcriptURL: URL) -> String? {

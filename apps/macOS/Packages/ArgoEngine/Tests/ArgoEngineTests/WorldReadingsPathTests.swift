@@ -72,7 +72,7 @@ struct WorldReadingsPathTests {
 
         folders.cwds = [linked]
         await readings.refreshWorkspaces()
-        await readings.spell([other], settling: .foldersNotYetSpelled)
+        await readings.spell(theProjectRootAnd: [other], settling: .foldersNotYetSpelled)
 
         #expect(log.count(of: other) == 2)
     }
@@ -102,7 +102,7 @@ struct WorldReadingsPathTests {
         #expect(readings.liveness(inCwd: linked, lastActivityAtMs: Self.nowMs) == .quiet)
 
         folders.cwds = [linked]
-        await readings.spell(folders.cwds, settling: .foldersNotYetSpelled)
+        await readings.spell(theProjectRootAnd: folders.cwds, settling: .foldersNotYetSpelled)
 
         #expect(readings.liveness(inCwd: linked, lastActivityAtMs: Self.nowMs) == .live)
     }

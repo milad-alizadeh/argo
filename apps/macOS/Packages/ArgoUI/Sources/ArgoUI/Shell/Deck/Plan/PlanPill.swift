@@ -10,6 +10,9 @@ struct PlanPill: View {
     /// Whether the list is showing before anybody opened it — a specimen's seam, since a click
     /// cannot be reached from a screenshot.
     var isRevealed = false
+    /// Whether the pill starts with the keyboard on it, beside `isRevealed` and for its reason. It
+    /// draws no ring alone: `ArgoFocusVisibility` still has to say the reader arrived by key.
+    var isCursored = false
 
     /// Opened by a click and by nothing else: the list stands over the middle of the reading, so a
     /// pointer crossing the pill on its way somewhere may not open it.
@@ -68,11 +71,18 @@ struct PlanPill: View {
             .focusable()
             .focused($isFocused)
             .focusEffectDisabled()
-            .argoFocusRing(isFocused, in: Capsule())
+            .argoFocusRing(isFocused, in: .capsule)
             // `.focusable()` above takes the key events a focused Button would answer itself.
             .onKeyPress(.space) { pressed() }
             .onKeyPress(.return) { pressed() }
             .onExitCommand { isOpen = false }
+            // The focus a Tab would have placed. Order against the specimen's own event note does
+            // not matter: the ring reads the visibility as an `@Observable`.
+            .onAppear {
+                if isCursored {
+                    isFocused = true
+                }
+            }
             .accessibilityLabel("Plan")
             .accessibilityValue(spoken)
             .accessibilityHint(showsList ? "Hides the steps" : "Shows the steps")
