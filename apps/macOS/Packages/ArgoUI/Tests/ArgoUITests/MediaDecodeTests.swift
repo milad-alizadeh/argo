@@ -161,6 +161,19 @@ struct MediaDecodeTests {
         #expect(showing.provenance == .captured)
     }
 
+    /// A cut-short capture reaches ImageIO as a readable SOURCE with no image behind it, and the
+    /// two boxes fail it differently: a thumbnail comes back nil, where `NSImage(data:)` hands back
+    /// an image with no representations at all and a size of zero. Filed as a picture, that one
+    /// opens the lightbox on a blank frame captioned "as the agent saw it" — the strongest claim
+    /// the app makes, over nothing.
+    @Test
+    func `a picture cut short after its header decodes to nothing in either box`() throws {
+        let bytes = try MediaFixture.truncated(width: 1340, height: 900)
+
+        #expect(MediaDecode.bitmap(from: bytes, in: .plate(Self.plate), scale: 2) == nil)
+        #expect(MediaDecode.bitmap(from: bytes, in: .full, scale: 2) == nil)
+    }
+
     @Test
     func `bytes that are not a picture show none`() {
         let media = MediaEvidence(

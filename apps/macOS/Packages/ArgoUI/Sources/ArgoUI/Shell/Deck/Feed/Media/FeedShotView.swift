@@ -67,9 +67,10 @@ struct FeedShotView: View {
     }
 
     /// A shot with no picture says so where the picture would have been, as an empty plate. In the
-    /// shot's own box like every other state, which for a record that kept no bytes IS the fixed
-    /// one — there is no ratio to take a width from. A width that changed with what the decode
-    /// found would be geometry the lane and the ruler cannot see.
+    /// shot's own box like every other state: the fixed one for a record that kept no bytes, and
+    /// the header's own ratio for a run that was cut short after its header and then decoded to
+    /// nothing. Either way the box is the one the signature settled, because a width that changed
+    /// with what the decode found would be geometry the lane and the ruler cannot see.
     private var absence: some View {
         Text(showing.provenance.instead)
             .argoText(ArgoTypography.caption)

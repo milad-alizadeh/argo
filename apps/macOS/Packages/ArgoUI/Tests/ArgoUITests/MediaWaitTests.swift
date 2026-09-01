@@ -77,6 +77,23 @@ struct MediaWaitTests {
         #expect(showing.provenance.instead != MediaProvenance.absence)
     }
 
+    /// A capture cut short by a dying writer passes the signature check and then decodes to
+    /// nothing — the one run where the promise is broken by the file itself rather than by the
+    /// file going away.
+    @Test
+    func `a picture cut short after its header settles as gone rather than as an absence`(
+    ) async throws {
+        let media = try MediaFixture.truncatedMedia(width: 1404, height: 904)
+
+        #expect(MediaShowing.atOnce(media).isPending)
+        let showing = try #require(await MediaShowing.decoded(media, drawnIn: Self.plate))
+
+        #expect(showing.picture == nil)
+        #expect(!showing.isPending)
+        #expect(showing.provenance == .unreadable)
+        #expect(showing.provenance.instead == MediaProvenance.gone)
+    }
+
     @Test
     func `bytes that were never a picture stay an absence after the read`() async {
         let media = MediaEvidence(
