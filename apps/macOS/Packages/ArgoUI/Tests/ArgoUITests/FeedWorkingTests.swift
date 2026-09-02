@@ -46,8 +46,8 @@ struct FeedWorkingTests {
         #expect(expected.map(\.status) == SessionStatus.allCases)
         for row in expected {
             let session = Self.session(status: row.status, events: [.message(markdown: "Done.")])
-            #expect(FeedWorking.isWorking(session) == row.working, "\(row.status)")
-            #expect(FeedWorking.isStarting(session) == row.starting, "\(row.status)")
+            #expect(FeedWorking.isWorking(session.status) == row.working, "\(row.status)")
+            #expect(FeedWorking.isStarting(session.status) == row.starting, "\(row.status)")
         }
     }
 
@@ -62,8 +62,8 @@ struct FeedWorkingTests {
     /// reading" has no end, since the record does not appear until the first prompt (#587).
     @Test
     func `a spawned Session that has written nothing is neither, on its emptiness alone`() {
-        #expect(!FeedWorking.isWorking(Self.session()))
-        #expect(!FeedWorking.isStarting(Self.session()))
+        #expect(!FeedWorking.isWorking(Self.session().status))
+        #expect(!FeedWorking.isStarting(Self.session().status))
     }
 
     @Test
@@ -98,7 +98,7 @@ struct FeedWorkingTests {
     /// same evidence a managed one does — and loses it, honestly, the moment liveness degrades.
     @Test
     func `an external Session mid-turn is working on the same evidence`() {
-        #expect(FeedWorking.isWorking(Self.session(access: .external, status: .running)))
+        #expect(FeedWorking.isWorking(Self.session(access: .external, status: .running).status))
     }
 
     /// The thread says it now, and it says it with no words at all. A caption here would sit in a

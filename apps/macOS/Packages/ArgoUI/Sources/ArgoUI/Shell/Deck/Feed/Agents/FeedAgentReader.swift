@@ -66,7 +66,7 @@ public struct FeedAgentReader: Equatable, Sendable {
         self.identity = other.identity
         self.read = other.read
         self.stamp = stamp
-        self.liveness = stamp?.liveness ?? .notRunning
+        self.liveness = DelegatingSession.of(stamp?.status)
     }
 
     /// The same reader, told which reading of the Session it is being asked alongside. Taken by

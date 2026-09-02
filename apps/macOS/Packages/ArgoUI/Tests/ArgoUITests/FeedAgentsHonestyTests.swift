@@ -31,12 +31,26 @@ struct FeedAgentsHonestyTests {
     }
 
     /// degrade-down: a Session Argo cannot observe resolves to the quieter state, so it never
-    /// produces a green dot.
+    /// produces a green dot. Nor do the two the ticket was written from, nor an ORPHANED Session —
+    /// which is an `Access` and not a status, so what makes it quiet is the status its record left
+    /// behind (`CONTEXT.md` L2, ADR-0026).
     @Test
-    func `an unknown session cannot produce a running chip`() {
-        let chips = FeedAgents.all(in: Self.rows, of: DelegatingSession.of(Self.session(.unknown)))
+    func `a session that cannot be driving anything produces no running chip`() {
+        for status in [SessionStatus.unknown, .stopped, .ended, .idle] {
+            let chips = FeedAgents.all(in: Self.rows, of: DelegatingSession.of(status))
 
-        #expect(chips.map(\.isRunning) == [false])
+            #expect(chips.map(\.isRunning) == [false], "\(status)")
+        }
+        #expect(Self.listing(of: .ended, access: .orphaned).map(\.isRunning) == [false])
+    }
+
+    /// The other half of the ruling: a Session blocked on a permission prompt is alive, and the
+    /// Subagent it launched is genuinely still out — so the chip keeps its running dot rather than
+    /// being quieted by a Session that is merely waiting on its reader.
+    @Test
+    func `a session waiting on the reader keeps its subagent running`() {
+        #expect(Self.listing(of: .permission).map(\.isRunning) == [true])
+        #expect(Self.listing(of: .asking).map(\.isRunning) == [true])
     }
 
     /// The clock, which is the same untruth with the animation removed: a chip whose Session is
@@ -115,13 +129,17 @@ struct FeedAgentsHonestyTests {
 
     /// The rail's list as the shell derives it: through the reader, stamped with a reading of a
     /// Session at this status.
-    private static func listing(of status: SessionStatus) -> [FeedAgent] {
+    private static func listing(
+        of status: SessionStatus,
+        access: CockpitPresentation.Session.Access = .managed,
+    )
+        -> [FeedAgent] {
         SessionsRoomReadingCache.forget()
         let reading = SessionsRoomReading(
             presentation: CockpitPresentation(
                 projects: [],
                 activeProjectID: nil,
-                sessions: [session(status)],
+                sessions: [session(status, access: access)],
                 checkout: .unavailable,
                 connection: .idle,
             ),
@@ -130,11 +148,15 @@ struct FeedAgentsHonestyTests {
         return readings.stamped(reading.stamp).agents(in: reading.feed)
     }
 
-    private static func session(_ status: SessionStatus) -> CockpitPresentation.Session {
+    private static func session(
+        _ status: SessionStatus,
+        access: CockpitPresentation.Session.Access = .managed,
+    )
+        -> CockpitPresentation.Session {
         CockpitPresentation.Session(
             id: "one",
             title: "one",
-            access: .managed,
+            access: access,
             status: status,
             transcript: .init(events: launched),
         )

@@ -33,11 +33,12 @@ enum SessionsRoomReadingCache {
         let asking: FeedAskProjection.Asking
         let handedOff: FeedHandoff?
         let expired: [PermissionExpiry]
-        /// Whether the Session is at work — the feed's live row and the rail's dots are both a
-        /// function of it (#1076).
-        let liveness: DelegatingSession
-        /// `starting` ends with no event appended, so nothing else here moves when it does.
-        let isStarting: Bool
+        /// The Session's own status, stored as the STATUS rather than as either reading taken of
+        /// it: the feed's live row wants a Turn in progress (`FeedWorking`) and the rail's dots
+        /// want a Session that can still be driving work (`DelegatingSession`, #1076), and those
+        /// two boundaries are no longer the same. One fact here, each reading named where it is
+        /// taken — two stored Bools would be two places to answer a status added later.
+        let status: SessionStatus?
 
         /// Derived from the Session rather than spelled out at the call site: a stamp assembled by
         /// hand is one a later projection input can quietly fall out of.
@@ -51,8 +52,7 @@ enum SessionsRoomReadingCache {
             self.asking = asking
             self.handedOff = handedOff
             self.expired = session?.expiredPermissions ?? []
-            self.liveness = DelegatingSession.of(session)
-            self.isStarting = FeedWorking.isStarting(session)
+            self.status = session?.status
         }
     }
 
@@ -121,7 +121,10 @@ enum SessionsRoomReadingCache {
         if let agents = entries[at].agents {
             return agents
         }
-        let agents = FeedAgents.all(in: entries[at].body.feed, of: entries[at].stamp.liveness)
+        let agents = FeedAgents.all(
+            in: entries[at].body.feed,
+            of: DelegatingSession.of(entries[at].stamp.status),
+        )
         counted(\.agents)
         entries[at].agents = agents
         return agents
