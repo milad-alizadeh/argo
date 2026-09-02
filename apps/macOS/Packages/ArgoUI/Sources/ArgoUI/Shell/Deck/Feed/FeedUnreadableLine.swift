@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// A stretch of the record nothing could parse, drawn as one quiet line the reader can open.

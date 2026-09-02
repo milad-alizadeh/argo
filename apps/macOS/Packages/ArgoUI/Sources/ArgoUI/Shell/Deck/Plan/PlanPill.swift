@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The plan, as one line floating above the dock: where the agent says it is, and how far along.

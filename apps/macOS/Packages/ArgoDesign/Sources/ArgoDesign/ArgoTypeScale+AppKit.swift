@@ -6,7 +6,7 @@ import AppKit
 /// Both frameworks read the HIG's own table, so a role set here and the same role set in SwiftUI
 /// are the same size at the same Accessibility text setting. That is the whole reason this maps to
 /// a semantic style rather than to `NSFont.systemFont(ofSize:)` and the rung's number.
-extension ArgoTypeScale {
+public extension ArgoTypeScale {
     var appKitStyle: NSFont.TextStyle {
         switch self {
         case .largeTitle: .largeTitle

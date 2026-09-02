@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The typographic part of the contract sheet: the platform's own scale with every rung drawn at

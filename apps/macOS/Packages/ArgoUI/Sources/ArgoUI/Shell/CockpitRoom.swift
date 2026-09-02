@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {

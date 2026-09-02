@@ -1,3 +1,4 @@
+import ArgoDesign
 import Foundation
 
 /// The legend beside a pie: one row per slice — a swatch in the slice's own hue, the name it was

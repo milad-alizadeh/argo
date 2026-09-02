@@ -1,19 +1,20 @@
+import ArgoDesign
 import SwiftUI
 
 /// A sidebar or rail group's own label, on `sectionLabel` — the role whose documented job this is.
 ///
 /// A `Section("…")` header takes the platform's sidebar style instead, which is title-case at the
 /// body rung; `sectionLabel` is uppercase at `subheadline` with tracking, and the two do not meet.
-struct GroupLabel: View {
+public struct GroupLabel: View {
     @Environment(\.argo) private var argo
 
     private let text: String
 
-    init(_ text: String) {
+    public init(_ text: String) {
         self.text = text
     }
 
-    var body: some View {
+    public var body: some View {
         Text(text.uppercased())
             .argoText(ArgoTypography.sectionLabel)
             .foregroundStyle(argo.color.text.tertiary)

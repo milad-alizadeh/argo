@@ -1,3 +1,4 @@
+import ArgoDesign
 import ArgoEngine
 import SwiftUI
 
@@ -7,6 +8,14 @@ import SwiftUI
 /// and bindings, so each piece still renders from a `#Preview` or a specimen without one.
 /// The non-`private` members below are read by `CockpitView+Intents.swift` and by nothing else.
 public struct CockpitView: View {
+    /// The size the window opens at, beside the minimum this view already holds it to. Read from
+    /// here rather than from the contract directly, so the scene takes its window furniture from
+    /// the module that draws the window and the app target names no token of its own (ADR-0022).
+    public static let idealSize = CGSize(
+        width: ArgoLayout.windowIdealWidth,
+        height: ArgoLayout.windowIdealHeight,
+    )
+
     let presentation: CockpitPresentation
     let actions: CockpitActions
     /// The Connect panel, when it is up. Closed by default so every preview and specimen of the

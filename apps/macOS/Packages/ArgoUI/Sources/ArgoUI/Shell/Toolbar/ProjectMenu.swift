@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The one place you both switch Projects and manage the registered set — no modal, no settings

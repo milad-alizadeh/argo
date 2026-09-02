@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A run of the transcript's own words, typeset. Shared by everything that draws prose — a

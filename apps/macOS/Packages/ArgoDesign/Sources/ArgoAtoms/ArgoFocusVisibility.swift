@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 
 /// Whether a focus ring drawn right now would be answering the keyboard.
 ///
@@ -9,19 +10,21 @@ import AppKit
 ///
 /// The last event the app saw is the whole answer: a reader working the keys just pressed one, and
 /// a reader working the mouse just clicked.
-@MainActor @Observable final class ArgoFocusVisibility {
+@MainActor @Observable public final class ArgoFocusVisibility {
     /// The app's one reader, and the only instance watching events. A suite makes its own and
     /// states the events itself, rather than sharing this one's mutable answer.
-    static let shared: ArgoFocusVisibility = {
+    public static let shared: ArgoFocusVisibility = {
         let visibility = ArgoFocusVisibility()
         visibility.watch()
         return visibility
     }()
 
     /// Whether the reader is working by keyboard. Starts false: a window is opened with a pointer.
-    private(set) var isOn = false
+    public private(set) var isOn = false
 
     private var monitor: Any?
+
+    public init() {}
 
     /// Local, so it sees only this app's events, and it passes every one of them straight on.
     private func watch() {
@@ -37,7 +40,7 @@ import AppKit
     ///
     /// Mouse-UP and mouse-DRAGGED are deliberately not watched: a reader who clicked to place a
     /// text cursor and then typed is working the keyboard again by the first key.
-    func note(_ event: NSEvent.EventType) {
+    public func note(_ event: NSEvent.EventType) {
         switch event {
         case .keyDown:
             isOn = true

@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The Instrument Deck: opaque by contract, so it reads as ground against the sidebar's

@@ -137,7 +137,7 @@ public extension ArgoMotion {
     static let passReentry: TimeInterval = 1.0 / 60
 }
 
-extension EnvironmentValues {
+public extension EnvironmentValues {
     /// Reduce Motion, forced on for a RENDER. `accessibilityReduceMotion` mirrors a system setting
     /// and cannot be written, so a specimen of a still has no other way onto a screenshot.
     ///

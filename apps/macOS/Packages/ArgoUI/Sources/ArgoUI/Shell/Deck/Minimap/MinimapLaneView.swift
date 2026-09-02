@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 
 /// The overview lane itself: layers over the deck, and only the top ones move while the reader
 /// scrolls.

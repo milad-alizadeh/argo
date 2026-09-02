@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// What one feed row is measured at. Every GAP names a step of `ArgoSpacing`; a bare number is a
@@ -69,14 +70,14 @@ public enum ArgoFeedRow {
     /// The line height the body is set at.
     public static let lineHeight: CGFloat = 20
 
+    /// The gutter a patch's line numbers sit in. Wide enough for four digits.
+    public static let diffGutterWidth: CGFloat = 32
+
     /// The rung the feed's MONO is set on — a fence, a patch, an evidence panel's output. The prose
     /// rung and not `ArgoTypography.machine`'s: the feed draws its mono as
     /// `.system(.body, design: .monospaced)`, which keeps the BODY's line box and changes only the
     /// advances, so the chrome role's `callout` is a box nothing in the feed stands in (#1026).
     static let machineRung: ArgoTypeScale = proseRung
-
-    /// The gutter a patch's line numbers sit in. Wide enough for four digits.
-    public static let diffGutterWidth: CGFloat = 32
 
     /// How far the way-back-to-the-newest control floats above the bottom of the feed. Stacked
     /// above the plan pill's lane, not beside it: side by side, a narrow deck draws the centred

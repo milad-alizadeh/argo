@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The tab line's trailing group (`docs/designs/cockpit-session-header.md`): what the Session is

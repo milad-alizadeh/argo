@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A label that draws its symbol beside its title, at the contract's rhythm.
@@ -9,11 +10,11 @@ import SwiftUI
 /// The two sizes are named separately because they answer to different scales: the words to the
 /// type ramp, the mark to the icon scale. They were one number multiplied by 0.85, which is how
 /// the app ended up with an icon size per type role.
-struct ArgoLabelStyle: LabelStyle {
+public struct ArgoLabelStyle: LabelStyle {
     let style: ArgoTextStyle
     let icon: ArgoIconSize
 
-    func makeBody(configuration: Configuration) -> some View {
+    public func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: ArgoSpacing.snug) {
             configuration.icon.argoIcon(icon)
             configuration.title.argoText(style)
@@ -21,7 +22,7 @@ struct ArgoLabelStyle: LabelStyle {
     }
 }
 
-extension LabelStyle where Self == ArgoLabelStyle {
+public extension LabelStyle where Self == ArgoLabelStyle {
     /// The mark defaults to `inline`, which is the rung a label's icon almost always wants: it
     /// sits beside words rather than standing in for them.
     static func argo(_ style: ArgoTextStyle, icon: ArgoIconSize = .inline) -> ArgoLabelStyle {

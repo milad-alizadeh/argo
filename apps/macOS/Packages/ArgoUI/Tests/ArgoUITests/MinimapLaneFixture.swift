@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 @testable import ArgoUI
 
 /// A lane over a laid-out feed, for the suites that need a real one: `MinimapLaneTests` for what a

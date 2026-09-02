@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A pipe table, as a table — across the whole measure the feed gives it.

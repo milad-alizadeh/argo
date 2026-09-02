@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 import SwiftUI
 
 /// A grant while it waits: where to finish it, the code to type where there is one, and a way to

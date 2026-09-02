@@ -1,3 +1,4 @@
+import ArgoDesign
 @testable import ArgoUI
 import Testing
 

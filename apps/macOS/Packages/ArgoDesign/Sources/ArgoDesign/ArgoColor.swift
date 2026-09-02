@@ -37,7 +37,7 @@ public struct ArgoColor: Sendable, Hashable {
 
     /// The same colour again for AppKit, which takes neither — an `NSAttributedString`, or a
     /// property on a control reached through `NSViewRepresentable`.
-    var nsColor: NSColor {
+    public var nsColor: NSColor {
         NSColor(srgbRed: red, green: green, blue: blue, alpha: opacity)
     }
 

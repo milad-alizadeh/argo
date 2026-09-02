@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 import ArgoEngine
 import SwiftUI
 

@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The ticket's head: id, title, then the status pair. Title-FIRST — no scope badge and no

@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// One labelled line of the Connect panel: what it is, what it currently says, and the control

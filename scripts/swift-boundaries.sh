@@ -5,12 +5,17 @@
 # tree, not of the file you happened to touch.
 #
 # Edges 1-4 are ADR-0022's layering; edge 5 is ADR-0027, on the projection between two of its
-# layers; edge 6 is the parameter cap on the one declaration shape SwiftLint cannot see. Each is
-# checkable by looking at imports, declarations and size alone — which is the whole reason they are
-# gates rather than review notes.
+# layers; edge 6 is the parameter cap on the one declaration shape SwiftLint cannot see; edge 7 is
+# the token contract's own module. Each is checkable by looking at imports, declarations and size
+# alone — which is the whole reason they are gates rather than review notes.
 set -eu
 
 APP_DIR="apps/macOS"
+# Edge 7's own script, which owns the patterns a design constant is recognised by. Called rather
+# than copied: two greps for one rule are two rules the day one of them is edited.
+TOKENS="$(dirname "$0")/check-design-tokens-swift.sh"
+# The module that owns the contract, and the one edge 7 exempts from the check above.
+DESIGN_SOURCES="$APP_DIR/Packages/ArgoDesign/Sources/ArgoDesign"
 UI_SOURCES="$APP_DIR/Packages/ArgoUI/Sources"
 ENGINE_SOURCES="$APP_DIR/Packages/ArgoEngine/Sources/ArgoEngine"
 APP_TARGET="$APP_DIR/Argo"
@@ -556,6 +561,56 @@ $SWIFTLINT_CONFIG; $sealed skipped, memberwise init sealed private"
     report "a grandfathered entry cannot say which init it means" "$hits" \
       "Two files of one name, both over the cap at the same width. Group one of them, or the entry" \
       "covers whichever the gate reads first."
+  fi
+fi
+
+# 7. A design VALUE is declared only in the module that owns the contract. A colour, a rhythm step,
+#    a radius, a stroke width or a type size written down anywhere else is a second contract, kept
+#    in step with the first by eye. This edge is checkable for exactly one reason: `ArgoDesign` is
+#    a module now, so the palette that DEFINES a ramp and the view that spends it are no longer
+#    two folders in one target (#1088).
+#
+#    The patterns and the shrink-only allowlist are the script's; what belongs here is the scope,
+#    and running it at all — until this edge, the rule was gated on nothing but pre-commit.
+if [ ! -f "$TOKENS" ]; then
+  report "edge 7 cannot find its own script — $TOKENS has moved" \
+    "It carries the patterns a design constant is recognised by. An edge that cannot run checks" \
+    "nothing, and nothing else in this repo would notice."
+else
+  tokens_output=$(sh "$TOKENS" 2>&1) || report "a design constant is declared outside ArgoDesign (#1088)" \
+    "$tokens_output"
+fi
+
+# 7b. And the exemption is worth having only while the exempt module stays what it says it is.
+#     Moving the contract out of ArgoUI turns "the folder a view could be moved into" into "the
+#     module a view could be moved into" unless two things are checked here: that ArgoDesign is a
+#     LEAF, and that it declares no view. Without them the escape hatch survives the move one level
+#     up, which is the ticket's own complaint (#1088).
+if [ ! -d "$DESIGN_SOURCES" ]; then
+  report "edge 7b cannot see the contract — $DESIGN_SOURCES has moved" \
+    "Point DESIGN_SOURCES at its new home. A grep over a path that is not there matches nothing," \
+    "which is a boundary that passes every tree."
+else
+  # A leaf: the contract is spent by everything and reaches for nothing, so it can be built, read
+  # and reasoned about without the app around it.
+  hits=$(grep -rnE '^ *import  *(ArgoEngine|ArgoUI|ArgoAtoms|ArgoTerminal|HighlightSwift)' \
+    "$DESIGN_SOURCES" 2>/dev/null || true)
+  if [ -n "$hits" ]; then
+    report "ArgoDesign imports one of Argo's own modules — the contract is a leaf (#1088)" "$hits" \
+      "SwiftUI, AppKit and Foundation only. A contract that reaches back into what spends it is a" \
+      "cycle, and the layering below it stops meaning anything."
+  fi
+
+  # Tokens only (rules/design-system.md). A family here may still extend `View` with a modifier
+  # that applies its own value — that is the value being reached by name — so it is the TYPE that
+  # is checked, exactly as edge 3 checks the app target's.
+  hits=$(grep -rnE '(struct|class|enum) +[A-Za-z0-9_]+ *: *[^{]*\b(View|ViewModifier|LabelStyle)\b' \
+    "$DESIGN_SOURCES" --include='*.swift' 2>/dev/null || true)
+  if [ -n "$hits" ]; then
+    report "ArgoDesign declares a view — it holds tokens, and the views built out of them are ArgoAtoms" \
+      "$hits" \
+      "Otherwise the literal check above exempts whatever is moved in here, which is the folder-name" \
+      "escape hatch this edge was written to close (rules/design-system.md, #772, #1088)."
   fi
 fi
 

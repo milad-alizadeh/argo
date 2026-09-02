@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A block of what the agent produced, at a reading measure.

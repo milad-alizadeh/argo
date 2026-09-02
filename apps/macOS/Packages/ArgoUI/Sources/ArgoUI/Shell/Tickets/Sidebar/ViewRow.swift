@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// One row of the sidebar: a mark, a name, what it holds, and what it could not place.

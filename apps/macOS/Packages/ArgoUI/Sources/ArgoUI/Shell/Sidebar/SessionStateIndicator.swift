@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The canonical state dot. It leads every roster row, including the rows whose state Argo

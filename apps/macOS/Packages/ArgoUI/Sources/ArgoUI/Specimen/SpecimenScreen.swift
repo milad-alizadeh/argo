@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// One registry entry filling the window. No per-entry frame: a state is judged at the width the

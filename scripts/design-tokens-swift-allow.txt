@@ -1,11 +1,22 @@
 # Allowlist for the SWIFT design-token guardrail (scripts/check-design-tokens-swift.sh).
-# One grep -E pattern per line, matched against the whole "path:line:content" finding.
+# One grep -E pattern per line, matched against the whole "path:line:content" finding, with a
+# comment line directly above it saying why. Both halves are enforced: an entry with nothing said
+# about it fails, and so does an entry that matches nothing any more.
 #
 # An entry here is DEBT, not an exemption: it is a design constant that escaped the
 # contract and has not been snapped or promoted yet. Each one names the ticket that
 # removes it. The list may only shrink — the fix is Palette/TypeRole/Space, never a
 # pattern added here to keep a commit moving.
 #
-# Empty on purpose. VisualContract/ and Specimen/ are already exempt in the script itself —
-# the first because it IS the contract, the second because a specimen's whole job is to show
-# what a role is worth.
+# Everything below is a specimen's own fixture, uncovered when #1088 replaced this script's
+# blanket `Specimen/` exemption with the module boundary. Each of them is DRAWN, so snapping it
+# moves a committed render; they wait on a deliberate re-render rather than riding in on the
+# extraction that found them.
+
+# #1088 — the swatch a dropped-screenshot fixture decodes into a thumbnail chip. Two bands meant
+# as "the shell's own graphite" and sampled by eye; the contract's own roles are a different blue.
+Specimen/AttachmentFixture\.swift:[0-9]+:.*NSColor\(red:
+
+# #1088 — the specimen deck's own chrome mark, at a rung the icon scale does not have: 11pt sits
+# between `ArgoIconSize.inline` (10) and `.control` (13), so neither snap is pixel-identical.
+Specimen/SpecimenDeck\.swift:[0-9]+:.*\.font\(\.system\(size: 11

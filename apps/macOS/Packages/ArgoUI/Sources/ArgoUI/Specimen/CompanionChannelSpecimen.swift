@@ -1,3 +1,4 @@
+import ArgoDesign
 import ArgoEngine
 import SwiftUI
 
@@ -10,7 +11,7 @@ struct CompanionChannelSpecimen: View {
     @Environment(\.argo) private var argo
 
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
+        HStack(alignment: .top, spacing: ArgoSpacing.flush) {
             ForEach(CompanionLiveness.allCases, id: \.self) { liveness in
                 column(liveness)
             }

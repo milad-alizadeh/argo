@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The roster with one row carrying a name somebody typed. The claim is story 19's, drawn: the

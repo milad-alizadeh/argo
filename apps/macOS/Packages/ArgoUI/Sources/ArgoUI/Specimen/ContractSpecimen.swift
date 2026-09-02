@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The contract's roles laid out side by side, for the one judgement the assembled cockpit

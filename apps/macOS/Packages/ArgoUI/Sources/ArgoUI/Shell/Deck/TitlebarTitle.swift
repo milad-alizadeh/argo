@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The Session's name where macOS puts a document title: the centre of the titlebar (#692).

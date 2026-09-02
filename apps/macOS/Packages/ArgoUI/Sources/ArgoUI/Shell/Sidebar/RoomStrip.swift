@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The room switcher at the top of the sidebar, under the titlebar rather than in it

@@ -1,6 +1,7 @@
+import ArgoDesign
 import SwiftUI
 
-extension View {
+public extension View {
     /// The ground under a selected sidebar row, in both rails. It COVERS
     /// `.listStyle(.sidebar)`'s own capsule, which on macOS 26 is a fixed neutral that neither
     /// `.tint` nor the `AccentColor` asset moves by a value (D30, as amended by #875, #906, #922).

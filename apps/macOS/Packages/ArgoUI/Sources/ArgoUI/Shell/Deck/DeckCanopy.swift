@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The deck's top zone — the Session's identity and the tab line under it — as the lower half of

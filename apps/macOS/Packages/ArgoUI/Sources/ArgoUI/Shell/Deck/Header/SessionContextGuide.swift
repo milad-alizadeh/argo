@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The panel the ⓘ opens: the budget legend, which EXPLAINS Argo's policy, then the block that

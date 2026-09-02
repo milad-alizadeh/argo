@@ -1,4 +1,6 @@
 import AppKit
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The plan's pill, over the feed it is deliberately not in.

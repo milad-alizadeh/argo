@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The shell's room-awareness (#812, #818): which sidebar the split view's leading slot takes, how

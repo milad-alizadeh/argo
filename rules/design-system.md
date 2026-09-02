@@ -14,10 +14,10 @@ projects that have a browser. What follows is Argo's own, in SwiftUI.
 
 ## Where the contract lives (ADR-0022)
 
-`apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/` is the single source of visual
+`apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign/` is the single source of visual
 **tokens** — a value the whole app reaches by name. It declares no `View`, `ViewModifier` or
 `LabelStyle` TYPE and holds no observable state; the views built out of its values are its
-neighbour, `ArgoUI/Atoms/`.
+neighbour, `ArgoAtoms`.
 
 A **measure** is a value too, and it is deliberately not here: it answers to one surface's
 content rather than to the whole app, so it lives in that surface's own directory. That is the
@@ -27,12 +27,12 @@ The type is what draws the line, not the `View` extension. A family here may sti
 `View` with a modifier that applies its own value in one expression — `argoShadow`, `argoIcon`,
 `argoText`, `argoTheme` — because that is the value being reached by name, which is Rule 1.
 The moment the modifier needs a `ViewModifier` of its own to hold what it draws, the type is an
-atom and both halves move: that is why `argoAnimation` left `ArgoMotion` for `Atoms/`.
+atom and both halves move: that is why `argoAnimation` left `ArgoMotion` for `ArgoAtoms`.
 
 Three populations, one table each: **tokens** and **atoms** are the two directories above, and
 **measures** are the third population precisely because they live in neither.
 
-### Tokens — a value the whole app reaches by name (`VisualContract/`)
+### Tokens — a value the whole app reaches by name (`ArgoDesign`)
 
 | File | Holds |
 |---|---|
@@ -48,7 +48,7 @@ Three populations, one table each: **tokens** and **atoms** are the two director
 | `ArgoOperationalState` | the four states colour is owed, and the tint each takes from a palette |
 | `ArgoWaitAge` | the ladder `ArgoMotion.working` cools down as the wait it reports gets older |
 
-### Measures — a property of the content, so it lives beside the surface (not `VisualContract/`)
+### Measures — a property of the content, so it lives beside the surface (not `ArgoDesign`)
 
 A measure is not a token, and it is not in the contract's directory. It sits in the directory of
 the **one surface whose layout it describes**, with its reason at the value — because how wide a
@@ -72,7 +72,7 @@ costs nothing inside one Swift module: the minimap re-lays out the feed, so it r
 | `ArgoAgentsRail` | `Shell/Deck/Feed/Agents/` | where the rail opens, and where it collapses to |
 | `ArgoRosterFoot` | `Shell/Sidebar/` | the floor under the roster's archive header |
 | `ArgoProjectDisabled` | `Shell/Project/` | the measure the disabled Project's one error state is set to |
-| `ArgoLayout` | `VisualContract/` | the window's structural proportions — pane widths, minimums, the splits |
+| `ArgoLayout` | `ArgoDesign` | the window's structural proportions — pane widths, minimums, the splits |
 
 `ArgoLayout` is the one that stays, and not as an exception: pane widths and the splits between
 them describe the window, which is every surface and therefore no single one. One reading
@@ -96,7 +96,7 @@ to the sentences they hold, so the ladder has nothing to say about any of them;
 below where its seam may be dragged, a guide column wider than the thresholds beside it. A measure
 whose reason nothing can check is a number waiting to drift.
 
-### Atoms — the views built out of those values (`Atoms/`)
+### Atoms — the views built out of those values (`ArgoAtoms`)
 
 One shared control or material per file, reached by type name or by the modifier beside it.
 An atom holds no state of its own and reads every value it draws from the contract.
@@ -154,7 +154,7 @@ type names: `bun run contract:sweep`, with the method and the last sweep's judge
 ## Rule 1 — Tokens only, never magic numbers
 
 Every visual constant is a named value, and a view reaches it by name — a token in
-`VisualContract/`, or a measure on the sheet beside the surface it belongs to. What is banned is
+`ArgoDesign`, or a measure on the sheet beside the surface it belongs to. What is banned is
 the number written at the call site, not the number's address.
 
 - **Never** write a colour literal, a font size, a duration, or a spacing number in a view.
@@ -182,9 +182,11 @@ that way — the cost of getting this wrong is not a bug, it is a sweep through 
   — anything true only of a dark appearance — is a claim about a value, and probably wrong.
 
 `scripts/check-design-tokens-swift.sh` is the mechanical half: it reads colour construction,
-the type ladder, and the modifiers that take a rhythm value. `VisualContract/` is exempt
-because it IS the contract, and `Specimen/` because a specimen exists to show what a role is
-worth. **`Atoms/` is not exempt** — an atom draws with the contract like any other view, so it
+the type ladder, and the modifiers that take a rhythm value, and edge 7 of the package boundaries
+runs it. `ArgoDesign` is exempt because it IS the contract — a MODULE, not a folder name, which
+is the whole reason the check is a CI gate (#1088). A specimen is **not** exempt any more: what
+one has to write down goes on the allowlist by name, with a reason and a ticket.
+**`ArgoAtoms` is not exempt** — an atom draws with the contract like any other view, so it
 answers to the gate like any other view. Neither are the measure sheets, now that they live in
 surface directories rather than the exempt one — though in practice a sheet declaring
 `static let shotWidth: CGFloat = 168` matches none of the four patterns, so the gate covering
@@ -315,7 +317,7 @@ hide: judge it, don't assume the gate did.
 ## Checklist before you finish visual work
 
 - [ ] No colour literal, font size, duration or spacing number in a view — every one of them a
-      token in `VisualContract/` or a member of the surface's own measure sheet.
+      token in `ArgoDesign` or a member of the surface's own measure sheet.
 - [ ] Colour read from `\.argo`, not from a static or a system colour.
 - [ ] Type set with `argoText(_:)` / `argoMono(_:)` or a named `ArgoTypography` role.
 - [ ] Any new visual value added to the contract first, with its reason.

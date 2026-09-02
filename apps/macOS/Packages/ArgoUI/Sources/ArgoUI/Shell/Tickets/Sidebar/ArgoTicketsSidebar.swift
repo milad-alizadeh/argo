@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// What the Tickets room's sidebar is measured at (`docs/designs/cockpit-work-room.md` — the

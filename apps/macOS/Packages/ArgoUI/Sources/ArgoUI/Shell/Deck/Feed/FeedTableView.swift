@@ -1,4 +1,5 @@
 import AppKit
+import ArgoAtoms
 import SwiftUI
 
 /// The feed's table — `NSTableView` plus the keyboard verbs the reading answers to. Closures

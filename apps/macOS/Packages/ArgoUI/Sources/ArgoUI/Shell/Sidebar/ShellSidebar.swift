@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// Session navigation on the system sidebar material. The Project strip is gone: switching Projects

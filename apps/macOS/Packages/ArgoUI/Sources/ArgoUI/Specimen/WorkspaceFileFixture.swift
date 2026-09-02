@@ -1,3 +1,5 @@
+import ArgoDesign
+
 /// The Workspace tree the `@` menu's cases are drawn against (#687) — this repository's own paths,
 /// which is where the design's "nine segments deep" came from.
 ///

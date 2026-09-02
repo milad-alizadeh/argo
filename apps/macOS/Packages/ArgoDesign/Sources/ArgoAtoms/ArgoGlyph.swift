@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A symbol drawn at exactly one rung of the icon scale, whatever box the symbol itself is drawn
@@ -6,11 +7,11 @@ import SwiftUI
 /// Point size alone cannot settle this: `folder` is drawn to cap height while
 /// `arrow.triangle.branch` fills its em box, so at one font size they stand a head apart in the
 /// same bar. The frame is the rung, so every mark on a rung measures the same.
-struct ArgoGlyph: View {
+public struct ArgoGlyph: View {
     private let symbol: String
     private let size: ArgoIconSize
 
-    init(_ symbol: String, _ size: ArgoIconSize) {
+    public init(_ symbol: String, _ size: ArgoIconSize) {
         self.symbol = symbol
         self.size = size
     }
@@ -24,7 +25,7 @@ struct ArgoGlyph: View {
     /// `scaledToFit` then grows the mark into whatever room the stack has going spare — which blew
     /// the disclosure chevron up to twice the folder beside it. Fixed, it takes the intrinsic
     /// width for that height, which is the whole point.
-    var body: some View {
+    public var body: some View {
         Image(systemName: symbol)
             .resizable()
             .scaledToFit()

@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The ticket's facts under the title — priority, type, bucket, then labels, closed by a hairline

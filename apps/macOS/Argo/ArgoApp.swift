@@ -120,7 +120,7 @@ struct ArgoApp: App {
             // Inert unless ARGO_FRAME_PROBE=1 — the measurement rig's only foothold in the app.
             .frameProbe()
         }
-        .defaultSize(width: ArgoLayout.windowIdealWidth, height: ArgoLayout.windowIdealHeight)
+        .defaultSize(CockpitView.idealSize)
         // Hidden title bar so the deck's content extends beneath the toolbar region. The chrome
         // bar's ground reaches the top of the WINDOW that way (`ArgoChromeBar`) — with a titlebar
         // in the way, the icons sat on a strip no surface of ours could reach, and the bar read as

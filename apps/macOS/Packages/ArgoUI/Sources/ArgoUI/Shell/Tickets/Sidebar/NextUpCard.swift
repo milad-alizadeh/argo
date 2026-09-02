@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The hero at the foot of the sidebar's scroll, answering "what should I pick up"

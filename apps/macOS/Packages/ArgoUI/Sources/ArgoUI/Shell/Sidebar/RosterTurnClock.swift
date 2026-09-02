@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The roster row's one age slot (`cockpit-roster-turn-clock.md`): a live Turn duration in the

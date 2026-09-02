@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import ArgoEngine
 import SwiftUI
 
@@ -88,8 +90,13 @@ private struct EvidenceDiffLine: View {
     let coloured: AttributedString?
 
     var body: some View {
-        ArgoCodeLine(text: line.text, gutter: .number(number), coloured: coloured, ink: ink)
-            .background(ground)
+        ArgoCodeLine(
+            text: line.text,
+            gutter: .number(number, width: ArgoFeedRow.diffGutterWidth),
+            coloured: coloured,
+            ink: ink,
+        )
+        .background(ground)
     }
 
     /// A wash for the changed sides and nothing for context, at the same strength a status chip

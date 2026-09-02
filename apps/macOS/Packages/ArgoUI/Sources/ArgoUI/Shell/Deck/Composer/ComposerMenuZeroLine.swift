@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The one line a composer menu draws when nothing matches, whichever sigil opened it (design

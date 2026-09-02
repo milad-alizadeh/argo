@@ -1,6 +1,7 @@
+import ArgoDesign
 import SwiftUI
 
-extension View {
+public extension View {
     /// Widens what a small mark answers clicks over, WITHOUT moving the mark: the square is laid
     /// OVER it rather than around it, so nothing in the row's rhythm shifts.
     func argoHitTarget() -> some View {

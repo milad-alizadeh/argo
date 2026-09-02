@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 
 // The banded half of the lane: which slice of the miniature is held as pixels, where that slice is
 // put, and when it is drawn again (#658) — now drawing the rows' own shapes (#382).

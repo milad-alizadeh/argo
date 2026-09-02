@@ -1,3 +1,5 @@
+import ArgoDesign
+
 /// Why a Session has no composer, and what the line in its place says (#546, design decision 7).
 ///
 /// The words live on the reason rather than in the view, for `SessionMode+Rung`'s reason: which

@@ -1,3 +1,5 @@
+import ArgoDesign
+
 /// One of the backlog's five views (`cockpit-work-room.md` — the sidebar holds views, not
 /// tickets). A view's name is WRITTEN rather than inherited from a tracker, which is the whole
 /// reason these fit a 280pt rail where ticket titles did not.

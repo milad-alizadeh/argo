@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// What the list pane says where the query matched nothing (#873). Inside the pane rather than one

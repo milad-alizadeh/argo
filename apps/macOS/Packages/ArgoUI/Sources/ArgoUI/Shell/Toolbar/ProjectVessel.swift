@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The active Project as the leading half of the scope vessel: its symbol, its full name and the

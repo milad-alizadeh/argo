@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 
 /// The face a run of the feed's words is set in, and the rhythm it is set at.
 ///

@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The deck's one chrome row: the tabs on the leading edge, `TabLineInstruments` on the trailing

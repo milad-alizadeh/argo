@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A `mermaid` fence, drawn. ONE view for every diagram type there will ever be: it draws a plan,

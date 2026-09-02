@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The palette half of the contract sheet: every colour role, on the surfaces it is read
