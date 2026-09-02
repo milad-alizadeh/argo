@@ -11,6 +11,13 @@ extension SpecimenRegistry {
         // has to settle is that three promises read as promises rather than as a feature grid, and
         // that nothing on it needs a tier explained first.
         SpecimenEntry("welcome") { SpecimenScene.centred { WelcomeScreen(start: {}) } },
+        // Argo's own blindness, with every provider healthy: the state §8 governs, and the one
+        // state of this chip nothing else in the deck renders.
+        SpecimenEntry("observationFailed") {
+            SpecimenScene.centred {
+                SpecimenScene.observationChip(.failed(message: "Transcript unavailable"))
+            }
+        },
     ] + panels + chips
 
     private static let panels: [SpecimenEntry] = ConnectFixture.states.map { state in

@@ -44,8 +44,7 @@ public actor SessionDiscovery {
         self.cli = store.cli
     }
 
-    /// The transcripts to tail for one Project, newest first. A transcript whose working directory
-    /// cannot be read belongs to no Project here (degrade-down).
+    /// The transcripts to tail for one Project, newest first.
     ///
     /// Every folder the answer turns on is spelled in ONE batch, off the main actor: the Project's
     /// own root and the `cwd` of each transcript that survived the mtime window.
@@ -56,8 +55,22 @@ public actor SessionDiscovery {
             .sorted { $0.modifiedAt > $1.modifiedAt }
             .map(\.url)
         let spelled = await paths([projectURL.path] + recent.compactMap { origin(of: $0) })
+        let project = address(of: projectURL, spelled: spelled)
+        return recent.filter { belongs($0, to: project, spelled: spelled) }
+    }
+
+    /// How this Project is addressed while sweeping: the spelling every `cwd` is compared against,
+    /// and the names the CLI would have written its record directory under.
+    ///
+    /// BOTH spellings are encoded, because the two can disagree and the CLI used neither on Argo's
+    /// account: it wrote the path it was launched with, which may be the one Argo resolved away.
+    private func address(of projectURL: URL, spelled: [String: String]) -> ProjectAddress {
         let root = spelled.spelling(of: projectURL.path)
-        return recent.filter { belongs($0, toRoot: root, spelled: spelled) }
+        return ProjectAddress(
+            root: root,
+            recordDirectoryNames: Set([projectURL.path, root.value]
+                .compactMap { cli.recordDirectoryName(forProjectRoot: $0) }),
+        )
     }
 
     /// One element per burst of writes under the record directory, so a Session started while Argo
@@ -66,14 +79,25 @@ public actor SessionDiscovery {
         RecordDirectoryWatcher(rootURL: store.rootURL).changes()
     }
 
+    /// A transcript whose `cwd` reads is placed by it, and nothing else — the file's own word about
+    /// where it ran outranks where it was filed.
+    ///
+    /// A transcript whose `cwd` does NOT read is placed by the directory the CLI filed it in. That
+    /// is the §8 degrade: an unparseable head costs the Session its derived facts, never its row,
+    /// and dropping the row is the one rendering that cannot be told apart from no Session at all.
+    /// It only ever admits — a file whose head reads is never reached by it — so the worst it can
+    /// do is put a row on the roster of a Project encoding to the same name.
     private func belongs(
         _ transcriptURL: URL,
-        toRoot root: SpelledPath,
+        to project: ProjectAddress,
         spelled: [String: String],
     )
         -> Bool {
-        guard let cwd = origin(of: transcriptURL) else { return false }
-        return ProjectScope.contains(cwd: spelled.spelling(of: cwd), projectRoot: root)
+        guard let cwd = origin(of: transcriptURL) else {
+            return project.recordDirectoryNames
+                .contains(transcriptURL.deletingLastPathComponent().lastPathComponent)
+        }
+        return ProjectScope.contains(cwd: spelled.spelling(of: cwd), projectRoot: project.root)
     }
 
     private func origin(of transcriptURL: URL) -> String? {
