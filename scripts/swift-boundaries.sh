@@ -251,6 +251,12 @@ fi
 #    edge extends, so there is no second figure to sit above it — a ratchet of 18 beside a stated
 #    cap of 4 is a gate nothing anyone writes can fail (#992).
 #
+#    A struct's SYNTHESIZED memberwise init is the second shape neither SwiftLint nor a grep for
+#    `init` can see, and it is the one a regroup produces by construction: #1058 cut a row from 9
+#    parameters to 4 by extracting a value whose own group held five, so the width had been moved
+#    rather than removed and the ratchet read 28 → 23 while it happened (#1060). Both shapes are
+#    counted here, and both are grandfathered by the same list — a memberwise init IS an init.
+#
 #    What is grandfathered is a NAMED list beside that rule, and the list may only shrink: an init
 #    over the cap fails unless it is named, and a name matching no init over the cap fails too.
 INIT_CAP=$(
@@ -303,6 +309,47 @@ $(printf '%s\n' "$INIT_EXEMPT" | awk 'NF' | wc -l | tr -d ' ') grandfathered by 
               } else if (char == "(" || char == "[" || char == "{") depth++
               else if (char == "," && depth == 1) { commas++; trailing = 1; continue }
               if (char != " " && char != "\t") { seen = 1; trailing = 0 }
+            }
+          }
+        ' "$file"
+        # The synthesized memberwise init, counted by brace depth rather than by paren depth:
+        # there is no declaration to find, so the subject is the struct's own body. What Swift puts
+        # in the list was checked against swiftc, not assumed — an initialised `let` is left out, a
+        # defaulted `var` is in with a default, and a `private` STORED property makes the whole init
+        # private. That last one is skipped, and the reason is at the rule in $SWIFTLINT_CONFIG.
+        awk -v file="$file" -v cap="$INIT_CAP" "$AWK_READER"'
+          function stored(text,   rest, brace, equals) {
+            if (text ~ /(^|[^.A-Za-z0-9_])init\??[ \t]*[(<]/) { written[depth] = 1; return }
+            if (text !~ /(^|[^.A-Za-z0-9_])(var|let)[ \t]+[A-Za-z_]/) return
+            if (text ~ /(^|[^.A-Za-z0-9_])(static|class|lazy)[ \t]/) return
+            rest = text; sub(/^.*[^.A-Za-z0-9_](var|let)[ \t]+/, "", rest)
+            brace = index(rest, "{"); equals = index(rest, "=")
+            # Accessors with no value assigned before them: a computed property stores nothing.
+            if (brace && (!equals || equals > brace)) return
+            # An initialised `let` is settled, so no call site can pass it.
+            if (text ~ /(^|[^.A-Za-z0-9_])let[ \t]/ && equals) return
+            if (text ~ /(^|[^.A-Za-z0-9_])(private|fileprivate)[ \t]/) { sealed[depth] = 1; return }
+            fields[depth]++
+          }
+          {
+            line = code($0)
+            if (match(line, /(^|[^.A-Za-z0-9_])struct[ \t]+[A-Za-z_][A-Za-z0-9_]*/)) {
+              pending = substr(line, RSTART, RLENGTH); sub(/^.*struct[ \t]+/, "", pending)
+            }
+            if (isstruct[depth]) stored(line)
+            for (i = 1; i <= length(line); i++) {
+              char = substr(line, i, 1)
+              if (char == "{") {
+                depth++
+                isstruct[depth] = (pending != ""); named[depth] = pending
+                fields[depth] = 0; written[depth] = 0; sealed[depth] = 0; at[depth] = FNR
+                pending = ""
+              } else if (char == "}") {
+                if (isstruct[depth] && !written[depth] && !sealed[depth] && fields[depth] > cap)
+                  print file ":" at[depth] ": " named[depth] "'"'"'s synthesized memberwise init takes " \
+                    fields[depth] " parameters"
+                if (depth > 0) depth--
+              }
             }
           }
         ' "$file"

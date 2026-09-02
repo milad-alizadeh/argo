@@ -5,17 +5,21 @@
 // only thing counting an `init`'s slots. It counts by paren depth rather than by pattern, and the
 // cases below are the two ways that can go wrong: a default value carrying commas of its own, and
 // the ratchet going unread — which would leave the edge passing everything and saying so.
+//
+// The second half is the SYNTHESIZED memberwise init (#1060), which has no `init` to match at all:
+// a regroup that moves width into a value type would otherwise pass a gate that read a narrower
+// list and said the cap held.
 import assert from 'node:assert/strict'
 import { check, report } from './check-harness.mjs'
-import { ENGINE, run, SHELL, swiftlint, tree } from './swift-boundaries.fixture.mjs'
-
-const ACTIONS = `${SHELL}/CockpitActions.swift`
-const CONFIG = 'apps/macOS/.swiftlint.yml'
-const wideInit = (count) =>
-  `struct CockpitActions {\n    init(\n${Array.from(
-    { length: count },
-    (_, i) => `        slot${i}: Int,\n`,
-  ).join('')}    ) {}\n}\n`
+import {
+  ACTIONS,
+  CONFIG,
+  ENGINE,
+  run,
+  swiftlint,
+  tree,
+  wideInit,
+} from './swift-boundaries.fixture.mjs'
 
 check('edge 6 passes an init at the cap', () => {
   const result = run(tree({ [ACTIONS]: wideInit(4) }))
