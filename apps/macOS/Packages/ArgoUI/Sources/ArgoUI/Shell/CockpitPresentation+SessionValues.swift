@@ -8,10 +8,8 @@ import ArgoEngine
 /// edge 5 compares the init's slots against.
 public extension CockpitPresentation.Session {
     /// The resume chain (`CONTEXT.md` L2): what runs it, when it ran, what it handed to, and
-    /// whether Argo's own channel to it is up.
-    ///
-    /// The channel belongs to this reading and not to `Autonomy` beside it: it is a property of the
-    /// process this chain link is running in, which is what `cli` and the two moments are about.
+    /// whether Argo's own channel to it is up — a property of the process this link runs in, which
+    /// is what `cli` and the two moments are about too.
     struct Chain: Equatable, Sendable {
         public let cli: AgentCLI?
         public let model: String?

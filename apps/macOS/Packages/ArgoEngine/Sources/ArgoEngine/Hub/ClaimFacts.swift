@@ -8,11 +8,9 @@ import Foundation
 struct ClaimFacts: Equatable {
     /// The CONVENTION tier, and the only place it comes from.
     var report: CompanionReport?
-    /// Whether the channel that tier arrives over is up (#493). DIRECT — Argo owns the socket — and
-    /// `notApplicable` where this claim has no channel at all, which is every CLI that takes no
-    /// companion plugin. Kept when the claim is withdrawn, unlike the report's own standing claims:
-    /// a channel that dropped is a thing that HAPPENED, and the orphaned row is where saying so
-    /// earns its keep.
+    /// Whether the channel that tier arrives over is up (#493). Kept when the claim is withdrawn,
+    /// unlike the report's own standing claims: a channel that dropped is a thing that HAPPENED, so
+    /// it holds this entry in the ledger the way `ticket` and `modeSet` already do.
     var companionLiveness: CompanionLiveness = .notApplicable
     /// The Permissions this claim's agent is blocked on, oldest first.
     var waiting: [PermissionRequest] = []

@@ -22,7 +22,7 @@ public final class CompanionChannel {
     private let onFact: (SessionOwnership.ClaimID, CompanionFact) -> Void
     private let onLiveness: (SessionOwnership.ClaimID, CompanionLiveness) -> Void
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
-    /// Which claims a client has ever held, which is the whole of what `dropped` rests on (#493).
+    /// What `dropped` rests on (#493).
     private var dials = CompanionDialLog()
     /// The last invite that failed, in its refusal's own words; cleared by the next success.
     private var lastRefusal: String?
@@ -43,12 +43,8 @@ public final class CompanionChannel {
         return .installFailed(why: lastRefusal)
     }
 
-    /// `onFact` carries what the agent SAID, at the CONVENTION tier; `onLiveness` carries what the
-    /// socket did, at DIRECT. Two callbacks because they are two tiers: folding the channel's own
-    /// state into the report would file an observation of Argo's own as something an agent claimed.
-    ///
-    /// `onFact` is last so a caller with nothing to do about liveness still writes the obvious
-    /// trailing closure, and it carries no default: a channel filing no facts serves no tier.
+    /// Two callbacks because they are two tiers: `onFact` is what the agent SAID (CONVENTION),
+    /// `onLiveness` is what the socket DID (DIRECT).
     init(
         scope: CompanionScope,
         onLiveness: @escaping (SessionOwnership.ClaimID, CompanionLiveness) -> Void = { _, _ in },
@@ -91,17 +87,19 @@ public final class CompanionChannel {
             gatedBy: permissionSocketPath,
         )
         let endpoint = CompanionEndpoint { [weak self] fact in self?.onFact(claim, fact) }
-        let socket = CompanionSocket(path: socketPath) { line in
-            guard let request = CompanionRequest(line: line),
-                  let reply = endpoint.respond(to: request)
-            else { return nil }
-            return CompanionResponse.line(reply)
-        }
-        socket.onPeersChanged = { [weak self] peers in self?.observe(peers: peers, of: claim) }
+        let socket = CompanionSocket(
+            path: socketPath,
+            onPeersChanged: { [weak self] peers in self?.observe(peers: peers, of: claim) },
+            respond: { line in
+                guard let request = CompanionRequest(line: line),
+                      let reply = endpoint.respond(to: request)
+                else { return nil }
+                return CompanionResponse.line(reply)
+            },
+        )
         try socket.open()
         sockets[claim] = socket
-        // Open and unreached: the channel is there and nothing has spoken down it yet, which is a
-        // state the cockpit renders rather than an absence it stays quiet about.
+        // There and unreached, which the cockpit renders rather than staying quiet about.
         onLiveness(claim, dials.opened(claim))
         return invitation
     }
@@ -111,21 +109,15 @@ public final class CompanionChannel {
     func withdraw(_ claim: SessionOwnership.ClaimID) {
         let channel = sockets.removeValue(forKey: claim)
         channel?.close()
-        // Unconditionally, and before the guard below: an invite whose socket failed to open left
-        // a plugin directory behind and no socket to find it by, and that is exactly the claim
-        // whose relinquish has to sweep it.
+        // Before the guard, and unconditional: an invite whose socket failed to open leaves a
+        // plugin directory behind and no socket to find it by.
         CompanionPlugin.remove(forClaim: claim, under: scope.root)
-        // Nothing to say about a claim that never had a channel — publishing here would file a
-        // reading for one, which is the false DIRECT this whole ladder is against.
+        // A claim that never had a channel gets no reading — filing one would be the false DIRECT.
         guard channel != nil else { return }
-        // The reading an orphaned Session is left with, and it is `dropped` only where a client had
-        // actually dialled in — read off the log, never off the posture.
         onLiveness(claim, dials.closed(claim))
     }
 
-    /// The socket's news, on the ladder. Published on every change rather than remembered here:
-    /// the claim ledger is what the roster reads, and a reading filed nowhere is one no surface
-    /// draws.
+    /// Published on every change rather than remembered here: the ledger is what the roster reads.
     private func observe(peers: Int, of claim: SessionOwnership.ClaimID) {
         onLiveness(claim, dials.peers(peers, of: claim))
     }

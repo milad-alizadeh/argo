@@ -23,9 +23,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// Absent for every external Session and for a managed one whose agent has not spoken — not a
     /// degrade, only the tier having nothing to say yet.
     public internal(set) var convention: CompanionReport?
-    /// Whether the channel that tier arrives over is up (#493) — DIRECT, because Argo owns the
-    /// socket that both the dial and the hang-up land on. `notApplicable` until the Hub has a
-    /// channel to report on at all, which is the quietest of the four states (degrade-down).
+    /// Whether the channel that tier arrives over is up (#493) — DIRECT. `notApplicable` until the
+    /// Hub has a channel to report on, which is the quietest of the four (degrade-down).
     public internal(set) var companionChannel: CompanionLiveness = .notApplicable
     /// DIRECT: the blocked hook and the channel its answer goes down are both Argo's own. Absent
     /// for every external Session (unobservable there, per ADR-0024).

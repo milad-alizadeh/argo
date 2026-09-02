@@ -9,10 +9,10 @@ import Testing
 struct SessionHeaderGuideTests {
     private let minute = 60000
 
-    /// The design's nine rows, in the design's order. The tenth is the companion channel's, which
-    /// this Session has none of — `SessionCompanionReadingTests` is where that row is asserted.
+    /// The design's ten rows less the companion channel's, which this Session has none of —
+    /// `SessionCompanionReadingTests` is where that row is asserted.
     @Test
-    func `the block says the design's nine rows, in order`() {
+    func `a Session with no companion channel says nine rows, in order`() {
         let facts = SessionHeaderProjection.header(from: fullSession()).facts
 
         #expect(facts.map(\.term) == [

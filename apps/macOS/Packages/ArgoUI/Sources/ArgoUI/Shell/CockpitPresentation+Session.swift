@@ -108,9 +108,7 @@ public extension CockpitPresentation {
         /// them.
         public let handedOffTo: String?
         /// Whether the companion channel this Session's CONVENTION-tier facts arrive over is up
-        /// (#493) — the engine's own reading, carried whole. `notApplicable` for every Session
-        /// there is no channel to report on, which the surfaces draw as nothing rather than as a
-        /// negative claim.
+        /// (#493). `notApplicable` draws NOTHING rather than a negative claim.
         public let companionChannel: CompanionLiveness
         /// Whether the user cleared this Session off the roster. Argo's own fact and not a
         /// reading of anything (`CONTEXT.md` "Storage & ownership"): nothing observed sets it,

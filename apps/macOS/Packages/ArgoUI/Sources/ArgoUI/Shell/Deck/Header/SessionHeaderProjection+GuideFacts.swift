@@ -33,8 +33,7 @@ extension SessionHeaderProjection {
                     .map { Fact(term: "Branch", value: branchReading($0, in: session)) },
                 row(for: session.ticket).map { Fact(term: "Issue", value: issueReading($0)) },
                 mark(for: session.access).map { Fact(term: "Access", value: $0.word) },
-                // Under Access, because the two answer one question between them: what Argo owns
-                // of this Session, and what it can still hear from it (#493).
+                // Under Access: what Argo owns of this Session, then what it can hear (#493).
                 companion(for: session.companionChannel)
                     .map { Fact(term: "Companion", value: $0) },
             ].compactMap(\.self)
