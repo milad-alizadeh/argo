@@ -14,6 +14,9 @@ import SwiftUI
 /// can do must not live only in a hover, so it is set beside the title in words.
 package struct TitlebarTitle: View {
     @Environment(\.argo) private var argo
+    /// Why there is no name to draw, for the one case where the bar's silence needs a different
+    /// word — see `FeedVacancy.spokenAbsence`.
+    @Environment(\.argoFeedVacancy) private var vacancy
 
     /// Absent when nothing is selected. The item still holds its height: the bar's rhythm is the
     /// window's, not the Session's.
@@ -39,7 +42,7 @@ package struct TitlebarTitle: View {
         // fight the reach the canopy climbs by.
         .argoHelp(header?.tooltip)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(header?.announcement ?? "No Session selected")
+        .accessibilityLabel(header?.announcement ?? vacancy.spokenAbsence)
     }
 
     /// Cut at the TAIL: a Session's title is written subject first, so its front tells two of them

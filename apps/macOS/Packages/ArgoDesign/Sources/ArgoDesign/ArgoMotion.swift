@@ -130,6 +130,19 @@ public extension ArgoMotion {
     /// its `duration` is a period the reader watches, not a wait.
     static let durationCeiling: TimeInterval = 0.5
 
+    /// How long Argo may take to draw a Session before the deck owes the reader a word.
+    ///
+    /// `durationCeiling` spent as a DELAY rather than as a duration, which is the one reading of it
+    /// a surface is allowed: past the point at which a change stops reading as feedback and starts
+    /// reading as latency, the surface is no longer covering a transition — it is holding a reader
+    /// in front of a blank, and the honest thing is to say so (`FeedVacancy.unread`).
+    ///
+    /// Derived rather than written down, so the two cannot drift into two answers to one question.
+    /// A word held back for less than this would flash on every click, which is worse than no word
+    /// at all; a word held back for longer would leave the blank unexplained past the moment the
+    /// reader started wondering.
+    static let unreadDelay: TimeInterval = durationCeiling
+
     /// The gap a loop driven one pass at a time leaves between two passes. SwiftUI folds every
     /// change in a tick into the last value, so putting the ion back at its start has to be a tick
     /// of its own or the next pass animates from nowhere. One frame, and spent entirely off the

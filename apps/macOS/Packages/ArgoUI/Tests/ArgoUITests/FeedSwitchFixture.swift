@@ -34,6 +34,14 @@ import AppKit
     func show(_ rows: [FeedRow], of reading: FeedReading) async {
         await FeedTableFixture.show(rows, of: reading, on: coordinator, keeping: geometries)
     }
+
+    /// A switch as the SHELL takes it: the new reading with an empty feed on the pass that paints
+    /// the click, and its rows a turn later (`DrawnSession`). Two `show`s, because a claim about a
+    /// switch made in one of them is a claim about a pass the app no longer has.
+    func switching(to rows: [FeedRow], of reading: FeedReading) async {
+        await show([], of: reading)
+        await show(rows, of: reading)
+    }
 }
 
 /// The two readings a switch moves between, and the rows that make them.

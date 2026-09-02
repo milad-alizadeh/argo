@@ -173,3 +173,36 @@ Empty-state and error **copy** is surface-local (harvested per-prototype), but i
   not wrong. Blanking on a failed poll would erase your backlog over a dropped packet.
 - **Fact-level failure — `unknown`.** A fact that cannot be established honestly renders
   `unknown` rather than a default (§8).
+- **Argo's own unfinished work — `Argo has not read this Session yet`, held back
+  0.5s — 2026-09-02.** A fourth empty for the deck's reading zone, beside `Nothing to read yet`,
+  `Select a Session to read it` and `Start a Session and its reading appears here`
+  (`FeedVacancy`). The pass that paints a fresh selection now takes no reading — the click's own
+  frame may not wait on a walk of the transcript it is switching onto — so a switch passes through
+  a deck Argo has not drawn yet, and that deck has to say whose the wait is.
+
+  **It names Argo.** The three empties above are readings of the RECORD; this one is a reading of
+  the cockpit. Drawn as `Nothing to read yet` a switch still resolving would report an empty
+  Session, which is a claim about the agent Argo has no grounds for; drawn as `Select a Session
+  to read it` it would tell the reader to select the row they have just clicked. **DIRECT** — it
+  is Argo's own work being reported, and it says nothing whatever about what the Session is doing.
+
+  **It is a word, not a treatment.** No skeleton and no shimmer — the ban above stands, and this
+  is the honest alternative to it rather than an exception. It does not move: the one repeating
+  role in the contract is `ArgoMotion.working`, whose operation is a Turn in flight (D12), and a
+  deck Argo has not finished drawing is not one.
+
+  **Everything the deck derives from the reading is absent while this is up** — the canopy's
+  Session name, and the Subagents rail, which is a reading of the feed's own rows. A withheld fact
+  is survivable and a false one is not: carrying the last Session's name or its Subagents across
+  would attribute them to the row the reader has just clicked. The one place absence itself reads
+  as a false claim is the titlebar's spoken label, which becomes this word rather than
+  `No Session selected` (`FeedVacancy.spokenAbsence`) — the same misreading, refused the same way,
+  one pane up.
+
+  **It is held back `ArgoMotion.unreadDelay`** — `durationCeiling`, 0.5s, spent as a delay. Every
+  switch passes through this state and almost all of them leave it on the next frame, so a word
+  drawn the moment it arrives would flash on every click, which is worse than no word at all. Past
+  the ceiling a wait has stopped reading as feedback and started reading as latency, and the
+  surface owes the reader a word. A switch that resolves inside the delay says nothing, draws
+  nothing and animates nothing. The clock times the BLANK rather than the click: two switches with
+  no drawn deck between them share one, which is the wait the reader has actually been given.
