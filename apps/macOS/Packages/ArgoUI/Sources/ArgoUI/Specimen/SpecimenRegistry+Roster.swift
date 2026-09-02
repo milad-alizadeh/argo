@@ -40,6 +40,10 @@ extension SpecimenRegistry {
         SpecimenEntry("narrowTicketRoster") {
             TicketRosterSpecimen(width: ArgoLayout.sidebarMinimumWidth)
         },
+        // A caption loop's 180 headless runs on one row (#1073), shut and opened. The state it
+        // replaces cannot be photographed usefully: 180 near-identical rows past the window's foot.
+        SpecimenEntry("foldedRoster") { FoldedRosterSpecimen() },
+        SpecimenEntry("openFoldedRoster") { FoldedRosterSpecimen(isOpened: true) },
         SpecimenEntry("editingRow") { EditingRowSpecimen() },
         // A pane's state must die with its Session, which `FeedRow.ID` being a POSITION otherwise
         // carries across.

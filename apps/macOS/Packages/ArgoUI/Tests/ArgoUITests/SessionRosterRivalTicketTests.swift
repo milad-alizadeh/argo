@@ -85,7 +85,7 @@ struct SessionRosterRivalTicketTests {
             Self.session(id: "two", title: "These two files change together"),
         ])
 
-        #expect(try #require(rows.first).rename.name == "Write a caption for one folder")
+        #expect(try #require(rows.first).rename?.name == "Write a caption for one folder")
     }
 
     @Test
@@ -96,7 +96,7 @@ struct SessionRosterRivalTicketTests {
         ])
 
         // Taking the name off would put two rows on #650, so Reset may not promise its words.
-        #expect(try #require(rows.first).rename.derived == "Write a caption")
+        #expect(try #require(rows.first).rename?.derived == "Write a caption")
     }
 
     static let atlas = CockpitPresentation.Session

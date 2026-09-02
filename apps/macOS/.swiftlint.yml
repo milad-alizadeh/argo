@@ -125,7 +125,7 @@ function_parameter_count:
   # alternative. An entry is a slot on a file and a width, so a NEW struct of a grandfathered
   # width in a grandfathered file inherits the slot: check the reason still names the right type.
   # INIT: IssueJSON.swift 15 — the GitHub issue fixture, spelled the way GitHub spells it so the
-  # INIT: TranscriptRecord.swift 15 — MessageRecord, the facts every message-bearing record
+  # INIT: TranscriptRecord.swift 14 — MessageRecord, the facts every message-bearing record
   # INIT: LinearIssueJSON.swift 14 — the Linear issue fixture, field for field as its GraphQL API
   # INIT: GitHubIssue.swift 13 — one issue as GitHub's REST API serves it, parsed at the boundary
   # INIT: SessionComposerProjection.swift 13 — Composer, the composer's whole reading, one fact per

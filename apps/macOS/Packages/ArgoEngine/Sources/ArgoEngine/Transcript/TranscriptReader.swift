@@ -70,7 +70,7 @@ public actor TranscriptReader {
     /// `TranscriptSubject`. A Subagent's own file is all sidechain, and all of it is its own.
     func attributes(_ message: MessageRecord) -> Bool {
         switch subject {
-        case .session: !message.isSidechain
+        case .session: !message.authorship.isSidechain
         case .subagent: true
         }
     }
@@ -138,7 +138,8 @@ public actor TranscriptReader {
     /// stance is not the root Session's fact. Counted, either is a record speaking after a set —
     /// which is what snaps the control back off a change that landed.
     private func stance(of message: MessageRecord) -> [TranscriptEvent] {
-        guard !message.isMeta, !message.isCompactSummary, !message.isSidechain else { return [] }
+        guard !message.authorship.isMeta, !message.authorship.isCompactSummary,
+              !message.authorship.isSidechain else { return [] }
         return message.permissionMode.map { [.mode(cli: $0)] } ?? []
     }
 
@@ -156,7 +157,7 @@ public actor TranscriptReader {
     private func userEvents(_ message: MessageRecord) -> [TranscriptEvent] {
         // A compact summary is the condensed history itself. Read as a prompt it would open a turn
         // titled with the summary of everything before it.
-        if message.isCompactSummary {
+        if message.authorship.isCompactSummary {
             return [.compaction(atMs: message.timestampMs)]
         }
 
@@ -180,7 +181,7 @@ public actor TranscriptReader {
             return reported(report, in: message)
         }
 
-        return message.isMeta ? metaEvents(message) : promptEvents(message, in: location)
+        return message.authorship.isMeta ? metaEvents(message) : promptEvents(message, in: location)
     }
 
     /// The CLI talking to itself. Almost all of it means nothing to a reader — but a skill's

@@ -111,6 +111,23 @@ answering it there is nothing to corroborate — the Turn is DIRECT for the same
 rule for WHICH open Turn is Argo's, and the only one available reads a Turn typed at the dock
 terminal as one of ours — which is the guess #587 refused, arriving by a different door.
 
+**Entry is a fact about the process, not a kind of Session.** A `claude -p` run is one logical
+resume-chain and the root Agent — a Session by L2's own definition, and #1073 declined to carve out
+a second kind for it. What is true of it is narrower: nobody is at the terminal. That is a property
+of how the process was started, so it sits beside `cli` and `cwd` rather than beside
+`managed | external`, and it changes what the Roster DRAWS without changing what a Session IS.
+
+**And the folded row is not one either.** A row standing for 180 Sessions is not a Session, so
+#1073 named it in "Not domain entities" beside Cockpit and Roster rather than in L2 — it belongs to
+the projection, and nothing about it reaches `HubSession`. Two alternatives were on the table and
+were declined. **Hiding headless runs** (dropping them at `isPublished`) is cheaper and needs no
+name at all, but a headless run that FAILED would become invisible and its transcript unreachable
+from the cockpit — the Roster lying by omission about work that ran in this Project. **Admitting
+them and fixing only the naming** (#1072) is honest to L2 as written and needs no new concept, but
+leaves the Roster permanently ~55% SDK output: 328 transcripts in the argo Project's 7-day working
+set, at least 136 of them headless, and one caption loop burying the four Sessions being steered
+under fourteen visible rows. Folding keeps the evidence reachable and spends one row on it.
+
 **`SessionFacts` dissolved.** Naming it as an entity would duplicate the homes its members
 already have (Workspace / Delivery / Session status) and invite drift. What is real is the
 honesty tier on each fact, not the bundle.

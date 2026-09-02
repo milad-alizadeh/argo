@@ -97,6 +97,7 @@ extension SessionHeaderProjection {
             // prompt beside it, and that prompt's own timestamp is already counted. The seam is
             // handled above, where it withholds the figure entire.
             case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .branch, .mode,
+                 .entry,
                  .message, .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine,
                  .skillLoaded, .excerpted: nil
             }

@@ -19,6 +19,7 @@ enum RosterSessionFixture {
         kind: CockpitPresentation.Session.WorkspaceKind? = .main,
         branch: String? = "main",
         access: CockpitPresentation.Session.Access = .managed,
+        entry: SessionEntry = .interactive,
         status: SessionStatus = .idle,
         lastSeenAtMs: Int? = nil,
         isArchived: Bool = false,
@@ -33,7 +34,7 @@ enum RosterSessionFixture {
             access: access,
             status: status,
             chain: .init(
-                program: .init(model: "claude-opus-5"),
+                program: .init(model: "claude-opus-5", entry: entry),
                 span: .init(lastSeenAtMs: lastSeenAtMs),
             ),
             work: .init(
