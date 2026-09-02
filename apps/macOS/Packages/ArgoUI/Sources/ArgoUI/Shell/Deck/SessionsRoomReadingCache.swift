@@ -34,9 +34,7 @@ enum SessionsRoomReadingCache {
         let handedOff: FeedHandoff?
         let expired: [PermissionExpiry]
         let isWorking: Bool
-        /// The boot appends no event, so nothing else here moves when it ends — without this the
-        /// cache would answer a booted Session with the reading it took while it was starting
-        /// (#587).
+        /// `starting` ends with no event appended, so nothing else here moves when it does.
         let isStarting: Bool
 
         /// Derived from the Session rather than spelled out at the call site: a stamp assembled by

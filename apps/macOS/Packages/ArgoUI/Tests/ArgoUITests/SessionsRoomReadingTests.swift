@@ -72,22 +72,22 @@ struct SessionsRoomReadingTests {
         #expect((reading.header != nil) == reads)
     }
 
-    /// A boot ending appends no event, so the stamp has to carry the status itself: without it the
-    /// cache answers a booted Session with the reading it took while it was starting, and the
-    /// `starting the agent` row stands over an agent that is at its prompt (#587).
+    /// `starting` ends with no event appended, so the stamp has to carry the status itself:
+    /// without it the cache answers a Session that is up with the reading it took while it was
+    /// starting, and `starting the agent` stands over an agent at its prompt (#587).
     @Test
-    func `a boot ending is a fresh reading, not the one the cache holds`() {
+    func `a Session that has come up is a fresh reading, not the one the cache holds`() {
         let starting = SessionsRoomReading(
             presentation: Self.presentation(status: .starting),
             sessionID: "one",
         )
-        let booted = SessionsRoomReading(
+        let up = SessionsRoomReading(
             presentation: Self.presentation(status: .idle),
             sessionID: "one",
         )
 
         #expect(starting.feed.map(\.content) == [.mark(.starting)])
-        #expect(booted.feed.isEmpty)
+        #expect(up.feed.isEmpty)
     }
 
     private static let transcript = TranscriptFixtures.previewTranscript

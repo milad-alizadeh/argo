@@ -38,7 +38,7 @@ enum FeedProjection {
             asking,
         )
         // The link goes BELOW the roll-up, at the very foot.
-        return (work + booting(starting) + inFlight(working, over: work) + unanswered(expired) +
+        return (work + startingUp(starting) + inFlight(working, over: work) + unanswered(expired) +
             rolledUp(events) + chained(handedOff)).enumerated()
             .map { position, content in
                 FeedRow(id: position, content: content)
@@ -59,12 +59,10 @@ enum FeedProjection {
         working && !rows.contains(where: \.kind.isCallInFlight) ? [.mark(.working)] : []
     }
 
-    /// The agent coming up, which by construction is the whole of the reading: the CLI writes no
-    /// record until its first prompt, so a Session Argo is still waiting on has nothing above this
-    /// row. Drawn anyway rather than only when the reading is empty — a row is what the feed says
-    /// things with, and `FeedSilence` would otherwise say "nothing to read yet" over a program
-    /// that has not started (#587).
-    private static func booting(_ starting: Bool) -> [FeedRow.Content] {
+    /// The CLI coming up, in place of the `FeedSilence` an empty reading would otherwise draw
+    /// (#587). By construction it IS the whole reading: a Session Argo is still waiting on has
+    /// written no record for anything to sit above it.
+    private static func startingUp(_ starting: Bool) -> [FeedRow.Content] {
         starting ? [.mark(.starting)] : []
     }
 

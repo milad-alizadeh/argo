@@ -28,7 +28,7 @@ struct SessionRosterProjectionTests {
         // `Stopped` means the Turn ended short, not that anything crashed; `ended` is a
         // cancelled or exited Session and reads idle.
         let expected: [(status: SessionStatus, word: String?)] = [
-            // The boot spends no word for the reason `running` and `idle` do not: the dot carries
+            // `starting` spends no word for the reason `running` and `idle` do not: the dot carries
             // it, and the feed is where a starting Session is spelled out (#587).
             (.starting, nil),
             (.running, nil),

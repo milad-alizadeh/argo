@@ -2,15 +2,14 @@
 import Foundation
 import Testing
 
-/// The boot Argo can SEE. A spawned CLI writes no record until its first prompt, so between the
-/// PTY starting and the agent being ready at it there is a wait nothing in the record covers — and
-/// the only honest end to it is the child's own first bytes, on a descriptor Argo owns (#587).
-@Suite("Hub spawn boot")
+/// The `starting` a spawn is published in, and what ends it. A spawned CLI writes no record until
+/// its first prompt, so the wait before that is one no record covers — and the only honest end to
+/// it is the child's own first bytes, on a descriptor Argo owns (#587).
+@Suite("Hub spawn starting")
 @MainActor
-struct HubSpawnBootTests {
-    /// The end of the `starting` claim, and the whole reason it is allowed to be made: the first
-    /// bytes off the PTY are a DIRECT fact about a process Argo started, so the row stops saying
-    /// "starting" on an observation rather than on a clock (#587).
+struct HubSpawnStartingTests {
+    /// The end of the claim, which is what makes it allowed at all: the row stops saying
+    /// `starting` on something Argo observed rather than on a clock.
     @Test
     func `the CLI's first bytes off the PTY end the starting claim`() async throws {
         let fixture = try SpawnFixture()
@@ -21,15 +20,15 @@ struct HubSpawnBootTests {
 
         try #require(fixture.host.started.last).emit("\u{1B}[?1049h")
 
-        // Idle and DERIVED, exactly as the row read before this state existed: the boot is over
-        // and nothing has been asked of the agent.
+        // Idle, exactly as the row read before this state existed: the CLI is up and has been
+        // asked nothing.
         #expect(fixture.hub.sessions.map(\.status) == [.idle])
     }
 
-    /// The write is once, and it has to be: `Hub.rosterStamp` reads the spawns, so a moment
-    /// restamped per chunk would rebuild the whole roster for every byte the agent prints.
+    /// The moment is witnessed once, and it has to be: `Hub.rosterStamp` reads the spawns, so a
+    /// moment restamped per chunk would rebuild the whole roster for every byte the agent prints.
     @Test
-    func `only the FIRST chunk is recorded, however many follow it`() async throws {
+    func `the first bytes are witnessed once, however many follow them`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()

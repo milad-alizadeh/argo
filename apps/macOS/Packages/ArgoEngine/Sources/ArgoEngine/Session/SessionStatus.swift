@@ -2,9 +2,8 @@
 /// stored, and carrying its own `unknown` so a status that cannot be established honestly has
 /// somewhere to go (ADR-0008's degrade-down rule).
 public enum SessionStatus: Sendable, Equatable, CaseIterable {
-    /// Argo started the process and it has not spoken yet. DIRECT, managed only, and the one status
-    /// with no reading of a record behind it — see `HubSession.statusReading` for what ends it
-    /// (#587). Unreachable from `read(_:)`: a transcript says nothing about a boot.
+    /// Argo started the process and it has not spoken yet. DIRECT, managed only, and unreachable
+    /// from `read(_:)` — no record exists to read it off (`HubSession.statusReading`, #587).
     case starting
     /// A Turn is in progress.
     case running

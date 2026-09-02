@@ -117,12 +117,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public private(set) var isQueued = false
     /// The Turn in flight and what the last one ended as — see `SessionTurnState`.
     private(set) var turn = SessionTurnState()
-    /// Whether this row is a spawn Argo has heard nothing from yet (#587) — the raw input to
-    /// `statusReading`'s `starting`, and internal for that reason: the cockpit takes the status the
-    /// fold READ, never the fact it was read from (ADR-0027).
-    ///
-    /// Only `init(spawn:)` can set it, so no observed Session can reach the state: a transcript
-    /// says nothing about a boot, and a record existing at all is proof the boot ended.
+    /// Whether this row is a spawn Argo has heard nothing from yet — what `statusReading` reads
+    /// `starting` off (#587). Set by `init(spawn:)` alone, so no observed Session reaches the
+    /// state: a record existing at all is proof the CLI has spoken.
     private(set) var awaitingFirstOutput = false
 
     public init(observation: TranscriptObservation) {
@@ -159,8 +156,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // DIRECT: Argo started this process, so the row belongs on the roster from the moment it
         // exists.
         self.hasAgentActivity = true
-        // A process that is GONE is not one whose boot is in flight, whatever it never said: the
-        // exit is the stronger fact and the row reads `ended` off it.
+        // An exit outranks it: a spawn that died having never spoken reads `ended`, not `starting`.
         self.awaitingFirstOutput = spawn.exit == nil && spawn.firstOutputAtMs == nil
     }
 

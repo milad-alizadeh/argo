@@ -21,7 +21,8 @@ enum SessionState {
         case .running: .running
         case .permission, .asking: .attention
         // `starting` takes the calm ink, not the running one: nothing has been asked of the agent
-        // and no Turn is in flight, and the live glow would say one is. What the boot IS is spelled
+        // and no Turn is in flight, and the live glow would say one is. What `starting` IS is
+        // spelled
         // in the feed, which is the surface that had a wrong word for it (`FeedWorking`, #587).
         case .idle, .ended, .starting: .idle
         case .stopped: .failure

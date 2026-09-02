@@ -105,9 +105,8 @@ extension SpecimenRegistry {
         // A row arriving at the end must not move the row somebody is looking at.
         SpecimenEntry("feedArriving") { ArrivingFeedSpecimen() },
         SpecimenEntry("emptyFeed") { SpecimenScene.sessions([]) },
-        // The same empty reading over a CLI that has not spoken yet. The pair is the whole claim:
-        // one of these says nothing has been said and the other says why, and before #587 both
-        // drew the first (`FeedWorking`).
+        // The same empty reading over a CLI that has not spoken yet: the pair is the claim, one
+        // saying nothing has been said and the other saying why.
         SpecimenEntry("startingFeed") {
             SpecimenScene.sessions(FeedProjection.rows(from: [], starting: true))
         },

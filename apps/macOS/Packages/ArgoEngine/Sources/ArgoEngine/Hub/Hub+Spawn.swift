@@ -167,12 +167,9 @@ public extension Hub {
         )
     }
 
-    /// The agent has spoken, so the boot the spawn's row is reporting is over (#587).
-    ///
-    /// Written ONCE and then never again: the moment is on a row `rosterStamp` reads, so restamping
-    /// it per chunk would rebuild the whole roster for every byte the agent prints. The guard also
-    /// makes this free for every Session past its first chunk and for every one whose record has
-    /// arrived — both are a dictionary miss.
+    /// The agent has spoken, so the row stops reading `starting` (#587). Written ONCE: the moment
+    /// sits on a row `rosterStamp` reads, so restamping it per chunk would rebuild the whole roster
+    /// for every byte the agent prints.
     private func noteFirstOutput(of claim: SessionOwnership.ClaimID) {
         guard var spawn = spawns[claim], spawn.firstOutputAtMs == nil else { return }
         spawn.firstOutputAtMs = Date().epochMs
