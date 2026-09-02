@@ -117,6 +117,9 @@ extension Hub {
         // before the CLI has picked an id, and outlives the reconciliation that gave the row one.
         let facts = claims.facts(for: ownership.boundClaim(ofSessionID: session.id))
         published.convention = facts.report
+        // Off the CHANNEL's own log, never off the posture above: a reading taken from
+        // `managed`-ness would have every orphaned Session claiming a live channel (#493).
+        published.companionChannel = facts.companionLiveness
         // The oldest waiting Permission: prompts are answered one at a time, and the first one
         // raised is the one the agent is blocked on.
         published.permission = facts.waiting.first

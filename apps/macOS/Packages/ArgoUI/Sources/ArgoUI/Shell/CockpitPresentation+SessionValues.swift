@@ -7,13 +7,18 @@ import ArgoEngine
 /// Each field keeps the engine's own name for its fact, which is what `swift-boundaries.sh`
 /// edge 5 compares the init's slots against.
 public extension CockpitPresentation.Session {
-    /// The resume chain (`CONTEXT.md` L2): what runs it, when it ran, and what it handed to.
+    /// The resume chain (`CONTEXT.md` L2): what runs it, when it ran, what it handed to, and
+    /// whether Argo's own channel to it is up.
+    ///
+    /// The channel belongs to this reading and not to `Autonomy` beside it: it is a property of the
+    /// process this chain link is running in, which is what `cli` and the two moments are about.
     struct Chain: Equatable, Sendable {
         public let cli: AgentCLI?
         public let model: String?
         public let startedAtMs: Int?
         public let lastSeenAtMs: Int?
         public let handedOffTo: String?
+        public let companionChannel: CompanionLiveness
 
         public init(
             cli: AgentCLI? = nil,
@@ -21,12 +26,14 @@ public extension CockpitPresentation.Session {
             startedAtMs: Int? = nil,
             lastSeenAtMs: Int? = nil,
             handedOffTo: String? = nil,
+            companionChannel: CompanionLiveness = .notApplicable,
         ) {
             self.cli = cli
             self.model = model
             self.startedAtMs = startedAtMs
             self.lastSeenAtMs = lastSeenAtMs
             self.handedOffTo = handedOffTo
+            self.companionChannel = companionChannel
         }
     }
 

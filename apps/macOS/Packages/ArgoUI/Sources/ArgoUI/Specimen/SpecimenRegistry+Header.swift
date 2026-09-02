@@ -29,6 +29,10 @@ extension SpecimenRegistry {
         SpecimenEntry("contextGuideUnlinked") {
             ContextGuideSpecimen(header: SessionHeaderFixture.unlinked)
         },
+        // Whether the companion channel is live, in all four of its states at once (#493). One
+        // entry rather than four, because the state that draws NOTHING is only judgeable beside
+        // the three that draw something.
+        SpecimenEntry("companionChannel") { CompanionChannelSpecimen() },
         // No button left on the red header, and the reading ends in a link to the next Session.
         SpecimenEntry("handedOffReading") {
             InstrumentDeckShell(

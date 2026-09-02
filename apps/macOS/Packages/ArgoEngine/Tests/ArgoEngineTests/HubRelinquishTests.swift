@@ -26,7 +26,14 @@ struct HubRelinquishTests {
             // because nothing read its answer (#918).
             await settle { fixture.hub.facts(forClaim: claim).standing.isEmpty }
             let rung = SessionModeSet(mode: .code, recordsWhenSet: 0)
-            #expect(fixture.hub.facts(forClaim: claim) == ClaimFacts(modeSet: rung))
+            // The channel's reading stays for the reason the rung does: it is a thing that
+            // happened, and the orphaned row is where it is worth saying (#493). `neverDialled`
+            // because this fixture's client dials the permission gate rather than the companion
+            // channel — the two are separate sockets.
+            #expect(fixture.hub.facts(forClaim: claim) == ClaimFacts(
+                companionLiveness: .neverDialled,
+                modeSet: rung,
+            ))
         }
     }
 

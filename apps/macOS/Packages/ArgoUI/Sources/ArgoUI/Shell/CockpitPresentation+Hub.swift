@@ -137,6 +137,7 @@ extension CockpitPresentation.Session {
                 startedAtMs: session.startedAtMs,
                 lastSeenAtMs: session.lastSeenAtMs,
                 handedOffTo: session.handedOffTo,
+                companionChannel: session.companionChannel,
             ),
             work: Work(
                 location: session.cwd,

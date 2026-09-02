@@ -29,6 +29,13 @@ final class ClaimLedger {
         }
     }
 
+    /// Where the channel that tier arrives over stands (#493). Its own publish rather than part of
+    /// the fold above, because it is Argo's reading of Argo's own socket and not something the
+    /// agent said — two tiers, two writes.
+    func publish(companionLiveness: CompanionLiveness, for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.companionLiveness = companionLiveness }
+    }
+
     func publish(waiting: [PermissionRequest], for claim: SessionOwnership.ClaimID) {
         update(claim) { $0.waiting = waiting }
     }

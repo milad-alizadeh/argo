@@ -19,6 +19,13 @@ private let listenBacklog = Int32(SOMAXCONN)
 @MainActor
 final class CompanionSocket {
     let path: String
+    /// Called whenever a client dials in or hangs up, with how many hold the channel afterwards —
+    /// the only news anybody has about whether this socket is being spoken down (#493).
+    ///
+    /// Settable rather than a fifth parameter: the initializer below is at the cap the whole tree
+    /// is held to (`.swiftlint.yml`, `function_parameter_count`), and this is news one caller
+    /// listens for rather than part of how a socket is built.
+    var onPeersChanged: (Int) -> Void = { _ in }
     private let respond: (String, Int, @escaping CompanionConnection.Reply) -> Void
     private let endsAfterReply: Bool
     private let onPeerClosed: (Int) -> Void
@@ -96,6 +103,8 @@ final class CompanionSocket {
         source = nil
         descriptor = -1
         let closing = connections.values
+        // No `onPeersChanged` with it: this end is what is going, so "no clients left" would read
+        // as a peer having hung up. The channel states the withdrawal's own reading (#493).
         connections = [:]
         for connection in closing {
             connection.close()
@@ -167,11 +176,13 @@ final class CompanionSocket {
         )
         connections[key] = connection
         connection.open()
+        onPeersChanged(connections.count)
     }
 
     private func drop(_ key: Int) {
         guard let connection = connections.removeValue(forKey: key) else { return }
         connection.close()
+        onPeersChanged(connections.count)
         onPeerClosed(key)
     }
 }

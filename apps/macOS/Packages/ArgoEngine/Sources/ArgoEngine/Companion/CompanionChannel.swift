@@ -20,7 +20,10 @@ public final class CompanionChannel {
 
     private let scope: CompanionScope
     private let onFact: (SessionOwnership.ClaimID, CompanionFact) -> Void
+    private let onLiveness: (SessionOwnership.ClaimID, CompanionLiveness) -> Void
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
+    /// Which claims a client has ever held, which is the whole of what `dropped` rests on (#493).
+    private var dials = CompanionDialLog()
     /// The last invite that failed, in its refusal's own words; cleared by the next success.
     private var lastRefusal: String?
 
@@ -40,12 +43,20 @@ public final class CompanionChannel {
         return .installFailed(why: lastRefusal)
     }
 
+    /// `onFact` carries what the agent SAID, at the CONVENTION tier; `onLiveness` carries what the
+    /// socket did, at DIRECT. Two callbacks because they are two tiers: folding the channel's own
+    /// state into the report would file an observation of Argo's own as something an agent claimed.
+    ///
+    /// `onFact` is last so a caller with nothing to do about liveness still writes the obvious
+    /// trailing closure, and it carries no default: a channel filing no facts serves no tier.
     init(
         scope: CompanionScope,
+        onLiveness: @escaping (SessionOwnership.ClaimID, CompanionLiveness) -> Void = { _, _ in },
         onFact: @escaping (SessionOwnership.ClaimID, CompanionFact) -> Void,
     ) {
         self.scope = scope
         self.onFact = onFact
+        self.onLiveness = onLiveness
     }
 
     /// Open this claim's channel and write the plugin that reaches it. `gatedBy` names the
@@ -86,15 +97,30 @@ public final class CompanionChannel {
             else { return nil }
             return CompanionResponse.line(reply)
         }
+        socket.onPeersChanged = { [weak self] peers in self?.observe(peers: peers, of: claim) }
         try socket.open()
         sockets[claim] = socket
+        // Open and unreached: the channel is there and nothing has spoken down it yet, which is a
+        // state the cockpit renders rather than an absence it stays quiet about.
+        onLiveness(claim, dials.opened(claim))
         return invitation
     }
 
     /// The PTY is gone, so the channel is too: the socket closes and the plugin that named it goes
     /// with it. Ownership does not come back, and neither does this.
     func withdraw(_ claim: SessionOwnership.ClaimID) {
-        sockets.removeValue(forKey: claim)?.close()
+        guard let socket = sockets.removeValue(forKey: claim) else { return }
+        socket.close()
         CompanionPlugin.remove(forClaim: claim, under: scope.root)
+        // The reading an orphaned Session is left with, and it is `dropped` only where a client had
+        // actually dialled in — read off the log, never off the posture.
+        onLiveness(claim, dials.closed(claim))
+    }
+
+    /// The socket's news, on the ladder. Published on every change rather than remembered here:
+    /// the claim ledger is what the roster reads, and a reading filed nowhere is one no surface
+    /// draws.
+    private func observe(peers: Int, of claim: SessionOwnership.ClaimID) {
+        onLiveness(claim, dials.peers(peers, of: claim))
     }
 }

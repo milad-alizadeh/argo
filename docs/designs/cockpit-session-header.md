@@ -154,6 +154,23 @@ cockpit's contract, not a gap in this panel. ⌘I is bound on the mark itself ra
 because the popover is anchored to it, and the key is written into the `.help` since a control
 outside a menu has nowhere else to say it. Escape and a click outside are `.popover`'s own.
 
+### Amendment · a tenth row, `Companion` (#493) · 2026-09-02
+
+The block's nine rows are ten. **`Companion`** sits under `Access`, because the two answer one
+question between them: what Argo owns of this Session, and what it can still hear from it. The
+reading is one of three — `Live`, `Not dialled in — …`, `Dropped — …` — and the fourth state of
+the channel draws **no row at all**, which is the same absence rule the rest of the block follows:
+an external Session was never going to have a companion channel, and a row saying so on every one
+of them trains the reader past the one row where it means something.
+
+Two of the three carry a sentence where the rest of the block carries a reading, and that is
+deliberate: `Dropped` alone says a channel went and not what went with it. The panel is the only
+surface that says any of this — the two rows above it are full, and a state with nothing to say on
+three Sessions in four does not earn a mark on a 40pt line.
+
+No measurement changes. It is a row in the existing term/value column, and its value wraps like
+the branch and the issue title do.
+
 ## Contract changes
 
 The five from #691/#692, and **one promotion** with #694 — `ArgoContextBar.guideTermWidth`, the

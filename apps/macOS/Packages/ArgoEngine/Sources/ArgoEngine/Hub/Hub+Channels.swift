@@ -15,9 +15,15 @@ extension Hub {
     /// be a second thing that could fail at the moment an agent starts — which is the one moment
     /// there is nothing useful to say about it.
     func openCompanionChannel() {
-        companion = CompanionChannel(scope: companionScope) { [weak self] claim, fact in
-            self?.claims.record(fact, for: claim)
-        }
+        companion = CompanionChannel(
+            scope: companionScope,
+            onLiveness: { [weak self] claim, liveness in
+                self?.claims.publish(companionLiveness: liveness, for: claim)
+            },
+            onFact: { [weak self] claim, fact in
+                self?.claims.record(fact, for: claim)
+            },
+        )
         permissions = PermissionChannel(
             scope: companionScope,
             patience: spawnServices.permissionPatience,
