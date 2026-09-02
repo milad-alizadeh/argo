@@ -104,13 +104,13 @@ struct SessionsDeck: View {
     private var zones: some View {
         VStack(spacing: ArgoSpacing.flush) {
             DeckContentRow(
-                reading: reading,
-                feed: feed,
-                showing: showing,
-                selection: selection,
-                held: held,
-                vessel: vessel,
-                intents: intents,
+                content: DeckContent(
+                    reading: reading,
+                    feed: feed,
+                    showing: showing,
+                    picked: DeckContent.Picked(selection: selection, held: held),
+                ),
+                slot: DeckVesselControl(vessel: vessel, intents: intents),
                 seams: seams,
                 rail: AgentsRailControl(
                     scope: scope,

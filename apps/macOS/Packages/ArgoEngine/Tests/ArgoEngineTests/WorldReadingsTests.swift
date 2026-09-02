@@ -225,9 +225,11 @@ private let twoWorktrees: WorktreeEnumerationRead = { _ in
 private let branchNamedAfterFolder: WorkspaceRead = { entry in
     WorkspaceProjection(
         kind: entry.kind,
-        branch: entry.branch,
-        dirty: 0,
-        divergence: UpstreamDivergence(ahead: 0, behind: 0),
+        refs: WorkspaceProjection.Refs(branch: entry.branch),
+        drift: WorkspaceProjection.Drift(
+            dirty: 0,
+            divergence: UpstreamDivergence(ahead: 0, behind: 0),
+        ),
     )
 }
 

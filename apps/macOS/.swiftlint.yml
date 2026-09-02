@@ -74,16 +74,12 @@ function_parameter_count:
   # INIT: ArgoPalette.swift 10 — one ground per surface layer
   # INIT: SpawnServices.swift 9 — the Hub's spawn collaborators and the files they own
   # INIT: ConnectReading.swift 9 — the connect panel's whole reading
-  # INIT: DeckContentRow.swift 9 — the deck row's readings beside its intents
   # INIT: ConnectPanelActions.swift 8 — one closure per connect step
-  # INIT: WorkspaceProjection.swift 7 — one git fact per slot
   # INIT: ToolCall.swift 7 — a call as the transcript declares it
-  # INIT: ToolCall.swift 7 — its outcome, which is a later record and not an edit to the first
   # INIT: ComposerDraft.swift 7 — what the composer holds between sends
   # INIT: ArgoPalette.swift 7 — the palette's role groups, one per family
   # INIT: ArgoPalette.swift 7 — one colour per interaction role
   # INIT: DeliveryPullRequest.swift 6 — the PR's own fields; its git facts are grouped already
-  # INIT: Evidence.swift 6 — a diff result's counts beside its tier
   # INIT: CockpitPresentation.swift 6 — one project row, a field per column
   # INIT: CockpitPresentation+SessionValues.swift 6 — the autonomy reading, one fact per rung
   # INIT: GitHubDeviceChallenge.swift 5 — the device-flow response as GitHub documents it
@@ -91,7 +87,6 @@ function_parameter_count:
   # INIT: LaunchConfiguration.swift 5 — the launch arguments as parsed
   # INIT: SessionSignals.swift 5 — the signals one transcript record carries
   # INIT: SessionSeed.swift 5 — what a New Session opens with
-  # INIT: TicketPoll.swift 5 — the poll's port, its clock and its sink
   # INIT: LiveClaudeFixture.swift 5 — a live-CLI fixture's collaborators
   # INIT: CockpitPresentation.swift 5 — the cockpit reading's parts
   # INIT: ComposerSpecimen.swift 5 — the composer specimen's inputs

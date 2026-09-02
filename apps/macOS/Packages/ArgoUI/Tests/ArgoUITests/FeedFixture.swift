@@ -33,10 +33,11 @@ enum FeedFixture {
     static func failed(_ id: String, printing output: String?) -> ToolCallOutcome {
         ToolCallOutcome(
             id: id,
-            status: .failed,
-            result: output.map { .output(OutputEvidence(tier: .direct, text: $0)) },
-            endedAtMs: nil,
-            usage: nil,
+            resolution: ToolCallOutcome.Resolution(
+                status: .failed,
+                result: output.map { .output(OutputEvidence(tier: .direct, text: $0)) },
+                endedAtMs: nil,
+            ),
         )
     }
 
@@ -56,11 +57,8 @@ enum FeedFixture {
         -> ToolResult {
         .diff(DiffEvidence(
             tier: .direct,
-            change: change,
-            destination: destination,
-            added: added,
-            removed: removed,
-            hunks: hunks,
+            mutation: DiffEvidence.Mutation(change: change, destination: destination),
+            patch: DiffEvidence.Patch(added: added, removed: removed, hunks: hunks),
         ))
     }
 

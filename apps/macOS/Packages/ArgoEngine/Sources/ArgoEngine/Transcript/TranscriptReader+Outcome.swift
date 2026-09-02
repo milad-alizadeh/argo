@@ -11,14 +11,19 @@ extension TranscriptReader {
         let status = status(of: result, reported: message.toolUseResult)
         return ToolCallOutcome(
             id: result.toolUseId,
-            status: status,
-            result: evidence(for: result, status: status, reported: message.toolUseResult),
-            endedAtMs: message.timestampMs,
-            usage: spend(reportedIn: message),
-            // Read whatever the record's sidechain flag says, unlike the spend above: an id is not
-            // summed, so there is no double-count for a guard to prevent — see `ToolCallOutcome`.
-            subagentID: message.toolUseResult?.stringField("agentId"),
-            reportedDurationMs: message.toolUseResult?["totalDurationMs"]?.int,
+            resolution: ToolCallOutcome.Resolution(
+                status: status,
+                result: evidence(for: result, status: status, reported: message.toolUseResult),
+                endedAtMs: message.timestampMs,
+            ),
+            delegated: ToolCallOutcome.Delegated(
+                usage: spend(reportedIn: message),
+                // Read whatever the record's sidechain flag says, unlike the spend above: an id is
+                // not summed, so there is no double-count for a guard to prevent — see
+                // `ToolCallOutcome`.
+                subagentID: message.toolUseResult?.stringField("agentId"),
+                reportedDurationMs: message.toolUseResult?["totalDurationMs"]?.int,
+            ),
         )
     }
 

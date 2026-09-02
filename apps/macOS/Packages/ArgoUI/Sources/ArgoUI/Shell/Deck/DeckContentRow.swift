@@ -11,17 +11,13 @@ import SwiftUI
 /// seams: a hairline reaching the window's top edge behind the glass is the rule the canopy
 /// replaced, drawn again.
 struct DeckContentRow: View {
-    /// Which reading the zones are showing — see `FeedReading`. Assembled above, because a scope
-    /// is half of it and the rail's scope is the deck's.
+    // Unpacked from `DeckContent` and `DeckVesselControl`, where each of these is documented.
     var reading = FeedReading.unattached
     let feed: [FeedRow]
     let showing: PlanShowing
     let selection: FeedRowSelection
     var held: FeedRow.ID?
-    /// What is in the slot below the reading — see `DeckVessel`. The undriveable line is not drawn
-    /// here: it replaces the reading's end rather than floating over it, so `SessionsDeck` owns it.
     var vessel = DeckVessel.none
-    /// What that vessel's controls do.
     var intents = DeckIntents.inert
     let seams: DeckSeams
     /// The rail as a control — what the feed is scoped to, and whether the rail is collapsed.
@@ -34,26 +30,21 @@ struct DeckContentRow: View {
 
     /// Seeds the handle with `held`, which has to be true before the first frame.
     init(
-        reading: FeedReading = .unattached,
-        feed: [FeedRow],
-        showing: PlanShowing,
-        selection: FeedRowSelection,
-        held: FeedRow.ID? = nil,
-        vessel: DeckVessel = .none,
-        intents: DeckIntents = .inert,
+        content: DeckContent,
+        slot: DeckVesselControl = .inert,
         seams: DeckSeams,
         rail: AgentsRailControl = .inert,
     ) {
-        self.reading = reading
-        self.feed = feed
-        self.showing = showing
-        self.selection = selection
-        self.held = held
-        self.vessel = vessel
-        self.intents = intents
+        self.reading = content.reading
+        self.feed = content.feed
+        self.showing = content.showing
+        self.selection = content.picked.selection
+        self.held = content.picked.held
+        self.vessel = slot.vessel
+        self.intents = slot.intents
         self.seams = seams
         self.rail = rail
-        _table = State(initialValue: FeedTableHandle(held: held))
+        _table = State(initialValue: FeedTableHandle(held: content.picked.held))
     }
 
     /// The deck's selection with the keyboard's way home wired onto the reading's table — the copy

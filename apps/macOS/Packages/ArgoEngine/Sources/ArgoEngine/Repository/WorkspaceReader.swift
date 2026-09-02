@@ -22,11 +22,15 @@ actor WorkspaceReader {
         guard let dirty = dirtyCount(at: directoryURL) else { return nil }
         return WorkspaceProjection(
             kind: entry.kind,
-            branch: entry.branch,
-            baseRef: baseRef(at: directoryURL),
-            headSha: entry.headSha,
-            dirty: dirty,
-            divergence: divergence(at: directoryURL),
+            refs: WorkspaceProjection.Refs(
+                branch: entry.branch,
+                baseRef: baseRef(at: directoryURL),
+                headSha: entry.headSha,
+            ),
+            drift: WorkspaceProjection.Drift(
+                dirty: dirty,
+                divergence: divergence(at: directoryURL),
+            ),
         )
     }
 

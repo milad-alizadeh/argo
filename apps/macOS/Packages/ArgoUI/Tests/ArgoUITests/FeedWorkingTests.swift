@@ -196,7 +196,12 @@ struct FeedWorkingTests {
             id: "call-1", name: "shell", kind: .execute, target: "swift test", atMs: nil,
         ))
         let answered = TranscriptEvent.toolCallOutcome(ToolCallOutcome(
-            id: "call-1", status: .completed, result: nil, endedAtMs: nil, usage: nil,
+            id: "call-1",
+            resolution: ToolCallOutcome.Resolution(
+                status: .completed,
+                result: nil,
+                endedAtMs: nil,
+            ),
         ))
         let again = TranscriptEvent.toolCall(ToolCall(
             id: "call-2", name: "shell", kind: .execute, target: "swift build", atMs: nil,

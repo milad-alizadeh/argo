@@ -90,11 +90,15 @@ struct FeedAgentsTests {
             .toolCall(FeedFixture.call("back", tool: "Task", kind: .delegate, naming: "verify")),
             .toolCallOutcome(ToolCallOutcome(
                 id: "back",
-                status: .completed,
-                result: nil,
-                endedAtMs: nil,
-                usage: Self.reported,
-                reportedDurationMs: 96400,
+                resolution: ToolCallOutcome.Resolution(
+                    status: .completed,
+                    result: nil,
+                    endedAtMs: nil,
+                ),
+                delegated: ToolCallOutcome.Delegated(
+                    usage: Self.reported,
+                    reportedDurationMs: 96400,
+                ),
             )),
         ]
     }

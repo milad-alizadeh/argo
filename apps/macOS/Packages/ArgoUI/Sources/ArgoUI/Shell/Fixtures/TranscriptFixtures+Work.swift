@@ -60,14 +60,15 @@ extension TranscriptFixtures {
         )),
         .toolCallOutcome(ToolCallOutcome(
             id: "build",
-            status: .failed,
-            result: .output(OutputEvidence(
-                tier: .direct,
-                text: "Exit code 65\n\nFeedCallLine.swift:88:7: error: cannot find 'diffAdded' "
-                    + "in scope\n** BUILD FAILED **",
-            )),
-            endedAtMs: nil,
-            usage: nil,
+            resolution: ToolCallOutcome.Resolution(
+                status: .failed,
+                result: .output(OutputEvidence(
+                    tier: .direct,
+                    text: "Exit code 65\n\nFeedCallLine.swift:88:7: error: cannot find 'diffAdded' "
+                        + "in scope\n** BUILD FAILED **",
+                )),
+                endedAtMs: nil,
+            ),
         )),
         // One read between two commands: a quiet call with a loud one either side never folds, so
         // this is the line that still names the file it looked at.
@@ -99,11 +100,12 @@ extension TranscriptFixtures {
         )),
         .toolCallOutcome(finished("spec", .diff(DiffEvidence(
             tier: .direct,
-            change: .create,
-            destination: nil,
-            added: 12,
-            removed: 0,
-            hunks: [DiffHunk(oldStart: 0, newStart: 1, lines: specification)],
+            mutation: DiffEvidence.Mutation(change: .create, destination: nil),
+            patch: DiffEvidence.Patch(
+                added: 12,
+                removed: 0,
+                hunks: [DiffHunk(oldStart: 0, newStart: 1, lines: specification)],
+            ),
         )))),
         // A skill, whose result is the instructions themselves: the row names WHICH one, and the
         // panel behind it is the body the agent went off and read.
@@ -165,27 +167,28 @@ extension TranscriptFixtures {
     private static func patch(_ change: FileChange, added: Int, removed: Int) -> DiffEvidence {
         DiffEvidence(
             tier: .direct,
-            change: change,
-            destination: nil,
-            added: added,
-            removed: removed,
-            hunks: [DiffHunk(oldStart: 86, newStart: 86, lines: [
-                DiffLine(side: .context, text: "    private var churn: some View {"),
-                DiffLine(side: .del, text: "        .foregroundStyle(diffAdded)"),
-                DiffLine(side: .add, text: "        .foregroundStyle(argo.color.diff.added)"),
-                DiffLine(side: .context, text: "    }"),
-            ])],
+            mutation: DiffEvidence.Mutation(change: change, destination: nil),
+            patch: DiffEvidence.Patch(
+                added: added,
+                removed: removed,
+                hunks: [DiffHunk(oldStart: 86, newStart: 86, lines: [
+                    DiffLine(side: .context, text: "    private var churn: some View {"),
+                    DiffLine(side: .del, text: "        .foregroundStyle(diffAdded)"),
+                    DiffLine(
+                        side: .add,
+                        text: "        .foregroundStyle(argo.color.diff.added)",
+                    ),
+                    DiffLine(side: .context, text: "    }"),
+                ])],
+            ),
         )
     }
 
     private static func moved(to destination: String) -> DiffEvidence {
         DiffEvidence(
             tier: .direct,
-            change: .move,
-            destination: destination,
-            added: 0,
-            removed: 0,
-            hunks: [],
+            mutation: DiffEvidence.Mutation(change: .move, destination: destination),
+            patch: DiffEvidence.Patch(added: 0, removed: 0, hunks: []),
         )
     }
 }

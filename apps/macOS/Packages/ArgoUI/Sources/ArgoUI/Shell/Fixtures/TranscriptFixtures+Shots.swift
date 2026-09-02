@@ -47,14 +47,15 @@ extension TranscriptFixtures {
             )),
             .toolCallOutcome(ToolCallOutcome(
                 id: shot.id,
-                status: .completed,
-                result: .media(MediaEvidence(
-                    tier: shot.tier,
-                    mediaType: "image/png",
-                    bytes: shot.bytes.map { .held(unwrapped($0)) },
-                )),
-                endedAtMs: nil,
-                usage: nil,
+                resolution: ToolCallOutcome.Resolution(
+                    status: .completed,
+                    result: .media(MediaEvidence(
+                        tier: shot.tier,
+                        mediaType: "image/png",
+                        bytes: shot.bytes.map { .held(unwrapped($0)) },
+                    )),
+                    endedAtMs: nil,
+                ),
             )),
         ]
     }

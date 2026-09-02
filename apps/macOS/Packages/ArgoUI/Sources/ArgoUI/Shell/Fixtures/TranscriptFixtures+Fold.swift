@@ -23,16 +23,23 @@ extension TranscriptFixtures {
             )),
             .toolCallOutcome(finished("fold-edit", .diff(DiffEvidence(
                 tier: .direct,
-                change: .modify,
-                destination: nil,
-                added: 2,
-                removed: 1,
-                hunks: [DiffHunk(oldStart: 45, newStart: 45, lines: [
-                    DiffLine(side: .context, text: "    private static func quiet("),
-                    DiffLine(side: .del, text: "        guard case let .call(call) = content,"),
-                    DiffLine(side: .add, text: "        guard case let .call(call) = content,"),
-                    DiffLine(side: .add, text: "              call.onlyLooks,"),
-                ])],
+                mutation: DiffEvidence.Mutation(change: .modify, destination: nil),
+                patch: DiffEvidence.Patch(
+                    added: 2,
+                    removed: 1,
+                    hunks: [DiffHunk(oldStart: 45, newStart: 45, lines: [
+                        DiffLine(side: .context, text: "    private static func quiet("),
+                        DiffLine(
+                            side: .del,
+                            text: "        guard case let .call(call) = content,",
+                        ),
+                        DiffLine(
+                            side: .add,
+                            text: "        guard case let .call(call) = content,",
+                        ),
+                        DiffLine(side: .add, text: "              call.onlyLooks,"),
+                    ])],
+                ),
             )))),
         ] + mutations
 

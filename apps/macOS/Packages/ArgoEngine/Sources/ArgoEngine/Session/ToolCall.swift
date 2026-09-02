@@ -79,46 +79,69 @@ public struct ToolCall: Sendable, Equatable {
 /// different records that can be arbitrarily far apart in the file — and in a stream, the second
 /// one is a later event, not a retroactive edit to the first.
 public struct ToolCallOutcome: Sendable, Equatable {
+    /// The answering record's reading of the call: its status, what it produced, and when its
+    /// result came back.
+    public struct Resolution: Sendable, Equatable {
+        public let status: ToolCallStatus
+        /// What the call produced, or `nil` for a result of a kind nothing reads.
+        public let result: ToolResult?
+        /// When its result came back, so a call has a duration and not just a moment.
+        public let endedAtMs: Int?
+
+        public init(status: ToolCallStatus, result: ToolResult?, endedAtMs: Int?) {
+            self.status = status
+            self.result = result
+            self.endedAtMs = endedAtMs
+        }
+    }
+
+    /// What a DELEGATING call reported about the Subagent it ran.
+    public struct Delegated: Sendable, Equatable {
+        /// What the call itself reported spending. `nil` for the ordinary call, which spends
+        /// nothing of its own — a DELEGATING call is the case this exists for: its result carries
+        /// the whole spend of the subagent it ran, which is the only place that spend is visible.
+        public let usage: Usage?
+        /// The Subagent this call started, where it started one. `nil` for every ordinary call.
+        ///
+        /// The join key onto that Subagent's own transcript, which the host names for this string
+        /// — see `SubagentTranscripts`. Unlike `usage` it is read whatever the record's own
+        /// sidechain flag says: the spend is nil'd there to stop a nested delegation being billed
+        /// twice, and an id is not summed.
+        public let subagentID: String?
+        /// How long the call itself reported taking, in milliseconds. A DELEGATING call is again
+        /// the case this exists for: the host measures the Subagent's whole run and reports it
+        /// beside the spend, which is the only place that figure is ever stated.
+        ///
+        /// Not `endedAtMs - atMs`: those are the PARENT's two clock readings, and a resumed chain
+        /// or a record with no timestamp leaves that subtraction with nothing to work from.
+        public let reportedDurationMs: Int?
+
+        public init(usage: Usage?, subagentID: String? = nil, reportedDurationMs: Int? = nil) {
+            self.usage = usage
+            self.subagentID = subagentID
+            self.reportedDurationMs = reportedDurationMs
+        }
+
+        /// The ordinary call, which delegated nothing and so reported none of this.
+        public static let none = Delegated(usage: nil)
+    }
+
     public let id: String
+    // Each is documented on its `Resolution` or `Delegated` slot above.
     public let status: ToolCallStatus
-    /// What the call produced, or `nil` for a result of a kind nothing reads.
     public let result: ToolResult?
-    /// When its result came back, so a call has a duration and not just a moment.
     public let endedAtMs: Int?
-    /// What the call itself reported spending. `nil` for the ordinary call, which spends nothing of
-    /// its own — a DELEGATING call is the case this exists for: its result carries the whole spend
-    /// of the subagent it ran, which is the only place that spend is ever visible.
     public let usage: Usage?
-    /// The Subagent this call started, where it started one. `nil` for every ordinary call.
-    ///
-    /// The join key onto that Subagent's own transcript, which the host names for this string —
-    /// see `SubagentTranscripts`. Unlike `usage` it is read whatever the record's own sidechain
-    /// flag says: the spend is nil'd there to stop a nested delegation being billed twice, and an
-    /// id is not summed.
     public let subagentID: String?
-    /// How long the call itself reported taking, in milliseconds. A DELEGATING call is again the
-    /// case this exists for: the host measures the Subagent's whole run and reports it beside the
-    /// spend, which is the only place that figure is ever stated.
-    ///
-    /// Not `endedAtMs - atMs`: those are the PARENT's two clock readings, and a resumed chain or a
-    /// record with no timestamp leaves that subtraction with nothing to work from.
     public let reportedDurationMs: Int?
 
-    public init(
-        id: String,
-        status: ToolCallStatus,
-        result: ToolResult?,
-        endedAtMs: Int?,
-        usage: Usage?,
-        subagentID: String? = nil,
-        reportedDurationMs: Int? = nil,
-    ) {
+    public init(id: String, resolution: Resolution, delegated: Delegated = .none) {
         self.id = id
-        self.status = status
-        self.result = result
-        self.endedAtMs = endedAtMs
-        self.usage = usage
-        self.subagentID = subagentID
-        self.reportedDurationMs = reportedDurationMs
+        self.status = resolution.status
+        self.result = resolution.result
+        self.endedAtMs = resolution.endedAtMs
+        self.usage = delegated.usage
+        self.subagentID = delegated.subagentID
+        self.reportedDurationMs = delegated.reportedDurationMs
     }
 }

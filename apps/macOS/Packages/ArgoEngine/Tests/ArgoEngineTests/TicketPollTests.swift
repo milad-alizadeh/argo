@@ -25,7 +25,10 @@ struct TicketPollTests {
             let items = TicketLedger()
             self.health = health
             self.items = items
-            self.poll = TicketPoll(port: port, health: health, items: items)
+            self.poll = TicketPoll(
+                port: port,
+                ledgers: TicketPoll.Ledgers(health: health, items: items),
+            )
         }
     }
 
@@ -92,7 +95,8 @@ struct TicketPollTests {
         let landings = Landings()
         let port = ScriptedTickets([.success([ticket]), .failure(.offline)])
         let poll = TicketPoll(
-            port: port, health: ConnectionHealthLedger(), items: TicketLedger(),
+            port: port,
+            ledgers: TicketPoll.Ledgers(health: ConnectionHealthLedger(), items: TicketLedger()),
         )
 
         await poll.report(to: landings.raise)
@@ -107,8 +111,11 @@ struct TicketPollTests {
         let wait = PollWait()
         let port = ScriptedTickets([.success([ticket])])
         let poll = TicketPoll(
-            port: port, health: ConnectionHealthLedger(), items: TicketLedger(),
-            sleep: { _ in await wait.reach(); try await Task.sleep(for: .milliseconds(1)) },
+            port: port,
+            ledgers: TicketPoll.Ledgers(health: ConnectionHealthLedger(), items: TicketLedger()),
+            pacing: TicketPoll.Pacing(
+                sleep: { _ in await wait.reach(); try await Task.sleep(for: .milliseconds(1)) },
+            ),
         )
 
         await poll.start(target, every: .milliseconds(1))
@@ -125,8 +132,11 @@ struct TicketPollTests {
         let wait = PollWait()
         let port = ScriptedTickets([.success([ticket])])
         let poll = TicketPoll(
-            port: port, health: ConnectionHealthLedger(), items: TicketLedger(),
-            sleep: { _ in await wait.reach(); try await Task.sleep(for: .seconds(600)) },
+            port: port,
+            ledgers: TicketPoll.Ledgers(health: ConnectionHealthLedger(), items: TicketLedger()),
+            pacing: TicketPoll.Pacing(
+                sleep: { _ in await wait.reach(); try await Task.sleep(for: .seconds(600)) },
+            ),
         )
 
         await poll.start(target, every: .seconds(600))

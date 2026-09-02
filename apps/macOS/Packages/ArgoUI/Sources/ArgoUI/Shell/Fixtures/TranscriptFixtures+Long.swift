@@ -78,15 +78,16 @@ extension TranscriptFixtures {
             )),
             .toolCallOutcome(finished(id, .diff(DiffEvidence(
                 tier: .direct,
-                change: .modify,
-                destination: nil,
-                added: number % 9 + 1,
-                removed: number % 4,
-                hunks: [DiffHunk(
-                    oldStart: 1,
-                    newStart: 1,
-                    lines: [DiffLine(side: .add, text: "    .argoFeedMeasure()")],
-                )],
+                mutation: DiffEvidence.Mutation(change: .modify, destination: nil),
+                patch: DiffEvidence.Patch(
+                    added: number % 9 + 1,
+                    removed: number % 4,
+                    hunks: [DiffHunk(
+                        oldStart: 1,
+                        newStart: 1,
+                        lines: [DiffLine(side: .add, text: "    .argoFeedMeasure()")],
+                    )],
+                ),
             )))),
         ]
     }
@@ -105,15 +106,16 @@ extension TranscriptFixtures {
             )),
             .toolCallOutcome(ToolCallOutcome(
                 id: id,
-                status: broke ? .failed : .completed,
-                result: .output(OutputEvidence(
-                    tier: .direct,
-                    text: broke
-                        ? "error: 1 test failed in FeedProjectionTests"
-                        : "Test run with 229 tests in 29 suites passed.",
-                )),
-                endedAtMs: nil,
-                usage: nil,
+                resolution: ToolCallOutcome.Resolution(
+                    status: broke ? .failed : .completed,
+                    result: .output(OutputEvidence(
+                        tier: .direct,
+                        text: broke
+                            ? "error: 1 test failed in FeedProjectionTests"
+                            : "Test run with 229 tests in 29 suites passed.",
+                    )),
+                    endedAtMs: nil,
+                ),
             )),
         ]
     }

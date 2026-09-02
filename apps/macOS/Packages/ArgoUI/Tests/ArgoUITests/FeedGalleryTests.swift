@@ -50,10 +50,11 @@ struct FeedGalleryTests {
             .toolCall(FeedFixture.call("shot", tool: "Read", kind: .read, naming: "half.png")),
             .toolCallOutcome(ToolCallOutcome(
                 id: "shot",
-                status: .failed,
-                result: FeedFixture.shot(.direct),
-                endedAtMs: nil,
-                usage: nil,
+                resolution: ToolCallOutcome.Resolution(
+                    status: .failed,
+                    result: FeedFixture.shot(.direct),
+                    endedAtMs: nil,
+                ),
             )),
         ]
 

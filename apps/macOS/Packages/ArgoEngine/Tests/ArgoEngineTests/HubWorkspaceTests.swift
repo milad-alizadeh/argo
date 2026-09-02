@@ -91,9 +91,6 @@ private let oneWorktree = WorktreeEntry(
 /// What git would say about that worktree.
 private let gitRead = WorkspaceProjection(
     kind: .worktree,
-    branch: "argo/#510",
-    baseRef: "origin/main",
-    headSha: "aaa",
-    dirty: 3,
-    divergence: UpstreamDivergence(ahead: 1, behind: 0),
+    refs: WorkspaceProjection.Refs(branch: "argo/#510", baseRef: "origin/main", headSha: "aaa"),
+    drift: WorkspaceProjection.Drift(dirty: 3, divergence: UpstreamDivergence(ahead: 1, behind: 0)),
 )

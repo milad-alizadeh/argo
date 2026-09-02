@@ -14,7 +14,14 @@ enum TranscriptFixtures {
     /// A call the record answered, with whatever it answered with. `nil` for the outcome that
     /// carried no result at all, which is a real shape and not a missing one.
     static func finished(_ id: String, _ result: ToolResult?) -> ToolCallOutcome {
-        ToolCallOutcome(id: id, status: .completed, result: result, endedAtMs: nil, usage: nil)
+        ToolCallOutcome(
+            id: id,
+            resolution: ToolCallOutcome.Resolution(
+                status: .completed,
+                result: result,
+                endedAtMs: nil,
+            ),
+        )
     }
 
     /// The same outcome with its result pre-wrapped as printed output — a read, a command, a
@@ -38,12 +45,16 @@ enum TranscriptFixtures {
         -> ToolCallOutcome {
         ToolCallOutcome(
             id: id,
-            status: .completed,
-            result: nil,
-            endedAtMs: nil,
-            usage: usage,
-            subagentID: subagent,
-            reportedDurationMs: reportedMs,
+            resolution: ToolCallOutcome.Resolution(
+                status: .completed,
+                result: nil,
+                endedAtMs: nil,
+            ),
+            delegated: ToolCallOutcome.Delegated(
+                usage: usage,
+                subagentID: subagent,
+                reportedDurationMs: reportedMs,
+            ),
         )
     }
 
