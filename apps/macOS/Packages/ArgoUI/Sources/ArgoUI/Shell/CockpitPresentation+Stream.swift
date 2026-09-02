@@ -1,5 +1,4 @@
 import ArgoEngine
-import Synchronization
 
 public extension CockpitPresentation.Session.Transcript {
     /// A Session's whole decoded stream, and the one number the cockpit compares it BY.
@@ -16,36 +15,33 @@ public extension CockpitPresentation.Session.Transcript {
     /// Everything in this type is described by the stamp, and that is the rule for anything added
     /// to it: a fact here that the stamp cannot see would be a fact the cockpit stops redrawing
     /// for. Facts the stamp does NOT stand for belong one level up, on `Transcript`, where equality
-    /// is synthesised.
+    /// is synthesised — and one the size of the transcript does not belong there either, because a
+    /// synthesised comparison of it is the cost this type exists to have removed.
     struct Stream: Equatable, Sendable {
         /// Everything the Session's transcript said, in order — the feed's whole input. The
         /// engine's own events, undigested; `FeedProjection` is what draws them.
-        ///
-        /// The one way to the stream, which is what makes `reads` below a count of the WORK: a
-        /// comparison that walks the events has to come through here to reach them.
         public var events: [TranscriptEvent] {
-            #if DEBUG
-                reads.note()
-            #endif
-            return held
+            held.events
         }
 
         /// Which version of the above this is. Moved by every write the engine makes to it, by a
         /// `didSet` rather than by a caller remembering — see `TranscriptStream`.
         public let stamp: TranscriptStamp
 
-        private let held: [TranscriptEvent]
+        /// The events, and the tally of the times they were handed out — in a file this one cannot
+        /// see past, which is what makes that tally a gate rather than a hope. See `HeldEvents`.
+        private let held: HeldEvents
 
         #if DEBUG
-            /// How many times this stream has handed its events out, counted rather than timed
-            /// (ADR-0028 Rule 8) — the count `CockpitPresentationCostTests` gates the comparison
-            /// on. Per value, because a static one would be shared by every suite running beside
-            /// it.
-            let reads = StreamReads()
+            /// What `CockpitPresentationCostTests` reads: a comparison answered by the stamp asks
+            /// this stream for nothing (ADR-0028 Rule 8).
+            var reads: HeldEvents.Reads {
+                held.reads
+            }
         #endif
 
         init(events: [TranscriptEvent], stamp: TranscriptStamp) {
-            self.held = events
+            self.held = HeldEvents(events)
             self.stamp = stamp
         }
 
@@ -60,20 +56,3 @@ public extension CockpitPresentation.Session.Transcript {
         }
     }
 }
-
-#if DEBUG
-    /// How often one `Stream` was asked for its events. A reference, so that a stream held in a
-    /// `let` still counts; atomic, because the value it hangs off is `Sendable` and nothing about
-    /// a read promises which thread asks.
-    final class StreamReads: Sendable {
-        private let handed = Atomic<Int>(0)
-
-        var count: Int {
-            handed.load(ordering: .relaxed)
-        }
-
-        func note() {
-            handed.wrappingAdd(1, ordering: .relaxed)
-        }
-    }
-#endif

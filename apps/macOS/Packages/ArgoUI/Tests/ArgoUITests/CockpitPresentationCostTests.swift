@@ -10,24 +10,28 @@ import Testing
 /// stream of every chained Session, and the pass after one deep-compared all of it — 5.48 ms for
 /// four Sessions of 5 824 events, on a pass in which nothing had changed (#1005).
 ///
-/// A COUNT, and never the seconds it takes: `Stream.events` is the one way to the events, so a
-/// comparison that walks them has to ask for them, and a comparison answered by the stamp asks for
-/// nothing. Zero at a short transcript and zero at an eightfold one — the claim the two fixtures
-/// carry is that the count does not follow the length, and it is exact rather than bounded.
+/// A COUNT, and never the seconds it takes: the stream keeps its events in `HeldEvents`, whose
+/// accessor is the only way to them and tallies every ask, so a comparison that walks them has to
+/// ask and one answered by the stamp asks for nothing. Zero at a short transcript and zero at an
+/// eightfold one — the claim the two fixtures carry is that the count does not follow the length,
+/// and it is exact rather than bounded.
 ///
 /// **This replaces a quotient of two thread-CPU readings**, which is the shape Rule 8 forbids
 /// where a count exists: its two arms were the same comparison over one and eight times the
 /// resident working set, a difference `CLOCK_THREAD_CPUTIME_ID` charges to the larger arm in every
 /// trial, so no least-of-N could take it out. It read 1.3045 against its own `1.3` on the `macos`
 /// job on a branch touching nothing it measures, with `main` green on the same code (#1068). The
-/// readings it was written against are `PerfBudgets.presentationCompareReads`, gated by nothing.
+/// readings it was written against sit beside `PerfBudgets.presentationCompareReads` as figures
+/// gated by nothing.
 ///
 /// **Narrower than the quotient it replaces, and ADR-0028's amendment says so.** The old assertion
 /// timed the WHOLE presentation comparison, so every other field of every Session was held against
 /// growing with the transcript as a side effect of it; this one holds the stream, which is the
 /// only field that carries the transcript and the only one the doc comment above ever named. And
-/// it is this type's own tally: an `==` rewritten to reach the events some other way would not be
-/// seen — the limit every count in this suite carries.
+/// it is this type's own tally: a transcript-sized field added to `Transcript` BESIDE the stream,
+/// where equality is synthesised, would be deep-compared without ever asking the stream for
+/// anything — which `Stream`'s own doc comment now says is not where such a fact goes. That a
+/// count only holds the pass reporting it is the limit every count in this suite carries.
 @Suite("Cockpit presentation cost", .serialized)
 @MainActor
 struct CockpitPresentationCostTests {
@@ -42,9 +46,8 @@ struct CockpitPresentationCostTests {
 
         #expect(Self.reads(short) == PerfBudgets.presentationCompareReads)
         #expect(Self.reads(long) == PerfBudgets.presentationCompareReads)
-        Self.expectComparable(short)
-        Self.expectComparable(long)
-        #expect(Self.long.count == Self.short.count * Self.lengths)
+        Self.expectComparable(Self.pair(events: Self.short))
+        Self.expectComparable(Self.pair(events: Self.long))
     }
 
     /// The other half, which Rule 7 forbids letting the warm case stand in for: a Session whose
@@ -59,8 +62,8 @@ struct CockpitPresentationCostTests {
 
         #expect(Self.reads(short) == PerfBudgets.presentationCompareReads)
         #expect(Self.reads(long) == PerfBudgets.presentationCompareReads)
-        Self.expectComparable(short)
-        Self.expectComparable(long)
+        Self.expectComparable(Self.grown(events: Self.short))
+        Self.expectComparable(Self.grown(events: Self.long))
         // The three Sessions in front of the one that grew are equal, which is what makes this the
         // expensive case: a comparison that walks pays for the whole roster before it reaches the
         // change. A fixture that differed at the first Session would never reach them.
@@ -70,33 +73,53 @@ struct CockpitPresentationCostTests {
 
     /// Every stream in both presentations, summed: a comparison walking any ONE of them is a read.
     private static func reads(_ pair: (CockpitPresentation, CockpitPresentation)) -> Int {
-        [pair.0, pair.1].flatMap(\.sessions).map(\.transcript.stream.reads.count).reduce(0, +)
+        streams(pair).map(\.reads.count).reduce(0, +)
     }
 
-    /// What the count above would be worthless without, so it is asserted rather than assumed.
+    /// What the count above would be worthless without, so it is asserted rather than assumed —
+    /// over a pair of its OWN, because reading a stream is what moves the tally the cases gate.
     ///
-    /// The two sides share no buffer, because `Array.==` answers an identical buffer without
-    /// looking at an element — so a walking comparison over shared buffers would read this zero
-    /// too. And the counter is LIVE: the same tally that read zero above moves the moment the
-    /// buffers are asked for, which the reads here are.
+    /// The two sides of what the builder makes share no buffer, because `Array.==` answers an
+    /// identical buffer without looking at an element — so a walking comparison over shared
+    /// buffers would read zero too. And the counter is LIVE: the same tally that reads zero above
+    /// moves the moment a stream is asked for, which the reads here are. The fixture is long
+    /// enough for either to mean anything.
     private static func expectComparable(_ pair: (CockpitPresentation, CockpitPresentation)) {
-        let before = reads(pair)
-        let buffers = zip(pair.0.sessions, pair.1.sessions).map { one, other in
-            (buffer(of: one.events), buffer(of: other.events))
+        let looked = zip(pair.0.sessions, pair.1.sessions).map { one, other in
+            (
+                mine: buffer(of: one.events),
+                theirs: buffer(of: other.events),
+                events: one.events.count,
+            )
         }
-        #expect(buffers.allSatisfy { $0.0 != $0.1 })
-        #expect(buffers.allSatisfy { $0.0 != nil })
-        #expect(reads(pair) > before)
+        #expect(looked.allSatisfy { $0.mine != $0.theirs })
+        #expect(looked.allSatisfy { $0.mine != 0 && $0.theirs != 0 })
+        #expect(looked.allSatisfy { $0.events >= events })
+        // EVERY stream's tally, not the sum: one live counter beside seven dead ones would carry a
+        // sum, and it is each of them the cases above read a zero off.
+        #expect(streams(pair).allSatisfy { $0.reads.count >= 1 })
     }
 
-    private static func buffer(of events: [TranscriptEvent]) -> UnsafeRawPointer? {
-        events.withUnsafeBufferPointer { UnsafeRawPointer($0.baseAddress) }
+    private static func streams(_ pair: (CockpitPresentation, CockpitPresentation))
+        -> [CockpitPresentation.Session.Transcript.Stream] {
+        [pair.0, pair.1].flatMap(\.sessions).map(\.transcript.stream)
+    }
+
+    /// The storage's address as a NUMBER, never as a pointer that outlives the access it came
+    /// from: all this asks is whether two arrays are the same allocation.
+    private static func buffer(of events: [TranscriptEvent]) -> UInt {
+        events.withUnsafeBufferPointer { UInt(bitPattern: $0.baseAddress) }
     }
 
     /// How much longer the long fixture is than the short one — the two sizes Rule 3 asks a cost
     /// case to carry, and the reason a count of zero at both says the cost does not follow the
-    /// length. Asserted of the fixtures rather than trusted of them.
+    /// length.
     private static let lengths = 8
+
+    /// A floor under the short fixture, asserted because a gated zero is the same zero over an
+    /// empty stream — the fixture is what carries the claim's size, and this is the drift #1065
+    /// found. `longTranscript` runs to 728 events, and the long fixture to eight times that.
+    private static let events = 500
 
     private static let short = TranscriptFixtures.longTranscript
     private static let long = Array(repeating: TranscriptFixtures.longTranscript, count: lengths)
