@@ -173,7 +173,12 @@
   #read .ties { margin-top: 18px; }
   #read .ties h4 { font: var(--t-footnote) var(--mono); text-transform: uppercase;
                    letter-spacing: .1em; color: #5c8b99; font-weight: 400;
-                   padding-bottom: 6px; border-bottom: 1px solid rgba(126,214,240,.16); }
+                   padding-bottom: 6px; border-bottom: 1px solid rgba(126,214,240,.16);
+                   display: flex; gap: 10px; }
+  /* What the heading is counting sits in the heading, because a cap the reader learns by
+     counting arcs is not a cap they were told about. */
+  #read .ties h4 b { margin-left: auto; font-weight: 400; text-transform: none;
+                     letter-spacing: 0; color: var(--text-off); }
   #read .tie { display: flex; gap: 10px; padding: 5px 0; font-size: var(--t-callout);
                color: var(--text-2); border-bottom: 1px solid rgba(126,214,240,.07); }
   #read .tie span { overflow-wrap: anywhere; }
@@ -210,6 +215,12 @@
                   color: var(--text-off); overflow-wrap: anywhere; }
   #read .tie i { flex-basis: 100%; font-style: normal; margin-top: 4px;
                  font: var(--t-footnote)/1.5 var(--sans); color: var(--text-3); }
+  #read .ties p { margin-top: 7px; font: var(--t-footnote)/1.5 var(--sans);
+                  color: var(--text-3); }
+  /* Quiet, because it is a fact about the drawing and not about the code. */
+  #read .tie u { text-decoration: none; align-self: center; padding: 1px 5px;
+                 border-radius: 4px; font: var(--t-footnote) var(--mono);
+                 color: var(--text-off); border: 1px solid rgba(126,214,240,.18); }
 
   /* The legend is the sidebar's last section, because it describes what the sections
      above it just did. It is never hidden: a colour that means something only while you
@@ -491,6 +502,13 @@ const LINKS = new Map();
    pointing at a file always shows that file's own, however the switch is set. */
 let TOP_TIES = [];
 const TIE_CAP = 160;
+/* The arcs and the panel are one fact stated twice, so they read it through one function:
+   the same partners, the same order, the same cap. They used to disagree twice over — the
+   panel cut to six while the map drew all sixty, and the map dropped a hidden test file
+   silently (a pruned file has no block for an arc to end on) while the panel listed it. */
+const TIE_SHOW = 6;
+const tiesOf = path => (LINKS.get(path) || [])
+  .filter(([o]) => !(state && state.noTests && TESTY(o)));
 
 /* ---------- squarified treemap (Bruls, Huizing & van Wijk 1999) ---------- */
 function squarify(items, x, y, w, h) {
@@ -1863,8 +1881,8 @@ function frame(now) {
   const focus = state.hover && state.hover.file ? state.hover
               : state.pinned && state.pinned.file ? state.pinned : null;
   if (state.ties) filaments(TOP_TIES, .30, 1, now);
-  if (focus) filaments((LINKS.get(focus.path) || []).map(([o, v]) => [focus.path, o, v]),
-                       .95, 1.9, now);
+  if (focus) filaments(tiesOf(focus.path).slice(0, TIE_SHOW)
+                       .map(([o, v]) => [focus.path, o, v]), .95, 1.9, now);
 
   /* the pinned one stays marked after the pointer has gone, so the panel and the map agree */
   /* the pin restarts its draw when what it points at changes, and stops existing the moment
@@ -2076,10 +2094,13 @@ let NOTES = { files: {}, pairs: [] };
 const PAIR_NOTES = new Map();
 const pairKey = (a, b) => [a, b].sort().join(String.fromCharCode(0));
 
+/* Called again after a rebuild, so it replaces rather than adds: a pair note kept from the
+   run before would outlive the pair it was written about. */
 function loadNotes() {
-  return fetch('atlas-notes.json').then(r => r.ok ? r.json() : null).then(j => {
+  return fetch('atlas-notes.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => {
     if (!j) return;
     NOTES = j;
+    PAIR_NOTES.clear();
     for (const n of j.pairs || []) PAIR_NOTES.set(pairKey(n.pair[0], n.pair[1]), n.note);
   }).catch(() => {});
 }
@@ -2424,15 +2445,33 @@ function detail(b) {
   /* A percentage next to a basename is a fact nobody can use. The row carries the folder,
      because a tie across two packages is the finding and a tie inside one is not; it carries
      the shared idea when one was written; and it takes you there when you click it. */
-  const ties = (it.file && LINKS.get(it.path) || []).slice(0, 6);
-  const tieHTML = ties.length ? `<div class="ties"><h4>Changes with</h4>`
+  const all = it.file ? tiesOf(it.path) : [];
+  const ties = all.slice(0, TIE_SHOW);
+  /* A count the reader can see has to be reachable from what they are told, and a file with
+     sixty partners would be an unreadable ball of wool drawn in full — so the cap stays and
+     says so. Six rows beside six arcs, and the sixty is a number rather than a surprise. */
+  const many = all.length > ties.length
+    ? `<b>strongest ${ties.length} of ${all.length}</b>` : '';
+  const tieHTML = ties.length ? `<div class="ties"><h4>Changes with${many}</h4>`
     + ties.map(([o, v]) => {
         const note = PAIR_NOTES.get(pairKey(it.path, o));
+        /* A row can name a file the map is not drawing — too small for a block at this
+           fit — and an arc to it goes nowhere, so the row says the arc is missing rather
+           than leaving the reader to count five cords against six rows. */
+        const off = view && view.seat && !view.seat.has(o);
         return `<div class="tie" data-go="${esc(o)}" title="Go to this file">`
-          + `<span>${esc(o.split('/').pop())}</span><b>${Math.round(v * 100)}%</b>`
+          + `<span>${esc(o.split('/').pop())}</span>`
+          + (off ? `<u title="Too small for a block at this fit, so no arc reaches it">`
+                 + `no block</u>` : '')
+          + `<b>${Math.round(v * 100)}%</b>`
           + `<em>${esc(o.split('/').slice(0, -1).slice(-2).join('/'))}</em>`
           + (note ? `<i>${esc(note)}</i>` : '') + `</div>`;
       }).join('')
+    /* An arc needs a block at BOTH ends, and sixty-four files have none at the opening fit.
+       When the open file is one of them the panel is right and the map is simply empty, so
+       the panel says which of the two it is. */
+    + (view && view.seat && !view.seat.has(it.path)
+        ? `<p>This file has no block at this fit, so none of its arcs are drawn.</p>` : '')
     + `</div>` : '';
 
   /* The colour channel is the one measure a number cannot carry: 12 is meaningless until
@@ -2628,6 +2667,71 @@ function stamp() {
 }
 
 
+/* ---------- adopting a map ---------- */
+/* The one route from a fetched atlas-cc.json to the state the page draws from. Boot takes it
+   and so does the rebuild button, because a second adoption that forgot one memo is a map
+   whose numbers depend on how you arrived at it. Every derived index over DATA is either
+   filled here or emptied here — a memo left behind is last week's answer under this week's
+   geometry, which is the one failure nothing on screen can show you. */
+function adopt(j, co) {
+  DATA = j.nodes[0];
+  stampPaths(DATA);
+  DESC = j.attributeDescriptors;
+  CO = co && co.edges ? co : null;
+  LINKS.clear();
+  /* The edge is DIRECTED, and the page used to read it as if it were not: gitlogparser's
+     temporal coupling is the commits that touched both over the commits of the FROM file,
+     so a pair carries two different numbers and this data states 236 of them both ways
+     round. Pushing one value into both ends printed one file's share on the other file's
+     row, and gave that partner two rows and two arcs. Each end keeps its own share now. */
+  const COMMITS = new Map(leaves(DATA).map(f => [f.__path, at(f, 'number_of_commits') || 1]));
+  const share = new Map();
+  const put = (from, to, v) => {
+    if (!share.has(from)) share.set(from, new Map());
+    share.get(from).set(to, v);
+  };
+  const edges = j.edges || [];
+  for (const [a, b, v] of edges) put(a, b, v);
+  /* Two thirds of the pairs are stated one way only, so the missing direction is converted
+     rather than dropped: the shared commits are one count seen from either end, which makes
+     v(a→b)·commits(a) === v(b→a)·commits(b) — it holds on all 236 pairs that state both. */
+  for (const [a, b, v] of edges)
+    if (!(share.get(b) && share.get(b).has(a)))
+      put(b, a, Math.min(1, v * (COMMITS.get(a) || 1) / (COMMITS.get(b) || 1)));
+  for (const [from, to] of share)
+    LINKS.set(from, [...to].sort((x, y) => y[1] - x[1]));
+  /* One pair, one cord: a reversed twin is the same tie seen from the other end, so drawing
+     both laid a second stroke over the first and spent a slot in the strongest 160. */
+  const seenPair = new Set();
+  TOP_TIES = edges.filter(([a, b]) => {
+    const k = a < b ? a + '\n' + b : b + '\n' + a;
+    if (seenPair.has(k)) return false;
+    seenPair.add(k);
+    return true;
+  }).slice(0, TIE_CAP);
+  NODE.clear();
+  for (const n of leaves(DATA)) NODE.set(n.__path, n);
+  SORTS.clear(); CORRS.clear(); FADES.clear();
+  PRUNED = null; HITS = null; DOM = null; domKey = ''; TREE = null; treeKey = '';
+}
+
+/* The boot tail, minus the camera: a rebuild is the same map of a moved repository, so where
+   the reader had got to in it is the one thing that must survive. `fit()` is the difference. */
+function reseat() {
+  morph = null; pinPath = null;
+  state.hover = state.pinned = state.peek = null; state.peekKey = '';
+  state.domSel = null; state.folder = null; state.folderName = null; state.trail = [];
+  closePage(); hideDef();
+  if (state.dom !== 'off' && !domainsReady()) state.dom = 'off';
+  for (const id of ['mArea', 'mHeight', 'mColour'])
+    for (const o of $(id).options) o.textContent = DESC[o.value].title;
+  refind();
+  $('qn').textContent = HITS ? String(HITS.size) : '';
+  if (state.dom !== 'off') domains();
+  domUI(); rebuild(); detail(null); railIndex(); stamp();
+}
+
+
 /* ---------- boot ---------- */
 /* The clustering and its sidecar are both allowed to be absent: a repo with no git history,
    or a checkout without the co-change pass run, still gets the whole map — it just gets no
@@ -2639,17 +2743,8 @@ Promise.all([
   soft(import('./atlas-domains.mjs')),
   soft(fetch('atlas-cochange.json').then(r => r.ok ? r.json() : null)),
 ]).then(([j, , lib, co]) => {
-  LIB = lib; CO = co && co.edges ? co : null;
-  DATA = j.nodes[0];
-  stampPaths(DATA);
-  DESC = j.attributeDescriptors;
-  for (const [a, b, v] of j.edges || []) {
-    if (!LINKS.has(a)) LINKS.set(a, []);
-    if (!LINKS.has(b)) LINKS.set(b, []);
-    LINKS.get(a).push([b, v]); LINKS.get(b).push([a, v]);
-  }
-  for (const list of LINKS.values()) list.sort((x, y) => y[1] - x[1]);
-  TOP_TIES = (j.edges || []).slice(0, TIE_CAP);
+  LIB = lib;
+  adopt(j, co);
   /* Three channels that say three different things. Colour is whole-file complexity,
      not max-per-function: half the files score 0 on that one, so it bands them all green. */
   const q = new URLSearchParams(location.search);
@@ -2685,7 +2780,6 @@ Promise.all([
     };
   }
 
-  for (const n of leaves(DATA)) NODE.set(n.__path, n);
   domUI();
   for (const [id, m] of [['dOff', 'off'], ['dGroup', 'group']])
     $(id).onclick = () => setDom(m);

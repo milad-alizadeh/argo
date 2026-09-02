@@ -5,12 +5,10 @@
   const API = '_atlas/';
 
   /* The page is a classic script, so its top-level bindings live in the global lexical scope
-     and an indirect eval is the only way in from here without editing the file. */
+     and an indirect eval is the only way in from here without editing the file. Only the
+     page's own functions are reached this way — nothing here assigns to its state, because
+     a second writer is a second adoption and the two drift. */
   const peek = n => { try { return (0, eval)(n); } catch { return undefined; } };
-  const poke = (n, v) => {
-    window.__atlasIn = v;
-    try { (0, eval)(n + ' = window.__atlasIn'); return true; } catch { return false; }
-  };
 
   /* The host page's own control skin — the segmented buttons in its sidebar — rather than
      the floating bar's, which the sidebar rewrite deleted along with #bar. */
@@ -141,29 +139,24 @@
     refresh(true);
   }
 
+  const fresh = (file, soft) => fetch(file + '?t=' + Date.now(), { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : null).catch(() => null)
+    .then(j => j || (soft ? null : Promise.reject(new Error(file))));
+
   /* Redrawn in place, because a page reload throws away the camera and the map's whole point
-     is where you had got to in it. The page's own boot does exactly this much. */
+     is where you had got to in it. Every one of the three files the rebuild writes is refetched
+     and handed to the page's own `adopt`, which is the same call its boot makes — the numbers
+     after this button and the numbers after a reload are then the same numbers by construction.
+     A page without those two functions is somebody else's copy, and it reloads instead. */
   async function redraw() {
-    let j;
-    try { j = await fetch('atlas-cc.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()); }
-    catch { return false; }
-    const links = peek('LINKS'), rebuild = peek('rebuild'), detail = peek('detail');
-    if (!links || typeof rebuild !== 'function' || !poke('DATA', j.nodes[0])) return false;
-    poke('DESC', j.attributeDescriptors);
-    const st = peek('state');
-    if (st) { st.hover = null; st.pinned = null; }
-    links.clear();
-    for (const [a, b, v] of j.edges || []) {
-      if (!links.has(a)) links.set(a, []);
-      if (!links.has(b)) links.set(b, []);
-      links.get(a).push([b, v]); links.get(b).push([a, v]);
-    }
-    for (const list of links.values()) list.sort((x, y) => y[1] - x[1]);
-    poke('TOP_TIES', (j.edges || []).slice(0, peek('TIE_CAP') || 160));
-    /* The layout is memoised on the channel key alone, so new data under unchanged channels
-       would redraw the old city. A stale layout is worse than a reload, hence the fallback. */
-    if (!poke('treeKey', '')) return false;
-    try { rebuild(); if (typeof detail === 'function') detail(null); } catch { return false; }
+    const adopt = peek('adopt'), reseat = peek('reseat'), notes = peek('loadNotes');
+    if (typeof adopt !== 'function' || typeof reseat !== 'function' || !peek('state')) return false;
+    let j, co;
+    try {
+      [j, co] = await Promise.all([fresh('atlas-cc.json'), fresh('atlas-cochange.json', true)]);
+      if (typeof notes === 'function') await notes();
+    } catch { return false; }
+    try { adopt(j, co); reseat(); } catch (e) { console.error('atlas: redraw failed', e); return false; }
     return true;
   }
 
