@@ -67,21 +67,19 @@ function_parameter_count:
   # above it: the 18 that used to sit here as a ratchet was a gate nothing anyone writes could
   # fail (#992).
   #
-  # Edge 6 also counts the memberwise init Swift SYNTHESIZES for a struct, because that is a
-  # parameter list too and it is the one a regroup produces (#1060). What is in that list was
-  # checked against swiftc rather than assumed: an initialised `let` is left out, a defaulted `var`
-  # is in.
+  # Edge 6 also counts the memberwise init Swift SYNTHESIZES for a struct (#1060) — a parameter
+  # list too, and the one a regroup produces. What is in that list was checked against swiftc: an
+  # initialised `let` is out, a defaulted `var` and a `lazy var` are in, and a `private` or
+  # `fileprivate` STORED property makes the whole init private (a private COMPUTED property does
+  # not — it is not in the list at all).
   #
-  # THE CAP IS ON THE DECLARATION, NOT THE CALL SITE. A defaulted slot counts even where no call
-  # site passes it, exactly as it does for a written init — the list still exists and a caller may
-  # line up every slot of it. Where a width is the shape of the thing rather than a design choice,
-  # the LIST below is where that is said; the cap is not read down to mean something narrower.
+  # The cap is on the DECLARATION, not the call site: a defaulted slot counts where nothing passes
+  # it, and the list below — never a narrower reading of the cap — is where a width that is the
+  # shape of the thing gets to say so.
   #
-  # The one shape edge 6 skips: a struct with a `private` or `fileprivate` STORED property. Swift
-  # gives such a struct a private memberwise init, so no other file can call it and no width can
-  # cross into it — the list is an artifact of internal state rather than a seam. That is most of
-  # ArgoUI, where a view holds `@State private var`, and its real seam is a written init or its own
-  # file. A private COMPUTED property seals nothing: it is not stored, so it is not in the list.
+  # A struct whose memberwise init Swift made private is SKIPPED, because no other file can call it
+  # and no width can cross into it. That is most of ArgoUI, where a view holds `@State private
+  # var`, and its real seam is a written init or its own file.
   error: 4
   warning: 4
   # RATCHET initializer-parameter-count — the LIST is the ratchet, not a wider number. Edge 6 fails
@@ -114,84 +112,82 @@ function_parameter_count:
   # INIT: ComposerSpecimen.swift 5 — the composer specimen's inputs
   # INIT: TextRoles.swift 5 — one colour per text role
   #
-  # And the SYNTHESIZED memberwise inits, which edge 6 could not see until #1060 — the shape a
-  # regroup produces by construction, so #1058's nine-parameter row became four beside a value
-  # whose own group held five and this list read 28 → 23 while it happened. They are grandfathered
-  # by the same lines and the same widths: a memberwise init IS an init, and grouping one deletes
-  # its line the same way. Nothing below predates the CAP; all of it predates the edge reading it.
-  # INIT: GitHubIssue.swift 18 — one issue as GitHub's REST API serves it, parsed at the boundary and nowhere else
-  # INIT: IssueJSON.swift 15 — the GitHub issue fixture, spelled the way GitHub spells it so the decoder is what is tested
-  # INIT: TranscriptRecord.swift 15 — MessageRecord — the facts every message-bearing record carries, whichever type it is
-  # INIT: LinearIssueJSON.swift 14 — the Linear issue fixture, field for field as its GraphQL API sends them
-  # INIT: LinearIssue.swift 13 — one issue as Linear's GraphQL API serves it, edges included, parsed at the boundary
-  # INIT: SessionComposerProjection.swift 13 — Composer — the composer's whole reading, one fact per control it draws
-  # INIT: FeedRowKind.swift 12 — Kind — what a row IS, one flag per question the feed asks of it; every slot defaults
-  # INIT: FrameProbeSummary.swift 12 — one measurement window reduced to the figures a frame budget is read off
-  # INIT: TicketsRoom.swift 11 — the room's view, whose slots are the Bindings the cockpit owns rather than readings
-  # INIT: TicketsRoomProjection+Detail.swift 11 — Detail — everything the trailing pane draws about one ticket
-  # INIT: ConnectPanelProjection.swift 10 — Panel — the connect panel's whole reading, one slot per row it draws
-  # INIT: DeckIntents.swift 10 — one closure per thing the deck's vessel does; every intent is inert by default
+  # And the SYNTHESIZED memberwise inits, which edge 6 could not see until #1060. Grandfathered by
+  # the same lines and the same widths — a memberwise init IS an init, and grouping one deletes its
+  # line the same way. Nothing below predates the CAP; all of it predates the edge reading it.
+  # INIT: IssueJSON.swift 15 — the GitHub issue fixture, spelled the way GitHub spells it so the
+  # INIT: TranscriptRecord.swift 15 — MessageRecord, the facts every message-bearing record
+  # INIT: LinearIssueJSON.swift 14 — the Linear issue fixture, field for field as its GraphQL API
+  # INIT: GitHubIssue.swift 13 — one issue as GitHub's REST API serves it, parsed at the boundary
+  # INIT: SessionComposerProjection.swift 13 — Composer, the composer's whole reading, one fact per
+  # INIT: FeedRowKind.swift 12 — Kind, what a row IS, one flag per question the feed asks of it
+  # INIT: FrameProbeSummary.swift 12 — one measurement window reduced to the figures a frame budget
+  # INIT: LinearIssue.swift 11 — one issue as Linear's GraphQL API serves it, edges included
+  # INIT: TicketsRoom.swift 11 — the room's view, whose slots are the Bindings the cockpit owns
+  # INIT: TicketsRoomProjection+Detail.swift 11 — Detail, everything the trailing pane draws about
+  # INIT: ConnectPanelProjection.swift 10 — Panel, the connect panel's whole reading, one slot per
+  # INIT: DeckIntents.swift 10 — one closure per thing the deck's vessel does; every intent is
   # INIT: FeedCall.swift 10 — one tool call as a sentence, a slot per part of it
-  # INIT: TicketsRoomProjection.swift 10 — Row — one backlog row, a field per column plus its children
+  # INIT: TicketsRoomProjection.swift 10 — Row, one backlog row, a field per column plus its
   # INIT: ClaimFacts.swift 9 — everything Argo knows about one claim, under one key
-  # INIT: FeedTable.swift 9 — the feed's AppKit scroller, whose slots are what the SwiftUI half hands it
-  # INIT: FeedTableModel.swift 9 — everything the AppKit half of the feed needs from the SwiftUI half, as one value
-  # INIT: GitHubPullRequest.swift 9 — one pull request as GitHub's REST API serves it, parsed at the boundary
-  # INIT: PullRequestJSON.swift 9 — the GitHub pull-request fixture, written the way GitHub writes it
-  # INIT: TicketsRoomProjection.swift 9 — Room — the Tickets room's whole reading
-  # INIT: ConnectPanelProjection+Ports.swift 8 — PortRow — one port's row, its choices and offers beside its binding
-  # INIT: FeedColumn.swift 8 — the feed and the composer floating over it, one slot per reading each takes
-  # INIT: MermaidCompartmented.swift 8 — MermaidRelation — one relationship: its two ends, its stroke and the three words it carries
-  # INIT: MinimapReadingStamp.swift 8 — everything a MinimapReading is a function of, in a form that costs no walk to take
-  # INIT: TicketsReading.swift 8 — everything the Tickets room is derived from, provider Tickets beside Argo's own facts
-  # INIT: FeedAgent.swift 7 — a subagent as the rail names one, every fact read off the delegating call
-  # INIT: FeedAskOfferList.swift 7 — one waiting question's options, plus the field and the Other… under them
-  # INIT: HubRosterMemo.swift 7 — HubRosterStamp — five counters and two values the roster fold is compared by
-  # INIT: MermaidSequence.swift 7 — Message — one arrow: its two ends, its words, its stroke, its head and the two activations
-  # INIT: PermissionPromptProjection.swift 7 — Prompt — one permission request as the composer draws it
-  # INIT: ProjectMenuProjection.swift 7 — Row — one project in the menu, a field per thing the row says
-  # INIT: TicketsChromeProjection.swift 7 — Reading — the Tickets chrome's whole reading, heading through empty state
+  # INIT: FeedTable.swift 9 — the feed's AppKit scroller, whose slots are what the SwiftUI half
+  # INIT: FeedTableModel.swift 9 — everything the AppKit half of the feed needs from the SwiftUI
+  # INIT: GitHubPullRequest.swift 9 — one pull request as GitHub's REST API serves it, parsed at
+  # INIT: PullRequestJSON.swift 9 — the GitHub pull-request fixture, written the way GitHub writes
+  # INIT: TicketsRoomProjection.swift 9 — Room, the Tickets room's whole reading
+  # INIT: ConnectPanelProjection+Ports.swift 8 — PortRow, one port's row, its choices and offers
+  # INIT: FeedColumn.swift 8 — the feed and the composer floating over it, one slot per reading
+  # INIT: MermaidCompartmented.swift 8 — MermaidRelation, one relationship: its two ends, its
+  # INIT: MinimapReadingStamp.swift 8 — everything a MinimapReading is a function of, in a form
+  # INIT: TicketsReading.swift 8 — everything the Tickets room is derived from, provider Tickets
+  # INIT: FeedAgent.swift 7 — a subagent as the rail names one, every fact read off the delegating
+  # INIT: FeedAskOfferList.swift 7 — one waiting question's options, plus the field and the Other…
+  # INIT: HubRosterMemo.swift 7 — HubRosterStamp, five counters and two values the roster fold is
+  # INIT: MermaidSequence.swift 7 — Message, one arrow: its two ends, its words, its stroke, its
+  # INIT: PermissionPromptProjection.swift 7 — Prompt, one permission request as the composer draws
+  # INIT: ProjectMenuProjection.swift 7 — Row, one project in the menu, a field per thing the row
+  # INIT: TicketsChromeProjection.swift 7 — Reading, the Tickets chrome's whole reading, heading
   # INIT: AgentSpawn.swift 6 — what Argo just started, before its CLI has written a record
-  # INIT: AgentSpawnPlan.swift 6 — everything one spawn was decided to be, before anything has started
-  # INIT: ClaudeSessionDriver.swift 6 — the driver's collaborators, one per thing a Claude Session is driven through
-  # INIT: CodexSessionDriver.swift 6 — the driver's collaborators, one per thing a Codex Session is driven through
-  # INIT: ComposerMenu.swift 6 — Row — one pickable thing, its words beside what picking it inserts
+  # INIT: AgentSpawnPlan.swift 6 — everything one spawn was decided to be, before anything has
+  # INIT: ClaudeSessionDriver.swift 6 — the driver's collaborators, one per thing a Claude Session
+  # INIT: CodexSessionDriver.swift 6 — the driver's collaborators, one per thing a Codex Session is
+  # INIT: ComposerMenu.swift 6 — Row, one pickable thing, its words beside what picking it inserts
   # INIT: DeckZoning.swift 6 — the deck's inputs for one layout pass, and nothing here is state
   # INIT: DeliveryFacts.swift 6 — one Delivery as the ticket carries it, fact for fact
-  # INIT: DrivenSession.swift 6 — a driven fixture's handles, one closure per thing a test does to it
-  # INIT: FeedEvidence.swift 6 — Step — one step of the evidence panel, its address beside its result
+  # INIT: DrivenSession.swift 6 — a driven fixture's handles, one closure per thing a test does to
+  # INIT: FeedEvidence.swift 6 — Step, one step of the evidence panel, its address beside its result
   # INIT: MinimapRowRect.swift 6 — one rectangle a feed row draws, in the row's own coordinates
-  # INIT: ResolvedCall.swift 6 — one call as the record left it, with the two places a result can sit
-  # INIT: SessionHeaderProjection+HeaderValues.swift 6 — Identity — the header's leading half, in the order it draws them
-  # INIT: SessionOwnership.swift 6 — Claim — one stretch of ownership as the ledger records it
-  # INIT: ComposerMenu.swift 5 — Listing — the menu surface, its sections beside what the line matched
-  # INIT: ConnectPanelProjection+Ports.swift 5 — Picker — an open scope picker, with its Account already resolved
-  # INIT: EngineReads.swift 5 — the reads an Engine is composed from, as ONE value; the clump is the point
-  # INIT: FeedAskLine.swift 5 — Waiting — what a held-open question offers
-  # INIT: FeedEvidence.swift 5 — FeedEvidence — what the panel is open on, as the row said it
+  # INIT: ResolvedCall.swift 6 — one call as the record left it, with the two places a result can
+  # INIT: SessionHeaderProjection+HeaderValues.swift 6 — Identity, the header's leading half, in
+  # INIT: SessionOwnership.swift 6 — Claim, one stretch of ownership as the ledger records it
+  # INIT: ComposerMenu.swift 5 — Listing, the menu surface, its sections beside what the line
+  # INIT: ConnectPanelProjection+Ports.swift 5 — Picker, an open scope picker, with its Account
+  # INIT: EngineReads.swift 5 — the reads an Engine is composed from, as ONE value; the clump is
+  # INIT: FeedAskLine.swift 5 — Waiting, what a held-open question offers
+  # INIT: FeedEvidence.swift 5 — FeedEvidence, what the panel is open on, as the row said it
   # INIT: FeedRowSelection.swift 5 — what the deck has open and where the keyboard is, in one value
   # INIT: FixturePlugin.swift 5 — one plugin as installed_plugins.json records it
-  # INIT: GitHubDeviceFlow+Wire.swift 5 — DeviceCodeResponse — the device-flow response as GitHub documents it
-  # INIT: HarnessRecord.swift 5 — TaskNotification — a background agent's report as the CLI files it
-  # INIT: HelpPanelPace.swift 5 — how long each step of the Help-panel drive waits, and how often it asks
-  # INIT: MermaidClassBuild.swift 5 — Entry — one class as it is being gathered, its box beside its two member bands
-  # INIT: MermaidFlowchart.swift 5 — Edge — one connector: its two ends, its label, its stroke and its head
-  # INIT: MermaidGantt.swift 5 — Task — one task row, its name and id beside its states and both ends
-  # INIT: MermaidGanttTask.swift 5 — MermaidGanttDraft — one task row as the source wrote it, before either end is knowable
-  # INIT: MermaidGraph.swift 5 — Edge — one connector: its two ends, its stroke and the cap at each end
-  # INIT: MermaidGraph.swift 5 — MermaidGraph — what the layered pass lays out, in the pass's own vocabulary
+  # INIT: GitHubDeviceFlow+Wire.swift 5 — DeviceCodeResponse, the device-flow response as GitHub
+  # INIT: HarnessRecord.swift 5 — TaskNotification, a background agent's report as the CLI files it
+  # INIT: HelpPanelPace.swift 5 — how long each step of the Help-panel drive waits, and how often
+  # INIT: MermaidClassBuild.swift 5 — Entry, one class as it is being gathered, its box beside its
+  # INIT: MermaidFlowchart.swift 5 — Edge, one connector: its two ends, its label, its stroke and
+  # INIT: MermaidGantt.swift 5 — Task, one task row, its name and id beside its states and both ends
+  # INIT: MermaidGanttTask.swift 5 — MermaidGanttDraft, one task row as the source wrote it, before
+  # INIT: MermaidGraph.swift 5 — Edge, one connector: its two ends, its stroke and the cap at each
+  # INIT: MermaidGraph.swift 5 — MermaidGraph, what the layered pass lays out, in the pass's own
   # INIT: MermaidJoin.swift 5 — the token joining two boxes, cut into what it says
-  # INIT: MermaidQuadrant.swift 5 — a quadrant chart as its source wrote it, both axes and all four corners
-  # INIT: MermaidRoute.swift 5 — one routed edge: what it draws, where a word on it goes, and how it meets each box
+  # INIT: MermaidQuadrant.swift 5 — a quadrant chart as its source wrote it, both axes and all four
+  # INIT: MermaidRoute.swift 5 — one routed edge: what it draws, where a word on it goes, and how
   # INIT: MinimapReading.swift 5 — the shape of the reading as the overview lane needs it
-  # INIT: MinimapRect.swift 5 — one drawn rectangle of the miniature, its place beside how it is drawn
-  # INIT: MinimapRow.swift 5 — one feed row as the lane needs it; deliberately cheap, one per row of the document
-  # INIT: ModeControlLabel.swift 5 — everything the Mode control SAYS, for one reading and one held rung
-  # INIT: RecordDirectoryFixture.swift 5 — FixtureTranscript — one transcript to lay down in a fixture record directory
-  # INIT: SessionHeaderProjection+Context.swift 5 — Context — the context gauge's reading, its tier beside its fill and marks
-  # INIT: SessionHeaderProjection+Handoff.swift 5 — Handoff — the hand-off control's words, its tier and what blocks it
-  # INIT: SessionOwnershipLedger.swift 5 — Window — one stretch of ownership, open while the PTY lives
-  # INIT: TicketsReading+Ranking.swift 5 — Rank — the ranking keys in the order they decide, so the order cannot drift
+  # INIT: MinimapRect.swift 5 — one drawn rectangle of the miniature, its place beside how it is
+  # INIT: MinimapRow.swift 5 — one feed row as the lane needs it; deliberately cheap, one per row
+  # INIT: ModeControlLabel.swift 5 — everything the Mode control SAYS, for one reading and one held
+  # INIT: RecordDirectoryFixture.swift 5 — FixtureTranscript, one transcript to lay down in a
+  # INIT: SessionHeaderProjection+Context.swift 5 — Context, the context gauge's reading, its tier
+  # INIT: SessionHeaderProjection+Handoff.swift 5 — Handoff, the hand-off control's words, its tier
+  # INIT: SessionOwnershipLedger.swift 5 — Window, one stretch of ownership, open while the PTY
+  # INIT: TicketsReading+Ranking.swift 5 — Rank, the ranking keys in the order they decide, so the
 
 cyclomatic_complexity:
   # biome gates cognitive complexity at 15; SwiftLint measures cyclomatic. Same ceiling,

@@ -38,10 +38,10 @@ fi
 # `code` is the line with its comments and string CONTENTS removed: a `//` inside a string ends no
 # comment, and a `"` inside one opens no string. Getting that wrong silently unbalances the parens
 # for the rest of the file, which is a gate that passes everything and says so — the exact
-# fail-open docs/agents/quality-gates.md is about. `""" `blocks are tracked across lines because
-# their contents are prose that may hold anything.
+# fail-open docs/agents/quality-gates.md is about. `"""` blocks and `/* */` comments are tracked
+# across lines because their contents are prose that may hold anything, a declaration included.
 AWK_READER='
-  function code(line,   out, i, char, next2) {
+  function code(line,   out, i, char, next2, rest, seen) {
     out = ""
     if (inblock) {
       i = index(line, "\"\"\"")
@@ -49,10 +49,22 @@ AWK_READER='
       inblock = 0
       line = substr(line, i + 3)
     }
+    if (incomment) {
+      i = index(line, "*/")
+      if (!i) return ""
+      incomment = 0
+      line = substr(line, i + 2)
+    }
     for (i = 1; i <= length(line); i++) {
       char = substr(line, i, 1)
       next2 = substr(line, i, 3)
       if (next2 == "\"\"\"") { inblock = 1; return out }
+      if (char == "/" && substr(line, i, 2) == "/*") {
+        rest = substr(line, i + 2); seen = index(rest, "*/")
+        if (!seen) { incomment = 1; return out }
+        i = i + 2 + seen
+        continue
+      }
       if (char == "/" && substr(line, i, 2) == "//") return out
       if (char == "\"") {
         for (i++; i <= length(line); i++) {
@@ -252,10 +264,9 @@ fi
 #    cap of 4 is a gate nothing anyone writes can fail (#992).
 #
 #    A struct's SYNTHESIZED memberwise init is the second shape neither SwiftLint nor a grep for
-#    `init` can see, and it is the one a regroup produces by construction: #1058 cut a row from 9
-#    parameters to 4 by extracting a value whose own group held five, so the width had been moved
-#    rather than removed and the ratchet read 28 → 23 while it happened (#1060). Both shapes are
-#    counted here, and both are grandfathered by the same list — a memberwise init IS an init.
+#    `init` can see, and it is the one a regroup produces by construction, so width moved into one
+#    is width hidden rather than removed (#1060). Both shapes are counted here, and both are
+#    grandfathered by the same list — a memberwise init IS an init.
 #
 #    What is grandfathered is a NAMED list beside that rule, and the list may only shrink: an init
 #    over the cap fails unless it is named, and a name matching no init over the cap fails too.
@@ -314,43 +325,79 @@ $(printf '%s\n' "$INIT_EXEMPT" | awk 'NF' | wc -l | tr -d ' ') grandfathered by 
         ' "$file"
         # The synthesized memberwise init, counted by brace depth rather than by paren depth:
         # there is no declaration to find, so the subject is the struct's own body. What Swift puts
-        # in the list was checked against swiftc, not assumed — an initialised `let` is left out, a
-        # defaulted `var` is in with a default, and a `private` STORED property makes the whole init
-        # private. That last one is skipped, and the reason is at the rule in $SWIFTLINT_CONFIG.
+        # in that list was checked against swiftc, not assumed — an initialised `let` is left out, a
+        # `lazy var` is in, and a `private` STORED property makes the whole init private. That last
+        # one is skipped, and the reason is at the rule in $SWIFTLINT_CONFIG.
+        #
+        # Read as SEGMENTS — a run of code between braces, semicolons and newlines — rather than as
+        # lines: `struct Inner { init() {} }` on one line would otherwise hand the struct around it
+        # an `init` it does not have, and a wide struct written on one line would read as having no
+        # members at all. Both are house style here, so both would be ways past a gate that looked.
         awk -v file="$file" -v cap="$INIT_CAP" "$AWK_READER"'
-          function stored(text,   rest, brace, equals) {
+          # How many properties one declaration binds. `let a: Int, b: Int` is two, while the commas
+          # inside `(Int, Int)` or `Dictionary<String, Int>` are one type talking about itself, so a
+          # binding is only counted where a NAME and its colon follow the comma outside any bracket.
+          function bindings(text,   i, char, nest, count) {
+            count = 1
+            for (i = 1; i <= length(text); i++) {
+              char = substr(text, i, 1)
+              if (char == "(" || char == "[") nest++
+              else if (char == ")" || char == "]") nest--
+              else if (char == "," && !nest && substr(text, i) ~ /^,[ \t]*[A-Za-z_][A-Za-z0-9_]*[ \t]*[:=]/)
+                count++
+            }
+            return count
+          }
+          # `opens` says a brace follows this segment, which is what tells a computed property from a
+          # stored one — the difference is invisible in the declaration itself.
+          function member(text, opens,   rest) {
+            # A nested type owns its own members, and its own `init` suppresses its own list, not the
+            # enclosing one.
+            if (text ~ /(^|[^.A-Za-z0-9_])(struct|enum|class|actor|protocol|extension)[ \t]+[A-Za-z_]/) return
             if (text ~ /(^|[^.A-Za-z0-9_])init\??[ \t]*[(<]/) { written[depth] = 1; return }
             if (text !~ /(^|[^.A-Za-z0-9_])(var|let)[ \t]+[A-Za-z_]/) return
-            if (text ~ /(^|[^.A-Za-z0-9_])(static|class|lazy)[ \t]/) return
-            rest = text; sub(/^.*[^.A-Za-z0-9_](var|let)[ \t]+/, "", rest)
-            brace = index(rest, "{"); equals = index(rest, "=")
-            # Accessors with no value assigned before them: a computed property stores nothing.
-            if (brace && (!equals || equals > brace)) return
+            # A type property is not in the list.
+            if (text ~ /(^|[^.A-Za-z0-9_])static[ \t]/) return
+            # Accessors rather than a value: a computed property stores nothing.
+            if (opens && text !~ /=/) return
             # An initialised `let` is settled, so no call site can pass it.
-            if (text ~ /(^|[^.A-Za-z0-9_])let[ \t]/ && equals) return
+            if (text ~ /(^|[^.A-Za-z0-9_])let[ \t]/ && text ~ /=/) return
             if (text ~ /(^|[^.A-Za-z0-9_])(private|fileprivate)[ \t]/) { sealed[depth] = 1; return }
-            fields[depth]++
+            rest = text; sub(/^.*[^.A-Za-z0-9_](var|let)[ \t]+/, "", rest)
+            fields[depth] += bindings(rest)
+          }
+          function close_struct() {
+            if (isstruct[depth] && !written[depth] && !sealed[depth] && fields[depth] > cap)
+              print file ":" at[depth] ": " named[depth] "'"'"'s synthesized memberwise init takes " \
+                fields[depth] " parameters"
+            if (depth > 0) depth--
+          }
+          function open_scope(text,   opening) {
+            if (isstruct[depth]) member(text, 1)
+            opening = ""
+            if (match(text, /(^|[^.A-Za-z0-9_])struct[ \t]+[A-Za-z_][A-Za-z0-9_]*/)) {
+              opening = substr(text, RSTART, RLENGTH); sub(/^.*struct[ \t]+/, "", opening)
+            }
+            depth++
+            isstruct[depth] = (opening != ""); named[depth] = opening
+            fields[depth] = 0; written[depth] = 0; sealed[depth] = 0; at[depth] = FNR
           }
           {
             line = code($0)
-            if (match(line, /(^|[^.A-Za-z0-9_])struct[ \t]+[A-Za-z_][A-Za-z0-9_]*/)) {
-              pending = substr(line, RSTART, RLENGTH); sub(/^.*struct[ \t]+/, "", pending)
-            }
-            if (isstruct[depth]) stored(line)
             for (i = 1; i <= length(line); i++) {
               char = substr(line, i, 1)
-              if (char == "{") {
-                depth++
-                isstruct[depth] = (pending != ""); named[depth] = pending
-                fields[depth] = 0; written[depth] = 0; sealed[depth] = 0; at[depth] = FNR
-                pending = ""
-              } else if (char == "}") {
-                if (isstruct[depth] && !written[depth] && !sealed[depth] && fields[depth] > cap)
-                  print file ":" at[depth] ": " named[depth] "'"'"'s synthesized memberwise init takes " \
-                    fields[depth] " parameters"
-                if (depth > 0) depth--
-              }
+              if (char == "{") { open_scope(seg); seg = "" }
+              else if (char == "}") {
+                if (isstruct[depth]) member(seg, 0)
+                close_struct(); seg = ""
+              } else if (char == ";") {
+                if (isstruct[depth]) member(seg, 0)
+                seg = ""
+              } else seg = seg char
             }
+            # Swift needs no semicolon, so a newline ends a declaration too.
+            if (isstruct[depth]) member(seg, 0)
+            seg = ""
           }
         ' "$file"
       done

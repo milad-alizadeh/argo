@@ -8,10 +8,8 @@ import assert from 'node:assert/strict'
 import { check, report } from './check-harness.mjs'
 import { ACTIONS, CONFIG, run, swiftlint, tree, wideStruct } from './swift-boundaries.fixture.mjs'
 
-// The hole #1060 is: a value type's memberwise init is a parameter list every call site lines up,
-// and nothing was counting it. #1058 regrouped nine parameters into four by extracting a value whose
-// own group held five — width moved rather than removed, and the ratchet read 28 → 23 while it
-// happened.
+// A value type's memberwise init is a parameter list every call site lines up, and nothing counted
+// it — so a regroup could move width into one rather than remove it (#1060).
 check('edge 6 counts a synthesized memberwise init past the cap', () => {
   const result = run(tree({ [ACTIONS]: wideStruct(5) }))
   assert.equal(result.status, 1, `a five-field value type passed: ${result.output}`)
@@ -42,22 +40,28 @@ check('edge 6 counts a memberwise init an extension does not suppress', () => {
   assert.match(result.output, /memberwise init takes 5 parameters/)
 })
 
-// Only STORED properties become parameters. Counting a computed one, a `static` one or a `lazy` one
-// would fail the build on a list Swift does not declare — a gate that cries wolf gets suppressed.
-check('edge 6 counts only the properties the memberwise init takes', () => {
-  const source = `struct Picked {
-    let slot0: Int
-    let slot1: Int
-    static let shared = Picked(slot0: 0, slot1: 0)
-    lazy var late: Int = 0
-    var doubled: Int { slot0 * 2 }
-    var described: String {
-        get { "\\(slot0)" }
-        set { slot0 = Int(newValue) ?? 0 }
-    }
+// Only the members Swift actually puts in the list count. One row per shape, each built so the
+// struct is at cap+1 ONLY if that row counts — so a miscount fires rather than passing vacuously.
+// `lazy var` was checked against swiftc: `Picked(slot0:late:)` compiles, so it IS a parameter.
+const MEMBERS = [
+  ['static let shared = 0', false],
+  ['var doubled: Int { slot0 * 2 }', false],
+  ['var described: String {\n        get { "" }\n        set { slot0 = 0 }\n    }', false],
+  ['lazy var late: Int = 0', true],
+  ['var flag = false', true],
+]
+
+for (const [member, counts] of MEMBERS) {
+  check(`edge 6 ${counts ? 'counts' : 'does not count'} \`${member.split('\n')[0]}\``, () => {
+    const result = run(tree({ [ACTIONS]: wideStruct(4, `    ${member}\n`) }))
+    assert.equal(result.status, counts ? 1 : 0, `expected counts=${counts}: ${result.output}`)
+  })
 }
-`
-  const result = run(tree({ [ACTIONS]: source }))
+
+// A `private lazy var` is stored and private, so it seals the list — the modifier filter must not
+// swallow it before the seal is read.
+check('edge 6 is sealed by a private lazy stored property', () => {
+  const result = run(tree({ [ACTIONS]: wideStruct(5, '    private lazy var late: Int = 0\n') }))
   assert.equal(result.status, 0, result.output)
 })
 
@@ -191,6 +195,114 @@ check('edge 6 does not count a value type written inside a multi-line string', (
 `
   const result = run(tree({ [ACTIONS]: prose }))
   assert.equal(result.status, 0, result.output)
+})
+
+// A nested type declared on ONE line used to be read as the enclosing struct's own members, which
+// is house style here (`GitHubIssue`'s wire types) and so was the cheapest way to pass this gate:
+// its `init` suppressed the outer list, its `private` field sealed it, and its stored properties
+// inflated the outer count. Segments rather than lines is what fixes all three.
+const ONE_LINERS = [
+  'struct Inner { init() {} }',
+  'struct Inner { private var hidden = 0 }',
+  'struct Inner: Decodable { let login: String }',
+]
+
+for (const inner of ONE_LINERS) {
+  check(`edge 6 is not thrown off by \`${inner}\``, () => {
+    const result = run(tree({ [ACTIONS]: wideStruct(5, `    ${inner}\n`) }))
+    assert.equal(result.status, 1, `a one-line nested type hid the width: ${result.output}`)
+    assert.match(result.output, /Picked's synthesized memberwise init takes 5 parameters/)
+  })
+}
+
+// And the enclosing struct is counted at ITS width, not its width plus the nested types' fields.
+check("edge 6 does not count a nested type's fields against the type around it", () => {
+  const source = `struct Picked {
+    let slot0: Int
+    let slot1: Int
+    struct A: Decodable { let a: String }
+    struct B: Decodable { let b: String }
+    struct C: Decodable { let c: String }
+}
+`
+  const result = run(tree({ [ACTIONS]: source }))
+  assert.equal(result.status, 0, result.output)
+})
+
+// A whole struct on one line declares the same list as the same struct on seven.
+check('edge 6 counts a value type written on one line', () => {
+  const source = 'struct Picked { let a: Int; let b: Int; let c: Int; let d: Int; let e: Int }\n'
+  const result = run(tree({ [ACTIONS]: source }))
+  assert.equal(result.status, 1, `a one-line struct passed: ${result.output}`)
+  assert.match(result.output, /memberwise init takes 5 parameters/)
+})
+
+// One declaration may bind several properties, and each is its own parameter.
+check('edge 6 counts every property one declaration binds', () => {
+  const source = `struct Picked {
+    let slot0: Int, slot1: Int
+    let slot2: Int, slot3: Int
+    let slot4: Int
+}
+`
+  const result = run(tree({ [ACTIONS]: source }))
+  assert.equal(result.status, 1, `a second binding went uncounted: ${result.output}`)
+  assert.match(result.output, /memberwise init takes 5 parameters/)
+})
+
+// The commas inside a type are the type talking about itself, not further bindings. Counting them
+// would fail the build on a struct within the cap.
+check('edge 6 does not read a comma inside a type as a second binding', () => {
+  const source = `struct Picked {
+    let pair: (Int, Int)
+    let map: Dictionary<String, Int>
+    let call: (String, Int) -> Void
+    let list: [(Int, Int)]
+}
+`
+  const result = run(tree({ [ACTIONS]: source }))
+  assert.equal(result.status, 0, result.output)
+})
+
+// An `extension` wrapping the declaration is not the declaration: its brace opens no struct, so
+// the type inside it is still counted at its own width.
+check('edge 6 counts a value type an extension wraps on one line', () => {
+  const source = `extension Head { struct Picked { let a: Int; let b: Int; let c: Int; let d: Int; let e: Int } }\n`
+  const result = run(tree({ [ACTIONS]: source }))
+  assert.equal(result.status, 1, `an extension hid the width: ${result.output}`)
+  assert.match(result.output, /memberwise init takes 5 parameters/)
+})
+
+// A block comment is prose, and prose may hold a declaration. Counting one would fail the build on
+// a list Swift never declares — the `/* */` twin of the multi-line-string case below.
+check('edge 6 does not count a value type written inside a block comment', () => {
+  const source = `/*
+struct Fake {
+    let a: Int
+    let b: Int
+    let c: Int
+    let d: Int
+    let e: Int
+}
+*/
+struct Picked { let only: Int }
+`
+  const result = run(tree({ [ACTIONS]: source }))
+  assert.equal(result.status, 0, result.output)
+})
+
+// A block comment that opens and closes on one line hides only what is between its markers.
+check('edge 6 reads the code around a one-line block comment', () => {
+  const source = `struct Picked {
+    let slot0: Int /* a note */, slot1: Int
+    let slot2: Int
+    let slot3: Int
+    let slot4: Int
+}
+`
+  const result = run(tree({ [ACTIONS]: source }))
+  assert.equal(result.status, 1, `a block comment swallowed the line: ${result.output}`)
+  assert.match(result.output, /memberwise init takes 5 parameters/)
 })
 
 report('swift boundaries: the memberwise initializer cap')
