@@ -29,6 +29,12 @@ struct HubJoin {
     /// invisible to it. Retaken by every fold, and a `headLeafUUID` that moves forces one.
     private var chainKeys: Set<String> = []
 
+    #if DEBUG
+        /// How many whole-set rebuilds this join paid, counted rather than timed (ADR-0028 Rule
+        /// 8). Per value, because a static one would be shared by every suite running beside this.
+        private(set) var rebuilds = 0
+    #endif
+
     var isEmpty: Bool {
         transcripts.isEmpty
     }
@@ -149,6 +155,9 @@ struct HubJoin {
     /// While the fold is partial nothing may be written into the roster in place either — see
     /// `HubRoster.holdWrites`, whose every rejection is a fact about the whole set.
     private mutating func rebuild() {
+        #if DEBUG
+            rebuilds += 1
+        #endif
         chainKeys = Set(transcripts.compactMap(\.session.headLeafUUID))
         isOrdered = true
         let publishable = HubJoinPublishable(of: transcripts, owners: recordOwners)

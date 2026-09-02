@@ -3,8 +3,8 @@
 # scope.
 #
 # What it does NOT cover, so that a green run is not read as more than it is: ADR-0028's
-# Consequences also name eight CPU quotients across five cost suites, two of them
-# (`HubJoinCostTests`, `HubRosterCostTests`) in `ArgoEngine`, which this job never builds. Those
+# Consequences also name seven CPU quotients across four cost suites, one of them
+# (`HubRosterCostTests`) in `ArgoEngine`, which this job never builds. Those
 # are GATES and they run in debug on every push, where a count cannot get them wrong — see
 # `docs/agents/quality-gates.md`. This job re-records FIGURES, which is a different thing.
 #

@@ -18,14 +18,20 @@
 /// Nothing in this package gates on a second, so no bound here moves when they are re-recorded —
 /// but the block ADR-0028 names is still up.
 enum PerfBudgets {
-    /// `HubJoinCostTests` — a Session's own content batch may not cost more as the roster grows.
+    /// `HubJoinCostTests` — a Session's own content batch may not rebuild the join, whatever the
+    /// roster holds.
     ///
-    /// Recorded: 0.97–1.01 over six readings, never above 1.02, each arm 5.9 ms of 500 batches ·
-    /// Apple silicon laptop · debug · least of 15, interleaved, three idle and three with ten
-    /// spinners. Restoring `rebuild()` on this path takes the quotient to 36x.
+    /// Recorded: 0 rebuilds over 500 batches, at 4 rows and at 200 · either · exact. Restoring
+    /// `rebuild()` on this path makes it 500 at both.
     ///
-    /// 1.3 is ADR-0028 Rule 3's own number, and tighter than Rule 7's 3x would allow.
-    static let batchOverRosterFlat = 1.3
+    /// The same claim in seconds rides along here and BINDS nothing (ADR-0028 Rule 8, #1064): a
+    /// quotient of 0.97–1.01 over six readings, each arm 5.9 ms of 500 batches · Apple silicon
+    /// laptop · debug · least of 15, interleaved, three idle and three with ten spinners, with the
+    /// same defect reading 36x. It is a figure and not a bound because its halves are fifty times
+    /// apart in resident working set, which is a difference `CLOCK_THREAD_CPUTIME_ID` charges to
+    /// the larger arm in every trial — so it read 1.53 on a hosted runner while the code stood
+    /// still.
+    static let batchRebuilds = 0
 
     /// `HubRosterCostTests` — one `session(id:)` may not cost more as the roster grows.
     ///
