@@ -1,16 +1,22 @@
 import SwiftUI
 
-/// How many blockers still stand between a backlog row and being startable (#896), on the row
-/// itself rather than one ticket at a time in the pane beside it.
+/// That something still stands between a backlog row and being startable (#896), on the row itself
+/// rather than one ticket at a time in the pane beside it.
 ///
-/// The glyph says *blocked* and the count says *how* blocked (#939): blocked by three and blocked
-/// by one are different distances from startable. It is drawn only where there is something to
-/// count — `TicketsRoomProjection.blockage` withholds the value on a clear ticket and on one whose
-/// edges nobody served, so nothing here has to know which of the two silences it is looking at.
+/// **The glyph alone.** It shipped as a glyph and a count in a capsule (#939); the count is now the
+/// pane's, where `Blocked by · 6` states it against the blockers it can name. On the row it was a
+/// numeral a reader could not act on, and it made the one mark that answers "can I start this"
+/// heavier than the claim mark that answers "is somebody on it". The count survives in the hover
+/// and in what the row speaks.
 ///
-/// The ink is the Route's, unchanged (`cockpit-work-room.md` — the Route): waiting is `state.idle`,
-/// so a list of blocked tickets does not read as an emergency on day one, and `state.failure` is
-/// spent only on the one that can never unblock itself.
+/// The ink is `TicketsView.blocked.ink`, the sidebar's own, so the rail's mark and the row's agree
+/// on colour as well as on shape. A STRANDED mark goes to `text.disabled` instead: the edge can
+/// never satisfy itself, so the row is not waiting for anything and reads as struck out rather
+/// than as a louder wait. It also leaves the palette's one red spent on one state.
+///
+/// It is drawn only where there is something to mark — `TicketsRoomProjection.blockage` withholds
+/// the value on a clear ticket and on one whose edges nobody served, so nothing here has to know
+/// which of the two silences it is looking at.
 struct BlockageMark: View {
     /// Shared with the sidebar's `Blocked` view, which counts exactly the rows that carry this:
     /// two glyphs would be two concepts to a reader who has to learn they are one (#939).
@@ -21,27 +27,18 @@ struct BlockageMark: View {
     let blockage: TicketsRoomProjection.Blockage
 
     var body: some View {
-        HStack(spacing: ArgoSpacing.hair) {
-            ArgoGlyph(Self.symbol, .inline)
-            Text("\(blockage.count)")
-                .argoText(ArgoTypography.machineCaption)
-        }
-        .foregroundStyle(ink.color)
-        // One rung wider than the numeral alone took. The glyph's box is tight to its ring, so at
-        // `tight` the ring crowds the capsule's own stroke — rendered, not guessed.
-        .padding(.horizontal, ArgoSpacing.snug)
-        .frame(minHeight: ArgoBacklogList.trailingMark)
-        .background(Capsule().strokeBorder(ink.color, lineWidth: ArgoStroke.hairline))
-        // Rigid for the `#id`'s reason: a mark that gave up width would set its own glyph and
-        // digits down the column rather than let the title take the squeeze.
-        .fixedSize()
-        .help(help)
-        // The row speaks the mark as part of one sentence — see `BacklogRow.announcement`.
-        .accessibilityHidden(true)
+        ArgoGlyph(Self.symbol, .inline)
+            .foregroundStyle(ink.color)
+            // The claim mark's box, so the two sit on one vertical whether a row carries one of
+            // them or both.
+            .frame(minHeight: ArgoBacklogList.trailingMark)
+            .fixedSize()
+            .help(help)
+            // The row speaks the mark as part of one sentence — see `BacklogRow.announcement`.
+            .accessibilityHidden(true)
     }
 
-    /// What the glyph and the count say between them, spelled out on the same terms the roll-up
-    /// beside it uses.
+    /// What the glyph says, spelled out with the count it no longer draws.
     private var help: String {
         blockage.isStranded
             ? "\(blockage.count) blockers, one of them ruled out — the edge can only be cleared by "
@@ -50,7 +47,7 @@ struct BlockageMark: View {
     }
 
     private var ink: ArgoColor {
-        blockage.isStranded ? argo.color.state.failure : argo.color.state.idle
+        blockage.isStranded ? argo.color.text.disabled : TicketsView.blocked.ink(argo)
     }
 }
 

@@ -145,6 +145,27 @@ struct TicketsBacklogMarkTests {
         #expect(ClaimMark.symbol == TicketsView.inProgress.symbol)
     }
 
+    /// …and one INK. Agreeing on shape while disagreeing on colour is the same two concepts #939
+    /// removed, so the sidebar glyph and the row mark read `TicketsView.ink` rather than naming a
+    /// palette role each.
+    @Test
+    func `a view that marks the list draws its mark in the view's own ink`() {
+        let argo = ArgoTheme.graphite
+
+        #expect(TicketsView.inProgress.ink(argo) == argo.color.state.running)
+        #expect(TicketsView.blocked.ink(argo) == argo.color.state.failure)
+    }
+
+    /// A view that marks NOTHING in the list takes no colour: an unblocked ticket is deliberately
+    /// unmarked (the row does not claim `unblocked` over edges nobody served), so a coloured glyph
+    /// on the rail would mean something the list never says.
+    @Test(arguments: [TicketsView.allOpen, .unblocked])
+    func `a view with no row mark takes no ink of its own`(view: TicketsView) {
+        let argo = ArgoTheme.graphite
+
+        #expect(view.ink(argo) == argo.color.text.tertiary)
+    }
+
     @Test
     func `the mark reaches the row the list draws`() {
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading)

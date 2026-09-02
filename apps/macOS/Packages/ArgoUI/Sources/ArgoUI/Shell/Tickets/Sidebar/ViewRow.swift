@@ -10,6 +10,10 @@ struct ViewRow: View {
 
     let symbol: String
     let name: String
+    /// The glyph's ink — `TicketsView.ink`, the same value the row mark counting into this view
+    /// draws in. Passed as a value rather than read off a `TicketsView` here, so this row stays a
+    /// dumb view of four strings and a colour.
+    var ink: ArgoColor?
     /// What the row holds, and `nil` where nothing has said enough to arrive at a number. The slot
     /// is then EMPTY rather than a zero, which is the same rule the rest of the room reads by.
     let count: Int?
@@ -19,7 +23,7 @@ struct ViewRow: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
             ArgoGlyph(symbol, .inline)
-                .foregroundStyle(argo.color.text.tertiary)
+                .foregroundStyle((ink ?? argo.color.text.tertiary).color)
                 .frame(width: ArgoTicketsSidebar.glyphWidth)
             Text(name)
                 .argoText(ArgoTypography.rowMeta)

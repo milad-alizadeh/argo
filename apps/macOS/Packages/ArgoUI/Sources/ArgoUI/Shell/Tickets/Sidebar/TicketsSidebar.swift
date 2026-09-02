@@ -40,6 +40,7 @@ struct TicketsSidebar: View {
                 ViewRow(
                     symbol: reading.id.symbol,
                     name: reading.id.name,
+                    ink: reading.id.ink(argo),
                     count: reading.count,
                     unplaced: reading.unplaced,
                 )

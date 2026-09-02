@@ -177,15 +177,43 @@ caption: *can I start this*, rather than *what is this* or *how long has it sat*
 blocked and stale therefore draws both, and the count is a count rather than a flag — blocked by
 three and blocked by one are different distances from startable.
 
-**The mark leads with a glyph and carries the count second (amended #939).** The glyph says
-*blocked*; the number says *how* blocked. It shipped as a bare numeral in a capsule, which named
-nothing — a number in a circle is a count, and the only thing that said what it counted was a
-tooltip nobody hovers. Both facts survive the amendment; only the wordless numeral goes.
+**The mark is the glyph alone (amended #1074).** It shipped as a bare numeral in a capsule, gained
+a leading glyph in #939, and now sheds both the capsule and the numeral. The count is the *pane's*,
+where `Blocked by · 6` states it against the blockers it can name; on the row it was a number a
+reader could not act on, and it made the mark that answers *can I start this* heavier than the
+claim mark that answers *is somebody on it*. The count survives in the hover and in what the row
+speaks. **The two marks in this region are now one glyph each**, which is what lets a reader scan
+the column at all.
 
-**The glyph is the one the sidebar's `Blocked` view draws** — `ArgoSymbol.blockedView`, which
-#939 settled as `nosign` for both surfaces at once. The sidebar says "8 blocked" beside that mark
-and the rows are the 8 it counted, so two glyphs would be two concepts to a reader who has to learn
-they are the same one. One concept, one mark, and one edit moves both.
+**The glyph is the one the sidebar's `Blocked` view draws** — `ArgoSymbol.blockedView`. #939
+settled that they are one constant for both surfaces; #1074 changes the shape to
+`slash.circle.fill`, **filled** like `All open` and `In progress`, `nosign` having no fill variant
+of its own. The sidebar says "8 blocked" beside that mark and the rows are the 8 it counted, so two
+glyphs would be two concepts to a reader who has to learn they are the same one. One concept, one
+mark, and one edit moves both.
+
+### The rail and the row are one ink, too (#1074)
+
+**A view's glyph and the row mark counting into it draw in the same colour**, `TicketsView.ink` —
+the same rule #939 fixed for the shape, for the same reason. Agreeing on shape while disagreeing on
+hue is the two concepts again.
+
+| View | Ink | Why |
+|---|---|---|
+| `All open` | `text.tertiary` | marks nothing in the list, so there is no ink to agree with |
+| `Unblocked` | `text.tertiary` | the same: an unblocked row is deliberately unmarked |
+| `In progress` | `state.running` | the Route's word for a turn in flight, which is what a claim is |
+| `Blocked` | `state.failure` | **amended #1074**; it was `state.idle` |
+
+**A view that marks nothing takes no colour.** Colour on the rail means *there is a mark like this
+in the list*, so spending an ink on `All open` or `Unblocked` would state something the list never
+says.
+
+**Stranded is `text.disabled`, not a second red.** The palette holds one red and `Blocked` now
+spends it. That is the right way round: a stranded edge can never satisfy itself, so the row is not
+waiting for anything, and struck-out reads truer than a louder wait. It also means the two states
+are told apart by value rather than by hue, which survives a reader who cannot separate the two
+reds.
 
 **The caption holds exactly one fact, in this order.** First one present wins; the rest are not
 drawn.
@@ -218,10 +246,13 @@ therefore drawn identically for a *clear* ticket and an *unread* one, which is c
 says nothing about blockage in both cases, and only the sidebar's `Blocked` count, which can see the
 whole set, is allowed to tell them apart.
 
-**The mark's ink is the Route's, unchanged.** Waiting is `state.idle`, so seventeen blocked rows do
-not read as an emergency on day one; `state.failure` is spent only on a ticket that can never
-unblock itself — one whose blocker was **ruled out**, which satisfies nothing and needs a human to
-re-scope one of the two. No palette role is added.
+**~~The mark's ink is the Route's, unchanged.~~ Superseded by #1074** — see *The rail and the row
+are one ink* above. Waiting was `state.idle` and stranded `state.failure`, on the reasoning that
+seventeen blocked rows must not read as an emergency on day one. The rail is what changed that: a
+`Blocked` glyph in the sidebar's neutral said nothing next to `In progress`, and matching the rail
+to the row is what the pair is for. Blocked is `state.failure` on both surfaces and stranded is
+`text.disabled`. No palette role is added, and the reasoning survives inverted: the loud state is
+the one you can act on, and the one nothing will clear is the quiet one.
 
 **None of this is a leading accent.** The region is trailing, and a selected or current row is still
 carried by its ground alone.
@@ -615,6 +646,12 @@ drawn beside the word only where it says something the word cannot, which on a t
 is `claimed`, the filing no provider carries. `Bucket` keeps its labelled home in the fact strip;
 what the head drops is the restatement, not the fact.
 
+**Amended #1074: `open` never earns the second slot.** #893 tested for the same *word*, which left
+every provider whose open word is not the string `open` still drawing the pair — a head read
+`In progress | open`, two words for one bit and the second of them dimmed. An open ticket is in an
+open listing, so filing it under `open` restates the room the reader is already standing in.
+`resolved`, `ruled out` and `claimed` still draw: each says something the provider's word cannot.
+
 **Deliveries are chips, not a list.** Each is a bordered object on `surface.raised` carrying its
 number, its branch, its diff and its checks reading. At 480 a chip sets on one line, so two
 Deliveries are two stacked chips rather than a wrapped mess (`deep.png`).
@@ -700,7 +737,7 @@ Surface sheets, beside the surface, per `rules/design-system.md` — a measure i
 | `indentStep` | `ArgoSpacing.loose` 16 | one level; a child's dot lands under its parent's id |
 | `indentDepthCap` | **2** | level three shares level two's inset |
 | `gap` | `ArgoSpacing.base` 8 | between dot, id, title and the trailing region |
-| `trailingMark` | **16**, a HEIGHT floor | a trailing mark's box; every mark in the region takes it, so they sit on one vertical. **Renamed #1074** from `blockageMark`, the claim mark being the second reader of it. **Amended #939**: it was a floor on both axes, sized so one digit drew a circle. The mark holds a glyph and a count now, so its width is what those two set and there is no square to floor — the capsule grows sideways at a second digit rather than shrinking either half |
+| `trailingMark` | **16**, a HEIGHT floor | a trailing mark's box; every mark in the region takes it, so they sit on one vertical. **Renamed #1074** from `blockageMark`, the claim mark being the second reader of it. **Amended #939**: it was a floor on both axes, sized so one digit drew a circle. **Amended #1074**: both marks are one glyph, so the box is a height floor holding them on one vertical and nothing sets a width |
 
 The mark's glyph is drawn at `ArgoIconSize.inline` **10** — the contract's rung for "a mark on a
 line of text", beside the `machineCaption` 11 the count is set in, and the rung the sidebar draws
@@ -742,7 +779,7 @@ for; anything not listed is stock used directly.
 | `TicketsRoom` | organism | the shell's existing `NavigationSplitView` slots | supplies sidebar and detail; it does not own a split of its own |
 | `TicketsSidebar` | organism | `List(selection:)` with two `Section`s | views, not tickets |
 | `RoomStrip` | atom | `NSSegmentedControl`, via `RoomSegments` | `Sessions \| Tickets \| Code`, at the head of EVERY room's sidebar (#805). AppKit's control since #857, for `segmentDistribution` and for a mark beside a word; its selected segment is bezelled to a neutral (#944). #816 deleted the titlebar's `RoomsVessel`, so this is the window's only rooms picker and it lives in `Shell/Sidebar/` rather than under `Tickets/` |
-| `ViewRow` | molecule | an `HStack` in a `List` row | glyph · name · shortfall · count, at `viewRowHeight` as a floor. **Amended #1074**: a count may state what it is short by, inboard of itself, so the numbers keep the trailing edge they are read down |
+| `ViewRow` | molecule | an `HStack` in a `List` row | glyph · name · shortfall · count, at `viewRowHeight` as a floor. **Amended #1074**: a count may state what it is short by, inboard of itself, so the numbers keep the trailing edge they are read down; and the glyph takes `TicketsView.ink` rather than a flat `text.tertiary`, so the rail's mark matches the row's |
 | `ProviderFoot` | atom | an `HStack` above a `Divider` | the bound provider, at the sidebar's foot |
 | `NextUpCard` | molecule | a `VStack` on `surface.raised` | the hero; carries the ticket or an empty-tier sentence |
 | `NextUpChip` | atom | `Text` in a rounded rect | at most two, each earned |
@@ -751,7 +788,7 @@ for; anything not listed is stock used directly.
 | `BacklogRow` | molecule | an `HStack` in a `List` row | `twist · dot · id · title · trailing` |
 | `BacklogTwist` | atom | `DisclosureGroup`'s chevron, drawn | drawn rather than inherited so it can carry its own hit target |
 | `DeliveryDot` | atom | `Circle` at `ArgoLayout.statusDotSize` | the five-state table above |
-| `BlockageMark` | atom | an `ArgoGlyph` and a count in a `Capsule().strokeBorder` | **Added #896**: how many blockers still stand, in the trailing region. Hollow rather than filled, so the contrast is the ink's own in both appearances. **Amended #939**: the glyph leads and names the state, which the numeral alone never did; it is `BlockageMark.symbol`, the sidebar's `ArgoSymbol.blockedView` |
+| `BlockageMark` | atom | a bare `ArgoGlyph` | **Added #896** as how many blockers still stand, in the trailing region. **Amended #939**: a glyph leads and names the state, which the numeral alone never did. **Amended #1074**: the capsule and the count go — the count is the pane's, and two one-glyph marks are what make the column scannable. It is `BlockageMark.symbol`, the sidebar's `ArgoSymbol.blockedView`, in `TicketsView.blocked.ink` — or `text.disabled` when stranded |
 | `ClaimMark` | atom | a bare `ArgoGlyph` | **Added #1074**: that a live Session is on this ticket, in the trailing region inboard of the blockage mark. A glyph with no count and no capsule — claimed has no degree — in `state.running`. It is `ClaimMark.symbol`, the sidebar's `ArgoSymbol.inProgressView`, for #939's reason |
 | `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
 | `TicketsToolbar` | organism | `.toolbar { ToolbarItem }` per control | the window row, and **every control the room has**. Amended twice: #836 moved all but search into per-pane bands, and the bands are now gone — see the column question |

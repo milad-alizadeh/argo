@@ -10,7 +10,7 @@ struct ClaimMark: View {
 
     var body: some View {
         ArgoGlyph(Self.symbol, .inline)
-            .foregroundStyle(argo.color.state.running)
+            .foregroundStyle(TicketsView.inProgress.ink(argo).color)
             // The blockage mark's box, so the two sit on one vertical whether a row carries one
             // of them or both.
             .frame(minHeight: ArgoBacklogList.trailingMark)
