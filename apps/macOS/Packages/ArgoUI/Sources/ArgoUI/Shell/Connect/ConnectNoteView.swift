@@ -17,9 +17,8 @@ struct ConnectNoteView: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
                 lines
-                // Below the fix rather than beside the cause: the three lines are what the reader
-                // is scanning, and a control between them would come before the remedy it is
-                // quieter than. Absent where Argo wrote the middle line itself (§5).
+                // Below the fix: a control between the three lines would come before the remedy
+                // it is quieter than. Absent where Argo wrote the middle line itself (§5).
                 if let output = note.output {
                     RawOutputDisclosure(output: output)
                 }
@@ -32,8 +31,7 @@ struct ConnectNoteView: View {
             RoundedRectangle(cornerRadius: ArgoRadius.control)
                 .fill(ArgoOperationalState.failure.ground(in: argo.color))
         }
-        // `contain` and not `combine`: a combined note swallows the gesture beside it, and an
-        // output nobody can reach is the thing §5 exists to stop.
+        // `contain` and not `combine`: a combined note swallows the gesture beside it.
         .accessibilityElement(children: .contain)
     }
 

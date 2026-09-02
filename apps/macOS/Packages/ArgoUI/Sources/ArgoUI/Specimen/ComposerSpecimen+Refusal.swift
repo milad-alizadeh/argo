@@ -14,7 +14,8 @@ extension ComposerSpecimen {
     }
 
     /// A refusal from outside Argo's own vocabulary, which is the only kind that carries output.
-    private struct PortRefusal: LocalizedError {
+    /// Internal so the suites raise the SAME words the render is judged against.
+    struct PortRefusal: LocalizedError {
         var errorDescription: String? {
             """
             The adapter would not take that Turn.

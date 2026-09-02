@@ -10,6 +10,9 @@ import Synchronization
 /// so the read of stdout waits for an end that cannot arrive. Draining the second channel
 /// alongside the first is what makes capturing both safe.
 ///
+/// One descriptor pair and one queue block per invocation, which the subprocess it is reading
+/// dwarfs — every caller is already paying for a `fork` and an `exec`.
+///
 /// `readToEnd()` rather than `readDataToEndOfFile()`, for the reason `gitInvocation` spells out:
 /// the older read answers a descriptor that has gone bad by raising an Objective-C exception no
 /// Swift `catch` can see. What it hands back here is the empty text a channel nobody wrote to has.
@@ -25,8 +28,8 @@ final class PipeDrain: Sendable {
         }
     }
 
-    /// Everything the pipe carried. Waits for the read to end, so the writer has to be on its way
-    /// out before this is asked — after `waitUntilExit()`, never before it.
+    /// Everything the pipe carried. Waits for the read to end — which nothing bounds but the last
+    /// writer closing the descriptor — so this is asked after `waitUntilExit()`, never before it.
     func text() -> String {
         group.wait()
         return collected.withLock { String(data: $0, encoding: .utf8) ?? "" }

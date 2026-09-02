@@ -22,7 +22,7 @@ struct ComposerDraft: Equatable {
     /// (#540), or the clearing an interrupt leaves behind (#541). Quieter than `refusal` and
     /// outranked by it.
     ///
-    /// Set through `say(_:)` rather than written to, so it and the output behind it move together.
+    /// Mutated through `say(_:)`, so it and the output behind it move together.
     private(set) var notice: String?
     /// Why the last send was refused, and `nil` the moment one goes through.
     private(set) var refusal: String?
@@ -92,16 +92,17 @@ struct ComposerDraft: Equatable {
         say(nil)
     }
 
-    /// Stand under a refusal, or take the standing one away. The line and the output behind it are
-    /// written together here and nowhere else, so the seam's gesture cannot open one refusal's
-    /// output under another's line.
+    /// Stand under a refusal, or take the standing one away. Every mutation of the pair goes
+    /// through here, so the seam's gesture cannot open one refusal's output under another's line.
+    /// The memberwise init is the one other writer, and it takes a bare sentence: a fixture has no
+    /// port to have printed anything.
     private mutating func refused(by line: ComposerSeamLine?) {
         refusal = line?.detail
         refusalOutput = line?.output
     }
 
     /// Say something about this draft that the reader did not do, or take back what was said. Pairs
-    /// the notice with its output the way `refused(by:)` pairs a refusal with its own.
+    /// the notice with its output on the same rule `refused(by:)` states.
     mutating func say(_ line: ComposerSeamLine?) {
         notice = line?.detail
         noticeOutput = line?.output

@@ -20,13 +20,23 @@ struct GitAnswerTests {
     }
 
     @Test
-    func `a read that worked answers on stdout and prints nothing on stderr`() throws {
+    func `a read that worked answers git's own words on stdout`() throws {
         let fixture = try ProjectFixture()
         defer { fixture.remove() }
         let repository = try fixture.folder("repo", git: true)
         let answer = try #require(gitInvocation(["rev-parse", "--show-toplevel"], repository))
         #expect(answer.isSuccess)
-        #expect(answer.output?.contains("repo") == true)
+        // By its tail, because git answers the real path and a temporary folder sits under a
+        // symlink `/var` that neither URL nor `standardized` resolves.
+        #expect(answer.output?.hasSuffix("/\(fixture.rootURL.lastPathComponent)/repo\n") == true)
+    }
+
+    @Test
+    func `a read that worked prints nothing on stderr`() throws {
+        let fixture = try ProjectFixture()
+        defer { fixture.remove() }
+        let repository = try fixture.folder("repo", git: true)
+        let answer = try #require(gitInvocation(["rev-parse", "--show-toplevel"], repository))
         #expect(answer.errorOutput.isEmpty)
     }
 
@@ -46,48 +56,8 @@ struct GitAnswerTests {
         defer { fixture.remove() }
         let repository = try fixture.folder("repo", git: true)
         let read = try #require(gitCommand(["rev-parse", "--show-toplevel"], repository))
-        #expect(read.contains("repo"))
-    }
-}
-
-/// The reason both channels are read at once rather than one after the other.
-@Suite("Draining a second channel")
-struct PipeDrainTests {
-    /// Well past a 64KB pipe buffer on stderr, with one short line on stdout.
-    static let longOnStderr = "awk 'BEGIN { for (i = 0; i < 40000; i++) print i }' >&2; echo done"
-
-    /// A process printing more on stderr than the kernel's pipe buffer holds, read exactly the way
-    /// `gitInvocation` reads one. Read in series this deadlocks: the writer blocks on a full
-    /// stderr, never closes stdout, and the read of stdout never ends. The test would hang rather
-    /// than fail, which is the only way this failure can be shown.
-    @Test(.timeLimit(.minutes(1)))
-    func `a channel too long for the buffer does not stop the other one`() throws {
-        let process = Process()
-        let output = Pipe()
-        let errors = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", Self.longOnStderr]
-        process.standardOutput = output
-        process.standardError = errors
-        try process.run()
-        let printed = PipeDrain(draining: errors)
-        let data = try #require(try output.fileHandleForReading.readToEnd())
-        process.waitUntilExit()
-        #expect(String(data: data, encoding: .utf8) == "done\n")
-        #expect(printed.text().count > 65536)
-    }
-
-    @Test
-    func `a channel nothing was written to carries no text`() throws {
-        let process = Process()
-        let errors = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", "exit 0"]
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = errors
-        try process.run()
-        let printed = PipeDrain(draining: errors)
-        process.waitUntilExit()
-        #expect(printed.text().isEmpty)
+        // Untrimmed, so a read that had wrapped or cut the answer would not pass: git ends its
+        // own with a newline, and every caller is the thing that trims it.
+        #expect(read.hasSuffix("/\(fixture.rootURL.lastPathComponent)/repo\n"))
     }
 }

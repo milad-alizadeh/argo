@@ -157,7 +157,7 @@ Paraphrase-only failure messages are the most reliable way a git GUI becomes wor
 The accepted cost — raw stderr is ugly, occasionally enormous, and leaks git's vocabulary into a
 surface that otherwise speaks Argo's — is confined to a channel you opened deliberately.
 
-### Landing note (#850) — two of the three rows have no surface
+### Landing note (#850, #1045) — two of the three rows have no surface
 
 The routing law stands; what changed is which rows the app can honestly reach.
 
@@ -192,8 +192,13 @@ The routing law stands; what changed is which rows the app can honestly reach.
 - **Every failure surface that holds a port's own text now offers it whole (#1045).** The
   composer's seam and the Connect panel's note both take row three: their line is the port's FIRST
   line and `see output` opens the rest. Which of them carries output is decided by provenance and
-  never by length — a `SessionDriveError` or a `BindingRefusal` is a sentence Argo worded itself,
-  one line long by its own contract, and keeps the tooltip this list already allows it.
+  never by length — the gesture stands wherever a port's own words reached the surface, which is a
+  device-flow or redirect grant the provider refused, a failure with no `BindingRefusal` of its
+  own, and anything thrown at the composer that is not a `SessionDriveError`. Everything else is a
+  sentence Argo worded itself — `BindingRefusal` is Argo's vocabulary throughout, `unreadable`
+  included — and stays a line with nothing behind it. The composer's half stands on the catch-all
+  and no shipped adapter reaches it: every `SessionDriver` throws `SessionDriveError` and nothing
+  else, so today that seam's gesture appears in the specimen and not in the app.
 
 ## 6 · A missing folder disables the project
 

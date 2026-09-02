@@ -1,6 +1,5 @@
 import ArgoEngine
 @testable import ArgoUI
-import Foundation
 import Testing
 
 /// Which of the composer seam's sentences put unabridged output one gesture behind them (§5 of
@@ -8,26 +7,26 @@ import Testing
 /// behind it to open (#1045).
 @Suite("Composer seam output")
 struct SeamRefusalOutputTests {
-    /// Something thrown at the composer that Argo did not word: more than one line, because that is
-    /// the length nothing in Argo controls once the words are somebody else's.
-    struct PortRefusal: LocalizedError {
-        var errorDescription: String? {
-            """
-            The adapter would not take that Turn.
-            hint: it was still writing the last one
-            """
-        }
-    }
+    /// The specimen's own refusal, so these claims and the render are made of the same words.
+    typealias PortRefusal = ComposerSpecimen.PortRefusal
 
     static let firstLine = "The adapter would not take that Turn."
+    static let hint = "hint: the last one is still being written"
 
     @Test
-    func `a refusal Argo did not word carries every word of it`() {
+    func `a refusal Argo did not word says the port's first line`() {
         var draft = ComposerDraft(text: "Carry on.")
         draft.send(via: { _, _ in throw PortRefusal() })
 
         #expect(draft.refusal == Self.firstLine)
-        #expect(draft.refusalOutput?.text.contains("hint: it was still writing") == true)
+    }
+
+    @Test
+    func `a refusal Argo did not word keeps every word of it`() {
+        var draft = ComposerDraft(text: "Carry on.")
+        draft.send(via: { _, _ in throw PortRefusal() })
+
+        #expect(draft.refusalOutput?.text == PortRefusal().errorDescription)
     }
 
     /// The tooltip's one surviving case: `SessionDriveError.detail` is Argo's own line, and short
@@ -47,7 +46,7 @@ struct SeamRefusalOutputTests {
         draft.stopped(via: { throw PortRefusal() })
 
         #expect(draft.refusal == Self.firstLine)
-        #expect(draft.refusalOutput?.text.contains("hint: it was still writing") == true)
+        #expect(draft.refusalOutput?.text.contains(Self.hint) == true)
     }
 
     @Test
@@ -56,22 +55,36 @@ struct SeamRefusalOutputTests {
         draft.modeRefused(PortRefusal())
 
         #expect(draft.notice == Self.firstLine)
-        #expect(draft.noticeOutput?.text.contains("hint: it was still writing") == true)
+        #expect(draft.noticeOutput?.text.contains(Self.hint) == true)
     }
 
-    /// Every notice Argo writes for this seam is Argo's own sentence about the draft.
-    @Test
-    func `a notice Argo wrote itself carries no output`() {
+    /// One act that puts a sentence on the seam, named so a failure says which.
+    struct Notice: CustomTestStringConvertible, Sendable {
+        let name: String
+        let said: @Sendable (inout ComposerDraft) -> Void
+
+        var testDescription: String {
+            name
+        }
+    }
+
+    /// Every notice Argo writes for this seam is Argo's own sentence about the draft, so not one
+    /// of the four acts that raise one leaves anything to open.
+    @Test(arguments: [
+        Notice(name: "a rung Argo could not establish", said: {
+            $0.modeRefused(SessionDriveError.modeUnreachable)
+        }),
+        Notice(name: "a drop the adapter takes none of", said: {
+            $0.attach([AttachmentFixture.pasted], canAttach: false)
+        }),
+        Notice(name: "a rung held for the boundary", said: { $0.modeHeld(.auto) }),
+        Notice(name: "a Turn the CLI never heard", said: { _ = $0.turnLost("Carry on.") }),
+    ])
+    func `a notice Argo wrote itself carries no output`(notice: Notice) {
         var draft = ComposerDraft(text: "Carry on.")
-        draft.modeRefused(SessionDriveError.modeUnreachable)
-        #expect(draft.noticeOutput == nil)
+        notice.said(&draft)
 
-        draft.attach([], canAttach: false)
-        draft.modeHeld(.auto)
-        #expect(draft.noticeOutput == nil)
-
-        let told = draft.turnLost("Carry on.")
-        #expect(told)
+        #expect(draft.notice != nil)
         #expect(draft.noticeOutput == nil)
     }
 

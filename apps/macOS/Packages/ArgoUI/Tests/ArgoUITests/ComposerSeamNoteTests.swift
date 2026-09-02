@@ -49,7 +49,11 @@ struct ComposerSeamNoteTests {
             modeDidNotTake: .auto,
         )
 
-        #expect(note == .notice("Auto did not take. The Session is still on the rung shown."))
+        #expect(note
+            ==
+            .notice(
+                ComposerSeamLine("Auto did not take. The Session is still on the rung shown."),
+            ))
     }
 
     /// A refusal still outranks it: those words are unsent and at risk, and the seam is ONE line.
@@ -59,6 +63,6 @@ struct ComposerSeamNoteTests {
 
         let note = ComposerSeamNote.note(for: draft, enteredAtMs: 0, modeDidNotTake: .auto)
 
-        #expect(note == .refusal("The session is not accepting input"))
+        #expect(note == .refusal(ComposerSeamLine("The session is not accepting input")))
     }
 }

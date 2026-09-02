@@ -9,7 +9,8 @@ import Foundation
 public typealias CheckoutRead = @Sendable (URL) async -> CheckoutProjection
 
 /// One `git` invocation in a folder, answered whole — both channels and the exit status. `nil`
-/// where git never ran at all: no git, no such folder.
+/// only where the subprocess could not be launched; a git that ran and refused is an answer with a
+/// non-zero status, and the stderr behind it is the point of this spelling.
 typealias GitInvocation = @Sendable ([String], URL) -> GitAnswer?
 
 /// One `git` invocation in a folder: its stdout verbatim, or `nil` where git answered nothing at
@@ -55,9 +56,8 @@ let gitInvocation: GitInvocation = { arguments, directoryURL in
 }
 
 /// The reads' own spelling of the same invocation: stdout where git answered, `nil` where it did
-/// not. The four read paths have no failure surface to put stderr on — a checkout git cannot
-/// answer for degrades to `unavailable` and says so in one word — so the discard is HERE, in one
-/// place, rather than at the subprocess where a write would inherit it.
+/// not. The four read paths have no failure surface to put stderr on, so the discard is HERE — one
+/// line, rather than at the subprocess where a git write would inherit it.
 let gitCommand: GitCommand = { arguments, directoryURL in
     guard let answer = gitInvocation(arguments, directoryURL), answer.isSuccess else { return nil }
     return answer.output

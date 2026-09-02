@@ -18,9 +18,8 @@ struct ComposerSeam: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
             line
-            // Between the line and the Retry, because it is about the line: what the port printed
-            // is the reason, and Retry is the answer to it. Absent where Argo wrote the sentence
-            // itself, which is every note but a refusal the port worded (§5).
+            // Between the line and the Retry, because it is about the line rather than a second
+            // remedy. Absent wherever Argo wrote the sentence itself (§5).
             if let output = note.output {
                 RawOutputDisclosure(output: output)
             }
@@ -41,8 +40,7 @@ struct ComposerSeam: View {
         // ABOUT the vessel, and one stepped in to the field's own leading reads as the first line
         // of what is in it (the study's `draft.png` and `failed.png` both).
         .padding(.horizontal, ArgoSpacing.snug)
-        // `contain` and not `combine`: what the seam holds beside its sentence are controls, and a
-        // combined row swallows them — an output nobody can reach is what §5 exists to stop.
+        // `contain` and not `combine`: a combined row swallows the controls beside the sentence.
         .accessibilityElement(children: .contain)
     }
 
@@ -82,7 +80,7 @@ struct ComposerSeam: View {
 
 #Preview("Composer seam — a refused send") {
     ComposerSeam(
-        note: .refusal("Argo no longer holds this Session — nothing was sent"),
+        note: .refusal(ComposerSeamLine(SessionDriveError.notDrivable.detail)),
         retry: {},
     )
     .padding(ArgoSpacing.section)

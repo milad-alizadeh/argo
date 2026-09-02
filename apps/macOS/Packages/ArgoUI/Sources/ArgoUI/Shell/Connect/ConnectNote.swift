@@ -29,6 +29,19 @@ public struct ConnectNote: Equatable, Sendable {
     }
 }
 
+public extension ConnectNote {
+    /// A failure that is not a refusal Argo has a word for — the transport under a grant, or the
+    /// registry write behind it. The words are the system's, so the line is their first one and
+    /// the rest is one gesture away (§5).
+    init(unreadable error: any Error) {
+        self.init(
+            what: "Argo could not reach the provider.",
+            verbatim: error.localizedDescription,
+            fix: "Check your connection, then try again.",
+        )
+    }
+}
+
 extension ConnectNote {
     /// A note whose middle line is not Argo's: `words` are the provider's or the transport's own,
     /// so the line is their FIRST line and the whole of them is one gesture behind it (§5). Argo's

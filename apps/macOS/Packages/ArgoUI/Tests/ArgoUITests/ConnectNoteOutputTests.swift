@@ -16,12 +16,14 @@ struct ConnectNoteOutputTests {
 
     static let firstLine = "Your organisation blocks OAuth Apps that request repo access."
 
+    /// A failure with no `BindingRefusal` of its own: the transport, or the write behind it.
     @Test
-    func `a provider Argo could not read carries its whole answer`() {
-        let note = ConnectNote(refusal: .unreadable(Self.refusal))
+    func `a failure Argo has no word for carries what it said`() {
+        let refused = URLError(.notConnectedToInternet)
+        let note = ConnectNote(unreadable: refused)
 
-        #expect(note.why == Self.firstLine)
-        #expect(note.output?.text == Self.refusal)
+        #expect(note.why == refused.localizedDescription)
+        #expect(note.output?.text == refused.localizedDescription)
     }
 
     @Test
@@ -55,8 +57,7 @@ struct ConnectNoteOutputTests {
         #expect(note.output?.text == Self.refusal)
     }
 
-    /// A failure that is not the flow's own — the transport, or the registry write behind it —
-    /// takes the `unreadable` route and keeps the same words.
+    /// A failure that is not the flow's own falls to the same catch-all, and keeps its words.
     @Test
     func `a grant that failed outside the flow carries what it said`() {
         let note = ConnectNote(grant: URLError(.notConnectedToInternet), provider: .github)
@@ -64,7 +65,8 @@ struct ConnectNoteOutputTests {
         #expect(note.output?.text == URLError(.notConnectedToInternet).localizedDescription)
     }
 
-    /// Argo asked the provider nothing, so the provider printed nothing.
+    /// `BindingRefusal` is Argo's own vocabulary throughout — `unreadable` included, whose reason
+    /// every engine site that raises one writes itself. None of them is a provider's printed text.
     @Test(arguments: [
         BindingRefusal.noSuchProject,
         .noSuchAccount,
@@ -72,6 +74,7 @@ struct ConnectNoteOutputTests {
         .grantExpired,
         .unauthorized,
         .scopeNotVisible("milad-alizadeh/argo"),
+        .unreadable("GitHub could not be reached."),
     ])
     func `a refusal Argo worded itself offers nothing to open`(refusal: BindingRefusal) {
         #expect(ConnectNote(refusal: refusal).output == nil)

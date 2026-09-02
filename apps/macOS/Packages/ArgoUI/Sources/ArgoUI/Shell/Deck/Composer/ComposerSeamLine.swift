@@ -6,7 +6,7 @@ import ArgoEngine
 /// A pair rather than a bare string, so the line and the output under it are made in one place and
 /// cannot come to disagree — the seam shows one note at a time, and a gesture opening the output
 /// of a failure that is no longer on screen would be worse than no gesture.
-struct ComposerSeamLine: Equatable, ExpressibleByStringLiteral {
+struct ComposerSeamLine: Equatable {
     let detail: String
     /// What the gesture opens, and `nil` where the line IS the whole of it.
     let output: RawOutput?
@@ -14,11 +14,6 @@ struct ComposerSeamLine: Equatable, ExpressibleByStringLiteral {
     init(_ detail: String, output: RawOutput? = nil) {
         self.detail = detail
         self.output = output
-    }
-
-    /// A sentence Argo wrote itself, with no port output behind it to open.
-    init(stringLiteral value: StringLiteralType) {
-        self.init(value)
     }
 
     /// What a port's refusal leaves on the seam.
