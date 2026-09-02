@@ -109,9 +109,15 @@ public final class CompanionChannel {
     /// The PTY is gone, so the channel is too: the socket closes and the plugin that named it goes
     /// with it. Ownership does not come back, and neither does this.
     func withdraw(_ claim: SessionOwnership.ClaimID) {
-        guard let socket = sockets.removeValue(forKey: claim) else { return }
-        socket.close()
+        let channel = sockets.removeValue(forKey: claim)
+        channel?.close()
+        // Unconditionally, and before the guard below: an invite whose socket failed to open left
+        // a plugin directory behind and no socket to find it by, and that is exactly the claim
+        // whose relinquish has to sweep it.
         CompanionPlugin.remove(forClaim: claim, under: scope.root)
+        // Nothing to say about a claim that never had a channel — publishing here would file a
+        // reading for one, which is the false DIRECT this whole ladder is against.
+        guard channel != nil else { return }
         // The reading an orphaned Session is left with, and it is `dropped` only where a client had
         // actually dialled in — read off the log, never off the posture.
         onLiveness(claim, dials.closed(claim))
