@@ -10,7 +10,8 @@ import Foundation
 extension TranscriptWatch {
     /// What is being read, per transcript, in the order the transcripts joined the set.
     var observations: [HubObservation] {
-        join.transcripts.map { transcript in
+        registerOnTheJoin()
+        return join.transcripts.map { transcript in
             HubObservation(
                 id: transcript.id,
                 sourceURL: transcript.sourceURL,

@@ -28,10 +28,16 @@ final class TranscriptWatch {
     /// that has awaited a batch has awaited everything that follows from it.
     @ObservationIgnored var onApplied: @MainActor () async -> Void = {}
 
-    private(set) var join = HubJoin()
+    /// NOT observed, and `joinRevision` below is why: an `inout` access to an observed property
+    /// publishes whether or not the body writes anything, so a join left observed would republish
+    /// on every no-op write however carefully `mutate` guarded the stamp (#858). The two readers a
+    /// view reaches — `sessions` here and `observations` in `+Reading` — register on the revision
+    /// instead, which is the fact a write actually moves.
+    @ObservationIgnored private(set) var join = HubJoin()
     /// Bumped by `mutate` and by nothing else — the roster's memo is keyed by it
     /// (`HubRosterMemo`), so a batch that landed in the join without going through the one write
-    /// below would be a Session the cockpit never redraws.
+    /// below would be a Session the cockpit never redraws. It is also the whole of what a reader
+    /// of the join observes, per the note above.
     private(set) var joinRevision = 0
     /// The rosters of the Projects this watch has been pointed at, kept across a switch. The sweep
     /// still re-runs and the tails still re-read on re-entry.
@@ -56,7 +62,8 @@ final class TranscriptWatch {
 
     /// The Sessions the tails have read, in the order the join holds them.
     var sessions: [HubSession] {
-        join.sessions
+        registerOnTheJoin()
+        return join.sessions
     }
 
     /// "Connected" is a claim about a live source, and a Project with no tail running has none.
@@ -85,7 +92,7 @@ final class TranscriptWatch {
     /// Take back the join retained for a Project, or start a fresh one. Keyed by the RESOLVED
     /// Project, which is the key it was retained under.
     func restore(for key: String) {
-        mutate { $0 = retained.take(for: key) ?? HubJoin() }
+        mutate { $0.replace(with: retained.take(for: key) ?? HubJoin()) }
     }
 
     /// Keep this Project's join, before the tails are torn down — which is what empties it.
@@ -161,7 +168,7 @@ final class TranscriptWatch {
         let stopped = Array(tails.values)
         tails = [:]
         whole = WholeReadings()
-        mutate { $0 = HubJoin() }
+        mutate { $0.replace(with: HubJoin()) }
         // A failure is a claim about what could not be read, and nothing is being read now. The one
         // caller that wants it standing — `observeNamed` — sets it AFTER this returns.
         failureMessage = nil
@@ -187,7 +194,7 @@ final class TranscriptWatch {
     /// a different extent (`TranscriptWatch+Reading.swift`).
     func tail(
         _ observation: TranscriptObservation,
-        joining admit: (inout HubJoin) -> Void,
+        joining admit: (inout HubJoin) -> Bool,
     ) async {
         await pauseObserving(transcriptID: observation.id)
         mutate(admit)
@@ -238,9 +245,18 @@ final class TranscriptWatch {
     /// The ONE write to the join. In place, so a batch costs no copy of the transcripts it lands
     /// in, and revision-stamped, so no write can reach the join without reaching the memo folded
     /// off it (ADR-0028 Rule 1).
-    private func mutate(_ change: (inout HubJoin) -> Void) {
-        change(&join)
+    ///
+    /// A change that MOVED nothing publishes nothing (#858). Whether it moved is the change's own
+    /// answer, because only the write knows — every mutating method on `HubJoin` reports it.
+    private func mutate(_ change: (inout HubJoin) -> Bool) {
+        guard change(&join) else { return }
         joinRevision += 1
+    }
+
+    /// Register a read of the join on the one property a write to it publishes. Spelled once and
+    /// called from both readers a view reaches, so neither can be written without it.
+    func registerOnTheJoin() {
+        _ = joinRevision
     }
 
     private func makeSubagentTails() -> SubagentTails {
