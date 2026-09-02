@@ -202,14 +202,14 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   `CockpitPresentationCostTests` (2), `FeedRowsCompareCostTests` (2),
   `SessionsRoomReadingCostTests` (2) — and four more only by the #1065 amendment below, which is
   the second time this census has been short; one of those four is a count now, and so are both of
-  `CockpitPresentationCostTests`' (#1069, the first of the original seven to go), leaving
+  `CockpitPresentationCostTests`' (#1070, the first of the original seven to go), leaving
   `HubRosterCostTests` (1), `FeedRowsCompareCostTests` (2), `SessionsRoomReadingCostTests` (2),
   `ProseTextSizeCostTests` (2) and `FeedRowShapeTests` (1) — eight claims across five suites. Six
   migrations have turned quotients into counts, because Rule 8's first instruction had a count
   available in every one of them: the roster memo's own fold count and the prose store's hit rate
   when #991 swept, the join's own rebuild count in #1064, the roster's fold count again for
   `SubagentCostTests` in #1065, the labelling pass's own count of the paths it looked at in #1066,
-  and the stream's own count of the times it handed its events out in #1069. All seven named when
+  and the stream's own count of the times it handed its events out in #1070. All seven named when
   this bullet was written held unchanged optimised, and so does every count beside them:
   `ArgoEngine` 1 222 tests and `ArgoUI` 2 035 tests pass in release with no budget touched.
 
@@ -329,7 +329,7 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   > move them by. The count that would replace it has not been looked for. Named here so the next
   > red run is read as this.
 
-  > **Amendment — 2026-09-02 (#1069).** The count was looked for and it was there.
+  > **Amendment — 2026-09-02 (#1070).** The count was looked for and it was there.
   > `CockpitPresentationCostTests` now counts the times a Session's stream HANDED ITS EVENTS OUT
   > across one presentation comparison, and reads zero — at a 728-event transcript and at an
   > eightfold one, over four Sessions whose two sides share no buffer. Both its quotients go, which

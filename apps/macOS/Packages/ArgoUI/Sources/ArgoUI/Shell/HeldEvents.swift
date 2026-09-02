@@ -8,7 +8,7 @@ import ArgoEngine
 /// **In a file of its own, and that is the mechanism rather than tidiness.** Swift's `private` is
 /// FILE-scoped, so storage declared beside `Stream.==` would let a comparison read the array
 /// without passing the accessor that counts — and `CockpitPresentationCostTests` would stay green
-/// through the whole-stream walk it exists to catch (#1069). Here, the only thing the stream's own
+/// through the whole-stream walk it exists to catch (#1070). Here, the only thing the stream's own
 /// file can reach is `events`.
 struct HeldEvents: Sendable {
     /// The one way to the events, which is what makes `reads` a count of the WORK: anything that
