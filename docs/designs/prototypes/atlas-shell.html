@@ -136,7 +136,7 @@
 
   /* A gauge is a number and its rank in one block. The bands are clipped to round their
      ends; the needle is not, because a file at 100% sits where a clip would eat it. */
-  .facts { display: flex; gap: 14px; margin-top: 11px;
+  .facts { display: flex; flex-wrap: wrap; gap: 4px 13px; margin-top: 11px;
     font: var(--t-callout) var(--sans); color: var(--text-3); }
   .facts b { font-family: var(--mono); color: var(--text-1); font-weight: 500; }
   .gauges { margin-top: 14px; display: flex; flex-direction: column; gap: 11px; }
@@ -521,9 +521,9 @@ function rank(v, k) {
    colours the reader has already learnt outside this panel */
 const BAND = u => `hsl(${(200 - u * 168).toFixed(0)} 62% ${(34 + u * 22).toFixed(0)}%)`;
 
-const AGE = d => d < 60 ? d + ' days'
-  : d < 730 ? Math.round(d / 30.4) + ' months'
-  : (d / 365).toFixed(1) + ' years';
+/* short enough to sit inline beside the counts, in whatever unit is legible at that size */
+const AGE = d => d < 14 ? d + 'd' : d < 60 ? Math.round(d / 7) + 'w'
+  : d < 730 ? Math.round(d / 30.4) + 'mo' : (d / 365).toFixed(1) + 'y';
 
 /* `word` is what the rank means for this measure — "higher" reads wrong under an age. */
 function Gauge(label, value, r, word) {
@@ -556,11 +556,10 @@ function FileBody(fi) {
     <div style="margin-top:11px"><span class="chip" data-dom="${f.dom}">
       <i style="background:${COL(f.dom)}"></i>${esc(d[0])}</span></div>
     <div class="facts"><span><b>${f.loc}</b> lines</span><span><b>${f.authors}</b> ${
-      f.authors === 1 ? 'author' : 'authors'}</span></div>
+      f.authors === 1 ? 'author' : 'authors'}</span><span><b>${f.commits}</b> commits</span>
+      <span><b>${AGE(f.age)}</b> old</span></div>
     <div class="gauges">
       ${Gauge('Complexity', f.cx, rank(f.cx, 'cx'), 'Higher')}
-      ${Gauge('Commits', f.commits, rank(f.commits, 'commits'), 'More')}
-      ${Gauge('Age', AGE(f.age), rank(f.age, 'age'), 'Older')}
     </div>
 
     ${f.note ? `<p class="note" style="margin-top:13px">A model read this file: it folds raw
