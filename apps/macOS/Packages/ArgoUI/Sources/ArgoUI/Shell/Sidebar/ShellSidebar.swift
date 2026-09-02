@@ -49,7 +49,9 @@ struct ShellSidebar: View {
     /// Split out from `body` so the strip above it stays one line: the roster is the sidebar's
     /// content, and the strip is the window's control sitting over it.
     private var navigator: some View {
-        let reading = roster.reading(of: presentation.sessions, opened: openFolds)
+        let reading = roster.reading(
+            of: presentation.sessions, opened: openFolds, selection: selection,
+        )
 
         return SessionNavigator(
             rows: reading.rows,

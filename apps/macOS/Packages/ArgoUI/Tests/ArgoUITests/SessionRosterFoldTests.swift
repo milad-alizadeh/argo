@@ -3,32 +3,21 @@ import ArgoEngine
 import Testing
 
 /// The Roster's folds (`CONTEXT.md` "Not domain entities" · Fold): one row standing for the
-/// headless runs that share a working directory.
+/// headless runs that share a working directory, and what that row says.
 ///
 /// The measurement behind it (#1073): the argo Project's 7-day working set held 328 transcripts,
 /// at least 136 of them headless, and one caption loop's 180 runs buried the four Sessions
-/// somebody was actually steering.
+/// somebody was actually steering. The rules about what may NOT be folded are their own suite —
+/// `SessionRosterFoldRulesTests`.
 @Suite("Session roster folds")
 struct SessionRosterFoldTests {
-    private let loop = "\(RosterSessionFixture.checkout)/docs/designs/prototypes"
+    private let loop = RosterFoldFixture.loop
 
     private func runs(
-        _ count: Int,
-        at directory: String?,
-        entry: SessionEntry = .headless,
-        from first: Int = 0,
+        _ count: Int, at directory: String?, from first: Int = 0,
     )
         -> [CockpitPresentation.Session] {
-        (first ..< first + count).map {
-            RosterSessionFixture.session(
-                id: "run-\($0)",
-                title: "Write the caption",
-                workspaceLocation: directory,
-                entry: entry,
-                // Newest first, the order the Hub publishes in.
-                lastSeenAtMs: 9_000_000 - $0,
-            )
-        }
+        RosterFoldFixture.runs(count, at: directory, from: first)
     }
 
     @Test
@@ -42,16 +31,6 @@ struct SessionRosterFoldTests {
         // pass could not supply, because 180 near-identical prompts share their first words.
         #expect(fold.toldApart == "prototypes")
         #expect(fold.fold?.count == 180)
-    }
-
-    /// The rule that matters most, and the one degrade-down exists for: a Session somebody is
-    /// driving is never folded away, whatever it is sitting beside.
-    @Test
-    func `interactive Sessions are never folded, however many share a directory`() {
-        let rows = SessionRosterProjection.rows(from: runs(3, at: loop, entry: .interactive))
-
-        #expect(rows.count == 3)
-        #expect(rows.allSatisfy { $0.fold == nil })
     }
 
     @Test
@@ -68,7 +47,7 @@ struct SessionRosterFoldTests {
     @Test
     func `a directory holding both folds only the runs nobody is at`() throws {
         let sessions = runs(3, at: loop)
-            + runs(2, at: loop, entry: .interactive, from: 100)
+            + RosterFoldFixture.runs(2, at: loop, entry: .interactive, from: 100)
 
         let rows = SessionRosterProjection.rows(from: sessions)
 
@@ -81,21 +60,12 @@ struct SessionRosterFoldTests {
 
     @Test
     func `runs in two directories fold apart, each named by its own folder`() {
-        let other = "\(RosterSessionFixture.checkout)/docs/designs/captions"
         let rows = SessionRosterProjection.rows(
-            from: runs(4, at: loop) + runs(3, at: other, from: 100),
+            from: runs(4, at: loop) + runs(3, at: RosterFoldFixture.otherLoop, from: 100),
         )
 
         #expect(rows.map(\.title) == ["4 runs", "3 runs"])
         #expect(rows.map(\.toldApart) == ["prototypes", "captions"])
-    }
-
-    /// A fold has no folder to be keyed by, so there is nothing to fold into.
-    @Test
-    func `runs Argo read no working directory for are never folded`() {
-        let rows = SessionRosterProjection.rows(from: runs(3, at: nil))
-
-        #expect(rows.count == 3)
     }
 
     /// The fold sits where its newest run sat, so nothing above or below it moves when a
@@ -160,11 +130,8 @@ struct SessionRosterFoldTests {
     /// Session described differently.
     @Test
     func `the archived list folds by the same rule`() {
-        let archived = runs(3, at: loop).map {
-            RosterSessionFixture.session(
-                id: $0.id, workspaceLocation: loop, entry: .headless, isArchived: true,
-            )
-        }
+        let archived = (0 ..< 3)
+            .map { RosterFoldFixture.run(at: loop, index: $0, isArchived: true) }
 
         #expect(SessionRosterProjection.archivedRows(from: archived).count == 1)
         #expect(SessionRosterProjection.rows(from: archived).isEmpty)

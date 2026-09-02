@@ -6,7 +6,7 @@ extension SessionRosterProjection {
     /// What a folded row stands for. Carried on `Row.Identity`, because it is what the row IS: a
     /// fold has no Session behind it, so nothing may address it as one.
     struct Fold: Equatable {
-        /// The fold's own id, which is its directory and never a Session's.
+        /// The fold's own id, which names a directory and a list, and never a Session.
         let id: String
         /// How many runs are under it. Never one — see `Folding.least`.
         let count: Int
@@ -20,94 +20,137 @@ extension SessionRosterProjection {
     /// (ADR-0028): which fold a run belongs to is a property of the whole list, and asking it per
     /// row reads every other row once per row.
     ///
-    /// Every field is a lookup taken in `init`, so a pass over 328 Sessions builds this once and
-    /// answers each row from it.
+    /// A run reaches `membership` only where its directory actually folded, so the two answers
+    /// below cannot disagree: every run is either inside a fold that draws a row or on a row of
+    /// its own, and none can fall between the two.
     struct Folding {
         /// A fold of one saves no row and costs a name, so a lone run keeps its own row.
-        private static let least = 2
+        static let least = 2
 
-        /// Which directory each folded run belongs to. A run drawn on its own row is absent.
+        /// One folded directory: how many runs it holds, the label it is captioned by, and the
+        /// run whose place it takes — the first of the group, which, the Hub publishing
+        /// newest-activity-first, is its newest.
+        struct Reading {
+            let count: Int
+            let label: String
+            let leader: String
+        }
+
+        /// Which directory each FOLDED run belongs to. A run drawn on its own row is absent.
         private let membership: [String: String]
-        private let counts: [String: Int]
-        private let labels: [String: String]
-        /// The run whose place each fold takes: the first of the group, which — the Hub publishing
-        /// newest-activity-first — is its newest.
-        private let leaders: [String: String]
+        private let folds: [String: Reading]
         private let opened: Set<String>
+        /// Which of the roster's two lists this pass drew. In the id because a directory with runs
+        /// on both would otherwise have one id for two rows, and opening either would open both.
+        private let list: String
 
-        init(of sessions: [CockpitPresentation.Session], opened: Set<String>) {
-            let folded = Self.grouped(sessions).filter { $0.runs.count >= Self.least }
-            let labelled = zip(folded, DistinguishingLabel.labels(for: folded.map(\.directory)))
-            self.membership = Dictionary(
-                uniqueKeysWithValues: folded.flatMap { group in
+        init(of sessions: [CockpitPresentation.Session], in pass: SessionRosterProjection.Pass) {
+            let groups = Self.groups(of: sessions)
+            let members = Dictionary(
+                uniqueKeysWithValues: groups.flatMap { group in
                     group.runs.map { ($0, group.directory) }
                 },
             )
-            self.counts = Dictionary(
-                uniqueKeysWithValues: folded.map { ($0.directory, $0.runs.count) },
-            )
-            self.labels = Dictionary(
-                uniqueKeysWithValues: labelled.compactMap { group, label in
-                    label.map { (group.directory, $0) }
-                },
-            )
-            self.leaders = Dictionary(
-                uniqueKeysWithValues: folded.compactMap { group in
-                    group.runs.first.map { (group.directory, $0) }
-                },
-            )
-            self.opened = opened
+            let list = pass.isArchived ? "archived" : "roster"
+            // A fold holding the selection is open whether or not the reader opened it, for the
+            // reason the archive foot is (`isArchiveOpen`): the deck draws what the selection
+            // names, and a fold shut over it would leave the roster drawing no row for the
+            // Session the feed is drawing.
+            let selected = pass.selection.flatMap { members[$0] }
+            self.list = list
+            self.membership = members
+            self.folds = Dictionary(uniqueKeysWithValues: groups.map { ($0.directory, $0.reading) })
+            self.opened = pass.opened
+                .union(selected.map { [Self.identifier(of: $0, in: list)] } ?? [])
         }
 
         /// The fold this Session OPENS — the one whose leading run it is — and `nil` for every
         /// other row. What draws a fold once, at the place its newest run had.
         func fold(opening session: CockpitPresentation.Session) -> Fold? {
-            guard let directory = membership[session.id], leaders[directory] == session.id,
-                  let count = counts[directory], let label = labels[directory]
+            guard let directory = membership[session.id], let reading = folds[directory],
+                  reading.leader == session.id
             else { return nil }
-            let id = Self.identifier(of: directory)
-            return Fold(id: id, count: count, label: label, isOpen: opened.contains(id))
+            let id = identifier(of: directory)
+            return Fold(
+                id: id, count: reading.count, label: reading.label, isOpen: opened.contains(id),
+            )
         }
 
         /// Whether this Session is drawn on a row of its own: every run outside a fold, and every
-        /// run inside one the reader has opened.
+        /// run inside one that is open.
         func drawsOwnRow(_ session: CockpitPresentation.Session) -> Bool {
             guard let directory = membership[session.id] else { return true }
-            return opened.contains(Self.identifier(of: directory))
+            return opened.contains(identifier(of: directory))
         }
 
-        /// One directory's headless runs, in the order the roster lists them.
-        private struct Group {
-            let directory: String
-            let runs: [String]
+        private func identifier(of directory: String) -> String {
+            Self.identifier(of: directory, in: list)
         }
 
-        /// The `headless` runs grouped by working directory, directories in the order their first
-        /// run appears — which is the order the fold rows are then labelled and drawn in.
-        ///
-        /// The transcript directory the CLI writes into is a mangling of this same folder, so this
-        /// is the grouping #1073 asked for said in a fact the cockpit already holds: ADR-0027
-        /// leaves the file path in the engine (`not-projected: sourceURL`).
-        ///
-        /// A run Argo read no directory for is not folded: there is nothing to fold it into, and
-        /// the quiet answer is its own row (degrade-down).
-        private static func grouped(_ sessions: [CockpitPresentation.Session]) -> [Group] {
-            var order: [String] = []
-            var runs: [String: [String]] = [:]
-            for session in sessions where session.entry == .headless {
-                guard let directory = session.workspaceLocation else { continue }
-                if runs[directory] == nil {
-                    order.append(directory)
-                }
-                runs[directory, default: []].append(session.id)
+        /// A fold's id, off its directory and its list, and prefixed so it can never collide with
+        /// a Session's: nothing on the roster may name a fold and a Session with one word.
+        private static func identifier(of directory: String, in list: String) -> String {
+            "fold:\(list):\(directory)"
+        }
+    }
+}
+
+private extension SessionRosterProjection.Folding {
+    /// One directory's headless runs, in the order the roster lists them.
+    struct Candidate {
+        let directory: String
+        let runs: [String]
+    }
+
+    /// A candidate that earned a fold, and what its fold says.
+    struct Group {
+        let directory: String
+        let runs: [String]
+        let reading: Reading
+    }
+
+    /// Every directory that folds, with the label it is captioned by.
+    ///
+    /// The labels are decided across the folds TOGETHER, so two loops running in folders of the
+    /// same name are told apart rather than both reading `prototypes`.
+    ///
+    /// A candidate whose path has no component to name it by does not fold at all: its runs keep
+    /// their own rows, rather than falling out of the roster between the two answers below.
+    static func groups(of sessions: [CockpitPresentation.Session]) -> [Group] {
+        let candidates = grouped(sessions).filter { $0.runs.count >= least }
+        return zip(candidates, DistinguishingLabel.labels(for: candidates.map(\.directory)))
+            .compactMap { candidate, label in
+                guard let label, let leader = candidate.runs.first else { return nil }
+                return Group(
+                    directory: candidate.directory,
+                    runs: candidate.runs,
+                    reading: Reading(
+                        count: candidate.runs.count, label: label, leader: leader,
+                    ),
+                )
             }
-            return order.map { Group(directory: $0, runs: runs[$0] ?? []) }
-        }
+    }
 
-        /// A fold's id, taken off its directory and prefixed so it can never collide with a
-        /// Session's: nothing on the roster may name a fold and a Session with one word.
-        private static func identifier(of directory: String) -> String {
-            "fold:\(directory)"
+    /// The `headless` runs grouped by working directory, directories in the order their first run
+    /// appears — which is the order the fold rows are then drawn in.
+    ///
+    /// The transcript directory the CLI writes into is a mangling of this same folder, so this is
+    /// the grouping #1073 asked for said in a fact the cockpit already holds: ADR-0027 leaves the
+    /// file path in the engine (`not-projected: sourceURL`).
+    ///
+    /// Two runs are left out, both by degrade-down. One Argo read no directory for has nothing to
+    /// be folded into; one Argo owns the terminal of can be TYPED at, whatever its record said it
+    /// was started as, and a Session anybody can drive is never folded away.
+    static func grouped(_ sessions: [CockpitPresentation.Session]) -> [Candidate] {
+        var order: [String] = []
+        var runs: [String: [String]] = [:]
+        for session in sessions where session.entry == .headless && session.access != .managed {
+            guard let directory = session.workspaceLocation else { continue }
+            if runs[directory] == nil {
+                order.append(directory)
+            }
+            runs[directory, default: []].append(session.id)
         }
+        return order.map { Candidate(directory: $0, runs: runs[$0] ?? []) }
     }
 }

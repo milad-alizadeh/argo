@@ -18,8 +18,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// store, or DIRECT from the spawn; never guessed from the prose inside the file.
     public internal(set) var cli: AgentCLI?
     /// How the process behind this Session was STARTED (`CONTEXT.md` L2 · Entry) — DERIVED, off
-    /// the host's own `entrypoint`. `interactive` until a record says otherwise, which is
-    /// degrade-down: an unread file never makes a Session look like output nobody can drive.
+    /// the host's own `entrypoint`, and `interactive` until a record says otherwise.
     public private(set) var entry: SessionEntry = .interactive
     /// Absent until a read has happened, and for a folder git could not answer for — an unread
     /// Workspace is not a clean one.

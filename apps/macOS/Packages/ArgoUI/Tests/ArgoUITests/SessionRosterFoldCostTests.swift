@@ -9,14 +9,15 @@ import Testing
 /// runs spends do not follow how many runs it holds.
 @Suite("Session roster fold cost")
 struct SessionRosterFoldCostTests {
-    private let loop = "\(RosterSessionFixture.checkout)/docs/designs/prototypes"
+    private let loop = RosterFoldFixture.loop
 
-    private func runs(_ count: Int, at directory: String) -> [CockpitPresentation.Session] {
-        (0 ..< count).map {
-            RosterSessionFixture.session(
-                id: "\(directory)#\($0)", workspaceLocation: directory, entry: .headless,
-            )
-        }
+    /// `from` keeps the ids of three folders apart: a Session id is unique on the roster, and a
+    /// fixture that repeated one would fold two runs into the same entry.
+    private func runs(
+        _ count: Int, at directory: String, from first: Int = 0,
+    )
+        -> [CockpitPresentation.Session] {
+        RosterFoldFixture.runs(count, at: directory, from: first)
     }
 
     @Test
@@ -31,7 +32,7 @@ struct SessionRosterFoldCostTests {
     /// mistake #963 tracks.
     @Test
     func `the roster is one row per fold plus one per Session drawn on its own`() {
-        let folded = (0 ..< 3).flatMap { runs(60, at: "\(loop)/loop-\($0)") }
+        let folded = (0 ..< 3).flatMap { runs(60, at: "\(loop)/loop-\($0)", from: $0 * 1000) }
         let steered = (0 ..< 4).map {
             RosterSessionFixture.session(id: "steered-\($0)")
         }

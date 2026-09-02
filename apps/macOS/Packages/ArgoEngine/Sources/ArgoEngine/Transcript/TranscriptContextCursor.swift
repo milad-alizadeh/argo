@@ -1,9 +1,8 @@
 /// The session facts a record carries beside its content, emitted only when they CHANGE.
 ///
 /// Every record repeats them, and a stream that re-announced the cwd two hundred times would bury
-/// the events anyone is watching for. The cwd and the entrypoint keep their first reading and the
-/// branch its latest,
-/// because a run can switch branch mid-session but never switches its root.
+/// the events anyone is watching for. The cwd and the entrypoint keep their first reading and
+/// the branch its latest, because a run can switch branch mid-session but never its root.
 ///
 /// A cursor of its own rather than three fields on the reader: "have I said this already" is the
 /// whole of its state, and it is the one part of the reader's memory that has nothing to do with

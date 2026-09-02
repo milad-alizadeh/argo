@@ -71,8 +71,7 @@ public extension CockpitPresentation {
         /// is every Session read from a record whose CLI it did not recognise.
         public let cli: AgentCLI?
         /// How this Session's process was started (`CONTEXT.md` L2 · Entry) — DERIVED, and
-        /// `interactive` wherever Argo read no word it recognised. That is what keeps a Session
-        /// somebody is driving out of the Roster's folds.
+        /// `interactive` wherever Argo read no word it recognised.
         public let entry: SessionEntry
         /// Absent for a Session with no git context at all, rather than an empty Workspace: a
         /// Workspace whose every field is `nil` is a claim that one exists.

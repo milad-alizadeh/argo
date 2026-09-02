@@ -1,10 +1,8 @@
 /// How the process behind a Session was STARTED (`CONTEXT.md` L2 · Entry) — DERIVED, off the CLI's
 /// own `entrypoint` field in a file Argo does not own.
 ///
-/// Two values and no `unknown`, deliberately, because the absent rendering IS one of the two: a
-/// Session nothing has been read for is one nobody can prove is unattended, and that is
-/// `interactive`. See `init(entrypoint:)`.
-public enum SessionEntry: Sendable, Equatable, CaseIterable {
+/// Two values and no `unknown`: the absent rendering IS one of them — see `init(entrypoint:)`.
+public enum SessionEntry: Sendable, Equatable {
     /// A person at a terminal, which is what a Session is until a record says otherwise.
     case interactive
     /// A program started it and nobody is at it — `claude -p` and everything the SDK runs.

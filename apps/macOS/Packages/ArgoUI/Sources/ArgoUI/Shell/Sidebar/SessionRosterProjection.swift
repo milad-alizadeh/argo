@@ -12,17 +12,24 @@ enum SessionRosterProjection {
     static func rows(
         from sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
+        selection: String? = nil,
         now: Date = Date(),
     )
         -> [Row] {
-        rows(from: sessions, in: Pass(isArchived: false, opened: opened), now: now)
+        rows(
+            from: sessions,
+            in: Pass(isArchived: false, opened: opened, selection: selection),
+            now: now,
+        )
     }
 
-    /// One pass over the roster: which of the two lists it is drawing, and which folds the reader
-    /// has opened.
+    /// One pass over the roster: which of the two lists it is drawing, which folds the reader has
+    /// opened, and what the deck is drawing — a fold holding the selection is open whatever the
+    /// reader did, for the reason the archive foot is.
     struct Pass {
         let isArchived: Bool
         let opened: Set<String>
+        let selection: String?
     }
 
     /// What is behind the foot of the roster. The same rows by the same rules — a Session put out
@@ -30,10 +37,15 @@ enum SessionRosterProjection {
     static func archivedRows(
         from sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
+        selection: String? = nil,
         now: Date = Date(),
     )
         -> [Row] {
-        rows(from: sessions, in: Pass(isArchived: true, opened: opened), now: now)
+        rows(
+            from: sessions,
+            in: Pass(isArchived: true, opened: opened, selection: selection),
+            now: now,
+        )
     }
 
     private static func rows(
@@ -49,7 +61,7 @@ enum SessionRosterProjection {
         // Once over the list this pass is drawing, never once per row (ADR-0028) — and over the
         // kept half, so a fold's count is what the reader can see rather than what is behind the
         // foot as well.
-        let folding = Folding(of: kept.map { pair in pair.0 }, opened: pass.opened)
+        let folding = Folding(of: kept.map { pair in pair.0 }, in: pass)
         return kept.flatMap { session, decided -> [Row] in
             [
                 folding.fold(opening: session).map { foldRow($0, at: session, nowMs: nowMs) },

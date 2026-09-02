@@ -27,9 +27,9 @@ public struct MessageRecord: Sendable, Equatable {
     /// The host's own result object, unread. Where a mutation's patch and an image's bytes live.
     public let toolUseResult: JSONValue?
 
-    /// Who wrote this record and on whose behalf — the three flags that each name a writer other
-    /// than the Session's own two parties, and each of which disowns the record from the Session's
-    /// exchange for a different reason.
+    /// Whose words a record carries, where they are not the Session's own two parties': the host
+    /// talking to itself, the host's condensation of the history, or a delegated Subagent. Each
+    /// disowns the record from the Session's exchange, and each for a different reason.
     public struct Authorship: Sendable, Equatable {
         /// The host talking to ITSELF. Claude Code's own flag, taken at face value rather than
         /// inferred from the text: it is the one signal that separates plumbing from a prompt. A

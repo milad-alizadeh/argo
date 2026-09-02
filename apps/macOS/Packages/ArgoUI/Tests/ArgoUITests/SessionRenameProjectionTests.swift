@@ -87,7 +87,9 @@ struct SessionRenameProjectionTests {
     func `a Session nobody renamed is offered no Reset`() throws {
         let row = try #require(SessionRosterProjection.rows(from: [session()]).first)
 
-        #expect(row.rename?.derived == nil)
+        // Through `#require`, so the claim is that the rename EXISTS and offers no Reset — an
+        // optional compared to `nil` would pass just as well on a row carrying no rename at all.
+        #expect(try #require(row.rename).derived == nil)
     }
 
     @Test
@@ -119,7 +121,7 @@ struct SessionRenameProjectionTests {
         let rows = RenameFixture.rows
 
         #expect(rows.contains { $0.rename?.derived != nil })
-        #expect(rows.contains { $0.rename?.derived == nil })
+        #expect(rows.contains { $0.rename.map { $0.derived == nil } == true })
     }
 
     @Test
@@ -129,7 +131,7 @@ struct SessionRenameProjectionTests {
         let editing = try #require(RenameFixture.rows.first { $0.id == RenameFixture.editingRowID })
 
         // The first rename of a Session, which is the state the field is met in: nothing to reset.
-        #expect(editing.rename?.derived == nil)
+        #expect(try #require(editing.rename).derived == nil)
     }
 
     private func session(

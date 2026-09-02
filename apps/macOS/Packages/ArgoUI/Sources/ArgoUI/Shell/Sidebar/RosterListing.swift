@@ -32,15 +32,16 @@ struct RosterListing {
     func reading(
         of sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
+        selection: String? = nil,
         now: Date = Date(),
     )
         -> Reading {
         Reading(
-            rows: order.published(
-                SessionRosterProjection.rows(from: sessions, opened: opened, now: now),
-            ),
+            rows: order.published(SessionRosterProjection.rows(
+                from: sessions, opened: opened, selection: selection, now: now,
+            )),
             archived: SessionRosterProjection.archivedRows(
-                from: sessions, opened: opened, now: now,
+                from: sessions, opened: opened, selection: selection, now: now,
             ),
         )
     }

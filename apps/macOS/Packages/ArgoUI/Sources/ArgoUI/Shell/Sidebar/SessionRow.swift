@@ -43,6 +43,14 @@ struct SessionRow: View {
         // pointer and the menu holding Reset (#502, story 20).
         .help(inspectionText)
         .contextMenu { copyActions }
+        // A fold takes no `List` tag, so neither the keyboard nor a screen reader's own
+        // activation can reach it (`SessionNavigator`). This is the way in that does not need a
+        // pointer.
+        .accessibilityActions {
+            if row.fold != nil {
+                Button("Open") { select() }
+            }
+        }
     }
 
     private var primaryLine: some View {
@@ -86,7 +94,7 @@ struct SessionRow: View {
     }
 
     @ViewBuilder private var title: some View {
-        if isRenaming.wrappedValue, row.rename != nil {
+        if isRenaming.wrappedValue {
             nameField
         } else {
             Text(row.title)
