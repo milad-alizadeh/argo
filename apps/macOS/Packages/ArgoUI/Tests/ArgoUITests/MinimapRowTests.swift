@@ -8,27 +8,21 @@ import Testing
 /// The claim under the suite is that the lane is the reading SHRUNK: every ink here is one the row
 /// itself is drawn in, and every piece is one the row itself draws. Drift turns the lane into a
 /// legend, which is what D25 was written against.
+///
+/// The one row with a shape of its own — a question — is `MinimapAskCardTests`.
 @MainActor
 @Suite("Minimap row shapes")
 struct MinimapRowTests {
-    private static func row(_ content: FeedRow.Content) -> MinimapRow {
-        MinimapRow(FeedRow(id: 0, content: content), height: 20)
-    }
-
-    private static func shape(_ content: FeedRow.Content) -> MinimapRowShape {
-        row(content).shape
-    }
-
     /// The pieces a single-line row is drawn as, empty where it is drawn as anything else — so a
     /// claim about them is one expectation rather than a guard and a recorded issue.
     private static func parts(_ content: FeedRow.Content) -> [MinimapLinePart] {
-        guard case let .line(parts, _) = shape(content) else { return [] }
+        guard case let .line(parts, _) = MinimapRowFixture.shape(content) else { return [] }
         return parts
     }
 
     /// The ink of a row drawn as one line, `nil` where it is drawn as anything else.
     private static func lineInk(_ content: FeedRow.Content) -> FeedInk? {
-        guard case let .line(_, ink) = shape(content) else { return nil }
+        guard case let .line(_, ink) = MinimapRowFixture.shape(content) else { return nil }
         return ink
     }
 
@@ -49,10 +43,10 @@ struct MinimapRowTests {
     /// keeps a heading from being reported at a paragraph's face by a second one.
     @Test
     func `what the agent said is its blocks in the ink the feed says it in`() {
-        #expect(Self.shape(.message("said")) == .composed(
+        #expect(MinimapRowFixture.shape(.message("said")) == .composed(
             blocks: [.prose(MinimapProseWords(text: "said"))], ink: .message,
         ))
-        #expect(Self.shape(.thought("reasoned")) == .composed(
+        #expect(MinimapRowFixture.shape(.thought("reasoned")) == .composed(
             blocks: [.prose(MinimapProseWords(text: "reasoned"))], ink: .thought,
         ))
     }
@@ -61,7 +55,7 @@ struct MinimapRowTests {
     /// is drawn, not the leading edge prose runs from.
     @Test
     func `a prompt is a bubble rather than prose`() {
-        #expect(Self.shape(.prompt(text: "Fix the seam", shots: [])) == .bubble(
+        #expect(MinimapRowFixture.shape(.prompt(text: "Fix the seam", shots: [])) == .bubble(
             text: "Fix the seam",
             shots: [],
             isFolded: true,
@@ -70,8 +64,9 @@ struct MinimapRowTests {
 
     @Test
     func `a prompt carries the words it asked for and nothing else does`() {
-        #expect(Self.row(.prompt(text: "Fix the seam", shots: [])).prompt == "Fix the seam")
-        #expect(Self.row(.message("Fixed it")).prompt == nil)
+        #expect(MinimapRowFixture.row(.prompt(text: "Fix the seam", shots: []))
+            .prompt == "Fix the seam")
+        #expect(MinimapRowFixture.row(.message("Fixed it")).prompt == nil)
     }
 
     @Test
@@ -121,77 +116,15 @@ struct MinimapRowTests {
         #expect(Self.parts(.call(failed)).allSatisfy { $0.ink == .failure })
     }
 
-    /// D25's map may never depend on colour alone, so the row waiting on somebody is still the one
-    /// thing in the lane with a shape of its own — but that shape is now the card the feed draws: a
-    /// frame across the whole measure with the words inside it, not a slab of the loudest colour
-    /// the app has.
-    @Test
-    func `a question is the card the feed draws it in`() {
-        let asked = Ask(questions: [Ask.Question(
-            text: "Which reading?",
-            options: Ask.Option.labelled(["One", "Two"]),
-        )])
-        let ask = FeedAsk(ask: asked, isAnswered: false, answer: nil)
-        // The offers carry the numbers the ROW sets them behind, because the lane places them on
-        // the same marker grid the row does.
-        #expect(Self.shape(.ask(ask)) == .card(MinimapAskCard(
-            questions: [MinimapAskCard.Question(
-                text: "Which reading?",
-                offers: [
-                    MinimapAskCard.Offer(marker: "1.", label: "One"),
-                    MinimapAskCard.Offer(marker: "2.", label: "Two"),
-                ],
-            )],
-            ink: .attention,
-            isRuled: true,
-        )))
-        let rects = Self.shape(.ask(ask)).rects(across: 400, height: 90)
-        // The card's own border, stroked across the whole measure, with the words filled inside it.
-        #expect(rects.first == MinimapRowRect(
-            y: 0, height: 90, from: 0, to: 400, ink: .attention, shape: .frame,
-        ))
-        #expect(rects.dropFirst().allSatisfy { $0.drawn == .bar && $0.from > 0 })
-        // Three lines, each its marker and its words: the question and the two options under it.
-        #expect(rects.count == 7)
-    }
-
-    /// The attention ink means *this is waiting on YOU*. On a Session Argo cannot drive it is not,
-    /// because nothing done here reaches the agent (#546) — so the lane goes quiet with the row,
-    /// rule and all, exactly as an answered question does.
-    @Test
-    func `a question nobody here can answer takes no attention ink`() {
-        let unanswerable = FeedAsk(
-            ask: Ask(questions: []),
-            isAnswered: false,
-            answer: nil,
-            offer: FeedAskProjection.Asking(live: nil, isDriveable: false),
-        )
-        #expect(Self.shape(.ask(unanswerable)) == .card(MinimapAskCard(
-            questions: [], ink: .message, isRuled: false,
-        )))
-    }
-
-    /// The row goes quiet the moment something answers it, and the lane has to go quiet with it — a
-    /// lane still amber beside a settled question is the map disagreeing with the reading. It loses
-    /// its rule with the colour, because the feed's settled card keeps none either.
-    @Test
-    func `a question somebody answered stops taking attention ink and its rule`() {
-        let settled = FeedAsk(ask: Ask(questions: []), isAnswered: true, answer: "Both")
-        #expect(Self.shape(.ask(settled)) == .card(MinimapAskCard(
-            questions: [], ink: .message, isRuled: false,
-        )))
-        #expect(Self.shape(.ask(settled)).rects(across: 400, height: 90).isEmpty)
-    }
-
     @Test
     func `a run of pictures is one frame per shot rather than one over the run`() {
-        #expect(Self.shape(.gallery(FeedGallery(shots: []))) == .shots(widths: []))
+        #expect(MinimapRowFixture.shape(.gallery(FeedGallery(shots: []))) == .shots(widths: []))
         #expect(FeedInk.media.shape == .frame)
     }
 
     @Test
     func `the punctuation between Turns is a rule`() {
-        #expect(Self.shape(.mark(.compacted)) == .whole(.boundary))
+        #expect(MinimapRowFixture.shape(.mark(.compacted)) == .whole(.boundary))
         #expect(FeedInk.boundary.shape == .rule)
     }
 
@@ -202,11 +135,11 @@ struct MinimapRowTests {
         (FeedMark.working, false),
     ])
     func `only a stop reason and an interruption end a Turn`(mark: FeedMark, ends: Bool) {
-        #expect(Self.row(.mark(mark)).endsTurn == ends)
+        #expect(MinimapRowFixture.row(.mark(mark)).endsTurn == ends)
     }
 
     @Test
     func `nothing but a mark can end a Turn`() {
-        #expect(Self.row(.message("Done")).endsTurn == false)
+        #expect(MinimapRowFixture.row(.message("Done")).endsTurn == false)
     }
 }

@@ -770,7 +770,7 @@ its approved study are authoritative for the replacement look and feel.
   Two facts this document asserted are corrected here rather than left standing: the capsule is
   not replaced, and `text.tertiary` is **not** a sub-AA voice on `surface.base` — #906 wrote that
   it "is a sub-AA voice on `surface.base` already — the contract exempts it there". It measured
-  4.86:1 and `VisualContractTests` has always asserted 4.5:1 on it.
+  4.86:1 and `VisualContractLegibilityTests` has always asserted 4.5:1 on it.
 
   - **The floor is stated, and it is stated where the ramp is defined.**
     `ArgoPalette.TextRoles.contrastFloor` — 4.5:1, WCAG AA for body text — and every voice a row is

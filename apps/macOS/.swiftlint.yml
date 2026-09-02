@@ -33,13 +33,11 @@ file_length:
   ignore_comment_only_lines: true
 
 type_body_length:
-  # RATCHET: 150 is the number, and no PRODUCTION body blocks it any more — #759 gave Hub's state
-  # two owners (98), #788 took the composer's menus out of SessionComposer (146), and #790 gave
-  # HubSession's Turn its own owner (145). What is left is ten TEST suites between 151 and 169, the
-  # widest ConnectPanelProjectionTests and VisualContractTests at 169 — which is what the number
-  # tracks, and what #793 sweeps. Lower it as each goes, never raise it to fit a file.
-  error: 169
-  warning: 169
+  # 150 code lines is the house ceiling for a type, and nothing in the tree is over it. #793 swept
+  # the last of it — every body between 151 and 169 was split along a boundary its own doc comment
+  # states. This is a cap rather than a target now: split the type, never raise the number.
+  error: 150
+  warning: 150
 
 function_body_length:
   # Counts neither comments nor blank lines, so this is biome's 50 exactly.

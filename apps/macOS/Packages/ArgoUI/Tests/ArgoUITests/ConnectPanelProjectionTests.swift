@@ -2,7 +2,12 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// What the Connect panel says. Every claim here is one the panel must make in WORDS.
+/// What the Connect panel says AROUND its rows: the folder it needs before anything can start, the
+/// call to action that folder alone enables, the mode the panel is drawn in, and the device flow it
+/// carries while an authorization waits.
+///
+/// The two port rows are `ConnectPortRowTests` and the plugin row is `ConnectCompanionRowTests`.
+/// Every claim here is one the panel must make in WORDS.
 @Suite("Connect panel projection")
 struct ConnectPanelProjectionTests {
     @Test
@@ -35,120 +40,6 @@ struct ConnectPanelProjectionTests {
     }
 
     @Test
-    func `both ports are drawn whether or not the reading mentions them`() {
-        let panel = ConnectPanelProjection.panel(from: ConnectFixture.partly)
-
-        #expect(panel.ports.map(\.id) == [.ticket, .codeHost])
-        #expect(panel.ports.map(\.isBound) == [true, false])
-    }
-
-    /// The claim the account level is for: which identity, not merely which provider.
-    @Test
-    func `a bound port names its Account and its scope`() throws {
-        let panel = ConnectPanelProjection.panel(from: ConnectFixture.wired)
-        let issues = try #require(panel.ports.first)
-        let pulls = try #require(panel.ports.last)
-
-        #expect(issues.row.detail == "GitHub · milad-alizadeh · milad-alizadeh/argo")
-        #expect(pulls.row.detail == "GitHub · milad-at-trili · trili/cockpit")
-    }
-
-    /// Two identities on one provider, told apart by what is on screen and nothing else.
-    @Test
-    func `two Accounts on one provider are distinguishable in the choices`() throws {
-        let panel = ConnectPanelProjection.panel(from: ConnectFixture.wired)
-        let issues = try #require(panel.ports.first)
-
-        #expect(issues.choices.map(\.title) == [
-            "GitHub · milad-alizadeh",
-            "GitHub · milad-at-trili",
-        ])
-    }
-
-    /// Rebinding is picking again: the same identity under a different scope is a move a row
-    /// allows.
-    @Test
-    func `the Account already bound is still offered`() throws {
-        let panel = ConnectPanelProjection.panel(from: ConnectFixture.wired)
-        let issues = try #require(panel.ports.first)
-
-        #expect(issues.choices.map(\.id).contains(ConnectFixture.personal.id))
-    }
-
-    @Test
-    func `a port with no account behind it says what connecting one would show`() throws {
-        let panel = ConnectPanelProjection.panel(from: ConnectFixture.folderOnly)
-        let pulls = try #require(panel.ports.last)
-
-        #expect(pulls.row.detail.contains("pull requests"))
-        #expect(pulls.note == nil)
-    }
-
-    /// An Account that cannot fill a port is never offered under it, because the only outcome of
-    /// picking it is the refusal `bind` already raises.
-    @Test
-    func `a Linear Account is offered for issues and never for the code host`() throws {
-        let reading = ConnectReading(
-            folder: ConnectFixture.folder,
-            accounts: [ConnectFixture.personal, ConnectFixture.linear],
-        )
-        let panel = ConnectPanelProjection.panel(from: reading)
-        let issues = try #require(panel.ports.first)
-        let pulls = try #require(panel.ports.last)
-
-        #expect(issues.choices.map(\.title).contains("Linear · Trili"))
-        #expect(pulls.choices.map(\.title) == ["GitHub · milad-alizadeh"])
-    }
-
-    /// Authorizing one more identity is always on offer, which is what makes a second Account
-    /// reachable at all.
-    @Test
-    func `every port offers a way to authorize another identity`() {
-        let panel = ConnectPanelProjection.panel(from: ConnectFixture.wired)
-
-        #expect(panel.ports.allSatisfy {
-            $0.offers.map(\.title) == ["Connect a GitHub account"]
-        })
-    }
-
-    /// A provider with no flow behind it in this build is not offered.
-    @Test
-    func `only a provider Argo can authorize is offered`() {
-        #expect(ConnectPanelProjection.panel(from: ConnectFixture.fresh).ports.allSatisfy {
-            $0.offers.map(\.id) == [.github]
-        })
-    }
-
-    /// The other half of that claim: the list is what the app hands over, not a set this file
-    /// decided.
-    @Test
-    func `the offered set is whatever the app says it can authorize`() throws {
-        let reading = ConnectReading(authorizable: [.github, .linear])
-        let issues = try #require(ConnectPanelProjection.panel(from: reading).ports.first)
-
-        #expect(issues.offers.map(\.id) == [.github, .linear])
-    }
-
-    @Test
-    func `a Binding whose Account was removed keeps its place and says what went`() throws {
-        let reading = ConnectReading(
-            folder: ConnectFixture.folder,
-            accounts: [ConnectFixture.personal],
-            ports: [ConnectPort(port: .ticket, state: .broken(
-                accountID: ConnectFixture.work.id,
-                scope: "trili/cockpit",
-                fault: .accountRemoved,
-            ))],
-        )
-        let panel = ConnectPanelProjection.panel(from: reading)
-        let issues = try #require(panel.ports.first)
-
-        #expect(issues.note?.what == "The account this row used is gone.")
-        #expect(issues.row.detail == "trili/cockpit")
-        #expect(!issues.choices.isEmpty)
-    }
-
-    @Test
     func `settings is the same panel, one word and one row further on`() {
         let reading = ConnectReading(
             folder: ConnectFixture.folder,
@@ -167,55 +58,6 @@ struct ConnectPanelProjectionTests {
     @Test
     func `onboarding carries no Agent row`() {
         #expect(ConnectPanelProjection.panel(from: ConnectFixture.wired).agent == nil)
-    }
-
-    /// The row's whole payoff: a Project on this reading gets CONVENTION-tier facts with every
-    /// spawn, and there is no install to offer because Argo already did it.
-    @Test
-    func `the companion row says the plugin comes with every spawn`() {
-        let panel = ConnectPanelProjection.panel(from: ConnectFixture.wired)
-
-        #expect(panel.companion.detail.contains("every session Argo starts"))
-        #expect(panel.companion.detail.contains("nothing to install"))
-    }
-
-    /// The honest `Not available yet`: a build with no plugin has no install to offer either.
-    @Test
-    func `a build that ships no plugin says so plainly`() {
-        let panel = ConnectPanelProjection.panel(from: ConnectReading(companion: .missingFromBuild))
-
-        #expect(panel.companion.detail.contains("Not available"))
-        #expect(panel.companion.detail.contains("ships no plugin"))
-    }
-
-    /// A failed install is a fourth thing again, and it says why in the refusal's own words.
-    @Test
-    func `a failed plugin write is told apart and carries its reason`() {
-        let reading = ConnectReading(
-            companion: .installFailed(why: "Companion socket could not be opened"),
-        )
-        let panel = ConnectPanelProjection.panel(from: reading)
-
-        #expect(panel.companion.detail.contains("without its plugin"))
-        #expect(panel.companion.detail.contains("Companion socket could not be opened"))
-    }
-
-    /// The Hub's fact maps one to one, and no channel to ask degrades down to `unknown`.
-    @Test
-    func `the row's reading is the Hub's own standing, degraded down when absent`() {
-        #expect(ConnectCompanion(standing: .includedWithSpawns) == .includedWithSpawns)
-        #expect(ConnectCompanion(standing: .missingFromBuild) == .missingFromBuild)
-        #expect(ConnectCompanion(standing: .installFailed(why: "no room"))
-            == .installFailed(why: "no room"))
-        #expect(ConnectCompanion(standing: nil) == .unknown)
-    }
-
-    /// Where even that cannot be established it falls to `unknown`, never to the nearest guess.
-    @Test
-    func `a companion state Argo cannot establish reads unknown`() {
-        let panel = ConnectPanelProjection.panel(from: ConnectReading(companion: .unknown))
-
-        #expect(panel.companion.detail == "unknown")
     }
 
     @Test
