@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.ATLAS_PORT || 8731);
 const MAP = join(HERE, 'atlas-cc.json');
+const COCHANGE = join(HERE, 'atlas-cochange.json');
 const NOTES = join(HERE, 'atlas-notes.json');
 /* The subtree and the language are the pipeline's only repo-specific knobs, and both stay
    env-settable so this serves a repo that has neither apps/macOS nor any Swift in it. */
@@ -100,7 +101,7 @@ async function status() {
   const s = {
     ok: true, subtree: (map && map.projectName) || SUBTREE, built,
     head: repo && repo.head, dirty: repo && repo.dirty,
-    mapAt: mtime(MAP), notesAt: mtime(NOTES),
+    mapAt: mtime(MAP), notesAt: mtime(NOTES), cochangeAt: mtime(COCHANGE),
     tools: { map: mapTools(), notes: missing(['claude']) },
     behind: null, notesStale: 0, notesTotal: 0, reasons: [],
   };
@@ -111,6 +112,13 @@ async function status() {
   }
   if (!map) s.reasons.push('no map built yet');
   else if (!built) s.reasons.push('built from an unrecorded commit');
+  /* The sidecar is what the domains are inferred from. Missing it is not a broken map, but it
+     is a silently smaller one, so it gets said rather than discovered. */
+  const co = readJSON(COCHANGE);
+  s.cochange = co ? { edges: co.edges.length, files: co.files.length,
+                      commits: co.built.kept, cap: co.built.cap } : null;
+  if (!co) s.reasons.push('no co-change built yet');
+  else if (built && co.built.commit !== built.commit) s.reasons.push('co-change is from another commit');
   if (repo && repo.dirty) s.reasons.push('working tree is dirty');
   const notes = readJSON(NOTES);
   if (notes && map) {
@@ -177,6 +185,14 @@ async function buildMap(work, repo, say) {
   await runStreaming(process.execPath, [join(HERE, 'atlas-cc-trim.mjs'), `${merged}.cc.json`, trimmed], HERE,
     l => say('log', l));
   stampAndPlace(trimmed, repo);
+
+  /* The sidecar is built from the same commit and placed in the same pass. Split them and the
+     two files can end up describing different repo states, which nothing downstream can see. */
+  say('step', 'Counting what changes together');
+  const co = COCHANGE + '.tmp';
+  await runStreaming(process.execPath, [join(HERE, 'atlas-cochange.mjs'), repo.root, SUBTREE, EXT, co],
+    HERE, l => say('log', l));
+  renameSync(co, COCHANGE);
 }
 
 /* Only the subjects whose file actually changed are handed to the writer, and the rest of

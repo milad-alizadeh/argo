@@ -1,6 +1,6 @@
 #!/bin/sh
 # PROTOTYPE — regenerates atlas-cc.json from the repo. Stock CodeCharta, no authored content.
-# Needs Java 11+ and: npm i codecharta-analysis   (binary lands at node_modules/.bin/ccsh)
+# Needs Java 11+ and ccsh, which npx fetches on demand: npx -y -p codecharta-analysis ccsh
 set -eu
 
 ROOT=$(git rev-parse --show-toplevel)
@@ -13,3 +13,7 @@ ccsh merge "$OUT/metrics.cc.json" "$OUT/churn.cc.json" -nc -o "$OUT/argo"
 
 # The full map is 2.2 MB. The page reads the apps/macOS subtree with 12 of the 40 attributes.
 node "$(dirname "$0")/atlas-cc-trim.mjs" "$OUT/argo.cc.json" "$(dirname "$0")/atlas-cc.json"
+
+# ccsh's own coupling export reaches a sixth of the files, which is too thin to cluster on.
+# Same commit as the map above, so the pair never disagrees about which repo state it describes.
+node "$(dirname "$0")/atlas-cochange.mjs" "$ROOT" apps/macOS swift "$(dirname "$0")/atlas-cochange.json"

@@ -84,3 +84,46 @@ runs on the second, and rewrites only the notes whose subject changed.
 
 On a plain static server the endpoint is absent and the button does not appear, which is the
 same contract the notes layer follows.
+
+## Domains, and what the map cannot measure
+
+The city answers "how big" and "how bad". It cannot answer "where is the code about X",
+because the folder tree files code by layer and nothing files it by subject. So the map grew a
+second partition, inferred from the only two signals every repository has: what files are
+called, and what changes together.
+
+`atlas-cochange.mjs` counts co-change from git alone. `ccsh`'s own coupling export reaches 240
+of this repo's 1,547 files, which is too thin to cluster on; counting it here reaches 1,380,
+because the two thresholds that decide the answer become ours — a commit-size cap at the
+repo's own p90, so one sweeping refactor cannot couple everything to everything, and a top-20
+neighbour list per file, so the sidecar's size follows the file count rather than how busy the
+history is. Jaccard, not a raw count: a file that changes on every commit is otherwise coupled
+to the whole repo, which is a fact about that file and never about a pair.
+
+`atlas-domains.mjs` blends that with TF-IDF over **filename** tokens — directory tokens are
+off by default, because feeding the folder names in makes the clustering rediscover the folder
+tree and "domains cut across folders" becomes a statement about the input — and runs Louvain
+over the blend. Three choices carry the honesty:
+
+- **The resolution is chosen by plateau, in the partition rather than the cluster count.**
+  Count rises monotonically with resolution for nearly any graph, so a flat stretch of it
+  barely exists; a stretch where turning the knob stops moving files between domains does. No
+  plateau is a real answer — this repo has no grain — and it is said rather than papered over.
+- **A file may belong to nothing.** It keeps its domain only if it is more that domain than
+  the runner-up, by a ratio that carries no repo-specific scale. The same number becomes the
+  saturation it is drawn at, and the unassigned pile is a region of the map like any other.
+- **There is no oracle, so stability stands in for accuracy.** Clustering on names alone and
+  on the blend agree on 94% of file pairs here. Agreement between two independent signals is
+  the only accuracy number available without a human answer key, and it is shown.
+
+Two settings, one control. **Tint** recolours in place, so a domain is seen scattered over
+five plates — the diagnosis. **Regroup** re-tiles the plan by domain, so it becomes one
+region — the cure. Area is the same measure in both, so the reshuffle conserves every
+footprint and only ever moves it; files leave staggered by domain, and the camera lies down
+for the journey because in the city half the motion happens behind the towers.
+
+The recovery literature is blunt that inference here is unreliable — the same technique scores
+36 and 94 on different codebases, and the tools that do it best (ACDC, ARC, inside ARCADE)
+have eleven GitHub stars between them and no maintenance. So domains are a **third kind of
+fact**: not measured like every number, not read like every note, but inferred, and labelled
+that way wherever they appear.
