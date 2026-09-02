@@ -106,6 +106,9 @@ extension SpecimenRegistry {
         },
         // A session at the length a real one reaches. Render narrow too (`ARGO_WINDOW_SIZE`).
         SpecimenEntry("feedAtScale") { SpecimenScene.sessions(FeedProjection.longRows) },
+        // Rows that say the same words as each other, which is the state a height store keyed on
+        // what a row says draws on top of itself (#1100).
+        SpecimenEntry("feedRepeatedRows") { SpecimenScene.sessions(FeedProjection.repeatedRows) },
         // A row arriving at the end must not move the row somebody is looking at.
         SpecimenEntry("feedArriving") { ArrivingFeedSpecimen() },
         SpecimenEntry("emptyFeed") { SpecimenScene.sessions([]) },

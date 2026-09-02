@@ -95,14 +95,10 @@ struct FeedTypesetCostTests {
         let handle = FeedTableHandle()
         let coordinator = FeedTableFixture.laidOut(rows, in: Self.pane, through: handle)
         let table = coordinator.table
+        coordinator.dropMeasuredHeights()
         let before = coordinator.layouts
         var declined = 0
         for at in rows.indices {
-            // Emptied per row, not once: a height is filed under what it is a fact ABOUT
-            // (`FeedGeometry.Ground`), so two rows of this reading that draw alike are one entry
-            // and the second of them reaches nothing. The claim here is about the ROUTING, which
-            // is a question asked of each row cold.
-            coordinator.dropMeasuredHeights()
             _ = table.map { coordinator.measuredHeight(at: at, in: $0) }
             declined += FeedRowMeasure.height(
                 of: rows[at].content,

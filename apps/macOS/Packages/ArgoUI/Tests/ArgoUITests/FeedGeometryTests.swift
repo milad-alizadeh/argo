@@ -96,7 +96,7 @@ struct FeedGeometryTests {
         let geometry = FeedGeometry()
         let model = FeedTableFixture.model(showing: Self.rows)
         geometry.settle(at: Self.pane.width, in: model.environment)
-        geometry.record(120, under: Self.ground(at: 1, of: model))
+        geometry.record(120, at: 1, under: Self.ground(at: 1, of: model))
         var reinked = model
         reinked.environment.dynamicTypeSize = .accessibility3
 
@@ -105,29 +105,27 @@ struct FeedGeometryTests {
         #expect(geometry.isEmpty)
     }
 
-    /// Another reading under a table that is still standing: the same width and the same ink, but
-    /// DIFFERENT rows — the Agents rail scoping the feed onto a Subagent, or a transcript rewritten
-    /// rather than appended to — must not come back at the heights of whatever stood at those
-    /// indices.
+    /// The rows re-numbering under a table that is still standing: a row's id IS its index, so a
+    /// reading with the same width and ink but DIFFERENT rows — the Agents rail scoping the feed
+    /// onto a Subagent, or a transcript rewritten rather than appended to — must not come back at
+    /// the heights of whatever stood at those indices.
     @Test
-    func `a reading of different rows at the same indices keeps nothing`() throws {
+    func `a reading that re-numbers its rows keeps nothing`() throws {
         let kept = Self.kept()
         let opened = try Self.entered(kept)
 
-        // Asked of the STORE, and the ground is the only thing that can refuse: nothing drops a
-        // height for re-numbering any more, because re-numbering is exactly what a height now
-        // survives (`FeedGeometry`). Different rows at the same indices is a different question.
+        // Asked of the STORE, not through `apply` — a re-numbering that goes through the table is
+        // caught by `execute`'s drop on a `.reload` delta, which would pass with no ground at all.
+        // The claim here is that the ground alone refuses, which is the path a room switch takes.
         let scoped = FeedTableFixture.model(showing: Self.scoped)
-        #expect(kept.geometry.height(under: Self.ground(at: 1, of: scoped)) == nil)
+        #expect(kept.geometry.height(at: 1, under: Self.ground(at: 1, of: scoped)) == nil)
         #expect(opened.table.measurements > 0)
     }
 
     /// The same claim across the switch: a reader who comes back to a reading that re-projected
-    /// while they were away pays for it rather than drawing it at the old heights. Different ROWS
-    /// and not merely different indices — a reading that only re-numbered is what
-    /// `FeedExcerptCostTests` holds, and it may not pay for one of them.
+    /// while they were away pays for it rather than drawing it at the old heights.
     @Test
-    func `a reading of other rows entirely is measured again`() throws {
+    func `a reading that re-numbered while the reader was away is measured again`() throws {
         let kept = Self.kept()
         _ = try Self.entered(kept)
 
@@ -161,11 +159,11 @@ struct FeedGeometryTests {
     func `a fold is part of what a height is true of`() {
         let geometry = FeedGeometry()
         let folded = FeedTableFixture.model(showing: Self.rows)
-        geometry.record(900, under: Self.ground(at: 1, of: folded))
+        geometry.record(900, at: 1, under: Self.ground(at: 1, of: folded))
         var unfolded = folded
         unfolded.unfolded = .constant([Self.rows[1].id])
 
-        #expect(geometry.height(under: Self.ground(at: 1, of: unfolded)) == nil)
+        #expect(geometry.height(at: 1, under: Self.ground(at: 1, of: unfolded)) == nil)
     }
 
     /// A survey draws one line per call while it is the open row and nothing while it is not
@@ -176,14 +174,14 @@ struct FeedGeometryTests {
     func `whether a row is open is part of what a height is true of`() {
         let geometry = FeedGeometry()
         let shut = FeedTableFixture.model(showing: Self.rows)
-        geometry.record(30, under: Self.ground(at: 1, of: shut))
+        geometry.record(30, at: 1, under: Self.ground(at: 1, of: shut))
         var open = shut
         open.selection = FeedRowSelection(
             open: .constant(Self.rows[1].id), step: .constant(nil), lit: .constant(nil),
             focus: shut.selection.focus,
         )
 
-        #expect(geometry.height(under: Self.ground(at: 1, of: open)) == nil)
+        #expect(geometry.height(at: 1, under: Self.ground(at: 1, of: open)) == nil)
     }
 
     /// The step above a row is INSIDE that row's height — `FeedRow.step(to:from:)` — so the row
@@ -192,23 +190,19 @@ struct FeedGeometryTests {
     func `the row above is part of what a height is true of`() {
         let geometry = FeedGeometry()
         let model = FeedTableFixture.model(showing: Self.rows)
-        geometry.record(120, under: Self.ground(at: 1, of: model))
+        geometry.record(120, at: 1, under: Self.ground(at: 1, of: model))
         var moved = Self.rows
         moved[0] = FeedRow(id: 0, content: .message("The row above is another row now."))
 
         let after = FeedTableFixture.model(showing: moved)
-        #expect(geometry.height(under: Self.ground(at: 1, of: after)) == nil)
+        #expect(geometry.height(at: 1, under: Self.ground(at: 1, of: after)) == nil)
     }
 
-    /// Nothing is remembered much longer than the reading on screen, which is the whole bound on
-    /// what this costs in memory. A long reading, then a short one: the entries the short one
-    /// cannot name are gone, or a Session with ten rows would hold the previous one's four hundred
-    /// for the life of the window. Asserting against the LONG reading's count would pass on any
-    /// implementation, bound or not.
-    ///
-    /// Twice the reading, because that is the ceiling `FeedGeometry.hold(rows:)` states and why —
-    /// a store cut back to exactly one height per row evicts the height it is about to be asked
-    /// for. Forty against four hundred is still the claim: an unbounded store fails this.
+    /// Nothing is remembered longer than the reading on screen, which is the whole bound on what
+    /// this costs in memory. A long reading, then a short one: the entries the short one cannot
+    /// name are gone, or a Session with ten rows would hold the previous one's four hundred for the
+    /// life of the window. Asserting against the LONG reading's count would pass on any
+    /// implementation, bound or not, because its keys are 0 ..< 400 by construction.
     @Test
     func `a shorter reading does not go on holding the longer one's heights`() throws {
         let kept = Self.kept()
@@ -217,7 +211,7 @@ struct FeedGeometryTests {
 
         _ = try Self.entered(kept, showing: Self.short)
 
-        #expect(kept.geometry.count <= Self.short.count * 2)
+        #expect(kept.geometry.count <= Self.short.count)
     }
 
     private static func ground(at index: Int, of model: FeedTableModel) -> FeedGeometry.Ground {
