@@ -168,7 +168,7 @@ struct SessionHeaderFactsTests {
             title: "Session",
             access: .orphaned,
             status: .idle,
-            chain: .init(cli: .claude, model: "claude-opus-5"),
+            chain: .init(program: .init(cli: .claude, model: "claude-opus-5")),
             work: .init(location: "/Users/milad/Developer/argo", workspace: .init(branch: "main")),
         ))
 
@@ -187,7 +187,7 @@ struct SessionHeaderFactsTests {
             title: "Session",
             access: .managed,
             status: .idle,
-            chain: .init(cli: cli, model: model),
+            chain: .init(program: .init(cli: cli, model: model)),
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: workspace,

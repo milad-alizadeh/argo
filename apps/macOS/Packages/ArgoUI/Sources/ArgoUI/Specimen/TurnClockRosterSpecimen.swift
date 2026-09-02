@@ -47,7 +47,10 @@ struct TurnClockRosterSpecimen: View {
             title: title,
             access: .managed,
             status: .running,
-            chain: .init(model: "claude-opus-5", lastSeenAtMs: startedAtMs),
+            chain: .init(
+                program: .init(model: "claude-opus-5"),
+                span: .init(lastSeenAtMs: startedAtMs),
+            ),
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(kind: .main, branch: "main"),
@@ -62,7 +65,7 @@ struct TurnClockRosterSpecimen: View {
             title: "Native Session roster in Swift",
             access: .external,
             status: .running,
-            chain: .init(lastSeenAtMs: nowMs - 12000),
+            chain: .init(span: .init(lastSeenAtMs: nowMs - 12000)),
             work: .init(
                 location: "/Users/milad/Developer/argo/.claude/worktrees/ticket-377-roster",
                 workspace: .init(kind: .worktree, branch: "argo/#377-native-session-roster"),
@@ -76,7 +79,10 @@ struct TurnClockRosterSpecimen: View {
             title: "Graphite and Ion Blue across the shell",
             access: .managed,
             status: .idle,
-            chain: .init(model: "claude-opus-5", lastSeenAtMs: nowMs - 3 * 60 * 60 * 1000),
+            chain: .init(
+                program: .init(model: "claude-opus-5"),
+                span: .init(lastSeenAtMs: nowMs - 3 * 60 * 60 * 1000),
+            ),
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(kind: .main, branch: "main"),

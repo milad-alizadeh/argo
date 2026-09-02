@@ -47,10 +47,8 @@ struct CompanionChannelSpecimen: View {
             access: liveness == .notApplicable ? .external : .managed,
             status: .idle,
             chain: .init(
-                cli: .claude,
-                model: "claude-opus-5",
-                startedAtMs: 0,
-                lastSeenAtMs: 12 * 60000,
+                program: .init(cli: .claude, model: "claude-opus-5"),
+                span: .init(startedAtMs: 0, lastSeenAtMs: 12 * 60000),
                 companionChannel: liveness,
             ),
             work: .init(

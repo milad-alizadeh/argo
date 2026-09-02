@@ -9,8 +9,36 @@ import ArgoEngine
 public extension CockpitPresentation.Session {
     /// The resume chain (`CONTEXT.md` L2): what runs it, when it ran, what it handed to, and
     /// whether Argo's own channel to it is up — a property of the process this link runs in, which
-    /// is what `cli` and the two moments are about too.
+    /// is what `Program` and the two moments are about too.
+    ///
+    /// Those four clauses ARE the parameter list. The facts stay flat below them, so every read
+    /// site names the fact and not the group it arrived in.
     struct Chain: Equatable, Sendable {
+        /// What is running the chain — the agent program, and the model it reported. One reading:
+        /// the header draws the pair as one line, and a record that named neither named both.
+        public struct Program: Equatable, Sendable {
+            public let cli: AgentCLI?
+            public let model: String?
+
+            public init(cli: AgentCLI? = nil, model: String? = nil) {
+                self.cli = cli
+                self.model = model
+            }
+        }
+
+        /// When it ran. The two moments are one reading because neither is a duration alone —
+        /// together they are the Session's wall-clock span, and that is the only thing read off
+        /// them.
+        public struct Span: Equatable, Sendable {
+            public let startedAtMs: Int?
+            public let lastSeenAtMs: Int?
+
+            public init(startedAtMs: Int? = nil, lastSeenAtMs: Int? = nil) {
+                self.startedAtMs = startedAtMs
+                self.lastSeenAtMs = lastSeenAtMs
+            }
+        }
+
         public let cli: AgentCLI?
         public let model: String?
         public let startedAtMs: Int?
@@ -19,17 +47,15 @@ public extension CockpitPresentation.Session {
         public let companionChannel: CompanionLiveness
 
         public init(
-            cli: AgentCLI? = nil,
-            model: String? = nil,
-            startedAtMs: Int? = nil,
-            lastSeenAtMs: Int? = nil,
+            program: Program = .init(),
+            span: Span = .init(),
             handedOffTo: String? = nil,
             companionChannel: CompanionLiveness = .notApplicable,
         ) {
-            self.cli = cli
-            self.model = model
-            self.startedAtMs = startedAtMs
-            self.lastSeenAtMs = lastSeenAtMs
+            self.cli = program.cli
+            self.model = program.model
+            self.startedAtMs = span.startedAtMs
+            self.lastSeenAtMs = span.lastSeenAtMs
             self.handedOffTo = handedOffTo
             self.companionChannel = companionChannel
         }

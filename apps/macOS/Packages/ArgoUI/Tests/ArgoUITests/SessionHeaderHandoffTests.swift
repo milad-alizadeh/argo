@@ -118,7 +118,7 @@ struct SessionHeaderHandoffTests {
                 title: "Session",
                 access: .managed,
                 status: .idle,
-                chain: .init(model: "claude-opus-5"),
+                chain: .init(program: .init(model: "claude-opus-5")),
                 spend: .init(contextTokens: Self.pastWarn),
             )).handoff,
         )
@@ -158,7 +158,10 @@ struct SessionHeaderHandoffTests {
             title: "Session",
             access: access,
             status: .idle,
-            chain: .init(cli: .claude, model: "claude-opus-5", handedOffTo: handedOffTo),
+            chain: .init(
+                program: .init(cli: .claude, model: "claude-opus-5"),
+                handedOffTo: handedOffTo,
+            ),
             work: .init(location: "/Users/milad/Developer/argo", workspace: .init(branch: "main")),
             spend: .init(contextTokens: tokens),
         ))

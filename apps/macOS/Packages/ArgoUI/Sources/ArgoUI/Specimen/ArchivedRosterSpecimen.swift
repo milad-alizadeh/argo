@@ -46,7 +46,7 @@ struct ArchivedRosterSpecimen: View {
             title: "Correct the design docs the next session would design from",
             access: .managed,
             status: .idle,
-            chain: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(46)),
+            chain: .init(span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(46))),
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(branch: "argo/#504-correct-design-docs"),
@@ -57,7 +57,7 @@ struct ArchivedRosterSpecimen: View {
             title: "Watch an externally launched agent work",
             access: .external,
             status: .idle,
-            chain: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(4 * 60)),
+            chain: .init(span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(4 * 60))),
             work: .init(
                 location: "/Users/milad/Developer/cockpit",
                 workspace: .init(branch: "main"),
@@ -68,7 +68,7 @@ struct ArchivedRosterSpecimen: View {
             title: "Answer a question nobody is going to read",
             access: .managed,
             status: .running,
-            chain: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(0)),
+            chain: .init(span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(0))),
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(branch: "argo/#498-roster-order"),
@@ -80,7 +80,7 @@ struct ArchivedRosterSpecimen: View {
             title: "Rebuild the graphite ramp",
             access: .managed,
             status: .idle,
-            chain: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(6 * 24 * 60)),
+            chain: .init(span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(6 * 24 * 60))),
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(branch: "argo/#375-graphite-ion-blue"),

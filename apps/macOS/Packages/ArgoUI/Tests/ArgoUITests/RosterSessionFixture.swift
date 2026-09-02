@@ -30,7 +30,10 @@ enum RosterSessionFixture {
             title: "Session \(id)",
             access: access,
             status: status,
-            chain: .init(model: "claude-opus-5", lastSeenAtMs: lastSeenAtMs),
+            chain: .init(
+                program: .init(model: "claude-opus-5"),
+                span: .init(lastSeenAtMs: lastSeenAtMs),
+            ),
             work: .init(
                 location: workspaceLocation,
                 workspace: kind == nil && branch == nil ? nil : .init(kind: kind, branch: branch),

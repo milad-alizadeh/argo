@@ -32,7 +32,7 @@ struct GhostedRosterSpecimen: View {
             title: "Ship the native Liquid Glass application shell",
             access: .managed,
             status: .running,
-            chain: .init(model: "claude-opus-5"),
+            chain: .init(program: .init(model: "claude-opus-5")),
             work: .init(
                 location: "\(checkout)/.claude/worktrees/ticket-508-row-ghosted",
                 workspace: .init(kind: .worktree, branch: "argo/#508-external-row-ghosted"),
@@ -44,7 +44,7 @@ struct GhostedRosterSpecimen: View {
             title: "Answer a question from a Session nobody here started",
             access: .external,
             status: .asking,
-            chain: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(7)),
+            chain: .init(span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(7))),
             work: .init(
                 location: "\(checkout)/.claude/worktrees/ticket-502-session-header",
                 workspace: .init(
@@ -60,8 +60,8 @@ struct GhostedRosterSpecimen: View {
             access: .managed,
             status: .idle,
             chain: .init(
-                model: "claude-sonnet-4",
-                lastSeenAtMs: CockpitPresentation.minutesAgo(3 * 60),
+                program: .init(model: "claude-sonnet-4"),
+                span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(3 * 60)),
             ),
             work: .init(location: checkout, workspace: .init(kind: .main, branch: "main")),
         ),

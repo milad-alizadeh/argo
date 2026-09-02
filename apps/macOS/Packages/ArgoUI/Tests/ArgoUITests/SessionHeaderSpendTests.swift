@@ -151,9 +151,8 @@ struct SessionHeaderSpendTests {
             access: .managed,
             status: .idle,
             chain: .init(
-                model: "claude-opus-5",
-                startedAtMs: startedAtMs,
-                lastSeenAtMs: lastSeenAtMs,
+                program: .init(model: "claude-opus-5"),
+                span: .init(startedAtMs: startedAtMs, lastSeenAtMs: lastSeenAtMs),
             ),
             work: .init(location: "/Users/milad/Developer/argo"),
             spend: .init(

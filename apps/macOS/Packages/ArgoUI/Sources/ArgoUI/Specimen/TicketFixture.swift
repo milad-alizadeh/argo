@@ -43,7 +43,7 @@ enum TicketFixture {
             title: title,
             access: .managed,
             status: status,
-            chain: .init(lastSeenAtMs: minutesAgo.map(CockpitPresentation.minutesAgo)),
+            chain: .init(span: .init(lastSeenAtMs: minutesAgo.map(CockpitPresentation.minutesAgo))),
             work: .init(
                 location: "/Users/milad/Developer/argo/.claude/worktrees/ticket-\(id)",
                 workspace: .init(

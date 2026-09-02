@@ -128,7 +128,7 @@ struct SessionComposerProjectionTests {
             title: "Restore the sessions Warp closed",
             access: access,
             status: status,
-            chain: .init(cli: cli, model: model),
+            chain: .init(program: .init(cli: cli, model: model)),
             autonomy: .init(mode: mode),
         )
     }

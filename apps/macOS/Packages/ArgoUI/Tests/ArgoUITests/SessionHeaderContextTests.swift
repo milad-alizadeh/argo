@@ -128,7 +128,7 @@ struct SessionHeaderContextTests {
             title: "Session",
             access: .managed,
             status: .idle,
-            chain: .init(model: "claude-opus-5"),
+            chain: .init(program: .init(model: "claude-opus-5")),
             work: .init(location: "/Users/milad/Developer/argo"),
             spend: .init(contextTokens: tokens),
         )

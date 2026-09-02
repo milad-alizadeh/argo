@@ -224,7 +224,7 @@ struct SessionTicketTitleTests {
             title: title,
             access: .managed,
             status: .idle,
-            chain: .init(cli: .claude, model: "claude-opus-5"),
+            chain: .init(program: .init(cli: .claude, model: "claude-opus-5")),
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(branch: "argo/#741-anchor-the-feed"),

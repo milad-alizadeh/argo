@@ -112,7 +112,7 @@ struct DeckVesselTests {
             title: "A Session",
             access: access,
             status: status ?? (permission == nil ? .idle : .permission),
-            chain: .init(model: "claude-opus-5"),
+            chain: .init(program: .init(model: "claude-opus-5")),
             work: .init(location: "/Users/someone/repo"),
             autonomy: .init(permission: permission),
         )

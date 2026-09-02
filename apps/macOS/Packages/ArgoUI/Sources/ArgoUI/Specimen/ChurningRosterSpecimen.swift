@@ -58,7 +58,7 @@ struct ChurningRosterSpecimen: View {
         title: "Start a Session while the roster is being read",
         access: .managed,
         status: .running,
-        chain: .init(model: "claude-opus-5"),
+        chain: .init(program: .init(model: "claude-opus-5")),
         work: .init(
             location: "/Users/milad/Developer/argo/.claude/worktrees/"
                 + "ticket-498-roster-order-freeze",

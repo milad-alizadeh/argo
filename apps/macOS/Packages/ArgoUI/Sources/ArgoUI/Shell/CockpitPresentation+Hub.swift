@@ -132,10 +132,8 @@ extension CockpitPresentation.Session {
             access: Access(provenance: session.provenance),
             status: session.status,
             chain: Chain(
-                cli: session.cli,
-                model: session.model,
-                startedAtMs: session.startedAtMs,
-                lastSeenAtMs: session.lastSeenAtMs,
+                program: .init(cli: session.cli, model: session.model),
+                span: .init(startedAtMs: session.startedAtMs, lastSeenAtMs: session.lastSeenAtMs),
                 handedOffTo: session.handedOffTo,
                 companionChannel: session.companionChannel,
             ),

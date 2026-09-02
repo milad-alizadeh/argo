@@ -109,10 +109,8 @@ struct SessionHeaderGuideTests {
             access: access,
             status: .idle,
             chain: .init(
-                cli: .claude,
-                model: "claude-opus-5",
-                startedAtMs: 0,
-                lastSeenAtMs: 120 * minute,
+                program: .init(cli: .claude, model: "claude-opus-5"),
+                span: .init(startedAtMs: 0, lastSeenAtMs: 120 * minute),
             ),
             work: .init(
                 location: "/Users/milad/Developer/argo",

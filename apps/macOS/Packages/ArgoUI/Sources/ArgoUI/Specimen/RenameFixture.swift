@@ -31,7 +31,7 @@ enum RenameFixture {
         title: "Correct the design docs the next session would design from",
         access: .managed,
         status: .idle,
-        chain: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(46)),
+        chain: .init(span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(46))),
         work: .init(
             location: "/Users/milad/Developer/argo",
             workspace: .init(branch: "argo/#504-correct-design-docs"),
@@ -46,7 +46,7 @@ enum RenameFixture {
             title: "Watch an externally launched agent work",
             access: .external,
             status: .idle,
-            chain: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(4 * 60)),
+            chain: .init(span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(4 * 60))),
             work: .init(
                 location: "/Users/milad/Developer/cockpit",
                 workspace: .init(branch: "main"),

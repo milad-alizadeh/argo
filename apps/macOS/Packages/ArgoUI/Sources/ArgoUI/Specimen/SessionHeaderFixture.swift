@@ -60,7 +60,7 @@ enum SessionHeaderFixture {
             title: "A Session whose folder Argo never read",
             access: .managed,
             status: .idle,
-            chain: .init(model: "claude-opus-5"),
+            chain: .init(program: .init(model: "claude-opus-5")),
             spend: .init(contextTokens: 216_764),
         )),
     ].compactMap(\.self)
@@ -74,10 +74,8 @@ enum SessionHeaderFixture {
         access: .managed,
         status: .idle,
         chain: .init(
-            cli: .claude,
-            model: "claude-opus-5",
-            startedAtMs: 0,
-            lastSeenAtMs: 48 * 60000,
+            program: .init(cli: .claude, model: "claude-opus-5"),
+            span: .init(startedAtMs: 0, lastSeenAtMs: 48 * 60000),
         ),
         work: .init(
             location: "/Users/milad/Developer/argo",
@@ -116,7 +114,7 @@ enum SessionHeaderFixture {
         title: "Sweep the rules folder",
         access: .managed,
         status: .idle,
-        chain: .init(cli: .claude, model: "claude-opus-5"),
+        chain: .init(program: .init(cli: .claude, model: "claude-opus-5")),
         work: .init(
             location: "/Users/milad/Developer/argo",
             workspace: .init(kind: .worktree, branch: "worktree-parallel-workitem-edges"),
@@ -176,7 +174,10 @@ enum SessionHeaderFixture {
             title: title,
             access: access,
             status: status,
-            chain: .init(cli: .claude, model: "claude-opus-5", handedOffTo: handedOffTo),
+            chain: .init(
+                program: .init(cli: .claude, model: "claude-opus-5"),
+                handedOffTo: handedOffTo,
+            ),
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(kind: .worktree, branch: branch, dirty: 3, unpushed: 1),

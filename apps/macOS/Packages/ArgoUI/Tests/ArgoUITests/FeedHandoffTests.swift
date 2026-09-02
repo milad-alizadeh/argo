@@ -94,7 +94,7 @@ struct FeedHandoffTests {
             title: title,
             access: .managed,
             status: .idle,
-            chain: .init(model: "claude-opus-5", handedOffTo: handedOffTo),
+            chain: .init(program: .init(model: "claude-opus-5"), handedOffTo: handedOffTo),
             work: .init(location: "/Users/milad/Developer/argo"),
         )
     }

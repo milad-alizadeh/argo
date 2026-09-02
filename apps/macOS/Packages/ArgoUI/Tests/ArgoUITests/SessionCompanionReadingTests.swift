@@ -76,7 +76,10 @@ struct SessionCompanionReadingTests {
             title: "Say whether the companion channel is live",
             access: access,
             status: .idle,
-            chain: .init(cli: .claude, model: "claude-opus-5", companionChannel: liveness),
+            chain: .init(
+                program: .init(cli: .claude, model: "claude-opus-5"),
+                companionChannel: liveness,
+            ),
         )
     }
 }
