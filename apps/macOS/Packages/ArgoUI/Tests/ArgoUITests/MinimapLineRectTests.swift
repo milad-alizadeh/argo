@@ -1,5 +1,6 @@
 @testable import ArgoUI
 import Foundation
+import ProseText
 import Testing
 
 /// A single-line row reported as the pieces it is drawn in — a call's rect, its verb, what it

@@ -1,4 +1,5 @@
 @testable import ArgoUI
+@testable import MermaidLayout
 import Testing
 
 /// The shape an agent gave its answer, found in the characters it wrote. Nothing here rewrites a

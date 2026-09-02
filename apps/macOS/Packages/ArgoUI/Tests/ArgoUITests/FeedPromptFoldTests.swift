@@ -1,6 +1,7 @@
 import ArgoDesign
 @testable import ArgoSpecimens
 @testable import ArgoUI
+import ProseText
 import SwiftUI
 import Testing
 

@@ -1,4 +1,5 @@
 import AppKit
+import ProseText
 
 // What the overview lane reads off the feed, and the one verb it has over it (#402).
 

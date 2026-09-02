@@ -1,4 +1,5 @@
 @testable import ArgoUI
+@testable import MermaidLayout
 import Testing
 
 /// What `MermaidMeasure` claims about a rendered diagram — every member read against another

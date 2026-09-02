@@ -1,6 +1,7 @@
 import AppKit
 @testable import ArgoSpecimens
 @testable import ArgoUI
+import ProseText
 import Testing
 
 /// The claim the whole reporting rework exists to make: what a row REPORTS it drew agrees with what

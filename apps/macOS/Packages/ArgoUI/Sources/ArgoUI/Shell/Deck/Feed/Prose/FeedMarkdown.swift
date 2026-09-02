@@ -1,4 +1,5 @@
 import ArgoDesign
+import MermaidView
 import SwiftUI
 
 /// A message's markdown, drawn with the shape the agent gave it.

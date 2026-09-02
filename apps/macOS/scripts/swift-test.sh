@@ -80,9 +80,10 @@ verdict() {
   echo "swift-test: $1 clean, 0 failures across $tests reported tests"
 }
 
-# Both packages, not just the engine: ArgoUI carries the visual contract's tests (#375), and
-# a `test` script that silently covered one of the two would be worse than none.
-for package in ArgoEngine ArgoUI; do
+# Every package with a test target, not just the engine: ArgoUI carries the visual contract's
+# tests (#375) and ArgoMermaid the renderer's layout suites (#1087). A `test` script that
+# silently covered some of them would be worse than none.
+for package in ArgoEngine ArgoUI ArgoMermaid; do
   echo "swift-test: $package ($CONFIGURATION)"
   status=0
   # The report path stays third, ahead of the configuration flags: swift-tooling.test.mjs stubs

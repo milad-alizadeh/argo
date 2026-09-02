@@ -1,5 +1,6 @@
 @testable import ArgoSpecimens
 @testable import ArgoUI
+@testable import MermaidLayout
 import Testing
 
 /// Every diagram specimen really draws a diagram.

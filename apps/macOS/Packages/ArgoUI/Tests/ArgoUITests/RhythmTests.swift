@@ -1,5 +1,6 @@
 import ArgoDesign
 @testable import ArgoUI
+import MermaidLayout
 import Testing
 
 /// What the cockpit claims about SHAPE rather than colour: measures and durations, fixed across
@@ -128,11 +129,7 @@ struct RhythmTests {
             ArgoFeedRow.bubbleInsetY, ArgoFeedRow.tableCellInsetX, ArgoFeedRow.tableCellInsetY,
             ArgoFeedRow.askCardInset, ArgoFeedRow.askOptionGap,
         ]))
-        #expect(ladder.isSuperset(of: [
-            MermaidMeasure.nodeInsetX, MermaidMeasure.nodeInsetY, MermaidMeasure.rankGap,
-            MermaidMeasure.nodeGap, MermaidMeasure.groupInset, MermaidMeasure.backLane,
-            MermaidMeasure.wordGap,
-        ]))
+        // The renderer's own steps: `MermaidRhythmTests`.
         #expect(ladder.isSuperset(of: [
             ArgoMinimapLane.rectInset, ArgoMinimapLane.turnLineGap, ArgoMinimapLane.labelPadding,
         ]))

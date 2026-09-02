@@ -1,4 +1,5 @@
 import Foundation
+import ProseText
 
 // A row the feed says in one line, drawn as the pieces it says it in — at the widths they measure
 // and in the inks they take.

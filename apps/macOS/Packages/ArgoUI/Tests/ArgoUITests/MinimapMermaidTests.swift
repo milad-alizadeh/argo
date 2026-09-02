@@ -1,5 +1,7 @@
 @testable import ArgoUI
 import Foundation
+@testable import MermaidLayout
+import MermaidView
 import Testing
 
 /// A diagram in the lane, drawn as its own silhouette rather than as one featureless slab — off the
@@ -122,5 +124,43 @@ struct MinimapMermaidTests {
         ]
 
         #expect(blocks == expected)
+    }
+
+    /// A diagram is as big as the thing it draws, so one too wide for the prose column is SCROLLED
+    /// rather than reflowed — and the height the lane reports for it is the height it drew, at any
+    /// measure at all (#861).
+    ///
+    /// Here rather than beside the banded layouts because `mapped(across:)` is the LANE's, and the
+    /// renderer is a package that knows nothing about a lane (#1087).
+    @Test(arguments: [Banded.journey, Banded.timeline])
+    func `a banded diagram reports the height it drew at any measure`(source: String) throws {
+        let diagram = try #require(MermaidDiagram.read(source))
+
+        #expect(diagram.laid.size.width > 120)
+        #expect(diagram.mapped(across: 120).height == diagram.laid.size.height)
+        #expect(diagram.mapped(across: 4000).height == diagram.laid.size.height)
+    }
+
+    /// The two banded sources, as the layout suite in the renderer's own package spells them.
+    private enum Banded {
+        static let journey = """
+        journey
+          title A working day
+          section Morning
+            Make tea: 5: Me
+            Read the ticket: 3: Me, Argo
+          section Afternoon
+            Wait on CI: 1: CI
+        """
+
+        static let timeline = """
+        timeline
+          title A history of the feed
+          section 2000s
+            2002 : LinkedIn
+            2004 : Facebook : Google
+          section 2010s
+            2010 : Instagram
+        """
     }
 }

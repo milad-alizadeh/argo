@@ -1,6 +1,7 @@
 import AppKit
 @testable import ArgoSpecimens
 @testable import ArgoUI
+import ProseText
 import Testing
 
 /// What the reading stores actually hold while a whole-document walk crosses them (ADR-0028 Rule

@@ -44,13 +44,22 @@ touch (each rule's `paths:` frontmatter states its scope):
 
 ### Module boundaries
 
-`apps/macOS`'s layers — `ArgoEngine` ⊥ `ArgoDesign` → `ArgoAtoms` → `ArgoUI` ⊥ the app target —
-are enforced by `scripts/swift-boundaries.sh` (in `quality:swift`, on the `macos` CI job and in
-pre-commit).
+`apps/macOS`'s layers — `ArgoEngine` ⊥ `ArgoDesign` → `ArgoAtoms` / `ProseText` →
+`MermaidLayout` → `MermaidView` → `ArgoUI` ⊥ the app target — are enforced by
+`scripts/swift-boundaries.sh` (in `quality:swift`, on the `macos` CI job and in pre-commit).
 Every edge is checkable from imports and declarations alone, which is why they are gates rather
 than review notes. Four of the eight are ADR-0022's layering; the sharpest of those is **exactly
 one file in `ArgoUI` may read live Hub state** — the Hub → cockpit projection. Everything else
 takes a value.
+
+Edge 2 of those four has **two** subjects, one implementation: `ArgoEngine` is ADR-0022's own,
+and `MermaidLayout` — the renderer's headless half, which scans, ranks and measures without
+drawing — is there for the same argument (#1087). `ArgoMermaid`'s other target, `MermaidView`,
+draws and is not a subject. Five types are `public` out of the pair — `MermaidDiagram`,
+`MermaidView`, `MermaidPlan`, `MermaidMeasure`, `MermaidFigure` — and everything the two targets
+share between themselves is `package`, which `ArgoUI` cannot see. That split is a convention and
+not an edge: nothing counts the public names, so widening one is a review note rather than a
+build failure.
 
 The fifth is ADR-0027, on that projection: the cockpit **restates** `HubSession` rather than
 holding one, so every public engine fact must land in the mapping or be named on a

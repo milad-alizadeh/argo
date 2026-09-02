@@ -1,4 +1,5 @@
 import Foundation
+import MermaidLayout
 
 /// One block of the markdown a CLI writes. Nothing here rewrites the words: a block is the same
 /// characters with the marker taken off and a role attached, and a line this does not recognise is

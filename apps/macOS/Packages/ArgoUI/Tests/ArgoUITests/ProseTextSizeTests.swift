@@ -1,5 +1,6 @@
 import AppKit
 @testable import ArgoUI
+import ProseText
 import Testing
 
 /// #1027, held to a COUNT. What makes a stale answer visible is that the store answered at all, so

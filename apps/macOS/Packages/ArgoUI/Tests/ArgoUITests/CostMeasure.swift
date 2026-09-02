@@ -1,3 +1,4 @@
+@testable import ArgoUI
 import Darwin
 
 /// What a cost budget is measured in: the CPU a piece of work SPENT, never the seconds that passed

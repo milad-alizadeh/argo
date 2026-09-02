@@ -1,5 +1,6 @@
 import ArgoDesign
 import Foundation
+import ProseText
 
 // A prose row laid out block by block, each block at the height it really stands.
 //

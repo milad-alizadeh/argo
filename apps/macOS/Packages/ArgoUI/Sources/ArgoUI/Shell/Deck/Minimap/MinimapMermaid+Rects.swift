@@ -1,9 +1,10 @@
 import Foundation
+import MermaidLayout
 
 // A diagram in the lane: its own silhouette — a frame per node, a line per connector — rather than
 // the featureless slab a fence draws as.
 //
-// Both the shapes and the height come from `ProseReading.plan`, which is the very layout
+// Both the shapes and the height come from `MermaidDiagram.plan`, which is the very layout
 // `MermaidView` draws. Not an optimisation: it is what makes the two heights agree by construction
 // instead of by two implementations happening to match.
 
@@ -24,13 +25,13 @@ extension MermaidFigure {
     /// A connector is a hairline in both directions, so a straight line survives the reduction
     /// instead of collapsing to nothing.
     func mapped(within measure: CGFloat) -> MinimapRowRect? {
-        let bounds = form.bounds
-        guard bounds.minX < measure else { return nil }
+        let box = bounds
+        guard box.minX < measure else { return nil }
         return MinimapRowRect(
-            y: bounds.minY,
-            height: max(bounds.height, MermaidMeasure.stroke),
-            from: bounds.minX,
-            to: min(measure, max(bounds.maxX, bounds.minX + MermaidMeasure.stroke)),
+            y: box.minY,
+            height: max(box.height, MermaidMeasure.stroke),
+            from: box.minX,
+            to: min(measure, max(box.maxX, box.minX + MermaidMeasure.stroke)),
             ink: .diagram,
             shape: laneShape,
         )
@@ -39,9 +40,6 @@ extension MermaidFigure {
     /// A container is a frame; a connector is a bar, because a stroked hairline at the lane's scale
     /// is nothing at all.
     private var laneShape: FeedInk.Shape {
-        switch role {
-        case .node, .emphasis, .note, .series, .axis: .frame
-        case .edge: .bar
-        }
+        isConnector ? .bar : .frame
     }
 }

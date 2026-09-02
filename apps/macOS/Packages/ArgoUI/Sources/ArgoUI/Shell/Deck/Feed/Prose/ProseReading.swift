@@ -1,3 +1,5 @@
+import MermaidLayout
+import ProseText
 import SwiftUI
 
 /// How a string of the record was read, kept so it is read once. A view body is evaluated far more
@@ -10,20 +12,13 @@ import SwiftUI
 /// stays verbatim.
 @MainActor
 enum ProseReading {
-    private static var marks = ProseCache<AttributedString>()
     private static var scans = ProseCache<[MarkdownBlock]>()
     private static var structures = ProseCache<[MinimapProseBlock]>()
-    private static var plans = ProseCache<MermaidPlan>()
 
-    /// The agent's own inline marks. See `FeedProseText` for why the read is inline-only.
+    /// The agent's own inline marks. Held in `ProseMarks`, under the feed, because every width the
+    /// feed measures rests on it — this name is where the rest of the feed asks.
     static func marked(_ text: String) -> AttributedString {
-        marks.reading(of: text) { text in
-            let parsed = try? AttributedString(
-                markdown: text,
-                options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace),
-            )
-            return parsed ?? AttributedString(text)
-        }
+        ProseMarks.marked(text)
     }
 
     /// The blocks the agent gave the message its shape with.
@@ -36,15 +31,10 @@ enum ProseReading {
         structures.reading(of: text) { MinimapProseBlock.blocks(from: blocks(in: $0)) }
     }
 
-    /// A diagram laid out. The renderer AND the overview lane both come here, so their geometry is
-    /// one layout rather than two implementations that happen to agree — which is what makes their
-    /// heights match by construction (#860).
-    ///
-    /// Keyed on the source and nothing else, because a diagram is as big as the thing it draws: one
-    /// too wide for the column is scrolled rather than reflowed, so there is no second width for a
-    /// second layout to answer at (#861).
+    /// A diagram laid out — the renderer holds that store now that it is a package, so this is a
+    /// forward. Named here still because this is where the feed asks for every other reading.
     static func plan(of diagram: MermaidDiagram) -> MermaidPlan {
-        plans.reading(of: diagram.source) { _ in diagram.laid }
+        diagram.plan
     }
 
     /// The stores a whole-document walk reaches, held to the document it is about to cross — see

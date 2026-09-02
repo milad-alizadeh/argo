@@ -1,5 +1,6 @@
 @testable import ArgoUI
 import Foundation
+@testable import MermaidLayout
 import Testing
 
 /// What a `quadrantChart` fence is read as, and — the half that matters more — what it is NOT read
