@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The window's fixed chrome: ONE tinted blur from the window's top edge to the one hairline
@@ -69,7 +70,7 @@ struct ArgoChromeBar: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     /// Draws this bar as the window's fixed chrome — see `ArgoChromeBar`.
     func argoChromeBar() -> some View {
         modifier(ArgoChromeBar())

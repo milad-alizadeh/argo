@@ -31,7 +31,7 @@ projects that do have a browser.
 
 The ramps themselves — colour roles, the type scale, spacing, radii, elevation, motion — are
 designed once via the `setup-design-foundations` skill and live in
-`ArgoUI/Sources/ArgoUI/VisualContract/`. `Specimen/ContractSpecimen.swift` renders them and
+`ArgoDesign/Sources/ArgoDesign/`. `ArgoUI/Specimen/ContractSpecimen.swift` renders them and
 is the one **non-disposable** design artifact: it draws the real tokens rather than a copy, so
 it cannot drift from the contract it documents, and a `Mirror` assertion fails the build if a
 role is missing from it. (`Specimen/FoundationSpecimen.swift` is the companion view — the same
@@ -40,11 +40,12 @@ roles dressed onto a real shell, for judging the contract in situ rather than en
 Screen work follows the foundations; it proposes, it never redefines. A screen that needs a
 value the contract lacks marks it a **proposal**, and promoting one is a contract change that
 comes back through `setup-design-foundations`' bless step — never a raw constant left in a view.
-`scripts/check-design-tokens-swift.sh` is the gate; `VisualContract/` and `Specimen/` are
-exempt from it because they are, respectively, the contract and the thing that shows it.
-`Atoms/` — the shared views built out of the contract — is not exempt (#772), and neither are
-the per-surface measure sheets, which live beside their surfaces rather than in the contract
-(#756).
+`scripts/check-design-tokens-swift.sh` is the gate, run as edge 7 of the package boundaries;
+`ArgoDesign` is exempt from it because it IS the contract, and the exemption is that MODULE
+rather than a folder name (#1088). `ArgoAtoms` — the shared views built out of the contract —
+is not exempt (#772), and neither are the per-surface measure sheets, which live beside their
+surfaces rather than in the contract (#756), nor a specimen: what a specimen has to write down
+goes on the allowlist by name, with a reason and a ticket.
 
 ## A state is settled by rendering it
 

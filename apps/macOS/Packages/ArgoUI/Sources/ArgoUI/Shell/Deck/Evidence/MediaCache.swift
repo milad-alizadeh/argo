@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 import ArgoEngine
 
 /// Decoded pictures, held between the surfaces that draw them and bounded by what a window can

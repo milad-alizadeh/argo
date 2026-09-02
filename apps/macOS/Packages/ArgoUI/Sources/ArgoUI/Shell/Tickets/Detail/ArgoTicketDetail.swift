@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// What the deck's trailing pane is measured at (`docs/designs/cockpit-work-room.md` — the ticket

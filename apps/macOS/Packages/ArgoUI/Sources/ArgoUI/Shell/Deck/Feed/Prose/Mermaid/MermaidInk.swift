@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// What a diagram's roles are drawn in: the one place a `MermaidRole` becomes a colour.

@@ -4,13 +4,12 @@
 // not of the app — and shared rather than copied, because two trees would drift into two ideas of
 // what a repository the gate passes looks like.
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const SCRIPT = path.join(REPO_ROOT, 'scripts/swift-boundaries.sh')
 export const ENGINE = 'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub'
 export const SHELL = 'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell'
 // The file edge 6's cases put their subject in, and the config it reads its cap off.
@@ -27,6 +26,27 @@ export const wideStruct = (count, extra = '') =>
   `struct Picked {\n${Array.from({ length: count }, (_, i) => `    let slot${i}: Int\n`).join(
     '',
   )}${extra}}\n`
+export const CONTRACT = 'apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign'
+export const ATOMS = 'apps/macOS/Packages/ArgoDesign/Sources/ArgoAtoms'
+export const ALLOW = 'scripts/design-tokens-swift-allow.txt'
+
+// Edge 7 calls a script of its own, and that script reads its allowlist from beside itself. Both
+// are copied into the tree so a case can state the allowlist the way it states a source file —
+// and so no case can pass or fail on what the REAL allowlist happens to hold today.
+const SCRIPTS = {
+  'scripts/swift-boundaries.sh': null,
+  'scripts/check-design-tokens-swift.sh': null,
+}
+for (const name of Object.keys(SCRIPTS)) {
+  SCRIPTS[name] = readFileSync(path.join(REPO_ROOT, name), 'utf8')
+}
+
+// The contract's own module, where a literal colour is the point. Present in every tree: edge 7
+// reports a scope it cannot find rather than passing a tree it never looked at.
+export const CONTRACT_FILE = `public struct ArgoColor {
+    public static let accent = Color(red: 0.24, green: 0.61, blue: 1)
+}
+`
 
 // `internalOnly` is the trap: keyword-less at struct indentation, and internal to the engine, so
 // ArgoUI cannot see it and the gate must not demand it. `HubSession`'s own `resumeID` is this.
@@ -90,6 +110,10 @@ export function tree(files = {}) {
     [`${SHELL}/CockpitPresentation+SessionValues.swift`]: VALUES,
     'apps/macOS/.swiftlint.yml': SWIFTLINT,
     'apps/macOS/Argo/ArgoApp.swift': '@main struct ArgoApp {}\n',
+    [`${CONTRACT}/ArgoColor.swift`]: CONTRACT_FILE,
+    [`${ATOMS}/ArgoRule.swift`]: 'public struct ArgoRule { public init() {} }\n',
+    [ALLOW]: '# Nothing carried in the synthetic tree.\n',
+    ...SCRIPTS,
     ...files,
   }
   for (const [relative, contents] of Object.entries(written)) {
@@ -102,7 +126,8 @@ export function tree(files = {}) {
 }
 
 export function run(root) {
-  const result = spawnSync('/bin/sh', [SCRIPT], { cwd: root, encoding: 'utf8' })
+  const script = path.join(root, 'scripts/swift-boundaries.sh')
+  const result = spawnSync('/bin/sh', [script], { cwd: root, encoding: 'utf8' })
   rmSync(root, { recursive: true, force: true })
   return { status: result.status, output: `${result.stdout}${result.stderr}` }
 }

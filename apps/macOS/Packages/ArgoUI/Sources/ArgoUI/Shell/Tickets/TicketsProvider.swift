@@ -1,3 +1,4 @@
+import ArgoDesign
 import ArgoEngine
 
 /// The bound provider, as the sidebar's foot names it (`cockpit-work-room.md` — the connection

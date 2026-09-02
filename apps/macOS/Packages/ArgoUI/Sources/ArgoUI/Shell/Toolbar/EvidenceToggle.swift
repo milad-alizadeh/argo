@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The evidence panel's own control, at the trailing edge of the bar (#875 finding 5). Before it

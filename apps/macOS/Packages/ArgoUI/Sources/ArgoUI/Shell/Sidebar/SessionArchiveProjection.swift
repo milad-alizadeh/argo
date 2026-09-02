@@ -1,3 +1,5 @@
+import ArgoDesign
+
 /// Every word and mark the archive gesture is drawn with — `SessionRenameProjection`'s counterpart
 /// for the roster's other verb, reached from the menu bar and from the row's swipe action.
 enum SessionArchiveProjection {

@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A Turn thinking, drawn as one ion filament crossing the whole measure.

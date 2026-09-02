@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The one keyboard cursor, drawn from the contract's own tokens. Hand-drawn rather than the
@@ -9,16 +10,16 @@ import SwiftUI
 ///
 /// Generic over that edge, because a ring has to trace the control it is around: a capsule pill
 /// ringed by a rounded rectangle shows daylight at all four corners.
-struct ArgoFocusRing<Edge: InsettableShape>: View {
+public struct ArgoFocusRing<Edge: InsettableShape>: View {
     @Environment(\.argo) private var argo
 
     private let edge: Edge
 
-    init(_ edge: Edge) {
+    public init(_ edge: Edge) {
         self.edge = edge
     }
 
-    var body: some View {
+    public var body: some View {
         edge.strokeBorder(argo.color.interaction.focusRing, lineWidth: ArgoStroke.focus)
     }
 }
@@ -36,7 +37,7 @@ private struct ArgoFocusRinged<Edge: InsettableShape>: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     /// The keyboard cursor around this view, on only while the keyboard is what the reader is
     /// working with. `ArgoApp` turns the system effect off for the whole window, so pair this with
     /// `focusEffectDisabled()` only where a `#Preview` has to draw the same state.

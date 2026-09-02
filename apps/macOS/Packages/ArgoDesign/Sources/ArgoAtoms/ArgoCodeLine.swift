@@ -1,10 +1,11 @@
+import ArgoDesign
 import SwiftUI
 
 /// One line of code as its file has it: the host's number in a gutter, the characters beside it
 /// under the grammar where the grammar reached them.
-struct ArgoCodeLine: View {
+public struct ArgoCodeLine: View {
     /// Whether the FILE numbers its lines, and this line's number where it does.
-    enum Gutter: Equatable {
+    public enum Gutter: Equatable {
         /// A file carrying no numbers. Drawn without the column, because a column that came and
         /// went down the panel would move the words it is there to line up.
         case unnumbered
@@ -22,7 +23,14 @@ struct ArgoCodeLine: View {
     /// The ink for the characters the grammar did not reach. The colours carry their own.
     let ink: ArgoColor
 
-    var body: some View {
+    public init(text: String, gutter: Gutter, coloured: AttributedString?, ink: ArgoColor) {
+        self.text = text
+        self.gutter = gutter
+        self.coloured = coloured
+        self.ink = ink
+    }
+
+    public var body: some View {
         HStack(alignment: .top, spacing: ArgoSpacing.snug) {
             number
             // Wraps under its own words rather than back under the gutter, so a wrapped line still
@@ -42,7 +50,7 @@ struct ArgoCodeLine: View {
                 .argoMono(.body)
                 .monospacedDigit()
                 .foregroundStyle(argo.color.text.disabled)
-                .frame(width: ArgoFeedRow.diffGutterWidth, alignment: .trailing)
+                .frame(width: ArgoLayout.diffGutterWidth, alignment: .trailing)
         }
     }
 

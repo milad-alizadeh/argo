@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A prompt's bubble, whole: its ceiling, its insets, and whether there is more of the prompt than

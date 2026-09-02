@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The two screens as one surface: Welcome, then Connect.

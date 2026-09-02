@@ -1,3 +1,5 @@
+import ArgoDesign
+
 /// What the deck's header zone says about the Session it is showing — the roster projection's
 /// counterpart above the feed.
 enum SessionHeaderProjection {

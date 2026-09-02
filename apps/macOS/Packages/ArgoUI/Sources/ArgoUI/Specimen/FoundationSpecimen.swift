@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The visual contract dressed onto a real `NavigationSplitView`, so the sidebar is the system's

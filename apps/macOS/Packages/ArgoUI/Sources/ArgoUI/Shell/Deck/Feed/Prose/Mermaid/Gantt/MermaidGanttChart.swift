@@ -1,3 +1,4 @@
+import ArgoDesign
 import Foundation
 
 /// A Gantt chart's geometry: the gutter its names stand in, the band its bars are drawn across,

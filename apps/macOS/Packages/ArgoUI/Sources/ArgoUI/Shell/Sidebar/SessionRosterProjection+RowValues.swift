@@ -1,3 +1,4 @@
+import ArgoDesign
 import ArgoEngine
 
 /// What a Row is assembled from — one value per reading it comes from (#755, #999), the way

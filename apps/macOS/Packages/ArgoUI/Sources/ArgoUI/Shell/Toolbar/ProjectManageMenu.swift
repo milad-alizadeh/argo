@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// One registered Project's management verbs, as a submenu of `ProjectMenu`.

@@ -1,6 +1,6 @@
 # Sweeping the visual contract for members nothing reads
 
-`VisualContract/` runs ahead of the build on purpose, so some of its members have no reader. Some
+`ArgoDesign` runs ahead of the build on purpose, so some of its members have no reader. Some
 of those are decisions and some are debt, and telling them apart needs a method — a grep over type
 names is not one, because it cannot see a member reached through an extension method.
 
@@ -14,7 +14,7 @@ script and that test together, never one alone.
 
 ## What the machine does
 
-It reads every member declared under `VisualContract/` and looks for the **shape a call site
+It reads every member declared under `ArgoDesign` and looks for the **shape a call site
 spells**, over every Swift file under `apps/macOS/`:
 
 | shape | example | why it matters |

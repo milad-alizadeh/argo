@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The one line pinned above a composer menu's list saying how a slower half of its catalog is

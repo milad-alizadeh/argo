@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The window's connection chips: what Argo can observe, and how the active Project's ports are

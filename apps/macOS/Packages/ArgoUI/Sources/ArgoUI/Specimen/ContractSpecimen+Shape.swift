@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The geometry half of the contract sheet: the radius rungs, and how far each elevation rung

@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// One subagent: a dot for whether it is still working, what it was handed, and what it cost.

@@ -10,7 +10,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const CONTRACT = 'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract'
+const CONTRACT = 'apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign'
 const SEARCH = 'apps/macOS'
 
 const ACCESS = /(?:public\s+|private\s+|internal\s+|fileprivate\s+)?/.source
@@ -50,10 +50,12 @@ function declarations(file) {
   return found
 }
 
-// Only an `app` reader is a surface drawing the value.
-function population(file) {
+// Only an `app` reader is a surface drawing the value. Which files are contract is taken from
+// where the contract IS rather than from a folder name: `ArgoDesign` is a module now, and a name
+// this counted on would count `ArgoAtoms` beside it as contract too (#1088).
+const populationIn = (contract) => (file) => {
+  if (file === contract || file.startsWith(contract + path.sep)) return 'contract'
   const parts = file.split(path.sep)
-  if (parts.includes('VisualContract')) return 'contract'
   if (parts.includes('Specimen')) return 'specimen'
   if (parts.some((part) => part.endsWith('Tests'))) return 'tests'
   return 'app'
@@ -71,22 +73,24 @@ function shapes(member) {
   }
 }
 
-function readersIn(member, file, shape) {
+// `lens` is the shapes this member is spelled in plus the reading of where a file sits, which
+// travel together: neither says anything about a hit on its own.
+function readersIn(member, file, lens) {
   const own = file.path === member.file
   const found = []
   for (const [index, line] of file.lines.entries()) {
-    if (!(own ? shape.inside : shape.site).test(code(line))) continue
-    if (own && (index + 1 === member.line || shape.catalog.test(line))) continue
-    found.push([own ? 'own' : population(file.short), `${file.short}:${index + 1}`])
+    if (!(own ? lens.inside : lens.site).test(code(line))) continue
+    if (own && (index + 1 === member.line || lens.catalog.test(line))) continue
+    found.push([own ? 'own' : lens.population(file.short), `${file.short}:${index + 1}`])
   }
   return found
 }
 
-function readers(member, corpus) {
-  const shape = shapes(member)
+function readers(member, corpus, population) {
+  const lens = { ...shapes(member), population }
   const hits = { app: [], own: [], contract: [], specimen: [], tests: [] }
   for (const file of corpus) {
-    for (const [where, at] of readersIn(member, file, shape)) hits[where].push(at)
+    for (const [where, at] of readersIn(member, file, lens)) hits[where].push(at)
   }
   return hits
 }
@@ -110,9 +114,10 @@ export function sweep({ contractDir, searchRoot }) {
     lines: readFileSync(file, 'utf8').split('\n'),
   }))
   const shared = namesakes(declared)
+  const population = populationIn(path.relative(searchRoot, contractDir))
   const members = declared.map((member) => ({
     ...member,
-    hits: readers(member, corpus),
+    hits: readers(member, corpus, population),
     shared: shared(member),
   }))
 

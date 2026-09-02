@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The Next-up hero AS a control (#898): its own ground, washed under the pointer and pressed under

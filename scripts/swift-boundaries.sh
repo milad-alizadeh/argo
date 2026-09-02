@@ -5,12 +5,15 @@
 # tree, not of the file you happened to touch.
 #
 # Edges 1-4 are ADR-0022's layering; edge 5 is ADR-0027, on the projection between two of its
-# layers; edge 6 is the parameter cap on the one declaration shape SwiftLint cannot see. Each is
-# checkable by looking at imports, declarations and size alone — which is the whole reason they are
-# gates rather than review notes.
+# layers; edge 6 is the parameter cap on the one declaration shape SwiftLint cannot see; edge 7 is
+# the token contract's own module. Each is checkable by looking at imports, declarations and size
+# alone — which is the whole reason they are gates rather than review notes.
 set -eu
 
 APP_DIR="apps/macOS"
+# Edge 7's own script, which owns the patterns a design constant is recognised by. Called rather
+# than copied: two greps for one rule are two rules the day one of them is edited.
+TOKENS="$(dirname "$0")/check-design-tokens-swift.sh"
 UI_SOURCES="$APP_DIR/Packages/ArgoUI/Sources"
 ENGINE_SOURCES="$APP_DIR/Packages/ArgoEngine/Sources/ArgoEngine"
 APP_TARGET="$APP_DIR/Argo"
@@ -557,6 +560,23 @@ $SWIFTLINT_CONFIG; $sealed skipped, memberwise init sealed private"
       "Two files of one name, both over the cap at the same width. Group one of them, or the entry" \
       "covers whichever the gate reads first."
   fi
+fi
+
+# 7. A design VALUE is declared only in the module that owns the contract. A colour, a rhythm step,
+#    a radius, a stroke width or a type size written down anywhere else is a second contract, kept
+#    in step with the first by eye. This edge is checkable for exactly one reason: `ArgoDesign` is
+#    a module now, so the palette that DEFINES a ramp and the view that spends it are no longer
+#    two folders in one target (#1088).
+#
+#    The patterns and the shrink-only allowlist are the script's; what belongs here is the scope,
+#    and running it at all — until this edge, the rule was gated on nothing but pre-commit.
+if [ ! -x "$TOKENS" ] && [ ! -f "$TOKENS" ]; then
+  report "edge 7 cannot find its own script — $TOKENS has moved" \
+    "It carries the patterns a design constant is recognised by. An edge that cannot run checks" \
+    "nothing, and nothing else in this repo would notice."
+else
+  tokens_output=$(sh "$TOKENS" 2>&1) || report "a design constant is declared outside ArgoDesign (#1088)" \
+    "$tokens_output"
 fi
 
 if [ "$failed" -eq 1 ]; then

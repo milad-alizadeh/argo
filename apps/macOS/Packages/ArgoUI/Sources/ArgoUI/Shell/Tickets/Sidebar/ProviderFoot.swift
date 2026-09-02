@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The bound provider at the sidebar's foot, above a hairline (`cockpit-work-room.md`). Here and

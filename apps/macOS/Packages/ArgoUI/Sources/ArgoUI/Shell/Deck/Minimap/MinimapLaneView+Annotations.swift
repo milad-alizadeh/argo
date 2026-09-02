@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 
 // The annotation half of the lane (#382): which Turn is named, the Ion Blue line that spans it, and
 // the prompt drawn beside it.

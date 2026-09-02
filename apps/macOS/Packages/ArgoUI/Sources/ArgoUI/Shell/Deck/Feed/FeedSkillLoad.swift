@@ -1,3 +1,4 @@
+import ArgoDesign
 import ArgoEngine
 
 /// A skill load as the feed says it: the record's own value, and the `SKILL.md` addressed the way

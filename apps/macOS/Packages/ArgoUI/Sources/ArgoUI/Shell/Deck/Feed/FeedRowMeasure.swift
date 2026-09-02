@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 
 /// What a PROSE row stands at, typeset rather than laid out.
 ///

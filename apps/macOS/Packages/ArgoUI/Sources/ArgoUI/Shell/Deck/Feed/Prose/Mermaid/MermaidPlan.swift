@@ -1,3 +1,4 @@
+import ArgoDesign
 import Foundation
 
 /// A laid-out diagram: every figure and every caption already placed, and the room the whole thing

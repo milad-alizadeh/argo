@@ -27,7 +27,7 @@ public extension ArgoPalette {
         /// accent under a selected backlog row, where `onAccent` carries all three
         /// (`LoudSelectionGroundTests`, #1071). Stated because #922 was a ramp chosen against ONE
         /// ground and read on another.
-        static let contrastFloor = 4.5
+        public static let contrastFloor = 4.5
 
         public init(
             primary: ArgoColor,

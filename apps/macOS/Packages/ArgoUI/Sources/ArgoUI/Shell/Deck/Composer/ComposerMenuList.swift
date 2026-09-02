@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The surface a composer sigil opens: a status strip where there is one, then the rows, sectioned

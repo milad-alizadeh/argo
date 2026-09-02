@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 // The canvas entries for `SpecimenScreen`, kept apart from the screen that serves them. They are a

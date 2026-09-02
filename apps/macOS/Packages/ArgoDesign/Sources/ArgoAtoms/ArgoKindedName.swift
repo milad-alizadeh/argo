@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A name with the glyph that says what KIND of thing it names, drawn as one group.
@@ -10,12 +11,18 @@ import SwiftUI
 ///
 /// Ink is the caller's: the group takes whatever `foregroundStyle` it is placed in, so the glyph
 /// and the words can never end up two colours.
-struct ArgoKindedName: View {
+public struct ArgoKindedName: View {
     let symbol: String?
     let name: String
     let style: ArgoTextStyle
 
-    var body: some View {
+    public init(symbol: String?, name: String, style: ArgoTextStyle) {
+        self.symbol = symbol
+        self.name = name
+        self.style = style
+    }
+
+    public var body: some View {
         HStack(spacing: ArgoSpacing.tight) {
             if let symbol {
                 ArgoGlyph(symbol, .inline)

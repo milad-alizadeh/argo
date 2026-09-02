@@ -4,6 +4,5 @@
     "sh scripts/swift-format.sh",
     "sh scripts/swift-lint.sh",
     "sh scripts/swift-boundaries.sh"
-  ],
-  "apps/macOS/{Argo,Packages/ArgoUI/Sources}/**/*.swift": "sh scripts/check-design-tokens-swift.sh"
+  ]
 }

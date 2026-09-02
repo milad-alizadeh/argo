@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The rail collapsed: one state dot per Agent, and the chevron back.

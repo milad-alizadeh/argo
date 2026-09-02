@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The transient chip a degraded connection uses. It states the condition in words with the

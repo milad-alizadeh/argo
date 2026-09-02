@@ -44,8 +44,9 @@ touch (each rule's `paths:` frontmatter states its scope):
 
 ### Module boundaries
 
-`apps/macOS`'s three layers — `ArgoEngine` ⊥ `ArgoUI` ⊥ the app target — are enforced by
-`scripts/swift-boundaries.sh` (in `quality:swift`, on the `macos` CI job and in pre-commit).
+`apps/macOS`'s layers — `ArgoEngine` ⊥ `ArgoDesign` → `ArgoAtoms` → `ArgoUI` ⊥ the app target —
+are enforced by `scripts/swift-boundaries.sh` (in `quality:swift`, on the `macos` CI job and in
+pre-commit).
 Every edge is checkable from imports and declarations alone, which is why they are gates rather
 than review notes. Four are ADR-0022's layering; the sharpest of those is **exactly one file in
 `ArgoUI` may read live Hub state** — the Hub → cockpit projection. Everything else takes a value.
@@ -66,6 +67,15 @@ and a line naming an init that is no longer over the cap fails too, so the list 
 The script prints the cap in force on every run. The cap is on the **declaration**, not the call
 site, and the one shape edge 6 skips is a struct whose memberwise init a `private` stored
 property makes private — both stated at the rule.
+
+The seventh is the token contract's own module (#1088). `ArgoDesign` holds the 23 contract files
+and `ArgoAtoms` the 15 primitives over them, so **a colour, rhythm step, radius, stroke width or
+type size may be DECLARED only in `ArgoDesign`** — a view may name any of them and write none of
+them down. Checkable only because the contract is a module: while it was a folder inside `ArgoUI`,
+a literal in a view and a literal in the palette were the same grep. The patterns live in
+`scripts/check-design-tokens-swift.sh`, which the edge calls rather than copies, and its allowlist
+is debt on the same ratchet as the init list — a reason per line, and an entry that matches
+nothing fails.
 
 The JS/TS boundary gates are dormant — no subject since ADR-0023 retired the Electron
 cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-0021, ADR-0023.

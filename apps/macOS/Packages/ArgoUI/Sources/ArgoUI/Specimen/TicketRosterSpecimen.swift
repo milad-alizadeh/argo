@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The roster with three Sessions on one ticket and one alone on another (#745, #1072): the shared

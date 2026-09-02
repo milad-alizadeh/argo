@@ -1,3 +1,5 @@
+import ArgoDesign
+
 /// What the toolbar's Project half draws: its mark, the name it spells out, and the two sentences
 /// it says about the active Project.
 struct ProjectVesselReading: Equatable {

@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// The one instrument on the tab line: how full the Session's context is, on the trailing edge.

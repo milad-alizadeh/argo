@@ -57,13 +57,13 @@ The design decisions carry no measurements, so `docs/designs/cockpit-sessions-li
 is the only source for rhythm, density and type size. Prose in the decision log can be
 satisfied while the approved pixels are not.
 
-The rhythm itself lives in `ArgoUI/VisualContract/`, rendered by the `foundations` specimen.
+The rhythm itself lives in `ArgoDesign`, rendered by the `foundations` specimen.
 That, not an HTML page, is the living token contract (`rules/design-system.md`). The directory
-holds tokens only: the shared views drawn with them are `ArgoUI/Atoms/`, and one surface's own
+holds tokens only: the shared views drawn with them are `ArgoAtoms`, and one surface's own
 measures — the feed's column, the composer's vessel, the minimap's lane, the plan pill, the
 toolbar's vessel, the context bar, the Connect panel, the agents rail, the roster's foot — sit in
 that surface's directory under `Shell/`, not in the contract. `ArgoLayout` is the one measure
-sheet still in `VisualContract/`, and it holds the splits between panes, which describe the
+sheet still in `ArgoDesign`, and it holds the splits between panes, which describe the
 window rather than any one surface.
 
 ## A render is not a click

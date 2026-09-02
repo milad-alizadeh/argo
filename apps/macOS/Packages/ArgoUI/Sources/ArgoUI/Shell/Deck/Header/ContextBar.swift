@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The bar under the reading: how much of the window is held, with both policy lines standing in

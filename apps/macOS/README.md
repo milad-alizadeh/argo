@@ -16,12 +16,14 @@ Packages/
     Session/        the domain: the event model, evidence, tiers, usage
     Transcript/     the untrusted-input boundary: one .jsonl becomes typed events
     argo-observe/   the CLI that tails a transcript and prints what it reads
+  ArgoDesign/       the token contract and the primitives over it. A leaf: SwiftUI and
+                    AppKit, nothing of Argo's (#1088)
+    ArgoDesign/     palette, type, spacing, radii, elevation, motion (#375) — TOKENS only
+    ArgoAtoms/      the shared views and materials built out of those values (#772), and
+                    whether a focus ring would be answering the keyboard (#533)
   ArgoUI/           shared visual components. No engine dependency
     Shell/          production NavigationSplitView, sidebar, deck ground and toolbar vessels
                     — and each surface's own measure sheet, beside the surface it measures (#756)
-    VisualContract/ palette, type, spacing, radii, elevation, motion (#375) — TOKENS only
-    Atoms/          the shared views and materials built out of those values (#772)
-    Focus/          whether a focus ring would be answering the keyboard (#533)
     Specimen/       preview-only views that show the contract's roles together
 ```
 
@@ -93,8 +95,8 @@ so does CI, with SwiftFormat in `--check` mode rather than rewriting.
 |---|---|---|
 | Formatting | SwiftFormat | `.swiftformat` |
 | The caps and the escape-hatch bans | SwiftLint, every rule an error | `.swiftlint.yml` (+ a nested one under `Packages/ArgoEngine/Tests`) |
-| Package layering | `scripts/swift-boundaries.sh` | the three edges below |
-| Design tokens | `scripts/check-design-tokens-swift.sh` | `Packages/ArgoUI/Sources/ArgoUI/VisualContract/` |
+| Package layering | `scripts/swift-boundaries.sh` | the edges below |
+| Design tokens | the same script, edge 7 | `scripts/check-design-tokens-swift.sh` and its allowlist |
 | Duplication | `jscpd`, Swift included | `.jscpd.json` |
 
 The numbers are `biome.jsonc`'s numbers: a 200-line function is as unreadable in Swift as in
@@ -102,17 +104,18 @@ TypeScript. `rules/swift-style.md` is the prose half — how Swift spells `rules
 plus the SwiftUI section that extends `rules/ui-components.md`.
 
 Boundaries are checkable by imports and declarations alone, which is why they are gates rather
-than review notes: **ArgoUI** never imports ArgoEngine, **ArgoEngine** never imports a UI
-framework, and the **app target** declares no `View` — everything with logic in it belongs in a
-package, where a test can reach it.
+than review notes: **ArgoEngine** never imports a UI framework, **ArgoDesign** imports nothing of
+Argo's at all, and the **app target** declares no `View` — everything with logic in it belongs in
+a package, where a test can reach it.
 
-Colours, type, spacing, radii, strokes, elevation and motion come from `ArgoUI/VisualContract/`
-(#375), and the guard's only job is to keep every other file naming a role instead of writing a
-value down. `VisualContract/` is exempt because it IS the contract; `Specimen/` is exempt for the
-opposite reason — a specimen exists to show what a role is worth, and it ships in no screen.
+Colours, type, spacing, radii, strokes, elevation and motion come from `ArgoDesign` (#375), and
+the guard's only job is to keep every other file naming a role instead of writing a value down.
+`ArgoDesign` is exempt because it IS the contract, and that exemption is a MODULE rather than a
+folder name as of #1088 — which is the whole reason the check can run on CI. What a specimen
+carries is debt on the allowlist, named and shrink-only, not a directory waved through.
 
 The contract holds **tokens and nothing else**, which took three cuts to get to. #772 took out the
-views: `ArgoBadge`, `ArgoGlyph`, `ArgoFloatingGlass` and the rest are `ArgoUI/Atoms/`, inside the
+views: `ArgoBadge`, `ArgoGlyph`, `ArgoFloatingGlass` and the rest are `ArgoAtoms`, inside the
 guard's scope like every other view. #756 took out the **measures** — how wide the reading runs,
 how tall a chip stands — because that is a property of the content, so each sheet lives in the
 directory of the one surface whose layout it describes: `ArgoFeedRow`, `ArgoComposerVessel`,

@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A state said as a mark rather than as prose: the roster row's `NEEDS INPUT`, the Permission
@@ -11,10 +12,14 @@ import SwiftUI
 /// in.
 ///
 /// Ink is the caller's — which ink a state takes is the state's to say.
-struct ArgoStateLabel: View {
+public struct ArgoStateLabel: View {
     let word: String
 
-    var body: some View {
+    public init(word: String) {
+        self.word = word
+    }
+
+    public var body: some View {
         Text(word)
             .argoText(ArgoTypography.badge)
             .textCase(.uppercase)

@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A markdown file in the panel, drawn with the shape its markup asked for. `FeedMarkdown` and

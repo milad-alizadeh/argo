@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// One earned reason on the Next-up hero (`cockpit-work-room.md` — the Next-up hero).

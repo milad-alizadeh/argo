@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The remedy, beside the reading that asks for it. It draws an offer it was handed and judges

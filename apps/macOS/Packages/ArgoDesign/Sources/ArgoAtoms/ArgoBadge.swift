@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// A count carried on a control: how many of something is waiting behind it.
@@ -6,26 +7,30 @@ import SwiftUI
 /// is a ground off the neutral ramp (`overlay`) with the loudest neutral ink on it. A capsule and
 /// not a circle, so a number is never cut to fit; one digit still reads as a disc, because the
 /// capsule's minimum width is its height.
-struct ArgoBadge: View {
+public struct ArgoBadge: View {
     @Environment(\.argo) private var argo
 
     /// The type the number is set in. Monospaced: a number that changes while the reader watches
     /// re-measures the chip around it in a proportional face.
-    static let type = ArgoTypography.machineCaption
+    public static let type = ArgoTypography.machineCaption
     /// Either side of the number, so two and three digits stay a chip.
-    static let insetX: CGFloat = ArgoSpacing.tight
+    public static let insetX: CGFloat = ArgoSpacing.tight
     /// Above and below it — the type-setter's line box already stands clear of the glyphs.
-    static let insetY: CGFloat = ArgoSpacing.hair
+    public static let insetY: CGFloat = ArgoSpacing.hair
 
     /// One line of that type plus the inset either side, DERIVED rather than sampled: a number
     /// written down here goes wrong the moment the type role under it moves.
-    static var height: CGFloat {
+    public static var height: CGFloat {
         insetY * 2 + type.nominalLineBox.rounded(.up)
     }
 
     let count: Int
 
-    var body: some View {
+    public init(count: Int) {
+        self.count = count
+    }
+
+    public var body: some View {
         Text("\(count)")
             .argoText(Self.type)
             .foregroundStyle(argo.color.text.primary)

@@ -1,3 +1,5 @@
+import ArgoDesign
+
 /// A run of looking, read as one line.
 ///
 /// A fold and never a filter: nothing is dropped, the count is what the run did, and everything

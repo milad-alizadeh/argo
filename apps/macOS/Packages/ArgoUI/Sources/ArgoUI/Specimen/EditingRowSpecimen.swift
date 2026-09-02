@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The roster with one row being typed into, its neighbours at rest.

@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The deck's trailing pane: one scrolling column, no inner split. There is no 240pt facts sidebar

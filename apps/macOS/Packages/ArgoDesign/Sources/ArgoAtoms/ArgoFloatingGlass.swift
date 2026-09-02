@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The material a surface takes when it floats over the deck rather than sitting in it.
@@ -43,7 +44,7 @@ struct ArgoFloatingGlass<Vessel: InsettableShape>: ViewModifier {
     }
 }
 
-extension EnvironmentValues {
+public extension EnvironmentValues {
     /// Reduce Transparency, forced on from inside the app: the system's own flag is read-only, so
     /// the flat fallback would otherwise be renderable only by changing System Settings. One
     /// direction only — nothing here can force transparency BACK on over a reader who asked for
@@ -60,7 +61,7 @@ extension EnvironmentValues {
     }
 }
 
-extension View {
+public extension View {
     /// Draws this surface as a float over the deck — see `ArgoFloatingGlass`.
     func argoFloatingGlass(in vessel: some InsettableShape, rim: ArgoColor? = nil) -> some View {
         modifier(ArgoFloatingGlass(vessel: vessel, rim: rim))

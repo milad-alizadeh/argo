@@ -1,3 +1,5 @@
+import ArgoAtoms
+import ArgoDesign
 import SwiftUI
 
 /// One picture, opened over the deck at the size it actually is. It covers the whole deck rather

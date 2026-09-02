@@ -1,3 +1,5 @@
+import ArgoDesign
+
 /// What a file is written in, read from its own name.
 ///
 /// The extension and nothing else — the contents are never sniffed. An unrecognised extension is

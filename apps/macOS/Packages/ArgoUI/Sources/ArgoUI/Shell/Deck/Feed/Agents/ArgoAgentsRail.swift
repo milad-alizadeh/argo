@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// What the agents rail beside the reading is measured at. How far the rail may be DRAGGED is the

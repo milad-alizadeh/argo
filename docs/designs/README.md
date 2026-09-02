@@ -9,9 +9,9 @@ the renders the app itself produces.
 
 ## The token contract lives in Swift, not in this folder
 
-`apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/` **is** the contract: the colour
+`apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign/` **is** the contract: the colour
 roles, Apple's macOS type scale, spacing, radii, elevation and motion, each a value with a
-documented reason. Tokens only — the shared views drawn with them are `ArgoUI/Atoms/`, and a
+documented reason. Tokens only — the shared views drawn with them are `ArgoAtoms`, and a
 surface's own measures live in that surface's directory under `Shell/`. `rules/design-system.md`
 lists all three populations by file. `ArgoUI/Specimen/ContractSpecimen.swift` is the
 contract's living specimen — every role enumerated on the surfaces it is read against:

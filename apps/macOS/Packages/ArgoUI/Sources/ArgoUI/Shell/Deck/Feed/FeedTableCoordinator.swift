@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 import SwiftUI
 
 /// The AppKit half of the feed: what the table draws, and the one thing that moves the scroll.

@@ -15,13 +15,23 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../ArgoEngine"),
+        // The token contract and the primitives over it, one layer below every view here (#1088).
+        .package(path: "../ArgoDesign"),
         // Syntax highlighting: highlight.js under a SwiftUI surface, MIT. A grammar per language is
         // a solved problem and not one to hand-roll (`rules/dependencies.md`), and this one ships
         // Xcode's own theme, which is the theme the panel wants.
         .package(url: "https://github.com/appstefan/HighlightSwift.git", from: "1.1.0"),
     ],
     targets: [
-        .target(name: "ArgoUI", dependencies: ["ArgoEngine", "HighlightSwift"]),
+        .target(
+            name: "ArgoUI",
+            dependencies: [
+                "ArgoEngine",
+                "HighlightSwift",
+                .product(name: "ArgoDesign", package: "ArgoDesign"),
+                .product(name: "ArgoAtoms", package: "ArgoDesign"),
+            ],
+        ),
         .testTarget(name: "ArgoUITests", dependencies: ["ArgoUI"]),
     ],
 )

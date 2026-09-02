@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 import SwiftUI
 
 /// The rooms segmented control, as AppKit's own rather than SwiftUI's.

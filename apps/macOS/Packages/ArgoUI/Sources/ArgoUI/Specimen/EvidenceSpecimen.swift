@@ -1,3 +1,4 @@
+import ArgoDesign
 import SwiftUI
 
 /// The evidence panel's header, per subject: the panel open on a command that runs to the three

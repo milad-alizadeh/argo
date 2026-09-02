@@ -9,8 +9,9 @@ prove a change to them.
 `bun run quality` is biome, duplication and Swift. `quality:swift` (SwiftFormat in check mode,
 SwiftLint, package boundaries) needs a macOS runner, so it sits on the `macos` CI job alongside
 the build and the swift-testing suites. Linux CI runs biome, duplication and `test:hooks` — the
-only executable suite there. Pre-commit runs lint-staged: biome, then SwiftFormat, SwiftLint,
-boundaries and the design-token gate over staged Swift.
+only executable suite there. Pre-commit runs lint-staged: biome, then SwiftFormat, SwiftLint and
+boundaries over staged Swift. The design-token gate is inside boundaries as edge 7 (#1088), so it
+runs on CI now rather than on pre-commit alone — `check:design-tokens` is the same scan by hand.
 
 Nothing here is optimised by default: `bun run build` is Debug unless asked otherwise, and
 `swift-test.sh` takes no configuration at all, so every suite runs `-Onone`. What each
@@ -92,6 +93,7 @@ apply to that category) or **RATCHET** (debt; the list may only shrink):
 | `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
 | `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
 | the module map's `placement` block | the folder rules — `allow`/`ratchet`/`exclude`, each value its own reason |
+| `scripts/design-tokens-swift-allow.txt` | design constants outside `ArgoDesign` — one `grep -E` pattern per line with a comment line above it saying why. Both halves are gates: an entry with no reason is refused, and so is one that matches nothing any more |
 | `.swiftlint.yml` | the Swift caps, ratchets inline — including the initializer cap that `swift-boundaries.sh` edge 6 reads from there and SwiftLint itself cannot check. That one's ratchet is a named list, not a number: `# INIT: <file> <count> — <why>`, one line per grandfathered init, and edge 6 fails a stale line as well as an unnamed init (#992) |
 
 The placement gates fail on a **stale** exemption too: an entry naming no file is deleted, not
