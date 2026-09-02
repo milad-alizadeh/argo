@@ -98,10 +98,14 @@ struct TurnDeliveryTests {
         #expect(watch.lost.map(\.text) == ["Second"])
     }
 
-    /// A Session being torn down files nothing: a Turn nobody can retype is not news the composer
-    /// could act on, and the roster already says the Session is gone.
+    /// A Session being torn down is left where it stands: a Turn nobody can retype is not news the
+    /// composer could act on, and the roster already says the Session is gone.
+    ///
+    /// It types nothing either, which is what `SpawnFixture.typeTurn` stands on: a dropped watch
+    /// still spending its Returns would go on writing at the PTY those suites count the writes of
+    /// (#1040).
     @Test
-    func `a forgotten Session reports nothing`() async {
+    func `a forgotten Session is left alone`() async {
         let watch = Recorder(records: 1)
         let delivery = TurnDelivery(watch.watch, patience: Self.patience)
 
@@ -109,6 +113,7 @@ struct TurnDeliveryTests {
         delivery.forget("session-a")
         await Self.pauseLongEnoughForTheWholeWatch()
 
+        #expect(watch.retyped == 0)
         #expect(watch.lost.isEmpty)
     }
 

@@ -21,10 +21,10 @@ struct HubHandoffTests {
         await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
 
         #expect(fixture.hub.steer(sessionID: spawnedSessionID, typing: "/handoff /tmp/b.md"))
+        fixture.dropTurnWatch(on: spawnedSessionID)
 
         // The Turn is two writes with a pause between them (#682), so the Return is waited for.
-        await settle { fixture.host.started.last?.written.count == 2 }
-        let written = fixture.host.started.last?.written ?? []
+        let written = await fixture.keystrokes(exactly: 2)
         #expect(written.first?.contains("/handoff /tmp/b.md") == true)
         #expect(written.last == "\r")
     }
