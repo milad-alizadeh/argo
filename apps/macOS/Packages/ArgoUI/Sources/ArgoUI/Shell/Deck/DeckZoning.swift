@@ -24,10 +24,9 @@ struct DeckZoning {
 
     /// On screen for a Session that DELEGATED anything, and never beside the panel.
     ///
-    /// Delegations and not running ones (#1076): a Subagent is running only while the Session that
-    /// delegated it is, so a rail keyed on the dots would leave the deck the moment those went
-    /// honest — taking every finished chip, and the only way back out of a scoped feed, with it.
-    /// The rail lists what this Session handed over; what it says about NOW is the count line.
+    /// Delegations and not RUNNING ones: a Subagent runs only while its Session does, so this
+    /// keyed on the dots would leave the deck with every finished chip still to read (#1076). What
+    /// the rail says about NOW is its count line.
     var showsRail: Bool {
         !isPanelOpen && !agents.isEmpty
     }

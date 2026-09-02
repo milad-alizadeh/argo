@@ -27,10 +27,8 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// under it so the deck's zones and the toolbar's evidence toggle ask the same question once
     /// (#875, #1005). Unstamped simply derives, which is what it did before.
     private let stamp: SessionsRoomReadingCache.Stamp?
-    /// Whether the Session these delegations belong to is itself running (#1076). It rides HERE
-    /// because the reader is already the value that knows WHICH reading of the Session it is asked
-    /// beside — read off the same stamp, so the cache's memo and the walk below cannot disagree,
-    /// and `notRunning` until something says otherwise, which is degrade-down.
+    /// Whether the Session these delegations belong to is itself running (`DelegatingSession`).
+    /// Read off the stamp below, so the cache's memo and the walk this file does cannot disagree.
     private let liveness: DelegatingSession
 
     /// A reader that has nothing to ask.

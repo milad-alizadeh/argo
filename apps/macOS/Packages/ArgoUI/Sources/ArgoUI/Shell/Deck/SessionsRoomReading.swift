@@ -78,7 +78,7 @@ struct SessionsRoomReading {
             SessionsRoomReadingCache.Body(
                 feed: FeedProjection.rows(
                     from: session?.events ?? [],
-                    working: stamp.isWorking,
+                    working: stamp.liveness.isRunning,
                     starting: stamp.isStarting,
                     handedOff: handedOff,
                     expired: stamp.expired,

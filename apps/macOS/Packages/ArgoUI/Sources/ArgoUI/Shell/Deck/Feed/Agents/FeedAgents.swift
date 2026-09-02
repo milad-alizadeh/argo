@@ -29,14 +29,9 @@ enum FeedAgents {
     /// How many subagents are running right now, as far as the record can say.
     ///
     /// TWO facts, never one: a delegation the transcript has not resolved, in a Session that is
-    /// itself running. The parent writes the call when it hands the work over and the result when
-    /// it comes back — or, for a backgrounded launch, a receipt that resolves nothing until the
-    /// report lands (#908). Where that report never lands — the delegating process is gone, or the
-    /// agent was stopped — the call stays pending for the life of the record, and read on its own
-    /// it draws a green dot on work that ended 43 hours ago (#1076).
-    ///
-    /// DERIVED, degrading the honest way: the Session's own status is what closes the gap, and an
-    /// `unknown` one resolves to not running — see `DelegatingSession`.
+    /// itself running (`DelegatingSession`). A backgrounded launch is answered at once by a receipt
+    /// that resolves nothing (#908), so where its report never lands the call stays pending for the
+    /// life of the record and the Session's own status is all that closes the gap (#1076).
     static func running(in rows: [FeedRow], of session: DelegatingSession) -> Int {
         all(in: rows, of: session).filter(\.isRunning).count
     }

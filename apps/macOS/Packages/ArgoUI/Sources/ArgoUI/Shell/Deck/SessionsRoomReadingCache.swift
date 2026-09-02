@@ -33,16 +33,11 @@ enum SessionsRoomReadingCache {
         let asking: FeedAskProjection.Asking
         let handedOff: FeedHandoff?
         let expired: [PermissionExpiry]
-        /// Whether the Session is at work, which two readings are a function of: the feed's live
-        /// row, and — since #1076 — whether a delegation still open is a Subagent still running.
+        /// Whether the Session is at work — the feed's live row and the rail's dots are both a
+        /// function of it (#1076).
         let liveness: DelegatingSession
         /// `starting` ends with no event appended, so nothing else here moves when it does.
         let isStarting: Bool
-
-        /// The same fact as a `Bool`, for the feed's live row — see `FeedWorking`.
-        var isWorking: Bool {
-            liveness.isRunning
-        }
 
         /// Derived from the Session rather than spelled out at the call site: a stamp assembled by
         /// hand is one a later projection input can quietly fall out of.

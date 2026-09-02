@@ -20,7 +20,7 @@ enum AgentsRailFixture {
     /// The same records beside a Session that is NOT running — every delegation still open reads
     /// as a Subagent that stopped with it, which is the state the rail used to draw a green dot and
     /// a growing clock on (#1076).
-    static let quietReadings = FeedAgentReader(events: [verifierID: verifier])
+    static let quietReadings = FeedAgentReader(events: [verifierID: verifier], of: .notRunning)
 
     /// Every Agent in the wide fan-out read, so the many-Agent render shows a rail of controls
     /// rather than a rail of quiet rows.

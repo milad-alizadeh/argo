@@ -121,7 +121,7 @@ struct AgentsRailScopeTests {
         FeedAgents.all(in: FeedProjection.rows(from: events), of: .running)
     }
 
-    /// One delegation, answered: nothing is running, so the rail is off the deck.
+    /// One delegation, answered — a chip the rail still lists, with nothing running.
     private func settled() -> [TranscriptEvent] {
         [
             .toolCall(FeedFixture.call("back", tool: "Task", kind: .delegate, naming: "verify")),
@@ -133,8 +133,8 @@ struct AgentsRailScopeTests {
         ]
     }
 
-    /// A handover the record has not answered, which is a subagent still running — the state that
-    /// puts the rail on screen at all.
+    /// A handover the record has not answered, which is a subagent still running beside a Session
+    /// that is.
     private let working = FeedProjection.rows(from: [
         .toolCall(FeedFixture.call("hand", tool: "Task", kind: .delegate, naming: "review")),
     ])
