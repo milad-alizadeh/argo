@@ -95,6 +95,7 @@ extension SpecimenRegistry {
         // The same reading arrived at by the CLICK rather than opened on: the state #1012 lives in,
         // and the one nothing rendered until now (#1003's "Not covered").
         SpecimenEntry("agentsRailRescoped") { AgentsRailSpecimen(subject: .rescoped) },
+        SpecimenEntry("agentsRailQuiet") { AgentsRailSpecimen(subject: .quiet) },
         SpecimenEntry("agentsRailCollapsed") { AgentsRailSpecimen(subject: .collapsed) },
         // Collapsed AND scoped: the one state where the way back out of a Subagent could still go
         // missing, since the strip has no room for the word Main (#1013).
