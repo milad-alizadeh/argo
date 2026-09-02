@@ -59,6 +59,11 @@ struct BacklogRow: View {
                 .truncationMode(.tail)
             Spacer(minLength: ArgoBacklogList.gap)
             labels
+            // Inboard of both marks below, which is what leaves an already-blocked row drawn
+            // exactly where it was when the claim mark was added (#1074).
+            if row.isClaimed {
+                ClaimMark(backdrop: ink.backdrop)
+            }
             // Inboard of the caption, so the caption keeps the trailing edge it has always been
             // right-aligned to and an unblocked row is drawn exactly where it was.
             if let blockage = row.blockage {
@@ -114,11 +119,15 @@ struct BacklogRow: View {
 
     /// The id is spoken as a number rather than as `#607`, which VoiceOver reads as "number 607".
     /// The blockage is SPOKEN where the mark is a numeral in a capsule: speech has no capsule, so
-    /// a bare `2` in this sentence would be read as a second id.
+    /// a bare `2` in this sentence would be read as a second id. The claim is spoken for the same
+    /// reason its mark is wordless — a lone glyph says nothing at all to a screen reader.
     private var announcement: String {
         (
             [String(row.id), row.title] + BacklogRowLabels(row.labels).spoken
-                + [spokenBlockage, drawn.caption(asOf: pinnedNow ?? Date())],
+                + [
+                    row.isClaimed ? "claimed" : nil, spokenBlockage,
+                    drawn.caption(asOf: pinnedNow ?? Date()),
+                ],
         )
         .compactMap(\.self)
         .joined(separator: ", ")

@@ -75,6 +75,9 @@ enum TicketsRoomProjection {
     struct ViewReading: Sendable, Equatable, Identifiable {
         let id: TicketsView
         let count: Int?
+        /// What the count is SHORT by — how many live Sessions this view's join could not place
+        /// (#1074). Zero on every view whose ground is not the claims.
+        var unplaced = 0
     }
 
     /// What a row's blockage mark carries (#896). Built only where there is something to mark, so
@@ -116,6 +119,10 @@ enum TicketsRoomProjection {
         /// drift apart silently — `TicketsBacklogMarkTests` holds them in step over the whole open
         /// set, which is the check that makes the pair worth having in two shapes.
         let blockage: Blockage?
+        /// Whether a LIVE Session is on this ticket (#1074). Off the same `TicketClaims.numbers`
+        /// the sidebar's `In progress` counts, and `TicketsBacklogMarkTests` holds the two in step
+        /// over the whole open set — the way it already does for `blockage`.
+        var isClaimed = false
         /// When the provider last saw this ticket change, and `nil` where it served no date at all
         /// — in which case the row draws none rather than inventing one (#897). LAST TOUCHED and
         /// not filed: `Ticket.updatedAt` is the only date any adapter reads.

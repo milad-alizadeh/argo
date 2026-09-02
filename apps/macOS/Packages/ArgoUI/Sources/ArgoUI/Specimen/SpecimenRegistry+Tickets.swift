@@ -51,11 +51,30 @@ extension SpecimenRegistry {
         SpecimenEntry("unmatchedTicketsBacklog") {
             TicketsPanesSpecimen(reading: TicketsFixture.reading, seed: .init(query: "kubernetes"))
         },
-        // A live Session Argo could not join to a ticket (#894): `In progress` draws NO count,
-        // beside three views that still draw theirs. A zero there would say nothing is in progress
-        // about a machine with an agent running on it.
+        // Two live Sessions Argo could not place on a ticket (#894, amended #1074): `In progress`
+        // draws its count AND what it is short by.
         SpecimenEntry("unjoinedTicketsProgress") {
             TicketsPanesSpecimen(reading: TicketsFixture.unjoinedClaims)
+        },
+        // The other half of that pair: NOBODY could read a link, so no join happened and the count
+        // is absent with no shortfall beside it. What separates the two is what a reader has to be
+        // able to see, so both are rendered.
+        SpecimenEntry("unreadTicketsProgress") {
+            TicketsPanesSpecimen(reading: TicketsFixture.unreadClaims)
+        },
+        // The claim mark on the row (#1074). #272 is claimed AND blocked here, which is the row no
+        // other reading reaches.
+        SpecimenEntry("claimedTicketsBacklog") {
+            TicketsPanesSpecimen(reading: TicketsFixture.claimedAndBlocked)
+        },
+        // The same claim, read in a view that is not `In progress`. The mark is a fact about the
+        // TICKET, so a reader scrolling `Blocked` sees it too — and `All open` alone cannot show
+        // that.
+        SpecimenEntry("claimedBlockedView") {
+            TicketsPanesSpecimen(
+                reading: TicketsFixture.claimedAndBlocked,
+                seed: .init(opening: .blocked),
+            )
         },
         // A ticket whose blocker was RULED OUT (#896). The mark carries the same count and spends
         // `state.failure` on it, because this one never clears itself — every other blocked row in

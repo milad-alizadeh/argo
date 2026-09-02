@@ -16,6 +16,14 @@ struct StatusFilingTests {
         #expect(bucket.filing(beside: word) == nil)
     }
 
+    /// `open` earns the slot from no word at all, however far the word is from saying it. The
+    /// ticket is in an open listing, so the filing restates the room the reader is standing in —
+    /// which is what left a head reading `In progress | open`, two words for one bit.
+    @Test(arguments: ["In progress", "Todo", "Backlog", "Selected for development"])
+    func `an open ticket is filed by its own word alone`(word: String) {
+        #expect(TicketState.open.filing(beside: word) == nil)
+    }
+
     @Test(arguments: [
         // GitHub's state stays `open` while a Session holds the ticket, so the claim is the one
         // thing a word can never carry.

@@ -48,11 +48,12 @@ enum ArgoBacklogList {
     static let labelLimit = 2
     /// Between the label chips, and between the last of them and the trailing fact.
     static let labelGap: CGFloat = ArgoSpacing.hair
-    /// The blockage mark's capsule, as a HEIGHT floor. The width is whatever its glyph and digits
-    /// set, so the capsule grows sideways at a second digit rather than shrinking either half.
-    /// Sized against the machine caption it sets, not against the dot at the row's leading edge —
-    /// the dot is a signal and this is a mark somebody reads.
-    static let blockageMark: CGFloat = 16
+    /// A trailing mark's box, as a HEIGHT floor — every mark in the region takes it, so they sit
+    /// on one vertical whether a row carries one or both. The width is whatever a mark's own glyph
+    /// and digits set, so the blockage capsule grows sideways at a second digit rather than
+    /// shrinking either half. Sized against the machine caption it sets, not against the dot at
+    /// the row's leading edge — the dot is a signal and this is a mark somebody reads.
+    static let trailingMark: CGFloat = 16
     /// One level of nesting. Sized so a child's dot lands under its parent's id.
     static let indentStep: CGFloat = ArgoSpacing.loose
     /// Level three shares level two's inset. At 520 this is comfort rather than necessity — it is
@@ -79,4 +80,21 @@ extension EnvironmentValues {
     /// twice. Optional rather than defaulted to `.now`, because an environment default resolves
     /// once and would freeze every age at whatever instant first read the key.
     @Entry var backlogNow: Date?
+}
+
+extension View {
+    /// The opaque plate a trailing mark is laid on where the row's own ground is not one the
+    /// Route's inks can be read on — a selected row's loud accent (#1071). `nil` on the deck,
+    /// which is the ground those inks were chosen against, and no plate is drawn at all.
+    ///
+    /// Shared by both marks in the region: carrying its own ink is what makes a mark need the
+    /// plate, and since #1074 both of them do.
+    func argoTrailingMarkPlate(_ backdrop: ArgoColor?) -> some View {
+        padding(.horizontal, backdrop == nil ? ArgoSpacing.flush : ArgoSpacing.tight)
+            .background {
+                if let backdrop {
+                    Capsule().fill(backdrop.color)
+                }
+            }
+    }
 }

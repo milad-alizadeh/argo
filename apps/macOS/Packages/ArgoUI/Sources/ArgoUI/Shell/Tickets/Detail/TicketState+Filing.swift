@@ -12,9 +12,15 @@ extension TicketState {
         }
     }
 
-    /// The filing worth setting beside `word`, or `nil` where the word already says it (#893).
-    /// Case is ignored: a provider that capitalises its word has not told us a second thing.
+    /// The filing worth setting beside `word`, or `nil` where the head draws the word alone (#893).
+    ///
+    /// Two ways to earn nothing. **`open` never earns the slot**: the ticket is in an open listing,
+    /// so Argo filing it under `open` restates the room the reader is already standing in — which
+    /// is how a head came to read `In progress | open`, two words for one bit, the second of them
+    /// dimmed. And a bucket the word ALREADY SAYS earns nothing whatever the bucket is; case is
+    /// ignored, because a provider that capitalises its word has not told us a second thing.
     func filing(beside word: String) -> String? {
-        filing.caseInsensitiveCompare(word) == .orderedSame ? nil : filing
+        guard self != .open, filing.caseInsensitiveCompare(word) != .orderedSame else { return nil }
+        return filing
     }
 }

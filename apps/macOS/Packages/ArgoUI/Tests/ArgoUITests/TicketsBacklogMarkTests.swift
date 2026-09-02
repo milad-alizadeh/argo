@@ -91,6 +91,81 @@ struct TicketsBacklogMarkTests {
         #expect(!TicketsView.unblocked.admits(unedged, claimed: false))
     }
 
+    /// The claim mark and the sidebar's `In progress` count are two readings of ONE set,
+    /// `TicketClaims.numbers`, through two different code paths — the tree builds the row, and
+    /// `admits` filters the count — so the agreement is CHECKED rather than asserted in a comment
+    /// (#1074). `All open` draws every open ticket, so the marked rows are exactly the ones the
+    /// rail counted.
+    @Test
+    func `a row carries a claim mark exactly where the sidebar counts it in progress`() {
+        let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
+        let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
+
+        #expect(room.view(.inProgress)?.count == drawn.count { $0.row.isClaimed })
+        #expect(room.view(.inProgress)?.count ?? 0 > 0)
+    }
+
+    /// The claim is a fact about the TICKET, not about the view it is being read in: a reader
+    /// scrolling `All open` or `Blocked` has to be able to tell a claimed row from an untouched
+    /// one, which was the whole of what #894's AC2 left undone.
+    ///
+    /// Over `claimedAndBlocked` rather than the main reading, so every one of the four views holds
+    /// a claimed ticket — the main one claims only unblocked tickets, which would leave `Blocked`
+    /// passing this over zero marked rows. The `at least one` expectation is what says so.
+    @Test(arguments: TicketsView.allCases)
+    func `a claimed ticket renders as claimed in every view that admits it`(view: TicketsView) {
+        let reading = TicketsFixture.claimedAndBlocked
+        let room = TicketsRoomProjection.room(from: reading, in: view)
+        let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
+
+        for row in drawn where !row.row.isRail {
+            #expect(row.row.isClaimed == reading.claimed.contains(row.id))
+        }
+        #expect(drawn.contains { $0.row.isClaimed })
+    }
+
+    /// The two marks answer different questions — "is somebody already on this" and "can it be
+    /// started" — so a row that is both draws both rather than choosing. It has a fixture of its
+    /// own because the main reading claims only unblocked tickets, and a case no render reaches is
+    /// one nobody has looked at.
+    @Test
+    func `a claimed and blocked row carries both marks`() {
+        let room = TicketsRoomProjection.room(from: TicketsFixture.claimedAndBlocked)
+        let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
+        let both = drawn.first { $0.id == 272 }?.row
+
+        #expect(both?.isClaimed == true)
+        #expect(both?.blockage?.count == 2)
+    }
+
+    /// One concept, one mark, for the reason #939 fixed the blockage glyph: the rail says "4 in
+    /// progress" and these rows are the 4 it counted.
+    @Test
+    func `the row's claim mark and the sidebar's In progress view draw one glyph`() {
+        #expect(ClaimMark.symbol == TicketsView.inProgress.symbol)
+    }
+
+    /// …and one INK. Agreeing on shape while disagreeing on colour is the same two concepts #939
+    /// removed, so the sidebar glyph and the row mark read `TicketsView.ink` rather than naming a
+    /// palette role each.
+    @Test
+    func `a view that marks the list draws its mark in the view's own ink`() {
+        let argo = ArgoTheme.graphite
+
+        #expect(TicketsView.inProgress.ink(argo) == argo.color.state.running)
+        #expect(TicketsView.blocked.ink(argo) == argo.color.state.failure)
+    }
+
+    /// A view that marks NOTHING in the list takes no colour: an unblocked ticket is deliberately
+    /// unmarked (the row does not claim `unblocked` over edges nobody served), so a coloured glyph
+    /// on the rail would mean something the list never says.
+    @Test(arguments: [TicketsView.allOpen, .unblocked])
+    func `a view with no row mark takes no ink of its own`(view: TicketsView) {
+        let argo = ArgoTheme.graphite
+
+        #expect(view.ink(argo) == argo.color.text.tertiary)
+    }
+
     @Test
     func `the mark reaches the row the list draws`() {
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
