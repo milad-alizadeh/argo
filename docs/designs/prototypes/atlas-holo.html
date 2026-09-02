@@ -809,6 +809,21 @@ function layout(root, mArea, mHeight, maxH) {
     me.inner = [ix, iy, iw, ih];
     const kids = (n.children || [])
       .map(c => ({ c, v: roll(c, mArea) })).filter(k => k.v > 0);
+    /* MEASURED AND REJECTED: d3's canonical frame — squarify the children in the PLAN square
+       and remap them linearly into this rect — which atlas-snap-zoom.md §8.2 recommends as
+       "eight lines and no loss of stability". It is eight lines, and it does deliver what it
+       promises: standing inside a folder, the median file aspect goes 1.68 -> 1.10 and the
+       p90 3.89 -> 1.42. But it is measured against a renderer that draws ONE LEVEL AT A TIME
+       (d3 renders `root.children.concat(root)`), and this map draws every level at once. Both
+       tilings built from the same tree in the same page:
+         on the resting map   median aspect 1.16 -> 6.06, p90 1.64 -> 24.98,
+                              files worse than 10:1  2 -> 239,
+                              FILES DRAWN AT ALL  1483 -> 951.
+       A parent's own aspect multiplies its children's, so a sliver's inner rect collapses
+       past `iw <= 2` and takes its whole subtree with it. 532 files is thirteen times the
+       loss that got the caption strip rewritten (40 of 1483), and the resting map is what
+       the reader looks at. The snap does not need it: the camera frames the plate's rect
+       whatever shape its children are. */
     for (const b of squarify(kids.map(k => ({ v: k.v, c: k.c })), ix, iy, iw, ih))
       me.kids.push(walk(b.it.c, b.x, b.y, b.w, b.h, depth + 1, rank + (ghost ? 0 : 1), here));
     return me;
@@ -1071,10 +1086,14 @@ function baseScale() { return extent().k; }
 /* The picture's real extent, measured rather than assumed. The tallest tower is nowhere
    near a corner, so a formula that reserves the full height at the far corner leaves the
    map sitting high with a band of nothing under it. */
-function extent() {
-  const st = $('stage'), W = st.clientWidth, H = st.clientHeight, pad = 34;
+/* A box list may be passed to measure ONE plate and what stands on it, which is what a snap
+   frames. Same measurement either way, so a snapped camera and a fitted one are the same
+   kind of thing rather than two arrangements that happen to agree. */
+function extent(boxes, inset) {
+  const st = $('stage'), W = st.clientWidth, H = st.clientHeight;
+  const pad = inset === undefined ? 34 : inset;
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-  for (const b of boxesNow()) {
+  for (const b of (boxes || boxesNow())) {
     for (const [x, y] of [[b.x, b.y], [b.x + b.w, b.y], [b.x + b.w, b.y + b.h], [b.x, b.y + b.h]]) {
       for (const z of [b.z0, b.z1]) {
         const [px, py] = raw(x, y, z);
@@ -1099,6 +1118,70 @@ function fit() {
   cam.scale = e.k;
   cam.ox = W / 2 - e.mx * e.k;
   cam.oy = H / 2 - e.my * e.k;
+}
+
+/* ---------- the snap ---------- */
+/* Every system in the survey that snaps well leaves the parent visible round the edge:
+   ECharts' zoomToNodeRatio is 0.32 of each linear dimension, FoamTree documents
+   groupExposureZoomMargin: 0 as the degenerate case you configure away from, and MapLibre's
+   fitBounds takes padding as a first-class argument. ~90% linear fill is the survey's own
+   target (atlas-snap-zoom.md §8.3). */
+const SNAP_FILL = 0.9;
+/* 500ms and ease-out, taken from the evidence rather than from taste: the field clusters at
+   500–750ms, and the low end is where the two systems whose hops are short and repeated sit —
+   Highcharts' animObject (500ms, easeInOutSine) and MapLibre's easeTo (500ms, CSS ease).
+   ECharts' cubicOut is the easing this page already spells `ease`. §5 and §8.5. */
+const SNAP_MS = 500;
+
+/* The camera that frames a set of boxes with a margin round them. fit() is this over the
+   whole city; a snap is this over one plate and everything standing on it. */
+function camFor(boxes, fill) {
+  const st = $('stage'), W = st.clientWidth, H = st.clientHeight;
+  const e = extent(boxes, boxes ? 0 : undefined);
+  const k = e.k * (fill || 1);
+  return { scale: k, ox: W / 2 - e.mx * k, oy: H / 2 - e.my * k };
+}
+
+/* WHAT IS INTERPOLATED, and why it is not the obvious thing.
+   Bostock's zoomable treemap sets the x/y scale DOMAINS at the two endpoints and lets d3
+   interpolate the resulting rect attributes. atlas-snap-zoom.md §5 works out what that
+   actually computes: because the domain change is a SIMILARITY shared by every rect,
+   per-rect linear interpolation of the corners is pointwise identical to linearly
+   interpolating the single affine transform. Our camera IS that transform — screen =
+   raw(x,y,z) * scale + (ox,oy) — so interpolating `scale`, `ox` and `oy` linearly is d3's
+   animation exactly, for the price of three numbers instead of fifteen hundred rectangles.
+   Interpolating the visible raw-space window (the literal domain lerp, i.e. linear in 1/scale)
+   would NOT be d3's treemap; it is what the zoomable SUNBURST does, and it would bend every
+   rect's pixel path.
+   The tween writes cam itself rather than holding a private copy, which is Bostock's
+   documented reason for storing interpolated state back on the datum: a second plate clicked
+   mid-flight retargets from where the camera actually is, and cannot snap. */
+let fly = null;         // { t0, from, to, at } — `at` is the last camera this tween wrote
+function flyTo(to) {
+  if (CALM) { fly = null; Object.assign(cam, to); rebuild(); stamp(); return; }
+  const from = { scale: cam.scale, ox: cam.ox, oy: cam.oy };
+  fly = { t0: performance.now(), to, from, at: { ...from } };
+}
+/* Anyone else who writes the camera wins. The tween remembers its own last write, so a wheel
+   notch, a drag, a turn, a resize or a view change during a flight ends it instead of fighting
+   it a frame at a time — and it ends without touching the scope, because a wheel is a size and
+   never a selection. */
+function flyStep(now) {
+  const c = fly.at;
+  if (c && (cam.scale !== c.scale || cam.ox !== c.ox || cam.oy !== c.oy)) { fly = null; return; }
+  const u = Math.min(1, (now - fly.t0) / SNAP_MS), e = ease(u), f = fly.from, t = fly.to;
+  cam.scale = f.scale + (t.scale - f.scale) * e;
+  cam.ox = f.ox + (t.ox - f.ox) * e;
+  cam.oy = f.oy + (t.oy - f.oy) * e;
+  if (u < 1) { fly.at = { scale: cam.scale, ox: cam.ox, oy: cam.oy }; rebuild(true); return; }
+  /* Landed on the exact target, never on frame 30 of an easing curve, so the camera a snap
+     reaches is byte-identical to the same camera reached any other way. */
+  Object.assign(cam, t);
+  fly = null;
+  rebuild();
+  /* Once, on arrival. replaceState called repeatedly outside an input event stalls the Chrome
+     renderer for seconds, so a tween may never stamp per frame. */
+  stamp();
 }
 
 /* ---------- the two layers ---------- */
@@ -2301,6 +2384,7 @@ function frame(now) {
     else rebuild(true);
   }
   if (morph) morphStep(now);
+  if (fly) flyStep(now);
   if (rising) {
     if (now - riseT0 > RISE_SPAN + RISE_DUR + 40) { rising = false; rebuild(); }
     else rebuild(true);
@@ -2672,7 +2756,17 @@ function ctxBar() {
 function goCrumb(k, i) {
   closePage();
   if (k === 'dom') { selectDomain(null); restoreTop(state.domTop); }
-  else if (k === 'dir') goFolder(+i);
+  /* Out is the SAME function as in — one flight, one duration, to the camera of the level
+     the crumb names, however many levels up that is. Not one animation per level the way
+     Highcharts drills up, and not a mirror-image heuristic the way Plotly does it
+     (atlas-snap-zoom.md §3, §8.7). The top of the trail is the whole city, and camFor over
+     everything at full fill is exactly what fit() computes — so the way back out and the
+     reset button agree on where "all of it" is. */
+  else if (k === 'dir') {
+    goFolder(+i);
+    flyTo(state.folder ? camFor(paintOrder(folderAt(state.folder)), SNAP_FILL)
+                       : camFor(null, 1));
+  }
 }
 /* A list that grows as it is scrolled cannot be scrolled to a place it has not grown to yet,
    so it is grown until the offset exists rather than clamped silently to the bottom. */
@@ -2738,12 +2832,19 @@ function folderAt(path) {
 }
 
 /* Descending is a FILTER, not a regroup: the boxes stay exactly where they are and only
-   what is out of scope loses its colour, so it dissolves rather than cuts. */
+   what is out of scope loses its colour, so it dissolves rather than cuts.
+   This is the ONE way into a folder. The rail's rows call it and so does a click on a plate,
+   because a map that set a scope of its own beside this one would be a second drill-down
+   agreeing with the first by coincidence and drifting the week after. */
 function enterFolder(path, name) {
   beginFade();
+  closePage();
   state.trail.push({ path: state.folder, name: state.folderName, top: $('rows').scrollTop });
   state.folder = path; state.folderName = name;
-  railIndex(); rebuild(); key(view.lo, view.hi);
+  /* Where you are is carried by the plate's own rim, whichever control put you there — so
+     the frame lands on the folder you entered from the map and from the list alike. */
+  state.pinned = folderAt(path);
+  railIndex(); rebuild(); key(view.lo, view.hi); detail(null); railMark();
 }
 /* The trail, not the path: a collapsed chain has levels the reader never stood on, and
    stepping up into one of those is a place they cannot have come from. */
@@ -2752,7 +2853,38 @@ function goFolder(i) {
   beginFade();
   state.trail = state.trail.slice(0, i);
   state.folder = t.path; state.folderName = t.name;
-  railIndex(); restoreTop(t.top); rebuild(); key(view.lo, view.hi);
+  state.pinned = t.path ? folderAt(t.path) : null;
+  railIndex(); restoreTop(t.top); rebuild(); key(view.lo, view.hi); detail(null); railMark();
+}
+
+/* The rail's rows are chainDown() of the current folder's children, so a plate click walks
+   that same chain rather than jumping straight to the box it was handed: the trail has to
+   record the levels the rail would have offered, or it names a place nobody stood on.
+   Returns null when the plate is not below where you are — an ancestor's plate is the way
+   OUT, and the breadcrumb is the only way out. */
+function railSteps(box) {
+  const steps = [];
+  let here = folderAt(state.folder);
+  for (let n = 0; here && here !== box && n < 64; n++) {
+    const kid = here.kids.find(k => !k.file && under(box.path, k.path));
+    if (!kid) break;
+    const step = chainDown(kid);
+    if (step.box === here) break;
+    steps.push(step); here = step.box;
+  }
+  return here === box ? steps : null;
+}
+
+/* A snap and a drill are ONE act: the scope, the crumb, the dimming and the rail come from
+   enterFolder, and the camera flight is the only thing the map adds on top of what the rail
+   already does. Scope is dim plus crumb, camera is size; a snap is the one gesture that is
+   both, because it is a selection that happens to move the viewport. */
+function snapTo(box) {
+  const steps = railSteps(box);
+  if (!steps || !steps.length) return false;
+  for (const s of steps) enterFolder(s.box.path, s.name);
+  flyTo(camFor(paintOrder(folderAt(state.folder)), SNAP_FILL));
+  return true;
 }
 
 function folderIndex() {
@@ -3418,6 +3550,11 @@ Promise.all([
     const r = cv.getBoundingClientRect();
     const hit = pick(e.clientX - r.left, e.clientY - r.top);
     if (!hit) return;
+    /* A PLATE IS A PLACE AND A FILE IS A THING TO READ. Clicking a plate goes there — the
+       same act as clicking that folder's row in the rail, down to the trail entry, with the
+       camera following it — and clicking a file opens its reading. A plate already at or
+       above where you are does nothing here: the breadcrumb is the only way out. */
+    if (!hit.file) { snapTo(hit); return; }
     /* pin it so the numbers stay while the pointer goes to the controls */
     /* Clicking what is already open closes it, which is the same gesture as Esc. */
     if (state.page && state.pinned && state.pinned.path === hit.path) {
