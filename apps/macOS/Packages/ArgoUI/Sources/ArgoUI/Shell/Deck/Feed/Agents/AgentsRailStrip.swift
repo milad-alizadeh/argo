@@ -85,7 +85,7 @@ struct AgentsRailStrip: View {
     @Previewable @State var isCollapsed = true
 
     AgentsRailStrip(
-        agents: FeedAgents.all(in: FeedProjection.previewRows),
+        agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running),
         control: AgentsRailControl(
             scope: $scope,
             isCollapsed: $isCollapsed,
@@ -102,7 +102,7 @@ struct AgentsRailStrip: View {
     @Previewable @State var isCollapsed = true
 
     AgentsRailStrip(
-        agents: FeedAgents.all(in: FeedProjection.previewRows),
+        agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running),
         control: AgentsRailControl(
             scope: $scope,
             isCollapsed: $isCollapsed,

@@ -58,6 +58,22 @@ enum TranscriptFixtures {
         )
     }
 
+    /// A BACKGROUNDED delegation's launch receipt, which resolves nothing: the host answers the
+    /// handover at once and the report that ends the call lands later, as a second outcome for the
+    /// same id (#908). It names the Subagent from the start, where a synchronous handover names it
+    /// only when it comes back.
+    static func launched(_ id: String, subagent: String) -> ToolCallOutcome {
+        ToolCallOutcome(
+            id: id,
+            resolution: ToolCallOutcome.Resolution(
+                status: .inProgress,
+                result: nil,
+                endedAtMs: nil,
+            ),
+            delegated: ToolCallOutcome.Delegated(usage: nil, subagentID: subagent),
+        )
+    }
+
     /// A delegation that came back, priced and timed — the two figures the rail draws on a chip.
     /// The tokens land as cache reads, where a real Subagent's spend mostly sits.
     static func landed(_ id: String, tokens: Int, seconds: Int) -> ToolCallOutcome {

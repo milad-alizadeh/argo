@@ -10,9 +10,9 @@ struct DeckZoning {
     /// The rows the reader is looking at — the Session's own reading, or the Subagent's that the
     /// rail scoped onto. What the panel and the lane are resolved against.
     let feed: [FeedRow]
-    /// Who else is working. A VALUE rather than read off `feed`, because the rail lists the
-    /// SESSION's Subagents whatever the feed beside it is scoped to — read off a scoped feed the
-    /// rail would empty itself the moment somebody used it.
+    /// What this Session handed over, and which of it is still running. A VALUE rather than read
+    /// off `feed`, because the rail lists the SESSION's Subagents whatever the feed beside it is
+    /// scoped to — read off a scoped feed the rail would empty itself the moment somebody used it.
     let agents: [FeedAgent]
     /// Which row's evidence the reader opened, if any. Resolved against the feed below rather than
     /// trusted: a live transcript grows under an open panel.
@@ -22,9 +22,13 @@ struct DeckZoning {
     /// Whether the rail is showing its dot strip rather than its chips.
     var isRailCollapsed = false
 
-    /// On screen only while subagents are running, and never beside the panel.
+    /// On screen for a Session that DELEGATED anything, and never beside the panel.
+    ///
+    /// Delegations and not RUNNING ones: a Subagent runs only while its Session does, so this
+    /// keyed on the dots would leave the deck with every finished chip still to read (#1076). What
+    /// the rail says about NOW is its count line.
     var showsRail: Bool {
-        !isPanelOpen && agents.contains(where: \.isRunning)
+        !isPanelOpen && !agents.isEmpty
     }
 
     /// How wide the rail's column is: its dot strip when collapsed, otherwise wherever the reader

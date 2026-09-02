@@ -33,9 +33,12 @@ enum SessionsRoomReadingCache {
         let asking: FeedAskProjection.Asking
         let handedOff: FeedHandoff?
         let expired: [PermissionExpiry]
-        let isWorking: Bool
-        /// `starting` ends with no event appended, so nothing else here moves when it does.
-        let isStarting: Bool
+        /// The Session's own status, stored as the STATUS rather than as either reading taken of
+        /// it: the feed's live row wants a Turn in progress (`FeedWorking`) and the rail's dots
+        /// want a Session that can still be driving work (`DelegatingSession`, #1076), and those
+        /// two boundaries are no longer the same. One fact here, each reading named where it is
+        /// taken — two stored Bools would be two places to answer a status added later.
+        let status: SessionStatus?
 
         /// Derived from the Session rather than spelled out at the call site: a stamp assembled by
         /// hand is one a later projection input can quietly fall out of.
@@ -49,8 +52,7 @@ enum SessionsRoomReadingCache {
             self.asking = asking
             self.handedOff = handedOff
             self.expired = session?.expiredPermissions ?? []
-            self.isWorking = FeedWorking.isWorking(session)
-            self.isStarting = FeedWorking.isStarting(session)
+            self.status = session?.status
         }
     }
 
@@ -108,18 +110,21 @@ enum SessionsRoomReadingCache {
     /// Who else is working — the walk `DeckContentRow` and the deck's zoning both need, taken once
     /// for the pass. `nil` where nothing is held at this stamp, which leaves the caller to walk.
     ///
-    /// Derived from the ENTRY's own rows and never from rows a caller passed in. The list is a fact
-    /// about the reading, and a memo keyed on the stamp that forwarded the caller's rows would let
-    /// the first caller's answer stand for every later one — a rail answered with no agents drops
-    /// the feed's scope on the floor, because `FeedAgentReader.rows(under:of:otherwise:)` falls
-    /// back the moment nothing in the list is running.
+    /// Derived from the ENTRY's own rows and its own stamp, never from anything a caller passed
+    /// in. The list is a fact about the reading — including whether the Session behind it is
+    /// running, which is what says a still-open delegation is a Subagent still working (#1076) —
+    /// and a memo keyed on the stamp that forwarded the caller's rows would let the first caller's
+    /// answer stand for every later one.
     static func agents(at stamp: Stamp) -> [FeedAgent]? {
         guard let found = index(of: stamp) else { return nil }
         let at = entries.touch(found)
         if let agents = entries[at].agents {
             return agents
         }
-        let agents = FeedAgents.all(in: entries[at].body.feed)
+        let agents = FeedAgents.all(
+            in: entries[at].body.feed,
+            of: DelegatingSession.of(entries[at].stamp.status),
+        )
         counted(\.agents)
         entries[at].agents = agents
         return agents

@@ -10,14 +10,14 @@ enum FeedAgents {
     /// One row is one child, and that holds because a delegation is never collapsed into another
     /// (`FeedCall.stands(for:)`): two agents handed the same brief keep two rows, two endings and
     /// two spends.
-    static func all(in rows: [FeedRow]) -> [FeedAgent] {
+    static func all(in rows: [FeedRow], of session: DelegatingSession) -> [FeedAgent] {
         rows.compactMap(delegation(in:)).enumerated().map { position, call in
             FeedAgent(
                 id: position,
                 // The disambiguated address: a row here stands alone in a column of its own, with
                 // no line beside it to tell two same-named subjects apart.
                 label: call.subject.captioned,
-                isRunning: call.ending == .pending,
+                isRunning: session.isRunning && call.ending == .pending,
                 spend: call.spend,
                 subagentID: call.subagentID,
                 durationMs: call.durationMs,
@@ -26,15 +26,16 @@ enum FeedAgents {
         }
     }
 
-    /// How many subagents are running right now, as far as the record can say.
+    /// How many of them are running right now, as far as the record can say — the count line's
+    /// figure and the list under it, from one reading (`AgentsRail`).
     ///
-    /// A delegation the transcript has not RESOLVED IS a subagent still working: the parent writes
-    /// the call when it hands the work over and the result when it comes back — or, for a
-    /// backgrounded launch, a receipt that resolves nothing until the report lands. DERIVED,
-    /// degrading the honest way — a transcript that stopped mid-turn leaves a delegation open
-    /// forever, which reads as one running rather than as none.
-    static func running(in rows: [FeedRow]) -> Int {
-        all(in: rows).filter(\.isRunning).count
+    /// TWO facts behind each one, never one: a delegation the transcript has not resolved, in a
+    /// Session that is itself running (`DelegatingSession`). A backgrounded launch is answered at
+    /// once by a receipt that resolves nothing (#908), so where its report never lands the call
+    /// stays pending for the life of the record and the Session's own status is all that closes the
+    /// gap (#1076).
+    static func running(of agents: [FeedAgent]) -> Int {
+        agents.filter(\.isRunning).count
     }
 
     /// The delegation a row is, or `nil` — which is also what says the rail has nothing to show

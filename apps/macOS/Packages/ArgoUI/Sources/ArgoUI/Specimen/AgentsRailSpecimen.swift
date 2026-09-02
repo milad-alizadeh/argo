@@ -21,6 +21,10 @@ struct AgentsRailSpecimen: View {
         /// switch's result rather than a deck mounted onto the destination — the row heights are
         /// this reading's and the lane maps this document, or neither is (#1012).
         case rescoped
+        /// The same fan-out beside a Session that is NOT running: the rail still lists what was
+        /// handed over, and says so quietly — no running dot, `0 running` on the count line, and no
+        /// clock on a delegation whose report never landed (#1076).
+        case quiet
         /// The rail as its dot strip, with the feed taking the width back.
         case collapsed
         /// The strip while the feed is scoped onto an Agent — the state that proves the way back
@@ -39,7 +43,7 @@ struct AgentsRailSpecimen: View {
             room: .sessions,
             feed: feed,
             header: SessionHeaderFixture.header(for: .managed),
-            readings: AgentsRailFixture.readings,
+            readings: readings,
             scope: subject == .rescoped ? $live : .constant(scope),
             isRailCollapsed: subject == .collapsed || subject == .collapsedScoped,
         )
@@ -47,6 +51,11 @@ struct AgentsRailSpecimen: View {
             guard subject == .rescoped else { return }
             live = .subagent(2)
         }
+    }
+
+    /// A quiet Session's records read as a quiet Session's — see `AgentsRailFixture`.
+    private var readings: FeedAgentReader {
+        subject == .quiet ? AgentsRailFixture.quietReadings : AgentsRailFixture.readings
     }
 
     private var feed: [FeedRow] {
@@ -74,6 +83,12 @@ struct AgentsRailSpecimen: View {
 
 #Preview("Agents rail — the feed re-scoped onto one Agent by a chip") {
     AgentsRailSpecimen(subject: .rescoped)
+        .frame(width: 1000, height: 620)
+        .argoAppearance()
+}
+
+#Preview("Agents rail — the same fan-out, beside a session that is not running") {
+    AgentsRailSpecimen(subject: .quiet)
         .frame(width: 1000, height: 620)
         .argoAppearance()
 }

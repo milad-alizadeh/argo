@@ -62,7 +62,10 @@ struct AgentsRailMainEntryTests {
     /// control, so the rail draws it and it does nothing.
     @Test
     func `a chip with no reading behind it is still not a control`() throws {
-        let unread = FeedAgents.all(in: FeedProjection.rows(from: FeedFixture.handedOver()))
+        let unread = FeedAgents.all(
+            in: FeedProjection.rows(from: FeedFixture.handedOver()),
+            of: .running,
+        )
         let agent = try #require(unread.first)
 
         #expect(rail(Scope(.session)).select(agent) == nil)
@@ -75,7 +78,10 @@ struct AgentsRailMainEntryTests {
     private static let said = "The fold holds."
 
     private var agents: [FeedAgent] {
-        FeedAgents.all(in: FeedProjection.rows(from: FeedFixture.handedOver(subagent: Self.read)))
+        FeedAgents.all(
+            in: FeedProjection.rows(from: FeedFixture.handedOver(subagent: Self.read)),
+            of: .running,
+        )
     }
 
     private func rail(_ scope: Scope) -> AgentsRailControl {

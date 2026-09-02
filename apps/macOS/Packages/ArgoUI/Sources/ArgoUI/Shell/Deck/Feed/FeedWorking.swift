@@ -18,13 +18,16 @@ enum FeedWorking {
     /// observed from outside, a long quiet mid-turn reads as idle, and this row is absent then
     /// rather than asserted over the gap. That confidence is DERIVED for every reading but one —
     /// a Turn Argo itself typed, before the record has answered it, is DIRECT (#1048).
-    static func isWorking(_ session: CockpitPresentation.Session?) -> Bool {
-        session?.status == .running
+    /// A Turn in progress and nothing else — narrower than `DelegatingSession`, deliberately: a
+    /// Session blocked on a permission prompt can still be driving a Subagent, but it is not
+    /// mid-Turn, and this row claims it is.
+    static func isWorking(_ status: SessionStatus?) -> Bool {
+        status == .running
     }
 
     /// DIRECT, and the engine's own reading, so no surface re-derives it from an empty reading.
-    static func isStarting(_ session: CockpitPresentation.Session?) -> Bool {
-        session?.status == .starting
+    static func isStarting(_ status: SessionStatus?) -> Bool {
+        status == .starting
     }
 
     /// A sentence, and the only words this state has left: `FeedWorkingThread` says it on screen

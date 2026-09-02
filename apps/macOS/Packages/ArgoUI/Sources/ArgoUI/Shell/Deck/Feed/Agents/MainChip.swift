@@ -39,7 +39,9 @@ struct MainChip: View {
 #Preview("Main chip — the head of the rail, and the chip under it") {
     VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
         MainChip(isSelected: true, select: {})
-        ForEach(FeedAgents.all(in: FeedProjection.previewRows)) { AgentChip(agent: $0) }
+        ForEach(FeedAgents.all(in: FeedProjection.previewRows, of: .running)) {
+            AgentChip(agent: $0)
+        }
     }
     .padding(ArgoSpacing.comfortable)
     .frame(width: ArgoAgentsRail.width)
@@ -50,7 +52,7 @@ struct MainChip: View {
 #Preview("Main chip — unlit, the feed scoped onto an Agent instead") {
     VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
         MainChip(isSelected: false, select: {})
-        ForEach(FeedAgents.all(in: FeedProjection.previewRows)) { agent in
+        ForEach(FeedAgents.all(in: FeedProjection.previewRows, of: .running)) { agent in
             AgentChip(agent: agent, isSelected: agent.id == 1, scope: {})
         }
     }

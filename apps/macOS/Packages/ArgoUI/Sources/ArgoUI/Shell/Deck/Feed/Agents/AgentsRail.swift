@@ -76,7 +76,7 @@ struct AgentsRail: View {
     }
 
     private var running: Int {
-        agents.filter(\.isRunning).count
+        FeedAgents.running(of: agents)
     }
 }
 
@@ -85,7 +85,7 @@ struct AgentsRail: View {
     @Previewable @State var isCollapsed = false
 
     AgentsRail(
-        agents: FeedAgents.all(in: FeedProjection.previewRows),
+        agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running),
         control: AgentsRailControl(
             scope: $scope,
             isCollapsed: $isCollapsed,
@@ -102,7 +102,7 @@ struct AgentsRail: View {
     @Previewable @State var isCollapsed = false
 
     AgentsRail(
-        agents: Array(FeedAgents.all(in: FeedProjection.previewRows).prefix(1)),
+        agents: Array(FeedAgents.all(in: FeedProjection.previewRows, of: .running).prefix(1)),
         control: AgentsRailControl(scope: $scope, isCollapsed: $isCollapsed),
     )
     .frame(width: ArgoAgentsRail.width, height: 420)
@@ -117,7 +117,7 @@ struct AgentsRail: View {
     @Previewable @State var isCollapsed = false
 
     AgentsRail(
-        agents: FeedAgents.all(in: FeedProjection.previewRows),
+        agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running),
         control: AgentsRailControl(
             scope: $scope,
             isCollapsed: $isCollapsed,
@@ -134,7 +134,7 @@ struct AgentsRail: View {
     @Previewable @State var isCollapsed = true
 
     AgentsRail(
-        agents: FeedAgents.all(in: FeedProjection.previewRows),
+        agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running),
         control: AgentsRailControl(
             scope: $scope,
             isCollapsed: $isCollapsed,

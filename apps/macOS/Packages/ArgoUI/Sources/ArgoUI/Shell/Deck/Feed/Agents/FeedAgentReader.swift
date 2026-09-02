@@ -27,6 +27,9 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// under it so the deck's zones and the toolbar's evidence toggle ask the same question once
     /// (#875, #1005). Unstamped simply derives, which is what it did before.
     private let stamp: SessionsRoomReadingCache.Stamp?
+    /// Whether the Session these delegations belong to is itself running (`DelegatingSession`).
+    /// Read off the stamp below, so the cache's memo and the walk this file does cannot disagree.
+    private let liveness: DelegatingSession
 
     /// A reader that has nothing to ask.
     public static let unread = FeedAgentReader()
@@ -40,36 +43,42 @@ public struct FeedAgentReader: Equatable, Sendable {
         self.identity = .source(ObjectIdentifier(source))
         self.read = read
         self.stamp = nil
+        self.liveness = .notRunning
     }
 
     /// The readings a fixture or a specimen has in hand, which are a dictionary and never a live
     /// file — so a state rendered for review is the state that ships.
-    init(events: [String: [TranscriptEvent]]) {
+    init(events: [String: [TranscriptEvent]], of session: DelegatingSession = .notRunning) {
         self.identity = .fixture(events)
         self.read = { events[$0] }
         self.stamp = nil
+        self.liveness = session
     }
 
     private init() {
         self.identity = .nothing
         self.read = { _ in nil }
         self.stamp = nil
+        self.liveness = .notRunning
     }
 
     private init(_ other: FeedAgentReader, stamp: SessionsRoomReadingCache.Stamp?) {
         self.identity = other.identity
         self.read = other.read
         self.stamp = stamp
+        self.liveness = DelegatingSession.of(stamp?.status)
     }
 
     /// The same reader, told which reading of the Session it is being asked alongside. Taken by
-    /// `SessionsRoomReading`, which is the one place that knows the stamp.
+    /// `SessionsRoomReading`, which is the one place that knows the stamp — and the stamp is where
+    /// the Session's own status arrives, so the rail needs nothing else handed down the deck.
     func stamped(_ stamp: SessionsRoomReadingCache.Stamp?) -> FeedAgentReader {
         FeedAgentReader(self, stamp: stamp)
     }
 
     public static func == (first: FeedAgentReader, second: FeedAgentReader) -> Bool {
         first.identity == second.identity && first.stamp == second.stamp
+            && first.liveness == second.liveness
     }
 
     /// Whether Argo has read this Agent's file at all. Asked by the rail per chip, which is why it
@@ -94,17 +103,17 @@ public struct FeedAgentReader: Equatable, Sendable {
     ///
     /// A scope is honoured only while the rail is still LISTING — the rail is the only way back out
     /// of a Subagent, so a scope that outlived it would strand the reader in a feed with no chip to
-    /// click. A fan-out whose last delegation lands takes the rail off screen, and the reading has
-    /// to come back with it.
-    ///
-    /// It also falls back for an Agent that has left the list, and for one whose reading has gone —
-    /// both live-transcript cases, since a chip is only offered where there was a reading to offer.
+    /// click. LISTING and never RUNNING: the rail stays for every Session that delegated anything
+    /// (`DeckZoning.showsRail`), so keyed on the running dots this would drop a chip's own reading
+    /// on the floor the moment they went honest (#1076). It falls back for an Agent that has left
+    /// the list too, and for one whose reading has gone — both live-transcript cases, since a chip
+    /// is only offered where there was a reading to offer.
     ///
     /// Nothing is asked of the engine until a scope names an Agent, which is what keeps a reader
     /// who has scoped nothing out of the way of a child's bytes entirely.
     @MainActor func rows(under scope: FeedScope, of agents: [FeedAgent], otherwise feed: [FeedRow])
         -> [FeedRow] {
-        guard agents.contains(where: \.isRunning),
+        guard !agents.isEmpty,
               let selected = scope.agent,
               let agent = agents.first(where: { $0.id == selected }),
               let rows = rows(of: agent) else { return feed }
@@ -133,7 +142,7 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// the answer a fact about the reading rather than about whoever asked first.
     @MainActor func agents(in feed: [FeedRow]) -> [FeedAgent] {
         guard let stamp, let known = SessionsRoomReadingCache.agents(at: stamp) else {
-            return FeedAgents.all(in: feed)
+            return FeedAgents.all(in: feed, of: liveness)
         }
         return known
     }
