@@ -9,7 +9,7 @@ struct FeedAgent: Equatable, Sendable, Identifiable {
     /// What it was handed, verbatim — the brief the delegating call named.
     let label: String
     /// Whether the delegation is still unresolved AND the Session that delegated it is running —
-    /// see `FeedAgents.running(in:of:)`. Synchronously the first half is the gap between the call
+    /// see `FeedAgents.running(of:)`. Synchronously the first half is the gap between the call
     /// and its result; a backgrounded launch is answered at once and stays unresolved until its
     /// report lands as a second outcome (#908), which is why the second half is here at all: a
     /// report that never lands leaves a pending call nothing will ever close (#1076).

@@ -17,7 +17,7 @@ struct FeedAgentsHonestyTests {
         let chips = FeedAgents.all(in: Self.rows, of: .notRunning)
 
         #expect(chips.map(\.isRunning) == [false])
-        #expect(FeedAgents.running(in: Self.rows, of: .notRunning) == 0)
+        #expect(FeedAgents.running(of: chips) == 0)
     }
 
     /// And the other half of it: the fix is not a rail that went quiet for good. A delegation still
@@ -27,7 +27,7 @@ struct FeedAgentsHonestyTests {
         let chips = FeedAgents.all(in: Self.rows, of: .running)
 
         #expect(chips.map(\.isRunning) == [true])
-        #expect(FeedAgents.running(in: Self.rows, of: .running) == 1)
+        #expect(FeedAgents.running(of: chips) == 1)
     }
 
     /// degrade-down: a Session Argo cannot observe resolves to the quieter state, so it never

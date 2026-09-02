@@ -42,8 +42,10 @@ struct FeedAgentsAsyncTests {
 
     @Test
     func `a launch receipt leaves the subagent running`() {
-        #expect(FeedAgents.all(in: rows, of: .running).map(\.isRunning) == [true])
-        #expect(FeedAgents.running(in: rows, of: .running) == 1)
+        let chips = FeedAgents.all(in: rows, of: .running)
+
+        #expect(chips.map(\.isRunning) == [true])
+        #expect(FeedAgents.running(of: chips) == 1)
     }
 
     /// Which is the whole bug: a rail that never appears while three agents are working.
@@ -60,7 +62,7 @@ struct FeedAgentsAsyncTests {
     func `the last report retires the chip and leaves the rail standing`() {
         let ended = Self.launched + [.toolCallOutcome(Self.reported)]
 
-        #expect(FeedAgents.running(in: rows(ended), of: .running) == 0)
+        #expect(FeedAgents.running(of: FeedAgents.all(in: rows(ended), of: .running)) == 0)
         #expect(zoning(ended).showsRail)
     }
 }

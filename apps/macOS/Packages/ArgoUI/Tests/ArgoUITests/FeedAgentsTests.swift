@@ -18,7 +18,7 @@ struct FeedAgentsTests {
         let chips = agents(in: handedOver())
 
         #expect(chips.map(\.isRunning) == [true, false])
-        #expect(FeedAgents.running(in: FeedProjection.rows(from: handedOver()), of: .running) == 1)
+        #expect(FeedAgents.running(of: chips) == 1)
     }
 
     @Test
@@ -34,7 +34,7 @@ struct FeedAgentsTests {
         ]
 
         #expect(agents(in: looking).isEmpty)
-        #expect(FeedAgents.running(in: FeedProjection.rows(from: looking), of: .running) == 0)
+        #expect(FeedAgents.running(of: agents(in: looking)) == 0)
     }
 
     /// Nothing is reported until the delegating call comes back.

@@ -26,14 +26,16 @@ enum FeedAgents {
         }
     }
 
-    /// How many subagents are running right now, as far as the record can say.
+    /// How many of them are running right now, as far as the record can say — the count line's
+    /// figure and the list under it, from one reading (`AgentsRail`).
     ///
-    /// TWO facts, never one: a delegation the transcript has not resolved, in a Session that is
-    /// itself running (`DelegatingSession`). A backgrounded launch is answered at once by a receipt
-    /// that resolves nothing (#908), so where its report never lands the call stays pending for the
-    /// life of the record and the Session's own status is all that closes the gap (#1076).
-    static func running(in rows: [FeedRow], of session: DelegatingSession) -> Int {
-        all(in: rows, of: session).filter(\.isRunning).count
+    /// TWO facts behind each one, never one: a delegation the transcript has not resolved, in a
+    /// Session that is itself running (`DelegatingSession`). A backgrounded launch is answered at
+    /// once by a receipt that resolves nothing (#908), so where its report never lands the call
+    /// stays pending for the life of the record and the Session's own status is all that closes the
+    /// gap (#1076).
+    static func running(of agents: [FeedAgent]) -> Int {
+        agents.filter(\.isRunning).count
     }
 
     /// The delegation a row is, or `nil` — which is also what says the rail has nothing to show

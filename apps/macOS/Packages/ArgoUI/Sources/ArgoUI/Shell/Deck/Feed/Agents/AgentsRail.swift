@@ -76,7 +76,7 @@ struct AgentsRail: View {
     }
 
     private var running: Int {
-        agents.filter(\.isRunning).count
+        FeedAgents.running(of: agents)
     }
 }
 
