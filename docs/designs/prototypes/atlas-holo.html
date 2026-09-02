@@ -38,7 +38,7 @@
   #rail { grid-area: rail; border-left: 1px solid rgba(126,214,240,.14); background: #0a1014;
           display: flex; flex-direction: column; min-height: 0; }
   #index { display: flex; flex-direction: column; min-height: 0; flex: 1; }
-  #index .pad { padding: 14px 16px 0; }
+  #rail > .pad { padding: 14px 16px 0; flex: none; }
   #index .head { padding: 12px 16px 6px; }
   #rows { flex: 1; overflow-y: auto; min-height: 0; padding: 0 8px 12px; }
   /* One height, always. A panel that grew and shrank with what was picked moved the list
@@ -46,6 +46,11 @@
   #inspect { flex: 0 0 322px; display: flex; flex-direction: column;
              border-top: 1px solid rgba(126,214,240,.22); background: #0c1519; min-height: 0; }
   #read { flex: 1; overflow-y: auto; padding: 14px 16px 14px; }
+  /* A click opens the file as a PAGE: the reading gets the whole rail and the list steps
+     aside, because a file worth opening is worth more than 322px. The list is only hidden,
+     never rebuilt, so coming back is the list you left rather than a fresh one. */
+  body.page #index { display: none; }
+  body.page #inspect { flex: 1; }
   #inspect .foot { flex: none; padding: 9px 16px 10px; border-top: 1px solid rgba(126,214,240,.1);
                    font: var(--t-footnote) var(--mono); color: var(--text-3); }
   /* The field sits outside #read, which is rebuilt on every pointer move: inside it, a search
@@ -266,25 +271,30 @@
   /* A domain, once chosen, stays said: it is the standing context over its own file list,
      so opening a file ADDS a fact instead of replacing the one you came for. The hue is the
      left border — a bigger, quieter swatch than a square, and the hue the map is now lit in. */
-  #ctx { display: grid; grid-template-columns: 26px 1fr; gap: 0 11px;
-    padding: 12px 16px 13px; border-bottom: 1px solid rgba(126,214,240,.12);
-    border-left: 3px solid var(--dh, #7fe8ff);
+  /* One way back, everywhere: the trail IS the control. A back button beside it would be a
+     second thing doing the same job, and the reader would have to learn which one goes where. */
+  #ctx { flex: none; padding: 11px 16px 12px; border-bottom: 1px solid rgba(126,214,240,.12);
+    border-left: 3px solid transparent; }
+  /* Lit only when a domain is chosen, in that domain's own hue — the one thing saying the
+     rail and the map are showing the same selection. */
+  #ctx.lit { border-left-color: var(--dh, #7fe8ff);
     background: linear-gradient(100deg,
       color-mix(in srgb, var(--dh, #7fe8ff) 13%, transparent), transparent 62%); }
-  #ctx[hidden] { display: none; }
-  #ctx .back { grid-row: 1; width: 26px; height: 26px; border-radius: 7px;
-    display: grid; place-items: center; color: var(--text-2);
-    background: color-mix(in srgb, var(--dh, #7fe8ff) 16%, transparent);
-    border: 1px solid color-mix(in srgb, var(--dh, #7fe8ff) 34%, transparent); }
-  #ctx .back:hover { background: color-mix(in srgb, var(--dh, #7fe8ff) 34%, transparent);
-    color: var(--text-1); }
-  #ctx .back svg { width: 13px; height: 13px; }
-  #ctx h4 { grid-column: 2; align-self: center; font: 600 var(--t-title3) var(--sans);
-    color: var(--text-1); line-height: 26px; overflow-wrap: anywhere; }
-  #ctx p { grid-column: 2; font: var(--t-callout)/1.5 var(--sans); color: var(--text-2);
-    margin-top: 6px; }
-  #ctx .row { grid-column: 2; margin-top: 9px; font: var(--t-footnote)/1.6 var(--mono);
-    color: var(--text-off); }
+  #ctx .crumbs { display: flex; flex-wrap: wrap; align-items: baseline;
+    font: var(--t-footnote) var(--mono); color: var(--text-off); margin: 0 -6px; }
+  /* Every crumb but the last is a control, so it is a target with a ground of its own —
+     a line of text with a pointer cursor is not something anybody aims at. */
+  #ctx .crumbs a { padding: 3px 6px; border-radius: 6px; color: var(--text-2); cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 190px; }
+  #ctx .crumbs a:hover { background: rgba(127,232,255,.13); color: var(--text); }
+  #ctx .crumbs a:focus-visible { outline: 2px solid rgba(127,232,255,.55); outline-offset: -2px; }
+  #ctx .crumbs i { font-style: normal; opacity: .45; padding: 0 1px; }
+  /* Where you are, which is not a link: bigger, because it is the heading this bar used to
+     carry as an <h4> and a location strip that ends in a whisper says nothing. */
+  #ctx .crumbs b { padding: 3px 6px; font: 600 var(--t-callout) var(--sans);
+    color: var(--text-1); overflow-wrap: anywhere; }
+  #ctx p { font: var(--t-callout)/1.5 var(--sans); color: var(--text-2); margin: 6px 6px 0; }
+  #ctx .row { margin: 9px 6px 0; font: var(--t-footnote)/1.6 var(--mono); color: var(--text-off); }
   #ctx .row b { color: var(--text-2); font-weight: 400; }
 
   .eyebrow { font: var(--t-footnote) var(--mono); text-transform: uppercase;
@@ -319,6 +329,12 @@
   .frow i { font: var(--t-footnote) var(--sans); font-style: normal; opacity: .85;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 118px;
     text-align: right; }
+  /* A folder row is a way in, not a value: no swatch, because a colour that means nothing
+     is noise, and a chevron because the click descends rather than opens. */
+  .drow.dir { grid-template-columns: 1fr auto auto; }
+  .drow.dir .nm { font-family: var(--mono); }
+  .drow.dir .go { font: 13px var(--sans); color: var(--text-off); }
+  .drow.dir:hover .go { color: var(--text-2); }
   #rows .idle { padding: 10px 9px; font-size: var(--t-callout); color: var(--text-3);
     line-height: 1.5; }
 
@@ -335,13 +351,22 @@
   #read .dom p { margin: 9px 0 0; font-size: var(--t-callout); color: var(--text-1); }
   #read .dom p.about { color: var(--text-dim); }
   #read .dom.none b { font-size: var(--t-callout); color: var(--text); }
-  #read .dom .chip { display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  /* A citation is one line at chip weight: a file with no domain must not shout louder
+     than a file with one, which a bordered card with a heading in it does. */
+  #read .cite { margin-top: 14px; display: flex; flex-wrap: wrap; align-items: baseline;
+                gap: 4px 9px; }
+  #read .cite .none { padding: 4px 10px; border-radius: 999px; font-size: var(--t-callout);
+                      color: var(--text-2); background: rgba(140,170,190,.055);
+                      border: 1px solid rgba(150,180,200,.10); }
+  #read .cite .src { font: var(--t-footnote)/1.5 var(--mono); color: #6d8794; }
+  #read .dom .chip, #read .cite .chip { display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
                      padding: 4px 10px 4px 8px; border-radius: 999px; font: inherit;
                      font-size: var(--t-callout); color: var(--text);
                      background: rgba(180,210,230,.09); border: 1px solid rgba(160,195,215,.16); }
-  #read .dom .chip:hover { background: rgba(127,232,255,.14); }
-  #read .dom .chip.on { background: rgba(127,232,255,.20); border-color: rgba(127,232,255,.45); }
-  #read .dom .chip i { width: 9px; height: 9px; border-radius: 2px; }
+  #read .dom .chip:hover, #read .cite .chip:hover { background: rgba(127,232,255,.14); }
+  #read .dom .chip.on, #read .cite .chip.on { background: rgba(127,232,255,.20);
+                                              border-color: rgba(127,232,255,.45); }
+  #read .dom .chip i, #read .cite .chip i { width: 9px; height: 9px; border-radius: 2px; }
   #read .dom .flag { display: block; margin-top: 10px; font: var(--t-footnote)/1.5 var(--mono);
                      color: #9fb6c4; }
   /* Said in the same quiet monospace the measured sources are, because this is a provenance
@@ -366,11 +391,6 @@
       <button class="sbtn" id="hide" title="Hide sidebar" aria-label="Hide sidebar"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="1.6" y="2.8" width="12.8" height="10.4" rx="1.6"/><path d="M6.2 2.8v10.4"/></svg></button>
     </header>
     <div class="body">
-      <div class="sbsec"><h6>Encoding</h6>
-        <div class="srow"><span>Area</span><select id="mArea"></select></div>
-        <div class="srow" id="lHeight"><span>Height</span><select id="mHeight"></select></div>
-        <div class="srow"><span>Colour</span><select id="mColour"></select></div>
-      </div>
       <div class="sbsec"><h6>Arrangement</h6>
         <div class="srow" id="lDom"><span>Group by</span><span class="seg" id="segDom">
           <button id="dOff" aria-pressed="true" title="Lay the map out by folder (D)">Folders</button
@@ -387,6 +407,11 @@
               <path d="M7 2.6v10.8M7 8h7.4M10.8 8v5.4"/></svg></button>
         </span></div>
       </div>
+      <div class="sbsec"><h6>Encoding</h6>
+        <div class="srow"><span>Area</span><select id="mArea"></select></div>
+        <div class="srow" id="lHeight"><span>Height</span><select id="mHeight"></select></div>
+        <div class="srow" id="lColour"><span>Colour</span><select id="mColour"></select></div>
+      </div>
       <div class="sbsec"><h6>Filters</h6>
         <div class="srow"><span>Hide test files</span>
           <button class="sws" role="switch" id="noTests" aria-checked="false"
@@ -395,6 +420,7 @@
           <button class="sws" role="switch" id="ties" aria-checked="false"
             title="The file pairs that keep changing in the same commit (T)"></button></div>
       </div>
+      <div class="sbsec" id="regen-slot" hidden><h6>Repository data</h6></div>
       <div class="sbsec" id="legend"><h6>Legend</h6>
         <div class="lead">Colour &#183; <span id="keyName"></span></div>
         <div class="ramp"><i style="background:#4ed3a8"></i><i style="background:#e8b45c"></i><i style="background:#e86a58"></i></div>
@@ -412,15 +438,15 @@
   <div id="pop" hidden></div>
 
   <div id="rail">
-    <section id="index">
-      <div class="pad">
-        <div id="find">
-          <input id="q" type="search" autocomplete="off" spellcheck="false"
-                 placeholder="Find a file, folder or domain" aria-label="Find">
-          <span id="qn"></span>
-        </div>
+    <div class="pad">
+      <div id="find">
+        <input id="q" type="search" autocomplete="off" spellcheck="false"
+               placeholder="Find a file, folder or domain" aria-label="Find">
+        <span id="qn"></span>
       </div>
-      <div id="ctx" hidden></div>
+    </div>
+    <nav id="ctx" aria-label="Where you are"></nav>
+    <section id="index">
       <div class="head"><div class="eyebrow" id="ihead"></div></div>
       <div id="rows"></div>
     </section>
@@ -645,16 +671,15 @@ function domains() {
    that means the clustering declined to place it. */
 function domBase(path) {
   const d = DOM && DOM.byPath.get(path);
-  /* With one domain picked out, everything else drops to the ground colour. Seventeen hues
-     answer "how is this repo divided"; one hue against the rest answers "where does this
-     domain live", and that is the question a reader has once they have a name. */
-  if (state.domSel !== null && (!d || d.id !== state.domSel)) return HUSH;
+  /* Whether this file is in scope at all is `inScope`'s question, asked before this one. */
   if (!d || d.id < 0) return UNSURE;
   return domTone(DOM.rank.get(d.id), d.conf);
 }
 
 function selectDomain(id) {
   beginFade();
+  closePage();
+  if (id !== null && state.domSel === null) state.domTop = $('rows').scrollTop;
   state.domSel = id;
   rebuild(); detail(state.pinned || null); railIndex(); key(view.lo, view.hi); stamp();
 }
@@ -995,7 +1020,6 @@ const tallCv = document.createElement('canvas'), tctx = tallCv.getContext('2d');
 const SHADOW_SCALE = 0.5;
 let view = null;   // { boxes, lo, hi, seat, dLo, dSpan, top, bottom }
 let W = 0, H = 0, DPR = 1;
-const labels = [];  // the screen rects of the names already written this frame
 
 /* the animated clocks, all in one place so reduced motion can silence them together */
 let ft = [];        // the last composites, in ms — read by the harness
@@ -1042,6 +1066,12 @@ function domUI() {
   const ready = domainsReady();
   $('dGroup').disabled = !ready;
   $('lDom').classList.toggle('off', !ready);
+  /* In Domains mode the map is lit by domain and the measured channel is not read at all,
+     so the menu says so rather than naming a measure nothing is drawn from — the same
+     treatment `segUI` gives Height in a treemap, for the same reason. */
+  const byDom = state.dom === 'group';
+  $('mColour').disabled = byDom;
+  $('lColour').classList.toggle('off', byDom);
 }
 
 /* Anything that changes which boxes exist or where they sit goes through here, so hiding the
@@ -1065,6 +1095,7 @@ function setDom(mode) {
   beginFade();
   const apply = () => {
     state.dom = mode; state.hover = null; state.pinned = null; state.domSel = null;
+    state.folder = null; state.folderName = null; state.trail = []; closePage();
     hideDef(); domUI();
   };
   if (regroup) reshuffle(apply);
@@ -1199,11 +1230,6 @@ function rebuild(fast) {
   }
   for (const b of files) drawBox(mctx, b, riseZ(b, rising), fast);
   if (!fast) {
-    /* biggest plate first, so the name that survives a collision is the one with the
-       most ground behind it rather than whichever the tree happened to reach first */
-    labels.length = 0;
-    for (const b of [...boxes].filter(b => !b.file && !b.ghost).sort((a, c) => c.w * c.h - a.w * a.h))
-      plateLabel(b);
     for (const b of boxes) noteMark(b);
     mctx.save();
     mctx.globalCompositeOperation = 'overlay';
@@ -1307,30 +1333,70 @@ function pickFace(x, y, a, e) {
    before and a single after to interpolate between rather than a rule per feature.
    A search is a question about the whole map, so the map answers it: what does not match goes
    to the ground colour and what does keeps whatever it was already saying. */
+/* ONE question, asked once, in TWO layers: what a click COMMITTED and what the pointer is
+   PREVIEWING over the top of it. A search, a chosen domain, a folder the rail descended into
+   and a row under the pointer are narrowings of the same kind, so they compose — a file is
+   lit when it is inside ALL of them, and everything else drops to the ground colour.
+   Dim is the only channel scope uses: nothing here moves a box, recolours one, or stops one
+   being picked. An out-of-scope box is still drawn, still hit-tested and still readable. */
+const under = (path, dir) => path === dir || path.startsWith(dir + '/');
+const inDomain = (path, id) => { const d = DOM && DOM.byPath.get(path); return !!d && d.id === id; };
+
+function inScope(path) {
+  if (HITS && !HITS.has(path)) return false;
+  if (state.domSel !== null && DOM && !inDomain(path, state.domSel)) return false;
+  if (state.folder && !under(path, state.folder)) return false;
+  const p = state.peek;
+  if (!p) return true;
+  if (p.dir !== undefined && !under(path, p.dir)) return false;
+  if (p.dom !== undefined && !inDomain(path, p.dom)) return false;
+  if (p.file !== undefined && path !== p.file) return false;
+  return true;
+}
+
+/* The preview never commits and never survives the pointer leaving. Setting it to what it
+   already is does nothing, which is what makes the restore idempotent however fast the
+   pointer crosses the list. */
+function setPeek(p) {
+  const key = p ? JSON.stringify(p) : '';
+  if (key === (state.peekKey || '')) return;
+  beginFade(PEEK_MS);
+  state.peek = p; state.peekKey = key;
+  rebuild(true);
+}
+const rowScope = r => !r ? null
+  : r.dataset.dir !== undefined ? { dir: r.dataset.dir }
+  : r.dataset.dom !== undefined ? { dom: +r.dataset.dom }
+  : r.dataset.go !== undefined ? { file: r.dataset.go } : null;
+
+/* Where a box SITS and what colour it IS are two questions with two controls. The MODE
+   answers the colour one — Domains mode lights by domain, Folders mode by the measured
+   channel — and a selection only ever narrows the scope. A selection that also repainted
+   the map would be a third arrangement nobody asked for. */
 function fileBase(b) {
-  if (HITS && !HITS.has(b.path)) return HUSH;
-  /* "Folders / Tint / Regroup" was two questions in one control: where a box SITS and what
-     colour it IS. Tint was never a third arrangement — it is folders arranged with domains
-     coloured, which is what picking a domain out of the index already asks for. */
-  return state.dom === 'off' && (state.domSel === null || !DOM)
-    ? BAND[bandOf(b)] : domBase(b.path);
+  if (!inScope(b.path)) return HUSH;
+  return state.dom === 'group' ? domBase(b.path) : BAND[bandOf(b)];
 }
 
 /* Colour changes are dissolves, not cuts. Switching the channel, turning domains on, picking
    one of them out, typing in the search — each of those repaints most of the map at once, and
    at that size a cut reads as the map being replaced rather than answering. */
 const FADE_MS = 420;
+/* A preview is quicker in and quicker out than a commitment: a hover that animates at the
+   weight of a click reads as though the click already happened. */
+const PEEK_MS = 150;
 let fading = null;
-function beginFade() {
+function beginFade(ms) {
   if (CALM || !view) return;
   const from = new Map();
   for (const b of view.boxes) if (b.file) from.set(b.path, fileBase(b));
-  fading = { from, t0: performance.now() };
+  /* one object, replaced whole — a pointer running down a long list cannot stack fades */
+  fading = { from, t0: performance.now(), ms: ms || FADE_MS };
 }
 function tinted(b) {
   const to = fileBase(b);
   if (!fading) return to;
-  const u = Math.min(1, (performance.now() - fading.t0) / FADE_MS);
+  const u = Math.min(1, (performance.now() - fading.t0) / fading.ms);
   const fr = fading.from.get(b.path);
   if (!fr) return to;
   const e = glide(u);
@@ -1509,52 +1575,258 @@ function quad(g, a, b, c, d, fill) {
   g.closePath(); g.fill();
 }
 
-/* A name is earned by how big the plate is on screen, never by how deep it sits. That
-   is what makes zooming a way in: the folders you approach name themselves. */
-function plateLabel(b) {
+/* ---------- names ---------- */
+/* ONE RULE, every view: a name belongs to a SURFACE, is clipped to it, is drawn only when
+   that surface can hold it at a legible size, and when more surfaces qualify than the budget
+   allows the biggest win. A folder's surface is its plate, a file's is its cell in the plan
+   and its roof quad in the city. Nothing floats: a label that is not inside the thing it
+   names reads as a sticker, and the reader cannot tell what it names.
+   The one exception is a CALLOUT — the pill — spent only on the handful of boxes the reader
+   asked about by name: the pointer, the pin, a search hit, and only when their own face has
+   no room for the answer. Those are annotations about one thing; everything else is a label
+   on a face. All of it is drawn in the animated layer, so a wheel notch costs no repaint. */
+const labels = [];        // the screen rects taken this frame
+const named = new Map();  // path -> the rect its name took, so nothing is named twice
+const overlaid = [];      // [name, labeller, path] this frame — read by the harness
+const marked = [];        // and what was pointed at rather than named again
+
+const SIZE_ON = 11;       // the size a name must fit at to arrive
+const SIZE_OFF = 9;       // and the size it may shrink to before it goes — hysteresis, so a
+                          // hand shaking on the wheel cannot strobe a name on and off
+const CELL_PAD = 3;       // how far inside its own edge a cell's name sits
+const MIN_CHARS = 6;      // fewer than this before the ellipsis and the name identifies nothing
+const CITY_CAP = 12;      // roofs the city may name at once — thirty names is a bad list
+const NAME_MS = 220;
+const FADES = new Map();
+let nameT = 0;
+
+function fits(box) {
+  if (box[0] < 2 || box[1] < 2 || box[0] + box[2] > W - 2 || box[1] + box[3] > H - 2) return false;
+  for (const q of labels)
+    if (box[0] < q[0] + q[2] && q[0] < box[0] + box[2] &&
+        box[1] < q[1] + q[3] && q[1] < box[1] + box[3]) return false;
+  return true;
+}
+/* Taken, once: the rect joins the collision list, the box joins the named set, and the pair
+   joins what the harness reads. Every labeller goes through here or it can name a thing
+   twice. */
+function take(b, box, by) {
+  labels.push(box); named.set(b.path, box); overlaid.push([b.n.name, by, b.path]);
+}
+const font = (size, weight) => `${weight} ${size}px -apple-system, "SF Pro Text", sans-serif`;
+
+/* Truncated, never to nothing: a name cut to two characters names no file, so a face that
+   cannot carry MIN_CHARS and an ellipsis goes unnamed until the zoom gives it room. */
+function clipText(name, maxW) {
+  const full = ctx.measureText(name).width;
+  if (full <= maxW) return name;
+  let n = Math.min(name.length - 1, Math.max(0, Math.floor(name.length * maxW / full)));
+  for (; n >= MIN_CHARS; n--)
+    if (ctx.measureText(name.slice(0, n) + '…').width <= maxW) return name.slice(0, n) + '…';
+  return null;
+}
+
+/* A cell's name is drawn in whatever its own pigment is not — light on a dark cell, dark on
+   a light one — so the contrast comes from the fact underneath rather than from a backdrop
+   laid over it. */
+function ink(b) {
+  const p = tinted(b), m = LIT.r;
+  const l = (0.2126 * p[0] * m[0] + 0.7152 * p[1] * m[1] + 0.0722 * p[2] * m[2]) / 255;
+  return l > 0.58 ? 'rgba(4,10,14,.92)' : 'rgba(240,251,255,.96)';
+}
+
+const quadOf = b => [project(b.x, b.y, b.z1), project(b.x + b.w, b.y, b.z1),
+                     project(b.x + b.w, b.y + b.h, b.z1), project(b.x, b.y + b.h, b.z1)];
+const bboxOf = q => { const xs = q.map(p => p[0]), ys = q.map(p => p[1]);
+  const x = Math.min(...xs), y = Math.min(...ys);
+  return [x, y, Math.max(...xs) - x, Math.max(...ys) - y]; };
+const inQuad = (x, y, q) => inTri(x, y, q[0], q[1], q[2]) || inTri(x, y, q[0], q[2], q[3]);
+
+/* THE PLAN. Every rectangle is data and there is no sky to write into, so the name goes
+   INSIDE its own cell, top-left, one padding for all of them — aligned names read as a grid,
+   centred ones read as a scatter. Clipped to the cell, so two names on two disjoint cells
+   cannot collide and no name can run off the map. */
+function cellPlan(b, size) {
+  const r = bboxOf(quadOf(b));
+  const iw = r[2] - CELL_PAD * 2;
+  if (r[3] - CELL_PAD * 2 < size || iw < 10) return null;
+  ctx.font = font(size, 500);
+  const t = clipText(b.n.name, iw);
+  if (t === null) return null;
+  const box = [r[0] + CELL_PAD, r[1] + CELL_PAD, ctx.measureText(t).width, size + 2];
+  return fits(box) ? { kind: 'cell', clip: r, box, text: t, size } : null;
+}
+
+/* THE CITY. A volume's flat face is its roof, a parallelogram in screen space rather than a
+   rectangle — so the name is set horizontally about the roof's own centre and accepted only
+   when all four corners of the text's box fall inside the quad. That test is exact, which is
+   why a name can never extend past the roof it belongs to. */
+function roofPlan(b, size) {
+  const q = quadOf(b);
+  const cx = (q[0][0] + q[2][0]) / 2, cy = (q[0][1] + q[2][1]) / 2;
+  ctx.font = font(size, 600);
+  const t = clipText(b.n.name, Math.max(...q.map(p => p[0])) - Math.min(...q.map(p => p[0])));
+  if (t === null) return null;
+  const tw = ctx.measureText(t).width;
+  const box = [cx - tw / 2 - 2, cy - size / 2 - 1, tw + 4, size + 2];
+  for (const [dx, dy] of [[0, 0], [1, 0], [1, 1], [0, 1]])
+    if (!inQuad(box[0] + box[2] * dx, box[1] + box[3] * dy, q)) return null;
+  return fits(box) ? { kind: 'roof', box, text: t, size, cx, cy } : null;
+}
+
+const facePlan = (b, size) => flat() ? cellPlan(b, size) : roofPlan(b, size);
+
+/* Planned first, drawn second, because the alpha a name arrives at is only known once the
+   fade has been advanced — and a fade cannot be advanced by something already on the canvas. */
+function drawFace(b, p, alpha, by) {
+  take(b, p.box, by);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.font = font(p.size, p.kind === 'cell' ? 500 : 600);
+  if (p.kind === 'cell') {
+    ctx.beginPath(); ctx.rect(p.clip[0], p.clip[1], p.clip[2], p.clip[3]); ctx.clip();
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = ink(b);
+    ctx.fillText(p.text, p.box[0], p.box[1]);
+  } else {
+    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = 'rgba(2,8,12,.85)'; ctx.lineWidth = 3;
+    ctx.strokeText(p.text, p.cx - (p.box[2] - 4) / 2, p.cy);
+    ctx.fillStyle = 'rgba(238,250,255,.96)';
+    ctx.fillText(p.text, p.cx - (p.box[2] - 4) / 2, p.cy);
+  }
+  ctx.restore();
+}
+
+/* A plate writes at its own far corner, which is the top of it on screen and never behind a
+   building. Unchanged in every respect but the canvas it lands on. */
+function plateName(b) {
   const c = [[b.x, b.y], [b.x + b.w, b.y], [b.x + b.w, b.y + b.h], [b.x, b.y + b.h]];
   const px = c.map(p => project(p[0], p[1], 0)[0]);
   const wide = Math.max(...px) - Math.min(...px);
-  /* Nothing stands in front of anything here, so the only reason to withhold a name is that
-     it will not fit — which is what the collision rule already decides. The gate drops to
-     the width of a short name and lets many more folders speak for themselves. */
-  if (wide < (flat() ? 46 : 90)) return;
+  if (wide < (flat() ? 46 : 90)) return false;
 
-  /* the far corner, which is the top of the plate on screen and never behind a building */
   let far = c[0], best = Infinity;
   for (const p of c) { const d = depth(p[0], p[1]); if (d < best) { best = d; far = p; } }
   const inward = [far[0] < b.x + b.w / 2 ? 5 : -5, far[1] < b.y + b.h / 2 ? 5 : -5];
   let p = project(far[0] + inward[0], far[1] + inward[1], 0);
 
   const size = wide > 420 ? 13 : wide > 200 ? 11 : 10;
-  const fade = wide > 420 ? .94 : wide > 200 ? .74 : .52;
-  mctx.font = `${wide > 420 ? 600 : 400} ${size}px -apple-system, "SF Pro Text", sans-serif`;
+  const alpha = wide > 420 ? .94 : wide > 200 ? .74 : .52;
+  ctx.font = font(size, wide > 420 ? 600 : 400);
+  ctx.textBaseline = 'alphabetic';
   /* A plan has no apex to hang a name off, so the name sits inside the region's own top-left
      and the region must be deep enough to hold a line of it. */
   if (flat()) {
     const py = c.map(q => project(q[0], q[1], 0)[1]);
     const tall = Math.max(...py) - Math.min(...py);
-    if (tall < size + 9) return;
+    if (tall < size + 9) return false;
     p = [Math.min(...px) + 1, Math.min(...py) + size + 4];
   }
+  const box = [p[0] + 4, p[1] - size - 3, ctx.measureText(b.n.name).width + 8, size + 7];
+  if (!fits(box)) return false;
+  take(b, box, 'plate');
+  ctx.save();
+  ctx.fillStyle = `rgba(226,248,255,${alpha})`;
+  ctx.strokeStyle = 'rgba(2,8,12,.8)'; ctx.lineWidth = 3;
+  ctx.strokeText(b.n.name, p[0] + 4, p[1] - 3);
+  ctx.fillText(b.n.name, p[0] + 4, p[1] - 3);
+  ctx.restore();
+  return true;
+}
 
-  /* Squarify seats the largest child in its parent's own corner, so a nested chain aims
-     every one of its names at the same point. Labels are placed largest first, and a name
-     that would land on one already written is dropped — zoom in and it gets its turn. */
-  const tw = mctx.measureText(b.n.name).width;
-  const box = [p[0] + 4, p[1] - size - 3, tw + 8, size + 7];
-  /* a name half off the stage reads as a different, shorter name */
-  if (box[0] < 2 || box[1] < 2 ||
-      box[0] + box[2] > W - 2 || box[1] + box[3] > H - 2) return;
-  for (const q of labels)
-    if (box[0] < q[0] + q[2] && q[0] < box[0] + box[2] &&
-        box[1] < q[1] + q[3] && q[1] < box[1] + box[3]) return;
-  labels.push(box);
+/* The callout, and the ONLY thing in the whole design that may float — and only in the city,
+   where a volume seen in three-quarter projection genuinely has no flat face to hang a name
+   the reader asked for. In the plan every rectangle IS a face, so a chip laid over one says
+   the name belongs to a layer above the map, which is the thing that made the labels read as
+   scattered debris. */
+function pill(b, by) {
+  if (flat()) return false;
+  ctx.font = font(11, 600);
+  ctx.textBaseline = 'alphabetic';
+  const p = project(b.x + b.w / 2, b.y + b.h / 2, b.z1);
+  const w = ctx.measureText(b.n.name).width;
+  const box = [p[0] - w / 2 - 5, p[1] - 26, w + 10, 17];
+  if (box[0] < 2 || box[1] < 2 || box[0] + box[2] > W - 2 || box[1] + box[3] > H - 2) return false;
+  take(b, box, by + '\u00b7pill');
+  ctx.fillStyle = 'rgba(6,11,16,.86)';
+  ctx.beginPath(); ctx.roundRect(box[0], box[1], box[2], box[3], 4); ctx.fill();
+  ctx.strokeStyle = 'rgba(127,232,255,.34)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = '#dcf6ff';
+  ctx.fillText(b.n.name, p[0] - w / 2, box[1] + 12);
+  return true;
+}
 
-  mctx.fillStyle = `rgba(226,248,255,${fade})`;
-  mctx.strokeStyle = 'rgba(2,8,12,.8)'; mctx.lineWidth = 3;
-  mctx.strokeText(b.n.name, p[0] + 4, p[1] - 3);
-  mctx.fillText(b.n.name, p[0] + 4, p[1] - 3);
+/* Asked for by name: marked if it already carries one, on its own face if that face can hold
+   it, and only then as a callout. */
+function callout(b, by) {
+  const it = b && (view.seat.get(b.path) || b);
+  if (!it || it.w === undefined || it.ghost) return;
+  const had = named.get(it.path);
+  /* ONE NAME PER THING PER FRAME. A box already named is MARKED where it stands — a second
+     copy of the same word in a second place is what put two names on one plate. */
+  if (had) {
+    /* recorded apart from the names: a mark is not a second name, and the invariant that no
+       path is ever named twice has to stay literally checkable */
+    marked.push([it.n.name, by, it.path]);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(127,232,255,.85)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.roundRect(had[0] - 3, had[1] - 3, had[2] + 6, had[3] + 6, 6);
+    ctx.stroke(); ctx.restore();
+    return;
+  }
+  const p = facePlan(it, SIZE_ON);
+  /* A plan cell too small for its own name gets none: the rim marks which box it is and the
+     rail says what it is called, which is where the reader is already reading. */
+  if (p) drawFace(it, p, 1, by); else pill(it, by);
+}
+
+/* Once a name is up it may shrink to SIZE_OFF before it goes, which is the hysteresis; the
+   fade is what stops it popping, and CALM makes the fade a cut. */
+function held(path, k, up) {
+  const had = FADES.get(path);
+  const a = Math.max(0, Math.min(1, (had === undefined ? 0 : had) + (up ? k : -k)));
+  if (a <= 0.01) { FADES.delete(path); return 0; }
+  FADES.set(path, a);
+  return a;
+}
+
+function names(now) {
+  const k = CALM ? 1 : Math.min(1, Math.max(1, now - (nameT || now)) / NAME_MS);
+  nameT = now;
+  labels.length = 0; named.clear(); overlaid.length = 0; marked.length = 0;
+
+  /* Plates first, biggest first: at the zoom where a folder's name is the useful one it must
+     not lose its place to a file standing on it. */
+  for (const b of view.boxes.filter(x => !x.file && !x.ghost).sort((a, c) => c.w * c.h - a.w * a.h))
+    plateName(b);
+
+  /* Then the files, largest face first — the order the eye already read the map in, so the
+     budget is spent on what it was drawn to. */
+  const cand = [];
+  for (const b of view.boxes) if (b.file && !b.ghost) {
+    const r = bboxOf(quadOf(b));
+    if (r[2] < 10 || r[3] < 8) { FADES.delete(b.path); continue; }
+    cand.push([r[2] * r[3], b]);
+  }
+  cand.sort((a, c) => c[0] - a[0]);
+  const cap = flat() ? 400 : CITY_CAP;
+  let spent = 0;
+  for (const [, b] of cand) {
+    const up = FADES.has(b.path);
+    /* Past the budget it fades out rather than vanishing, and it may not hold its place by
+       having been there first — the cap is on what is drawn, or it is not a cap. */
+    if (spent >= cap) { held(b.path, k, false); continue; }
+    const p = facePlan(b, up ? SIZE_OFF : SIZE_ON);
+    const a = held(b.path, k, !!p);
+    if (a > 0.01 && p) { drawFace(b, p, a, 'zoom'); spent++; }
+  }
+
+  if (state.pinned) callout(state.pinned, 'pin');
+  if (state.hover && state.hover !== state.pinned) callout(state.hover, 'hover');
+  if (HITS && HITS.size && HITS.size <= 40)
+    for (const path of HITS) { const b = view.seat.get(path);
+      if (b && !named.has(path)) callout(b, 'hit'); }
 }
 
 /* ---------- the animated layer ---------- */
@@ -1574,7 +1846,7 @@ function frame(now) {
     else rebuild(true);
   }
   if (fading) {
-    if (now - fading.t0 >= FADE_MS) { fading = null; rebuild(); }
+    if (now - fading.t0 >= fading.ms) { fading = null; rebuild(); }
     else rebuild(true);
   }
   if (morph) morphStep(now);
@@ -1602,35 +1874,13 @@ function frame(now) {
   /* Labelling fifteen hundred boxes is unreadable, which is why the map has almost no names on
      it. A search is the moment that stops being true: a handful of boxes matter, and those get
      their names, over the model rather than baked into it so a keystroke costs no rebuild. */
-  if (HITS && HITS.size && HITS.size <= 40) markHits();
   if (state.pinned && state.pinned.w !== undefined) pinMark(state.pinned, now);
   if (state.hover && state.hover !== state.pinned) hoverRim(state.hover);
+  /* Every name goes on after the rims, so a stroke never crosses a letter. */
+  names(now);
 
   ft.push(performance.now() - t0);
   if (ft.length > 240) ft = ft.slice(-120);
-}
-
-function markHits() {
-  ctx.font = '600 11px -apple-system, "SF Pro Text", sans-serif';
-  ctx.textBaseline = 'alphabetic';
-  const placed = [];
-  for (const path of HITS) {
-    const b = view.seat.get(path);
-    if (!b) continue;
-    const p = project(b.x + b.w / 2, b.y + b.h / 2, b.z1);
-    const name = b.n.name;
-    const w = ctx.measureText(name).width;
-    const box = [p[0] - w / 2 - 5, p[1] - 26, w + 10, 17];
-    if (box[0] < 2 || box[1] < 2 || box[0] + box[2] > W - 2) continue;
-    if (placed.some(q => box[0] < q[0] + q[2] && q[0] < box[0] + box[2]
-                      && box[1] < q[1] + q[3] && q[1] < box[1] + box[3])) continue;
-    placed.push(box);
-    ctx.fillStyle = 'rgba(6,11,16,.82)';
-    ctx.beginPath(); ctx.roundRect(box[0], box[1], box[2], box[3], 4); ctx.fill();
-    ctx.strokeStyle = 'rgba(127,232,255,.30)'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.fillStyle = '#dcf6ff';
-    ctx.fillText(name, p[0] - w / 2, box[1] + 12);
-  }
 }
 
 const ease = u => 1 - Math.pow(1 - u, 3);
@@ -1911,25 +2161,173 @@ function more() {
   wireRail();
 }
 
+/* ---------- where you are ---------- */
+/* One trail, both modes, and it is the ONLY way back: a back button beside it would be a
+   second control doing the same job, and the reader would have to learn which of the two
+   goes where. Every crumb but the last is a control; the last is where you are. */
+function crumbList() {
+  const out = [], d = domains();
+  if (state.dom === 'group') {
+    out.push({ k: 'dom', label: 'Domains' });
+    if (state.domSel !== null && d)
+      out.push({ k: 'list', label: domName(d.clusters[d.rank.get(state.domSel)]) });
+    else if (HITS) out.push({ k: 'list', label: matchLabel() });
+  } else if (HITS) out.push({ k: 'list', label: matchLabel() });
+  else {
+    state.trail.forEach((t, i) => out.push({ k: 'dir', i, label: t.path ? t.name : 'Folders' }));
+    out.push({ k: 'list', label: state.folder ? state.folderName : 'Folders' });
+  }
+  /* the page is the last crumb, in either mode */
+  if (state.page && state.pinned) out.push({ k: 'here', label: state.pinned.n.name });
+  return out;
+}
+const matchLabel = () => state.q ? 'Matches for \u201c' + state.q + '\u201d' : 'Matches';
+
+/* The trail and the domain's standing context share one band, because they are one fact:
+   where the reader is. The domain's name is the crumb rather than a heading of its own —
+   said twice it is a second thing to read — and its note, tokens and hue stay below it. */
+function ctxBar() {
+  const el = $('ctx'), d = domains();
+  const c = state.dom === 'group' && state.domSel !== null && d
+    ? d.clusters[d.rank.get(state.domSel)] : null;
+  if (c) el.style.setProperty('--dh', `rgb(${domTone(d.rank.get(c.id), c.confidence).join(',')})`);
+  else el.removeAttribute('style');
+  el.classList.toggle('lit', !!c);
+  const list = crumbList();
+  el.innerHTML = `<div class="crumbs">` + list.map((x, i) => i === list.length - 1
+      ? `<b aria-current="page">${esc(x.label)}</b>`
+      : `<a role="button" tabindex="0" data-k="${x.k}" data-i="${x.i === undefined ? '' : x.i}" `
+        + `title="Back to ${esc(x.label)}">${esc(x.label)}</a><i>\u203a</i>`).join('')
+    + `</div>`
+    + (c ? `<p>${esc(domNote(c) || c.about)}</p><div class="row"><b>${c.members.length} files</b>`
+         + ` &nbsp;\u00b7&nbsp; ${esc(c.tokens.join(' \u00b7 '))}</div>` : '')
+    + (!c && state.folder ? `<div class="row"><b>${leaves(folderAt(state.folder).n).length} files`
+         + `</b> &nbsp;\u00b7&nbsp; ${esc(state.folder)}</div>` : '');
+  for (const a of el.querySelectorAll('[data-k]')) {
+    const go = () => goCrumb(a.dataset.k, a.dataset.i);
+    a.onclick = go;
+    a.onkeydown = e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); go(); } };
+  }
+}
+
+/* A crumb restores a level's list AND where that list was scrolled to, which is the whole
+   point of it being the way back: the reader picks up where they stopped reading. */
+function goCrumb(k, i) {
+  closePage();
+  if (k === 'dom') { selectDomain(null); restoreTop(state.domTop); }
+  else if (k === 'dir') goFolder(+i);
+}
+/* A list that grows as it is scrolled cannot be scrolled to a place it has not grown to yet,
+   so it is grown until the offset exists rather than clamped silently to the bottom. */
+function restoreTop(top) {
+  const el = $('rows');
+  for (let n = 0; top && n < 60 && el.scrollHeight < top + el.clientHeight
+                   && LIST && shown < LIST.length; n++) more();
+  el.scrollTop = top || 0;
+}
+
+/* ---------- the reading, as a page ---------- */
+/* A file is worth more than the 322px a standing panel can spare, so a click opens it as a
+   page over the whole rail. The panel below the list keeps its job — it is what the POINTER
+   writes into, and hover must never navigate. */
+function openPage(it) {
+  if (!it) return;
+  /* captured on the way in, because `display: none` drops a scroller's position */
+  if (!state.page) state.rowsTop = $('rows').scrollTop;
+  state.page = true;
+  state.pinned = it;
+  document.body.classList.add('page');
+  ctxBar(); detail(null); railMark();
+}
+
+/* Leaving the page leaves the pin standing: which row is open is the list's own selection,
+   and a reader who came back to pick the next file has not stopped looking at this one. */
+function closePage() {
+  if (!state.page) return;
+  state.page = false;
+  document.body.classList.remove('page');
+  ctxBar();
+  $('rows').scrollTop = state.rowsTop || 0;
+  detail(null);
+}
+
+/* ---------- the folder index ---------- */
+/* Group by Folders lays the MAP out by folder, so the rail lists folders too — a rail
+   indexing domains beside a map tiled by path is answering a question nobody asked. The
+   levels are the layout's own: nothing here invents a folder the map does not draw. */
+function chainDown(box) {
+  const names = [box.n.name];
+  let b = box;
+  /* A folder whose only content is one folder is not a level anybody can act on, so the
+     whole chain is one row and one click, with its files under the far end. */
+  while (!b.kids.some(k => k.file)) {
+    const dirs = b.kids.filter(k => !k.file);
+    if (dirs.length !== 1) break;
+    b = dirs[0]; names.push(b.n.name);
+  }
+  return { box: b, name: names.join('/') };
+}
+
+/* The tree is rebuilt whenever area or height changes, so where you are is held as a path
+   and looked up again — a kept box reference would be a box nothing draws. */
+function folderAt(path) {
+  const root = tree();
+  let hit = null;
+  (function walk(b) {
+    if (hit || b.file) return;
+    if (b.path === path) hit = b; else b.kids.forEach(walk);
+  })(root);
+  return hit || root;
+}
+
+/* Descending is a FILTER, not a regroup: the boxes stay exactly where they are and only
+   what is out of scope loses its colour, so it dissolves rather than cuts. */
+function enterFolder(path, name) {
+  beginFade();
+  state.trail.push({ path: state.folder, name: state.folderName, top: $('rows').scrollTop });
+  state.folder = path; state.folderName = name;
+  railIndex(); rebuild(); key(view.lo, view.hi);
+}
+/* The trail, not the path: a collapsed chain has levels the reader never stood on, and
+   stepping up into one of those is a place they cannot have come from. */
+function goFolder(i) {
+  const t = state.trail[i] || { path: null, name: null, top: 0 };
+  beginFade();
+  state.trail = state.trail.slice(0, i);
+  state.folder = t.path; state.folderName = t.name;
+  railIndex(); restoreTop(t.top); rebuild(); key(view.lo, view.hi);
+}
+
+function folderIndex() {
+  const here = folderAt(state.folder);
+  const dirs = here.kids.filter(k => !k.file).map(chainDown)
+    .sort((a, b) => leaves(b.box.n).length - leaves(a.box.n).length);
+  ctxBar();
+
+  LIST_DOM = false;
+  LIST = here.kids.filter(k => k.file).map(k => k.path)
+    .sort((x, y) => at(NODE.get(y) || {}, state.colour) - at(NODE.get(x) || {}, state.colour));
+  $('ihead').textContent = `${dirs.length} folder${dirs.length === 1 ? '' : 's'} \u00b7 `
+    + `${LIST.length} file${LIST.length === 1 ? '' : 's'} here`;
+
+  shown = Math.min(PAGE, LIST.length);
+  const rows = dirs.map(d =>
+    `<div class="drow dir" data-dir="${esc(d.box.path)}" data-name="${esc(d.name)}" `
+    + `title="${esc(d.box.path)}"><span class="nm">${esc(d.name)}</span>`
+    + `<span class="ct">${leaves(d.box.n).length}</span><span class="go">\u203a</span></div>`
+  ).join('') + LIST.slice(0, shown).map(x => fileRow(x, false)).join('');
+  $('rows').innerHTML = rows
+    || `<div class="idle">This folder holds nothing the map is drawing.</div>`;
+  $('rows').scrollTop = 0;
+  wireRail();
+}
+
 function railIndex() {
+  state.peek = null; state.peekKey = '';
+  if (state.dom === 'off' && !HITS) return folderIndex();
   const d = domains();
   const c = state.domSel !== null && d ? d.clusters[d.rank.get(state.domSel)] : null;
-  const ctx = $('ctx');
-  /* A domain, once chosen, stays said: it becomes the standing context over its own file
-     list, so opening a file ADDS a fact instead of replacing the one you came for. Its hue
-     is the panel's, which is the hue the map is now lit in — nobody matches a swatch twice. */
-  if (c) {
-    ctx.hidden = false;
-    ctx.style.setProperty('--dh', `rgb(${domTone(d.rank.get(c.id), c.confidence).join(',')})`);
-    ctx.innerHTML = `<button class="back" data-back="1" title="Every domain again" `
-      + `aria-label="Every domain again"><svg viewBox="0 0 16 16" fill="none" `
-      + `stroke="currentColor" stroke-width="1.8" stroke-linecap="round" `
-      + `stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg></button>`
-      + `<h4>${esc(domName(c))}</h4>`
-      + (domNote(c) ? `<p>${esc(domNote(c))}</p>` : `<p>${esc(c.about)}</p>`)
-      + `<div class="row"><b>${c.members.length} files</b> &nbsp;·&nbsp; `
-      + `${esc(c.tokens.join(' · '))}</div>`;
-  } else { ctx.hidden = true; ctx.removeAttribute('style'); ctx.innerHTML = ''; }
+  ctxBar();
 
   LIST_DOM = false;
   if (c) LIST = domFiles(c.id);
@@ -1963,11 +2361,10 @@ function wireRail() {
       const box = boxesNow().find(x => x.path === path);
       const n = NODE.get(path);
       if (!box && !n) return;
-      state.pinned = box || { n, path, file: true };
-      detail(state.pinned); railMark();
+      openPage(box || { n, path, file: true });
     };
-  const back = $('ctx').querySelector('[data-back]');
-  if (back) back.onclick = () => selectDomain(null);
+  for (const r of $('rows').querySelectorAll('.drow[data-dir]'))
+    r.onclick = () => enterFolder(r.dataset.dir, r.dataset.name);
 }
 
 /* Which row is open is a property of the row, not of the list, so it is stamped rather
@@ -1996,8 +2393,8 @@ function detail(b) {
 
   if (!it) {
     d.innerHTML = `<div class="idle">
-      <p>Point at anything on the map to read it here, or pick a row above.
-      <b>Click</b> to pin it, <kbd>Esc</kbd> to let go.</p>
+      <p><b>Click</b> a box on the map, or a row in the list, to open it here.
+      <kbd>Esc</kbd> closes it again.</p>
       <p style="margin-top:10px">Every number here is measured from the code and its history.
       Plates carry a written caption, and the files marked <b class="dot">●</b> carry a
       note. Both are read, never counted.</p></div>`;
@@ -2062,10 +2459,10 @@ function detail(b) {
   /* A pin is the only state this panel cannot leave by moving the mouse, and until now the
      only way out was a key nothing mentioned. The way back is a control, next to the word
      that says why you are stuck. */
-  d.innerHTML = (b ? `<div class="kind">${it.file ? 'File' : 'Folder'}</div>`
+  d.innerHTML = (b || state.page ? `<div class="kind">${it.file ? 'File' : 'Folder'}</div>`
       : `<div class="kind pinned"><span>${it.file ? 'File' : 'Folder'} \u00b7 pinned</span>`
-        + `<button class="back" title="Let go and show the lists again (Esc)">`
-        + `\u2190 Back<kbd>esc</kbd></button></div>`)
+        + `<button class="back" title="Stop holding this file (Esc)">`
+        + `Unpin<kbd>esc</kbd></button></div>`)
     + `<div class="name">${n.name}</div>`
     + `<div class="where">${it.path}</div>`
     + (it.file ? '' : `<div class="pin">${leaves(n).length} files inside · zoom in to see them</div>`)
@@ -2085,18 +2482,18 @@ function domHTML(it) {
   if (state.dom === 'off' || !DOM) return '';
   const c = it.file ? domOf(it.path) : it.n.__dom;
   if (!it.file && !c) return '';
-  if (it.file && !c) return `<div class="dom none"><b>No domain</b>`
-    + `<p>Nothing this file is called, and nothing it changes with, put it clearly with any `
-    + `group.</p><span class="src">Inferred \u00b7 nobody confirmed it</span></div>`;
+  /* A domain is a thing with its own page, and a FILE cites it: the name, the swatch, and a
+     way to go there. Its note, its tokens, the folders it is spread across and where it came
+     from are all said in the standing context above the list — said here as well they are a
+     second copy that can only ever agree. A plate in Domains mode IS the domain, so there
+     the whole card stays: the subject is not a citation. */
+  if (it.file) return c ? `<div class="cite">${chipHTML(c)}</div>`
+    : `<div class="cite"><span class="none">No domain</span>`
+      + `<span class="src">Nothing it is called or changes with put it with a group</span></div>`;
 
-  const i = DOM.rank.get(c.id);
-  const on = state.domSel === c.id;
   const rows = c.where.slice(0, 5).map(([d, n]) =>
     `<div class="tie flat"><span>${esc(d.split('/').slice(-2).join('/'))}</span><b>${n}</b></div>`);
-  return `<div class="dom">`
-    + `<button class="chip${on ? ' on' : ''}" data-dom="${c.id}" `
-    + `title="${on ? 'Show every domain again' : 'Show only this domain'}">`
-    + `<i style="background:rgb(${domTone(i, c.confidence).join(',')})"></i>${esc(domName(c))}</button>`
+  return `<div class="dom">` + chipHTML(c)
     + (domNote(c) ? `<p>${esc(domNote(c))}</p>` : '')
     + `<p class="about">${esc(c.about)}</p>`
     + `<span class="flag">${esc(c.tokens.join(' \u00b7 '))}</span>`
@@ -2106,6 +2503,16 @@ function domHTML(it) {
     + (it.file ? '' : `<div class="ties"><h4>Where it lives</h4>${rows.join('')}</div>`)
     + `</div>`;
 }
+/* One chip, both places, so the swatch a file cites and the swatch its domain wears are
+   painted from the same call. */
+function chipHTML(c) {
+  const on = state.domSel === c.id;
+  return `<button class="chip${on ? ' on' : ''}" data-dom="${c.id}" `
+    + `title="${on ? 'Show every domain again' : 'Show only this domain'}">`
+    + `<i style="background:rgb(${domTone(DOM.rank.get(c.id), c.confidence).join(',')})"></i>`
+    + `${esc(domName(c))}</button>`;
+}
+
 const domOf = path => {
   const d = DOM && DOM.byPath.get(path);
   return d && d.id >= 0 ? DOM.clusters[DOM.rank.get(d.id)] : null;
@@ -2153,7 +2560,7 @@ function wireRead() {
   for (const t of $('read').querySelectorAll('.tie[data-go]'))
     t.onclick = () => {
       const box = view.boxes.find(x => x.path === t.dataset.go);
-      if (box) { state.pinned = box; detail(null); }
+      if (box) openPage(box);
     };
 }
 
@@ -2164,7 +2571,7 @@ function key(lo, hi) {
      the map can be read without first working out what "area" turned into on screen. */
   const note = Object.keys(NOTES.files || {}).length
     ? ` Files marked <b class="dot">●</b> carry a written note.` : '';
-  if (state.dom !== 'off' || state.domSel !== null) {
+  if (state.dom === 'group') {
     const d = domains();
     $('reads').innerHTML = `Each ${state.plan ? 'rectangle' : 'volume'} is a file and its `
       + `<b>colour</b> is its <b>domain</b> — ${d ? d.clusters.length : 0} of them, `
@@ -2253,6 +2660,9 @@ Promise.all([
             hover: null, pinned: null, ties: q.get('ties') === '1',
             dom: q.get('dom') === 'group' ? 'group' : 'off', domSel: null,
             noTests: q.get('tests') === 'no', q: q.get('find') || '',
+            peek: null, peekKey: '',
+            page: false, rowsTop: 0, domTop: 0,
+            folder: null, folderName: null, trail: [],
             plan: q.get('view') === 'plan' };
   if (state.dom !== 'off' && !domainsReady()) state.dom = 'off';
 
@@ -2287,7 +2697,7 @@ Promise.all([
     state.q = $('q').value;
     refind();
     $('qn').textContent = HITS ? String(HITS.size) : '';
-    state.hover = null; state.pinned = null;
+    state.hover = null; state.pinned = null; closePage();
     rebuild(); detail(null); railIndex(); stamp();
   };
   refind();
@@ -2302,6 +2712,7 @@ Promise.all([
     reshuffle(() => {
       state.noTests = !state.noTests;
       state.hover = state.pinned = null; state.domSel = null;
+      state.folder = null; state.folderName = null; state.trail = []; closePage();
       DOM = null; domKey = ''; PRUNED = null; refind();
       if (state.dom !== 'off') domains();
     });
@@ -2379,21 +2790,28 @@ Promise.all([
     const r = cv.getBoundingClientRect();
     const hit = pick(e.clientX - r.left, e.clientY - r.top);
     if (hit === state.hover) return;
-    state.hover = hit; detail(hit);
+    /* Hover answers on the MAP — the name, the rim, the file's own couplings — and nowhere
+       else. A reading is what the reader chose, so nothing under a moving pointer may
+       rewrite it: a panel that churns is a panel nobody can finish a sentence in. */
+    state.hover = hit;
   };
-  cv.onmouseleave = () => { if (drag) return; state.hover = null; detail(null); };
+  cv.onmouseleave = () => { if (drag) return; state.hover = null; };
   cv.onclick = e => {
     if (moved > 4) return;              // a drag that ended on a plate is not a click
     const r = cv.getBoundingClientRect();
     const hit = pick(e.clientX - r.left, e.clientY - r.top);
     if (!hit) return;
     /* pin it so the numbers stay while the pointer goes to the controls */
-    const same = state.pinned && state.pinned.path === hit.path;
-    state.pinned = same ? null : hit;
-    detail(hit); railMark();
+    /* Clicking what is already open closes it, which is the same gesture as Esc. */
+    if (state.page && state.pinned && state.pinned.path === hit.path) {
+      closePage(); state.pinned = null; detail(null); railMark(); return;
+    }
+    openPage(hit);
   };
   addEventListener('keydown', e => {
-    if (e.key === "Escape") { state.pinned = null; detail(null); }
+    if (e.key === "Escape") {
+      if (state.page) closePage(); else { state.pinned = null; detail(null); }
+    }
     if (e.key === "r" || e.key === "R") reset();
     if (e.key === 'Escape') hideDef();
     if (e.key === "t" || e.key === "T") $('ties').onclick();
@@ -2418,6 +2836,10 @@ Promise.all([
   };
   $('hide').onclick = () => sidebar(false);
   $('reveal').onclick = () => sidebar(true);
+  /* Delegated, because the list is rebuilt on every navigation and a per-row handler would
+     have to be re-attached each time. mouseover bubbles, so moving between rows re-fires. */
+  $('rows').onmouseover = e => setPeek(rowScope(e.target.closest('.drow,.frow')));
+  $('rows').onmouseleave = () => setPeek(null);
   /* the list has no end and no button: it grows where it is, so its scroll is never lost */
   $('rows').onscroll = () => {
     const el = $('rows');

@@ -12,10 +12,17 @@
     try { (0, eval)(n + ' = window.__atlasIn'); return true; } catch { return false; }
   };
 
+  /* The host page's own control skin — the segmented buttons in its sidebar — rather than
+     the floating bar's, which the sidebar rewrite deleted along with #bar. */
   const CSS = `
-  #regen { display: flex; flex-direction: column; gap: 7px; }
-  #regen .row { display: flex; gap: 7px; }
-  #regen .row button { flex: 1; padding: 5px 8px; }
+  #regen { display: flex; flex-direction: column; gap: 8px; }
+  #regen .row { display: flex; gap: 6px; }
+  #regen .row button { flex: 1; padding: 4px 8px; border-radius: 6px;
+                       font: var(--t-callout) var(--sans); color: var(--text-2);
+                       background: rgba(126,214,240,.07);
+                       border: 1px solid rgba(126,214,240,.2); }
+  #regen .row button:hover:not([disabled]) { background: rgba(126,214,240,.16);
+                                             color: var(--text-1); }
   #regen button.ghost { flex: 0 0 auto; color: var(--text-3);
                         background: rgba(126,214,240,.04); border-color: rgba(126,214,240,.14); }
   #regen button.ghost:hover { color: var(--text-1); }
@@ -39,9 +46,12 @@
 
   let box, say, mapBtn, notesBtn, armed = 0;
 
+  /* An empty, hidden section the host page provides by convention. Mounting by id is what
+     keeps this a drop-in: a page that has never heard of this script has no slot, so the
+     control is invisible and nothing here has to be told where to go. */
   function mount() {
-    const bar = document.getElementById('bar');
-    if (!bar || document.getElementById('regen')) return false;
+    const slot = document.getElementById('regen-slot');
+    if (!slot || document.getElementById('regen')) return false;
     document.head.append(el('style', null, CSS));
     box = el('div'); box.id = 'regen';
     const row = el('div', 'row');
@@ -51,7 +61,10 @@
     row.append(mapBtn, notesBtn);
     say = el('div', 'say');
     box.append(row, say);
-    bar.append(el('div', 'rule'), box);
+    slot.append(box);
+    /* the section stays hidden until there is something in it, so a static server shows no
+       empty labelled group where a control never arrived */
+    slot.hidden = false;
     return true;
   }
 
