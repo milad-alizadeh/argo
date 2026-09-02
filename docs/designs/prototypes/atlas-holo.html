@@ -1138,7 +1138,12 @@ const SNAP_MS = 500;
 function camFor(boxes, fill) {
   const st = $('stage'), W = st.clientWidth, H = st.clientHeight;
   const e = extent(boxes, boxes ? 0 : undefined);
-  const k = e.k * (fill || 1);
+  /* Bounded by the SAME ceiling the wheel enforces, off the same fitted scale, so a snap and
+     a notch can never disagree about how far in is too far. Unreachable on this repo — the
+     deepest plate lands at 2.1x fit against a 90x ceiling — but a bound that holds only for
+     the data you happened to measure is a bound that will be wrong silently. */
+  const base = baseScale();
+  const k = Math.min(base * 90, Math.max(base * 0.5, e.k * (fill || 1)));
   return { scale: k, ox: W / 2 - e.mx * k, oy: H / 2 - e.my * k };
 }
 
@@ -1157,10 +1162,29 @@ function camFor(boxes, fill) {
    documented reason for storing interpolated state back on the datum: a second plate clicked
    mid-flight retargets from where the camera actually is, and cannot snap. */
 let fly = null;         // { t0, from, to, at } — `at` is the last camera this tween wrote
+let calmStamp = false;
 function flyTo(to) {
-  if (CALM) { fly = null; Object.assign(cam, to); rebuild(); stamp(); return; }
-  const from = { scale: cam.scale, ox: cam.ox, oy: cam.oy };
-  fly = { t0: performance.now(), to, from, at: { ...from } };
+  if (!CALM) {
+    const from = { scale: cam.scale, ox: cam.ox, oy: cam.oy };
+    fly = { t0: performance.now(), to, from, at: { ...from } };
+    return;
+  }
+  fly = null; Object.assign(cam, to); rebuild();
+  /* A snap several plates deep enters one level at a time, so under reduced motion the cut
+     happens once per level inside a single turn. Deferring the write to the microtask
+     checkpoint makes a completed gesture stamp exactly ONCE however many levels it crossed —
+     which is what the tween gets for free, because only the surviving flight lands. */
+  if (calmStamp) return;
+  calmStamp = true;
+  queueMicrotask(() => { calmStamp = false; stamp(); });
+}
+
+/* Arriving at a level flies the camera onto it, and EVERY control that moves the scope comes
+   through here — a plate on the map, a row in the rail, a crumb on the way back. The map and
+   the list are one-to-one, so a route that moved the scope and left the camera behind would
+   make where you are depend on which of the two you used. */
+function flyHere() {
+  flyTo(state.folder ? camFor(paintOrder(folderAt(state.folder)), SNAP_FILL) : camFor(null, 1));
 }
 /* Anyone else who writes the camera wins. The tween remembers its own last write, so a wheel
    notch, a drag, a turn, a resize or a view change during a flight ends it instead of fighting
@@ -2761,12 +2785,8 @@ function goCrumb(k, i) {
      Highcharts drills up, and not a mirror-image heuristic the way Plotly does it
      (atlas-snap-zoom.md §3, §8.7). The top of the trail is the whole city, and camFor over
      everything at full fill is exactly what fit() computes — so the way back out and the
-     reset button agree on where "all of it" is. */
-  else if (k === 'dir') {
-    goFolder(+i);
-    flyTo(state.folder ? camFor(paintOrder(folderAt(state.folder)), SNAP_FILL)
-                       : camFor(null, 1));
-  }
+     reset button agree on where "all of it" is. goFolder does the flying, as entering does. */
+  else if (k === 'dir') goFolder(+i);
 }
 /* A list that grows as it is scrolled cannot be scrolled to a place it has not grown to yet,
    so it is grown until the offset exists rather than clamped silently to the bottom. */
@@ -2835,7 +2855,8 @@ function folderAt(path) {
    what is out of scope loses its colour, so it dissolves rather than cuts.
    This is the ONE way into a folder. The rail's rows call it and so does a click on a plate,
    because a map that set a scope of its own beside this one would be a second drill-down
-   agreeing with the first by coincidence and drifting the week after. */
+   agreeing with the first by coincidence and drifting the week after — and the camera moves
+   from in here for the same reason, so the two controls cannot end anywhere different. */
 function enterFolder(path, name) {
   beginFade();
   closePage();
@@ -2844,7 +2865,7 @@ function enterFolder(path, name) {
   /* Where you are is carried by the plate's own rim, whichever control put you there — so
      the frame lands on the folder you entered from the map and from the list alike. */
   state.pinned = folderAt(path);
-  railIndex(); rebuild(); key(view.lo, view.hi); detail(null); railMark();
+  railIndex(); rebuild(); key(view.lo, view.hi); detail(null); railMark(); flyHere();
 }
 /* The trail, not the path: a collapsed chain has levels the reader never stood on, and
    stepping up into one of those is a place they cannot have come from. */
@@ -2855,6 +2876,7 @@ function goFolder(i) {
   state.folder = t.path; state.folderName = t.name;
   state.pinned = t.path ? folderAt(t.path) : null;
   railIndex(); restoreTop(t.top); rebuild(); key(view.lo, view.hi); detail(null); railMark();
+  flyHere();
 }
 
 /* The rail's rows are chainDown() of the current folder's children, so a plate click walks
@@ -2883,7 +2905,6 @@ function snapTo(box) {
   const steps = railSteps(box);
   if (!steps || !steps.length) return false;
   for (const s of steps) enterFolder(s.box.path, s.name);
-  flyTo(camFor(paintOrder(folderAt(state.folder)), SNAP_FILL));
   return true;
 }
 
@@ -3550,7 +3571,12 @@ Promise.all([
     const r = cv.getBoundingClientRect();
     const hit = pick(e.clientX - r.left, e.clientY - r.top);
     if (!hit) return;
-    /* A PLATE IS A PLACE AND A FILE IS A THING TO READ. Clicking a plate goes there — the
+    /* PROBING THIS: MouseEvent.clientX is a `long`, so a real click ALWAYS lands on an
+       integer pixel, and a plate's rim is thin enough that the half-pixel out of project()
+       misses it. A synthetic click dispatched at fractional coordinates therefore tests a
+       click the browser cannot deliver, and reads as "the handler does nothing" — find an
+       integer pixel where pick() returns the plate and dispatch at that.
+       A PLATE IS A PLACE AND A FILE IS A THING TO READ. Clicking a plate goes there — the
        same act as clicking that folder's row in the rail, down to the trail entry, with the
        camera following it — and clicking a file opens its reading. A plate already at or
        above where you are does nothing here: the breadcrumb is the only way out. */
