@@ -14,8 +14,7 @@ import Foundation
 /// issue's own repro is: a Return at a composer holding nothing does nothing.
 ///
 /// The baseline it reads to do that is also what the roster needs to say a Turn is running (#1048),
-/// so the submit is reported from here rather than counted again: two readings of one count, taken
-/// moments apart, are two answers to when the Turn began.
+/// so the submit is reported from here rather than counted again.
 ///
 /// Reading growth as arrival is the deliberate direction to be wrong in. Retyping a Return nobody
 /// asked for could submit half a sentence in an attached pane, while reading it the other way costs

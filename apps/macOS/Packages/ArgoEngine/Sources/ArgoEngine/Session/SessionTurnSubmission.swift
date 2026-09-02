@@ -7,20 +7,19 @@
 ///
 /// A COUNT and not the value of any record, for the reason `SessionModeSet` keeps one: the record
 /// arrives long after the keystroke, and only "has the file grown since" can tell a record that has
-/// not caught up from one that says the Turn is over.
+/// not caught up from one that has.
 struct SessionTurnSubmission: Equatable, Sendable {
-    /// Zero for a Session that had written nothing when the Turn was typed at it, which is the same
-    /// fact and not a gap.
     let recordsWhenSubmitted: Int
 
-    /// Whether the Turn this stands for is still the one running.
+    /// Whether the record has yet to answer the Turn this stands for — the one window in which
+    /// Argo's own submit is all that knows a Turn opened.
     ///
-    /// Two states, and the record tells them apart. While it has not grown at all, nothing has yet
-    /// had the chance to say the Turn ended, so Argo's own submit is the whole of what is known.
-    /// Once it has, the record's Turn boundaries are what answer — and a record that has moved
-    /// without opening a Turn ends the claim, which under-reports the Turn rather than standing on
-    /// it (`CONTEXT.md` Honesty tier, degrade-down).
-    func isRunning(records: Int, turn: SessionTurnState) -> Bool {
-        records == recordsWhenSubmitted || turn.isOpen
+    /// It ends the moment the record grows, and it never comes back: the CLI has spoken, so what
+    /// the Session is doing is the record's to say from then on. That is the honest FLOOR in #587's
+    /// sense. Holding the claim across the whole Turn would mean deciding WHICH open Turn is the
+    /// one Argo submitted, and the only rule available — "any open Turn" — would render a Turn
+    /// typed at the dock terminal as one of Argo's own.
+    func isAwaitingRecord(_ records: Int) -> Bool {
+        records == recordsWhenSubmitted
     }
 }

@@ -5,12 +5,13 @@ import Testing
 /// `working…` off the channel Argo owns (#1048).
 ///
 /// For a managed Session, Argo performed the submit and holds the PTY it went down, so a Turn is a
-/// thing it WITNESSED rather than a thing the 5-second liveness poll has to corroborate. Every
-/// suite here runs on a machine with no agent process on it at all — so the reading being asserted
-/// cannot be the DERIVED one, which would read `idle` throughout.
+/// thing it WITNESSED rather than a thing the 5-second liveness poll has to corroborate. Every test
+/// here runs on a machine with no agent process on it at all — so the reading being asserted cannot
+/// be the DERIVED one, which reads `idle` throughout.
 ///
-/// The claim has three ends, one per test below, and it has to: a Turn opened on Argo's own act and
-/// closed by nothing would stand over an agent that finished hours ago (#585).
+/// The claim covers one window, and it has to: a Turn opened on Argo's own act and closed by
+/// nothing would stand over an agent that finished hours ago (#585). Three things end it, and the
+/// last test is the reason it may not come back afterwards.
 @Suite("Hub submitted turn")
 @MainActor
 struct HubSubmittedTurnTests {
@@ -30,41 +31,46 @@ struct HubSubmittedTurnTests {
             == SessionStatusReading(tier: .direct, status: .running))
     }
 
-    /// The record catching up does not weaken the claim. It is the same Turn, and the poll that
-    /// would have had to corroborate it has still not run.
+    /// The first end, and the ordinary one: the CLI has spoken, so what the Session is doing is the
+    /// record's to say from here on and Argo stops answering for it.
     @Test
-    func `the record opening the Turn leaves it Argo's own claim`() async throws {
+    func `the record answering the Turn takes the claim back`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let session = try await Self.boundSession(of: fixture)
-
         try fixture.hub.driver.send("Fix the caption, not the sort.", to: spawnedSessionID)
+
         session.yield([.prompt(text: "Fix the caption, not the sort.", images: [], atMs: 2000)])
 
         await hubSettle { fixture.hub.session(id: spawnedSessionID)?.events.count == 4 }
         #expect(fixture.hub.session(id: spawnedSessionID)?.statusReading
-            == SessionStatusReading(tier: .direct, status: .running))
+            == SessionStatusReading(tier: .derived, status: .idle))
     }
 
-    /// The first of the three ends, and the ordinary one: the CLI's own record says the Turn is
-    /// over, and Argo stops claiming it is running.
+    /// The claim is over for good, not merely dormant. A Turn typed at the dock terminal opens a
+    /// record of its own, and a rule that answered "any open Turn" would render it as one of
+    /// Argo's — a submit Argo never performed, at the tier that says it did.
     @Test
-    func `the record saying the Turn ended takes the claim back`() async throws {
+    func `a later Turn Argo never typed is not claimed as its own`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let session = try await Self.boundSession(of: fixture)
         try fixture.hub.driver.send("Fix the caption, not the sort.", to: spawnedSessionID)
-
         session.yield([
             .prompt(text: "Fix the caption, not the sort.", images: [], atMs: 2000),
             .turnEnded(.endTurn),
         ])
+        await hubSettle { fixture.hub.session(id: spawnedSessionID)?.events.count == 5 }
 
-        await hubSettle { fixture.hub.session(id: spawnedSessionID)?.status == .idle }
+        session.yield([.prompt(text: "Typed at the terminal instead.", images: [], atMs: 3000)])
+
+        await hubSettle { fixture.hub.session(id: spawnedSessionID)?.events.count == 6 }
+        #expect(fixture.hub.session(id: spawnedSessionID)?.statusReading
+            == SessionStatusReading(tier: .derived, status: .idle))
     }
 
     /// The second end. A Return the file-mention popup ate leaves the record exactly as it was, so
-    /// nothing in it will ever close this Turn — the delivery watch is what bounds the claim, and
+    /// nothing in it will ever answer this Turn — the delivery watch is what bounds the claim, and
     /// the words go back to the composer rather than the row going on working (#682).
     @Test
     func `a Turn the CLI never heard stops being reported as running`() async throws {

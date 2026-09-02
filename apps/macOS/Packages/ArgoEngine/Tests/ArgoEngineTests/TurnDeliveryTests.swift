@@ -25,8 +25,7 @@ struct TurnDeliveryTests {
     }
 
     /// The Turn reported for the roster to draw `running` on (#1048) is counted from the record
-    /// this same watch measures silence against. Two readings taken moments apart would be two
-    /// answers to when the Turn began, and the row would go on working past the Turn that ended.
+    /// this same watch measures silence against, and not from a second reading of its own.
     @Test
     func `the Turn reported and the silence watched are counted from one record`() {
         let watch = Recorder(records: 7)

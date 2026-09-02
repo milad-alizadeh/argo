@@ -51,14 +51,21 @@
     before it is ready ends the claim early, which under-reports the boot rather than over-claiming
     it, and anything stricter would mean recognising a prompt in a TUI's own bytes — a guess in an
     observation's clothes.
-  - **running** — a Turn is in progress. **DERIVED**, except for a Turn ARGO ITSELF submitted to a
-    managed Session, which is **DIRECT**: Argo wrote the words to a PTY it owns, so no liveness poll
-    and no cwd match has to corroborate that a Turn opened (#1048). Tier-gated by posture the way
-    `asking` already is, and for the same reason — the channel exists on one posture only. That
-    claim ends where Argo can WITNESS it ending, never on a clock: the record saying the Turn
-    ended, the delivery watch reporting a Turn the CLI never heard (#682), or the process behind
-    the PTY going. A record that grows without opening a Turn ends it too, which under-reports the
-    Turn rather than standing on it. An **external** Session reaches none of this: the submission
+  - **running** — a Turn is in progress. **DERIVED**, except for the window between a Turn ARGO
+    ITSELF submitted to a managed Session and the record answering it, which is **DIRECT**: Argo
+    wrote the words to a PTY it owns, so nothing has to corroborate that a Turn opened (#1048).
+    Tier-gated by posture the way `asking` already is, and for the same reason — the channel exists
+    on one posture only. It is also adapter-gated in practice: only the `claude` adapter types at a
+    PTY, so a managed `codex` Session reports over its own drive port instead.
+
+    That claim ends where Argo can WITNESS it ending, never on a clock: **the record growing at
+    all** — the CLI has spoken, so what the Session is doing is the record's to say from then on —
+    the delivery watch reporting a Turn the CLI never heard (#682), or the process behind the PTY
+    going. It never comes back, and that is deliberate: holding it across the whole Turn would mean
+    deciding WHICH open Turn is the one Argo submitted, and the only rule available would read a
+    Turn typed at the dock terminal as one of Argo's own. So the claim is the honest FLOOR, exactly
+    as `starting`'s first byte is — it under-reports the Turn rather than standing on it, and the
+    record plus liveness carry the rest. An **external** Session reaches none of it: the submission
     is filed against a claim, and a Session Argo holds no claim on is one it cannot type at.
   - **permission** — blocked on an agent `request_permission` prompt.
   - **asking** — blocked on a structured `AskUserQuestion`.

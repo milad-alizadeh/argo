@@ -5,9 +5,8 @@ import Testing
 /// When a Session's start is published, against a reading that runs into a gap (#1056).
 ///
 /// A bounded read marks its seam MID-STREAM, so the records ahead of the seam were read out of a
-/// whole file and the ones behind it were not. Three careful readings of the fold got this rule
-/// wrong in prose, each of them saying the start is withheld on an excerpt — so it is asserted
-/// here, through the roster, in the terms `SessionTranscriptExtent` states it in.
+/// whole file and the ones behind it were not. The start is therefore NOT withheld on an excerpt:
+/// it is withheld only where it would have to come from beyond the seam.
 @Suite("Session start across a gap")
 struct SessionStartAcrossGapTests {
     private static let projectURL = URL(fileURLWithPath: "/tmp/argo-session-start")

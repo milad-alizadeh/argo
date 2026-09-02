@@ -99,11 +99,9 @@ public extension Hub {
         ))
     }
 
-    /// File the Turn Argo just typed at a Session (#1048), against the CLAIM for the reason a lost
-    /// one is filed there: a fresh Session is re-keyed to its own id the moment its record lands.
-    ///
-    /// A Session with no claim is one Argo cannot type at, so there is no Turn of ours to report —
-    /// which is what keeps an external Session off a status only a channel Argo owns can support.
+    /// File the Turn Argo just typed at a Session (#1048), against the CLAIM for the reason
+    /// `rememberLostTurn` below is, and refused for a Session with no claim for the same reason —
+    /// which is also what keeps an external Session off a status only Argo's own channel supports.
     private func rememberSubmittedTurn(
         _ submission: SessionTurnSubmission,
         for sessionID: String,

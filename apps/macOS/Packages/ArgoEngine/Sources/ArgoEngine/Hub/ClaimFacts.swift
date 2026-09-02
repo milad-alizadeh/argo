@@ -28,9 +28,10 @@ struct ClaimFacts: Equatable {
     /// `thread/status/changed` (#683). Absent for a `claude` claim, whose surface is a PTY with
     /// nothing on it to report.
     var driveStatus: SessionStatus?
-    /// The Turn Argo typed at it that the record has not answered yet (#1048) — DIRECT, because
-    /// Argo performed the submit. Absent for a claim with no Turn of ours in flight, and
-    /// unreachable for an external Session, which has no claim to file one against.
+    /// The last Turn Argo typed at this claim's PTY, and the record count when it did (#1048) —
+    /// DIRECT, because Argo performed the submit. Whether that Turn is STILL running is
+    /// `SessionTurnSubmission.isRunning`'s answer and not this field's, so it outlives the Turn it
+    /// stands for. Unreachable for an external Session, which has no claim to file one against.
     var submittedTurn: SessionTurnSubmission?
     /// The last Turn typed at it that the CLI never heard, verbatim (#682). Held so the words can
     /// go back where they were typed: the composer cleared on the strength of a keystroke that was

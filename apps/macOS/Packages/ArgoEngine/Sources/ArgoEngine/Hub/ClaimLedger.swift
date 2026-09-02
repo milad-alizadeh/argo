@@ -78,9 +78,11 @@ final class ClaimLedger {
         update(claim) { $0.modeSet = modeSet }
     }
 
-    /// A Turn Argo typed at this claim's PTY (#1048), or `nil` where the one it stood for is over.
+    /// A Turn Argo typed at this claim's PTY (#1048). Nothing takes one back when the record
+    /// answers it — that reading is derived — so the only writes that clear it are the two below,
+    /// where the Turn was never heard at all or the PTY it went down has gone.
     func setSubmittedTurn(
-        _ submission: SessionTurnSubmission?,
+        _ submission: SessionTurnSubmission,
         for claim: SessionOwnership.ClaimID,
     ) {
         update(claim) { $0.submittedTurn = submission }
