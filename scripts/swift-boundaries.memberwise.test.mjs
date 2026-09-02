@@ -192,4 +192,52 @@ check('edge 6 reports no skips when nothing is sealed', () => {
   assert.match(result.output, /0 skipped, memberwise init sealed private/)
 })
 
+// A tuple pattern binds one property per NAME, and Swift gives each its own parameter.
+check('edge 6 counts every name a tuple pattern binds', () => {
+  const source = `struct Picked {
+    let (a, b): (Int, Int)
+    let (c, d): (Int, Int)
+    let e: Int
+}
+`
+  const result = run(tree({ [ACTIONS]: source }))
+  assert.equal(result.status, 1, `a tuple pattern counted as one slot: ${result.output}`)
+  assert.match(result.output, /memberwise init takes 5 parameters/)
+})
+
+// Observers open a brace and assign nothing, which is what a computed property looks like — but the
+// property is stored and Swift puts it in the list. The first word inside the block is the tell.
+check('edge 6 counts a stored property that only carries observers', () => {
+  const source = `struct Picked {
+    var slot0: Int {
+        didSet {}
+    }
+    var slot1: Int
+    var slot2: Int
+    var slot3: Int
+    var slot4: Int
+}
+`
+  const result = run(tree({ [ACTIONS]: source }))
+  assert.equal(result.status, 1, `an observed property went uncounted: ${result.output}`)
+  assert.match(result.output, /memberwise init takes 5 parameters/)
+})
+
+// The skip figure counts what the seal HID, so it must include the private half that caused it —
+// a struct whose width is private was being skipped and reported as nothing skipped.
+check('edge 6 counts a skip whose width is the private half', () => {
+  const source = `struct Picked {
+    private var p0: Int
+    private var p1: Int
+    private var p2: Int
+    var a: Int
+    var b: Int
+    var c: Int
+}
+`
+  const result = run(tree({ [ACTIONS]: source }))
+  assert.equal(result.status, 0, result.output)
+  assert.match(result.output, /1 skipped, memberwise init sealed private/)
+})
+
 report('swift boundaries: the memberwise initializer cap')

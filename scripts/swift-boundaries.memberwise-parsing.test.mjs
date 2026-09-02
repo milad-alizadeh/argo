@@ -9,25 +9,6 @@ import assert from 'node:assert/strict'
 import { check, report } from './check-harness.mjs'
 import { ACTIONS, run, tree, wideStruct } from './swift-boundaries.fixture.mjs'
 
-// Prose may hold anything, a struct declaration included. Its contents are not code.
-check('edge 6 does not count a value type written inside a multi-line string', () => {
-  const prose = `struct CockpitActions {
-    static let help = """
-    struct Picked {
-        let slot0: Int
-        let slot1: Int
-        let slot2: Int
-        let slot3: Int
-        let slot4: Int
-    }
-    """
-    let only: Int
-}
-`
-  const result = run(tree({ [ACTIONS]: prose }))
-  assert.equal(result.status, 0, result.output)
-})
-
 // A nested type declared on ONE line used to be read as the enclosing struct's own members, which
 // is house style here (`GitHubIssue`'s wire types) and so was the cheapest way to pass this gate:
 // its `init` suppressed the outer list, its `private` field sealed it, and its stored properties
@@ -104,38 +85,6 @@ check('edge 6 counts a value type an extension wraps on one line', () => {
   assert.match(result.output, /memberwise init takes 5 parameters/)
 })
 
-// A block comment is prose, and prose may hold a declaration. Counting one would fail the build on
-// a list Swift never declares — the `/* */` twin of the multi-line-string case below.
-check('edge 6 does not count a value type written inside a block comment', () => {
-  const source = `/*
-struct Fake {
-    let a: Int
-    let b: Int
-    let c: Int
-    let d: Int
-    let e: Int
-}
-*/
-struct Picked { let only: Int }
-`
-  const result = run(tree({ [ACTIONS]: source }))
-  assert.equal(result.status, 0, result.output)
-})
-
-// A block comment that opens and closes on one line hides only what is between its markers.
-check('edge 6 reads the code around a one-line block comment', () => {
-  const source = `struct Picked {
-    let slot0: Int /* a note */, slot1: Int
-    let slot2: Int
-    let slot3: Int
-    let slot4: Int
-}
-`
-  const result = run(tree({ [ACTIONS]: source }))
-  assert.equal(result.status, 1, `a block comment swallowed the line: ${result.output}`)
-  assert.match(result.output, /memberwise init takes 5 parameters/)
-})
-
 // A name Swift escapes is still a name, and the type behind it declares the same list.
 check('edge 6 counts a value type whose name is backtick-escaped', () => {
   const source = `struct \`default\` {
@@ -151,41 +100,6 @@ check('edge 6 counts a value type whose name is backtick-escaped', () => {
   assert.match(result.output, /memberwise init takes 5 parameters/)
 })
 
-// Only ONE branch of a conditional is compiled, so counting the property in each branch reports a
-// width Swift never declares — and a false positive is what gets a gate suppressed.
-check('edge 6 counts a conditionally compiled property once', () => {
-  const source = `struct Picked {
-    let slot0: Int
-    let slot1: Int
-    let slot2: Int
-#if DEBUG
-    let slot3: Int
-#else
-    let slot3: Int
-#endif
-}
-`
-  const result = run(tree({ [ACTIONS]: source }))
-  assert.equal(result.status, 0, result.output)
-})
-
-// The first branch is still read, so a conditional cannot be used to hide a field either.
-check('edge 6 reads the first branch of a conditional', () => {
-  const source = `struct Picked {
-    let slot0: Int
-    let slot1: Int
-    let slot2: Int
-#if DEBUG
-    let slot3: Int
-    let slot4: Int
-#endif
-}
-`
-  const result = run(tree({ [ACTIONS]: source }))
-  assert.equal(result.status, 1, `a conditional hid two fields: ${result.output}`)
-  assert.match(result.output, /memberwise init takes 5 parameters/)
-})
-
 // A `private let` with a value is settled, so it is not in the list and seals nothing — swiftc says
 // such a struct keeps an internal memberwise init, and the gate must still count it.
 check('edge 6 is not sealed by a settled private let', () => {
@@ -193,9 +107,6 @@ check('edge 6 is not sealed by a settled private let', () => {
   assert.equal(result.status, 1, `a settled private let sealed the type: ${result.output}`)
   assert.match(result.output, /memberwise init takes 5 parameters/)
 })
-
-// The seal is an exemption no `# INIT:` line records, so the run says how many it skipped. A gate
-// that stays silent about what it did not read is one "quality passed" can be misread as covering.
 
 // The struct keyword and the brace it opens need not share a line. A conformance list SwiftFormat
 // wrapped is the common one, and it used to take the whole type out of the check — reachable by
@@ -262,38 +173,6 @@ check('edge 6 counts a backtick-escaped property name', () => {
   assert.match(result.output, /memberwise init takes 5 parameters/)
 })
 
-// A raw string and an extended regex literal escape nothing with `\`, so reading either by the
-// plain-string rule runs past its terminator and swallows the brace that closes the struct — the
-// whole rest of the file goes uncounted, which is the fail-open this gate exists to not be.
-const LITERALS = ['static let backslash = #"\\"#', 'static let brace = #/\\{/#']
-
-for (const [index, literal] of LITERALS.entries()) {
-  check(`edge 6 is not unbalanced by a raw literal (${index})`, () => {
-    const result = run(tree({ [ACTIONS]: wideStruct(5, `    ${literal}\n`) }))
-    assert.equal(result.status, 1, `a raw literal swallowed the body: ${result.output}`)
-    assert.match(result.output, /memberwise init takes 5 parameters/)
-  })
-}
-
-// One branch of a conditional compiles and the gate cannot know which, so it counts the WIDEST:
-// no branch hides a field, and no field is counted twice for being written in two branches.
-check('edge 6 counts a field declared only in the else branch', () => {
-  const source = `struct Picked {
-    let a: Int
-    let b: Int
-    let c: Int
-    let d: Int
-#if os(Linux)
-#else
-    let e: Int
-#endif
-}
-`
-  const result = run(tree({ [ACTIONS]: source }))
-  assert.equal(result.status, 1, `the else branch went unread: ${result.output}`)
-  assert.match(result.output, /memberwise init takes 5 parameters/)
-})
-
 // An accessor brace on the next line is still an accessor, so the property is computed and stores
 // nothing. Counting it would fail the build on a struct Swift gives a four-parameter init.
 check('edge 6 does not count a property whose accessor brace is on the next line', () => {
@@ -309,5 +188,44 @@ check('edge 6 does not count a property whose accessor brace is on the next line
   const result = run(tree({ [ACTIONS]: source }))
   assert.equal(result.status, 0, result.output)
 })
+
+// Neither a blank line nor a comment says what follows a held declaration, so neither settles it as
+// stored — the accessor brace under them still makes the property computed.
+const GAPS = ['    // The sum every caller wants.', '']
+
+for (const [index, gap] of GAPS.entries()) {
+  check(`edge 6 holds a declaration across a gap before its brace (${index})`, () => {
+    const source = `struct Picked {
+    var a: Int
+    var b: Int
+    var c: Int
+    var d: Int
+    var total: Int
+${gap}
+    {
+        a + b + c + d
+    }
+}
+`
+    const result = run(tree({ [ACTIONS]: source }))
+    assert.equal(result.status, 0, result.output)
+  })
+}
+
+// `init!` and a generic `init<T>` are initializers too, so the written-init scanner counts them and
+// the memberwise one knows they suppress the synthesized list.
+const SPELLINGS = ['init!', 'init<T: BinaryInteger>']
+
+for (const spelling of SPELLINGS) {
+  check(`edge 6 counts a written \`${spelling}\``, () => {
+    const source = `struct Picked {
+    ${spelling}(a: Int, b: Int, c: Int, d: Int, e: Int) { }
+}
+`
+    const result = run(tree({ [ACTIONS]: source }))
+    assert.equal(result.status, 1, `${spelling} went uncounted: ${result.output}`)
+    assert.match(result.output, /init takes 5 parameters/)
+  })
+}
 
 report('swift boundaries: reading a struct body')

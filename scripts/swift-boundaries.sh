@@ -41,7 +41,7 @@ fi
 # fail-open docs/agents/quality-gates.md is about. `"""` blocks and `/* */` comments are tracked
 # across lines because their contents are prose that may hold anything, a declaration included.
 AWK_READER='
-  function code(line,   out, i, char, next2, hashes, opener, closer, seen) {
+  function code(line,   out, i, char, next2, hashes, opener, closer, seen, nest) {
     out = ""
     if (inblock) {
       i = index(line, "\"\"\"")
@@ -49,11 +49,14 @@ AWK_READER='
       inblock = 0
       line = substr(line, i + 3)
     }
-    if (incomment) {
+    while (incomment) {
       i = index(line, "*/")
       if (!i) return ""
-      incomment = 0
+      # Swift NESTS block comments, so the first `*/` need not be the one that ends this one.
+      seen = index(substr(line, 1, i), "/*")
       line = substr(line, i + 2)
+      if (!seen) incomment--
+      else incomment++
     }
     if (inraw != "") {
       i = index(line, inraw)
@@ -66,9 +69,11 @@ AWK_READER='
       next2 = substr(line, i, 3)
       if (next2 == "\"\"\"") { inblock = 1; return out }
       if (char == "/" && substr(line, i, 2) == "/*") {
-        seen = index(substr(line, i + 2), "*/")
-        if (!seen) { incomment = 1; return out }
-        i = i + 2 + seen
+        incomment = 1
+        for (i = i + 2; i <= length(line); i++) {
+          if (substr(line, i, 2) == "/*") { incomment++; i++; continue }
+          if (substr(line, i, 2) == "*/") { i++; if (!--incomment) break }
+        }
         continue
       }
       if (char == "/" && substr(line, i, 2) == "//") return out
@@ -88,6 +93,16 @@ AWK_READER='
       }
       if (char == "\"") {
         for (i++; i <= length(line); i++) {
+          if (substr(line, i, 2) == "\\(") {
+            # An interpolation holds CODE, quotes and braces included, so it is matched by paren
+            # rather than read as string body — a `"` in there does not end the string.
+            nest = 1
+            for (i = i + 2; i <= length(line) && nest; i++) {
+              if (substr(line, i, 1) == "(") nest++
+              else if (substr(line, i, 1) == ")" && !--nest) break
+            }
+            continue
+          }
           if (substr(line, i, 1) == "\\") { i++; continue }
           if (substr(line, i, 1) == "\"") break
         }
@@ -325,7 +340,7 @@ else
           {
             line = code($0); start = 1
             if (!active) {
-              if (!match(line, /(^|[^.A-Za-z0-9_])init\??[ \t]*\(/)) next
+              if (!match(line, /(^|[^.A-Za-z0-9_])init[?!]?[ \t]*(<[^>]*>)?[ \t]*\(/)) next
               start = RSTART + RLENGTH
               active = 1; depth = 1; commas = 0; seen = 0; trailing = 0; declared = FNR
             }
@@ -368,14 +383,21 @@ else
           }
           # An initialised `let` is settled, so no call site can pass it. Asked per BINDING, because
           # `let e: Int, settled = 7` settles only the second one.
-          function bound(piece, islet) { return (islet && piece ~ /=/) ? 0 : 1 }
+          function bound(piece, islet,   names, i, count) {
+            if (islet && piece ~ /=/) return 0
+            # `let (a, b): (Int, Int)` is two properties, not one.
+            if (piece !~ /^[ \t]*\(/) return 1
+            sub(/^[ \t]*\(/, "", piece); sub(/\).*$/, "", piece)
+            count = split(piece, names, ",")
+            return count ? count : 1
+          }
           # `opens` says a brace follows this declaration, which is what tells a computed property
           # from a stored one — the difference is invisible in the declaration itself.
           function member(text, opens,   rest, islet, count) {
             # A nested type owns its own members, and its own `init` suppresses its own list.
             if (text ~ /(^|[^.A-Za-z0-9_])(struct|enum|class|actor|protocol|extension)[ \t]+`?[A-Za-z_]/) return
-            if (text ~ /(^|[^.A-Za-z0-9_])init\??[ \t]*[(<]/) { written[depth] = 1; return }
-            if (text !~ /(^|[^.A-Za-z0-9_])(var|let)[ \t]+`?[A-Za-z_]/) return
+            if (text ~ /(^|[^.A-Za-z0-9_])init[?!]?[ \t]*[(<]/) { written[depth] = 1; return }
+            if (text !~ /(^|[^.A-Za-z0-9_])(var|let)[ \t]+[(`A-Za-z_]/) return
             # A type property is not in the list.
             if (text ~ /(^|[^.A-Za-z0-9_])static[ \t]/) return
             # Accessors rather than a value: a computed property stores nothing.
@@ -385,11 +407,12 @@ else
             count = count_bindings(rest, islet)
             # Nothing of this declaration reaches the list, so it neither counts nor seals.
             if (!count) return
+            widths[depth] += count
             if (text ~ /(^|[^.A-Za-z0-9_])(private|fileprivate)[ \t]/) { sealed[depth] = 1; return }
             fields[depth] += count
           }
           function close_struct() {
-            if (isstruct[depth] && !written[depth] && sealed[depth] && fields[depth] > cap)
+            if (isstruct[depth] && !written[depth] && sealed[depth] && widths[depth] > cap)
               print "sealed|" file ":" at[depth] ": " named[depth]
             if (isstruct[depth] && !written[depth] && !sealed[depth] && fields[depth] > cap)
               print file ":" at[depth] ": " named[depth] "'"'"'s synthesized memberwise init takes " \
@@ -399,7 +422,9 @@ else
           # The type is read off the HEADER, which runs from the last brace to this one — a
           # conformance list SwiftFormat wrapped, an Allman brace and a `where` clause on its own
           # line all put the keyword on a different line from the brace it opens.
-          function open_scope(text,   opening) {
+          function open_scope(text,   opening, held) {
+            observed(text)
+            held = (pended != "") ? pended : text
             if (pended != "") { member(pended, 1); pended = "" }
             else member(text, 1)
             # Padded, so a `struct` at the very start of a file has the same left edge as any
@@ -411,29 +436,52 @@ else
               sub(/[^A-Za-z0-9_].*$/, "", opening)
             }
             depth++
+            # A `var x: Int {` that assigned nothing: observers below make it stored after all.
+            watched = (opening == "" && held ~ /(^|[^.A-Za-z0-9_])(var|let)[ \t]+[(`A-Za-z_]/ &&
+              held !~ /=/) ? held : ""
             isstruct[depth] = (opening != ""); named[depth] = opening
-            fields[depth] = 0; written[depth] = 0; sealed[depth] = 0; at[depth] = FNR
+            fields[depth] = 0; widths[depth] = 0; written[depth] = 0; sealed[depth] = 0
+            probe[depth] = watched; at[depth] = FNR
           }
-          function flush(text) { if (isstruct[depth]) member(text, 0) }
+          # A held declaration turns out to be STORED when the first word in its block is an
+          # observer: `var x: Int { didSet {} }` assigns nothing and is a parameter all the same.
+          function observed(text) {
+            if (probe[depth] == "") return
+            if (text !~ /(^|[^.A-Za-z0-9_])(didSet|willSet)([^A-Za-z0-9_]|$)/) return
+            depth--; member(probe[depth + 1], 0); depth++
+            probe[depth] = ""
+          }
+          function flush(text) { observed(text); if (isstruct[depth]) member(text, 0) }
           function drain() { if (pended != "") { flush(pended); pended = "" } }
           # Only one branch of a conditional compiles, and the gate cannot know which. It counts the
           # WIDEST, so no branch can hide a field and no branch is counted twice.
-          /^[ \t]*#if/ { drain(); base[depth] = fields[depth]; best[depth] = 0; next }
-          /^[ \t]*#(else|elseif)/ {
-            drain()
-            if (fields[depth] - base[depth] > best[depth]) best[depth] = fields[depth] - base[depth]
-            fields[depth] = base[depth]; next
-          }
-          /^[ \t]*#endif/ {
-            drain()
-            if (fields[depth] - base[depth] > best[depth]) best[depth] = fields[depth] - base[depth]
-            fields[depth] = base[depth] + best[depth]; next
+          function widest(   grown) {
+            grown = fields[depth] - base[depth "." cond[depth]]
+            if (grown > best[depth "." cond[depth]]) best[depth "." cond[depth]] = grown
           }
           {
             line = code($0)
+            # One branch of a conditional compiles and the gate cannot know which, so it counts the
+            # WIDEST: no branch hides a field, and none is counted twice for being in two branches.
+            # Keyed by nesting level as well as depth, because an inner `#if` would otherwise
+            # overwrite the maximum its own outer branch had reached.
+            if (line ~ /^[ \t]*#if/) {
+              drain(); cond[depth]++
+              base[depth "." cond[depth]] = fields[depth]; best[depth "." cond[depth]] = 0
+              next
+            }
+            if (line ~ /^[ \t]*#(else|elseif)/) {
+              drain(); widest(); fields[depth] = base[depth "." cond[depth]]; next
+            }
+            if (line ~ /^[ \t]*#endif/) {
+              drain(); widest()
+              fields[depth] = base[depth "." cond[depth]] + best[depth "." cond[depth]]
+              cond[depth]--
+              next
+            }
             # A declaration held over from the last line belongs to whatever follows it: a brace on
             # its own line makes it a computed property, and anything else makes it stored.
-            if (pended != "" && line !~ /^[ \t]*\{/) drain()
+            if (pended != "" && line ~ /[^ \t]/ && line !~ /^[ \t]*\{/) drain()
             for (i = 1; i <= length(line); i++) {
               char = substr(line, i, 1)
               if (char == "{") { open_scope(seg); seg = ""; header = "" }
