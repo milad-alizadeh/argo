@@ -120,6 +120,44 @@ struct FeedPunctuationTests {
         #expect(mark.words == "session · 143.6K tokens")
     }
 
+    /// The seam a bounded read leaves, at the place the record was cut: a head stitched to a tail
+    /// with nothing between them reads as one continuous conversation and is not one (#404 AC4).
+    @Test
+    func `a record read in two ends says where the middle is missing`() {
+        let rows = FeedProjection.rows(from: [
+            .message(markdown: "The oldest thing this reading has."),
+            .excerpted,
+            .message(markdown: "The newest."),
+        ])
+
+        #expect(rows.map(\.content) == [
+            .message("The oldest thing this reading has."),
+            .mark(.excerpted),
+            .message("The newest."),
+        ])
+    }
+
+    @Test
+    func `the seam says what is missing rather than the mechanism that missed it`() {
+        #expect(FeedMark.excerpted.words == "earlier records not read yet")
+        #expect(
+            FeedMark.excerpted.spoken == "Earlier records in this Session have not been read yet",
+        )
+    }
+
+    /// The withholding `HubSession` and the header already make (`SessionHeaderProjection+Spend`),
+    /// made here too: a total summed over two ends of a record leaves out whatever the missing
+    /// stretch spent, and the foot of the reading renders it as the Session's whole cost.
+    @Test
+    func `a bounded reading rolls up no spend at all`() {
+        let rows = FeedProjection.rows(from: delegations() + [.excerpted])
+
+        let marks = FeedFixture.marks(in: rows)
+
+        #expect(!marks.contains(where: isSpend))
+        #expect(marks.contains(.excerpted))
+    }
+
     /// A run of reads reaching across a turn boundary would put looking from two different turns
     /// behind one count.
     @Test
@@ -133,6 +171,11 @@ struct FeedPunctuationTests {
         ])
 
         #expect(FeedFixture.surveys(in: rows).count == 2)
+    }
+
+    private func isSpend(_ mark: FeedMark) -> Bool {
+        guard case .spent = mark else { return false }
+        return true
     }
 
     private func delegations() -> [TranscriptEvent] {

@@ -160,6 +160,23 @@ extension FeedProjection {
         }?.id
     }
 
+    /// The reading a bounded launch read leaves: a transcript's opening records, the seam where its
+    /// middle is missing, and its newest ones (`TranscriptExcerpt`).
+    ///
+    /// Assembled rather than filtered, because no fixture stream can be excerpted — the seam is a
+    /// fact about how many BYTES were read, and every fixture here is handed to the projection
+    /// whole. The tail begins mid-turn on purpose: a read that starts at an offset starts mid-turn,
+    /// which is exactly what the seam has to make legible.
+    static let previewExcerptedRows = rows(
+        from: TranscriptFixtures.longTranscript.prefix(excerptEnd)
+            + [.excerpted]
+            + TranscriptFixtures.longTranscript.suffix(excerptEnd),
+    )
+
+    /// Two turns or so either side — enough that the seam is read between work rather than at the
+    /// top of an otherwise empty column.
+    private static let excerptEnd = 16
+
     /// The punctuation on its own, for the same reason. The interrupt is added rather than found:
     /// the shipping preview transcript carries no stopped Turn (#541).
     static let previewMarkRows = numbered(

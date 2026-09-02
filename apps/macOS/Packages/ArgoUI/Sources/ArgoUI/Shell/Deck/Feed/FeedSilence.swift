@@ -3,13 +3,15 @@ import SwiftUI
 /// A feed with no row in it. It says so, because a blank zone is indistinguishable from one that
 /// failed to draw.
 ///
-/// A claim about this SURFACE and not about the Session: an agent can be busy in kinds this feed
-/// does not draw yet, and "nothing said" would be a reading of the record rather than of the feed.
+/// WHICH of the three empties it is comes off `FeedVacancy`, from the environment: a window with
+/// Sessions and none chosen is not a window with no Sessions, and the words are the only thing on
+/// screen that can tell them apart.
 struct FeedSilence: View {
     @Environment(\.argo) private var argo
+    @Environment(\.argoFeedVacancy) private var vacancy
 
     var body: some View {
-        Text("Nothing to read yet")
+        Text(vacancy.words)
             .argoText(ArgoTypography.body)
             .foregroundStyle(argo.color.text.disabled)
     }
@@ -18,6 +20,22 @@ struct FeedSilence: View {
 #Preview("Feed silence — a Session that has said nothing") {
     FeedSilence()
         .padding(ArgoSpacing.region)
+        .argoDeckSurface()
+        .argoAppearance()
+}
+
+#Preview("Feed silence — a roster with Sessions on it and none chosen") {
+    FeedSilence()
+        .padding(ArgoSpacing.region)
+        .environment(\.argoFeedVacancy, .unselected)
+        .argoDeckSurface()
+        .argoAppearance()
+}
+
+#Preview("Feed silence — no Sessions at all") {
+    FeedSilence()
+        .padding(ArgoSpacing.region)
+        .environment(\.argoFeedVacancy, .noSessions)
         .argoDeckSurface()
         .argoAppearance()
 }
