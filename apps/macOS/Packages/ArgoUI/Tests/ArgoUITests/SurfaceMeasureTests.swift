@@ -1,15 +1,18 @@
 @testable import ArgoUI
 import Testing
 
-/// What a measure sheet beside its surface claims about that surface. Not one of them names
-/// a step of `ArgoSpacing` — every member is a slot sized to the sentence it holds — so
-/// `RhythmTests`' ladder assertion has nothing to hold them to. What holds a slot honest is the
-/// reason on its declaration, and these are those reasons made assertable.
+/// What a measure sheet beside one of the SHELL's own surfaces claims about that surface —
+/// everything held here belongs to something the shell draws whatever room is open. The Tickets
+/// room's panes are `TicketsRoomMeasureTests`, and a rendered diagram `MermaidMeasureTests`.
+///
+/// Not one of them names a step of `ArgoSpacing` — every member is a slot sized to the sentence it
+/// holds — so `RhythmTests`' ladder assertion has nothing to hold them to. What holds a slot honest
+/// is the reason on its declaration, and these are those reasons made assertable.
 ///
 /// A member with nothing to be read against is deliberately absent. `ArgoRosterFoot.minimumHeight`
 /// is a floor macOS raises from the reader's own sidebar setting, so the only claim available is
 /// that it is positive, and a test proving that earns nothing.
-@Suite("The measures that live beside their surface")
+@Suite("The measures that live beside the shell's own surfaces")
 struct SurfaceMeasureTests {
     @Test
     func `the rail opens somewhere the seam could also be dragged to`() {
@@ -93,185 +96,6 @@ struct SurfaceMeasureTests {
     @Test
     func `the state dot is drawn smaller than any symbol rung`() {
         #expect(ArgoIconSize.allCases.allSatisfy { $0.rawValue > ArgoIconSize.statusDot })
-    }
-
-    // MARK: - The Tickets room
-
-    /// The room's three panes tile the ideal window by construction, so the assertable claim is
-    /// that 520 leaves the third of them something to be: the design calls the ticket's 480 its
-    /// tightest number, and a wider list is what would take it below readable.
-    @Test
-    func `the backlog leaves the ticket beside it a pane`() {
-        #expect(ArgoTicketDetail.idealWidth > ArgoLayout.feedMinimumWidth)
-        #expect(ArgoTicketDetail.idealWidth < ArgoBacklogList.width)
-    }
-
-    /// Both panes carry a band at their head (#836), and the list is what gives up width when the
-    /// window cannot afford both — so the claim worth asserting is that the narrowest window still
-    /// seats all three columns. Under this, a control in the ticket's band meets the window's edge.
-    @Test
-    func `the room's three columns fit the narrowest window`() {
-        let columns = ArgoLayout.sidebarMinimumWidth
-            + ArgoBacklogList.minimumWidth
-            + ArgoLayout.feedMinimumWidth
-
-        #expect(columns <= ArgoLayout.windowMinimumWidth)
-    }
-
-    /// The list yields and the ticket does not, which is what makes a clipped title the room's
-    /// answer to a narrow window rather than an unreachable control.
-    @Test
-    func `the list gives up width before it reaches the ticket's floor`() {
-        #expect(ArgoBacklogList.minimumWidth < ArgoBacklogList.width)
-        #expect(ArgoBacklogList.minimumWidth > ArgoLayout.feedMinimumWidth)
-    }
-
-    /// The band is a FLOOR holding two lines — the title and the count under it — so a height that
-    /// did not clear both would crop the half that stops the title lying about the filter.
-    @Test
-    func `the band clears the two lines it is drawn for`() {
-        let lines = ArgoTypography.windowTitle.nominalLineBox
-            + ArgoTypography.rowMeta.nominalLineBox
-
-        #expect(ArgoBacklogList.bandHeight > lines)
-    }
-
-    /// The list is the wider pane, which is the whole reason the backlog left the rail: the design
-    /// rejected four rooms that put provider-owned text in a narrow column.
-    @Test
-    func `the backlog is wider than the rail it moved out of`() {
-        #expect(ArgoBacklogList.width > ArgoLayout.sidebarMaximumWidth)
-    }
-
-    /// Both are FLOORS macOS raises from the reader's own sidebar setting, so the assertable claim
-    /// is the relation: a backlog row carries a title at `body` and a view row a name at `rowMeta`,
-    /// so the row holding the larger type is the taller of the two.
-    @Test
-    func `a backlog row is floored taller than a sidebar view row`() {
-        #expect(ArgoBacklogList.rowHeight > ArgoTicketsSidebar.viewRowHeight)
-        #expect(ArgoBacklogList.rowHeight > ArgoTypography.body.nominalLineBox)
-        #expect(ArgoTicketsSidebar.viewRowHeight > ArgoTypography.rowMeta.nominalLineBox)
-    }
-
-    /// The glyph column exists so every view name starts on one vertical, which it can only do if
-    /// it is wider than the marks it holds.
-    @Test
-    func `the sidebar's glyph column holds the mark it is drawn for`() {
-        #expect(ArgoTicketsSidebar.glyphWidth > ArgoIconSize.inline.rawValue)
-    }
-
-    /// The twist's slot holds the mark drawn in it, the same way the sidebar's glyph column does —
-    /// a leaf keeps the slot, so a slot narrower than its mark would put every dot on a different
-    /// vertical the moment a parent appeared.
-    @Test
-    func `the twist's slot holds the chevron drawn in it`() {
-        #expect(ArgoBacklogList.twistWidth > ArgoIconSize.chevron.rawValue)
-    }
-
-    /// A step that did not clear the twist would put a child's dot under its parent's twist rather
-    /// than under its id, which is the one thing the design says the step is sized for.
-    @Test
-    func `one indent step carries a child's dot past its parent's twist`() {
-        #expect(ArgoBacklogList.indentStep > ArgoBacklogList.twistWidth)
-    }
-
-    /// The cap is an inset cap, not a depth cap: level three shares level two's, and the two below
-    /// it still differ, or the nesting would read as one flat band.
-    @Test
-    func `the indent caps at two steps and moves for every step under it`() {
-        let step = ArgoBacklogList.indentStep
-        // Compared OUTSIDE the macro, deliberately: `#expect` reports a `CGFloat` against a
-        // locally SUMMED `CGFloat` as unequal where the two are bit-identical, so the second step
-        // is settled here and the macro is handed the answer.
-        let secondStepMatchesTheFirst = ArgoBacklogList.indent(atDepth: 2)
-            == ArgoBacklogList.indent(atDepth: 1) + step
-
-        #expect(ArgoBacklogList.indent(atDepth: 0) == .zero)
-        #expect(ArgoBacklogList.indent(atDepth: 1) == step)
-        #expect(secondStepMatchesTheFirst)
-        #expect(ArgoBacklogList.indent(atDepth: 3) == ArgoBacklogList.indent(atDepth: 2))
-        #expect(ArgoBacklogList.indent(atDepth: 9) == ArgoBacklogList.indent(atDepth: 2))
-    }
-
-    /// A rule between two facts on one line, not a divider under the line: it has to stand shorter
-    /// than the taller of the two words it separates, or it reads as a break in the column.
-    @Test
-    func `the status pair's rule is shorter than the words it parts`() {
-        #expect(ArgoTicketDetail.statusDividerHeight < ArgoTypography.control.nominalLineBox * 2)
-        #expect(ArgoTicketDetail.statusDividerHeight > 0)
-    }
-
-    /// The vacancy panel is two centred sentences, not prose, so it is set narrower than the
-    /// measure a paragraph of Argo's own reading runs to.
-    @Test
-    func `the vacancy panel is narrower than a body of prose`() {
-        #expect(ArgoTicketsRoomVacancy.panelWidth < ArgoFeedRow.column)
-    }
-
-    /// It is a frame rather than a ceiling, so it has to fit the tightest deck the shell allows —
-    /// the minimum window with the sidebar dragged to its widest.
-    @Test
-    func `the vacancy panel fits the narrowest deck the shell allows`() {
-        #expect(
-            ArgoTicketsRoomVacancy.panelWidth
-                < ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMaximumWidth,
-        )
-    }
-
-    /// A connector's head is drawn in the lane between two ranks, so it has to stand well inside
-    /// that lane — a head as long as the gap would touch the box it left.
-    @Test
-    func `a connector's head stands well inside the gap between two ranks`() {
-        #expect(MermaidMeasure.arrowLength > 0)
-        #expect(MermaidMeasure.arrowLength < MermaidMeasure.rankGap / 2)
-        #expect(MermaidMeasure.arrowWidth < MermaidMeasure.arrowLength * 2)
-    }
-
-    /// The floor is what keeps a one-letter node a BOX. It has to clear the room a label is given
-    /// on either side of it, or the narrowest node would be narrower than its own padding.
-    @Test
-    func `the narrowest node is wider than the room its label is given`() {
-        #expect(MermaidMeasure.nodeMinWidth > MermaidMeasure.nodeInsetX * 2)
-    }
-
-    /// A diagram sets at the feed's rhythm, so its own boxes must not out-measure the column the
-    /// prose around them runs to.
-    @Test
-    func `a node is drawn narrower than the feed's own measure`() {
-        #expect(MermaidMeasure.nodeMinWidth < ArgoFeedRow.column - ArgoFeedRow.inset * 2)
-    }
-
-    /// A flag's point and a cylinder's lid are cut OUT of the box the label was measured into, so
-    /// both have to stay a fraction of the narrowest box there is — a point as wide as the box
-    /// leaves a triangle where a node should be.
-    @Test
-    func `a shape's own cut stays a fraction of the narrowest node`() {
-        #expect(MermaidMeasure.flagPoint > 0)
-        #expect(MermaidMeasure.flagPoint < MermaidMeasure.nodeMinWidth / 4)
-        #expect(MermaidMeasure.lidDepth > 0)
-        #expect(MermaidMeasure.lidDepth < MermaidMeasure.flagPoint)
-    }
-
-    /// A diamond only clears its own sloping sides where it stands BIGGER than the words, and a
-    /// scale under one would make it smaller than them.
-    @Test
-    func `a diamond is measured bigger than the words inside it`() {
-        #expect(MermaidMeasure.diamondScale > 1)
-    }
-
-    /// The three link kinds are told apart by weight, so a thick link has to be heavier than a
-    /// plain one and a dotted link's gap wide enough to read as a gap at that weight.
-    @Test
-    func `a loud link is drawn heavier than a plain one`() {
-        #expect(MermaidMeasure.thickStroke > MermaidMeasure.stroke)
-        #expect(MermaidMeasure.dash > MermaidMeasure.stroke)
-    }
-
-    /// A `subgraph`'s frame is a softer corner than the boxes inside it, so the enclosure reads as
-    /// a room around them rather than as another node.
-    @Test
-    func `an enclosure is drawn at a softer corner than the nodes it holds`() {
-        #expect(MermaidMeasure.groupRadius > MermaidMeasure.nodeRadius)
     }
 
     /// §5 forbids re-flowing the output, so the panel that holds it cannot be narrower than the
