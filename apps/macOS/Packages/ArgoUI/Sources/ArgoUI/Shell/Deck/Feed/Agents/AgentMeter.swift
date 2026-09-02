@@ -13,6 +13,9 @@ import SwiftUI
 /// A backgrounded Agent is never reported either figure, at either end (#908) — so a finished one
 /// draws NOTHING here. The count-up is gated on `isRunning` for exactly that: a clock still growing
 /// beside an idle dot would say the work goes on, which is the untruth the rail was fixed to stop.
+/// That gate now carries the delegating Session's own status with it (#1076), so a delegation left
+/// pending by a Session that has stopped draws no duration at all — a frozen `43h 24m` is the same
+/// untruth with the animation taken off it.
 struct AgentMeter: View {
     @Environment(\.argo) private var argo
 

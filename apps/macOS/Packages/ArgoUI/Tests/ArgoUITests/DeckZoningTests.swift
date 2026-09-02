@@ -123,7 +123,7 @@ struct DeckZoningTests {
         DeckZoning(
             deck: deck ?? self.deck,
             feed: feed,
-            agents: FeedAgents.all(in: feed),
+            agents: FeedAgents.all(in: feed, of: .running),
             open: open,
             seams: DeckSeams(
                 rail: .constant(ArgoAgentsRail.width),

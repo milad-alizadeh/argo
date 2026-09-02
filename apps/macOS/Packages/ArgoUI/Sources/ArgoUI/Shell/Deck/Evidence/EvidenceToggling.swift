@@ -8,8 +8,8 @@
 ///
 /// **The rail.** Nothing is decided here, because `DeckZoning.showsRail` already decides it: the
 /// panel and the rail are mutually exclusive and the panel wins. Opening the panel from the toolbar
-/// closes the rail exactly as opening it from a row does, and closing it brings the rail back if
-/// anything is still running.
+/// closes the rail exactly as opening it from a row does, and closing it brings the rail back for
+/// any Session that delegated anything.
 struct EvidenceToggling {
     /// The rows on screen — the Session's own, or the Subagent's the rail scoped onto.
     let feed: [FeedRow]

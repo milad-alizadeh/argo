@@ -76,7 +76,7 @@ extension SpecimenRegistry {
             SpecimenScene.sessions(FeedProjection.previewExpiredMarkRows)
         },
         SpecimenEntry("feedAgents") {
-            AgentsRail(agents: FeedAgents.all(in: FeedProjection.previewRows))
+            AgentsRail(agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running))
                 .frame(width: ArgoAgentsRail.width)
                 .argoDeckSurface()
         },

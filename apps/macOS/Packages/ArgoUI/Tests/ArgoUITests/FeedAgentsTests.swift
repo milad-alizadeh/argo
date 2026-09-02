@@ -8,7 +8,7 @@ import Testing
 @Suite("Feed agents")
 struct FeedAgentsTests {
     private func agents(in events: [TranscriptEvent]) -> [FeedAgent] {
-        FeedAgents.all(in: FeedProjection.rows(from: events))
+        FeedAgents.all(in: FeedProjection.rows(from: events), of: .running)
     }
 
     /// The parent writes the call when it hands the work over and the result when it comes back, so
@@ -18,7 +18,7 @@ struct FeedAgentsTests {
         let chips = agents(in: handedOver())
 
         #expect(chips.map(\.isRunning) == [true, false])
-        #expect(FeedAgents.running(in: FeedProjection.rows(from: handedOver())) == 1)
+        #expect(FeedAgents.running(in: FeedProjection.rows(from: handedOver()), of: .running) == 1)
     }
 
     @Test
@@ -34,7 +34,7 @@ struct FeedAgentsTests {
         ]
 
         #expect(agents(in: looking).isEmpty)
-        #expect(FeedAgents.running(in: FeedProjection.rows(from: looking)) == 0)
+        #expect(FeedAgents.running(in: FeedProjection.rows(from: looking), of: .running) == 0)
     }
 
     /// Nothing is reported until the delegating call comes back.

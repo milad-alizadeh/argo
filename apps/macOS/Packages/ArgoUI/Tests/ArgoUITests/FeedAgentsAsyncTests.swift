@@ -11,15 +11,7 @@ import Testing
 struct FeedAgentsAsyncTests {
     private static let launched: [TranscriptEvent] = [
         .toolCall(FeedFixture.call("away", tool: "Agent", kind: .delegate, naming: "review")),
-        .toolCallOutcome(ToolCallOutcome(
-            id: "away",
-            resolution: ToolCallOutcome.Resolution(
-                status: .inProgress,
-                result: nil,
-                endedAtMs: nil,
-            ),
-            delegated: ToolCallOutcome.Delegated(usage: nil, subagentID: "a-away"),
-        )),
+        .toolCallOutcome(TranscriptFixtures.launched("away", subagent: "a-away")),
     ]
 
     /// The report that ends it, filed as a second outcome for the same call — #825's join, which
@@ -42,7 +34,7 @@ struct FeedAgentsAsyncTests {
         DeckZoning(
             deck: 1400,
             feed: rows(events),
-            agents: FeedAgents.all(in: rows(events)),
+            agents: FeedAgents.all(in: rows(events), of: .running),
             open: nil,
             seams: .unheld,
         )
@@ -50,8 +42,8 @@ struct FeedAgentsAsyncTests {
 
     @Test
     func `a launch receipt leaves the subagent running`() {
-        #expect(FeedAgents.all(in: rows).map(\.isRunning) == [true])
-        #expect(FeedAgents.running(in: rows) == 1)
+        #expect(FeedAgents.all(in: rows, of: .running).map(\.isRunning) == [true])
+        #expect(FeedAgents.running(in: rows, of: .running) == 1)
     }
 
     /// Which is the whole bug: a rail that never appears while three agents are working.
@@ -60,13 +52,15 @@ struct FeedAgentsAsyncTests {
         #expect(zoning(Self.launched).showsRail)
     }
 
-    /// And the other half of it: the rail is a claim about NOW, so the report landing must take it
-    /// away again rather than leaving a fan-out on screen for the rest of the session.
+    /// And the other half of it: the COUNT LINE is the claim about now, so the report landing has
+    /// to retire the chip rather than leave a fan-out running for the rest of the session. The rail
+    /// itself stays — it lists what this Session delegated, finished chips included, and leaving
+    /// with the last report would take the way back out of a scoped feed with it (#1076).
     @Test
-    func `the rail goes away when the last report lands`() {
+    func `the last report retires the chip and leaves the rail standing`() {
         let ended = Self.launched + [.toolCallOutcome(Self.reported)]
 
-        #expect(FeedAgents.running(in: rows(ended)) == 0)
-        #expect(!zoning(ended).showsRail)
+        #expect(FeedAgents.running(in: rows(ended), of: .running) == 0)
+        #expect(zoning(ended).showsRail)
     }
 }

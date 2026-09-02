@@ -28,17 +28,19 @@ struct AgentsRailScopeTests {
         #expect(readings.rows(of: running) == nil)
     }
 
-    /// The rail is the way back out of a Subagent, and it leaves the deck once nothing is running —
-    /// so a scope that outlived it would strand the reader in a feed with no chip left to click.
+    /// The rail lists what the Session delegated, finished chips included — so the chip a reader
+    /// clicks after the work landed still scopes the feed onto its reading, in a Session that has
+    /// stopped running. Keyed on "something is running", this fell back to the Session's own feed
+    /// the moment the dots went honest (#1076).
     @Test
-    func `a scope drops back to the session once no agent is still running`() {
+    func `a scope on an agent whose work has landed still draws that agent's rows`() {
         let landed = FeedProjection.rows(from: settled())
 
         #expect(readings.rows(
             under: .subagent(0),
-            of: FeedAgents.all(in: landed),
+            of: FeedAgents.all(in: landed, of: .notRunning),
             otherwise: landed,
-        ) == landed)
+        ).map(\.content) == [.message(Self.said)])
     }
 
     /// The same fallback for an Agent that has left the list — a live transcript can be re-read,
@@ -49,7 +51,7 @@ struct AgentsRailScopeTests {
 
         #expect(readings.rows(
             under: .subagent(99),
-            of: FeedAgents.all(in: session),
+            of: FeedAgents.all(in: session, of: .running),
             otherwise: session,
         ) == session)
     }
@@ -59,7 +61,7 @@ struct AgentsRailScopeTests {
         let session = FeedProjection.rows(from: FeedFixture.handedOver(subagent: Self.read))
         let scoped = readings.rows(
             under: .subagent(1),
-            of: FeedAgents.all(in: session),
+            of: FeedAgents.all(in: session, of: .running),
             otherwise: session,
         )
 
@@ -73,14 +75,19 @@ struct AgentsRailScopeTests {
         let session = FeedProjection.rows(from: FeedFixture.handedOver(subagent: Self.read))
         let scoped = FeedProjection.rows(from: [.message(markdown: Self.said)])
 
-        #expect(zoning(feed: scoped, agents: FeedAgents.all(in: session)).agents.count == 2)
+        #expect(zoning(feed: scoped, agents: FeedAgents.all(in: session, of: .running)).agents
+            .count == 2)
     }
 
     /// The strip is narrower than the seam's own floor, which is the whole reason collapsing is not
     /// a drag to the minimum.
     @Test
     func `a collapsed rail takes its strip's width rather than the seam's`() {
-        let collapsed = zoning(feed: working, agents: FeedAgents.all(in: working), collapsed: true)
+        let collapsed = zoning(
+            feed: working,
+            agents: FeedAgents.all(in: working, of: .running),
+            collapsed: true,
+        )
 
         #expect(collapsed.railWidth == ArgoAgentsRail.collapsedWidth)
         #expect(collapsed.railWidth < ArgoLayout.railWidths.lowerBound)
@@ -93,7 +100,7 @@ struct AgentsRailScopeTests {
     /// width the share is over its ceiling either way, so the widest deck would show nothing move.
     @Test
     func `collapsing the rail gives its width back to the reading`() {
-        let agents = FeedAgents.all(in: working)
+        let agents = FeedAgents.all(in: working, of: .running)
         let open = zoning(deck: Self.narrowDeck, feed: working, agents: agents)
         let shut = zoning(deck: Self.narrowDeck, feed: working, agents: agents, collapsed: true)
 
@@ -111,7 +118,7 @@ struct AgentsRailScopeTests {
     )
 
     private func agents(in events: [TranscriptEvent]) -> [FeedAgent] {
-        FeedAgents.all(in: FeedProjection.rows(from: events))
+        FeedAgents.all(in: FeedProjection.rows(from: events), of: .running)
     }
 
     /// One delegation, answered: nothing is running, so the rail is off the deck.

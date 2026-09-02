@@ -11,7 +11,11 @@ enum AgentsRailFixture {
 
     /// The reading behind that one chip. The rest of the preview's delegations are unanswered, so
     /// they name no Subagent and stay unselectable — which is the honest shape of a live fan-out.
-    static let readings = FeedAgentReader(events: [verifierID: verifier])
+    ///
+    /// `of: .running` because these fixtures ARE Sessions at work: a delegation still open reads as
+    /// a Subagent still running only beside a Session that is running too (#1076), and a fixture
+    /// that said nothing would render every state of this rail quiet.
+    static let readings = FeedAgentReader(events: [verifierID: verifier], of: .running)
 
     /// Every Agent in the wide fan-out read, so the many-Agent render shows a rail of controls
     /// rather than a rail of quiet rows.
@@ -21,6 +25,7 @@ enum AgentsRailFixture {
                 agent.subagentID.map { ($0, verifier) }
             },
         ),
+        of: .running,
     )
 
     /// A Session that handed work to exactly ONE Agent, and is waiting on it.
