@@ -24,14 +24,23 @@
 ///
 /// What the optimiser is worth on these paths, and why it is small, is ADR-0028's Consequences.
 enum PerfBudgets {
-    /// `CockpitPresentationCostTests` — one presentation comparison may not scale with the
-    /// transcript it carries.
+    /// `CockpitPresentationCostTests` — one presentation comparison reads NONE of the transcript
+    /// it carries, at either transcript length.
     ///
-    /// Recorded: 0.997–1.002, a pass 1.8 µs inside a 5 000-pass block over 4 Sessions of 5 824
-    /// events · Apple silicon laptop · debug · least of 20. Before the fix an equal comparison of
-    /// reallocated buffers cost 5.48 ms against 3.9 µs after, and this quotient read about 19.
-    /// Rule 7's 3x would allow 3.0; 1.3 is Rule 3's own number and the tighter of the two.
-    static let presentationCompareFlat = 1.3
+    /// Recorded: 0 reads of `Stream.events` over 4 Sessions of 728 events and of 5 824 · M4 Pro ·
+    /// either · exact. A comparison answered by the stamp asks for no events at all; one that
+    /// walked them asks once a side per Session — 8 over this fixture — which is why zero is
+    /// gated exactly rather than with slack.
+    ///
+    /// The same claim in seconds rides along here and BINDS nothing (ADR-0028 Rule 8): a quotient
+    /// of 0.997–1.002 under a `1.3`, a pass 1.8 µs inside a 5 000-pass block · Apple silicon
+    /// laptop · debug · least of 20; before the fix an equal comparison of reallocated buffers
+    /// cost 5.48 ms against 3.9 µs after, and that quotient read about 19. It is a figure and not
+    /// a bound because its arms are the same comparison over eight times the resident working set,
+    /// a difference `CLOCK_THREAD_CPUTIME_ID` charges to the larger arm in every trial — and it
+    /// read **1.3045** on the `macos` job on a branch touching nothing it measures, with `main`
+    /// green on the same code (#1068).
+    static let presentationCompareReads = 0
 
     /// `FeedRowsCompareCostTests` — asking whether the fresh rows are the reading that stands may
     /// not scale with the reading.

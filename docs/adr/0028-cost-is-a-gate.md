@@ -197,18 +197,21 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   assumed. A COUNT is control flow: a ruler measure, a Core Text pass, a whole-document walk, a
   geometry derivation, a cache miss and a retained byte happen the same number of times under
   `-Onone` and under `-O`, so debug costs those claims nothing and Rule 8's sweep is what made that
-  most of the suite. Ten claims are CPU quotients and they are what a release run re-records.
+  most of the suite. Eight claims are CPU quotients and they are what a release run re-records.
   Seven were named when this bullet was written — `HubRosterCostTests` (1),
   `CockpitPresentationCostTests` (2), `FeedRowsCompareCostTests` (2),
   `SessionsRoomReadingCostTests` (2) — and four more only by the #1065 amendment below, which is
-  the second time this census has been short; one of those four is a count now, leaving
-  `ProseTextSizeCostTests` (2) and `FeedRowShapeTests` (1) beside the seven. Five others were
-  quotients and are now counts, because Rule 8's first instruction had a count available in all
-  five: the roster memo's own fold count and the prose store's hit rate when #991 swept, the join's
-  own rebuild count in #1064, the roster's fold count again for `SubagentCostTests` in #1065, and
-  the labelling pass's own count of the paths it looked at in #1066. All seven named above
-  hold unchanged optimised, and so does every count beside them: `ArgoEngine` 1 222 tests
-  and `ArgoUI` 2 035 tests pass in release with no budget touched.
+  the second time this census has been short; one of those four is a count now, and so are both of
+  `CockpitPresentationCostTests`' (#1070, the first of the original seven to go), leaving
+  `HubRosterCostTests` (1), `FeedRowsCompareCostTests` (2), `SessionsRoomReadingCostTests` (2),
+  `ProseTextSizeCostTests` (2) and `FeedRowShapeTests` (1) — eight claims across five suites. Six
+  migrations have turned quotients into counts, because Rule 8's first instruction had a count
+  available in every one of them: the roster memo's own fold count and the prose store's hit rate
+  when #991 swept, the join's own rebuild count in #1064, the roster's fold count again for
+  `SubagentCostTests` in #1065, the labelling pass's own count of the paths it looked at in #1066,
+  and the stream's own count of the times it handed its events out in #1070. All seven named when
+  this bullet was written held unchanged optimised, and so does every count beside them:
+  `ArgoEngine` 1 222 tests and `ArgoUI` 2 035 tests pass in release with no budget touched.
 
   > **Amendment — 2026-09-02 (#1064).** `HubJoinCostTests` was the eighth quotient and is now a
   > count, because #991's sweep left it in place and it turned `main` red on unchanged code. Its
@@ -326,6 +329,57 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   > move them by. The count that would replace it has not been looked for. Named here so the next
   > red run is read as this.
 
+  > **Amendment — 2026-09-02 (#1070).** The count was looked for and it was there.
+  > `CockpitPresentationCostTests` now counts the times a Session's stream HANDED ITS EVENTS OUT
+  > across one presentation comparison, and reads zero — at a 728-event transcript and at an
+  > eightfold one, over four Sessions whose two sides share no buffer. Both its quotients go, which
+  > is the first of the seven the census named from the start to be migrated and takes the census
+  > to **eight CPU quotients across five suites**.
+  >
+  > **The count is of the WORK and not of the answer**, which is the question #1066 nearly got
+  > wrong. `HeldEvents.events` is the only way to the events, so a comparison answered by the stamp
+  > asks for none of them and one that walks them has to ask: the injected regression
+  > `lhs.stamp == rhs.stamp && lhs.events == rhs.events` reads 8 against the gated 0 on the equal
+  > case and 6 on the changed one, where `&&` stops at the Session that grew. A tally of the
+  > comparison's ANSWERS — how many Sessions compared equal — is the same either way, which is why
+  > it is not the tally taken. `StreamReads` hangs off the value, as `HubJoin.rebuilds` and
+  > `HubRosterMemo.folds` do, and never off a static.
+  >
+  > **Both vacuity holes the last two migrations found are closed on the case rather than argued
+  > about.** The zero is gated absolutely, and beside it the fixture is asserted to hold what the
+  > claim needs: the two sides share no buffer, because `Array.==` answers an identical buffer
+  > without looking at an element and a walking comparison over shared buffers would read zero too
+  > — a `reallocated` that stopped reallocating fails that assertion, not the count. And the same
+  > tally is shown to MOVE when the events are asked for, so a counter that had stopped counting
+  > cannot leave the gate green at a blind zero. Its `PerfBudgets.presentationCompareFlat` is
+  > RETIRED rather than moved, because a bound left in place reads as live; the 0.997–1.002 it was
+  > written against, and the 1.3045 that reddened the runner, sit beside
+  > `PerfBudgets.presentationCompareReads` as figures gated by nothing.
+  >
+  > **Narrower than the quotient it replaces, and the case says so.** The old assertion timed the
+  > whole `CockpitPresentation ==`, so every other field of every Session was held against growing
+  > with the transcript as a side effect of it; this one holds the stream — the only field that
+  > carries the transcript, and the only one the suite's own doc comment ever named. It also
+  > carries a limit every count in this suite carries: a transcript-sized field added to
+  > `Transcript` beside the stream, where equality is synthesised, would be deep-compared without
+  > asking the stream for anything — so `Stream`'s doc comment now says that is not where such a
+  > fact goes.
+  >
+  > **The one door has to be a door the defect cannot walk around, and that took the file split
+  > #1066 also needed.** Swift's `private` is FILE-scoped, so storage declared beside `Stream.==`
+  > is visible to it: `lhs.stamp == rhs.stamp && lhs.held == rhs.held` compiled, walked all 5 824
+  > events, and left the gate GREEN — the review found it by injection rather than by reading. The
+  > events now live in `HeldEvents`, a file `Stream` cannot see past, so the same injection no
+  > longer compiles and the only way to the array is the accessor that counts. A gate whose
+  > mechanism has a one-token bypass at the exact site of the defect is the busy-box lesson again,
+  > one level down.
+  >
+  > `HubRosterCostTests`' `session(id:)` still stands, for the reason #1065 gave. It is now the
+  > only quotient of that shape left in `ArgoEngine`, and the next candidate: an eightfold resident
+  > set under a `1.3`, already red once at 1.89 (#1005), and the count that would replace it — the
+  > fold count the case beside it asserts — cannot see a lookup that walks the folded roster,
+  > which is why migrating it is a piece of work rather than a rename.
+
   > **Amendment — 2026-09-02 (#1024).** "Before the budgets bind" assumed that a `macos-26`
   > recording would make a SECOND bindable. It does not, and this bullet is the last place in the
   > ADR that reads as though it might. A GitHub-hosted runner is a shared, virtualised box with no
@@ -355,7 +409,7 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   so `swift test -c release` failed to COMPILE `ArgoUITests` — exiting 0 as it did, the #918 hazard
   again — and took the seven CPU quotients in that target down with the count assertions that share
   the module. Defining DEBUG in the optimised build is honest exactly while every `#if DEBUG` under
-  `Packages/*/Sources` stays additive: 18 sites in 7 files today, not one with an `#else`. An
+  `Packages/*/Sources` stays additive: 37 sites in 15 files today, not one with an `#else`. An
   `#else` added there would make a release run measure debug behaviour, and nothing checks for one.
 - **Release is not on the `macos` job.** Cold on the machine this was written on, both packages:
   289.6 s optimised against 106.3 s in debug, 2.7x, for the same 3 257 tests — whole-module `-O`
