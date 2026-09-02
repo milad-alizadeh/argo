@@ -85,7 +85,7 @@ final class TranscriptWatch {
     /// Take back the join retained for a Project, or start a fresh one. Keyed by the RESOLVED
     /// Project, which is the key it was retained under.
     func restore(for key: String) {
-        mutate { $0 = retained.take(for: key) ?? HubJoin() }
+        mutate { $0.replace(with: retained.take(for: key) ?? HubJoin()) }
     }
 
     /// Keep this Project's join, before the tails are torn down — which is what empties it.
@@ -161,7 +161,7 @@ final class TranscriptWatch {
         let stopped = Array(tails.values)
         tails = [:]
         whole = WholeReadings()
-        mutate { $0 = HubJoin() }
+        mutate { $0.replace(with: HubJoin()) }
         // A failure is a claim about what could not be read, and nothing is being read now. The one
         // caller that wants it standing — `observeNamed` — sets it AFTER this returns.
         failureMessage = nil
@@ -187,7 +187,7 @@ final class TranscriptWatch {
     /// a different extent (`TranscriptWatch+Reading.swift`).
     func tail(
         _ observation: TranscriptObservation,
-        joining admit: (inout HubJoin) -> Void,
+        joining admit: (inout HubJoin) -> Bool,
     ) async {
         await pauseObserving(transcriptID: observation.id)
         mutate(admit)
@@ -238,8 +238,14 @@ final class TranscriptWatch {
     /// The ONE write to the join. In place, so a batch costs no copy of the transcripts it lands
     /// in, and revision-stamped, so no write can reach the join without reaching the memo folded
     /// off it (ADR-0028 Rule 1).
-    private func mutate(_ change: (inout HubJoin) -> Void) {
-        change(&join)
+    ///
+    /// The stamp moves only where the change says something MOVED. This counter is a dependency of
+    /// the whole cockpit — the scene root reads the roster folded off it — so a write that changed
+    /// no row would re-render every row for news that is not news (#858). Answering that is the
+    /// change's own job, because only the write knows: every mutating method on `HubJoin` reports
+    /// it, `replace(with:)` included.
+    private func mutate(_ change: (inout HubJoin) -> Bool) {
+        guard change(&join) else { return }
         joinRevision += 1
     }
 

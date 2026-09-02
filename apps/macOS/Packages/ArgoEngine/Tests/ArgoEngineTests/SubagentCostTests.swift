@@ -70,7 +70,9 @@ struct SubagentCostTests {
     private static func foldsOnAStampMove(of hub: Hub) -> Int {
         _ = hub.sessions
         let before = hub.roster.folds
-        hub.claims.setLostTurn(nil, for: probe)
+        // A fact that MOVES, since #858: a claim republished with what it already held publishes
+        // nothing, and `nil` over a claim holding nothing is the emptiest write there is.
+        hub.claims.setLostTurn("a Turn nobody heard", for: probe)
         _ = hub.sessions
         return hub.roster.folds - before
     }
