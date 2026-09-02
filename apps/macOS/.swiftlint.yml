@@ -79,7 +79,9 @@ function_parameter_count:
   #
   # A struct whose memberwise init Swift made private is SKIPPED, because no other file can call it
   # and no width can cross into it. That is most of ArgoUI, where a view holds `@State private
-  # var`, and its real seam is a written init or its own file.
+  # var`, and its real seam is a written init or its own file. What seals it is a private property
+  # that is IN the list — `private let x = 0` is settled and seals nothing, and `private lazy var`
+  # does. The skip is an exemption no line here records, so the script counts it out loud instead.
   error: 4
   warning: 4
   # RATCHET initializer-parameter-count — the LIST is the ratchet, not a wider number. Edge 6 fails
@@ -114,7 +116,10 @@ function_parameter_count:
   #
   # And the SYNTHESIZED memberwise inits, which edge 6 could not see until #1060. Grandfathered by
   # the same lines and the same widths — a memberwise init IS an init, and grouping one deletes its
-  # line the same way. Nothing below predates the CAP; all of it predates the edge reading it.
+  # line the same way. Nothing below predates the CAP; all of it predates the edge reading it, and
+  # they are lines rather than groupings because regrouping 73 value types unreviewed is the worse
+  # alternative. An entry is a slot on a file and a width, so a NEW struct of a grandfathered
+  # width in a grandfathered file inherits the slot: check the reason still names the right type.
   # INIT: IssueJSON.swift 15 — the GitHub issue fixture, spelled the way GitHub spells it so the
   # INIT: TranscriptRecord.swift 15 — MessageRecord, the facts every message-bearing record
   # INIT: LinearIssueJSON.swift 14 — the Linear issue fixture, field for field as its GraphQL API

@@ -41,7 +41,7 @@ fi
 # fail-open docs/agents/quality-gates.md is about. `"""` blocks and `/* */` comments are tracked
 # across lines because their contents are prose that may hold anything, a declaration included.
 AWK_READER='
-  function code(line,   out, i, char, next2, rest, seen) {
+  function code(line,   out, i, char, next2, hashes, opener, closer, seen) {
     out = ""
     if (inblock) {
       i = index(line, "\"\"\"")
@@ -55,17 +55,37 @@ AWK_READER='
       incomment = 0
       line = substr(line, i + 2)
     }
+    if (inraw != "") {
+      i = index(line, inraw)
+      if (!i) return ""
+      line = substr(line, i + length(inraw))
+      inraw = ""
+    }
     for (i = 1; i <= length(line); i++) {
       char = substr(line, i, 1)
       next2 = substr(line, i, 3)
       if (next2 == "\"\"\"") { inblock = 1; return out }
       if (char == "/" && substr(line, i, 2) == "/*") {
-        rest = substr(line, i + 2); seen = index(rest, "*/")
+        seen = index(substr(line, i + 2), "*/")
         if (!seen) { incomment = 1; return out }
         i = i + 2 + seen
         continue
       }
       if (char == "/" && substr(line, i, 2) == "//") return out
+      # A raw string or an extended regex: `\` escapes nothing inside either, so the plain string
+      # rule below would read past the real terminator and unbalance the braces after it.
+      if (char == "#") {
+        for (hashes = 0; substr(line, i + hashes, 1) == "#"; hashes++) continue
+        opener = substr(line, i + hashes, 1)
+        if (opener == "\"" || opener == "/") {
+          closer = opener
+          while (length(closer) <= hashes) closer = closer "#"
+          seen = index(substr(line, i + hashes + 1), closer)
+          if (!seen) { inraw = closer; return out }
+          i = i + hashes + seen + length(closer) - 1
+          continue
+        }
+      }
       if (char == "\"") {
         for (i++; i <= length(line); i++) {
           if (substr(line, i, 1) == "\\") { i++; continue }
@@ -289,13 +309,9 @@ if [ -z "$INIT_CAP" ]; then
     "That is the rule this edge extends to the shape SwiftLint cannot see, and this edge reads its" \
     "number rather than carrying one of its own. Without it the edge checks nothing and says so."
 else
-  # Printed on every run, pass or fail: a cap nothing says out loud is a cap "quality passed" can be
-  # read as having held (#992).
-  echo "swift-boundaries: edge 6 — initializer cap $INIT_CAP parameters, SwiftLint's own; \
-$(printf '%s\n' "$INIT_EXEMPT" | awk 'NF' | wc -l | tr -d ' ') grandfathered by name in $SWIFTLINT_CONFIG"
   # Depth-counted rather than pattern-matched: a default value may itself hold commas and parens,
   # and a list wide enough to matter is always wrapped one parameter per line.
-  hits=$(
+  scanned=$(
     find "$APP_DIR" -name '*.swift' \
       ! -path '*/.build/*' ! -path '*/build/*' ! -path '*.xcodeproj/*' -print 2>/dev/null \
       | sort \
@@ -334,74 +350,116 @@ $(printf '%s\n' "$INIT_EXEMPT" | awk 'NF' | wc -l | tr -d ' ') grandfathered by 
         # an `init` it does not have, and a wide struct written on one line would read as having no
         # members at all. Both are house style here, so both would be ways past a gate that looked.
         awk -v file="$file" -v cap="$INIT_CAP" "$AWK_READER"'
-          # How many properties one declaration binds. `let a: Int, b: Int` is two, while the commas
-          # inside `(Int, Int)` or `Dictionary<String, Int>` are one type talking about itself, so a
-          # binding is only counted where a NAME and its colon follow the comma outside any bracket.
-          function bindings(text,   i, char, nest, count) {
-            count = 1
-            for (i = 1; i <= length(text); i++) {
-              char = substr(text, i, 1)
+          # One declaration may bind several properties, and each is its own slot. The commas inside
+          # `(Int, Int)` or `Dictionary<String, Int>` are a type talking about itself, so a binding
+          # is only split off where a NAME and its colon follow the comma outside any bracket.
+          function count_bindings(rest, islet,   i, char, nest, piece, count) {
+            count = 0; piece = ""
+            for (i = 1; i <= length(rest); i++) {
+              char = substr(rest, i, 1)
               if (char == "(" || char == "[") nest++
               else if (char == ")" || char == "]") nest--
-              else if (char == "," && !nest && substr(text, i) ~ /^,[ \t]*[A-Za-z_][A-Za-z0-9_]*[ \t]*[:=]/)
-                count++
+              if (char == "," && !nest && substr(rest, i) ~ /^,[ \t]*`?[A-Za-z_][A-Za-z0-9_`]*[ \t]*[:=]/) {
+                count += bound(piece, islet); piece = ""; continue
+              }
+              piece = piece char
             }
-            return count
+            return count + bound(piece, islet)
           }
-          # `opens` says a brace follows this segment, which is what tells a computed property from a
-          # stored one — the difference is invisible in the declaration itself.
-          function member(text, opens,   rest) {
-            # A nested type owns its own members, and its own `init` suppresses its own list, not the
-            # enclosing one.
-            if (text ~ /(^|[^.A-Za-z0-9_])(struct|enum|class|actor|protocol|extension)[ \t]+[A-Za-z_]/) return
+          # An initialised `let` is settled, so no call site can pass it. Asked per BINDING, because
+          # `let e: Int, settled = 7` settles only the second one.
+          function bound(piece, islet) { return (islet && piece ~ /=/) ? 0 : 1 }
+          # `opens` says a brace follows this declaration, which is what tells a computed property
+          # from a stored one — the difference is invisible in the declaration itself.
+          function member(text, opens,   rest, islet, count) {
+            # A nested type owns its own members, and its own `init` suppresses its own list.
+            if (text ~ /(^|[^.A-Za-z0-9_])(struct|enum|class|actor|protocol|extension)[ \t]+`?[A-Za-z_]/) return
             if (text ~ /(^|[^.A-Za-z0-9_])init\??[ \t]*[(<]/) { written[depth] = 1; return }
-            if (text !~ /(^|[^.A-Za-z0-9_])(var|let)[ \t]+[A-Za-z_]/) return
+            if (text !~ /(^|[^.A-Za-z0-9_])(var|let)[ \t]+`?[A-Za-z_]/) return
             # A type property is not in the list.
             if (text ~ /(^|[^.A-Za-z0-9_])static[ \t]/) return
             # Accessors rather than a value: a computed property stores nothing.
             if (opens && text !~ /=/) return
-            # An initialised `let` is settled, so no call site can pass it.
-            if (text ~ /(^|[^.A-Za-z0-9_])let[ \t]/ && text ~ /=/) return
-            if (text ~ /(^|[^.A-Za-z0-9_])(private|fileprivate)[ \t]/) { sealed[depth] = 1; return }
+            islet = (text ~ /(^|[^.A-Za-z0-9_])let[ \t]/)
             rest = text; sub(/^.*[^.A-Za-z0-9_](var|let)[ \t]+/, "", rest)
-            fields[depth] += bindings(rest)
+            count = count_bindings(rest, islet)
+            # Nothing of this declaration reaches the list, so it neither counts nor seals.
+            if (!count) return
+            if (text ~ /(^|[^.A-Za-z0-9_])(private|fileprivate)[ \t]/) { sealed[depth] = 1; return }
+            fields[depth] += count
           }
           function close_struct() {
+            if (isstruct[depth] && !written[depth] && sealed[depth] && fields[depth] > cap)
+              print "sealed|" file ":" at[depth] ": " named[depth]
             if (isstruct[depth] && !written[depth] && !sealed[depth] && fields[depth] > cap)
               print file ":" at[depth] ": " named[depth] "'"'"'s synthesized memberwise init takes " \
                 fields[depth] " parameters"
             if (depth > 0) depth--
           }
+          # The type is read off the HEADER, which runs from the last brace to this one — a
+          # conformance list SwiftFormat wrapped, an Allman brace and a `where` clause on its own
+          # line all put the keyword on a different line from the brace it opens.
           function open_scope(text,   opening) {
-            if (isstruct[depth]) member(text, 1)
-            opening = ""
-            if (match(text, /(^|[^.A-Za-z0-9_])struct[ \t]+[A-Za-z_][A-Za-z0-9_]*/)) {
-              opening = substr(text, RSTART, RLENGTH); sub(/^.*struct[ \t]+/, "", opening)
+            if (pended != "") { member(pended, 1); pended = "" }
+            else member(text, 1)
+            # Padded, so a `struct` at the very start of a file has the same left edge as any
+            # other and the greedy strip below takes the LAST one the header holds.
+            opening = " " header
+            if (opening !~ /[^.A-Za-z0-9_]struct[ \t]+`?[A-Za-z_]/) opening = ""
+            else {
+              sub(/^.*[^.A-Za-z0-9_]struct[ \t]+`?/, "", opening)
+              sub(/[^A-Za-z0-9_].*$/, "", opening)
             }
             depth++
             isstruct[depth] = (opening != ""); named[depth] = opening
             fields[depth] = 0; written[depth] = 0; sealed[depth] = 0; at[depth] = FNR
           }
+          function flush(text) { if (isstruct[depth]) member(text, 0) }
+          function drain() { if (pended != "") { flush(pended); pended = "" } }
+          # Only one branch of a conditional compiles, and the gate cannot know which. It counts the
+          # WIDEST, so no branch can hide a field and no branch is counted twice.
+          /^[ \t]*#if/ { drain(); base[depth] = fields[depth]; best[depth] = 0; next }
+          /^[ \t]*#(else|elseif)/ {
+            drain()
+            if (fields[depth] - base[depth] > best[depth]) best[depth] = fields[depth] - base[depth]
+            fields[depth] = base[depth]; next
+          }
+          /^[ \t]*#endif/ {
+            drain()
+            if (fields[depth] - base[depth] > best[depth]) best[depth] = fields[depth] - base[depth]
+            fields[depth] = base[depth] + best[depth]; next
+          }
           {
             line = code($0)
+            # A declaration held over from the last line belongs to whatever follows it: a brace on
+            # its own line makes it a computed property, and anything else makes it stored.
+            if (pended != "" && line !~ /^[ \t]*\{/) drain()
             for (i = 1; i <= length(line); i++) {
               char = substr(line, i, 1)
-              if (char == "{") { open_scope(seg); seg = "" }
-              else if (char == "}") {
-                if (isstruct[depth]) member(seg, 0)
-                close_struct(); seg = ""
-              } else if (char == ";") {
-                if (isstruct[depth]) member(seg, 0)
-                seg = ""
-              } else seg = seg char
+              if (char == "{") { open_scope(seg); seg = ""; header = "" }
+              else if (char == "}") { drain(); flush(seg); close_struct(); seg = ""; header = "" }
+              else if (char == ";") { drain(); flush(seg); seg = ""; header = "" }
+              else { seg = seg char; header = header char }
             }
-            # Swift needs no semicolon, so a newline ends a declaration too.
-            if (isstruct[depth]) member(seg, 0)
+            # The header spans lines; only a brace or a semicolon ends the declaration it opens.
+            header = header " "
+            # A trailing comma means the binding list runs on, so the declaration is not over yet.
+            if (seg ~ /,[ \t]*$/) next
+            if (seg ~ /[^ \t]/) { pended = seg; seg = "" }
             seg = ""
           }
         ' "$file"
       done
   )
+  # The private-sealed skip is an exemption no `# INIT:` line records, so it is counted OUT LOUD
+  # rather than left to look like nothing was there — a gate that says how much it did not read.
+  sealed=$(printf '%s\n' "$scanned" | grep -c '^sealed|' || true)
+  hits=$(printf '%s\n' "$scanned" | grep -v '^sealed|' || true)
+  # Printed on every run, pass or fail: a cap nothing says out loud is a cap "quality passed" can be
+  # read as having held (#992).
+  echo "swift-boundaries: edge 6 — initializer cap $INIT_CAP parameters, SwiftLint's own; \
+$(printf '%s\n' "$INIT_EXEMPT" | awk 'NF' | wc -l | tr -d ' ') grandfathered by name in \
+$SWIFTLINT_CONFIG; $sealed skipped, memberwise init sealed private"
   # Matched by file and count rather than by line, because a line number moves under every edit
   # above it and a list that churns is a list nobody reads. Two inits of the same width in one file
   # take one entry each; two FILES of one name would make an entry ambiguous, and that is reported
