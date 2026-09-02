@@ -21,7 +21,8 @@ enum AgentsRailFixture {
 
     /// The same records beside a Session that is NOT running — every delegation still open reads
     /// as a Subagent that stopped with it, which is the state the rail used to draw a green dot and
-    /// a growing clock on (#1076).
+    /// a growing clock on (#1076). None of them is listed now: not running is not listed (#1090),
+    /// so this fixture renders the rail with its disclosure and nothing else.
     static let quietReadings = FeedAgentReader(
         events: [TranscriptFixtures.verifierID: verifier],
         of: .notRunning,

@@ -12,6 +12,9 @@ struct AgentsFanOutSpecimen: View {
     /// twenty dots fit a column that twenty names overflow — so it is the case worth a still of its
     /// own rather than a variant nobody looks at.
     var isCollapsed = false
+    /// The rail opened onto the Agents that have landed (#1090) — the disclosure's other side, and
+    /// the widest the column ever gets, since it is then holding every delegation at once.
+    var showingFinished = false
 
     @State private var scope = FeedScope.session
 
@@ -26,6 +29,7 @@ struct AgentsFanOutSpecimen: View {
                     isCollapsed: .constant(isCollapsed),
                     readings: AgentsRailFixture.fanOutReadings,
                 ),
+                showingFinished: showingFinished,
             )
             .frame(width: width)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -46,6 +50,12 @@ struct AgentsFanOutSpecimen: View {
 
 #Preview("Agents rail — a fan-out running under the canopy") {
     AgentsFanOutSpecimen()
+        .frame(width: 900, height: 620)
+        .argoAppearance()
+}
+
+#Preview("Agents rail — the fan-out with its finished Agents revealed") {
+    AgentsFanOutSpecimen(showingFinished: true)
         .frame(width: 900, height: 620)
         .argoAppearance()
 }

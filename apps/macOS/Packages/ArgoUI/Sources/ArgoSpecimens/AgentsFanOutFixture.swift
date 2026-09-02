@@ -9,9 +9,9 @@ import Foundation
 /// subagents, and a rail holding four never leaves its column.
 enum AgentsFanOutFixture {
     static let agents: [FeedAgent] = briefs.enumerated().map { position, brief in
-        // The first third are still out. A fan-out mid-flight is what the rail is glanced at
-        // to read, so the fixture is not a list of finished work.
-        let isRunning = position.isMultiple(of: 3)
+        // Two in every three are still out, so the column still overflows now that it holds only
+        // the live ones (#1090). The other third are what the disclosure at the foot counts.
+        let isRunning = !position.isMultiple(of: 3)
         // Every second one was launched in the BACKGROUND, so the column holds both shapes: an
         // async agent is named by its launch receipt, which reports nothing else ever (#908).
         let isAsync = position.isMultiple(of: 2)

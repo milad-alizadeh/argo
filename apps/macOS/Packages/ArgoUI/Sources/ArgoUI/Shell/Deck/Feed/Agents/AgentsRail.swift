@@ -18,10 +18,15 @@ package struct AgentsRail: View {
     /// What the feed is scoped to, whether this rail is collapsed, and which chips have a reading
     /// behind them — all three the deck's state, which the rail writes. See `AgentsRailControl`.
     var control = AgentsRailControl.inert
+    /// Whether the Agents that have landed are showing. It survives a Session switch, and is
+    /// deliberately NOT cleared in `CockpitView.forgetEvidence()` beside `scope`: a scope names a
+    /// delegation of the Session being left, where this is a preference about the COLUMN — the
+    /// reason `isCollapsed` is held above the deck's per-Session identity too.
+    @State private var showsFinished: Bool
 
     package var body: some View {
         if control.isCollapsed {
-            AgentsRailStrip(agents: agents, control: control)
+            AgentsRailStrip(agents: listing.listed, control: control)
         } else {
             full
         }
@@ -35,12 +40,19 @@ package struct AgentsRail: View {
             LazyVStack(alignment: .leading, spacing: ArgoSpacing.tight) {
                 header
                 MainChip(isSelected: control.scope.isSession, select: control.selectSession)
-                ForEach(agents) { agent in
+                ForEach(listing.listed) { agent in
                     AgentChip(
                         agent: agent,
                         isSelected: control.scope.agent == agent.id,
                         scope: control.select(agent),
                     )
+                }
+                // Nothing at all where nothing is held back: a control that opens onto an empty
+                // list is a control claiming there is more to see.
+                if !listing.finished.isEmpty {
+                    AgentsRailFinished(count: listing.finished.count, isShowing: showsFinished) {
+                        showsFinished.toggle()
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -52,8 +64,9 @@ package struct AgentsRail: View {
         .accessibilityLabel(AgentsRailCopy.agents)
     }
 
-    /// The ones that have landed stay in the count line's list because a Subagent that finished is
-    /// how its spend is read at all. What the line SAYS is `AgentsRailCopy`.
+    /// The count is of what is RUNNING, and since #1090 so is the list under it — the ones that
+    /// have landed sit behind the disclosure at the foot (`AgentsRailListing`). What the line SAYS
+    /// is `AgentsRailCopy`.
     ///
     /// The line doubles as the way to collapse: a control of its own beside it would be a second
     /// thing at the top of a column whose whole job is to stay quiet.
@@ -81,9 +94,25 @@ package struct AgentsRail: View {
         FeedAgents.running(of: agents)
     }
 
+    /// Which of them the column holds, drawn from the WHOLE list every time: the count line still
+    /// counts every delegation's state, so the heading cannot disagree with a list that hides some.
+    private var listing: AgentsRailListing {
+        AgentsRailListing(
+            of: agents,
+            scopedOnto: control.scope.agent,
+            revealing: showsFinished,
+        )
+    }
+
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-    package init(agents: [FeedAgent], control: AgentsRailControl = AgentsRailControl.inert) {
+    /// `showingFinished` seeds the state above, so a render can open on the revealed rail.
+    package init(
+        agents: [FeedAgent],
+        control: AgentsRailControl = AgentsRailControl.inert,
+        showingFinished: Bool = false,
+    ) {
         self.agents = agents
         self.control = control
+        _showsFinished = State(initialValue: showingFinished)
     }
 }
