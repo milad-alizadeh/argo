@@ -6,12 +6,17 @@ import SwiftUI
 /// It draws the projection's FLATTENED order (`TicketsRoomProjection.drawn`) rather than nesting
 /// `View`s. Why, and what that trades away: `cockpit-work-room.inventory.md`.
 struct BacklogOutline: View {
+    @Environment(\.argo) private var argo
+
     /// The band's rows in draw order, already flattened. Handed in rather than derived, because
     /// the header above them counts this same array (#819).
     let drawn: [TicketsRoomProjection.Drawn]
     /// Which parents the reader has folded. **Everything opens open** — a tree that opens shut
     /// hides what it was added for, so this starts empty and folding is the deliberate act.
     @Binding var shut: Set<Int>
+    /// The row the reader is working in, from the list's own selection. Handed down because the
+    /// row's whole treatment turns on it — the ground included (#1071).
+    var selection: Int?
     /// Whether the fold is the reader's to move here. A search stands the twists down rather than
     /// drawing dead ones: it hands in a tree that is already open, and a twist that folds nothing
     /// visible is the control-that-does-nothing this room keeps refusing (#873).
@@ -19,12 +24,21 @@ struct BacklogOutline: View {
 
     var body: some View {
         ForEach(drawn) { drawn in
+            let ink = BacklogRowInk(
+                isSelected: drawn.id == selection,
+                isRail: drawn.row.isRail,
+                palette: argo.color,
+            )
             BacklogRow(
                 drawn: drawn,
                 isOpen: !shut.contains(drawn.id),
+                ink: ink,
                 toggle: folds && drawn.isParent ? { toggle(drawn.id) } : nil,
             )
             .previewSafeListRow()
+            // On the ROW and from HERE: a `listRowBackground` declared inside the row's own body
+            // reaches nothing, and the band it would have drawn is the platform's instead (#1071).
+            .listRowBackground(ink.ground.color)
             // On the ROW, not the list: declared on the `List` the modifier reaches nothing. A rule
             // under every row turns a list into a table.
             .listRowSeparator(.hidden)

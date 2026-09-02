@@ -46,7 +46,7 @@ struct BacklogList: View {
                     .previewSafeListRow()
                     .listRowSeparator(.hidden)
                     .selectionDisabled()
-                BacklogOutline(drawn: drawn, shut: $shut, folds: header.folds)
+                BacklogOutline(drawn: drawn, shut: $shut, selection: selection, folds: header.folds)
             }
         }
         .listStyle(.inset)

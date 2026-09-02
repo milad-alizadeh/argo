@@ -19,6 +19,10 @@ struct BlockageMark: View {
     @Environment(\.argo) private var argo
 
     let blockage: TicketsRoomProjection.Blockage
+    /// The opaque ground to lay under the capsule, where the surface under the mark is not one the
+    /// Route's inks can be read on — a selected backlog row's loud ground reads both at 1.2:1
+    /// (#1071). `nil` on the deck, which is the ground they were chosen against.
+    var backdrop: ArgoColor?
 
     var body: some View {
         HStack(spacing: ArgoSpacing.hair) {
@@ -31,7 +35,13 @@ struct BlockageMark: View {
         // `tight` the ring crowds the capsule's own stroke — rendered, not guessed.
         .padding(.horizontal, ArgoSpacing.snug)
         .frame(minHeight: ArgoBacklogList.blockageMark)
-        .background(Capsule().strokeBorder(ink.color, lineWidth: ArgoStroke.hairline))
+        // Filled where the row hands it a ground, so the two state inks are read on the deck's
+        // own surface wherever the mark is drawn — a stroke over nothing takes whatever is behind.
+        .background {
+            Capsule()
+                .fill(backdrop ?? .transparent)
+                .overlay(Capsule().strokeBorder(ink.color, lineWidth: ArgoStroke.hairline))
+        }
         // Rigid for the `#id`'s reason: a mark that gave up width would set its own glyph and
         // digits down the column rather than let the title take the squeeze.
         .fixedSize()
