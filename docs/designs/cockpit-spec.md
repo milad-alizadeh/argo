@@ -172,6 +172,14 @@ Detail: `cockpit-onboarding-spec.md`; Project Settings in `cockpit-app-shell-spe
   `⋯` menu**: glance only.
 - **Title resolves through a stable fallback chain** — explicit name → linked ticket →
   conversation-derived — and never rewrites per turn, so rail and header always match.
+  - **Amended by [#1072](https://github.com/milad-alizadeh/argo/issues/1072) — 2026-09-02:** the
+    roster spends the linked ticket on a title only where it names **one** row. Where two or more
+    of its Sessions would draw the same ticket, each row falls back to its conversation-derived
+    name and the ticket rides the secondary line. The chain is not reordered — it is held to the
+    case it is true in: one worktree's caption loop drew fourteen rows reading
+    `#650 — Rough atlas…` alike, the ticket being the least distinguishing fact on the row. The
+    header, which draws one Session beside its own Issue row, still reads the chain whole, so rail
+    and header match on every row the ticket does distinguish.
 - **Meta line order: `status · model · mode · branch(+∆/↑) · elapsed · intent ↗`** — the natural
   triage sweep. When the session is titled from its ticket the intent chip collapses to `#<n> ↗`
   so the link never echoes the title.

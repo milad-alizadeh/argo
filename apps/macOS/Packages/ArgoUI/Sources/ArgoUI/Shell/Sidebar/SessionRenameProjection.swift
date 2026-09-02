@@ -16,13 +16,19 @@ enum SessionRenameProjection {
     /// Spelled as what it goes back TO, and completed by the title itself where it is drawn.
     static let reset = "Reset to"
 
-    static func rename(for session: CockpitPresentation.Session) -> Rename {
+    /// `naming` is the roster's own decision about this row (`SessionTitle.namings(across:)`) and
+    /// not a second reading of it, so the dialog opens on the line that was clicked and Reset
+    /// promises the words that line would go back to (#1072).
+    static func rename(
+        for session: CockpitPresentation.Session, naming: SessionTitle.Naming,
+    )
+        -> Rename {
         Rename(
             sessionID: session.id,
-            name: SessionTitle.resolved(for: session),
+            name: naming.title,
             // Read off the explicit name and not off a comparison of the two: a user who renamed a
             // Session to exactly its derived title has still renamed it.
-            derived: session.explicitName == nil ? nil : SessionTitle.fallback(for: session),
+            derived: session.explicitName == nil ? nil : naming.resetsTo,
         )
     }
 }

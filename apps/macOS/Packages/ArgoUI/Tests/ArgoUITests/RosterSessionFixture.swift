@@ -13,6 +13,8 @@ enum RosterSessionFixture {
 
     static func session(
         id: String,
+        // The Session's derived name. Defaulted, because only the title suites care what it says.
+        title: String? = nil,
         workspaceLocation: String? = checkout,
         kind: CockpitPresentation.Session.WorkspaceKind? = .main,
         branch: String? = "main",
@@ -27,7 +29,7 @@ enum RosterSessionFixture {
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
             id: id,
-            title: "Session \(id)",
+            title: title ?? "Session \(id)",
             access: access,
             status: status,
             chain: .init(

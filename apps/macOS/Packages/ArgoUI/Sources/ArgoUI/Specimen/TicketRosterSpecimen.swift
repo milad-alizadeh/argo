@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// The roster once the ticket names the row (#745) — the state the whole ticket is about, where
-/// before it every row read `/implement <N>`.
+/// The roster with three Sessions on one ticket and one alone on another (#745, #1072): the shared
+/// ticket names none of the three apart, so each reads its own derived title with `#741` on the
+/// line below, and the row that owns its ticket still reads the ticket's words.
 ///
-/// Rendered at BOTH widths on purpose: the column truncates at the tail, and whether three Sessions
-/// on one ticket are still told apart when the shared title cuts is a question only the narrow
-/// render answers.
+/// Rendered at BOTH widths on purpose: the column truncates at the tail, and whether the three are
+/// still told apart when their own titles cut is a question only the narrow render answers.
 struct TicketRosterSpecimen: View {
     var width = ArgoLayout.sidebarIdealWidth
 
