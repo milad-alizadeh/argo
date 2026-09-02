@@ -10,7 +10,6 @@
 		11CBAC93302A279300682C20 /* ArgoTerminal in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60000000000A2 /* ArgoTerminal */; };
 		A1B2C3D4E5F6000000000001 /* ArgoEngine in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60000000000A0 /* ArgoEngine */; };
 		A1B2C3D4E5F6000000000002 /* ArgoUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60000000000A1 /* ArgoUI */; };
-		A1B2C3D4E5F6000000000003 /* ArgoDesign in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60000000000A3 /* ArgoDesign */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,7 +49,6 @@
 				11CBAC93302A279300682C20 /* ArgoTerminal in Frameworks */,
 				A1B2C3D4E5F6000000000001 /* ArgoEngine in Frameworks */,
 				A1B2C3D4E5F6000000000002 /* ArgoUI in Frameworks */,
-				A1B2C3D4E5F6000000000003 /* ArgoDesign in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -99,7 +97,6 @@
 				A1B2C3D4E5F60000000000A0 /* ArgoEngine */,
 				A1B2C3D4E5F60000000000A1 /* ArgoUI */,
 				A1B2C3D4E5F60000000000A2 /* ArgoTerminal */,
-				A1B2C3D4E5F60000000000A3 /* ArgoDesign */,
 			);
 			productName = Argo;
 			productReference = A1B2C3D4E5F6000000000010 /* Argo.app */;
@@ -157,7 +154,6 @@
 			packageReferences = (
 				A1B2C3D4E5F6000000000090 /* XCLocalSwiftPackageReference "Packages/ArgoEngine" */,
 				A1B2C3D4E5F6000000000091 /* XCLocalSwiftPackageReference "Packages/ArgoUI" */,
-				A1B2C3D4E5F6000000000092 /* XCLocalSwiftPackageReference "Packages/ArgoDesign" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A1B2C3D4E5F6000000000031 /* Products */;
@@ -410,10 +406,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ArgoUI;
 		};
-		A1B2C3D4E5F6000000000092 /* XCLocalSwiftPackageReference "Packages/ArgoDesign" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/ArgoDesign;
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -428,10 +420,6 @@
 		A1B2C3D4E5F60000000000A2 /* ArgoTerminal */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ArgoTerminal;
-		};
-		A1B2C3D4E5F60000000000A3 /* ArgoDesign */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = ArgoDesign;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
