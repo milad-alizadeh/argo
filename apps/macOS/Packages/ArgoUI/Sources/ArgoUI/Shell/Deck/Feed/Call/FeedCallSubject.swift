@@ -6,7 +6,7 @@ import SwiftUI
 /// A path never appears here. The filename is the whole address, with a parent in front of it only
 /// where another file in the same feed answers to the same name — which is what keeps a call one
 /// line at any window width, and what leaves the full path to the evidence panel.
-struct FeedCallSubject: View {
+package struct FeedCallSubject: View {
     @Environment(\.argo) private var argo
     /// Whether this drawing is the ion's mask rather than the row — see `isIonMask`.
     @Environment(\.isIonMask) private var isIonMask
@@ -18,7 +18,7 @@ struct FeedCallSubject: View {
     /// Whether this row's evidence is the panel's content.
     var isOpen = false
 
-    var body: some View {
+    package var body: some View {
         switch subject {
         case let .file(file): named(file)
         case let .command(command): typed(command)
@@ -64,6 +64,13 @@ struct FeedCallSubject: View {
     private var ink: ArgoColor {
         tint ?? (isOpen ? argo.color.interaction.accentBright : argo.color.text.secondary)
     }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(subject: FeedCall.Subject, tint: ArgoColor? = nil, isOpen: Bool = false) {
+        self.subject = subject
+        self.tint = tint
+        self.isOpen = isOpen
+    }
 }
 
 extension FeedCall.Subject {
@@ -80,16 +87,3 @@ extension FeedCall.Subject {
 
 // Taken from the shipping projection rather than written here, so no preview can show a shape the
 // shared rule would never produce.
-#Preview("Call subject — every shape a call can name") {
-    VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
-        ForEach(FeedProjection.previewCallRows) { row in
-            if case let .call(call) = row.content {
-                FeedCallSubject(subject: call.subject)
-            }
-        }
-    }
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 520)
-    .argoDeckSurface()
-    .argoAppearance()
-}

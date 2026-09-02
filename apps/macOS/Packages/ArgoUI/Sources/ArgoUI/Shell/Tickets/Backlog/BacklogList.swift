@@ -7,7 +7,7 @@ import SwiftUI
 /// its own — #836's `minWidth/idealWidth/maxWidth` let the `HStack` distribute the deck between
 /// the two panes, and the seam settles that now. The floor those named survives as the seam's
 /// (`ArgoLayout.backlogWidths`).
-struct BacklogList: View {
+package struct BacklogList: View {
     /// The tree's roots, banded here: which rows a band draws depends on the fold, which is the
     /// pane's state rather than the room's.
     let rows: [TicketsRoomProjection.Row]
@@ -22,12 +22,32 @@ struct BacklogList: View {
     /// — every open view, and the closed one once the provider has served its last (#1075).
     var more: (@MainActor () -> Void)?
 
-    struct Held {
-        @Binding var selection: Int?
-        @Binding var shut: Set<Int>
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        rows: [TicketsRoomProjection.Row],
+        held: Held,
+        header: TicketsChromeProjection.Reading = .none,
+        more: (@MainActor () -> Void)? = nil,
+    ) {
+        self.rows = rows
+        self.held = held
+        self.header = header
+        self.more = more
     }
 
-    var body: some View {
+    package struct Held {
+        @Binding var selection: Int?
+        @Binding var shut: Set<Int>
+
+        /// Spelled out because Swift synthesises no memberwise initializer above
+        /// `internal`, and the specimens build this from their own target (#1085).
+        package init(selection: Binding<Int?>, shut: Binding<Set<Int>>) {
+            _selection = selection
+            _shut = shut
+        }
+    }
+
+    package var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
             BacklogHeader(reading: header)
             if let stated = header.empty {
@@ -101,79 +121,13 @@ struct BacklogList: View {
     }
 }
 
-#Preview("Backlog list — everything open") {
-    @Previewable @State var selection: Int? = 272
-    @Previewable @State var shut: Set<Int> = []
-
-    BacklogList(
-        rows: TicketsFixture.room.backlog,
-        held: .init(selection: $selection, shut: $shut),
-    )
-    .frame(width: ArgoBacklogList.width, height: 520)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Backlog list — a parent folded, and its header's count with it") {
-    @Previewable @State var selection: Int? = 607
-    @Previewable @State var shut: Set = [607]
-
-    BacklogList(
-        rows: TicketsFixture.room.backlog,
-        held: .init(selection: $selection, shut: $shut),
-    )
-    .frame(width: ArgoBacklogList.width, height: 520)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
 // The state that SHIPS: no port reads a priority yet (#388), so every root bands under the one
 // header that says nothing was read rather than being dropped by three that cannot hold it.
-#Preview("Backlog list — nobody read a priority") {
-    @Previewable @State var shut: Set<Int> = []
-    let unread = TicketsRoomProjection.room(from: TicketsFixture.reading(of: TicketsFixture.items))
-        .backlog
-
-    BacklogList(rows: unread, held: .init(selection: .constant(nil), shut: $shut))
-        .frame(width: ArgoBacklogList.width, height: 420)
-        .argoDeckSurface()
-        .argoAppearance()
-}
 
 // The `Closed` view's own shape (#1075): flat, no priority headers, every row stating its own
 // closure, and the foot that reads the page behind this one.
-#Preview("Backlog list — closed, flat, with another page behind it") {
-    @Previewable @State var selection: Int? = 264
-    @Previewable @State var shut: Set<Int> = []
-    let room = TicketsRoomProjection.room(from: TicketsFixture.closedMore, in: .closed)
-
-    BacklogList(
-        rows: room.backlog,
-        held: .init(selection: $selection, shut: $shut),
-        header: TicketsChromeProjection.reading(of: room, in: .closed, showing: selection),
-        more: {},
-    )
-    .frame(width: ArgoBacklogList.width, height: 420)
-    .argoDeckSurface()
-    .argoAppearance()
-    .environment(\.backlogNow, TicketsFixture.asOf)
-}
 
 // …and the last page, where the foot is not drawn at all.
-#Preview("Backlog list — closed, the provider served its last page") {
-    @Previewable @State var shut: Set<Int> = []
-    let room = TicketsRoomProjection.room(from: TicketsFixture.closedRead, in: .closed)
-
-    BacklogList(
-        rows: room.backlog,
-        held: .init(selection: .constant(nil), shut: $shut),
-        header: TicketsChromeProjection.reading(of: room, in: .closed, showing: nil),
-    )
-    .frame(width: ArgoBacklogList.width, height: 420)
-    .argoDeckSurface()
-    .argoAppearance()
-    .environment(\.backlogNow, TicketsFixture.asOf)
-}
 
 #Preview("Backlog list — the provider answered with nothing") {
     BacklogList(rows: [], held: .init(selection: .constant(nil), shut: .constant([])))

@@ -1,5 +1,7 @@
 import ArgoDesign
 import ArgoEngine
+import ArgoFixtures
+@testable import ArgoSpecimens
 @testable import ArgoUI
 import Foundation
 import Testing

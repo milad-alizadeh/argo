@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// The scrolling itself is `FeedTable`'s (AppKit's), and where it lands is `FeedScrollPolicy`'s.
 /// This view reads both off the handle and writes neither.
-struct FeedView: View {
+package struct FeedView: View {
     @Environment(\.argo) private var argo
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Whether a deck seam is being dragged — the table degrades its re-measure to the visible rows
@@ -16,8 +16,8 @@ struct FeedView: View {
 
     /// Which reading these rows are — see `FeedReading`. Every piece of per-reading state below is
     /// keyed on it, which is what the deck's `.id(session)` used to do by destroying the lot.
-    var reading = FeedReading.unattached
-    let rows: [FeedRow]
+    package var reading = FeedReading.unattached
+    package let rows: [FeedRow]
     /// What the deck has open and where the keyboard is. Owned by the deck: opening a row resizes
     /// the column this view is drawn in. Already routed through
     /// `FeedRowSelection.homing(onto:)` by whoever owns it — this view holds no copy to route.
@@ -77,7 +77,7 @@ struct FeedView: View {
     /// come back reading as a fresh one.
     @State private var waitStarted: Date?
 
-    var body: some View {
+    package var body: some View {
         FeedTable(
             reading: reading,
             rows: rows,
@@ -160,24 +160,25 @@ struct FeedView: View {
                 .duration,
         )
     }
-}
 
-#Preview("Feed — a turn read from a transcript") {
-    FeedPreview(rows: FeedProjection.previewRows)
-        .frame(width: 820, height: 560)
-}
-
-#Preview("Feed — a deck wide enough to break the measure") {
-    FeedPreview(rows: FeedProjection.previewRows)
-        .frame(width: 1440, height: 560)
-}
-
-#Preview("Feed — a Session that has said nothing") {
-    FeedPreview(rows: [])
-        .frame(width: 820, height: 320)
-}
-
-#Preview("Feed — a real session's worth of rows") {
-    FeedPreview(rows: FeedProjection.longRows)
-        .frame(width: 820, height: 560)
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        reading: FeedReading = FeedReading.unattached,
+        rows: [FeedRow],
+        selection: FeedRowSelection,
+        held: FeedRow.ID? = nil,
+        isUnderComposer: Bool = false,
+        table: FeedTableHandle,
+        opensUnfolded: Set<FeedRow.ID> = [],
+        washed: FeedRow.ID? = nil,
+    ) {
+        self.reading = reading
+        self.rows = rows
+        self.selection = selection
+        self.held = held
+        self.isUnderComposer = isUnderComposer
+        self.table = table
+        self.opensUnfolded = opensUnfolded
+        _washed = State(wrappedValue: washed)
+    }
 }

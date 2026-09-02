@@ -4,14 +4,14 @@ import ArgoEngine
 ///
 /// It selects the kinds this feed draws, pairs each call with the outcome that answered it, and
 /// hands every character on untouched.
-enum FeedProjection {
+package enum FeedProjection {
     /// Rows in the stream's own order. Nothing is sorted, nothing is promoted, and an event kind
     /// with no row yet contributes none rather than a placeholder.
     /// `working`, `handedOff` and `expired` are the inputs that are not the record's — a Turn in
     /// progress (`FeedWorking`), a handoff (`CONTEXT.md` L2), and a Permission Argo's own gate
     /// refused (#573). No CLI wrote a word about any of them, so they arrive beside the stream
     /// rather than being looked for inside it.
-    static func rows(
+    package static func rows(
         from events: [TranscriptEvent],
         working: Bool = false,
         starting: Bool = false,

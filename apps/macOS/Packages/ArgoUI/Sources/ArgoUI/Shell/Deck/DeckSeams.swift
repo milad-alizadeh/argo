@@ -3,7 +3,7 @@ import SwiftUI
 /// The widths the reader has dragged the deck's movable seams to — a preference of the WINDOW, so
 /// passed in rather than owned among the zones. The zone layout is rebuilt whenever the deck
 /// changes Session, and a seam owned inside that subtree loses its drag on every switch.
-struct DeckSeams {
+package struct DeckSeams {
     /// How wide the agents rail opens.
     var rail: Binding<CGFloat>
     /// What the reader dragged the evidence panel to. `nil` until they do — the panel opens at its

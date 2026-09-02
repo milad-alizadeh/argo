@@ -50,7 +50,7 @@ struct MermaidGantt: Equatable, Sendable {
     /// ONE list, read by `labels` and by the layout alike. A heading and a task row placed from
     /// two separate walks would be one edit away from the captions and the labels disagreeing,
     /// which is the pairing `MermaidLayout` rests on.
-    var rows: [Row] {
+    package var rows: [Row] {
         sections.enumerated().flatMap { at, section in
             // A section named nothing writes no heading, so an unnamed run of tasks starts at the
             // axis rather than under a blank line.

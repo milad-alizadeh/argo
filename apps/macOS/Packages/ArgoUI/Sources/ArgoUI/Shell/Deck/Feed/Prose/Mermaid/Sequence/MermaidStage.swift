@@ -9,7 +9,7 @@ import Foundation
 struct MermaidStage {
     let diagram: MermaidSequence
     let columns: MermaidColumns
-    let rows: MermaidSequenceRows
+    package let rows: MermaidSequenceRows
 
     init(_ diagram: MermaidSequence) {
         let columns = MermaidColumns.of(diagram)

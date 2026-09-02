@@ -8,12 +8,12 @@
 /// The division is the handoff's (`CockpitView.handOff`): the app performs the spawn, the shell
 /// decides what to point at.
 @MainActor
-struct CockpitSpawn {
+package struct CockpitSpawn {
     let offer: NewSessionOffer
     private let actions: CockpitActions
     private let navigation: CockpitNavigationModel
 
-    init(
+    package init(
         presentation: CockpitPresentation,
         actions: CockpitActions,
         navigation: CockpitNavigationModel,

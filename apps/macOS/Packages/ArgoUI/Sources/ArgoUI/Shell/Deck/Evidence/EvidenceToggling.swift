@@ -10,7 +10,7 @@
 /// panel and the rail are mutually exclusive and the panel wins. Opening the panel from the toolbar
 /// closes the rail exactly as opening it from a row does, and closing it brings the rail back for
 /// any Session that delegated anything.
-struct EvidenceToggling {
+package struct EvidenceToggling {
     /// The rows on screen — the Session's own, or the Subagent's the rail scoped onto.
     let feed: [FeedRow]
     /// Which row's evidence is open, if any.
@@ -49,5 +49,11 @@ struct EvidenceToggling {
 
     private var latest: FeedRow.ID? {
         feed.last(where: { $0.content.opened != nil })?.id
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(feed: [FeedRow], open: FeedRow.ID?) {
+        self.feed = feed
+        self.open = open
     }
 }

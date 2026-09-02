@@ -45,7 +45,7 @@ enum SessionState {
 
     /// The two together, and `nil` for every status that spends no word — so a surface drawing the
     /// pair cannot render a tint against nothing.
-    static func reading(for status: SessionStatus) -> Reading? {
+    package static func reading(for status: SessionStatus) -> Reading? {
         guard let word = word(for: status) else { return nil }
         return Reading(word: word, tone: role(for: status))
     }

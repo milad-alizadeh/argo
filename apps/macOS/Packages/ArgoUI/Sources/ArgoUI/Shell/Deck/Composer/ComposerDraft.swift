@@ -6,12 +6,12 @@ import Foundation
 /// One closure and not two, because they are one act — the paths are named INSIDE the Turn the
 /// words are in (`SessionTurn.text(_:attaching:)`), so an attach that went and a send that did not
 /// would leave files written for a message nobody sent.
-typealias ComposerSend = (String, [SessionAttachment]) throws -> Void
+package typealias ComposerSend = (String, [SessionAttachment]) throws -> Void
 
 /// What the field holds, what is waiting behind it, and why the last attempt to send did not go.
 /// Also what the per-Session store (`ComposerDrafts`) keeps.
-struct ComposerDraft: Equatable {
-    var text: String
+package struct ComposerDraft: Equatable {
+    package var text: String
     /// What is on the tray above the field, in the order it was given (#540). The order is the
     /// contract: it is the order the Turn names the paths in.
     ///
@@ -44,7 +44,7 @@ struct ComposerDraft: Equatable {
     /// Whether the walk for `heldMode` has begun, so no second boundary can start another (#653).
     private(set) var isWalkingMode = false
 
-    init(
+    package init(
         text: String = "",
         refusal: String? = nil,
         queued: [QueuedTurn] = [],
@@ -84,7 +84,7 @@ struct ComposerDraft: Equatable {
 
     /// Put the draft to the Session through `deliver`. A refusal keeps every character where it
     /// was typed and every chip where it was dropped — a failed send must never clear the field.
-    mutating func send(via deliver: ComposerSend) {
+    package mutating func send(via deliver: ComposerSend) {
         refused(by: Self.refusal(putting: text, attaching: attachments, via: deliver))
         guard refusal == nil else { return }
         text = ""
@@ -170,7 +170,7 @@ struct ComposerDraft: Equatable {
 
     /// The seam's sentence for it. Named rather than written at the call site, so the test that
     /// asserts the reader was told and the vessel that tells them cannot come to disagree.
-    static let cleared = "Turn stopped — the composer was cleared"
+    package static let cleared = "Turn stopped — the composer was cleared"
 
     /// The port's reason a rung did not land (#545), on the seam as a notice rather than a
     /// refusal: no words are at risk, so there is nothing for the seam's Retry to put back.
@@ -212,7 +212,7 @@ struct ComposerDraft: Equatable {
     /// What the seam says about a rung Argo is holding: the port's own refusal first, verbatim,
     /// then what Argo did with the intent. Both halves, because a reader who picked a rung needs
     /// to know it was refused AND that it was not dropped.
-    static func held(_ mode: SessionMode) -> String {
+    package static func held(_ mode: SessionMode) -> String {
         "\(SessionDriveError.modeBusy.detail) — \(mode.label) is held until this Turn ends"
     }
 
@@ -240,7 +240,7 @@ struct ComposerDraft: Equatable {
     /// What the seam says about a Turn the CLI never heard. It does not offer a Retry: the words
     /// are back in the field where Send is, and a second button for the same act would be a second
     /// answer to "how do I send this".
-    static let lost = "The agent never received that message — your words are back below"
+    package static let lost = "The agent never received that message — your words are back below"
 
     /// Take one waiting follow-up back — the chip's `×`. By id and never by text: two identical
     /// follow-ups are two things.

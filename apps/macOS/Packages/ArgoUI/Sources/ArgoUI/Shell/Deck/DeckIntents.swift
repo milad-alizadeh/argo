@@ -4,7 +4,7 @@ import SwiftUI
 /// What the deck's one vessel DOES — the closures that reach the selected Session, beside the
 /// `DeckVessel` value that says what is drawn. Every intent is inert by default, so a specimen
 /// renders the vessel without a terminal behind it.
-struct DeckIntents {
+package struct DeckIntents {
     /// One Turn to the shown Session; refusals are thrown back and the composer's seam repeats
     /// them.
     var send: ComposerSend = { _, _ in }
@@ -17,7 +17,7 @@ struct DeckIntents {
     /// reporting it. The composer's own act: it is the thing that took the news in.
     var lostTurnSeen: () -> Void = {}
     /// Stopping the Turn in flight (#541); a Session blocked on a Permission has nothing to stop.
-    var stop: () throws -> Void = {}
+    package var stop: () throws -> Void = {}
     /// Putting the Session on a rung of the Mode ladder (#545); refused rungs reach the seam.
     /// Async because the port's walk is: the ring is stepped one keystroke at a time (#653).
     var setMode: (SessionMode) async throws -> Void = { _ in }
@@ -41,4 +41,29 @@ struct DeckIntents {
 
     /// Controls that reach nothing, for a specimen or a `#Preview` with no Session behind them.
     @MainActor static let inert = DeckIntents()
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        send: @escaping ComposerSend = { _, _ in },
+        decide: @escaping (PermissionDecision) -> Void = { _ in },
+        revoke: @escaping (String) -> Void = { _ in },
+        lostTurnSeen: @escaping () -> Void = {},
+        stop: @escaping () throws -> Void = {},
+        setMode: @escaping (SessionMode) async throws -> Void = { _ in },
+        spawnBeside: @escaping () async -> Void = {},
+        commands: @escaping () async -> CommandCatalog = { CommandCatalog.empty },
+        files: @escaping () async -> [String] = { [] },
+        draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
+    ) {
+        self.send = send
+        self.decide = decide
+        self.revoke = revoke
+        self.lostTurnSeen = lostTurnSeen
+        self.stop = stop
+        self.setMode = setMode
+        self.spawnBeside = spawnBeside
+        self.commands = commands
+        self.files = files
+        self.draft = draft
+    }
 }

@@ -48,7 +48,7 @@ public struct FeedAgentReader: Equatable, Sendable {
 
     /// The readings a fixture or a specimen has in hand, which are a dictionary and never a live
     /// file — so a state rendered for review is the state that ships.
-    init(events: [String: [TranscriptEvent]], of session: DelegatingSession = .notRunning) {
+    package init(events: [String: [TranscriptEvent]], of session: DelegatingSession = .notRunning) {
         self.identity = .fixture(events)
         self.read = { events[$0] }
         self.stamp = nil

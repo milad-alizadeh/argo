@@ -8,13 +8,13 @@ import SwiftUI
 ///
 /// The bucket is set LOWERCASE — uppercase machine at 11 reads as loud as the word it is filing
 /// (`cockpit-work-room.md`, token reconciliation).
-struct StatusPair: View {
+package struct StatusPair: View {
     @Environment(\.argo) private var argo
 
     let word: String
     let bucket: TicketState
 
-    var body: some View {
+    package var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
             Text(word)
                 .argoText(ArgoTypography.rowMeta)
@@ -34,9 +34,10 @@ struct StatusPair: View {
     private var filingWorthDrawing: String? {
         bucket.filing(beside: word)
     }
-}
 
-#Preview("Status pair — every reading a provider can put in the head") {
-    StatusPairSpecimen()
-        .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(word: String, bucket: TicketState) {
+        self.word = word
+        self.bucket = bucket
+    }
 }

@@ -12,6 +12,11 @@ import { fileURLToPath } from 'node:url'
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 export const ENGINE = 'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub'
 export const SHELL = 'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell'
+// Edge 7's two subjects: the dev-tool targets beside ArgoUI, which the edge checks the direction
+// of. Named files rather than empty directories, because git carries no empty one and the edge
+// reports a missing target rather than passing over it.
+export const SPECIMENS = 'apps/macOS/Packages/ArgoUI/Sources/ArgoSpecimens'
+export const FIXTURES = 'apps/macOS/Packages/ArgoUI/Sources/ArgoFixtures'
 // The file edge 6's cases put their subject in, and the config it reads its cap off.
 export const ACTIONS = `${SHELL}/CockpitActions.swift`
 export const CONFIG = 'apps/macOS/.swiftlint.yml'
@@ -114,6 +119,8 @@ export function tree(files = {}) {
     [`${ATOMS}/ArgoRule.swift`]: 'public struct ArgoRule { public init() {} }\n',
     [ALLOW]: '# Nothing carried in the synthetic tree.\n',
     ...SCRIPTS,
+    [`${SPECIMENS}/SpecimenRegistry.swift`]: 'import ArgoUI\n\nenum SpecimenRegistry {}\n',
+    [`${FIXTURES}/TranscriptFixtures.swift`]: 'import ArgoEngine\n\nenum TranscriptFixtures {}\n',
     ...files,
   }
   for (const [relative, contents] of Object.entries(written)) {

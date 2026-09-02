@@ -1,3 +1,4 @@
+@testable import ArgoSpecimens
 @testable import ArgoUI
 
 /// One feed row at the lane's own scale, for the two suites that read a shape off it (#382):

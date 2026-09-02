@@ -1,4 +1,5 @@
 import ArgoEngine
+import ArgoSpecimens
 import ArgoUI
 import Foundation
 import SwiftUI
@@ -20,10 +21,7 @@ struct ArgoApp: App {
         // asks the app what it can render rather than parsing Swift source for a list, and a name
         // nothing answers to stops here rather than drawing the cockpit under it. The launch reads
         // its own arguments, so what this target does with them is dispatch (ADR-0022).
-        let launch = SpecimenLaunch(
-            arguments: CommandLine.arguments,
-            currentDirectoryPath: FileManager.default.currentDirectoryPath,
-        )
+        let launch = SpecimenLaunch.ofThisProcess
         if let code = launch.ending?.stated() {
             exit(code)
         }

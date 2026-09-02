@@ -4,7 +4,7 @@ import SwiftUI
 /// A run of the transcript's own words, typeset. Shared by everything that draws prose — a
 /// paragraph, a heading, a list item — so the measure, the leading and the reading of the inline
 /// marks are decided once. Ink and fold are the caller's claims, not the type's.
-struct FeedProseText: View {
+package struct FeedProseText: View {
     @Environment(\.argo) private var argo
     /// The ink the prose around this run is set in. Ambient because it is a property of the block
     /// being drawn, not of each span inside it.
@@ -20,7 +20,7 @@ struct FeedProseText: View {
     /// wrapping is the only thing that knows.
     @State private var links: [ProseLinkRun] = []
 
-    var body: some View {
+    package var body: some View {
         MarkedProse.composed(inked)
             .argoText(rung, weight)
             .lineSpacing(ArgoFeedRow.proseLineSpacing)
@@ -57,6 +57,17 @@ struct FeedProseText: View {
     /// of once per evaluation of this body.
     @MainActor private var marked: AttributedString {
         ProseReading.marked(text)
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        text: String,
+        rung: ArgoTypeScale = ArgoFeedRow.proseRung,
+        weight: Font.Weight? = nil,
+    ) {
+        self.text = text
+        self.rung = rung
+        self.weight = weight
     }
 }
 

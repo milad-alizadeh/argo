@@ -11,7 +11,7 @@ import SwiftUI
 ///
 /// When the rail appears at all is still the deck's decision, made from the same reading these came
 /// from.
-struct AgentsRail: View {
+package struct AgentsRail: View {
     @Environment(\.argo) private var argo
 
     let agents: [FeedAgent]
@@ -19,7 +19,7 @@ struct AgentsRail: View {
     /// behind them — all three the deck's state, which the rail writes. See `AgentsRailControl`.
     var control = AgentsRailControl.inert
 
-    var body: some View {
+    package var body: some View {
         if control.isCollapsed {
             AgentsRailStrip(agents: agents, control: control)
         } else {
@@ -80,70 +80,10 @@ struct AgentsRail: View {
     private var running: Int {
         FeedAgents.running(of: agents)
     }
-}
 
-#Preview("Agents rail — a fan-out with two still working") {
-    @Previewable @State var scope = FeedScope.session
-    @Previewable @State var isCollapsed = false
-
-    AgentsRail(
-        agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running),
-        control: AgentsRailControl(
-            scope: $scope,
-            isCollapsed: $isCollapsed,
-            readings: AgentsRailFixture.readings,
-        ),
-    )
-    .frame(width: ArgoAgentsRail.width, height: 420)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Agents rail — one subagent, still working") {
-    @Previewable @State var scope = FeedScope.session
-    @Previewable @State var isCollapsed = false
-
-    AgentsRail(
-        agents: Array(FeedAgents.all(in: FeedProjection.previewRows, of: .running).prefix(1)),
-        control: AgentsRailControl(scope: $scope, isCollapsed: $isCollapsed),
-    )
-    .frame(width: ArgoAgentsRail.width, height: 420)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Agents rail — one Agent scoped onto, with the rest beside it") {
-    // Index 2 is the preview transcript's one ANSWERED delegation, and so the one chip with a
-    // reading behind it — see `AgentsRailFixture`.
-    @Previewable @State var scope = FeedScope.subagent(2)
-    @Previewable @State var isCollapsed = false
-
-    AgentsRail(
-        agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running),
-        control: AgentsRailControl(
-            scope: $scope,
-            isCollapsed: $isCollapsed,
-            readings: AgentsRailFixture.readings,
-        ),
-    )
-    .frame(width: ArgoAgentsRail.width, height: 420)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Agents rail — collapsed to its dot strip") {
-    @Previewable @State var scope = FeedScope.session
-    @Previewable @State var isCollapsed = true
-
-    AgentsRail(
-        agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running),
-        control: AgentsRailControl(
-            scope: $scope,
-            isCollapsed: $isCollapsed,
-            readings: AgentsRailFixture.readings,
-        ),
-    )
-    .frame(width: ArgoAgentsRail.collapsedWidth, height: 420)
-    .argoDeckSurface()
-    .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(agents: [FeedAgent], control: AgentsRailControl = AgentsRailControl.inert) {
+        self.agents = agents
+        self.control = control
+    }
 }

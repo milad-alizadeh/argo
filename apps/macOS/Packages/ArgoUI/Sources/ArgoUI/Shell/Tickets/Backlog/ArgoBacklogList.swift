@@ -3,12 +3,12 @@ import SwiftUI
 
 /// What the deck's leading pane is measured at (`docs/designs/cockpit-work-room.md` — the backlog
 /// list). Beside the surface, per `rules/design-system.md`: a measure is not a token.
-enum ArgoBacklogList {
+package enum ArgoBacklogList {
     /// The width the pane RESTS at: the smallest at which all twelve of the repo's real titles read
     /// whole at depth three. At 480 three of them clip, which is the arithmetic that moved the
     /// backlog out of the rail. No longer a ceiling — it is where the pane opens, and the reader
     /// drags it from there (#844, `ArgoLayout.backlogLimits`).
-    static let width: CGFloat = 520
+    package static let width: CGFloat = 520
     /// …and what it gives up to when the window cannot afford 520 (#836). A title that clips is a
     /// title you can still read the start of; a ticket pane squeezed under its own controls is a
     /// control you cannot reach at all, so the list is what yields. Rows already truncate at the
@@ -80,7 +80,7 @@ extension EnvironmentValues {
     /// it has to: an age measured against the wall clock makes a shot that never matches itself
     /// twice. Optional rather than defaulted to `.now`, because an environment default resolves
     /// once and would freeze every age at whatever instant first read the key.
-    @Entry var backlogNow: Date?
+    @Entry package var backlogNow: Date?
 }
 
 extension View {

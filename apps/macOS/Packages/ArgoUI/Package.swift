@@ -12,6 +12,10 @@ let package = Package(
     platforms: [.macOS("26.0")],
     products: [
         .library(name: "ArgoUI", targets: ["ArgoUI"]),
+        // The dev-tool half, kept OUT of the library that draws the product. The app target links
+        // this one too, because the specimen harness is reached by launch argument on the real
+        // binary — that is what makes a specimen render evidence rather than a preview (#1085).
+        .library(name: "ArgoSpecimens", targets: ["ArgoSpecimens"]),
     ],
     dependencies: [
         .package(path: "../ArgoEngine"),
@@ -32,6 +36,22 @@ let package = Package(
                 .product(name: "ArgoAtoms", package: "ArgoDesign"),
             ],
         ),
-        .testTarget(name: "ArgoUITests", dependencies: ["ArgoUI"]),
+        // Sample data, and nothing that draws: the transcripts the cockpit is judged against and
+        // the Tickets they hang off. A leaf under both targets above it, so the fixtures cannot
+        // reach a view and a view cannot reach a fixture.
+        .target(name: "ArgoFixtures", dependencies: ["ArgoEngine"]),
+        // The specimen harness: the surfaces `scripts/specimens.sh` renders, the registry that
+        // names them and the launch that dispatches to one. It sees ArgoUI's `package` surface,
+        // and ArgoUI sees nothing of it.
+        .target(
+            name: "ArgoSpecimens",
+            dependencies: [
+                "ArgoUI",
+                "ArgoFixtures",
+                .product(name: "ArgoDesign", package: "ArgoDesign"),
+                .product(name: "ArgoAtoms", package: "ArgoDesign"),
+            ],
+        ),
+        .testTarget(name: "ArgoUITests", dependencies: ["ArgoUI", "ArgoFixtures", "ArgoSpecimens"]),
     ],
 )

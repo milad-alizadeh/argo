@@ -2,7 +2,7 @@ import ArgoEngine
 
 /// What one provider-port write control renders, folded from what the port admits (§7 of
 /// `cockpit-failure-states-spec.md`) and where the last attempt got to (§4).
-enum WriteControlState: Equatable, Sendable {
+package enum WriteControlState: Equatable, Sendable {
     case live
     /// Disabled in place: no spinner, no toast, no layout shift.
     case pending

@@ -3,7 +3,7 @@
 /// The feed is RE-SCOPED, never duplicated. A second feed beside the first would ask the reader to
 /// hold two places in two records at once, and it would make the rail a reading surface when the
 /// rail is navigation — the feed stays the primary surface (D33).
-enum FeedScope: Hashable, Sendable {
+package enum FeedScope: Hashable, Sendable {
     /// The root Agent: the Session's own reading, which is where the deck opens and what Escape
     /// comes back to.
     case session

@@ -5,11 +5,17 @@ import SwiftUI
 /// The one row in the feed that points at another Session. The id is what the click goes to; the
 /// title is that row's own, read from the same roster the sidebar draws, so the link and the row
 /// it lands on cannot disagree about what they are called.
-struct FeedHandoff: Equatable, Sendable {
+package struct FeedHandoff: Equatable, Sendable {
     /// The row the link points at.
     let sessionID: String
     /// What that row is called, in the roster's own words.
     let title: String
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(sessionID: String, title: String) {
+        self.sessionID = sessionID
+        self.title = title
+    }
 }
 
 extension CockpitPresentation {

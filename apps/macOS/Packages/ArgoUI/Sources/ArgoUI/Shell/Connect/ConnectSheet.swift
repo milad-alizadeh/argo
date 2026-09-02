@@ -35,7 +35,3 @@ public struct ConnectSheet: View {
         .argoAppearance()
     }
 }
-
-#Preview("Connect sheet — a first launch") {
-    ConnectSheet(reading: ConnectFixture.fresh, actions: .inert, startsAtWelcome: true)
-}

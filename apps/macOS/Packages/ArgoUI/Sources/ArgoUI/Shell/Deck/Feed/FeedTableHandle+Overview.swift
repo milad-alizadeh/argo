@@ -16,13 +16,13 @@ extension FeedTableHandle {
     }
 
     /// The same reading, against a stamp the caller already holds.
-    func reading(at stamp: MinimapReadingStamp) -> MinimapReading? {
+    package func reading(at stamp: MinimapReadingStamp) -> MinimapReading? {
         coordinator?.reading(at: stamp)
     }
 
     /// The shape of the reading. Not where it sits — see `offset()` — because the lane holds the
     /// shape still for the length of a scrub and reads the position every frame of one.
-    func reading() -> MinimapReading? {
+    package func reading() -> MinimapReading? {
         coordinator?.reading()
     }
 

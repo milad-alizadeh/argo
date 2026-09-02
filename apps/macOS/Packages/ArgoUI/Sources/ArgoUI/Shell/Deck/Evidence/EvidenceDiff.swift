@@ -15,7 +15,7 @@ struct EvidenceDiff: View {
     var language: EvidenceLanguage?
     /// Whether the patch is drawn as a patch or as the document it made. Only markdown is ever
     /// asked in `prose`; every other language IS its source.
-    var reading: EvidenceReading = .source
+    package var reading: EvidenceReading = .source
 
     var body: some View {
         if diff.hunks.isEmpty {

@@ -13,8 +13,8 @@ import SwiftUI
 struct FeedTable: NSViewRepresentable {
     /// Which reading this is, so the coordinator can tell another Session's rows from this one's
     /// next batch — see `FeedReading`.
-    let reading: FeedReading
-    let rows: [FeedRow]
+    package let reading: FeedReading
+    package let rows: [FeedRow]
     let selection: FeedRowSelection
     let held: FeedRow.ID?
     let isResizing: Bool

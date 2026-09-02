@@ -8,11 +8,16 @@
 /// A run of ONE is still a gallery, and that is the difference from the survey fold: `Read 1` loses
 /// an address and saves nothing, but one thumbnail is a picture where there was a filename. The
 /// treatment does not change with the count.
-struct FeedGallery: Equatable, Sendable {
-    let shots: [FeedShot]
+package struct FeedGallery: Equatable, Sendable {
+    package let shots: [FeedShot]
 
     /// What a screen reader hears in place of the pictures it cannot show.
-    var spoken: String {
+    package var spoken: String {
         shots.count == 1 ? "Showed 1 image" : "Showed \(shots.count) images"
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(shots: [FeedShot]) {
+        self.shots = shots
     }
 }

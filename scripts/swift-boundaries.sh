@@ -6,8 +6,9 @@
 #
 # Edges 1-4 are ADR-0022's layering; edge 5 is ADR-0027, on the projection between two of its
 # layers; edge 6 is the parameter cap on the one declaration shape SwiftLint cannot see; edge 7 is
-# the token contract's own module. Each is checkable by looking at imports, declarations and size
-# alone — which is the whole reason they are gates rather than review notes.
+# the token contract's own module; edge 8 is the direction between ArgoUI and the dev-tool targets
+# beside it (#1085). Each is checkable by looking at imports, declarations and size alone — which
+# is the whole reason they are gates rather than review notes.
 set -eu
 
 APP_DIR="apps/macOS"
@@ -613,6 +614,47 @@ else
       "escape hatch this edge was written to close (rules/design-system.md, #772, #1088)."
   fi
 fi
+
+# 8. ArgoUI ⊥ the dev-tool targets. The specimen harness and the sample transcripts live in
+#    ArgoSpecimens and ArgoFixtures, beside ArgoUI rather than inside it (#1085), and the arrow only
+#    ever points one way: a view may not reach a fixture, and a fixture may not reach a view. Nothing
+#    but an import can cross it, which is why this is a gate — the direction was unenforceable while
+#    both sides compiled into one module, and it reverted the first time somebody wanted a fixture
+#    in a view file.
+#
+# Every spelling of an import is matched, not the bare one: `@testable import`, an access modifier
+# in front (SE-0409), and `import struct ArgoFixtures.X` all cross the edge exactly as far as
+# `import ArgoFixtures` does, and a gate that missed them would name the way around itself.
+IMPORT='^ *(@[A-Za-z_]+ +)*(public |package |internal |fileprivate |private )?import +([a-z]+ +)?'
+hits=$(grep -rnE "$IMPORT(ArgoSpecimens|ArgoFixtures)\b" "$UI_SOURCES/ArgoUI" \
+  --include='*.swift' 2>/dev/null || true)
+if [ -n "$hits" ]; then
+  report "ArgoUI imports a dev-tool target — the specimens depend on ArgoUI, never the other way (#1085)" \
+    "$hits" \
+    "Move the fixture or the #Preview into ArgoSpecimens. A view that needs sample data to draw is" \
+    "a view whose caller should be handing it a value."
+fi
+
+# And the leaf stays a leaf: ArgoFixtures is sample data with nothing that draws, so a view type
+# reaching it would put the whole of ArgoUI under the fixtures.
+hits=$(grep -rnE "$IMPORT(ArgoUI|ArgoSpecimens|SwiftUI|SwiftUICore|AppKit|Cocoa)\b" \
+  "$UI_SOURCES/ArgoFixtures" --include='*.swift' 2>/dev/null || true)
+if [ -n "$hits" ]; then
+  report "ArgoFixtures imports a UI module — it holds sample data and nothing that draws (#1085)" \
+    "$hits" \
+    "A fixture that needs a view type belongs in ArgoSpecimens, which is the target above this one."
+fi
+
+# Both edges above check an import, so they check nothing if the targets are gone. Named rather
+# than globbed: a directory renamed out from under this reads as a passing gate otherwise.
+for target in ArgoSpecimens ArgoFixtures; do
+  if [ ! -d "$UI_SOURCES/$target" ]; then
+    report "edge 8 cannot see its own subject — $UI_SOURCES/$target is missing" \
+      "The dev-tool targets are what the edge is about. Point UI_SOURCES at their new home, or" \
+      "delete this edge deliberately: an import check over a directory that is not there passes" \
+      "every file in the tree."
+  fi
+done
 
 if [ "$failed" -eq 1 ]; then
   echo "" >&2

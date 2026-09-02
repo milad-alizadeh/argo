@@ -11,7 +11,7 @@ enum SessionRenameProjection {
         let derived: String?
     }
 
-    static let heading = "Rename Session"
+    package static let heading = "Rename Session"
     static let prompt = "Session name"
     /// Spelled as what it goes back TO, and completed by the title itself where it is drawn.
     static let reset = "Reset to"

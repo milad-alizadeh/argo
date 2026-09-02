@@ -16,7 +16,7 @@ struct MinimapGeometry: Equatable {
     /// The Turns the rows break into, worked out once here rather than per hover — the boundaries
     /// are a property of the reading, and the reading is what this holds still.
     let turns: [MinimapTurn]
-    let reading: MinimapReading
+    package let reading: MinimapReading
     let lane: CGSize
 
     init(_ reading: MinimapReading, lane: CGSize) {

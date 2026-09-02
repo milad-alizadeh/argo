@@ -4,7 +4,7 @@ import ArgoDesign
 ///
 /// A fold and never a filter: nothing is dropped, the count is what the run did, and everything
 /// the run produced is still one click behind the line.
-struct FeedSurvey: Equatable, Sendable {
+package struct FeedSurvey: Equatable, Sendable {
     /// How many of one kind the run contained. Counted in CALLS rather than in rows: three reads of
     /// one file are already one collapsed row.
     struct Tally: Equatable, Sendable {
@@ -48,7 +48,7 @@ struct FeedSurvey: Equatable, Sendable {
 
     /// The whole line as one sentence, for a reader who cannot see it. The verb comes back,
     /// because a mark says nothing in the ear.
-    var spoken: String {
+    package var spoken: String {
         [Self.verb, label, ending.spoken].compactMap(\.self).joined(separator: " ")
     }
 
@@ -57,7 +57,7 @@ struct FeedSurvey: Equatable, Sendable {
     ///
     /// No language on the header and one per step: a run of looking has no ONE language, and the
     /// first file's would colour every patch under it.
-    var opened: FeedEvidence {
+    package var opened: FeedEvidence {
         FeedEvidence(
             verb: Self.verb,
             symbol: ArgoSymbol.looked,

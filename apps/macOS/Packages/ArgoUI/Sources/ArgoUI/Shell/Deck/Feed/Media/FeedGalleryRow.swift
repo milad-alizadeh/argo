@@ -7,11 +7,11 @@ import SwiftUI
 /// tail behind an affordance and fights the reading for every wheel gesture; a grid that breaks
 /// onto the next line shows every shot at the size the contract fixed, and costs only height —
 /// the one direction this column already spends.
-struct FeedGalleryRow: View {
-    let gallery: FeedGallery
+package struct FeedGalleryRow: View {
+    package let gallery: FeedGallery
     let open: (FeedShot) -> Void
 
-    var body: some View {
+    package var body: some View {
         WrapFlow(gap: ArgoFeedRow.shotGap) {
             ForEach(Array(gallery.shots.enumerated()), id: \.offset) { _, shot in
                 FeedShotView(shot: shot, open: open)
@@ -23,23 +23,10 @@ struct FeedGalleryRow: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(gallery.spoken)
     }
-}
 
-#Preview("Gallery — a run of shots the agent looked at") {
-    FeedGalleryRow(gallery: FeedGallery(shots: FeedProjection.previewShots), open: { _ in })
-        .padding(ArgoFeedRow.inset)
-        .frame(width: 720)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Gallery — one shot on its own, drawn the same way") {
-    FeedGalleryRow(
-        gallery: FeedGallery(shots: Array(FeedProjection.previewShots.prefix(1))),
-        open: { _ in },
-    )
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(gallery: FeedGallery, open: @escaping (FeedShot) -> Void) {
+        self.gallery = gallery
+        self.open = open
+    }
 }

@@ -3,7 +3,7 @@ import ArgoDesign
 import SwiftUI
 
 /// The one gesture between the line at a control and everything the operation printed (§5).
-struct RawOutputDisclosure: View {
+package struct RawOutputDisclosure: View {
     @Environment(\.argo) private var argo
 
     let output: RawOutput
@@ -13,7 +13,7 @@ struct RawOutputDisclosure: View {
     /// The spec's own words for the gesture, spoken and drawn from one string.
     static let name = "see output"
 
-    var body: some View {
+    package var body: some View {
         // Opens rather than toggles, because the popover's own dismissal already closes it — a
         // toggle would re-open on the click that dismissed it.
         Button { isOpen = true } label: {
@@ -32,12 +32,9 @@ struct RawOutputDisclosure: View {
             RawOutputView(output: output)
         }
     }
-}
 
-#Preview("See output — the gesture at rest") {
-    if let output = RawOutput(WriteControlSpecimen.validationRefusal) {
-        RawOutputDisclosure(output: output)
-            .padding(ArgoSpacing.region)
-            .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(output: RawOutput) {
+        self.output = output
     }
 }

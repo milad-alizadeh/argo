@@ -14,7 +14,7 @@ import SwiftUI
 /// replaced, drawn again.
 struct DeckContentRow: View {
     // Unpacked from `DeckContent` and `DeckVesselControl`, where each of these is documented.
-    var reading = FeedReading.unattached
+    package var reading = FeedReading.unattached
     let feed: [FeedRow]
     let showing: PlanShowing
     let selection: FeedRowSelection

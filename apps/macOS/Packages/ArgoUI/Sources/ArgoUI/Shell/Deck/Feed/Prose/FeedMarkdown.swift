@@ -5,18 +5,23 @@ import SwiftUI
 ///
 /// The blocks are found by `MarkdownBlock` and drawn here — nothing is reworded on either side of
 /// that line.
-struct FeedMarkdown: View {
+package struct FeedMarkdown: View {
     @Environment(\.argo) private var argo
 
     let text: String
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.blockStep) {
             ForEach(Array(ProseReading.blocks(in: text).enumerated()), id: \.offset) { _, block in
                 FeedMarkdownBlock(block: block)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(text: String) {
+        self.text = text
     }
 }
 

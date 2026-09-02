@@ -1,7 +1,7 @@
 /// A stretch of the record nothing could parse, read as one line. Kept rather than dropped: a
 /// surface that skips it silently cannot tell a quiet session from a corrupt file. Folded into a
 /// run because a truncated write leaves a tail of them.
-struct FeedUnreadable: Equatable, Sendable {
+package struct FeedUnreadable: Equatable, Sendable {
     /// The raw text of each line, in the order the record wrote them, verbatim.
     let lines: [String]
 

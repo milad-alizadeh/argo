@@ -73,7 +73,7 @@ struct NextUpStarterStyle: ButtonStyle {
     }
 }
 
-extension EnvironmentValues {
+package extension EnvironmentValues {
     /// The STARTER's own pointer state, forced for a render — `nextUpStillsPointer`'s sibling, and
     /// separate from it so one frame can show a card at rest under a starter being pressed. That
     /// pair is the only evidence a still render can give that the two are separate targets.

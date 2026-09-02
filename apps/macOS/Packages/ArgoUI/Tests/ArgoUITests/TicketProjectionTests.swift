@@ -1,4 +1,5 @@
 import ArgoEngine
+@testable import ArgoSpecimens
 @testable import ArgoUI
 import Testing
 

@@ -11,7 +11,7 @@ import Foundation
 /// that happens to open on a digit fails the first, and a table of numbers fails the second.
 /// Anything that fails is `nil` and is drawn exactly as it arrived, which is the honest answer and
 /// also the harmless one.
-struct EvidenceListing: Equatable, Sendable {
+package struct EvidenceListing: Equatable, Sendable {
     /// One line of the file, with the number the host gave it — `nil` where the text carried no
     /// gutter, since a line's place in a file is a fact only the host has.
     struct Line: Equatable, Sendable {

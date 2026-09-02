@@ -10,7 +10,7 @@ import SwiftUI
 ///
 /// The INDENT is the row's, not the list's: `List` insets a whole section, and what moves here is
 /// one row against its siblings.
-struct BacklogRow: View {
+package struct BacklogRow: View {
     /// How wide the pane drawing this row is. The chips are RIGID — they would take the title's
     /// last characters rather than give up their own — so under `ArgoBacklogList.labelsAppearAt`
     /// they stand down instead. Read from the room rather than measured here: a row inside a
@@ -36,7 +36,7 @@ struct BacklogRow: View {
         drawn.row
     }
 
-    var body: some View {
+    package var body: some View {
         line
             .frame(minHeight: ArgoBacklogList.rowHeight)
             .accessibilityElement(children: .ignore)
@@ -147,26 +147,17 @@ struct BacklogRow: View {
             $0.isStranded ? "stranded, \($0.count) blockers" : "blocked by \($0.count)"
         }
     }
-}
 
-#Preview("Backlog rows — a roll-up, an odd priority, a blockage mark and an age") {
-    let high = TicketsRoomProjection.bands(of: TicketsFixture.room.backlog)[0]
-
-    return List {
-        ForEach(TicketsRoomProjection.drawn(high, shut: [])) { drawn in
-            // The ground with the ink, the way the outline pairs them: an ink for a selected row
-            // over the deck would preview a state the app never draws.
-            let ink = BacklogRowInk(
-                isSelected: drawn.id == 272, isRail: drawn.row.isRail, palette: .graphite,
-            )
-            BacklogRow(drawn: drawn, isOpen: true, ink: ink, toggle: drawn.isParent ? {} : nil)
-                .previewSafeListRow()
-                .listRowBackground(ink.ground.color)
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        drawn: TicketsRoomProjection.Drawn,
+        isOpen: Bool,
+        ink: BacklogRowInk,
+        toggle: (() -> Void)?,
+    ) {
+        self.drawn = drawn
+        self.isOpen = isOpen
+        self.ink = ink
+        self.toggle = toggle
     }
-    .listStyle(.inset)
-    .frame(width: ArgoBacklogList.width, height: 420)
-    .argoDeckSurface()
-    .argoAppearance()
-    .environment(\.backlogNow, TicketsFixture.asOf)
 }

@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// The glass is spelled HERE and not left to the toolbar: this control must not merge with a
 /// neighbour, so its item hides the shared background and carries its own.
-struct NewSessionButton: View {
+package struct NewSessionButton: View {
     /// How far the mark moves right and up to sit centred in its container. One number for both
     /// axes because the symbol's own imbalance is diagonal.
     ///
@@ -25,7 +25,7 @@ struct NewSessionButton: View {
     /// waiting state on screen — by hand it lasts a second or two on a window's first spawn only.
     @State var isStarting = false
 
-    var body: some View {
+    package var body: some View {
         Button(action: start) {
             mark
                 // A SQUARE of the bar's own container height, and not `toolbarSegment()`: that
@@ -100,28 +100,18 @@ struct NewSessionButton: View {
     private var ink: ArgoColor {
         offer.isLaunchable ? argo.color.text.primary : argo.color.text.tertiary
     }
-}
 
-#Preview("New Session button") {
-    NewSessionButton(offer: NewSessionOffer(presentation: .preview), spawn: {})
-        .padding(ArgoSpacing.region)
-        .argoAppearance()
-}
-
-#Preview("New Session button — nothing registered") {
-    NewSessionButton(offer: NewSessionOffer(presentation: .unregisteredPreview), spawn: {})
-        .padding(ArgoSpacing.region)
-        .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        offer: NewSessionOffer,
+        spawn: @escaping () async -> Void,
+        isStarting: Bool = false,
+    ) {
+        self.offer = offer
+        self.spawn = spawn
+        _isStarting = State(wrappedValue: isStarting)
+    }
 }
 
 // The first spawn of a window shells out to a login shell for the user's `PATH` before it can start
 // anything, and that whole wait otherwise looks exactly like a press that did nothing (#361).
-#Preview("New Session button — a spawn in flight") {
-    NewSessionButton(
-        offer: NewSessionOffer(presentation: .preview),
-        spawn: {},
-        isStarting: true,
-    )
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}

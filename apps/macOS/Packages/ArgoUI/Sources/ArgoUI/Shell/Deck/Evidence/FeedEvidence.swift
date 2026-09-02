@@ -3,7 +3,7 @@ import ArgoEngine
 
 /// What the panel is open on. The ADDRESS is the step's, not this header's — the header says only
 /// what the ROW said (verb, count, outcome).
-struct FeedEvidence: Equatable, Sendable {
+package struct FeedEvidence: Equatable, Sendable {
     struct Step: Equatable, Sendable, Identifiable {
         /// Position in the panel, assigned by the panel's projection rather than carried from the
         /// record — the only thing that stays stable to scroll to while a live transcript grows.
@@ -44,7 +44,7 @@ struct FeedEvidence: Equatable, Sendable {
 
 /// What the panel is open on, and how it is IDENTIFIED — a path by its right-hand end (cut from
 /// the front), a command by its first word and its middle arguments (cut in the middle).
-enum EvidenceAddress: Equatable, Sendable {
+package enum EvidenceAddress: Equatable, Sendable {
     /// A path in the working tree, drawn in two inks: parent, then filename.
     case filed(String)
     /// A pattern, a URL, a tool's own name, a count — whatever else named the subject.
@@ -64,7 +64,7 @@ enum EvidenceAddress: Equatable, Sendable {
     static let commandLineLength = 26
 
     /// The address whole, uncut — what the ear and the tooltip take.
-    var text: String {
+    package var text: String {
         switch self {
         case let .filed(text), let .named(text), let .typed(text): text
         }
@@ -92,7 +92,7 @@ enum EvidenceAddress: Equatable, Sendable {
 
 extension FeedCall {
     /// What the panel shows for one call: its results, each under the address it came from.
-    var opened: FeedEvidence {
+    package var opened: FeedEvidence {
         FeedEvidence(
             verb: kind.verb,
             symbol: symbol,
@@ -133,7 +133,7 @@ extension FeedCall {
 
     /// The whole path for a file. The shape comes off the SUBJECT, not the surface: only a shell
     /// call's target is a command.
-    var address: EvidenceAddress {
+    package var address: EvidenceAddress {
         switch subject {
         case let .file(file): .filed(file.path)
         case let .command(command): .typed(command)

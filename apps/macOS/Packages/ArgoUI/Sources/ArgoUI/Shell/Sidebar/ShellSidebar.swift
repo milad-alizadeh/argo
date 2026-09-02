@@ -11,7 +11,7 @@ import SwiftUI
 /// a key that moves on every record either agent writes — and this holds the resulting order still
 /// for as long as the window is up, re-settling only while it is not. Keyed on the window and not
 /// the pointer (#498).
-struct ShellSidebar: View {
+package struct ShellSidebar: View {
     /// `.inactive` means the window is not front: nothing on this roster is being read, and it can
     /// go back to answering "what moved last" so it is already right when the reader returns.
     @Environment(\.controlActiveState) private var activeState
@@ -39,7 +39,7 @@ struct ShellSidebar: View {
     /// `RosterListing`'s and no longer this body's — see the invariants stated there.
     @State private var roster = RosterListing()
 
-    var body: some View {
+    package var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
             RoomStrip(selection: $room)
             navigator
@@ -81,21 +81,21 @@ struct ShellSidebar: View {
             }
         }
     }
-}
 
-#Preview("Continuous sidebar") {
-    @Previewable @State var selection = CockpitPresentation.preview.sessions.first?.id
-    @Previewable @State var room = CockpitRoom.sessions
-
-    ShellSidebar(presentation: .preview, selection: $selection, room: $room)
-        .frame(width: 340, height: 600)
-        .argoAppearance()
-}
-
-#Preview("Continuous sidebar — no Sessions") {
-    @Previewable @State var room = CockpitRoom.sessions
-
-    ShellSidebar(presentation: .emptyPreview, selection: .constant(nil), room: $room)
-        .frame(width: 340, height: 600)
-        .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        presentation: CockpitPresentation,
+        selection: Binding<CockpitPresentation.Session.ID?>,
+        room: Binding<CockpitRoom>,
+        archive: @escaping (String, Bool) -> Void = { _, _ in },
+        rename: @escaping (String, String?) -> Void = { _, _ in },
+        renamingSessionID: Binding<String?> = .constant(nil),
+    ) {
+        self.presentation = presentation
+        _selection = selection
+        _room = room
+        self.archive = archive
+        self.rename = rename
+        self.renamingSessionID = renamingSessionID
+    }
 }

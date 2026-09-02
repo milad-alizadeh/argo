@@ -2,7 +2,7 @@ import ArgoDesign
 
 /// What the toolbar's Project half draws: its mark, the name it spells out, and the two sentences
 /// it says about the active Project.
-struct ProjectVesselReading: Equatable {
+package struct ProjectVesselReading: Equatable {
     /// What the press does. One sentence for the one gesture, whatever the Project's state.
     static let hint = "Opens the Project drawer"
 
@@ -15,7 +15,7 @@ struct ProjectVesselReading: Equatable {
 }
 
 extension ProjectVesselReading {
-    init(presentation: CockpitPresentation) {
+    package init(presentation: CockpitPresentation) {
         self.init(project: presentation.activeProject)
     }
 

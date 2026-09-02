@@ -5,7 +5,7 @@ import SwiftUI
 /// The opaque plane filling the detail side of the split view, flush to the window. It is the
 /// ground the glass canopy is read against, so it is the one surface that must not borrow the
 /// canopy's material (D10, D40).
-struct InstrumentDeckShell: View {
+package struct InstrumentDeckShell: View {
     let room: CockpitRoom
     /// Which Session the deck is reading, as an IDENTITY rather than as content — nothing below
     /// draws it. `FeedRow.ID` is a dense POSITION, so a pane keyed on the rows reads one Session as
@@ -62,7 +62,7 @@ struct InstrumentDeckShell: View {
     /// `scope` is a parameter.
     @State var isRailCollapsed = false
 
-    var body: some View {
+    package var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .argoDeckSurface()
@@ -98,41 +98,49 @@ struct InstrumentDeckShell: View {
             Color.clear
         }
     }
-}
 
-#Preview("Instrument Deck — Sessions") {
-    InstrumentDeckShell(
-        room: .sessions,
-        feed: FeedProjection.previewRows,
-        header: SessionHeaderFixture.header(for: .managed),
-        showing: PlanShowing(plan: PlanProjection.previewReading),
-    )
-    .frame(width: 900, height: 620)
-    .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        room: CockpitRoom,
+        session: CockpitPresentation.Session.ID? = nil,
+        feed: [FeedRow] = [],
+        header: SessionHeaderProjection.Header? = nil,
+        handOff: @escaping () async -> Void = {},
+        showing: PlanShowing = PlanShowing(),
+        open: Binding<FeedRow.ID?> = .constant(nil),
+        step: Binding<Int?> = .constant(nil),
+        lit: FeedShot? = nil,
+        held: FeedRow.ID? = nil,
+        vessel: DeckVessel = DeckVessel.none,
+        intents: DeckIntents = DeckIntents.inert,
+        readings: FeedAgentReader = FeedAgentReader.unread,
+        scope: Binding<FeedScope> = .constant(.session),
+        tickets: TicketsRoom? = nil,
+        isRailCollapsed: Bool = false,
+    ) {
+        self.room = room
+        self.session = session
+        self.feed = feed
+        self.header = header
+        self.handOff = handOff
+        self.showing = showing
+        self.open = open
+        self.step = step
+        self.lit = lit
+        self.held = held
+        self.vessel = vessel
+        self.intents = intents
+        self.readings = readings
+        self.scope = scope
+        self.tickets = tickets
+        _isRailCollapsed = State(wrappedValue: isRailCollapsed)
+    }
 }
 
 #Preview("Instrument Deck — a Session with nothing read yet") {
     InstrumentDeckShell(room: .sessions)
         .frame(width: 900, height: 620)
         .argoAppearance()
-}
-
-#Preview("Instrument Deck — the Tickets room") {
-    @Previewable @State var ticket: Int? = 272
-    @Previewable @State var cockpitRoom = CockpitRoom.tickets
-    @Previewable @State var view = TicketsView.allOpen
-    @Previewable @State var width = ArgoBacklogList.width
-    @Previewable @State var shut: Set<Int> = []
-
-    InstrumentDeckShell(
-        room: .tickets,
-        tickets: TicketsRoom(
-            room: TicketsFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket, view: $view,
-            backlogWidth: $width, shut: $shut,
-        ),
-    )
-    .frame(width: ArgoBacklogList.width + ArgoTicketDetail.idealWidth, height: 620)
-    .argoAppearance()
 }
 
 #Preview("Instrument Deck — a room with no zones yet") {

@@ -19,7 +19,7 @@ import SwiftUI
 /// not a centring: it parked the title against the scope vessel and pushed Rooms into the bar's
 /// overflow menu. The title is drawn by `DeckCanopy`, which is the detail pane itself and already
 /// reaches up into this band.
-struct ShellToolbar: ToolbarContent {
+package struct ShellToolbar: ToolbarContent {
     /// Assembled by the caller: nothing below the bar reads a presentation.
     let scope: ScopeVessel
     /// New Session, in the rooms that create one. `nil` in the Tickets room, whose one create
@@ -35,7 +35,7 @@ struct ShellToolbar: ToolbarContent {
     /// the spacer is what carries the toggle to the trailing edge.
     var evidence: EvidenceToggle?
 
-    @ToolbarContentBuilder var body: some ToolbarContent {
+    @ToolbarContentBuilder package var body: some ToolbarContent {
         if let spawn {
             ToolbarItem(placement: .navigation) {
                 NewSessionButton(offer: spawn.offer) { await spawn.run() }
@@ -59,5 +59,12 @@ struct ShellToolbar: ToolbarContent {
             }
             .sharedBackgroundVisibility(.hidden)
         }
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(scope: ScopeVessel, spawn: CockpitSpawn?, evidence: EvidenceToggle? = nil) {
+        self.scope = scope
+        self.spawn = spawn
+        self.evidence = evidence
     }
 }

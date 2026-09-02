@@ -4,7 +4,7 @@ import SwiftUI
 
 /// What a call produced, beside the feed that named it. It takes evidence, never a Session or a
 /// selection — the deck owns which row is open.
-struct EvidencePanel: View {
+package struct EvidencePanel: View {
     @Environment(\.argo) private var argo
 
     let evidence: FeedEvidence
@@ -18,7 +18,7 @@ struct EvidencePanel: View {
     /// The header rides INSIDE the scroll, above the results, rather than pinned over them: a
     /// pinned bar below the canopy would hide this column's content from the glass. Escape and the
     /// row that opened the panel both still close it once the ✕ has scrolled away.
-    var body: some View {
+    package var body: some View {
         ScrollViewReader { pane in
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
@@ -64,12 +64,19 @@ struct EvidencePanel: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
     }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(evidence: FeedEvidence, current: Int? = nil, dismiss: @escaping () -> Void) {
+        self.evidence = evidence
+        self.current = current
+        self.dismiss = dismiss
+    }
 }
 
 /// One result inside the panel, under the address it came from.
 private struct EvidenceStep: View {
     let step: FeedEvidence.Step
-    let reading: EvidenceReading
+    package let reading: EvidenceReading
     /// Whether the CALL failed — the only grain at which the record tells error output from
     /// ordinary output.
     let hasFailed: Bool
@@ -111,28 +118,4 @@ private struct EvidenceAbsent: View {
             .foregroundStyle(argo.color.text.disabled)
             .padding(ArgoSpacing.comfortable)
     }
-}
-
-#Preview("Evidence — a failed command's whole output") {
-    EvidenceFixture.failed.map { EvidencePanel(evidence: $0, dismiss: {}) }
-        .frame(width: 420, height: 480)
-        .argoAppearance()
-}
-
-#Preview("Evidence — the patch one edit made") {
-    EvidenceFixture.edited.map { EvidencePanel(evidence: $0, dismiss: {}) }
-        .frame(width: 420, height: 480)
-        .argoAppearance()
-}
-
-#Preview("Evidence — everything a folded run of looking read") {
-    EvidenceFixture.surveyed.map { EvidencePanel(evidence: $0, dismiss: {}) }
-        .frame(width: 420, height: 480)
-        .argoAppearance()
-}
-
-#Preview("Evidence — a folded run, scrolled to the file the feed pointed at") {
-    EvidenceFixture.surveyed.map { EvidencePanel(evidence: $0, current: 2, dismiss: {}) }
-        .frame(width: 420, height: 480)
-        .argoAppearance()
 }

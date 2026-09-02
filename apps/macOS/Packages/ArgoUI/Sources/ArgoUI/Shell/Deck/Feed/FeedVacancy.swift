@@ -20,7 +20,7 @@ enum FeedVacancy: Equatable, Sendable {
     /// `hasSelection` is whether a Session RESOLVED, never whether an id is held: a selection
     /// pointing at a Session the roster has dropped draws the same deck as no selection at all,
     /// and it is the deck that is being described here.
-    static func reading(hasSelection: Bool, hasSessions: Bool) -> FeedVacancy {
+    package static func reading(hasSelection: Bool, hasSessions: Bool) -> FeedVacancy {
         if hasSelection {
             return .silent
         }

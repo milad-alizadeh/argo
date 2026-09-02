@@ -35,7 +35,7 @@ struct StartVerb: View {
     /// How either control is announced and helped. A press that silently dispatched one of five
     /// different jobs is a press nobody can aim, and a reader who cannot see the command has to be
     /// told it here or not at all.
-    static func spoken(_ command: WorkCommand?) -> String {
+    package static func spoken(_ command: WorkCommand?) -> String {
         guard let command else { return "Start a Session on this ticket, with an empty composer" }
         return "Start a Session on this ticket, on \(command.typed)"
     }

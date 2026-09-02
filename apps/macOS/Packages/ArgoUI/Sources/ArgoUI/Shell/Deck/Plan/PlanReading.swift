@@ -3,7 +3,7 @@ import ArgoEngine
 /// The agent's live to-do list, as the pill above the dock reads it. Every value is DERIVED from
 /// the one list the record carries, and none is invented: a plan that marks nothing in progress has
 /// no current step rather than the next pending one.
-struct PlanReading: Equatable, Sendable {
+package struct PlanReading: Equatable, Sendable {
     /// One entry, addressed by its place in the list.
     struct Step: Identifiable, Equatable, Sendable {
         /// Where it sits, from zero. A list is replaced whole (ADR-0020), so a step's identity is
@@ -17,7 +17,7 @@ struct PlanReading: Equatable, Sendable {
     let steps: [Step]
 
     /// A plan arrives complete, so there is nothing here to merge into: numbering is the whole job.
-    init(entries: [PlanEntry]) {
+    package init(entries: [PlanEntry]) {
         self.steps = entries.enumerated().map { position, entry in
             Step(id: position, text: entry.text, status: entry.status)
         }

@@ -7,13 +7,13 @@ import Foundation
 /// A menu row is ONE line of text, which is what `title` is for — the same constraint `ModeMenu`
 /// answers with an em dash, answered the same way. The folder is not on it: a path in a menu row is
 /// the diagnostic table D30 took off the roster, and `Reveal in Finder` is where it belongs.
-enum ProjectMenuProjection {
+package enum ProjectMenuProjection {
     /// The words that replace a path when the folder is not where it was registered. Never a
     /// colour or a dashed edge alone — those are the second reading of this, not the first.
     static let unreachable = "folder not found"
 
-    struct Row: Identifiable, Sendable {
-        let id: String
+    package struct Row: Identifiable, Sendable {
+        package let id: String
         let name: String
         /// The whole menu line: the name, and what qualifies it where anything does.
         let title: String
@@ -26,7 +26,7 @@ enum ProjectMenuProjection {
         let accessibilityLabel: String
     }
 
-    static func rows(from presentation: CockpitPresentation) -> [Row] {
+    package static func rows(from presentation: CockpitPresentation) -> [Row] {
         presentation.projects.map { project in
             Row(
                 id: project.id,

@@ -6,7 +6,7 @@ import ArgoEngine
 /// A Subagent cannot be running when the Session that delegated it is not: the delegating process
 /// is what would write the report that ends the call, so a delegation left pending by a Session
 /// nobody is running is a record nothing will ever close (#1076).
-enum DelegatingSession: Equatable, Sendable {
+package enum DelegatingSession: Equatable, Sendable {
     case running
     case notRunning
 

@@ -7,7 +7,7 @@ import ArgoEngine
 /// file — but a markdown patch is a document written in a notation, and the notation is the part
 /// the reader mostly does not want. A spec the agent just wrote is 161 lines of `##` and backticks
 /// under a gutter, when the thing worth looking at is the spec.
-enum EvidenceReading: Equatable, Sendable {
+package enum EvidenceReading: Equatable, Sendable {
     /// The patch, as the record carries it: hunks, the host's line numbers, both sides.
     case source
     /// The document the patch made — its AFTER side, drawn with the shape the markup asked for.

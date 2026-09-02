@@ -26,7 +26,7 @@ struct BacklogRowLabels: Equatable {
 
     /// The labels as a screen reader hears them — the drawn ones, then the count of the rest, so
     /// speech and pixels answer the same question the same way.
-    var spoken: [String] {
+    package var spoken: [String] {
         let words = shown.map(\.name)
         return overflow > 0 ? words + ["\(overflow) more"] : words
     }

@@ -4,14 +4,14 @@ import SwiftUI
 
 /// The panel the ⓘ opens: the budget legend, which EXPLAINS Argo's policy, then the block that
 /// REPORTS what this Session reads (#694).
-struct SessionContextGuide: View {
+package struct SessionContextGuide: View {
     @Environment(\.argo) private var argo
 
     /// The Session's own facts, already composed. Never empty: the context reading is always one
     /// row, said as `unknown` where it cannot be read.
     let facts: [SessionHeaderProjection.Fact]
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
             section("Context budget") {
                 ForEach(SessionHeaderProjection.Context.guide) { line in
@@ -78,25 +78,9 @@ struct SessionContextGuide: View {
         // One element per row: read column by column, a term and its reading are two lists.
         .accessibilityElement(children: .combine)
     }
-}
 
-#Preview("Context guide — the policy, then what this Session reads") {
-    SessionContextGuide(facts: SessionHeaderFixture.guided.facts)
-        .argoFloatingGlass(in: .rect(cornerRadius: ArgoRadius.popover))
-        .padding(ArgoSpacing.region)
-        .argoAppearance()
-}
-
-#Preview("Context guide — a Session on a branch that names no ticket") {
-    SessionContextGuide(facts: SessionHeaderFixture.unlinked.facts)
-        .argoFloatingGlass(in: .rect(cornerRadius: ArgoRadius.popover))
-        .padding(ArgoSpacing.region)
-        .argoAppearance()
-}
-
-#Preview("Context guide — a Session almost nothing could be read off") {
-    SessionContextGuide(facts: SessionHeaderFixture.unguided.facts)
-        .argoFloatingGlass(in: .rect(cornerRadius: ArgoRadius.popover))
-        .padding(ArgoSpacing.region)
-        .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(facts: [SessionHeaderProjection.Fact]) {
+        self.facts = facts
+    }
 }

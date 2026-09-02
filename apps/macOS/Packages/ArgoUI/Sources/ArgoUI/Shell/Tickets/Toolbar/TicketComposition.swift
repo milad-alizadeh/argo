@@ -5,7 +5,7 @@ import ArgoEngine
 /// A VALUE the composer is opened WITH and edits, held above the sheet: a refused create returns
 /// the reader to their own words rather than to an empty field, and the sheet is rebuilt on every
 /// pass of the shell.
-struct TicketComposition: Equatable {
+package struct TicketComposition: Equatable {
     var title = ""
     var body = ""
 
@@ -21,5 +21,11 @@ struct TicketComposition: Equatable {
         guard !title.isEmpty else { return nil }
         let body = body.trimmingCharacters(in: .whitespacesAndNewlines)
         return TicketDraft(title: title, body: body.isEmpty ? nil : body)
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(title: String = "", body: String = "") {
+        self.title = title
+        self.body = body
     }
 }

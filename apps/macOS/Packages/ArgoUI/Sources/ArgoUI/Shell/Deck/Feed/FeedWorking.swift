@@ -33,7 +33,7 @@ enum FeedWorking {
     /// A sentence, and the only words this state has left: `FeedWorkingThread` says it on screen
     /// with an ion and no caption, and a shape crossing the column is exactly what a screen reader
     /// gets nothing from.
-    static let spoken = "The agent is working"
+    package static let spoken = "The agent is working"
 
     static let startingSpoken = "The agent is starting"
 

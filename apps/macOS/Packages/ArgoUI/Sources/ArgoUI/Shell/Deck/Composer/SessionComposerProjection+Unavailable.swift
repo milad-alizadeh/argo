@@ -5,7 +5,7 @@ import ArgoDesign
 /// The words live on the reason rather than in the view, for `SessionMode+Rung`'s reason: which
 /// sentence a case carries is a fact about the case.
 extension SessionComposerProjection {
-    enum Unavailable: CaseIterable, Equatable {
+    package enum Unavailable: CaseIterable, Equatable {
         /// Never Argo's. Read-only from the first observation, and staying that way.
         case external
         /// Was Argo's: the PTY died and ownership cannot be re-adopted (`CONTEXT.md` L2).

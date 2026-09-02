@@ -1,4 +1,5 @@
 import ArgoDesign
+@testable import ArgoSpecimens
 @testable import ArgoUI
 
 /// What the three visual-contract suites assert over: every appearance the contract ships, and the

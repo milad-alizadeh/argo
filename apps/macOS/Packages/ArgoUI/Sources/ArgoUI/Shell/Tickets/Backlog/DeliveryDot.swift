@@ -4,12 +4,12 @@ import SwiftUI
 /// A Delivery's whole signal, on one 6pt mark — the same size the roster spends on a Session
 /// (`cockpit-work-room.md`, the delivery signal on the dot alone). No chip beside it: #272's rule
 /// is that the row stays lean, and five states fit a mark.
-struct DeliveryDot: View {
+package struct DeliveryDot: View {
     @Environment(\.argo) private var argo
 
-    let reading: DeliveryReading
+    package let reading: DeliveryReading
 
-    var body: some View {
+    package var body: some View {
         Group {
             if let fill {
                 Circle().fill(fill.color)
@@ -34,6 +34,11 @@ struct DeliveryDot: View {
         case .failing: argo.color.state.failure
         case .merged: argo.color.state.running
         }
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(reading: DeliveryReading) {
+        self.reading = reading
     }
 }
 

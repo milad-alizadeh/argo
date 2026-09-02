@@ -11,7 +11,7 @@ import SwiftUI
 ///
 /// The draft is a BINDING and not state of its own: what the user typed lives in `ComposerDrafts`,
 /// keyed by Session, so leaving and coming back finds it where it was.
-struct SessionComposer: View {
+package struct SessionComposer: View {
     let composer: SessionComposerProjection.Composer
     /// What the vessel's controls do — the deck's own value, the one the feed already holds. The
     /// composer reads the acts it draws a control for; `decide` and `spawnBeside` belong to the
@@ -29,7 +29,7 @@ struct SessionComposer: View {
     /// Which menu the line has open and where the keyboard is in it. None of it survives a close.
     @State private var menus = ComposerMenus()
 
-    init(
+    package init(
         composer: SessionComposerProjection.Composer,
         intents: DeckIntents = .inert,
         isDropTargeted: Bool = false,
@@ -42,7 +42,7 @@ struct SessionComposer: View {
         self.isDropTargeted = isDropTargeted
     }
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             // Above the vessel in the stack rather than in an overlay over it: the whole composer
             // is anchored to the feed's bottom edge, so a row here grows UPWARD and the menu ends

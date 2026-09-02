@@ -53,7 +53,7 @@ extension MinimapLaneView {
 
     /// The pointer's own zone, re-cut whenever the lane is. Key-window only: a lane lighting up in
     /// a background window answers a hand that is not on it.
-    override func updateTrackingAreas() {
+    package override func updateTrackingAreas() {
         super.updateTrackingAreas()
         for area in trackingAreas {
             removeTrackingArea(area)
@@ -67,7 +67,7 @@ extension MinimapLaneView {
         ))
     }
 
-    override func mouseEntered(with event: NSEvent) {
+    package override func mouseEntered(with event: NSEvent) {
         pointedAt = laneY(of: event)
         readModifiers(event.modifierFlags)
         watchModifiers()
@@ -76,7 +76,7 @@ extension MinimapLaneView {
 
     /// A scrub carried off the lane keeps it lit — the hand is still on the reading. The Turn's
     /// rect goes either way: it names a Turn under the pointer, and the pointer has left.
-    override func mouseExited(with _: NSEvent) {
+    package override func mouseExited(with _: NSEvent) {
         pointedAt = nil
         holdsBothKeys = false
         stopWatchingModifiers()
@@ -86,7 +86,7 @@ extension MinimapLaneView {
 
     /// The Turn under the pointer re-read. Only the annotation layer answers, and it does nothing
     /// at all while the pointer stays inside the Turn it is already naming.
-    override func mouseMoved(with event: NSEvent) {
+    package override func mouseMoved(with event: NSEvent) {
         pointedAt = laneY(of: event)
         settleAnnotations()
     }
@@ -123,7 +123,7 @@ extension MinimapLaneView {
 
     /// A wheel over the lane scrolls the reading beside it, rather than nothing at all. The event
     /// is handed to the scroll view whole, so momentum and rubber-banding stay the platform's.
-    override func scrollWheel(with event: NSEvent) {
+    package override func scrollWheel(with event: NSEvent) {
         guard let scroller = feed?.scroller else {
             return super.scrollWheel(with: event)
         }
@@ -136,7 +136,7 @@ extension MinimapLaneView {
     ///
     /// A lane with nothing to scroll answers nothing. It draws no rectangle either, and a press
     /// that silently issued a scroll on a surface showing no viewport is a press that lied.
-    override func mouseDown(with event: NSEvent) {
+    package override func mouseDown(with event: NSEvent) {
         guard geometry.isScrollable else { return }
         let laneY = laneY(of: event)
         let band = viewportBand()
@@ -163,14 +163,14 @@ extension MinimapLaneView {
     /// The scrub. Instant, and mapped through the same one place-in-the-lane-is-a-place-in-the-
     /// reading function a click goes through — a drag is a click whose grab point is not the
     /// rectangle's centre, and nothing else.
-    override func mouseDragged(with event: NSEvent) {
+    package override func mouseDragged(with event: NSEvent) {
         guard let grab else { return }
         settle(at: geometry.offset(forLaneY: laneY(of: event) - grab), over: nil)
     }
 
     /// The hand off the lane. The geometry was frozen for the length of the scrub, so whatever
     /// arrived under it reflows the rects now.
-    override func mouseUp(with event: NSEvent) {
+    package override func mouseUp(with event: NSEvent) {
         grab = nil
         isLit = bounds.contains(convert(event.locationInWindow, from: nil))
         refresh()

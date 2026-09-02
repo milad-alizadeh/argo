@@ -9,7 +9,7 @@ import SwiftUI
 /// It takes `argoChromeBar()` and so does the window toolbar directly above it. One material
 /// across both is what makes the icons up there and the Session's title down here read as one bar
 /// rather than two surfaces meeting, and the single hairline at the foot is where the chrome ends.
-struct DeckCanopy: View {
+package struct DeckCanopy: View {
     /// Absent when nothing is selected. The bar still holds its height — every zone under it is
     /// inset by that height, and a canopy that collapsed would move all of them.
     let header: SessionHeaderProjection.Header?
@@ -26,7 +26,7 @@ struct DeckCanopy: View {
     /// centred title's share is taken of (#692).
     @State private var paneWidth: CGFloat = 0
 
-    var body: some View {
+    package var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
             // Zero-height wherever there is no toolbar above the deck, so a specimen of the deck
             // alone draws no title.
@@ -40,9 +40,20 @@ struct DeckCanopy: View {
         .argoChromeBar()
         .ignoresSafeArea(.container, edges: .top)
     }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        header: SessionHeaderProjection.Header?,
+        reach: CGFloat = 0,
+        handOff: @escaping () async -> Void = {},
+    ) {
+        self.header = header
+        self.reach = reach
+        self.handOff = handOff
+    }
 }
 
-extension EnvironmentValues {
+package extension EnvironmentValues {
     /// How far the canopy reaches down over the deck, published by `SessionsDeck`. Zero everywhere
     /// else, so a zone rendered on its own draws with nothing over it.
     @Entry var argoDeckCanopy: CGFloat = 0
@@ -78,33 +89,4 @@ private struct ArgoScrollsUnderCanopy: ViewModifier {
     func body(content: Content) -> some View {
         content.contentMargins(.top, canopy, for: .scrollContent)
     }
-}
-
-/// The bar over a reading long enough to run beneath it, and over nothing — an empty deck and a
-/// deck with no Session on it are two different absences.
-private struct DeckCanopyGallery: View {
-    var isFlat = false
-
-    var body: some View {
-        VStack(spacing: ArgoSpacing.section) {
-            SessionsDeck(
-                feed: FeedProjection.longRows,
-                header: SessionHeaderFixture.header(for: .managed),
-                held: FeedProjection.longHeldRowID,
-            )
-            SessionsDeck(feed: [])
-        }
-        .argoWithoutTransparency(isFlat)
-        .frame(width: 900, height: 800)
-        .argoDeckSurface()
-        .argoAppearance()
-    }
-}
-
-#Preview("Deck canopy — over a reading, and over nothing") {
-    DeckCanopyGallery()
-}
-
-#Preview("Deck canopy — as a reader who asked for no transparency sees it") {
-    DeckCanopyGallery(isFlat: true)
 }

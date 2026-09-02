@@ -8,7 +8,7 @@ import SwiftUI
 struct FeedColumn: View {
     /// Which reading the column is drawing — see `FeedReading`. Passed on down; nothing here reads
     /// it.
-    var reading = FeedReading.unattached
+    package var reading = FeedReading.unattached
     let feed: [FeedRow]
     let showing: PlanShowing
     let selection: FeedRowSelection

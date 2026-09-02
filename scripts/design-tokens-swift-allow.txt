@@ -15,8 +15,8 @@
 
 # #1088 — the swatch a dropped-screenshot fixture decodes into a thumbnail chip. Two bands meant
 # as "the shell's own graphite" and sampled by eye; the contract's own roles are a different blue.
-Specimen/AttachmentFixture\.swift:[0-9]+:.*NSColor\(red:
+ArgoSpecimens/AttachmentFixture\.swift:[0-9]+:.*NSColor\(red:
 
 # #1088 — the specimen deck's own chrome mark, at a rung the icon scale does not have: 11pt sits
 # between `ArgoIconSize.inline` (10) and `.control` (13), so neither snap is pixel-identical.
-Specimen/SpecimenDeck\.swift:[0-9]+:.*\.font\(\.system\(size: 11
+ArgoSpecimens/SpecimenDeck\.swift:[0-9]+:.*\.font\(\.system\(size: 11

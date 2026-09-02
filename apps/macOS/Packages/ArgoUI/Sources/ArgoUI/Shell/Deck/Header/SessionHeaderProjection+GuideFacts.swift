@@ -8,12 +8,12 @@ import ArgoEngine
 /// hover is prose and speaks in sentences, this is a column and speaks in readings.
 extension SessionHeaderProjection {
     /// One row: the term the panel labels it with, and the reading itself.
-    struct Fact: Equatable, Sendable, Identifiable {
+    package struct Fact: Equatable, Sendable, Identifiable {
         let term: String
         /// The reading alone — `Started` carries `2h ago`, because the term has said the rest.
         let value: String
 
-        var id: String {
+        package var id: String {
             term
         }
     }

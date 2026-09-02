@@ -5,8 +5,8 @@ import ArgoEngine
 /// so neither file owns two subjects. The `Row` and everything that constructs one sit together,
 /// which is what keeps its initializer `fileprivate`.
 extension SessionRosterProjection {
-    struct Row: Identifiable, Sendable {
-        let id: String
+    package struct Row: Identifiable, Sendable {
+        package let id: String
         let title: String
         /// Never drawn — the worktree label stands in for it — but the tooltip and the copy
         /// actions still address the Session by it.

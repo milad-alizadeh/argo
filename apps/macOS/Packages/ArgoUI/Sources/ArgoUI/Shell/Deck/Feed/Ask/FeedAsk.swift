@@ -4,7 +4,7 @@ import ArgoEngine
 /// way it went. Holds the engine's `Ask` whole, since every word of it is carried verbatim.
 ///
 /// A pending question is the only attention-coloured thing in the feed; an answered one is history.
-struct FeedAsk: Equatable, Sendable {
+package struct FeedAsk: Equatable, Sendable {
     let ask: Ask
     /// Whether the record has answered it at all — the existence of a result, not what was in it.
     /// Apart from `answer` because they degrade in opposite directions: a question answered with an

@@ -22,7 +22,7 @@ enum TurnClockPhrase {
     }
 
     /// The same duration for a screen reader, which gets nothing from `04`.
-    static func spoken(seconds: Int) -> String {
+    package static func spoken(seconds: Int) -> String {
         let elapsed = max(seconds, 0)
         return switch elapsed {
         case ..<minute: unit(elapsed, "second")

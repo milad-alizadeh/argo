@@ -37,13 +37,13 @@ extension FeedTableCoordinator {
     ///
     /// The heights are the table's OWN, not a second measure: a lane summing anything else would
     /// put a mark where the row it stands for is not.
-    func reading() -> MinimapReading? {
+    package func reading() -> MinimapReading? {
         readingStamp().flatMap(reading(at:))
     }
 
     /// The same reading, against a stamp the caller already holds — so a reader that decided to
     /// walk walks against the very facts it made the decision on.
-    func reading(at stamp: MinimapReadingStamp) -> MinimapReading? {
+    package func reading(at stamp: MinimapReadingStamp) -> MinimapReading? {
         guard let table else { return nil }
         // This is the whole-document walk `ProseCache` derives its ceiling from: every prose row
         // below asks `ProseReading.structure(of:)`, so a store smaller than the reading would be

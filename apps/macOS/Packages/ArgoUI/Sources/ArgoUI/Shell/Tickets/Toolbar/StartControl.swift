@@ -13,10 +13,10 @@ import SwiftUI
 /// browser (#872) — drawn and unpressable, rather than live and inert. Disabled and not hidden: the
 /// row is a fixed set of marks, and a pair that came and went with the provider would move the
 /// ones beside them.
-struct StartControl: View {
+package struct StartControl: View {
     let verbs: TicketsToolbarIntents.Verbs
 
-    var body: some View {
+    package var body: some View {
         ToolbarVessel {
             start
             DeckSeparator()
@@ -47,6 +47,11 @@ struct StartControl: View {
         .buttonStyle(.plain)
         .help(StartVerb.spoken(verbs.command))
         .accessibilityLabel(StartVerb.spoken(verbs.command))
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(verbs: TicketsToolbarIntents.Verbs) {
+        self.verbs = verbs
     }
 }
 

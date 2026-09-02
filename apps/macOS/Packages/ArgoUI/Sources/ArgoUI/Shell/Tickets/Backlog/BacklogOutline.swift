@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// It draws the projection's FLATTENED order (`TicketsRoomProjection.drawn`) rather than nesting
 /// `View`s. Why, and what that trades away: `cockpit-work-room.inventory.md`.
-struct BacklogOutline: View {
+package struct BacklogOutline: View {
     @Environment(\.argo) private var argo
 
     /// The band's rows in draw order, already flattened. Handed in rather than derived, because
@@ -23,7 +23,7 @@ struct BacklogOutline: View {
     /// visible is the control-that-does-nothing this room keeps refusing (#873).
     var folds = true
 
-    var body: some View {
+    package var body: some View {
         ForEach(drawn) { drawn in
             let ink = BacklogRowInk(
                 isSelected: drawn.id == selection,
@@ -53,35 +53,17 @@ struct BacklogOutline: View {
             shut.insert(id)
         }
     }
-}
 
-#Preview("Backlog outline — open, and with one parent folded") {
-    @Previewable @State var open = Set<Int>()
-    @Previewable @State var folded: Set = [607]
-    let high = TicketsRoomProjection.bands(of: TicketsFixture.room.backlog)[0]
-
-    HStack(spacing: ArgoSpacing.flush) {
-        List {
-            BacklogOutline(
-                drawn: TicketsRoomProjection.drawn(high, shut: open), shut: $open, selection: 272,
-            )
-        }
-        List {
-            BacklogOutline(drawn: TicketsRoomProjection.drawn(high, shut: folded), shut: $folded)
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        drawn: [TicketsRoomProjection.Drawn],
+        shut: Binding<Set<Int>>,
+        selection: Int? = nil,
+        folds: Bool = true,
+    ) {
+        self.drawn = drawn
+        _shut = shut
+        self.selection = selection
+        self.folds = folds
     }
-    .listStyle(.inset)
-    .frame(width: ArgoBacklogList.width * 2, height: 420)
-    .argoDeckSurface()
-    .argoAppearance()
-    .environment(\.backlogNow, TicketsFixture.asOf)
-}
-
-#Preview("Backlog outline — the provider answered with nothing") {
-    List { BacklogOutline(drawn: [], shut: .constant([])) }
-        .listStyle(.inset)
-        .frame(width: ArgoBacklogList.width, height: 240)
-        .argoDeckSurface()
-        .argoAppearance()
-        .environment(\.backlogNow, TicketsFixture.asOf)
 }

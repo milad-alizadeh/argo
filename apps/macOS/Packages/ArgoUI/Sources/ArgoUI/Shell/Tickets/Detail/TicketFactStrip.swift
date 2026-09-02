@@ -7,12 +7,12 @@ import SwiftUI
 ///
 /// One wrapping run: at 480 the three fact pairs set on one line and the labels take the next,
 /// which is what every render shows, but a provider with longer words breaks wherever it must.
-struct TicketFactStrip: View {
+package struct TicketFactStrip: View {
     @Environment(\.argo) private var argo
 
     let ticket: TicketsRoomProjection.Detail
 
-    var body: some View {
+    package var body: some View {
         WrapFlow(along: ArgoTicketDetail.factGap, between: ArgoTicketDetail.factLineGap) {
             // Absent until a port reads one (#388), never defaulted to a rung nobody named.
             if let priority = ticket.priority {
@@ -57,24 +57,9 @@ struct TicketFactStrip: View {
             .argoText(ArgoTypography.rowMeta)
             .foregroundStyle(argo.color.text.secondary)
     }
-}
 
-#Preview("Fact strip — every fact read") {
-    if let ticket = TicketsFixture.room.ticket {
-        TicketFactStrip(ticket: ticket)
-            .padding(ArgoTicketDetail.inset)
-            .frame(width: ArgoTicketDetail.idealWidth)
-            .argoDeckSurface()
-            .argoAppearance()
-    }
-}
-
-#Preview("Fact strip — nothing read but Argo's own bucket") {
-    if let ticket = TicketsRoomProjection.room(from: TicketsFixture.unread).ticket {
-        TicketFactStrip(ticket: ticket)
-            .padding(ArgoTicketDetail.inset)
-            .frame(width: ArgoTicketDetail.idealWidth)
-            .argoDeckSurface()
-            .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(ticket: TicketsRoomProjection.Detail) {
+        self.ticket = ticket
     }
 }

@@ -2,7 +2,7 @@ extension FeedRow.Content {
     /// What a row IS, answered for every kind in one place. The feed's spacing, its two filtered
     /// renders, the accent on a just-sent echo, the working thread, the evidence panel, the Turn
     /// punctuation, the lightbox and what a press on the row does each read one of these.
-    struct Kind: Equatable, Sendable {
+    package struct Kind: Equatable, Sendable {
         /// What a press on the row does — Return, Space and a click alike, since the row IS the
         /// control.
         enum Activation: Equatable, Sendable {
@@ -25,15 +25,15 @@ extension FeedRow.Content {
 
         /// A piece of work rather than a piece of prose. The feed welds a run of these together
         /// with a tighter step than prose gets.
-        var isCall = false
+        package var isCall = false
         /// Something somebody SAID — neither the work nor the punctuation around it.
-        var isProse = false
+        package var isProse = false
         /// Something the AGENT said. Narrower than `isProse`: a Turn's final message routinely
         /// contradicts its own reasoning, so counting a thought would promise two answers where
         /// the agent gave one.
-        var isMessage = false
+        package var isMessage = false
         /// Something the USER asked for.
-        var isPrompt = false
+        package var isPrompt = false
         /// A call the record has not answered yet — the one the ion crosses. A folded run is not
         /// one even while a call inside it is pending: the row is a count rather than a line, and
         /// the working thread is what stands over it.

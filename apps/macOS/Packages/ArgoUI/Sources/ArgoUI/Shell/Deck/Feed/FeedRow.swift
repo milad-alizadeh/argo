@@ -1,8 +1,8 @@
 /// One drawable line of a Session's reading: its place in the feed and the claim it makes.
-struct FeedRow: Identifiable, Equatable, Sendable {
+package struct FeedRow: Identifiable, Equatable, Sendable {
     /// What a row IS, which is what decides how it is drawn. Each kind carries its own payload
     /// rather than sharing one `text` field.
-    enum Content: Equatable, Sendable {
+    package enum Content: Equatable, Sendable {
         /// What someone asked for, verbatim, and whatever was pasted in with it. A steer typed
         /// mid-run is one of these too.
         case prompt(text: String, shots: [FeedShot])
@@ -29,12 +29,18 @@ struct FeedRow: Identifiable, Equatable, Sendable {
     /// The row's place in the feed — position, never the content: a feed keyed by what a row says
     /// would fuse two identical messages. Dense over the ROWS, so the kinds this feed ignores leave
     /// no hole for a list to animate across.
-    let id: Int
-    let content: Content
+    package let id: Int
+    package let content: Content
 
     /// What this row IS — every fact about it, answered in one place. Rebuilt on each access, so a
     /// reader wanting more than one fact takes it into a local first.
-    var kind: Content.Kind {
+    package var kind: Content.Kind {
         content.kind
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(id: Int, content: Content) {
+        self.id = id
+        self.content = content
     }
 }

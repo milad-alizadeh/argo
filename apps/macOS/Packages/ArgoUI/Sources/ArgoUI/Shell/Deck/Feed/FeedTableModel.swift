@@ -10,8 +10,8 @@ import SwiftUI
     /// WHICH reading these rows are — see `FeedReading`. The one field the coordinator reads as an
     /// identity rather than as content: a fresh one means another Session or another scope, and
     /// every per-row fact it holds is about a reading that has gone.
-    var reading: FeedReading
-    var rows: [FeedRow]
+    package var reading: FeedReading
+    package var rows: [FeedRow]
     var selection: FeedRowSelection
     /// Which row the reading opens held at — see `FeedView.held`.
     var held: FeedRow.ID?

@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// The canopy shares the stack's top edge with the row rather than sitting above it in a column —
 /// the reading has to reach the deck's top edge to pass under the glass.
-struct SessionsDeck: View {
+package struct SessionsDeck: View {
     /// Which Session is being read, as an IDENTITY — nothing here draws it. Half of `FeedReading`;
     /// the rail's scope is the other half. `nil` in a preview and a specimen, where nothing
     /// switches.
@@ -67,7 +67,7 @@ struct SessionsDeck: View {
         FeedReading(session: session, scope: scope.wrappedValue)
     }
 
-    var body: some View {
+    package var body: some View {
         // The canopy is declared FIRST and lifted by `zIndex`, not laid over the row as an overlay:
         // a stack is read in declaration order, so an overlay would put the Session's title after
         // the whole reading for VoiceOver and for the keyboard. `zIndex` moves only the paint.
@@ -132,53 +132,47 @@ struct SessionsDeck: View {
     private var selection: FeedRowSelection {
         FeedRowSelection(open: open, step: step, lit: $lit, focus: $focus)
     }
-}
 
-#Preview("Sessions deck — zones") {
-    SessionsDeck(
-        feed: FeedProjection.previewRows,
-        header: SessionHeaderFixture.header(for: .managed),
-        showing: PlanShowing(plan: PlanProjection.previewReading),
-    )
-    .frame(width: 900, height: 620)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Sessions deck — a call's evidence open beside the feed") {
-    SessionsDeck(
-        feed: FeedProjection.previewRows,
-        open: .constant(FeedProjection.previewFailedCallID),
-    )
-    .frame(width: 900, height: 620)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Sessions deck — the plan's list open over the feed") {
-    SessionsDeck(
-        feed: FeedProjection.previewRows,
-        showing: PlanShowing(plan: PlanFixture.working, isRevealed: true),
-    )
-    .frame(width: 900, height: 620)
-    .argoDeckSurface()
-    .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        session: CockpitPresentation.Session.ID? = nil,
+        feed: [FeedRow],
+        header: SessionHeaderProjection.Header? = nil,
+        handOff: @escaping () async -> Void = {},
+        showing: PlanShowing = PlanShowing(),
+        open: Binding<FeedRow.ID?> = .constant(nil),
+        step: Binding<Int?> = .constant(nil),
+        lit: FeedShot? = nil,
+        held: FeedRow.ID? = nil,
+        vessel: DeckVessel = DeckVessel.none,
+        intents: DeckIntents = DeckIntents.inert,
+        seams: DeckSeams = DeckSeams.unheld,
+        isRailCollapsed: Binding<Bool> = .constant(false),
+        readings: FeedAgentReader = FeedAgentReader.unread,
+        scope: Binding<FeedScope> = .constant(.session),
+    ) {
+        self.session = session
+        self.feed = feed
+        self.header = header
+        self.handOff = handOff
+        self.showing = showing
+        self.open = open
+        self.step = step
+        _lit = State(wrappedValue: lit)
+        self.held = held
+        self.vessel = vessel
+        self.intents = intents
+        self.seams = seams
+        self.isRailCollapsed = isRailCollapsed
+        self.readings = readings
+        self.scope = scope
+    }
 }
 
 // No plan on this one, and that is the point: a Session that never reported one shows no pill.
 #Preview("Sessions deck — a Session that has said nothing") {
     SessionsDeck(feed: [])
         .frame(width: 900, height: 620)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Sessions deck — narrowest deck the window allows") {
-    SessionsDeck(feed: FeedProjection.previewRows)
-        .frame(
-            width: ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth,
-            height: ArgoLayout.windowMinimumHeight,
-        )
         .argoDeckSurface()
         .argoAppearance()
 }

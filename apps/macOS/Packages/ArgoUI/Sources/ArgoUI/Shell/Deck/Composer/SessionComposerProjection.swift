@@ -2,7 +2,7 @@ import ArgoEngine
 
 /// What the composer states about the Session it drives, derived the way the header's facts are:
 /// off the presentation, in a projection a test can hold still.
-enum SessionComposerProjection {
+package enum SessionComposerProjection {
     /// What the Session's adapter declares about itself. One type rather than three parallel flags
     /// because they travel together from `CockpitView` down to the vessel, and each is read off the
     /// drive port for the same Session at the same moment.
@@ -16,16 +16,16 @@ enum SessionComposerProjection {
         var resolvesMentions = false
     }
 
-    struct Composer: Equatable {
+    package struct Composer: Equatable {
         /// The handle `send` is keyed by — the roster's own id for the Session.
-        let sessionID: String
+        package let sessionID: String
         /// `Message Claude Code…` — addressed to the agent by name, because the field is how the
         /// user speaks to it.
-        let placeholder: String
+        package let placeholder: String
         /// What the Session runs at — `Opus 5` — stated on the composer and nowhere else once
         /// #558 moves it off the header (design decision 2). Effort joins it there too, when it
         /// is a value something actually holds.
-        let facts: String?
+        package let facts: String?
         /// What this Session has stopped asking about (#572). Empty for a Session holding none,
         /// which draws no tray.
         let standingAllows: [StandingAllow]
@@ -35,7 +35,7 @@ enum SessionComposerProjection {
         let isRunning: Bool
         /// The Session's standing stance as Argo can state it (#545, ADR-0025). The whole reading,
         /// because the `≈` and the CLI's own word are both things the control says.
-        let mode: SessionModeReading
+        package let mode: SessionModeReading
         /// The rung the user picked that the CLI then contradicted (#629). The seam says so, and
         /// `mode` above is already back on the real rung — a picker showing a rung nobody is
         /// standing on would be a false DIRECT.
@@ -66,6 +66,38 @@ enum SessionComposerProjection {
         /// relative to `workspaceRoot`. They sort to the top of the `@` menu, because the file the
         /// reader means next is nearly always one the agent has just been in.
         var touchedFiles: [String] = []
+
+        /// Spelled out because Swift synthesises no memberwise initializer above
+        /// `internal`, and the specimens build this from their own target (#1085).
+        package init(
+            sessionID: String,
+            placeholder: String,
+            facts: String?,
+            standingAllows: [StandingAllow],
+            isRunning: Bool,
+            mode: SessionModeReading,
+            modeDidNotTake: SessionMode?,
+            lostTurn: String?,
+            canAttach: Bool,
+            canRunCommands: Bool,
+            resolvesMentions: Bool = false,
+            workspaceRoot: String? = nil,
+            touchedFiles: [String] = [],
+        ) {
+            self.sessionID = sessionID
+            self.placeholder = placeholder
+            self.facts = facts
+            self.standingAllows = standingAllows
+            self.isRunning = isRunning
+            self.mode = mode
+            self.modeDidNotTake = modeDidNotTake
+            self.lostTurn = lostTurn
+            self.canAttach = canAttach
+            self.canRunCommands = canRunCommands
+            self.resolvesMentions = resolvesMentions
+            self.workspaceRoot = workspaceRoot
+            self.touchedFiles = touchedFiles
+        }
     }
 
     /// A composer only for a Session Argo can put keystrokes to: managed, and not over. Everything
@@ -102,7 +134,7 @@ enum SessionComposerProjection {
     }
 
     /// What the field invites while a Turn is running: send holds the words until the Turn ends.
-    static let queuePlaceholder = "Queue a follow-up…"
+    package static let queuePlaceholder = "Queue a follow-up…"
 
     /// Addressed to the agent when the record has named one, and to the role when it has not: a
     /// managed Session's first moments are a claim without a CLI's own record behind it.

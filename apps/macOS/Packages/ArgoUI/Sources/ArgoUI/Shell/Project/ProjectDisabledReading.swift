@@ -7,9 +7,9 @@
 ///
 /// `nil` is the ordinary window. A value is the whole of what replaces it, which is why the
 /// decision lives here rather than in a `body` no suite can read.
-struct ProjectDisabledReading: Equatable {
+package struct ProjectDisabledReading: Equatable {
     /// What both repair verbs are sent with. The id survives a relocation; the path does not.
-    let projectID: String
+    package let projectID: String
     let name: String
     /// `folder not found` — the registered status word for Project integrity
     /// (`cockpit-status-vocabulary.md`), never a second wording of it here.
@@ -19,7 +19,7 @@ struct ProjectDisabledReading: Equatable {
 }
 
 extension ProjectDisabledReading {
-    init?(presentation: CockpitPresentation) {
+    package init?(presentation: CockpitPresentation) {
         self.init(project: presentation.activeProject)
     }
 

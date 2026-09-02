@@ -4,7 +4,7 @@ import ArgoEngine
 ///
 /// A spawn runs in the active Project's folder, so there has to BE one and it has to still be
 /// there. Both refusals are drawn disabled rather than hidden (#361).
-struct NewSessionOffer: Equatable, Sendable {
+package struct NewSessionOffer: Equatable, Sendable {
     /// The verb, spelled once for both routes to it — the File menu's item and the button's label.
     static let label = "New Session"
     /// The key the MENU owns. The button names it rather than binding it: two controls on one
@@ -20,7 +20,7 @@ struct NewSessionOffer: Equatable, Sendable {
         blocked == nil
     }
 
-    init(presentation: CockpitPresentation) {
+    package init(presentation: CockpitPresentation) {
         self.blocked = Self.refusal(from: presentation)
     }
 

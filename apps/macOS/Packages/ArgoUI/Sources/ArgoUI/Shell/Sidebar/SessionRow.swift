@@ -6,7 +6,7 @@ import SwiftUI
 
 /// One flat sidebar row over the sidebar's system material. It draws no selection of its own: the
 /// ground is the list's, through `.argoSelectedRowGround(isSelected:)` (D30, as amended by #875).
-struct SessionRow: View {
+package struct SessionRow: View {
     /// Bound and interval on the focus retries in `open()`.
     private static let focusAttempts = 20
     private static let focusRetry = Duration.milliseconds(20)
@@ -26,7 +26,7 @@ struct SessionRow: View {
     @State private var typed = ""
     @FocusState private var isFieldFocused: Bool
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
             primaryLine
             secondaryLine
@@ -180,6 +180,31 @@ struct SessionRow: View {
 
     /// Ahead of the clock, because the leading edge is where the eye lands and this is the slot
     /// the reader scans to place the row (#745, #1072).
+    @ViewBuilder private var stateWord: some View {
+        if let word = row.stateWord {
+            ArgoStateLabel(word: word)
+                .foregroundStyle(row.state?.tint(in: argo.color) ?? argo.color.text.tertiary)
+                .layoutPriority(1)
+        }
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        row: SessionRosterProjection.Row,
+        rename: @escaping (String?) -> Void = { _ in },
+        isRenaming: Binding<Bool> = .constant(false),
+        select: @escaping () -> Void = {},
+    ) {
+        self.row = row
+        self.rename = rename
+        self.isRenaming = isRenaming
+        self.select = select
+    }
+}
+
+/// The second line's own labels, beside the row rather than in it: the body is at the house
+/// ceiling for a type, and what a row says about its Workspace is one subject of its own.
+private extension SessionRow {
     @ViewBuilder private var toldApartLabel: some View {
         if let toldApart = row.toldApart {
             Text(toldApart)
@@ -209,17 +234,10 @@ struct SessionRow: View {
         }
     }
 
-    /// The word takes the state dot's own ink — every state ink is asserted legible as a word and
-    /// not only as a dot. Drawn even under a state with no colour, or it would be announced and
-    /// never drawn.
-    ///
-    /// Above the title in priority: a title that gives up characters still reads, and a truncated
-    /// badge says a different state (`composer/perm.png`, where the title is the line that cuts).
-    @ViewBuilder private var stateWord: some View {
-        if let word = row.stateWord {
-            ArgoStateLabel(word: word)
-                .foregroundStyle(row.state?.tint(in: argo.color) ?? argo.color.text.tertiary)
-                .layoutPriority(1)
-        }
-    }
+    // The word takes the state dot's own ink — every state ink is asserted legible as a word and
+    // not only as a dot. Drawn even under a state with no colour, or it would be announced and
+    // never drawn.
+    //
+    // Above the title in priority: a title that gives up characters still reads, and a truncated
+    // badge says a different state (`composer/perm.png`, where the title is the line that cuts).
 }

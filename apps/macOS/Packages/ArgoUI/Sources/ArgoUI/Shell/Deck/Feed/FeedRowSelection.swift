@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// What the deck currently has open and where the keyboard is, in one value.
-struct FeedRowSelection {
+package struct FeedRowSelection {
     @Binding var open: FeedRow.ID?
     /// Which result inside the open row the reader asked for — the position of a step down the
     /// panel.
@@ -68,9 +68,24 @@ struct FeedRowSelection {
             focus.wrappedValue = .row(row)
         }
     }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        open: Binding<FeedRow.ID?>,
+        step: Binding<Int?>,
+        lit: Binding<FeedShot?>,
+        focus: FocusState<FeedFocus?>.Binding,
+        homeward: ((FeedRow.ID) -> Void)? = nil,
+    ) {
+        _open = open
+        _step = step
+        _lit = lit
+        self.focus = focus
+        self.homeward = homeward
+    }
 }
 
-extension FeedRowSelection {
+package extension FeedRowSelection {
     /// The same selection with the keyboard's way home wired onto a table.
     ///
     /// `FeedRowSelection` is a value, so a `homeward` set on one copy is absent from every other:

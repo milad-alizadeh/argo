@@ -5,11 +5,11 @@ import CoreGraphics
 ///
 /// A shot carries its own address rather than borrowing the row's: a gallery is a run of SEVERAL
 /// calls drawn as one row, so the row has no single file to name.
-struct FeedShot: Equatable, Sendable {
+package struct FeedShot: Equatable, Sendable {
     /// The short address, with the parent that tells two same-named files apart where needed.
     let name: String
     /// The whole path, which is what the lightbox says.
-    let address: String
+    package let address: String
     let media: MediaEvidence
     /// Read off the file's signature, which is the only reading cheap enough: the projection
     /// builds every shot again on every body pass, so a decode here is one per picture per pass
@@ -42,7 +42,7 @@ struct FeedShot: Equatable, Sendable {
     }
 
     /// Whether clicking this opens anything — a shot with no picture is not a control.
-    var isOpenable: Bool {
+    package var isOpenable: Bool {
         provenance.showsPicture
     }
 }

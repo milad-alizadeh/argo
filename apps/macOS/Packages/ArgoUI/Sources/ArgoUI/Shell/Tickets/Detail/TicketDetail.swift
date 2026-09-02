@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// The pane carries no band of its own: the ticket's verbs are in the window's row with the rest of
 /// the room's controls (`TicketsToolbar`), which is a line of height back for the words.
-struct TicketDetail: View {
+package struct TicketDetail: View {
     let ticket: TicketsRoomProjection.Detail?
     /// The number the pane is open on that nothing was read for, and `nil` wherever `ticket` has
     /// something — the projection settles which of the two this is (`TicketsRoomProjection.Room`).
@@ -17,7 +17,7 @@ struct TicketDetail: View {
     /// is a closure and not a binding that could disagree with `ticket`.
     let open: (Int) -> Void
 
-    var body: some View {
+    package var body: some View {
         // Only the ticket SCROLLS. A one-line sentence in a scroll view sits at the top of it,
         // which is the wrong shape for a stated empty — `BacklogNoMatch` centres in the pane.
         Group {
@@ -52,20 +52,17 @@ struct TicketDetail: View {
         // and a second cap here would be a second answer to one question.
         .argoFeedMeasure()
     }
-}
 
-#Preview("Ticket detail") {
-    TicketDetail(ticket: TicketsFixture.room.ticket, open: { _ in })
-        .frame(width: ArgoTicketDetail.idealWidth, height: 520)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Ticket detail — a parent, deep") {
-    TicketDetail(ticket: TicketsFixture.room(showing: 607).ticket, open: { _ in })
-        .frame(width: ArgoTicketDetail.idealWidth, height: 720)
-        .argoDeckSurface()
-        .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        ticket: TicketsRoomProjection.Detail?,
+        unreadNumber: Int? = nil,
+        open: @escaping (Int) -> Void,
+    ) {
+        self.ticket = ticket
+        self.unreadNumber = unreadNumber
+        self.open = open
+    }
 }
 
 #Preview("Ticket detail — nothing selected") {

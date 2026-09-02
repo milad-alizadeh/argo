@@ -1,4 +1,5 @@
 import AppKit
+@testable import ArgoSpecimens
 @testable import ArgoUI
 import Testing
 

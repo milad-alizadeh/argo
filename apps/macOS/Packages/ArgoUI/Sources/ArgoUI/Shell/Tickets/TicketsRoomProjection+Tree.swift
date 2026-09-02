@@ -13,8 +13,8 @@ import Foundation
 extension TicketsRoomProjection {
     /// One row as the list draws it: the row itself and how far in it sits. Flat, because selection
     /// and row height are the `List`'s and a `List` counts rows rather than subtrees.
-    struct Drawn: Sendable, Equatable, Identifiable {
-        let row: Row
+    package struct Drawn: Sendable, Equatable, Identifiable {
+        package let row: Row
         /// Levels from the root, UNCAPPED — the inset caps at `indentDepthCap`, the depth does not,
         /// so a reader asking how deep a ticket sits gets the truth.
         let depth: Int
@@ -23,12 +23,12 @@ extension TicketsRoomProjection {
         /// the band is flattened: which header a row lands under is not something the tree knows.
         var odd: String?
 
-        var id: Int {
+        package var id: Int {
             row.id
         }
 
         /// A leaf keeps the twist's slot but never its mark, so every dot lands on one vertical.
-        var isParent: Bool {
+        package var isParent: Bool {
             !row.children.isEmpty
         }
 

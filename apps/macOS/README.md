@@ -24,8 +24,15 @@ Packages/
   ArgoUI/           shared visual components. No engine dependency
     Shell/          production NavigationSplitView, sidebar, deck ground and toolbar vessels
                     — and each surface's own measure sheet, beside the surface it measures (#756)
-    Specimen/       preview-only views that show the contract's roles together
+  ArgoUI/ArgoFixtures/   sample transcripts and Tickets. Depends on ArgoEngine and nothing else
+  ArgoUI/ArgoSpecimens/  the specimen harness and every #Preview drawn from a fixture (#1085)
 ```
+
+`ArgoFixtures` and `ArgoSpecimens` are targets in the ArgoUI **package**, beside `ArgoUI` rather
+than inside it: 7,300 lines of dev-tool code used to compile into the library that draws the
+product, and no gate could see the edge while they did. `swift-boundaries.sh` edge 8 keeps the
+arrow pointed one way. The app target links `ArgoSpecimens` because the harness is reached by
+launch argument on the real binary — that is what makes a specimen render evidence.
 
 `Argo/` is a **file-system-synchronized group**: the project file does not enumerate its
 contents, so adding a Swift file to that folder adds it to the target with no `.pbxproj`

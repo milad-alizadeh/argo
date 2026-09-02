@@ -6,7 +6,7 @@ import SwiftUI
 /// Bindings, because every one of the three is state the deck owns — the rail writes them and the
 /// feed beside it reads them, which is what makes selecting an Agent re-scope one feed rather than
 /// open a second.
-struct AgentsRailControl {
+package struct AgentsRailControl {
     @Binding var scope: FeedScope
     /// Held ABOVE the deck's per-Session identity, beside the seam widths: keyed to the Session it
     /// would spring open again on every switch, and a reader who collapsed the rail meant the rail.
@@ -19,6 +19,17 @@ struct AgentsRailControl {
         scope: .constant(.session),
         isCollapsed: .constant(false),
     )
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        scope: Binding<FeedScope>,
+        isCollapsed: Binding<Bool>,
+        readings: FeedAgentReader = FeedAgentReader.unread,
+    ) {
+        _scope = scope
+        _isCollapsed = isCollapsed
+        self.readings = readings
+    }
 }
 
 extension AgentsRailControl {

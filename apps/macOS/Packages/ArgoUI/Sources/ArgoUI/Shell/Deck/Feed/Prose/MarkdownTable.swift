@@ -8,7 +8,7 @@ import Foundation
 /// Every cell keeps its own inline marks for `FeedProseText` to read, exactly as a list item does.
 struct MarkdownTable: Equatable, Sendable {
     let header: [String]
-    let rows: [[String]]
+    package let rows: [[String]]
 
     /// The table these lines make, or `nil` for lines that are prose. Called on a closed block, so
     /// the second line can decide the first.

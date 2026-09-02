@@ -6,7 +6,7 @@ import ArgoDesign
 /// `nil` here and renders as plain text under the generic mark.
 ///
 /// The `alias` is highlight.js's own name for the grammar, handed straight to it.
-enum EvidenceLanguage: String, CaseIterable, Sendable {
+package enum EvidenceLanguage: String, CaseIterable, Sendable {
     case swift
     case typescript
     case javascript
@@ -24,7 +24,7 @@ enum EvidenceLanguage: String, CaseIterable, Sendable {
     case sql
 
     /// `nil` where the name carries no extension Argo recognises.
-    init?(path: String) {
+    package init?(path: String) {
         guard let name = path.split(separator: "/").last,
               let suffix = name.split(separator: ".").last,
               name.contains("."),

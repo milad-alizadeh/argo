@@ -21,7 +21,7 @@ struct ComposerFooter: View {
     var isRunning = false
     let send: () -> Void
     /// Stop that Turn. Inert by default, for the reason `attach` is absent by default.
-    var stop: () -> Void = {}
+    package var stop: () -> Void = {}
     /// What the `+` does, and `nil` for a Session whose adapter declares no attachments — which is
     /// what takes the control off the row entirely.
     var attach: (([SessionAttachment]) -> Void)?

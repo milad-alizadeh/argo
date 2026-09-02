@@ -3,13 +3,13 @@ import SwiftUI
 
 /// One Delivery as a bordered object, deep-linking to the code host (`cockpit-work-room.md` — the
 /// ticket detail).
-struct DeliveryChip: View {
+package struct DeliveryChip: View {
     @Environment(\.argo) private var argo
     @Environment(\.openURL) private var openURL
 
     let delivery: DeliveryFacts
 
-    var body: some View {
+    package var body: some View {
         if let url = delivery.url {
             Button { openURL(url) } label: { chip }
                 .buttonStyle(.plain)
@@ -76,8 +76,9 @@ struct DeliveryChip: View {
             .compactMap(\.self)
             .joined(separator: ", ")
     }
-}
 
-#Preview("Delivery chips — every checks reading, and one with no page to open") {
-    DeliveryChipsSpecimen().argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(delivery: DeliveryFacts) {
+        self.delivery = delivery
+    }
 }

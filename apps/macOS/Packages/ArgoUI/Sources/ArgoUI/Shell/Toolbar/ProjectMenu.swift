@@ -8,13 +8,13 @@ import SwiftUI
 /// The switch is an inline `Picker` rather than a row of buttons because that is what draws the
 /// tick. The verbs are a `Manage` submenu below it for the same reason in reverse: a menu item can
 /// carry a tick OR a submenu, never both, and switching Projects is the thing this menu is for.
-struct ProjectMenu: View {
+package struct ProjectMenu: View {
     /// Already projected: the menu's honesty claims are `ProjectMenuProjection`'s, and this file
     /// only draws them.
-    let rows: [ProjectMenuProjection.Row]
+    package let rows: [ProjectMenuProjection.Row]
     let actions: CockpitActions
 
-    var body: some View {
+    package var body: some View {
         if rows.isEmpty {
             // Inert rather than absent: a menu that opens onto `Add Project…` alone does not say
             // why there is nothing above it.
@@ -64,32 +64,14 @@ struct ProjectMenu: View {
             },
         )
     }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(rows: [ProjectMenuProjection.Row], actions: CockpitActions) {
+        self.rows = rows
+        self.actions = actions
+    }
 }
 
 // The menu's own items, drawn inside a `Menu` because that is the only place they exist — a
 // `ForEach` of `Button`s outside one renders as a column of buttons and proves nothing about what
 // AppKit will build. Clicking the label in a preview opens the real thing.
-
-#Preview("Project menu") {
-    Menu("Projects") {
-        ProjectMenu(rows: ProjectMenuProjection.rows(from: .preview), actions: .inert)
-    }
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}
-
-#Preview("Project menu — a Project whose folder is not there") {
-    Menu("Projects") {
-        ProjectMenu(rows: ProjectMenuProjection.rows(from: .unreachablePreview), actions: .inert)
-    }
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}
-
-#Preview("Project menu — nothing registered") {
-    Menu("Projects") {
-        ProjectMenu(rows: ProjectMenuProjection.rows(from: .unregisteredPreview), actions: .inert)
-    }
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}

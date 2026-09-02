@@ -7,23 +7,23 @@ import Foundation
 /// The sidebar's counts are arithmetic over the SAME list the deck draws, computed here once. Two
 /// surfaces counting the same set separately is how a rail comes to disagree with the rows beside
 /// it, and no render shows that.
-enum TicketsRoomProjection {
-    struct Room: Sendable, Equatable {
+package enum TicketsRoomProjection {
+    package struct Room: Sendable, Equatable {
         let views: [ViewReading]
         let provider: TicketsProvider?
-        let backlog: [Row]
-        let ticket: Detail?
+        package let backlog: [Row]
+        package let ticket: Detail?
         /// The number the deck is open on that nothing has been read for — a link followed to a
         /// ticket the listing does not hold, which is every closed one (#895). `nil` wherever
         /// `ticket` has something, so the pane draws one or the other and never both.
-        let unreadNumber: Int?
+        package let unreadNumber: Int?
         /// The Project the window is scoped to. Carried for the vacancy pages, which name it.
         let project: String?
         /// What the view this room was derived in answers about itself (#1075).
         let opened: Opened
         /// What the sidebar's hero states. Absent with nothing bound, where the room hides whole —
         /// a backlog-clear sentence under an unbound provider would answer a question nobody asked.
-        let nextUp: NextUp?
+        package let nextUp: NextUp?
         /// What the search field's query has done to `backlog`, and `nil` where nothing is typed
         /// (#873). Here, so the heading's count and the rows under it come off one value.
         var narrowing: Narrowing?
@@ -38,7 +38,7 @@ enum TicketsRoomProjection {
         /// The set it is a nothing ABOUT is the view's own: an empty open listing is not `Closed`'s
         /// nothing, and a repository where every ticket is finished must still be able to show the
         /// view that says so.
-        var vacancy: Vacancy? {
+        package var vacancy: Vacancy? {
             guard let provider else { return .unbound }
             guard !opened.hasItems else { return nil }
             // An empty listing is not an answer until one has landed. Saying "everything is closed"
@@ -74,7 +74,7 @@ enum TicketsRoomProjection {
     /// The room with nothing to draw, and which nothing it is (#818, #820). `unbound` and `unread`
     /// name no count anywhere — nothing was read, so every number would be invented; `nothingOpen`
     /// names the provider that answered.
-    enum Vacancy: Sendable, Equatable {
+    package enum Vacancy: Sendable, Equatable {
         case unbound
         /// Bound, and nothing has come back yet. Neither of the other two: there IS a provider, so
         /// `Connect a provider…` would be the wrong act, and nobody has answered, so an empty
@@ -128,13 +128,20 @@ enum TicketsRoomProjection {
     /// What a row's blockage mark carries (#896). Built only where there is something to mark, so
     /// `count` is never zero and the type has no case for "nothing" — `blockage(of:)` returns `nil`
     /// there instead.
-    struct Blockage: Sendable, Equatable {
+    package struct Blockage: Sendable, Equatable {
         /// How many blockers still stand. A COUNT and not a flag: blocked by three and blocked by
         /// one are different distances from startable.
         let count: Int
         /// Whether one of those blockers was ruled out, so no amount of waiting clears the edge and
         /// a human has to re-scope one of the two. It picks the mark's ink, nothing else.
         let isStranded: Bool
+
+        /// Spelled out because Swift synthesises no memberwise initializer above
+        /// `internal`, and the specimens build this from their own target (#1085).
+        package init(count: Int, isStranded: Bool) {
+            self.count = count
+            self.isStranded = isStranded
+        }
     }
 
     /// The marks a row's trailing region can carry. They do not contend: a closed ticket's edges
@@ -160,8 +167,8 @@ enum TicketsRoomProjection {
     }
 
     /// One row of the backlog: `twist · dot · id · title`, plus the trailing region.
-    struct Row: Sendable, Equatable, Identifiable {
-        let id: Int
+    package struct Row: Sendable, Equatable, Identifiable {
+        package let id: Int
         let title: String
         let delivery: DeliveryReading
         /// The parent's `n/m` roll-up, and `nil` on a leaf. It counts the TRACKER's children rather
@@ -186,7 +193,7 @@ enum TicketsRoomProjection {
         let touched: Date?
         /// Whether this row is on screen only because something under it matched the query — always
         /// false where nothing is narrowing, so an unsearched list has no rails in it (#873).
-        var isRail = false
+        package var isRail = false
     }
 
     /// With no provider bound the room is VACANT rather than empty — no views, no list, no ticket
@@ -202,7 +209,7 @@ enum TicketsRoomProjection {
     /// derived here on every pass, from the live `showing`, so a remembered room never draws a
     /// remembered ticket.
     @MainActor
-    static func room(
+    package static func room(
         from reading: TicketsReading,
         in view: TicketsView = .allOpen,
         matching query: String = "",

@@ -2,21 +2,28 @@ import ArgoEngine
 
 /// The claim join as the views take it (#894, #1074): which tickets live Sessions hold, and how
 /// many live Sessions the join could not place.
-struct TicketClaims: Equatable, Sendable {
+package struct TicketClaims: Equatable, Sendable {
     /// The tickets placed. The sidebar counts these and a backlog row marks itself off the same
     /// set, so the mark and the count cannot disagree about which tickets are claimed.
-    let numbers: Set<Int>
+    package let numbers: Set<Int>
     /// Live Sessions that named no ticket, so `numbers` is short by this many. The count is still
     /// printed and states this beside it (#1074).
-    var unplaced = 0
+    package var unplaced = 0
     /// Live Sessions nobody could have read a link for at all. This is what takes the count
     /// ABSENT: no join happened, so there is no partial answer to state.
-    var unread = 0
+    package var unread = 0
 
     /// Whether the claim ground was read at all. One `unread` Session sinks it: with nothing to
     /// link TO, "n tickets are claimed" is a number off a join that never happened.
     var wasRead: Bool {
         unread == 0
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(numbers: Set<Int>, unplaced: Int = 0, unread: Int = 0) {
+        self.numbers = numbers
+        self.unplaced = unplaced
+        self.unread = unread
     }
 }
 

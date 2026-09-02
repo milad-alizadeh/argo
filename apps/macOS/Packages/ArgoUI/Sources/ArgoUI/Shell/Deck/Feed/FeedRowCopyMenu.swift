@@ -9,7 +9,7 @@ import SwiftUI
 /// takes text away with. The Turn's extent is walked outwards from the row rather than swept over
 /// the whole reading (`TurnExtents.span`), because this sits on every cell of it.
 struct FeedRowCopyMenu: ViewModifier {
-    let rows: [FeedRow]
+    package let rows: [FeedRow]
     let index: Int
 
     func body(content: Content) -> some View {

@@ -3,26 +3,46 @@ import Foundation
 
 /// What the prompt states about the Permission it puts to the user, derived the way the composer's
 /// facts are: off the presentation, in a projection a test can hold still.
-enum PermissionPromptProjection {
-    struct Prompt: Equatable {
+package enum PermissionPromptProjection {
+    package struct Prompt: Equatable {
         /// The handles `decide` is keyed by: the roster's own id for the Session, and the request
         /// itself. Both, because the answer must reach the Permission whose words are on screen —
         /// a Session with two calls waiting cannot say which one that is.
-        let sessionID: String
-        let requestID: String
+        package let sessionID: String
+        package let requestID: String
         /// The CLI's name for the tool, verbatim — never renamed, because the answer authorises
         /// exactly what was asked.
-        let toolName: String
+        package let toolName: String
         /// What the tool wants, said after its name: `wants to run a command in this Workspace`.
-        let subject: String
+        package let subject: String
         /// The target, verbatim and in full — a decision made on a truncated command is a guess.
-        let target: PermissionRequest.Target
+        package let target: PermissionRequest.Target
         /// The quiet line under the target: the Workspace a command runs in, or an edit's
         /// `+1 −1 · 1 hunk`. Absent where neither fact exists.
-        let caption: String?
+        package let caption: String?
         /// What this Session has already stopped asking about (#572) — on the prompt because the
         /// prompt is where those grants get made, and empty for a Session holding none.
         let standingAllows: [StandingAllow]
+
+        /// Spelled out because Swift synthesises no memberwise initializer above
+        /// `internal`, and the specimens build this from their own target (#1085).
+        package init(
+            sessionID: String,
+            requestID: String,
+            toolName: String,
+            subject: String,
+            target: PermissionRequest.Target,
+            caption: String?,
+            standingAllows: [StandingAllow],
+        ) {
+            self.sessionID = sessionID
+            self.requestID = requestID
+            self.toolName = toolName
+            self.subject = subject
+            self.target = target
+            self.caption = caption
+            self.standingAllows = standingAllows
+        }
     }
 
     /// A prompt only while the Session is blocked on one, and only for a Session that can be
