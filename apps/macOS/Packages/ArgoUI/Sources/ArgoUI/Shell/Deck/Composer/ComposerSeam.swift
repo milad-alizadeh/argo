@@ -17,11 +17,13 @@ struct ComposerSeam: View {
 
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
-            ArgoGlyph(symbol, .control)
-                .foregroundStyle(ink)
-            Text(note.detail)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(ink)
+            line
+            // Between the line and the Retry, because it is about the line: what the port printed
+            // is the reason, and Retry is the answer to it. Absent where Argo wrote the sentence
+            // itself, which is every note but a refusal the port worded (§5).
+            if let output = note.output {
+                RawOutputDisclosure(output: output)
+            }
             Spacer()
             if case .refusal = note {
                 Button(action: retry) {
@@ -39,7 +41,22 @@ struct ComposerSeam: View {
         // ABOUT the vessel, and one stepped in to the field's own leading reads as the first line
         // of what is in it (the study's `draft.png` and `failed.png` both).
         .padding(.horizontal, ArgoSpacing.snug)
+        // `contain` and not `combine`: what the seam holds beside its sentence are controls, and a
+        // combined row swallows them — an output nobody can reach is what §5 exists to stop.
+        .accessibilityElement(children: .contain)
+    }
+
+    /// The mark and the sentence, spoken as the one line they read as.
+    private var line: some View {
+        HStack(spacing: ArgoSpacing.base) {
+            ArgoGlyph(symbol, .control)
+                .foregroundStyle(ink)
+            Text(note.detail)
+                .argoText(ArgoTypography.caption)
+                .foregroundStyle(ink)
+        }
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(note.detail)
     }
 
     /// A refusal is Argo reporting on its own failed act and takes the failure ink; a kept draft is
@@ -74,14 +91,14 @@ struct ComposerSeam: View {
 }
 
 #Preview("Composer seam — a drop the adapter cannot take") {
-    ComposerSeam(note: .notice(SessionDriveError.cannotAttach.detail), retry: {})
+    ComposerSeam(note: .notice(ComposerSeamLine(SessionDriveError.cannotAttach.detail)), retry: {})
         .padding(ArgoSpacing.section)
         .argoDeckSurface()
         .argoAppearance()
 }
 
 #Preview("Composer seam — what an interrupt cleared") {
-    ComposerSeam(note: .notice(ComposerDraft.cleared), retry: {})
+    ComposerSeam(note: .notice(ComposerSeamLine(ComposerDraft.cleared)), retry: {})
         .padding(ArgoSpacing.section)
         .argoDeckSurface()
         .argoAppearance()

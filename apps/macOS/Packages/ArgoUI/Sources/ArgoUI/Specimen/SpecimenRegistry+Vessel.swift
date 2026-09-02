@@ -65,6 +65,12 @@ extension SpecimenRegistry {
         // A refused send: the message still where it was typed, the reason on the seam above the
         // vessel, and a way to try again.
         SpecimenEntry("composerRefusal") { ComposerSpecimen(draft: ComposerSpecimen.refused) },
+        // The same seam under words nobody at Argo wrote, with the rest of them one gesture away
+        // (§5, #1045). Its own entry because the CONTROL is the claim: a line, a way to the whole
+        // of it, and a Retry, on a seam that is still one line high.
+        SpecimenEntry("composerRefusalAtLength") {
+            ComposerSpecimen(draft: ComposerSpecimen.refusedAtLength)
+        },
         // A Turn the CLI never heard, put back where it was typed (#682). Beside the refusal above
         // because the two are deliberately NOT the same line: a refusal is a send that did not go
         // and the words never left, while this one went, cleared the field, and came back seconds

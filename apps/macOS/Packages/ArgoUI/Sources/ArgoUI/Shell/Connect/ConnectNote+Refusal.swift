@@ -1,7 +1,8 @@
 import ArgoEngine
 
 /// Every way connecting can fail, said in the user's words. The engine's refusals carry no copy at
-/// all; `unreadable` and `refused` put the provider's own sentence in the `why` verbatim.
+/// all; `unreadable` and `refused` put the provider's own first line in the `why` and hold the
+/// whole of what it printed one gesture behind it (§5).
 public extension ConnectNote {
     init(refusal: BindingRefusal) {
         switch refusal {
@@ -50,7 +51,7 @@ public extension ConnectNote {
         case let .unreadable(reason):
             self.init(
                 what: "Argo could not reach the provider.",
-                why: reason,
+                verbatim: reason,
                 fix: "Check your connection, then try again.",
             )
         }
@@ -80,7 +81,7 @@ public extension ConnectNote {
         case let .refused(code, description):
             self.init(
                 what: "\(name) refused the sign-in.",
-                why: description.isEmpty ? code : description,
+                verbatim: description.isEmpty ? code : description,
                 fix: "Read \(name)'s reason above, then try again.",
             )
         }

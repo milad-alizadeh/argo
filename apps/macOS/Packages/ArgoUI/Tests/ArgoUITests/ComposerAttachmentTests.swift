@@ -138,7 +138,7 @@ struct ComposerAttachmentTests {
             notice: SessionDriveError.cannotAttach.detail,
         )
         #expect(ComposerSeamNote.note(for: allThree, enteredAtMs: 60000)
-            == .refusal(SessionDriveError.notDrivable.detail))
+            == .refusal(ComposerSeamLine(SessionDriveError.notDrivable.detail)))
 
         // The send that failed is answered; the drop that was refused is not.
         let noticeAndKept = ComposerDraft(
@@ -147,7 +147,7 @@ struct ComposerAttachmentTests {
             notice: SessionDriveError.cannotAttach.detail,
         )
         #expect(ComposerSeamNote.note(for: noticeAndKept, enteredAtMs: 60000)
-            == .notice(SessionDriveError.cannotAttach.detail))
+            == .notice(ComposerSeamLine(SessionDriveError.cannotAttach.detail)))
 
         // Nothing went wrong at all — only the words that were waiting.
         let keptOnly = ComposerDraft(text: "Carry on.", editedAtMs: 0)

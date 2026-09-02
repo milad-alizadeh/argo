@@ -181,10 +181,19 @@ The routing law stands; what changed is which rows the app can honestly reach.
   place. The first control to take the row is the Tickets room's New ticket, which lives in the
   window's toolbar row and has no height to give; §4's *"no layout shift"* holds for the failure
   as well as for the pending state. *Inline* binds the anchor, not the presentation.
-- **Git's stderr is still unrouted, and there is nothing yet to route.** Argo runs no git write —
-  #161's and #183's mechanical ops are unbuilt — and its four read paths send stderr to
-  `/dev/null` and collapse every failure to absence. The first git write must capture stderr as a
-  value, or this rule cannot reach the case it was written for.
+- **Git's stderr is a value now, and there is still nothing to route it to (#1045).** Argo runs
+  no git write — #161's and #183's mechanical ops are unbuilt — so no failed git operation has a
+  surface. What changed is the adapter under the four read paths: `gitInvocation` keeps both
+  channels and the exit status as a `GitAnswer`, and the discard is one line in `gitCommand`,
+  where the reads that have no failure surface ask for stdout alone. A checkout git cannot answer
+  for still degrades to `unavailable` in one word, which is §6's rule and not this one's. The
+  first git WRITE takes the invocation instead of the read, so it inherits the words rather than
+  the `/dev/null` that was there before.
+- **Every failure surface that holds a port's own text now offers it whole (#1045).** The
+  composer's seam and the Connect panel's note both take row three: their line is the port's FIRST
+  line and `see output` opens the rest. Which of them carries output is decided by provenance and
+  never by length — a `SessionDriveError` or a `BindingRefusal` is a sentence Argo worded itself,
+  one line long by its own contract, and keeps the tooltip this list already allows it.
 
 ## 6 · A missing folder disables the project
 

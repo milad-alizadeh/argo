@@ -7,14 +7,14 @@ import ArgoEngine
 /// know whether they are looking at this morning's thought or last week's.
 enum ComposerSeamNote: Equatable {
     /// Why the last send did not go, in the port's own words, with a retry (design decision 8).
-    case refusal(String)
+    case refusal(ComposerSeamLine)
     /// A draft that survived leaving the Session, and the age of the words in it.
     case draftKept(String)
     /// Something Argo did to the draft that the reader did not — a drop the adapter cannot take
     /// (#540, design decision 9), or the clearing an interrupt leaves behind (#541). Its own case
     /// rather than a `refusal`, because nothing was sent and no unsent words are at risk: it
     /// reports rather than warns, and takes the quiet ink for saying so.
-    case notice(String)
+    case notice(ComposerSeamLine)
 
     /// Which of the three is up, for one draft read at one moment — the seam is ONE line, so the
     /// order is the whole of what this decides.
@@ -34,16 +34,16 @@ enum ComposerSeamNote: Equatable {
     )
         -> Self? {
         if let refusal = draft.refusal {
-            return .refusal(refusal)
+            return .refusal(ComposerSeamLine(refusal, output: draft.refusalOutput))
         }
         // Ahead of the draft's own notice, and a notice rather than a refusal: nothing was sent and
         // no words are at risk, but the control the reader is looking at has just moved on its own
         // and this is the only line that says why (#629).
         if let modeDidNotTake {
-            return .notice(didNotTake(modeDidNotTake))
+            return .notice(ComposerSeamLine(didNotTake(modeDidNotTake)))
         }
         if let notice = draft.notice {
-            return .notice(notice)
+            return .notice(ComposerSeamLine(notice, output: draft.noticeOutput))
         }
         guard !draft.text.isEmpty, let editedAtMs = draft.editedAtMs, editedAtMs < enteredAtMs
         else { return nil }
@@ -66,7 +66,17 @@ enum ComposerSeamNote: Equatable {
 
     var detail: String {
         switch self {
-        case let .refusal(detail), let .draftKept(detail), let .notice(detail): detail
+        case let .refusal(line), let .notice(line): line.detail
+        case let .draftKept(detail): detail
+        }
+    }
+
+    /// What the seam's gesture opens (§5), and `nil` where the line IS the whole of it. A kept
+    /// draft never has one: it is housekeeping Argo worded itself, and no port was asked anything.
+    var output: RawOutput? {
+        switch self {
+        case let .refusal(line), let .notice(line): line.output
+        case .draftKept: nil
         }
     }
 }

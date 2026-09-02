@@ -52,7 +52,7 @@ struct ComposerInterruptTests {
 
         #expect(draft.notice == ComposerDraft.cleared)
         #expect(ComposerSeamNote.note(for: draft, enteredAtMs: 0)
-            == .notice(ComposerDraft.cleared))
+            == .notice(ComposerSeamLine(ComposerDraft.cleared)))
     }
 
     /// Stopping with nothing in the vessel says nothing. The control is live for the whole of a run

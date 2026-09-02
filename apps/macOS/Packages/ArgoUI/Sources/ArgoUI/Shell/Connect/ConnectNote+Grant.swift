@@ -28,7 +28,7 @@ public extension ConnectNote {
         case let .refused(reason):
             self.init(
                 what: "\(name) refused the sign-in.",
-                why: reason,
+                verbatim: reason,
                 fix: "Read \(name)'s reason above, then try again.",
             )
         case .malformedResponse:

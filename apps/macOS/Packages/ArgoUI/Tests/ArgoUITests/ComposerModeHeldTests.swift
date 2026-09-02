@@ -50,7 +50,7 @@ struct ComposerModeHeldTests {
         #expect(log.draft.notice == ComposerDraft.held(.auto))
         #expect(
             ComposerSeamNote.note(for: log.draft, enteredAtMs: 0)
-                == .notice(ComposerDraft.held(.auto)),
+                == .notice(ComposerSeamLine(ComposerDraft.held(.auto))),
         )
     }
 

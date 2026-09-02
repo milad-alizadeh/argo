@@ -16,11 +16,11 @@ extension ComposerDraft {
     mutating func attach(_ incoming: [SessionAttachment], canAttach: Bool) {
         guard !incoming.isEmpty else { return }
         guard canAttach else {
-            notice = SessionDriveError.cannotAttach.detail
+            say(ComposerSeamLine(SessionDriveError.cannotAttach.detail))
             return
         }
         attachments.append(contentsOf: incoming)
-        notice = nil
+        say(nil)
     }
 
     /// Take one back — the chip's `×`. By id and never by name: a screenshot pasted twice is two
