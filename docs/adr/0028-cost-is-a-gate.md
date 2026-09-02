@@ -202,7 +202,7 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   `SessionsRoomReadingCostTests` (2). Four more were quotients and are now counts, because Rule
   8's first instruction had a count available in all four: the roster memo's own fold count and
   the prose store's hit rate when #991 swept, the join's own rebuild count in #1064, and the
-  roster's fold count again for `SubagentCostTests` in #PRNUM. All seven
+  roster's fold count again for `SubagentCostTests` in #1065. All seven
   hold unchanged optimised, and so does every count beside them: `ArgoEngine` 1 222 tests
   and `ArgoUI` 2 035 tests pass in release with no budget touched.
 
@@ -225,7 +225,7 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   > here — the count it wants is the roster's, not the join's — and until it is, it is the next
   > suite that can redden `main` without a regression under it.
 
-  > **Amendment — 2026-09-02 (#PRNUM).** That one is migrated. `SubagentCostTests` now counts
+  > **Amendment — 2026-09-02 (#1065).** That one is migrated. `SubagentCostTests` now counts
   > `HubRosterMemo.folds` — the roster's counter, which `HubRosterCostTests` already gates on —
   > across 2 000 Subagent batches at 4 rows and at 200, and reads zero at both. The roster is read
   > beside every batch on purpose: a fold is only ever paid on a READ, so a batch that republished

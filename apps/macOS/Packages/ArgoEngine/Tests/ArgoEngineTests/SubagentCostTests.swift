@@ -14,8 +14,8 @@ import Testing
 ///
 /// Asserted as a COUNT of folds and never in seconds, which is ADR-0028 Rule 8's first instruction:
 /// a count is EXACTLY the same idle and loaded where thread CPU is only approximately so. What the
-/// CPU quotient here could not be held to, and why, is that ADR's #1064 amendment; the seconds it
-/// read are `PerfBudgets.subagentReadingFolds` and they bind nothing.
+/// CPU quotient here could not be held to, and why, is that ADR's #1064 and #1065 amendments; the
+/// seconds it read are `PerfBudgets.subagentReadingFolds` and they bind nothing.
 ///
 /// It is the neighbour of `HubJoinCostTests`, not a copy of it: that one counts what a SESSION's
 /// own batch rebuilds inside the join, and this one counts what a CHILD's batch folds on a roster

@@ -52,7 +52,7 @@ enum PerfBudgets {
     /// Recorded: 0 folds over 2 000 batches, at 4 rows and at 200 · either · exact. Wiring the
     /// batch or the read back through the roster makes it one per batch at both.
     ///
-    /// The same claim in seconds rides along here and BINDS nothing (ADR-0028 Rule 8, #1064): a
+    /// The same claim in seconds rides along here and BINDS nothing (ADR-0028 Rule 8, #1065): a
     /// quotient of 0.99, 1.00 and 0.99 over three runs · Apple silicon laptop · debug · least of
     /// 10, interleaved, with the same defect reading 37x. It is a figure and not a bound because
     /// its halves are fifty times apart in resident working set, which is a difference
