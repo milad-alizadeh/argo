@@ -414,8 +414,8 @@ and the ticket's prose re-wraps to what it is left. Rendered whole at 960 and at
 
 The seam term is not decoration: without it the arithmetic comes out exact, the split view takes
 the divider from the SIDEBAR instead, and the sidebar draws its labels off its own leading edge.
-`SurfaceMeasureTests` asserts the three columns fit the narrowest window, and that the list yields
-before it reaches the ticket's floor.
+`TicketsRoomMeasureTests` asserts the three columns fit the narrowest window, and that the list
+yields before it reaches the ticket's floor.
 
 **Two consequences beyond the mounting.**
 
