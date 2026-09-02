@@ -111,17 +111,19 @@ package struct SessionNavigator: View {
         )
         .previewSafeListRow()
 
-        // A fold takes no tag, deliberately: the `List`'s own selection — the keyboard's included
-        // — can then never land on a row the deck has no Session to draw for. It is archived and
-        // renamed through the runs under it, so it carries neither gesture either.
-        if row.fold == nil {
+        // A fold takes neither tag nor selection, deliberately: `ForEach` tags a row with its
+        // `Identifiable` id whether or not `.tag` is written, so leaving `.tag` off never kept the
+        // platform off a fold — and a fold is the one row the ground below never covers.
+        // `selectionDisabled` is how the app refuses that fill everywhere else (`BacklogList`). It
+        // is archived and renamed through the runs under it, so it carries neither gesture either.
+        if row.takesSelection {
             drawn
                 // Holds its colour while the list is not first responder, where the platform greys
                 // its own selection out: this is the one piece of state a reader tracks all day.
                 // First responder, the platform's own fill is the `AccentColor` asset at full
                 // strength, so a row this misses is not a quiet miss — it is a saturated blue row
                 // (D30, 2026-08-31).
-                .argoSelectedRowGround(isSelected: row.id == selection)
+                .argoSelectedRowGround(isSelected: reading.isSelected(row))
                 .tag(row.id)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(
@@ -133,14 +135,20 @@ package struct SessionNavigator: View {
                     .tint(argo.color.interaction.destructive)
                 }
         } else {
-            drawn
+            // Refused outright rather than covered: there is no ground to cover it with.
+            drawn.selectionDisabled()
         }
+    }
+
+    /// The one reading of "which row is selected", which the ground is drawn from.
+    private var reading: SessionRosterProjection.Selection {
+        SessionRosterProjection.Selection(named: selection)
     }
 
     /// What a click on a row does. A fold is not a Session, so it cannot be selected: it OPENS,
     /// and the runs under it are then ordinary rows the reader can select one by one (#1073).
     private func chose(_ row: SessionRosterProjection.Row) {
-        if row.fold == nil {
+        if row.takesSelection {
             selection = row.id
         } else {
             openFold(row.id)

@@ -906,6 +906,23 @@ its approved study are authoritative for the replacement look and feel.
     responder, and the SAME band once focus has left it.
 
   ![The selected backlog row before and after #1071](renders/1071-selected-backlog-row.png)
+- **Amended — 2026-09-02: a row that cannot carry the ground may not be selectable either.** The
+  2026-08-31 amendment said the ground is drawn per ROW and the platform fills whichever row its
+  own selection names, so a divergence is two highlights. It left one case unnamed: a row the app
+  draws NO ground on at all. The Roster grew one when the Fold arrived — a Fold is opened, never
+  selected, so `.argoSelectedRowGround(isSelected:)` is never applied to it — and `ForEach` tags a
+  row with its `Identifiable` id whether or not `.tag` is written, so the platform could select it
+  regardless. Its `AccentColor` fill then had nothing over it, beside Argo's own ground on the
+  Session below: the reported two-highlight state.
+
+  **The rule, stated so it cannot be met by a colour.** Every row the `List` may select carries the
+  ground, and every row that does not carry the ground refuses selection — `.selectionDisabled()`,
+  the same modifier the backlog's headers and `BacklogMore` already use. Both readings come off one
+  value (`SessionRosterProjection.Selection`), so they cannot name different rows again;
+  `RosterSelectionTests` holds that, and `foldedRoster` / `openFoldedRoster` are the frames it is
+  judged on.
+
+  **Still not reopened, a fifth time:** the leading Ion Blue rail. Selection is the ground alone.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.

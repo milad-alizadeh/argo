@@ -65,6 +65,18 @@ struct SessionRosterSpecimenTests {
         })
     }
 
+    /// The `openFoldedRoster` PNG is the only evidence an OPENED fold has, so it has to be one:
+    /// the id the specimen opens by is the projection's own, and this is what says so.
+    @Test
+    func `the opened folded roster the specimen renders is actually opened`() throws {
+        let shut = FoldedRosterSpecimen.rows(opened: [])
+        let opened = FoldedRosterSpecimen.rows(opened: FoldedRosterSpecimen.folds)
+
+        #expect(try #require(shut.first { $0.fold != nil }).fold?.isOpen == false)
+        #expect(try #require(opened.first { $0.fold != nil }).fold?.isOpen == true)
+        #expect(opened.count > shut.count)
+    }
+
     @Test
     func `the specimen renders both badge words, so the two are judged side by side`() {
         #expect(
