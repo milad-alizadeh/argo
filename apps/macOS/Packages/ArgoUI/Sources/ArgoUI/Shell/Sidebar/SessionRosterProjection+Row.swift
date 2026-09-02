@@ -1,3 +1,4 @@
+import ArgoDesign
 import ArgoEngine
 
 /// One roster row and the two passes that build one — split off `SessionRosterProjection.swift`
