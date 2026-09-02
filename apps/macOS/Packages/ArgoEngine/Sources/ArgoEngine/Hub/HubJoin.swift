@@ -64,8 +64,9 @@ struct HubJoin {
     /// claim, absent from the roster until its file has been read. Re-adding one already here
     /// changes nothing.
     ///
-    /// Answers whether anything moved, which is what `TranscriptWatch.mutate` publishes on: a
-    /// write that changed no row may not invalidate every view that draws one (#858).
+    /// Answers whether anything MOVED, which is what `TranscriptWatch.mutate` publishes on (#858).
+    /// The four writes a test drives directly carry `@discardableResult`; the two that exist only
+    /// for that answer do not, so the compiler holds them.
     @discardableResult
     mutating func add(_ observation: TranscriptObservation) -> Bool {
         guard positions[observation.id] == nil else { return false }
@@ -85,7 +86,6 @@ struct HubJoin {
     /// and the feed needs the whole file (`TranscriptExcerpt`). The first reading is dropped rather
     /// than added to, so nothing it saw is counted twice — and the row on screen stands, stale
     /// rather than absent, until the new one settles.
-    @discardableResult
     mutating func reread(_ observation: TranscriptObservation) -> Bool {
         guard let index = position(of: observation.id) else { return false }
         transcripts[index] = HubTranscript(observation: observation)
@@ -98,7 +98,6 @@ struct HubJoin {
     /// Take a whole join in place of this one — a Project repointed onto its retained join, or a
     /// teardown emptying it. Two EMPTY joins are the same join, so a repoint with nothing retained
     /// for the Project publishes no roster.
-    @discardableResult
     mutating func replace(with fresh: HubJoin) -> Bool {
         let moved = !isEmpty || !fresh.isEmpty
         self = fresh
@@ -126,9 +125,10 @@ struct HubJoin {
         let before = HubJoinFacts(of: transcripts[index].session)
         // A backfill is a transcript joining the published set, which is a move of the set itself.
         var moved = !transcripts[index].isSettled
-        // Nothing in the batch and the transcript already settled: no event to append, no record
-        // to claim, and so no row to publish. The tail that ENDS takes this path on every Session
-        // that ages out of the working set (#858).
+        // Nothing in the batch and the transcript already settled: no event to append and no
+        // record to claim, so no row moves. Every tail that ENDS takes this path (#858). A batch
+        // with events in it always moves one, folded fact or not — the stream's stamp is what the
+        // cockpit compares two readings by, and an event moves that.
         guard !events.isEmpty || moved else { return false }
         for event in events {
             transcripts[index].session.apply(event)

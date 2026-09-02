@@ -72,33 +72,46 @@ struct RosterPublishingTests {
     /// The join's half. Every tail that ends settles its transcript, and one already settled
     /// settles to nothing — so a Session ageing out of the working set republished the roster for a
     /// write that changed no row.
-    ///
-    /// This pair reads `joinRevision` where the cases above read the wire, and the difference is
-    /// the WAIT: both have to let a tail run, and the five-second liveness poll can land inside a
-    /// wait on a loaded box. The counter is the same published fact — `Hub.rosterStamp` folds it,
-    /// and the wire fires on the fold — with only the join's half of it in view.
     @Test
     func `a tail ending on a settled transcript publishes nothing`() async {
         let hub = testHub(projectURL: Self.projectURL)
         let records = await Self.tailing(hub)
-        let published = hub.watch.joinRevision
+        let roster = Tripwire.watching { _ = hub.sessions }
 
         records.finish()
         await hubTailEnded(hub, transcriptID: Self.transcriptID)
 
-        #expect(hub.watch.joinRevision == published)
+        #expect(!roster.fired)
+    }
+
+    /// The same claim over a read that FOLDED, which is the case a guard on the revision alone does
+    /// not hold: the fold reads the join itself, and an `inout` access to an observed property
+    /// publishes whether or not the body writes. So the join is not observed and the revision is —
+    /// see `TranscriptWatch.join`. Without this, the pass after every real change stayed hostage to
+    /// the next no-op.
+    @Test
+    func `a no-op after a fold publishes nothing`() async {
+        let hub = testHub(projectURL: Self.projectURL)
+        let records = await Self.tailing(hub)
+        hub.claims.setLostTurn("a Turn nobody heard", for: Self.claim)
+        let roster = Tripwire.watching { _ = hub.sessions }
+
+        records.finish()
+        await hubTailEnded(hub, transcriptID: Self.transcriptID)
+
+        #expect(!roster.fired)
     }
 
     @Test
     func `a batch that grew a transcript is published`() async {
         let hub = testHub(projectURL: Self.projectURL)
         let records = await Self.tailing(hub)
-        let published = hub.watch.joinRevision
+        let roster = Tripwire.watching { _ = hub.sessions }
 
         records.yield([.message(markdown: "the agent said")])
-        await hubSettle { hub.watch.joinRevision != published }
+        await hubSettle { roster.fired }
 
-        #expect(hub.watch.joinRevision == published + 1)
+        #expect(roster.fired)
         records.finish()
     }
 
@@ -108,14 +121,20 @@ struct RosterPublishingTests {
 
     private static let transcriptID = "root"
 
-    /// One live transcript, read and settled — the state a tail is in when the two cases above
-    /// start, and the one the roster publishes from.
+    /// One live transcript, read and settled — the state a tail is in when the cases above start,
+    /// and the one the roster publishes from.
+    ///
+    /// The batch's own follow-on is awaited here, before any of them arms a wire: applying one
+    /// spells the folders it named, which is a world reading and so a second publisher. Left in
+    /// flight it lands inside the wait those cases make and trips the wire for a reason the case is
+    /// not about — on a loaded box only, which is the worst way to find out.
     private static func tailing(_ hub: Hub) async
         -> AsyncStream<[TranscriptEvent]>.Continuation {
         let (observation, records) = hubLiveObservation(id: transcriptID)
         await hub.startObserving(observation)
         records.yield([.title("Reading")])
         await hubSettle { !hub.sessions.isEmpty }
+        await hub.didApply()
         return records
     }
 

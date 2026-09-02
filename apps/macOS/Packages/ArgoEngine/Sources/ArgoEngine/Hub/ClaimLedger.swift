@@ -120,13 +120,9 @@ final class ClaimLedger {
         }
     }
 
-    /// The one write, and the one publish rule with it: a fact that did not move is not published.
-    ///
-    /// The counter is a dependency of the whole cockpit — the scene root reads the roster folded
-    /// off it — so a write of the fact this claim already held re-renders every row in the roster
-    /// for news that is not news (#858, ADR-0028 Rule 1). The companion channel is what makes that
-    /// frequent rather than theoretical: every peer event on ONE Session's plugin socket
-    /// republishes `live` for its claim, and a working agent sends many.
+    /// The one write, and the one publish rule with it: a fact that did not move is not published
+    /// (#858, ADR-0028 Rule 1). The revision is a dependency of every view that draws a Session,
+    /// and the companion channel republishes `live` on every peer event one agent's socket sees.
     private func update(
         _ claim: SessionOwnership.ClaimID,
         _ change: (inout ClaimFacts) -> Void,

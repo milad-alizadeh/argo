@@ -35,6 +35,21 @@ struct HubJoinTests {
         #expect(join.sessions.map(\.id).sorted() == ["session", "swept"])
     }
 
+    /// A batch of nothing, against a transcript that has already been read, returns before the fold
+    /// — so this states what the roster still holds while ANOTHER transcript has writes held on it
+    /// (`HubRoster.holdWrites`). The empty batch used to refold it as a side effect (#858).
+    @Test
+    func `an empty batch on a settled transcript leaves the rest of the roster standing`() {
+        var join = settledJoin()
+        join.add(hubTestObservation(id: "swept", events: []))
+
+        join.apply([], to: "session")
+        join.apply([.title("Swept")], to: "swept")
+
+        #expect(join.sessions.map(\.id).sorted() == ["session", "swept"])
+        #expect(join.sessions.compactMap(\.title).sorted() == ["Reading", "Swept"])
+    }
+
     /// A batch against a transcript the join was built without has no row to be right about.
     @Test
     func `a batch against an unknown transcript changes nothing`() {
