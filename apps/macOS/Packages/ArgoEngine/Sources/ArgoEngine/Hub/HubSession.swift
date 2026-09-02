@@ -100,13 +100,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// Every spend the records reported, at both grains — see `SessionSpend`, which owns the
     /// arithmetic and the three token readings the header draws from it.
     private(set) var spend = SessionSpend()
-    public private(set) var lastActivityAtMs: Int?
-    /// The oldest moment the records report. The roster's sort key, and no longer any part of
-    /// ownership: a claim names its Session rather than matching a window (#742).
-    public private(set) var startedAtMs: Int?
-    /// The file's own last write — what a transcript whose records carry no time still says about
-    /// when it ran.
-    private(set) var recordedAtMs: Int?
+    /// Every moment this Session is placed in time by — see `SessionMoments`, which owns the fold
+    /// each one takes. Two of the three are republished under their own names in
+    /// `HubSession+Readings.swift`, which is where a public fact has to sit for ADR-0027's edge 5
+    /// to see it.
+    private(set) var moments = SessionMoments()
     /// Whether an AGENT has ever spoken here — said something, thought, called a tool, ended a
     /// turn, or been priced. A prompt does not count: it is what was ASKED. DIRECT for a Session
     /// Argo spawned (`init(spawn:)` sets it).
@@ -129,7 +127,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.name = SessionTitle(
             startingWith: observation.sourceURL.deletingPathExtension().lastPathComponent,
         )
-        self.recordedAtMs = observation.modifiedAt?.epochMs
+        self.moments = SessionMoments(recordedAtMs: observation.modifiedAt?.epochMs)
     }
 
     /// The row for an agent Argo has just STARTED, before the CLI has written a record (#361).
@@ -150,8 +148,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // DIRECT on the same ground: the row is claimed from the moment it appears, rather than
         // once a branch has been cut for something to read the number off (#872).
         self.ticket = spawn.ticket
-        self.lastActivityAtMs = spawn.exit?.atMs ?? spawn.spawnedAtMs
-        self.startedAtMs = spawn.spawnedAtMs
+        self.moments = SessionMoments(
+            startedAtMs: spawn.spawnedAtMs,
+            lastActivityAtMs: spawn.exit?.atMs ?? spawn.spawnedAtMs,
+        )
         self.turn = SessionTurnState(lastStop: spawn.exit == nil ? .endTurn : .cancelled)
         // DIRECT: Argo started this process, so the row belongs on the roster from the moment it
         // exists.
@@ -159,7 +159,13 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // An exit outranks it: a spawn that died having never spoken reads `ended`, not `starting`.
         self.awaitingFirstOutput = spawn.exit == nil && spawn.firstOutputAtMs == nil
     }
+}
 
+/// Folding one transcript event into the facts above.
+///
+/// Both folds in this file are here rather than in files of their own because the facts they write
+/// are `private(set)`, which Swift scopes to the declaring file.
+extension HubSession {
     mutating func apply(_ event: TranscriptEvent) {
         transcript.append(event)
         switch event {
@@ -230,21 +236,15 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         observedModeCount += 1
     }
 
-    /// The latest time wins, and an absent one says nothing: a record with no timestamp is not a
-    /// Session that ran at the epoch.
-    ///
-    /// The EARLIEST is only taken while the reading is still whole. A moment read after a bounded
-    /// read's seam sits behind a stretch nobody opened, so it cannot be the earliest one the file
-    /// holds — and an unread start is unknown rather than "the oldest thing this happened to see"
-    /// (`SessionTranscriptExtent`). The roster sorts on the latest, which a tail always reads, so
-    /// what this withholds costs no row its place.
+    /// The extent is read where the fold has reached, not where it ended: a bounded read's seam
+    /// lands mid-stream, and the moments behind it were still whole when they were observed.
     private mutating func observeActivity(_ atMs: Int?) {
-        guard let atMs else { return }
-        lastActivityAtMs = max(lastActivityAtMs ?? atMs, atMs)
-        guard transcriptExtent == .whole else { return }
-        startedAtMs = min(startedAtMs ?? atMs, atMs)
+        moments.observe(atMs, extent: transcriptExtent)
     }
+}
 
+/// Joining the later link of a resume-chain onto the reading its root left.
+extension HubSession {
     mutating func mergeContinuation(_ continuation: HubSession) {
         name.merge(continuation.name)
         // A resume file opened and not yet answered does not un-run the reading it continues.
@@ -277,9 +277,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // The tip moves with the chain, unlike `sourceURL`: a resume continues the last link, and
         // the last link is whatever was merged in most recently.
         chainTipURL = continuation.chainTipURL ?? chainTipURL
-        observeActivity(continuation.lastActivityAtMs)
-        observeActivity(continuation.startedAtMs)
-        recordedAtMs = continuation.recordedAtMs.map { max(recordedAtMs ?? $0, $0) } ?? recordedAtMs
+        // After the extent above, never before it: one bounded link makes the joined reading an
+        // excerpt, and an excerpt withholds the earliest moment rather than guessing it.
+        moments.merge(continuation.moments, extent: transcriptExtent)
         turn.merge(continuation.turn)
     }
 }

@@ -7,7 +7,21 @@ public extension HubSession {
     /// `nil` where neither source could say — the roster sorts such a Session last rather than
     /// giving it a guessed time, and liveness reads it as uncorroborated rather than recent.
     var lastSeenAtMs: Int? {
-        lastActivityAtMs ?? recordedAtMs
+        moments.lastActivityAtMs ?? moments.recordedAtMs
+    }
+
+    /// The most recent moment the records report. Nothing reads it today — the roster and liveness
+    /// both fold `lastSeenAtMs` above, and the cockpit lists this one `not-projected:` — so it is
+    /// public only to keep that marker line naming a fact.
+    var lastActivityAtMs: Int? {
+        moments.lastActivityAtMs
+    }
+
+    /// The oldest moment the records report. Only ever taken from a moment read BEFORE a bounded
+    /// read's seam: a start behind an unopened stretch is not the start. A value already taken
+    /// stands after the seam, so this is not withheld on an excerpt.
+    var startedAtMs: Int? {
+        moments.startedAtMs
     }
 }
 
