@@ -19,6 +19,9 @@ struct SessionNavigator: View {
     /// because the menu bar's Rename opens it too, and a state per row could only ever be set by
     /// the row that owns it.
     var renamingRowID: Binding<String?> = .constant(nil)
+    /// Open a fold, or shut it (#1073). Inert by default: a preview draws a folded roster
+    /// without owning the set of open ones.
+    var openFold: (String) -> Void = { _ in }
 
     /// Opens the foot for the render harness, out-ranking the state so it cannot be shut under it —
     /// as `PlanPill.isRevealed` does, and for the same reason.
@@ -93,8 +96,8 @@ struct SessionNavigator: View {
     /// `.swipeActions` gives the system's reveal, spring back, close-when-another-opens and
     /// full-swipe commit. `allowsFullSwipe` is what keeps story 12 — a hard pull still archives
     /// outright, without a second click.
-    private func swipeable(_ row: SessionRosterProjection.Row) -> some View {
-        SessionRow(
+    @ViewBuilder private func swipeable(_ row: SessionRosterProjection.Row) -> some View {
+        let drawn = SessionRow(
             row: row,
             rename: { rename(row.id, $0) },
             isRenaming: Binding(
@@ -104,23 +107,43 @@ struct SessionNavigator: View {
             // The selection the `List`'s own click would have made, made by the row instead — the
             // row carries a double-click, and the two cannot share one click. Written through the
             // same binding, so the highlight, the keyboard and the deck all still read one fact.
-            select: { selection = row.id },
+            select: { chose(row) },
         )
         .previewSafeListRow()
-        // Holds its colour while the list is not first responder, where the platform greys its
-        // own selection out: this is the one piece of state a reader tracks all day. First
-        // responder, the platform's own fill is the `AccentColor` asset at full strength, so a
-        // row this misses is not a quiet miss — it is a saturated blue row (D30, 2026-08-31).
-        .argoSelectedRowGround(isSelected: row.id == selection)
-        .tag(row.id)
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(
-                SessionArchiveProjection.title(isArchived: row.isArchived),
-                systemImage: SessionArchiveProjection.symbol(isArchived: row.isArchived),
-            ) {
-                archive(row.id, !row.isArchived)
-            }
-            .tint(argo.color.interaction.destructive)
+
+        // A fold takes no tag, deliberately: the `List`'s own selection — the keyboard's included
+        // — can then never land on a row the deck has no Session to draw for. It is archived and
+        // renamed through the runs under it, so it carries neither gesture either.
+        if row.fold == nil {
+            drawn
+                // Holds its colour while the list is not first responder, where the platform greys
+                // its own selection out: this is the one piece of state a reader tracks all day.
+                // First responder, the platform's own fill is the `AccentColor` asset at full
+                // strength, so a row this misses is not a quiet miss — it is a saturated blue row
+                // (D30, 2026-08-31).
+                .argoSelectedRowGround(isSelected: row.id == selection)
+                .tag(row.id)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(
+                        SessionArchiveProjection.title(isArchived: row.isArchived),
+                        systemImage: SessionArchiveProjection.symbol(isArchived: row.isArchived),
+                    ) {
+                        archive(row.id, !row.isArchived)
+                    }
+                    .tint(argo.color.interaction.destructive)
+                }
+        } else {
+            drawn
+        }
+    }
+
+    /// What a click on a row does. A fold is not a Session, so it cannot be selected: it OPENS,
+    /// and the runs under it are then ordinary rows the reader can select one by one (#1073).
+    private func chose(_ row: SessionRosterProjection.Row) {
+        if row.fold == nil {
+            selection = row.id
+        } else {
+            openFold(row.id)
         }
     }
 

@@ -62,7 +62,7 @@ struct SessionTicketTitleTests {
 
         #expect(row.title == "Tonight's run")
         // And Reset lands on the ticket, which is where the Session would be without the rename.
-        #expect(row.rename.derived == "#741 — Anchor the feed")
+        #expect(row.rename?.derived == "#741 — Anchor the feed")
     }
 
     @Test

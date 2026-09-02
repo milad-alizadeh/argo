@@ -20,6 +20,10 @@ public enum TranscriptEvent: Sendable, Equatable {
     case model(String)
     /// The branch the records report. Latest reading wins: a run can switch branch mid-session.
     case branch(String)
+    /// How the process was started, in the CLI's OWN word for it and unread — what it means on
+    /// Argo's own axis is `SessionEntry`'s to say. First reading only, like the cwd above and for
+    /// the same reason: a file's entrypoint is settled when it is opened.
+    case entry(cli: String)
     /// The standing autonomy stance the records report, in the CLI's OWN word for it and unread —
     /// what it means on Argo's ladder is `ClaudePermissionMode`'s to say (ADR-0025). Latest reading
     /// wins: the stance can be cycled mid-session, and the file keeps both.

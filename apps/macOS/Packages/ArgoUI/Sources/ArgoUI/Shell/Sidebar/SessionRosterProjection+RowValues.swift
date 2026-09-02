@@ -6,12 +6,15 @@ import ArgoEngine
 /// reads `row.title` and `row.clock`, and a grouping is how the facts ARRIVE rather than a second
 /// shape for them to be read through.
 extension SessionRosterProjection.Row {
-    /// What names this Session — and, on `rename`, the same name in the form the dialog behind a
-    /// double-click opens with.
+    /// What names this row — and, on `rename`, the same name in the form the dialog behind a
+    /// double-click opens with. A fold is named by what it stands for instead, so it carries no
+    /// rename and its `fold` says how many runs are under it.
     struct Identity {
         let id: String
         let title: String
-        let rename: SessionRenameProjection.Rename
+        let rename: SessionRenameProjection.Rename?
+        /// What the row stands for where it is not one Session — `nil` on every ordinary row.
+        let fold: SessionRosterProjection.Fold?
     }
 
     /// What the Session is working on: the folder it runs in, the label the roster tells that

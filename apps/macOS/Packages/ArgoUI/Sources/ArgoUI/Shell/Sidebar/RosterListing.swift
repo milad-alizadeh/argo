@@ -26,10 +26,23 @@ struct RosterListing {
         order.isHolding
     }
 
-    func reading(of sessions: [CockpitPresentation.Session], now: Date = Date()) -> Reading {
+    /// `opened` is the folds the reader has opened (#1073) — the sidebar's own state, passed
+    /// through rather than held here: which folds are open is a fact about the window, and this
+    /// value is rebuilt every pass.
+    func reading(
+        of sessions: [CockpitPresentation.Session],
+        opened: Set<String> = [],
+        selection: String? = nil,
+        now: Date = Date(),
+    )
+        -> Reading {
         Reading(
-            rows: order.published(SessionRosterProjection.rows(from: sessions, now: now)),
-            archived: SessionRosterProjection.archivedRows(from: sessions, now: now),
+            rows: order.published(SessionRosterProjection.rows(
+                from: sessions, opened: opened, selection: selection, now: now,
+            )),
+            archived: SessionRosterProjection.archivedRows(
+                from: sessions, opened: opened, selection: selection, now: now,
+            ),
         )
     }
 

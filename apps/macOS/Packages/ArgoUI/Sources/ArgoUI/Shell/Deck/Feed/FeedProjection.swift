@@ -103,8 +103,8 @@ enum FeedProjection {
         case let .toolCallOutcome(outcome): outcome.usage
         case .prompt, .message, .thought, .toolCall, .recordIdentity, .headLeaf, .originSession,
              .title, .cwd,
-             .model, .branch, .mode, .turnEnded, .plan, .compaction, .queued, .unreadableLine,
-             .skillLoaded, .excerpted: nil
+             .model, .branch, .mode, .entry, .turnEnded, .plan, .compaction, .queued,
+             .unreadableLine, .skillLoaded, .excerpted: nil
         }
     }
 
@@ -181,7 +181,7 @@ enum FeedProjection {
         // everything below it, with a stretch of the record missing between the two.
         case .excerpted: .mark(.excerpted)
         case .toolCallOutcome, .usage, .recordIdentity, .headLeaf, .originSession, .title, .cwd,
-             .model, .branch, .mode, .plan, .queued: nil
+             .model, .branch, .mode, .entry, .plan, .queued: nil
         }
     }
 

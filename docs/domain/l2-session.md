@@ -90,6 +90,21 @@
   carries no Turn boundary at all is `unknown`, not `idle` — nothing observed is a different claim
   from observed to be quiet.
 
+- **Entry** — how the process behind a Session was STARTED: **`interactive`**, a person at a
+  terminal, or **`headless`**, a program started it and nobody is at it (`claude -p` and everything
+  the SDK runs). **DERIVED**: Argo reads the CLI's own `entrypoint` field out of a transcript it
+  does not own, and the word is matched rather than interpreted — `sdk-cli` is `headless`, and that
+  is the whole list.
+
+  **Degrade-down is the whole of the rule.** An absent word, an unread file and a word this list
+  does not carry all read `interactive`, so a value nobody has seen before can never make a Session
+  the reader is driving look like output nobody can drive. The error the rule prevents is one-way:
+  reading a headless run as interactive costs a Roster row, and reading an interactive one as
+  headless folds a Session somebody is steering out of sight.
+
+  A chain is `headless` only where EVERY link is. A resume opened at a terminal continues the work
+  a `-p` run started, and what is happening to it NOW is the fact the Roster draws.
+
 - **Session Mode** — the Session's *standing autonomy stance*; defined once in the Autonomy
   cluster below. A Session (root-Agent) fact, not per-Subagent. DIRECT for managed, tier-gated
   for external.

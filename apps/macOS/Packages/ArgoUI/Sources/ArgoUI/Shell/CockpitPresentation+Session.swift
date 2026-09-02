@@ -70,6 +70,9 @@ public extension CockpitPresentation {
         /// Which agent program is running (`CONTEXT.md` L2). Absent where Argo cannot say, which
         /// is every Session read from a record whose CLI it did not recognise.
         public let cli: AgentCLI?
+        /// How this Session's process was started (`CONTEXT.md` L2 · Entry) — DERIVED, and
+        /// `interactive` wherever Argo read no word it recognised.
+        public let entry: SessionEntry
         /// Absent for a Session with no git context at all, rather than an empty Workspace: a
         /// Workspace whose every field is `nil` is a claim that one exists.
         public let workspace: Workspace?
@@ -178,6 +181,7 @@ public extension CockpitPresentation {
             self.status = status
             self.model = chain.model
             self.cli = chain.cli
+            self.entry = chain.entry
             self.lastSeenAtMs = chain.lastSeenAtMs
             self.startedAtMs = chain.startedAtMs
             self.handedOffTo = chain.handedOffTo

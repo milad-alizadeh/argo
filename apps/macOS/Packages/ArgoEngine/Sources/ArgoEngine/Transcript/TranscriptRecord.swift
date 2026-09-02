@@ -9,15 +9,12 @@ public struct MessageRecord: Sendable, Equatable {
     public let cwd: String?
     public let gitBranch: String?
     public let timestampMs: Int?
-    /// The host talking to ITSELF. Claude Code's own flag, taken at face value rather than inferred
-    /// from the text: it is the one signal that separates plumbing from a prompt. A host that sets
-    /// no such flag simply has no meta records, which is the honest degradation.
-    public let isMeta: Bool
-    /// This record IS the condensed history, not a prompt in front of it.
-    public let isCompactSummary: Bool
-    /// A delegated subagent's record, written into the parent's own file. Its Turns are the
-    /// child's, so the root Session's Turn is neither opened nor closed by one.
-    public let isSidechain: Bool
+    /// Who wrote this record, where it was not the Session's own two parties — see `Authorship`.
+    public let authorship: Authorship
+    /// How the process writing this file was started, in the host's own word and unread — what it
+    /// means on Argo's own axis is `SessionEntry`'s to say. Every message-bearing record carries
+    /// it, and a host that writes none simply has no reading, which degrades to `interactive`.
+    public let entrypoint: String?
     /// The standing stance this record was written under, which only a PROMPT carries — a tool
     /// result is a user record with none. Read as a stance for the reason `case permissionMode`
     /// below states (#629).
@@ -29,6 +26,21 @@ public struct MessageRecord: Sendable, Equatable {
     public let content: [ContentBlock]
     /// The host's own result object, unread. Where a mutation's patch and an image's bytes live.
     public let toolUseResult: JSONValue?
+
+    /// Whose words a record carries, where they are not the Session's own two parties': the host
+    /// talking to itself, the host's condensation of the history, or a delegated Subagent. Each
+    /// disowns the record from the Session's exchange, and each for a different reason.
+    public struct Authorship: Sendable, Equatable {
+        /// The host talking to ITSELF. Claude Code's own flag, taken at face value rather than
+        /// inferred from the text: it is the one signal that separates plumbing from a prompt. A
+        /// host that sets no such flag simply has no meta records, which is the honest degradation.
+        public let isMeta: Bool
+        /// This record IS the condensed history, not a prompt in front of it.
+        public let isCompactSummary: Bool
+        /// A delegated subagent's record, written into the parent's own file. Its Turns are the
+        /// child's, so the root Session's Turn is neither opened nor closed by one.
+        public let isSidechain: Bool
+    }
 }
 
 /// One line of a transcript, typed.
@@ -113,9 +125,12 @@ extension MessageRecord {
         self.cwd = record.stringField("cwd")
         self.gitBranch = record.stringField("gitBranch")
         self.timestampMs = ArgoEngine.timestampMs(record)
-        self.isMeta = record["isMeta"]?.bool == true
-        self.isCompactSummary = record["isCompactSummary"]?.bool == true
-        self.isSidechain = record["isSidechain"]?.bool == true
+        self.authorship = Authorship(
+            isMeta: record["isMeta"]?.bool == true,
+            isCompactSummary: record["isCompactSummary"]?.bool == true,
+            isSidechain: record["isSidechain"]?.bool == true,
+        )
+        self.entrypoint = record.stringField("entrypoint")
         self.permissionMode = record.stringField("permissionMode")
         self.model = message?.stringField("model")
         self.stopReason = message?.stringField("stop_reason")

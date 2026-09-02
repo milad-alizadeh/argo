@@ -17,6 +17,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// Which agent program wrote this record (`CONTEXT.md` L2). Set by the Hub from the record
     /// store, or DIRECT from the spawn; never guessed from the prose inside the file.
     public internal(set) var cli: AgentCLI?
+    /// How the process behind this Session was STARTED (`CONTEXT.md` L2 · Entry) — DERIVED, off
+    /// the host's own `entrypoint`, and `interactive` until a record says otherwise.
+    public private(set) var entry: SessionEntry = .interactive
     /// Absent until a read has happened, and for a folder git could not answer for — an unread
     /// Workspace is not a clean one.
     public internal(set) var workspace: WorkspaceProjection?
@@ -188,6 +191,8 @@ extension HubSession {
             model = observedModel
         case let .branch(observedBranch):
             branch = Self.branchName(observedBranch)
+        case let .entry(cli):
+            entry = SessionEntry(entrypoint: cli)
         case let .mode(cli):
             observe(mode: cli)
         case let .prompt(text, _, atMs):
@@ -269,6 +274,11 @@ extension HubSession {
         // A resume is a fresh `claude` with its own flag, so the later half's stance is the live
         // one — and a file that has not stated one yet does not un-state the root's.
         observedMode = continuation.observedMode ?? observedMode
+        // A chain is headless only where EVERY link is: a resume opened at a terminal continues
+        // the work a `-p` run started, and what is happening to it NOW is what the Roster draws.
+        if continuation.entry == .interactive {
+            entry = .interactive
+        }
         modeSet = continuation.modeSet ?? modeSet
         // A resume continues the work the root was started on, so the later half only adds a ticket
         // where the root named none.

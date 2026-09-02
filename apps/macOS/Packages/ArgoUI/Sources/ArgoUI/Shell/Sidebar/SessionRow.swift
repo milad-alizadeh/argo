@@ -43,15 +43,37 @@ struct SessionRow: View {
         // pointer and the menu holding Reset (#502, story 20).
         .help(inspectionText)
         .contextMenu { copyActions }
+        // A fold takes no `List` tag, so neither the keyboard nor a screen reader's own
+        // activation can reach it (`SessionNavigator`). This is the way in that does not need a
+        // pointer.
+        .accessibilityActions {
+            if row.fold != nil {
+                Button("Open") { select() }
+            }
+        }
     }
 
     private var primaryLine: some View {
         HStack(spacing: ArgoSpacing.snug) {
-            SessionStateIndicator(state: row.state)
+            marker
             title
             lock
             Spacer(minLength: ArgoSpacing.tight)
             stateWord
+        }
+    }
+
+    /// The leading column: what the Session is DOING, or — on a fold — whether it is open. One of
+    /// the two is a state and the other is a control, and no row is both. Framed to the dot's own
+    /// box either way, so every title on the roster stays on one x.
+    @ViewBuilder private var marker: some View {
+        if let fold = row.fold {
+            ArgoDisclosure(fold.isOpen ? .below : .beside)
+                .frame(width: ArgoIconSize.statusDot, height: ArgoIconSize.statusDot)
+                .foregroundStyle(argo.color.text.tertiary)
+                .accessibilityHidden(true)
+        } else {
+            SessionStateIndicator(state: row.state)
         }
     }
 
@@ -110,7 +132,7 @@ struct SessionRow: View {
     /// Asked for until it is HELD: the `List` keeps keyboard focus until its own update settles,
     /// and a request made before then is dropped without a word.
     private func open() async {
-        typed = row.rename.name
+        typed = row.rename?.name ?? ""
         for _ in 0 ..< Self.focusAttempts where !isFieldFocused {
             isFieldFocused = true
             try? await Task.sleep(for: Self.focusRetry)
@@ -118,7 +140,9 @@ struct SessionRow: View {
     }
 
     /// Opens the field. The name and the focus belong to the field itself (`open`).
-    private func beginRenaming() {
+    /// A fold has no name of its own to change, so the field never opens on one.
+    func beginRenaming() {
+        guard row.rename != nil else { return }
         isRenaming.wrappedValue = true
     }
 
@@ -197,33 +221,5 @@ struct SessionRow: View {
                 .foregroundStyle(row.state?.tint(in: argo.color) ?? argo.color.text.tertiary)
                 .layoutPriority(1)
         }
-    }
-
-    @ViewBuilder private var copyActions: some View {
-        // Rename and Reset are not copies: they name the gestures nothing else on screen does.
-        Button(SessionRenameProjection.heading) { beginRenaming() }
-        resetAction
-        Divider()
-        Button("Copy Session title") { ArgoPasteboard.put(row.title) }
-        if let location = row.location {
-            Button("Copy full location") { ArgoPasteboard.put(location) }
-        }
-        if let branch = row.branch {
-            Button("Copy branch") { ArgoPasteboard.put(branch) }
-        }
-    }
-
-    /// The way back to the title the rename covered up (#502, story 20). Absent for a Session
-    /// nobody renamed, and it names the title it restores — nothing else on screen shows it.
-    @ViewBuilder private var resetAction: some View {
-        if let derived = row.rename.derived {
-            Button("\(SessionRenameProjection.reset) “\(derived)”") { rename(nil) }
-        }
-    }
-
-    /// The full path, which the line above stands in for — absolute paths never appear in the
-    /// default presentation (#377). The branch is not here: it is the header's.
-    private var inspectionText: String {
-        [row.title, row.location].compactMap(\.self).joined(separator: "\n")
     }
 }

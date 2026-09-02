@@ -12,14 +12,21 @@ public extension CockpitPresentation.Session {
     /// is what `Program` and the two moments are about too. Those four clauses are the parameter
     /// list, and the facts under them stay flat.
     struct Chain: Equatable, Sendable {
-        /// What is running the chain. No call site names one of the two without the other.
+        /// What is running the chain, and how it was started. No call site names one of the three
+        /// without the others: they are all read off the same records, at the same moment.
         public struct Program: Equatable, Sendable {
             public let cli: AgentCLI?
             public let model: String?
+            /// `interactive` by default, which is degrade-down rather than a guess — see
+            /// `SessionEntry`.
+            public let entry: SessionEntry
 
-            public init(cli: AgentCLI? = nil, model: String? = nil) {
+            public init(
+                cli: AgentCLI? = nil, model: String? = nil, entry: SessionEntry = .interactive,
+            ) {
                 self.cli = cli
                 self.model = model
+                self.entry = entry
             }
         }
 
@@ -36,6 +43,7 @@ public extension CockpitPresentation.Session {
 
         public let cli: AgentCLI?
         public let model: String?
+        public let entry: SessionEntry
         public let startedAtMs: Int?
         public let lastSeenAtMs: Int?
         public let handedOffTo: String?
@@ -49,6 +57,7 @@ public extension CockpitPresentation.Session {
         ) {
             self.cli = program.cli
             self.model = program.model
+            self.entry = program.entry
             self.startedAtMs = span.startedAtMs
             self.lastSeenAtMs = span.lastSeenAtMs
             self.handedOffTo = handedOffTo

@@ -235,6 +235,9 @@ The vocabulary below is the part every session needs. Use these words, never a s
 - **Session** — one logical resume-chain, and the root Agent. Stored as `managed` or `external`.
 - **orphaned** — a managed Session whose owning process is gone. Read-only until selected, which
   resumes the chain in a fresh process and makes it `managed` again (ADR-0026).
+- **Entry** — how the process was started: `interactive` (a person at a terminal) or `headless`
+  (a program did, `claude -p`). DERIVED off the CLI's own `entrypoint`; anything absent or
+  unrecognised reads `interactive`, so an unknown word never folds a Session somebody is driving.
 - **Session status** — `starting · running · permission · asking · idle · stopped · ended ·
   unknown`. `starting` is DIRECT and managed-only: Argo started the process and has not heard it
   yet, and the child's first bytes on the PTY end the claim.
@@ -273,4 +276,5 @@ allow** (one tool that stopped asking), **Permission expiry** (Argo's own clock 
 is something an observed Session connects to rather than something Argo reads through.
 
 **Surfaces, not entities** — Cockpit, Roster, Panels, rooms. The **Hub** is the in-memory
-projection that assembles the join.
+projection that assembles the join. A **Fold** is one Roster row standing for the
+`headless` Sessions that share a working directory; it is opened, never selected.

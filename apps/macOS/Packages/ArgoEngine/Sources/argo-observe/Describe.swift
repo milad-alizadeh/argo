@@ -56,6 +56,8 @@ func describe(_ event: TranscriptEvent) -> String {
         "branch      \(branch)"
     case let .mode(cli):
         "mode        \(cli)"
+    case let .entry(cli):
+        "entry       \(cli)"
     case let .prompt(text, images, _):
         "prompt      \(oneLine(text))\(describe(sentWith: images))"
     case let .message(markdown):
