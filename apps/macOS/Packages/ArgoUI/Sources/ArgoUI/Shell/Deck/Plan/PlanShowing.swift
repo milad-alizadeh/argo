@@ -3,7 +3,7 @@
 /// The pair travels together for the reason `FeedRowSelection`'s does: every layer between the
 /// deck and the pill takes both or neither, and threading them separately put a fourth parameter
 /// on views that care about neither.
-struct PlanShowing: Equatable {
+package struct PlanShowing: Equatable {
     /// The reading, or `nil` when the Session has never reported a plan — in which case nothing is
     /// drawn. A Session with no plan and a Session whose plan is empty are the same absence.
     var plan: PlanReading?
@@ -11,4 +11,11 @@ struct PlanShowing: Equatable {
     var isRevealed = false
     /// Whether the keyboard is on the pill. A specimen's seam beside `isRevealed`; see `PlanPill`.
     var isCursored = false
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(plan: PlanReading? = nil, isRevealed: Bool = false, isCursored: Bool = false) {
+        self.plan = plan
+        self.isRevealed = isRevealed
+        self.isCursored = isCursored
+    }
 }

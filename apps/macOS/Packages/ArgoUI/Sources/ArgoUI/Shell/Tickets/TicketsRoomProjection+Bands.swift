@@ -3,7 +3,7 @@ import ArgoEngine
 
 /// The backlog's top-level structure: priority over the ROOTS, a child staying under its parent
 /// whatever its own priority is (`cockpit-work-room.md` — the one conflict, and how it resolves).
-extension TicketsRoomProjection {
+package extension TicketsRoomProjection {
     /// One priority band and the roots under it.
     struct Band: Sendable, Equatable, Identifiable {
         /// The provider's own word, verbatim and in its own case, and absent where nothing was
@@ -13,7 +13,7 @@ extension TicketsRoomProjection {
 
         /// A band nobody read a priority for and one whose word is empty are DIFFERENT bands, so
         /// the two cannot share a key — `ForEach` would draw one of them and drop the other.
-        var id: String {
+        package var id: String {
             priority.map { "priority:\($0.lowercased())" } ?? "unread"
         }
 
@@ -21,6 +21,13 @@ extension TicketsRoomProjection {
         /// than claiming the tracker set none (`CONTEXT.md` L2 · degrade-down).
         var label: String {
             priority ?? "no priority read"
+        }
+
+        /// Spelled out because Swift synthesises no memberwise initializer above
+        /// `internal`, and the specimens build this from their own target (#1085).
+        package init(priority: String?, roots: [Row]) {
+            self.priority = priority
+            self.roots = roots
         }
     }
 

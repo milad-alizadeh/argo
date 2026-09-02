@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// The same anatomy as a call line — a mark, then words, then the chevron — and quieter than one
 /// throughout.
-struct FeedSurveyLine: View {
+package struct FeedSurveyLine: View {
     @Environment(\.argo) private var argo
 
     let survey: FeedSurvey
@@ -19,7 +19,7 @@ struct FeedSurveyLine: View {
     /// at it is the current one.
     var current: Int?
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
             Button(action: open) {
                 sentence
@@ -99,18 +99,19 @@ struct FeedSurveyLine: View {
                 .foregroundStyle(isOpen ? argo.color.interaction.accent : argo.color.text.disabled)
         }
     }
-}
 
-#Preview("Survey line — the run of looking a turn opens with") {
-    VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
-        ForEach(FeedProjection.previewRows) { row in
-            if case let .survey(survey) = row.content {
-                FeedSurveyLine(survey: survey, isOpen: false, open: {})
-            }
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        survey: FeedSurvey,
+        isOpen: Bool,
+        open: @escaping () -> Void,
+        look: @escaping (Int) -> Void = { _ in },
+        current: Int? = nil,
+    ) {
+        self.survey = survey
+        self.isOpen = isOpen
+        self.open = open
+        self.look = look
+        self.current = current
     }
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
 }

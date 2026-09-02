@@ -7,7 +7,7 @@ import SwiftUI
 /// the SwiftUI half still has over the table. The verbs are the shape of `ScrollViewProxy`, for the
 /// same reason: a scroll is an act, not a state, and modelling one as state means inventing a token
 /// that changes whenever the act should happen.
-@MainActor @Observable final class FeedTableHandle {
+@MainActor @Observable package final class FeedTableHandle {
     /// The table this handle drives. Replaced wholesale when the rail scopes the feed onto a
     /// Subagent: `FeedColumn` is keyed to that scope, so the table, its scroll view and its
     /// coordinator are all built again under this one handle. That swap is the reading changing,
@@ -64,7 +64,7 @@ import SwiftUI
 
     /// Seeded with the row the reading opens held at, so both facts are already true before the
     /// first frame — which is what lets a still show the detached state without anybody scrolling.
-    init(held: FeedRow.ID? = nil) {
+    package init(held: FeedRow.ID? = nil) {
         let policy = FeedScrollPolicy(held: held)
         self.policy = policy
         self.isFollowing = policy.isFollowing
@@ -73,7 +73,7 @@ import SwiftUI
 
     /// Whether the opening scroll is still owed — see `FeedScrollPolicy`. Read by the adapter and
     /// not observable, because it is taken off the policy directly rather than mirrored.
-    var isOpeningOwed: Bool {
+    package var isOpeningOwed: Bool {
         policy.isOpeningOwed
     }
 
@@ -97,7 +97,7 @@ import SwiftUI
     }
 
     /// The keyboard onto a row — the deck's half of `FeedRowSelection.close()`.
-    func focus(onto id: FeedRow.ID) {
+    package func focus(onto id: FeedRow.ID) {
         coordinator?.focus(onto: id)
     }
 

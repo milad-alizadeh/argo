@@ -19,7 +19,7 @@ import SwiftUI
 /// It is drawn only where there is something to mark — `TicketsRoomProjection.blockage` withholds
 /// the value on a clear ticket and on one whose edges nobody served, so nothing here has to know
 /// which of the two silences it is looking at.
-struct BlockageMark: View {
+package struct BlockageMark: View {
     /// Shared with the sidebar's `Blocked` view, which counts exactly the rows that carry this:
     /// two glyphs would be two concepts to a reader who has to learn they are one (#939).
     nonisolated static let symbol = ArgoSymbol.blockedView
@@ -32,7 +32,7 @@ struct BlockageMark: View {
     /// `nil` on the deck, which is the ground they were chosen against.
     var backdrop: ArgoColor?
 
-    var body: some View {
+    package var body: some View {
         ArgoGlyph(Self.symbol, .inline)
             .foregroundStyle(ink.color)
             // The claim mark's box, so the two sit on one vertical whether a row carries one of
@@ -55,6 +55,12 @@ struct BlockageMark: View {
 
     private var ink: ArgoColor {
         blockage.isStranded ? argo.color.text.disabled : TicketsView.blocked.ink(argo)
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(blockage: TicketsRoomProjection.Blockage, backdrop: ArgoColor? = nil) {
+        self.blockage = blockage
+        self.backdrop = backdrop
     }
 }
 

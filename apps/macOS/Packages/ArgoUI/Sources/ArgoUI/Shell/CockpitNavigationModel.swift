@@ -13,7 +13,7 @@ public final class CockpitNavigationModel {
 
     /// The ticket the Tickets room is open on. Beside the Session and not inside it: a room keeps
     /// where it was pointing while the reader is in another one.
-    var ticket: Int?
+    package var ticket: Int?
     /// Which of the backlog's views is open. Here rather than in the sidebar, because it decides
     /// what the DECK draws — held inside the sidebar it filtered nothing.
     var ticketsView = TicketsView.allOpen

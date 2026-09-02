@@ -17,7 +17,7 @@ extension SessionHeaderProjection {
     /// The one figure the header WALKS the whole event stream for — a compact and a sort over every
     /// moment in it, taken twice, once for the line and once for the ⓘ panel's rows. A caller that
     /// is already holding a reading at a known stamp has paid for it and hands it over instead.
-    struct Worked: Equatable, Sendable {
+    package struct Worked: Equatable, Sendable {
         let milliseconds: Int?
 
         static func read(across events: [TranscriptEvent]) -> Worked {

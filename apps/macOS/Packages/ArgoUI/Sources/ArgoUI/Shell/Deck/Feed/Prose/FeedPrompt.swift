@@ -5,7 +5,7 @@ import SwiftUI
 /// speaking. Steering typed mid-run lands here too: a steer is a prompt.
 ///
 /// Unlabelled, because the shape says it; the label survives for screen readers, where it does not.
-struct FeedPrompt: View {
+package struct FeedPrompt: View {
     @Environment(\.argo) private var argo
 
     let text: String
@@ -24,7 +24,7 @@ struct FeedPrompt: View {
     /// lateness in a size #946 itself — a late fact the row's cached height never sees.
     @State private var isOffered = false
 
-    var body: some View {
+    package var body: some View {
         bubble
             .frame(maxWidth: .infinity, alignment: .trailing)
     }
@@ -93,6 +93,19 @@ struct FeedPrompt: View {
             .lineLimit(lineLimit)
             .fixedSize(horizontal: false, vertical: true)
     }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        text: String,
+        shots: [FeedShot],
+        open: @escaping (FeedShot) -> Void,
+        isExpanded: Binding<Bool>,
+    ) {
+        self.text = text
+        self.shots = shots
+        self.open = open
+        _isExpanded = isExpanded
+    }
 }
 
 #Preview("Feed prompt — short enough to stand whole") {
@@ -131,36 +144,6 @@ struct FeedPrompt: View {
     FeedPrompt(
         text: String(repeating: "Read the whole anatomy study before you start. ", count: 14),
         shots: [],
-        open: { _ in },
-        isExpanded: $isExpanded,
-    )
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Feed prompt — a picture pasted in with the words") {
-    @Previewable @State var isExpanded = false
-
-    FeedPrompt(
-        text: "Look at the rule under the header — it sits a point low against the seam.",
-        shots: Array(FeedProjection.previewShots.prefix(1)),
-        open: { _ in },
-        isExpanded: $isExpanded,
-    )
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Feed prompt — nothing but the picture") {
-    @Previewable @State var isExpanded = false
-
-    FeedPrompt(
-        text: "",
-        shots: Array(FeedProjection.previewShots.prefix(1)),
         open: { _ in },
         isExpanded: $isExpanded,
     )

@@ -9,7 +9,7 @@ import SwiftUI
 ///
 /// Its label and reading sit a rung below the roles the 56pt band set them at (#693): a 40pt line
 /// carrying two stacked rows has no room for the band's sizes.
-struct SessionHeaderContext: View {
+package struct SessionHeaderContext: View {
     @Environment(\.argo) private var argo
 
     let context: SessionHeaderProjection.Context
@@ -35,7 +35,7 @@ struct SessionHeaderContext: View {
     /// half the readers cannot find.
     private static let aboutLabel = "About the context reading — Command I"
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             HStack(spacing: ArgoSpacing.tight) {
                 Text(context.label)
@@ -99,15 +99,10 @@ struct SessionHeaderContext: View {
     private var readingInk: ArgoColor {
         context.tier?.readingInk(in: argo.color) ?? argo.color.text.tertiary
     }
-}
 
-#Preview("Context instrument — every tier, and the one that cannot be read") {
-    VStack(alignment: .leading, spacing: ArgoSpacing.section) {
-        ForEach(SessionHeaderFixture.contexts, id: \.name) { tier in
-            SessionHeaderContext(context: tier.header.context, facts: tier.header.facts)
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(context: SessionHeaderProjection.Context, facts: [SessionHeaderProjection.Fact]) {
+        self.context = context
+        self.facts = facts
     }
-    .padding(ArgoSpacing.region)
-    .argoDeckSurface()
-    .argoAppearance()
 }

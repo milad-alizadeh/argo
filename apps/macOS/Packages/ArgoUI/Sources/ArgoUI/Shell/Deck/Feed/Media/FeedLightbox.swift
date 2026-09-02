@@ -6,7 +6,7 @@ import SwiftUI
 /// than the feed column, which is a reading measure a deck-width screenshot does not fit in.
 /// Everything is a way out: the scrim is the button, the picture is inside it, and Escape answers.
 /// The caption is the WHOLE path plus the provenance, which is more than the thumbnail said.
-struct FeedLightbox: View {
+package struct FeedLightbox: View {
     @Environment(\.argo) private var argo
 
     let shot: FeedShot
@@ -14,7 +14,7 @@ struct FeedLightbox: View {
 
     @State private var showing = MediaShowing.undecoded
 
-    var body: some View {
+    package var body: some View {
         ZStack {
             // The scrim lands at full dim on the first frame; faded WITH the picture, the reading
             // stays bright under a half-opaque overlay the whole way in and reads as a flicker. On
@@ -77,6 +77,12 @@ struct FeedLightbox: View {
             .compactMap(\.self)
             .joined(separator: " · ")
     }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(shot: FeedShot, dismiss: @escaping () -> Void) {
+        self.shot = shot
+        self.dismiss = dismiss
+    }
 }
 
 extension View {
@@ -106,16 +112,4 @@ extension View {
         }
         .argoAnimation(.reveal, value: selection.lit)
     }
-}
-
-#Preview("Lightbox — a shot opened over the deck") {
-    Color.clear
-        .argoDeckSurface()
-        .overlay {
-            if let shot = FeedProjection.previewShots.first {
-                FeedLightbox(shot: shot, dismiss: {})
-            }
-        }
-        .frame(width: 900, height: 620)
-        .argoAppearance()
 }

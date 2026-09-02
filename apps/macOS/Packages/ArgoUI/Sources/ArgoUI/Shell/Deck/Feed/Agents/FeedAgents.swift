@@ -4,13 +4,13 @@ import ArgoEngine
 ///
 /// ONE reading, not two: the rail's visibility and the chips in it are the same claim about the
 /// same rows, so a count cannot disagree with the list it counts.
-enum FeedAgents {
+package enum FeedAgents {
     /// Every subagent the reading knows about, in the order the work was handed over.
     ///
     /// One row is one child, and that holds because a delegation is never collapsed into another
     /// (`FeedCall.stands(for:)`): two agents handed the same brief keep two rows, two endings and
     /// two spends.
-    static func all(in rows: [FeedRow], of session: DelegatingSession) -> [FeedAgent] {
+    package static func all(in rows: [FeedRow], of session: DelegatingSession) -> [FeedAgent] {
         rows.compactMap(delegation(in:)).enumerated().map { position, call in
             FeedAgent(
                 id: position,

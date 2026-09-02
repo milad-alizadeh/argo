@@ -6,7 +6,7 @@
 ///
 /// Held by the deck, for the same reason the deck holds which row is open: opening a row resizes
 /// the column it sits in, so the feed is not the surface that owns what happened.
-enum FeedFocus: Hashable {
+package enum FeedFocus: Hashable {
     /// One row of the reading, by its place in the feed.
     case row(FeedRow.ID)
     /// The evidence panel, as a whole. Not per-step: the panel is one region a reader tabs into

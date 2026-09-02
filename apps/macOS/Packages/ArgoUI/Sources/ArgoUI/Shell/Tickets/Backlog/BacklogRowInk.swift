@@ -6,11 +6,11 @@ import ArgoDesign
 ///
 /// A value rather than three call-site conditionals, because the contract asserts these readings
 /// absolutely — `LoudSelectionGroundTests`.
-struct BacklogRowInk: Equatable {
+package struct BacklogRowInk: Equatable {
     /// The ground the row lays for ITSELF. Argo's own for the roster's reason (D30, 2026-08-31):
     /// the platform's fill is the loud accent only while the list is first responder and a mid
     /// grey the rest of the time, and no one ink clears the floor on both.
-    let ground: ArgoColor
+    package let ground: ArgoColor
     let title: ArgoColor
     /// The `#id`.
     let machine: ArgoColor
@@ -20,7 +20,7 @@ struct BacklogRowInk: Equatable {
     /// is already under it.
     let backdrop: ArgoColor?
 
-    init(isSelected: Bool, isRail: Bool, palette: ArgoPalette) {
+    package init(isSelected: Bool, isRail: Bool, palette: ArgoPalette) {
         guard isSelected else {
             self.ground = .transparent
             // A rail is on screen for a descendant's sake rather than for its own match, so its

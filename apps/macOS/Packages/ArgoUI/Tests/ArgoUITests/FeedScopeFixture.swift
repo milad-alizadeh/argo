@@ -1,4 +1,6 @@
 import ArgoEngine
+import ArgoFixtures
+@testable import ArgoSpecimens
 @testable import ArgoUI
 
 /// One Session that fanned out: three delegations, one still running — which is what keeps the rail

@@ -114,7 +114,7 @@ private extension MarkdownBlock {
         return nil
     }
 
-    static func heading(_ line: String) -> MarkdownBlock? {
+    package static func heading(_ line: String) -> MarkdownBlock? {
         let hashes = line.prefix { $0 == "#" }
         guard !hashes.isEmpty, hashes.count <= 6 else { return nil }
         let rest = line.dropFirst(hashes.count)

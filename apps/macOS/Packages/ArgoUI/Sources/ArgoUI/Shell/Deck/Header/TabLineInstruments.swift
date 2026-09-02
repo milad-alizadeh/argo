@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The tab line's trailing group (`docs/designs/cockpit-session-header.md`): what the Session is
 /// waiting for, the one instrument, and the remedy when there is one.
-struct TabLineInstruments: View {
+package struct TabLineInstruments: View {
     @Environment(\.argo) private var argo
 
     /// Absent when nothing is selected, and the group draws nothing.
@@ -11,7 +11,7 @@ struct TabLineInstruments: View {
     /// `async` because `/handoff` is answered in minutes, so the control holds itself that long.
     var handOff: () async -> Void = {}
 
-    var body: some View {
+    package var body: some View {
         // The instrument is a bar with no baseline of its own.
         HStack(alignment: .center, spacing: ArgoSpacing.loose) {
             if let header {
@@ -35,18 +35,13 @@ struct TabLineInstruments: View {
             .foregroundStyle(state.tone?.tint(in: argo.color) ?? argo.color.text.tertiary)
             .lineLimit(1)
     }
-}
 
-#Preview("Tab line instruments — every access posture, and the state word") {
-    VStack(alignment: .trailing, spacing: ArgoSpacing.section) {
-        ForEach(
-            Array((SessionHeaderFixture.headers + [SessionHeaderFixture.needsInput]).enumerated()),
-            id: \.offset,
-        ) { _, header in
-            TabLineInstruments(header: header)
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        header: SessionHeaderProjection.Header?,
+        handOff: @escaping () async -> Void = {},
+    ) {
+        self.header = header
+        self.handOff = handOff
     }
-    .padding(ArgoSpacing.region)
-    .argoDeckSurface()
-    .argoAppearance()
 }

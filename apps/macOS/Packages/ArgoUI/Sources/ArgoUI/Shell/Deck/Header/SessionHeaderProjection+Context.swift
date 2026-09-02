@@ -3,7 +3,7 @@ import Foundation
 /// How full the Session's context is, and how alarmed to be about it. A surface receives a reading
 /// it draws, never a number it judges — the whole colour decision is the tier function below.
 extension SessionHeaderProjection {
-    struct Context: Equatable, Sendable {
+    package struct Context: Equatable, Sendable {
         /// Which of the two lines the Session is past. **`nil` is the honest gap** — a record that
         /// carried no usage at all — and is never `.okay`: an unread context and an empty one are
         /// opposite claims. `okay` rather than the spec's `ok`: a name here is a word.

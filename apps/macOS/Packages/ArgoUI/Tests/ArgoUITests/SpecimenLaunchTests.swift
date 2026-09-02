@@ -1,4 +1,5 @@
 import ArgoEngine
+@testable import ArgoSpecimens
 @testable import ArgoUI
 import Foundation
 import Testing
@@ -71,5 +72,18 @@ struct SpecimenLaunchTests {
 
         #expect(launch.ending == nil)
         #expect(launch.entry == nil)
+    }
+
+    /// The reading the app target used to assemble itself (#1085). It reads this process's own
+    /// arguments — a test runner's — so what it can be held to is that it reads THEM: the suite
+    /// names no specimen, so the launch must be the ordinary one rather than a refusal.
+    @Test
+    func `the process's own launch reads this process's arguments`() {
+        let launch = SpecimenLaunch.ofThisProcess
+
+        #expect(launch.entry == nil)
+        #expect(launch.ending == nil)
+        #expect(launch.configuration.launchDirectoryURL.path == FileManager.default
+            .currentDirectoryPath)
     }
 }

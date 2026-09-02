@@ -8,13 +8,13 @@ import SwiftUI
 ///
 /// Picking an existing Account is one gesture and no OAuth round-trip (#414), and authorizing is
 /// the second item on the same menu rather than a different screen.
-struct ConnectPortRow: View {
+package struct ConnectPortRow: View {
     @Environment(\.argo) private var argo
 
     let row: ConnectPanelProjection.PortRow
     let actions: ConnectPanelActions
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             ConnectRow(row: row.row) { menu }
             if let note = row.note {
@@ -90,59 +90,18 @@ struct ConnectPortRow: View {
             cancel: actions.cancelChoice,
         )
     }
-}
 
-#Preview("Port row — bound, and re-bindable") {
-    ConnectPortRow(
-        row: ConnectPanelProjection.panel(from: ConnectFixture.wired).ports[0],
-        actions: .inert,
-    )
-    .frame(width: ArgoConnectPanel.width)
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}
-
-#Preview("Port row — nothing connected") {
-    ConnectPortRow(
-        row: ConnectPanelProjection.panel(from: ConnectFixture.fresh).ports[1],
-        actions: .inert,
-    )
-    .frame(width: ArgoConnectPanel.width)
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(row: ConnectPanelProjection.PortRow, actions: ConnectPanelActions) {
+        self.row = row
+        self.actions = actions
+    }
 }
 
 // An identity held and no Binding yet: the row has to say the account is there, or the device-code
 // card simply vanished and nothing happened (#821).
-#Preview("Port row — connected, choosing a repository") {
-    ConnectPortRow(
-        row: ConnectPanelProjection.panel(from: ConnectFixture.choosing).ports[0],
-        actions: .inert,
-    )
-    .frame(width: ArgoConnectPanel.width)
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}
 
 // The listing GitHub would not answer. The judgement is that it offers the read again and never a
 // field to guess into.
-#Preview("Port row — the repositories could not be read") {
-    ConnectPortRow(
-        row: ConnectPanelProjection.panel(from: ConnectFixture.scopesUnreadable).ports[0],
-        actions: .inert,
-    )
-    .frame(width: ArgoConnectPanel.width)
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}
 
 // A Binding whose Account was removed: the row says what came undone and keeps the scope it was on.
-#Preview("Port row — the account it used is gone") {
-    ConnectPortRow(
-        row: ConnectPanelProjection.panel(from: ConnectFixture.broken).ports[0],
-        actions: .inert,
-    )
-    .frame(width: ArgoConnectPanel.width)
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}

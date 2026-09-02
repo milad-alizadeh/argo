@@ -48,8 +48,9 @@ touch (each rule's `paths:` frontmatter states its scope):
 are enforced by `scripts/swift-boundaries.sh` (in `quality:swift`, on the `macos` CI job and in
 pre-commit).
 Every edge is checkable from imports and declarations alone, which is why they are gates rather
-than review notes. Four are ADR-0022's layering; the sharpest of those is **exactly one file in
-`ArgoUI` may read live Hub state** — the Hub → cockpit projection. Everything else takes a value.
+than review notes. Four of the eight are ADR-0022's layering; the sharpest of those is **exactly
+one file in `ArgoUI` may read live Hub state** — the Hub → cockpit projection. Everything else
+takes a value.
 
 The fifth is ADR-0027, on that projection: the cockpit **restates** `HubSession` rather than
 holding one, so every public engine fact must land in the mapping or be named on a
@@ -81,6 +82,14 @@ The exemption is only worth having while the exempt module stays what it says it
 edge holds `ArgoDesign` to being a **leaf** that declares **no view**: without both, "the folder a
 view could be moved into" is just "the module a view could be moved into", and the escape hatch
 survives the extraction one level up.
+
+The eighth is the direction between `ArgoUI` and the two dev-tool targets beside it (#1085):
+`ArgoSpecimens` holds the specimen harness, `ArgoFixtures` the sample transcripts and Tickets, and
+**no file under `Sources/ArgoUI` may import either** — in any spelling — nor may `ArgoFixtures`
+import anything that draws. The app target links `ArgoSpecimens`, which is the one accepted leak:
+the harness is reached by launch argument on the real binary, and that is what makes a specimen
+render evidence rather than a preview. A `#Preview` that needs sample data belongs in
+`ArgoSpecimens` with it.
 
 The JS/TS boundary gates are dormant — no subject since ADR-0023 retired the Electron
 cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-0021, ADR-0023.

@@ -5,16 +5,29 @@ import SwiftUI
 ///
 /// No glass of its own: the single toolbar item hosting it supplies that, and one capsule around
 /// both is the whole claim. It tints the pair, so the merged vessel speaks in one colour.
-struct ScopeVessel: View {
+package struct ScopeVessel: View {
     @Environment(\.argo) private var argo
 
     let project: ProjectVesselReading
     /// The menu hangs off the Project half, so its rows arrive with it.
-    let rows: [ProjectMenuProjection.Row]
+    package let rows: [ProjectMenuProjection.Row]
     let checkout: CheckoutReading
     let actions: CockpitActions
 
-    var body: some View {
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        project: ProjectVesselReading,
+        rows: [ProjectMenuProjection.Row],
+        checkout: CheckoutReading,
+        actions: CockpitActions,
+    ) {
+        self.project = project
+        self.rows = rows
+        self.checkout = checkout
+        self.actions = actions
+    }
+
+    package var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
             ProjectVessel(reading: project, rows: rows, actions: actions)
             DeckSeparator()
@@ -33,7 +46,7 @@ struct ScopeVessel: View {
     }
 }
 
-extension ScopeVessel {
+package extension ScopeVessel {
     /// Where THIS vessel projects a presentation. The disabled window's narrower bar has its own
     /// (`ProjectDisabledToolbar`), because it draws no checkout half.
     init(presentation: CockpitPresentation, actions: CockpitActions) {
@@ -44,26 +57,4 @@ extension ScopeVessel {
             actions: actions,
         )
     }
-}
-
-#Preview("Scope vessel") {
-    ScopeVessel(
-        project: ProjectVesselReading(presentation: .preview),
-        rows: ProjectMenuProjection.rows(from: .preview),
-        checkout: CheckoutReading(presentation: .preview),
-        actions: .inert,
-    )
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}
-
-#Preview("Scope vessel — nothing registered") {
-    ScopeVessel(
-        project: ProjectVesselReading(presentation: .unregisteredPreview),
-        rows: ProjectMenuProjection.rows(from: .unregisteredPreview),
-        checkout: CheckoutReading(presentation: .unregisteredPreview),
-        actions: .inert,
-    )
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
 }

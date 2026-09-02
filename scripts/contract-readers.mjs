@@ -56,7 +56,7 @@ function declarations(file) {
 const populationIn = (contract) => (file) => {
   if (file === contract || file.startsWith(contract + path.sep)) return 'contract'
   const parts = file.split(path.sep)
-  if (parts.includes('Specimen')) return 'specimen'
+  if (parts.includes('ArgoSpecimens')) return 'specimen'
   if (parts.some((part) => part.endsWith('Tests'))) return 'tests'
   return 'app'
 }

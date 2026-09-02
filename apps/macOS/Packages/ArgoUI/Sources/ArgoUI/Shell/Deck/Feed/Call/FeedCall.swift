@@ -7,18 +7,18 @@ import ArgoEngine
 /// Sentence-shaped rather than tabular: columns and a right-hand metadata rail are what turned the
 /// discarded #378 attempt into a log table, so there is no slot here for a timestamp and no field a
 /// renderer would have to reserve width for.
-struct FeedCall: Equatable, Sendable {
-    let kind: Kind
-    let subject: Subject
+package struct FeedCall: Equatable, Sendable {
+    package let kind: Kind
+    package let subject: Subject
     /// What a mutation did in lines, where the record carried a patch to count.
     let churn: Churn?
-    let ending: Ending
+    package let ending: Ending
     /// What the engine kept of what the calls produced — the panel's whole content. A LIST because
     /// a row can stand for a run of calls. Only results with something in them are here: an empty
     /// output or an unreadable patch is dropped at the reading.
-    let evidence: [ToolResult]
+    package let evidence: [ToolResult]
     /// How many calls this one line stands for. `1` for all but a collapsed run.
-    let repeats: Int
+    package let repeats: Int
     /// What the call itself reported spending. `nil` for the ordinary call; a DELEGATING call's
     /// result carries the whole spend of the subagent it ran, the only place a sidechain's cost is
     /// ever reported.
@@ -47,7 +47,7 @@ struct FeedCall: Equatable, Sendable {
     /// The whole row as one sentence, for a reader who cannot see it. Everything the drawn line
     /// says WITHOUT words is spelled out here and nowhere else: the failure ink, the `×3`, and the
     /// parent that tells two same-named files apart.
-    var spoken: String {
+    package var spoken: String {
         [
             kind.verb,
             subject.captioned,
@@ -60,7 +60,7 @@ struct FeedCall: Equatable, Sendable {
     }
 }
 
-extension FeedCall {
+package extension FeedCall {
     /// What the call did, at the grain the feed says it in words — finer than the engine's own
     /// `ToolCallKind` on purpose.
     enum Kind: Equatable, Sendable {
@@ -111,7 +111,7 @@ extension FeedCall {
     /// A file as the feed addresses it: the filename, and nothing else, at any window width.
     struct FileName: Equatable, Sendable {
         /// The path the record named — never drawn in the feed; the evidence panel opens on it.
-        let path: String
+        package let path: String
         let name: String
         /// The shortest parent that tells this file from another of the same name in this feed.
         /// `nil` where the name is already unambiguous, which is the common case.
@@ -161,7 +161,7 @@ extension FeedCall {
     }
 
     /// What a mutation did, in lines.
-    struct Churn: Equatable, Sendable {
+    internal struct Churn: Equatable, Sendable {
         let added: Int
         let removed: Int
 
@@ -173,13 +173,13 @@ extension FeedCall {
     }
 
     /// Whether the row could open onto anything — see `FeedCall.disclosure`, which derives it.
-    enum Disclosure: Equatable, Sendable {
+    internal enum Disclosure: Equatable, Sendable {
         case none
         case available
     }
 
     /// The same call, with its filename told apart from the others in the feed.
-    func naming(_ file: FileName) -> FeedCall {
+    internal func naming(_ file: FileName) -> FeedCall {
         FeedCall(
             kind: kind,
             subject: .file(file),
@@ -195,7 +195,7 @@ extension FeedCall {
     }
 }
 
-extension FeedCall.Ending {
+package extension FeedCall.Ending {
     var hasFailed: Bool {
         self == .failed
     }
@@ -203,7 +203,7 @@ extension FeedCall.Ending {
     /// The ink a call with this ending is drawn in, for the row and the lane alike. Only a failure
     /// carries a colour: a pending call is a rung above the finished ones rather than a hue, and a
     /// success is the ordinary case.
-    var ink: FeedInk {
+    internal var ink: FeedInk {
         hasFailed ? .failure : .command
     }
 

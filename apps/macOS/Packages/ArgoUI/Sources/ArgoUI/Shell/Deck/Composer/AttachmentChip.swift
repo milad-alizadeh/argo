@@ -8,7 +8,7 @@ import SwiftUI
 /// The `×` is the point of the chip. Something given to an agent that can only be taken back by
 /// clearing the whole field is not a decision a person can make carefully, so the way out sits ON
 /// the record of it.
-struct AttachmentChip: View {
+package struct AttachmentChip: View {
     @Environment(\.argo) private var argo
 
     let attachment: SessionAttachment
@@ -18,7 +18,7 @@ struct AttachmentChip: View {
     /// pass, and a file read on each of them is a tray that stutters as it wraps.
     @State private var thumbnail: Image?
 
-    var body: some View {
+    package var body: some View {
         HStack(spacing: ArgoSpacing.tight) {
             mark
             Text(attachment.name)
@@ -84,15 +84,10 @@ struct AttachmentChip: View {
         .accessibilityLabel(AttachmentProjection.removal(attachment))
         .help(AttachmentProjection.removal(attachment))
     }
-}
 
-#Preview("Attachment chip — a picture, a source file and a log") {
-    VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-        ForEach(AttachmentFixture.mixed) { attachment in
-            AttachmentChip(attachment: attachment, remove: {})
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(attachment: SessionAttachment, remove: @escaping () -> Void) {
+        self.attachment = attachment
+        self.remove = remove
     }
-    .padding(ArgoSpacing.section)
-    .argoDeckSurface()
-    .argoAppearance()
 }

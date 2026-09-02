@@ -6,9 +6,9 @@ import SwiftUI
 /// detail). The reading measure is NOT here: the body takes `ArgoFeedRow.column` through
 /// `argoFeedMeasure()`, reused rather than redeclared — the feed already settled what a line of
 /// Argo's prose runs to.
-enum ArgoTicketDetail {
+package enum ArgoTicketDetail {
     /// The column off the deck's edges.
-    static let inset: CGFloat = ArgoSpacing.section
+    package static let inset: CGFloat = ArgoSpacing.section
     /// The rule between the provider's status word and Argo's bucket. Short deliberately: it
     /// separates two facts on one line rather than dividing the line from anything.
     static let statusDividerHeight: CGFloat = 10
@@ -56,7 +56,7 @@ enum ArgoTicketDetail {
     static let chipInsetY: CGFloat = ArgoSpacing.snug
     /// Between the facts inside one chip, and between two stacked chips. At this pane's width a
     /// chip sets on one line, so two Deliveries stack rather than wrap into a mess.
-    static let chipGap: CGFloat = ArgoSpacing.base
+    package static let chipGap: CGFloat = ArgoSpacing.base
 
     // MARK: - The body's sections
 
@@ -75,7 +75,7 @@ enum ArgoTicketDetail {
     /// What the pane is left at the ideal window — the deck, less the backlog beside it. Derived
     /// rather than written down: it is the design's tightest number and the first to move if the
     /// three-pane room ever proves cramped.
-    static var idealWidth: CGFloat {
+    package static var idealWidth: CGFloat {
         ArgoLayout.windowIdealWidth - ArgoLayout.sidebarMinimumWidth - ArgoBacklogList.width
     }
 }

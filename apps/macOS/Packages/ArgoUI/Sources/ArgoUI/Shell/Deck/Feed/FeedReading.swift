@@ -11,7 +11,7 @@ import Foundation
 ///
 /// Both halves are here because both re-key the rows: a Session switch replaces the reading, and so
 /// does scoping the rail onto one Subagent.
-struct FeedReading: Hashable {
+package struct FeedReading: Hashable {
     /// `CockpitPresentation.Session.ID`, spelled as its underlying type: the feed draws no Session
     /// and must not have to know one. `nil` in a preview, a specimen and a suite, where nothing
     /// switches — which is what keeps those on the plain mount path.
@@ -29,6 +29,6 @@ struct FeedReading: Hashable {
 /// reading and is nothing at all across a switch, and `FeedWait.showing(in:)` answering the same
 /// case for two Sessions in a row is two waits, not one that never stopped.
 struct FeedFact<Value: Equatable>: Equatable {
-    let reading: FeedReading
+    package let reading: FeedReading
     let value: Value
 }

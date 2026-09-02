@@ -10,7 +10,7 @@ import ArgoEngine
 /// external or an orphaned Session (story 49) — the coloured reading still warns, the button is not
 /// drawn. A Session that has already handed over keeps its coloured reading and its link to the
 /// Session that took it; a second press would fork the branch rather than chain it.
-extension SessionHeaderProjection {
+package extension SessionHeaderProjection {
     struct Handoff: Equatable, Sendable {
         /// The verb, and the whole of the control's ink — **no caption** (story 46).
         let label: String

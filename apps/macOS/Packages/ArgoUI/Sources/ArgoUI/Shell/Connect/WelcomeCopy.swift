@@ -16,7 +16,7 @@ enum WelcomeCopy {
         }
     }
 
-    static let heading = "Argo watches the agents you run."
+    package static let heading = "Argo watches the agents you run."
     static let subheading = "Point it at a folder and it starts there. Everything else is optional."
     static let start = "Get started"
 

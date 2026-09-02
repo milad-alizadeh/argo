@@ -11,8 +11,8 @@ import SwiftUI
 ///
 /// `@MainActor` because it holds the row's verbs, and a closure a control calls is not `Sendable`.
 @MainActor
-struct TicketsRoom {
-    let room: TicketsRoomProjection.Room
+package struct TicketsRoom {
+    package let room: TicketsRoomProjection.Room
     /// Which room the strip in the sidebar's head is on — the whole window's, not this room's.
     @Binding var cockpitRoom: CockpitRoom
     /// Which ticket the deck is open on. Held above the room, because the ticket outlives the pane.
@@ -43,7 +43,7 @@ struct TicketsRoom {
 
     /// Every read a room raises: one by the number a followed link named (#895), and the closed
     /// listing's own two (#1075). One value, because none of them is the poll's.
-    struct Reads {
+    package struct Reads {
         /// What a link to a ticket the listing does not hold raises: one read, by that number.
         var follow: @MainActor (Int) async -> Void = { _ in }
         var closed = ClosedReads.inert
@@ -73,14 +73,19 @@ struct TicketsRoom {
     /// Mode chevron went (#872), and the search field is not the last thing this row will hold.
     var held = Held.unheld
 
-    struct Held {
+    package struct Held {
         var query: Binding<String>
 
         /// Nothing remembers it, for a `#Preview` and a specimen with no window above them.
-        static let unheld = Held(query: .constant(""))
+        package static let unheld = Held(query: .constant(""))
+
+        /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+        package init(query: Binding<String>) {
+            self.query = query
+        }
     }
 
-    var sidebar: some View {
+    package var sidebar: some View {
         TicketsSidebar(room: room, cockpitRoom: $cockpitRoom, view: $view, intents: nextUpIntents)
     }
 
@@ -105,7 +110,7 @@ struct TicketsRoom {
     }
 
     /// The two panes, OR one of the room's vacancies — never both.
-    var deck: some View {
+    package var deck: some View {
         pages
             // OUTSIDE the vacancy branch, deliberately. Until the closed read lands the room is its
             // own `unread` vacancy, so a task inside the branch that draws the rows would be
@@ -170,21 +175,31 @@ struct TicketsRoom {
             TicketDetail(ticket: room.ticket, unreadNumber: room.unreadNumber) { ticket = $0 }
         }
     }
-}
 
-#Preview("Tickets room — the deck's two panes") {
-    @Previewable @State var ticket: Int? = 272
-    @Previewable @State var cockpitRoom = CockpitRoom.tickets
-    @Previewable @State var view = TicketsView.allOpen
-    @Previewable @State var width = ArgoBacklogList.width
-    @Previewable @State var shut: Set<Int> = []
-
-    TicketsRoom(
-        room: TicketsFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket, view: $view,
-        backlogWidth: $width, shut: $shut,
-    )
-    .deck
-    .frame(width: ArgoBacklogList.width + ArgoTicketDetail.idealWidth, height: 620)
-    .argoDeckSurface()
-    .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        room: TicketsRoomProjection.Room,
+        cockpitRoom: Binding<CockpitRoom>,
+        ticket: Binding<Int?>,
+        view: Binding<TicketsView>,
+        backlogWidth: Binding<CGFloat>,
+        shut: Binding<Set<Int>>,
+        connect: @escaping @MainActor () -> Void = {},
+        intents: TicketsToolbarIntents = TicketsToolbarIntents.inert,
+        starting: StartIntent = StartIntent.inert,
+        reads: Reads = Reads.inert,
+        held: Held = Held.unheld,
+    ) {
+        self.room = room
+        _cockpitRoom = cockpitRoom
+        _ticket = ticket
+        _view = view
+        _backlogWidth = backlogWidth
+        _shut = shut
+        self.connect = connect
+        self.intents = intents
+        self.starting = starting
+        self.reads = reads
+        self.held = held
+    }
 }

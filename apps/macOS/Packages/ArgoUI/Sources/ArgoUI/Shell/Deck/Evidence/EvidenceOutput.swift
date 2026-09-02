@@ -10,7 +10,7 @@ import SwiftUI
 /// Error output is told apart at the grain the RECORD tells it apart at: a transcript carries one
 /// `is_error` on the whole answer and nothing per line, so a failed call's stream is marked whole,
 /// by a rule down its edge. Never per line — `error:` appears in plenty of output that worked.
-struct EvidenceOutput: View {
+package struct EvidenceOutput: View {
     @Environment(\.argo) private var argo
 
     let output: OutputEvidence
@@ -24,11 +24,11 @@ struct EvidenceOutput: View {
     var holdsTheFile = false
     /// Whether a markdown file is drawn as the document it is or as its own characters. Only
     /// markdown is ever asked in `prose` — every other language IS its source.
-    var reading: EvidenceReading = .source
+    package var reading: EvidenceReading = .source
 
     /// Read once per pass, not once per branch: this splits and re-parses the whole text, and a
     /// panel of a long file draws it on every layout (#474).
-    var body: some View {
+    package var body: some View {
         let listing = EvidenceListing.read(output.text)
         // The step says whether these characters ARE the file; the gutter does not, and a file Argo
         // read itself has none (#736). A FAILED call printed a message about the call, not a file.
@@ -72,6 +72,21 @@ struct EvidenceOutput: View {
                 .fill(argo.color.state.failure)
                 .frame(width: ArgoFeedRow.ruleWidth)
         }
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        output: OutputEvidence,
+        language: EvidenceLanguage? = nil,
+        hasFailed: Bool = false,
+        holdsTheFile: Bool = false,
+        reading: EvidenceReading = .source,
+    ) {
+        self.output = output
+        self.language = language
+        self.hasFailed = hasFailed
+        self.holdsTheFile = holdsTheFile
+        self.reading = reading
     }
 }
 

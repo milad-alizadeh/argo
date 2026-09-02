@@ -5,8 +5,8 @@ extension TicketsRoomProjection {
     ///
     /// `Detail` and not `Ticket`, which the engine's entity now owns (#881), and not `Row`, which
     /// the backlog's rows already are: this is what ONE pane draws, and the pane is the detail.
-    struct Detail: Sendable, Equatable, Identifiable {
-        let id: Int
+    package struct Detail: Sendable, Equatable, Identifiable {
+        package let id: Int
         let title: String
         /// The provider's own status word, rendered verbatim (#272).
         let status: String
@@ -23,19 +23,19 @@ extension TicketsRoomProjection {
         /// The Deliveries in flight, one chip each.
         let deliveries: [DeliveryFacts]
         /// `nil` on a ticket the tracker gives no children: the section is then absent.
-        let children: Children?
+        package let children: Children?
         /// The blockers, in the provider's own edge order. EMPTY draws no section at all: nothing
         /// tells "no edges read" from "edges read, none found", so degrade-down takes the quieter
         /// reading (`CONTEXT.md` L2 · Honesty tier).
-        let blockedBy: [Link]
+        package let blockedBy: [Link]
         /// The body, absent where nothing was read for it.
         let body: String?
     }
 
     /// One ticket named from inside another — a child, or a blocker. One shape: the two differ
     /// only in the trailing fact they carry (#815).
-    struct Link: Sendable, Equatable, Identifiable {
-        let id: Int
+    package struct Link: Sendable, Equatable, Identifiable {
+        package let id: Int
         /// The tracker's own name, and `nil` only where nothing was read — a blocker already
         /// CLOSED still has one.
         let title: String?
@@ -48,8 +48,8 @@ extension TicketsRoomProjection {
     /// A parent's Children section. `closed` and `total` are the TRACKER's figures over children
     /// the section does not draw, which is why `2 of 9 closed` can stand over five rows and be
     /// right; children the poll never reached count in `total` alone.
-    struct Children: Sendable, Equatable {
-        let open: [Link]
+    package struct Children: Sendable, Equatable {
+        package let open: [Link]
         let closed: Int
         let total: Int
     }

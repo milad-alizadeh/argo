@@ -2,10 +2,10 @@ import ArgoEngine
 
 /// A subagent, as the rail names one. Everything here is read off the DELEGATING call — a
 /// subagent's own turns run in a sidechain the parent does not attribute.
-struct FeedAgent: Equatable, Sendable, Identifiable {
+package struct FeedAgent: Equatable, Sendable, Identifiable {
     /// Its place among the delegations — two subagents can be handed the same brief, so a list
     /// keyed by what they were asked would fuse them.
-    let id: Int
+    package let id: Int
     /// What it was handed, verbatim — the brief the delegating call named.
     let label: String
     /// Whether the delegation is still unresolved AND the Session that delegated it is running —
@@ -23,7 +23,7 @@ struct FeedAgent: Equatable, Sendable, Identifiable {
     /// `FeedAgentReader`. Synchronously it arrives with the result, so a running chip has nothing
     /// to key a reading by and is the UNSELECTABLE one; a backgrounded launch names `agentId` in
     /// the receipt, so a running async chip has its id from the start.
-    var subagentID: String?
+    package var subagentID: String?
     /// How long it ran, as the host measured it. `nil` while a synchronous agent is still working —
     /// the total arrives with the result, as `spend` does — and `nil` for the whole life of a
     /// backgrounded one, which reports no total at either end.
@@ -31,4 +31,23 @@ struct FeedAgent: Equatable, Sendable, Identifiable {
     /// When the work was handed over. What a running chip counts up from, since a total it does not
     /// have yet cannot be drawn.
     var startedAtMs: Int?
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        id: Int,
+        label: String,
+        isRunning: Bool,
+        spend: Usage?,
+        subagentID: String? = nil,
+        durationMs: Int? = nil,
+        startedAtMs: Int? = nil,
+    ) {
+        self.id = id
+        self.label = label
+        self.isRunning = isRunning
+        self.spend = spend
+        self.subagentID = subagentID
+        self.durationMs = durationMs
+        self.startedAtMs = startedAtMs
+    }
 }

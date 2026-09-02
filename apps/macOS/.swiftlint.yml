@@ -198,6 +198,22 @@ function_parameter_count:
   # INIT: SessionOwnershipLedger.swift 5 — Window, one stretch of ownership, open while the PTY
   # INIT: TicketsReading+Ranking.swift 5 — Rank, the ranking keys in the order they decide, so the
 
+  #
+  # And the ones #1085 made visible. Spelling out a memberwise initializer is what lifting the
+  # specimens into their own target cost — Swift synthesizes none above `internal` — and every
+  # width below is the width that initializer already had. Each was skipped by the rule above it
+  # because a `private` stored property looked like a seal, which a DEFAULTED private property is
+  # not: it leaves the list rather than closing it. Nothing here is a wider call than the module
+  # already made, and each shrinks when the struct's own fields are grouped.
+  # INIT: InstrumentDeckShell.swift 16 — the deck shell's fields, as the memberwise init had them
+  # INIT: SessionsDeck.swift 15 — the deck's fields, as the memberwise init had them
+  # INIT: FeedView.swift 8 — the reading, and the state the deck owns around it
+  # INIT: SessionNavigator.swift 8 — the roster's rows and the acts on them
+  # INIT: ShellSidebar.swift 6 — the sidebar's rooms, its roster and what is selected in them
+  # INIT: EvidenceOutput.swift 5 — the output panel's fields
+  # INIT: FeedSurveyLine.swift 5 — the survey row's fields
+  # INIT: NewTicketComposer.swift 5 — the new-ticket sheet's fields
+
 cyclomatic_complexity:
   # biome gates cognitive complexity at 15; SwiftLint measures cyclomatic. Same ceiling,
   # slightly stricter metric — a flat switch inflates it, which is what the `ignores_case_

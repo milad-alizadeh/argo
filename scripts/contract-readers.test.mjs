@@ -78,7 +78,7 @@ check('a member read only by the specimen and a test is undrawn, not unread', ()
     'ArgoWaitAge.swift': `public enum ArgoWaitAge {
     public static let coldest = 4
 }`,
-    'Specimen/ContractSpecimen.swift': 'Text(ArgoWaitAge.coldest)',
+    'ArgoSpecimens/ContractSpecimen.swift': 'Text(ArgoWaitAge.coldest)',
     'Tests/WaitAgeTests.swift': '#expect(ArgoWaitAge.coldest == 4)',
   })
   assert.deepEqual(names(swept.unread), [])

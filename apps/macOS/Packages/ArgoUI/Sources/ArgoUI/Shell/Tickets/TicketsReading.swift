@@ -11,16 +11,16 @@ import ArgoEngine
 /// `Equatable` because it is `TicketsRoomMemo`'s stamp: the whole reading is what the room is
 /// derived from, so comparing it whole is what makes a remembered room impossible to serve for a
 /// listing that has moved. A field added below joins the stamp by construction.
-struct TicketsReading: Sendable, Equatable {
+package struct TicketsReading: Sendable, Equatable {
     /// The provider's items in the order it served them, closed ones included: a parent's roll-up
     /// counts children the backlog does not draw.
-    var items: [Ticket] = []
+    package var items: [Ticket] = []
     /// Which items a Session has taken, and how short that answer is (#894, #1074). DIRECT and
     /// Argo's alone — no provider carries a claim.
     ///
     /// One value rather than the set beside its own two shortfalls: `In progress` counts what it
     /// can and states what it could not place, so the three are never read apart.
-    var claims = TicketClaims(numbers: [])
+    package var claims = TicketClaims(numbers: [])
     /// What was read about each item's Delivery. Absent where nothing was read, which is a state
     /// of its own and not a quiet one (`DeliveryReading.absent`). Empty until a code host is read
     /// (#258), so every backlog dot is a hollow ring today.
@@ -35,18 +35,18 @@ struct TicketsReading: Sendable, Equatable {
     /// The Project the window is scoped to, by its own name. Read only by the room's vacancy pages,
     /// which name it — every other surface here is already inside one Project's window and would be
     /// repeating itself.
-    var project: String?
+    package var project: String?
     /// Which ticket the deck opens on.
-    var showing: Int?
+    package var showing: Int?
     /// What the bounded closed read answered, and `nil` until it has (#1075).
     ///
     /// The closed TICKETS themselves ride in `items` above, because a parent's roll-up counts
     /// children the backlog does not draw. What is left here is the two facts those items cannot
     /// carry: that an answer arrived at all — which is what keeps the `Closed` count absent rather
     /// than zero — and whether the provider has another page behind them.
-    var closedListing: ClosedListingReading?
+    package var closedListing: ClosedListingReading?
 
-    struct ClosedListingReading: Sendable, Equatable {
+    package struct ClosedListingReading: Sendable, Equatable {
         /// Which numbers the closed READ answered with — the `Closed` view's set, exactly.
         ///
         /// A closed ticket that arrived some other way is deliberately NOT in it. One followed by
@@ -56,13 +56,42 @@ struct TicketsReading: Sendable, Equatable {
         let numbers: Set<Int>
         /// Whether the provider served a cursor for the page behind these.
         let hasMore: Bool
+
+        /// Spelled out because Swift synthesises no memberwise initializer above
+        /// `internal`, and the specimens build this from their own target (#1085).
+        package init(numbers: Set<Int>, hasMore: Bool) {
+            self.numbers = numbers
+            self.hasMore = hasMore
+        }
     }
 
     /// The same reading, opened on another ticket. A specimen selecting a child re-derives the room
     /// rather than mutating it, which is what keeps the room a value.
-    func opened(at number: Int?) -> TicketsReading {
+    package func opened(at number: Int?) -> TicketsReading {
         var next = self
         next.showing = number
         return next
+    }
+
+    /// Spelled out because Swift synthesises no memberwise initializer above
+    /// `internal`, and the specimens build this from their own target (#1085).
+    package init(
+        items: [Ticket] = [],
+        claims: TicketClaims = TicketClaims(numbers: []),
+        deliveries: [Int: DeliveryReading] = [:],
+        deliveryFacts: [Int: [DeliveryFacts]] = [:],
+        provider: TicketsProvider? = nil,
+        project: String? = nil,
+        showing: Int? = nil,
+        closedListing: ClosedListingReading? = nil,
+    ) {
+        self.items = items
+        self.claims = claims
+        self.deliveries = deliveries
+        self.deliveryFacts = deliveryFacts
+        self.provider = provider
+        self.project = project
+        self.showing = showing
+        self.closedListing = closedListing
     }
 }

@@ -3,15 +3,15 @@ import ArgoEngine
 
 /// A skill load as the feed says it: the record's own value, and the `SKILL.md` addressed the way
 /// every other file in this feed is — relative to where the Session is working.
-struct FeedSkillLoad: Equatable, Sendable {
-    let load: SkillLoad
+package struct FeedSkillLoad: Equatable, Sendable {
+    package let load: SkillLoad
     /// The file Argo read, shortened against the Session's cwd. Absolute in the record: a skill
     /// routinely lives in the user's home folder rather than in the Project.
-    let address: String
+    package let address: String
     /// See `FeedPath.isExternal`, asked of what the shortening LEFT.
     let isExternal: Bool
 
-    init(_ load: SkillLoad, within path: FeedPath = .anywhere) {
+    package init(_ load: SkillLoad, within path: FeedPath = .anywhere) {
         self.load = load
         self.address = path.shortened(load.path)
         self.isExternal = path.isExternal(address)
@@ -19,7 +19,7 @@ struct FeedSkillLoad: Equatable, Sendable {
 
     /// What a screen reader is told. The row draws its label and its name as two runs, and a run is
     /// a shape rather than a word.
-    var spoken: String {
+    package var spoken: String {
         "Skill loaded: \(load.name)"
     }
 

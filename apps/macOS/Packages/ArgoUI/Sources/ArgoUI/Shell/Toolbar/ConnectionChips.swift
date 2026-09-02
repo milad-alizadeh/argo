@@ -6,14 +6,14 @@ import SwiftUI
 ///
 /// Both are silent when there is nothing wrong, so the ordinary window carries none of this — a
 /// permanently-lit healthy indicator trains the eye to skip the spot the warning appears in.
-struct ConnectionChips: View {
+package struct ConnectionChips: View {
     let connection: CockpitPresentation.Connection
     /// Which Project the panel opens on. The chip is about the window's active one.
     let projectID: CockpitPresentation.Project.ID?
     let health: ConnectionHealthReading
     let actions: CockpitActions
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             if let observation = ConnectionChipReading(observing: connection) {
                 ConnectionChip(reading: observation, act: actions.retry.connection)
@@ -46,5 +46,18 @@ struct ConnectionChips: View {
     /// it, not a second one.
     private func open() {
         actions.projects.openPanel(projectID)
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        connection: CockpitPresentation.Connection,
+        projectID: CockpitPresentation.Project.ID?,
+        health: ConnectionHealthReading,
+        actions: CockpitActions,
+    ) {
+        self.connection = connection
+        self.projectID = projectID
+        self.health = health
+        self.actions = actions
     }
 }

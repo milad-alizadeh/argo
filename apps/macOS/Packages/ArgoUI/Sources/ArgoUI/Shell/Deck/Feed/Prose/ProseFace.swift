@@ -21,7 +21,7 @@ struct ProseFace: Hashable, Sendable {
 
     /// A heading's face. Three rungs for six levels, as `FeedMarkdown` draws them — the deepest is
     /// the paragraph's own size at the heavier weight, never smaller than the prose under it.
-    static func heading(level: Int) -> ProseFace {
+    package static func heading(level: Int) -> ProseFace {
         switch level {
         case 1: ProseFace(rung: .title1, isBold: true)
         case 2: ProseFace(rung: .title2, isBold: true)

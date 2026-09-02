@@ -6,12 +6,12 @@ import SwiftUI
 /// Three benefit rows and no jargon: no feature grid, no honesty-tier ladder, nothing the reader
 /// has to learn before they can press the button (#265). The tiers are real and they stay
 /// internal; what a connection buys you is said as the thing you get.
-struct WelcomeScreen: View {
+package struct WelcomeScreen: View {
     @Environment(\.argo) private var argo
 
     let start: () -> Void
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.section) {
             VStack(alignment: .leading, spacing: ArgoSpacing.base) {
                 Text(WelcomeCopy.heading)
@@ -44,6 +44,11 @@ struct WelcomeScreen: View {
         }
         .padding(ArgoSpacing.region)
         .frame(width: ArgoConnectPanel.width, alignment: .leading)
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(start: @escaping () -> Void) {
+        self.start = start
     }
 }
 

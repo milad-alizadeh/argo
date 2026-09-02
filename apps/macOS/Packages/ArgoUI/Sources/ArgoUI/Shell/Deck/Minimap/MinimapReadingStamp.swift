@@ -17,10 +17,10 @@ import Foundation
 /// a height dropped and taken again under the same `Ground` at the same width comes back the same
 /// number. It errs the loud way (degrade-down): a re-measure that landed on the value it already
 /// had still counts, so the lane re-reads a document that did not change rather than the reverse.
-struct MinimapReadingStamp: Equatable {
+package struct MinimapReadingStamp: Equatable {
     /// The rows themselves — what a rewrite at an unchanged height moves, and what the shapes in
     /// each `MinimapRow` are read out of.
-    var rows: [FeedRow] = []
+    package var rows: [FeedRow] = []
     /// The reader's own folds: the one state that changes a row's SHAPE rather than its height.
     var unfolded: Set<FeedRow.ID> = []
     /// How many ruler measures the feed has run, ever — see above.

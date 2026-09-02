@@ -3,19 +3,25 @@ import SwiftUI
 
 /// Tickets named from inside a ticket — the Children and `blockedBy` sections, which are ONE
 /// component with two callers (#815). The count changes nothing: it lives in the section heading.
-struct TicketLinkList: View {
+package struct TicketLinkList: View {
     let links: [TicketsRoomProjection.Link]
     /// What opening one does. Every row is a control, blockers included: a blocker outside the
     /// backlog is reachable by the number it names (#895), so the row no longer leads nowhere.
     let open: (Int) -> Void
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoTicketDetail.linkGap) {
             ForEach(links) { link in
                 Button { open(link.id) } label: { TicketLinkRow(link: link) }
                     .buttonStyle(.plain)
             }
         }
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(links: [TicketsRoomProjection.Link], open: @escaping (Int) -> Void) {
+        self.links = links
+        self.open = open
     }
 }
 
@@ -65,25 +71,5 @@ private struct TicketLinkRow: View {
     /// The id is spoken as a number rather than as `#607`, which VoiceOver reads as "number 607".
     private var announcement: String {
         [String(link.id), link.title, link.trailing].compactMap(\.self).joined(separator: ", ")
-    }
-}
-
-#Preview("Link list — children, with the provider's word trailing each") {
-    if let children = TicketsFixture.room(showing: 607).ticket?.children {
-        TicketLinkList(links: children.open, open: { _ in })
-            .padding(ArgoTicketDetail.inset)
-            .frame(width: ArgoTicketDetail.idealWidth)
-            .argoDeckSurface()
-            .argoAppearance()
-    }
-}
-
-#Preview("Link list — six blockers, one of them never read") {
-    if let ticket = TicketsFixture.room(showing: 607).ticket {
-        TicketLinkList(links: ticket.blockedBy, open: { _ in })
-            .padding(ArgoTicketDetail.inset)
-            .frame(width: ArgoTicketDetail.idealWidth)
-            .argoDeckSurface()
-            .argoAppearance()
     }
 }

@@ -69,7 +69,7 @@ struct FeedIonLoop<Content: View>: View {
 extension EnvironmentValues {
     /// How old the wait is, forced for a RENDER — the cooled rungs are a minute and five minutes
     /// in. Read INSTEAD of the clock, and only where a render sets it.
-    @Entry var argoAgesWait: TimeInterval?
+    @Entry package var argoAgesWait: TimeInterval?
 
     /// When the wait the reading is showing began — `FeedView`'s answer, stamped when `FeedWait`
     /// changes. In the environment because the table hosts each row in its own `NSHostingView`, so

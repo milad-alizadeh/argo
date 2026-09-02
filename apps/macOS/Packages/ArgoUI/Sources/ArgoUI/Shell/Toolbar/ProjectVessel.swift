@@ -12,14 +12,14 @@ import SwiftUI
 /// hand-drawn ground again in the system's handwriting. It is Xcode's branch control's style.
 ///
 /// No state dot: nothing derives the per-Project worst-state rollup yet (#164).
-struct ProjectVessel: View {
+package struct ProjectVessel: View {
     @Environment(\.argo) private var argo
 
-    let reading: ProjectVesselReading
-    let rows: [ProjectMenuProjection.Row]
+    package let reading: ProjectVesselReading
+    package let rows: [ProjectMenuProjection.Row]
     let actions: CockpitActions
 
-    var body: some View {
+    package var body: some View {
         Menu {
             ProjectMenu(rows: rows, actions: actions)
         } label: {
@@ -45,34 +45,15 @@ struct ProjectVessel: View {
         .accessibilityLabel(reading.announcement)
         .accessibilityHint(ProjectVesselReading.hint)
     }
-}
 
-#Preview("Project vessel") {
-    ProjectVessel(
-        reading: ProjectVesselReading(presentation: .preview),
-        rows: ProjectMenuProjection.rows(from: .preview),
-        actions: .inert,
-    )
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}
-
-#Preview("Project vessel — folder not found") {
-    ProjectVessel(
-        reading: ProjectVesselReading(presentation: .unreachablePreview),
-        rows: ProjectMenuProjection.rows(from: .unreachablePreview),
-        actions: .inert,
-    )
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}
-
-#Preview("Project vessel — nothing registered") {
-    ProjectVessel(
-        reading: ProjectVesselReading(presentation: .unregisteredPreview),
-        rows: ProjectMenuProjection.rows(from: .unregisteredPreview),
-        actions: .inert,
-    )
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        reading: ProjectVesselReading,
+        rows: [ProjectMenuProjection.Row],
+        actions: CockpitActions,
+    ) {
+        self.reading = reading
+        self.rows = rows
+        self.actions = actions
+    }
 }

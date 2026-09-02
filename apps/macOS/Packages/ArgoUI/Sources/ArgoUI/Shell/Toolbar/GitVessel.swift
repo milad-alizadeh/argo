@@ -14,7 +14,7 @@ import SwiftUI
 struct GitVessel: View {
     @Environment(\.argo) private var argo
 
-    let reading: CheckoutReading
+    package let reading: CheckoutReading
     let refresh: () -> Void
 
     var body: some View {

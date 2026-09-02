@@ -8,12 +8,12 @@ import SwiftUI
 /// A `Toggle` and not a `Button`: the button style draws its ON state itself, which is the whole of
 /// "shows open and closed state" — and it is the same control the platform puts at this edge for a
 /// right-hand column, so the reader has met it before.
-struct EvidenceToggle: View {
+package struct EvidenceToggle: View {
     /// The decision, already made — see `EvidenceToggling`.
     let toggling: EvidenceToggling
     let act: () -> Void
 
-    var body: some View {
+    package var body: some View {
         Toggle(isOn: pressed) {
             Label("Evidence", systemImage: ArgoSymbol.evidencePanel)
         }
@@ -29,19 +29,10 @@ struct EvidenceToggle: View {
     private var pressed: Binding<Bool> {
         Binding(get: { toggling.isOpen }, set: { _ in act() })
     }
-}
 
-#Preview("Evidence toggle — shut, open, and with nothing to show") {
-    HStack(spacing: ArgoSpacing.comfortable) {
-        EvidenceToggle(toggling: EvidenceToggling(feed: FeedProjection.previewRows, open: nil)) {}
-        EvidenceToggle(
-            toggling: EvidenceToggling(
-                feed: FeedProjection.previewRows,
-                open: FeedProjection.previewFailedCallID,
-            ),
-        ) {}
-        EvidenceToggle(toggling: EvidenceToggling(feed: [], open: nil)) {}
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(toggling: EvidenceToggling, act: @escaping () -> Void) {
+        self.toggling = toggling
+        self.act = act
     }
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
 }

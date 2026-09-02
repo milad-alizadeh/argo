@@ -2,8 +2,8 @@ import ArgoDesign
 
 /// What the deck's header zone says about the Session it is showing — the roster projection's
 /// counterpart above the feed.
-enum SessionHeaderProjection {
-    struct Header: Equatable, Sendable {
+package enum SessionHeaderProjection {
+    package struct Header: Equatable, Sendable {
         struct AccessMark: Equatable, Sendable {
             let word: String
             let detail: String
@@ -107,17 +107,17 @@ enum SessionHeaderProjection {
         let issue: IssueRow?
         /// The one instrument on the header. Never absent: an unreadable context is still a
         /// context, and the absence lives INSIDE the reading, as `unknown`.
-        let context: Context
+        package let context: Context
         /// What the Session has spent and how long it has been going, already composed — the tab
         /// line's whole content. `nil` where none of those facts could be established, so the
         /// line collapses rather than drawing separators between facts it does not have.
         let spend: String?
         /// The remedy, when it is the right move and Argo is the one who can take it — see
         /// `handoff(from:)` for the two facts that decide it.
-        let handoff: Handoff?
+        package let handoff: Handoff?
         /// The same facts as rows, for the ⓘ panel — the route to them that a keyboard and a
         /// screenshot both have, which `tooltip` above is not (#694).
-        let facts: [Fact]
+        package let facts: [Fact]
 
         /// `fileprivate`, so `header(from:)` is the only way a header comes into being. Taken as
         /// one value per zone (`SessionHeaderProjection+HeaderValues.swift`) and unpacked onto the
@@ -191,7 +191,7 @@ enum SessionHeaderProjection {
     /// that has already taken it at a known stamp (`SessionsRoomReadingCache`) and read here
     /// otherwise. It is the only header fact a remembered reading may carry: everything else moves
     /// with no event appended.
-    static func header(
+    package static func header(
         from session: CockpitPresentation.Session,
         worked: Worked? = nil,
     )

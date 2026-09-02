@@ -22,7 +22,7 @@ struct SendButton: View {
     var isRunning = false
     let send: () -> Void
     /// Stop that Turn. Inert by default so a preview draws the state without a port behind it.
-    var stop: () -> Void = {}
+    package var stop: () -> Void = {}
 
     var body: some View {
         Button(action: isRunning ? stop : send) {

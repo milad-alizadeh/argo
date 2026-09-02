@@ -3,7 +3,7 @@ import Foundation
 /// One Turn's stretch of the reading — the semantic block the lane draws a line beside (#382).
 struct MinimapTurn: Equatable, Sendable {
     /// The rows it holds, both ends included.
-    let rows: ClosedRange<Int>
+    package let rows: ClosedRange<Int>
     /// What it opened with. `nil` for a promptless exchange — a resumed Session's first stretch has
     /// no prompt in the record, and inventing one would put words in somebody's mouth.
     let prompt: String?

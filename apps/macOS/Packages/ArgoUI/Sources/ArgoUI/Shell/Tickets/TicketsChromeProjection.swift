@@ -4,8 +4,8 @@
 /// A VALUE and not a read of the panes: the count under the heading has to be the count of the rows
 /// the list is drawing, and two surfaces counting the same set separately is how a heading comes to
 /// disagree with what is under it.
-enum TicketsChromeProjection {
-    struct Reading: Sendable, Equatable {
+package enum TicketsChromeProjection {
+    package struct Reading: Sendable, Equatable {
         /// What you are looking at. One word, and never enough on its own.
         let heading: String
         /// …and how many, which is the half that stops the heading lying about the filter.
@@ -45,7 +45,7 @@ enum TicketsChromeProjection {
 
     /// The row for a room. `showing` comes from the deck's selection rather than the room, because
     /// the ticket outlives the pane and the verbs address what is open, not what was projected.
-    static func reading(
+    package static func reading(
         of room: TicketsRoomProjection.Room,
         in view: TicketsView,
         showing: Int?,

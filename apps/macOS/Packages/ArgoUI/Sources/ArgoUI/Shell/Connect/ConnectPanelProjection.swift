@@ -3,7 +3,7 @@ import ArgoEngine
 /// The Connect panel as rows: a folder alone makes a Project, a port says which Account it reads
 /// through, an undone Binding says so where it stands, and no honesty tier reaches the screen. The
 /// same three rows in both of the panel's lives (`ConnectPanelMode`).
-enum ConnectPanelProjection {
+package enum ConnectPanelProjection {
     /// A labelled line: what the row is, what it says, and both spoken. Shared by the folder, the
     /// companion and the Agent rows.
     struct Row: Equatable {
@@ -15,12 +15,12 @@ enum ConnectPanelProjection {
         let isDetailMachine: Bool
     }
 
-    struct Panel: Equatable {
+    package struct Panel: Equatable {
         let heading: String
         let folder: Row
         /// The verb on the folder row, which changes with whether there is one.
         let folderCall: String
-        let ports: [PortRow]
+        package let ports: [PortRow]
         let companion: Row
         /// Absent while creating: a Project that does not exist yet starts no Sessions.
         let agent: Row?
@@ -30,7 +30,7 @@ enum ConnectPanelProjection {
         let isCallEnabled: Bool
     }
 
-    static func panel(from reading: ConnectReading) -> Panel {
+    package static func panel(from reading: ConnectReading) -> Panel {
         Panel(
             heading: heading(of: reading.mode),
             folder: folderRow(from: reading),

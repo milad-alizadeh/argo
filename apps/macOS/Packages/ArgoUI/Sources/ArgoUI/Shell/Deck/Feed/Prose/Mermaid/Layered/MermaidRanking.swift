@@ -18,7 +18,7 @@ struct MermaidRanking: Equatable, Sendable {
     }
 
     /// The nodes of each rank, in the order the source first named them.
-    func rows(of names: [String]) -> [[String]] {
+    package func rows(of names: [String]) -> [[String]] {
         (0 ..< depth).map { rank in names.filter { ranks[$0] == rank } }
     }
 }

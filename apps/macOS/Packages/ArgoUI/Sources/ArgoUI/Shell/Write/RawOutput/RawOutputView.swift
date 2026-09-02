@@ -3,7 +3,7 @@ import ArgoDesign
 import SwiftUI
 
 /// Everything a failed operation printed, at the affordance that invoked it (§5).
-struct RawOutputView: View {
+package struct RawOutputView: View {
     @Environment(\.argo) private var argo
 
     let output: RawOutput
@@ -11,7 +11,7 @@ struct RawOutputView: View {
     /// The channel's own name, spoken and drawn from one string.
     static let name = "Output"
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             header
             // Scrolls both ways: git aligns its own output in columns, so wrapping it would be a
@@ -38,11 +38,9 @@ struct RawOutputView: View {
             ArgoCopyButton(text: output.text, name: "Copy the output")
         }
     }
-}
 
-#Preview("Raw output — everything a refused write printed") {
-    if let output = RawOutput(WriteControlSpecimen.validationRefusal) {
-        RawOutputView(output: output)
-            .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(output: RawOutput) {
+        self.output = output
     }
 }

@@ -8,7 +8,7 @@ import SwiftUI
 /// Both flows hand their challenge back before they start waiting, which is what this card draws.
 /// GitHub's carries a code; Linear's is a redirect and carries none, so the code row is simply
 /// absent rather than filled with something to look at.
-struct DeviceCodeCard: View {
+package struct DeviceCodeCard: View {
     @Environment(\.argo) private var argo
     /// Whether the code has just been put on the pasteboard. Local, and never a fact about the
     /// flow: copying is not a step of the grant.
@@ -17,7 +17,7 @@ struct DeviceCodeCard: View {
     let challenge: ConnectChallenge
     let stopWaiting: () -> Void
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
             Text(DeviceCodeCopy.heading(for: challenge))
                 .argoText(ArgoTypography.rowTitle)
@@ -59,28 +59,13 @@ struct DeviceCodeCard: View {
             .buttonStyle(.quiet)
         }
     }
-}
 
-#Preview("Device code — waiting on the browser") {
-    Form {
-        Section {
-            DeviceCodeCard(challenge: ConnectFixture.challenge, stopWaiting: {})
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(challenge: ConnectChallenge, stopWaiting: @escaping () -> Void) {
+        self.challenge = challenge
+        self.stopWaiting = stopWaiting
     }
-    .formStyle(.grouped)
-    .frame(width: ArgoConnectPanel.width)
-    .argoAppearance()
 }
 
 // Linear's grant is a redirect: the browser is already open on it, so there is no code to type and
 // the card says where the tab is rather than what to put in it.
-#Preview("Redirect — waiting on the browser") {
-    Form {
-        Section {
-            DeviceCodeCard(challenge: ConnectFixture.redirect, stopWaiting: {})
-        }
-    }
-    .formStyle(.grouped)
-    .frame(width: ArgoConnectPanel.width)
-    .argoAppearance()
-}

@@ -46,7 +46,7 @@ struct ProseCache<Value> {
         ceiling = min(cap, max(ceiling, entries))
     }
 
-    mutating func reading(of text: String, read: (String) -> Value) -> Value {
+    package mutating func reading(of text: String, read: (String) -> Value) -> Value {
         if let known = readings[text] {
             #if DEBUG
                 cost.hits += 1

@@ -4,7 +4,7 @@ import ArgoEngine
 /// The bound provider, as the sidebar's foot names it (`cockpit-work-room.md` — the connection
 /// chip lives at the sidebar's foot, because it is a property of the provider whose views these
 /// are).
-struct TicketsProvider: Sendable, Equatable {
+package struct TicketsProvider: Sendable, Equatable {
     /// The provider's own name, verbatim — `GitHub`, `Linear`.
     let name: String
     /// The account the Binding authenticated as.
@@ -33,7 +33,7 @@ struct TicketsProvider: Sendable, Equatable {
         )
     }
 
-    init(name: String, account: String, state: ArgoOperationalState?, hasAnswered: Bool) {
+    package init(name: String, account: String, state: ArgoOperationalState?, hasAnswered: Bool) {
         self.name = name
         self.account = account
         self.state = state

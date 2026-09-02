@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// A chip that hugs its own words, not a rule across the measure: the marks that run the column
 /// say the reading changed SHAPE, and this one says something arrived inside it.
-struct SkillLoadedMarker: View {
+package struct SkillLoadedMarker: View {
     @Environment(\.argo) private var argo
 
     let skill: FeedSkillLoad
@@ -15,7 +15,7 @@ struct SkillLoadedMarker: View {
     let isOpen: Bool
     let open: () -> Void
 
-    var body: some View {
+    package var body: some View {
         Button(action: open) {
             chip
         }
@@ -73,31 +73,14 @@ struct SkillLoadedMarker: View {
 
     /// Argo's own words about the record, so they are not the skill's to change.
     private static let label = "Skill Loaded:"
-}
 
-#Preview("Skill loaded — read, unreadable, and nothing behind it") {
-    VStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
-        ForEach(Array(FeedProjection.previewSkillLoads.enumerated()), id: \.offset) { _, skill in
-            SkillLoadedMarker(skill: skill, isOpen: false, open: {})
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(skill: FeedSkillLoad, isOpen: Bool, open: @escaping () -> Void) {
+        self.skill = skill
+        self.isOpen = isOpen
+        self.open = open
     }
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
 }
 
 // The open row beside a closed one: the selected ground and the accent chevron are what say which
 // marker the panel is showing, and neither is reachable without a click.
-#Preview("Skill loaded — the marker whose evidence is open") {
-    VStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
-        let pair = Array(FeedProjection.previewSkillLoads.prefix(2).enumerated())
-        ForEach(pair, id: \.offset) { position, skill in
-            SkillLoadedMarker(skill: skill, isOpen: position == 0, open: {})
-        }
-    }
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
-}

@@ -11,7 +11,7 @@ import SwiftUI
 /// composer talks to the Session, it does not answer it. One `AskUserQuestion` is one card with one
 /// ground however many questions it put, because two grounds would put a seam through a single
 /// stop.
-struct FeedAskLine: View {
+package struct FeedAskLine: View {
     @Environment(\.argo) private var argo
     @Environment(\.feedAskAnswering) private var answering
 
@@ -21,7 +21,7 @@ struct FeedAskLine: View {
     /// the whole call goes as one answer.
     @State private var held = FeedAskHeld()
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.blockStep) {
             ForEach(Array(ask.questions.enumerated()), id: \.offset) { index, question in
                 FeedAskQuestion(
@@ -101,35 +101,15 @@ struct FeedAskLine: View {
     private var ground: ArgoColor {
         ask.ink == .attention ? ArgoOperationalState.attention.ground(in: argo.color) : .transparent
     }
-}
 
-#Preview("Ask — waiting on you, and the same feed's question once it is settled") {
-    VStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
-        ForEach(Array(FeedProjection.previewAsks.enumerated()), id: \.offset) { _, ask in
-            FeedAskLine(ask: ask)
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(ask: FeedAsk) {
+        self.ask = ask
     }
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
 }
 
 // Every shape a call can put a question in, while Argo holds it open. The settled reading is the
 // preview above; these are the states where the row is the thing you press.
-#Preview("Ask — every waiting shape") {
-    ScrollView {
-        VStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
-            ForEach(Array(FeedProjection.previewWaitingAsks.enumerated()), id: \.offset) { _, ask in
-                FeedAskLine(ask: ask)
-            }
-        }
-        .padding(ArgoFeedRow.inset)
-    }
-    .frame(width: 720, height: 760)
-    .argoDeckSurface()
-    .argoAppearance()
-}
 
 /// One question and the options it offered — read, or pressable.
 private struct FeedAskQuestion: View {
@@ -148,7 +128,7 @@ private struct FeedAskQuestion: View {
     /// The options it offered, numbered, in the order it offered them.
     let offers: [FeedAskOffer]
     let ink: ArgoColor
-    let waiting: Waiting?
+    package let waiting: Waiting?
 
     /// The ask glyph takes the same marker column the option numbers do, so the block is one grid
     /// and the read options need no indent of their own.

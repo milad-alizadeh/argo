@@ -6,7 +6,7 @@ import SwiftUI
 /// foot. Views and NOT tickets — a view's name is written rather than inherited from a tracker, so
 /// it fits a 280pt rail where nine of twelve real ticket titles truncated
 /// (`cockpit-work-room.md`).
-struct TicketsSidebar: View {
+package struct TicketsSidebar: View {
     @Environment(\.argo) private var argo
 
     let room: TicketsRoomProjection.Room
@@ -19,7 +19,7 @@ struct TicketsSidebar: View {
     /// What the hero performs (#898).
     var intents = NextUpIntents.inert
 
-    var body: some View {
+    package var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
             // Above the `List` and not a row inside it, so the strip lands on the same vertical as
             // the Sessions room's — a picker that scrolls in one room and not the other reads as
@@ -67,26 +67,17 @@ struct TicketsSidebar: View {
             .listRowInsets(EdgeInsets())
         }
     }
-}
 
-#Preview("Tickets sidebar") {
-    @Previewable @State var room = CockpitRoom.tickets
-    @Previewable @State var view = TicketsView.allOpen
-
-    TicketsSidebar(room: TicketsFixture.room, cockpitRoom: $room, view: $view)
-        .frame(width: ArgoLayout.sidebarMinimumWidth, height: 520)
-        .argoAppearance()
-}
-
-#Preview("Tickets sidebar — nothing bound") {
-    @Previewable @State var room = CockpitRoom.tickets
-    @Previewable @State var view = TicketsView.allOpen
-
-    TicketsSidebar(
-        room: TicketsRoomProjection.room(from: TicketsFixture.unbound),
-        cockpitRoom: $room,
-        view: $view,
-    )
-    .frame(width: ArgoLayout.sidebarMinimumWidth, height: 520)
-    .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        room: TicketsRoomProjection.Room,
+        cockpitRoom: Binding<CockpitRoom>,
+        view: Binding<TicketsView>,
+        intents: NextUpIntents = NextUpIntents.inert,
+    ) {
+        self.room = room
+        _cockpitRoom = cockpitRoom
+        _view = view
+        self.intents = intents
+    }
 }

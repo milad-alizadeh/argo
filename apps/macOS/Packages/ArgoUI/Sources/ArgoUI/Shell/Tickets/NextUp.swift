@@ -1,6 +1,6 @@
 /// What the sidebar's hero states: one ticket worth picking up, or which of three reasons there is
 /// none (`cockpit-work-room.md` — the Next-up hero).
-enum NextUp: Sendable, Equatable {
+package enum NextUp: Sendable, Equatable {
     case pick(Pick)
     /// Every open leaf is waiting on something still open.
     case nothingUnblocked
@@ -12,13 +12,13 @@ enum NextUp: Sendable, Equatable {
     /// At most two chips, and never a score (#273).
     static let chipLimit = 2
 
-    struct Pick: Sendable, Equatable, Identifiable {
+    package struct Pick: Sendable, Equatable, Identifiable {
         let number: Int
         let title: String
         /// Why this one, in the design's order and already cut to `chipLimit`.
         let reasons: [Reason]
 
-        var id: Int {
+        package var id: Int {
             number
         }
     }

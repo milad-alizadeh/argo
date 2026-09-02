@@ -9,7 +9,7 @@ import ArgoDesign
 /// moves the rects layer's frame and repaints nothing. The viewport rectangle is a second layer
 /// moved the same way, inside a `CATransaction` with actions disabled. The annotations are a third
 /// (#382), and the only one a pointer moving over the lane ever touches.
-final class MinimapLaneView: NSView {
+package final class MinimapLaneView: NSView {
     /// The feed this lane maps. Weak, because the handle belongs to the deck above both of them.
     weak var feed: FeedTableHandle?
 
@@ -279,13 +279,13 @@ final class MinimapLaneView: NSView {
         CGRect(x: 0, y: bounds.height - laneY - height, width: bounds.width, height: height)
     }
 
-    override func layout() {
+    package override func layout() {
         super.layout()
         refresh()
     }
 
     /// A fresh backing scale retires the pixels, whatever the band holds.
-    override func viewDidChangeBackingProperties() {
+    package override func viewDidChangeBackingProperties() {
         super.viewDidChangeBackingProperties()
         drawnBand = nil
         paintedAt = nil
@@ -294,7 +294,7 @@ final class MinimapLaneView: NSView {
 
     /// The hand is off the lane whatever happened to it — a drag interrupted by the window going
     /// away never gets its `mouseUp`, and a scrub left open would freeze the geometry for good.
-    override func viewDidMoveToWindow() {
+    package override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         grab = nil
         isLit = false

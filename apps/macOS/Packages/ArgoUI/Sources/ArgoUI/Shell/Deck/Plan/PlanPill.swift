@@ -5,7 +5,7 @@ import SwiftUI
 /// The plan, as one line floating above the dock: where the agent says it is, and how far along.
 /// Standing state on a standing surface, not in the feed (#425) — the agent replaces the list
 /// whole every time it moves.
-struct PlanPill: View {
+package struct PlanPill: View {
     @Environment(\.argo) private var argo
 
     let plan: PlanReading
@@ -21,7 +21,7 @@ struct PlanPill: View {
     @State private var isOpen = false
     @FocusState private var isFocused: Bool
 
-    var body: some View {
+    package var body: some View {
         pill
             // Above: the pill sits at the bottom of the deck, so a list opening downward would
             // open into the dock.
@@ -135,6 +135,13 @@ struct PlanPill: View {
     private var spoken: String {
         "\(counter.shown), \(currentStep)"
     }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(plan: PlanReading, isRevealed: Bool = false, isCursored: Bool = false) {
+        self.plan = plan
+        self.isRevealed = isRevealed
+        self.isCursored = isCursored
+    }
 }
 
 /// How far along the plan is, in words, holding still while it changes.
@@ -192,48 +199,4 @@ private struct PlanRing: View {
             // The arc says what the counter beside it already says in words.
             .accessibilityHidden(true)
     }
-}
-
-#Preview("Plan pill — a step under way") {
-    PlanPill(plan: PlanFixture.working)
-        .padding(ArgoSpacing.region)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Plan pill — the list revealed") {
-    PlanPill(plan: PlanFixture.working, isRevealed: true)
-        .padding(.top, 240)
-        .padding(ArgoSpacing.region)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Plan pill — a plan the agent has not started") {
-    PlanPill(plan: PlanFixture.unstarted)
-        .padding(ArgoSpacing.region)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Plan pill — a plan with every step behind it") {
-    PlanPill(plan: PlanFixture.finished)
-        .padding(ArgoSpacing.region)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Plan pill — one step") {
-    PlanPill(plan: PlanFixture.single)
-        .padding(ArgoSpacing.region)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Plan pill — a step longer than the pill") {
-    PlanPill(plan: PlanFixture.wordy)
-        .frame(width: 420)
-        .padding(ArgoSpacing.region)
-        .argoDeckSurface()
-        .argoAppearance()
 }

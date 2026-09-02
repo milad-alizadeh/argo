@@ -1,4 +1,5 @@
 import ArgoEngine
+@testable import ArgoSpecimens
 @testable import ArgoUI
 
 /// The Session the roster suites project from, defaulting to the plainest one there is: managed,

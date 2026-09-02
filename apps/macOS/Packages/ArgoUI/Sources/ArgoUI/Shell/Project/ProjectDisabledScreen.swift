@@ -12,13 +12,13 @@ import SwiftUI
 /// Said in WORDS, with no mark over them. The icon ladder tops out at a control's own rung
 /// (`ArgoIconSize`), and a 13pt folder above a whole window reads as a speck rather than as a
 /// state, so the failure ink on the status word is the only second reading here.
-struct ProjectDisabledScreen: View {
+package struct ProjectDisabledScreen: View {
     @Environment(\.argo) private var argo
 
-    let reading: ProjectDisabledReading
+    package let reading: ProjectDisabledReading
     let repair: ProjectRepair
 
-    var body: some View {
+    package var body: some View {
         ContentUnavailableView {
             VStack(spacing: ArgoSpacing.tight) {
                 Text(reading.name)
@@ -60,15 +60,10 @@ struct ProjectDisabledScreen: View {
         // opening something. A repair's label is the one thing here that may not be abbreviated.
         .fixedSize(horizontal: true, vertical: false)
     }
-}
 
-#Preview("Project disabled — folder not found") {
-    if let reading = ProjectDisabledReading(presentation: .unreachablePreview) {
-        ProjectDisabledScreen(
-            reading: reading,
-            repair: ProjectRepair(projectID: reading.projectID, actions: .inert),
-        )
-        .frame(width: ArgoLayout.windowMinimumWidth, height: ArgoLayout.windowMinimumHeight)
-        .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(reading: ProjectDisabledReading, repair: ProjectRepair) {
+        self.reading = reading
+        self.repair = repair
     }
 }

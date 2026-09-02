@@ -4,14 +4,14 @@ import SwiftUI
 
 /// What the ticket says, and the three sections under it: Deliveries, Children, Blocked by, in
 /// that order (`cockpit-work-room.md` — the ticket detail).
-struct TicketBody: View {
+package struct TicketBody: View {
     @Environment(\.argo) private var argo
 
     let ticket: TicketsRoomProjection.Detail
     /// What opening a child does.
     let open: (Int) -> Void
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoTicketDetail.headingStep) {
             deliveries
             prose
@@ -80,28 +80,10 @@ struct TicketBody: View {
             .argoText(ArgoTypography.bodyHeading)
             .padding(.top, ArgoTicketDetail.sectionLift)
     }
-}
 
-#Preview("Ticket body — two Deliveries, five children and six blockers") {
-    if let ticket = TicketsFixture.room(showing: 607).ticket {
-        ScrollView {
-            TicketBody(ticket: ticket, open: { _ in })
-                .padding(ArgoTicketDetail.inset)
-        }
-        .frame(width: ArgoTicketDetail.idealWidth, height: 620)
-        .argoDeckSurface()
-        .argoAppearance()
-    }
-}
-
-#Preview("Ticket body — no Delivery, and no edges to draw") {
-    if let ticket = TicketsRoomProjection.room(from: TicketsFixture.edgeless).ticket {
-        ScrollView {
-            TicketBody(ticket: ticket, open: { _ in })
-                .padding(ArgoTicketDetail.inset)
-        }
-        .frame(width: ArgoTicketDetail.idealWidth, height: 420)
-        .argoDeckSurface()
-        .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(ticket: TicketsRoomProjection.Detail, open: @escaping (Int) -> Void) {
+        self.ticket = ticket
+        self.open = open
     }
 }

@@ -12,7 +12,7 @@ import UniformTypeIdentifiers
 /// Files win over pixels where the board carries both. Copying a picture in the Finder puts the
 /// file's URL AND a preview of it on the board, and the file is the better answer — it has a name,
 /// a size, and an address the agent can read without Argo writing anything down.
-enum ComposerPasteboard {
+package enum ComposerPasteboard {
     static func attachments(on board: NSPasteboard = .general) -> [SessionAttachment] {
         if let urls = board.readObjects(forClasses: [NSURL.self]) as? [URL], !urls.isEmpty {
             return urls.map(SessionAttachment.file(at:))
@@ -37,7 +37,7 @@ enum ComposerPasteboard {
     /// Pixels in whatever the source offered — TIFF, which is what the pasteboard falls back to and
     /// what `NSImage` hands back when a fixture draws one, or the JPEG a drag can carry instead.
     /// Shared so the paste and the drop cannot re-encode differently.
-    static func png(from data: Data) -> Data? {
+    package static func png(from data: Data) -> Data? {
         NSBitmapImageRep(data: data)?.representation(using: .png, properties: [:])
     }
 

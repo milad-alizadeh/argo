@@ -3,7 +3,7 @@ import ArgoDesign
 /// One of the backlog's five views (`cockpit-work-room.md` — the sidebar holds views, not
 /// tickets). A view's name is WRITTEN rather than inherited from a tracker, which is the whole
 /// reason these fit a 280pt rail where ticket titles did not.
-enum TicketsView: String, Sendable, CaseIterable, Identifiable {
+package enum TicketsView: String, Sendable, CaseIterable, Identifiable {
     case allOpen
     case unblocked
     case inProgress
@@ -13,7 +13,7 @@ enum TicketsView: String, Sendable, CaseIterable, Identifiable {
     /// ticket has left it.
     case closed
 
-    var id: Self {
+    package var id: Self {
         self
     }
 

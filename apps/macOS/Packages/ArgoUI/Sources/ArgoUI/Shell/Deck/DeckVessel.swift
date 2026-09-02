@@ -3,7 +3,7 @@
 ///
 /// Carries no closures: a specimen builds one from a fixture, with no Hub behind it. What the
 /// controls DO is `DeckIntents`.
-enum DeckVessel: Equatable {
+package enum DeckVessel: Equatable {
     /// A Session Argo can put keystrokes to, with nothing blocking it.
     case composer(SessionComposerProjection.Composer)
     /// The Permission that Session is blocked on. It takes the composer's own slot.
@@ -41,7 +41,7 @@ enum DeckVessel: Equatable {
         return composer
     }
 
-    var prompt: PermissionPromptProjection.Prompt? {
+    package var prompt: PermissionPromptProjection.Prompt? {
         guard case let .prompt(prompt) = self else { return nil }
         return prompt
     }

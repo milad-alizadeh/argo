@@ -6,9 +6,9 @@ import ArgoEngine
 /// It answers two questions the row cannot: is the row on screen the one the gate is holding open,
 /// and can this Session be driven at all. They are separate because their absences mean opposite
 /// things — see `Asking`.
-enum FeedAskProjection {
+package enum FeedAskProjection {
     /// A question Argo can actually answer: the handles `answer` is keyed by, and the ask itself.
-    struct Live: Equatable, Sendable {
+    package struct Live: Equatable, Sendable {
         /// The roster's own id for the Session, and the gate's for the question. Both, because the
         /// answer must reach the question whose words are on screen — a Session with two questions
         /// up cannot say which one that is.
@@ -18,6 +18,14 @@ enum FeedAskProjection {
         /// share no id: the hook payload names no record, and the transcript's call carries no
         /// request. They do carry the same `tool_input`, which is what makes the match exact.
         let ask: Ask
+
+        /// Spelled out because Swift synthesises no memberwise initializer above
+        /// `internal`, and the specimens build this from their own target (#1085).
+        package init(sessionID: String, askID: String, ask: Ask) {
+            self.sessionID = sessionID
+            self.askID = askID
+            self.ask = ask
+        }
     }
 
     /// What the feed is told about answering, for one Session.
@@ -28,13 +36,20 @@ enum FeedAskProjection {
     /// gate may not have raised it yet, or Argo restarted under a CLI still holding it, and there
     /// the row keeps the honest "still waiting" reading #534 shipped. Collapsing the two would
     /// render a question nobody has answered as one somebody did.
-    struct Asking: Equatable, Sendable {
+    package struct Asking: Equatable, Sendable {
         let live: Live?
         let isDriveable: Bool
 
         /// What a feed with no Session behind it is told — a preview, a specimen, a render.
         /// Driveable, because those are readings of a live cockpit and not of a dead Session.
         static let none = Asking(live: nil, isDriveable: true)
+
+        /// Spelled out because Swift synthesises no memberwise initializer above
+        /// `internal`, and the specimens build this from their own target (#1085).
+        package init(live: Live?, isDriveable: Bool) {
+            self.live = live
+            self.isDriveable = isDriveable
+        }
     }
 
     static func asking(for session: CockpitPresentation.Session?) -> Asking {

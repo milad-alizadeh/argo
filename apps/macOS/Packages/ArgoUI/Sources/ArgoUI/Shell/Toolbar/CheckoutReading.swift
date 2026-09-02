@@ -1,13 +1,13 @@
 /// What the toolbar's checkout half draws: one word for the global primary checkout, plus the
 /// tooltip and the spoken value built from it.
-struct CheckoutReading: Equatable {
+package struct CheckoutReading: Equatable {
     let label: String
     let help: String
     let announcement: String
 }
 
 extension CheckoutReading {
-    init(presentation: CockpitPresentation) {
+    package init(presentation: CockpitPresentation) {
         self.init(checkout: presentation.checkout)
     }
 

@@ -3,10 +3,10 @@ import ArgoDesign
 import SwiftUI
 
 /// Native Sessions navigation with stable, information-dense rows.
-struct SessionNavigator: View {
+package struct SessionNavigator: View {
     @Environment(\.argo) private var argo
 
-    let rows: [SessionRosterProjection.Row]
+    package let rows: [SessionRosterProjection.Row]
     /// What is behind the foot. Which list a Session belongs to is the projection's decision.
     var archived: [SessionRosterProjection.Row] = []
     @Binding var selection: CockpitPresentation.Session.ID?
@@ -31,7 +31,7 @@ struct SessionNavigator: View {
     /// that opened itself would put the cleared rows back under the ones that were kept.
     @State private var isArchiveShowing = false
 
-    var body: some View {
+    package var body: some View {
         List(selection: $selection) {
             if rows.isEmpty, archived.isEmpty {
                 emptyState.previewSafeListRow()
@@ -158,30 +158,27 @@ struct SessionNavigator: View {
         .padding(.vertical, ArgoSpacing.tight)
         .listRowSeparator(.hidden)
     }
-}
 
-#Preview("Sessions navigation") {
-    @Previewable @State var selection = CockpitPresentation.preview.sessions.first?.id
-
-    SessionNavigator(rows: SessionRosterProjection.previewRows, selection: $selection)
-        .frame(width: 280, height: 480)
-        .argoAppearance()
-}
-
-#Preview("Sessions navigation — no selection") {
-    SessionNavigator(rows: SessionRosterProjection.previewRows, selection: .constant(nil))
-        .frame(width: 320, height: 480)
-        .argoAppearance()
-}
-
-#Preview("Sessions navigation — with an archive at the foot") {
-    SessionNavigator(
-        rows: ArchivedRosterSpecimen.rows,
-        archived: ArchivedRosterSpecimen.archived,
-        selection: .constant(nil),
-    )
-    .frame(width: 320, height: 480)
-    .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        rows: [SessionRosterProjection.Row],
+        archived: [SessionRosterProjection.Row] = [],
+        selection: Binding<CockpitPresentation.Session.ID?>,
+        archive: @escaping (String, Bool) -> Void = { _, _ in },
+        rename: @escaping (String, String?) -> Void = { _, _ in },
+        renamingRowID: Binding<String?> = .constant(nil),
+        openFold: @escaping (String) -> Void = { _ in },
+        isArchiveRevealed: Bool = false,
+    ) {
+        self.rows = rows
+        self.archived = archived
+        _selection = selection
+        self.archive = archive
+        self.rename = rename
+        self.renamingRowID = renamingRowID
+        self.openFold = openFold
+        self.isArchiveRevealed = isArchiveRevealed
+    }
 }
 
 #Preview("Sessions navigation — empty") {

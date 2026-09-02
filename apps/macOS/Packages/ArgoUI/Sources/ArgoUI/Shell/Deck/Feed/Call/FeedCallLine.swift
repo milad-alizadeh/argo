@@ -10,7 +10,7 @@ import SwiftUI
 /// the panel's, whole.
 ///
 /// Every part of the sentence is set on ONE rung, interface and mono alike.
-struct FeedCallLine: View {
+package struct FeedCallLine: View {
     @Environment(\.argo) private var argo
 
     let call: FeedCall
@@ -19,7 +19,7 @@ struct FeedCallLine: View {
     let isOpen: Bool
     let open: () -> Void
 
-    var body: some View {
+    package var body: some View {
         Button(action: open) {
             sentence
         }
@@ -139,48 +139,14 @@ struct FeedCallLine: View {
     private var markInk: ArgoColor {
         isRunning ? argo.color.interaction.accent : argo.color.text.disabled
     }
-}
 
-#Preview("Call lines — every kind the preview transcript makes") {
-    VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
-        ForEach(FeedProjection.previewCallRows) { row in
-            if case let .call(call) = row.content {
-                FeedCallLine(call: call, isOpen: false, open: {})
-            }
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(call: FeedCall, isOpen: Bool, open: @escaping () -> Void) {
+        self.call = call
+        self.isOpen = isOpen
+        self.open = open
     }
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
 }
 
 // The one state a still cannot prove, so it is here to be WATCHED: the pass has to cross the whole
 // sentence as one piece, with no seam where a word ends.
-#Preview("Call lines — the one still running, under the ones that finished") {
-    VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
-        ForEach(FeedProjection.previewPendingCallRows) { row in
-            if case let .call(call) = row.content {
-                FeedCallLine(call: call, isOpen: false, open: {})
-            }
-        }
-    }
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Call lines — the row whose evidence is open") {
-    VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
-        ForEach(FeedProjection.previewCallRows) { row in
-            if case let .call(call) = row.content {
-                FeedCallLine(call: call, isOpen: call.ending.hasFailed, open: {})
-            }
-        }
-    }
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
-}

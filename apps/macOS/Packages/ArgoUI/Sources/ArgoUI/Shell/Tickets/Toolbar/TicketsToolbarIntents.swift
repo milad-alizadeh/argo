@@ -10,7 +10,7 @@ import ArgoEngine
 /// One value rather than four closures, because the cap is three parameters and these travel
 /// together anyway. Every slot is assigned in `ticketsIntents`; a slot nothing assigns is what let
 /// the funnel draw live and do nothing (#900).
-struct TicketsToolbarIntents {
+package struct TicketsToolbarIntents {
     /// The call-to-action, which belongs to no ticket — it makes one, through a provider. So it is
     /// this room's one provider-port write control, and the verb travels with what the control
     /// renders (#275).
@@ -19,13 +19,25 @@ struct TicketsToolbarIntents {
     var verbs = Verbs()
 
     /// A write verb, what its control renders, and the repair the disabled reading points at.
-    struct Creation {
+    package struct Creation {
         var act: () -> Void = {}
         var control = WriteControlState.live
         var reconnect: () -> Void = {}
+
+        /// Spelled out because Swift synthesises no memberwise initializer above
+        /// `internal`, and the specimens build this from their own target (#1085).
+        package init(
+            act: @escaping () -> Void = {},
+            control: WriteControlState = WriteControlState.live,
+            reconnect: @escaping () -> Void = {},
+        ) {
+            self.act = act
+            self.control = control
+            self.reconnect = reconnect
+        }
     }
 
-    struct Verbs {
+    package struct Verbs {
         var start: () -> Void = {}
         /// Which command `Start` will send, drawn beside the word so the press can be aimed (#899),
         /// and `nil` where the ticket asks for none — an empty composer, said as `Start` alone.
@@ -40,6 +52,20 @@ struct TicketsToolbarIntents {
         /// Verbs with nothing behind them, for a preview and for a room whose ticket has no link
         /// to open.
         @MainActor static let inert = Verbs()
+
+        /// Spelled out because Swift synthesises no memberwise initializer above
+        /// `internal`, and the specimens build this from their own target (#1085).
+        package init(
+            start: @escaping () -> Void = {},
+            command: WorkCommand? = nil,
+            openOnHost: (() -> Void)? = nil,
+            copyLink: (() -> Void)? = nil,
+        ) {
+            self.start = start
+            self.command = command
+            self.openOnHost = openOnHost
+            self.copyLink = copyLink
+        }
     }
 
     /// A toolbar whose controls perform nothing, for a `#Preview` and a specimen. Not a state the

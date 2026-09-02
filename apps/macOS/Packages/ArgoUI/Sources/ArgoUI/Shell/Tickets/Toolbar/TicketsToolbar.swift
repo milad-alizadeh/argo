@@ -14,14 +14,14 @@ import SwiftUI
 ///
 /// Each vessel draws its own glass, so every item hides the shared background a toolbar region
 /// would otherwise stack a second capsule under.
-struct TicketsToolbar: ToolbarContent {
-    let reading: TicketsChromeProjection.Reading
+package struct TicketsToolbar: ToolbarContent {
+    package let reading: TicketsChromeProjection.Reading
     var intents = TicketsToolbarIntents.inert
     /// What the row HOLDS rather than reads — the query, which outlives the pane and is therefore
     /// held above the room (`TicketsRoom.Held`).
     var held = TicketsRoom.Held.unheld
 
-    @ToolbarContentBuilder var body: some ToolbarContent {
+    @ToolbarContentBuilder package var body: some ToolbarContent {
         if reading.draws {
             // `narrows` and not `draws`: the controls that act on the list go with the list they
             // act on, so an empty backlog loses them where New ticket survives.
@@ -55,5 +55,16 @@ struct TicketsToolbar: ToolbarContent {
                 .sharedBackgroundVisibility(.hidden)
             }
         }
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        reading: TicketsChromeProjection.Reading,
+        intents: TicketsToolbarIntents = TicketsToolbarIntents.inert,
+        held: TicketsRoom.Held = TicketsRoom.Held.unheld,
+    ) {
+        self.reading = reading
+        self.intents = intents
+        self.held = held
     }
 }

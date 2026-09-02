@@ -11,8 +11,8 @@ import SwiftUI
 /// The Project half stays because it is the only way to another Project: a reader trapped on the
 /// error state of one Project could not switch to a Project that is fine.
 struct ProjectDisabledToolbar: ToolbarContent {
-    let reading: ProjectVesselReading
-    let rows: [ProjectMenuProjection.Row]
+    package let reading: ProjectVesselReading
+    package let rows: [ProjectMenuProjection.Row]
     let actions: CockpitActions
 
     var body: some ToolbarContent {

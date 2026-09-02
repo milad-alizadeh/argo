@@ -1,4 +1,6 @@
 import ArgoEngine
+import ArgoFixtures
+@testable import ArgoSpecimens
 @testable import ArgoUI
 
 /// Calls as a transcript writes them — an emitted call, and the outcome that answers it some

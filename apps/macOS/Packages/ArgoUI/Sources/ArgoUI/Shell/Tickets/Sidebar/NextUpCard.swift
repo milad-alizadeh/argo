@@ -13,7 +13,7 @@ import SwiftUI
 ///
 /// TWO controls since #899: the card opens the ticket, and the starter at its foot starts a Session
 /// on it. They are siblings rather than one nested in the other — see `opener(_:)`.
-struct NextUpCard: View {
+package struct NextUpCard: View {
     @Environment(\.argo) private var argo
 
     /// The card states one ticket, so its title wraps to the rail's width rather than truncating.
@@ -24,7 +24,7 @@ struct NextUpCard: View {
     /// What pressing it does (#898), inert for a `#Preview` and a specimen.
     var intents = NextUpIntents.inert
 
-    var body: some View {
+    package var body: some View {
         statement
             .padding(.horizontal, ArgoTicketsSidebar.heroInset)
             .padding(.top, ArgoTicketsSidebar.heroInset)
@@ -141,17 +141,12 @@ struct NextUpCard: View {
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
-}
 
-#Preview("Next-up hero — the four tiers") {
-    VStack(alignment: .leading, spacing: ArgoSpacing.base) {
-        NextUpCard(nextUp: TicketsFixture.room.nextUp ?? .backlogClear)
-        NextUpCard(nextUp: .nothingUnblocked)
-        NextUpCard(nextUp: .allRunning)
-        NextUpCard(nextUp: .backlogClear)
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(nextUp: NextUp, intents: NextUpIntents = NextUpIntents.inert) {
+        self.nextUp = nextUp
+        self.intents = intents
     }
-    .frame(width: ArgoLayout.sidebarMinimumWidth)
-    .argoAppearance()
 }
 
 #Preview("Next-up hero — one earned chip, and a title that wraps") {

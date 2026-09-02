@@ -2,14 +2,14 @@ import ArgoDesign
 import ArgoEngine
 import Foundation
 
-enum SessionRosterProjection {
+package enum SessionRosterProjection {
     /// The roster proper: everything the user has not cleared off it.
     ///
     /// The filter is on Argo's own flag and on nothing observed, so a Session whose transcript
     /// grew a second ago is as absent as one that has not moved in a week (#502, stories 14, 16).
     ///
     /// `now` is a parameter so an age is arithmetic against a fixed moment rather than the clock.
-    static func rows(
+    package static func rows(
         from sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
         selection: String? = nil,
@@ -34,7 +34,7 @@ enum SessionRosterProjection {
 
     /// What is behind the foot of the roster. The same rows by the same rules — a Session put out
     /// of sight is not a Session described differently.
-    static func archivedRows(
+    package static func archivedRows(
         from sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
         selection: String? = nil,

@@ -5,7 +5,7 @@ import SwiftUI
 /// One picture in a gallery: the thumbnail, and where it came from. No caption — the name,
 /// dimensions and provenance words belong to the lightbox; provenance is drawn instead, and the
 /// address survives as the hover's word and the spoken label.
-struct FeedShotView: View {
+package struct FeedShotView: View {
     @Environment(\.argo) private var argo
 
     let shot: FeedShot
@@ -15,7 +15,7 @@ struct FeedShotView: View {
     /// answers to: a shot drawing an absence must not also be a control.
     @State private var showing = MediaShowing.undecoded
 
-    var body: some View {
+    package var body: some View {
         Button { open(shot) } label: { plate }
             .buttonStyle(.plain)
             .disabled(!showing.provenance.showsPicture)
@@ -127,17 +127,12 @@ struct FeedShotView: View {
     private var pictureHeight: CGFloat {
         ArgoFeedRow.shotHeight - mount * 2
     }
-}
 
-#Preview("Shot — the four provenances, side by side") {
-    HStack(alignment: .top, spacing: ArgoFeedRow.shotGap) {
-        ForEach(Array(FeedProjection.previewShots.enumerated()), id: \.offset) { _, shot in
-            FeedShotView(shot: shot, open: { _ in })
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(shot: FeedShot, open: @escaping (FeedShot) -> Void) {
+        self.shot = shot
+        self.open = open
     }
-    .padding(ArgoFeedRow.inset)
-    .argoDeckSurface()
-    .argoAppearance()
 }
 
 #Preview("Shot — a picture the record kept nothing for") {

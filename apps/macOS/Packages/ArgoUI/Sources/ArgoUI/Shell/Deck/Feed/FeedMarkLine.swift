@@ -9,7 +9,7 @@ import SwiftUI
 ///
 /// The words are machine type — the record talking about itself, not the agent. A mark with
 /// nothing to say is the rule alone, running the whole column.
-struct FeedMarkLine: View {
+package struct FeedMarkLine: View {
     @Environment(\.argo) private var argo
     /// How this row reaches another Session. From the environment rather than threaded through the
     /// four views between here and the shell, exactly as `deckIsResizing` is.
@@ -20,7 +20,7 @@ struct FeedMarkLine: View {
     /// `working` is drawn by `FeedWorkingThread` and never as a rule, because a rule with no words
     /// let into it is already how this view says a Turn ENDED. Routed here rather than at the
     /// caller, so every path to a mark takes the same fork.
-    var body: some View {
+    package var body: some View {
         switch mark {
         case .working: FeedWorkingThread()
         case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .permissionExpired,
@@ -82,18 +82,11 @@ struct FeedMarkLine: View {
             .fill(argo.color.edge.hairline)
             .frame(height: ArgoStroke.hairline)
     }
-}
 
-#Preview("Marks — every one the preview transcript punctuates its reading with") {
-    VStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
-        ForEach(Array(FeedProjection.previewMarks.enumerated()), id: \.offset) { _, mark in
-            FeedMarkLine(mark: mark)
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(mark: FeedMark) {
+        self.mark = mark
     }
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
 }
 
 // A stop reason outside the vocabulary reads `unknown` rather than the nearest guess.
@@ -107,13 +100,3 @@ struct FeedMarkLine: View {
 
 // The expiry against an ordinary mark rather than alone — the preview transcript carries no
 // expiry, so this is the only place the two ever meet.
-#Preview("Marks — a Permission the gate refused because nobody answered") {
-    VStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
-        FeedMarkLine(mark: .turnEnded(.endTurn))
-        FeedMarkLine(mark: .permissionExpired(FeedProjection.previewExpiry))
-    }
-    .padding(ArgoFeedRow.inset)
-    .frame(width: 720)
-    .argoDeckSurface()
-    .argoAppearance()
-}

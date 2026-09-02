@@ -10,10 +10,10 @@ import SwiftUI
 /// It is also the room's one provider-port write control, so §4 and §7 of the failure spec decide
 /// its state: never hidden, disabled in place while a create is on the wire or the token is dead,
 /// and untouched by mere staleness.
-struct NewTicketButton: View {
+package struct NewTicketButton: View {
     var creation = TicketsToolbarIntents.Creation()
 
-    var body: some View {
+    package var body: some View {
         HStack(spacing: ArgoSpacing.comfortable) {
             ToolbarVessel {
                 ToolbarIcon(symbol: ArgoSymbol.newTicket, label: "New ticket", act: creation.act)
@@ -24,6 +24,11 @@ struct NewTicketButton: View {
             WriteNote(control: creation.control, reconnect: creation.reconnect)
         }
     }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(creation: TicketsToolbarIntents.Creation = TicketsToolbarIntents.Creation()) {
+        self.creation = creation
+    }
 }
 
 #Preview("New ticket button") {
@@ -33,14 +38,3 @@ struct NewTicketButton: View {
 }
 
 // Every state past `live`, off the same list the specimens render.
-#Preview("New ticket button — pending, refused, and no usable token") {
-    VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-        ForEach(WriteControlSpecimen.states, id: \.name) { state in
-            NewTicketButton(
-                creation: TicketsToolbarIntents.Creation(control: state.control, reconnect: {}),
-            )
-        }
-    }
-    .padding(ArgoSpacing.region)
-    .argoAppearance()
-}

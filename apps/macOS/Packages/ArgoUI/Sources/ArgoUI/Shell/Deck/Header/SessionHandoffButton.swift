@@ -5,7 +5,7 @@ import SwiftUI
 /// nothing — whether there is one, and how urgent, are `SessionHeaderProjection.handoff(from:)`'s.
 /// The ink is the TIER's, and the button disables itself while a press is still being answered:
 /// each press starts another handoff.
-struct SessionHandoffButton: View {
+package struct SessionHandoffButton: View {
     @Environment(\.argo) private var argo
 
     let handoff: SessionHeaderProjection.Handoff
@@ -13,7 +13,7 @@ struct SessionHandoffButton: View {
 
     @State private var isRunning = false
 
-    var body: some View {
+    package var body: some View {
         Button {
             Task {
                 isRunning = true
@@ -51,15 +51,10 @@ struct SessionHandoffButton: View {
             ? handoff.tier.tint(in: argo.color)
             : argo.color.text.disabled
     }
-}
 
-#Preview("Hand off — amber, red, and out of reach") {
-    VStack(alignment: .leading, spacing: ArgoSpacing.section) {
-        ForEach(Array(SessionHeaderFixture.handoffOffers.enumerated()), id: \.offset) { offer in
-            SessionHandoffButton(handoff: offer.element, run: {})
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(handoff: SessionHeaderProjection.Handoff, run: @escaping () async -> Void) {
+        self.handoff = handoff
+        self.run = run
     }
-    .padding(ArgoSpacing.region)
-    .argoDeckSurface()
-    .argoAppearance()
 }

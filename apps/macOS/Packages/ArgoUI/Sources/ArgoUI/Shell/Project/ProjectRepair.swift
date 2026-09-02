@@ -9,7 +9,7 @@
 /// Relocate is first-class rather than a workaround: a Project is keyed to a stable id and the path
 /// is a mutable attribute (`CONTEXT.md` L1), so re-pointing it keeps the Project it already was and
 /// everything linked to that id comes with it.
-struct ProjectRepair {
+package struct ProjectRepair {
     /// The ellipsis is the platform's promise that a folder picker follows.
     static let relocate = "Relocate…"
     /// Not `Remove project`: what goes is Argo's registration, and the label says which.
@@ -32,5 +32,11 @@ struct ProjectRepair {
     /// Forget the Project. `ProjectRegistry.removing(id:)` is the whole of what that means.
     func forget() {
         actions.projects.remove(projectID)
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(projectID: String, actions: CockpitActions) {
+        self.projectID = projectID
+        self.actions = actions
     }
 }

@@ -5,10 +5,13 @@ import SwiftUI
 /// The hairline where two zones meet, taking its orientation from the stack it sits in. It
 /// separates without enclosing either side — no border, no shadow, no rounded container — which
 /// is what keeps the deck one plane rather than a stack of cards (D40).
-struct DeckSeparator: View {
+package struct DeckSeparator: View {
     @Environment(\.argo) private var argo
 
-    var body: some View {
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init() {}
+
+    package var body: some View {
         ArgoRule(ink: argo.color.edge.hairline)
     }
 }

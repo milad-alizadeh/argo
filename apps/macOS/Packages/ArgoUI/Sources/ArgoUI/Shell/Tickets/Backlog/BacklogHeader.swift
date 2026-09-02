@@ -12,12 +12,12 @@ import SwiftUI
 /// **Words only.** The controls that narrow this list are in the window's row with every other
 /// control the room has, because a row of marks met at three different heights reads as three
 /// unrelated rows — see `TicketsToolbar`.
-struct BacklogHeader: View {
+package struct BacklogHeader: View {
     @Environment(\.argo) private var argo
 
-    let reading: TicketsChromeProjection.Reading
+    package let reading: TicketsChromeProjection.Reading
 
-    var body: some View {
+    package var body: some View {
         HStack(spacing: ArgoSpacing.base) {
             lines
             Spacer(minLength: ArgoSpacing.base)
@@ -41,30 +41,12 @@ struct BacklogHeader: View {
         }
         .accessibilityHidden(true)
     }
-}
 
-#Preview("Backlog header") {
-    BacklogHeader(
-        reading: TicketsChromeProjection.reading(
-            of: TicketsFixture.room, in: .allOpen, showing: 272,
-        ),
-    )
-    .frame(width: ArgoBacklogList.width)
-    .argoDeckSurface()
-    .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(reading: TicketsChromeProjection.Reading) {
+        self.reading = reading
+    }
 }
 
 // The vacancy: the provider answered with nothing, so the count says zero and the two controls that
 // narrow a list are gone with the list.
-#Preview("Backlog header — the provider answered with nothing") {
-    BacklogHeader(
-        reading: TicketsChromeProjection.reading(
-            of: TicketsRoomProjection.room(from: TicketsFixture.answeredEmpty),
-            in: .allOpen,
-            showing: nil,
-        ),
-    )
-    .frame(width: ArgoBacklogList.width)
-    .argoDeckSurface()
-    .argoAppearance()
-}

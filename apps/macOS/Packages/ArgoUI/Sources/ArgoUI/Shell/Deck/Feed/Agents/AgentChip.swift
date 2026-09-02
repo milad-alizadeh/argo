@@ -8,7 +8,7 @@ import SwiftUI
 /// from. It appears only once the subagent has reported — with the delegating call's result, and
 /// never at all for a backgrounded Agent (#908) — because a chip showing `0` would claim the work
 /// was free rather than unpriced.
-struct AgentChip: View {
+package struct AgentChip: View {
     @Environment(\.argo) private var argo
 
     let agent: FeedAgent
@@ -21,7 +21,7 @@ struct AgentChip: View {
     /// what is happening and simply does not claim to be a control.
     var scope: (() -> Void)?
 
-    var body: some View {
+    package var body: some View {
         if let scope {
             Button(action: scope) { line }
                 .buttonStyle(FeedRowButtonStyle(isOpen: isSelected))
@@ -60,28 +60,11 @@ struct AgentChip: View {
         .compactMap(\.self)
         .joined(separator: ", ")
     }
-}
 
-#Preview("Agent chips — running, and landed with what it spent") {
-    VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-        ForEach(FeedAgents.all(in: FeedProjection.previewRows, of: .running)) {
-            AgentChip(agent: $0)
-        }
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(agent: FeedAgent, isSelected: Bool = false, scope: (() -> Void)? = nil) {
+        self.agent = agent
+        self.isSelected = isSelected
+        self.scope = scope
     }
-    .padding(ArgoSpacing.comfortable)
-    .frame(width: ArgoAgentsRail.width)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Agent chips — the selected one, against the ones beside it") {
-    VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-        ForEach(FeedAgents.all(in: FeedProjection.previewRows, of: .running)) { agent in
-            AgentChip(agent: agent, isSelected: agent.id == 1, scope: {})
-        }
-    }
-    .padding(ArgoSpacing.comfortable)
-    .frame(width: ArgoAgentsRail.width)
-    .argoDeckSurface()
-    .argoAppearance()
 }

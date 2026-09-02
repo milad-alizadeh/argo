@@ -5,7 +5,7 @@ import Foundation
 /// Inside a Session everything is relative to that Session's own cwd, so the prefix says nothing a
 /// reader does not already know. It shortens whatever it is given rather than parsing a path out of
 /// it, because a command line carries paths too, in the middle of its own words.
-struct FeedPath: Equatable, Sendable {
+package struct FeedPath: Equatable, Sendable {
     /// Where the Session is working. `nil` for a record that never said, which is a real case: a
     /// transcript is read from the first line and the cwd may not have arrived yet.
     let cwd: String?

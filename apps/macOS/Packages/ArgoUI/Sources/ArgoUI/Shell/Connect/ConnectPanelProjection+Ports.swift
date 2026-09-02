@@ -20,8 +20,8 @@ extension ConnectPanelProjection {
         let title: String
     }
 
-    struct PortRow: Identifiable, Equatable {
-        let id: AccountPort
+    package struct PortRow: Identifiable, Equatable {
+        package let id: AccountPort
         let row: Row
         let choices: [AccountChoice]
         let offers: [Offer]

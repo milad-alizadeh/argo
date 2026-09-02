@@ -18,7 +18,7 @@ import SwiftUI
 struct ModePicker: View {
     @Environment(\.argo) private var argo
 
-    let reading: SessionModeReading
+    package let reading: SessionModeReading
     /// A rung picked while a Turn was running, waiting on the boundary to be walked (#940). It is
     /// drawn instead of the reading, under `≈` and ticking nothing — see `ModeControlLabel`.
     var heldMode: SessionMode?

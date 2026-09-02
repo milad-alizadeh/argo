@@ -6,7 +6,7 @@ import SwiftUI
 /// The composer's slot while the agent waits on a decision: the vessel becomes the prompt — one
 /// input surface, always holding whichever question is live. The field is replaced, not disabled,
 /// because there is nothing to type into while the agent is blocked on you.
-struct PermissionPrompt: View {
+package struct PermissionPrompt: View {
     @Environment(\.argo) private var argo
 
     let prompt: PermissionPromptProjection.Prompt
@@ -18,7 +18,7 @@ struct PermissionPrompt: View {
     /// able to see, and undo, what they have already blessed.
     var revoke: (String) -> Void = { _ in }
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             if !prompt.standingAllows.isEmpty {
                 StandingAllowTray(allows: prompt.standingAllows, revoke: revoke)
@@ -57,29 +57,15 @@ struct PermissionPrompt: View {
                 .foregroundStyle(argo.color.text.secondary)
         }
     }
-}
 
-#Preview("Permission prompt — a command") {
-    PermissionPrompt(prompt: PermissionSpecimen.command, decide: { _ in })
-        .padding(ArgoSpacing.section)
-        .frame(width: 760)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Permission prompt — a path and its hunk") {
-    PermissionPrompt(prompt: PermissionSpecimen.edit, decide: { _ in })
-        .padding(ArgoSpacing.section)
-        .frame(width: 760)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Permission prompt — the Reduce Transparency fallback") {
-    PermissionPrompt(prompt: PermissionSpecimen.command, decide: { _ in })
-        .padding(ArgoSpacing.section)
-        .frame(width: 760)
-        .argoWithoutTransparency()
-        .argoDeckSurface()
-        .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        prompt: PermissionPromptProjection.Prompt,
+        decide: @escaping (PermissionDecision) -> Void,
+        revoke: @escaping (String) -> Void = { _ in },
+    ) {
+        self.prompt = prompt
+        self.decide = decide
+        self.revoke = revoke
+    }
 }

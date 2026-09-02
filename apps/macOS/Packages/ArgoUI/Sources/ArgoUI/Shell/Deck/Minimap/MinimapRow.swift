@@ -5,7 +5,7 @@ import Foundation
 ///
 /// Deliberately cheap. A reading holds one of these per row and is rebuilt whenever the feed
 /// reshapes, so nothing here allocates and nothing here walks a string.
-struct MinimapRow: Equatable, Sendable {
+package struct MinimapRow: Equatable, Sendable {
     var height: CGFloat
     var shape: MinimapRowShape = .whole(.boundary)
     /// How far down its own cell the row's content starts. The step to the row above is drawn as

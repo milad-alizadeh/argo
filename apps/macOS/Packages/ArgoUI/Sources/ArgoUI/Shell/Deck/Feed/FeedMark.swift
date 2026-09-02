@@ -3,7 +3,7 @@ import ArgoEngine
 /// The punctuation of a reading: the things that happen BETWEEN what an agent said and did — rows
 /// about the shape of the record itself rather than about the work. One kind rather than four
 /// because they are drawn alike and a run of looking breaks at each of them.
-enum FeedMark: Equatable, Sendable {
+package enum FeedMark: Equatable, Sendable {
     /// History was condensed here. The resume chain stitches across it; the reading says so.
     case compacted
     /// A Turn ended, and which reason ended it. An unreadable reason arrives as `.unknown` and is
@@ -106,7 +106,7 @@ extension FeedMark {
     /// What a screen reader is told the mark is — a rule with no words is a shape, and a shape does
     /// not carry. Switched exhaustively with no `default`, so a mark added to this enum has to say
     /// what it SOUNDS like rather than inheriting a fallback written for turn boundaries.
-    var spoken: String {
+    package var spoken: String {
         switch self {
         case .compacted, .turnEnded, .spent, .handedOff: words ?? "Turn ended"
         // A sentence rather than the caption: "interrupted" alone read out is an adjective with

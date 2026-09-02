@@ -13,7 +13,7 @@ import SwiftUI
 /// It renders the SAME `WriteControlState` the row's button does, off the same reading: a token
 /// that died while the sheet was open disables `Create ticket` in place and points at the same
 /// repair, rather than letting the sheet spend a write the row already knows is refused.
-struct NewTicketComposer: View {
+package struct NewTicketComposer: View {
     @Environment(\.argo) private var argo
 
     @Binding var composition: TicketComposition
@@ -22,7 +22,7 @@ struct NewTicketComposer: View {
     var cancel: () -> Void = {}
     var create: (TicketDraft) -> Void = { _ in }
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.section) {
             Text("New ticket")
                 .argoText(ArgoTypography.identityHeading)
@@ -76,21 +76,26 @@ struct NewTicketComposer: View {
                 .disabled(composition.draft == nil || !control.isEnabled)
         }
     }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(
+        composition: Binding<TicketComposition>,
+        control: WriteControlState = WriteControlState.live,
+        reconnect: @escaping () -> Void = {},
+        cancel: @escaping () -> Void = {},
+        create: @escaping (TicketDraft) -> Void = { _ in },
+    ) {
+        _composition = composition
+        self.control = control
+        self.reconnect = reconnect
+        self.cancel = cancel
+        self.create = create
+    }
 }
 
 #Preview("New ticket composer") {
     @Previewable @State var composition = TicketComposition()
 
     NewTicketComposer(composition: $composition)
-        .argoAppearance()
-}
-
-#Preview("New ticket composer — the token died while it was open") {
-    @Previewable @State var composition = TicketComposition(
-        title: "The Tickets room's row draws four verbs and performs none",
-        body: "Every control in the row takes a click and returns.",
-    )
-
-    NewTicketComposer(composition: $composition, control: .blocked(ConnectFixture.personal))
         .argoAppearance()
 }

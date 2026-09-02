@@ -15,7 +15,7 @@ enum MermaidOrdering {
 
 extension MermaidOrdering {
     /// The rows of `graph`, each in the order its nodes should be drawn.
-    static func rows(of graph: MermaidGraph, ranked: MermaidRanking) -> [[String]] {
+    package static func rows(of graph: MermaidGraph, ranked: MermaidRanking) -> [[String]] {
         var best = grouped(ranked.rows(of: graph.names), by: graph.groups)
         var fewest = crossings(of: best, in: graph)
         var rows = best

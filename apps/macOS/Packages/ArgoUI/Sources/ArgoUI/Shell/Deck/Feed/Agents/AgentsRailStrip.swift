@@ -7,7 +7,7 @@ import SwiftUI
 /// Dots rather than nothing at all, because what the rail is glanced at to answer survives losing
 /// the names — how many are working — and a rail that vanished would need a control floating over
 /// the feed to bring it back.
-struct AgentsRailStrip: View {
+package struct AgentsRailStrip: View {
     @Environment(\.argo) private var argo
 
     let agents: [FeedAgent]
@@ -18,7 +18,7 @@ struct AgentsRailStrip: View {
     /// A ScrollView, exactly as the expanded rail is: thirty dots outgrow the column too, and
     /// `argoScrollsUnderCanopy` insets SCROLL content — on a plain stack it is a no-op, so the
     /// first dots end up drawn behind the glass.
-    var body: some View {
+    package var body: some View {
         ScrollView {
             LazyVStack(spacing: ArgoSpacing.snug) {
                 // `.plain` for the reason the rail's own heading takes it: a filled control ground
@@ -80,38 +80,10 @@ struct AgentsRailStrip: View {
             indicator.accessibilityLabel(agent.label)
         }
     }
-}
 
-#Preview("Agents rail collapsed — a fan-out as dots, under the Session's own reading") {
-    @Previewable @State var scope = FeedScope.session
-    @Previewable @State var isCollapsed = true
-
-    AgentsRailStrip(
-        agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running),
-        control: AgentsRailControl(
-            scope: $scope,
-            isCollapsed: $isCollapsed,
-            readings: AgentsRailFixture.readings,
-        ),
-    )
-    .frame(width: ArgoAgentsRail.collapsedWidth, height: 420)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Agents rail collapsed — one Agent scoped onto, and the mark back") {
-    @Previewable @State var scope = FeedScope.subagent(2)
-    @Previewable @State var isCollapsed = true
-
-    AgentsRailStrip(
-        agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running),
-        control: AgentsRailControl(
-            scope: $scope,
-            isCollapsed: $isCollapsed,
-            readings: AgentsRailFixture.readings,
-        ),
-    )
-    .frame(width: ArgoAgentsRail.collapsedWidth, height: 420)
-    .argoDeckSurface()
-    .argoAppearance()
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(agents: [FeedAgent], control: AgentsRailControl) {
+        self.agents = agents
+        self.control = control
+    }
 }

@@ -3,15 +3,15 @@ import SwiftUI
 
 /// The Next-up hero AS a control (#898): its own ground, washed under the pointer and pressed under
 /// the click. `.plain` draws neither, which is the reading the report was about.
-struct NextUpCardStyle: ButtonStyle {
+package struct NextUpCardStyle: ButtonStyle {
     /// Where the pointer is, which is the whole of what the card's ground says.
-    enum Pointer: CaseIterable, Hashable {
+    package enum Pointer: CaseIterable, Hashable {
         case away
         case over
         case down
     }
 
-    func makeBody(configuration: Configuration) -> some View {
+    package func makeBody(configuration: Configuration) -> some View {
         Card(isPressed: configuration.isPressed, label: configuration.label)
     }
 
@@ -43,7 +43,7 @@ struct NextUpCardStyle: ButtonStyle {
     }
 }
 
-extension EnvironmentValues {
+package extension EnvironmentValues {
     /// The card's pointer state, forced for a RENDER. Hover and press are live input, so a specimen
     /// has no other way to put either on a screenshot — the reason `argoStillsMotion` exists.
     @Entry var nextUpStillsPointer: NextUpCardStyle.Pointer?

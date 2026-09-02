@@ -5,7 +5,7 @@ import ArgoEngine
 /// the rail's scope is the deck's.
 struct DeckContent {
     /// Which reading the zones are showing — see `FeedReading`.
-    var reading = FeedReading.unattached
+    package var reading = FeedReading.unattached
     let feed: [FeedRow]
     let showing: PlanShowing
     let picked: Picked

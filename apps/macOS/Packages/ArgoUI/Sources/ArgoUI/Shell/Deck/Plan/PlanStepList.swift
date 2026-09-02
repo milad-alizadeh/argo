@@ -5,12 +5,12 @@ import SwiftUI
 
 /// The whole plan, revealed over the pill: every step in the agent's own order, each marked with
 /// where it has got to.
-struct PlanStepList: View {
+package struct PlanStepList: View {
     @Environment(\.argo) private var argo
 
     let plan: PlanReading
 
-    var body: some View {
+    package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.snug) {
             Text("Plan · replaced whole by the agent")
                 .argoText(ArgoTypography.sectionLabel)
@@ -27,6 +27,11 @@ struct PlanStepList: View {
         .frame(width: ArgoPlanPill.listWidth, alignment: .leading)
         // The pill's own material: this is the second half of one surface.
         .argoFloatingGlass(in: .rect(cornerRadius: ArgoRadius.popover))
+    }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(plan: PlanReading) {
+        self.plan = plan
     }
 }
 
@@ -73,25 +78,4 @@ private struct PlanStepLine: View {
     private var ink: ArgoColor {
         step.status == .inProgress ? argo.color.text.primary : argo.color.text.tertiary
     }
-}
-
-#Preview("Plan list — a plan under way") {
-    PlanStepList(plan: PlanFixture.working)
-        .padding(ArgoSpacing.region)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Plan list — a plan that names no current step") {
-    PlanStepList(plan: PlanFixture.unstarted)
-        .padding(ArgoSpacing.region)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Plan list — steps longer than the measure") {
-    PlanStepList(plan: PlanFixture.wordy)
-        .padding(ArgoSpacing.region)
-        .argoDeckSurface()
-        .argoAppearance()
 }

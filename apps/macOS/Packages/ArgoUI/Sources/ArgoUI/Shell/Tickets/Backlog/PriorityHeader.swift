@@ -8,7 +8,7 @@ import SwiftUI
 /// The count is of the rows the band DRAWS, so folding a parent lowers it. A subtree count would
 /// stand over one visible row and read as a lie; the parent's own `n/m` roll-up already says how
 /// many children it has (`cockpit-work-room.md`).
-struct PriorityHeader: View {
+package struct PriorityHeader: View {
     @Environment(\.argo) private var argo
 
     let band: TicketsRoomProjection.Band
@@ -16,7 +16,7 @@ struct PriorityHeader: View {
     /// header and the rows under it cannot be counting two different things.
     let count: Int
 
-    var body: some View {
+    package var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
             GroupLabel(band.label)
             Spacer(minLength: ArgoSpacing.snug)
@@ -29,18 +29,10 @@ struct PriorityHeader: View {
         .padding(.bottom, ArgoSpacing.tight)
         .accessibilityElement(children: .combine)
     }
-}
 
-#Preview("Priority headers — the three bands, and the one nobody read") {
-    let roots = TicketsFixture.room.backlog
-
-    VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
-        ForEach(TicketsRoomProjection.bands(of: roots)) { band in
-            PriorityHeader(band: band, count: TicketsRoomProjection.drawn(band, shut: []).count)
-        }
-        PriorityHeader(band: TicketsRoomProjection.Band(priority: nil, roots: []), count: 0)
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(band: TicketsRoomProjection.Band, count: Int) {
+        self.band = band
+        self.count = count
     }
-    .frame(width: ArgoBacklogList.width, alignment: .leading)
-    .argoDeckSurface()
-    .argoAppearance()
 }

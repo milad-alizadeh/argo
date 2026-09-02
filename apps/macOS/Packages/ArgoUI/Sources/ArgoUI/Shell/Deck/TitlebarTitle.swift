@@ -12,7 +12,7 @@ import SwiftUI
 /// Everything the header's fact line and the tab line used to say out loud is on the hover
 /// (`Header.tooltip`). The access posture is the one exception: a fact that gates what the composer
 /// can do must not live only in a hover, so it is set beside the title in words.
-struct TitlebarTitle: View {
+package struct TitlebarTitle: View {
     @Environment(\.argo) private var argo
 
     /// Absent when nothing is selected. The item still holds its height: the bar's rhythm is the
@@ -22,7 +22,7 @@ struct TitlebarTitle: View {
     /// which draws the title unconstrained for one pass rather than at a width of nothing.
     var paneWidth: CGFloat = 0
 
-    var body: some View {
+    package var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
             if let header {
                 title(header)
@@ -70,6 +70,12 @@ struct TitlebarTitle: View {
     private var cap: CGFloat {
         paneWidth > 0 ? paneWidth * ArgoLayout.titlebarTitleMaximumShare : .infinity
     }
+
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
+    package init(header: SessionHeaderProjection.Header?, paneWidth: CGFloat = 0) {
+        self.header = header
+        self.paneWidth = paneWidth
+    }
 }
 
 private extension View {
@@ -85,13 +91,4 @@ private extension View {
     }
 }
 
-#Preview("Titlebar title — every access posture, and nothing selected") {
-    TitlebarTitleSpecimen.gallery(width: 900)
-}
-
 // The width real titles are cut at.
-#Preview("Titlebar title — at the narrowest detail pane the window allows") {
-    TitlebarTitleSpecimen.gallery(
-        width: ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth,
-    )
-}

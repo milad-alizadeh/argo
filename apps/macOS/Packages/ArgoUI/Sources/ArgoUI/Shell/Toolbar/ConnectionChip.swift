@@ -11,7 +11,7 @@ struct ConnectionChip: View {
     @Environment(\.argo) private var argo
     @Environment(\.colorSchemeContrast) private var contrast
 
-    let reading: ConnectionChipReading
+    package let reading: ConnectionChipReading
     let act: () -> Void
 
     var body: some View {
