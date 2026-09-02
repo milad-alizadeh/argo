@@ -79,6 +79,7 @@ struct SessionsRoomReading {
                 feed: FeedProjection.rows(
                     from: session?.events ?? [],
                     working: stamp.isWorking,
+                    starting: stamp.isStarting,
                     handedOff: handedOff,
                     expired: stamp.expired,
                     asking: asking,

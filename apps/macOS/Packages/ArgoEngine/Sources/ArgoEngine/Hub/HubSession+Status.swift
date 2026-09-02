@@ -21,8 +21,10 @@ public extension HubSession {
     /// are Argo's. Then a status the CLI reported over the drive port, also DIRECT: the thread that
     /// reported it is one Argo started and holds the pipe to, so the join from the report to this
     /// Session is exact rather than the working directory and time window a transcript is matched
-    /// on. Below those, a status the agent REPORTED wins at the CONVENTION tier. A Session with no
-    /// channel, or one that has said nothing, falls through to DERIVED, never worse.
+    /// on. Below those, a status the agent REPORTED wins at the CONVENTION tier. Then a CLI Argo is
+    /// still waiting on, at DIRECT on the same ground — the PTY those bytes have not come out of is
+    /// Argo's own. A Session with no channel, or one that has said nothing, falls through to
+    /// DERIVED, never worse.
     var statusReading: SessionStatusReading {
         if permission != nil {
             return SessionStatusReading(tier: .direct, status: .permission)
@@ -36,8 +38,15 @@ public extension HubSession {
         if let driveStatus {
             return SessionStatusReading(tier: .direct, status: driveStatus)
         }
-        guard let reported = convention?.status else { return SessionStatus.read(signals) }
-        return SessionStatusReading(tier: .convention, status: reported)
+        if let reported = convention?.status {
+            return SessionStatusReading(tier: .convention, status: reported)
+        }
+        // Below every channel above it, because a channel that has SPOKEN is itself proof the CLI
+        // is up — and above the record, which has no word for a Session that has written none.
+        if awaitingFirstOutput {
+            return SessionStatusReading(tier: .direct, status: .starting)
+        }
+        return SessionStatus.read(signals)
     }
 
     var status: SessionStatus {

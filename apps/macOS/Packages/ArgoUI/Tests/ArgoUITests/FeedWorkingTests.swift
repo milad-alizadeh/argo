@@ -2,7 +2,7 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// The one live state the feed draws, and — mostly — the many it does not. Every claim below is
+/// The two live states the feed draws, and — mostly — the many it does not. Every claim below is
 /// about a row that says something is in flight, so the ones that matter most are the cases where
 /// nothing is and the row is absent: a feed reading `working…` over a Session sitting at its prompt
 /// is worse than the silence it replaced.
@@ -25,29 +25,73 @@ struct FeedWorkingTests {
         )
     }
 
+    /// The whole point of both rows, in one table: every status that is NOT in flight, and every
+    /// one that is no evidence of a CLI still coming up. A live-looking foot under any of them
+    /// would be a claim nothing observed.
     @Test
-    func `a Turn in progress is working`() {
-        let session = Self.session(status: .running, events: [.message(markdown: "On it.")])
-        #expect(FeedWorking.isWorking(session))
+    func `each status says exactly what it is evidence of`() {
+        let expected: [Evidence] = [
+            Evidence(status: .starting, working: false, starting: true),
+            Evidence(status: .running, working: true, starting: false),
+            Evidence(status: .permission, working: false, starting: false),
+            Evidence(status: .asking, working: false, starting: false),
+            Evidence(status: .idle, working: false, starting: false),
+            Evidence(status: .stopped, working: false, starting: false),
+            Evidence(status: .ended, working: false, starting: false),
+            Evidence(status: .unknown, working: false, starting: false),
+        ]
+
+        // Every status answered, so one added to the domain fails here rather than quietly
+        // inheriting a neighbour's reading.
+        #expect(expected.map(\.status) == SessionStatus.allCases)
+        for row in expected {
+            let session = Self.session(status: row.status, events: [.message(markdown: "Done.")])
+            #expect(FeedWorking.isWorking(session) == row.working, "\(row.status)")
+            #expect(FeedWorking.isStarting(session) == row.starting, "\(row.status)")
+        }
     }
 
-    /// The whole point of the row. Every one of these is a Session that is NOT in flight, and a
-    /// live-looking foot under any of them would be a claim nothing observed.
-    @Test(arguments: [SessionStatus.idle, .permission, .asking, .stopped, .ended, .unknown])
-    func `a Session that is not running says nothing about what it is doing`(
-        status: SessionStatus,
-    ) {
-        let session = Self.session(status: status, events: [.message(markdown: "Done.")])
-        #expect(!FeedWorking.isWorking(session))
+    /// One status and the two live readings it is evidence of.
+    private struct Evidence {
+        let status: SessionStatus
+        let working: Bool
+        let starting: Bool
     }
 
-    /// The state this row deliberately does NOT claim. Argo owns the spawn but nothing tells it
-    /// when the CLI finished booting — the record does not appear until the first prompt — so a
-    /// managed Session with an empty reading is the engine's `idle` and stays it. A `starting…`
-    /// row here would stand over a booted agent for the rest of the window's life.
+    /// `starting` is the engine's reading and never re-derived here: "managed with an empty
+    /// reading" has no end, since the record does not appear until the first prompt (#587).
     @Test
-    func `a spawned Session that has written nothing is not working`() {
+    func `a spawned Session that has written nothing is neither, on its emptiness alone`() {
         #expect(!FeedWorking.isWorking(Self.session()))
+        #expect(!FeedWorking.isStarting(Self.session()))
+    }
+
+    @Test
+    func `no Session selected is no Session waiting`() {
+        #expect(!FeedWorking.isWorking(nil))
+        #expect(!FeedWorking.isStarting(nil))
+    }
+
+    /// The row `starting` exists for: a spawn's reading is empty by construction, so without it the
+    /// feed draws `FeedSilence` — true, and identical to what a Session at its prompt draws.
+    @Test
+    func `a Session still starting has that as its whole reading`() {
+        #expect(FeedProjection.rows(from: [], starting: true).map(\.content) == [.mark(.starting)])
+        #expect(FeedProjection.rows(from: []).isEmpty)
+    }
+
+    /// On screen as well as to a reader, because a hairline with nothing in it already means a Turn
+    /// ended — this state cannot borrow the working thread's silence.
+    @Test
+    func `the starting row says what it is waiting for`() {
+        #expect(FeedMark.starting.words == "starting the agent")
+        #expect(FeedMark.starting.spoken == "The agent is starting")
+    }
+
+    /// A CLI coming up is no Turn boundary, whatever a rule across the column looks like.
+    @Test
+    func `the starting row ends no Turn`() {
+        #expect(!FeedMark.starting.endsTurn)
     }
 
     /// Read off the status and nothing else, so an external Session gets the row on exactly the
@@ -55,11 +99,6 @@ struct FeedWorkingTests {
     @Test
     func `an external Session mid-turn is working on the same evidence`() {
         #expect(FeedWorking.isWorking(Self.session(access: .external, status: .running)))
-    }
-
-    @Test
-    func `no Session selected is not a Session waiting`() {
-        #expect(!FeedWorking.isWorking(nil))
     }
 
     /// The thread says it now, and it says it with no words at all. A caption here would sit in a

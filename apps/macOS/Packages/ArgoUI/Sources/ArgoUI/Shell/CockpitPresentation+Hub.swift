@@ -81,7 +81,7 @@ extension CockpitPresentation.Session {
     /// over; `unknown` is not — nothing observed is not observed to have finished.
     var isLive: Bool {
         switch status {
-        case .running, .permission, .asking, .idle, .stopped, .unknown: true
+        case .running, .permission, .asking, .idle, .stopped, .starting, .unknown: true
         case .ended: false
         }
     }

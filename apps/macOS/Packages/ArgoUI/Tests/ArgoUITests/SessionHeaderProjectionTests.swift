@@ -99,7 +99,7 @@ struct SessionHeaderProjectionTests {
         }
 
         #expect(words == SessionStatus.allCases.map { SessionState.word(for: $0) })
-        #expect(words == [nil, "Needs input", "Needs input", nil, "Stopped", nil, nil])
+        #expect(words == [nil, nil, "Needs input", "Needs input", nil, "Stopped", nil, nil])
     }
 
     @Test

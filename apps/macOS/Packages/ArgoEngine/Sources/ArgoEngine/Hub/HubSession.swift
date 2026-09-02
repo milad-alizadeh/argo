@@ -117,6 +117,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public private(set) var isQueued = false
     /// The Turn in flight and what the last one ended as — see `SessionTurnState`.
     private(set) var turn = SessionTurnState()
+    /// Whether this row is a spawn Argo has heard nothing from yet — what `statusReading` reads
+    /// `starting` off (#587). Set by `init(spawn:)` alone, so no observed Session reaches the
+    /// state: a record existing at all is proof the CLI has spoken.
+    private(set) var awaitingFirstOutput = false
 
     public init(observation: TranscriptObservation) {
         self.id = observation.id
@@ -131,8 +135,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// The row for an agent Argo has just STARTED, before the CLI has written a record (#361).
     ///
     /// Its id IS the claim's — the only handle the spawn and the terminal share until the CLI picks
-    /// one. Idle, not running: a spawn IS a Turn boundary, and rendering it DIRECT keeps the row
-    /// off `unknown` until the liveness poll catches up. A PTY that goes without a record ever
+    /// one. `starting` until the PTY carries bytes and idle after — never running: a spawn IS a
+    /// Turn boundary, and rendering it DIRECT keeps the row off `unknown` until the liveness poll
+    /// catches up. A PTY that goes without a record ever
     /// appearing closes that Turn `cancelled`; the `ended` the roster then shows comes from the
     /// orphaned provenance, never from a reason invented here.
     init(spawn: AgentSpawn) {
@@ -151,6 +156,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // DIRECT: Argo started this process, so the row belongs on the roster from the moment it
         // exists.
         self.hasAgentActivity = true
+        // An exit outranks it: a spawn that died having never spoken reads `ended`, not `starting`.
+        self.awaitingFirstOutput = spawn.exit == nil && spawn.firstOutputAtMs == nil
     }
 
     mutating func apply(_ event: TranscriptEvent) {

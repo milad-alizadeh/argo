@@ -113,7 +113,11 @@ struct CompanionChannelTests {
 
         #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
         #expect(fixture.hub.sessions.first?.convention == nil)
-        #expect(fixture.hub.sessions.first?.statusReading.tier == .derived)
+        // DIRECT and `starting`, not CONVENTION: the only thing that has said anything about this
+        // Session is Argo's own PTY, which has carried no bytes yet (#587). What the claim here is
+        // about is that no tier ABOVE reports on an agent that never dialled in.
+        #expect(fixture.hub.sessions.first?.statusReading
+            == SessionStatusReading(tier: .direct, status: .starting))
     }
 
     @Test

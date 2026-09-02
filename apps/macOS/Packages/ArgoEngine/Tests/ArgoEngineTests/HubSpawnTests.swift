@@ -22,7 +22,9 @@ struct HubSpawnTests {
         // Managed and steerable from the moment it exists: Argo holds the claim and the PTY, and
         // both are DIRECT.
         #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
-        #expect(fixture.hub.sessions.map(\.status) == [.idle])
+        // Starting, not idle: the PTY is up and the CLI has not spoken, which is a claim Argo
+        // WITNESSED rather than a wait it is guessing at (#587).
+        #expect(fixture.hub.sessions.map(\.status) == [.starting])
         #expect(fixture.hub.sessions.map(\.sourceURL) == [nil])
         // A New Session is started on no ticket, which is absence and not a number (#872).
         #expect(fixture.hub.sessions.map(\.ticket) == [nil])

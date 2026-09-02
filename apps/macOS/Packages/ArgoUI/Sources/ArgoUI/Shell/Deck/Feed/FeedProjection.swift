@@ -14,6 +14,7 @@ enum FeedProjection {
     static func rows(
         from events: [TranscriptEvent],
         working: Bool = false,
+        starting: Bool = false,
         handedOff: FeedHandoff? = nil,
         expired: [PermissionExpiry] = [],
         asking: FeedAskProjection.Asking = .none,
@@ -37,8 +38,8 @@ enum FeedProjection {
             asking,
         )
         // The link goes BELOW the roll-up, at the very foot.
-        return (work + inFlight(working, over: work) + unanswered(expired) + rolledUp(events) +
-            chained(handedOff)).enumerated()
+        return (work + startingUp(starting) + inFlight(working, over: work) + unanswered(expired) +
+            rolledUp(events) + chained(handedOff)).enumerated()
             .map { position, content in
                 FeedRow(id: position, content: content)
             }
@@ -56,6 +57,13 @@ enum FeedProjection {
     private static func inFlight(_ working: Bool, over rows: [FeedRow.Content])
         -> [FeedRow.Content] {
         working && !rows.contains(where: \.kind.isCallInFlight) ? [.mark(.working)] : []
+    }
+
+    /// The CLI coming up, in place of the `FeedSilence` an empty reading would otherwise draw
+    /// (#587). By construction it IS the whole reading: a Session Argo is still waiting on has
+    /// written no record for anything to sit above it.
+    private static func startingUp(_ starting: Bool) -> [FeedRow.Content] {
+        starting ? [.mark(.starting)] : []
     }
 
     private static func chained(_ handedOff: FeedHandoff?) -> [FeedRow.Content] {

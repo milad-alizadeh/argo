@@ -60,6 +60,8 @@ struct HubSpawnProcessTests {
 
         #expect(fixture.hub.sessions.map(\.title) == ["claude exited (code 127)"])
         #expect(fixture.hub.sessions.map(\.provenance) == [.orphaned])
+        // Ended and not `starting`, though the CLI never did speak: a process Argo watched go is
+        // the stronger fact, and nothing can still be coming up in a process that is gone (#587).
         #expect(fixture.hub.sessions.map(\.status) == [.ended])
     }
 

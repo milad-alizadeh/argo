@@ -72,6 +72,24 @@ struct SessionsRoomReadingTests {
         #expect((reading.header != nil) == reads)
     }
 
+    /// `starting` ends with no event appended, so the stamp has to carry the status itself:
+    /// without it the cache answers a Session that is up with the reading it took while it was
+    /// starting, and `starting the agent` stands over an agent at its prompt (#587).
+    @Test
+    func `a Session that has come up is a fresh reading, not the one the cache holds`() {
+        let starting = SessionsRoomReading(
+            presentation: Self.presentation(status: .starting),
+            sessionID: "one",
+        )
+        let up = SessionsRoomReading(
+            presentation: Self.presentation(status: .idle),
+            sessionID: "one",
+        )
+
+        #expect(starting.feed.map(\.content) == [.mark(.starting)])
+        #expect(up.feed.isEmpty)
+    }
+
     private static let transcript = TranscriptFixtures.previewTranscript
 
     private static func reading(events: [TranscriptEvent]) -> SessionsRoomReading {
@@ -91,14 +109,25 @@ struct SessionsRoomReadingTests {
     private static func session(
         id: String,
         events: [TranscriptEvent],
+        status: SessionStatus = .idle,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
             id: id,
             title: id,
             access: .managed,
-            status: .idle,
+            status: status,
             transcript: .init(events: events),
+        )
+    }
+
+    private static func presentation(status: SessionStatus) -> CockpitPresentation {
+        CockpitPresentation(
+            projects: [],
+            activeProjectID: nil,
+            sessions: [session(id: "one", events: [], status: status)],
+            checkout: .unavailable,
+            connection: .idle,
         )
     }
 }

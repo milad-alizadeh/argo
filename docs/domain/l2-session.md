@@ -42,7 +42,15 @@
   re-keys to the new path. A claim that stayed behind renders a Session Argo is steering right now
   as one it never spawned, which is #942.
 
-- **Session status** — a DERIVED rollup on the Session:
+- **Session status** — a DERIVED rollup on the Session, with one DIRECT value beside it:
+  - **starting** — Argo started the process and it has not written to the PTY yet. **DIRECT and
+    managed-only**, and the only value read off no record at all: the CLI writes none until its
+    first prompt. It ends on the child's FIRST BYTES — witnessed on a descriptor Argo owns — and
+    never on a clock or on "nothing written yet", which would stand over a booted agent for the
+    rest of the window's life (#587). First byte is the honest FLOOR: a CLI that prints a banner
+    before it is ready ends the claim early, which under-reports the boot rather than over-claiming
+    it, and anything stricter would mean recognising a prompt in a TUI's own bytes — a guess in an
+    observation's clothes.
   - **running** — a Turn is in progress.
   - **permission** — blocked on an agent `request_permission` prompt.
   - **asking** — blocked on a structured `AskUserQuestion`.
@@ -58,6 +66,10 @@
   carries none, or one outside the vocabulary, the status is **`unknown`**, never the nearest
   guess. **External floors at `running · asking? · idle · ended`**; managed `permission` collapses
   to `idle` when observed externally.
+
+  `starting` is unreachable for every other posture, and for a `managed` Session it is unreachable
+  once anything at all has spoken: a Permission, a question, a drive report or a companion report
+  is itself proof the CLI is up, and each of them outranks it.
 
   A **seventh value, `unknown`**, is the degrade-down rule made reachable: a Session whose record
   carries no Turn boundary at all is `unknown`, not `idle` — nothing observed is a different claim

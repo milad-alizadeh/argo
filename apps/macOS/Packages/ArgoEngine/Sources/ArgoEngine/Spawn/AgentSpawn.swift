@@ -13,6 +13,10 @@ struct AgentSpawn: Sendable, Equatable {
     /// moment it appears rather than from the moment its CLI writes a record.
     var ticket: Int?
 
+    /// When the child first wrote to the PTY, absent until it has, and DIRECT — Argo owns the
+    /// descriptor those bytes came out of (#587).
+    var firstOutputAtMs: Int?
+
     /// How the PTY went away, once it has — and only for a spawn whose CLI never wrote a record,
     /// the one row no observation can reach.
     var exit: Exit?

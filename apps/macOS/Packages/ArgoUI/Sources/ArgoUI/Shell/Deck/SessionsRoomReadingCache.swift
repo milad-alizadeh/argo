@@ -34,6 +34,8 @@ enum SessionsRoomReadingCache {
         let handedOff: FeedHandoff?
         let expired: [PermissionExpiry]
         let isWorking: Bool
+        /// `starting` ends with no event appended, so nothing else here moves when it does.
+        let isStarting: Bool
 
         /// Derived from the Session rather than spelled out at the call site: a stamp assembled by
         /// hand is one a later projection input can quietly fall out of.
@@ -48,6 +50,7 @@ enum SessionsRoomReadingCache {
             self.handedOff = handedOff
             self.expired = session?.expiredPermissions ?? []
             self.isWorking = FeedWorking.isWorking(session)
+            self.isStarting = FeedWorking.isStarting(session)
         }
     }
 

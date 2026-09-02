@@ -36,7 +36,9 @@ struct SpawningRosterSpecimen: View {
             id: "claim-\(started)",
             title: Self.provisionalTitle,
             access: .managed,
-            status: .idle,
+            // What the Hub's own provisional row reads: Argo has started the PTY and heard nothing
+            // off it yet (#587).
+            status: .starting,
             chain: .init(
                 program: .init(cli: .claude),
                 span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(0)),

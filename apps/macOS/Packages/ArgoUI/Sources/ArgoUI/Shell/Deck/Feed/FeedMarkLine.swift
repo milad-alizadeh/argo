@@ -22,7 +22,7 @@ struct FeedMarkLine: View {
         switch mark {
         case .working: FeedWorkingThread()
         case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .permissionExpired,
-             .excerpted:
+             .starting, .excerpted:
             punctuation
         }
     }
