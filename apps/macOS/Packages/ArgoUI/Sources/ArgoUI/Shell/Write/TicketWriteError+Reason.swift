@@ -1,7 +1,7 @@
 import ArgoEngine
 
-/// How a refused write reads at the control — the real reason, one line (§5). The unabridged
-/// output the same rule promises one gesture away is #850.
+/// How a refused write reads at the control — the real reason, one line (§5) — and the unabridged
+/// output the same rule puts one gesture behind it (#850).
 extension TicketWriteError {
     var reason: String {
         switch self {
@@ -11,11 +11,21 @@ extension TicketWriteError {
             "This provider has no status for \(state.readableName)"
         case let .illegalTransition(from, to):
             "This provider will not move a ticket from \(from.readableName) to \(to.readableName)"
-        // Verbatim: the provider's sentence is usually the only thing here that says how to fix it.
+        // Verbatim: the provider's sentence is usually the only thing here that says how to fix it,
+        // and the line is its own first line rather than a phrase Argo wrote over it.
         case let .refused(words):
-            words
+            output?.summary ?? words
         case let .unreachable(failure):
             failure.reason
+        }
+    }
+
+    /// What the provider printed, and `nil` where nothing did: the three refusals Argo words itself
+    /// were never put to a provider, and a connection that did not answer printed no answer.
+    var output: RawOutput? {
+        switch self {
+        case .unavailable, .inexpressible, .illegalTransition, .unreachable: nil
+        case let .refused(words): RawOutput(words)
         }
     }
 }

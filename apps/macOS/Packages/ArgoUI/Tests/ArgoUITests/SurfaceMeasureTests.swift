@@ -265,4 +265,19 @@ struct SurfaceMeasureTests {
     func `an enclosure is drawn at a softer corner than the nodes it holds`() {
         #expect(MermaidMeasure.groupRadius > MermaidMeasure.nodeRadius)
     }
+
+    /// §5 forbids re-flowing the output, so the panel that holds it cannot be narrower than the
+    /// widest sentence the shell already sets.
+    @Test
+    func `the raw output panel is wider than the widest sentence panel`() {
+        #expect(ArgoRawOutputPanel.width > ArgoConnectPanel.width)
+    }
+
+    /// It opens as a popover over the window, so both measures have to fit the smallest window
+    /// there is or the panel is cut by the screen rather than by its own scroll view.
+    @Test
+    func `the raw output panel fits the narrowest window it opens over`() {
+        #expect(ArgoRawOutputPanel.width < ArgoLayout.windowMinimumWidth)
+        #expect(ArgoRawOutputPanel.maxHeight < ArgoLayout.windowMinimumHeight)
+    }
 }

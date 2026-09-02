@@ -63,12 +63,7 @@ struct NewTicketComposer: View {
     /// row: a line under the buttons would resize the sheet around them.
     private var call: some View {
         HStack(spacing: ArgoSpacing.comfortable) {
-            if let reason = control.reason {
-                WriteNote(
-                    reason: reason,
-                    reconnect: control.needsReconnect ? reconnect : nil,
-                )
-            }
+            WriteNote(control: control, reconnect: reconnect)
             Spacer(minLength: ArgoSpacing.flush)
             Button("Cancel", action: cancel)
                 .buttonStyle(.quiet)

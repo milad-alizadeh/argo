@@ -68,6 +68,7 @@ costs nothing inside one Swift module: the minimap re-lays out the feed, so it r
 | `ArgoToolbarVessel` | `Shell/Toolbar/` | how tall a toolbar container is, and the slots in it and its drawers |
 | `ArgoContextBar` | `Shell/Deck/Header/` | the context gauge on the tab line and the ⓘ panel it opens |
 | `ArgoConnectPanel` | `Shell/Connect/` | the Connect panel's width and the device code's slot in it |
+| `ArgoRawOutputPanel` | `Shell/Write/RawOutput/` | the panel a failure's unabridged output opens in |
 | `ArgoAgentsRail` | `Shell/Deck/Feed/Agents/` | where the rail opens, and where it collapses to |
 | `ArgoRosterFoot` | `Shell/Sidebar/` | the floor under the roster's archive header |
 | `ArgoLayout` | `VisualContract/` | the window's structural proportions — pane widths, minimums, the splits |
