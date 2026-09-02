@@ -23,7 +23,9 @@ struct EvidenceSource: View {
                     ArgoCodeLine(
                         text: line.text,
                         // Whether the FILE has numbers, not this line — see `ArgoCodeLine.Gutter`.
-                        gutter: listing.hasGutter ? .number(line.number) : .unnumbered,
+                        gutter: listing.hasGutter
+                            ? .number(line.number, width: ArgoFeedRow.diffGutterWidth)
+                            : .unnumbered,
                         coloured: colouring[position],
                         ink: argo.color.text.secondary,
                     )

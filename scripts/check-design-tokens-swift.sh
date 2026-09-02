@@ -23,6 +23,12 @@
 #
 # Scans the whole tree and ignores any arguments, the way its caller does: which constants are
 # outside the contract is a property of the tree, not of the file you happened to touch.
+#
+# That replaced a file mode, which took the staged paths from lint-staged so a full scan could not
+# fail a commit on a parallel session's WIP (AGENTS.md → Session isolation). The trade is recorded
+# rather than silent: `swift-boundaries.sh` was ALREADY in lint-staged and already scanned the
+# whole tree, so that protection had gone before this script's caller arrived — a second, narrower
+# entry only made it look present. What remains is one scan, and one answer to what the tree holds.
 set -u
 
 # Every Swift source that CONSUMES the contract. `ArgoDesign` itself is absent because it declares

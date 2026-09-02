@@ -9,9 +9,11 @@ public struct ArgoCodeLine: View {
         /// A file carrying no numbers. Drawn without the column, because a column that came and
         /// went down the panel would move the words it is there to line up.
         case unnumbered
-        /// A numbered file. No number is a line the numbering does not reach — a removed line is
-        /// not in the file the gutter counts.
-        case number(Int?)
+        /// A numbered file, and how wide the column is. No number is a line the numbering does
+        /// not reach — a removed line is not in the file the gutter counts. The width comes from
+        /// the caller because it is a MEASURE: how wide four digits sit is the reading surface's
+        /// property, not the contract's (rules/design-system.md).
+        case number(Int?, width: CGFloat)
     }
 
     @Environment(\.argo) private var argo
@@ -45,12 +47,12 @@ public struct ArgoCodeLine: View {
     }
 
     @ViewBuilder private var number: some View {
-        if case let .number(number) = gutter {
+        if case let .number(number, width) = gutter {
             Text(number.map(String.init) ?? "")
                 .argoMono(.body)
                 .monospacedDigit()
                 .foregroundStyle(argo.color.text.disabled)
-                .frame(width: ArgoLayout.diffGutterWidth, alignment: .trailing)
+                .frame(width: width, alignment: .trailing)
         }
     }
 
@@ -62,6 +64,9 @@ public struct ArgoCodeLine: View {
         }
     }
 }
+
+/// The width the feed hands the gutter, restated here because a preview is its own caller.
+private let previewGutter: CGFloat = 32
 
 /// A run with real inks in it, so the coloured branch is on screen beside the plain one.
 private func previewColoured(_ head: String, _ tail: String) -> AttributedString {
@@ -76,13 +81,13 @@ private func previewColoured(_ head: String, _ tail: String) -> AttributedString
     VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
         ArgoCodeLine(
             text: "    return nil",
-            gutter: .number(41),
+            gutter: .number(41, width: previewGutter),
             coloured: previewColoured("    return ", "nil"),
             ink: ArgoPalette.graphite.text.secondary,
         )
         ArgoCodeLine(
             text: "    let colours = coloured[position]",
-            gutter: .number(nil),
+            gutter: .number(nil, width: previewGutter),
             coloured: nil,
             ink: ArgoPalette.graphite.text.primary,
         )
@@ -96,7 +101,7 @@ private func previewColoured(_ head: String, _ tail: String) -> AttributedString
         ArgoCodeLine(
             text: "        return await SyntaxHighlight.lines(of: lines, in: language, "
                 + "colors: SyntaxTheme.colors) ?? []",
-            gutter: .number(42),
+            gutter: .number(42, width: previewGutter),
             coloured: nil,
             ink: ArgoPalette.graphite.text.secondary,
         )

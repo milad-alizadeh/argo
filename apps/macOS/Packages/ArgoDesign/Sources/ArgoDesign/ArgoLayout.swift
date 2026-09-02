@@ -62,9 +62,6 @@ public enum ArgoLayout {
     /// is the shape UNDER it, which is what a pointer actually has to find — the same distinction
     /// `seamGrabWidth` draws for a hairline.
     public static let controlHitTarget: CGFloat = 24
-
-    /// The gutter a patch's line numbers sit in. Wide enough for four digits.
-    public static let diffGutterWidth: CGFloat = 32
     /// A draggable seam's hit area. The line stays a hairline; this is the width of the invisible
     /// strip over it, which is what a pointer actually has to find.
     public static let seamGrabWidth: CGFloat = 9

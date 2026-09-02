@@ -68,14 +68,19 @@ The script prints the cap in force on every run. The cap is on the **declaration
 site, and the one shape edge 6 skips is a struct whose memberwise init a `private` stored
 property makes private — both stated at the rule.
 
-The seventh is the token contract's own module (#1088). `ArgoDesign` holds the 23 contract files
-and `ArgoAtoms` the 15 primitives over them, so **a colour, rhythm step, radius, stroke width or
-type size may be DECLARED only in `ArgoDesign`** — a view may name any of them and write none of
-them down. Checkable only because the contract is a module: while it was a folder inside `ArgoUI`,
-a literal in a view and a literal in the palette were the same grep. The patterns live in
+The seventh is the token contract's own module (#1088). `ArgoDesign` holds the contract and
+`ArgoAtoms` the primitives over it, so **a colour, rhythm step, radius, stroke width or type size
+may be DECLARED only in `ArgoDesign`** — a view may name any of them and write none of them down.
+Checkable only because the contract is a module: while it was a folder inside `ArgoUI`, a literal
+in a view and a literal in the palette were the same grep. The patterns live in
 `scripts/check-design-tokens-swift.sh`, which the edge calls rather than copies, and its allowlist
 is debt on the same ratchet as the init list — a reason per line, and an entry that matches
 nothing fails.
+
+The exemption is only worth having while the exempt module stays what it says it is, so the same
+edge holds `ArgoDesign` to being a **leaf** that declares **no view**: without both, "the folder a
+view could be moved into" is just "the module a view could be moved into", and the escape hatch
+survives the extraction one level up.
 
 The JS/TS boundary gates are dormant — no subject since ADR-0023 retired the Electron
 cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-0021, ADR-0023.

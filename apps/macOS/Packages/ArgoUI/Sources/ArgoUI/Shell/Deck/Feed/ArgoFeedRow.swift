@@ -70,6 +70,9 @@ public enum ArgoFeedRow {
     /// The line height the body is set at.
     public static let lineHeight: CGFloat = 20
 
+    /// The gutter a patch's line numbers sit in. Wide enough for four digits.
+    public static let diffGutterWidth: CGFloat = 32
+
     /// The rung the feed's MONO is set on — a fence, a patch, an evidence panel's output. The prose
     /// rung and not `ArgoTypography.machine`'s: the feed draws its mono as
     /// `.system(.body, design: .monospaced)`, which keeps the BODY's line box and changes only the

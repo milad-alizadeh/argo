@@ -58,6 +58,50 @@ check('edge 7 fails when its scope has moved', () => {
   assert.match(result.output, /not there/)
 })
 
+// 7b. The exemption is only worth having while the exempt module stays what it says it is. Without
+// these two, "the folder a view could be moved into" is just "the module a view could be moved
+// into", and the escape hatch survives the extraction one level up.
+for (const [name, files, message] of [
+  [
+    "the contract importing a module of Argo's own",
+    { [`${CONTRACT}/ArgoTheme.swift`]: 'import ArgoUI\n' },
+    /is a leaf/,
+  ],
+  [
+    'a view declared inside the contract',
+    {
+      [`${CONTRACT}/Sneak.swift`]:
+        'struct Sneak: View {\n    var body: some View { Text("x") }\n}\n',
+    },
+    /declares a view/,
+  ],
+  [
+    'a view modifier declared inside the contract',
+    { [`${CONTRACT}/Sneak.swift`]: 'struct Sneak: ViewModifier {}\n' },
+    /declares a view/,
+  ],
+]) {
+  check(`edge 7b fails on ${name}`, () => {
+    const result = run(tree(files))
+    assert.equal(result.status, 1, `expected a failure, got: ${result.output}`)
+    assert.match(result.output, message)
+  })
+}
+
+// A family in the contract may still extend `View` with a modifier that applies its own value —
+// `argoText`, `argoShadow` — because that is the value being reached by name. It is the TYPE that
+// is banned, so a check keyed on the word `View` alone would fail the contract as it stands.
+check("edge 7b leaves the contract's own View extensions alone", () => {
+  const extension_ = 'public extension View {\n    func argoInk() -> some View { self }\n}\n'
+  const result = run(tree({ [`${CONTRACT}/ArgoInk.swift`]: extension_ }))
+  assert.equal(result.status, 0, `a modifier is how a token is spent: ${result.output}`)
+})
+
+check('edge 7b fails when the contract has moved out from under it', () => {
+  const result = run(tree({ [`${CONTRACT}/ArgoColor.swift`]: null }))
+  assert.equal(result.status, 1, `a missing contract passed: ${result.output}`)
+})
+
 // The allowlist, which is debt and not an exemption: it may only shrink, and an entry that
 // silences a finding must not silence the tree.
 const allowed = (contents, files) => tree({ [ALLOW]: contents, ...files })

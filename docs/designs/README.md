@@ -144,7 +144,7 @@ The HTML studies, `tokens.css`, `foundations.html`, `kit.js`, `study-template.ht
 renderer and a CSS custom-property contract that no longer exist: `tokens.css` `@import`ed a
 stylesheet inside `apps/desktop`, `foundations.html` rendered that stylesheet's values back to
 itself, and the inventory named `data-component` names in renderer slices. Their successors are
-the Swift `VisualContract` and `FoundationSpecimen` above.
+the Swift `ArgoDesign` contract and `FoundationSpecimen` above.
 
 Git history keeps all of them. `git log --diff-filter=D -- docs/designs/` finds the commit that
 removed one.
