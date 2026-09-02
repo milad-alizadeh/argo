@@ -22,9 +22,11 @@ extension FeedTableCoordinator {
         case .rebuild:
             // No drop of its own. A row measured against an interim launch width is cached too
             // tall, and a reload re-asking that store would re-seat every row on the stale answer —
-            // but a width is part of `FeedGeometry.Ground` now, and rows that re-numbered were
-            // dropped by `execute` before this ran. Emptying it here as well is what made every
-            // return to the Sessions room re-measure a reading nothing had changed about (#858).
+            // but a width retires the store on its own (`FeedGeometry.settle(at:in:)`), and a row
+            // that re-numbered is answered by its own ground rather than by its index. Emptying it
+            // here is what made every return to the Sessions room re-measure a reading nothing had
+            // changed about (#858); emptying it on the reload was the same cost on every arrival
+            // of a Session's whole reading behind its excerpt (`FeedExcerptCostTests`).
             tailing?.cancel()
             table.reloadData()
         }

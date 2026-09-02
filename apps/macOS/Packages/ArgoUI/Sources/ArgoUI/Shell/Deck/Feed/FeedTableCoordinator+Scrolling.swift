@@ -40,12 +40,11 @@ extension FeedTableCoordinator {
     /// `pace` is the way-back control's animation. Every other landing is instant, because a feed
     /// easing once per arriving line would be permanently in motion.
     func execute(_ decision: FeedScrollDecision, over pace: TimeInterval? = nil) {
-        // Memory, not correctness — a ground answers for its own row or for nothing. A reading
-        // that re-numbered leaves an entry per index that no question will ever match again, and
-        // nothing else would ever reclaim them (#858).
-        if decision.delta == .reload {
-            dropMeasuredHeights()
-        }
+        // No drop on a `.reload`. A reload means the rows RE-NUMBERED, and a height is filed
+        // under what it is a fact about rather than under where its row sat — so re-numbering
+        // invalidates nothing. The excerpt a Session opens on and the whole file that lands behind
+        // it share their tail byte for byte, and every one of those heights is still true.
+        // Reclaiming the orphans is `FeedGeometry.hold(rows:)`', bounded by the reading itself.
         insert(decision.delta)
         remeasure(decision.remeasure)
         land(decision.landing, over: pace)
