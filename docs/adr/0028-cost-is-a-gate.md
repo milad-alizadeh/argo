@@ -197,13 +197,32 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   assumed. A COUNT is control flow: a ruler measure, a Core Text pass, a whole-document walk, a
   geometry derivation, a cache miss and a retained byte happen the same number of times under
   `-Onone` and under `-O`, so debug costs those claims nothing and Rule 8's sweep is what made that
-  most of the suite. Eight claims are CPU quotients and they are what a release run re-records:
-  `HubJoinCostTests`, `HubRosterCostTests` (1), `CockpitPresentationCostTests` (2),
-  `FeedRowsCompareCostTests` (2), `SessionsRoomReadingCostTests` (2). Two more were quotients when
-  #991 swept and are now counts, because Rule 8's first instruction had a count available in both:
-  the roster memo's own fold count, and the prose store's hit rate. All eight hold unchanged
-  optimised, and so does every count beside them: `ArgoEngine` 1 222 tests
+  most of the suite. Seven claims are CPU quotients and they are what a release run re-records:
+  `HubRosterCostTests` (1), `CockpitPresentationCostTests` (2), `FeedRowsCompareCostTests` (2),
+  `SessionsRoomReadingCostTests` (2). Three more were quotients and are now counts, because Rule
+  8's first instruction had a count available in all three: the roster memo's own fold count and
+  the prose store's hit rate when #991 swept, and the join's own rebuild count in #1064. All seven
+  hold unchanged optimised, and so does every count beside them: `ArgoEngine` 1 222 tests
   and `ArgoUI` 2 035 tests pass in release with no budget touched.
+
+  > **Amendment — 2026-09-02 (#1064).** `HubJoinCostTests` was the eighth quotient and is now a
+  > count, because #991's sweep left it in place and it turned `main` red on unchanged code. Its
+  > arms differ by fifty times the resident working set while the measured work is a fixed row, so
+  > `CLOCK_THREAD_CPUTIME_ID` charges the large arm cache, TLB and memory-bandwidth stall the small
+  > one never pays — the same fact this ADR's own Consequences already record of
+  > `FeedTypesetCostTests`, where 4 000 rows against 300 read 3.98 to 4.10 warm. **A bias present
+  > in every trial is not something a minimum over trials can remove**, which is the part the
+  > `least of 15` in that suite was standing in for. The defect it exists to catch was already
+  > named as a count in its own doc comment — "restoring `rebuild()` on this path takes it to 36x"
+  > is a count of `HubJoin.rebuild()` calls — so Rule 8's first instruction applied unchanged, and
+  > `HubJoin.rebuilds` follows `HubRosterMemo.folds`. The seconds stay in `PerfBudgets` as figures
+  > gated by nothing.
+  >
+  > The census above is still short by one, and naming it is the point of saying so:
+  > `SubagentCostTests` gates a CPU quotient of the same 4-against-200 shape, at a `1.3` written
+  > inline rather than in `PerfBudgets`, and it runs on the same hosted runner. It is not migrated
+  > here — the count it wants is the roster's, not the join's — and until it is, it is the next
+  > suite that can redden `main` without a regression under it.
 
   > **Amendment — 2026-09-02 (#1024).** "Before the budgets bind" assumed that a `macos-26`
   > recording would make a SECOND bindable. It does not, and this bullet is the last place in the

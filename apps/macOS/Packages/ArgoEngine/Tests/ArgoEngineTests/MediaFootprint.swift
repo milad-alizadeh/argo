@@ -81,7 +81,8 @@ func settledFootprint() -> Int {
 
 /// The CPU the whole PROCESS spent, which is what a read costs: the pipeline runs the file cursor,
 /// the reader actor and the consumer on three different threads, so the calling thread's own clock
-/// — `threadCPUSeconds`, what every other budget in this suite uses — reads a read as free.
+/// — `threadCPUSeconds`, what every seconds figure in this suite is taken with — reads a read as
+/// free.
 func processCPUSeconds() -> Double {
     var spent = timespec()
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &spent)
