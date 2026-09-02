@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- PROTOTYPE — throwaway. Stock CodeCharta data, drawn here. No authored content, no model.
+<!-- PROTOTYPE — throwaway. NIGHT CITY: the same CodeCharta measurements, lit from inside.
      Data: ccsh unifiedparser + ccsh gitlogparser + ccsh merge  →  atlas-cc.json (1547 files). -->
 <meta charset="utf-8">
-<title>Argo · CodeCharta</title>
+<title>Argo · CodeCharta at night</title>
 <link rel="stylesheet" href="atlas-tokens.css">
 <style>
-  html, body { height: 100%; overflow: hidden; }
+  html, body { height: 100%; overflow: hidden; background: #04050a; }
   #app { height: 100%; display: grid; grid-template-rows: auto 1fr; }
   #main { display: grid; grid-template-columns: 1fr 330px; min-height: 0; }
 
@@ -13,14 +13,14 @@
   header h1 { font: 600 var(--t-title3)/1.2 var(--sans); }
   header .count { margin-left: auto; font: var(--t-footnote) var(--mono); color: var(--text-3); }
 
-  #stage { position: relative; overflow: hidden; }
+  #stage { position: relative; overflow: hidden; background: #04050a; }
   /* the width/height attributes carry the backing store and are also CSS hints, so the
      element must be pinned to the stage or a retina canvas lays out at twice its size */
   canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
 
   /* the side panel: one place a fact appears, and it holds its size so the map
      never reflows when the pointer moves across it */
-  #side { border-left: 1px solid var(--hairline); background: var(--ground-2, #17191c);
+  #side { border-left: 1px solid var(--hairline); background: #0c0e13;
           display: flex; flex-direction: column; min-height: 0; }
   #read { flex: 1; overflow-y: auto; padding: 16px 18px 18px; }
   #read .kind { font: var(--t-footnote) var(--mono); text-transform: uppercase;
@@ -52,19 +52,19 @@
      It sits on the stage rather than the window, so it travels with the map, not the page. */
   #bar { position: absolute; left: 16px; top: 16px; z-index: 60; width: 268px;
          display: flex; flex-direction: column; gap: 9px; padding: 13px 14px 12px;
-         background: rgba(38,41,46,.94); backdrop-filter: blur(16px);
-         border: 1px solid var(--strong); border-radius: 12px;
-         box-shadow: 0 10px 30px rgba(0,0,0,.55); }
+         background: rgba(14,17,24,.82); backdrop-filter: blur(18px);
+         border: 1px solid rgba(120,182,255,.16); border-radius: 12px;
+         box-shadow: 0 10px 34px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.04); }
   #bar label { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: 9px;
                font: var(--t-footnote) var(--mono); text-transform: uppercase;
                letter-spacing: .1em; color: var(--text-3); }
   #bar select { width: 100%; font: var(--t-callout) var(--sans); color: var(--text-1);
-                background: var(--raised); border: 1px solid var(--subtle);
+                background: rgba(255,255,255,.05); border: 1px solid var(--subtle);
                 border-radius: 6px; padding: 4px 7px; text-transform: none; letter-spacing: 0; }
   #bar button { font: var(--t-callout) var(--sans); color: var(--text-1);
-                background: var(--raised); border: 1px solid var(--subtle);
+                background: rgba(255,255,255,.05); border: 1px solid var(--subtle);
                 border-radius: 6px; padding: 5px 12px; white-space: nowrap; }
-  #bar button:hover { background: var(--hover); border-color: var(--strong); }
+  #bar button:hover { background: rgba(120,182,255,.12); border-color: var(--accent); }
   #bar .rule { height: 1px; background: var(--hairline); margin: 2px -14px 1px; }
   #bar .help { font: var(--t-footnote)/1.65 var(--sans); color: var(--text-3); }
   #bar .reads { font: var(--t-footnote)/1.6 var(--sans); color: var(--text-3);
@@ -72,7 +72,7 @@
   #bar .reads b { color: var(--text-1); font-weight: 600; }
   #bar .help b { color: var(--text-2); font-weight: 600; }
   #bar kbd { font: var(--t-footnote) var(--mono); color: var(--text-1);
-             background: var(--raised); border: 1px solid var(--subtle);
+             background: rgba(255,255,255,.06); border: 1px solid var(--subtle);
              border-radius: 4px; padding: 0 5px; }
   #bar label.check { display: flex; grid-template-columns: none; gap: 7px; cursor: pointer;
                      letter-spacing: .04em; color: var(--text-2); text-transform: none;
@@ -83,15 +83,15 @@
   #read .ties h4 { font: var(--t-footnote) var(--mono); text-transform: uppercase;
                    letter-spacing: .1em; color: var(--text-off); font-weight: 400;
                    padding-bottom: 6px; border-bottom: 1px solid var(--hairline); }
-  #read .tie { display: flex; gap: 10px; padding: 5px 0; font-size: var(--t-callout);
-               color: var(--text-2); border-bottom: 1px solid rgba(255,255,255,.045); }
-  #read .tie span { overflow-wrap: anywhere; }
-  #read .tie b { margin-left: auto; font: var(--t-callout) var(--mono); color: #78b6ff; }
   /* A basename alone hides the only interesting part: a tie inside one folder is ordinary,
      and a tie across two packages is the finding. So the twin carries where it lives. */
-  #read .tie { flex-wrap: wrap; cursor: pointer; border-radius: 5px;
+  #read .tie { display: flex; gap: 10px; font-size: var(--t-callout);
+               color: var(--text-2); border-bottom: 1px solid rgba(255,255,255,.045);
+               flex-wrap: wrap; cursor: pointer; border-radius: 5px;
                padding: 5px 6px; margin: 0 -6px; }
-  #read .tie:hover { background: rgba(120,182,255,.08); }
+  #read .tie span { overflow-wrap: anywhere; }
+  #read .tie b { margin-left: auto; font: var(--t-callout) var(--mono); color: #78b6ff; }
+  #read .tie:hover { background: rgba(120,182,255,.1); }
   #read .tie em { flex-basis: 100%; font-style: normal; font: var(--t-footnote) var(--mono);
                   color: var(--text-off); overflow-wrap: anywhere; }
   #read .tie i { flex-basis: 100%; font-style: normal; margin-top: 4px;
@@ -100,8 +100,9 @@
   /* the legend, bottom right of the map, on the stage and never hidden */
   #key { position: absolute; right: 16px; bottom: 16px; z-index: 60; width: 186px;
          padding: 10px 12px 9px; border-radius: 10px;
-         background: rgba(38,41,46,.94); backdrop-filter: blur(16px);
-         border: 1px solid var(--strong); box-shadow: 0 10px 30px rgba(0,0,0,.55);
+         background: rgba(14,17,24,.82); backdrop-filter: blur(18px);
+         border: 1px solid rgba(120,182,255,.16);
+         box-shadow: 0 10px 34px rgba(0,0,0,.7);
          font: var(--t-footnote) var(--mono); color: var(--text-3); }
   #key .lead { text-transform: uppercase; letter-spacing: .1em; color: var(--text-off); }
   #key #keyName { color: var(--text-2); }
@@ -137,8 +138,8 @@
          color: var(--text-3); font: 10px/1 var(--mono); cursor: pointer; }
   .ask:hover, .ask[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
   #pop { position: fixed; z-index: 90; width: 268px; padding: 12px 13px;
-         border-radius: 10px; background: rgba(30,33,37,.98); backdrop-filter: blur(20px);
-         border: 1px solid var(--strong); box-shadow: 0 16px 44px rgba(0,0,0,.6);
+         border-radius: 10px; background: rgba(12,15,21,.97); backdrop-filter: blur(20px);
+         border: 1px solid rgba(120,182,255,.2); box-shadow: 0 16px 44px rgba(0,0,0,.7);
          font: var(--t-footnote)/1.55 var(--sans); color: var(--text-2); }
   #pop h5 { margin: 0 0 6px; font: var(--t-footnote) var(--mono); text-transform: uppercase;
             letter-spacing: .1em; color: var(--text-off); }
@@ -160,7 +161,7 @@
 
 <div id="app">
   <header>
-    <h1>Argo, as CodeCharta sees it</h1>
+    <h1>Argo after dark, as CodeCharta sees it</h1>
     <div class="count" id="count"></div>
   </header>
   <div id="main">
@@ -180,12 +181,12 @@
       <kbd>R</kbd> resets the view
     </div>
     <div class="rule"></div>
-    <div class="help">Point at a file to see the ones that change with it.</div>
+    <div class="help">Point at a file to raise its light and see what runs with it.</div>
   </div>
   <div id="pop" hidden></div>
     <div id="key">
     <div class="lead">Colour &#183; <span id="keyName"></span></div>
-    <div class="ramp"><i style="background:#4e8a63"></i><i style="background:#a8873c"></i><i style="background:#a8523f"></i></div>
+    <div class="ramp"><i style="background:#2eab7f"></i><i style="background:#dc9c39"></i><i style="background:#ff6644"></i></div>
     <div class="ends"><span id="keyLo"></span><span id="keyHi"></span></div>
     <div class="ends foot"><span>half the files</span><span>top 15%</span></div>
   </div>
@@ -199,6 +200,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const fmt = n => (Math.round(n * 10) / 10).toLocaleString('en-US');
+const CALM = matchMedia('(prefers-reduced-motion: reduce)');
 
 /* the plan square, in its own units */
 const PLAN = 1000;                  // the plan is laid out in a square this wide
@@ -278,21 +280,6 @@ function leaves(n, out = []) {
   return out;
 }
 
-/* Every file with the path the boxes are keyed by, built the same way layout() builds it, so
-   a row in the panel can travel to a box. It is needed before the first draw, which is why
-   it walks the tree rather than reading the drawn boxes. */
-let PATHS = null;
-function filePaths() {
-  if (PATHS) return PATHS;
-  PATHS = [];
-  (function walk(n, base) {
-    const here = base ? base + '/' + n.name : n.name;
-    if (n.type === 'File') PATHS.push({ n, path: here });
-    else (n.children || []).forEach(c => walk(c, here));
-  })(DATA, '');
-  return PATHS;
-}
-
 /* ---------- layout ---------- */
 function layout(root, mArea, mHeight, maxH) {
   /* `rank` counts the plates you can actually see above a box, which is not the same as
@@ -335,12 +322,14 @@ function paintOrder(box, out = []) {
 }
 
 /* ---------- colour ---------- */
-/* The studio bands a metric at two percentiles of what is on screen and paints
-   the three bands. Nothing is a hue for its own sake — the band is the fact. */
+/* The studio bands a metric at two percentiles of what is on screen and paints the three
+   bands. Nothing is a hue for its own sake — the band is the fact. At night the roof is
+   the emitter and the walls are what the light does not reach, so each band keeps its hue
+   and splits into one bright face and two nearly-black ones. */
 const BAND = [
-  { top: '#4e8a63', left: '#28453380', right: '#365f45' },
-  { top: '#a8873c', left: '#53431d80', right: '#75612c' },
-  { top: '#a8523f', left: '#54281f80', right: '#763a2d' },
+  { top: '#2eab7f', left: '#050d0a', right: '#0a1712' },
+  { top: '#dc9c39', left: '#100c04', right: '#1d1608' },
+  { top: '#ff6644', left: '#140604', right: '#220e08' },
 ];
 function bands(k) {
   const v = sorted(k);
@@ -470,12 +459,7 @@ function extent() {
 
 /* the layout of the moment: the drawn one when there is one, else a fresh one, because
    the first fit runs before anything has been drawn */
-function boxesNow() {
-  if (view) return view.boxes;
-  const files = leaves(DATA);
-  const maxH = Math.max(...files.map(f => at(f, state.height)), 1);
-  return paintOrder(layout(DATA, state.area, state.height, maxH));
-}
+function boxesNow() { return (view || build()).boxes; }
 
 function fit() {
   const st = $('stage'), W = st.clientWidth, H = st.clientHeight;
@@ -485,58 +469,236 @@ function fit() {
   cam.oy = H / 2 - e.my * e.k;
 }
 
-/* ---------- draw ---------- */
+/* ---------- the layers ---------- */
+/* The city is expensive and almost always still, so it is drawn once per state change into
+   an offscreen canvas and only the lights move per frame. Four surfaces:
+     city  — the geometry alone, on nothing, so it can be blurred into bloom as it stands
+     refl  — the towers mirrored under the plates, blurred once and added back
+     b1/b2 — the bloom, at a third and a ninth of the frame
+     stat  — ground, reflection, city, bloom, haze and names, composited and then held  */
 const cv = $('cv'), ctx = cv.getContext('2d');
-let view = null;   // { boxes, lo, hi }
-const labels = [];  // the screen rects of the names already written this frame
+const pad = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const city = pad(1, 1), refl = pad(1, 1), stat = pad(1, 1), b1 = pad(1, 1), b2 = pad(1, 1);
+const cityG = city.getContext('2d'), reflG = refl.getContext('2d'), statG = stat.getContext('2d');
+const b1G = b1.getContext('2d'), b2G = b2.getContext('2d');
 
-function render() {
-  const st = $('stage');
-  const W = st.clientWidth, H = st.clientHeight, dpr = devicePixelRatio || 1;
-  cv.width = W * dpr; cv.height = H * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, W, H);
+/* every draw helper writes to whichever surface is current, so the same geometry code
+   serves the offscreen city and the live frame */
+let g = ctx;
+let view = null;            // { boxes, lo, hi }
+let tree = null, treeKey = '';
+let staticDirty = true, W = 0, H = 0, DPR = 1;
+const labels = [];          // the screen rects of the names already written this frame
+const PERF = { frame: 0, statics: 0, n: 0 };
+window.PERF = PERF;
 
-  /* One tree, one layout, one set of colour bands. Zooming is the only way in, so a
-     building's colour means the same thing wherever you are looking from. */
-  const root = DATA;
-  const files = leaves(root);
-  const maxH = Math.max(...files.map(f => at(f, state.height)), 1);
-  const boxes = paintOrder(layout(root, state.area, state.height, maxH));
+/* One tree, one set of colour bands. Zooming is the only way in, so a building's colour
+   means the same thing wherever you are looking from. The tree survives a turn — only the
+   paint order depends on the yaw — so turning the city never re-runs the treemap. */
+function build() {
+  const key = state.area + '|' + state.height;
+  if (treeKey !== key) {
+    const files = leaves(DATA);
+    const maxH = Math.max(...files.map(f => at(f, state.height)), 1);
+    tree = layout(DATA, state.area, state.height, maxH);
+    treeKey = key;
+  }
   const [lo, hi] = bands(state.colour);
-  view = { boxes, lo, hi };
+  view = { boxes: paintOrder(tree), lo, hi };
+  return view;
+}
 
-  for (const b of boxes) drawBox(b, view);
+function size() {
+  const st = $('stage');
+  W = st.clientWidth; H = st.clientHeight; DPR = devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(W * DPR)), h = Math.max(1, Math.round(H * DPR));
+  for (const c of [cv, city, refl, stat]) { c.width = w; c.height = h; }
+  b1.width = Math.ceil(w / 3); b1.height = Math.ceil(h / 3);
+  b2.width = Math.ceil(w / 9); b2.height = Math.ceil(h / 9);
+  for (const q of [ctx, cityG, reflG, statG]) q.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
+/* ---------- the static city ---------- */
+function drawStatic() {
+  const t0 = performance.now();
+  const v = build();
+  cityG.setTransform(DPR, 0, 0, DPR, 0, 0); cityG.clearRect(0, 0, W, H);
+  reflG.setTransform(DPR, 0, 0, DPR, 0, 0); reflG.clearRect(0, 0, W, H);
+
+  g = cityG;
+  for (const b of v.boxes) drawBox(b, v);
+  g = reflG;
+  for (const b of v.boxes) if (b.file) mirror(b, v);
+
+  bloom();
+
+  g = statG;
+  statG.setTransform(DPR, 0, 0, DPR, 0, 0);
+  statG.clearRect(0, 0, W, H);
+  ground();
+  statG.setTransform(1, 0, 0, 1, 0, 0);
+  statG.drawImage(city, 0, 0);
+  /* The smear goes on top of the city, not under it: a plate is opaque, so a reflection
+     composited first is a reflection the ground hides. Added, blurred and weak, it reads
+     as light lying on wet ground rather than as a second city. */
+  statG.globalCompositeOperation = 'lighter';
+  statG.globalAlpha = 0.30;
+  statG.filter = `blur(${(5 * DPR).toFixed(1)}px)`;
+  statG.drawImage(refl, 0, 0);
+  statG.filter = 'none';
+  /* Bloom is a glow around the city, never a wash over it: a block whose roof is lifted by
+     its own blur loses both its edge and its band, so these stay far below the point where
+     the picture looks impressive and only just above nothing. */
+  statG.globalAlpha = 0.13; statG.drawImage(b1, 0, 0, city.width, city.height);
+  statG.globalAlpha = 0.08; statG.drawImage(b2, 0, 0, city.width, city.height);
+  statG.globalAlpha = 1;
+  statG.globalCompositeOperation = 'source-over';
+  statG.setTransform(DPR, 0, 0, DPR, 0, 0);
+  haze();
+
   /* biggest plate first, so the name that survives a collision is the one with the
      most ground behind it rather than whichever the tree happened to reach first */
   labels.length = 0;
-  for (const b of [...boxes].filter(b => !b.file && !b.ghost).sort((a, c) => c.w * c.h - a.w * a.h))
+  for (const b of [...v.boxes].filter(b => !b.file && !b.ghost).sort((a, c) => c.w * c.h - a.w * a.h))
     plateLabel(b);
-  /* Ties are drawn last, over the city, because a line that disappears behind a tower
-     is worse than one that floats. The near end is whatever the pointer holds. */
+
+  PERF.statics = performance.now() - t0;
+  staticDirty = false;
+}
+
+/* the bloom: downsample the city twice, blur each, and both go back additively. The walls
+   are near-black by design, so the geometry needs no separate emissive pass — what is lit
+   is what blooms. */
+function bloom() {
+  b1G.setTransform(1, 0, 0, 1, 0, 0);
+  b1G.clearRect(0, 0, b1.width, b1.height);
+  b1G.filter = `blur(${(1.6 * DPR).toFixed(1)}px)`;
+  b1G.drawImage(city, 0, 0, b1.width, b1.height);
+  b1G.filter = 'none';
+  b2G.setTransform(1, 0, 0, 1, 0, 0);
+  b2G.clearRect(0, 0, b2.width, b2.height);
+  b2G.filter = `blur(${(2.2 * DPR).toFixed(1)}px)`;
+  b2G.drawImage(city, 0, 0, b2.width, b2.height);
+  b2G.filter = 'none';
+}
+
+/* the night the city sits in: a cold floor, and a lift behind the far edge so the skyline
+   has something to be a silhouette against */
+function ground() {
+  const far = project(C + Math.sin(cam.yaw) * PLAN, C + Math.cos(cam.yaw) * PLAN, 0);
+  let s = statG.createRadialGradient(W / 2, H * 0.62, 10, W / 2, H * 0.62, Math.max(W, H) * 0.8);
+  s.addColorStop(0, '#0d1219'); s.addColorStop(1, '#04050a');
+  statG.fillStyle = s; statG.fillRect(0, 0, W, H);
+  s = statG.createRadialGradient(far[0], far[1], 10, far[0], far[1], Math.max(W, H) * 0.55);
+  s.addColorStop(0, 'rgba(46,84,132,.30)'); s.addColorStop(1, 'rgba(46,84,132,0)');
+  statG.fillStyle = s; statG.fillRect(0, 0, W, H);
+}
+
+/* Air, measured the same way the paint order is: along the plan's own depth axis, so the
+   far side of the map sits behind more of it however the city is turned. */
+function haze() {
+  const near = project(C - Math.sin(cam.yaw) * C, C - Math.cos(cam.yaw) * C, 0);
+  const far = project(C + Math.sin(cam.yaw) * C, C + Math.cos(cam.yaw) * C, 0);
+  const s = statG.createLinearGradient(near[0], near[1], far[0], far[1]);
+  /* Air, but never enough of it to turn a roof blue: the far side reads as further away
+     and its band still reads as its own band. */
+  s.addColorStop(0, 'rgba(9,17,28,0)');
+  s.addColorStop(0.42, 'rgba(10,19,31,.10)');
+  s.addColorStop(1, 'rgba(13,25,40,.32)');
+  statG.fillStyle = s; statG.fillRect(0, 0, W, H);
+}
+
+/* One tower, mirrored into the plate it stands on. A flat mirrored volume, not a true
+   reflection: the plate is wet, not a mirror, and the blur is what sells it. Short towers
+   never light the ground, so they are skipped rather than drawn at nothing. */
+function mirror(b, v) {
+  const { x, y, w, h, z1 } = b;
+  if (z1 < 5) return;
+  const r = [project(x, y, 0), project(x + w, y, 0), project(x + w, y + h, 0), project(x, y + h, 0)];
+  const wide = Math.max(...r.map(p => p[0])) - Math.min(...r.map(p => p[0]));
+  if (wide < 5) return;
+  const val = at(b.n, state.colour);
+  const band = BAND[val > v.hi ? 2 : val > v.lo ? 1 : 0];
+  const mz = -z1 * 0.5;
+  g.globalAlpha = 0.26 / (1 + z1 / 55);
+  for (const [a, e] of nearWalls(x, y, w, h))
+    quad(project(a[0], a[1], 0), project(e[0], e[1], 0),
+         project(e[0], e[1], mz), project(a[0], a[1], mz), band.top);
+  quad(project(x, y, mz), project(x + w, y, mz),
+       project(x + w, y + h, mz), project(x, y + h, mz), band.top);
+  g.globalAlpha = 1;
+}
+
+/* ---------- the live frame ---------- */
+/* The camera never moves on its own. A drifting one is a second, unasked-for animation and
+   it also means the matrix pick() reads can differ by a frame from the matrix the picture
+   was drawn with — the hover then names a neighbour of the block under the pointer. */
+let userYaw = YAW, userPitch = PITCH;
+
+/* The loop sleeps. Nothing here moves unless the pointer or a channel asked it to, so a
+   frame is requested by whatever changed and the loop only continues itself while something
+   is genuinely travelling. */
+let raf = 0;
+function requestFrame() { if (!raf) raf = requestAnimationFrame(frame); }
+function focusOf() {
+  return state.hover && state.hover.file ? state.hover
+       : state.pinned && state.pinned.file ? state.pinned : null;
+}
+function animating() { return !CALM.matches && (state.ties || !!focusOf()); }
+
+function frame(now) {
+  raf = 0;
+  const t0 = performance.now();
+
+  if (staticDirty) drawStatic();
+
+  g = ctx;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(stat, 0, 0);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
   const seat = new Map();
-  for (const b of boxes) if (b.file) seat.set(b.path, b);
-  if (state.ties) drawTies(seat, TOP_TIES, .34, 1);
-  const focus = state.hover && state.hover.file ? state.hover
-              : state.pinned && state.pinned.file ? state.pinned : null;
-  if (focus) drawTies(seat, (LINKS.get(focus.path) || []).map(([o, v]) => [focus.path, o, v]),
-                      .95, 1.9);
+  for (const b of view.boxes) if (b.file) seat.set(b.path, b);
+
+  ctx.globalCompositeOperation = 'lighter';
+  if (state.ties) traffic(seat, TOP_TIES, 0.30, 1, now);
+  const focus = focusOf();
+  if (focus) traffic(seat, (LINKS.get(focus.path) || []).map(([o, v]) => [focus.path, o, v]),
+                     0.95, 1.9, now);
+
+  /* a shaft is a light, so it is added to the sky rather than laid over it */
+  if (state.pinned && state.pinned.file) shaft(state.pinned, 0.9);
+  if (state.hover && state.hover.file && state.hover !== state.pinned)
+    shaft(state.hover, CALM.matches ? 0.8 : 0.72 + Math.sin(now / 620) * 0.14);
+  ctx.globalCompositeOperation = 'source-over';
 
   /* the pinned one stays lit after the pointer has gone, so the panel and the map agree */
   if (state.pinned) {
-    const still = boxes.find(b => b.path === state.pinned.path);
+    const still = view.boxes.find(b => b.path === state.pinned.path);
     if (still) drawBox(still, view, true);
   }
   if (state.hover) drawBox(state.hover, view, true);
 
-  $('count').textContent = `${files.length.toLocaleString('en-US')} files · ${DESC[state.area].title} ${fmt(roll(root, state.area))} total`;
-  key(lo, hi);
+  const ms = performance.now() - t0;
+  PERF.frame = PERF.n ? PERF.frame * 0.9 + ms * 0.1 : ms;
+  PERF.n++;
+  if (animating()) requestFrame();
 }
 
-/* One tie: an arc between two roofs, bowed away from the ground by a share of the
-   distance it spans, so a pair of neighbours is a shallow hop and a pair on opposite
-   sides of the map is a high one. */
-function drawTies(seat, list, alpha, width) {
+/* ---------- traffic ---------- */
+/* A tie is a road and the coupling is how busy it is: more pulses, faster, brighter, on the
+   pair that keeps changing together. The arc itself stays visible under them, because a road
+   with no traffic on it this second is still a road. */
+const phase = s => { let n = 0; for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) % 9973; return n / 9973; };
+const PHASE = new Map();
+const bez = (a, c, b, t) => {
+  const u = 1 - t;
+  return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0],
+          u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]];
+};
+
+function traffic(seat, list, alpha, width, now) {
   ctx.lineCap = 'round';
   for (const [from, to, v] of list) {
     const a = seat.get(from), b = seat.get(to);
@@ -545,15 +707,108 @@ function drawTies(seat, list, alpha, width) {
     const q = project(b.x + b.w / 2, b.y + b.h / 2, b.z1);
     const run = Math.hypot(q[0] - p[0], q[1] - p[1]);
     if (run < 3) continue;
-    ctx.strokeStyle = `rgba(120,182,255,${(alpha * v).toFixed(3)})`;
-    ctx.lineWidth = width * (0.5 + v);
+    const c = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2 - run * 0.34];
+
+    ctx.strokeStyle = `rgba(58,104,168,${(alpha * v * 0.55).toFixed(3)})`;
+    ctx.lineWidth = width * (0.4 + v);
     ctx.beginPath();
-    ctx.moveTo(...p);
-    ctx.quadraticCurveTo((p[0] + q[0]) / 2, (p[1] + q[1]) / 2 - run * 0.34, ...q);
+    ctx.moveTo(...p); ctx.quadraticCurveTo(c[0], c[1], ...q);
     ctx.stroke();
+
+    if (CALM.matches) { calmHead(p, c, q, alpha, v, width); continue; }
+
+    const id = from + ' ' + to;
+    if (!PHASE.has(id)) PHASE.set(id, phase(id));
+    const cars = 1 + Math.round(v * 2.4);
+    const speed = 0.00011 + v * 0.00030;          // t per ms
+    for (let i = 0; i < cars; i++) {
+      const t = (now * speed + PHASE.get(id) + i / cars) % 1;
+      car(p, c, q, t, alpha * (0.45 + v * 0.75), width * (0.5 + v), run);
+    }
   }
 }
 
+/* one pulse: a short trail behind a hot head, both scaled by how strong the coupling is */
+function car(p, c, q, t, k, lw, run) {
+  const tail = Math.max(0.06, Math.min(0.22, 34 / run));
+  const t0 = Math.max(0, t - tail);
+  const head = bez(p, c, q, t), start = bez(p, c, q, t0);
+  const grad = ctx.createLinearGradient(start[0], start[1], head[0], head[1]);
+  grad.addColorStop(0, 'rgba(84,140,220,0)');
+  grad.addColorStop(1, `rgba(190,225,255,${Math.min(0.95, k).toFixed(3)})`);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = lw * 1.5;
+  ctx.beginPath();
+  ctx.moveTo(...start);
+  for (let s = 1; s <= 6; s++) ctx.lineTo(...bez(p, c, q, t0 + (t - t0) * s / 6));
+  ctx.stroke();
+
+  const r = lw * 1.5 + 1.6;
+  const dot = ctx.createRadialGradient(head[0], head[1], 0, head[0], head[1], r * 2.4);
+  dot.addColorStop(0, `rgba(235,246,255,${Math.min(1, k * 1.1).toFixed(3)})`);
+  dot.addColorStop(0.35, `rgba(120,182,255,${(k * 0.55).toFixed(3)})`);
+  dot.addColorStop(1, 'rgba(120,182,255,0)');
+  ctx.fillStyle = dot;
+  ctx.beginPath(); ctx.arc(head[0], head[1], r * 2.4, 0, 7); ctx.fill();
+}
+
+/* Reduced motion keeps the reading and drops the movement: the arc still brightens towards
+   the file it changes with, so direction survives without anything travelling. */
+function calmHead(p, c, q, alpha, v, width) {
+  const grad = ctx.createLinearGradient(p[0], p[1], q[0], q[1]);
+  grad.addColorStop(0, 'rgba(120,182,255,0)');
+  grad.addColorStop(1, `rgba(200,230,255,${(alpha * v * 0.5).toFixed(3)})`);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = width * (0.4 + v * 0.8);
+  ctx.beginPath();
+  ctx.moveTo(...p); ctx.quadraticCurveTo(c[0], c[1], ...q);
+  ctx.stroke();
+}
+
+/* The shaft: what the pointer is holding sends its light up. It tapers with the projection
+   rather than by a fixed ratio, so it stays vertical in the plan at any yaw or zoom. */
+function shaft(b, k) {
+  const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+  const foot = project(cx, cy, b.z1), up = project(cx, cy, b.z1 + 2600);
+  /* The beam runs along the plan's own vertical, so it stays upright at any yaw, but it is
+     as long and as wide as it is in *pixels*: a world-length shaft leaves the top of the
+     stage while still bright, and the hard cut at the edge reads as a rectangle, not light.
+     A pixel-length one always finishes fading inside the frame. */
+  const len = Math.hypot(up[0] - foot[0], up[1] - foot[1]) || 1;
+  const REACH = 400;
+  const tip = [foot[0] + (up[0] - foot[0]) / len * REACH,
+               foot[1] + (up[1] - foot[1]) / len * REACH];
+  const r = [project(b.x, b.y, b.z1), project(b.x + b.w, b.y, b.z1),
+             project(b.x + b.w, b.y + b.h, b.z1), project(b.x, b.y + b.h, b.z1)];
+  const wide = Math.max(...r.map(p => p[0])) - Math.min(...r.map(p => p[0]));
+  const half = Math.max(2.4, Math.min(13, wide * 0.24));
+  const beam = (w, a, hot) => {
+    const grad = ctx.createLinearGradient(foot[0], foot[1], tip[0], tip[1]);
+    grad.addColorStop(0, `rgba(${hot},${(a * k).toFixed(3)})`);
+    grad.addColorStop(0.3, `rgba(96,168,255,${(a * k * 0.34).toFixed(3)})`);
+    grad.addColorStop(1, 'rgba(60,120,220,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(foot[0] - w, foot[1]); ctx.lineTo(foot[0] + w, foot[1]);
+    ctx.lineTo(tip[0] + w * 0.22, tip[1]); ctx.lineTo(tip[0] - w * 0.22, tip[1]);
+    ctx.closePath(); ctx.fill();
+  };
+  beam(half * 3.2, 0.10, '70,140,255');
+  beam(half * 1.3, 0.16, '150,200,255');
+  beam(half * 0.34, 0.30, '224,242,255');
+
+  /* The pool lands on the roof of the very block being read, so it is a blue halo around
+     the beam and never a white light on the paint: bleach the roof and the band the reader
+     came for is gone. */
+  const pr = Math.min(70, half * 3.4);
+  const pool = ctx.createRadialGradient(foot[0], foot[1], 0, foot[0], foot[1], pr);
+  pool.addColorStop(0, `rgba(150,200,255,${(0.20 * k).toFixed(3)})`);
+  pool.addColorStop(1, 'rgba(110,176,255,0)');
+  ctx.fillStyle = pool;
+  ctx.beginPath(); ctx.arc(foot[0], foot[1], pr, 0, 7); ctx.fill();
+}
+
+/* ---------- geometry ---------- */
 /* The two walls you can see depend on which way the plan is turned, so they are
    found each frame rather than fixed to the +x and +y sides. */
 function nearWalls(x, y, w, h) {
@@ -569,7 +824,7 @@ function drawBox(b, v, lit) {
 
   /* A plate is the ground its buildings stand on, so filling it hides the very thing
      you are pointing at. A folder is marked by its edge; only a building is filled. */
-  if (lit && !b.file) { outline(b); return; }
+  if (lit) { b.file ? litFile(b) : outline(b); return; }
 
   let top, left, right;
   if (b.file) {
@@ -577,9 +832,11 @@ function drawBox(b, v, lit) {
     const band = BAND[val > v.hi ? 2 : val > v.lo ? 1 : 0];
     top = band.top; left = band.left; right = band.right;
   } else {
-    /* two shades, not one per level: a ramp that keeps climbing reads as a ziggurat */
-    top = b.depth < 2 ? '#1b1d21' : '#212429';
-    left = '#101215'; right = '#171a1e';
+    /* the plates are the unlit part of the city: dark enough that the bloom pass reads
+       them as nothing, and two shades rather than one per level, because a ramp that
+       keeps climbing reads as a ziggurat */
+    top = b.depth < 2 ? '#0b0e13' : '#0e1218';
+    left = '#05070a'; right = '#080b10';
   }
 
   const mid = project(x + w / 2, y + h / 2, 0)[0];
@@ -600,49 +857,41 @@ function drawBox(b, v, lit) {
   const rw = Math.max(...r.map(p => p[0])) - Math.min(...r.map(p => p[0]));
   if (rw > 5 || !b.file) {
     /* the edge fades with depth too, so a deep folder is a seam and not a frame */
-    const a = 0.13 / (1 + b.depth * 0.7);
-    ctx.strokeStyle = b.file ? 'rgba(0,0,0,.45)' : `rgba(255,255,255,${a.toFixed(3)})`;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(...r[0]); r.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
-    ctx.stroke();
+    const a = 0.09 / (1 + b.depth * 0.7);
+    g.strokeStyle = b.file ? 'rgba(0,0,0,.62)' : `rgba(140,180,230,${a.toFixed(3)})`;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(...r[0]); r.slice(1).forEach(p => g.lineTo(...p)); g.closePath();
+    g.stroke();
   }
-
-  /* A focused block keeps its band: the band is the fact the reader is pointing at, and a
-     fill that replaced it would answer the question by erasing it. The mark is a rim. */
-  if (lit) rim(b);
 
   /* Twenty-five noted files among fifteen hundred is a needle in a field, so the note has to
      be visible from the map rather than found by pointing at things until one appears. */
   if (b.file && NOTES.files && NOTES.files[b.path] && rw > 7) {
     const cx = (r[0][0] + r[2][0]) / 2, cy = (r[0][1] + r[2][1]) / 2;
     const rad = Math.max(1.6, Math.min(3.4, rw * 0.09));
-    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, 7);
-    ctx.fillStyle = '#dceaff'; ctx.fill();
-    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(10,14,20,.75)'; ctx.stroke();
+    g.beginPath(); g.arc(cx, cy, rad, 0, 7);
+    g.fillStyle = '#eaf4ff'; g.fill();
+    g.lineWidth = 1; g.strokeStyle = 'rgba(6,10,16,.8)'; g.stroke();
   }
 }
 
-/* The focused building's own silhouette in the accent: the roof rim, and the standing edges
-   of the two walls you can see, so a block reads as picked from above and from the side.
-   The dark pass under it is what keeps the rim off a pale roof from vanishing into it. */
-function rim(b) {
+/* What the pointer holds keeps its own roof: repainting it would hide the one measurement
+   the reader is asking about. It gains a rim, a wash on its walls, and the shaft. */
+/* The roof is not repainted at all — not even in its own band — because the static layer
+   already carries it under the same haze as its neighbours, and a repaint lands one pixel
+   brighter than the row it sits in, which reads as a different band. */
+function litFile(b) {
   const { x, y, w, h, z0, z1 } = b;
+  for (const [a, e] of nearWalls(x, y, w, h))
+    quad(project(a[0], a[1], z0), project(e[0], e[1], z0),
+         project(e[0], e[1], z1), project(a[0], a[1], z1), 'rgba(130,190,255,.18)');
   const r = [project(x, y, z1), project(x + w, y, z1),
              project(x + w, y + h, z1), project(x, y + h, z1)];
-  const posts = [];
-  for (const [a, e] of nearWalls(x, y, w, h))
-    for (const p of [a, e]) posts.push([project(p[0], p[1], z0), project(p[0], p[1], z1)]);
-
-  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  for (const [width, paint] of [[3.4, 'rgba(6,10,16,.7)'], [1.6, '#3E9BFF']]) {
-    ctx.lineWidth = width; ctx.strokeStyle = paint;
-    ctx.beginPath();
-    ctx.moveTo(...r[0]); r.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
-    for (const [a, e] of posts) { ctx.moveTo(...a); ctx.lineTo(...e); }
-    ctx.stroke();
-  }
-  ctx.lineCap = 'butt';
+  g.strokeStyle = '#e6f2ff'; g.lineWidth = 2; g.lineJoin = 'round';
+  g.beginPath();
+  g.moveTo(...r[0]); r.slice(1).forEach(p => g.lineTo(...p)); g.closePath();
+  g.stroke();
 }
 
 /* the plate's own edge, plus a wash on the two walls that face you */
@@ -654,19 +903,19 @@ function outline(b) {
 
   const r = [project(x, y, z1), project(x + w, y, z1),
              project(x + w, y + h, z1), project(x, y + h, z1)];
-  ctx.fillStyle = 'rgba(62,155,255,.10)';
-  ctx.beginPath();
-  ctx.moveTo(...r[0]); r.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = '#3E9BFF'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
-  ctx.stroke();
+  g.fillStyle = 'rgba(62,155,255,.10)';
+  g.beginPath();
+  g.moveTo(...r[0]); r.slice(1).forEach(p => g.lineTo(...p)); g.closePath();
+  g.fill();
+  g.strokeStyle = '#6FB6FF'; g.lineWidth = 2; g.lineJoin = 'round';
+  g.stroke();
 }
 
 function quad(a, b, c, d, fill) {
-  ctx.fillStyle = fill;
-  ctx.beginPath();
-  ctx.moveTo(...a); ctx.lineTo(...b); ctx.lineTo(...c); ctx.lineTo(...d);
-  ctx.closePath(); ctx.fill();
+  g.fillStyle = fill;
+  g.beginPath();
+  g.moveTo(...a); g.lineTo(...b); g.lineTo(...c); g.lineTo(...d);
+  g.closePath(); g.fill();
 }
 
 /* A name is earned by how big the plate is on screen, never by how deep it sits. That
@@ -684,31 +933,33 @@ function plateLabel(b) {
   const p = project(far[0] + inward[0], far[1] + inward[1], 0);
 
   const size = wide > 420 ? 13 : wide > 200 ? 11 : 10;
-  const fade = wide > 420 ? .92 : wide > 200 ? .72 : .5;
-  ctx.font = `${wide > 420 ? 600 : 400} ${size}px -apple-system, sans-serif`;
+  const fade = wide > 420 ? .92 : wide > 200 ? .74 : .54;
+  g.font = `${wide > 420 ? 600 : 400} ${size}px -apple-system, "SF Pro Text", system-ui, sans-serif`;
 
   /* Squarify seats the largest child in its parent's own corner, so a nested chain aims
      every one of its names at the same point. Labels are placed largest first, and a name
      that would land on one already written is dropped — zoom in and it gets its turn. */
-  const tw = ctx.measureText(b.n.name).width;
+  const tw = g.measureText(b.n.name).width;
   const box = [p[0] + 4, p[1] - size - 3, tw + 8, size + 7];
   /* a name half off the stage reads as a different, shorter name */
-  const st = $('stage');
   if (box[0] < 2 || box[1] < 2 ||
-      box[0] + box[2] > st.clientWidth - 2 || box[1] + box[3] > st.clientHeight - 2) return;
+      box[0] + box[2] > W - 2 || box[1] + box[3] > H - 2) return;
   for (const q of labels)
     if (box[0] < q[0] + q[2] && q[0] < box[0] + box[2] &&
         box[1] < q[1] + q[3] && q[1] < box[1] + box[3]) return;
   labels.push(box);
 
-  ctx.fillStyle = `rgba(255,255,255,${fade})`;
-  ctx.strokeStyle = 'rgba(0,0,0,.78)'; ctx.lineWidth = 2.8;
-  ctx.strokeText(b.n.name, p[0] + 4, p[1] - 3);
-  ctx.fillText(b.n.name, p[0] + 4, p[1] - 3);
+  /* the names are written after the bloom, or a blurred glyph is a smear rather than a word */
+  g.fillStyle = `rgba(228,238,250,${fade})`;
+  g.strokeStyle = 'rgba(2,4,8,.85)'; g.lineWidth = 3;
+  g.strokeText(b.n.name, p[0] + 4, p[1] - 3);
+  g.fillText(b.n.name, p[0] + 4, p[1] - 3);
 }
 
 /* ---------- hit test ---------- */
-/* Front to back over the same order the painter used, so the topmost wins. */
+/* Front to back over the same order the painter used, so the topmost wins. Nothing moves
+   `cam` but the reader, so this resolves against exactly the matrix the frame on screen
+   was drawn with. */
 function pick(mx, my) {
   const v = view; if (!v) return null;
   for (let i = v.boxes.length - 1; i >= 0; i--) {
@@ -778,19 +1029,19 @@ function noteIndex() {
     + `</div>`;
 }
 
-/* The top band says "over the threshold" and nothing more, so a 58 and a 20 are the same
-   colour and the worst file in the repo cannot be found by looking. This is that answer,
-   ranked on whatever the colour channel is set to — the bands themselves are unchanged. */
-const TOP_N = 12;
+/* The bands answer "is this one of the bad ones"; they cannot answer "which is the worst
+   one", because everything past the top percentile is the same colour. This is that answer:
+   the extreme by name, in the measure the colour channel is currently carrying. */
 function topList() {
-  const k = state.colour;
-  const rows = filePaths().slice().sort((a, b) => at(b.n, k) - at(a.n, k)).slice(0, TOP_N);
-  if (!rows.length || !at(rows[0].n, k)) return '';
-  return `<div class="ties"><h4>Highest ${esc(DESC[k].title)}</h4>`
-    + rows.map(({ n, path }) =>
-        `<div class="tie" data-go="${esc(path)}" title="Go to this file">`
-        + `<span>${esc(n.name)}</span><b>${fmt(at(n, k))}</b>`
-        + `<em>${esc(path.split('/').slice(0, -1).slice(-2).join('/'))}</em></div>`).join('')
+  if (!view) return '';
+  const c = state.colour;
+  const top = view.boxes.filter(b => b.file)
+    .sort((a, b) => at(b.n, c) - at(a.n, c)).slice(0, 12);
+  if (!top.length || at(top[0].n, c) <= 0) return '';
+  return `<div class="ties"><h4>Highest ${esc(DESC[c].title)}</h4>`
+    + top.map(b => `<div class="tie" data-go="${esc(b.path)}" title="Go to this file">`
+        + `<span>${esc(b.n.name)}</span><b>${fmt(at(b.n, c))}</b>`
+        + `<em>${esc(b.path.split('/').slice(0, -1).slice(-2).join('/'))}</em></div>`).join('')
     + `</div>`;
 }
 
@@ -815,8 +1066,11 @@ function detail(b) {
       <p>Point at anything to read it here. <b>Click</b> to pin it,
       <kbd>Esc</kbd> to let go. Folder names appear as you zoom towards them.</p>
       <p style="margin-top:10px">Every number here is measured from the code and its history.
-      Plates carry a written caption, and the files marked <b class="dot">\u25cf</b> carry a
-      note. Both are read, never counted.</p></div>` + topList() + noteIndex();
+      The lights that travel between roofs are file pairs that keep changing in the same
+      commit — the busier the line, the tighter the pair.</p>
+      <p style="margin-top:10px">Plates carry a written caption, and the files marked
+      <b class="dot">●</b> carry a note. Both are read, never counted.</p></div>`
+      + topList() + noteIndex();
     wireRead();
     return;
   }
@@ -858,8 +1112,8 @@ function detail(b) {
     + `<button class="ask" data-def="${c}" aria-expanded="false" `
     + `aria-label="What does ${DESC[c].title} mean?">?</button>`
     + `<b>${fmt(cval)}</b></div>
-      <div class="track"><div class="bars"><i style="background:#4e8a63;flex:50"></i>`
-    + `<i style="background:#a8873c;flex:35"></i><i style="background:#a8523f;flex:15"></i></div>`
+      <div class="track"><div class="bars"><i style="background:#2eab7f;flex:50"></i>`
+    + `<i style="background:#dc9c39;flex:35"></i><i style="background:#ff6644;flex:15"></i></div>`
     + `<u style="left:${(r * 100).toFixed(1)}%"></u></div>
       <div class="ends"><span>lowest here</span><span>highest</span></div>
       <div class="note">${r > 0.995 ? 'At the very top of this repo — nothing scores higher.'
@@ -911,7 +1165,7 @@ function wireRead() {
   for (const t of $('read').querySelectorAll('.tie[data-go]'))
     t.onclick = () => {
       const box = view.boxes.find(x => x.path === t.dataset.go);
-      if (box) { state.pinned = box; detail(null); render(); }
+      if (box) { state.pinned = box; detail(null); requestFrame(); }
     };
 }
 
@@ -921,10 +1175,10 @@ function key(lo, hi) {
   /* The three menus name measures, not shapes. This says which shape each one drives, so
      the map can be read without first working out what "area" turned into on screen. */
   $('reads').innerHTML = `Each block is a file. Its <b>ground</b> is ${DESC[state.area].title}, `
-    + `its <b>height</b> is ${DESC[state.height].title}, its <b>colour</b> is `
+    + `its <b>height</b> is ${DESC[state.height].title}, its lit <b>roof</b> is `
     + `${DESC[state.colour].title}. A plate is a folder.`
     + (Object.keys(NOTES.files || {}).length
-        ? ` Files marked <b class="dot">\u25cf</b> carry a written note.` : '');
+        ? ` Files marked <b class="dot">●</b> carry a written note.` : '');
   for (const [id, k] of [['mArea', 'area'], ['mHeight', 'height'], ['mColour', 'colour']])
     $(id).title = DESC[state[k]].description;
   $('keyName').textContent = DESC[state.colour].title;
@@ -932,8 +1186,19 @@ function key(lo, hi) {
   $('keyHi').textContent = '> ' + fmt(hi);
 }
 
+/* the one call every interaction makes: the city is stale, and the panel chrome is redrawn
+   now rather than waiting for a frame that has nothing to do with it */
+function render() {
+  staticDirty = true;
+  requestFrame();
+  const v = build();
+  $('count').textContent = `${leaves(DATA).length.toLocaleString('en-US')} files · `
+    + `${DESC[state.area].title} ${fmt(roll(DATA, state.area))} total`;
+  key(v.lo, v.hi);
+}
+
 function reset() {
-  cam.yaw = YAW; cam.pitch = PITCH;
+  cam.yaw = userYaw = YAW; cam.pitch = userPitch = PITCH;
   fit(); render(); stamp();
 }
 
@@ -941,7 +1206,7 @@ function reset() {
 function stamp() {
   history.replaceState(null, '',
     `?area=${state.area}&height=${state.height}&colour=${state.colour}`
-    + `&yaw=${cam.yaw.toFixed(3)}&pitch=${cam.pitch.toFixed(3)}${state.ties ? '&ties=1' : ''}`);
+    + `&yaw=${userYaw.toFixed(3)}&pitch=${userPitch.toFixed(3)}${state.ties ? '&ties=1' : ''}`);
 }
 
 
@@ -972,9 +1237,7 @@ Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]
       o.value = m; o.textContent = DESC[m].title; sel.append(o);
     }
     sel.value = state[k];
-    /* the panel's idle list is ranked on the colour channel, so it is rebuilt with the map */
-    sel.onchange = () => { state[k] = sel.value; state.hover = null;
-                           render(); detail(null); stamp(); };
+    sel.onchange = () => { state[k] = sel.value; state.hover = null; render(); detail(null); stamp(); };
   }
 
   /* ---------- the camera, on the mouse ---------- */
@@ -986,7 +1249,7 @@ Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]
      the press, so letting go of option mid-drag cannot swap the gesture under the hand. */
   cv.onmousedown = e => {
     drag = { x: e.clientX, y: e.clientY, turn: e.altKey || e.button === 2,
-             ox: cam.ox, oy: cam.oy, yaw: cam.yaw, pitch: cam.pitch,
+             ox: cam.ox, oy: cam.oy, yaw: userYaw, pitch: userPitch,
              scale: cam.scale };
     moved = 0;
     cv.style.cursor = drag.turn ? 'move' : 'grabbing';
@@ -1003,9 +1266,9 @@ Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]
          centre, and project() sends that to exactly (ox, oy) — so pinning it means
          leaving the pan and the zoom alone, not correcting them afterwards. Every one
          of them is restored from the press, so a long drag cannot accumulate drift. */
-      cam.yaw = snap(drag.yaw + dx * 0.006, Math.PI / 4);
+      cam.yaw = userYaw = snap(drag.yaw + dx * 0.006, Math.PI / 4);
       /* pitch, clamped: flat on is unreadable, straight down loses every height */
-      cam.pitch = snap(Math.min(1.45, Math.max(0.10, drag.pitch + dy * 0.0028)), PITCH);
+      cam.pitch = userPitch = snap(Math.min(1.45, Math.max(0.10, drag.pitch + dy * 0.0028)), PITCH);
       cam.ox = drag.ox; cam.oy = drag.oy; cam.scale = drag.scale;
     }
     state.hover = null; render();
@@ -1038,9 +1301,10 @@ Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]
     const r = cv.getBoundingClientRect();
     const hit = pick(e.clientX - r.left, e.clientY - r.top);
     if (hit === state.hover) return;
-    state.hover = hit; render(); detail(hit);
+    /* hover changes the lights, not the city, so it costs a frame rather than a rebuild */
+    state.hover = hit; detail(hit); requestFrame();
   };
-  cv.onmouseleave = () => { if (drag) return; state.hover = null; render(); detail(null); };
+  cv.onmouseleave = () => { if (drag) return; state.hover = null; detail(null); requestFrame(); };
   cv.onclick = e => {
     if (moved > 4) return;              // a drag that ended on a plate is not a click
     const r = cv.getBoundingClientRect();
@@ -1048,12 +1312,11 @@ Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]
     if (!hit) return;
     /* pin it so the numbers stay while the pointer goes to the controls */
     state.pinned = state.pinned && state.pinned.path === hit.path ? null : hit;
-    render(); detail(hit);
+    detail(hit); requestFrame();
   };
   addEventListener('keydown', e => {
-    if (e.key === "Escape") { state.pinned = null; render(); detail(null); }
+    if (e.key === "Escape") { state.pinned = null; detail(null); requestFrame(); hideDef(); }
     if (e.key === "r" || e.key === "R") reset();
-    if (e.key === 'Escape') hideDef();
     if (e.key === "t" || e.key === "T") { $('ties').checked = !state.ties; $('ties').onchange(); }
   });
   $('reset').onclick = reset;
@@ -1061,16 +1324,18 @@ Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]
   addEventListener('mousedown', e => { if (!e.target.closest('#pop, .ask')) hideDef(); });
   addEventListener('resize', hideDef);
   $('ties').checked = state.ties;
-  $('ties').onchange = () => { state.ties = $('ties').checked; render(); stamp(); };
-  addEventListener('resize', () => { fit(); render(); });
+  $('ties').onchange = () => { state.ties = $('ties').checked; requestFrame(); stamp(); };
+  addEventListener('resize', () => { size(); fit(); render(); });
+  CALM.addEventListener('change', () => { cam.yaw = userYaw; cam.pitch = userPitch; render(); });
 
   const num = (k, d, lo, hi) => {
     const n = parseFloat(q.get(k));
     return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d;
   };
-  cam.yaw = num("yaw", YAW, -Math.PI * 2, Math.PI * 2);
-  cam.pitch = num("pitch", PITCH, 0.10, 1.45);
+  cam.yaw = userYaw = num("yaw", YAW, -Math.PI * 2, Math.PI * 2);
+  cam.pitch = userPitch = num("pitch", PITCH, 0.10, 1.45);
+  size();
   fit();
-  detail(null); render();
+  render(); detail(null);
 });
 </script>

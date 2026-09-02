@@ -1,8 +1,10 @@
 <!doctype html>
-<!-- PROTOTYPE — throwaway. Stock CodeCharta data, drawn here. No authored content, no model.
+<!-- PROTOTYPE — throwaway. Same CodeCharta data and same measurement semantics as
+     atlas-codecharta.html; this variant is the physical model: one warm key light, one cool
+     fill, soft contact shadows, crowding gloom, and a model that assembles on load.
      Data: ccsh unifiedparser + ccsh gitlogparser + ccsh merge  →  atlas-cc.json (1547 files). -->
 <meta charset="utf-8">
-<title>Argo · CodeCharta</title>
+<title>Argo · the scale model</title>
 <link rel="stylesheet" href="atlas-tokens.css">
 <style>
   html, body { height: 100%; overflow: hidden; }
@@ -13,7 +15,9 @@
   header h1 { font: 600 var(--t-title3)/1.2 var(--sans); }
   header .count { margin-left: auto; font: var(--t-footnote) var(--mono); color: var(--text-3); }
 
-  #stage { position: relative; overflow: hidden; }
+  /* the desk: darker than the tokens' desktop, so the lamp pool painted on the canvas
+     has something to be brighter than */
+  #stage { position: relative; overflow: hidden; background: #08090b; }
   /* the width/height attributes carry the backing store and are also CSS hints, so the
      element must be pinned to the stage or a retina canvas lays out at twice its size */
   canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -52,9 +56,9 @@
      It sits on the stage rather than the window, so it travels with the map, not the page. */
   #bar { position: absolute; left: 16px; top: 16px; z-index: 60; width: 268px;
          display: flex; flex-direction: column; gap: 9px; padding: 13px 14px 12px;
-         background: rgba(38,41,46,.94); backdrop-filter: blur(16px);
+         background: rgba(30,32,36,.90); backdrop-filter: blur(16px);
          border: 1px solid var(--strong); border-radius: 12px;
-         box-shadow: 0 10px 30px rgba(0,0,0,.55); }
+         box-shadow: 0 18px 44px rgba(0,0,0,.7); }
   #bar label { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: 9px;
                font: var(--t-footnote) var(--mono); text-transform: uppercase;
                letter-spacing: .1em; color: var(--text-3); }
@@ -100,8 +104,8 @@
   /* the legend, bottom right of the map, on the stage and never hidden */
   #key { position: absolute; right: 16px; bottom: 16px; z-index: 60; width: 186px;
          padding: 10px 12px 9px; border-radius: 10px;
-         background: rgba(38,41,46,.94); backdrop-filter: blur(16px);
-         border: 1px solid var(--strong); box-shadow: 0 10px 30px rgba(0,0,0,.55);
+         background: rgba(30,32,36,.90); backdrop-filter: blur(16px);
+         border: 1px solid var(--strong); box-shadow: 0 18px 44px rgba(0,0,0,.7);
          font: var(--t-footnote) var(--mono); color: var(--text-3); }
   #key .lead { text-transform: uppercase; letter-spacing: .1em; color: var(--text-off); }
   #key #keyName { color: var(--text-2); }
@@ -180,12 +184,12 @@
       <kbd>R</kbd> resets the view
     </div>
     <div class="rule"></div>
-    <div class="help">Point at a file to see the ones that change with it.</div>
+    <div class="help">Point at a file to lift it off its plate and see the ones that change with it.</div>
   </div>
   <div id="pop" hidden></div>
     <div id="key">
     <div class="lead">Colour &#183; <span id="keyName"></span></div>
-    <div class="ramp"><i style="background:#4e8a63"></i><i style="background:#a8873c"></i><i style="background:#a8523f"></i></div>
+    <div class="ramp"><i style="background:#5f8f6c"></i><i style="background:#ab8b48"></i><i style="background:#a95c47"></i></div>
     <div class="ends"><span id="keyLo"></span><span id="keyHi"></span></div>
     <div class="ends foot"><span>half the files</span><span>top 15%</span></div>
   </div>
@@ -199,6 +203,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const fmt = n => (Math.round(n * 10) / 10).toLocaleString('en-US');
+const CALM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* the plan square, in its own units */
 const PLAN = 1000;                  // the plan is laid out in a square this wide
@@ -320,7 +325,30 @@ function layout(root, mArea, mHeight, maxH) {
       me.kids.push(walk(b.it.c, b.x, b.y, b.w, b.h, depth + 1, rank + (ghost ? 0 : 1), here));
     return me;
   }
-  return walk(root, 0, 0, PLAN, PLAN, 0, 0, '');
+  const tree = walk(root, 0, 0, PLAN, PLAN, 0, 0, '');
+  occlude(tree);
+  return tree;
+}
+
+/* ---------- crowding, per box ---------- */
+/* An ambient-occlusion stand-in that costs one pass over the tree: a file is in shade in
+   proportion to how many siblings share its plate and how small its own footprint is
+   against theirs, released again by its own height, because a tower's upper storeys are
+   in the open however tight the ground is. The second half of the effect — the pool of
+   gloom a whole cluster sits in — is the blurred density layer in drawModel. */
+function occlude(box) {
+  const files = box.kids.filter(k => k.file);
+  if (files.length) {
+    const areas = files.map(f => f.w * f.h).sort((a, b) => a - b);
+    const mid = areas[areas.length >> 1] || 1;
+    const many = Math.min(1, Math.max(0, (files.length - 3) / 42));
+    for (const f of files) {
+      const small = Math.min(1, Math.max(0, 1 - (f.w * f.h) / (mid * 1.6)));
+      const open = 1 - Math.min(0.62, (f.z1 / HMAX) * 1.5);
+      f.ao = 1 - (many * 0.55 + small * 0.45) * 0.30 * open;
+    }
+  }
+  for (const k of box.kids) occlude(k);
 }
 
 /* A plate always sits behind everything standing on it, whichever way the plan is
@@ -335,13 +363,13 @@ function paintOrder(box, out = []) {
 }
 
 /* ---------- colour ---------- */
-/* The studio bands a metric at two percentiles of what is on screen and paints
-   the three bands. Nothing is a hue for its own sake — the band is the fact. */
-const BAND = [
-  { top: '#4e8a63', left: '#28453380', right: '#365f45' },
-  { top: '#a8873c', left: '#53431d80', right: '#75612c' },
-  { top: '#a8523f', left: '#54281f80', right: '#763a2d' },
-];
+/* The studio bands a metric at two percentiles of what is on screen. Here a band is a
+   *material* rather than a set of three face colours: one mid-tone pigment, which the
+   lighting then values. That is what makes a tower and a low block read as the same stuff
+   in different light — the band is still the fact, and it is the only thing the metric
+   touches. */
+const BAND = [[104, 138, 112], [176, 143, 74], [174, 94, 72]];
+const PLATE_TONE = [[46, 49, 54], [39, 42, 46], [33, 36, 40]];
 function bands(k) {
   const v = sorted(k);
   if (!v.length) return [0, 0];
@@ -396,6 +424,53 @@ function rank(v, k) {
   return s.length ? i / s.length : 0;
 }
 
+/* ---------- the lamp ---------- */
+/* One warm key, one cool fill, both fixed in the *model's* own space rather than the
+   screen's — so turning the plan turns which side is lit, which is the whole point of a
+   thing standing on a desk under a lamp. Five surface orientations exist in this model
+   (four walls and a roof), so the light is solved five times per frame and every box then
+   costs one multiply. */
+/* The plan direction matters: at the opening yaw the two walls you can see are the -x and
+   -y ones, so a lamp aimed between them lights both equally and every box goes flat. This one
+   rakes across, lighting -x and +y — one visible wall bright, one in shade. */
+const KEY = norm3([-0.62, 0.40, 0.67]);
+const FILL = norm3([0.55, -0.34, 0.28]);
+const KEY_RGB = [1.00, 0.90, 0.74], FILL_RGB = [0.52, 0.66, 0.92];
+const AMB_RGB = [0.30, 0.325, 0.375];
+const KEY_I = 1.28, FILL_I = 0.34;
+/* A true shadow from that elevation is longer than the plate it lands on, so the slope is
+   compressed. It is the same compression for every box, which is what keeps it readable. */
+const SUN_SLOPE = 0.40;
+const NORMALS = { r: [0, 0, 1], px: [1, 0, 0], nx: [-1, 0, 0], py: [0, 1, 0], ny: [0, -1, 0] };
+const FACE_ID = { r: 0, px: 1, nx: 2, py: 3, ny: 4 };
+let LIT = {};
+
+function norm3(v) { const m = Math.hypot(...v); return v.map(c => c / m); }
+function solveLight() {
+  for (const [k, n] of Object.entries(NORMALS)) {
+    const kd = Math.max(0, n[0] * KEY[0] + n[1] * KEY[1] + n[2] * KEY[2]);
+    const fd = Math.max(0, n[0] * FILL[0] + n[1] * FILL[1] + n[2] * FILL[2]);
+    const sky = Math.max(0, n[2]) * 0.14;
+    LIT[k] = AMB_RGB.map((a, i) =>
+      a + KEY_I * kd * KEY_RGB[i] + FILL_I * fd * FILL_RGB[i] + sky * FILL_RGB[i]);
+  }
+}
+
+/* rgb() strings are the one real cost in a per-frame repaint of 1547 boxes, so occlusion
+   is quantised to 24 steps and every (material, orientation, shade) triple is built once */
+const SWATCH = new Map();
+function tone(base, face, ao) {
+  const q = Math.round(ao * 24);
+  const id = base[0] * 1e6 + base[1] * 1e3 + base[2] + FACE_ID[face] * 1e9 + q * 1e10;
+  let s = SWATCH.get(id);
+  if (s === undefined) {
+    const m = LIT[face], k = q / 24;
+    s = 'rgb(' + base.map((c, i) => Math.min(255, Math.round(c * m[i] * k))).join(',') + ')';
+    SWATCH.set(id, s);
+  }
+  return s;
+}
+
 /* ---------- camera ---------- */
 /* Still axonometric — no perspective, no engine. Turning the plan under a fixed
    projection gives orbit; the y multiplier is the pitch, from ground to overhead. */
@@ -406,11 +481,6 @@ const YAW = Math.PI / 4, PITCH = 0.6155;
 const cam = { yaw: YAW, pitch: PITCH, scale: 1, ox: 0, oy: 0 };
 const C = PLAN / 2;
 
-/* An orthographic camera over a horizontal plan: yaw turns the plan under it, pitch
-   is the angle it looks down from. Across the screen nothing is foreshortened; into
-   the screen everything is foreshortened by sin(pitch), and height by cos(pitch).
-   Scaling the across axis by a constant instead — which is what a hard-coded pair of
-   multipliers does — stretches the whole picture and shears it as it turns. */
 /* The eye sits a finite distance from the plan and everything divides by how far away it
    is, which is what makes a receding floor read as a floor. CodeCharta's own studio does
    the same — its bundle builds `new PerspectiveCamera(45, ...)` — and an orthographic view
@@ -477,83 +547,182 @@ function boxesNow() {
   return paintOrder(layout(DATA, state.area, state.height, maxH));
 }
 
+/* the zoom the whole model fits at, kept so anything measured in model units — the gloom's
+   spread, most of all — can be drawn at the same size relative to the model at any zoom */
+let fitScale = 1;
 function fit() {
   const st = $('stage'), W = st.clientWidth, H = st.clientHeight;
   const e = extent();
-  cam.scale = e.k;
+  cam.scale = fitScale = e.k;
   cam.ox = W / 2 - e.mx * e.k;
   cam.oy = H / 2 - e.my * e.k;
 }
 
-/* ---------- draw ---------- */
-const cv = $('cv'), ctx = cv.getContext('2d');
-let view = null;   // { boxes, lo, hi }
-const labels = [];  // the screen rects of the names already written this frame
+/* ---------- the layers ---------- */
+/* Four canvases, because the model is expensive and only two of its parts move. The model
+   is redrawn when the state or the camera changes; every frame in between is one drawImage
+   plus the cords and whatever is lifted. The rise is the exception — it redraws the model
+   sixty times a second, and pays for it by dropping the grain and the names. */
+const cv = $('cv'), fctx = cv.getContext('2d');
+const modelCv = document.createElement('canvas'), mctx = modelCv.getContext('2d');
+const shortCv = document.createElement('canvas'), sctx = shortCv.getContext('2d');
+const tallCv = document.createElement('canvas'), tctx = tallCv.getContext('2d');
+const denseCv = document.createElement('canvas'), dctx = denseCv.getContext('2d');
+const SHADOW_SCALE = 0.5, DENSE_SCALE = 0.28;
+let g = mctx;                      // the target the drawing helpers write to
+let view = null;                   // { boxes, lo, hi }
+let W = 0, H = 0, dpr = 1;
+const labels = [];                 // the screen rects of the names already written this frame
 
-function render() {
+/* one 96px tile of noise, built once: the grain is a pattern fill, not per-box work */
+let GRAIN = null;
+function grain() {
+  if (GRAIN) return GRAIN;
+  const t = document.createElement('canvas'); t.width = t.height = 96;
+  const c = t.getContext('2d'), im = c.createImageData(96, 96);
+  for (let i = 0; i < im.data.length; i += 4) {
+    const v = 118 + (Math.random() * 74 | 0);
+    im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255;
+  }
+  c.putImageData(im, 0, 0);
+  GRAIN = mctx.createPattern(t, 'repeat');
+  return GRAIN;
+}
+
+function sizeLayers() {
   const st = $('stage');
-  const W = st.clientWidth, H = st.clientHeight, dpr = devicePixelRatio || 1;
-  cv.width = W * dpr; cv.height = H * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, W, H);
+  W = st.clientWidth; H = st.clientHeight; dpr = devicePixelRatio || 1;
+  for (const [c, k] of [[cv, 1], [modelCv, 1], [shortCv, SHADOW_SCALE],
+                        [tallCv, SHADOW_SCALE], [denseCv, DENSE_SCALE]]) {
+    const w = Math.max(1, Math.round(W * dpr * k)), h = Math.max(1, Math.round(H * dpr * k));
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+  }
+  fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  sctx.setTransform(dpr * SHADOW_SCALE, 0, 0, dpr * SHADOW_SCALE, 0, 0);
+  tctx.setTransform(dpr * SHADOW_SCALE, 0, 0, dpr * SHADOW_SCALE, 0, 0);
+  dctx.setTransform(dpr * DENSE_SCALE, 0, 0, dpr * DENSE_SCALE, 0, 0);
+}
 
-  /* One tree, one layout, one set of colour bands. Zooming is the only way in, so a
-     building's colour means the same thing wherever you are looking from. */
-  const root = DATA;
-  const files = leaves(root);
+/* ---------- the model ---------- */
+/* rebuilt only when the tree, the channels or the camera change */
+function build() {
+  const files = leaves(DATA);
   const maxH = Math.max(...files.map(f => at(f, state.height)), 1);
-  const boxes = paintOrder(layout(root, state.area, state.height, maxH));
+  const boxes = paintOrder(layout(DATA, state.area, state.height, maxH));
   const [lo, hi] = bands(state.colour);
-  view = { boxes, lo, hi };
-
-  for (const b of boxes) drawBox(b, view);
-  /* biggest plate first, so the name that survives a collision is the one with the
-     most ground behind it rather than whichever the tree happened to reach first */
-  labels.length = 0;
-  for (const b of [...boxes].filter(b => !b.file && !b.ghost).sort((a, c) => c.w * c.h - a.w * a.h))
-    plateLabel(b);
-  /* Ties are drawn last, over the city, because a line that disappears behind a tower
-     is worse than one that floats. The near end is whatever the pointer holds. */
-  const seat = new Map();
-  for (const b of boxes) if (b.file) seat.set(b.path, b);
-  if (state.ties) drawTies(seat, TOP_TIES, .34, 1);
-  const focus = state.hover && state.hover.file ? state.hover
-              : state.pinned && state.pinned.file ? state.pinned : null;
-  if (focus) drawTies(seat, (LINKS.get(focus.path) || []).map(([o, v]) => [focus.path, o, v]),
-                      .95, 1.9);
-
-  /* the pinned one stays lit after the pointer has gone, so the panel and the map agree */
-  if (state.pinned) {
-    const still = boxes.find(b => b.path === state.pinned.path);
-    if (still) drawBox(still, view, true);
-  }
-  if (state.hover) drawBox(state.hover, view, true);
-
-  $('count').textContent = `${files.length.toLocaleString('en-US')} files · ${DESC[state.area].title} ${fmt(roll(root, state.area))} total`;
+  view = { boxes, lo, hi, plates: boxes.filter(b => !b.file), files: boxes.filter(b => b.file) };
+  for (const b of view.files) b.rd = Math.hypot(b.x + b.w / 2 - C, b.y + b.h / 2 - C) / (C * 1.42);
+  $('count').textContent = `${files.length.toLocaleString('en-US')} files · ${DESC[state.area].title} ${fmt(roll(DATA, state.area))} total`;
   key(lo, hi);
+  modelDirty = true;
 }
 
-/* One tie: an arc between two roofs, bowed away from the ground by a share of the
-   distance it spans, so a pair of neighbours is a shallow hop and a pair on opposite
-   sides of the map is a high one. */
-function drawTies(seat, list, alpha, width) {
-  ctx.lineCap = 'round';
-  for (const [from, to, v] of list) {
-    const a = seat.get(from), b = seat.get(to);
-    if (!a || !b) continue;
-    const p = project(a.x + a.w / 2, a.y + a.h / 2, a.z1);
-    const q = project(b.x + b.w / 2, b.y + b.h / 2, b.z1);
-    const run = Math.hypot(q[0] - p[0], q[1] - p[1]);
-    if (run < 3) continue;
-    ctx.strokeStyle = `rgba(120,182,255,${(alpha * v).toFixed(3)})`;
-    ctx.lineWidth = width * (0.5 + v);
-    ctx.beginPath();
-    ctx.moveTo(...p);
-    ctx.quadraticCurveTo((p[0] + q[0]) / 2, (p[1] + q[1]) / 2 - run * 0.34, ...q);
-    ctx.stroke();
+/* Every plate, then the shadows they and their buildings cast, then every building. The
+   split is safe because plate tops are all coplanar at z=0 and tile the plan, so a plate
+   can only ever hide another plate's skirt — never anything standing up. It is also the
+   only way to blur a thousand shadows for the price of two: they are stamped solid into
+   one half-resolution canvas per softness and composited in a single pass. */
+function drawModel(rising) {
+  g = mctx;
+  g.clearRect(0, 0, W, H);
+  desk();
+  sctx.clearRect(0, 0, W, H); tctx.clearRect(0, 0, W, H);
+  dctx.clearRect(0, 0, W, H);
+  sctx.fillStyle = tctx.fillStyle = '#000';
+
+  for (const b of view.plates) if (!b.ghost) { drawBox(b); shadow(b, b.z1 - b.z0, sctx); }
+  for (const b of view.files) {
+    const z = riseZ(b, rising);
+    if (z > 0.2) shadow(b, z, z > 26 ? tctx : sctx);
+    density(b, z);
   }
+  blit(shortCv, 3.0, 0.44);
+  blit(tallCv, 8.5, 0.40);
+  for (const b of view.files) drawBox(b, riseZ(b, rising));
+  /* A treemap leaves a tower almost no bare plate to fall on, so the same tall-shadow layer
+     goes down a second time over the roofs it actually reaches. It is the one pass that puts
+     the towers *among* the blocks rather than beside them, and it costs nothing extra. */
+  g.save();
+  g.globalCompositeOperation = 'multiply';
+  blit(tallCv, 7, 0.17);
+  g.restore();
+  /* the pool of gloom a cluster sits in: coverage by small footprints, blurred wide and
+     multiplied back over everything, so a tight folder is in shade and a lone tower is not */
+  g.save();
+  g.globalCompositeOperation = 'multiply';
+  g.globalAlpha = 0.22;
+  g.filter = `blur(${(7 * Math.min(3.5, Math.max(0.6, cam.scale / fitScale))).toFixed(1)}px)`;
+  g.drawImage(denseCv, 0, 0, W, H);
+  g.restore();
+
+  if (!rising) {
+    g.save();
+    g.globalCompositeOperation = 'overlay';
+    g.globalAlpha = 0.05; g.fillStyle = grain();
+    g.fillRect(0, 0, W, H);
+    g.restore();
+    labels.length = 0;
+    for (const b of [...view.plates].filter(b => !b.ghost).sort((a, c) => c.w * c.h - a.w * a.h))
+      plateLabel(b);
+  }
+  modelDirty = false;
 }
 
+/* the desk and the pool the lamp throws on it, so the model has something to sit in */
+function desk() {
+  const gr = g.createRadialGradient(W * 0.44, H * 0.36, 0, W * 0.44, H * 0.36, Math.max(W, H) * 0.78);
+  gr.addColorStop(0, '#171a1e'); gr.addColorStop(0.55, '#0e1013'); gr.addColorStop(1, '#070809');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+}
+
+function blit(src, px, alpha) {
+  g.save();
+  g.globalAlpha = alpha; g.filter = `blur(${px}px)`;
+  g.drawImage(src, 0, 0, W, H);
+  g.restore();
+}
+
+/* the footprint, pushed across the plan away from the key light by a share of the height */
+const SUN_XY = [-KEY[0] / Math.hypot(KEY[0], KEY[1]), -KEY[1] / Math.hypot(KEY[0], KEY[1])];
+function shadow(b, height, t) {
+  const c = height * SUN_SLOPE, ox = SUN_XY[0] * c, oy = SUN_XY[1] * c;
+  quadOn(t, project(b.x + ox, b.y + oy, 0), project(b.x + b.w + ox, b.y + oy, 0),
+         project(b.x + b.w + ox, b.y + b.h + oy, 0), project(b.x + ox, b.y + b.h + oy, 0));
+}
+
+/* a small footprint counts for much more than a large one, so the layer reads as crowding
+   rather than as coverage */
+function density(b, z) {
+  const r = [project(b.x, b.y, 0), project(b.x + b.w, b.y, 0),
+             project(b.x + b.w, b.y + b.h, 0), project(b.x, b.y + b.h, 0)];
+  const wide = Math.max(r[0][0], r[1][0], r[2][0], r[3][0])
+             - Math.min(r[0][0], r[1][0], r[2][0], r[3][0]);
+  if (wide < 0.7) return;
+  const a = Math.min(0.55, 11 / (Math.sqrt(b.w * b.h) + 12));
+  dctx.fillStyle = `rgba(0,0,0,${a.toFixed(3)})`;
+  dctx.beginPath();
+  dctx.moveTo(...r[0]); dctx.lineTo(...r[1]); dctx.lineTo(...r[2]); dctx.lineTo(...r[3]);
+  dctx.closePath(); dctx.fill();
+}
+
+/* ---------- the rise ---------- */
+/* The signature. Buildings grow out of their plates from the middle of the plan outwards,
+   with a touch of overshoot at the top of the travel, and the whole assembly is over in a
+   second. It runs once, on load — never on hover, and never on a channel change, because a
+   model that reassembles every time you change a menu is a loading screen. */
+const RISE_SPAN = 620, RISE_DUR = 400;
+let riseT0 = 0, rising = false;
+function riseZ(b, on) {
+  if (!on) return b.z1;
+  const t = (performance.now() - riseT0 - b.rd * RISE_SPAN) / RISE_DUR;
+  if (t <= 0) return 0;
+  if (t >= 1) return b.z1;
+  const u = t - 1, s = 1.15;
+  return b.z1 * (1 + (s + 1) * u * u * u + s * u * u);
+}
+
+/* ---------- boxes ---------- */
 /* The two walls you can see depend on which way the plan is turned, so they are
    found each frame rather than fixed to the +x and +y sides. */
 function nearWalls(x, y, w, h) {
@@ -563,86 +732,77 @@ function nearWalls(x, y, w, h) {
   return [[c[(near + 3) % 4], c[near]], [c[near], c[(near + 1) % 4]]];
 }
 
-function drawBox(b, v, lit) {
+const LIFT = 7;
+function drawBox(b, zTop, lift) {
   if (b.ghost) return;
-  const { x, y, w, h, z0, z1 } = b;
+  const { x, y, w, h } = b;
+  const z0 = b.z0 + (lift || 0), z1 = (zTop === undefined ? b.z1 : zTop) + (lift || 0);
+  const base = b.file ? BAND[bandOf(b)] : PLATE_TONE[Math.min(2, b.depth)];
+  const ao = b.file ? (b.ao === undefined ? 1 : b.ao) : 1;
+  const warm = lift ? 1.16 : 1;
 
-  /* A plate is the ground its buildings stand on, so filling it hides the very thing
-     you are pointing at. A folder is marked by its edge; only a building is filled. */
-  if (lit && !b.file) { outline(b); return; }
-
-  let top, left, right;
-  if (b.file) {
-    const val = at(b.n, state.colour);
-    const band = BAND[val > v.hi ? 2 : val > v.lo ? 1 : 0];
-    top = band.top; left = band.left; right = band.right;
-  } else {
-    /* two shades, not one per level: a ramp that keeps climbing reads as a ziggurat */
-    top = b.depth < 2 ? '#1b1d21' : '#212429';
-    left = '#101215'; right = '#171a1e';
-  }
-
-  const mid = project(x + w / 2, y + h / 2, 0)[0];
   /* a wall thinner than a couple of units is a dark hairline that only adds noise */
   if (b.file || z1 - z0 >= 2) {
-    for (const [a, e] of nearWalls(x, y, w, h)) {
-      const face = (project(a[0], a[1], 0)[0] + project(e[0], e[1], 0)[0]) / 2 < mid ? left : right;
+    for (const [a, e] of nearWalls(x, y, w, h))
       quad(project(a[0], a[1], z0), project(e[0], e[1], z0),
-           project(e[0], e[1], z1), project(a[0], a[1], z1), face);
-    }
+           project(e[0], e[1], z1), project(a[0], a[1], z1),
+           tone(base, pickFace(x, y, a, e), ao * warm));
   }
 
   const r = [project(x, y, z1), project(x + w, y, z1),
              project(x + w, y + h, z1), project(x, y + h, z1)];
-  quad(r[0], r[1], r[2], r[3], top);
+  quad(r[0], r[1], r[2], r[3], tone(base, 'r', ao * warm));
 
-  /* an edge on the roof, or a run of neighbours reads as one solid slab */
   const rw = Math.max(...r.map(p => p[0])) - Math.min(...r.map(p => p[0]));
+  /* the roof's lit edges catch the lamp, the others take the plain seam: without the first
+     a run of neighbours reads as one slab, and without the second a deep folder is a frame */
   if (rw > 5 || !b.file) {
-    /* the edge fades with depth too, so a deep folder is a seam and not a frame */
-    const a = 0.13 / (1 + b.depth * 0.7);
-    ctx.strokeStyle = b.file ? 'rgba(0,0,0,.45)' : `rgba(255,255,255,${a.toFixed(3)})`;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(...r[0]); r.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
-    ctx.stroke();
+    g.lineWidth = 1;
+    if (b.file) {
+      g.strokeStyle = 'rgba(0,0,0,.42)';
+      g.beginPath();
+      g.moveTo(...r[0]); r.slice(1).forEach(p => g.lineTo(...p)); g.closePath(); g.stroke();
+      litEdges(x, y, w, h, z1, lift ? 0.66 : 0.42);
+    } else {
+      const a = 0.13 / (1 + b.depth * 0.7);
+      g.strokeStyle = `rgba(255,255,255,${a.toFixed(3)})`;
+      g.beginPath();
+      g.moveTo(...r[0]); r.slice(1).forEach(p => g.lineTo(...p)); g.closePath(); g.stroke();
+    }
   }
-
-  /* A focused block keeps its band: the band is the fact the reader is pointing at, and a
-     fill that replaced it would answer the question by erasing it. The mark is a rim. */
-  if (lit) rim(b);
 
   /* Twenty-five noted files among fifteen hundred is a needle in a field, so the note has to
      be visible from the map rather than found by pointing at things until one appears. */
   if (b.file && NOTES.files && NOTES.files[b.path] && rw > 7) {
     const cx = (r[0][0] + r[2][0]) / 2, cy = (r[0][1] + r[2][1]) / 2;
     const rad = Math.max(1.6, Math.min(3.4, rw * 0.09));
-    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, 7);
-    ctx.fillStyle = '#dceaff'; ctx.fill();
-    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(10,14,20,.75)'; ctx.stroke();
+    g.beginPath(); g.arc(cx, cy, rad, 0, 7);
+    g.fillStyle = '#dceaff'; g.fill();
+    g.lineWidth = 1; g.strokeStyle = 'rgba(10,14,20,.75)'; g.stroke();
   }
 }
 
-/* The focused building's own silhouette in the accent: the roof rim, and the standing edges
-   of the two walls you can see, so a block reads as picked from above and from the side.
-   The dark pass under it is what keeps the rim off a pale roof from vanishing into it. */
-function rim(b) {
-  const { x, y, w, h, z0, z1 } = b;
-  const r = [project(x, y, z1), project(x + w, y, z1),
-             project(x + w, y + h, z1), project(x, y + h, z1)];
-  const posts = [];
-  for (const [a, e] of nearWalls(x, y, w, h))
-    for (const p of [a, e]) posts.push([project(p[0], p[1], z0), project(p[0], p[1], z1)]);
+const bandOf = b => { const v = at(b.n, state.colour); return v > view.hi ? 2 : v > view.lo ? 1 : 0; };
 
-  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  for (const [width, paint] of [[3.4, 'rgba(6,10,16,.7)'], [1.6, '#3E9BFF']]) {
-    ctx.lineWidth = width; ctx.strokeStyle = paint;
-    ctx.beginPath();
-    ctx.moveTo(...r[0]); r.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
-    for (const [a, e] of posts) { ctx.moveTo(...a); ctx.lineTo(...e); }
-    ctx.stroke();
+/* the wall's own world orientation, from which side of the box the edge sits on */
+function pickFace(x, y, a, e) {
+  if (a[1] === e[1]) return a[1] === y ? 'ny' : 'py';
+  return a[0] === x ? 'nx' : 'px';
+}
+
+/* the two roof edges whose outward normal faces the lamp */
+function litEdges(x, y, w, h, z, alpha) {
+  g.strokeStyle = `rgba(255,242,222,${alpha})`;
+  g.lineWidth = 1;
+  const sides = [['ny', [x, y], [x + w, y]], ['py', [x, y + h], [x + w, y + h]],
+                 ['nx', [x, y], [x, y + h]], ['px', [x + w, y], [x + w, y + h]]];
+  g.beginPath();
+  for (const [f, a, e] of sides) {
+    const n = NORMALS[f];
+    if (n[0] * KEY[0] + n[1] * KEY[1] <= 0.06) continue;
+    g.moveTo(...project(a[0], a[1], z)); g.lineTo(...project(e[0], e[1], z));
   }
-  ctx.lineCap = 'butt';
+  g.stroke();
 }
 
 /* the plate's own edge, plus a wash on the two walls that face you */
@@ -654,19 +814,24 @@ function outline(b) {
 
   const r = [project(x, y, z1), project(x + w, y, z1),
              project(x + w, y + h, z1), project(x, y + h, z1)];
-  ctx.fillStyle = 'rgba(62,155,255,.10)';
-  ctx.beginPath();
-  ctx.moveTo(...r[0]); r.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = '#3E9BFF'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
-  ctx.stroke();
+  g.fillStyle = 'rgba(62,155,255,.10)';
+  g.beginPath();
+  g.moveTo(...r[0]); r.slice(1).forEach(p => g.lineTo(...p)); g.closePath();
+  g.fill();
+  g.strokeStyle = '#3E9BFF'; g.lineWidth = 2; g.lineJoin = 'round';
+  g.stroke();
 }
 
 function quad(a, b, c, d, fill) {
-  ctx.fillStyle = fill;
-  ctx.beginPath();
-  ctx.moveTo(...a); ctx.lineTo(...b); ctx.lineTo(...c); ctx.lineTo(...d);
-  ctx.closePath(); ctx.fill();
+  g.fillStyle = fill;
+  g.beginPath();
+  g.moveTo(...a); g.lineTo(...b); g.lineTo(...c); g.lineTo(...d);
+  g.closePath(); g.fill();
+}
+function quadOn(t, a, b, c, d) {
+  t.beginPath();
+  t.moveTo(...a); t.lineTo(...b); t.lineTo(...c); t.lineTo(...d);
+  t.closePath(); t.fill();
 }
 
 /* A name is earned by how big the plate is on screen, never by how deep it sits. That
@@ -684,28 +849,128 @@ function plateLabel(b) {
   const p = project(far[0] + inward[0], far[1] + inward[1], 0);
 
   const size = wide > 420 ? 13 : wide > 200 ? 11 : 10;
-  const fade = wide > 420 ? .92 : wide > 200 ? .72 : .5;
-  ctx.font = `${wide > 420 ? 600 : 400} ${size}px -apple-system, sans-serif`;
+  const fade = wide > 420 ? .95 : wide > 200 ? .88 : .78;
+  g.font = `${wide > 420 ? 600 : 400} ${size}px -apple-system, sans-serif`;
 
   /* Squarify seats the largest child in its parent's own corner, so a nested chain aims
      every one of its names at the same point. Labels are placed largest first, and a name
      that would land on one already written is dropped — zoom in and it gets its turn. */
-  const tw = ctx.measureText(b.n.name).width;
+  const tw = g.measureText(b.n.name).width;
   const box = [p[0] + 4, p[1] - size - 3, tw + 8, size + 7];
   /* a name half off the stage reads as a different, shorter name */
-  const st = $('stage');
-  if (box[0] < 2 || box[1] < 2 ||
-      box[0] + box[2] > st.clientWidth - 2 || box[1] + box[3] > st.clientHeight - 2) return;
+  if (box[0] < 2 || box[1] < 2 || box[0] + box[2] > W - 2 || box[1] + box[3] > H - 2) return;
   for (const q of labels)
     if (box[0] < q[0] + q[2] && q[0] < box[0] + box[2] &&
         box[1] < q[1] + q[3] && q[1] < box[1] + box[3]) return;
   labels.push(box);
 
-  ctx.fillStyle = `rgba(255,255,255,${fade})`;
-  ctx.strokeStyle = 'rgba(0,0,0,.78)'; ctx.lineWidth = 2.8;
-  ctx.strokeText(b.n.name, p[0] + 4, p[1] - 3);
-  ctx.fillText(b.n.name, p[0] + 4, p[1] - 3);
+  g.fillStyle = `rgba(255,255,255,${fade})`;
+  g.strokeStyle = 'rgba(0,0,0,.78)'; g.lineWidth = 2.8;
+  g.strokeText(b.n.name, p[0] + 4, p[1] - 3);
+  g.fillText(b.n.name, p[0] + 4, p[1] - 3);
 }
+
+/* ---------- the moving layer ---------- */
+/* One drawImage of the settled model, then the cords, then whatever the pointer is
+   holding up. Nothing here touches the tree, so it is cheap enough to run every frame. */
+function paint() {
+  g = fctx;
+  g.clearRect(0, 0, W, H);
+  g.drawImage(modelCv, 0, 0, W, H);
+  if (rising) return;
+
+  const seat = new Map();
+  for (const b of view.files) seat.set(b.path, b);
+  if (state.ties) drawTies(seat, TOP_TIES, .30, 1);
+  const focus = state.hover && state.hover.file ? state.hover
+              : state.pinned && state.pinned.file ? state.pinned : null;
+  if (focus) drawTies(seat, (LINKS.get(focus.path) || []).map(([o, v]) => [focus.path, o, v]),
+                      .92, 1.9);
+
+  /* the pinned one stays up after the pointer has gone, so the panel and the map agree */
+  const held = [];
+  if (state.pinned) held.push(state.pinned);
+  if (state.hover && (!state.pinned || state.hover.path !== state.pinned.path)) held.push(state.hover);
+  for (const b of held) lifted(b);
+}
+
+/* A lifted building is drawn again, higher, over its own resting self — and the shadow it
+   dropped comes away from it and softens, which is what says "off the plate" rather than
+   "brighter". The blurred shadow also covers the sliver of the resting box the lift
+   uncovers, so nothing has to be erased from the model underneath. */
+function lifted(b) {
+  const up = liftOf(b);
+  if (!b.file) { outline(b); return; }
+  sctx.clearRect(0, 0, W, H);
+  sctx.fillStyle = '#000';
+  shadow(b, 5 + up * 3.4, sctx);
+  blit(shortCv, 2.4 + up * 1.1, 0.62 - up * 0.022);
+  drawBox(b, undefined, up);
+  b.lifted = true;
+}
+
+const LIFT_MS = 190;
+function liftOf(b) {
+  if (CALM) return LIFT;
+  const t = Math.min(1, (performance.now() - (b.upAt || 0)) / LIFT_MS);
+  return LIFT * (1 - Math.pow(1 - t, 3));
+}
+
+/* One cord between two roofs. It is slung over the model rather than hung under it — a
+   cord that sagged the way a real one does would spend its length behind towers — but the
+   profile is the catenary a slung cord actually takes, inverted, not a parabola. The slack
+   is taken up with a damped spring the first half-second after a cord appears. */
+const CAT_A = 2.4, CAT_STEPS = 14;
+const CAT = Array.from({ length: CAT_STEPS + 1 }, (_, i) => {
+  const u = i / CAT_STEPS;
+  return (Math.cosh(CAT_A) - Math.cosh(CAT_A * (2 * u - 1))) / (Math.cosh(CAT_A) - 1);
+});
+let springT0 = -1e9;
+function drawTies(seat, list, alpha, width) {
+  const tau = (performance.now() - springT0) / 1000;
+  const slack = CALM || tau > 0.9 ? 1
+    : 1 + 0.85 * Math.exp(-5.2 * tau) * Math.cos(9.4 * tau);
+  g.lineCap = 'round';
+  for (const [from, to, v] of list) {
+    const a = seat.get(from), b = seat.get(to);
+    if (!a || !b) continue;
+    const az = a.z1 + (a.lifted ? liftOf(a) : 0), bz = b.z1 + (b.lifted ? liftOf(b) : 0);
+    const p = project(a.x + a.w / 2, a.y + a.h / 2, az);
+    const q = project(b.x + b.w / 2, b.y + b.h / 2, bz);
+    const run = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (run < 3) continue;
+    const sag = run * 0.30 * slack;
+    g.strokeStyle = `rgba(214,206,186,${(alpha * v * 0.92).toFixed(3)})`;
+    g.lineWidth = width * (0.5 + v);
+    g.beginPath();
+    g.moveTo(...p);
+    for (let i = 1; i <= CAT_STEPS; i++) {
+      const u = i / CAT_STEPS;
+      g.lineTo(p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u - sag * CAT[i]);
+    }
+    g.stroke();
+  }
+}
+
+/* ---------- the frame loop ---------- */
+/* It sleeps. Nothing is redrawn unless something asked for it, so an idle model costs
+   nothing and the rise, the lift and the spring each keep it awake only while they run. */
+let modelDirty = true, frameDirty = true, lastMs = 0, settled = false;
+/* the one frame after the rise that has to redraw the model with its names and its grain */
+function justSettled() { if (rising || settled) return false; settled = true; return true; }
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (rising && now - riseT0 > RISE_SPAN + RISE_DUR + 40) rising = false;
+  if (rising || justSettled()) modelDirty = true;
+  if (!modelDirty && !frameDirty) return;
+  const t = performance.now();
+  if (modelDirty) drawModel(rising);
+  frameDirty = false;
+  paint();
+  lastMs = performance.now() - t;
+}
+const redraw = () => { modelDirty = true; };
+const restir = () => { frameDirty = true; };
 
 /* ---------- hit test ---------- */
 /* Front to back over the same order the painter used, so the topmost wins. */
@@ -723,8 +988,12 @@ function pick(mx, my) {
   }
   return null;
 }
+/* A lifted box is hit over the union of where it is and where it was: the pointer can
+   leave the drawn box and still be on the resting footprint, and a region that shrank the
+   moment it lifted would flicker the hover on and off at the edge. */
 function inBox(b, mx, my) {
-  const { x, y, w, h, z0, z1 } = b;
+  const { x, y, w, h, z0 } = b;
+  const z1 = b.z1 + (b.lifted ? LIFT : 0);
   const faces = [[project(x, y, z1), project(x + w, y, z1),
                   project(x + w, y + h, z1), project(x, y + h, z1)]];
   for (const [a, e] of nearWalls(x, y, w, h))
@@ -815,7 +1084,7 @@ function detail(b) {
       <p>Point at anything to read it here. <b>Click</b> to pin it,
       <kbd>Esc</kbd> to let go. Folder names appear as you zoom towards them.</p>
       <p style="margin-top:10px">Every number here is measured from the code and its history.
-      Plates carry a written caption, and the files marked <b class="dot">\u25cf</b> carry a
+      Plates carry a written caption, and the files marked <b class="dot">●</b> carry a
       note. Both are read, never counted.</p></div>` + topList() + noteIndex();
     wireRead();
     return;
@@ -858,8 +1127,8 @@ function detail(b) {
     + `<button class="ask" data-def="${c}" aria-expanded="false" `
     + `aria-label="What does ${DESC[c].title} mean?">?</button>`
     + `<b>${fmt(cval)}</b></div>
-      <div class="track"><div class="bars"><i style="background:#4e8a63;flex:50"></i>`
-    + `<i style="background:#a8873c;flex:35"></i><i style="background:#a8523f;flex:15"></i></div>`
+      <div class="track"><div class="bars"><i style="background:#5f8f6c;flex:50"></i>`
+    + `<i style="background:#ab8b48;flex:35"></i><i style="background:#a95c47;flex:15"></i></div>`
     + `<u style="left:${(r * 100).toFixed(1)}%"></u></div>
       <div class="ends"><span>lowest here</span><span>highest</span></div>
       <div class="note">${r > 0.995 ? 'At the very top of this repo — nothing scores higher.'
@@ -911,8 +1180,17 @@ function wireRead() {
   for (const t of $('read').querySelectorAll('.tie[data-go]'))
     t.onclick = () => {
       const box = view.boxes.find(x => x.path === t.dataset.go);
-      if (box) { state.pinned = box; detail(null); render(); }
+      if (box) { hold(box, 'pinned'); detail(null); restir(); }
     };
+}
+
+/* one place a box becomes held, so its lift always starts from now and the old one drops */
+function hold(box, slot) {
+  const was = state[slot];
+  state[slot] = box;
+  if (was && was !== state.hover && was !== state.pinned) was.lifted = false;
+  if (box) { box.upAt = performance.now(); box.lifted = true; springT0 = performance.now(); }
+  restir();
 }
 
 /* The legend is never hidden. A colour that means something only while you remember
@@ -924,7 +1202,7 @@ function key(lo, hi) {
     + `its <b>height</b> is ${DESC[state.height].title}, its <b>colour</b> is `
     + `${DESC[state.colour].title}. A plate is a folder.`
     + (Object.keys(NOTES.files || {}).length
-        ? ` Files marked <b class="dot">\u25cf</b> carry a written note.` : '');
+        ? ` Files marked <b class="dot">●</b> carry a written note.` : '');
   for (const [id, k] of [['mArea', 'area'], ['mHeight', 'height'], ['mColour', 'colour']])
     $(id).title = DESC[state[k]].description;
   $('keyName').textContent = DESC[state.colour].title;
@@ -934,7 +1212,7 @@ function key(lo, hi) {
 
 function reset() {
   cam.yaw = YAW; cam.pitch = PITCH;
-  fit(); render(); stamp();
+  fit(); redraw(); stamp();
 }
 
 /* the three channels and the camera live in the URL, so a view can be sent to somebody */
@@ -972,9 +1250,9 @@ Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]
       o.value = m; o.textContent = DESC[m].title; sel.append(o);
     }
     sel.value = state[k];
-    /* the panel's idle list is ranked on the colour channel, so it is rebuilt with the map */
-    sel.onchange = () => { state[k] = sel.value; state.hover = null;
-                           render(); detail(null); stamp(); };
+    /* the panel's idle list is ranked on the colour channel, so it is rebuilt with the model */
+    sel.onchange = () => { state[k] = sel.value; hold(null, 'hover');
+                           build(); detail(null); stamp(); };
   }
 
   /* ---------- the camera, on the mouse ---------- */
@@ -1008,7 +1286,7 @@ Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]
       cam.pitch = snap(Math.min(1.45, Math.max(0.10, drag.pitch + dy * 0.0028)), PITCH);
       cam.ox = drag.ox; cam.oy = drag.oy; cam.scale = drag.scale;
     }
-    state.hover = null; render();
+    hold(null, 'hover'); redraw();
   });
 
   addEventListener('mouseup', () => {
@@ -1030,30 +1308,29 @@ Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]
     cam.ox = mx - (mx - cam.ox) * next;
     cam.oy = my - (my - cam.oy) * next;
     cam.scale *= next;
-    state.hover = null; render();
+    hold(null, 'hover'); redraw();
   };
 
   cv.onmousemove = e => {
-    if (drag) return;
+    if (drag || rising) return;
     const r = cv.getBoundingClientRect();
     const hit = pick(e.clientX - r.left, e.clientY - r.top);
     if (hit === state.hover) return;
-    state.hover = hit; render(); detail(hit);
+    hold(hit, 'hover'); detail(hit);
   };
-  cv.onmouseleave = () => { if (drag) return; state.hover = null; render(); detail(null); };
+  cv.onmouseleave = () => { if (drag) return; hold(null, 'hover'); detail(null); };
   cv.onclick = e => {
     if (moved > 4) return;              // a drag that ended on a plate is not a click
     const r = cv.getBoundingClientRect();
     const hit = pick(e.clientX - r.left, e.clientY - r.top);
     if (!hit) return;
     /* pin it so the numbers stay while the pointer goes to the controls */
-    state.pinned = state.pinned && state.pinned.path === hit.path ? null : hit;
-    render(); detail(hit);
+    hold(state.pinned && state.pinned.path === hit.path ? null : hit, 'pinned');
+    detail(hit);
   };
   addEventListener('keydown', e => {
-    if (e.key === "Escape") { state.pinned = null; render(); detail(null); }
+    if (e.key === "Escape") { hold(null, 'pinned'); detail(null); hideDef(); }
     if (e.key === "r" || e.key === "R") reset();
-    if (e.key === 'Escape') hideDef();
     if (e.key === "t" || e.key === "T") { $('ties').checked = !state.ties; $('ties').onchange(); }
   });
   $('reset').onclick = reset;
@@ -1061,8 +1338,9 @@ Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]
   addEventListener('mousedown', e => { if (!e.target.closest('#pop, .ask')) hideDef(); });
   addEventListener('resize', hideDef);
   $('ties').checked = state.ties;
-  $('ties').onchange = () => { state.ties = $('ties').checked; render(); stamp(); };
-  addEventListener('resize', () => { fit(); render(); });
+  $('ties').onchange = () => { state.ties = $('ties').checked; springT0 = performance.now();
+                               restir(); stamp(); };
+  addEventListener('resize', () => { sizeLayers(); fit(); redraw(); });
 
   const num = (k, d, lo, hi) => {
     const n = parseFloat(q.get(k));
@@ -1070,7 +1348,14 @@ Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]
   };
   cam.yaw = num("yaw", YAW, -Math.PI * 2, Math.PI * 2);
   cam.pitch = num("pitch", PITCH, 0.10, 1.45);
+
+  solveLight();
+  sizeLayers();
   fit();
-  detail(null); render();
+  build();
+  detail(null);
+  rising = !CALM;
+  riseT0 = performance.now();
+  requestAnimationFrame(frame);
 });
 </script>
