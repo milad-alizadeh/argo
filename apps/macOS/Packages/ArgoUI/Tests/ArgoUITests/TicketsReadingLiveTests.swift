@@ -10,13 +10,14 @@ import Testing
 /// The other two live sources have suites of their own over the same fixture: the roster is
 /// `TicketsProgressCountTests`, the poll's listing is `TicketsServedItemTests`.
 @Suite("Tickets room live reading")
+@MainActor
 struct TicketsReadingLiveTests {
     struct HealthCase: Sendable {
         let fault: ConnectionFault?
         let state: ArgoOperationalState?
     }
 
-    private static let states = [
+    nonisolated private static let states = [
         HealthCase(fault: nil, state: .idle),
         HealthCase(fault: .grantRefused, state: .failure),
         HealthCase(fault: .read(.rateLimited), state: .attention),

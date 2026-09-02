@@ -68,6 +68,26 @@ enum PerfBudgets {
     /// bias in every trial is not one a least-of-N can remove.
     static let labellingLooks = 754
 
+    /// `TicketsRoomCostTests` — selecting one ticket may not scale with the ticket set.
+    ///
+    /// Recorded: 2 Tickets read for a selection over a listing of 200 and over one of 2 000 — the
+    /// ticket itself and its one blocker · M4 Pro · either · exact. Before the memo a selection
+    /// cost the whole listing: 562 against 5 602, or a ratio of 9.97.
+    ///
+    /// Rule 3's 1.3, spent on counts that are EXACT rather than on a duration. A ratio and not the
+    /// figures themselves because the two arms are the same work at two sizes, which is the shape
+    /// Rule 3 asks for and the shape that survives a fixture edit.
+    static let ticketSelectionFlat = 1.3
+
+    /// `TicketsRoomCostTests` — placing the hero's pool may not cost more PER TICKET as the
+    /// listing grows. Its own bound and not the selection's: the two claims are about different
+    /// passes, and one moved to fit a red run must not move the other.
+    ///
+    /// Recorded: 1.8 chart children placed per ticket over a listing of 200 and over one of 2 000 ·
+    /// M4 Pro · either · exact. The per-item chart search it replaced reads 9.48 times as much per
+    /// ticket at the larger size. Rule 3's 1.3, as above.
+    static let ticketPlacementFlat = 1.3
+
     /// `SessionsRoomReadingCostTests` — how much cheaper a repeat reading at the same stamp is than
     /// the cold one, with Rule 7's 3x spent on it.
     ///

@@ -5,6 +5,7 @@ import Testing
 /// The order the backlog draws in is Argo's own (#892). Every ticket below is served in an order
 /// no key explains, so a room that passed the provider's array through fails all of these.
 @Suite("The backlog states its own order")
+@MainActor
 struct TicketsBacklogOrderTests {
     /// Six tickets in an order that is neither the newest first nor the oldest: #1004 is the one
     /// just filed and the provider served it in the middle, which is the reported symptom.

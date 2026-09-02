@@ -9,6 +9,7 @@ import Testing
 /// Every case here is a claim about the items served; the Binding's health is
 /// `TicketsReadingLiveTests` and the roster is `TicketsProgressCountTests`.
 @Suite("Tickets room served items")
+@MainActor
 struct TicketsServedItemTests {
     /// The two views partition the open set, so neither can be counted where a ticket's edges were
     /// not served. Absent rather than zero: zero is a claim that nothing is blocked.

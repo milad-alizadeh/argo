@@ -5,6 +5,7 @@ import Testing
 /// sequence → age` and nothing else — every case here states the pool and the one input meant to
 /// decide it, so a reader can re-run the ranking by hand.
 @Suite("Next-up ranking")
+@MainActor
 struct NextUpRankingTests {
     /// Priority is the FIRST key, so it outranks both tie-breaks at once: #2 is earlier in the PRD
     /// and older, and still loses to a `high` word.

@@ -196,6 +196,12 @@ enum TicketsRoomProjection {
     /// `matching` is the search field's query, and it narrows LAST: the view chooses the set and
     /// the query narrows within it, which is the order `cockpit-work-room.md` fixes and the order
     /// the heading reads in.
+    ///
+    /// Everything but the selection comes off `TicketsRoomMemo`, which is what makes CLICKING a
+    /// ticket a lookup rather than a second pass over the listing (ADR-0028 Rule 1). The detail is
+    /// derived here on every pass, from the live `showing`, so a remembered room never draws a
+    /// remembered ticket.
+    @MainActor
     static func room(
         from reading: TicketsReading,
         in view: TicketsView = .allOpen,
@@ -203,17 +209,34 @@ enum TicketsRoomProjection {
     )
         -> Room {
         guard reading.provider != nil else { return .vacant(in: reading.project) }
+        let stamp = TicketsRoomMemo.Stamp(of: reading, in: view, matching: query)
+        let held = TicketsRoomMemo.held(at: stamp) {
+            // The STAMP's reading, whose selection is cleared, and never the caller's: what is
+            // remembered must not be able to read the number it is remembered across.
+            unopened(from: stamp.reading, in: view, matching: query)
+        }
+        return held.room.showing(ticket(reading.showing, in: held.listing), at: reading.showing)
+    }
+
+    /// The room with nothing open — every field the selected number is not an input to. Taken once
+    /// per stamp and remembered; `room(from:in:matching:)` above opens it.
+    @MainActor
+    private static func unopened(
+        from reading: TicketsReading,
+        in view: TicketsView,
+        matching query: String,
+    )
+        -> Room {
         let sets = Sets.of(reading)
         let shown = items(of: sets, in: view)
         let search = Query.typed(query).map { narrowed(shown, to: $0) }
         let rows = tree(of: search?.items ?? shown, in: view, reading: reading)
-        let opened = ticket(in: reading)
         return Room(
             views: views(of: sets),
             provider: reading.provider,
             backlog: search.map { railed(rows, matching: $0.hits) } ?? rows,
-            ticket: opened,
-            unreadNumber: opened == nil ? reading.showing : nil,
+            ticket: nil,
+            unreadNumber: nil,
             project: reading.project,
             opened: Opened(
                 view: view,

@@ -6,6 +6,7 @@ import Testing
 /// claim on this card is one a person acts on next, so an unearned chip costs more than a missing
 /// one.
 @Suite("Next-up hero")
+@MainActor
 struct NextUpTests {
     /// #273 is `medium` in the fixture, so the hero does NOT claim high priority for it — the same
     /// word the ticket detail draws beside it (#815). One fact, one answer, both surfaces.

@@ -7,6 +7,7 @@ import Foundation
 /// `TicketsServedItemTests` the poll's listing.
 ///
 /// Beside the suites: nothing the app ships assembles a room from a hand-written `Sources` value.
+@MainActor
 enum TicketsLiveFixture {
     static let account = AccountRecord(
         provider: .github, providerAccountID: "1", displayName: "octocat",

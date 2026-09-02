@@ -9,6 +9,7 @@ import Testing
 /// it changes none of what they say: every reading defined over the open set is still defined over
 /// the open set with a closed listing in hand.
 @Suite("The Closed view")
+@MainActor
 struct TicketsClosedViewTests {
     private func room(
         _ reading: TicketsReading = TicketsFixture.closedRead,

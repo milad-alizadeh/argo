@@ -5,6 +5,7 @@ import Testing
 /// The Tickets room's two panes: how far the seam between them may travel, and what a row does with
 /// more labels than it has width for.
 @Suite("Backlog pane")
+@MainActor
 struct BacklogPaneTests {
     // MARK: - The seam's travel
 

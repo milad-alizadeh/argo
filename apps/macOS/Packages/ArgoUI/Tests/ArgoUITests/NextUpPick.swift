@@ -3,6 +3,7 @@ import Testing
 
 /// The pick out of a reading, for the three suites that assert on one. Held once: each of them had
 /// its own copy of this and its own error beside it, which is three ways for one unwrap to drift.
+@MainActor
 enum NextUpPick {
     static func of(_ reading: TicketsReading) throws -> NextUp.Pick {
         try of(TicketsRoomProjection.room(from: reading))

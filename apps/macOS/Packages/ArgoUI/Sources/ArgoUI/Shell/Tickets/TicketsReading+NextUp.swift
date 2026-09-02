@@ -8,6 +8,7 @@ extension TicketsReading {
     /// · unblocked · session-less`, and the pick is the head of it ranked by `priority desc → PRD
     /// sequence → age` (`TicketsReading+Ranking.swift`). Which ticket most needs attention is a
     /// different question, and the attention channel's.
+    @MainActor
     func nextUp(of open: [Ticket]) -> NextUp {
         // No open LEAF is the clear tier, not the blocked one: "every open leaf is waiting on
         // something still open" is false when there is no open leaf to wait.

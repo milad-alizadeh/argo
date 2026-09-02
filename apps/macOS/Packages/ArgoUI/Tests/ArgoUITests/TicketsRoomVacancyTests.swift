@@ -5,6 +5,7 @@ import Testing
 /// somebody answered with nothing. Conflating them tells a reader their backlog is clear when in
 /// fact nothing has been read.
 @Suite("Tickets room vacancy")
+@MainActor
 struct TicketsRoomVacancyTests {
     @Test
     func `an unbound room is the unbound vacancy`() {
