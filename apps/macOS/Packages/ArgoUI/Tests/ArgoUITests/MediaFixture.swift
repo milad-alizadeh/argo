@@ -1,6 +1,5 @@
 import AppKit
 import ArgoEngine
-@testable import ArgoSpecimens
 import ImageIO
 import Testing
 import UniformTypeIdentifiers

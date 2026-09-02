@@ -1,6 +1,5 @@
 import AppKit
 import ArgoDesign
-@testable import ArgoSpecimens
 @testable import ArgoUI
 import SwiftUI
 import Testing

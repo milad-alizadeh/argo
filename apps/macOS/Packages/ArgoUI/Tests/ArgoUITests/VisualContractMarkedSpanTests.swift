@@ -1,5 +1,4 @@
 import ArgoDesign
-@testable import ArgoSpecimens
 @testable import ArgoUI
 import Testing
 

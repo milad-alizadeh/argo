@@ -1,5 +1,4 @@
 import ArgoEngine
-@testable import ArgoSpecimens
 @testable import ArgoUI
 
 /// The caption loop the fold suites project from: near-identical headless runs sharing one folder,

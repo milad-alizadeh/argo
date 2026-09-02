@@ -1,5 +1,4 @@
 import ArgoEngine
-@testable import ArgoSpecimens
 @testable import ArgoUI
 
 /// One row of every kind the feed can produce. Hand-listed rather than derived: `FeedRow.Content`
