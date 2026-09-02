@@ -16,13 +16,13 @@ extension FeedTableCoordinator {
         // it (#858).
         geometry.settle(at: width, in: model.environment)
         let ground = FeedGeometry.Ground(at: index, of: model)
-        if let known = geometry.height(at: index, under: ground) {
+        if let known = geometry.height(under: ground) {
             return known
         }
         // Rounded UP to a whole point: a non-integral row height still blurs baselines on
         // current macOS, and up rather than to-nearest so text is never clipped by rounding.
         let height = Self.usableHeight(ceil(measure(at: index, of: model, atWidth: width)))
-        geometry.record(height, at: index, under: ground)
+        geometry.record(height, under: ground)
         return height
     }
 

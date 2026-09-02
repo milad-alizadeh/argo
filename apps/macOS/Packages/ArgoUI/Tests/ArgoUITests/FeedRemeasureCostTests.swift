@@ -67,6 +67,23 @@ struct FeedRemeasureCostTests {
         #expect(laid.coordinator.measuredHeight(at: Self.rewritten, in: table) > was)
     }
 
+    /// The narrow scope, over a reading nothing has touched: zero, for the same reason `.all` is.
+    /// It used to surrender the visible rows' heights before noting them, which re-paid a layout
+    /// per row on screen every time a seam drag ended — and a height a drag did not move is still
+    /// true of its row. A width that DID move retires the whole store on its own
+    /// (`FeedGeometry.settle(at:in:)`), which is what leaves this pass nothing to drop.
+    @Test
+    func `a visible re-measure of an unchanged reading measures nothing`() async {
+        let laid = FeedSwitchDeck()
+        await laid.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
+        let measured = laid.coordinator.measurements
+        #expect(measured >= FeedSwitchFixture.alphaRows.count)
+
+        laid.coordinator.remeasure(.visible)
+
+        #expect(laid.coordinator.measurements == measured)
+    }
+
     /// The forced synchronous layout a re-measure does NOT pay for (#955, ADR-0028 Rule 2).
     ///
     /// `scroller.layoutSubtreeIfNeeded()` used to run on every scope, and a clip-view frame notice

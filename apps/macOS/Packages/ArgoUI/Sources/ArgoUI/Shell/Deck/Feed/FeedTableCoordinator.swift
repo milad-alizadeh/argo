@@ -170,9 +170,8 @@ import SwiftUI
         let switched = model != nil && model?.reading != fresh.reading
         model = fresh
         shown = fresh.rows
-        surrenderMovedChip()
-        // A reading that shrank leaves an entry per lost index that nothing can ever match.
-        geometry.dropBeyond(fresh.rows.count)
+        // How many heights may be kept — a ceiling off the reading itself, never a literal.
+        geometry.hold(rows: fresh.rows.count)
         guard table != nil else { return }
         if switched {
             openAfresh()
@@ -204,29 +203,16 @@ import SwiftUI
         place()
     }
 
-    /// Measured heights surrendered — all of them for a re-wrap, or the rows named.
-    func dropMeasuredHeights(_ rows: IndexSet? = nil) {
-        geometry.drop(rows)
+    /// Every measured height surrendered, for the one thing that retires all of them at once: a
+    /// re-wrap. No caller names rows any more — a row whose ground moved is already unfindable, and
+    /// a named drop could only surrender a height still true of the row as it stands.
+    func dropMeasuredHeights() {
+        geometry.drop()
     }
 
     /// Where the reading's measured heights are kept, when the shell keeps them somewhere that
     /// survives this coordinator. Taken before anything is measured — `FeedTable.bind(_:through:)`
     /// runs ahead of the first `apply` — so nothing already known is ever thrown away by the swap.
-    /// The chip the arriving rows moved, and the row it moved off — both measured with a chip they
-    /// no longer have, or without one they now do.
-    ///
-    /// The one height a ground cannot judge: `FeedTableModel.content(at:)` asks
-    /// `FeedCopy.chipOffer(of:at:)`, which reads the row's whole Turn, where a ground reads the row
-    /// and the row above it. Only the reading's LAST message can gain or lose one — every chip
-    /// above it is inside a Turn an arrival cannot reach (`FeedTableDelta.chipRow`) — so this is
-    /// two rows on the passes that move it and nothing at all on every other.
-    private func surrenderMovedChip() {
-        let moved = shown.lastIndex { $0.kind.isMessage }
-        guard moved != geometry.chipRow else { return }
-        geometry.drop(IndexSet([geometry.chipRow, moved].compactMap(\.self)))
-        geometry.chipRow = moved
-    }
-
     /// `nil` where nothing above holds any — a preview, a specimen — which leaves this one its own.
     func keep(_ geometry: FeedGeometry?) {
         guard let geometry, geometry !== self.geometry else { return }
@@ -244,7 +230,8 @@ import SwiftUI
             cell?.host.rootView = model.content(at: row, hasCursor: row == cursorRow)
         }
         guard remeasuring, !rows.isEmpty else { return }
-        dropMeasuredHeights(rows)
+        // Noted, never dropped: the rows whose rendered fact changed answer `nil` by their own
+        // ground, and the rest are still standing at the height they were measured at.
         // Zero duration: this is a correction, not motion. Left to the default, every unfolded
         // prompt would ease the rows below it down.
         NSAnimationContext.runAnimationGroup { pass in

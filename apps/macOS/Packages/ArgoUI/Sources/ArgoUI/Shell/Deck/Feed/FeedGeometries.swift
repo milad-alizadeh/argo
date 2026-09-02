@@ -3,10 +3,11 @@ import SwiftUI
 
 /// One `FeedGeometry` per reading, held above every view identity a switch destroys.
 ///
-/// A height is kept under a `Ground` that names the row it is a fact about, so a single store
-/// shared across readings answers no question WRONG — but the miss overwrites: reading B measures
-/// its rows into the indices A's were at, so A → B → A costs two full readings, which is what a
-/// reader browsing the roster actually does (#858).
+/// A height is filed under a `Ground` that names the row it is a fact about, so a single store
+/// shared across readings answers no question WRONG — but they would share a ceiling: reading B's
+/// rows would evict A's, so A → B → A costs two full readings, which is what a reader browsing the
+/// roster actually does (#858). One store per reading is also what makes that ceiling derivable at
+/// all, since it is the length of ONE reading (`FeedGeometry.hold(rows:)`).
 ///
 /// Keyed by `FeedReading` and bounded, evicted oldest-first (ADR-0028 Rule 4): a store per Session
 /// the window has ever shown is an unbounded cache of held rows. Bounded by COUNT alone, unlike

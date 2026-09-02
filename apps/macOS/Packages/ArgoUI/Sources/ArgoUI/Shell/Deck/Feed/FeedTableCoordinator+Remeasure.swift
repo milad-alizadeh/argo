@@ -14,17 +14,18 @@ extension FeedTableCoordinator {
             return
         case .visible:
             tailing?.cancel()
-            let rows = visibleRows()
-            dropMeasuredHeights(rows)
-            note(rows, on: table)
+            // Noted and not dropped, for `remeasureEverything`'s reason one scope down.
+            note(visibleRows(), on: table)
         case .all:
             remeasureEverything(on: table)
         case .rebuild:
             // No drop of its own. A row measured against an interim launch width is cached too
             // tall, and a reload re-asking that store would re-seat every row on the stale answer —
-            // but a width is part of `FeedGeometry.Ground` now, and rows that re-numbered were
-            // dropped by `execute` before this ran. Emptying it here as well is what made every
-            // return to the Sessions room re-measure a reading nothing had changed about (#858).
+            // but a width retires the store on its own (`FeedGeometry.settle(at:in:)`), and a row
+            // that re-numbered is answered by its own ground rather than by its index. Emptying it
+            // here is what made every return to the Sessions room re-measure a reading nothing had
+            // changed about (#858); emptying it on the reload was the same cost on every arrival
+            // of a Session's whole reading behind its excerpt (`FeedExcerptCostTests`).
             tailing?.cancel()
             table.reloadData()
         }
