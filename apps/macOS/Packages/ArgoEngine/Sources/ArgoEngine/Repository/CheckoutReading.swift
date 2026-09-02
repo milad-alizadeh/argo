@@ -28,9 +28,7 @@ private let gitCheckoutReader = CheckoutReader()
 /// it takes the whole process down. The throwing spelling hands back an error, and a read that
 /// produced nothing is exactly the `nil` this signature already carries for "git answered nothing".
 ///
-/// This is a degrade, not a repair. Something in this process closes a descriptor it does not own —
-/// rarely, under concurrency, and not yet found — and until it is, this decides whether that lands
-/// as one unreadable answer or as a crash in whatever happened to be reading (#588).
+/// The stray closer it was hardened against was a test fixture's, never the app's (#936/#981).
 let gitCommand: GitCommand = { arguments, directoryURL in
     let process = Process()
     let output = Pipe()

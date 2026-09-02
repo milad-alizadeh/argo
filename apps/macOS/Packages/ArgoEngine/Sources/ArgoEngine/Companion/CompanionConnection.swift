@@ -11,7 +11,9 @@ final class CompanionConnection {
     /// called later for one that waits on a decision.
     typealias Reply = @MainActor (String) -> Void
 
-    private let descriptor: Int32
+    /// `-1` once released, so a source handler still in flight neither reads nor writes a number
+    /// the kernel may already have reissued.
+    private var descriptor: Int32
     private let respond: (String, @escaping Reply) -> Void
     private let onClose: () -> Void
     /// Whether the first reply ends the connection — the hook channel's one-exchange lifecycle,
@@ -42,20 +44,40 @@ final class CompanionConnection {
         source.setEventHandler { [weak self] in
             MainActor.assumeIsolated { self?.readAvailable() }
         }
-        // The descriptor is closed HERE and nowhere else. `cancel` is asynchronous, so closing
-        // beside it would free a number GCD is still watching — and the next `accept` hands that
-        // same number to another claim's connection.
+        // Once a source holds the number it is closed HERE and nowhere else. `cancel` is
+        // asynchronous, so closing beside it would free a number GCD is still watching — and the
+        // next `accept` hands that same number to another claim's connection.
         let closing = descriptor
         source.setCancelHandler { Darwin.close(closing) }
         source.resume()
         self.source = source
     }
 
+    /// Cancelling is what releases a descriptor a source holds; one that never reached a source is
+    /// closed here, because nothing else will.
     func close() {
         writeSource?.cancel()
         writeSource = nil
-        source?.cancel()
-        source = nil
+        guard descriptor >= 0 else { return }
+        if let source {
+            source.cancel()
+            self.source = nil
+        } else {
+            Darwin.close(descriptor)
+        }
+        descriptor = -1
+    }
+
+    /// An activated source is retained by GCD, so a connection dropped without a `close` holds its
+    /// descriptor for the life of the process unless the cancel is asked for here.
+    deinit {
+        guard descriptor >= 0 else { return }
+        writeSource?.cancel()
+        if let source {
+            source.cancel()
+        } else {
+            Darwin.close(descriptor)
+        }
     }
 
     private func readAvailable() {

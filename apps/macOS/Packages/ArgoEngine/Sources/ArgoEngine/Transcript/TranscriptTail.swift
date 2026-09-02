@@ -101,6 +101,11 @@ public func transcriptLines(
             let lines = await cursor.drain()
             continuation.yield(lines)
         }
+        guard let watcher else {
+            Task { await cursor.close() }
+            continuation.finish()
+            return
+        }
         continuation.onTermination = { _ in
             watcher.cancel()
             Task { await cursor.close() }
@@ -118,8 +123,11 @@ private final class FileWatcher: Sendable {
     private let source: any DispatchSourceFileSystemObject
     private let onChange: @Sendable () async -> Void
 
-    init(url: URL, onChange: @escaping @Sendable () async -> Void) {
+    /// `nil` where the open failed, because `-1` handed to a source arms a cancel handler on a
+    /// number this process never had.
+    init?(url: URL, onChange: @escaping @Sendable () async -> Void) {
         let descriptor = open(url.path, O_EVTONLY)
+        guard descriptor >= 0 else { return nil }
         self.onChange = onChange
         self.source = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: descriptor,
@@ -128,16 +136,26 @@ private final class FileWatcher: Sendable {
         )
         source.setEventHandler { Task { await onChange() } }
         source.setCancelHandler { close(descriptor) }
+        // Activated HERE and not in `start`: releasing a source that was never activated traps in
+        // libdispatch, and its cancel handler would not have run anyway — so a watcher that is
+        // dropped between the two would both leak the descriptor and take the process with it.
+        source.activate()
     }
 
-    /// Activate, then drain once unprompted: the events only report what happens NEXT, so a file
-    /// that is never written to again would otherwise never be read at all.
+    /// Drain once unprompted: the events only report what happens NEXT, so a file that is never
+    /// written to again would otherwise never be read at all.
     func start() {
-        source.activate()
         Task { await onChange() }
     }
 
     func cancel() {
+        source.cancel()
+    }
+
+    /// An activated source is retained by GCD, so a watcher dropped without a `cancel` holds its
+    /// descriptor for the life of the process. Cancelling twice is not closing twice: the handler
+    /// above is the only closer, and it runs once.
+    deinit {
         source.cancel()
     }
 }
