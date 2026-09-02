@@ -7,8 +7,12 @@ actor ScriptedTickets: TicketReading {
     private var script: [Result<[Ticket], ProviderFetchError>]
     private var reads = 0
 
-    init(_ script: [Result<[Ticket], ProviderFetchError>]) {
+    init(
+        _ script: [Result<[Ticket], ProviderFetchError>],
+        closed pages: [ClosedTicketPage] = [],
+    ) {
         self.script = script
+        self.closedPages = pages
     }
 
     func list(through _: ResolvedBinding) async throws -> [Ticket] {
@@ -21,6 +25,29 @@ actor ScriptedTickets: TicketReading {
     /// count `list` reads, and a by-number read is not one of them.
     func ticket(number: Int, through _: ResolvedBinding) async throws -> Ticket? {
         try script.first?.get().first { $0.number == number }
+    }
+
+    /// The closed half of the script, and it takes no turn either: these suites count `list` reads,
+    /// and the whole claim about the closed read is that it is not one of them.
+    private var closedPages: [ClosedTicketPage] = []
+    private var closedReads: [String?] = []
+
+    func serving(closed pages: [ClosedTicketPage]) -> ScriptedTickets {
+        closedPages = pages
+        return self
+    }
+
+    func closed(after cursor: String?, through _: ResolvedBinding) async throws
+        -> ClosedTicketPage {
+        closedReads.append(cursor)
+        guard !closedPages.isEmpty else { return .empty }
+        return closedPages.count > 1 ? closedPages.removeFirst() : closedPages[0]
+    }
+
+    /// The cursor each closed read carried, in order — what a test asserting `Load more` resumed
+    /// rather than re-read reads.
+    func closedCursors() -> [String?] {
+        closedReads
     }
 
     func readCount() -> Int {

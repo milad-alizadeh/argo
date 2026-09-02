@@ -125,13 +125,26 @@ struct TicketsRoomProjectionTests {
     }
 
     /// Each view's own count is what it draws, or the rail is telling the reader a number the pane
-    /// beside it disagrees with.
+    /// beside it disagrees with. Over EVERY view, `Closed` included — its count comes off the same
+    /// predicate the list does, out of the set the view is defined over (#1075).
     @Test
     func `every view's count is the number of rows it draws`() {
         for view in TicketsView.allCases {
-            let room = TicketsRoomProjection.room(from: TicketsFixture.reading, in: view)
+            let room = TicketsRoomProjection.room(from: TicketsFixture.closedRead, in: view)
             #expect(room.view(view)?.count == drawnIds(room).count)
         }
+    }
+
+    /// The other half of that, and the one this ticket is about: before the closed read has
+    /// answered the count is ABSENT rather than zero, on `Vacancy.unread`'s rule. Opening onto `0`
+    /// is the number that says the reader has finished nothing, and nobody asked.
+    @Test
+    func `the closed count is absent until the closed read has answered`() {
+        let unread = TicketsRoomProjection.room(from: TicketsFixture.reading, in: .closed)
+        let read = TicketsRoomProjection.room(from: TicketsFixture.closedRead, in: .closed)
+
+        #expect(unread.view(.closed)?.count == nil)
+        #expect(read.view(.closed)?.count != nil)
     }
 
     /// The counts are over the WHOLE open set, whichever view is open — a rail that recounted
@@ -156,14 +169,16 @@ struct TicketsRoomProjectionTests {
         #expect(room.backlog.isEmpty)
     }
 
-    /// The other empty page: the provider answered, and the answer was nothing. Its views stay, all
-    /// reading zero — telling a reader their backlog is empty is only honest once somebody asked.
+    /// The other empty page: the provider answered, and the answer was nothing. Its views stay, the
+    /// four over the open set reading zero — telling a reader their backlog is empty is only honest
+    /// once somebody asked. `Closed` is absent in the same breath and for the same reason: nobody
+    /// asked IT anything, and the poll that answered the other four never makes that read (#1075).
     @Test
     func `a provider that answered with nothing keeps its views`() {
         let room = TicketsRoomProjection.room(from: TicketsFixture.answeredEmpty)
 
         #expect(room.provider != nil)
-        #expect(room.views.map(\.count) == [0, 0, 0, 0])
+        #expect(room.views.map(\.count) == [0, 0, 0, 0, nil])
         #expect(room.backlog.isEmpty)
     }
 

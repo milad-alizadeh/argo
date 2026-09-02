@@ -18,6 +18,25 @@ enum TicketsFixture {
         TicketsRoomProjection.room(from: reading(showing: number))
     }
 
+    /// The same reading with the closed read ANSWERED — what the `Closed` view draws from (#1075).
+    ///
+    /// A fixture of its own because the absence is the point everywhere else: `reading` above has
+    /// closed items in it, for the roll-up, and the `Closed` view still counts absent over them
+    /// until a read has landed. Nothing else here reaches the state where it counts at all.
+    static let closedRead = closedRead(hasMore: false)
+
+    /// …and the same with a page behind it, which is the only state that draws `Load more`.
+    static let closedMore = closedRead(hasMore: true)
+
+    static func closedRead(hasMore: Bool) -> TicketsReading {
+        var answered = reading
+        answered.closedListing = TicketsReading.ClosedListingReading(
+            numbers: Set(answered.items.filter { $0.closure != .open }.map(\.number)),
+            hasMore: hasMore,
+        )
+        return answered
+    }
+
     /// Nothing bound: no provider to name, and no items anybody could have read. The Project is
     /// still named — a window is scoped to one whether or not anything is bound to it.
     static let unbound = TicketsReading(project: project)
@@ -71,7 +90,7 @@ enum TicketsFixture {
     static func reading(showing: Int) -> TicketsReading {
         TicketsReading(
             items: items,
-            claimed: [388, 609, 763],
+            claims: TicketClaims(numbers: [388, 609, 763]),
             deliveries: [388: .open, 609: .merged, 275: .failing, 763: .draft],
             deliveryFacts: deliveryFacts,
             provider: bound,
@@ -87,8 +106,7 @@ enum TicketsFixture {
     /// `claimed` outright, which asserts every live Session was placed.
     static let unjoinedClaims = TicketsReading(
         items: items,
-        claimed: [388, 609],
-        claimsUnplaced: 2,
+        claims: TicketClaims(numbers: [388, 609], unplaced: 2),
         provider: bound,
         project: project,
         showing: 388,
@@ -99,7 +117,11 @@ enum TicketsFixture {
     /// other three claims cannot drift from the room every other render draws.
     static var claimedAndBlocked: TicketsReading {
         var reading = reading
-        reading.claimed.insert(272)
+        reading.claims = TicketClaims(
+            numbers: reading.claims.numbers.union([272]),
+            unplaced: reading.claims.unplaced,
+            unread: reading.claims.unread,
+        )
         return reading
     }
 
@@ -107,7 +129,7 @@ enum TicketsFixture {
     /// is genuinely nothing rather than partial. The unread half of the pair above, drawn.
     static let unreadClaims = TicketsReading(
         items: items,
-        claimsUnread: 1,
+        claims: TicketClaims(numbers: [], unread: 1),
         provider: bound,
         project: project,
         showing: 388,
@@ -124,7 +146,7 @@ enum TicketsFixture {
     /// the one above, and a different day.
     static let poolRunning = TicketsReading(
         items: [item(272, blockedBy: []), item(273, blockedBy: [])],
-        claimed: [272, 273],
+        claims: TicketClaims(numbers: [272, 273]),
         provider: bound,
     )
 

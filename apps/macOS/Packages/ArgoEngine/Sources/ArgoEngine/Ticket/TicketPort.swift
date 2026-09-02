@@ -9,6 +9,17 @@ public protocol TicketPort: Sendable {
     /// included.
     func list(in scope: String, grant: AccountGrant) async throws -> [Ticket]
 
+    /// One PAGE of the closed Tickets the grant can see in the scope, last touched first, and the
+    /// cursor for the page behind it (#1075).
+    ///
+    /// Nothing calls it until a reader opens the view that shows them: no poll reads the closed
+    /// set, and none may be added that does (`TicketPollTests`).
+    ///
+    /// **No edges**, wherever an edge costs a request of its own — most of what keeps this cheap
+    /// next to `list`.
+    func closed(in scope: String, after cursor: String?, grant: AccountGrant) async throws
+        -> ClosedTicketPage
+
     /// ONE Ticket by the number a link named, in whatever state it is now — the read a closed
     /// ticket is reachable through at all, since no listing carries one (#895).
     ///

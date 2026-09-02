@@ -9,7 +9,10 @@ extension TicketsReading {
     /// Everything the app hands in. The listing is the provider's; the other three are the window's
     /// own, and none of them is a Hub fact.
     struct Sources {
-        let items: [Ticket]
+        /// What the ledger holds for this Project — the listing, the tickets followed by number,
+        /// and what the closed read answered. The ledger's own value, so the rows and the answer
+        /// about them can never arrive here from two different moments (#1075).
+        let tickets: TicketLedger.Reading
         let sessions: [CockpitPresentation.Session]
         let health: ConnectionHealthReading
         let project: String?
@@ -21,15 +24,15 @@ extension TicketsReading {
     /// host is read (#258), so every backlog dot draws the hollow ring `absent` means rather than a
     /// state nobody established.
     static func live(_ sources: Sources, showing: Int?) -> TicketsReading {
-        let claims = TicketClaims(over: links(in: sources.sessions))
-        return TicketsReading(
-            items: sources.items,
-            claimed: claims.numbers,
-            claimsUnplaced: claims.unplaced,
-            claimsUnread: claims.unread,
+        TicketsReading(
+            items: sources.tickets.items,
+            claims: TicketClaims(over: links(in: sources.sessions)),
             provider: TicketsProvider(reading: sources.health),
             project: sources.project,
             showing: showing,
+            closedListing: sources.tickets.closed.map {
+                .init(numbers: Set($0.items.map(\.number)), hasMore: $0.hasMore)
+            },
         )
     }
 

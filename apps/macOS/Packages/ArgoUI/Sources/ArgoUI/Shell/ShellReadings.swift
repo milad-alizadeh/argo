@@ -11,8 +11,12 @@ public struct ShellReadings: Equatable, Sendable {
     /// How the active Project's provider Bindings are reading. Not a Hub fact: the cockpit is a
     /// projection of the Hub, and Accounts and Bindings are registry facts the Hub never heard of.
     public let health: ConnectionHealthReading
-    /// The active Project's Tickets as the last poll that finished read them (#820).
-    public let tickets: [Ticket]
+    /// The active Project's Tickets as the ledger holds them (#820) — the poll's own listing, the
+    /// ones followed by number (#895), and what the closed read answered (#1075).
+    ///
+    /// The ledger's value WHOLE rather than a field per read, so a fourth read costs this seam
+    /// nothing and cannot arrive here beside a stale half of a third.
+    public let tickets: TicketLedger.Reading
     /// Where this Project's Tickets can be READ, on the provider's own site (#872). `nil` where the
     /// port is bound to nothing, which disables the row's two link verbs.
     public let ticketAddress: TicketAddress?
@@ -22,7 +26,7 @@ public struct ShellReadings: Equatable, Sendable {
 
     public init(
         health: ConnectionHealthReading = .quiet,
-        tickets: [Ticket] = [],
+        tickets: TicketLedger.Reading = .nothing,
         ticketAddress: TicketAddress? = nil,
     ) {
         self.health = health

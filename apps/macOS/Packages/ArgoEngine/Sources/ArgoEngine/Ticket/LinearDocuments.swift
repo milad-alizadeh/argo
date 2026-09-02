@@ -39,6 +39,31 @@ enum LinearDocuments {
     \(ticket)
     """
 
+    /// Closed only, and the exact complement of `teamIssues` above: an issue is closed here when
+    /// EITHER timestamp is set, where the listing wants both null (#1075).
+    ///
+    /// `orderBy: updatedAt` is asked of Linear rather than sorted after the fact, so the page
+    /// boundary and the row order are the same order — the cursor is only honest under the order
+    /// the pages were cut in.
+    static let teamClosedIssues = """
+    query TeamClosedIssues($team: String!, $first: Int!, $after: String) {
+      team(id: $team) {
+        issues(
+          first: $first
+          after: $after
+          orderBy: updatedAt
+          filter: { or: [
+            { completedAt: { null: false } }, { canceledAt: { null: false } }
+          ] }
+        ) {
+          pageInfo { hasNextPage endCursor }
+          nodes { ...Ticket }
+        }
+      }
+    }
+    \(ticket)
+    """
+
     /// One ticket by the number Argo holds. Every state, unlike the listing: a write's subject may
     /// have just been closed, and reading it back as absent would strand the adopt.
     static let teamIssue = """

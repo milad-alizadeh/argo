@@ -200,7 +200,7 @@ struct BacklogSearchTests {
     /// would leave the heading claiming a result nobody can see.
     @Test
     func `a search draws the tree open whatever the reader folded`() {
-        #expect(Self.chrome(matching: "canvas").folds == false)
-        #expect(Self.chrome(matching: "").folds)
+        #expect(Self.chrome(matching: "canvas").structure.folds == false)
+        #expect(Self.chrome(matching: "").structure.folds)
     }
 }

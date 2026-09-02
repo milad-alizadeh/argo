@@ -18,7 +18,7 @@ extension CockpitView {
         @Bindable var navigation = navigation
         let reading = TicketsReading.live(
             TicketsReading.Sources(
-                items: tickets,
+                tickets: readings.tickets,
                 sessions: presentation.sessions,
                 health: health,
                 project: presentation.activeProject?.name,
@@ -45,7 +45,13 @@ extension CockpitView {
                 run: { ticket in Task { await start.run(on: ticket, in: navigation) } },
                 command: { start.command(on: $0) },
             ),
-            follow: { await actions.tickets.readTicket($0) },
+            reads: TicketsRoom.Reads(
+                follow: { await actions.tickets.read(.ticket(number: $0)) },
+                closed: TicketsRoom.ClosedReads(
+                    open: { await actions.tickets.read(.closedListing) },
+                    more: { Task { await actions.tickets.read(.moreClosedTickets) } },
+                ),
+            ),
             held: TicketsRoom.Held(query: $navigation.ticketsQuery),
         )
     }

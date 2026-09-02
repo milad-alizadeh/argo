@@ -42,9 +42,10 @@ public struct CockpitActions {
         /// (`DesignedScreens`). Performed by the app layer for `Composer.skills`' reason: it walks
         /// a directory, and no view in `ArgoUI` may.
         public var designedScreens: () -> Set<String> = { [] }
-        /// Read ONE ticket, by the number a link named — the only way to a closed one, which no
-        /// listing carries (#895). It answers nothing: the listing it lands in is the answer.
-        public var readTicket: (Int) async -> Void = { _ in }
+        /// Make one of the reads a room raises — a link followed by number (#895), or a page of
+        /// the closed listing (#1075). ONE slot for all of them, because none is on a cadence and
+        /// each answers nothing: what lands in the ledger is the answer.
+        public var read: (TicketRead) async -> Void = { _ in }
     }
 
     /// Everything the shell asks a Session to DO, through the engine's port (ADR-0024, #633).

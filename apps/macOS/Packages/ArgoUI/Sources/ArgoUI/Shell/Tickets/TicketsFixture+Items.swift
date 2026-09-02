@@ -62,6 +62,10 @@ extension TicketsFixture {
         closed(256, "Ticket provider port over OAuth (Electron)"),
         closed(375, "The graphite/Ion visual foundation"),
         closed(376, "The native Liquid Glass shell"),
+        // The one RULED OUT, so the `Closed` view has both of its words to draw and no render can
+        // pass while folding the two into one (#1075). Deliberately named by nothing — no blocker
+        // edge and no child edge reaches it, so it cannot strand a parent or move a roll-up.
+        closed(186, "A status ladder across providers", .ruledOut),
     ]
 
     /// #272's title, which two fixtures name it by.
@@ -110,6 +114,11 @@ extension TicketsFixture {
     private static let daysUntouched: [Int: Double] = [
         336: 2 / 24.0, 609: 1, 607: 3, 388: 5, 275: 8, 272: 12, 334: 21, 273: 40, 185: 60,
         335: 95, 160: 400,
+        // The closed ones, dated so the `Closed` view has a recency to order BY (#1075) — the
+        // stamp is `updatedAt` and says last touched, never closed at: no adapter reads a
+        // closed-at date (#897). Interleaved with the open ages on purpose, so a render of the
+        // closed list is visibly not in number order.
+        690: 4, 745: 9, 264: 16, 186: 30, 256: 55, 375: 120, 376: 200,
     ]
 
     /// The provider's own word for a ticket somebody is on. Verbatim, and deliberately not
@@ -150,12 +159,17 @@ extension TicketsFixture {
         )
     }
 
-    private static func closed(_ number: Int, _ title: String) -> Ticket {
+    /// The provider's own word follows the closure it is a word FOR — a row reading `ruled out`
+    /// beside a status of `Done` would be the fixture contradicting itself.
+    private static func closed(
+        _ number: Int, _ title: String, _ closure: TicketClosure = .resolved,
+    )
+        -> Ticket {
         Ticket(
             number: number,
             title: title,
-            status: "Done",
-            closure: .resolved,
+            status: closure == .ruledOut ? "Not planned" : "Done",
+            closure: closure,
             blockedBy: [],
         )
     }

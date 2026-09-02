@@ -87,6 +87,13 @@ at the foot.
   genuinely nothing**: no Ticket provider bound, so no join happened and there is no partial
   answer to state. The two are `TicketClaims.unplaced` and `TicketClaims.unread`, and only the
   view whose ground is the claims carries either.
+- **`Closed` — a fifth view, and the only one not defined over the open set. Added #1075.** The
+  four above are filters *within* the open set, so "what did I finish this week" and "was #895
+  ever resolved" had no answer in the cockpit at all. It is a fifth rail rather than a `Resolved`
+  and a `Ruled out`: those are two answers to two questions, but a `closedUnreadably` ticket
+  belongs to neither and would have to be dropped or given a sixth rail. **One view, and the row
+  states which** — `resolved`, `ruled out`, or `closed` where the port could not read which of the
+  two it was. See **the closed list** below for what it costs and what bounds it.
 - ~~**Charts** — one row per PRD-shaped parent (`#607 Wayfinder`, `#334 The Route`), the entry
   point to the Route.~~ **Withdrawn (#844.)** The Route is #334 and is not built, so every row in
   the group answered no click, under a heading that read as a charting feature. The group comes
@@ -256,6 +263,53 @@ the one you can act on, and the one nothing will clear is the quiet one.
 
 **None of this is a leading accent.** The region is trailing, and a selected or current row is still
 carried by its ground alone.
+
+### The closed list (#1075)
+
+The `Closed` view's list is the one place the room's own structure changes, and everything below is
+why.
+
+**It is flat, and ordered by last touched — not banded by priority.** Priority banding and recency
+cannot both be a list's structure; that conflict is settled one way for the open views above and
+the other way here, because a closed ticket's priority is a fact about work nobody is picking up
+and last week's finished work scattered across `HIGH`/`MEDIUM`/`LOW` answers nothing. **The heading
+says so**: `Closed · by last touched · 50 tickets`, on the same rule the middle term has always
+carried — a subtitle naming a grouping the list does not have is the exact lie the second line
+exists to prevent.
+
+**Last touched, and never *closed at*.** No adapter reads a closed-at date (#897); `Ticket.updatedAt`
+is the only date any of them serves, and the heading names the one that is real. Both providers are
+asked to sort by it — `sort=updated&direction=desc`, `orderBy: updatedAt` — so the page boundary and
+the row order are the same order. A row the provider served no date for sinks below every dated one
+rather than claiming a recency nobody established.
+
+**It is bounded at one page of 50, with a `Load more` row at the foot.** The closed set is
+unbounded where the open set is not, so something has to stop it being the whole repository's
+history. The row is drawn only where the provider served a cursor and goes when it serves the last
+page — a `Load more` that survived the end of the list is the control-that-does-nothing this room
+keeps refusing (#900).
+
+**Each row states its own closure**, in the trailing region beside the caption: `resolved`, `ruled
+out`, or `closed`. A word and not a glyph — a pair of marks a reader has to learn is a worse way to
+say a difference the language already has two words for, and the third case has to be able to claim
+neither. It takes `text.tertiary`, the same demotion a search rail's title takes. No palette role is
+added, and `state.failure` is not spent here: a ticket somebody decided against did not fail.
+
+**Nothing else in the room moves.** `Unblocked`, `Blocked`, `In progress`, `All open`, the priority
+bands and the Next-up hero are all still defined over the open set alone — the hero especially,
+which answers "what should I pick up" and must never offer something finished.
+
+**The read is the view's, not the poll's.** Opening the view reads its first page; the minute
+cadence never touches it. The closed set is large, it is not needed to answer "what should I pick
+up", and the room already opens on round-trips it apologises for (#888). It asks for **no edges**
+where an edge costs a request — which is GitHub, where a closed row therefore draws no blockage
+mark and no roll-up. That is the correct absence rather than a `0/N` nobody established. Linear
+serves children and dependency edges inside the issue fragment itself, so a closed row there does
+carry them: each provider states what it actually read, which is the degrade-down rule and not an
+inconsistency to iron out.
+
+**The count is absent until that read has answered**, on the same rule `Blocked` follows over
+unread edges (#820). Opening onto `0` is the number that tells a reader they have finished nothing.
 
 ### The seam between the panes
 
@@ -675,6 +729,13 @@ sidebar and its views stay (all reading zero), the hero shows the backlog-clear 
 deck says who answered. Conflating the two would tell a reader their backlog is empty when in
 fact nobody asked.
 
+**A third empty, and it is the opposite of the second. Added #1075.** `Closed` has a nothing of its
+own: the read answered, and this Project has never closed anything. It says so in its own words —
+*nothing has been finished*, rather than *nothing is left to do*. Conflating it with the empty
+backlog would let one page state the exact reverse of the other. Before that read has landed the
+view is `unread` instead, which is the same page the poll's own silence draws and for the same
+reason.
+
 **The empty backlog keeps New ticket.** It is the moment you most want it. The list's ordering menu
 goes, and so does search — there is no list to order and nothing to search.
 
@@ -790,6 +851,8 @@ for; anything not listed is stock used directly.
 | `DeliveryDot` | atom | `Circle` at `ArgoLayout.statusDotSize` | the five-state table above |
 | `BlockageMark` | atom | a bare `ArgoGlyph` | **Added #896** as how many blockers still stand, in the trailing region. **Amended #939**: a glyph leads and names the state, which the numeral alone never did. **Amended #1074**: the capsule and the count go — the count is the pane's, and two one-glyph marks are what make the column scannable. It is `BlockageMark.symbol`, the sidebar's `ArgoSymbol.blockedView`, in `TicketsView.blocked.ink` — or `text.disabled` when stranded |
 | `ClaimMark` | atom | a bare `ArgoGlyph` | **Added #1074**: that a live Session is on this ticket, in the trailing region inboard of the blockage mark. A glyph with no count and no capsule — claimed has no degree — in `state.running`. It is `ClaimMark.symbol`, the sidebar's `ArgoSymbol.inProgressView`, for #939's reason |
+| `ClosureMark` | atom | a `Text` in the trailing region | **Added #1075**: how a closed row stopped being open — `resolved`, `ruled out`, or `closed` where the port could not read which. A word rather than a glyph, on `text.tertiary`. It never contends with `BlockageMark`: a closed ticket's edges are not read, and an open one has no closure to draw |
+| `BacklogMore` | atom | a full-width `Button` at the foot of the list | **Added #1075**: there is another page of closed tickets, and this reads it. Drawn only on a cursor the provider served, so it cannot outlive the last page |
 | `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
 | `TicketsToolbar` | organism | `.toolbar { ToolbarItem }` per control | the window row, and **every control the room has**. Amended twice: #836 moved all but search into per-pane bands, and the bands are now gone — see the column question |
 | `BacklogControls` | molecule | a `ToolbarVessel` | `BacklogMenu`, alone. Split out of `BacklogHeader` when the controls returned to the row. **Amended #900**: the funnel and the rule beside it are gone |

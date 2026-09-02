@@ -20,11 +20,23 @@ enum TicketsChromeProjection {
         /// The ticket the verbs address — the one the deck is OPEN on, not the one at the top of
         /// the list.
         let ticket: Int?
-        /// Whether the pane draws the reader's fold. A search does not: a folded parent hiding the
-        /// only match would leave the heading claiming a result nobody can see (#873).
-        var folds = true
+        /// How the list under this heading is built — the two structural facts a view decides.
+        var structure = Structure.default
         /// What the pane says where the query matched nothing, and `nil` wherever there are rows.
         var empty: String?
+
+        /// Whether the pane draws the reader's fold, and whether it bands its roots by priority.
+        /// One value because the same thing decides both: which view is open.
+        struct Structure: Sendable, Equatable {
+            /// A search does not fold: a folded parent hiding the only match would leave the
+            /// heading claiming a result nobody can see (#873).
+            var folds = true
+            /// `Closed` does not band: its rows are in recency order, and banding them by priority
+            /// would scatter last week's finished work across three headers (#1075).
+            var groups = true
+
+            static let `default` = Structure()
+        }
 
         static let none = Reading(
             heading: "", subtitle: "", narrows: false, draws: false, ticket: nil,
@@ -60,7 +72,9 @@ enum TicketsChromeProjection {
             // `narrows` and not `hasRows`: a query that matched nothing empties the list while the
             // ticket beside it is still open, so the verbs addressing it must not go with the rows.
             ticket: narrows ? showing : nil,
-            folds: narrowing == nil,
+            structure: Reading.Structure(
+                folds: narrowing == nil, groups: view.groupsByPriority,
+            ),
             empty: hasRows ? nil : narrowing.map { emptied(by: $0, in: view) },
         )
     }
@@ -72,14 +86,7 @@ enum TicketsChromeProjection {
         "No ticket in \(view.name) matches “\(narrowing.query)”."
     }
 
-    /// The middle term names the GROUPING in force, and it is here because #819 put the priority
-    /// headers over the list. It was absent through #812 and #814 for the same reason: a heading
-    /// reading `by priority` over an ungrouped list is the exact lie the second line exists to
-    /// prevent. One grouping today, so it is a constant rather than a parameter — the group-by
-    /// control that would make it vary does not choose anything yet.
-    private static let grouping = "by priority"
-
-    /// `<view> · by priority · <n> tickets`, and the last term DROPS where the view has no count to
+    /// `<view> · <grouping> · <n> tickets`, and the last term DROPS where the view has no count to
     /// state — the same absence the sidebar's row draws, since the two read one number (#820).
     private static func subtitle(
         of view: TicketsView,
@@ -87,7 +94,11 @@ enum TicketsChromeProjection {
     )
         -> String {
         let counted = lastTerm(of: view, in: room).map { [$0] } ?? []
-        return ([view.name, grouping] + counted).joined(separator: " · ")
+        // The VIEW's own middle term, and it is here because #819 put the priority headers over
+        // the list. A heading reading `by priority` over a list ordered by recency is the exact lie
+        // the second line exists to prevent — which is why `Closed` names its order instead
+        // (#1075, `TicketsView.grouping`).
+        return ([view.name, view.grouping] + counted).joined(separator: " · ")
     }
 
     /// Under a query the term counts RESULTS and is never absent: a match is arithmetic this room

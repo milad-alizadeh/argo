@@ -34,7 +34,8 @@ enum TicketsLiveFixture {
         -> TicketsRoomProjection.Room {
         let reading = TicketsReading.live(
             TicketsReading.Sources(
-                items: items, sessions: sessions, health: health, project: "argo",
+                tickets: .init(items: items, closed: nil),
+                sessions: sessions, health: health, project: "argo",
             ),
             showing: items.first?.number,
         )

@@ -206,7 +206,7 @@ struct ArgoApp: App {
         actions.tickets.createTicket = { await accounts.createTicket($0) }
         actions.tickets.startSession = { await cockpit.spawnSession(on: $0, mode: $1, opening: $2) }
         actions.tickets.designedScreens = DesignedScreens(projectURL: projectURL).screens
-        actions.tickets.readTicket = { await accounts.readTicket($0) }
+        actions.tickets.read = { await accounts.read($0) }
         return actions
     }
 }

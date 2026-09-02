@@ -126,6 +126,45 @@ struct TicketPollTests {
         #expect(await port.readCount() >= 3)
     }
 
+    /// The cadence must not pay for the closed set (#1075). It is large, nothing between ticks is
+    /// waiting on it, and lengthening the open path is what the room already apologises for (#888)
+    /// — so the closed read has no path through the poll at all, and this is what says so.
+    @Test
+    func `no number of ticks ever reads the closed listing`() async {
+        let wait = PollWait()
+        let port = ScriptedTickets([.success([ticket])], closed: [ClosedTicketPage(items: [])])
+        let poll = TicketPoll(
+            port: port,
+            ledgers: TicketPoll.Ledgers(health: ConnectionHealthLedger(), items: TicketLedger()),
+            pacing: TicketPoll.Pacing(
+                sleep: { _ in await wait.reach(); try await Task.sleep(for: .milliseconds(1)) },
+            ),
+        )
+
+        await poll.start(target, every: .milliseconds(1))
+        for _ in 1 ... 3 {
+            await wait.untilTick()
+        }
+        await poll.stop()
+
+        #expect(await port.readCount() >= 3)
+        #expect(await port.closedCursors().isEmpty)
+    }
+
+    /// The other half of the same claim: one tick is one request, and the closed read did not join
+    /// it. Counted rather than flagged, so a closed read folded into the open path would fail here
+    /// even if it left `closed` untouched.
+    @Test
+    func `one tick is still exactly one read`() async {
+        let port = ScriptedTickets([.success([ticket])], closed: [ClosedTicketPage(items: [])])
+        let polling = Polling(port)
+
+        await polling.poll.poll(target)
+
+        #expect(await port.readCount() == 1)
+        #expect(await port.closedCursors().isEmpty)
+    }
+
     @Test
     func `stopping ends the loop where it is waiting`() async {
         let wait = PollWait()

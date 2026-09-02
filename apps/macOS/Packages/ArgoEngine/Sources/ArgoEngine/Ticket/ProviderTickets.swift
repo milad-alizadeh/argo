@@ -28,6 +28,13 @@ public struct ProviderTickets: TicketReading {
         )
     }
 
+    public func closed(after cursor: String?, through binding: ResolvedBinding) async throws
+        -> ClosedTicketPage {
+        try await port(binding.provider).closed(
+            in: binding.binding.scope, after: cursor, grant: binding.grant,
+        )
+    }
+
     private func port(_ provider: AccountProvider) -> TicketPort {
         switch provider {
         case .github: github

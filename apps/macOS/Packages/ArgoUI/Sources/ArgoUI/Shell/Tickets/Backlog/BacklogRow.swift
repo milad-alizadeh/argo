@@ -61,13 +61,18 @@ struct BacklogRow: View {
             labels
             // Inboard of both marks below, which is what leaves an already-blocked row drawn
             // exactly where it was when the claim mark was added (#1074).
-            if row.isClaimed {
+            if row.marks.isClaimed {
                 ClaimMark(backdrop: ink.backdrop)
             }
             // Inboard of the caption, so the caption keeps the trailing edge it has always been
             // right-aligned to and an unblocked row is drawn exactly where it was.
-            if let blockage = row.blockage {
+            if let blockage = row.marks.blockage {
                 BlockageMark(blockage: blockage, backdrop: ink.backdrop)
+            }
+            // The same slot, and they never contend: a closed ticket's blockers are not read at
+            // all, and one still in the open set has no closure to draw (#1075).
+            if let closure = row.marks.closure {
+                ClosureMark(closure: closure)
             }
             caption
         }
@@ -120,12 +125,15 @@ struct BacklogRow: View {
     /// The id is spoken as a number rather than as `#607`, which VoiceOver reads as "number 607".
     /// The blockage is SPOKEN where the mark is a numeral in a capsule: speech has no capsule, so
     /// a bare `2` in this sentence would be read as a second id. The claim is spoken for the same
-    /// reason its mark is wordless — a lone glyph says nothing at all to a screen reader.
+    /// reason its mark is wordless — a lone glyph says nothing at all to a screen reader. The
+    /// closure is already a word, and is spoken as it is drawn.
     private var announcement: String {
         (
             [String(row.id), row.title] + BacklogRowLabels(row.labels).spoken
                 + [
-                    row.isClaimed ? "claimed" : nil, spokenBlockage,
+                    row.marks.isClaimed ? "claimed" : nil,
+                    spokenBlockage,
+                    row.marks.closure.map(ClosureMark.word),
                     drawn.caption(asOf: pinnedNow ?? Date()),
                 ],
         )
@@ -134,7 +142,7 @@ struct BacklogRow: View {
     }
 
     private var spokenBlockage: String? {
-        row.blockage.map {
+        row.marks.blockage.map {
             $0.isStranded ? "stranded, \($0.count) blockers" : "blocked by \($0.count)"
         }
     }

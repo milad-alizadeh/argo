@@ -33,6 +33,27 @@ enum ReadAdapter: String, CaseIterable, Sendable {
         }
     }
 
+    /// A port holding one resolved and one ruled-out ticket, in that order, on whichever path each
+    /// provider serves its CLOSED listing through (#1075).
+    func closedPort() -> any TicketPort {
+        switch self {
+        case .gitHub:
+            GitHubTickets(transport: RecordedGitHub(replies: [
+                RecordedGitHub.closedIssues(page: 1): IssueJSON.list([
+                    IssueJSON(number: 264, state: "closed", reason: "completed"),
+                    IssueJSON(number: 265, state: "closed", reason: "not_planned"),
+                ]),
+            ]))
+        case .linear:
+            LinearTickets(transport: RecordedLinear(replies: [
+                "query TeamClosedIssues": LinearIssueJSON.page([
+                    LinearIssueJSON(number: 264, state: "Done", category: "completed"),
+                    LinearIssueJSON(number: 265, state: "Canceled", category: "canceled"),
+                ]),
+            ]))
+        }
+    }
+
     /// A port the number names nothing on, answering so rather than failing to answer.
     func empty() -> any TicketPort {
         switch self {

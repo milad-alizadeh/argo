@@ -101,7 +101,7 @@ struct TicketsBacklogMarkTests {
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
         let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
 
-        #expect(room.view(.inProgress)?.count == drawn.count { $0.row.isClaimed })
+        #expect(room.view(.inProgress)?.count == drawn.count { $0.row.marks.isClaimed })
         #expect(room.view(.inProgress)?.count ?? 0 > 0)
     }
 
@@ -112,16 +112,19 @@ struct TicketsBacklogMarkTests {
     /// Over `claimedAndBlocked` rather than the main reading, so every one of the four views holds
     /// a claimed ticket — the main one claims only unblocked tickets, which would leave `Blocked`
     /// passing this over zero marked rows. The `at least one` expectation is what says so.
-    @Test(arguments: TicketsView.allCases)
+    ///
+    /// The four views defined over the OPEN set, which is every view a claim is a fact in: a claim
+    /// is a live Session on a ticket, and `Closed` holds the tickets nobody is working (#1075).
+    @Test(arguments: TicketsView.allCases.filter { $0.source == .open })
     func `a claimed ticket renders as claimed in every view that admits it`(view: TicketsView) {
         let reading = TicketsFixture.claimedAndBlocked
         let room = TicketsRoomProjection.room(from: reading, in: view)
         let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
 
         for row in drawn where !row.row.isRail {
-            #expect(row.row.isClaimed == reading.claimed.contains(row.id))
+            #expect(row.row.marks.isClaimed == reading.claims.numbers.contains(row.id))
         }
-        #expect(drawn.contains { $0.row.isClaimed })
+        #expect(drawn.contains { $0.row.marks.isClaimed })
     }
 
     /// The two marks answer different questions — "is somebody already on this" and "can it be
@@ -134,8 +137,8 @@ struct TicketsBacklogMarkTests {
         let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
         let both = drawn.first { $0.id == 272 }?.row
 
-        #expect(both?.isClaimed == true)
-        #expect(both?.blockage?.count == 2)
+        #expect(both?.marks.isClaimed == true)
+        #expect(both?.marks.blockage?.count == 2)
     }
 
     /// One concept, one mark, for the reason #939 fixed the blockage glyph: the rail says "4 in
@@ -171,9 +174,9 @@ struct TicketsBacklogMarkTests {
         let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
 
         // #272 waits on #609 and #388, both open; #763 was served an empty edge list.
-        #expect(room.backlog.first { $0.id == 763 }?.blockage == nil)
+        #expect(room.backlog.first { $0.id == 763 }?.marks.blockage == nil)
         #expect(
-            room.backlog.first { $0.id == 607 }?.children.first { $0.id == 272 }?.blockage
+            room.backlog.first { $0.id == 607 }?.children.first { $0.id == 272 }?.marks.blockage
                 == TicketsRoomProjection.Blockage(count: 2, isStranded: false),
         )
     }
@@ -193,7 +196,7 @@ struct TicketsBacklogCaptionTests {
         -> TicketsRoomProjection.Drawn {
         let row = TicketsRoomProjection.Row(
             id: 1, title: "A ticket", delivery: .absent, trailing: trailing, priority: nil,
-            labels: [], children: [], blockage: nil,
+            labels: [], children: [], marks: .none,
             touched: daysAgo.map { now.addingTimeInterval(-$0 * 86400) },
         )
         var drawn = TicketsRoomProjection.Drawn(row: row, depth: 0)
@@ -234,7 +237,7 @@ struct TicketsBacklogCaptionTests {
         let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
         let stale = drawn.first { $0.id == 272 }
 
-        #expect(stale?.row.blockage?.count == 2)
+        #expect(stale?.row.marks.blockage?.count == 2)
         #expect(stale?.caption(asOf: Self.now) != nil)
     }
 }
