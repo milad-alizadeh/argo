@@ -1,5 +1,4 @@
 import AppKit
-@testable import ArgoSpecimens
 @testable import ArgoUI
 
 /// A real deck's worth of the two things the shell holds across a reading switch — the scroll

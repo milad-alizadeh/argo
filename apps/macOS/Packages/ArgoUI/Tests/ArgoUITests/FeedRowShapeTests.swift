@@ -108,8 +108,15 @@ struct FeedRowShapeTests {
     /// hardware and not measurement.
     ///
     /// What DOES survive is the sign. So the claim is made twice, and neither half carries a figure
-    /// this suite recorded on one machine: every interleaved pair goes the same way, and the least
-    /// of them clears a floor far under both readings and far over the noise.
+    /// this suite recorded on one machine: nearly every interleaved pair goes the same way, and the
+    /// least of them clears a floor far under both readings and far over the noise.
+    ///
+    /// `nearly` is the word #1100 had to add. Requiring ALL of seven pairs was worth about one
+    /// chance in a hundred under a null of 50/50 — and it also failed the first time this suite ran
+    /// beside a heavier one, because a single descheduled pair is enough. Eleven pairs allowing one
+    /// inversion is the same sign test carried out at the same strength: 12 of 2^11, about one in
+    /// 170, against 1 of 2^7. It costs four more pairs and stops reporting the runner's luck as the
+    /// framework's.
     @Test
     func `measuring by shape costs less than measuring through one ruler`() {
         let rows = FeedProjection.longRows
@@ -145,15 +152,16 @@ struct FeedRowShapeTests {
             }
         }
 
-        let trials = pairedCPUSeconds(throughOne, against: byShape)
+        let trials = pairedCPUSeconds(trials: 11, throughOne, against: byShape)
         let shared = trials.map(\.first).min() ?? 0
         let split = trials.map(\.second).min() ?? 0
         let told = "one ruler \(shared)s, one per shape \(split)s, over \(trials.count) pairs"
 
         #expect(split > 0)
         // A split that stopped paying leaves two arms doing the same work, and a run of pairs that
-        // all fall the same way is then worth about one chance in a hundred.
-        #expect(trials.allSatisfy { $0.second < $0.first }, "A pair went the other way: \(told)")
+        // nearly all fall the same way is then worth about one chance in a hundred and seventy.
+        let inverted = trials.filter { $0.second >= $0.first }.count
+        #expect(inverted <= 1, "\(inverted) of \(trials.count) pairs went the other way: \(told)")
         #expect(shared / split >= 1.1, "\(told)")
     }
 }
