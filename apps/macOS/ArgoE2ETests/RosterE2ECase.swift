@@ -1,33 +1,8 @@
 import XCTest
 
-/// The launch every roster case shares, and the ways all of them address a row.
-///
-/// `@MainActor` because driving a UI is main-actor work under Swift 6.
+/// The ways every roster case addresses a row. The launch itself is `E2ECase`'s.
 @MainActor
-class RosterE2ECase: XCTestCase {
-    /// Which named state the app opens on. Every case answers it; the base deliberately does not.
-    var specimen: String {
-        preconditionFailure("A roster case must name the specimen it opens on.")
-    }
-
-    let app = XCUIApplication()
-
-    override func setUp() async throws {
-        try await super.setUp()
-        continueAfterFailure = false
-        app.launchArguments += ["--specimen", specimen]
-        app.launch()
-        XCTAssertTrue(
-            app.wait(for: .runningForeground, timeout: 30),
-            "Argo did not reach the foreground.",
-        )
-    }
-
-    override func tearDown() async throws {
-        app.terminate()
-        try await super.tearDown()
-    }
-
+class RosterE2ECase: E2ECase {
     func row(titled title: String) -> XCUIElement {
         app.rosterRow(titled: title)
     }

@@ -874,6 +874,11 @@ its approved study are authoritative for the replacement look and feel.
   holds its colour while the list is not first responder, because this is the row the reader is
   working in.
 
+  **What that costs, said out loud:** the band no longer says whether the arrow keys will move the
+  backlog or the pane beside it — the platform's own loud-to-grey was the only cue, and both rails
+  gave the same one up in #875 for the same trade. Selection is what this ground says; keyboard
+  focus is the focus ring's to say.
+
   - **Anything carrying its own ground is laid on the DECK's, not on this one.** A label chip
     washes the provider's hue at `labelGroundWash` and carries its word to a ratio measured
     against `surface.base`; the blockage mark strokes a capsule over nothing at all and spends
@@ -883,10 +888,11 @@ its approved study are authoritative for the replacement look and feel.
     exactly where it was chosen (`BacklogRowInk.backdrop`).
   - **What is NOT fixed here, and is recorded rather than left to be rediscovered:** the delivery
     dot. Its five hues are 6pt marks with no ground of their own, and `open` is `interaction
-    .accent` itself — invisible on this ground. A backdrop cannot save a mark the size of the ink,
-    so it needs a keyline or a lift of its own, and that is the dot's decision rather than the
-    ramp's. Nothing reads a code host yet (#258), so every dot the shipping room draws is
-    `absent`.
+    .accent` itself — invisible on this ground, and the `absent` ring the shipping room draws
+    reads 2.30:1 off the render, under the 3:1 a mark is held to. A backdrop cannot save a mark
+    the size of the ink, so it needs a keyline or a lift of its own, and that is the dot's
+    decision rather than the ramp's. Nothing reads a code host yet (#258), so every dot the
+    shipping room draws is that ring.
   - **The emphasised state still has no PNG, and the reason is one rung deeper than #922 put it.**
     It is not only that `.focused()` leaves the table a non-responder: a specimen render is of an
     app that is not the ACTIVE one, and macOS draws emphasised selection only in the key window of

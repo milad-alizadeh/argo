@@ -214,8 +214,8 @@ placements, and only these:
 | The selection indicator on a tab | `interaction.selectionIndicator` | full |
 | A link, and the ink an interactive word takes | `interaction.accent` | full |
 
-One hue, two weights: full strength where a control is the loud rung, a quiet ground where a row
-is merely selected. The weight is not a taste — it is whatever leaves every voice a row is read
+One hue, two weights: full strength where a control is the loud rung or a row is the room's
+subject, a quiet ground where a row is a rail beside one. The weight is not a taste — it is whatever leaves every voice a row is read
 in above `TextRoles.contrastFloor`, which `SelectionGroundTests` asserts absolutely on both of a
 row's grounds (#922). It replaced a relative claim against the neutral wash, which could not fail
 while the ground it named was not the ground drawn.

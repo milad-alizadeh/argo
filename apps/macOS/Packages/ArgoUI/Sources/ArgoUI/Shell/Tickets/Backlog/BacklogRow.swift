@@ -10,7 +10,6 @@ import SwiftUI
 /// The INDENT is the row's, not the list's: `List` insets a whole section, and what moves here is
 /// one row against its siblings.
 struct BacklogRow: View {
-    @Environment(\.argo) private var argo
     /// How wide the pane drawing this row is. The chips are RIGID — they would take the title's
     /// last characters rather than give up their own — so under `ArgoBacklogList.labelsAppearAt`
     /// they stand down instead. Read from the room rather than measured here: a row inside a
@@ -26,8 +25,7 @@ struct BacklogRow: View {
     /// Whether the twist points down. Meaningless on a leaf, whose slot draws nothing.
     let isOpen: Bool
     /// Every ink this row spends, told once against the ground under it. Handed in because the
-    /// GROUND is one of them and a `listRowBackground` declared inside a row's own body reaches
-    /// nothing — the outline is the row site, so the outline lays it (#1071).
+    /// GROUND is one of them and only the outline can lay that (#1071).
     let ink: BacklogRowInk
     /// `nil` on a leaf. Passed in rather than derived: who owns the fold is the outline's business,
     /// and the row only needs to know whether it has one.
@@ -138,15 +136,14 @@ struct BacklogRow: View {
 
     return List {
         ForEach(TicketsRoomProjection.drawn(high, shut: [])) { drawn in
-            BacklogRow(
-                drawn: drawn,
-                isOpen: true,
-                ink: BacklogRowInk(
-                    isSelected: drawn.id == 272, isRail: drawn.row.isRail, palette: .graphite,
-                ),
-                toggle: drawn.isParent ? {} : nil,
+            // The ground with the ink, the way the outline pairs them: an ink for a selected row
+            // over the deck would preview a state the app never draws.
+            let ink = BacklogRowInk(
+                isSelected: drawn.id == 272, isRail: drawn.row.isRail, palette: .graphite,
             )
-            .previewSafeListRow()
+            BacklogRow(drawn: drawn, isOpen: true, ink: ink, toggle: drawn.isParent ? {} : nil)
+                .previewSafeListRow()
+                .listRowBackground(ink.ground.color)
         }
     }
     .listStyle(.inset)

@@ -2,9 +2,8 @@
 /// read on the LOUD rung of the brand hue rather than on the quiet one every sidebar row takes
 /// (#1071, amending D30).
 ///
-/// A value and not three call-site conditionals, so the readings are assertable: `interaction
-/// .accent` is a third ground the contract has to name, and #922 was a ramp asserted on one ground
-/// and read on another.
+/// A value rather than three call-site conditionals, because the contract asserts these readings
+/// absolutely — `LoudSelectionGroundTests`.
 struct BacklogRowInk: Equatable {
     /// The ground the row lays for ITSELF. Argo's own for the roster's reason (D30, 2026-08-31):
     /// the platform's fill is the loud accent only while the list is first responder and a mid

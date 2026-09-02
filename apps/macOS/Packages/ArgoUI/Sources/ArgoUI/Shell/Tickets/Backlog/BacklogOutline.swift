@@ -60,7 +60,11 @@ struct BacklogOutline: View {
     let high = TicketsRoomProjection.bands(of: TicketsFixture.room.backlog)[0]
 
     HStack(spacing: ArgoSpacing.flush) {
-        List { BacklogOutline(drawn: TicketsRoomProjection.drawn(high, shut: open), shut: $open) }
+        List {
+            BacklogOutline(
+                drawn: TicketsRoomProjection.drawn(high, shut: open), shut: $open, selection: 272,
+            )
+        }
         List {
             BacklogOutline(drawn: TicketsRoomProjection.drawn(high, shut: folded), shut: $folded)
         }
