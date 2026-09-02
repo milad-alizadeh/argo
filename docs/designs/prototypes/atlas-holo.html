@@ -10,14 +10,15 @@
 <style>
   html, body { height: 100%; overflow: hidden; }
   body { background: #06090c; }
-  #app { height: 100%; display: grid; grid-template-rows: auto 1fr; }
-  #main { display: grid; grid-template-columns: 1fr 330px; min-height: 0; }
+  /* Controls left, map middle, what is being read right. No page header: a title bar over
+     a map is a caption on a thing that says its own name, and the count it carried is a
+     provenance line, which belongs under the reading it qualifies. */
+  #app { height: 100%; display: grid; min-height: 0;
+    grid-template-columns: 258px 1fr 356px; grid-template-areas: 'side stage rail'; }
+  body.nosb #app { grid-template-columns: 0 1fr 356px; }
+  body.nosb #side { display: none; }
 
-  header { padding: 16px 30px 8px; display: flex; align-items: baseline; gap: 14px; }
-  header h1 { font: 600 var(--t-title3)/1.2 var(--sans); }
-  header .count { margin-left: auto; font: var(--t-footnote) var(--mono); color: var(--text-3); }
-
-  #stage { position: relative; overflow: hidden; }
+  #stage { grid-area: stage; position: relative; overflow: hidden; }
   /* the width/height attributes carry the backing store and are also CSS hints, so the
      element must be pinned to the stage or a retina canvas lays out at twice its size */
   canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -31,14 +32,25 @@
           background: repeating-linear-gradient(to bottom,
             rgba(150,225,255,.012) 0 1px, rgba(0,0,0,0) 1px 3px); }
 
-  /* the side panel: one place a fact appears, and it holds its size so the map
-     never reflows when the pointer moves across it */
-  #side { border-left: 1px solid rgba(126,214,240,.14); background: #0a1014;
+  /* A list and a reading are different regions, both permanent: selecting inside the list
+     can then never destroy the list, which is what a single panel that swapped its whole
+     contents kept doing. */
+  #rail { grid-area: rail; border-left: 1px solid rgba(126,214,240,.14); background: #0a1014;
           display: flex; flex-direction: column; min-height: 0; }
-  #read { flex: 1; overflow-y: auto; padding: 16px 18px 18px; }
+  #index { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+  #index .pad { padding: 14px 16px 0; }
+  #index .head { padding: 12px 16px 6px; }
+  #rows { flex: 1; overflow-y: auto; min-height: 0; padding: 0 8px 12px; }
+  /* One height, always. A panel that grew and shrank with what was picked moved the list
+     above it on every click, which costs more than the space it saved. */
+  #inspect { flex: 0 0 322px; display: flex; flex-direction: column;
+             border-top: 1px solid rgba(126,214,240,.22); background: #0c1519; min-height: 0; }
+  #read { flex: 1; overflow-y: auto; padding: 14px 16px 14px; }
+  #inspect .foot { flex: none; padding: 9px 16px 10px; border-top: 1px solid rgba(126,214,240,.1);
+                   font: var(--t-footnote) var(--mono); color: var(--text-3); }
   /* The field sits outside #read, which is rebuilt on every pointer move: inside it, a search
      would lose focus and its own text between one keystroke and the next. */
-  #find { position: relative; margin: 0 0 14px; }
+  #find { position: relative; }
   #find input { width: 100%; box-sizing: border-box; padding: 8px 44px 8px 11px;
                 border-radius: 8px; color: var(--text); font: var(--t-callout) var(--sans);
                 background: rgba(140,170,190,.07);
@@ -83,47 +95,75 @@
                     background: rgba(126,214,240,.09); border: 1px solid rgba(126,214,240,.2);
                     border-radius: 4px; padding: 1px 5px; }
 
-  /* one panel, top left, over the map: the three channels, the reset, and the help.
-     It sits on the stage rather than the window, so it travels with the map, not the page. */
-  #bar { position: absolute; left: 16px; top: 16px; z-index: 60; width: 268px;
-         display: flex; flex-direction: column; gap: 9px; padding: 13px 14px 12px;
-         background: rgba(9,20,26,.82); backdrop-filter: blur(18px);
-         border: 1px solid rgba(126,214,240,.22); border-radius: 12px;
-         box-shadow: 0 10px 34px rgba(0,0,0,.6), inset 0 1px 0 rgba(150,235,255,.10); }
-  #bar label { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: 9px;
-               font: var(--t-footnote) var(--mono); text-transform: uppercase;
-               letter-spacing: .1em; color: #7fa7b4; }
-  #bar select { width: 100%; font: var(--t-callout) var(--sans); color: var(--text-1);
-                background: rgba(126,214,240,.08); border: 1px solid rgba(126,214,240,.2);
-                border-radius: 6px; padding: 4px 7px; text-transform: none; letter-spacing: 0; }
-  #bar button { font: var(--t-callout) var(--sans); color: var(--text-1);
-                background: rgba(126,214,240,.08); border: 1px solid rgba(126,214,240,.2);
-                border-radius: 6px; padding: 5px 12px; white-space: nowrap; }
-  #bar button:hover { background: rgba(126,214,240,.16); border-color: rgba(126,214,240,.4); }
-  #bar .rule { height: 1px; background: rgba(126,214,240,.14); margin: 2px -14px 1px; }
-  #bar .help { font: var(--t-footnote)/1.65 var(--sans); color: var(--text-3); }
-  #bar .reads { font: var(--t-footnote)/1.6 var(--sans); color: var(--text-3);
-                padding: 8px 0 1px; border-top: 1px solid rgba(126,214,240,.14); margin-top: 2px; }
-  #bar .reads b { color: var(--text-1); font-weight: 600; }
-  #bar .help b { color: var(--text-2); font-weight: 600; }
-  #bar kbd { font: var(--t-footnote) var(--mono); color: var(--text-1);
-             background: rgba(126,214,240,.09); border: 1px solid rgba(126,214,240,.2);
-             border-radius: 4px; padding: 0 5px; }
-  /* the view switch: two buttons in one control, the same skin as #bar button so the
-     panel reads as one set of controls rather than a menu block plus a widget */
-  #bar .seg { display: flex; gap: 0; }
-  #bar .seg button { flex: 1; border-radius: 0; padding: 4px 0; text-align: center; }
-  #bar .seg button:first-child { border-radius: 6px 0 0 6px; }
-  #bar .seg button:last-child { border-radius: 0 6px 6px 0; border-left: 0; }
-  #bar .seg button[aria-pressed="true"] { background: rgba(126,214,240,.22);
-    border-color: rgba(126,214,240,.5); color: var(--text-1); }
-  /* a menu that drives nothing must look like it drives nothing */
-  #bar select:disabled { opacity: .38; cursor: not-allowed; }
-  #bar label.off { opacity: .5; }
-  #bar label.check { display: flex; grid-template-columns: none; gap: 7px; cursor: pointer;
-                     letter-spacing: .04em; color: var(--text-2); text-transform: none;
-                     font: var(--t-callout) var(--sans); }
-  #bar label.check input { accent-color: #7fe8ff; margin: 0; }
+  /* A sidebar, the way every other surface in this app has one: a column of the window,
+     flush to its edge, with a hairline against what it borders. Not a card floating on the
+     map — a floating card is a popover, and standing controls are not transient. */
+  #side { grid-area: side; background: var(--sunken); min-height: 0;
+    border-right: 1px solid var(--hairline); display: flex; flex-direction: column; }
+  #side > header { display: flex; align-items: center; gap: 6px; height: 38px;
+    padding: 0 8px 0 14px; border-bottom: 1px solid var(--hairline); flex: none; }
+  #side > header h5 { font: 600 var(--t-callout) var(--sans); color: var(--text-1);
+    margin-right: auto; }
+  .sbtn { width: 26px; height: 24px; border-radius: var(--r-control); display: grid;
+    place-items: center; color: var(--text-2); flex: none; }
+  .sbtn:hover { background: var(--hover); color: var(--text-1); }
+  .sbtn svg { width: 14px; height: 14px; }
+  #side .body { flex: 1; overflow-y: auto; min-height: 0; padding: 4px 0 10px; }
+  /* group header, group, group header, group — the shape a settings sidebar has */
+  .sbsec { padding: 10px 14px 12px; }
+  .sbsec + .sbsec { border-top: 1px solid var(--hairline); }
+  .sbsec > h6 { font: var(--t-footnote) var(--mono); font-weight: 400;
+    text-transform: uppercase; letter-spacing: .1em; color: var(--text-off);
+    margin-bottom: 9px; }
+  /* Every field carries its name: a control with nothing beside it is a puzzle, whatever
+     it is made of. */
+  .srow { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px;
+    min-height: 26px; font: var(--t-callout) var(--sans); color: var(--text-2); }
+  .srow + .srow { margin-top: 7px; }
+  .srow.off { opacity: .45; }
+  .srow select { font: var(--t-callout) var(--sans); color: var(--text-1);
+    background: var(--control); border: 1px solid var(--subtle);
+    border-radius: var(--r-control); padding: 3px 6px; max-width: 152px; }
+  .srow select:disabled { cursor: not-allowed; }
+
+  .seg { display: flex; width: 138px; }
+  .seg button { flex: 1; padding: 3px 0; font: var(--t-callout) var(--sans);
+    color: var(--text-2); background: rgba(126,214,240,.07);
+    border: 1px solid rgba(126,214,240,.2); border-left-width: 0; }
+  .seg button:first-child { border-left-width: 1px; border-radius: 6px 0 0 6px; }
+  .seg button:last-child { border-radius: 0 6px 6px 0; }
+  .seg button[aria-pressed="true"] { background: rgba(126,214,240,.22);
+    border-color: rgba(126,214,240,.45); color: var(--text-1); }
+  .seg button:disabled { opacity: .4; cursor: not-allowed; }
+  /* Each view is a picture of itself, which two words in a menu are not. */
+  .iseg { display: flex; width: 68px; }
+  .iseg button { flex: 1; height: 24px; display: grid; place-items: center;
+    color: var(--text-3); background: rgba(126,214,240,.07);
+    border: 1px solid rgba(126,214,240,.2); border-left-width: 0; }
+  .iseg button:first-child { border-left-width: 1px; border-radius: 7px 0 0 7px; }
+  .iseg button:last-child { border-radius: 0 7px 7px 0; }
+  .iseg button:hover { color: var(--text-1); background: rgba(126,214,240,.16); }
+  .iseg button[aria-pressed="true"] { background: rgba(126,214,240,.22);
+    border-color: rgba(126,214,240,.45); color: var(--text-1); }
+  .iseg svg { width: 15px; height: 15px; }
+
+  /* A boolean is a switch, and the switch is the button itself: a checkbox hidden under a
+     label is a control that can look right and fire nothing. */
+  .sws { width: 30px; height: 17px; border-radius: 999px; flex: none; position: relative;
+    background: rgba(150,180,200,.16); border: 1px solid rgba(150,180,200,.2);
+    transition: background 160ms var(--ease-out), border-color 160ms var(--ease-out); }
+  .sws::after { content: ''; position: absolute; left: 1px; top: 1px; width: 12px; height: 12px;
+    border-radius: 50%; background: #9fb4bf; transition: transform 160ms var(--ease-out),
+    background 160ms var(--ease-out); }
+  .sws[aria-checked="true"] { background: rgba(127,232,255,.32);
+    border-color: rgba(127,232,255,.55); }
+  .sws[aria-checked="true"]::after { transform: translateX(13px); background: #cdf3ff; }
+
+  /* when the sidebar is away, the control that brings it back sits where it was */
+  #reveal { position: absolute; left: 12px; top: 12px; z-index: 60;
+    background: rgba(9,20,26,.82); backdrop-filter: blur(14px);
+    border: 1px solid rgba(126,214,240,.22); border-radius: 7px; }
+  #reveal[hidden] { display: none; }
 
   #read .ties { margin-top: 18px; }
   #read .ties h4 { font: var(--t-footnote) var(--mono); text-transform: uppercase;
@@ -166,20 +206,21 @@
   #read .tie i { flex-basis: 100%; font-style: normal; margin-top: 4px;
                  font: var(--t-footnote)/1.5 var(--sans); color: var(--text-3); }
 
-  /* the legend, bottom right of the map, on the stage and never hidden */
-  #key { position: absolute; right: 16px; bottom: 16px; z-index: 60; width: 186px;
-         padding: 10px 12px 9px; border-radius: 10px;
-         background: rgba(9,20,26,.82); backdrop-filter: blur(18px);
-         border: 1px solid rgba(126,214,240,.22);
-         box-shadow: 0 10px 34px rgba(0,0,0,.6), inset 0 1px 0 rgba(150,235,255,.10);
-         font: var(--t-footnote) var(--mono); color: var(--text-3); }
-  #key .lead { text-transform: uppercase; letter-spacing: .1em; color: #5c8b99; }
-  #key #keyName { color: var(--text-2); }
-  #key .ramp { display: flex; align-items: center; gap: 0; margin: 7px 0 4px;
-               border-radius: 3px; overflow: hidden; }
-  #key .ramp i { flex: 1; height: 9px; }
-  #key .ends { display: flex; justify-content: space-between; color: var(--text-2); }
-  #key .foot { color: #5c8b99; margin-top: 1px; }
+  /* The legend is the sidebar's last section, because it describes what the sections
+     above it just did. It is never hidden: a colour that means something only while you
+     remember what you picked in a menu means nothing by the second minute. */
+  #legend { font: var(--t-footnote) var(--mono); color: var(--text-3); }
+  #legend .lead { text-transform: uppercase; letter-spacing: .1em; color: #5c8b99; }
+  #legend #keyName { color: var(--text-2); }
+  #legend .ramp { display: flex; align-items: center; gap: 0; margin: 7px 0 4px;
+                  border-radius: 3px; overflow: hidden; }
+  #legend .ramp i { flex: 1; height: 9px; }
+  #legend .ends { display: flex; justify-content: space-between; color: var(--text-2); }
+  #legend .foot { color: #5c8b99; margin-top: 1px; }
+  #legend .reads { margin-top: 9px; padding-top: 9px; font: var(--t-footnote)/1.6 var(--sans);
+                   color: var(--text-3); border-top: 1px solid rgba(126,214,240,.12); }
+  #legend .reads b { color: var(--text-1); font-weight: 600; }
+  .dim { opacity: .5; }
 
   /* the colour channel, drawn on the bands the volumes are lit with */
   #read .gauge { margin-top: 16px; }
@@ -198,6 +239,11 @@
   #read .ends { display: flex; justify-content: space-between;
                 font: var(--t-footnote) var(--mono); color: #5c8b99; }
   #read .note { margin-top: 7px; font: var(--t-footnote)/1.5 var(--sans); color: var(--text-3); }
+  /* Counts and dates are numbers a reader already understands, so they cost one line
+     rather than a table. Only the ranked measure earns a gauge. */
+  #read .facts { display: flex; flex-wrap: wrap; gap: 4px 13px; margin-top: 12px;
+                 font: var(--t-callout) var(--sans); color: var(--text-3); }
+  #read .facts b { font-family: var(--mono); color: var(--text-1); font-weight: 500; }
   #read tr[title] { cursor: help; }
 
   /* A question mark is a thing you can point at. A dotted underline is a thing you have to
@@ -216,6 +262,65 @@
   #pop p:last-child { margin: 0; }
   #pop .src { color: #5c8b99; }
   #pop[hidden] { display: none; }
+
+  /* A domain, once chosen, stays said: it is the standing context over its own file list,
+     so opening a file ADDS a fact instead of replacing the one you came for. The hue is the
+     left border — a bigger, quieter swatch than a square, and the hue the map is now lit in. */
+  #ctx { display: grid; grid-template-columns: 26px 1fr; gap: 0 11px;
+    padding: 12px 16px 13px; border-bottom: 1px solid rgba(126,214,240,.12);
+    border-left: 3px solid var(--dh, #7fe8ff);
+    background: linear-gradient(100deg,
+      color-mix(in srgb, var(--dh, #7fe8ff) 13%, transparent), transparent 62%); }
+  #ctx[hidden] { display: none; }
+  #ctx .back { grid-row: 1; width: 26px; height: 26px; border-radius: 7px;
+    display: grid; place-items: center; color: var(--text-2);
+    background: color-mix(in srgb, var(--dh, #7fe8ff) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--dh, #7fe8ff) 34%, transparent); }
+  #ctx .back:hover { background: color-mix(in srgb, var(--dh, #7fe8ff) 34%, transparent);
+    color: var(--text-1); }
+  #ctx .back svg { width: 13px; height: 13px; }
+  #ctx h4 { grid-column: 2; align-self: center; font: 600 var(--t-title3) var(--sans);
+    color: var(--text-1); line-height: 26px; overflow-wrap: anywhere; }
+  #ctx p { grid-column: 2; font: var(--t-callout)/1.5 var(--sans); color: var(--text-2);
+    margin-top: 6px; }
+  #ctx .row { grid-column: 2; margin-top: 9px; font: var(--t-footnote)/1.6 var(--mono);
+    color: var(--text-off); }
+  #ctx .row b { color: var(--text-2); font-weight: 400; }
+
+  .eyebrow { font: var(--t-footnote) var(--mono); text-transform: uppercase;
+             letter-spacing: .12em; color: #5c8b99; }
+  /* one line each, a swatch and a count: a domain is a thing with its own page */
+  .drow { display: grid; grid-template-columns: 10px 1fr auto; gap: 9px; align-items: center;
+    padding: 6px 9px; border-radius: 7px; cursor: pointer; }
+  .drow:hover { background: rgba(126,214,240,.08); }
+  .drow[aria-selected="true"] { background: rgba(127,232,255,.15);
+    box-shadow: inset 0 0 0 1px rgba(127,232,255,.28); }
+  .drow .sw { width: 10px; height: 10px; border-radius: 3px; }
+  .drow .nm { font: var(--t-callout) var(--sans); color: var(--text-1);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drow .ct { font: var(--t-footnote) var(--mono); color: var(--text-3); }
+
+  /* Two lines, not one: a basename is not an address — half a repo is called index.ts —
+     and the name and the folder each need their own clip to survive. */
+  .frow { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start;
+    padding: 6px 9px; border-radius: 6px; cursor: pointer; min-width: 0; }
+  .frow em, .frow i { padding-top: 2px; }
+  .frow:hover { background: rgba(126,214,240,.08); }
+  .frow[aria-selected="true"] { background: rgba(127,232,255,.15); }
+  .frow .p { min-width: 0; }
+  .frow .p b { display: block; font: 400 var(--t-callout) var(--mono); color: var(--text-1);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* the directory is clipped from its LEFT, because its last segment is the telling one */
+  .frow .p s { display: block; direction: rtl; text-align: left; text-decoration: none;
+    font: var(--t-footnote) var(--mono); color: var(--text-off); margin-top: 1px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .frow .p s > span { direction: ltr; unicode-bidi: embed; }
+  .frow em { font: var(--t-footnote) var(--mono); font-style: normal; color: var(--text-3); }
+  .frow i { font: var(--t-footnote) var(--sans); font-style: normal; opacity: .85;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 118px;
+    text-align: right; }
+  #rows .idle { padding: 10px 9px; font-size: var(--t-callout); color: var(--text-3);
+    line-height: 1.5; }
 
   /* The written layer is drawn differently from every measured one, on purpose: a reader
      must be able to tell at a glance which lines are counted and which are read. */
@@ -252,57 +357,77 @@
 </style>
 
 <div id="app">
-  <header>
-    <h1>Argo, as CodeCharta sees it</h1>
-    <div class="count" id="count"></div>
-  </header>
-  <div id="main">
-    <div id="stage"><canvas id="cv"></canvas>
-    <div id="scan"></div>
-  <div id="bar">
-    <label>View <span class="seg" id="seg">
-      <button id="vCity" aria-pressed="true" title="The model, standing (V)">City</button
-      ><button id="vPlan" aria-pressed="false" title="Straight down, flat (V)">Treemap</button>
-    </span></label>
-    <label>Area <select id="mArea"></select></label>
-    <label id="lHeight">Height <select id="mHeight"></select></label>
-    <label>Colour <select id="mColour"></select></label>
-    <label id="lDom">Domains <span class="seg" id="segDom">
-      <button id="dOff" aria-pressed="true" title="Colour by the measure (D)">Off</button
-      ><button id="dTint" aria-pressed="false" title="Recolour in place, folders kept (D)">Tint</button
-      ><button id="dGroup" aria-pressed="false" title="Re-tile the map by domain (D)">Regroup</button>
-    </span></label>
-    <div class="reads" id="reads"></div>
-    <button id="reset" title="Back to the opening view (R)">Reset view</button>
-    <label class="check" title="The file pairs that keep changing in the same commit (T)">
-      <input type="checkbox" id="ties"> Strongest ties</label>
-    <label class="check" title="Drop test files and re-read the repo without them">
-      <input type="checkbox" id="noTests"> Hide tests</label>
-    <div class="rule"></div>
-    <div class="help">
-      <b>Drag</b> to pan · <b>scroll</b> to zoom<br>
-      <b>&#8997; option-drag</b> to turn and tilt<br>
-      <kbd>V</kbd> switches view · <kbd>D</kbd> domains · <kbd>R</kbd> resets it
+  <aside id="side">
+    <header><h5>Map</h5>
+      <button class="sbtn" id="reset" title="Back to the opening view (R)" aria-label="Reset view">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.7-3.97"/>
+          <path d="M13.6 2.2v3h-3"/></svg></button>
+      <button class="sbtn" id="hide" title="Hide sidebar" aria-label="Hide sidebar"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="1.6" y="2.8" width="12.8" height="10.4" rx="1.6"/><path d="M6.2 2.8v10.4"/></svg></button>
+    </header>
+    <div class="body">
+      <div class="sbsec"><h6>Encoding</h6>
+        <div class="srow"><span>Area</span><select id="mArea"></select></div>
+        <div class="srow" id="lHeight"><span>Height</span><select id="mHeight"></select></div>
+        <div class="srow"><span>Colour</span><select id="mColour"></select></div>
+      </div>
+      <div class="sbsec"><h6>Arrangement</h6>
+        <div class="srow" id="lDom"><span>Group by</span><span class="seg" id="segDom">
+          <button id="dOff" aria-pressed="true" title="Lay the map out by folder (D)">Folders</button
+          ><button id="dGroup" aria-pressed="false" title="Re-tile the map by domain (D)">Domains</button>
+        </span></div>
+        <div class="srow"><span>View</span><span class="iseg" id="seg">
+          <button id="vCity" aria-pressed="true" title="The model, standing (V)" aria-label="City">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"
+              stroke-linejoin="round"><path d="M8 1.6 14 5v6l-6 3.4L2 11V5z"/>
+              <path d="M2 5l6 3.4L14 5"/><path d="M8 8.4v6"/></svg></button
+          ><button id="vPlan" aria-pressed="false" title="Straight down, flat (V)" aria-label="Treemap">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"
+              stroke-linejoin="round"><rect x="1.6" y="2.6" width="12.8" height="10.8" rx="1.4"/>
+              <path d="M7 2.6v10.8M7 8h7.4M10.8 8v5.4"/></svg></button>
+        </span></div>
+      </div>
+      <div class="sbsec"><h6>Filters</h6>
+        <div class="srow"><span>Hide test files</span>
+          <button class="sws" role="switch" id="noTests" aria-checked="false"
+            title="Drop test files and re-read the repo without them"></button></div>
+        <div class="srow"><span>Strongest ties</span>
+          <button class="sws" role="switch" id="ties" aria-checked="false"
+            title="The file pairs that keep changing in the same commit (T)"></button></div>
+      </div>
+      <div class="sbsec" id="legend"><h6>Legend</h6>
+        <div class="lead">Colour &#183; <span id="keyName"></span></div>
+        <div class="ramp"><i style="background:#4ed3a8"></i><i style="background:#e8b45c"></i><i style="background:#e86a58"></i></div>
+        <div class="ends"><span id="keyLo"></span><span id="keyHi"></span></div>
+        <div class="ends foot"><span id="keyFootLo">half the files</span><span id="keyFootHi">top 15%</span></div>
+        <div class="reads" id="reads"></div>
+      </div>
     </div>
-    <div class="rule"></div>
-    <div class="help">Point at a file to see the ones that change with it.</div>
+  </aside>
+
+  <div id="stage"><canvas id="cv"></canvas>
+    <div id="scan"></div>
+    <button id="reveal" class="sbtn" title="Show sidebar" aria-label="Show sidebar" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="1.6" y="2.8" width="12.8" height="10.4" rx="1.6"/><path d="M6.2 2.8v10.4"/></svg></button>
   </div>
   <div id="pop" hidden></div>
-    <div id="key">
-    <div class="lead">Colour &#183; <span id="keyName"></span></div>
-    <div class="ramp"><i style="background:#4ed3a8"></i><i style="background:#e8b45c"></i><i style="background:#e86a58"></i></div>
-    <div class="ends"><span id="keyLo"></span><span id="keyHi"></span></div>
-    <div class="ends foot"><span id="keyFootLo">half the files</span><span id="keyFootHi">top 15%</span></div>
-  </div>
-  </div>
-    <aside id="side">
-      <div id="find">
-        <input id="q" type="search" autocomplete="off" spellcheck="false"
-               placeholder="Find a file, folder or domain" aria-label="Find">
-        <span id="qn"></span>
+
+  <div id="rail">
+    <section id="index">
+      <div class="pad">
+        <div id="find">
+          <input id="q" type="search" autocomplete="off" spellcheck="false"
+                 placeholder="Find a file, folder or domain" aria-label="Find">
+          <span id="qn"></span>
+        </div>
       </div>
+      <div id="ctx" hidden></div>
+      <div class="head"><div class="eyebrow" id="ihead"></div></div>
+      <div id="rows"></div>
+    </section>
+    <section id="inspect">
       <div id="read"></div>
-    </aside>
+      <div class="foot" id="count"></div>
+    </section>
   </div>
 </div>
 
@@ -531,7 +656,7 @@ function domBase(path) {
 function selectDomain(id) {
   beginFade();
   state.domSel = id;
-  rebuild(); detail(state.pinned || null); stamp();
+  rebuild(); detail(state.pinned || null); railIndex(); key(view.lo, view.hi); stamp();
 }
 
 /* The second tiling. The same boxes, partitioned on cluster instead of path, laid out by the
@@ -853,13 +978,7 @@ function fit() {
   cam.scale = e.k;
   cam.ox = W / 2 - e.mx * e.k;
   cam.oy = H / 2 - e.my * e.k;
-  /* The panel sits over the top-left of the stage. In the city that corner is sky; in a
-     plan every corner is data, so the map takes whatever slack the stage has to the right
-     of the panel rather than sitting under it. A square plan on a wide stage has plenty. */
-  const slack = Math.max(0, (W - e.w) / 2);
-  cam.ox += Math.max(0, Math.min(slack, BAR_RIGHT - slack)) * (1 - ZK);
 }
-const BAR_RIGHT = 300;   // #bar's left inset plus its width, in stage pixels
 
 /* ---------- the two layers ---------- */
 /* Fifteen hundred translucent volumes cost three paths each and cannot be redrawn sixty
@@ -918,10 +1037,10 @@ const DOM_MS = 780, DOM_STAGGER = 300;
 let morph = null;
 
 function domUI() {
-  for (const [id, m] of [['dOff', 'off'], ['dTint', 'tint'], ['dGroup', 'group']])
+  for (const [id, m] of [['dOff', 'off'], ['dGroup', 'group']])
     $(id).setAttribute('aria-pressed', String(state.dom === m));
   const ready = domainsReady();
-  for (const id of ['dTint', 'dGroup']) $(id).disabled = !ready;
+  $('dGroup').disabled = !ready;
   $('lDom').classList.toggle('off', !ready);
 }
 
@@ -937,7 +1056,7 @@ function reshuffle(apply) {
     for (const b of paintOrder(tree())) if (b.file) { b.mx = b.x; b.my = b.y; b.mw = b.w; b.mh = b.h; }
     morph = { t0: performance.now(), from, plate: 1 };
   }
-  fit(); rebuild(); detail(null); stamp();
+  fit(); rebuild(); detail(null); railIndex(); stamp();
 }
 
 function setDom(mode) {
@@ -1094,7 +1213,8 @@ function rebuild(fast) {
 
     $('count').textContent = `${leaves(live()).length.toLocaleString('en-US')} files`
       + (state.noTests ? ` · tests hidden` : '')
-      + ` · ${DESC[state.area].title} ${fmt(roll(live(), state.area))} total`;
+      + (DOM ? ` · ${DOM.clusters.length} domains` : '')
+      + ` · measured by CodeCharta`;
     key(lo, hi);
   }
   mt.push(performance.now() - t0);
@@ -1189,7 +1309,11 @@ function pickFace(x, y, a, e) {
    to the ground colour and what does keeps whatever it was already saying. */
 function fileBase(b) {
   if (HITS && !HITS.has(b.path)) return HUSH;
-  return state.dom === 'off' ? BAND[bandOf(b)] : domBase(b.path);
+  /* "Folders / Tint / Regroup" was two questions in one control: where a box SITS and what
+     colour it IS. Tint was never a third arrangement — it is folders arranged with domains
+     coloured, which is what picking a domain out of the index already asks for. */
+  return state.dom === 'off' && (state.domSel === null || !DOM)
+    ? BAND[bandOf(b)] : domBase(b.path);
 }
 
 /* Colour changes are dissolves, not cuts. Switching the channel, turning domains on, picking
@@ -1479,7 +1603,7 @@ function frame(now) {
      it. A search is the moment that stops being true: a handful of boxes matter, and those get
      their names, over the model rather than baked into it so a keystroke costs no rebuild. */
   if (HITS && HITS.size && HITS.size <= 40) markHits();
-  if (state.pinned) pinMark(state.pinned, now);
+  if (state.pinned && state.pinned.w !== undefined) pinMark(state.pinned, now);
   if (state.hover && state.hover !== state.pinned) hoverRim(state.hover);
 
   ft.push(performance.now() - t0);
@@ -1724,45 +1848,134 @@ function said(path, folder) {
 /* Every noted file, in one place, because a mark on a roof tells you where to look and this
    tells you what there is to look at. Both are needed: one is a map, the other is an index. */
 
-/* What the search found, and the one place a file can be reached by name. The domain each one
-   sits in rides along, because "which of these twelve Feed files did I mean" is the question a
-   list of basenames leaves you with. */
-function found() {
-  const all = [...HITS];
-  if (!all.length) return `<div class="ties"><h4>Nothing matches</h4>`
-    + `<div class="tie flat"><span>No file, folder or domain has all of those words.</span></div></div>`;
-  const rows = all.slice(0, 60).map(k => {
-    const c = DOM && domOf(k);
-    return `<div class="tie flat" data-go="${esc(k)}" title="${esc(k)}">`
-      + `<span>${esc(k.split('/').pop())}</span>`
-      + `<em>${esc(c ? domName(c) : k.split('/').slice(-2, -1)[0] || '')}</em></div>`;
-  });
-  return `<div class="ties"><h4>${all.length} file${all.length > 1 ? 's' : ''} found`
-    + `${all.length > 60 ? ' \u00b7 first 60' : ''}</h4>${rows.join('')}</div>`;
+/* ══ the rail's index ═══════════════════════════════════════════════════════════
+   The rail is split once and never again: this half is always a list — every domain, or
+   one domain's files, or what the search found — and the half below it is always the one
+   thing being read. Nothing here replaces anything, which is what a single panel that
+   swapped its whole contents kept doing to the list you were choosing from. */
+const NODE = new Map();
+const PAGE = 60;
+let LIST = [], LIST_DOM = false, shown = 0;
+
+/* short enough to sit inline beside the counts, in whatever unit is legible at that size */
+const AGE = w => { const d = w * 7;
+  return d < 14 ? Math.round(d) + 'd' : d < 60 ? Math.round(d / 7) + 'w'
+       : d < 730 ? Math.round(d / 30.4) + 'mo' : (d / 365).toFixed(1) + 'y'; };
+
+/* A basename alone is not an address — half a repo is called index.ts. So the folder is the
+   row's second line, clipped from its LEFT, because its last segment is the telling one. */
+function fileRow(path, withDomain) {
+  const n = NODE.get(path);
+  const c = withDomain && DOM ? domOf(path) : null;
+  const on = !!(state.pinned && state.pinned.path === path);
+  return `<div class="frow" data-go="${esc(path)}" aria-selected="${on}" title="${esc(path)}">`
+    + `<span class="p"><b>${esc(path.split('/').pop())}</b>`
+    + `<s><span>${esc(path.split('/').slice(0, -1).join('/'))}</span></s></span>`
+    + (c ? `<i style="color:rgb(${domTone(DOM.rank.get(c.id), c.confidence).join(',')})">`
+           + `${esc(domName(c))}</i>`
+         : `<em>${n ? fmt(at(n, state.colour)) : ''}</em>`)
+    + `</div>`;
 }
 
-/* A band answers "is this file in the top 15%", which makes a 58 the same pixel as a 20.
-   The extreme is what a reader comes to a map like this for, so the colour channel's own
-   top of the pile is listed outright. It re-sorts when that channel changes. */
-/* Whatever is picked above scopes this: a repo-wide ranking sitting under one selected domain
-   is a list nobody asked for, and the same list scoped is the drill-down — which is also why
-   there is no tree here. A domain holds up to a hundred and seventy files, and a row you can
-   expand into a hundred and seventy more is the thing this panel keeps being too long for. */
-function topList() {
-  if (!view) return '';
-  const k = state.colour;
-  const only = state.dom !== 'off' && state.domSel !== null && DOM;
-  const rows = view.boxes.filter(b => b.file)
-    .filter(b => !only || (DOM.byPath.get(b.path) || {}).id === state.domSel)
-    .map(b => ({ path: b.path, name: b.n.name, v: at(b.n, k) }))
-    .sort((a, b) => b.v - a.v).slice(0, 12);
-  if (!rows.length) return '';
-  const where = only ? ` in ${esc(domName(DOM.clusters[DOM.rank.get(state.domSel)]))}` : '';
-  return `<div class="ties"><h4>Highest ${esc(DESC[k].title)}${where}</h4>`
-    + rows.map(r => `<div class="tie" data-go="${esc(r.path)}" title="Go to this file">`
-        + `<span>${esc(r.name)}</span><b>${fmt(r.v)}</b>`
-        + `<em>${esc(r.path.split('/').slice(0, -1).slice(-2).join('/'))}</em></div>`).join('')
-    + `</div>`;
+/* One line each, and each one a way in: the list is how a reader gets from a name they are
+   curious about to the place it lives, which pointing at the map cannot do. */
+function domainRows() {
+  const d = domains();
+  if (!d) return `<div class="idle">No domains: this checkout has no change history to `
+    + `group by, or the clustering did not load. Everything else still works.</div>`;
+  return d.clusters.map((c, i) =>
+    `<div class="drow" data-dom="${c.id}" aria-selected="${state.domSel === c.id}" `
+    + `title="${esc(domNote(c) || c.about)}"><i class="sw" `
+    + `style="background:rgb(${domTone(i, c.confidence).join(',')})"></i>`
+    + `<span class="nm">${esc(domName(c))}</span>`
+    + `<span class="ct">${c.members.length}</span></div>`).join('');
+}
+
+function domFiles(id) {
+  const d = domains();
+  if (!d) return [];
+  const c = d.clusters[d.rank.get(id)];
+  return c.members.map(i => d.paths[i]).filter(pp => !HITS || HITS.has(pp))
+    .sort((x, y) => at(NODE.get(y) || {}, state.colour) - at(NODE.get(x) || {}, state.colour));
+}
+
+/* the list has no end and no button: it grows as it is scrolled, in place, so the scroll
+   position it grew from is never lost */
+function more() {
+  const el = $('rows');
+  /* the domain index is not a page of a longer list, so there is nothing here to grow */
+  if (!LIST || shown >= LIST.length) return;
+  const next = LIST.slice(shown, shown + PAGE);
+  shown += next.length;
+  el.insertAdjacentHTML('beforeend', next.map(x => fileRow(x, LIST_DOM)).join(''));
+  wireRail();
+}
+
+function railIndex() {
+  const d = domains();
+  const c = state.domSel !== null && d ? d.clusters[d.rank.get(state.domSel)] : null;
+  const ctx = $('ctx');
+  /* A domain, once chosen, stays said: it becomes the standing context over its own file
+     list, so opening a file ADDS a fact instead of replacing the one you came for. Its hue
+     is the panel's, which is the hue the map is now lit in — nobody matches a swatch twice. */
+  if (c) {
+    ctx.hidden = false;
+    ctx.style.setProperty('--dh', `rgb(${domTone(d.rank.get(c.id), c.confidence).join(',')})`);
+    ctx.innerHTML = `<button class="back" data-back="1" title="Every domain again" `
+      + `aria-label="Every domain again"><svg viewBox="0 0 16 16" fill="none" `
+      + `stroke="currentColor" stroke-width="1.8" stroke-linecap="round" `
+      + `stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg></button>`
+      + `<h4>${esc(domName(c))}</h4>`
+      + (domNote(c) ? `<p>${esc(domNote(c))}</p>` : `<p>${esc(c.about)}</p>`)
+      + `<div class="row"><b>${c.members.length} files</b> &nbsp;·&nbsp; `
+      + `${esc(c.tokens.join(' · '))}</div>`;
+  } else { ctx.hidden = true; ctx.removeAttribute('style'); ctx.innerHTML = ''; }
+
+  LIST_DOM = false;
+  if (c) LIST = domFiles(c.id);
+  else if (HITS) { LIST = [...HITS]; LIST_DOM = true; }
+  else LIST = null;
+
+  $('ihead').textContent = c
+    ? (HITS ? 'Matches here, highest ' : 'Files, highest ') + DESC[state.colour].title + ' first'
+    : HITS ? HITS.size + ' file' + (HITS.size === 1 ? '' : 's') + ' found'
+    : (d ? d.clusters.length + ' domains · ' + d.unassigned + ' files in none' : 'Domains');
+
+  const el = $('rows');
+  if (LIST === null) el.innerHTML = domainRows();
+  else if (!LIST.length) el.innerHTML =
+    `<div class="idle">Nothing here matches all of those words.</div>`;
+  else { shown = Math.min(PAGE, LIST.length);
+         el.innerHTML = LIST.slice(0, shown).map(x => fileRow(x, LIST_DOM)).join(''); }
+  el.scrollTop = 0;
+  wireRail();
+}
+
+function wireRail() {
+  for (const r of $('rows').querySelectorAll('.drow[data-dom]'))
+    r.onclick = () => selectDomain(+r.dataset.dom === state.domSel ? null : +r.dataset.dom);
+  /* Sixty-odd files are too small to be given a box at the opening zoom, so a row can name
+     something the map is not drawing. It still opens — it just has no mark to put on the
+     map, which is the honest state rather than a click that does nothing. */
+  for (const r of document.querySelectorAll('#rows .frow[data-go]'))
+    r.onclick = () => {
+      const path = r.dataset.go;
+      const box = boxesNow().find(x => x.path === path);
+      const n = NODE.get(path);
+      if (!box && !n) return;
+      state.pinned = box || { n, path, file: true };
+      detail(state.pinned); railMark();
+    };
+  const back = $('ctx').querySelector('[data-back]');
+  if (back) back.onclick = () => selectDomain(null);
+}
+
+/* Which row is open is a property of the row, not of the list, so it is stamped rather
+   than re-rendered: rebuilding the list to move a highlight loses the scroll. */
+function railMark() {
+  const path = state.pinned && state.pinned.path;
+  for (const r of document.querySelectorAll('#rows .frow'))
+    r.setAttribute('aria-selected', String(r.dataset.go === path));
 }
 
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -1783,19 +1996,26 @@ function detail(b) {
 
   if (!it) {
     d.innerHTML = `<div class="idle">
-      <p>Point at anything to read it here. <b>Click</b> to pin it,
-      <kbd>Esc</kbd> to let go. Folder names appear as you zoom towards them.</p>
+      <p>Point at anything on the map to read it here, or pick a row above.
+      <b>Click</b> to pin it, <kbd>Esc</kbd> to let go.</p>
       <p style="margin-top:10px">Every number here is measured from the code and its history.
       Plates carry a written caption, and the files marked <b class="dot">●</b> carry a
-      note. Both are read, never counted.</p></div>`
-      + (HITS ? found() : domainIndex() + topList());
-    wireRead();
+      note. Both are read, never counted.</p></div>`;
     return;
   }
 
   const n = it.n, live = state.area, h = state.height, c = state.colour;
+  /* Counts and dates are numbers a reader already understands, so they cost one line
+     instead of four table rows. Ranking them said nothing the number did not. */
+  const facts = !it.file ? '' : `<div class="facts">`
+    + [['rloc', v => `<b>${fmt(v)}</b> lines`],
+       ['number_of_authors', v => `<b>${fmt(v)}</b> author${v === 1 ? '' : 's'}`],
+       ['number_of_commits', v => `<b>${fmt(v)}</b> commits`],
+       ['age_in_weeks', v => `<b>${AGE(v)}</b> old`]]
+      .map(([k, f]) => `<span>${f(at(n, k))}</span>`).join('') + `</div>`;
+  const FACTS = it.file ? ['rloc', 'number_of_authors', 'number_of_commits', 'age_in_weeks'] : [];
   const rows = it.file
-    ? METRICS.filter(k => k !== c).map(k => {
+    ? METRICS.filter(k => k !== c && !FACTS.includes(k)).map(k => {
         const v = at(n, k), on = k === live || k === h;
         return `<tr class="${on ? 'on' : v ? '' : 'zero'}" title="${DESC[k].description}">`
              + `<td class="k">${DESC[k].title}</td><td class="v">${fmt(v)}</td></tr>`;
@@ -1849,6 +2069,7 @@ function detail(b) {
     + `<div class="name">${n.name}</div>`
     + `<div class="where">${it.path}</div>`
     + (it.file ? '' : `<div class="pin">${leaves(n).length} files inside · zoom in to see them</div>`)
+    + facts
     + said(it.path, !it.file)
     + domHTML(it)
     + gauge
@@ -1885,27 +2106,6 @@ function domHTML(it) {
     + (it.file ? '' : `<div class="ties"><h4>Where it lives</h4>${rows.join('')}</div>`)
     + `</div>`;
 }
-/* Every domain, one line each, and each one a way in: the list is how a reader gets from a
-   name they are curious about to the place it lives, which pointing at the map cannot do. */
-function domainIndex() {
-  if (state.dom === 'off' || !DOM) return '';
-  /* One at a time, so the list is a radio group rather than a set of switches: two domains at
-     once is a picture with no question behind it, and the reader always has to be able to get
-     back to all of them, which is why "every domain" is an option and not an empty selection. */
-  const row = (id, dot, label, count, title) =>
-    `<div class="radio${state.domSel === id ? ' on' : ''}" role="radio" tabindex="0" `
-    + `aria-checked="${state.domSel === id}" data-dom="${id === null ? '' : id}" title="${esc(title)}">`
-    + `<u></u>${dot}<span>${esc(label)}</span><b>${count}</b></div>`;
-  return `<div class="ties"><h4>${DOM.clusters.length} domains \u00b7 ${DOM.unassigned} files in none</h4>`
-    + `<div class="radios" role="radiogroup" aria-label="Domain">`
-    + row(null, `<i class="all"></i>`, 'All domains', DOM.paths.length - DOM.unassigned,
-          'Colour every domain at once')
-    + DOM.clusters.map((c, i) =>
-        row(c.id, `<i style="background:rgb(${domTone(i, c.confidence).join(',')})"></i>`,
-            domName(c), c.members.length, domNote(c) || c.about)).join('')
-    + `</div></div>`;
-}
-
 const domOf = path => {
   const d = DOM && DOM.byPath.get(path);
   return d && d.id >= 0 ? DOM.clusters[DOM.rank.get(d.id)] : null;
@@ -1918,7 +2118,7 @@ function showDef(btn, k) {
   const pop = $('pop'), r = btn.getBoundingClientRect();
   /* Anchored to the panel's edge, not the button's: a popover that covers the number it is
      explaining makes the reader close it to check what they were looking at. */
-  const edge = $('side').getBoundingClientRect().left;
+  const edge = $('rail').getBoundingClientRect().left;
   const extra = twin(k);
   pop.innerHTML = `<h5>${esc(DESC[k].title)}</h5><p>${esc(DESC[k].description)}</p>`
     + (extra ? `<p>${esc(extra.trim())}</p>` : '')
@@ -1964,7 +2164,7 @@ function key(lo, hi) {
      the map can be read without first working out what "area" turned into on screen. */
   const note = Object.keys(NOTES.files || {}).length
     ? ` Files marked <b class="dot">●</b> carry a written note.` : '';
-  if (state.dom !== 'off') {
+  if (state.dom !== 'off' || state.domSel !== null) {
     const d = domains();
     $('reads').innerHTML = `Each ${state.plan ? 'rectangle' : 'volume'} is a file and its `
       + `<b>colour</b> is its <b>domain</b> — ${d ? d.clusters.length : 0} of them, `
@@ -1973,7 +2173,7 @@ function key(lo, hi) {
       + `<b>Domains are inferred from names and change history. Nobody confirmed them.</b>`;
     for (const [id, k] of [['mArea', 'area'], ['mHeight', 'height'], ['mColour', 'colour']])
       $(id).title = DESC[state[k]].description;
-    const ramp = $('key').querySelectorAll('.ramp i');
+    const ramp = $('legend').querySelectorAll('.ramp i');
     ramp.forEach((el, i) => el.style.background = i === ramp.length - 1
       ? `rgb(${UNSURE.join(',')})`
       : d && d.clusters[i] ? `rgb(${domTone(i, d.clusters[i].confidence).join(',')})` : '#5a646c');
@@ -1995,7 +2195,7 @@ function key(lo, hi) {
     $(id).title = DESC[state[k]].description;
   /* Painted from the same call the roofs are, so the swatch and the block are one value
      and a reader holding one against the other is comparing like with like. */
-  const ramp = $('key').querySelectorAll('.ramp i');
+  const ramp = $('legend').querySelectorAll('.ramp i');
   ramp.forEach((el, i) => el.style.background = roofSwatch(i));
   $('keyName').textContent = DESC[state.colour].title;
   $('keyLo').textContent = '≤ ' + fmt(lo);
@@ -2051,7 +2251,7 @@ Promise.all([
             height: metricParam('height', 'number_of_commits'),
             colour: metricParam('colour', 'complexity'),
             hover: null, pinned: null, ties: q.get('ties') === '1',
-            dom: ['tint', 'group'].includes(q.get('dom')) ? q.get('dom') : 'off', domSel: null,
+            dom: q.get('dom') === 'group' ? 'group' : 'off', domSel: null,
             noTests: q.get('tests') === 'no', q: q.get('find') || '',
             plan: q.get('view') === 'plan' };
   if (state.dom !== 'off' && !domainsReady()) state.dom = 'off';
@@ -2070,13 +2270,14 @@ Promise.all([
        so that dissolves. Both are the same gesture to the reader and neither is a cut. */
     sel.onchange = () => {
       if (k === 'colour') { beginFade(); state.colour = sel.value; state.hover = null;
-                            rebuild(); detail(null); stamp(); return; }
+                            rebuild(); detail(null); railIndex(); stamp(); return; }
       reshuffle(() => { state[k] = sel.value; state.hover = null; });
     };
   }
 
+  for (const n of leaves(DATA)) NODE.set(n.__path, n);
   domUI();
-  for (const [id, m] of [['dOff', 'off'], ['dTint', 'tint'], ['dGroup', 'group']])
+  for (const [id, m] of [['dOff', 'off'], ['dGroup', 'group']])
     $(id).onclick = () => setDom(m);
   /* Retyping is free — the match is a substring test over fifteen hundred paths — so there is
      no debounce and no submit: the map narrows on the keystroke. */
@@ -2087,16 +2288,19 @@ Promise.all([
     refind();
     $('qn').textContent = HITS ? String(HITS.size) : '';
     state.hover = null; state.pinned = null;
-    rebuild(); detail(null); stamp();
+    rebuild(); detail(null); railIndex(); stamp();
   };
   refind();
   $('qn').textContent = HITS ? String(HITS.size) : '';
 
-  $('noTests').checked = state.noTests;
-  $('noTests').onchange = () => {
+  /* A checkbox hidden under a label is a control that can look right and fire nothing. */
+  const swSet = (id, on) => $(id).setAttribute('aria-checked', String(!!on));
+  swSet('noTests', state.noTests);
+  $('noTests').onclick = () => {
     beginFade();
+    swSet('noTests', !state.noTests);
     reshuffle(() => {
-      state.noTests = $('noTests').checked;
+      state.noTests = !state.noTests;
       state.hover = state.pinned = null; state.domSel = null;
       DOM = null; domKey = ''; PRUNED = null; refind();
       if (state.dom !== 'off') domains();
@@ -2105,7 +2309,7 @@ Promise.all([
   /* The clustering is a second of work and the button has to feel instant, so it is done
      once the first frame is on screen rather than on the click. */
   if (domainsReady()) requestAnimationFrame(() => setTimeout(() => {
-    domains(); domUI();
+    domains(); domUI(); railIndex();
     if (state.dom !== 'off') { treeKey = ''; fit(); rebuild(); }
   }, 0));
 
@@ -2186,16 +2390,15 @@ Promise.all([
     /* pin it so the numbers stay while the pointer goes to the controls */
     const same = state.pinned && state.pinned.path === hit.path;
     state.pinned = same ? null : hit;
-    detail(hit);
+    detail(hit); railMark();
   };
   addEventListener('keydown', e => {
     if (e.key === "Escape") { state.pinned = null; detail(null); }
     if (e.key === "r" || e.key === "R") reset();
     if (e.key === 'Escape') hideDef();
-    if (e.key === "t" || e.key === "T") { $('ties').checked = !state.ties; $('ties').onchange(); }
+    if (e.key === "t" || e.key === "T") $('ties').onclick();
     if (e.key === "v" || e.key === "V") setView(!state.plan);
-    if (e.key === "d" || e.key === "D")
-      setDom(['off', 'tint', 'group'][(['off', 'tint', 'group'].indexOf(state.dom) + 1) % 3]);
+    if (e.key === "d" || e.key === "D") setDom(state.dom === 'off' ? 'group' : 'off');
   });
   $('reset').onclick = reset;
   $('vCity').onclick = () => setView(false);
@@ -2204,8 +2407,22 @@ Promise.all([
   /* A popover that only closes on its own button is a popover you close by reloading. */
   addEventListener('mousedown', e => { if (!e.target.closest('#pop, .ask')) hideDef(); });
   addEventListener('resize', hideDef);
-  $('ties').checked = state.ties;
-  $('ties').onchange = () => { state.ties = $('ties').checked; stamp(); };
+  swSet('ties', state.ties);
+  $('ties').onclick = () => { state.ties = !state.ties; swSet('ties', state.ties); stamp(); };
+  /* The sidebar is a column of the window, so hiding it resizes the stage — which no
+     resize event reports, because the window did not change. */
+  const sidebar = show => {
+    document.body.classList.toggle('nosb', !show);
+    $('reveal').hidden = show;
+    requestAnimationFrame(() => { fit(); rebuild(); });
+  };
+  $('hide').onclick = () => sidebar(false);
+  $('reveal').onclick = () => sidebar(true);
+  /* the list has no end and no button: it grows where it is, so its scroll is never lost */
+  $('rows').onscroll = () => {
+    const el = $('rows');
+    if (el.scrollTop + el.clientHeight > el.scrollHeight - 260) more();
+  };
   addEventListener('resize', () => { fit(); rebuild(); });
 
   const num = (k, d, lo, hi) => {
@@ -2216,7 +2433,7 @@ Promise.all([
   cityPitch = num("pitch", PITCH, 0.10, 1.45);
   setFlat(state.plan ? 1 : 0);
   fit();
-  rebuild(); detail(null);
+  rebuild(); detail(null); railIndex();
   requestAnimationFrame(frame);
   rise();
 });
