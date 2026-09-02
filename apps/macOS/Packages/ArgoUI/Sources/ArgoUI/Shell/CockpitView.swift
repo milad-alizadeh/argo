@@ -62,6 +62,9 @@ public struct CockpitView: View {
     /// Session looked at last overwrites the one the reader is coming back to. See `FeedGeometries`
     /// (#858).
     @State var feedGeometries = FeedGeometries()
+    /// Which Session the shell has already drawn — what says whether this pass may take a reading
+    /// at all. See `DrawnSession`.
+    @State private var drawn = DrawnSession()
 
     public init(
         presentation: CockpitPresentation,
@@ -95,29 +98,6 @@ public struct CockpitView: View {
 
     var subagents: FeedAgentReader {
         presentation.subagents
-    }
-
-    /// What is in the deck's one slot for the selected Session — the composer, the Permission
-    /// displacing it, the line saying there is nothing to steer, or nothing at all. One decision,
-    /// made in `DeckVessel` where a test can reach it.
-    var vessel: DeckVessel {
-        DeckVessel.resolve(
-            for: presentation.session(navigation.session),
-            can: capabilities,
-        )
-    }
-
-    /// What the selected Session's adapter declares, read as one value off the port (#761). With no
-    /// Session selected there is nothing to ask about and nothing to draw: `DeckVessel` gives that
-    /// case no composer at all, so the defaults below are never rendered.
-    private var capabilities: SessionComposerProjection.Capabilities {
-        guard let sessionID = navigation.session else { return .init() }
-        let surface = actions.drive.surface(of: sessionID)
-        return SessionComposerProjection.Capabilities(
-            canAttach: surface.takesAttachments,
-            canRunCommands: surface.runsCommands,
-            resolvesMentions: surface.resolvesMentions,
-        )
     }
 
     /// The sheet is up exactly while there is a reading. Dismissing it — Escape, or the system's
@@ -178,6 +158,8 @@ public struct CockpitView: View {
     /// could build more easily than `CockpitView` already does.
     @ViewBuilder private var rooms: some View {
         @Bindable var navigation = navigation
+        // Whether the shell has caught up with the row that was clicked — see `DrawnSession`.
+        let isDrawn = drawn.isDrawn(navigation.session)
         // Assembled ONCE for the whole pass and handed to all four readers — the column's
         // visibility, the sidebar, the toolbar row and the deck. `nil` outside the Tickets room,
         // which is also what keeps the projection from running at all in the other two.
@@ -193,8 +175,12 @@ public struct CockpitView: View {
         } detail: {
             detail(
                 tickets: tickets,
-                // The pass's ONE reading, handed on rather than asked for again (#957).
-                reading: .taken(in: navigation.room, of: presentation, for: navigation.session),
+                // The pass's ONE reading, handed on rather than asked for again (#957) — and only
+                // where the shell has caught up with the row that was clicked. See `DrawnSession`.
+                reading: isDrawn
+                    ? .taken(in: navigation.room, of: presentation, for: navigation.session)
+                    : .none,
+                isDrawn: isDrawn,
             )
         }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")
@@ -234,8 +220,15 @@ public struct CockpitView: View {
             navigation.projectSwitched()
         }
         // What the deck's `.id(session)` used to discard for free — see `forgetEvidence()`.
-        .onChange(of: navigation.session) { _, _ in
-            forgetEvidence()
+        // `initial` is for the catch-up alone: the shell can be handed a selection before its
+        // first pass — a restored window, and every hosted fixture — and a `DrawnSession` that
+        // never heard about it would read inline for the life of the window. The evidence is
+        // cleared on a CHANGE, which the initial fire is not: it reports the same id twice.
+        .onChange(of: navigation.session, initial: true) { was, pointed in
+            if was != pointed {
+                forgetEvidence()
+            }
+            drawn.catchUp(to: pointed, in: navigation)
         }
     }
 }

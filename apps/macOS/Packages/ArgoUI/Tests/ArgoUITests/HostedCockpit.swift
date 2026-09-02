@@ -22,11 +22,17 @@ import SwiftUI
 
     /// Opened in the Sessions room on a Session with a real transcript in it — the one room that
     /// takes a reading at all.
-    init() {
+    convenience init() {
+        self.init(showing: Self.presentation)
+    }
+
+    /// The same shell over a roster the caller assembled, so a claim about SWITCHING between
+    /// Sessions has two of them to switch between.
+    init(showing presentation: CockpitPresentation) {
         navigation.room = .sessions
-        navigation.session = Self.sessionID
+        navigation.session = presentation.sessions.first?.id
         self.host = NSHostingView(rootView: AnyView(
-            CockpitView(presentation: Self.presentation, actions: .inert)
+            CockpitView(presentation: presentation, actions: .inert)
                 .environment(navigation),
         ))
         host.frame = NSRect(x: 0, y: 0, width: 1200, height: 800)
@@ -40,26 +46,73 @@ import SwiftUI
         host.layoutSubtreeIfNeeded()
     }
 
-    private static let sessionID = "one"
+    /// The turns AFTER the click: whatever `DrawnSession` enqueued, drained, and the shell laid
+    /// out again. What the reader sees a beat later, and the only way a suite with no run loop
+    /// under it reaches the deferred half of a switch.
+    func settle() async {
+        for _ in 0 ..< Self.turns {
+            await Task.yield()
+            host.layoutSubtreeIfNeeded()
+        }
+    }
 
-    /// Read through a MANAGED Session, which is what the app draws for a Session it spawned: the
+    /// `settle()`'s passes WITHOUT its yields — the same view-graph warm-up and none of the
+    /// draining. It exists so a figure's two arms can be alike: a shell measured against a settled
+    /// one would otherwise be measured against four extra layout passes as well as against the
+    /// deferral. See `SessionSelectionFigureRecording`.
+    func warm() {
+        for _ in 0 ..< Self.turns {
+            host.layoutSubtreeIfNeeded()
+        }
+    }
+
+    /// Enough turns for a `Task` enqueued during an update to have run. Four rather than one
+    /// because the catch-up invalidates the body, and what it invalidates is laid out on the next.
+    private static let turns = 4
+
+    /// One row picked and the shell laid out again — the pass between the mouse-down and the
+    /// frame that paints the new selection, which is the whole of what `SessionSelectionCostTests`
+    /// measures.
+    func select(_ sessionID: CockpitPresentation.Session.ID) {
+        navigation.session = sessionID
+        host.layoutSubtreeIfNeeded()
+    }
+
+    /// A roster of `ids`, each carrying `events`. What a switch costs is per Session, so a fixture
+    /// with one row in it could not be switched at all.
+    ///
+    /// Every row is MANAGED and running, which is what the app draws for a Session it spawned: the
     /// deck's one slot resolves to a composer and the shell hosts the real `ComposerTextView`
     /// under it, so a pass costed here is a pass of everything a running Session pays for.
     /// `ComposerFieldKeyTests`' `a second hosted composer leaves the first one's field working`
     /// is what keeps that arrangement legitimate (#1000).
-    static var presentation: CockpitPresentation {
+    static func presentation(
+        of ids: [CockpitPresentation.Session.ID],
+        events: [TranscriptEvent],
+    )
+        -> CockpitPresentation {
         CockpitPresentation(
             projects: [],
             activeProjectID: nil,
-            sessions: [CockpitPresentation.Session(
-                id: sessionID,
-                title: sessionID,
-                access: .managed,
-                status: .running,
-                transcript: .init(events: TranscriptFixtures.longTranscript),
-            )],
+            sessions: ids.map { id in
+                CockpitPresentation.Session(
+                    id: id,
+                    title: id,
+                    access: .managed,
+                    status: .running,
+                    transcript: .init(events: events),
+                )
+            },
             checkout: .unavailable,
             connection: .idle,
         )
+    }
+
+    private static let sessionID = "one"
+
+    /// One Session, read through the roster builder above rather than beside it: two builders of
+    /// the same value are two places for a fixture to drift.
+    static var presentation: CockpitPresentation {
+        presentation(of: [sessionID], events: TranscriptFixtures.longTranscript)
     }
 }

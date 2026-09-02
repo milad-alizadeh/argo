@@ -170,9 +170,21 @@ import SwiftUI
         let switched = model != nil && model?.reading != fresh.reading
         model = fresh
         shown = fresh.rows
-        surrenderMovedChip()
-        // A reading that shrank leaves an entry per lost index that nothing can ever match.
-        geometry.dropBeyond(fresh.rows.count)
+        // Both of these read the fresh rows as the WHOLE of what the reading now holds, so both
+        // are skipped where there are none. An empty reading is not a reading that shrank to
+        // nothing: it is a deck standing in for one — a Session whose reading has not been taken
+        // yet (`DrawnSession`), or a room whose deck is off screen (ADR-0028 Rule 5) — and the
+        // heights held are still true of the rows on their way back. Dropped there, a switch away
+        // and back measured the whole reading twice, which is the cost `FeedGeometries` exists to
+        // have removed (#858).
+        //
+        // What it leaves behind is an entry per index of a Session that really did empty, held
+        // until its store is evicted. They answer nothing wrong — a height is only handed back
+        // under a matching `Ground` — so this is bounded memory against a whole re-measure.
+        if !fresh.rows.isEmpty {
+            surrenderMovedChip()
+            geometry.dropBeyond(fresh.rows.count)
+        }
         guard table != nil else { return }
         if switched {
             openAfresh()

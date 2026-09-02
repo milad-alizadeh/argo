@@ -42,6 +42,26 @@ enum PerfBudgets {
     /// green on the same code (#1068).
     static let presentationCompareReads = 0
 
+    /// `SessionSelectionCostTests` — how many streams the pass between the mouse-down and the
+    /// frame that paints the selected ground still asks for, at either transcript length.
+    ///
+    /// Recorded: 3 reads of `Stream.events` over a roster of two running managed Sessions, at 728
+    /// events each and at 5 824 · M4 Pro · either · exact. The three are NAMED, because a count
+    /// nobody can account for is a budget rather than a finding:
+    ///
+    /// - two `SessionRosterProjection.openTurnStartMs`, one per running managed row, each bounded
+    ///   by the OPEN Turn since it started walking backwards from the tail;
+    /// - one `TouchedFiles.touched`, the composer's `@` picker over the selected Session — the one
+    ///   walk left on this pass that is still linear in the transcript, and named here rather than
+    ///   cut because the composer is drawn from the pass and cannot be deferred without the deck's
+    ///   one slot changing height under the click.
+    ///
+    /// The reading itself is not among them and cannot be: `the pass that paints a fresh selection
+    /// takes no reading` gates that at zero directly, off `SessionsRoomReading.tally`. This number
+    /// is the OTHER half — that what is left does not follow the length, which is Rule 3's claim
+    /// and why the case carries the two sizes.
+    static let selectionPassReads = 3
+
     /// `FeedRowsCompareCostTests` — asking whether the fresh rows are the reading that stands may
     /// not scale with the reading.
     ///
