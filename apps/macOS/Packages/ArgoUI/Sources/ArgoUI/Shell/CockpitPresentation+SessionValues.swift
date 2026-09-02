@@ -9,13 +9,10 @@ import ArgoEngine
 public extension CockpitPresentation.Session {
     /// The resume chain (`CONTEXT.md` L2): what runs it, when it ran, what it handed to, and
     /// whether Argo's own channel to it is up — a property of the process this link runs in, which
-    /// is what `Program` and the two moments are about too.
-    ///
-    /// Those four clauses ARE the parameter list. The facts stay flat below them, so every read
-    /// site names the fact and not the group it arrived in.
+    /// is what `Program` and the two moments are about too. Those four clauses are the parameter
+    /// list, and the facts under them stay flat.
     struct Chain: Equatable, Sendable {
-        /// What is running the chain — the agent program, and the model it reported. One reading:
-        /// the header draws the pair as one line, and a record that named neither named both.
+        /// What is running the chain. No call site names one of the two without the other.
         public struct Program: Equatable, Sendable {
             public let cli: AgentCLI?
             public let model: String?
@@ -26,9 +23,7 @@ public extension CockpitPresentation.Session {
             }
         }
 
-        /// When it ran. The two moments are one reading because neither is a duration alone —
-        /// together they are the Session's wall-clock span, and that is the only thing read off
-        /// them.
+        /// When it ran. Neither moment is a duration alone, and the span is all either is read for.
         public struct Span: Equatable, Sendable {
             public let startedAtMs: Int?
             public let lastSeenAtMs: Int?

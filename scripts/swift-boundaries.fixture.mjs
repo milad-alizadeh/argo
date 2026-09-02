@@ -45,6 +45,16 @@ export const PROJECTED = `public extension CockpitPresentation {
     }
 }
 `
+// The grouped values the projected init takes. `Chain` groups its own parameters again, so its
+// init body is a THIRD hand — a swap here reaches the two files above already made.
+export const VALUES = `public extension CockpitPresentation.Session {
+    struct Chain {
+        public init(program: Program) {
+            self.mode = program.mode
+        }
+    }
+}
+`
 // Edge 6 reads its cap off the SwiftLint config, so the config is one of its subjects. It reads the
 // rule's OWN `error:`, and grandfathers only what a `# INIT:` line beside it names.
 export const SWIFTLINT = `function_parameter_count:
@@ -63,6 +73,7 @@ export function tree(files = {}) {
     [`${ENGINE}/HubSession+Mode.swift`]: HUB_MODE,
     [`${SHELL}/CockpitPresentation+Hub.swift`]: PROJECTION,
     [`${SHELL}/CockpitPresentation+Session.swift`]: PROJECTED,
+    [`${SHELL}/CockpitPresentation+SessionValues.swift`]: VALUES,
     'apps/macOS/.swiftlint.yml': SWIFTLINT,
     'apps/macOS/Argo/ArgoApp.swift': '@main struct ArgoApp {}\n',
     ...files,
@@ -88,4 +99,7 @@ export const withFact = (source, declaration) => source.replace(/^}/m, `${declar
 export const projection = (contents) => ({ [`${SHELL}/CockpitPresentation+Hub.swift`]: contents })
 export const projected = (contents) => ({
   [`${SHELL}/CockpitPresentation+Session.swift`]: contents,
+})
+export const values = (contents) => ({
+  [`${SHELL}/CockpitPresentation+SessionValues.swift`]: contents,
 })
