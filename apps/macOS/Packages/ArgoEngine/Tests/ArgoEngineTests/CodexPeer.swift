@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 
 /// Where the client's lines land, and what its gate has published. A reference so the thread's
 /// closures and the peer reading them are looking at one list rather than two copies.

@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// Which request GitHub takes for each canonical intent — the adapter's whole job, since the

@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// What a Delivery derivation reports about its connection — the second of the two producers the

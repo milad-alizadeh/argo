@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 
 /// One spawned Codex Session: the id the roster carries it under, and the server on the other end.
 @MainActor

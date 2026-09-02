@@ -1,5 +1,4 @@
 @testable import ArgoUI
-import Foundation
 import Testing
 
 /// Where the reading lands when the PANE changes under it — one test per row of the decision table

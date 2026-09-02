@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// What the CLI's own Help panel says its built-in commands are (#686).

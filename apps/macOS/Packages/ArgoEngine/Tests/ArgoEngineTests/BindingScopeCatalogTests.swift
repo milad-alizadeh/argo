@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// The listing behind the panel's repository picker. It reads the same shape `BindingScopeCheck`

@@ -1,5 +1,4 @@
 @testable import ArgoUI
-import CoreGraphics
 import Testing
 
 /// What the pill's measures claim about the surfaces around them. They guard the tokens, not the

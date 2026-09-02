@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// Which of a Binding's four answers is worth polling on. The decision lives with the loop rather

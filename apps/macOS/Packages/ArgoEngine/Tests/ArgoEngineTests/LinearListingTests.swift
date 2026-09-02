@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// Enumerating a Linear team's Tickets through one Binding's grant — the port's second read,

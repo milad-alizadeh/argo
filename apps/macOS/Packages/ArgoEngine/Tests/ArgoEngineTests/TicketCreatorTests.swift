@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// Filing a ticket end to end (#872): resolve the Project's Binding, write through the adapter that

@@ -1,5 +1,3 @@
-import Foundation
-
 /// The check runs GitHub serves for one commit, written as GitHub writes them — steps and all, so
 /// a listing test exercises the decoder rather than a convenient subset of it.
 struct CheckRunJSON {

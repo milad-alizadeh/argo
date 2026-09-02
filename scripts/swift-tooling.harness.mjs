@@ -7,6 +7,7 @@
 import { spawnSync } from 'node:child_process'
 import {
   chmodSync,
+  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -54,16 +55,42 @@ for (const tool of ['swiftformat', 'swiftlint', 'swift', 'xcodebuild', 'security
   stub(tool)
 }
 
-export function run(script, { args = [], env = {}, pathValue }) {
+// `cwd` defaults to the real repo, which is what every test about a script's ARGV wants. A test
+// about what a script REFUSES needs a tree it may write in, so it passes a scratch one instead.
+export function run(script, { args = [], env = {}, pathValue, cwd = REPO_ROOT }) {
   rmSync(ARGV_LOG, { force: true })
   // /bin/sh by absolute path: the bare PATH deliberately holds no shell.
   const result = spawnSync('/bin/sh', [script, ...args], {
-    cwd: REPO_ROOT,
+    cwd,
     encoding: 'utf8',
     env: { PATH: pathValue, HOME: process.env.HOME, ...env },
   })
   const argv = existsSync(ARGV_LOG) ? readFileSync(ARGV_LOG, 'utf8').trim().split('\n') : []
   return { ...result, argv, output: `${result.stdout}${result.stderr}` }
+}
+
+// A scratch repo holding just what swift-lint.sh reads before it runs: the configs whose contents
+// decide whether it refuses, and copies of the scripts themselves. Written rather than pointed at
+// the real tree because these tests are about what a DIFFERENT config would do. `runner` names the
+// file the invocation goes in, so a test can put it anywhere the guard is meant to look.
+export function treeDeclaring({ analyzerRules = true, runner = null, invocation = '' } = {}) {
+  const root = mkdtempSync(path.join(scratch, 'lint-config-'))
+  mkdirSync(path.join(root, 'apps/macOS'), { recursive: true })
+  mkdirSync(path.join(root, '.github/workflows'), { recursive: true })
+  mkdirSync(path.join(root, 'scripts'), { recursive: true })
+  for (const file of ['swift-lint.sh', 'swift-tool-guard.sh']) {
+    copyFileSync(path.join(REPO_ROOT, 'scripts', file), path.join(root, 'scripts', file))
+  }
+  const rules = analyzerRules ? 'analyzer_rules:\n  - unused_import\n' : ''
+  writeFileSync(
+    path.join(root, 'apps/macOS/.swiftlint.yml'),
+    `${rules}line_length:\n  error: 100\n`,
+  )
+  writeFileSync(path.join(root, 'package.json'), '{"scripts":{"quality:swift":"swiftlint lint"}}')
+  if (runner) {
+    writeFileSync(path.join(root, runner), invocation)
+  }
+  return root
 }
 
 // A PATH with none of the tools on it, and one with the stubs first.

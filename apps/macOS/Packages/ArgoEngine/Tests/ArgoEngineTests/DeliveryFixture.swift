@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 
 /// A code host that answers from a script, for the suites about deriving rather than about GitHub.
 /// Each read takes the next answer and the last one repeats, so a test says "this read fails, every

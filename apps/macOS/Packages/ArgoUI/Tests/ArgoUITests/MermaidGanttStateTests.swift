@@ -1,5 +1,4 @@
 @testable import ArgoUI
-import Foundation
 import Testing
 
 /// What a bar SAYS: the states a task carries, and the mark each of them draws (#905).

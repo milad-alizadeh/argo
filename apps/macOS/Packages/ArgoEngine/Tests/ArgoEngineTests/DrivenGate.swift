@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// One gated call raised on the AGENT's side, and what the agent was finally told about it (#549).

@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 
 /// A stand-in `codex app-server`: what the client wrote, read back as JSON-RPC, and the answers a
 /// real server would send.

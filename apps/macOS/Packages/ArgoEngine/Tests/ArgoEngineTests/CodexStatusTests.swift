@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// What a Codex Session's status is read from (#683): `thread/status/changed`, and nothing else.

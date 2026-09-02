@@ -1,6 +1,5 @@
 import ArgoEngine
 @testable import ArgoUI
-import CoreGraphics
 import SwiftUI
 import Testing
 

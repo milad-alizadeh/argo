@@ -1,6 +1,5 @@
 @testable import ArgoEngine
 import Foundation
-import Testing
 
 /// A throwaway machine: a registry file that does not exist yet, and real folders — some of them
 /// real git repositories — to point it at.

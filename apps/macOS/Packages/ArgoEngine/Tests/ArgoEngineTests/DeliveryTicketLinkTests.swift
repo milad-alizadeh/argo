@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// Which Ticket a branch serves, by the precedence ADR-0014 fixed: native reference →

@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// The Codex gate: what an approval becomes, what the answer puts on the wire, and who refuses a

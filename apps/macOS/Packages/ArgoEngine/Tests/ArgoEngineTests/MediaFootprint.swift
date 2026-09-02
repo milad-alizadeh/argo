@@ -1,6 +1,5 @@
 import ArgoEngine
 import Darwin
-import Foundation
 
 // What the retained event streams cost in memory, measured two ways — because neither way alone is
 // honest about the number this file exists to hold down.

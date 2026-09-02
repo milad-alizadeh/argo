@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 
 /// A Ticket port that answers from a script, for the suites about polling rather than about
 /// GitHub. Each `list` takes the next answer and the last one repeats, so a test says "this read

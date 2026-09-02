@@ -75,8 +75,11 @@ counting code lines only, and whole-tree duplication under 1%.
 
 When a gate fires, fix it or ratchet it — **never suppress it inline and never raise a global
 cap.** Two of the configs fail open when commented, so `quality:duplication` keeps its explicit
-`--config .jscpd.json` and neither is ever proved by exit code alone. What runs on which CI
-job, where an exemption goes, and the verification recipe: `docs/agents/quality-gates.md`.
+`--config .jscpd.json` and neither is ever proved by exit code alone. And a rule may only be
+configured where something runs it: `swift-lint.sh` refuses an `analyzer_rules:` key while no
+script runs `swiftlint analyze`, because `lint` ignores that key and the rule then reads as
+coverage while checking nothing (#1043). What runs on which CI job, where an exemption goes, and
+the verification recipe: `docs/agents/quality-gates.md`.
 
 ## Session isolation
 

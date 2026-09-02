@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// The Codex adapter against a real `codex app-server` (#548, ADR-0024).

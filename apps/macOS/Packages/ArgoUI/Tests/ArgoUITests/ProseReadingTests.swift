@@ -1,6 +1,5 @@
 @testable import ArgoUI
 import Foundation
-import SwiftUI
 import Testing
 
 /// What the reading cache promises. Two claims, and they are the whole of it: a string is read

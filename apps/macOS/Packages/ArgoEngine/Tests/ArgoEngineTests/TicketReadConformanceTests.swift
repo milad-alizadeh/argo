@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// The Ticket adapters the by-number read runs against — both shipped ports (#371), held to one

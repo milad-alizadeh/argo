@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// The two cases the socket-level suite cannot reach (#493). Every other state is asserted through

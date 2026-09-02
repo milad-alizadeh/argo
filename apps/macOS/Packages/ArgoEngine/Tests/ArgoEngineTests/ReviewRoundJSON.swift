@@ -1,5 +1,3 @@
-import Foundation
-
 /// One submitted review round as GitHub serves it.
 struct ReviewRoundJSON {
     var author: String

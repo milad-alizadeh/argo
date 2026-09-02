@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// Resolving `#<N>` to the words the code host holds (#745), against recorded GitHub bodies. The

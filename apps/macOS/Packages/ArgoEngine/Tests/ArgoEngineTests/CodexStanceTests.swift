@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// A Codex Session's stance, stated in Codex's own words (#749) — the half of ADR-0025 that reading

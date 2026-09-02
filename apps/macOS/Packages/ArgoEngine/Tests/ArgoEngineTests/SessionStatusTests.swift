@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// One quiet external Session, varied one signal at a time: every case below differs from the
