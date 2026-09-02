@@ -1,0 +1,587 @@
+{
+  "of": "apps/macOS",
+  "at": "2026-09-02",
+  "model": "sonnet",
+  "folders": {
+    "macOS/Argo": {
+      "files": 9,
+      "note": "Where the app boots and stays whole: the window's single presentation reads Projects, Accounts, and the running Hub through one coordinator apiece, never three separate truths."
+    },
+    "macOS/ArgoE2ETests": {
+      "files": 22,
+      "note": "Where every keyboard shortcut, click, scroll, and focus handoff gets proven against a real running window, because no in-process test can fake a responder chain."
+    },
+    "macOS/Packages/ArgoEngine": {
+      "files": 1,
+      "note": "The domain and event model live here, kept free of AppKit so the parsing logic runs and tests from a plain command line."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine": {
+      "files": 2,
+      "note": "One place composes git checkouts, worktrees, workspace state and process liveness into pure reads the rest of the app can trust without touching disk itself."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account": {
+      "files": 12,
+      "note": "Keeps the OAuth grants, provider identities, and their bindings straight, so a token never lands where a stray edit could expose or misroute it."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/GitHub": {
+      "files": 12,
+      "note": "Device-flow login and issue writes to GitHub meet here, each network refusal translated once into a reason the rest of the engine can trust."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/HTTP": {
+      "files": 2,
+      "note": "Provider tokens meet HTTP here, sorted from GitHub's REST refusals and rate limits so callers see one throttled/unauthorized outcome instead of raw status codes."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Account/Linear": {
+      "files": 12,
+      "note": "Where Linear's OAuth handshake, its loopback redirect catcher, and its GraphQL call plumbing live together, apart from GitHub's parallel device-flow machinery."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Annotation": {
+      "files": 3,
+      "note": "Owned facts Argo cannot observe elsewhere — a Session's archived state, its user-given name, and the ticket title read for it — kept as one small versioned record."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding": {
+      "files": 14,
+      "note": "Argo asks each provider, at bind time, whether an identity can actually see a scope through a given port, so silent-empty reads are told apart from real refusals."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex": {
+      "files": 14,
+      "note": "Where Codex's app-server protocol meets Argo's own gate and turn model, translating its RPC handshake, patches, and approvals into shapes the rest of the engine already understands."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands": {
+      "files": 12,
+      "note": "Where the CLI's own slash-command menu gets read once per version and cached, since asking live would cost a hidden session on every keystroke."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion": {
+      "files": 12,
+      "note": "Where a managed Session's PTY gets an optional side channel to the cockpit—one Unix socket and MCP plugin per claim, capability-gated by file permissions alone."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery": {
+      "files": 16,
+      "note": "Assembles each project's in-flight work by joining local git branches with the code host's pull requests, checks, and reviews, without persisting anything."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery": {
+      "files": 12,
+      "note": "Watches, sweeps, and matches a CLI's on-disk transcripts to project folders and live processes, turning raw record files into the Sessions Argo tails."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive": {
+      "files": 32,
+      "note": "Where every prompt, keystroke, and attachment actually reaches a running Claude or Codex session, and where its answer is waited for and timed out."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff": {
+      "files": 6,
+      "note": "Handing one Session's work to a fresh one is a single ordered ritual here — type, wait, spawn, then record the link — refusing rather than faking a brief."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health": {
+      "files": 6,
+      "note": "One place tracks whether each connection is working, keeping the two failure levels — a dead grant versus a single stuck port — separate and never persisted."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub": {
+      "files": 34,
+      "note": "Live agent liveness, drive status, and ownership converge here from transcripts, process reads, and git, so every Session row means one thing everywhere."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Launch": {
+      "files": 1,
+      "note": "Where a process figures out what it was pointed at and named before anything else, from raw arguments and a working directory, gets decided here."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project": {
+      "files": 8,
+      "note": "Where one window's pointer, the machine's known folders, and their GitHub bindings live and change together, atomically, in one actor."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository": {
+      "files": 13,
+      "note": "Reads git's own answers about worktrees and checkouts rather than the roster, so a folder outlives the run that created it without lying about who is there."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session": {
+      "files": 18,
+      "note": "Records the live picture of one Session moment to moment—status, turns, tool calls, and their evidence—kept tier-honest so a claim never outruns what actually corroborates it."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills": {
+      "files": 10,
+      "note": "Skill discovery for one Project, reading names and descriptions straight from the same SKILL.md files the CLI and its plugins already installed on disk."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn": {
+      "files": 15,
+      "note": "Where a Session becomes a real OS process: resolving the CLI's path, environment, and argv, then holding its PTY and pacing keystrokes into it."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Storage": {
+      "files": 1,
+      "note": "One machine-local file, read and written as a whole so a single mutation can never leave the record half-changed."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket": {
+      "files": 50,
+      "note": "Where GitHub and Linear each get bent into one shared ticket shape, so the rest of the app never has to know which provider it's talking to."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript": {
+      "files": 22,
+      "note": "Where every JSONL line becomes a typed event, threading calls to their results and stitching lone records back into Turns, Plans, and prompts."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoTerminal": {
+      "files": 2,
+      "note": "Where a PTY is actually opened and its bytes turned into screen rows, isolated from the rest of the engine solely because SwiftTerm drags AppKit into the link."
+    },
+    "macOS/Packages/ArgoEngine/Sources/argo-observe": {
+      "files": 2,
+      "note": "A standalone command-line viewer that turns raw transcript events into human-readable log lines, letting engine changes be checked without waiting on any UI."
+    },
+    "macOS/Packages/ArgoEngine/Tests/ArgoEngineTests": {
+      "files": 213,
+      "note": "Every provider surface's behavior is pinned here through the CLI's own observed edges, not through mocks, so a refactor that changes what actually happens gets caught."
+    },
+    "macOS/Packages/ArgoEngine/Tests/ArgoTerminalTests": {
+      "files": 11,
+      "note": "Real claude and SwiftTerm processes are exercised here instead of doubles, catching what a fake host or fake CLI would let silently drift."
+    },
+    "macOS/Packages/ArgoUI": {
+      "files": 1,
+      "note": "Shared SwiftUI components and the app's window content, built strictly against a read-only state projection so nothing beneath the shell touches live state directly."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI": {
+      "files": 1,
+      "note": "Shared SwiftUI helpers that route around Xcode canvas crashes and other cross-cutting view quirks, kept separate so preview-only workarounds never leak into real UI logic."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms": {
+      "files": 15,
+      "note": "The smallest reusable building blocks — a badge, a rule, a glyph, a focus ring — each drawn once so every surface above them shares the same materials and states."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Focus": {
+      "files": 1,
+      "note": "One reader watches every keystroke and click to answer whether a focus ring right now is honestly speaking to a keyboard."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell": {
+      "files": 33,
+      "note": "The presentation seam for one native window: SwiftUI room, navigation, ticket verbs, and the projection turning Hub facts into what a Session's row can honestly show."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect": {
+      "files": 30,
+      "note": "Where a Project gets its identity: folder, Git and provider accounts bound to ports, and one place their failures turn into a sentence the user reads."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connection": {
+      "files": 5,
+      "note": "Rolls one project's failing ports into a single glanceable chip, naming the account only when a grant truly needs reconnecting, not on every stale read."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck": {
+      "files": 16,
+      "note": "The zone layout for one Session's reading — rail, feed, minimap, evidence panel, and the glass bar naming it — with draggable seams between the parts that move."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer": {
+      "files": 57,
+      "note": "Where a Turn's words, attachments, queue and menus are drafted, typed, and dressed before Argo ever sends them to the Session."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence": {
+      "files": 23,
+      "note": "Where a call's output becomes readable evidence — patches, media, and long results get their own diffing, decoding, and prose-versus-source rendering, apart from the feed row that names them."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/Syntax": {
+      "files": 8,
+      "note": "Colours a diff's code for reading rather than diffing: each side parsed whole under its own grammar so context and changed lines share one true rendering, falling back to plain text on any mismatch."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed": {
+      "files": 57,
+      "note": "Where the transcript becomes rows on screen, and where scrolling, focus, measurement, and selection are each settled once so nothing downstream has to guess."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Agents": {
+      "files": 10,
+      "note": "Each subagent gets a dot, chip, and cost meter that scope the one shared feed, kept flat since it navigates rather than reads."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Ask": {
+      "files": 13,
+      "note": "Where AskUserQuestion becomes a card living inside its own transcript row, taking its answer where it was asked instead of in a separate composer slot."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call": {
+      "files": 12,
+      "note": "Reads each tool call and its answer as one plain-language sentence, folding quiet lookups into a single collapsed line so the transcript reads like prose, not a log."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media": {
+      "files": 6,
+      "note": "Thumbnails, lightboxes, and the shot-run grouping logic that turns consecutive picture-only calls into one wrapping gallery instead of a scrolling strip."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose": {
+      "files": 21,
+      "note": "Markdown parsed once into typed blocks and re-laid out with Core Text, so headings, tables, fences, links, and the reply bubble share one measured wrap instead of guessing."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid": {
+      "files": 19,
+      "note": "Ten diagram types share one plan-then-draw pipeline here, so a node shape or arrow style is added once and every reader inherits it free."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Bands": {
+      "files": 6,
+      "note": "Layout math and mark-placement for banded diagrams, where a journey's actors and a timeline's events share one geometry so neither reading forces a fork in the code."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Class": {
+      "files": 4,
+      "note": "Reads mermaid classDiagram source into named boxes and relations, isolated because UML's six relationship arrows share four markers times two strokes."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Compartmented": {
+      "files": 7,
+      "note": "Terminal marks, box layout, and the join-token reader for compartmented diagrams, unified because class boxes and entity boxes differ only in which terminals their readers produce."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Entity": {
+      "files": 3,
+      "note": "Reads erDiagram sources into the same compartmented-box model as class diagrams, isolating crow's-foot cardinality parsing from UML's own marker syntax."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Flowchart": {
+      "files": 8,
+      "note": "Flowchart syntax parsed into groups, links, and a graph the shared layout passes can draw, with no rule for a line it cannot fully read."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Gantt": {
+      "files": 13,
+      "note": "Bars, ticks, and exclusion rules for a Gantt chart's own time axis, kept apart because reading, resolving, and drawing dates each demand separate, careful arithmetic."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Journey": {
+      "files": 2,
+      "note": "Reads a mermaid journey's title, bands, and scored tasks straight from its own source syntax, refusing whole rather than guessing at a line it cannot rate."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Layered": {
+      "files": 16,
+      "note": "Turns Mermaid's rank graph into drawn geometry — ordering, placement, and routing that fan shared box faces and lane back edges apart so crossing lines never read as one."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Mindmap": {
+      "files": 8,
+      "note": "Nested indentation becomes a tree here, then laid out band by band per depth so siblings never collide with cousins."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Pie": {
+      "files": 3,
+      "note": "Pie charts get their own layout because a share of a whole needs no ranking or routing, only wedges beside a legend that names them."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Quadrant": {
+      "files": 7,
+      "note": "Points must find open ground for their own names against a shared field of marks and labels, so placement logic for one chart kind lives apart from the rest."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Sequence": {
+      "files": 15,
+      "note": "Sequence-diagram arrows earn their own geometry — columns spaced by what crosses them, activation bars nested by depth, self-loops that never vanish into their own lifeline."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/State": {
+      "files": 7,
+      "note": "Turns statediagram syntax into placed figures for one machine, one line at a time, refusing anything half-understood rather than drawing a guess."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Prose/Mermaid/Timeline": {
+      "files": 2,
+      "note": "Reads Mermaid timeline syntax into bands and periods, refusing anything it cannot parse in full rather than drawing a partial or guessed chart."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header": {
+      "files": 18,
+      "note": "Where the tab line's identity and context readings are composed and drawn: branch, marks, ticket link, and the hover-driven budget panel explaining them."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap": {
+      "files": 30,
+      "note": "Where a hand or a still names one Turn in the reading, drawn as its own rects, viewport, and annotation layers so pointer moves never repaint the miniature bitmap."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan": {
+      "files": 7,
+      "note": "The plan pill's line, ring and step list, kept apart from the feed because the agent replaces the whole to-do list at once rather than editing it in place."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Fixtures": {
+      "files": 10,
+      "note": "Fake transcripts covering every evidence tier and record shape the feed must render, engineered so folding, qualifiers, and failures each get exercised deliberately."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar": {
+      "files": 19,
+      "note": "Session rows, roster projections, archiving and rename affordances, and the room switcher live here, kept apart because they read state but never own it."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets": {
+      "files": 29,
+      "note": "Where a ticket, its status, and its blockers become a room a reader can trust — one number for a roll-up, one page for each kind of nothing."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Backlog": {
+      "files": 13,
+      "note": "Rows for the priority-banded ticket tree, where the fold, the age stamp, and the blockage or staleness caption a ticket carries all live beside its title."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Detail": {
+      "files": 12,
+      "note": "Fact strips, chips, link lists, and prose panels that read one open ticket's own record, kept apart from the list rows that summon it."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Sidebar": {
+      "files": 11,
+      "note": "Composes the sidebar's four backlog views and the Next-up hero card into one scrollable rail, with the provider identity anchored beneath."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Toolbar": {
+      "files": 9,
+      "note": "Toolbar controls for creating a ticket, starting work on the open one, and searching the backlog, kept as one ordered row rather than scattered per-pane bands."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar": {
+      "files": 16,
+      "note": "The bar's top strip of controls—Project switching, checkout status, connection health, and starting a new Session—kept together because they share one row and one glass."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Write": {
+      "files": 5,
+      "note": "Where a provider's raw refusal becomes one steady sentence beside a disabled control, folding grant, wire, and answer into a single state without ever softening the provider's own words."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen": {
+      "files": 73,
+      "note": "Every UI state the cockpit can be in, rendered standalone and named, so a designer can judge one moment without driving the whole app to reach it."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract": {
+      "files": 23,
+      "note": "Every design token the shell draws from—color, spacing, type, motion, elevation—kept as measurable data so the contract's claims can be asserted, not just eyeballed."
+    },
+    "macOS/Packages/ArgoUI/Tests/ArgoUITests": {
+      "files": 242,
+      "note": "One suite per surface's own claim about itself, spanning composer, feed, minimap, mermaid, tickets, and connect, so a wording change breaks a test near the words it broke."
+    },
+    "macOS/scripts": {
+      "files": 2,
+      "note": "Standalone, permission-gated input scripts that drive or locate a live app window from outside the shipped binary, kept deliberately off-limits to the product."
+    }
+  },
+  "files": {
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenRegistry+Feed.swift": {
+      "hash": "373c133d4049e869",
+      "why": [
+        "One of the most complex files here.",
+        "Denser than its size explains."
+      ],
+      "note": "Feed rows, calls, asks, evidence panels, shots, and the minimap lane are gathered here because they're all facets of the same view read together in one place, rather than one row-kind per file. Its size follows from being the single index for every state the feed's specimens catalog."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptReader.swift": {
+      "hash": "c83364e511035e37",
+      "why": [
+        "One of the most complex files here.",
+        "Denser than its size explains."
+      ],
+      "note": "TranscriptReader turns raw JSONL transcript lines into structured events, tracking open tool calls and plan state across lines since a result only makes sense against the call it answers. It's isolated as an actor because live file-watching and consumer reads happen concurrently, which Swift 6 requires something to serialize."
+    },
+    "macOS/Packages/ArgoUI/Tests/ArgoUITests/MermaidCompartmentedLayoutTests.swift": {
+      "hash": "52d32fd4ff4e8ea3",
+      "why": [
+        "One of the most complex files here.",
+        "Denser than its size explains."
+      ],
+      "note": "Class and entity diagrams get one shared renderer, so their box rules, relationship markers, and label placements must all agree — this file pins that shared contract down, case by case, so a change to one diagram type can't silently break the other."
+    },
+    "macOS/Argo/ArgoApp.swift": {
+      "hash": "cbf3e7e1ad2867ad",
+      "why": [
+        "One of the most complex files here.",
+        "Denser than its size explains.",
+        "Changed more often than almost anything else.",
+        "Touched by more people than almost anything else."
+      ],
+      "note": "The app's entire composition root: it wires the window, both coordinators, menu commands, and every cross-cutting action closure in one place, so it inevitably grows dense and gets touched whenever any feature adds a new capability or wiring path."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedProjection.swift": {
+      "hash": "272342f8c55f251f",
+      "why": [
+        "One of the most complex files here."
+      ],
+      "note": "The transcript stream gets turned into rows for the feed, threading tool calls to their outcomes and adding markers Claude Code itself never wrote — working state, handoffs, expired permissions. It exists apart from the drawing code because ordering rules (collapse before disambiguate, gallery last) are load-bearing and easy to get wrong if scattered."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCallReading.swift": {
+      "hash": "0298be451b9aa539",
+      "why": [
+        "One of the most complex files here.",
+        "Denser than its size explains."
+      ],
+      "note": "The call's outcome may arrive far from the call itself in the stream, so pairing them into one row means tracking both events and every branch of what a result can mean. It also decides which calls the feed shows at all, since plan-tool writes and empty results are deliberately hidden here rather than in the display layer."
+    },
+    "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift": {
+      "hash": "9c990e479b39047c",
+      "why": [
+        "One of the most complex files here.",
+        "Changed more often than almost anything else."
+      ],
+      "note": "Session facts get folded here from a raw transcript stream, one struct owning every reading the roster, feed, and header draw on. It carries so much special-case merge logic for resumes and subagents that nearly every new Session capability touches it."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift": {
+      "hash": "525f77030d8ed381",
+      "why": [
+        "One of the most complex files here.",
+        "Denser than its size explains."
+      ],
+      "note": "Resolving what each control on the selected Session actually does lives here, apart from the view that draws it, because every method follows the same shape: capture the id, act only if one exists. The density comes from documenting why each closure is captured or inert the way it is—decisions tied to specific bugs (#682, #541, #653, #712) that would otherwise look arbitrary."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/ComposerSpecimen.swift": {
+      "hash": "4e57839a83962d9b",
+      "why": [
+        "One of the largest files here."
+      ],
+      "note": "The composer is where every send outcome an agent session can produce becomes a specific on-screen state — typing, a refused send, a kept draft, a queued follow-up — because only a render settles whether each reads correctly. It exists apart from the deck's chrome so those states can be triggered and reviewed one at a time."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/ContractSpecimen.swift": {
+      "hash": "90efed86fa3c1554",
+      "why": [
+        "One of the largest files here."
+      ],
+      "note": "The contract's roles sit side by side so a reviewer can judge legibility and hue separation at a glance, something the assembled cockpit can't isolate. It renders every palette entry via reflection, so adding a role automatically adds its swatch."
+    },
+    "macOS/Packages/ArgoUI/Tests/ArgoUITests/ConnectPanelProjectionTests.swift": {
+      "hash": "f4500e627ec070e1",
+      "why": [
+        "One of the largest files here."
+      ],
+      "note": "Every claim the Connect panel can display is checked here in words, so a screen change that quietly breaks the panel's meaning fails a test instead of shipping unnoticed. It exists apart from the panel's own code because it exercises every branch—bound, broken, missing, unknown—that a single manual look would never cover."
+    },
+    "macOS/Packages/ArgoUI/Tests/ArgoUITests/TicketsReadingLiveTests.swift": {
+      "hash": "2097055f315c8c72",
+      "why": [
+        "One of the largest files here."
+      ],
+      "note": "Tests reading of the app's actually-held state for the Tickets room — poll results, session roster, and Binding health — kept separate because it verifies live reads rather than pure projection logic. It exists as its own file so cases distinguishing \"empty\" from \"unread\" from \"unbound\" don't get lost among unit tests for other rooms."
+    },
+    "macOS/Packages/ArgoEngine/Tests/ArgoEngineTests/SkillCatalogTests.swift": {
+      "hash": "617c36859d53cdca",
+      "why": [
+        "One of the largest files here."
+      ],
+      "note": "Reading a Project's installed skills the way the CLI resolves them—project, user, and plugin sources, precedence, and enablement—needs many small scenarios pinned down as regression tests, hence the size. It exists separately from the catalog implementation to isolate that behavioral contract from how the reader is built."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/ShellPreview.swift": {
+      "hash": "1fd34a35f198bee1",
+      "why": [
+        "One of the largest files here."
+      ],
+      "note": "Extension bundling the Cockpit's preview fixture data—sample Projects, Sessions, and transcripts used by SwiftUI previews and specimens—kept separate from the shell's real logic. It grew large because it hand-builds many deliberately edge-case scenarios (long titles, aged timestamps, unreachable projects) each preview needs to exercise."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView.swift": {
+      "hash": "19fcf657bafa89f0",
+      "why": [
+        "Changed more often than almost anything else."
+      ],
+      "note": "The application shell wiring native navigation, one session deck, and two overlay panels into a single window; kept apart from its intents and sub-rooms so each piece still previews on its own. It changes often because nearly every new cockpit feature touches its state or its one navigation read point."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoSymbol.swift": {
+      "hash": "63d19c779ace60a7",
+      "why": [
+        "Changed more often than almost anything else."
+      ],
+      "note": "The SF Symbols catalog names every icon the shell draws by what it means rather than what it looks like, so call sites reference one vocabulary instead of scattering raw symbol strings. It changes constantly because nearly every new feature or room adds a state, action, or step that needs its own named mark."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/SessionsDeck.swift": {
+      "hash": "e6bca0f41b0e0911",
+      "why": [
+        "Changed more often than almost anything else."
+      ],
+      "note": "SessionsDeck arranges the Sessions room's visible zones: the scrollable reading and the floating title bar above it. It lives on its own because that layout keeps changing as new panels, rails, and selection states get threaded through it."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenScreen.swift": {
+      "hash": "6e5391052b3ff688",
+      "why": [
+        "Changed more often than almost anything else."
+      ],
+      "note": "This view fills the window with a single specimen entry, so a design state can be judged at real app width instead of an arbitrary preview frame. It changes often because every new specimen or appearance tweak across the UI routes through this one shared screen."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitActions.swift": {
+      "hash": "ae43708475710765",
+      "why": [
+        "Changed more often than almost anything else."
+      ],
+      "note": "The intents the shell can raise live in one struct so a view can request navigation, session, or project actions without knowing how any of them are carried out. It changes constantly because every new shell capability adds another callback here first."
+    },
+    "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/InstrumentDeckShell.swift": {
+      "hash": "3946ad6cc4337722",
+      "why": [
+        "Changed more often than almost anything else."
+      ],
+      "note": "The opaque plane filling the detail side of the split view exists to keep the canopy's glassy material off the one surface it must read against, so hand-off, plan, and vessel state stay owned above the per-Session identity switch that resets everything below it."
+    },
+    "macOS/Argo/AccountsCoordinator+Grant.swift": {
+      "hash": "053e7fc1ab238186",
+      "why": [
+        "Touched by more people than almost anything else."
+      ],
+      "note": "Grants and cancels GitHub/other account connections for the panel, coordinating the async approve-and-wait flow separately from the provider logic that actually talks to each service. It sits in its own file because so many contributors touch account-linking edge cases that isolating it limits collateral churn elsewhere."
+    },
+    "macOS/Argo/AccountsCoordinator.swift": {
+      "hash": "b654f0a7295ad912",
+      "why": [
+        "Touched by more people than almost anything else."
+      ],
+      "note": "The Connect panel's model of what this Mac can reach: which Accounts exist, which Project ports they're bound to, and whether those bindings are healthy. It stays its own file because so many features hang off Accounts and Bindings — tickets, connection health, onboarding — each pulling in a different contributor to touch this shared surface."
+    },
+    "macOS/Argo/CockpitCoordinator+Spawn.swift": {
+      "hash": "cc42ba6be1cea743",
+      "why": [
+        "Touched by more people than almost anything else."
+      ],
+      "note": "Starting an agent, and stopping cleanly when it can't, live here because both real failures — a missing folder or a `claude` binary absent from a GUI app's PATH — otherwise look identical to silent success. Its every entry point funnels through one spawn-and-report path so that fix, made after three separate copies once let failures slip through unreported, stays in force everywhere."
+    },
+    "macOS/Argo/CockpitCoordinator.swift": {
+      "hash": "62c9561de290b5a9",
+      "why": [
+        "Touched by more people than almost anything else."
+      ],
+      "note": "CockpitCoordinator ties the app window to whichever Project it's pointing at, driving registration, switching, and Hub connection through one explicit state machine. It exists separately because its pointing logic is the shared surface every contributor touches when adding or reworking window-level behavior, making it a natural magnet for edits."
+    },
+    "macOS/ArgoE2ETests/ContextGuideE2ETests.swift": {
+      "hash": "b17d0e62b6fc0510",
+      "why": [
+        "Touched by more people than almost anything else."
+      ],
+      "note": "The ⓘ info panel opens as a popover with its own window and environment, where rendering bugs invisible to specimen tests can surface. It exists separately because it is the only test target that can actually click the mark and verify the panel's real behavior."
+    }
+  },
+  "pairs": [
+    {
+      "pair": [
+        "macOS/Packages/ArgoEngine/Sources/argo-observe/Describe.swift",
+        "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/TranscriptEvent.swift"
+      ],
+      "strength": 1,
+      "hash": "7c1d1d70fa25ae5a-e0f50ecc38a3684c",
+      "note": "Both files exist to turn the engine's typed transcript vocabulary into a human-readable line, so adding or renaming a case in one requires the matching arm in the other."
+    },
+    {
+      "pair": [
+        "macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoElevation.swift",
+        "macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoMotion.swift"
+      ],
+      "strength": 1,
+      "hash": "ce6b1eb9f5c8e1fc-ede9537e2d78df13",
+      "note": "Each defines a numeric visual-contract role with a Reduce-Motion/zero-value default and an `unwired` map, so adding or resolving a role touches both."
+    },
+    {
+      "pair": [
+        "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Launch/LaunchConfiguration.swift",
+        "macOS/Argo/ArgoApp.swift"
+      ],
+      "strength": 1,
+      "hash": "1e0a56a80118f1e5-cbf3e7e1ad2867ad",
+      "note": "Both encode where a launch points and what it renders before the cockpit exists, so a new launch flag or specimen path always touches parsing and wiring together."
+    },
+    {
+      "pair": [
+        "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation.swift",
+        "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/ShellPreview.swift"
+      ],
+      "strength": 1,
+      "hash": "6f9a2f5f1047e492-1fd34a35f198bee1",
+      "note": "Both hold the cockpit's whole render input as one struct, so any field added or renamed forces a matching preview fixture update."
+    },
+    {
+      "pair": [
+        "macOS/Packages/ArgoEngine/Tests/ArgoEngineTests/HubObservationTests.swift",
+        "macOS/Packages/ArgoEngine/Tests/ArgoEngineTests/HubTests.swift"
+      ],
+      "strength": 1,
+      "hash": "24b75cb856b394c8-f663fa49c0fb33be",
+      "note": "Both files assert on Hub's session projection rather than internal state, so any change to what the projection exposes forces matching updates in each."
+    },
+    {
+      "pair": [
+        "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionStatus.swift",
+        "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift"
+      ],
+      "strength": 1,
+      "hash": "3217bea63d1752f3-9c990e479b39047c",
+      "note": "Both files define the same Session's derived-vs-direct provenance rules, so a change to one status field's honesty guarantees forces the matching edit in the other."
+    },
+    {
+      "pair": [
+        "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ScopeVessel.swift",
+        "macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ProjectVessel.swift"
+      ],
+      "strength": 1,
+      "hash": "0864cd35c85683c3-a26fa5e7decd9e8e",
+      "note": "Both render the same toolbar scope control, so any shared layout, tint, or menu-behavior change to one demands the matching change in the other."
+    },
+    {
+      "pair": [
+        "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession+Status.swift",
+        "macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift"
+      ],
+      "strength": 1,
+      "hash": "2b4a22982561f04b-9c990e479b39047c",
+      "note": "They both compute HubSession's derived status/facts from the same stored fields, so adding or renaming a signal forces a matching read-side change in the other."
+    }
+  ]
+}

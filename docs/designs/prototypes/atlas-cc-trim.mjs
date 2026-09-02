@@ -7,7 +7,10 @@ const KEEP = ['rloc','loc','complexity','max_complexity_per_function','number_of
 const src = JSON.parse(readFileSync(process.argv[2], 'utf8')).data;
 
 const find = (node, parts) => parts.reduce((n, p) => n && (n.children || []).find(c => c.name === p), node);
-const sub = find(src.nodes[0], ['apps', 'macOS']);
+/* The subtree to map, and where it sits on disk. Nothing downstream may guess this: the
+   notes pipeline resolves a map path back to a real file through it. */
+const SUB = (process.env.ATLAS_SUBTREE || 'apps/macOS').split('/');
+const sub = find(src.nodes[0], SUB);
 
 let files = 0;
 function trim(n) {
@@ -35,13 +38,14 @@ const alive = new Set();
   else (n.children || []).forEach(c => walk(c, here));
 })(nodes[0], '');
 
-const rel = s => s.replace(/^\/root\/apps\//, '');
+const rel = s => s.replace(new RegExp('^/root/' + SUB.slice(0, -1).join('/') + '/'), '');
 const edges = (src.edges || [])
   .map(e => [rel(e.fromNodeName), rel(e.toNodeName), +(e.attributes.temporal_coupling).toFixed(3)])
   .filter(([a, b]) => alive.has(a) && alive.has(b))
   .sort((a, b) => b[2] - a[2]);
 
-const out = { projectName: 'Argo (apps/macOS)', apiVersion: src.apiVersion,
+const out = { projectName: SUB.join('/'), sourceRoot: SUB.slice(0, -1).join('/'),
+              apiVersion: src.apiVersion,
               attributeDescriptors: src.attributeDescriptors, nodes, edges };
 writeFileSync(process.argv[3], JSON.stringify(out));
 console.log('files', files, 'edges', edges.length, 'bytes', JSON.stringify(out).length);

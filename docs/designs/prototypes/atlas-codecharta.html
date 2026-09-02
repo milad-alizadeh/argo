@@ -88,6 +88,15 @@
                color: var(--text-2); border-bottom: 1px solid rgba(255,255,255,.045); }
   #read .tie span { overflow-wrap: anywhere; }
   #read .tie b { margin-left: auto; font: var(--t-callout) var(--mono); color: #78b6ff; }
+  /* A basename alone hides the only interesting part: a tie inside one folder is ordinary,
+     and a tie across two packages is the finding. So the twin carries where it lives. */
+  #read .tie { flex-wrap: wrap; cursor: pointer; border-radius: 5px;
+               padding: 5px 6px; margin: 0 -6px; }
+  #read .tie:hover { background: rgba(120,182,255,.08); }
+  #read .tie em { flex-basis: 100%; font-style: normal; font: var(--t-footnote) var(--mono);
+                  color: var(--text-off); overflow-wrap: anywhere; }
+  #read .tie i { flex-basis: 100%; font-style: normal; margin-top: 4px;
+                 font: var(--t-footnote)/1.5 var(--sans); color: var(--text-3); }
 
   /* the legend, bottom right of the map, on the stage and never hidden */
   #key { position: absolute; right: 16px; bottom: 16px; z-index: 60; width: 186px;
@@ -120,9 +129,34 @@
   #read .ends { display: flex; justify-content: space-between;
                 font: var(--t-footnote) var(--mono); color: var(--text-off); }
   #read .note { margin-top: 7px; font: var(--t-footnote)/1.5 var(--sans); color: var(--text-3); }
-  #read tr[title], #read .gauge { cursor: help; }
-  /* the one hint that there is more to read: the name of the measure, underlined */
-  #read .gh span { border-bottom: 1px dotted var(--subtle); padding-bottom: 1px; }
+  #read tr[title] { cursor: help; }
+
+  /* A question mark is a thing you can point at. A dotted underline is a thing you have to
+     already know is there, which makes it no help to the reader who needs it most. */
+  .ask { width: 15px; height: 15px; margin-left: 6px; padding: 0; flex: none;
+         border: 1px solid var(--subtle); border-radius: 50%; background: none;
+         color: var(--text-3); font: 10px/1 var(--mono); cursor: pointer; }
+  .ask:hover, .ask[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+  #pop { position: fixed; z-index: 90; width: 268px; padding: 12px 13px;
+         border-radius: 10px; background: rgba(30,33,37,.98); backdrop-filter: blur(20px);
+         border: 1px solid var(--strong); box-shadow: 0 16px 44px rgba(0,0,0,.6);
+         font: var(--t-footnote)/1.55 var(--sans); color: var(--text-2); }
+  #pop h5 { margin: 0 0 6px; font: var(--t-footnote) var(--mono); text-transform: uppercase;
+            letter-spacing: .1em; color: var(--text-off); }
+  #pop p { margin: 0 0 8px; }
+  #pop p:last-child { margin: 0; }
+  #pop .src { color: var(--text-off); }
+  #pop[hidden] { display: none; }
+
+  /* The written layer is drawn differently from every measured one, on purpose: a reader
+     must be able to tell at a glance which lines are counted and which are read. */
+  #read .said { margin-top: 16px; padding: 11px 12px; border-radius: 8px;
+                background: rgba(120,182,255,.055); border: 1px solid rgba(120,182,255,.16); }
+  #read .said p { margin: 0; font: var(--t-callout)/1.55 var(--sans); color: var(--text-1); }
+  #read .said .flag { display: block; margin-top: 8px; font: var(--t-footnote)/1.5 var(--mono);
+                      color: #78b6ff; }
+  /* the same mark as the one on the roofs, so the sentence and the map agree */
+  .dot { color: #dceaff; font-size: 9px; vertical-align: 2px; }
 </style>
 
 <div id="app">
@@ -151,7 +185,8 @@
     <div class="rule"></div>
     <a href="atlas-map-variants.html">&#8592; authored map</a>
   </div>
-  <div id="key">
+  <div id="pop" hidden></div>
+    <div id="key">
     <div class="lead">Colour &#183; <span id="keyName"></span></div>
     <div class="ramp"><i style="background:#4e8a63"></i><i style="background:#a8873c"></i><i style="background:#a8523f"></i></div>
     <div class="ends"><span id="keyLo"></span><span id="keyHi"></span></div>
@@ -561,6 +596,16 @@ function drawBox(b, v, lit) {
     ctx.moveTo(...r[0]); r.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
     ctx.stroke();
   }
+
+  /* Twenty-five noted files among fifteen hundred is a needle in a field, so the note has to
+     be visible from the map rather than found by pointing at things until one appears. */
+  if (b.file && NOTES.files && NOTES.files[b.path] && rw > 7) {
+    const cx = (r[0][0] + r[2][0]) / 2, cy = (r[0][1] + r[2][1]) / 2;
+    const rad = Math.max(1.6, Math.min(3.4, rw * 0.09));
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, 7);
+    ctx.fillStyle = '#dceaff'; ctx.fill();
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(10,14,20,.75)'; ctx.stroke();
+  }
 }
 
 /* the plate's own edge, plus a wash on the two walls that face you */
@@ -658,6 +703,46 @@ function inTri(px, py, a, b, c) {
   return u >= 0 && w >= 0 && u + w <= 1;
 }
 
+/* ---------- the written layer ---------- */
+/* Optional by construction. A repo with no notes beside it draws the same map with the same
+   numbers and simply says nothing extra — the page never waits for it and never blames it. */
+let NOTES = { files: {}, pairs: [] };
+const PAIR_NOTES = new Map();
+const pairKey = (a, b) => [a, b].sort().join('\u0000');
+
+function loadNotes() {
+  return fetch('atlas-notes.json').then(r => r.ok ? r.json() : null).then(j => {
+    if (!j) return;
+    NOTES = j;
+    for (const n of j.pairs || []) PAIR_NOTES.set(pairKey(n.pair[0], n.pair[1]), n.note);
+  }).catch(() => {});
+}
+
+/* Said, not counted. The flag is the question the measurements asked, kept beside the answer
+   so a note can never read as an unprompted opinion about somebody's code. */
+function said(path, folder) {
+  const n = (folder ? NOTES.folders : NOTES.files || {})[path];
+  if (!n) return '';
+  const why = (n.why || []).join(' ');
+  return `<div class="said"><p>${esc(n.note)}</p>`
+    + (why ? `<span class="flag">${esc(why)}</span>` : '')
+    + `</div>`;
+}
+
+/* Every noted file, in one place, because a mark on a roof tells you where to look and this
+   tells you what there is to look at. Both are needed: one is a map, the other is an index. */
+function noteIndex() {
+  const all = Object.keys(NOTES.files || {});
+  if (!all.length) return '';
+  return `<div class="ties"><h4>${all.length} files carry a note</h4>`
+    + all.map(k => `<div class="tie" data-go="${esc(k)}" title="Go to this file">`
+        + `<span>${esc(k.split('/').pop())}</span>`
+        + `<em>${esc(k.split('/').slice(0, -1).slice(-2).join('/'))}</em></div>`).join('')
+    + `</div>`;
+}
+
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
 /* ---------- chrome ---------- */
 /* Twelve measures come out of ccsh and five of them say nothing here. Three are zero on
    most files, because the parser fills them only for languages it knows deeply. Comment
@@ -676,8 +761,10 @@ function detail(b) {
     d.innerHTML = `<div class="idle">
       <p>Point at anything to read it here. <b>Click</b> to pin it,
       <kbd>Esc</kbd> to let go. Folder names appear as you zoom towards them.</p>
-      <p style="margin-top:10px">Every number is measured by <code>ccsh</code>. Nothing on this
-      page was written by hand.</p></div>`;
+      <p style="margin-top:10px">Every number here is measured from the code and its history.
+      Plates carry a written caption, and the files marked <b class="dot">\u25cf</b> carry a
+      note. Both are read, never counted.</p></div>` + noteIndex();
+    wireRead();
     return;
   }
 
@@ -692,12 +779,18 @@ function detail(b) {
        [DESC[h].title, roll(n, h)], [DESC[c].title, roll(n, c)]]
         .map(([k, v]) => `<tr><td class="k">${k}</td><td class="v">${fmt(v)}</td></tr>`);
 
-  /* the same relation the arcs draw, said in numbers, because an arc tells you that
-     two files move together and never which files they are */
+  /* A percentage next to a basename is a fact nobody can use. The row carries the folder,
+     because a tie across two packages is the finding and a tie inside one is not; it carries
+     the shared idea when one was written; and it takes you there when you click it. */
   const ties = (it.file && LINKS.get(it.path) || []).slice(0, 6);
   const tieHTML = ties.length ? `<div class="ties"><h4>Changes with</h4>`
-    + ties.map(([o, v]) =>
-        `<div class="tie"><span>${o.split('/').pop()}</span><b>${Math.round(v * 100)}%</b></div>`).join('')
+    + ties.map(([o, v]) => {
+        const note = PAIR_NOTES.get(pairKey(it.path, o));
+        return `<div class="tie" data-go="${esc(o)}" title="Go to this file">`
+          + `<span>${esc(o.split('/').pop())}</span><b>${Math.round(v * 100)}%</b>`
+          + `<em>${esc(o.split('/').slice(0, -1).slice(-2).join('/'))}</em>`
+          + (note ? `<i>${esc(note)}</i>` : '') + `</div>`;
+      }).join('')
     + `</div>` : '';
 
   /* The colour channel is the one measure a number cannot carry: 12 is meaningless until
@@ -705,25 +798,68 @@ function detail(b) {
      buildings are painted with, and the needle sits where this file falls among them. */
   const cval = it.file ? at(n, c) : roll(n, c);
   const r = it.file ? rank(cval, c) : null;
-  /* Said on hover, not on the page: a definition answers a question you ask once, and a
-     panel that carries it for every reading is a panel you stop reading. */
-  const says = (DESC[c].description + ' \u2014 ccsh' + twin(c)).replace(/"/g, '&quot;');
-  const gauge = !it.file ? '' : `<div class="gauge" title="${says}">
-      <div class="gh"><span>${DESC[c].title}</span><b>${fmt(cval)}</b></div>
+  /* Asked, not hovered: a definition is what the reader wants once, on purpose, and a
+     tooltip is only found by the reader who already suspected it was there. */
+  const gauge = !it.file ? '' : `<div class="gauge">
+      <div class="gh"><span>${DESC[c].title}</span>`
+    + `<button class="ask" data-def="${c}" aria-expanded="false" `
+    + `aria-label="What does ${DESC[c].title} mean?">?</button>`
+    + `<b>${fmt(cval)}</b></div>
       <div class="track"><div class="bars"><i style="background:#4e8a63;flex:50"></i>`
     + `<i style="background:#a8873c;flex:35"></i><i style="background:#a8523f;flex:15"></i></div>`
     + `<u style="left:${(r * 100).toFixed(1)}%"></u></div>
       <div class="ends"><span>lowest here</span><span>highest</span></div>
-      <div class="note">Higher than ${Math.round(r * 100)}% of the files in this repo.</div>
+      <div class="note">${r > 0.995 ? 'At the very top of this repo — nothing scores higher.'
+        : 'Higher than ' + Math.round(r * 100) + '% of the files in this repo.'}</div>
     </div>`;
 
   d.innerHTML = `<div class="kind">${it.file ? 'File' : 'Folder'}${b ? '' : ' · pinned'}</div>`
     + `<div class="name">${n.name}</div>`
     + `<div class="where">${it.path}</div>`
     + (it.file ? '' : `<div class="pin">${leaves(n).length} files inside · zoom in to see them</div>`)
+    + said(it.path, !it.file)
     + gauge
     + `<table><tr><th>Measure</th><th class="v" style="text-align:right">Value</th></tr>`
     + rows.join('') + `</table>` + tieHTML;
+  wireRead();
+}
+
+/* ---------- popover ---------- */
+/* One popover element, moved and refilled, because two of them on screen at once is a bug
+   the user has to close twice. */
+function showDef(btn, k) {
+  const pop = $('pop'), r = btn.getBoundingClientRect();
+  /* Anchored to the panel's edge, not the button's: a popover that covers the number it is
+     explaining makes the reader close it to check what they were looking at. */
+  const edge = $('side').getBoundingClientRect().left;
+  const extra = twin(k);
+  pop.innerHTML = `<h5>${esc(DESC[k].title)}</h5><p>${esc(DESC[k].description)}</p>`
+    + (extra ? `<p>${esc(extra.trim())}</p>` : '')
+    + `<p class="src">Measured for every file by the analyzer. Not an opinion.</p>`;
+  pop.hidden = false;
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(edge, r.left) - w - 12) + 'px';
+  pop.style.top = Math.max(8, Math.min(r.top - 6, innerHeight - h - 8)) + 'px';
+  btn.setAttribute('aria-expanded', 'true');
+}
+
+function hideDef() {
+  $('pop').hidden = true;
+  for (const b of document.querySelectorAll('.ask[aria-expanded="true"]'))
+    b.setAttribute('aria-expanded', 'false');
+}
+
+/* The panel is rebuilt on every pointer move, so its controls are wired where they are
+   built rather than once at boot. */
+function wireRead() {
+  for (const b of $('read').querySelectorAll('.ask'))
+    b.onclick = e => { e.stopPropagation();
+      b.getAttribute('aria-expanded') === 'true' ? hideDef() : showDef(b, b.dataset.def); };
+  for (const t of $('read').querySelectorAll('.tie[data-go]'))
+    t.onclick = () => {
+      const box = view.boxes.find(x => x.path === t.dataset.go);
+      if (box) { state.pinned = box; detail(null); render(); }
+    };
 }
 
 /* The legend is never hidden. A colour that means something only while you remember
@@ -733,7 +869,9 @@ function key(lo, hi) {
      the map can be read without first working out what "area" turned into on screen. */
   $('reads').innerHTML = `Each block is a file. Its <b>ground</b> is ${DESC[state.area].title}, `
     + `its <b>height</b> is ${DESC[state.height].title}, its <b>colour</b> is `
-    + `${DESC[state.colour].title}. A plate is a folder.`;
+    + `${DESC[state.colour].title}. A plate is a folder.`
+    + (Object.keys(NOTES.files || {}).length
+        ? ` Files marked <b class="dot">\u25cf</b> carry a written note.` : '');
   for (const [id, k] of [['mArea', 'area'], ['mHeight', 'height'], ['mColour', 'colour']])
     $(id).title = DESC[state[k]].description;
   $('keyName').textContent = DESC[state.colour].title;
@@ -755,7 +893,7 @@ function stamp() {
 
 
 /* ---------- boot ---------- */
-fetch('atlas-cc.json').then(r => r.json()).then(j => {
+Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]) => {
   DATA = j.nodes[0];
   DESC = j.attributeDescriptors;
   for (const [a, b, v] of j.edges || []) {
@@ -860,9 +998,13 @@ fetch('atlas-cc.json').then(r => r.json()).then(j => {
   addEventListener('keydown', e => {
     if (e.key === "Escape") { state.pinned = null; render(); detail(null); }
     if (e.key === "r" || e.key === "R") reset();
+    if (e.key === 'Escape') hideDef();
     if (e.key === "t" || e.key === "T") { $('ties').checked = !state.ties; $('ties').onchange(); }
   });
   $('reset').onclick = reset;
+  /* A popover that only closes on its own button is a popover you close by reloading. */
+  addEventListener('mousedown', e => { if (!e.target.closest('#pop, .ask')) hideDef(); });
+  addEventListener('resize', hideDef);
   $('ties').checked = state.ties;
   $('ties').onchange = () => { state.ties = $('ties').checked; render(); stamp(); };
   addEventListener('resize', () => { fit(); render(); });
