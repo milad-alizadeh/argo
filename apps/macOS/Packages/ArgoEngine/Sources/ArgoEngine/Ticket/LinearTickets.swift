@@ -29,7 +29,8 @@ public struct LinearTickets: TicketPort {
         var items: [Ticket] = []
         var after: LinearValue = .null
         for _ in 1 ... Self.pageLimit {
-            let page = try await page(in: scope, after: after, grant: grant)
+            let request = PageRequest(document: LinearDocuments.teamIssues, scope: scope)
+            let page = try await page(request.resuming(at: after), grant: grant)
             items += page.nodes.map { $0.ticket() }
             guard page.pageInfo.hasNextPage, let cursor = page.pageInfo.endCursor else {
                 return items
@@ -39,16 +40,59 @@ public struct LinearTickets: TicketPort {
         return items
     }
 
+    /// ONE page of the closed issues, last touched first, and the cursor behind it (#1075).
+    ///
+    /// One request and no walk, where `list` above pages to the end: the whole point of the bound
+    /// is that the reader asks for the next page rather than the adapter taking them all.
+    ///
+    /// Nothing is stripped from what Linear served. Its `...Ticket` fragment carries children and
+    /// the dependency edges in the SAME request, so a closed ticket's edges cost this adapter
+    /// nothing — where GitHub spends a request per edge and therefore reads none.
+    public func closed(
+        in scope: String, after cursor: String?, grant: AccountGrant,
+    ) async throws
+        -> ClosedTicketPage {
+        let request = PageRequest(
+            document: LinearDocuments.teamClosedIssues,
+            scope: scope,
+            size: ClosedTicketPage.size,
+        )
+        let page = try await page(
+            request.resuming(at: cursor.map(LinearValue.string) ?? .null), grant: grant,
+        )
+        return ClosedTicketPage(
+            items: page.nodes.map { $0.ticket() },
+            next: page.pageInfo.hasNextPage ? page.pageInfo.endCursor : nil,
+        )
+    }
+
+    /// What one listing page asks for: which document, whose team, how many, and where to resume.
+    /// A value rather than four parameters, which is the cap and also the clearer read — three of
+    /// the four are the same on every page of one walk.
+    private struct PageRequest {
+        let document: String
+        let scope: String
+        var size = LinearTickets.pageSize
+        var after: LinearValue = .null
+
+        func resuming(at cursor: LinearValue) -> PageRequest {
+            var next = self
+            next.after = cursor
+            return next
+        }
+
+        var variables: [String: LinearValue] {
+            ["team": .string(scope), "first": .int(size), "after": after]
+        }
+    }
+
     private func page(
-        in scope: String, after: LinearValue, grant: AccountGrant,
+        _ request: PageRequest, grant: AccountGrant,
     ) async throws
         -> LinearPage<LinearIssue> {
         do {
             let payload: LinearTeamPayload<LinearIssuePage> = try await call.payload(
-                LinearOperation(
-                    LinearDocuments.teamIssues,
-                    ["team": .string(scope), "first": .int(Self.pageSize), "after": after],
-                ),
+                LinearOperation(request.document, request.variables),
                 grant: grant,
             )
             // A team this identity cannot see comes back as a null team rather than as an error,

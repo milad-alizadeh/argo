@@ -9,6 +9,19 @@ public protocol TicketPort: Sendable {
     /// included.
     func list(in scope: String, grant: AccountGrant) async throws -> [Ticket]
 
+    /// One PAGE of the closed Tickets the grant can see in the scope, last touched first, and the
+    /// cursor for the page behind it (#1075).
+    ///
+    /// A second method rather than a state argument on `list` above, because closed is unbounded
+    /// where open is not: the bound belongs on the read that needs one. It is not the poll's — it
+    /// answers "what did I finish", which no cadence is waiting on — so nothing calls this until a
+    /// reader opens the view that shows it.
+    ///
+    /// **No edges.** A closed ticket's blockers are nobody's question and its children cost a
+    /// request each, which is most of what keeps this cheap next to `list`.
+    func closed(in scope: String, after cursor: String?, grant: AccountGrant) async throws
+        -> ClosedTicketPage
+
     /// ONE Ticket by the number a link named, in whatever state it is now — the read a closed
     /// ticket is reachable through at all, since no listing carries one (#895).
     ///

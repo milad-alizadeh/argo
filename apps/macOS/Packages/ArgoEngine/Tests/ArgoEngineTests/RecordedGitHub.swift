@@ -11,6 +11,14 @@ actor RecordedGitHub: HTTPTransport {
     /// Item suite keys its listing by this, and a query string that moves lands here.
     static let openIssues = "issues?state=open"
 
+    /// One page of the CLOSED listing, keyed by the whole query `GitHubTickets.closed` builds —
+    /// spelled here rather than by fragment, so a suite keying a page is also asserting the order
+    /// and the bound that page was asked for under (#1075).
+    static func closedIssues(page: Int) -> String {
+        "issues?state=closed&sort=updated&direction=desc"
+            + "&per_page=\(ClosedTicketPage.size)&page=\(page)"
+    }
+
     private let replies: [String: String]
     private let failure: Error?
     private var sent: [HTTPRequest] = []

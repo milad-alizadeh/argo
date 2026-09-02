@@ -22,6 +22,7 @@ extension CockpitView {
                 sessions: presentation.sessions,
                 health: health,
                 project: presentation.activeProject?.name,
+                closed: closedTickets,
             ),
             showing: navigation.ticket,
         )
@@ -45,7 +46,11 @@ extension CockpitView {
                 run: { ticket in Task { await start.run(on: ticket, in: navigation) } },
                 command: { start.command(on: $0) },
             ),
-            follow: { await actions.tickets.readTicket($0) },
+            follow: { await actions.tickets.read(.ticket(number: $0)) },
+            closedReads: TicketsRoom.ClosedReads(
+                open: { await actions.tickets.read(.closedListing) },
+                more: { Task { await actions.tickets.read(.moreClosedTickets) } },
+            ),
             held: TicketsRoom.Held(query: $navigation.ticketsQuery),
         )
     }

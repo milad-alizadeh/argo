@@ -39,6 +39,12 @@ public enum ArgoSymbol {
     /// FILLED, like `allOpenView` and `inProgressView`: `nosign` has no fill variant of its own,
     /// and `slash.circle.fill` is the same sign drawn solid.
     public static let blockedView = "slash.circle.fill"
+    /// The fifth view, which is the only one not defined over the open set (#1075). A clock turning
+    /// back rather than a tick or a cross: the view holds `resolved` AND `ruledOut`, and either of
+    /// those marks would name one of the two buckets as the whole view. It also says which ORDER
+    /// the list is in, which is the one thing that distinguishes this view's list from the others.
+    /// Outlined, and outside the fill split above: it is not one of the open set's halves.
+    public static let closedView = "clock.arrow.circlepath"
 
     /// The Tickets room's chrome (`cockpit-work-room.md`), each mark named by what the control does
     /// rather than by its shape.

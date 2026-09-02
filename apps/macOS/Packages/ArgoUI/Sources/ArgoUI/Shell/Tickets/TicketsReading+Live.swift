@@ -13,6 +13,10 @@ extension TicketsReading {
         let sessions: [CockpitPresentation.Session]
         let health: ConnectionHealthReading
         let project: String?
+        /// The closed listing as far as the reader has asked for it, and `nil` where the `Closed`
+        /// view has never been opened on this Project (#1075). The tickets in it are already in
+        /// `items` — this is the ANSWER, not the rows.
+        var closed: TicketLedger.ClosedListing?
     }
 
     /// The live room, opened on `showing`.
@@ -30,6 +34,9 @@ extension TicketsReading {
             provider: TicketsProvider(reading: sources.health),
             project: sources.project,
             showing: showing,
+            closedListing: sources.closed.map {
+                .init(numbers: Set($0.items.map(\.number)), hasMore: $0.hasMore)
+            },
         )
     }
 

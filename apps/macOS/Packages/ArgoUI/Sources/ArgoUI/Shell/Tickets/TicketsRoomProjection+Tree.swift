@@ -58,10 +58,15 @@ extension TicketsRoomProjection {
         }
     }
 
-    /// The shown items as a tree. A shown item whose parent is also shown nests under it, and
-    /// everything else is a root — which keeps a view's filter from taking a child down with its
-    /// parent.
-    static func tree(of shown: [Ticket], reading: TicketsReading, closed: Set<Int>) -> [Row] {
+    /// The shown items as a tree, in the order the VIEW stands its rows in. A shown item whose
+    /// parent is also shown nests under it, and everything else is a root — which keeps a view's
+    /// filter from taking a child down with its parent.
+    ///
+    /// The closed numbers come off the whole reading rather than off `shown`: a roll-up counts the
+    /// TRACKER's children, which is most of the point of the closed listing being in hand at all
+    /// (#895's residue, #1075).
+    static func tree(of shown: [Ticket], in view: TicketsView, reading: TicketsReading) -> [Row] {
+        let closed = Set(reading.items.filter { $0.closure != .open }.map(\.number))
         let parents = parentEdges(of: shown)
         let byNumber = Dictionary(uniqueKeysWithValues: shown.map { ($0.number, $0) })
 
@@ -75,20 +80,36 @@ extension TicketsRoomProjection {
                 trailing: rollUp(of: item, closed: closed),
                 priority: item.priority,
                 labels: item.labels,
-                children: newest(siblings).map(node),
+                children: ordered(siblings, by: view.order).map(node),
                 blockage: blockage(of: item),
                 isClaimed: reading.claimed.contains(item.number),
                 touched: item.updatedAt,
+                closure: item.closure == .open ? nil : item.closure,
             )
         }
 
-        return newest(shown.filter { parents[$0.number] == nil }).map(node)
+        return ordered(shown.filter { parents[$0.number] == nil }, by: view.order).map(node)
     }
 
-    /// The list's own order, stated rather than inherited: highest number first, siblings against
-    /// siblings (#892).
-    private static func newest(_ items: [Ticket]) -> [Ticket] {
-        items.sorted { $0.number > $1.number }
+    /// The list's own order, stated rather than inherited, and applied to roots and siblings alike
+    /// (#892, #1075).
+    ///
+    /// `lastTouched` sorts on the PAIR, not on the date alone: a row the provider served no date
+    /// for sinks to the bottom in number order rather than claiming a recency nobody established,
+    /// and the order stays total — a fallback that compared dated rows against dateless ones by
+    /// number would not be transitive, and `sorted` is undefined on an order that is not.
+    private static func ordered(_ items: [Ticket], by order: TicketsView.Order) -> [Ticket] {
+        switch order {
+        case .newestNumber:
+            items.sorted { $0.number > $1.number }
+        case .lastTouched:
+            items.sorted {
+                ($0.updatedAt ?? .distantPast, $0.number) > (
+                    $1.updatedAt ?? .distantPast,
+                    $1.number,
+                )
+            }
+        }
     }
 
     /// Which shown item owns each shown child. Built once for the whole set rather than asked per

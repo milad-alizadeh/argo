@@ -59,6 +59,8 @@ struct TicketsRoomVacancy: View {
             "Nothing has been read from \(provider) yet"
         case .nothingOpen:
             project.map { "Nothing open in \($0)" } ?? "Nothing open"
+        case .nothingClosed:
+            project.map { "Nothing closed in \($0)" } ?? "Nothing closed"
         }
     }
 
@@ -81,6 +83,11 @@ struct TicketsRoomVacancy: View {
             """
             \(provider) answered: every Ticket it exposes for this Project is closed. Nothing \
             is waiting to be picked up.
+            """
+        case let .nothingClosed(provider):
+            """
+            \(provider) answered: nothing it exposes for this Project has been closed yet. \
+            Nothing has been finished, rather than nothing being left to do.
             """
         }
     }

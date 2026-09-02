@@ -39,6 +39,21 @@ struct TicketsRoom {
     /// What a link to a ticket the listing does not hold raises: one read, by that number (#895).
     /// Inert by default, so a `#Preview` and a specimen draw the pane with no request behind them.
     var follow: @MainActor (Int) async -> Void = { _ in }
+    /// What the `Closed` view's own read does (#1075) — the one listing no poll makes. Inert by
+    /// default, for the same reason `follow` is.
+    var closedReads = ClosedReads.inert
+
+    /// The two acts behind the closed listing: opening the view, and asking for the page behind
+    /// the one in hand. A pair rather than one closure taking a cursor — the room holds no cursor,
+    /// and the ledger that does is the only thing that should.
+    struct ClosedReads {
+        var open: @MainActor () async -> Void
+        var more: @MainActor () -> Void
+
+        /// Nothing reads anything, for a `#Preview` and a specimen with no provider behind them.
+        static let inert = ClosedReads(open: {}, more: {})
+    }
+
     /// What the room's chrome HOLDS rather than reads — the query, which outlives the pane and is
     /// therefore held above the room. A value rather than the binding bare: it was a pair until the
     /// Mode chevron went (#872), and the search field is not the last thing this row will hold.
@@ -75,8 +90,23 @@ struct TicketsRoom {
         TicketsChromeProjection.reading(of: room, in: view, showing: ticket)
     }
 
-    /// The two panes, OR one of the room's two vacancies — never both.
-    @ViewBuilder var deck: some View {
+    /// The two panes, OR one of the room's vacancies — never both.
+    var deck: some View {
+        pages
+            // OUTSIDE the vacancy branch, deliberately. Until the closed read lands the room is its
+            // own `unread` vacancy, so a task inside the branch that draws the rows would be
+            // waiting on the read that is waiting on it.
+            //
+            // Keyed on the view, which is what "opening the view is the only thing that reads the
+            // closed set" means: every switch INTO `Closed` reads its first page, and no tick ever
+            // does (#1075).
+            .task(id: room.view) {
+                guard room.view.source == .closed else { return }
+                await closedReads.open()
+            }
+    }
+
+    @ViewBuilder private var pages: some View {
         if let vacancy = room.vacancy {
             TicketsRoomVacancy(vacancy: vacancy, project: room.project, connect: connect)
         } else {
@@ -113,6 +143,9 @@ struct TicketsRoom {
                 selection: $ticket,
                 shut: $shut,
                 header: chrome,
+                // Only where the provider said there IS another page. A `Load more` that survived
+                // the last one is the control-that-does-nothing this room keeps refusing (#900).
+                more: room.closedHasMore ? closedReads.more : nil,
             )
             .frame(width: seated)
             // What the rows inside the `List` read to decide whether they have width for label

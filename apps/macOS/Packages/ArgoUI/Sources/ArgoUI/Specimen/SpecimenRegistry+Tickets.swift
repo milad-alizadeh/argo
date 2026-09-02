@@ -21,6 +21,29 @@ extension SpecimenRegistry {
         SpecimenEntry("blockedTicketsView") {
             TicketsPanesSpecimen(reading: TicketsFixture.reading, seed: .init(opening: .blocked))
         },
+        // The fifth view (#1075): a list nothing else in the room can reach. It is FLAT and in
+        // last-touched order — no priority headers, which is the one place the room's own
+        // structure changes — and every row states its own closure, so `resolved` and `ruled out`
+        // are two answers rather than one word.
+        SpecimenEntry("closedTicketsView") {
+            TicketsPanesSpecimen(
+                reading: TicketsFixture.closedRead, seed: .init(opening: .closed),
+            )
+        },
+        // …and with a page behind it, which is the only state that draws `Load more`. Its own
+        // render because the row is the whole bound made visible: it is drawn on the provider's
+        // cursor and goes when the provider serves the last page.
+        SpecimenEntry("closedTicketsMore") {
+            TicketsPanesSpecimen(
+                reading: TicketsFixture.closedMore, seed: .init(opening: .closed),
+            )
+        },
+        // The `Closed` view before its own read has landed. The count is ABSENT rather than zero
+        // and the deck says nothing has been read — opening onto `0` is the number that tells a
+        // reader they have finished nothing, and nobody asked.
+        SpecimenEntry("unreadClosedTickets") {
+            TicketsPanesSpecimen(reading: TicketsFixture.reading, seed: .init(opening: .closed))
+        },
         // The hero's three degraded tiers and its one-chip state (#817). Each is its own reading
         // rather than its own card: the tier is arithmetic over the backlog, so a specimen that
         // handed the card a literal would prove the card and not the room.

@@ -17,6 +17,9 @@ struct BacklogList: View {
     /// What the heading over the list says. Words only — the controls that narrow the list are in
     /// the window's row with the rest of the room's, see `TicketsToolbar`.
     var header: TicketsChromeProjection.Reading = .none
+    /// What reads the next page of closed tickets, and `nil` wherever there is no next page to read
+    /// — every open view, and the closed one once the provider has served its last (#1075).
+    var more: (@MainActor () -> Void)?
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
@@ -31,27 +34,53 @@ struct BacklogList: View {
 
     private var list: some View {
         List(selection: $selection) {
-            ForEach(TicketsRoomProjection.bands(of: rows)) { band in
-                // Flattened ONCE and handed to both, so the header counts the rows the outline
-                // draws rather than a second answer to the same question.
-                // A search draws the tree open whatever the reader folded — a parent that hid the
-                // one match would leave the heading claiming a result nobody can see (#873).
-                let drawn = TicketsRoomProjection.drawn(band, shut: header.folds ? shut : [])
-                // `.inset` spends about 52 between one section and the next section's word where
-                // the design draws 12, and `listSectionSpacing` is unavailable on macOS — so this
-                // is a row rather than the `Section` header the frozen name stands in for, and
-                // `selectionDisabled` returns the selection behaviour that cost. What it does not
-                // return is pinning: `cockpit-work-room.inventory.md`.
-                PriorityHeader(band: band, count: drawn.count)
+            if header.groups {
+                banded
+            } else {
+                flat
+            }
+            if let more {
+                BacklogMore(read: more)
                     .previewSafeListRow()
                     .listRowSeparator(.hidden)
                     .selectionDisabled()
-                BacklogOutline(drawn: drawn, shut: $shut, selection: selection, folds: header.folds)
             }
         }
         .listStyle(.inset)
         .scrollContentBackground(.hidden)
         .accessibilityLabel("Backlog")
+    }
+
+    /// The list `Closed` draws: one run of rows in the order the projection put them, and no
+    /// priority headers over it (#1075). Banding by priority here would scatter last week's
+    /// finished work across three headers and fight the recency order the view is defined by.
+    private var flat: some View {
+        BacklogOutline(
+            drawn: TicketsRoomProjection.drawn(rows, shut: header.folds ? shut : []),
+            shut: $shut,
+            selection: selection,
+            folds: header.folds,
+        )
+    }
+
+    private var banded: some View {
+        ForEach(TicketsRoomProjection.bands(of: rows)) { band in
+            // Flattened ONCE and handed to both, so the header counts the rows the outline
+            // draws rather than a second answer to the same question.
+            // A search draws the tree open whatever the reader folded — a parent that hid the
+            // one match would leave the heading claiming a result nobody can see (#873).
+            let drawn = TicketsRoomProjection.drawn(band, shut: header.folds ? shut : [])
+            // `.inset` spends about 52 between one section and the next section's word where
+            // the design draws 12, and `listSectionSpacing` is unavailable on macOS — so this
+            // is a row rather than the `Section` header the frozen name stands in for, and
+            // `selectionDisabled` returns the selection behaviour that cost. What it does not
+            // return is pinning: `cockpit-work-room.inventory.md`.
+            PriorityHeader(band: band, count: drawn.count)
+                .previewSafeListRow()
+                .listRowSeparator(.hidden)
+                .selectionDisabled()
+            BacklogOutline(drawn: drawn, shut: $shut, selection: selection, folds: header.folds)
+        }
     }
 }
 

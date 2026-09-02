@@ -37,6 +37,41 @@ public struct GitHubTickets: TicketPort {
         )
     }
 
+    /// One page of the closed issues, last touched first (#1075).
+    ///
+    /// `sort=updated&direction=desc` is asked of the HOST rather than sorted here, which is what
+    /// makes the paging honest: the page boundary and the row order are then the same order, so
+    /// `Load more` cannot hand back an issue that belonged on the page before it.
+    ///
+    /// No `sub_issues` and no `blocked_by`, where `list` above spends a request on each summary
+    /// that declares one — that fan-out is most of what the open listing costs, and a closed
+    /// ticket's edges are nobody's question.
+    public func closed(
+        in scope: String, after cursor: String?, grant: AccountGrant,
+    ) async throws
+        -> ClosedTicketPage {
+        let page = Self.page(after: cursor)
+        let issues: [GitHubIssue] = try await reads.get(
+            "/repos/\(scope)/issues?state=closed&sort=updated&direction=desc"
+                + "&per_page=\(ClosedTicketPage.size)&page=\(page)",
+            grant: grant,
+        )
+        return ClosedTicketPage(
+            items: issues.filter { $0.pullRequest == nil }
+                .map { $0.ticket(children: [], blockedBy: nil) },
+            // Decided on the RAW count, never the filtered one: a page whose pull requests were
+            // dropped is short without being last, and a cursor read off it would strand every
+            // closed ticket behind the first repository that files PRs faster than issues.
+            next: issues.count < ClosedTicketPage.size ? nil : String(page + 1),
+        )
+    }
+
+    /// Which page a cursor names. GitHub pages by NUMBER, so its cursor is the next page's own —
+    /// and no cursor, or one this adapter did not write, starts at the first.
+    private static func page(after cursor: String?) -> Int {
+        max(cursor.flatMap(Int.init) ?? 1, 1)
+    }
+
     /// GitHub serves pull requests from `/issues/<N>` too, and a Delivery is not a Ticket
     /// (`CONTEXT.md` L4) — so one is `nil` here on the same terms a number behind which there is
     /// nothing is.

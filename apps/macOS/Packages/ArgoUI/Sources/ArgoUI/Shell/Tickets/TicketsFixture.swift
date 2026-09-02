@@ -18,6 +18,25 @@ enum TicketsFixture {
         TicketsRoomProjection.room(from: reading(showing: number))
     }
 
+    /// The same reading with the closed read ANSWERED — what the `Closed` view draws from (#1075).
+    ///
+    /// A fixture of its own because the absence is the point everywhere else: `reading` above has
+    /// closed items in it, for the roll-up, and the `Closed` view still counts absent over them
+    /// until a read has landed. Nothing else here reaches the state where it counts at all.
+    static let closedRead = closedRead(hasMore: false)
+
+    /// …and the same with a page behind it, which is the only state that draws `Load more`.
+    static let closedMore = closedRead(hasMore: true)
+
+    static func closedRead(hasMore: Bool) -> TicketsReading {
+        var answered = reading
+        answered.closedListing = TicketsReading.ClosedListingReading(
+            numbers: Set(answered.items.filter { $0.closure != .open }.map(\.number)),
+            hasMore: hasMore,
+        )
+        return answered
+    }
+
     /// Nothing bound: no provider to name, and no items anybody could have read. The Project is
     /// still named — a window is scoped to one whether or not anything is bound to it.
     static let unbound = TicketsReading(project: project)

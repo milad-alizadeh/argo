@@ -21,7 +21,7 @@ struct TicketsRoomSpecimen: View {
             actions: .inert,
             readings: ShellReadings(
                 health: .previewBound,
-                tickets: TicketsFixture.items,
+                tickets: .init(items: TicketsFixture.items, closed: nil),
                 // The Binding the foot above it names, addressed — without it the row's two link
                 // verbs render disabled, a different state from the one this shot is of (#872).
                 ticketAddress: TicketsFixture.address,

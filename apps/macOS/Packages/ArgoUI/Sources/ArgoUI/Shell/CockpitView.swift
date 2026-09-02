@@ -73,11 +73,15 @@ public struct CockpitView: View {
     }
 
     var tickets: [Ticket] {
-        readings.tickets
+        readings.tickets.items
     }
 
     var ticketAddress: TicketAddress? {
         readings.ticketAddress
+    }
+
+    var closedTickets: TicketLedger.ClosedListing? {
+        readings.tickets.closed
     }
 
     var subagents: FeedAgentReader {

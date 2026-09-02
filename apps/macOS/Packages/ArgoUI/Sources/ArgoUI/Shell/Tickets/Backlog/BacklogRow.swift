@@ -69,6 +69,11 @@ struct BacklogRow: View {
             if let blockage = row.blockage {
                 BlockageMark(blockage: blockage, backdrop: ink.backdrop)
             }
+            // The same slot, and they never contend: a closed ticket's blockers are not read at
+            // all, and one still in the open set has no closure to draw (#1075).
+            if let closure = row.closure {
+                ClosureMark(closure: closure)
+            }
             caption
         }
         .padding(.leading, ArgoBacklogList.gutter + ArgoBacklogList.indent(atDepth: drawn.depth))
@@ -120,12 +125,15 @@ struct BacklogRow: View {
     /// The id is spoken as a number rather than as `#607`, which VoiceOver reads as "number 607".
     /// The blockage is SPOKEN where the mark is a numeral in a capsule: speech has no capsule, so
     /// a bare `2` in this sentence would be read as a second id. The claim is spoken for the same
-    /// reason its mark is wordless — a lone glyph says nothing at all to a screen reader.
+    /// reason its mark is wordless — a lone glyph says nothing at all to a screen reader. The
+    /// closure is already a word, and is spoken as it is drawn.
     private var announcement: String {
         (
             [String(row.id), row.title] + BacklogRowLabels(row.labels).spoken
                 + [
-                    row.isClaimed ? "claimed" : nil, spokenBlockage,
+                    row.isClaimed ? "claimed" : nil,
+                    spokenBlockage,
+                    row.closure.map(ClosureMark.word),
                     drawn.caption(asOf: pinnedNow ?? Date()),
                 ],
         )

@@ -11,4 +11,9 @@ public protocol TicketReading: Sendable {
     /// One Ticket by number, on `TicketPort.ticket(number:in:grant:)`'s terms — `nil` where the
     /// provider answered and has nothing behind it (#895).
     func ticket(number: Int, through binding: ResolvedBinding) async throws -> Ticket?
+
+    /// One page of the closed listing, on `TicketPort.closed(in:after:grant:)`'s terms (#1075).
+    /// Never reached by the poll: `after` is a cursor, and a cadence has nowhere to keep one.
+    func closed(after cursor: String?, through binding: ResolvedBinding) async throws
+        -> ClosedTicketPage
 }

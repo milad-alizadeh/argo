@@ -19,9 +19,22 @@ enum TicketsRoomProjection {
         let unreadNumber: Int?
         /// The Project the window is scoped to. Carried for the vacancy pages, which name it.
         let project: String?
-        /// Whether the provider served anything open AT ALL. A fact about the whole open set, which
-        /// no other field here can answer: `backlog` is already filtered to the view on screen.
-        let hasOpenTickets: Bool
+        /// Which view this room was derived in. Stored rather than passed alongside, because the
+        /// room's own nothing depends on it: an empty OPEN set is not `Closed`'s nothing (#1075).
+        let view: TicketsView
+        /// Whether the set this room's view is defined over served anything AT ALL — the open
+        /// listing for four of them, the closed one for the fifth. A fact about the whole set,
+        /// which no other field here can answer: `backlog` is already filtered to the view on
+        /// screen and narrowed by whatever is typed.
+        let hasItems: Bool
+        /// Whether the provider says there is another page of closed tickets behind the ones in
+        /// hand — what the `Load more` row at the foot of the closed list reads to decide whether
+        /// it draws at all (#1075).
+        let closedHasMore: Bool
+        /// Whether the closed read has ANSWERED for this Project. The same fact the `Closed` count
+        /// rests on (`TicketsView.Ground.closedListing`), read here for the page that says so —
+        /// the poll's own `hasAnswered` cannot, because no tick makes this read.
+        let closedWasRead: Bool
         /// What the sidebar's hero states. Absent with nothing bound, where the room hides whole —
         /// a backlog-clear sentence under an unbound provider would answer a question nobody asked.
         let nextUp: NextUp?
@@ -33,17 +46,29 @@ enum TicketsRoomProjection {
             views.first { $0.id == kind }
         }
 
-        /// Which of the room's two nothings this room is, and `nil` where it has something to draw
-        /// (#818). Both halves read this one, so the sidebar and the deck cannot disagree.
+        /// Which of the room's nothings this room is, and `nil` where it has something to draw
+        /// (#818, #1075). Both halves read this one, so the sidebar and the deck cannot disagree.
+        ///
+        /// The set it is a nothing ABOUT is the view's own: an empty open listing is not `Closed`'s
+        /// nothing, and a repository where every ticket is finished must still be able to show the
+        /// view that says so.
         var vacancy: Vacancy? {
             guard let provider else { return .unbound }
-            guard !hasOpenTickets else { return nil }
+            guard !hasItems else { return nil }
             // An empty listing is not an answer until one has landed. Saying "everything is closed"
             // over a read that never arrived — a launch mid-flight, or a Binding that has been
             // failing all session — is the false DIRECT the tier rules exist to refuse
             // (`CONTEXT.md` L2 · degrade-down).
-            guard provider.hasAnswered else { return .unread(provider: provider.name) }
-            return .nothingOpen(provider: provider.name)
+            guard hasAnswered else { return .unread(provider: provider.name) }
+            return view.source == .open
+                ? .nothingOpen(provider: provider.name)
+                : .nothingClosed(provider: provider.name)
+        }
+
+        /// Whether the read this view's set comes from has landed — the poll for four of the views,
+        /// and its own bounded read for `Closed`, which no tick ever makes.
+        private var hasAnswered: Bool {
+            view.source == .open ? provider?.hasAnswered == true : closedWasRead
         }
 
         /// Nothing read, and nothing bound. The room a deck draws before anything has answered —
@@ -51,8 +76,8 @@ enum TicketsRoomProjection {
         static func vacant(in project: String? = nil) -> Room {
             Room(
                 views: [], provider: nil, backlog: [], ticket: nil, unreadNumber: nil,
-                project: project,
-                hasOpenTickets: false, nextUp: nil,
+                project: project, view: .allOpen,
+                hasItems: false, closedHasMore: false, closedWasRead: false, nextUp: nil,
             )
         }
     }
@@ -67,6 +92,11 @@ enum TicketsRoomProjection {
         /// backlog is not a thing anyone may claim.
         case unread(provider: String)
         case nothingOpen(provider: String)
+        /// The closed read answered, and the provider has nothing closed to show (#1075). Its own
+        /// case rather than `nothingOpen` with a different word: "everything is closed" and
+        /// "nothing has ever been closed" are opposite facts about one Project, and a page that
+        /// said either for the other would be worse than no page.
+        case nothingClosed(provider: String)
     }
 
     /// One sidebar view and what it holds. The count is ABSENT where the provider has not said
@@ -127,6 +157,10 @@ enum TicketsRoomProjection {
         /// — in which case the row draws none rather than inventing one (#897). LAST TOUCHED and
         /// not filed: `Ticket.updatedAt` is the only date any adapter reads.
         let touched: Date?
+        /// How this ticket stopped being open, and `nil` on an open one — the mark that keeps
+        /// `resolved` and `ruledOut` apart on the row rather than folding both into "closed"
+        /// (#1075). Absent on every row of the four open views, which is why it is not a word.
+        let closure: TicketClosure?
         /// Whether this row is on screen only because something under it matched the query — always
         /// false where nothing is narrowing, so an unsearched list has no rails in it (#873).
         var isRail = false
@@ -146,23 +180,27 @@ enum TicketsRoomProjection {
     )
         -> Room {
         guard reading.provider != nil else { return .vacant(in: reading.project) }
-        let open = reading.items.filter { $0.closure == .open }
-        let closed = Set(reading.items.filter { $0.closure != .open }.map(\.number))
-        let shown = items(of: open, in: view, claimed: reading.claimed)
+        let sets = Sets.of(reading)
+        let shown = items(of: sets, in: view)
         let search = Query.typed(query).map { narrowed(shown, to: $0) }
-        let rows = tree(of: search?.items ?? shown, reading: reading, closed: closed)
+        let rows = tree(of: search?.items ?? shown, in: view, reading: reading)
         let opened = ticket(in: reading)
         return Room(
-            views: views(of: open, claims: reading.claims),
+            views: views(of: sets),
             provider: reading.provider,
             backlog: search.map { railed(rows, matching: $0.hits) } ?? rows,
             ticket: opened,
             unreadNumber: opened == nil ? reading.showing : nil,
             project: reading.project,
-            hasOpenTickets: !open.isEmpty,
+            view: view,
+            // The VIEW's own set, before the query narrowed it: opening `Closed` on a Project with
+            // nothing open must draw the closed rows rather than the open set's nothing.
+            hasItems: !(view.source == .open ? sets.open : sets.closed).isEmpty,
+            closedHasMore: reading.closedListing?.hasMore == true,
+            closedWasRead: sets.closedWasRead,
             // Over the whole open set, never the view on screen: the hero answers "what should I
             // pick up", and opening `Blocked` must not turn that into "nothing is unblocked".
-            nextUp: reading.nextUp(of: open),
+            nextUp: reading.nextUp(of: sets.open),
             narrowing: search?.narrowing,
         )
     }

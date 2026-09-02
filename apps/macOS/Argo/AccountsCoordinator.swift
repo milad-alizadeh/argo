@@ -23,7 +23,8 @@ final class AccountsCoordinator {
     /// The active Project's listing as the last read left it, for the Tickets room to draw (#820).
     /// Refreshed by every finished read, not by every panel act: the room is on screen whether or
     /// not the Connect panel is.
-    private(set) var tickets: [Ticket] = []
+    /// The ledger's value WHOLE, so a read added to it costs this box nothing (ADR-0022).
+    private(set) var tickets = TicketLedger.Reading.nothing
     /// Where those items can be READ, on the provider's own site (#872) — the Tickets room's two
     /// link verbs, and `nil` where the port is bound to nothing or the Binding addresses no page.
     /// Published with the listing and off the same resolve, so the room can never open a URL from
@@ -198,7 +199,7 @@ final class AccountsCoordinator {
     /// Take what the ledger holds for the active Project. A Project with nothing bound reads EMPTY
     /// rather than keeping the last one's backlog.
     private func readListing() async {
-        tickets = await ticketLedger.items(of: project?.id)
+        tickets = await ticketLedger.reading(of: project?.id)
     }
 
     private func show(ports: [ConnectPort]) async {

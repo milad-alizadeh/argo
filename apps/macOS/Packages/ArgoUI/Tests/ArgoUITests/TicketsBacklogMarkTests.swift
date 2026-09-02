@@ -195,6 +195,7 @@ struct TicketsBacklogCaptionTests {
             id: 1, title: "A ticket", delivery: .absent, trailing: trailing, priority: nil,
             labels: [], children: [], blockage: nil,
             touched: daysAgo.map { now.addingTimeInterval(-$0 * 86400) },
+            closure: nil,
         )
         var drawn = TicketsRoomProjection.Drawn(row: row, depth: 0)
         drawn.odd = odd
