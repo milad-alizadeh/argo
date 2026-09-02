@@ -14,9 +14,10 @@ import ArgoEngine
 /// would stand over a booted agent for the rest of the window's life. What ends this one is bytes
 /// on a PTY Argo owns (#587). The wait BEFORE the row exists at all is the toolbar's to report.
 enum FeedWorking {
-    /// DERIVED, at exactly the confidence `SessionStatus.running` carries and no more: for a
-    /// Session observed from outside, a long quiet mid-turn reads as idle, and this row is absent
-    /// then rather than asserted over the gap.
+    /// At exactly the confidence `SessionStatus.running` carries and no more: for a Session
+    /// observed from outside, a long quiet mid-turn reads as idle, and this row is absent then
+    /// rather than asserted over the gap. That confidence is DERIVED for every reading but one —
+    /// a Turn Argo itself typed, before the record has answered it, is DIRECT (#1048).
     static func isWorking(_ session: CockpitPresentation.Session?) -> Bool {
         session?.status == .running
     }

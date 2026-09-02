@@ -78,15 +78,34 @@ final class ClaimLedger {
         update(claim) { $0.modeSet = modeSet }
     }
 
+    /// A Turn Argo typed at this claim's PTY (#1048). Nothing takes one back when the record
+    /// answers it — that reading is derived — so the only writes that clear it are the two below,
+    /// where the Turn was never heard at all or the PTY it went down has gone.
+    func setSubmittedTurn(
+        _ submission: SessionTurnSubmission,
+        for claim: SessionOwnership.ClaimID,
+    ) {
+        update(claim) { $0.submittedTurn = submission }
+    }
+
     /// A Turn the CLI never heard (#682), or `nil` to take the news back once the composer has it.
+    ///
+    /// It ends the submission above in the same write, because the two are one act read in opposite
+    /// directions: a Turn nobody heard is not a Turn in flight, and news of it arriving while the
+    /// row still claimed one would draw the Session working on words it never received.
     func setLostTurn(_ text: String?, for claim: SessionOwnership.ClaimID) {
-        update(claim) { $0.lostTurn = text }
+        update(claim) {
+            $0.lostTurn = text
+            $0.submittedTurn = nil
+        }
     }
 
     /// The gate behind this claim is gone, so its three readings go, and so does everything that
-    /// stood on the companion channel. What the agent PRODUCED and the rung Argo set are things
-    /// that HAPPENED, so an orphaned Session keeps those rather than blanking. Which of the
-    /// report's facts are which is `CompanionReport`'s to say, not the ledger's (#799).
+    /// stood on the companion channel and the Turn Argo was driving down it — a claim about what a
+    /// Session is doing NOW cannot outlive the channel it was witnessed on (#1048). What the agent
+    /// PRODUCED and the rung Argo set are things that HAPPENED, so an orphaned Session keeps those
+    /// rather than blanking. Which of the report's facts are which is `CompanionReport`'s to say,
+    /// not the ledger's (#799).
     func withdraw(_ claim: SessionOwnership.ClaimID) {
         // A claim with nothing filed is not news: publishing over it would move the roster for a
         // teardown that changed nothing.
@@ -96,6 +115,7 @@ final class ClaimLedger {
             facts.asking = []
             facts.standing = []
             facts.expiries = []
+            facts.submittedTurn = nil
             facts.report?.channelClosed()
         }
     }

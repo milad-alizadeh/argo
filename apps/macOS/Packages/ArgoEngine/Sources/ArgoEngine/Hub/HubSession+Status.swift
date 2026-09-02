@@ -23,8 +23,9 @@ public extension HubSession {
     /// Session is exact rather than the working directory and time window a transcript is matched
     /// on. Below those, a status the agent REPORTED wins at the CONVENTION tier. Then a CLI Argo is
     /// still waiting on, at DIRECT on the same ground — the PTY those bytes have not come out of is
-    /// Argo's own. A Session with no channel, or one that has said nothing, falls through to
-    /// DERIVED, never worse.
+    /// Argo's own. Then a Turn Argo TYPED at that PTY, DIRECT on the same ground again and until
+    /// the record answers it (#1048). A Session with no channel, or one that has said nothing,
+    /// falls through to DERIVED, never worse.
     var statusReading: SessionStatusReading {
         if permission != nil {
             return SessionStatusReading(tier: .direct, status: .permission)
@@ -45,6 +46,12 @@ public extension HubSession {
         // is up — and above the record, which has no word for a Session that has written none.
         if awaitingFirstOutput {
             return SessionStatusReading(tier: .direct, status: .starting)
+        }
+        // Below `starting` and not above it, though this is the louder word: a CLI Argo has heard
+        // nothing at all from cannot be shown to have heard a Turn either, and ambiguity resolves
+        // to the quieter of the two claims (#1048).
+        if submittedTurn?.isAwaitingRecord(events.count) == true {
+            return SessionStatusReading(tier: .direct, status: .running)
         }
         return SessionStatus.read(signals)
     }

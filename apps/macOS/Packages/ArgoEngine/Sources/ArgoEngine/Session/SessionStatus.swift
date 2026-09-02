@@ -26,7 +26,9 @@ public extension SessionStatus {
     /// The Session's status, honesty-gated by posture and corroborated by liveness.
     ///
     /// DERIVED for every posture, managed included: Argo owns the PTY but not the link from it to a
-    /// transcript file, which is a working directory plus a time window and not a unique key.
+    /// transcript file, which is a working directory plus a time window and not a unique key. A
+    /// Turn Argo itself submitted needs no such link and is read above this, at DIRECT
+    /// (`HubSession.statusReading`, #1048) — every reading that reaches HERE is DERIVED.
     ///
     /// `permission` is unreachable here by construction — it belongs to the channels Argo owns (the
     /// permission gate, then the companion's report).

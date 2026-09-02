@@ -103,6 +103,14 @@ has no end, and a wall-clock timer would have been a guess wearing an observatio
 made it a term was Argo owning the PTY — the child's first bytes are DIRECT, and a claim with an
 end Argo witnessed is a state rather than a spinner (#587).
 
+**`running` is tier-gated because ONE window of it is a thing Argo did.** The rest of the status is
+a reading joining a record to a process by working directory and time window, which is DERIVED and
+stays so. But Argo performs the composer submit itself, so between that submit and the record
+answering it there is nothing to corroborate — the Turn is DIRECT for the same reason `starting` is
+(#1048). The window is deliberately no wider. Holding the claim across the whole Turn would need a
+rule for WHICH open Turn is Argo's, and the only one available reads a Turn typed at the dock
+terminal as one of ours — which is the guess #587 refused, arriving by a different door.
+
 **`SessionFacts` dissolved.** Naming it as an entity would duplicate the homes its members
 already have (Workspace / Delivery / Session status) and invite drift. What is real is the
 honesty tier on each fact, not the bundle.

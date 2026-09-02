@@ -24,6 +24,19 @@ struct TurnDeliveryTests {
         #expect(watch.lost.isEmpty)
     }
 
+    /// The Turn reported for the roster to draw `running` on (#1048) is counted from the record
+    /// this same watch measures silence against, and not from a second reading of its own.
+    @Test
+    func `the Turn reported and the silence watched are counted from one record`() {
+        let watch = Recorder(records: 7)
+        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+
+        delivery.typed("Fix the caption.", to: "session-a")
+        watch.records = 8
+
+        #expect(watch.submitted == [SessionTurnSubmission(recordsWhenSubmitted: 7)])
+    }
+
     /// The failure this exists for: the Return was eaten, so the transcript never moved. Argo types
     /// another one rather than leaving a Turn that looks sent and never ran.
     @Test
@@ -128,13 +141,14 @@ struct TurnDeliveryTests {
     /// One more wait than the watch takes, so the pause outlasts it.
     private static let attempts = TurnDelivery.attempts + 1
 
-    /// The Hub's three answers, written down instead of acted on.
+    /// The Hub's four answers, written down instead of acted on.
     @MainActor
     private final class Recorder {
         var records: Int
         var canRetype = true
         var onRetype: (() -> Void)?
         private(set) var retyped = 0
+        private(set) var submitted: [SessionTurnSubmission] = []
         private(set) var lost: [(text: String, sessionID: String)] = []
 
         init(records: Int) {
@@ -144,6 +158,9 @@ struct TurnDeliveryTests {
         var watch: TurnDelivery.Watch {
             TurnDelivery.Watch(
                 records: { [weak self] _ in self?.records ?? 0 },
+                submitted: { [weak self] submission, _ in
+                    self?.submitted.append(submission)
+                },
                 retype: { [weak self] _ in
                     guard let self, canRetype else { return false }
                     retyped += 1

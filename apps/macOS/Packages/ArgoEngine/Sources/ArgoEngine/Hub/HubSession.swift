@@ -115,6 +115,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public private(set) var isQueued = false
     /// The Turn in flight and what the last one ended as — see `SessionTurnState`.
     private(set) var turn = SessionTurnState()
+    /// The last Turn ARGO put to this Session (#1048) — see `SessionTurnSubmission`, which owns
+    /// whether that Turn is still running. Set by the Hub off the submit it performed itself. Not
+    /// public, because it is an input to the status fold rather than a fact a surface draws:
+    /// ADR-0027 has none of it to project.
+    var submittedTurn: SessionTurnSubmission?
     /// Whether this row is a spawn Argo has heard nothing from yet — what `statusReading` reads
     /// `starting` off (#587). Set by `init(spawn:)` alone, so no observed Session reaches the
     /// state: a record existing at all is proof the CLI has spoken.

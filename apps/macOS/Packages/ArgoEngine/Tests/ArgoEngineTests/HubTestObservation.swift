@@ -126,6 +126,17 @@ func hubLiveObservation(
     return (observation, continuation)
 }
 
+/// The same open-ended shape, keyed by PATH the way the engine keys a real record — what a suite
+/// reaches for when a live transcript has to bind to a claim, which happens on the chain uuid
+/// inside that path (#770).
+func hubLiveObservation(
+    at url: URL,
+)
+    -> (TranscriptObservation, AsyncStream<[TranscriptEvent]>.Continuation) {
+    let (events, continuation) = AsyncStream<[TranscriptEvent]>.makeStream()
+    return (TranscriptObservation(id: url.path, sourceURL: url, events: events), continuation)
+}
+
 /// Wait until the Hub's roster is standing. A `connect` returns before its file-backed tails have
 /// read anything, and the roster is deliberately held back until they have — so a test asserting on
 /// `sessions` straight after one is reading the emptiness it was given, not the answer.
