@@ -134,6 +134,24 @@
     border-bottom: 1px solid rgba(126,214,240,.07); }
   table.m td.v { text-align: right; font-family: var(--mono); color: var(--text-1); }
 
+  /* A gauge is a number and its rank in one block. The bands are clipped to round their
+     ends; the needle is not, because a file at 100% sits where a clip would eat it. */
+  .facts { display: flex; gap: 14px; margin-top: 11px;
+    font: var(--t-callout) var(--sans); color: var(--text-3); }
+  .facts b { font-family: var(--mono); color: var(--text-1); font-weight: 500; }
+  .gauges { margin-top: 14px; display: flex; flex-direction: column; gap: 11px; }
+  .gauge .gh { display: flex; align-items: baseline; gap: 8px;
+    font: var(--t-footnote) var(--mono); text-transform: uppercase;
+    letter-spacing: .09em; color: #5c8b99; }
+  .gauge .gh b { margin-left: auto; font: 600 var(--t-callout) var(--mono);
+    color: var(--text-1); letter-spacing: 0; text-transform: none; }
+  .gauge .track { position: relative; height: 8px; margin: 6px 0 4px; }
+  .gauge .bars { display: flex; height: 100%; border-radius: 3px; overflow: hidden; }
+  .gauge .bars i { height: 100%; }
+  .gauge .track u { position: absolute; top: -3px; width: 2px; height: 14px; margin-left: -1px;
+    background: var(--text-1); border-radius: 1px; box-shadow: 0 0 0 1px rgba(0,0,0,.6); }
+  .gauge .gn { font: var(--t-footnote)/1.5 var(--sans); color: var(--text-3); }
+
   .prov { font: var(--t-footnote)/1.6 var(--mono); color: var(--text-3); }
   .prov b { color: var(--text-2); font-weight: 400; }
   .tier { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 9px;
@@ -377,6 +395,8 @@ DOMAINS.forEach((d, di) => {
       dom: di, name, dir, path: dir + name,
       loc: 20 + Math.round(R() * 620), cx: 1 + Math.round(R() * 44),
       commits: 1 + Math.round(R() * 60), authors: 1 + Math.round(R() * 4),
+      /* skewed young, the way a repo is: most files are recent, a few are the founding ones */
+      age: 6 + Math.round(R() * R() * 2600),
       note: R() < 0.08,
     });
   }
@@ -487,6 +507,38 @@ function more() {
   shown += next.length;
   el.insertAdjacentHTML('beforeend', next.map(f => fileRow(f, LIST_DOM)).join(''));
 }
+/* A raw measure is close to meaningless on its own: 12 says nothing until you know it beats
+   two files in three. So every measure is drawn as its own rank among the files on the map. */
+const SORTED = {};
+const sorted = k => SORTED[k] || (SORTED[k] = FILES.map(f => f[k]).sort((a, b) => a - b));
+function rank(v, k) {
+  const s = sorted(k);
+  let lo = 0, hi = s.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (s[m] < v) lo = m + 1; else hi = m; }
+  return s.length ? lo / s.length : 0;
+}
+/* the same ramp the map lights its boxes with, so the bands under the needle are the
+   colours the reader has already learnt outside this panel */
+const BAND = u => `hsl(${(200 - u * 168).toFixed(0)} 62% ${(34 + u * 22).toFixed(0)}%)`;
+
+const AGE = d => d < 60 ? d + ' days'
+  : d < 730 ? Math.round(d / 30.4) + ' months'
+  : (d / 365).toFixed(1) + ' years';
+
+/* `word` is what the rank means for this measure — "higher" reads wrong under an age. */
+function Gauge(label, value, r, word) {
+  return `<div class="gauge">
+    <div class="gh"><span>${label}</span><b>${value}</b></div>
+    <div class="track"><div class="bars">
+      <i style="background:${BAND(.18)};flex:50"></i>
+      <i style="background:${BAND(.58)};flex:35"></i>
+      <i style="background:${BAND(.92)};flex:15"></i></div>
+      <u style="left:${(r * 100).toFixed(1)}%"></u></div>
+    <div class="gn">${r > 0.995 ? 'At the very top — nothing on this map scores higher.'
+      : word + ' than ' + Math.round(r * 100) + '% of the files here.'}</div>
+  </div>`;
+}
+
 function DomainBody(di) {
   const d = DOMAINS[di];
   return `<div class="eyebrow">Domain</div>
@@ -503,11 +555,14 @@ function FileBody(fi) {
     <div class="prov" style="margin-top:6px">${esc(f.path)}</div>
     <div style="margin-top:11px"><span class="chip" data-dom="${f.dom}">
       <i style="background:${COL(f.dom)}"></i>${esc(d[0])}</span></div>
-    <table class="m" style="margin-top:14px"><tr><th>Measure</th><th style="text-align:right">Value</th></tr>
-      <tr><td>Lines of code</td><td class="v">${f.loc}</td></tr>
-      <tr><td>Complexity</td><td class="v">${f.cx}</td></tr>
-      <tr><td>Commits</td><td class="v">${f.commits}</td></tr>
-      <tr><td>Authors</td><td class="v">${f.authors}</td></tr></table>
+    <div class="facts"><span><b>${f.loc}</b> lines</span><span><b>${f.authors}</b> ${
+      f.authors === 1 ? 'author' : 'authors'}</span></div>
+    <div class="gauges">
+      ${Gauge('Complexity', f.cx, rank(f.cx, 'cx'), 'Higher')}
+      ${Gauge('Commits', f.commits, rank(f.commits, 'commits'), 'More')}
+      ${Gauge('Age', AGE(f.age), rank(f.age, 'age'), 'Older')}
+    </div>
+
     ${f.note ? `<p class="note" style="margin-top:13px">A model read this file: it folds raw
       transcript events into the row state the feed draws.</p>` : ''}`;
 }
@@ -962,7 +1017,9 @@ function rebuildMap() {
     for (const f of FILES) {
       f.loc = 20 + Math.round(R() * 620); f.cx = 1 + Math.round(R() * 44);
       f.commits = 1 + Math.round(R() * 60); f.authors = 1 + Math.round(R() * 4);
+      f.age = 6 + Math.round(R() * R() * 2600);
     }
+    for (const k in SORTED) delete SORTED[k];
     REDOING = false; render();
   }, 620);
 }
