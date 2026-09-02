@@ -71,6 +71,7 @@ costs nothing inside one Swift module: the minimap re-lays out the feed, so it r
 | `ArgoRawOutputPanel` | `Shell/Write/RawOutput/` | the panel a failure's unabridged output opens in |
 | `ArgoAgentsRail` | `Shell/Deck/Feed/Agents/` | where the rail opens, and where it collapses to |
 | `ArgoRosterFoot` | `Shell/Sidebar/` | the floor under the roster's archive header |
+| `ArgoProjectDisabled` | `Shell/Project/` | the measure the disabled Project's one error state is set to |
 | `ArgoLayout` | `VisualContract/` | the window's structural proportions — pane widths, minimums, the splits |
 
 `ArgoLayout` is the one that stays, and not as an exception: pane widths and the splits between

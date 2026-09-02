@@ -120,7 +120,50 @@ public struct CockpitView: View {
         )
     }
 
+    /// The window's chrome, over the rooms or over the one error state that replaces them — a
+    /// Project whose folder is not at the recorded path is disabled WHOLE (failure spec §6), so the
+    /// branch is above the split view rather than inside a room.
+    ///
+    /// The three modifiers below belong to the WINDOW and so to both branches; the title and the
+    /// bar differ, and each branch states its own.
     public var body: some View {
+        Group {
+            if let reading = ProjectDisabledReading(presentation: presentation) {
+                disabled(reading)
+            } else {
+                rooms
+            }
+        }
+        // Hidden, so the icons sit on the window's own ground — and the canopy directly below is
+        // washed to that same ground. Letting the system draw its titlebar material here instead
+        // put the two bands a tone apart, which is the seam through the middle of what has to read
+        // as ONE bar. Two rendering paths cannot be matched by eye; one ground can.
+        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .frame(
+            minWidth: ArgoLayout.windowMinimumWidth,
+            minHeight: ArgoLayout.windowMinimumHeight,
+        )
+        .argoAppearance()
+    }
+
+    /// The error state, with the bar narrowed to the Project half — see `ProjectDisabledToolbar`.
+    private func disabled(_ reading: ProjectDisabledReading) -> some View {
+        ProjectDisabledScreen(
+            reading: reading,
+            repair: ProjectRepair(projectID: reading.projectID, actions: actions),
+        )
+        // The Project is still the window's scope, so it is still the window's name: a title that
+        // fell back to `Argo` here would read as the Project having gone rather than its folder.
+        .navigationTitle(reading.name)
+        .toolbar {
+            ProjectDisabledToolbar(presentation: presentation, actions: actions)
+        }
+    }
+
+    /// A `@ViewBuilder` property rather than a `View` of its own: what it draws reads six of this
+    /// view's `@State`s, and handing those down is a struct of a dozen bindings that no preview
+    /// could build more easily than `CockpitView` already does.
+    @ViewBuilder private var rooms: some View {
         @Bindable var navigation = navigation
         // Assembled ONCE for the whole pass and handed to all four readers — the column's
         // visibility, the sidebar, the toolbar row and the deck. `nil` outside the Tickets room,
@@ -142,16 +185,6 @@ public struct CockpitView: View {
             )
         }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")
-        // Hidden, so the icons sit on the window's own ground — and the canopy directly below is
-        // washed to that same ground. Letting the system draw its titlebar material here instead
-        // put the two bands a tone apart, which is the seam through the middle of what has to read
-        // as ONE bar. Two rendering paths cannot be matched by eye; one ground can.
-        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
-        .frame(
-            minWidth: ArgoLayout.windowMinimumWidth,
-            minHeight: ArgoLayout.windowMinimumHeight,
-        )
-        .argoAppearance()
         .sheet(isPresented: isConnecting) {
             if let reading = connect.reading {
                 ConnectSheet(
