@@ -4,7 +4,8 @@
    Nothing here knows it is looking at Argo: every rule reads the analysis, not the repo. */
 import { readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 
 const map = JSON.parse(readFileSync(process.argv[2], 'utf8'));
@@ -86,11 +87,40 @@ const size = new Map(files.map(f => [f.path, at(f, 'rloc')]));
 const sample = f => f.files.map(n => f.path + '/' + n)
   .sort((a, b) => (size.get(b) || 0) - (size.get(a) || 0)).slice(0, 5);
 
-const todo = { of: map.projectName || '', sourceRoot: map.sourceRoot || '', at: new Date().toISOString().slice(0, 10),
+/* Domains are the one subject here that is itself inferred, so the picker runs the same
+   clustering the page does rather than a second copy of it, and hands the writer the five
+   files that carry most of each domain's code. Absent a sidecar there are no domains, and
+   the pass simply has one fewer kind of subject — which is what a repo without git gets. */
+const byWeight = (members, list, rloc) => [...members]
+  .sort((a, b) => (rloc.get(list[b]) || 0) - (rloc.get(list[a]) || 0)).map(i => list[i]);
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const CO_PATH = join(HERE, 'atlas-cochange.json');
+let domains = [];
+if (existsSync(CO_PATH)) {
+  const co = JSON.parse(readFileSync(CO_PATH, 'utf8'));
+  const { cluster } = await import('./atlas-domains.mjs');
+  const list = files.map(f => f.path);
+  const rloc = new Map(files.map(f => [f.path, at(f, 'rloc')]));
+  const r = cluster(list, co.edges.map(([a, b, j]) => [co.files[a], co.files[b], j]),
+    { house: [co.built && co.built.repo], size: i => rloc.get(list[i]) || 0 });
+  domains = r.clusters.map(c => ({
+    key: c.key, tokens: c.tokens, files: c.members.length, folders: c.folders,
+    where: c.where.slice(0, 6),
+    /* Two lists, because they answer different questions. The sample is what a model reads,
+       so it is short. The core is what a later map matches this name against, so it is wide
+       enough to survive a view that drops a third of the repo. */
+    sample: byWeight(c.members, list, rloc).slice(0, 5),
+    core: byWeight(c.members, list, rloc).slice(0, 20),
+  }));
+}
+
+const todo = { of: map.projectName || '', sourceRoot: map.sourceRoot || '', domains, at: new Date().toISOString().slice(0, 10),
   folders: folders.map(f => ({ path: f.path, files: f.files, sample: sample(f) })),
   files: [...picked.values()].map(e => ({ ...e, hash: stamp(e.path) })).filter(e => e.hash),
   pairs: pairs.filter(p => p.pair.every(stamp)).map(p => ({ ...p, hash: p.pair.map(stamp).join('-') })) };
 
 writeFileSync(out, JSON.stringify(todo, null, 2));
 console.log('folders', todo.folders.length, 'files', todo.files.length,
-            'pairs', todo.pairs.length, 'of', files.length, 'measured');
+            'pairs', todo.pairs.length, 'domains', todo.domains.length,
+            'of', files.length, 'measured');

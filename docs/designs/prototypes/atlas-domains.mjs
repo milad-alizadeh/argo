@@ -193,18 +193,81 @@ export function membership(com, adj, floor = 3, minMargin = 0.15) {
   return { of, conf };
 }
 
-/* A domain's name is the token its members share most strongly, taken from the same TF-IDF
-   the clustering used — so the label comes out of the repo's own words and is rebuilt with
-   every map, rather than being written once and going quietly wrong. */
-export function name(members, vecs) {
+/* A domain's name has to be the token that is *concentrated* here, not merely the heaviest —
+   those are different, and the difference is the project's own name. It is in a sixth of the
+   filenames, so it wins any sum, and it names nothing: every domain is an Argo domain. So the
+   score is weight in this cluster times the share of that token's whole weight that falls in
+   it, which no token spread across the repo can win. */
+export function name(members, vecs, spread, house) {
   const acc = new Map();
   for (const i of members) for (const [t, w] of vecs[i]) acc.set(t, (acc.get(t) || 0) + w);
-  return [...acc].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([t]) => t);
+  return [...acc].filter(([t]) => !house.has(t))
+    .map(([t, w]) => [t, w * (w / (spread.get(t) || w))])
+    .sort((a, b) => b[1] - a[1]).slice(0, 4).map(([t]) => t);
+}
+
+/* A house word can be concentrated enough to win a name and still name nothing. Two kinds,
+   and they need different tests because a frequency bar tight enough to catch the first
+   throws away good names: "mermaid" is in a tenth of the filenames here and is exactly right.
+
+   The first kind is a word on a quarter of the files — "tests" — which is a layer, not a
+   subject. The second is the product's own name, which is not rare, not evenly spread, and
+   not detectable from the paths at all: every domain in the repo is one of its domains. That
+   one is a fact rather than a heuristic, so it is passed in rather than guessed at.
+
+   Both stay in the vectors, where they are harmless. They are barred only from the label. */
+function houseWords(paths, dirWeight, given = []) {
+  const df = new Map();
+  for (const p of paths) for (const t of tokens(p, dirWeight).keys())
+    df.set(t, (df.get(t) || 0) + 1);
+  const out = new Set();
+  for (const [t, n] of df) if (n / paths.length >= 0.2) out.add(t);
+  for (const g of given) for (const t of split(String(g))) out.add(t);
+  return out;
+}
+
+/* Every token's total weight across the whole repo, which is the denominator above. */
+function spreadOf(vecs) {
+  const all = new Map();
+  for (const v of vecs) for (const [t, w] of v) all.set(t, (all.get(t) || 0) + w);
+  return all;
+}
+
+/* A description nobody had to write: what the domain holds and where it lives. It is derived,
+   so it can never go stale against the map, and it says the one thing the name cannot — that
+   a domain is spread over folders that have nothing to do with each other. */
+function describe(members, paths) {
+  const where = new Map();
+  for (const i of members) {
+    const d = paths[i].split('/').slice(0, -1).join('/');
+    where.set(d, (where.get(d) || 0) + 1);
+  }
+  const top = [...where].sort((a, b) => b[1] - a[1]);
+  const say = top.slice(0, 2).map(([d, n]) => `${d.split('/').slice(-2).join('/')} (${n})`);
+  return { folders: where.size, top,
+    text: `${members.length} files across ${where.size} folder${where.size > 1 ? 's' : ''}`
+      + (where.size > 1 ? `, mostly ${say.join(' and ')}.` : '.') };
+}
+
+/* A domain's identity across rebuilds, for the written layer to hang off. Membership churns
+   — one new file must not orphan a caption that is still true — so the key is the core: the
+   five largest members, sorted. FNV-1a rather than a real digest because both the picker and
+   the page must compute it, and one of them has no crypto that is not asynchronous. */
+export function coreKey(members, paths, size) {
+  const core = [...members].sort((a, b) => (size(b) - size(a)) || (paths[a] < paths[b] ? -1 : 1))
+    .slice(0, 5).map(i => paths[i]).sort().join('\n');
+  let h = 0x811c9dc5;
+  for (let i = 0; i < core.length; i++) {
+    h ^= core.charCodeAt(i);
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+  }
+  return h.toString(36);
 }
 
 /* ---------- the one call the page makes ---------- */
 export function cluster(paths, cochange, opts = {}) {
   const alpha = opts.alpha ?? 0.6, dirWeight = opts.dirWeight ?? 0, floor = opts.floor ?? 3;
+  const size = opts.size || (() => 0);
   const { vecs, edges } = graph(paths, cochange, alpha, dirWeight);
   const adj = buildAdj(paths.length, edges);
   const plat = opts.gamma ? { gamma: opts.gamma, stable: true, steps: [], run: 0 }
@@ -215,13 +278,18 @@ export function cluster(paths, cochange, opts = {}) {
   const byId = new Map();
   of.forEach((c, i) => { if (c < 0) return;
     if (!byId.has(c)) byId.set(c, []); byId.get(c).push(i); });
+  const spread = spreadOf(vecs);
+  const house = houseWords(paths, dirWeight, opts.house || []);
   const used = new Set();
   const clusters = [...byId.entries()]
     .sort((a, b) => b[1].length - a[1].length)
     .map(([id, members]) => {
-      const words = name(members, vecs).filter(t => !used.has(t));
+      const words = name(members, vecs, spread, house).filter(t => !used.has(t));
       used.add(words[0]);
+      const d = describe(members, paths);
       return { id, members, tokens: words, name: words[0] || 'domain ' + id,
+               key: coreKey(members, paths, size),
+               about: d.text, folders: d.folders, where: d.top,
                confidence: members.reduce((s, i) => s + conf[i], 0) / members.length };
     });
 
@@ -235,15 +303,24 @@ export function cluster(paths, cochange, opts = {}) {
 }
 
 /* Pairwise agreement: over file pairs the two clusterings both have an opinion about, how
-   often do they agree that the pair does — or does not — belong together. */
-function agree(a, b, sample = 200000) {
-  let same = 0, seen = 0;
-  const n = a.length;
-  for (let t = 0; t < sample; t++) {
-    const i = (Math.random() * n) | 0, j = (Math.random() * n) | 0;
-    if (i === j || a[i] < 0 || a[j] < 0 || b[i] < 0 || b[j] < 0) continue;
-    seen++;
-    if ((a[i] === a[j]) === (b[i] === b[j])) same++;
+   often do they agree that the pair does — or does not — belong together. The Rand index,
+   computed exactly from the contingency table rather than sampled. Sampling it made the
+   resolution sweep below random, and two runs over one unchanged repo drew different maps —
+   which is disqualifying for the one number here that stands in for accuracy. */
+function agree(a, b) {
+  const pair = n => (n * (n - 1)) / 2;
+  const cell = new Map(), rows = new Map(), cols = new Map();
+  let n = 0;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] < 0 || b[i] < 0) continue;
+    n++;
+    const k = a[i] + ',' + b[i];
+    cell.set(k, (cell.get(k) || 0) + 1);
+    rows.set(a[i], (rows.get(a[i]) || 0) + 1);
+    cols.set(b[i], (cols.get(b[i]) || 0) + 1);
   }
-  return seen ? same / seen : null;
+  if (n < 2) return null;
+  const sum = m => [...m.values()].reduce((s, v) => s + pair(v), 0);
+  const both = sum(cell);
+  return (pair(n) - sum(rows) - sum(cols) + 2 * both) / pair(n);
 }

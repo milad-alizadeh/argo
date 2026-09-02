@@ -116,6 +116,29 @@
   #read .tie { flex-wrap: wrap; cursor: pointer; border-radius: 5px;
                padding: 5px 6px; margin: 0 -6px; }
   #read .tie:hover { background: rgba(127,232,255,.09); }
+  /* An index is scanned, not read: one line each, the folder trailing on the same line.
+     The two-line row is for a tie, where the folder is the finding. */
+  #read .tie.flat { flex-wrap: nowrap; align-items: baseline; gap: 6px; padding: 3px 0; }
+  #read .tie.flat span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #read .tie.flat em { flex-basis: auto; margin: 0 0 0 auto; padding-left: 8px;
+                       white-space: nowrap; opacity: .62; }
+  /* A radio list, because exactly one domain is ever being looked at. The mark is a real
+     radio rather than a highlight: a highlighted row reads as "recently clicked", and the
+     reader has to be able to see what is showing without remembering what they pressed. */
+  #read .radios { margin-top: 2px; }
+  #read .radio { display: flex; align-items: center; gap: 9px; cursor: pointer;
+                 padding: 5px 8px 5px 6px; margin: 0 -8px; border-radius: 6px;
+                 font-size: var(--t-callout); color: var(--text-dim); }
+  #read .radio:hover { background: rgba(127,232,255,.07); }
+  #read .radio:focus-visible { outline: 2px solid rgba(127,232,255,.55); outline-offset: -2px; }
+  #read .radio u { flex: none; width: 12px; height: 12px; border-radius: 50%; text-decoration: none;
+                   border: 1.5px solid rgba(160,190,210,.34); box-sizing: border-box; }
+  #read .radio.on { color: var(--text); background: rgba(127,232,255,.10); }
+  #read .radio.on u { border-color: #7fe8ff; box-shadow: inset 0 0 0 3px #7fe8ff; }
+  #read .radio i { flex: none; width: 9px; height: 9px; border-radius: 2px; }
+  #read .radio i.all { background: linear-gradient(135deg,#6f9a86,#b99a58,#9a6f86); }
+  #read .radio span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #read .radio b { margin-left: auto; font: var(--t-callout) var(--mono); color: #7fe8ff; }
   #read .tie em { flex-basis: 100%; font-style: normal; font: var(--t-footnote) var(--mono);
                   color: var(--text-off); overflow-wrap: anywhere; }
   #read .tie i { flex-basis: 100%; font-style: normal; margin-top: 4px;
@@ -177,6 +200,28 @@
   #read .said { margin-top: 16px; padding: 11px 12px; border-radius: 8px;
                 background: rgba(127,232,255,.06); border: 1px solid rgba(127,232,255,.18); }
   #read .said p { margin: 0; font: var(--t-callout)/1.55 var(--sans); color: var(--text-1); }
+  /* The domain is a property of the file like any other, so it sits in the panel rather than
+     in an index of its own — but it is the one property you can act on, so it carries a
+     control instead of a value. */
+  #read .dom { margin-top: 14px; padding: 12px 13px 13px; border-radius: 9px;
+               background: rgba(140,170,190,.055); border: 1px solid rgba(150,180,200,.10); }
+  #read .dom p { margin: 9px 0 0; font-size: var(--t-callout); color: var(--text-1); }
+  #read .dom p.about { color: var(--text-dim); }
+  #read .dom.none b { font-size: var(--t-callout); color: var(--text); }
+  #read .dom .chip { display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+                     padding: 4px 10px 4px 8px; border-radius: 999px; font: inherit;
+                     font-size: var(--t-callout); color: var(--text);
+                     background: rgba(180,210,230,.09); border: 1px solid rgba(160,195,215,.16); }
+  #read .dom .chip:hover { background: rgba(127,232,255,.14); }
+  #read .dom .chip.on { background: rgba(127,232,255,.20); border-color: rgba(127,232,255,.45); }
+  #read .dom .chip i { width: 9px; height: 9px; border-radius: 2px; }
+  #read .dom .flag { display: block; margin-top: 10px; font: var(--t-footnote)/1.5 var(--mono);
+                     color: #9fb6c4; }
+  /* Said in the same quiet monospace the measured sources are, because this is a provenance
+     line and not a finding — but it is the one line here that has to be read. */
+  #read .dom .src { display: block; margin-top: 7px; font: var(--t-footnote)/1.5 var(--mono);
+                    color: #6d8794; }
+  #read .dom .ties { margin-top: 13px; }
   #read .said .flag { display: block; margin-top: 8px; font: var(--t-footnote)/1.5 var(--mono);
                       color: #7fe8ff; }
   /* the same mark as the one on the roofs, so the sentence and the map agree */
@@ -209,6 +254,8 @@
     <button id="reset" title="Back to the opening view (R)">Reset view</button>
     <label class="check" title="The file pairs that keep changing in the same commit (T)">
       <input type="checkbox" id="ties"> Strongest ties</label>
+    <label class="check" title="Drop test files and re-read the repo without them">
+      <input type="checkbox" id="noTests"> Hide tests</label>
     <div class="rule"></div>
     <div class="help">
       <b>Drag</b> to pan · <b>scroll</b> to zoom<br>
@@ -326,6 +373,24 @@ function stampPaths(n, pre = '') {
   (n.children || []).forEach(c => stampPaths(c, here));
 }
 
+/* A test file is recognisable in every language that has tests without knowing which one
+   this is: the word is in the filename, or it names a directory on the way down. Nothing
+   here is a list of this repo's own folders. */
+const TESTY = p => /(^|[^a-z])(tests?|specs?)([^a-z]|$)/i.test(p.split('/').pop())
+  || p.split('/').slice(0, -1).some(d => /^(__)?(tests?|specs?)(__)?$/i.test(d));
+
+/* Tests are half of many repositories and they answer a different question from the code
+   they cover, so hiding them is a view of the same map rather than a different map. The tree
+   is rebuilt without them, which is what makes the domains recluster too — with the tests in,
+   a domain's largest folder is almost always somebody's test directory. */
+function prune(n) {
+  if (n.type === 'File') return TESTY(n.__path || n.name) ? null : n;
+  const kids = (n.children || []).map(prune).filter(Boolean);
+  return kids.length ? { ...n, children: kids } : null;
+}
+let PRUNED = null;
+const live = () => state && state.noTests ? (PRUNED = PRUNED || prune(DATA) || DATA) : DATA;
+
 /* ---------- domains ---------- */
 /* Every other number on this page is measured. These are inferred, from two signals every
    repository has — what files are called, and what changes together — and the recovery
@@ -344,6 +409,7 @@ function domTone(rank, conf) {
   return hsl(hue, sat, 0.47);
 }
 const UNSURE = [86, 96, 104];   // belongs to nothing we can name
+const HUSH = [46, 56, 63];      // a domain that is not the one being looked at
 function hsl(h, s, l) {
   const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
   const t = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x]
@@ -352,17 +418,48 @@ function hsl(h, s, l) {
 }
 
 function domainsReady() { return !!(LIB && CO && DATA); }
+
+/* The clustering can only offer the word a domain's filenames share, which is true and no use
+   — "backlog", "deck". The name a reader needs comes from reading the code, so it arrives in
+   the written layer like every other sentence a model produced, and is marked the same way.
+   Without it the token stands in, so the map still works on a repo nobody has annotated. */
+/* A written name is matched to a cluster by the files it was written about, not by an exact
+   identity: hiding the tests re-clusters the whole repo, and a name that fell off every domain
+   the moment you changed the view would be a name nobody could rely on. Three of the five
+   files it was written from, still together, is the same domain by any reading. The score is
+   taken over the files that are still on the map, so hiding the tests cannot starve a name
+   that was written mostly about tests. */
+function written(c) {
+  if (!NOTES.domains) return null;
+  const exact = NOTES.domains[c.key];
+  if (exact) return exact;
+  const mine = new Set(c.members.map(i => DOM.paths[i]));
+  const here = new Set(DOM.paths);
+  let best = null, score = 0;
+  for (const w of Object.values(NOTES.domains)) {
+    const live = (w.core || []).filter(f => here.has(f));
+    if (live.length < 3) continue;
+    const s = live.filter(f => mine.has(f)).length / live.length;
+    if (s > score) { score = s; best = w; }
+  }
+  return score >= 0.5 ? best : null;
+}
+const domName = c => (written(c) || {}).name || c.name;
+const domNote = c => (written(c) || {}).note || '';
 function domains() {
-  const k = DOM_ALPHA + '|' + DOM_DIRW;
+  const k = DOM_ALPHA + '|' + DOM_DIRW + '|' + (state && state.noTests ? 't' : '');
   if (!domainsReady()) return null;
   if (DOM && domKey === k) return DOM;
-  const files = leaves(DATA);
+  const files = leaves(live());
   const paths = files.map(f => f.__path);
   const t0 = performance.now();
   /* The sidecar interns its paths, so the edges arrive as index pairs and are named here
      rather than shipped named forty times over. */
   const named = CO.edges.map(([a, b, j]) => [CO.files[a], CO.files[b], j]);
-  const r = LIB.cluster(paths, named, { alpha: DOM_ALPHA, dirWeight: DOM_DIRW });
+  const rloc = new Map(paths.map((pp, i) => [pp, at(files[i], 'rloc')]));
+  const r = LIB.cluster(paths, named,
+    { alpha: DOM_ALPHA, dirWeight: DOM_DIRW, house: [CO.built && CO.built.repo],
+      size: i => rloc.get(paths[i]) || 0 });
   r.ms = Math.round(performance.now() - t0);
   r.paths = paths;
   r.rank = new Map(r.clusters.map((c, i) => [c.id, i]));
@@ -377,8 +474,17 @@ function domains() {
    that means the clustering declined to place it. */
 function domBase(path) {
   const d = DOM && DOM.byPath.get(path);
+  /* With one domain picked out, everything else drops to the ground colour. Seventeen hues
+     answer "how is this repo divided"; one hue against the rest answers "where does this
+     domain live", and that is the question a reader has once they have a name. */
+  if (state.domSel !== null && (!d || d.id !== state.domSel)) return HUSH;
   if (!d || d.id < 0) return UNSURE;
   return domTone(DOM.rank.get(d.id), d.conf);
+}
+
+function selectDomain(id) {
+  state.domSel = id;
+  rebuild(); detail(state.pinned || null); stamp();
 }
 
 /* The second tiling. The same boxes, partitioned on cluster instead of path, laid out by the
@@ -386,9 +492,9 @@ function domBase(path) {
    Area is the same measure it always was, which is why the reshuffle conserves it. */
 function domainRoot() {
   const d = domains();
-  if (!d) return DATA;
+  if (!d) return live();
   const kids = d.clusters.map(c => ({
-    name: c.name, type: 'Folder', __dom: c,
+    name: domName(c), type: 'Folder', __dom: c,
     children: c.members.map(i => d.node.get(d.paths[i])),
   }));
   const loose = d.paths.filter((pp, i) => d.of[i] < 0).map(pp => d.node.get(pp));
@@ -454,11 +560,12 @@ function occlude(box) {
 let TREE = null, treeKey = '';
 function tree() {
   const grouped = state.dom === 'group' && domainsReady();
-  const k = state.area + '|' + state.height + '|' + (grouped ? domKey + 'g' : 'f');
+  const k = state.area + '|' + state.height + '|' + (grouped ? domKey + 'g' : 'f')
+          + (state.noTests ? '|t' : '');
   if (k !== treeKey) {
-    const files = leaves(DATA);
+    const files = leaves(live());
     const maxH = Math.max(...files.map(f => at(f, state.height)), 1);
-    TREE = layout(grouped ? domainRoot() : DATA, state.area, state.height, maxH);
+    TREE = layout(grouped ? domainRoot() : live(), state.area, state.height, maxH);
     fixPaths(TREE);
     treeKey = k;
   }
@@ -757,8 +864,9 @@ function setView(plan) {
 /* Both tilings hold the same boxes at the same areas, so the move conserves every footprint
    and only ever changes where it is. Files leave in the order their domains are listed, which
    is the whole point of watching it: a domain gathers itself out of five different plates.
-   In the city the motion happens behind the towers, so the camera lies down for the journey
-   and stands back up at the end. */
+   The camera holds still through it. Laying the city down for the journey showed more of the
+   motion, and cost the reader the one thing that makes the move legible — that it is the same
+   city they were already looking at. */
 const DOM_MS = 780, DOM_STAGGER = 300;
 let morph = null;
 
@@ -775,11 +883,12 @@ function setDom(mode) {
   const regroup = (mode === 'group') !== (state.dom === 'group');
   const from = regroup
     ? new Map(boxesNow().filter(b => b.file).map(b => [b.path, [b.x, b.y, b.w, b.h]])) : null;
-  state.dom = mode; state.hover = null; state.pinned = null; hideDef(); domUI();
+  state.dom = mode; state.hover = null; state.pinned = null; state.domSel = null;
+  hideDef(); domUI();
   treeKey = '';
   if (regroup && !CALM) {
     for (const b of paintOrder(tree())) if (b.file) { b.mx = b.x; b.my = b.y; b.mw = b.w; b.mh = b.h; }
-    morph = { t0: performance.now(), from, dip: !state.plan, was: ZK };
+    morph = { t0: performance.now(), from, plate: 1 };
   }
   fit(); rebuild(); detail(null); stamp();
 }
@@ -800,14 +909,16 @@ function morphStep(now) {
     b.x = src[0] + (b.mx - src[0]) * e; b.y = src[1] + (b.my - src[1]) * e;
     b.w = src[2] + (b.mw - src[2]) * e; b.h = src[3] + (b.mh - src[3]) * e;
   }
-  if (morph.dip) setFlat(Math.sin(Math.PI * u));
+  /* Out over the first fifth, in over the last: the plates that are leaving and the plates
+     that are arriving are different plates, so they must not be on screen together. */
+  morph.plate = u < 0.2 ? 1 - u / 0.2 : u > 0.8 ? (u - 0.8) / 0.2 : 0;
   fit();
   if (u >= 1) {
     for (const b of paintOrder(TREE)) if (b.file && b.mx !== undefined) {
       b.x = b.mx; b.y = b.my; b.w = b.mw; b.h = b.mh;
     }
     morph = null;
-    setFlat(state.plan ? 1 : 0); fit(); rebuild(); detail(null);
+    fit(); rebuild(); detail(null);
   } else rebuild(true);
 }
 
@@ -922,7 +1033,9 @@ function rebuild(fast) {
     mctx.fillRect(0, 0, W, H);
     mctx.restore();
 
-    $('count').textContent = `${leaves(DATA).length.toLocaleString('en-US')} files · ${DESC[state.area].title} ${fmt(roll(DATA, state.area))} total`;
+    $('count').textContent = `${leaves(live()).length.toLocaleString('en-US')} files`
+      + (state.noTests ? ` · tests hidden` : '')
+      + ` · ${DESC[state.area].title} ${fmt(roll(live(), state.area))} total`;
     key(lo, hi);
   }
   mt.push(performance.now() - t0);
@@ -1045,9 +1158,17 @@ function blit(src, px, alpha) {
    nothing may tint it: every term here is a scalar on the same three numbers. */
 function drawBox(g, b, zTop, fast) {
   if (b.ghost) return;
-  /* Mid-reshuffle a file is between two plates and belongs to neither, so no plate is drawn
-     until it has landed. Anything else draws a file standing outside its own folder. */
-  if (morph && !b.file) return;
+  /* Mid-reshuffle a file is between two plates and belongs to neither, so the plates go. They
+     fade rather than vanish: a plate that blinks out under fifteen hundred moving boxes reads
+     as the boxes jumping, which is what the eye blames for a cut it did not see. */
+  /* The outermost plate is the ground the whole city stands on and belongs to neither
+     partition, so it stays: without it the boxes travel over nothing and the move reads as
+     the map being replaced rather than rearranged. */
+  const inner = morph && !b.file && b.depth > 0;
+  if (inner) {
+    if (morph.plate <= 0.01) return;
+    g.save(); g.globalAlpha = morph.plate;
+  }
   const { x, y, w, h } = b;
   const z0 = b.z0, z1 = zTop === undefined ? b.z1 : zTop;
   const t = Math.max(0, Math.min(1, nearness(b)));
@@ -1109,6 +1230,7 @@ function drawBox(g, b, zTop, fast) {
     rf = lg;
   }
   quad(g, roof[0], roof[1], roof[2], roof[3], rf);
+  if (inner) { g.restore(); return; }
 
   const ring = () => {
     g.beginPath();
@@ -1480,6 +1602,7 @@ function said(path, folder) {
 
 /* Every noted file, in one place, because a mark on a roof tells you where to look and this
    tells you what there is to look at. Both are needed: one is a map, the other is an index. */
+
 /* A band answers "is this file in the top 15%", which makes a 58 the same pixel as a 20.
    The extreme is what a reader comes to a map like this for, so the colour channel's own
    top of the pile is listed outright. It re-sorts when that channel changes. */
@@ -1494,16 +1617,6 @@ function topList() {
     + rows.map(r => `<div class="tie" data-go="${esc(r.path)}" title="Go to this file">`
         + `<span>${esc(r.name)}</span><b>${fmt(r.v)}</b>`
         + `<em>${esc(r.path.split('/').slice(0, -1).slice(-2).join('/'))}</em></div>`).join('')
-    + `</div>`;
-}
-
-function noteIndex() {
-  const all = Object.keys(NOTES.files || {});
-  if (!all.length) return '';
-  return `<div class="ties"><h4>${all.length} files carry a note</h4>`
-    + all.map(k => `<div class="tie" data-go="${esc(k)}" title="Go to this file">`
-        + `<span>${esc(k.split('/').pop())}</span>`
-        + `<em>${esc(k.split('/').slice(0, -1).slice(-2).join('/'))}</em></div>`).join('')
     + `</div>`;
 }
 
@@ -1529,8 +1642,7 @@ function detail(b) {
       <kbd>Esc</kbd> to let go. Folder names appear as you zoom towards them.</p>
       <p style="margin-top:10px">Every number here is measured from the code and its history.
       Plates carry a written caption, and the files marked <b class="dot">●</b> carry a
-      note. Both are read, never counted.</p></div>`
-      + domainIndex() + topList() + noteIndex();
+      note. Both are read, never counted.</p></div>` + domainIndex() + topList();
     wireRead();
     return;
   }
@@ -1598,45 +1710,54 @@ function detail(b) {
    across, which is the finding the folder tree cannot show. */
 function domHTML(it) {
   if (state.dom === 'off' || !DOM) return '';
-  if (!it.file) {
-    const c = it.n.__dom;
-    if (!c) return '';
-    const where = new Map();
-    for (const i of c.members) {
-      const d = DOM.paths[i].split('/').slice(0, -1).join('/');
-      where.set(d, (where.get(d) || 0) + 1);
-    }
-    const rows = [...where].sort((a, b) => b[1] - a[1]).slice(0, 6)
-      .map(([d, n]) => `<div class="tie"><span>${esc(d.split('/').slice(-2).join('/'))}</span><b>${n}</b></div>`);
-    return `<div class="said"><p>${c.members.length} files, spread across `
-      + `${where.size} folder${where.size > 1 ? 's' : ''}.</p>`
-      + `<span class="flag">${esc(c.tokens.join(' · '))}</span>`
-      + `<span class="src">Inferred from names and change history \u00b7 nobody confirmed it</span></div>`
-      + `<div class="ties"><h4>Where it lives</h4>${rows.join('')}</div>`;
-  }
-  const d = DOM.byPath.get(it.path);
-  if (!d) return '';
-  if (d.id < 0) return `<div class="said"><p>No domain. Nothing this file is called, and `
-    + `nothing it changes with, put it clearly with any group.</p>`
-    + `<span class="src">Inferred \u00b7 nobody confirmed it</span></div>`;
-  const c = DOM.clusters[DOM.rank.get(d.id)];
-  return `<div class="said"><p>Domain <b>${esc(c.name)}</b>, `
-    + `${Math.round(d.conf * 100)}% surer of it than of the next best.</p>`
-    + `<span class="flag">${esc(c.tokens.join(' \u00b7 '))}</span>`
-    + `<span class="src">Inferred from names and change history \u00b7 nobody confirmed it</span></div>`;
-}
+  const c = it.file ? domOf(it.path) : it.n.__dom;
+  if (!it.file && !c) return '';
+  if (it.file && !c) return `<div class="dom none"><b>No domain</b>`
+    + `<p>Nothing this file is called, and nothing it changes with, put it clearly with any `
+    + `group.</p><span class="src">Inferred \u00b7 nobody confirmed it</span></div>`;
 
-/* Every domain in one place, largest first, with the number of folders each is scattered
-   over — the same index the notes get, for the layer that most needs to be checkable. */
-function domainIndex() {
-  if (state.dom === 'off' || !DOM) return '';
-  const spread = c => new Set(c.members.map(i => DOM.paths[i].split('/').slice(0, -1).join('/'))).size;
-  return `<div class="ties"><h4>${DOM.clusters.length} domains, ${DOM.unassigned} files in none</h4>`
-    + DOM.clusters.map((c, i) => `<div class="tie" data-dom="${esc(c.name)}">`
-        + `<span style="color:rgb(${domTone(i, c.confidence).join(',')})">${esc(c.name)}</span>`
-        + `<b>${c.members.length}</b><em>across ${spread(c)} folders</em></div>`).join('')
+  const i = DOM.rank.get(c.id);
+  const on = state.domSel === c.id;
+  const rows = c.where.slice(0, 5).map(([d, n]) =>
+    `<div class="tie flat"><span>${esc(d.split('/').slice(-2).join('/'))}</span><b>${n}</b></div>`);
+  return `<div class="dom">`
+    + `<button class="chip${on ? ' on' : ''}" data-dom="${c.id}" `
+    + `title="${on ? 'Show every domain again' : 'Show only this domain'}">`
+    + `<i style="background:rgb(${domTone(i, c.confidence).join(',')})"></i>${esc(domName(c))}</button>`
+    + (domNote(c) ? `<p>${esc(domNote(c))}</p>` : '')
+    + `<p class="about">${esc(c.about)}</p>`
+    + `<span class="flag">${esc(c.tokens.join(' \u00b7 '))}</span>`
+    + `<span class="src">Grouped from names and change history`
+    + (domNote(c) ? `, named by ${esc(NOTES.model || 'a model')} that read it` : '')
+    + ` \u00b7 nobody confirmed it</span>`
+    + (it.file ? '' : `<div class="ties"><h4>Where it lives</h4>${rows.join('')}</div>`)
     + `</div>`;
 }
+/* Every domain, one line each, and each one a way in: the list is how a reader gets from a
+   name they are curious about to the place it lives, which pointing at the map cannot do. */
+function domainIndex() {
+  if (state.dom === 'off' || !DOM) return '';
+  /* One at a time, so the list is a radio group rather than a set of switches: two domains at
+     once is a picture with no question behind it, and the reader always has to be able to get
+     back to all of them, which is why "every domain" is an option and not an empty selection. */
+  const row = (id, dot, label, count, title) =>
+    `<div class="radio${state.domSel === id ? ' on' : ''}" role="radio" tabindex="0" `
+    + `aria-checked="${state.domSel === id}" data-dom="${id === null ? '' : id}" title="${esc(title)}">`
+    + `<u></u>${dot}<span>${esc(label)}</span><b>${count}</b></div>`;
+  return `<div class="ties"><h4>${DOM.clusters.length} domains \u00b7 ${DOM.unassigned} files in none</h4>`
+    + `<div class="radios" role="radiogroup" aria-label="Domain">`
+    + row(null, `<i class="all"></i>`, 'All domains', DOM.paths.length - DOM.unassigned,
+          'Colour every domain at once')
+    + DOM.clusters.map((c, i) =>
+        row(c.id, `<i style="background:rgb(${domTone(i, c.confidence).join(',')})"></i>`,
+            domName(c), c.members.length, domNote(c) || c.about)).join('')
+    + `</div></div>`;
+}
+
+const domOf = path => {
+  const d = DOM && DOM.byPath.get(path);
+  return d && d.id >= 0 ? DOM.clusters[DOM.rank.get(d.id)] : null;
+};
 
 /* ---------- popover ---------- */
 /* One popover element, moved and refilled, because two of them on screen at once is a bug
@@ -1666,6 +1787,12 @@ function hideDef() {
 /* The panel is rebuilt on every pointer move, so its controls are wired where they are
    built rather than once at boot. */
 function wireRead() {
+  for (const b of $('read').querySelectorAll('[data-dom]')) {
+    const pick = () => selectDomain(b.dataset.dom === '' ? null
+      : b.classList.contains('chip') && state.domSel === +b.dataset.dom ? null : +b.dataset.dom);
+    b.onclick = pick;
+    b.onkeydown = e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); pick(); } };
+  }
   for (const b of $('read').querySelectorAll('.ask'))
     b.onclick = e => { e.stopPropagation();
       b.getAttribute('aria-expanded') === 'true' ? hideDef() : showDef(b, b.dataset.def); };
@@ -1734,7 +1861,8 @@ function stamp() {
   history.replaceState(null, '',
     `?area=${state.area}&height=${state.height}&colour=${state.colour}`
     + `&yaw=${cityYaw.toFixed(3)}&pitch=${cityPitch.toFixed(3)}${state.ties ? '&ties=1' : ''}`
-    + (state.plan ? '&view=plan' : '') + (state.dom !== 'off' ? '&dom=' + state.dom : ''));
+    + (state.plan ? '&view=plan' : '') + (state.dom !== 'off' ? '&dom=' + state.dom : '')
+    + (state.noTests ? '&tests=no' : ''));
 }
 
 
@@ -1768,7 +1896,8 @@ Promise.all([
             height: metricParam('height', 'number_of_commits'),
             colour: metricParam('colour', 'complexity'),
             hover: null, pinned: null, ties: q.get('ties') === '1',
-            dom: ['tint', 'group'].includes(q.get('dom')) ? q.get('dom') : 'off',
+            dom: ['tint', 'group'].includes(q.get('dom')) ? q.get('dom') : 'off', domSel: null,
+            noTests: q.get('tests') === 'no',
             plan: q.get('view') === 'plan' };
   if (state.dom !== 'off' && !domainsReady()) state.dom = 'off';
 
@@ -1788,6 +1917,14 @@ Promise.all([
   domUI();
   for (const [id, m] of [['dOff', 'off'], ['dTint', 'tint'], ['dGroup', 'group']])
     $(id).onclick = () => setDom(m);
+  $('noTests').checked = state.noTests;
+  $('noTests').onchange = () => {
+    state.noTests = $('noTests').checked;
+    state.hover = state.pinned = null; state.domSel = null;
+    treeKey = ''; DOM = null; domKey = '';
+    if (state.dom !== 'off') domains();
+    fit(); rebuild(); detail(null); stamp();
+  };
   /* The clustering is a second of work and the button has to feel instant, so it is done
      once the first frame is on screen rather than on the click. */
   if (domainsReady()) requestAnimationFrame(() => setTimeout(() => {

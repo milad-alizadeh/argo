@@ -34,7 +34,35 @@ function ask(prompt) {
 }
 
 const notes = { of: todo.of, at: new Date().toISOString().slice(0, 10), model: MODEL,
-                folders: {}, files: {}, pairs: [] };
+                folders: {}, files: {}, pairs: [], domains: {} };
+
+/* A domain is the one subject on the map that nothing named. The clustering can only offer
+   the word its filenames share most, which is why they come out as "backlog" and "deck" —
+   true, and no use to a reader. The name has to come from reading the code. */
+const DOMAIN = `You are naming one area of an unfamiliar codebase on a map of it.
+These files were grouped together because their names and their change history say they
+belong together. Read them and answer in exactly this shape, nothing else:
+
+NAME: two or three words, Title Case, naming what this area is FOR
+WHAT: one sentence, at most 30 words, saying what it does and why it is its own area
+
+The name must be a thing a developer would say out loud, not a keyword from the filenames.
+Do not use the product's name. Do not number anything. No markdown, no quotes.`;
+
+for (const d of todo.domains || []) {
+  const seen = d.sample.filter(x => existsSync(disk(x)));
+  if (!seen.length) continue;
+  const spread = d.where.map(([f, n]) => `${f} (${n})`).join(', ');
+  const said = ask(`${DOMAIN}\n\nIt holds ${d.files} files across ${d.folders} folders: ${spread}\n`
+    + `Words its filenames share: ${d.tokens.join(', ')}\n\n`
+    + seen.map(x => `--- ${x}\n${read(x).slice(0, 4500)}`).join('\n\n'));
+  const name = (said.match(/NAME:\s*(.+?)(?:\s*WHAT:|$)/i) || [])[1];
+  const what = (said.match(/WHAT:\s*(.+)$/i) || [])[1];
+  if (!name) { console.log('?', d.tokens[0], '- unparsable'); continue; }
+  notes.domains[d.key] = { name: name.trim(), note: (what || '').trim(),
+                           tokens: d.tokens, files: d.files, core: d.core };
+  console.log('\u25c8', name.trim());
+}
 
 /* A caption answers the question a folder name raises and never repeats it: the reader can
    already see that a folder is called Feed, and what they want is what a feed is here. */
@@ -72,4 +100,5 @@ numbers, no file names.\n\n--- ${p.pair[0]}\n${read(p.pair[0])}\n\n--- ${p.pair[
 
 writeFileSync(out, JSON.stringify(notes, null, 2));
 console.log('wrote', Object.keys(notes.folders).length, 'captions,',
-            Object.keys(notes.files).length, 'notes and', notes.pairs.length, 'pairs');
+            Object.keys(notes.files).length, 'notes,', notes.pairs.length, 'pairs and',
+            Object.keys(notes.domains).length, 'domain names');

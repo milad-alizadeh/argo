@@ -97,11 +97,23 @@ for (const [f, list] of near) {
 /* Paths are interned. Written out in full, a ninety-character path appearing in forty edges
    is most of the file; the same data by index is a fifth of the size, and this is fetched on
    every page load. */
+/* Not the working directory's name: in a worktree that is the branch's name, which is a
+   different word every time. The common git directory belongs to the repository itself. */
+function repoName() {
+  const base = p => p.replace(/\/?\.git\/?$/, '').replace(/\/$/, '').split('/').pop();
+  try { return base(git('rev-parse', '--path-format=absolute', '--git-common-dir').trim()); }
+  catch { return base(REPO); }
+}
+
 const head = git('rev-parse', 'HEAD').trim();
 const names = [...changes.keys()];
 const idx = new Map(names.map((f, i) => [f, i]));
 const out = {
+  /* The repo's own name, which nothing else in the pipeline knows and no heuristic over the
+     paths can recover: it is a perfectly ordinary, well-concentrated token that happens to
+     name every domain equally, so it is the one word a domain must never be called. */
   built: { commit: head, at: new Date().toISOString(), subtree: SUB || '',
+           repo: repoName(),
            commits: commits.length, kept: kept.length, cap, k: K },
   files: names.map(strip),
   changes: names.map(f => changes.get(f)),
