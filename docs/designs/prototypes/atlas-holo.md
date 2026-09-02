@@ -74,6 +74,30 @@ disagree with the screen, because it is the screen.
 - **Claims are measured, not asserted.** Picking counts, pixels changed at rest, and roof
   pixels against the legend swatch. Every regression in this prototype was found that way, and
   the one blind assessment found defects three self-reports had missed.
+- **A label must be measured on what the reader can see.** `overlaid` is the harness's
+  view of the labelling, one row per name: `[name, labeller, path, painted, size, cut]`.
+  **Measure `painted`, index 3 — not `name`.** `name` is the file's or folder's own name, so
+  every duplicate-string and elision measurement taken against it was of the wrong quantity:
+  it cannot see that eight cells all painted `Sessio…`, and the old `dupPaths` check that
+  compared paths was guaranteed to pass by the `named` map and proved nothing. `inked` is the
+  matching map, path to the four corners the INK occupies — use it, not the label's rect, for
+  anything about adherence, because the bounding box of a caption set at its band's angle is
+  not the caption.
+
+## Measuring labels, and three ways it has gone wrong
+
+- **The fades have to be saturated before a count means anything.** A name's alpha carries over
+  from the camera before it, and `held` only draws above 0.01, so a count taken two frames
+  after a zoom is a count of the fade history. Twenty-five frames settles it. Measured across
+  sessions, two frames moved the label count by ten on identical code; the defect ratios never
+  moved, only the counts.
+- **`atlas-cc.json` can change under a measurement.** The regenerate button rewrites it, so a
+  before-and-after taken either side of a click is comparing two repositories, not two builds.
+  This lane lost an afternoon to it: the same commit measured 12 roof names in one session and
+  3 in the next, and the difference was 1,547 files becoming 1,861. Quote the file count the
+  footer shows beside every number, and re-measure both sides after any regeneration.
+- **Quote `cam.scale` with `W` and `H`, never a zoom multiple.** `fit()` normalises to the
+  canvas, so "1.9x" means a different picture in a different window.
 
 ## Regenerating
 

@@ -1683,7 +1683,7 @@ function quad(g, a, b, c, d, fill) {
    asked about by name: the pointer, the pin, a search hit, and only when their own face has
    no room for the answer. Those are annotations about one thing; everything else is a label
    on a face. All of it is drawn in the animated layer, so a wheel notch costs no repaint. */
-const labels = [];        // the screen rects taken this frame
+const labels = [];        // [box, ink corners] taken this frame
 const named = new Map();  // path -> the rect its name took, so nothing is named twice
 const overlaid = [];      // [name, labeller, path, painted] this frame — read by the harness
 const marked = [];        // and what was pointed at rather than named again
@@ -1714,17 +1714,41 @@ let nameT = 0;
    part of itself that is ON the stage. */
 const onStage = box => box[0] >= 2 && box[1] >= 2
   && box[0] + box[2] <= W - 2 && box[1] + box[3] <= H - 2;
-const free = box => !labels.some(q => box[0] < q[0] + q[2] && q[0] < box[0] + box[2]
-  && box[1] < q[1] + q[3] && q[1] < box[1] + box[3]);
-const fits = box => onStage(box) && free(box);
+/* Two convex quads share ground only if every separating axis fails, and the axes of two
+   rectangles are their own eight edge normals (Gottschalk 1996). Cheap box rejection first,
+   because two labels whose boxes miss cannot have ink that meets, and the exact test only for
+   the pairs whose boxes do meet. The box alone was not enough once a caption could be set at
+   its band's angle: the bounding box of a slanted word is up to seven times its ink, and a
+   name claiming that much of the screen blocks names nowhere near it — measured, judging
+   turned roof names by their boxes cost ten of the city's twelve. */
+function meets(a, b) {
+  for (const [p, q] of [[a, b], [b, a]])
+    for (let i = 0; i < 4; i++) {
+      const ax = p[(i + 1) & 3][1] - p[i][1], ay = p[i][0] - p[(i + 1) & 3][0];
+      let lo = Infinity, hi = -Infinity, lo2 = Infinity, hi2 = -Infinity;
+      for (const v of p) { const d = v[0] * ax + v[1] * ay;
+        if (d < lo) lo = d; if (d > hi) hi = d; }
+      for (const v of q) { const d = v[0] * ax + v[1] * ay;
+        if (d < lo2) lo2 = d; if (d > hi2) hi2 = d; }
+      if (hi <= lo2 || hi2 <= lo) return false;
+    }
+  return true;
+}
+const cornersOf = box => [[box[0], box[1]], [box[0] + box[2], box[1]],
+                          [box[0] + box[2], box[1] + box[3]], [box[0], box[1] + box[3]]];
+const free = (box, pts) => !labels.some(([q, qp]) =>
+  box[0] < q[0] + q[2] && q[0] < box[0] + box[2]
+  && box[1] < q[1] + q[3] && q[1] < box[1] + box[3]
+  && meets(pts, qp));
+const fits = (box, pts) => onStage(box) && free(box, pts || cornersOf(box));
 /* Taken, once: the rect joins the collision list, the box joins the named set, and the pair
    joins what the harness reads. Every labeller goes through here or it can name a thing
    twice. */
 function take(b, box, by, text, p) {
   const t = text || b.n.name;
-  labels.push(box); named.set(b.path, box); painted.add(t);
-  inked.set(b.path, (p && p.pts) || [[box[0], box[1]], [box[0] + box[2], box[1]],
-                            [box[0] + box[2], box[1] + box[3]], [box[0], box[1] + box[3]]]);
+  const pts = (p && p.pts) || cornersOf(box);
+  labels.push([box, pts]); named.set(b.path, box); painted.add(t);
+  inked.set(b.path, pts);
   /* the fit it ACHIEVED, not just that it fitted: the size it landed at and whether the name
      had to be cut, so the budget and the harness can both read the same facts */
   overlaid.push([b.n.name, by, b.path, t, p ? p.size : 0, !!(p && p.cut)]);
@@ -1750,6 +1774,9 @@ function elide(name, n) {
   const head = Math.ceil(room * 0.62), tail = room - head;
   return stem.slice(0, head) + '…' + (tail ? stem.slice(stem.length - tail) : '') + ext;
 }
+/* Walked down from a proportional guess, and NOT bisected: the guess is right first try often
+   enough that a bisection measuring five candidates every time was measurably slower — median
+   composite 1.6 ms to 3.2 ms in the plan, where this is the whole of the labelling cost. */
 function clipText(name, maxW) {
   const full = mw(name);
   if (full <= maxW) return name;
@@ -1806,10 +1833,6 @@ function cellPlan(b, size, q0) {
    rectangle — so the name is set horizontally about the roof's own centre and accepted only
    when all four corners of the text's box fall inside the quad. That test is exact, which is
    why a name can never extend past the roof it belongs to. */
-const CORNERS = [[0, 0], [1, 0], [1, 1], [0, 1]];
-const inside = (box, q) => CORNERS
-  .every(([dx, dy]) => inQuad(box[0] + box[2] * dx, box[1] + box[3] * dy, q));
-
 /* A roof's four-corner test is exact but purely geometric, and there is no id buffer here —
    picking is analytic — so the same painter's order answers "is this roof visible": only a
    box drawn AFTER this one can be standing in front of it. The screen footprints are
@@ -1875,34 +1898,33 @@ function roofPlan(b, size, q0) {
   if (bb[2] < roomFor(b.n.name, size) || bb[3] < size + 2) return null;
   const cx = (q[0][0] + q[2][0]) / 2, cy = (q[0][1] + q[2][1]) / 2;
   ctx.font = font(size, 600);
-  /* The bbox across a rotated quad is far wider than the usable run through its middle, so a
-     big obliquely-projected roof measured against the bbox was rejected outright and the
-     budget leaked to smaller ones. It retries shorter rather than giving up. */
+  const hi = size + 2;
+  /* LEVEL, about the roof's own centre — and level is not a default here, it is a measured
+     answer. The plate captions had to be turned to their band because a band is a long thin
+     strip whose edge is its only long direction. A roof is the opposite shape: it projects to
+     a near-diamond, and the roomiest line through a diamond is its own horizontal diagonal,
+     1.41 times the edge in BOTH directions for a square roof at forty-five degrees. Offering
+     the roof's two axes as well was tried and thrown away: over 816 roof names at ninety
+     cameras — six pitches, five yaws, three zooms — not one of them ever won, and asking cost
+     2.8 ms of a 4.9 ms frame at close range. The bbox across a rotated quad is far wider than
+     the usable run through its middle, so it RETRIES shorter rather than giving up, which is
+     what the one measurement against the bbox used to do. */
   let last = null;
-  for (let room = Math.max(...q.map(p => p[0])) - Math.min(...q.map(p => p[0]));
-       room > 18; room *= 0.72) {
+  for (let room = bb[2]; room > 18; room *= 0.72) {
     const t = clipText(b.n.name, room);
     if (t === null) break;
     if (t === last) continue;
     last = t;
-    const tw = mw(t);
-    const box = [cx - tw / 2 - 2, cy - size / 2 - 1, tw + 4, size + 2];
-    if (!inside(box, q) || !fits(box)) continue;
-    const corners = CORNERS.map(([dx, dy]) => [box[0] + box[2] * dx, box[1] + box[3] * dy]);
-    return buried(b, corners)
-      ? null : { kind: 'roof', box, text: t, size, cx, cy, cut: t !== b.n.name };
+    const tw = mw(t) + 4;
+    const box = [cx - tw / 2, cy - hi / 2, tw, hi];
+    const pts = cornersOf(box);
+    if (!pts.every(pt => inQuad(pt[0], pt[1], q)) || !fits(box, pts)) continue;
+    return buried(b, pts) ? null
+      : { kind: 'roof', q, box, pts, at: [box[0], cy], text: t, size, cut: t !== b.n.name };
   }
   return null;
 }
 
-/* The largest rung its own surface can carry, and a function of the geometry in front of the
-   reader and of NOTHING else. The rung used to be selected by whether the name was already
-   fading — so the fade chose the box's WIDTH, the width chose who collided, and a name
-   oscillated against its own damping for ever. Placement is memoryless now, which is the
-   strong form of Been, Daiches & Yap's D4: the same camera reached two ways gives the same
-   names because nothing about the route is remembered. It is also FoamTree's drop rule —
-   eligibility is rendered font size, not surface area — and that is what makes a zoom restore
-   labels monotonically instead of at a threshold. */
 const RUNGS = [SIZE_ON, SIZE_OFF];
 /* the surface's quad is passed in wherever the caller already has it: fifteen hundred
    candidates a frame times two rungs is three thousand projections nobody needs twice */
@@ -1927,11 +1949,17 @@ function drawFace(b, p, alpha, by) {
     ctx.fillStyle = ink(b);
     ctx.fillText(p.text, p.box[0], p.box[1]);
   } else {
+    /* clipped to its own roof as well as tested against it: the four-corner test already
+       promises the ink is inside, and the clip is what makes that true rather than trusted */
+    ctx.beginPath();
+    ctx.moveTo(p.q[0][0], p.q[0][1]);
+    for (let i = 1; i < 4; i++) ctx.lineTo(p.q[i][0], p.q[i][1]);
+    ctx.closePath(); ctx.clip();
     ctx.textBaseline = 'middle';
     ctx.strokeStyle = 'rgba(2,8,12,.85)'; ctx.lineWidth = 3;
-    ctx.strokeText(p.text, p.cx - (p.box[2] - 4) / 2, p.cy);
+    ctx.strokeText(p.text, p.at[0] + 2, p.at[1]);
     ctx.fillStyle = 'rgba(238,250,255,.96)';
-    ctx.fillText(p.text, p.cx - (p.box[2] - 4) / 2, p.cy);
+    ctx.fillText(p.text, p.at[0] + 2, p.at[1]);
   }
   ctx.restore();
 }
@@ -2038,7 +2066,7 @@ function bandPlan(b, r, size) {
     const pts = [[0, -hi / 2], [tw, -hi / 2], [tw, hi / 2], [0, hi / 2]]
       .map(([u, v]) => [at[0] + ux * u - uy * v, at[1] + uy * u + ux * v]);
     const box = bboxOf(pts);
-    if (pts.every(pt => inQuad(pt[0], pt[1], q)) && fits(box))
+    if (pts.every(pt => inQuad(pt[0], pt[1], q)) && fits(box, pts))
       return { q, box, pts, at, th, text: t, size, cut: t !== b.n.name };
   }
   return null;
@@ -2111,7 +2139,7 @@ function pill(b, by) {
   take(b, box, by + '\u00b7pill', b.n.name);
   ctx.fillStyle = 'rgba(6,11,16,.86)';
   ctx.beginPath(); ctx.roundRect(box[0], box[1], box[2], box[3], 4); ctx.fill();
-  ctx.strokeStyle = 'rgba(127,232,255,.34)'; ctx.lineWidth = 1; ctx.stroke();
+  /* no outline: the ground is what makes it readable and a border adds nothing but chrome */
   ctx.fillStyle = '#dcf6ff';
   ctx.fillText(b.n.name, p[0] - w / 2, box[1] + 12);
   return true;
@@ -2126,13 +2154,14 @@ function callout(b, by) {
   /* ONE NAME PER THING PER FRAME. A box already named is MARKED where it stands — a second
      copy of the same word in a second place is what put two names on one plate. */
   if (had) {
-    /* recorded apart from the names: a mark is not a second name, and the invariant that no
-       path is ever named twice has to stay literally checkable */
+    /* Recorded and NOTHING DRAWN. Ringing the word was the right instinct about duplication
+       and the wrong answer about emphasis: `hoverRim` and `pinMark` already rim the SURFACE,
+       so an outline round the name was a second indicator of one state, and the weaker of the
+       two — it outlined the name rather than the thing. A hovered or pinned box is carried by
+       its own rim and its own ground, and its name stays plain text, identical to every other
+       name on the map. The record stays because a hover must never add a SECOND name for
+       something already named, and that invariant has to remain literally checkable. */
     marked.push([it.n.name, by, it.path]);
-    ctx.save();
-    ctx.strokeStyle = 'rgba(127,232,255,.85)'; ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.roundRect(had[0] - 3, had[1] - 3, had[2] + 6, had[3] + 6, 6);
-    ctx.stroke(); ctx.restore();
     return;
   }
   const p = facePlan(it);
@@ -2157,7 +2186,10 @@ function names(now) {
   nameT = now;
   labels.length = 0; named.clear(); overlaid.length = 0; marked.length = 0;
   painted.clear(); inked.clear(); volBB = volIx = null;
-  if (!flat()) labels.push([BADGE[0], H - 26, BADGE[1], 18]);
+  if (!flat()) {
+    const r = [BADGE[0], H - 26, BADGE[1], 18];
+    labels.push([r, cornersOf(r)]);
+  }
 
   /* Plates first, biggest first: at the zoom where a folder's name is the useful one it must
      not lose its place to a file standing on it. */
@@ -2224,7 +2256,6 @@ function moreBadge() {
   const w = mw(t);
   ctx.fillStyle = 'rgba(6,11,16,.8)';
   ctx.beginPath(); ctx.roundRect(BADGE[0], H - 26, w + 16, 18, 4); ctx.fill();
-  ctx.strokeStyle = 'rgba(127,232,255,.24)'; ctx.lineWidth = 1; ctx.stroke();
   ctx.fillStyle = '#8fb4c2';
   ctx.fillText(t, BADGE[0] + 8, H - 17);
   ctx.restore();
