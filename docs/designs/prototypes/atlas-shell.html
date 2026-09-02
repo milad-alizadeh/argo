@@ -100,6 +100,19 @@
     border: 1px solid rgba(126,214,240,.2); }
   .redo:hover { background: rgba(126,214,240,.2); color: var(--text-1); }
   .redo svg { width: 13px; height: 13px; }
+
+  /* Each layout is a picture of itself, which a dropdown of three names is not — and three
+     names in a menu is a fourth menu in a row that already has three. */
+  .iseg { display: flex; gap: 0; }
+  .iseg button { width: 30px; height: 27px; display: grid; place-items: center;
+    color: var(--text-3); background: rgba(126,214,240,.07);
+    border: 1px solid rgba(126,214,240,.2); border-left-width: 0; }
+  .iseg button:first-child { border-left-width: 1px; border-radius: 7px 0 0 7px; }
+  .iseg button:last-child { border-radius: 0 7px 7px 0; }
+  .iseg button:hover { color: var(--text-1); background: rgba(126,214,240,.16); }
+  .iseg button[aria-pressed="true"] { background: rgba(126,214,240,.22);
+    border-color: rgba(126,214,240,.45); color: var(--text-1); }
+  .iseg svg { width: 15px; height: 15px; }
   .redo.spin svg { animation: turn 620ms var(--ease-out); }
   @keyframes turn { to { transform: rotate(360deg); } }
 
@@ -152,18 +165,29 @@
 
   /* a selected domain lends its hue to the panel that is about it, so the map and the
      words agree without anyone having to match a swatch twice */
-  #ctx { padding: 13px 16px 12px; border-bottom: 1px solid rgba(126,214,240,.12);
-    background: linear-gradient(180deg,
-      color-mix(in srgb, var(--dh) 15%, transparent), transparent); }
-  #ctx .top { display: flex; align-items: center; gap: 8px; }
-  #ctx .top i { width: 10px; height: 10px; border-radius: 3px; background: var(--dh); flex: none; }
-  #ctx h4 { font: 600 var(--t-body) var(--sans); color: var(--text-1); }
-  #ctx .all { margin-left: auto; font: var(--t-footnote) var(--mono); color: var(--dh);
-    cursor: pointer; white-space: nowrap; }
-  #ctx .all:hover { text-decoration: underline; }
-  #ctx p { font: var(--t-callout)/1.5 var(--sans); color: var(--text-2); margin-top: 7px; }
-  #ctx .row { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px;
-    font: var(--t-footnote) var(--mono); color: var(--text-3); }
+/* The back control owns a gutter and everything else hangs off it, so the way out is in
+   the one place a reader looks for it and the name, the note and the counts all share a
+   single left edge instead of each starting somewhere new. The domain's hue is the whole
+   left border, which is a bigger, quieter swatch than a 10px square. */
+  #ctx { display: grid; grid-template-columns: 26px 1fr; gap: 0 11px;
+    padding: 12px 16px 13px; border-bottom: 1px solid rgba(126,214,240,.12);
+    border-left: 3px solid var(--dh);
+    background: linear-gradient(100deg,
+      color-mix(in srgb, var(--dh) 13%, transparent), transparent 62%); }
+  #ctx .back { grid-row: 1; width: 26px; height: 26px; border-radius: 7px;
+    display: grid; place-items: center; color: var(--text-2);
+    background: color-mix(in srgb, var(--dh) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--dh) 34%, transparent); }
+  #ctx .back:hover { background: color-mix(in srgb, var(--dh) 34%, transparent);
+    color: var(--text-1); }
+  #ctx .back svg { width: 13px; height: 13px; }
+  #ctx h4 { grid-column: 2; align-self: center; font: 600 var(--t-title3) var(--sans);
+    color: var(--text-1); line-height: 26px; overflow-wrap: anywhere; }
+  #ctx p { grid-column: 2; font: var(--t-callout)/1.5 var(--sans); color: var(--text-2);
+    margin-top: 6px; }
+  #ctx .row { grid-column: 2; margin-top: 9px; font: var(--t-footnote)/1.6 var(--mono);
+    color: var(--text-off); }
+  #ctx .row b { color: var(--text-2); font-weight: 400; }
   #split[style] .drow[aria-selected="true"], #split[style] .frow[aria-selected="true"] {
     background: color-mix(in srgb, var(--dh) 22%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dh) 45%, transparent); }
@@ -190,7 +214,10 @@
   /* ─── shell B · dock + fixed two-region panel ───────────────────────────── */
   body[data-shell="b"] #app { height: 100%; display: grid; grid-template-columns: 1fr 356px; }
   #dock { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); z-index: 60;
-    display: flex; align-items: center; gap: 14px; padding: 10px 16px;
+    display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px 16px;
+    /* it must never grow past the map it floats on, so on a narrow window it wraps
+       rather than running under the panel */
+    max-width: calc(100% - 32px); flex-wrap: wrap; row-gap: 9px;
     background: rgba(9,20,26,.86); backdrop-filter: blur(18px);
     border: 1px solid rgba(126,214,240,.22); border-radius: 12px;
     box-shadow: 0 12px 40px rgba(0,0,0,.65), inset 0 1px 0 rgba(150,235,255,.1); }
@@ -200,7 +227,8 @@
   #dock select { font: var(--t-callout) var(--sans); color: var(--text-1);
     background: rgba(126,214,240,.08); border: 1px solid rgba(126,214,240,.2);
     border-radius: 6px; padding: 4px 7px; }
-  #dock .div { width: 1px; align-self: stretch; background: rgba(126,214,240,.16); }
+  #dock .div { width: 1px; align-self: stretch; min-height: 24px;
+    background: rgba(126,214,240,.16); }
   #dock .seg { width: 210px; }
   #dock .seg button { white-space: nowrap; padding: 4px 10px; }
   /* index on top, inspector below — both permanent, so nothing ever replaces anything */
@@ -715,11 +743,14 @@ function shellB() {
      list — so opening a file ADDS a fact instead of replacing the one you came for — and it
      lends its hue to the panel, which is the hue the map is now lit in. */
   const ctx = sd === null || HITS ? '' : `<div id="ctx">
-      <div class="top"><i></i><h4>${esc(DOMAINS[sd][0])}</h4>
-        <span class="all" data-go="root">All domains</span></div>
+      <button class="back" data-go="root" title="All domains" aria-label="All domains">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg>
+      </button>
+      <h4>${esc(DOMAINS[sd][0])}</h4>
       <p>${esc(DOMAINS[sd][1])}</p>
-      <div class="row"><span>${DOMAINS[sd][3]} files</span>
-        <span>${DOMAINS[sd][2].join(' · ')}</span></div></div>`;
+      <div class="row"><b>${DOMAINS[sd][3]} files</b>
+        &nbsp;·&nbsp; ${DOMAINS[sd][2].join(' · ')}</div></div>`;
 
   const list = HITS ? FileList(HITS, true)
     : sd !== null ? FileList(domFiles(sd).sort((a, b) => b.cx - a.cx), false)
@@ -733,7 +764,9 @@ function shellB() {
   return `<div id="stage"><canvas></canvas>
       <div id="dock">${Encoding(true)}<div class="div"></div>
         ${Grouping()}<div class="div"></div>${Filters()}
-        <div class="div"></div>${Redo()}</div>
+        <div class="div"></div>${Redo()}
+        <div class="div"></div>
+        <div class="grp"><span>Layout</span>${LayoutPicker()}</div></div>
       ${MapLegend()}
     </div>
     <div id="split"${sd === null ? '' : ` style="--dh:${COL(sd)}"`}>
@@ -749,6 +782,21 @@ function shellB() {
           ${Provenance()}</div>
       </section>
     </div>`;
+}
+
+/* Each layout drawn as what it is: three columns, a stage with a split panel, a bare
+   stage with a bar over it. */
+const SHAPES = {
+  a: '<rect x="1.5" y="3" width="13" height="10" rx="1.5"/><path d="M5.5 3v10M10.5 3v10"/>',
+  b: '<rect x="1.5" y="3" width="13" height="10" rx="1.5"/><path d="M9.5 3v10M9.5 8.6h5"/>',
+  c: '<rect x="1.5" y="3" width="13" height="10" rx="1.5"/><rect x="4.5" y="5" width="7" height="2.4" rx="1"/>',
+};
+function LayoutPicker() {
+  const names = { a: 'Two rails', b: 'Dock + index', c: 'Command' };
+  return `<div class="iseg">${['a', 'b', 'c'].map(k =>
+    `<button data-shell="${k}" aria-pressed="${S.shell === k}" title="${names[k]}"
+       aria-label="${names[k]}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+       stroke-width="1.3" stroke-linejoin="round">${SHAPES[k]}</svg></button>`).join('')}</div>`;
 }
 
 /* The map is derived from a repo that keeps moving, so rebuilding it is an ordinary
@@ -865,7 +913,10 @@ function render(keepFocus) {
     const q = document.getElementById('q');
     if (q) { q.focus(); try { q.setSelectionRange(at, at); } catch {} }
   }
+  /* B carries the layout choice in its own dock, so the floating pill would be the same
+     control twice. It stays for the two shells with nowhere to put it. */
   const sw = document.getElementById('switch');
+  sw.hidden = S.shell === 'b';
   sw.innerHTML = `<span class="tag">Layout</span>` + [['a', 'Two rails'], ['b', 'Dock + index'],
     ['c', 'Command']].map(([k, t]) =>
     `<button data-shell="${k}" aria-pressed="${S.shell === k}">${t}</button>`).join('');
