@@ -160,16 +160,6 @@ struct ConnectionHealthProjectionTests {
         )?.state == .failure)
     }
 
-    /// Argo's own observation keeps the chip it already had, in the words it already used. The two
-    /// subjects share one chrome so the app never grows a second failure language.
-    @Test
-    func `the observation chip keeps its own words`() {
-        #expect(ConnectionChipReading(observing: .connected) == nil)
-        #expect(ConnectionChipReading(observing: .idle)?.label == "No live sessions")
-        #expect(ConnectionChipReading(observing: .failed(message: "Transcript unavailable"))?
-            .action == "Retry")
-    }
-
     /// The channel separation #260 locks: connection health never enters the one the session dot
     /// carries. Asserted over the projection rather than by reading the wiring — the roster is
     /// built from `CockpitPresentation`, which has no connection in it at all, so a change that

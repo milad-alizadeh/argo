@@ -30,8 +30,9 @@ extension ConnectionChipReading {
         // blank would be read as the connected one.
         case .idle:
             self.init(label: "No live sessions", state: .idle, action: nil)
+        // Attention rather than the failure ink: red is the WORK failing (§8).
         case let .failed(message):
-            self.init(label: message, state: .failure, action: "Retry")
+            self.init(label: message, state: .attention, action: "Retry")
         }
     }
 }

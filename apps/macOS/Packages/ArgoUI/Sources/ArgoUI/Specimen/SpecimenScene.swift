@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// What the registry's entries are BUILT from, kept off the entry lists so those stay lists of
@@ -65,6 +66,18 @@ enum SpecimenScene {
             connection: .connected,
             projectID: CockpitPresentation.preview.activeProjectID,
             health: health,
+            actions: .inert,
+        )
+    }
+
+    /// The same stack over the OTHER subject: Argo's own observation gone bad, with every provider
+    /// healthy. The chip beside it is what §8 is judged on — a transcript Argo cannot read asks for
+    /// attention, and the failure ink is still available for the work failing.
+    static func observationChip(_ connection: HubConnection) -> some View {
+        ConnectionChips(
+            connection: connection,
+            projectID: CockpitPresentation.preview.activeProjectID,
+            health: ConnectionHealthReading(connections: []),
             actions: .inert,
         )
     }
