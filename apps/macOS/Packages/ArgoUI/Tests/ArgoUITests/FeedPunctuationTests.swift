@@ -158,6 +158,20 @@ struct FeedPunctuationTests {
         #expect(marks.contains(.excerpted))
     }
 
+    /// The pair the `feedExcerpted` still is drawn from, held against each other: the SEAM is what
+    /// takes the roll-up away, not the fixture happening to report nothing. Without it the same two
+    /// ends do carry a figure — and it is the misleading one, being their sum.
+    @Test
+    func `the seam is what takes the roll-up away, not the fixture`() {
+        let bounded = FeedFixture.marks(in: FeedProjection.previewExcerptedRows)
+        let whole = FeedFixture.marks(
+            in: FeedProjection.rows(from: FeedProjection.previewWholeOfExcerptEvents),
+        )
+
+        #expect(!bounded.contains(where: isSpend))
+        #expect(whole.contains(where: isSpend))
+    }
+
     /// A run of reads reaching across a turn boundary would put looking from two different turns
     /// behind one count.
     @Test

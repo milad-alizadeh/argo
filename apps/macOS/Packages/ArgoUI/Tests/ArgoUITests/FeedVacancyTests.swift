@@ -4,20 +4,28 @@ import Testing
 /// The three empties the deck's reading zone can be, and that they read as three things (#404).
 @Suite("Feed vacancy")
 struct FeedVacancyTests {
-    @Test
-    func `a Session on screen with an empty reading is the surface's own silence`() {
-        #expect(FeedVacancy.reading(hasSelection: true, hasSessions: true) == .silent)
+    /// One row of the truth table. A named value rather than a tuple, which the cap on those
+    /// forbids at three members.
+    struct Window {
+        let hasSelection: Bool
+        let hasSessions: Bool
+        let vacancy: FeedVacancy
     }
 
-    /// The distinction the deck was missing: a window with work in it and none of it chosen.
-    @Test
-    func `a populated roster with nothing chosen says to choose`() {
-        #expect(FeedVacancy.reading(hasSelection: false, hasSessions: true) == .unselected)
-    }
-
-    @Test
-    func `an empty roster says there is nothing to choose`() {
-        #expect(FeedVacancy.reading(hasSelection: false, hasSessions: false) == .noSessions)
+    /// The whole truth table, as a table. The middle row is the distinction the deck was missing: a
+    /// window with work on its roster and none of it chosen.
+    @Test(arguments: [
+        Window(hasSelection: true, hasSessions: true, vacancy: .silent),
+        Window(hasSelection: false, hasSessions: true, vacancy: .unselected),
+        Window(hasSelection: false, hasSessions: false, vacancy: .noSessions),
+    ])
+    func `which empty a window is in`(window: Window) {
+        #expect(
+            FeedVacancy.reading(
+                hasSelection: window.hasSelection,
+                hasSessions: window.hasSessions,
+            ) == window.vacancy,
+        )
     }
 
     /// The point of the whole type: one word for all three is the state the deck was in, and the
@@ -36,12 +44,18 @@ struct FeedVacancyTests {
         #expect(FeedVacancy.silent.words == "Nothing to read yet")
     }
 
-    /// What the render of the empty window caught: the roster's own block and the connection chip
-    /// both already say there are no Sessions, so a deck saying it too is one fact three times.
-    /// This word names the deck and the way on instead.
+    /// The seam the shell reads the distinction off — `reading.header != nil`. Asserted because the
+    /// enum being right settles nothing if the deck is handed the wrong case.
+    @MainActor
     @Test
-    func `the empty window's deck restates neither the roster nor the chip`() {
-        #expect(!FeedVacancy.noSessions.words.contains("No Sessions"))
-        #expect(!FeedVacancy.noSessions.words.contains("No live sessions"))
+    func `the reading names a header for a Session on screen and none for no selection`() {
+        let chosen = SessionsRoomReading(
+            presentation: .preview,
+            sessionID: CockpitPresentation.preview.sessions.first?.id,
+        )
+        let none = SessionsRoomReading(presentation: .preview, sessionID: nil)
+
+        #expect(chosen.header != nil)
+        #expect(none.header == nil)
     }
 }

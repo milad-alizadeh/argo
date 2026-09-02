@@ -3,10 +3,6 @@ import SwiftUI
 /// Why the deck has nothing to read — the three situations a blank feed zone can be in, which one
 /// word cannot tell apart.
 ///
-/// A window with Sessions and none chosen is not a window with no Sessions in it, and neither is a
-/// chosen Session that has said nothing. Drawn alike they read as one thing, and the one they read
-/// as is the most broken of the three (#404 AC1).
-///
 /// Two of the three are facts about the WINDOW rather than about a transcript, which is why the
 /// value reaches `FeedSilence` through the environment: the rows cannot carry a claim about the
 /// roster beside them.
@@ -36,11 +32,9 @@ enum FeedVacancy: Equatable, Sendable {
     /// `silent` is a claim about the SURFACE and not about the Session — an agent can be busy in
     /// kinds this feed does not draw yet, so "nothing said" would be a reading of the record.
     ///
-    /// `noSessions` names the DECK and the way on rather than restating the absence: an empty
-    /// window already says "No Sessions yet" in the roster's own block, and it said it a third time
-    /// in the connection chip — three statements of one fact, which is what the render of this
-    /// state caught (#404). `unselected` is the one word in its window doing any work, which is why
-    /// it is the one that points at the rail.
+    /// `noSessions` may not restate the absence: `SessionNavigator`'s own empty block and the
+    /// connection chip both already say there are no Sessions, so a third saying names the DECK
+    /// and the way on instead.
     var words: String {
         switch self {
         case .silent: "Nothing to read yet"

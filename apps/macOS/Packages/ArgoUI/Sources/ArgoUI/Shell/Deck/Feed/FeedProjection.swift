@@ -81,12 +81,10 @@ enum FeedProjection {
     /// BOTH grains: the turns' own spend, and the delegated spend that only ever appears on the
     /// call that handed the work over. Summed from what the record reported and nothing else.
     ///
-    /// Nothing at all on a BOUNDED reading — the same withholding `HubSession` and the header make
-    /// (`SessionHeaderProjection+Spend`): a sum over the two ends of a record leaves out whatever
-    /// the missing stretch spent, and this row renders it as the Session's whole cost. Read off the
-    /// seam's own event, which is the one fact about the extent the feed is handed.
+    /// Nothing at all on a BOUNDED reading — the withholding named once, on the predicate, and
+    /// spent here and by the header alike (`[TranscriptEvent].isBoundedReading`).
     private static func rolledUp(_ events: [TranscriptEvent]) -> [FeedRow.Content] {
-        guard !events.contains(.excerpted) else { return [] }
+        guard !events.isBoundedReading else { return [] }
         let spent = events.reduce(nil) { running, event -> Usage? in
             Usage.total(running, reported(in: event))
         }

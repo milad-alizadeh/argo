@@ -42,13 +42,12 @@ extension CockpitView {
         // Why the deck has nothing to read, where an empty feed alone cannot say. The header is
         // what answers "did a Session resolve" — it is `nil` exactly when the selection named
         // none — so this costs no second lookup into a roster that moves under an id (#957).
-        .environment(
-            \.argoFeedVacancy,
-            .reading(
-                hasSelection: reading.header != nil,
-                hasSessions: !presentation.sessions.isEmpty,
-            ),
-        )
+        //
+        // `sessions` and not the rail's own two lists: `SessionRosterProjection` PARTITIONS them on
+        // `isArchived`, so this is the same question `SessionNavigator` asks with
+        // `rows.isEmpty, archived.isEmpty`. An archived-only roster is `unselected` deliberately —
+        // the foot's rows are selectable, so there IS a Session to point the reader at.
+        .environment(\.argoFeedVacancy, vacancy(in: navigation.room, of: reading))
         .overlay(alignment: .topLeading) {
             ConnectionChips(
                 connection: presentation.connection,
@@ -70,5 +69,24 @@ extension CockpitView {
             )
             roomToolbar(tickets: tickets)
         }
+    }
+
+    /// Why the deck has nothing to read, where an empty feed alone cannot say — see `FeedVacancy`.
+    ///
+    /// The header answers "did a Session resolve": it is `nil` exactly when the selection named
+    /// none, so this costs no second lookup into a roster that moves under an id (#957). Which also
+    /// makes it the wrong reading in the rooms that TAKE no reading, where it is `nil` beside a
+    /// Session that is very much selected — hence the room gate.
+    ///
+    /// `sessions` and not the rail's own two lists: `SessionRosterProjection` PARTITIONS them on
+    /// `isArchived`, so this asks what `SessionNavigator` asks with `rows.isEmpty` and
+    /// `archived.isEmpty`. An archived-only roster reads `unselected` deliberately — there IS a
+    /// Session to point the reader at, behind the foot.
+    private func vacancy(in room: CockpitRoom, of reading: SessionsRoomReading) -> FeedVacancy {
+        guard room == .sessions else { return .silent }
+        return .reading(
+            hasSelection: reading.header != nil,
+            hasSessions: !presentation.sessions.isEmpty,
+        )
     }
 }
