@@ -94,7 +94,6 @@ function_parameter_count:
   # INIT: TicketPoll.swift 5 — the poll's port, its clock and its sink
   # INIT: LiveClaudeFixture.swift 5 — a live-CLI fixture's collaborators
   # INIT: CockpitPresentation.swift 5 — the cockpit reading's parts
-  # INIT: CockpitPresentation+SessionValues.swift 5 — which CLI is running, and since when
   # INIT: ComposerSpecimen.swift 5 — the composer specimen's inputs
   # INIT: TextRoles.swift 5 — one colour per text role
 

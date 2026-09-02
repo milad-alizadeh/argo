@@ -20,7 +20,10 @@ public final class CompanionChannel {
 
     private let scope: CompanionScope
     private let onFact: (SessionOwnership.ClaimID, CompanionFact) -> Void
+    private let onLiveness: (SessionOwnership.ClaimID, CompanionLiveness) -> Void
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
+    /// What `dropped` rests on (#493).
+    private var dials = CompanionDialLog()
     /// The last invite that failed, in its refusal's own words; cleared by the next success.
     private var lastRefusal: String?
 
@@ -40,12 +43,16 @@ public final class CompanionChannel {
         return .installFailed(why: lastRefusal)
     }
 
+    /// Two callbacks because they are two tiers: `onFact` is what the agent SAID (CONVENTION),
+    /// `onLiveness` is what the socket DID (DIRECT).
     init(
         scope: CompanionScope,
+        onLiveness: @escaping (SessionOwnership.ClaimID, CompanionLiveness) -> Void = { _, _ in },
         onFact: @escaping (SessionOwnership.ClaimID, CompanionFact) -> Void,
     ) {
         self.scope = scope
         self.onFact = onFact
+        self.onLiveness = onLiveness
     }
 
     /// Open this claim's channel and write the plugin that reaches it. `gatedBy` names the
@@ -80,21 +87,38 @@ public final class CompanionChannel {
             gatedBy: permissionSocketPath,
         )
         let endpoint = CompanionEndpoint { [weak self] fact in self?.onFact(claim, fact) }
-        let socket = CompanionSocket(path: socketPath) { line in
-            guard let request = CompanionRequest(line: line),
-                  let reply = endpoint.respond(to: request)
-            else { return nil }
-            return CompanionResponse.line(reply)
-        }
+        let socket = CompanionSocket(
+            path: socketPath,
+            onPeersChanged: { [weak self] peers in self?.observe(peers: peers, of: claim) },
+            respond: { line in
+                guard let request = CompanionRequest(line: line),
+                      let reply = endpoint.respond(to: request)
+                else { return nil }
+                return CompanionResponse.line(reply)
+            },
+        )
         try socket.open()
         sockets[claim] = socket
+        // There and unreached, which the cockpit renders rather than staying quiet about.
+        onLiveness(claim, dials.opened(claim))
         return invitation
     }
 
     /// The PTY is gone, so the channel is too: the socket closes and the plugin that named it goes
     /// with it. Ownership does not come back, and neither does this.
     func withdraw(_ claim: SessionOwnership.ClaimID) {
-        sockets.removeValue(forKey: claim)?.close()
+        let channel = sockets.removeValue(forKey: claim)
+        channel?.close()
+        // Before the guard, and unconditional: an invite whose socket failed to open leaves a
+        // plugin directory behind and no socket to find it by.
         CompanionPlugin.remove(forClaim: claim, under: scope.root)
+        // A claim that never had a channel gets no reading — filing one would be the false DIRECT.
+        guard channel != nil else { return }
+        onLiveness(claim, dials.closed(claim))
+    }
+
+    /// Published on every change rather than remembered here: the ledger is what the roster reads.
+    private func observe(peers: Int, of claim: SessionOwnership.ClaimID) {
+        onLiveness(claim, dials.peers(peers, of: claim))
     }
 }

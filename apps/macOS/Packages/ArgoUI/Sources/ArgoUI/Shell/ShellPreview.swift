@@ -1,13 +1,4 @@
 import ArgoEngine
-import Foundation
-
-extension CockpitPresentation {
-    /// Measured back from whenever the preview is read: a fixed stamp would age into `3y ago`
-    /// on every row. Shared with the specimens, which need the same moving `now`.
-    static func minutesAgo(_ minutes: Int) -> Int {
-        Date().epochMs - minutes * 60 * 1000
-    }
-}
 
 public extension CockpitPresentation {
     /// Public so the app target can preview against it: anything the system accent drives renders
@@ -41,10 +32,9 @@ public extension CockpitPresentation {
                 access: .managed,
                 status: .running,
                 chain: .init(
-                    cli: .claude,
-                    model: "claude-opus-5",
+                    program: .init(cli: .claude, model: "claude-opus-5"),
                     // A time it will not draw: the age is suppressed by the status.
-                    lastSeenAtMs: minutesAgo(0),
+                    span: .init(lastSeenAtMs: minutesAgo(0)),
                 ),
                 work: .init(
                     location: "/Users/milad/Developer/argo/.claude/worktrees/"
@@ -65,7 +55,10 @@ public extension CockpitPresentation {
                 title: "Port the session engine core to Swift",
                 access: .managed,
                 status: .permission,
-                chain: .init(cli: .claude, model: "codex", lastSeenAtMs: minutesAgo(4)),
+                chain: .init(
+                    program: .init(cli: .claude, model: "codex"),
+                    span: .init(lastSeenAtMs: minutesAgo(4)),
+                ),
                 work: .init(
                     // The Project's own checkout: the one workspace the roster draws no label for.
                     location: "/Users/milad/Experiments/argo",
@@ -96,9 +89,8 @@ public extension CockpitPresentation {
                 access: .managed,
                 status: .idle,
                 chain: .init(
-                    cli: .claude,
-                    model: "claude-sonnet-4",
-                    lastSeenAtMs: minutesAgo(3 * 60),
+                    program: .init(cli: .claude, model: "claude-sonnet-4"),
+                    span: .init(lastSeenAtMs: minutesAgo(3 * 60)),
                 ),
                 work: .init(
                     location: "/Users/milad/Developer/cockpit",
@@ -111,7 +103,10 @@ public extension CockpitPresentation {
                 title: "Repair the failed native build",
                 access: .managed,
                 status: .stopped,
-                chain: .init(cli: .claude, model: "codex", lastSeenAtMs: minutesAgo(2 * 24 * 60)),
+                chain: .init(
+                    program: .init(cli: .claude, model: "codex"),
+                    span: .init(lastSeenAtMs: minutesAgo(2 * 24 * 60)),
+                ),
                 work: .init(
                     // Long AND aged, deliberately: a real worktree name must truncate rather than
                     // push the age off the line.
@@ -142,7 +137,7 @@ public extension CockpitPresentation {
                 title: "Ship the native Liquid Glass application shell",
                 access: .managed,
                 status: .running,
-                chain: .init(cli: .claude, model: "claude-opus-5"),
+                chain: .init(program: .init(cli: .claude, model: "claude-opus-5")),
                 work: .init(
                     location: "/Users/milad/Developer/argo",
                     workspace: .init(kind: .worktree, branch: "argo/#376-native-shell"),
@@ -155,7 +150,7 @@ public extension CockpitPresentation {
                 title: "Port the session engine core to Swift",
                 access: .managed,
                 status: .idle,
-                chain: .init(cli: .claude, model: "codex"),
+                chain: .init(program: .init(cli: .claude, model: "codex")),
                 work: .init(
                     location: "/Users/milad/Experiments/argo",
                     workspace: .init(kind: .main, branch: "main"),

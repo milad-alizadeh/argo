@@ -23,7 +23,7 @@ struct FeedAskProjectionTests {
             title: "A Session",
             access: access,
             status: ask == nil ? .idle : .asking,
-            chain: .init(model: "claude-opus-5"),
+            chain: .init(program: .init(model: "claude-opus-5")),
             work: .init(location: "/repo"),
             autonomy: .init(ask: ask),
             transcript: .init(events: [.toolCall(FeedFixture.asking(Self.question))]),

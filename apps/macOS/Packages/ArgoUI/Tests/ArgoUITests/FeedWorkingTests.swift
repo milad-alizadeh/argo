@@ -19,7 +19,7 @@ struct FeedWorkingTests {
             title: "New session",
             access: access,
             status: status,
-            chain: .init(cli: .claude),
+            chain: .init(program: .init(cli: .claude)),
             work: .init(location: "/Users/milad/Developer/argo"),
             transcript: .init(events: events),
         )

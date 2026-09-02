@@ -18,10 +18,21 @@ private let listenBacklog = Int32(SOMAXCONN)
 /// and its path is handed to exactly one spawn.
 @MainActor
 final class CompanionSocket {
+    /// How a socket answers, and what it says about its peers. One value, so every callback is a
+    /// `let` set before `open` and none can be attached after a client could already have dialled.
+    struct Handlers {
+        /// Each line, with the peer it came down and a reply that may be held across a decision.
+        let respond: (String, Int, @escaping CompanionConnection.Reply) -> Void
+        /// One peer went — answered or not, which is the caller's to tell.
+        var onPeerClosed: (Int) -> Void = { _ in }
+        /// A peer arrived or went, with how many hold the socket afterwards. The only news anybody
+        /// has about whether this socket is being spoken down (#493).
+        var onPeersChanged: (Int) -> Void = { _ in }
+    }
+
     let path: String
-    private let respond: (String, Int, @escaping CompanionConnection.Reply) -> Void
+    private let handlers: Handlers
     private let endsAfterReply: Bool
-    private let onPeerClosed: (Int) -> Void
     private var descriptor: Int32 = -1
     private var source: DispatchSourceRead?
     private var connections: [Int: CompanionConnection] = [:]
@@ -44,27 +55,27 @@ final class CompanionSocket {
         weak var socket: CompanionSocket?
     }
 
-    /// The full shape: each line arrives with the peer it came down and a reply that can be held
-    /// open across a decision; `endsAfterReply` makes the first reply also the last, and
-    /// `onPeerClosed` says when a peer went — answered or not, which is the caller's to tell.
-    init(
-        path: String,
-        endsAfterReply: Bool = false,
-        onPeerClosed: @escaping (Int) -> Void = { _ in },
-        respond: @escaping (String, Int, @escaping CompanionConnection.Reply) -> Void,
-    ) {
+    /// `endsAfterReply` makes the first reply also the last — the hook channel's one-exchange
+    /// lifecycle.
+    init(path: String, endsAfterReply: Bool = false, handlers: Handlers) {
         self.path = path
         self.endsAfterReply = endsAfterReply
-        self.onPeerClosed = onPeerClosed
-        self.respond = respond
+        self.handlers = handlers
     }
 
     /// The companion channel's own shape: one line in, at most one answer out, decided in place.
-    convenience init(path: String, respond: @escaping (String) -> String?) {
-        self.init(path: path) { line, _, reply in
-            guard let answer = respond(line) else { return }
-            reply(answer)
-        }
+    convenience init(
+        path: String,
+        onPeersChanged: @escaping (Int) -> Void = { _ in },
+        respond: @escaping (String) -> String?,
+    ) {
+        self.init(path: path, handlers: Handlers(
+            respond: { line, _, reply in
+                guard let answer = respond(line) else { return }
+                reply(answer)
+            },
+            onPeersChanged: onPeersChanged,
+        ))
     }
 
     /// Bind and start accepting. Throws rather than degrading, because a spawn that went ahead
@@ -96,6 +107,8 @@ final class CompanionSocket {
         source = nil
         descriptor = -1
         let closing = connections.values
+        // No `onPeersChanged` with it: this end is what is going, so "no clients left" would read
+        // as a peer having hung up. The channel states the withdrawal's own reading (#493).
         connections = [:]
         for connection in closing {
             connection.close()
@@ -162,16 +175,18 @@ final class CompanionSocket {
         let connection = CompanionConnection(
             descriptor: client,
             endsAfterReply: endsAfterReply,
-            respond: { [weak self] line, reply in self?.respond(line, key, reply) },
+            respond: { [weak self] line, reply in self?.handlers.respond(line, key, reply) },
             onClose: { [weak self] in self?.drop(key) },
         )
         connections[key] = connection
         connection.open()
+        handlers.onPeersChanged(connections.count)
     }
 
     private func drop(_ key: Int) {
         guard let connection = connections.removeValue(forKey: key) else { return }
         connection.close()
-        onPeerClosed(key)
+        handlers.onPeersChanged(connections.count)
+        handlers.onPeerClosed(key)
     }
 }

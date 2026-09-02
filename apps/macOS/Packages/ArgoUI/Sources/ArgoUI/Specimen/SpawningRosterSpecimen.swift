@@ -37,7 +37,10 @@ struct SpawningRosterSpecimen: View {
             title: Self.provisionalTitle,
             access: .managed,
             status: .idle,
-            chain: .init(cli: .claude, lastSeenAtMs: CockpitPresentation.minutesAgo(0)),
+            chain: .init(
+                program: .init(cli: .claude),
+                span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(0)),
+            ),
             work: .init(location: presentation.activeProject?.location),
         )
         presentation = CockpitPresentation(

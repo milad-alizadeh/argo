@@ -107,6 +107,9 @@ public extension CockpitPresentation {
         /// within one). Absent for every Session that has not handed off, which is nearly all of
         /// them.
         public let handedOffTo: String?
+        /// Whether the companion channel this Session's CONVENTION-tier facts arrive over is up
+        /// (#493). `notApplicable` draws NOTHING rather than a negative claim.
+        public let companionChannel: CompanionLiveness
         /// Whether the user cleared this Session off the roster. Argo's own fact and not a
         /// reading of anything (`CONTEXT.md` "Storage & ownership"): nothing observed sets it,
         /// which is why new activity on an archived Session leaves it archived (#502, story 16)
@@ -178,6 +181,7 @@ public extension CockpitPresentation {
             self.lastSeenAtMs = chain.lastSeenAtMs
             self.startedAtMs = chain.startedAtMs
             self.handedOffTo = chain.handedOffTo
+            self.companionChannel = chain.companionChannel
             self.workspaceLocation = work.location
             self.workspace = work.workspace
             self.ticket = work.ticket

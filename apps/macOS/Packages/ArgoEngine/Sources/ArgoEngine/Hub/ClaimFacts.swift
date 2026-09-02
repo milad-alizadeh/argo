@@ -8,6 +8,10 @@ import Foundation
 struct ClaimFacts: Equatable {
     /// The CONVENTION tier, and the only place it comes from.
     var report: CompanionReport?
+    /// Whether the channel that tier arrives over is up (#493). Kept when the claim is withdrawn,
+    /// unlike the report's own standing claims: a channel that dropped is a thing that HAPPENED, so
+    /// it holds this entry in the ledger the way `ticket` and `modeSet` already do.
+    var companionLiveness: CompanionLiveness = .notApplicable
     /// The Permissions this claim's agent is blocked on, oldest first.
     var waiting: [PermissionRequest] = []
     /// The questions it is blocked on (#712), oldest first. Apart from `waiting` because the two
@@ -38,6 +42,7 @@ struct ClaimFacts: Equatable {
     /// entry keeps it alive there long after the PTY behind it went.
     var isEmpty: Bool {
         (report?.isEmpty ?? true)
+            && companionLiveness == .notApplicable
             && waiting.isEmpty
             && asking.isEmpty
             && standing.isEmpty

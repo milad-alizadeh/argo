@@ -57,7 +57,7 @@ struct SessionHeaderTooltipTests {
             title: "A Session nothing was spent on",
             access: .managed,
             status: .idle,
-            chain: .init(cli: .claude, model: "claude-opus-5"),
+            chain: .init(program: .init(cli: .claude, model: "claude-opus-5")),
         ))
 
         #expect(header.spend == nil)
@@ -90,10 +90,8 @@ struct SessionHeaderTooltipTests {
             access: access,
             status: .idle,
             chain: .init(
-                cli: .claude,
-                model: "claude-opus-5",
-                startedAtMs: 0,
-                lastSeenAtMs: 3_600_000,
+                program: .init(cli: .claude, model: "claude-opus-5"),
+                span: .init(startedAtMs: 0, lastSeenAtMs: 3_600_000),
             ),
             work: .init(
                 location: "/Users/milad/Developer/argo",

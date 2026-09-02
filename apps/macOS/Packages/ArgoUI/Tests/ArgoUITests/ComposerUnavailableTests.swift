@@ -146,7 +146,7 @@ struct ComposerUnavailableTests {
             title: "Graphite and Ion Blue across the shell",
             access: access,
             status: status,
-            chain: .init(cli: .claude, model: "claude-opus-5"),
+            chain: .init(program: .init(cli: .claude, model: "claude-opus-5")),
             autonomy: .init(permission: permission),
         )
     }

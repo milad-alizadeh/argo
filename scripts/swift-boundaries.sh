@@ -21,6 +21,11 @@ PROJECTION="$UI_SOURCES/ArgoUI/Shell/$PROJECTION_FILE"
 # wrong slot, and the edge below reads both files for that reason.
 PROJECTED_FILE="CockpitPresentation+Session.swift"
 PROJECTED="$UI_SOURCES/ArgoUI/Shell/$PROJECTED_FILE"
+# The grouped values the projected init takes, one per reading. A group whose OWN init unpacks
+# facts onto slots is a third hand, and a fact dropped on the wrong slot there reaches the two
+# files above already swapped — so this one is read for the slot check too (#1051).
+VALUES_FILE="CockpitPresentation+SessionValues.swift"
+VALUES="$UI_SOURCES/ArgoUI/Shell/$VALUES_FILE"
 HUB_SESSION="$ENGINE_SOURCES/Hub/HubSession.swift"
 SWIFTLINT_CONFIG="$APP_DIR/.swiftlint.yml"
 
@@ -144,10 +149,11 @@ mapped() {
     | cut -d. -f2 | sort -u
 }
 
-if [ ! -f "$HUB_SESSION" ] || [ ! -f "$PROJECTION" ] || [ ! -f "$PROJECTED" ]; then
-  report "edge 5 cannot see its own subjects — HubSession.swift, $PROJECTION_FILE or $PROJECTED_FILE has moved" \
-    "Point HUB_SESSION, PROJECTION and PROJECTED at their new homes. An edge whose input is" \
-    "missing checks nothing, and nothing else in this repo would notice."
+if [ ! -f "$HUB_SESSION" ] || [ ! -f "$PROJECTION" ] || [ ! -f "$PROJECTED" ] ||
+  [ ! -f "$VALUES" ]; then
+  report "edge 5 cannot see its own subjects — HubSession.swift, $PROJECTION_FILE, $PROJECTED_FILE or $VALUES_FILE has moved" \
+    "Point HUB_SESSION, PROJECTION, PROJECTED and VALUES at their new homes. An edge whose input" \
+    "is missing checks nothing, and nothing else in this repo would notice."
 else
   facts=$(hub_facts)
   dropped=$(not_projected)
@@ -185,8 +191,9 @@ else
   # 5b. And a fact handed straight through lands on the slot of its OWN name. Totality proves a
   #     fact was mentioned, never that it reached the right field, so `spentTokens:
   #     session.cachedTokens` is a swap both halves above call accounted for (#755). A fact crosses
-  #     two hands — named into the init, then unpacked out of a value in its body — and either hand
-  #     can drop it on the wrong slot, so both files are read. Only the verbatim slots are checked:
+  #     three hands — named into the init, unpacked out of a value in its body, and unpacked again
+  #     inside a group whose own init takes sub-groups — and any hand can drop it on the wrong slot,
+  #     so all three files are read (#1051). Only the verbatim slots are checked:
   #     an argument that is a whole expression is a derivation, and its name is the projection's.
   verbatim_pairs=$(
     awk "$AWK_READER"'
@@ -213,12 +220,12 @@ else
           if (slot != fact) print slot " <- " fact
         }
       }
-    ' "$PROJECTION" "$PROJECTED" | sort -u
+    ' "$PROJECTION" "$PROJECTED" "$VALUES" | sort -u
   )
   # The first two names on a marker line; whatever follows is prose.
   declared_renames=$(
     sed -nE 's/^.*renamed:[[:space:]]*([A-Za-z0-9_]+)[[:space:]]*<-[[:space:]]*([A-Za-z0-9_]+).*/\1 <- \2/p' \
-      "$PROJECTION" "$PROJECTED" | sort -u
+      "$PROJECTION" "$PROJECTED" "$VALUES" | sort -u
   )
 
   hits=$(printf '%s\n' "$verbatim_pairs" | grep -v '^$' | grep -vxF "$declared_renames" || true)
@@ -226,9 +233,9 @@ else
     report "these facts land on a slot of another name in the projection (ADR-0027, #755)" \
       "$hits" \
       "A fact passed straight through takes the slot of its own name, or the projection says why" \
-      "not: add a \`renamed: <slot> <- <fact> — <why>\` line beside it, in $PROJECTION_FILE or" \
-      "$PROJECTED_FILE. This is the check that catches two same-typed facts swapped, which no type" \
-      "and no totality check can."
+      "not: add a \`renamed: <slot> <- <fact> — <why>\` line beside it, in $PROJECTION_FILE," \
+      "$PROJECTED_FILE or $VALUES_FILE. This is the check that catches two same-typed facts" \
+      "swapped, which no type and no totality check can."
   fi
 
   hits=$(printf '%s\n' "$declared_renames" | grep -v '^$' | grep -vxF "$verbatim_pairs" || true)

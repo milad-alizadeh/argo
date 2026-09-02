@@ -29,6 +29,12 @@ final class ClaimLedger {
         }
     }
 
+    /// Where the channel that tier arrives over stands (#493). Its own publish, not part of the
+    /// fold above: two tiers, two writes.
+    func publish(companionLiveness: CompanionLiveness, for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.companionLiveness = companionLiveness }
+    }
+
     func publish(waiting: [PermissionRequest], for claim: SessionOwnership.ClaimID) {
         update(claim) { $0.waiting = waiting }
     }

@@ -165,7 +165,7 @@ struct SessionHeaderProjectionTests {
             title: title,
             access: access,
             status: status,
-            chain: .init(cli: .claude, model: "claude-opus-5"),
+            chain: .init(program: .init(cli: .claude, model: "claude-opus-5")),
             work: .init(location: "/Users/milad/Developer/argo", workspace: .init(branch: "main")),
         )
     }

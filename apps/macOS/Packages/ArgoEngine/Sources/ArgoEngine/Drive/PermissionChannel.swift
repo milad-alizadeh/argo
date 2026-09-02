@@ -77,10 +77,12 @@ final class PermissionChannel {
         let socket = CompanionSocket(
             path: path,
             endsAfterReply: true,
-            onPeerClosed: { [weak self] peer in self?.peerClosed(claim, peer: peer) },
-            respond: { [weak self] line, peer, reply in
-                self?.asked(claim, line: line, peer: peer, reply: reply)
-            },
+            handlers: CompanionSocket.Handlers(
+                respond: { [weak self] line, peer, reply in
+                    self?.asked(claim, line: line, peer: peer, reply: reply)
+                },
+                onPeerClosed: { [weak self] peer in self?.peerClosed(claim, peer: peer) },
+            ),
         )
         try socket.open()
         sockets[claim] = socket
