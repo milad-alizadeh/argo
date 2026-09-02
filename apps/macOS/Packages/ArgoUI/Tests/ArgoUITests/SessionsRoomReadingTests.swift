@@ -72,6 +72,24 @@ struct SessionsRoomReadingTests {
         #expect((reading.header != nil) == reads)
     }
 
+    /// A boot ending appends no event, so the stamp has to carry the status itself: without it the
+    /// cache answers a booted Session with the reading it took while it was starting, and the
+    /// `starting the agent` row stands over an agent that is at its prompt (#587).
+    @Test
+    func `a boot ending is a fresh reading, not the one the cache holds`() {
+        let starting = SessionsRoomReading(
+            presentation: Self.presentation(status: .starting),
+            sessionID: "one",
+        )
+        let booted = SessionsRoomReading(
+            presentation: Self.presentation(status: .idle),
+            sessionID: "one",
+        )
+
+        #expect(starting.feed.map(\.content) == [.mark(.starting)])
+        #expect(booted.feed.isEmpty)
+    }
+
     private static let transcript = TranscriptFixtures.previewTranscript
 
     private static func reading(events: [TranscriptEvent]) -> SessionsRoomReading {
@@ -91,14 +109,25 @@ struct SessionsRoomReadingTests {
     private static func session(
         id: String,
         events: [TranscriptEvent],
+        status: SessionStatus = .idle,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
             id: id,
             title: id,
             access: .managed,
-            status: .idle,
+            status: status,
             transcript: .init(events: events),
+        )
+    }
+
+    private static func presentation(status: SessionStatus) -> CockpitPresentation {
+        CockpitPresentation(
+            projects: [],
+            activeProjectID: nil,
+            sessions: [session(id: "one", events: [], status: status)],
+            checkout: .unavailable,
+            connection: .idle,
         )
     }
 }

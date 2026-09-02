@@ -97,6 +97,12 @@ own sessions across a restart. Managed = external + PTY steering + CONVENTION ch
 **Orphaned is a posture, not a kind.** Adding a fourth stored classification would imply Argo
 could restore steering by writing a value down; it can't — the channel died with the process.
 
+**`starting` is a status because the SIGNAL is real, not because the wait is.** #585 declined to
+report a spawn's boot at all: the only fact on hand was "managed and nothing written yet", which
+has no end, and a wall-clock timer would have been a guess wearing an observation's clothes. What
+made it a term was Argo owning the PTY — the child's first bytes are DIRECT, and a claim with an
+end Argo witnessed is a state rather than a spinner (#587).
+
 **`SessionFacts` dissolved.** Naming it as an entity would duplicate the homes its members
 already have (Workspace / Delivery / Session status) and invite drift. What is real is the
 honesty tier on each fact, not the bundle.

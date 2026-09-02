@@ -28,6 +28,9 @@ struct SessionRosterProjectionTests {
         // `Stopped` means the Turn ended short, not that anything crashed; `ended` is a
         // cancelled or exited Session and reads idle.
         let expected: [(status: SessionStatus, word: String?)] = [
+            // The boot spends no word for the reason `running` and `idle` do not: the dot carries
+            // it, and the feed is where a starting Session is spelled out (#587).
+            (.starting, nil),
             (.running, nil),
             (.permission, "Needs input"),
             (.asking, "Needs input"),
@@ -73,7 +76,7 @@ struct SessionRosterProjectionTests {
         // `allCases`, so a status added to the domain fails here rather than taking whichever
         // colour the mapping's last branch happens to be.
         #expect(rows(of: SessionStatus.allCases).map(\.state) == [
-            .running, .attention, .attention, .idle, .failure, .idle, nil,
+            .idle, .running, .attention, .attention, .idle, .failure, .idle, nil,
         ])
     }
 

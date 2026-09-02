@@ -33,7 +33,9 @@ struct FeedWorkingTests {
 
     /// The whole point of the row. Every one of these is a Session that is NOT in flight, and a
     /// live-looking foot under any of them would be a claim nothing observed.
-    @Test(arguments: [SessionStatus.idle, .permission, .asking, .stopped, .ended, .unknown])
+    @Test(arguments: [
+        SessionStatus.idle, .permission, .asking, .stopped, .ended, .unknown, .starting,
+    ])
     func `a Session that is not running says nothing about what it is doing`(
         status: SessionStatus,
     ) {
@@ -41,13 +43,64 @@ struct FeedWorkingTests {
         #expect(!FeedWorking.isWorking(session))
     }
 
-    /// The state this row deliberately does NOT claim. Argo owns the spawn but nothing tells it
-    /// when the CLI finished booting — the record does not appear until the first prompt — so a
-    /// managed Session with an empty reading is the engine's `idle` and stays it. A `starting…`
-    /// row here would stand over a booted agent for the rest of the window's life.
+    /// The state this row deliberately does NOT claim off an empty reading. "Managed and nothing
+    /// written yet" would stand over a booted agent for the rest of the window's life, because the
+    /// record does not appear until the first prompt — so the boot is read off the PTY instead,
+    /// and an empty reading on its own is the engine's `idle` and stays it (#587).
     @Test
     func `a spawned Session that has written nothing is not working`() {
         #expect(!FeedWorking.isWorking(Self.session()))
+        #expect(!FeedWorking.isStarting(Self.session()))
+    }
+
+    /// The claim that HAS an end: `starting` is the engine's, made off bytes Argo witnessed on a
+    /// PTY it owns, and it stops the moment those bytes arrive.
+    @Test
+    func `a Session the engine reads as starting says so`() {
+        #expect(FeedWorking.isStarting(Self.session(status: .starting)))
+    }
+
+    /// Every other status, the running one included: a boot is a claim about a process, and no
+    /// other status is evidence of one.
+    @Test(arguments: [
+        SessionStatus.running, .idle, .permission, .asking, .stopped, .ended, .unknown,
+    ])
+    func `no other status is read as a boot`(status: SessionStatus) {
+        #expect(!FeedWorking.isStarting(Self.session(status: status)))
+    }
+
+    @Test
+    func `no Session selected is not a Session starting`() {
+        #expect(!FeedWorking.isStarting(nil))
+    }
+
+    /// The row this state exists for: a spawn's reading is empty by construction, so without it
+    /// the feed draws `FeedSilence` — true, and identical to what a booted Session waiting at its
+    /// prompt draws.
+    @Test
+    func `the boot is the whole of a spawn's reading`() {
+        let rows = FeedProjection.rows(from: [], starting: true)
+
+        #expect(rows.map(\.content) == [.mark(.starting)])
+    }
+
+    @Test
+    func `a reading nothing is booting keeps the silence it had`() {
+        #expect(FeedProjection.rows(from: []).isEmpty)
+    }
+
+    /// On screen and to a reader both, because a hairline with nothing in it already means a Turn
+    /// ended — this state cannot borrow the working thread's silence.
+    @Test
+    func `the boot says what it is waiting for`() {
+        #expect(FeedMark.starting.words == "starting the agent")
+        #expect(FeedMark.starting.spoken == "The agent is starting")
+    }
+
+    /// A boot is not a Turn boundary, whatever a rule across the column looks like.
+    @Test
+    func `the boot ends no Turn`() {
+        #expect(!FeedMark.starting.endsTurn)
     }
 
     /// Read off the status and nothing else, so an external Session gets the row on exactly the

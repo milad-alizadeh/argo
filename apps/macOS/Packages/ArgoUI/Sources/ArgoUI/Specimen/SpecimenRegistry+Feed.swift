@@ -105,6 +105,12 @@ extension SpecimenRegistry {
         // A row arriving at the end must not move the row somebody is looking at.
         SpecimenEntry("feedArriving") { ArrivingFeedSpecimen() },
         SpecimenEntry("emptyFeed") { SpecimenScene.sessions([]) },
+        // The same empty reading over a CLI that has not spoken yet. The pair is the whole claim:
+        // one of these says nothing has been said and the other says why, and before #587 both
+        // drew the first (`FeedWorking`).
+        SpecimenEntry("startingFeed") {
+            SpecimenScene.sessions(FeedProjection.rows(from: [], starting: true))
+        },
         // A record read at its two ends, with the seam where its middle is missing (#404 AC4). The
         // whole deck rather than the rows alone: what the still has to settle is that the rule
         // carries between two turns of ordinary work, and that no spend is rolled up at the foot

@@ -13,6 +13,14 @@ struct AgentSpawn: Sendable, Equatable {
     /// moment it appears rather than from the moment its CLI writes a record.
     var ticket: Int?
 
+    /// When the child first wrote to the PTY, and absent until it has (#587). DIRECT: Argo owns
+    /// the descriptor these bytes came out of, so this is a fact it witnessed about a process it
+    /// started — the one thing that says the boot the spawn opened is over.
+    ///
+    /// It is a MOMENT rather than a flag because absence is the whole of what it says while it is
+    /// absent, and a spawn that has spoken is asked no second question about when.
+    var firstOutputAtMs: Int?
+
     /// How the PTY went away, once it has — and only for a spawn whose CLI never wrote a record,
     /// the one row no observation can reach.
     var exit: Exit?

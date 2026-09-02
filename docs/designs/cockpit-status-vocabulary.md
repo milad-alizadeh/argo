@@ -59,6 +59,7 @@ header's own prose rather than a mark in a column.
 
 | State | Word | Dot | Notes |
 |---|---|---|---|
+| Starting | `starting` | dim grey | Argo started the process and has heard nothing off the PTY yet — **DIRECT, managed-only** (`CONTEXT.md` L2, #587). Dot-only on the roster and in the header: no Turn is in flight, so the live glow would claim one, and the word `Starting` drawn beside a row that is about to go quiet again would be a second telling. It is **spelled in the feed**, where the wait actually reads — `starting the agent`, in place of `Nothing to read yet` |
 | Running | `running` | green, live glow | the normal state with 3–4 sessions; liveness stays legible under attention |
 | Idle | `idle` | dim grey | agent alive, not currently working — **and the honest reading of an agent's free-form question**, which the record cannot tell apart from idle |
 | Needs input | `Needs input` | amber/gold | the one attention state (#164) — a "come here", not a calm state. **Two domain states share this one word** (`CONTEXT.md` L2): `permission` (blocked on a permission prompt, DIRECT and managed-only) and `asking` (blocked on a structured question). Which flavour of "come here" it is would be a second telling, so the row never spells it. It names **what the Session is waiting for**, not who it wants (#507, superseding `needs you`) |

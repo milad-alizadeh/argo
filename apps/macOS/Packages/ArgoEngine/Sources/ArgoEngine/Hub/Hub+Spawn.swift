@@ -159,9 +159,24 @@ public extension Hub {
     /// per-CLI knowledge had accreted (#749).
     private func events(for claim: SessionOwnership.ClaimID) -> AgentProcessEvents {
         AgentProcessEvents(
-            onData: { [weak self] chunk in self?.adapters.received(chunk, from: claim) },
+            onData: { [weak self] chunk in
+                self?.noteFirstOutput(of: claim)
+                self?.adapters.received(chunk, from: claim)
+            },
             onExit: { [weak self] code in self?.processEnded(claim, exitCode: code) },
         )
+    }
+
+    /// The agent has spoken, so the boot the spawn's row is reporting is over (#587).
+    ///
+    /// Written ONCE and then never again: the moment is on a row `rosterStamp` reads, so restamping
+    /// it per chunk would rebuild the whole roster for every byte the agent prints. The guard also
+    /// makes this free for every Session past its first chunk and for every one whose record has
+    /// arrived — both are a dictionary miss.
+    private func noteFirstOutput(of claim: SessionOwnership.ClaimID) {
+        guard var spawn = spawns[claim], spawn.firstOutputAtMs == nil else { return }
+        spawn.firstOutputAtMs = Date().epochMs
+        spawns[claim] = spawn
     }
 
     /// The process is gone. Ownership cannot be re-adopted, so the claim closes and the Session

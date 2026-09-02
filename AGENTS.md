@@ -213,7 +213,9 @@ The vocabulary below is the part every session needs. Use these words, never a s
 - **Session** — one logical resume-chain, and the root Agent. Stored as `managed` or `external`.
 - **orphaned** — a managed Session whose owning process is gone. Read-only until selected, which
   resumes the chain in a fresh process and makes it `managed` again (ADR-0026).
-- **Session status** — `running · permission · asking · idle · stopped · ended · unknown`.
+- **Session status** — `starting · running · permission · asking · idle · stopped · ended ·
+  unknown`. `starting` is DIRECT and managed-only: Argo started the process and has not heard it
+  yet, and the child's first bytes on the PTY end the claim.
 - **Transcript file** — the physical per-file CLI record. Never itself called a Session.
 
 **Honesty tier** — a property of each rendered fact, not of a session.
