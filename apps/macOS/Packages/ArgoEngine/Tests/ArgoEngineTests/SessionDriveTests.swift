@@ -12,10 +12,9 @@ struct SessionDriveTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
-        try fixture.hub.driver.send("Fix the caption, not the sort.", to: claim.value)
+        try fixture.typeTurn("Fix the caption, not the sort.", to: claim.value)
 
-        await settle { fixture.host.started.last?.written.count == 2 }
-        let typed = fixture.host.started.last?.written ?? []
+        let typed = await fixture.keystrokes(exactly: 2)
         #expect(typed.first?.contains("Fix the caption, not the sort.") == true)
         // Submitted, not left sitting in the field: a Turn nobody sent is indistinguishable from
         // one that never arrived.
@@ -31,11 +30,9 @@ struct SessionDriveTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
-        try fixture.hub.driver.send("what is @README.md about?", to: claim.value)
+        try fixture.typeTurn("what is @README.md about?", to: claim.value)
 
-        await settle { fixture.host.started.last?.written.count == 2 }
-        let typed = fixture.host.started.last?.written ?? []
-        #expect(typed.count == 2)
+        let typed = await fixture.keystrokes(exactly: 2)
         #expect(typed.first?.hasSuffix("\r") == false)
         #expect(typed.last == "\r")
     }
@@ -44,22 +41,40 @@ struct SessionDriveTests {
     /// there would be submitted by the FIRST Turn's Return — the two messages arriving as one Turn.
     /// Reachable from the composer alone: a queue released when a Turn ends sends its follow-ups
     /// one after another.
+    ///
+    /// Asserted slot by slot and not by count alone, because the two catch different things. A
+    /// keystroke of Argo's own can land in the pause without changing the total: the delivery
+    /// watch's bare Return once did, leaving `[paste, CR, CR, paste]` — four writes, wrong order,
+    /// and the second Turn still unsent when the count said it had gone (#1040).
     @Test
     func `a second Turn cannot land between the first Turn's paste and its Return`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
-        try fixture.hub.driver.send("First", to: claim.value)
-        try fixture.hub.driver.send("Second", to: claim.value)
+        try fixture.typeTurn("First", to: claim.value)
+        try fixture.typeTurn("Second", to: claim.value)
 
-        await settle { fixture.host.started.last?.written.count == 4 }
-        let typed = fixture.host.started.last?.written ?? []
-        #expect(typed.count == 4)
+        let typed = await fixture.keystrokes(exactly: 4)
         #expect(typed.first?.contains("First") == true)
         #expect(typed[1] == "\r")
         #expect(typed[2].contains("Second"))
         #expect(typed.last == "\r")
+    }
+
+    /// What the delivery watch spends its silence on (#682), at the PTY rather than at the port
+    /// that counts them: ONE bare Return, so a Turn the file-mention popup swallowed is submitted
+    /// where it sits. A paste here would retype the whole message into a composer that may still
+    /// be holding it.
+    @Test
+    func `the watch answers silence with a bare Return at the prompt`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        #expect(fixture.hub.adapters.resubmit(claim.value))
+
+        #expect(fixture.host.started.last?.written == ["\r"])
     }
 
     /// Reachable only by the race between drawing the composer and the PTY going away: the answer
@@ -133,10 +148,9 @@ struct SessionDriveTests {
         let claim = try await fixture.hub.spawnSession()
 
         try fixture.hub.driver.interrupt(claim.value)
-        try fixture.hub.driver.send("Do the other thing instead.", to: claim.value)
+        try fixture.typeTurn("Do the other thing instead.", to: claim.value)
 
-        await settle { fixture.host.started.last?.written.count == 3 }
-        let typed = fixture.host.started.last?.written ?? []
+        let typed = await fixture.keystrokes(exactly: 3)
         #expect(typed.first == "\u{1B}")
         #expect(typed.dropFirst().first?.contains("Do the other thing instead.") == true)
         #expect(typed.last == "\r")
@@ -151,7 +165,7 @@ struct SessionDriveTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
-        try fixture.hub.driver.send("Off you go.", to: claim.value)
+        try fixture.typeTurn("Off you go.", to: claim.value)
         try fixture.hub.driver.interrupt(claim.value)
 
         // Asserted BEFORE the Return has had its pause: the paste is already out, and the `ESC`
@@ -161,8 +175,8 @@ struct SessionDriveTests {
         #expect(atOnce.first?.contains("Off you go.") == true)
         #expect(atOnce.last == "\u{1B}")
 
-        await settle { fixture.host.started.last?.written.count == 3 }
-        #expect(fixture.host.started.last?.written.last == "\r")
+        let typed = await fixture.keystrokes(exactly: 3)
+        #expect(typed.last == "\r")
     }
 
     @Test
