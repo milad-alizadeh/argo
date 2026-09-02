@@ -19,7 +19,7 @@ struct FoldedRosterSpecimen: View {
 
     var body: some View {
         SessionNavigator(
-            rows: SessionRosterProjection.rows(from: Self.sessions, opened: shown),
+            rows: Self.rows(opened: shown),
             selection: .constant("steered-0"),
             openFold: { opened.formSymmetricDifference([$0]) },
         )
@@ -32,7 +32,14 @@ struct FoldedRosterSpecimen: View {
 
     /// The runs' own folder, which the fold is captioned by.
     private static let loop = "/Users/milad/Developer/argo/docs/designs/prototypes"
-    private static let folds: Set<String> = ["fold:\(loop)"]
+
+    /// Asked for rather than spelled: a fold's id is the projection's own word.
+    static let folds = SessionRosterProjection.foldIDs(from: sessions)
+
+    /// The rows this specimen renders, which is what `SessionRosterSpecimenTests` asserts on.
+    static func rows(opened: Set<String>) -> [SessionRosterProjection.Row] {
+        SessionRosterProjection.rows(from: sessions, opened: opened)
+    }
 
     private static let sessions =
         (0 ..< 4).map { steered(at: $0) } + (0 ..< 180).map { run(at: $0) }

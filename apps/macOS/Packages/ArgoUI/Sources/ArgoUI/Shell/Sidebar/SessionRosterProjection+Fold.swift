@@ -16,6 +16,12 @@ extension SessionRosterProjection {
         let isOpen: Bool
     }
 
+    /// Every fold these Sessions draw a row for, by the id `rows(from:opened:)` opens one BY —
+    /// so a caller never spells `fold:<list>:<dir>` itself and drifts from it.
+    package static func foldIDs(from sessions: [CockpitPresentation.Session]) -> Set<String> {
+        Set(rows(from: sessions).compactMap { $0.fold?.id })
+    }
+
     /// The folds one roster pass settles, decided ONCE across the list rather than per row
     /// (ADR-0028): which fold a run belongs to is a property of the whole list, and asking it per
     /// row reads every other row once per row.
