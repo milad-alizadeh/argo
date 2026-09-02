@@ -195,13 +195,13 @@ func promptEvents(_ message: MessageRecord, in location: MediaLocation?)
                 id: id,
                 resolution: ToolCallOutcome.Resolution(
                     status: .completed,
-                    // `derived`: the text is read off an external record, not owned by Argo.
+                    // `derived`: the text is read off an external record rather than owned by
+                    // Argo.
                     result: .output(OutputEvidence(tier: .derived, text: printed)),
                     // A local command prints and is over. There is no second record to learn its
                     // end from, and the moment it printed is the moment it finished.
                     endedAtMs: message.timestampMs,
                 ),
-                delegated: ToolCallOutcome.Delegated(usage: nil),
             )),
         ]
     }

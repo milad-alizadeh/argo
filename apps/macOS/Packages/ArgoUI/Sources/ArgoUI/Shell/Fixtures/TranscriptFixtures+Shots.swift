@@ -56,7 +56,6 @@ extension TranscriptFixtures {
                     )),
                     endedAtMs: nil,
                 ),
-                delegated: ToolCallOutcome.Delegated(usage: nil),
             )),
         ]
     }

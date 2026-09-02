@@ -34,7 +34,6 @@ public actor TicketPoll {
     }
 
     /// Where the loop gets time from: how it waits between reads, and how it reads the moment.
-    /// Both are injectable, so a test drives the loop without spending the interval.
     public struct Pacing: Sendable {
         public let sleep: Sleeper
         public let now: @Sendable () -> Date

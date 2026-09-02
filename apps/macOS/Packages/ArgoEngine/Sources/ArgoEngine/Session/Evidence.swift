@@ -66,8 +66,7 @@ public enum FileChange: String, Sendable, Equatable {
 /// Zero hunks is the honest reading of a binary or unreadable patch — a renderer says "no diff
 /// available" rather than drawing an empty block, and never invents lines to fill it.
 public struct DiffEvidence: Sendable, Equatable {
-    /// What the edit did to the file as a whole — see `FileChange`, and `destination` for the one
-    /// change that has somewhere else to name.
+    /// See `FileChange`, and `destination` for the one change that has somewhere else to name.
     public struct Mutation: Sendable, Equatable {
         public let change: FileChange
         /// Where a moved file went, in the host's own characters. `nil` for every other change,
@@ -80,9 +79,7 @@ public struct DiffEvidence: Sendable, Equatable {
         }
     }
 
-    /// The change itself as the record reported it: how many lines came and went, and the runs of
-    /// them it carried. The counts are the record's own and are not re-derived from the hunks,
-    /// which a bounded patch does not carry all of.
+    /// The change itself: how many lines came and went, and the runs of them the record carried.
     public struct Patch: Sendable, Equatable {
         public let added: Int
         public let removed: Int
@@ -96,8 +93,7 @@ public struct DiffEvidence: Sendable, Equatable {
     }
 
     public let tier: Tier
-    // Flat, so a reader of one fact does not walk a group to reach it. Each is documented on the
-    // `Mutation` or `Patch` slot the initializer takes it from.
+    // Each is documented on its `Mutation` or `Patch` slot above.
     public let change: FileChange
     public let destination: String?
     public let added: Int

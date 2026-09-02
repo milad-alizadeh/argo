@@ -78,11 +78,11 @@ extension TranscriptReader {
                 id: id,
                 resolution: ToolCallOutcome.Resolution(
                     status: report.status,
-                    // `derived`: the text is read off an external record, not owned by Argo.
+                    // `derived`: the text is read off an external record rather than owned by
+                    // Argo.
                     result: report.text.map { .output(OutputEvidence(tier: .derived, text: $0)) },
                     endedAtMs: message.timestampMs,
                 ),
-                delegated: ToolCallOutcome.Delegated(usage: nil),
             )),
         ]
     }

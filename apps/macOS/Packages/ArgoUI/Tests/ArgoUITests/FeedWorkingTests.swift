@@ -202,7 +202,6 @@ struct FeedWorkingTests {
                 result: nil,
                 endedAtMs: nil,
             ),
-            delegated: ToolCallOutcome.Delegated(usage: nil),
         ))
         let again = TranscriptEvent.toolCall(ToolCall(
             id: "call-2", name: "shell", kind: .execute, target: "swift build", atMs: nil,

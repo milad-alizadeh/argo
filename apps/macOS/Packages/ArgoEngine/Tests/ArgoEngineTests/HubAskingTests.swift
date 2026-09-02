@@ -30,7 +30,6 @@ struct HubAskingTests {
                 result: nil,
                 endedAtMs: nowMs,
             ),
-            delegated: ToolCallOutcome.Delegated(usage: nil),
         ))
     }
 

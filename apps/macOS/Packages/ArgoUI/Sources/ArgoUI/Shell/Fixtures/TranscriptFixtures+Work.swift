@@ -69,7 +69,6 @@ extension TranscriptFixtures {
                 )),
                 endedAtMs: nil,
             ),
-            delegated: ToolCallOutcome.Delegated(usage: nil),
         )),
         // One read between two commands: a quiet call with a loud one either side never folds, so
         // this is the line that still names the file it looked at.

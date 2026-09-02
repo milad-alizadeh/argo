@@ -64,7 +64,6 @@ enum AgentsRailFixture {
                 result: .output(OutputEvidence(tier: .derived, text: "Read 84 lines.")),
                 endedAtMs: nil,
             ),
-            delegated: ToolCallOutcome.Delegated(usage: nil),
         )),
         .message(
             markdown: "It breaks at every mark. A punctuation row ends the run rather than being "

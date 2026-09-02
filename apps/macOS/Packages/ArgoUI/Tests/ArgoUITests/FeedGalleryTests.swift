@@ -55,7 +55,6 @@ struct FeedGalleryTests {
                     result: FeedFixture.shot(.direct),
                     endedAtMs: nil,
                 ),
-                delegated: ToolCallOutcome.Delegated(usage: nil),
             )),
         ]
 

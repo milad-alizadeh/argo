@@ -28,8 +28,7 @@ struct DeckContentRow: View {
     /// the minimap maps it.
     @State private var table: FeedTableHandle
 
-    /// Seeds the handle with `held`, which has to be true before the first frame. The two values it
-    /// unpacks are stored flat, so every zone below reads one fact rather than walking a group.
+    /// Seeds the handle with `held`, which has to be true before the first frame.
     init(
         content: DeckContent,
         slot: DeckVesselControl = .inert,
@@ -39,13 +38,13 @@ struct DeckContentRow: View {
         self.reading = content.reading
         self.feed = content.feed
         self.showing = content.showing
-        self.selection = content.selection
-        self.held = content.held
+        self.selection = content.picked.selection
+        self.held = content.picked.held
         self.vessel = slot.vessel
         self.intents = slot.intents
         self.seams = seams
         self.rail = rail
-        _table = State(initialValue: FeedTableHandle(held: content.held))
+        _table = State(initialValue: FeedTableHandle(held: content.picked.held))
     }
 
     /// The deck's selection with the keyboard's way home wired onto the reading's table — the copy

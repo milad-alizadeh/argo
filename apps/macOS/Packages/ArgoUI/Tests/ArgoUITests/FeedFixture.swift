@@ -38,7 +38,6 @@ enum FeedFixture {
                 result: output.map { .output(OutputEvidence(tier: .direct, text: $0)) },
                 endedAtMs: nil,
             ),
-            delegated: ToolCallOutcome.Delegated(usage: nil),
         )
     }
 

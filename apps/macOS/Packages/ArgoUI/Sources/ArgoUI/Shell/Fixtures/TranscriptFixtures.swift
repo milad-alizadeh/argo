@@ -21,7 +21,6 @@ enum TranscriptFixtures {
                 result: result,
                 endedAtMs: nil,
             ),
-            delegated: ToolCallOutcome.Delegated(usage: nil),
         )
     }
 

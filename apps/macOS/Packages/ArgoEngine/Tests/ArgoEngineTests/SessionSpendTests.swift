@@ -98,6 +98,7 @@ struct SessionSpendTests {
                     result: nil,
                     endedAtMs: 2000,
                 ),
+                // Spelled out rather than defaulted: the absent spend is what this claims.
                 delegated: ToolCallOutcome.Delegated(usage: nil),
             )),
         ])

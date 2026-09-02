@@ -11,8 +11,7 @@ public struct WorkspaceProjection: Equatable, Sendable {
         case worktree
     }
 
-    /// The refs git addresses this folder by. Each is absent wherever git would not name one, and
-    /// they arrive together because one `git` reading answers for all three.
+    /// The refs git addresses this folder by. Each is absent wherever git would not name one.
     public struct Refs: Equatable, Sendable {
         /// The branch the folder is on, and the join key Delivery is addressed by
         /// (`CONTEXT.md` L3). Absent for a detached HEAD, and for a repository git would not name
@@ -33,10 +32,10 @@ public struct WorkspaceProjection: Equatable, Sendable {
         }
     }
 
-    /// What the folder is holding that has not landed. Both counts are of what git reported, so a
-    /// zero is git saying nothing is outstanding — never that nobody asked.
+    /// What the folder is holding that has not landed.
     public struct Drift: Equatable, Sendable {
-        /// How many files are changed and not committed.
+        /// How many files are changed and not committed. A count of what git reported, so a zero
+        /// here means git said nothing was dirty — never that nobody asked.
         public let dirty: Int
         /// How far the branch has drifted from its upstream — see `UpstreamDivergence` for why the
         /// two counts travel together and why a branch with no upstream has none.
@@ -49,8 +48,7 @@ public struct WorkspaceProjection: Equatable, Sendable {
     }
 
     public let kind: Kind
-    // Flat, so a reader of one fact does not walk a group to reach it. Each is documented on the
-    // `Refs` or `Drift` slot the initializer takes it from.
+    // Each is documented on its `Refs` or `Drift` slot above.
     public let branch: String?
     public let baseRef: String?
     public let headSha: String?
