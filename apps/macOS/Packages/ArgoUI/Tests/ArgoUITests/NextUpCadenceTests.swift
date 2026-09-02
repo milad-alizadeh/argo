@@ -43,7 +43,7 @@ struct NextUpCadenceTests {
     @Test
     func `a session starting on the pick hands the hero to the next one`() throws {
         var started = TicketsFixture.reading(of: Self.pool)
-        started.claimed = [1]
+        started.claims = TicketClaims(numbers: [1])
 
         try #expect(Self.pick(in: started).number == 2)
     }
@@ -53,7 +53,7 @@ struct NextUpCadenceTests {
     @Test
     func `a session stopping puts its ticket back at the head`() throws {
         var stopped = TicketsFixture.reading(of: Self.pool)
-        stopped.claimed = []
+        stopped.claims = TicketClaims(numbers: [])
 
         try #expect(Self.pick(in: stopped).number == 1)
     }

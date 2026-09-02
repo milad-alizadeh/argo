@@ -10,16 +10,21 @@ struct BacklogList: View {
     /// The tree's roots, banded here: which rows a band draws depends on the fold, which is the
     /// pane's state rather than the room's.
     let rows: [TicketsRoomProjection.Row]
-    @Binding var selection: Int?
-    /// Which parents are folded. Held above the pane for the same reason the ticket is: a fold the
-    /// reader made outlives the pane, and it is what a specimen seeds to shoot `collapsed.png`.
-    @Binding var shut: Set<Int>
+    /// What the reader has done to this pane and nothing else — which row is selected, and which
+    /// parents are folded. Both outlive the pane, so both are held above it, and they travel as
+    /// one value because every row in the list is drawn from the pair (#1071, #814).
+    var held: Held
     /// What the heading over the list says. Words only — the controls that narrow the list are in
     /// the window's row with the rest of the room's, see `TicketsToolbar`.
     var header: TicketsChromeProjection.Reading = .none
     /// What reads the next page of closed tickets, and `nil` wherever there is no next page to read
     /// — every open view, and the closed one once the provider has served its last (#1075).
     var more: (@MainActor () -> Void)?
+
+    struct Held {
+        @Binding var selection: Int?
+        @Binding var shut: Set<Int>
+    }
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
@@ -33,8 +38,8 @@ struct BacklogList: View {
     }
 
     private var list: some View {
-        List(selection: $selection) {
-            if header.groups {
+        List(selection: held.$selection) {
+            if header.structure.groups {
                 banded
             } else {
                 flat
@@ -56,10 +61,10 @@ struct BacklogList: View {
     /// finished work across three headers and fight the recency order the view is defined by.
     private var flat: some View {
         BacklogOutline(
-            drawn: TicketsRoomProjection.drawn(rows, shut: header.folds ? shut : []),
-            shut: $shut,
-            selection: selection,
-            folds: header.folds,
+            drawn: TicketsRoomProjection.drawn(rows, shut: shut),
+            shut: held.$shut,
+            selection: held.selection,
+            folds: header.structure.folds,
         )
     }
 
@@ -69,7 +74,7 @@ struct BacklogList: View {
             // draws rather than a second answer to the same question.
             // A search draws the tree open whatever the reader folded — a parent that hid the
             // one match would leave the heading claiming a result nobody can see (#873).
-            let drawn = TicketsRoomProjection.drawn(band, shut: header.folds ? shut : [])
+            let drawn = TicketsRoomProjection.drawn(band, shut: shut)
             // `.inset` spends about 52 between one section and the next section's word where
             // the design draws 12, and `listSectionSpacing` is unavailable on macOS — so this
             // is a row rather than the `Section` header the frozen name stands in for, and
@@ -79,8 +84,19 @@ struct BacklogList: View {
                 .previewSafeListRow()
                 .listRowSeparator(.hidden)
                 .selectionDisabled()
-            BacklogOutline(drawn: drawn, shut: $shut, selection: selection, folds: header.folds)
+            BacklogOutline(
+                drawn: drawn,
+                shut: held.$shut,
+                selection: held.selection,
+                folds: header.structure.folds,
+            )
         }
+    }
+
+    /// What the list actually folds by: the reader's own set, and nothing at all under a search,
+    /// which draws the tree open whatever they folded (#873).
+    private var shut: Set<Int> {
+        header.structure.folds ? held.shut : []
     }
 }
 
@@ -88,20 +104,26 @@ struct BacklogList: View {
     @Previewable @State var selection: Int? = 272
     @Previewable @State var shut: Set<Int> = []
 
-    BacklogList(rows: TicketsFixture.room.backlog, selection: $selection, shut: $shut)
-        .frame(width: ArgoBacklogList.width, height: 520)
-        .argoDeckSurface()
-        .argoAppearance()
+    BacklogList(
+        rows: TicketsFixture.room.backlog,
+        held: .init(selection: $selection, shut: $shut),
+    )
+    .frame(width: ArgoBacklogList.width, height: 520)
+    .argoDeckSurface()
+    .argoAppearance()
 }
 
 #Preview("Backlog list — a parent folded, and its header's count with it") {
     @Previewable @State var selection: Int? = 607
     @Previewable @State var shut: Set = [607]
 
-    BacklogList(rows: TicketsFixture.room.backlog, selection: $selection, shut: $shut)
-        .frame(width: ArgoBacklogList.width, height: 520)
-        .argoDeckSurface()
-        .argoAppearance()
+    BacklogList(
+        rows: TicketsFixture.room.backlog,
+        held: .init(selection: $selection, shut: $shut),
+    )
+    .frame(width: ArgoBacklogList.width, height: 520)
+    .argoDeckSurface()
+    .argoAppearance()
 }
 
 // The state that SHIPS: no port reads a priority yet (#388), so every root bands under the one
@@ -111,7 +133,7 @@ struct BacklogList: View {
     let unread = TicketsRoomProjection.room(from: TicketsFixture.reading(of: TicketsFixture.items))
         .backlog
 
-    BacklogList(rows: unread, selection: .constant(nil), shut: $shut)
+    BacklogList(rows: unread, held: .init(selection: .constant(nil), shut: $shut))
         .frame(width: ArgoBacklogList.width, height: 420)
         .argoDeckSurface()
         .argoAppearance()
@@ -126,8 +148,7 @@ struct BacklogList: View {
 
     BacklogList(
         rows: room.backlog,
-        selection: $selection,
-        shut: $shut,
+        held: .init(selection: $selection, shut: $shut),
         header: TicketsChromeProjection.reading(of: room, in: .closed, showing: selection),
         more: {},
     )
@@ -144,8 +165,7 @@ struct BacklogList: View {
 
     BacklogList(
         rows: room.backlog,
-        selection: .constant(nil),
-        shut: $shut,
+        held: .init(selection: .constant(nil), shut: $shut),
         header: TicketsChromeProjection.reading(of: room, in: .closed, showing: nil),
     )
     .frame(width: ArgoBacklogList.width, height: 420)
@@ -155,7 +175,7 @@ struct BacklogList: View {
 }
 
 #Preview("Backlog list — the provider answered with nothing") {
-    BacklogList(rows: [], selection: .constant(nil), shut: .constant([]))
+    BacklogList(rows: [], held: .init(selection: .constant(nil), shut: .constant([])))
         .frame(width: ArgoBacklogList.width, height: 320)
         .argoDeckSurface()
         .argoAppearance()

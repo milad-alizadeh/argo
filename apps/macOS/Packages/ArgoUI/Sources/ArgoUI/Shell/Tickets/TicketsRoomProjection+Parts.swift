@@ -51,7 +51,7 @@ extension TicketsRoomProjection {
         var reads: TicketsView.Reads {
             TicketsView.Reads(
                 edges: open.allSatisfy { $0.blockage != .unread },
-                claims: claims.areWhole,
+                claims: claims.wasRead,
                 closedListing: closedWasRead,
             )
         }

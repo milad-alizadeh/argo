@@ -131,7 +131,7 @@ struct NextUpRankingTests {
             TicketsFixture.candidate(1, priority: "high", day: 1),
             TicketsFixture.candidate(2, priority: "low", day: 9),
         ])
-        reading.claimed = [1]
+        reading.claims = TicketClaims(numbers: [1])
 
         try #expect(Self.pick(in: reading).number == 2)
     }

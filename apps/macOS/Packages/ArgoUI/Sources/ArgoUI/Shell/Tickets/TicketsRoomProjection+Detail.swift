@@ -62,7 +62,7 @@ extension TicketsRoomProjection {
             id: number,
             title: item.title,
             status: item.status,
-            bucket: item.state(claimed: reading.claimed.contains(number)),
+            bucket: item.state(claimed: reading.claims.numbers.contains(number)),
             priority: item.priority,
             type: item.type,
             labels: item.labels,

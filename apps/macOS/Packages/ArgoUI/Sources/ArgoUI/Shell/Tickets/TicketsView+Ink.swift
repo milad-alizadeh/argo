@@ -8,10 +8,11 @@ extension TicketsView {
     /// A view that marks nothing in the list takes no colour. `All open` and `Unblocked` draw
     /// nothing on a row — an unblocked ticket is deliberately unmarked, because the row does not
     /// claim `unblocked` over edges nobody served — so there is no ink to agree with, and a colour
-    /// here would mean something the list never says.
+    /// here would mean something the list never says. `Closed` is a third: its rows carry a WORD
+    /// rather than a mark counted into a rail, and that word is the caption's own ink (#1075).
     func ink(_ argo: ArgoTheme) -> ArgoColor {
         switch self {
-        case .allOpen, .unblocked: argo.color.text.tertiary
+        case .allOpen, .unblocked, .closed: argo.color.text.tertiary
         case .inProgress: argo.color.state.running
         case .blocked: argo.color.state.failure
         }

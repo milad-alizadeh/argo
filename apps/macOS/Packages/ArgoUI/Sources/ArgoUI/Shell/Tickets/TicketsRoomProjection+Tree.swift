@@ -81,10 +81,12 @@ extension TicketsRoomProjection {
                 priority: item.priority,
                 labels: item.labels,
                 children: ordered(siblings, by: view.order).map(node),
-                blockage: blockage(of: item),
-                isClaimed: reading.claimed.contains(item.number),
+                marks: Marks(
+                    isClaimed: reading.claims.numbers.contains(item.number),
+                    blockage: blockage(of: item),
+                    closure: item.closure == .open ? nil : item.closure,
+                ),
                 touched: item.updatedAt,
-                closure: item.closure == .open ? nil : item.closure,
             )
         }
 

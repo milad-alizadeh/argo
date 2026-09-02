@@ -20,15 +20,23 @@ enum TicketsChromeProjection {
         /// The ticket the verbs address — the one the deck is OPEN on, not the one at the top of
         /// the list.
         let ticket: Int?
-        /// Whether the pane draws the reader's fold. A search does not: a folded parent hiding the
-        /// only match would leave the heading claiming a result nobody can see (#873).
-        var folds = true
-        /// Whether the list draws the priority headers over its roots. `Closed` does not: its rows
-        /// are in recency order, and banding them by priority would scatter last week's finished
-        /// work across three headers (#1075).
-        var groups = true
+        /// How the list under this heading is built — the two structural facts a view decides.
+        var structure = Structure.default
         /// What the pane says where the query matched nothing, and `nil` wherever there are rows.
         var empty: String?
+
+        /// Whether the pane draws the reader's fold, and whether it bands its roots by priority.
+        /// One value because the same thing decides both: which view is open.
+        struct Structure: Sendable, Equatable {
+            /// A search does not fold: a folded parent hiding the only match would leave the
+            /// heading claiming a result nobody can see (#873).
+            var folds = true
+            /// `Closed` does not band: its rows are in recency order, and banding them by priority
+            /// would scatter last week's finished work across three headers (#1075).
+            var groups = true
+
+            static let `default` = Structure()
+        }
 
         static let none = Reading(
             heading: "", subtitle: "", narrows: false, draws: false, ticket: nil,
@@ -64,8 +72,9 @@ enum TicketsChromeProjection {
             // `narrows` and not `hasRows`: a query that matched nothing empties the list while the
             // ticket beside it is still open, so the verbs addressing it must not go with the rows.
             ticket: narrows ? showing : nil,
-            folds: narrowing == nil,
-            groups: view.groupsByPriority,
+            structure: Reading.Structure(
+                folds: narrowing == nil, groups: view.groupsByPriority,
+            ),
             empty: hasRows ? nil : narrowing.map { emptied(by: $0, in: view) },
         )
     }

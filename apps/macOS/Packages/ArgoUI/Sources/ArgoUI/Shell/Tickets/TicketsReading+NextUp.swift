@@ -20,7 +20,8 @@ extension TicketsReading {
         guard !unblocked.isEmpty else { return .nothingUnblocked }
         // `todo` and `session-less` in ONE clause: `TicketState.open` is open AND unclaimed, and
         // the claim is the roster join the room already makes.
-        let pool = unblocked.filter { $0.state(claimed: claimed.contains($0.number)) == .open }
+        let pool = unblocked
+            .filter { $0.state(claimed: claims.numbers.contains($0.number)) == .open }
         guard let pick = ranked(pool).first else { return .allRunning }
         return .pick(NextUp.Pick(
             number: pick.number, title: pick.title, reasons: reasons(for: pick, in: pool),

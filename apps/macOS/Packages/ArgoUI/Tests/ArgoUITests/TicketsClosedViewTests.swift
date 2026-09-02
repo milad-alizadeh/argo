@@ -41,7 +41,7 @@ struct TicketsClosedViewTests {
         let closed = room()
 
         #expect(!closed.backlog.isEmpty)
-        #expect(closed.backlog.allSatisfy { $0.closure != nil })
+        #expect(closed.backlog.allSatisfy { $0.marks.closure != nil })
     }
 
     /// The four open views cannot reach a closed ticket, which is the whole shape of the problem
@@ -50,7 +50,7 @@ struct TicketsClosedViewTests {
     func `no open view can reach a closed ticket`(_ view: TicketsView) {
         let open = room(in: view)
 
-        #expect(open.backlog.allSatisfy { $0.closure == nil })
+        #expect(open.backlog.allSatisfy { $0.marks.closure == nil })
     }
 
     /// Last touched first, which is the order the second line under the heading names — and the
@@ -83,7 +83,7 @@ struct TicketsClosedViewTests {
 
     @Test
     func `resolved and ruled out each render as themselves`() {
-        let words = Set(room().backlog.compactMap(\.closure).map(ClosureMark.word))
+        let words = Set(room().backlog.compactMap(\.marks.closure).map(ClosureMark.word))
 
         #expect(words.contains("resolved"))
         #expect(words.contains("ruled out"))

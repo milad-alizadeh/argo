@@ -36,12 +36,19 @@ struct TicketsRoom {
     /// room could build — a spawn reaches the engine, and the mapping needs the listing and the
     /// design tree, neither of which the room holds.
     var starting = StartIntent.inert
-    /// What a link to a ticket the listing does not hold raises: one read, by that number (#895).
-    /// Inert by default, so a `#Preview` and a specimen draw the pane with no request behind them.
-    var follow: @MainActor (Int) async -> Void = { _ in }
-    /// What the `Closed` view's own read does (#1075) — the one listing no poll makes. Inert by
-    /// default, for the same reason `follow` is.
-    var closedReads = ClosedReads.inert
+    /// The reads this room raises, none of them on a cadence. Inert by default, so a `#Preview`
+    /// and a specimen draw the pane with no request behind them.
+    var reads = Reads.inert
+
+    /// Every read a room raises: one by the number a followed link named (#895), and the closed
+    /// listing's own two (#1075). One value, because none of them is the poll's.
+    struct Reads {
+        /// What a link to a ticket the listing does not hold raises: one read, by that number.
+        var follow: @MainActor (Int) async -> Void = { _ in }
+        var closed = ClosedReads.inert
+
+        static let inert = Reads()
+    }
 
     /// The two acts behind the closed listing: opening the view, and asking for the page behind
     /// the one in hand. A pair rather than one closure taking a cursor — the room holds no cursor,
@@ -108,9 +115,9 @@ struct TicketsRoom {
             // and no tick ever does (#1075). The Project is in the key because switching one while
             // sitting in `Closed` moves no view — a reader would otherwise be left on the `unread`
             // page until they navigated away and back.
-            .task(id: ClosedReads.Opening(view: room.view, project: room.project)) {
-                guard room.view.source == .closed else { return }
-                await closedReads.open()
+            .task(id: ClosedReads.Opening(view: room.opened.view, project: room.project)) {
+                guard room.opened.view.source == .closed else { return }
+                await reads.closed.open()
             }
     }
 
@@ -127,7 +134,7 @@ struct TicketsRoom {
             // not re-run while the deck stays open on it.
             .task(id: room.unreadNumber) {
                 guard let unread = room.unreadNumber else { return }
-                await follow(unread)
+                await reads.follow(unread)
             }
         }
     }
@@ -148,12 +155,11 @@ struct TicketsRoom {
             let seated = ArgoLayout.seated(backlogWidth, in: limits)
             BacklogList(
                 rows: room.backlog,
-                selection: $ticket,
-                shut: $shut,
+                held: BacklogList.Held(selection: $ticket, shut: $shut),
                 header: chrome,
                 // Only where the provider said there IS another page. A `Load more` that survived
                 // the last one is the control-that-does-nothing this room keeps refusing (#900).
-                more: room.closedHasMore ? closedReads.more : nil,
+                more: room.opened.closedHasMore ? reads.closed.more : nil,
             )
             .frame(width: seated)
             // What the rows inside the `List` read to decide whether they have width for label

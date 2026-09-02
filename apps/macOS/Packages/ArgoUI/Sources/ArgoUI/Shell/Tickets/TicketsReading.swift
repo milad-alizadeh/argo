@@ -12,14 +12,12 @@ struct TicketsReading: Sendable {
     /// The provider's items in the order it served them, closed ones included: a parent's roll-up
     /// counts children the backlog does not draw.
     var items: [Ticket] = []
-    /// Which items a Session has taken. DIRECT and Argo's alone — no provider carries a claim.
-    var claimed: Set<Int> = []
-    /// How many LIVE Sessions named no ticket, so `claimed` above is short by that many (#1074).
-    /// `In progress` still counts, and says what it is short by.
-    var claimsUnplaced: Int = 0
-    /// How many LIVE Sessions nobody could have read a link for, no Ticket provider being bound.
-    /// This one takes `In progress` absent: nothing was joined, so there is no answer to state.
-    var claimsUnread: Int = 0
+    /// Which items a Session has taken, and how short that answer is (#894, #1074). DIRECT and
+    /// Argo's alone — no provider carries a claim.
+    ///
+    /// One value rather than the set beside its own two shortfalls: `In progress` counts what it
+    /// can and states what it could not place, so the three are never read apart.
+    var claims = TicketClaims(numbers: [])
     /// What was read about each item's Delivery. Absent where nothing was read, which is a state
     /// of its own and not a quiet one (`DeliveryReading.absent`). Empty until a code host is read
     /// (#258), so every backlog dot is a hollow ring today.
@@ -55,10 +53,6 @@ struct TicketsReading: Sendable {
         let numbers: Set<Int>
         /// Whether the provider served a cursor for the page behind these.
         let hasMore: Bool
-    }
-
-    var claims: TicketClaims {
-        TicketClaims(numbers: claimed, unplaced: claimsUnplaced, unread: claimsUnread)
     }
 
     /// The same reading, opened on another ticket. A specimen selecting a child re-derives the room

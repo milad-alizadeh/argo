@@ -135,7 +135,7 @@ struct TicketsClosedIsolationTests {
     /// with rows that view cannot hold — the control-that-does-nothing, one worse (#900).
     @Test(arguments: [TicketsView.allOpen, .unblocked, .inProgress, .blocked])
     func `no open view offers to load more closed tickets`(_ view: TicketsView) {
-        #expect(!room(TicketsFixture.closedMore, in: view).closedHasMore)
+        #expect(!room(TicketsFixture.closedMore, in: view).opened.closedHasMore)
     }
 
     // MARK: - The chrome
@@ -148,7 +148,7 @@ struct TicketsClosedIsolationTests {
 
         #expect(reading.subtitle.contains("by last touched"))
         #expect(!reading.subtitle.contains("by priority"))
-        #expect(reading.groups == false)
+        #expect(reading.structure.groups == false)
     }
 
     @Test
@@ -157,7 +157,7 @@ struct TicketsClosedIsolationTests {
         let reading = TicketsChromeProjection.reading(of: open, in: .allOpen, showing: nil)
 
         #expect(reading.subtitle.contains("by priority"))
-        #expect(reading.groups)
+        #expect(reading.structure.groups)
     }
 
     // MARK: - The search field reaches it
@@ -211,8 +211,8 @@ struct TicketsClosedIsolationTests {
 
     @Test
     func `the Load more row stands only where the provider served a cursor`() {
-        #expect(room(TicketsFixture.closedMore).closedHasMore)
-        #expect(!room(TicketsFixture.closedRead).closedHasMore)
-        #expect(!room(TicketsFixture.reading).closedHasMore)
+        #expect(room(TicketsFixture.closedMore).opened.closedHasMore)
+        #expect(!room(TicketsFixture.closedRead).opened.closedHasMore)
+        #expect(!room(TicketsFixture.reading).opened.closedHasMore)
     }
 }

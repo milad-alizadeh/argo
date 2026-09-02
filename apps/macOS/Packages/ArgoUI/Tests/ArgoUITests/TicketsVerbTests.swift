@@ -108,12 +108,13 @@ struct TicketsVerbTests {
     @Test func `the room draws the ticket a live Session claimed as claimed`() {
         let reading = TicketsReading.live(
             TicketsReading.Sources(
-                items: [], sessions: [Self.session(claiming: 872)], health: .quiet, project: nil,
+                tickets: .nothing,
+                sessions: [Self.session(claiming: 872)], health: .quiet, project: nil,
             ),
             showing: nil,
         )
 
-        #expect(reading.claimed == [872])
+        #expect(reading.claims.numbers == [872])
     }
 
     private static func session(claiming ticket: Int) -> CockpitPresentation.Session {
