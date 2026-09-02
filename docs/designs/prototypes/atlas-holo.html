@@ -170,6 +170,22 @@
     border: 1px solid rgba(126,214,240,.22); border-radius: 7px; }
   #reveal[hidden] { display: none; }
 
+  /* The one thing allowed to float over the map, because it is the only control that is
+     about the map rather than about the encoding: the camera belongs where the picture is.
+     Small enough to sit inside the fit's own 34px pad at the default framing. */
+  #orbit { position: absolute; right: 12px; top: 12px; z-index: 60; display: flex;
+    align-items: center; gap: 5px; padding: 5px; border-radius: 10px;
+    background: rgba(9,20,26,.72); backdrop-filter: blur(14px);
+    border: 1px solid rgba(126,214,240,.16); }
+  /* the stage's canvas rule pins a canvas to the whole stage, which this one is not */
+  #orbc { position: static; inset: auto; width: 54px; height: 54px; border-radius: 50%;
+    cursor: grab; }
+  #orbit.turning #orbc { cursor: grabbing; }
+  #orbc:focus-visible { outline: 2px solid rgba(127,232,255,.55); outline-offset: 2px; }
+  /* A treemap seen from anywhere but straight down is neither view, so there is nothing
+     here to turn — the ball goes on reporting the camera, it just stops taking the hand. */
+  #orbit.flat #orbc { cursor: default; opacity: .45; }
+
   #read .ties { margin-top: 18px; }
   #read .ties h4 { font: var(--t-footnote) var(--mono); text-transform: uppercase;
                    letter-spacing: .1em; color: #5c8b99; font-weight: 400;
@@ -395,10 +411,6 @@
 <div id="app">
   <aside id="side">
     <header><h5>Map</h5>
-      <button class="sbtn" id="reset" title="Back to the opening view (R)" aria-label="Reset view">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
-          stroke-linecap="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.7-3.97"/>
-          <path d="M13.6 2.2v3h-3"/></svg></button>
       <button class="sbtn" id="hide" title="Hide sidebar" aria-label="Hide sidebar"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="1.6" y="2.8" width="12.8" height="10.4" rx="1.6"/><path d="M6.2 2.8v10.4"/></svg></button>
     </header>
     <div class="body">
@@ -444,6 +456,15 @@
 
   <div id="stage"><canvas id="cv"></canvas>
     <div id="scan"></div>
+    <!-- role=application because arrow keys are the control: a slider is one number and
+         this is two, and anything quieter has the reader's keys eaten by the reading mode. -->
+    <div id="orbit"><canvas id="orbc" tabindex="0" role="application"
+        aria-roledescription="Orbit" aria-label="Turn the model"></canvas>
+      <button class="sbtn" id="reset" title="Back to the opening view (R)" aria-label="Reset view">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.7-3.97"/>
+          <path d="M13.6 2.2v3h-3"/></svg></button>
+    </div>
     <button id="reveal" class="sbtn" title="Show sidebar" aria-label="Show sidebar" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="1.6" y="2.8" width="12.8" height="10.4" rx="1.6"/><path d="M6.2 2.8v10.4"/></svg></button>
   </div>
   <div id="pop" hidden></div>
@@ -983,6 +1004,15 @@ function snap(a, step) {
   return Math.abs(a - near) < 0.044 ? near : a;
 }
 
+/* Every gesture that turns the model comes through here — the option-drag on the map and
+   the orbit widget both — so the two cannot disagree about which angles are legal. The
+   pitch clamp is the reading: flat on is unreadable, straight down loses every height. */
+function turnTo(yaw, pitch) {
+  cityYaw = snap(yaw, Math.PI / 4);
+  cityPitch = snap(Math.min(1.45, Math.max(0.10, pitch)), PITCH);
+  setFlat(0);
+}
+
 /* how near a plan point is to the eye — larger is nearer, which is what the paint order,
    the choice of visible walls and the whole depth falloff ask for */
 const depth = (x, y) => { trig(); return -((x - C) * _sy + (y - C) * _cy); };
@@ -1154,6 +1184,7 @@ function segUI() {
   $('vPlan').setAttribute('aria-pressed', String(!!state.plan));
   $('mHeight').disabled = !!state.plan;
   $('lHeight').classList.toggle('off', !!state.plan);
+  $('orbit').classList.toggle('flat', !!state.plan);
 }
 function riseZ(b, on) {
   if (!on || !b.file) return b.z1;
@@ -1850,6 +1881,7 @@ function names(now) {
 /* ---------- the animated layer ---------- */
 function frame(now) {
   requestAnimationFrame(frame);
+  drawOrbit();
   if (!view) return;
   /* the rise is the one thing that has to repaint the model itself, and it pays for that
      by going without the names, the note marks and the grain until it settles */
@@ -2656,6 +2688,92 @@ function reset() {
   fit(); rebuild(); rise(); stamp();
 }
 
+/* ---------- the orbit ---------- */
+/* Turning is on the map under option, which is a gesture nobody finds. This is the same two
+   angles with a handle on them. Not a wireframe globe with latitude lines: the map is a lit
+   solid on near-black, so the handle is one too — the map's own neutral pigment under the
+   map's own lamp, with the plan the city stands on drawn through it. The lamp is fixed in the
+   model, so the highlight travels as the model turns and the ball is lit by the light it
+   controls, while the diamond says which way is which. */
+const ORB_R = 27;
+/* the pigment a file with no domain is painted in: the map's own way of saying "neutral" */
+const ORB_PIG = UNSURE;
+/* A lit disc at the model's own exposure is the brightest thing on a near-black stage, and
+   this is a control rather than the reading — so it is the same material, stopped down. */
+const ORB_DIM = 0.74;
+/* One rate for both axes, and it is the ball's radius: a drag across the ball is about a
+   half-turn, which is what turning a ball this size feels like. Linear, so it reverses
+   exactly — an arcball's asin would stall at the rim and never come back the same way. */
+const ORB_RATE = 1.5 / ORB_R;
+const ORB_STEP = Math.PI / 36;
+let orbc = null, octx = null, orbDrawn = null;
+
+/* model to screen, the same rotation raw() applies, as an orthonormal basis: right, up, and
+   toward the eye. Read off cam rather than cityYaw, so the lie-down turns the ball too. */
+function orbBasis() {
+  trig();
+  return [[_cy, -_sy, 0], [_sy * _sp, _cy * _sp, _cp], [-_sy * _cp, -_cy * _cp, _sp]];
+}
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const rot3 = (m, v) => [dot3(m[0], v), dot3(m[1], v), dot3(m[2], v)];
+
+/* A readout as much as a handle, so it is drawn from the camera and not from its own
+   gestures: an option-drag, a reset and the lie-down all move it without knowing it exists.
+   Polled rather than notified, and free while the camera is still. */
+function drawOrbit() {
+  if (!orbc) return;
+  if (orbDrawn && orbDrawn[0] === cam.yaw && orbDrawn[1] === cam.pitch) return;
+  orbDrawn = [cam.yaw, cam.pitch];
+  const m = orbBasis(), k = rot3(m, KEY), f = rot3(m, FILL);
+  const d = orbc.width, R = d / 2;
+  const img = octx.createImageData(d, d), buf = new Uint32Array(img.data.buffer);
+  for (let y = 0; y < d; y++) {
+    const v = (y + 0.5) / R - 1;
+    for (let x = 0; x < d; x++) {
+      const u = (x + 0.5) / R - 1, r2 = u * u + v * v;
+      if (r2 >= 1) continue;
+      const n = [u, -v, Math.sqrt(1 - r2)];
+      const kd = Math.max(0, dot3(n, k)), fd = Math.max(0, dot3(n, f));
+      /* the same sky term the roofs get, on this normal's own height in the model */
+      const sky = Math.max(0, n[1] * m[1][2] + n[2] * m[2][2]) * 0.16;
+      let px = Math.round(Math.min(1, (1 - Math.sqrt(r2)) * R) * 255) << 24;
+      for (let i = 0; i < 3; i++) {
+        const c = ORB_DIM * ORB_PIG[i] * (AMB_RGB[i] + KEY_I * kd * KEY_RGB[i]
+                                          + FILL_I * fd * FILL_RGB[i] + sky * FILL_RGB[i]);
+        px |= Math.min(255, Math.round(c)) << (i * 8);
+      }
+      buf[y * d + x] = px >>> 0;
+    }
+  }
+  octx.putImageData(img, 0, 0);
+  orbPlan(m, R, d);
+  orbc.title = `Turn the model — drag, or the arrow keys. `
+    + `${Math.round(cam.yaw * 180 / Math.PI)}° round, ${Math.round(cam.pitch * 180 / Math.PI)}° down.`;
+}
+
+/* The floor the city stands on, seen through the ball: yaw turns it, pitch opens and closes
+   it, so the widget shows the two angles as the shape the reader already has on screen. The
+   near edges are the bright ones and one fixed corner is marked, because a square is its own
+   quarter-turn and a half-turn would otherwise be invisible. */
+function orbPlan(m, R, d) {
+  const P = 0.64;   // a corner of the square, not a side, has to land inside the silhouette
+  const c = [[1, 1], [-1, 1], [-1, -1], [1, -1]].map(a => {
+    const p = rot3(m, [a[0], a[1], 0]);
+    return [R + p[0] * R * P, R - p[1] * R * P, p[2]];
+  });
+  octx.lineWidth = d / 54;
+  for (let i = 0; i < 4; i++) {
+    const a = c[i], b = c[(i + 1) % 4];
+    const near = Math.max(0, Math.min(1, ((a[2] + b[2]) / 2 + 1.42) / 2.84));
+    octx.strokeStyle = `rgba(127,232,255,${(0.07 + 0.62 * near).toFixed(3)})`;
+    octx.beginPath(); octx.moveTo(a[0], a[1]); octx.lineTo(b[0], b[1]); octx.stroke();
+  }
+  octx.beginPath();
+  octx.arc(c[0][0], c[0][1], octx.lineWidth * 1.8, 0, Math.PI * 2);
+  octx.fillStyle = `rgba(127,232,255,${c[0][2] > 0 ? 0.92 : 0.26})`;
+  octx.fill();
+}
+
 /* the three channels and the camera live in the URL, so a view can be sent to somebody */
 function stamp() {
   history.replaceState(null, '',
@@ -2819,6 +2937,10 @@ Promise.all([
   }, 0));
 
   /* ---------- the camera, on the mouse ---------- */
+  /* The ball is shaded a pixel at a time, so its backing store is sized once from the
+     screen it is on rather than on every draw. */
+  orbc = $('orbc'); octx = orbc.getContext('2d');
+  orbc.width = orbc.height = Math.round(ORB_R * 2 * (devicePixelRatio || 1));
   let drag = null, moved = 0;
 
   /* Panning and turning are different intentions, so they get different gestures. A plain
@@ -2846,10 +2968,7 @@ Promise.all([
          centre, and project() sends that to exactly (ox, oy) — so pinning it means
          leaving the pan and the zoom alone, not correcting them afterwards. Every one
          of them is restored from the press, so a long drag cannot accumulate drift. */
-      cityYaw = snap(drag.yaw + dx * 0.006, Math.PI / 4);
-      /* pitch, clamped: flat on is unreadable, straight down loses every height */
-      cityPitch = snap(Math.min(1.45, Math.max(0.10, drag.pitch + dy * 0.0028)), PITCH);
-      setFlat(0);
+      turnTo(drag.yaw + dx * 0.006, drag.pitch + dy * 0.0028);
       cam.ox = drag.ox; cam.oy = drag.oy; cam.scale = drag.scale;
     }
     state.hover = null; rebuild();
@@ -2902,6 +3021,40 @@ Promise.all([
     }
     openPage(hit);
   };
+  /* The ball is a proxy for the same gesture, so it is anchored at the press the same way:
+     the angles it turns from and the pan and zoom it restores are all read once, and a long
+     drag can no more accumulate drift here than it can on the map. */
+  let orbDrag = null, orbStamp = 0;
+  orbc.onmousedown = e => {
+    if (state.plan) return;
+    orbDrag = { x: e.clientX, y: e.clientY, yaw: cityYaw, pitch: cityPitch,
+                ox: cam.ox, oy: cam.oy, scale: cam.scale };
+    $('orbit').classList.add('turning');
+    orbc.focus(); e.preventDefault();
+  };
+  addEventListener('mousemove', e => {
+    if (!orbDrag) return;
+    turnTo(orbDrag.yaw + (e.clientX - orbDrag.x) * ORB_RATE,
+           orbDrag.pitch + (e.clientY - orbDrag.y) * ORB_RATE);
+    cam.ox = orbDrag.ox; cam.oy = orbDrag.oy; cam.scale = orbDrag.scale;
+    state.hover = null; rebuild();
+  });
+  addEventListener('mouseup', () => {
+    if (!orbDrag) return;
+    orbDrag = null; $('orbit').classList.remove('turning'); stamp();
+  });
+  const ORB_KEYS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+  orbc.onkeydown = e => {
+    const step = ORB_KEYS[e.key];
+    if (!step || state.plan) return;
+    e.preventDefault();
+    turnTo(cityYaw + step[0] * ORB_STEP, cityPitch + step[1] * ORB_STEP);
+    state.hover = null; rebuild();
+    /* Chrome stalls the renderer for seconds when replaceState is called repeatedly out of
+       an input event, so a burst of keys writes the URL once when it stops — which is also
+       what the drag does, at mouseup, rather than on every move. */
+    clearTimeout(orbStamp); orbStamp = setTimeout(stamp, 400);
+  };
   addEventListener('keydown', e => {
     if (e.key === "Escape") {
       if (state.page) closePage(); else { state.pinned = null; detail(null); }
@@ -2949,7 +3102,7 @@ Promise.all([
   cityPitch = num("pitch", PITCH, 0.10, 1.45);
   setFlat(state.plan ? 1 : 0);
   fit();
-  rebuild(); detail(null); railIndex();
+  rebuild(); detail(null); railIndex(); segUI();
   requestAnimationFrame(frame);
   rise();
 });
