@@ -14,16 +14,22 @@ struct LabelChip: View {
     /// The label this chip draws, where it is one. `nil` says this chip is Argo's own overflow
     /// count rather than a provider label, which has no hue to spend either way.
     var label: TicketLabel?
+    /// The opaque ground to lay the chip's own wash over, where the surface under the chip is not
+    /// one its hues were read against — a selected backlog row, whose ground is the loud rung of
+    /// the brand hue (#1071). `nil` on the deck, which is what `ink` already measures against.
+    var backdrop: ArgoColor?
 
-    init(label: TicketLabel) {
+    init(label: TicketLabel, backdrop: ArgoColor? = nil) {
         self.word = label.name
         self.label = label
+        self.backdrop = backdrop
     }
 
     /// Argo's own marker over the labels a row had no width for. Neutral by construction: it counts
     /// labels rather than being one, so no provider colour could be right for it.
-    init(counting word: String) {
+    init(counting word: String, backdrop: ArgoColor? = nil) {
         self.word = word
+        self.backdrop = backdrop
     }
 
     /// Read here rather than at the call site because the treatment needs the surface the chip sits
@@ -32,16 +38,20 @@ struct LabelChip: View {
         label.flatMap { LabelInk($0, on: argo.color.surface.base) }
     }
 
+    /// The chip's own wash, made OPAQUE where it is handed a backdrop: the word is carried to a
+    /// ratio against the deck, so a wash composited onto anything else is a reading nobody took.
+    private var ground: ArgoColor {
+        let own = ink?.ground ?? argo.color.surface.control
+        return backdrop.map(own.composited(over:)) ?? own
+    }
+
     var body: some View {
         Text(word)
             .argoText(ArgoTypography.badge)
             .foregroundStyle(ink?.word ?? argo.color.text.secondary)
             .padding(.horizontal, ArgoTicketDetail.labelInsetX)
             .padding(.vertical, ArgoTicketDetail.labelInsetY)
-            .background(
-                ink?.ground ?? argo.color.surface.control,
-                in: .rect(cornerRadius: ArgoRadius.marker),
-            )
+            .background(ground, in: .rect(cornerRadius: ArgoRadius.marker))
             .overlay {
                 RoundedRectangle(cornerRadius: ArgoRadius.marker)
                     .strokeBorder(

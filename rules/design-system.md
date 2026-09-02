@@ -208,16 +208,26 @@ placements, and only these:
 | Placement | Drawn by | Weight |
 |---|---|---|
 | A selected sidebar row — the roster's, and the Work room's view list | `interaction.selectionGround`, as a `listRowBackground`, via `.argoSelectedRowGround(isSelected:)` | `accent` at 0.18 over the rail, **resolved opaque** |
+| A selected BACKLOG row — the Tickets room's list | `interaction.accent`, as a `listRowBackground`, from `BacklogRowInk` | full |
 | The rooms picker's selected segment | the `AccentColor` **asset**, which `NSSegmentedControl` fills with | full |
 | Focus rings and stock accented controls | the same asset | full |
 | The selection indicator on a tab | `interaction.selectionIndicator` | full |
 | A link, and the ink an interactive word takes | `interaction.accent` | full |
 
-One hue, two weights: full strength where a control is the loud rung, a quiet ground where a row
-is merely selected. The weight is not a taste — it is whatever leaves every voice a row is read
+One hue, two weights: full strength where a control is the loud rung or a row is the room's
+subject, a quiet ground where a row is a rail beside one. The weight is not a taste — it is whatever leaves every voice a row is read
 in above `TextRoles.contrastFloor`, which `SelectionGroundTests` asserts absolutely on both of a
 row's grounds (#922). It replaced a relative claim against the neutral wash, which could not fail
 while the ground it named was not the ground drawn.
+
+**Which weight a row takes is the row's own decision, and there are two.** The backlog is the
+room's subject rather than a rail beside it, so its selected row takes the LOUD weight (#1071) —
+and no voice off the neutral ramp can be set on it: `text.tertiary` and Ion Blue have the same
+luminance. All three of that row's voices take `text.onAccent`, and anything carrying its own
+ground — a label chip, the blockage mark — is laid on an opaque `surface.base` so its hues are
+read where they were chosen. `LoudSelectionGroundTests` holds every one of those readings, and
+the design doc's #1071 amendment carries the reversal it is: a third ground with an ink of its
+own, which is not the same thing as a ramp that moves with its ground.
 
 **`selectionGround` is OPAQUE by contract** (#922). The capsule below is still drawn under it, so
 a translucent value composites ONTO the capsule instead of replacing it — which is how a 0.10
