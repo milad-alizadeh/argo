@@ -295,6 +295,25 @@
   #pop .src { color: #5c8b99; }
   #pop[hidden] { display: none; }
 
+  /* THE NAME BAR. A five-pixel cell cannot carry a name, and a chip laid over it says the
+     name belongs to a layer above the map — so the name goes to a standing surface instead,
+     which is what FoamTree does below `maxLabelSizeForTitleBar`. It is the stage's own strip
+     rather than the reading panel, because the panel is what a CLICK is for and a pointer
+     passing over the map must not rewrite what somebody is reading. It says something only
+     when the map could not: a box that carries its own name is answered where it stands. */
+  /* top centre, because the two top corners are already spoken for — the reveal button on
+     the left and the orbit ball on the right */
+  #hovname { position: absolute; z-index: 45; top: 10px; left: 50%; max-width: 52%;
+             transform: translateX(-50%);
+             padding: 5px 10px; border-radius: 7px; pointer-events: none;
+             background: rgba(7,16,21,.9); backdrop-filter: blur(14px);
+             border: 1px solid rgba(126,214,240,.22);
+             font: var(--t-footnote) var(--sans); color: var(--text);
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #hovname b { font-weight: 600; }
+  #hovname span { color: #5c8b99; }
+  #hovname[hidden] { display: none; }
+
   /* A domain, once chosen, stays said: it is the standing context over its own file list,
      so opening a file ADDS a fact instead of replacing the one you came for. The hue is the
      left border — a bigger, quieter swatch than a square, and the hue the map is now lit in. */
@@ -456,6 +475,7 @@
 
   <div id="stage"><canvas id="cv"></canvas>
     <div id="scan"></div>
+    <div id="hovname" hidden></div>
     <!-- role=application because arrow keys are the control: a slider is one number and
          this is two, and anything quieter has the reader's keys eaten by the reading mode. -->
     <div id="orbit"><canvas id="orbc" tabindex="0" role="application"
@@ -513,6 +533,24 @@ const PLATE = [10, 8, 6.5, 5, 4, 3.5, 3, 3];   // how thick a folder's plate is,
 /* A folder that holds no files of its own is never drawn, so the gutter it takes is a
    rim you can see and cannot click. It keeps just enough to separate its children. */
 const GHOST_GAP = 3;
+/* A folder's name lives in a strip of its own ground that its children may not enter, so a
+   parent's caption and a nested child's occupy DISJOINT geometry and never compete for a
+   place — which is the whole of what used to silence every nested plate. ECharts calls it
+   `upperLabel`, d3 calls it `paddingTop`, CodeCharta caps it at 0.15 of the node.
+   The cap is there because RESERVING room lies about area and the lie compounds with depth —
+   Lu & Fogarty measure a 151-unit node drawn smaller than an 18-unit one for exactly this
+   reason. So this strip reserves NOTHING: it is moved out of the gutter the plate already
+   keeps — the two gutters across the plan's y grow by the strip and the two across x shrink
+   by whatever keeps the children's rectangle the same AREA. The area channel is load-bearing
+   on this map and it is not worth a caption. Measured: byte-identical drawn areas and 0
+   files lost, where the version that added a strip cost 40 of 1483 files and 2.75 points of
+   area fidelity.
+   Both y gutters grow, not one, because the two views read opposite edges: the plan's y runs
+   UP the screen, so a plan caption belongs on the plate's high-y edge to sit at the top of it
+   the way every cell's name does, while the city must use whichever edge is NEAREST or its
+   own towers stand in front of the words. */
+const HDR_FRAC = 0.15;    // never more of the node than this, and never more
+const HDR_GUT = 0.6;      // than this share of the gutter it is taken from
 
 let DATA = null, DESC = {}, state = null;
 /* path -> [[other path, temporal coupling], ...], strongest first. gitlogparser counts
@@ -757,8 +795,18 @@ function layout(root, mArea, mHeight, maxH) {
     const t = ghost ? 0 : PLATE[Math.min(rank, PLATE.length - 1)];
     const me = { n, x, y, w, h, depth: rank, path: here, z0: -t, z1: 0, file: false, ghost, kids: [] };
     const m = ghost ? GHOST_GAP : MARGIN[Math.min(rank + 1, MARGIN.length - 1)];
-    const ix = x + m, iy = y + m, iw = w - m * 2, ih = h - m * 2;
+    /* t of the height onto each y gutter, s of the width off each x gutter, and
+       (1 + 2s)(1 - 2t) = 1 is the whole of "the children keep their area". */
+    const kw = w - m * 2, kh = h - m * 2;
+    const s0 = m * HDR_GUT / Math.max(1, kw);
+    const hf = ghost ? 0 : Math.min(HDR_FRAC / 2, m * HDR_GUT / Math.max(1, kh),
+                                    s0 / (1 + 2 * s0));
+    const hdr = hf * kh, off = kw * hf / (1 - 2 * hf);
+    const ix = x + m - off, iy = y + m + hdr, iw = kw + off * 2, ih = kh - hdr * 2;
     if (iw <= 2 || ih <= 2) return me;
+    /* what the children got, so the caption bands are the difference between this and the
+       plate — one fact, stated once, rather than the labeller re-deriving the margins */
+    me.inner = [ix, iy, iw, ih];
     const kids = (n.children || [])
       .map(c => ({ c, v: roll(c, mArea) })).filter(k => k.v > 0);
     for (const b of squarify(kids.map(k => ({ v: k.v, c: k.c })), ix, iy, iw, ih))
@@ -1072,6 +1120,7 @@ let W = 0, H = 0, DPR = 1;
 /* the animated clocks, all in one place so reduced motion can silence them together */
 let ft = [];        // the last composites, in ms — read by the harness
 let mt = [];        // the last static rebuilds, in ms
+let nt = [];        // and the last label passes, which are a budget of their own
 
 /* ---------- the rise ---------- */
 /* Buildings grow out of their plates from the middle of the plan outwards, with a touch of
@@ -1636,52 +1685,99 @@ function quad(g, a, b, c, d, fill) {
    on a face. All of it is drawn in the animated layer, so a wheel notch costs no repaint. */
 const labels = [];        // the screen rects taken this frame
 const named = new Map();  // path -> the rect its name took, so nothing is named twice
-const overlaid = [];      // [name, labeller, path] this frame — read by the harness
+const overlaid = [];      // [name, labeller, path, painted] this frame — read by the harness
 const marked = [];        // and what was pointed at rather than named again
+/* What the READER can see, which is what a duplicate is: two paths carrying one word are
+   the map's business, two identical words in one frame are the reader's. The old check was
+   on the paths and was guaranteed by `named` — it proved nothing. */
+const painted = new Set();
+/* path -> the four corners the INK occupies, which is not the collision rect once a caption
+   is turned to its band: the harness has to be able to ask whether the letters are on the
+   thing, and the bounding box of a slanted word is not the word. */
+const inked = new Map();
 
-const SIZE_ON = 11;       // the size a name must fit at to arrive
-const SIZE_OFF = 9;       // and the size it may shrink to before it goes — hysteresis, so a
-                          // hand shaking on the wheel cannot strobe a name on and off
+const SIZE_ON = 11;       // the rungs a face label may be set at, largest first: the size is
+const SIZE_OFF = 9;       // read off the SURFACE and never off the label's own fade
 const CELL_PAD = 3;       // how far inside its own edge a cell's name sits
-const MIN_CHARS = 6;      // fewer than this before the ellipsis and the name identifies nothing
+const MIN_CHARS = 11;     // fewer than this and the name identifies nothing — and it has to
+                          // carry an extension and a tail, not six leading characters
 const CITY_CAP = 12;      // roofs the city may name at once — thirty names is a bad list
 const NAME_MS = 220;
-const FADES = new Map();
+const FADES = new Map();  // path -> the alpha its name is at, which is a fade and NOTHING
+                          // else: no part of the placement may read it
+const BADGE_LOOK = 24;    // how far past the budget the count of withheld names is measured
 let nameT = 0;
 
-function fits(box) {
-  if (box[0] < 2 || box[1] < 2 || box[0] + box[2] > W - 2 || box[1] + box[3] > H - 2) return false;
-  for (const q of labels)
-    if (box[0] < q[0] + q[2] && q[0] < box[0] + box[2] &&
-        box[1] < q[1] + q[3] && q[1] < box[1] + box[3]) return false;
-  return true;
-}
+/* Two questions, and they were one function — which is how the biggest thing in the frame
+   went unnamed. A caption pinned to one corner of a plate leaves the stage long before the
+   plate does, so a plate asks only whether its own place is free and puts its name in the
+   part of itself that is ON the stage. */
+const onStage = box => box[0] >= 2 && box[1] >= 2
+  && box[0] + box[2] <= W - 2 && box[1] + box[3] <= H - 2;
+const free = box => !labels.some(q => box[0] < q[0] + q[2] && q[0] < box[0] + box[2]
+  && box[1] < q[1] + q[3] && q[1] < box[1] + box[3]);
+const fits = box => onStage(box) && free(box);
 /* Taken, once: the rect joins the collision list, the box joins the named set, and the pair
    joins what the harness reads. Every labeller goes through here or it can name a thing
    twice. */
-function take(b, box, by) {
-  labels.push(box); named.set(b.path, box); overlaid.push([b.n.name, by, b.path]);
+function take(b, box, by, text, p) {
+  const t = text || b.n.name;
+  labels.push(box); named.set(b.path, box); painted.add(t);
+  inked.set(b.path, (p && p.pts) || [[box[0], box[1]], [box[0] + box[2], box[1]],
+                            [box[0] + box[2], box[1] + box[3]], [box[0], box[1] + box[3]]]);
+  /* the fit it ACHIEVED, not just that it fitted: the size it landed at and whether the name
+     had to be cut, so the budget and the harness can both read the same facts */
+  overlaid.push([b.n.name, by, b.path, t, p ? p.size : 0, !!(p && p.cut)]);
 }
 const font = (size, weight) => `${weight} ${size}px -apple-system, "SF Pro Text", sans-serif`;
+/* One place to ask how wide a word is, because a caption tries four bands at four sizes and
+   every try measures several elisions of the same one. Not memoised: measured, a cache keyed
+   on `ctx.font` and the string costs more than the measurement it saves. */
+const mw = t => ctx.measureText(t).width;
 
 /* Truncated, never to nothing: a name cut to two characters names no file, so a face that
    cannot carry MIN_CHARS and an ellipsis goes unnamed until the zoom gives it room. */
+/* The MIDDLE goes, and the extension stays. Trailing elision on a Swift filename destroys
+   exactly the part that tells two names apart: eight cells reading `Sessio…` name nothing,
+   which is the failure the floor exists to prevent. */
+function elide(name, n) {
+  if (n >= name.length) return name;
+  const dot = name.lastIndexOf('.');
+  const ext = dot > 0 && name.length - dot <= 12 ? name.slice(dot) : '';
+  const stem = ext ? name.slice(0, dot) : name;
+  const room = n - ext.length - 1;
+  if (room < 4) return name.slice(0, Math.max(1, n - 1)) + '…';
+  const head = Math.ceil(room * 0.62), tail = room - head;
+  return stem.slice(0, head) + '…' + (tail ? stem.slice(stem.length - tail) : '') + ext;
+}
 function clipText(name, maxW) {
-  const full = ctx.measureText(name).width;
+  const full = mw(name);
   if (full <= maxW) return name;
   let n = Math.min(name.length - 1, Math.max(0, Math.floor(name.length * maxW / full)));
-  for (; n >= MIN_CHARS; n--)
-    if (ctx.measureText(name.slice(0, n) + '…').width <= maxW) return name.slice(0, n) + '…';
+  for (; n >= MIN_CHARS; n--) {
+    const t = elide(name, n);
+    if (mw(t) <= maxW) return t;
+  }
   return null;
 }
 
 /* A cell's name is drawn in whatever its own pigment is not — light on a dark cell, dark on
    a light one — so the contrast comes from the fact underneath rather than from a backdrop
    laid over it. */
+/* Which of the two it is is a question about CONTRAST, not about lightness, so both are
+   measured against the pigment and the higher ratio wins. A threshold is a guess about the
+   palette, and this one sat exactly on the palette's commonest warm tone: every light-ink
+   label it chose measured 2.6:1 where the dark one measured 7.2:1. */
+const DARK_INK = 'rgba(4,10,14,.92)', LIGHT_INK = 'rgba(240,251,255,.96)';
+const srgb = c => { const u = Math.min(255, Math.max(0, c)) / 255;
+  return u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4); };
+const lumOf = p => 0.2126 * srgb(p[0]) + 0.7152 * srgb(p[1]) + 0.0722 * srgb(p[2]);
+const contrast = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+const L_DARK = lumOf([4, 10, 14]), L_LIGHT = lumOf([240, 251, 255]);
 function ink(b) {
   const p = tinted(b), m = LIT.r;
-  const l = (0.2126 * p[0] * m[0] + 0.7152 * p[1] * m[1] + 0.0722 * p[2] * m[2]) / 255;
-  return l > 0.58 ? 'rgba(4,10,14,.92)' : 'rgba(240,251,255,.96)';
+  const l = lumOf([p[0] * m[0], p[1] * m[1], p[2] * m[2]]);
+  return contrast(l, L_DARK) >= contrast(l, L_LIGHT) ? DARK_INK : LIGHT_INK;
 }
 
 const quadOf = b => [project(b.x, b.y, b.z1), project(b.x + b.w, b.y, b.z1),
@@ -1695,40 +1791,133 @@ const inQuad = (x, y, q) => inTri(x, y, q[0], q[1], q[2]) || inTri(x, y, q[0], q
    INSIDE its own cell, top-left, one padding for all of them — aligned names read as a grid,
    centred ones read as a scatter. Clipped to the cell, so two names on two disjoint cells
    cannot collide and no name can run off the map. */
-function cellPlan(b, size) {
-  const r = bboxOf(quadOf(b));
+function cellPlan(b, size, q0) {
+  const r = bboxOf(q0 || quadOf(b));
   const iw = r[2] - CELL_PAD * 2;
   if (r[3] - CELL_PAD * 2 < size || iw < 10) return null;
   ctx.font = font(size, 500);
   const t = clipText(b.n.name, iw);
   if (t === null) return null;
-  const box = [r[0] + CELL_PAD, r[1] + CELL_PAD, ctx.measureText(t).width, size + 2];
-  return fits(box) ? { kind: 'cell', clip: r, box, text: t, size } : null;
+  const box = [r[0] + CELL_PAD, r[1] + CELL_PAD, mw(t), size + 2];
+  return fits(box) ? { kind: 'cell', clip: r, box, text: t, size, cut: t !== b.n.name } : null;
 }
 
 /* THE CITY. A volume's flat face is its roof, a parallelogram in screen space rather than a
    rectangle — so the name is set horizontally about the roof's own centre and accepted only
    when all four corners of the text's box fall inside the quad. That test is exact, which is
    why a name can never extend past the roof it belongs to. */
-function roofPlan(b, size) {
-  const q = quadOf(b);
-  const cx = (q[0][0] + q[2][0]) / 2, cy = (q[0][1] + q[2][1]) / 2;
-  ctx.font = font(size, 600);
-  const t = clipText(b.n.name, Math.max(...q.map(p => p[0])) - Math.min(...q.map(p => p[0])));
-  if (t === null) return null;
-  const tw = ctx.measureText(t).width;
-  const box = [cx - tw / 2 - 2, cy - size / 2 - 1, tw + 4, size + 2];
-  for (const [dx, dy] of [[0, 0], [1, 0], [1, 1], [0, 1]])
-    if (!inQuad(box[0] + box[2] * dx, box[1] + box[3] * dy, q)) return null;
-  return fits(box) ? { kind: 'roof', box, text: t, size, cx, cy } : null;
+const CORNERS = [[0, 0], [1, 0], [1, 1], [0, 1]];
+const inside = (box, q) => CORNERS
+  .every(([dx, dy]) => inQuad(box[0] + box[2] * dx, box[1] + box[3] * dy, q));
+
+/* A roof's four-corner test is exact but purely geometric, and there is no id buffer here —
+   picking is analytic — so the same painter's order answers "is this roof visible": only a
+   box drawn AFTER this one can be standing in front of it. The screen footprints are
+   measured once per frame and only when a roof name actually asks. */
+let volBB = null, volIx = null;
+/* Every volume's screen footprint, measured once for the frame in one flat array of numbers:
+   a volume is its roof plus however far its walls fall below it, and the tallest fall from
+   this camera bounds every one of them, so it is four projections a box rather than eight.
+   It over-covers on purpose — a footprint is a reject filter, so an over-estimate costs one
+   exact test and an under-estimate loses an occluder. */
+function footprints() {
+  trig();
+  volIx = new Map();
+  volBB = new Float64Array(view.boxes.length * 4);
+  const fall = HMAX * ZK * _cp / (EYE - HMAX) * cam.scale;
+  view.boxes.forEach((b, i) => {
+    volIx.set(b.path, i);
+    if (b.ghost || !b.file) return;
+    const r = bboxOf(quadOf(b));
+    volBB[i * 4] = r[0]; volBB[i * 4 + 1] = r[1];
+    volBB[i * 4 + 2] = r[0] + r[2]; volBB[i * 4 + 3] = r[1] + r[3] + fall;
+  });
+}
+/* a dozen points spread over the ink itself, in the ink's own frame, so a caption turned to
+   its band is asked about the word and not about the rectangle around it */
+const inkGrid = c => {
+  const out = [];
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) {
+    const u = (i + 0.5) / 6, v = (j + 0.5) / 3;
+    out.push([c[0][0] + (c[1][0] - c[0][0]) * u + (c[3][0] - c[0][0]) * v,
+              c[0][1] + (c[1][1] - c[0][1]) * u + (c[3][1] - c[0][1]) * v]);
+  }
+  return out;
+};
+function buried(b, corners) {
+  if (!volBB) footprints();
+  const i = volIx.has(b.path) ? volIx.get(b.path) : -1;
+  if (i < 0) return false;
+  const pts = inkGrid(corners), bb = bboxOf(corners);
+  const [lx0, ly0, lx1, ly1] = [bb[0], bb[1], bb[0] + bb[2], bb[1] + bb[3]];
+  for (let j = view.boxes.length - 1; j > i; j--) {
+    const x0 = volBB[j * 4], y0 = volBB[j * 4 + 1];
+    const x1 = volBB[j * 4 + 2], y1 = volBB[j * 4 + 3];
+    if (x1 === 0 || lx0 > x1 || x0 > lx1 || ly0 > y1 || y0 > ly1) continue;
+    /* a point at a time: the exact test walks three quads and eight projections apiece, so
+       the point has to be inside this volume's own footprint before it is worth asking */
+    for (const pt of pts)
+      if (pt[0] >= x0 && pt[0] <= x1 && pt[1] >= y0 && pt[1] <= y1
+          && inBox(view.boxes[j], pt[0], pt[1])) return true;
+  }
+  return false;
 }
 
-const facePlan = (b, size) => flat() ? cellPlan(b, size) : roofPlan(b, size);
+/* A lower bound on the room the shortest legible form of a name could possibly want, from the
+   character floor and the rung alone. Fifteen hundred roofs are offered to the labeller every
+   frame and all but a handful are far too small, so the cheap no comes before any measuring:
+   0.3em a character is narrower than any string this font actually sets. */
+const roomFor = (name, size) => Math.min(name.length, MIN_CHARS) * size * 0.3;
+
+function roofPlan(b, size, q0) {
+  const q = q0 || quadOf(b);
+  const bb = bboxOf(q);
+  if (bb[2] < roomFor(b.n.name, size) || bb[3] < size + 2) return null;
+  const cx = (q[0][0] + q[2][0]) / 2, cy = (q[0][1] + q[2][1]) / 2;
+  ctx.font = font(size, 600);
+  /* The bbox across a rotated quad is far wider than the usable run through its middle, so a
+     big obliquely-projected roof measured against the bbox was rejected outright and the
+     budget leaked to smaller ones. It retries shorter rather than giving up. */
+  let last = null;
+  for (let room = Math.max(...q.map(p => p[0])) - Math.min(...q.map(p => p[0]));
+       room > 18; room *= 0.72) {
+    const t = clipText(b.n.name, room);
+    if (t === null) break;
+    if (t === last) continue;
+    last = t;
+    const tw = mw(t);
+    const box = [cx - tw / 2 - 2, cy - size / 2 - 1, tw + 4, size + 2];
+    if (!inside(box, q) || !fits(box)) continue;
+    const corners = CORNERS.map(([dx, dy]) => [box[0] + box[2] * dx, box[1] + box[3] * dy]);
+    return buried(b, corners)
+      ? null : { kind: 'roof', box, text: t, size, cx, cy, cut: t !== b.n.name };
+  }
+  return null;
+}
+
+/* The largest rung its own surface can carry, and a function of the geometry in front of the
+   reader and of NOTHING else. The rung used to be selected by whether the name was already
+   fading — so the fade chose the box's WIDTH, the width chose who collided, and a name
+   oscillated against its own damping for ever. Placement is memoryless now, which is the
+   strong form of Been, Daiches & Yap's D4: the same camera reached two ways gives the same
+   names because nothing about the route is remembered. It is also FoamTree's drop rule —
+   eligibility is rendered font size, not surface area — and that is what makes a zoom restore
+   labels monotonically instead of at a threshold. */
+const RUNGS = [SIZE_ON, SIZE_OFF];
+/* the surface's quad is passed in wherever the caller already has it: fifteen hundred
+   candidates a frame times two rungs is three thousand projections nobody needs twice */
+function facePlan(b, q) {
+  for (const size of RUNGS) {
+    const p = flat() ? cellPlan(b, size, q) : roofPlan(b, size, q);
+    if (p) return p;
+  }
+  return null;
+}
 
 /* Planned first, drawn second, because the alpha a name arrives at is only known once the
    fade has been advanced — and a fade cannot be advanced by something already on the canvas. */
 function drawFace(b, p, alpha, by) {
-  take(b, p.box, by);
+  take(b, p.box, by, p.text, p);
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.font = font(p.size, p.kind === 'cell' ? 500 : 600);
@@ -1747,41 +1936,163 @@ function drawFace(b, p, alpha, by) {
   ctx.restore();
 }
 
-/* A plate writes at its own far corner, which is the top of it on screen and never behind a
-   building. Unchanged in every respect but the canvas it lands on. */
-function plateName(b) {
-  const c = [[b.x, b.y], [b.x + b.w, b.y], [b.x + b.w, b.y + b.h], [b.x, b.y + b.h]];
-  const px = c.map(p => project(p[0], p[1], 0)[0]);
-  const wide = Math.max(...px) - Math.min(...px);
-  if (wide < (flat() ? 46 : 90)) return false;
+/* THE PLATE. A folder's name belongs INSIDE its own ground, and its ground is the band its
+   children may not enter: the margin ring, thickened on one edge by the reserved caption
+   strip. Four bands, all of them disjoint from every child's, and the name goes in whichever
+   is nearest the eye — a band on the FAR edge is the one this plate's own towers stand in
+   front of, which is where every plate name used to land. Clipped to the band and accepted
+   only when all four corners of the text's box are inside it: the same exact test the roofs
+   use, and the only thing that can promise a name is on the thing it names. */
+function bandsOf(b) {
+  const i = b.inner;
+  if (!i) return [];
+  return [[b.x, b.y, b.w, i[1] - b.y],
+          [b.x, i[1] + i[3], b.w, b.y + b.h - i[1] - i[3]],
+          [b.x, i[1], i[0] - b.x, i[3]],
+          [i[0] + i[2], i[1], b.x + b.w - i[0] - i[2], i[3]]]
+    .filter(r => r[2] > 1 && r[3] > 1);
+}
+const bandQuad = r => [project(r[0], r[1], 0), project(r[0] + r[2], r[1], 0),
+                       project(r[0] + r[2], r[1] + r[3], 0), project(r[0], r[1] + r[3], 0)];
 
-  let far = c[0], best = Infinity;
-  for (const p of c) { const d = depth(p[0], p[1]); if (d < best) { best = d; far = p; } }
-  const inward = [far[0] < b.x + b.w / 2 ? 5 : -5, far[1] < b.y + b.h / 2 ? 5 : -5];
-  let p = project(far[0] + inward[0], far[1] + inward[1], 0);
-
-  const size = wide > 420 ? 13 : wide > 200 ? 11 : 10;
-  const alpha = wide > 420 ? .94 : wide > 200 ? .74 : .52;
-  ctx.font = font(size, wide > 420 ? 600 : 400);
-  ctx.textBaseline = 'alphabetic';
-  /* A plan has no apex to hang a name off, so the name sits inside the region's own top-left
-     and the region must be deep enough to hold a line of it. */
-  if (flat()) {
-    const py = c.map(q => project(q[0], q[1], 0)[1]);
-    const tall = Math.max(...py) - Math.min(...py);
-    if (tall < size + 9) return false;
-    p = [Math.min(...px) + 1, Math.min(...py) + size + 4];
+/* How much of a quad is actually ON the stage, in px². The honest measure of how big a thing
+   is in the frame, and so the gate a plate's name is spent on. */
+function stageArea(q) {
+  let poly = q;
+  for (const [a, b, c] of [[1, 0, -2], [-1, 0, W - 2], [0, 1, -2], [0, -1, H - 2]]) {
+    const out = [];
+    for (let i = 0; i < poly.length; i++) {
+      const p = poly[i], n = poly[(i + 1) % poly.length];
+      const dp = a * p[0] + b * p[1] + c, dn = a * n[0] + b * n[1] + c;
+      if (dp >= 0) out.push(p);
+      if ((dp >= 0) !== (dn >= 0)) {
+        const u = dp / (dp - dn);
+        out.push([p[0] + (n[0] - p[0]) * u, p[1] + (n[1] - p[1]) * u]);
+      }
+    }
+    poly = out;
+    if (!poly.length) return 0;
   }
-  const box = [p[0] + 4, p[1] - size - 3, ctx.measureText(b.n.name).width + 8, size + 7];
-  if (!fits(box)) return false;
-  take(b, box, 'plate');
-  ctx.save();
-  ctx.fillStyle = `rgba(226,248,255,${alpha})`;
-  ctx.strokeStyle = 'rgba(2,8,12,.8)'; ctx.lineWidth = 3;
-  ctx.strokeText(b.n.name, p[0] + 4, p[1] - 3);
-  ctx.fillText(b.n.name, p[0] + 4, p[1] - 3);
-  ctx.restore();
-  return true;
+  let sum = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], n = poly[(i + 1) % poly.length];
+    sum += p[0] * n[1] - n[0] * p[1];
+  }
+  return Math.abs(sum) / 2;
+}
+
+const PLATE_AREA = 1800;   // px² of visible ground before a folder is worth a name at all
+
+/* The part of a segment that is ON the stage. A band a thousand pixels long can have both
+   its ends off the picture and its middle in plain sight, and pinning the name to an end
+   that is off the picture is exactly how the largest object in the frame went unnamed.
+   (Liang & Barsky 1984.) */
+function onStageSeg(a, e, pad) {
+  const dx = e[0] - a[0], dy = e[1] - a[1];
+  let t0 = 0, t1 = 1;
+  for (const [p, q] of [[-dx, a[0] - 2], [dx, W - 2 - a[0]],
+                        [-dy, a[1] - pad], [dy, H - pad - a[1]]]) {
+    if (p === 0) { if (q < 0) return null; continue; }
+    const u = q / p;
+    if (p < 0) { if (u > t1) return null; if (u > t0) t0 = u; }
+    else { if (u < t0) return null; if (u < t1) t1 = u; }
+  }
+  return [[a[0] + dx * t0, a[1] + dy * t0], [a[0] + dx * t1, a[1] + dy * t1]];
+}
+
+/* Set ALONG the band's own centreline, at the band's own screen angle. A caption band in the
+   city is an oblique strip a dozen pixels thick, and a horizontal line of text needs the
+   strip's vertical gap to exceed its height PLUS its length times the slope — which is why
+   every big plate went unnamed the moment the words were kept level. Turned to the band, the
+   only thing that has to fit is the text. In the plan every band is square to the screen, so
+   a band the words would have to climb is refused there rather than set on a slant. */
+const LEAN = () => flat() ? 0.35 : 1.0;
+function bandPlan(b, r, size) {
+  const q = bandQuad(r);
+  const ends = r[2] >= r[3]
+    ? [project(r[0], r[1] + r[3] / 2, 0), project(r[0] + r[2], r[1] + r[3] / 2, 0)]
+    : [project(r[0] + r[2] / 2, r[1], 0), project(r[0] + r[2] / 2, r[1] + r[3], 0)];
+  /* as tight as a middle-baselined line needs, because four spare pixels are the difference
+     between a name and none */
+  const hi = size + 2;
+  const seen = onStageSeg(...(ends[0][0] <= ends[1][0] ? ends : [ends[1], ends[0]]), 2 + hi / 2);
+  if (!seen) return null;
+  const [a, e] = seen;
+  const th = Math.atan2(e[1] - a[1], e[0] - a[0]);
+  if (Math.abs(th) > LEAN()) return null;
+  const ux = Math.cos(th), uy = Math.sin(th);
+  /* The strip's own thickness ACROSS, which no line of text set along it can exceed however
+     short the words are cut. Asked first, because a plate tries four bands at four sizes and
+     a band a reader could never fit a name into should cost no measurement at all. */
+  const cross = r[2] >= r[3] ? [q[3][0] - q[0][0], q[3][1] - q[0][1]]
+                             : [q[1][0] - q[0][0], q[1][1] - q[0][1]];
+  if (Math.abs(cross[0] * uy - cross[1] * ux) < hi) return null;
+  const at = [a[0] + ux * 4, a[1] + uy * 4];
+  let last = null;
+  for (let room = Math.hypot(e[0] - a[0], e[1] - a[1]) - 8; room > 24; room *= 0.7) {
+    const t = clipText(b.n.name, room);
+    if (t === null) break;
+    if (t === last) continue;
+    last = t;
+    const tw = mw(t) + 4;
+    const pts = [[0, -hi / 2], [tw, -hi / 2], [tw, hi / 2], [0, hi / 2]]
+      .map(([u, v]) => [at[0] + ux * u - uy * v, at[1] + uy * u + ux * v]);
+    const box = bboxOf(pts);
+    if (pts.every(pt => inQuad(pt[0], pt[1], q)) && fits(box))
+      return { q, box, pts, at, th, text: t, size, cut: t !== b.n.name };
+  }
+  return null;
+}
+
+function plateName(b) {
+  const bands = bandsOf(b);
+  if (!bands.length) return false;
+  const ground = quadOf(b);
+  if (stageArea(ground) < PLATE_AREA) return false;
+  const bb = bboxOf(ground);
+  const wide = Math.min(bb[0] + bb[2], W) - Math.max(bb[0], 0);
+  const top = wide > 420 ? 13 : wide > 200 ? 11 : 10;
+  ctx.textBaseline = 'middle';
+  /* In the plan, the band at the top of the plate on screen — the same corner, the same
+     reading order, as every cell's name, so the captions and the cells are one grid. In the
+     city, the band nearest the eye, because a band on the far edge is the one this plate's
+     own towers are standing in front of. */
+  bands.sort(flat()
+    ? (p, q) => project(p[0] + p[2] / 2, p[1] + p[3] / 2, 0)[1]
+              - project(q[0] + q[2] / 2, q[1] + q[3] / 2, 0)[1]
+    : (p, q) => depth(q[0] + q[2] / 2, q[1] + q[3] / 2)
+              - depth(p[0] + p[2] / 2, p[1] + p[3] / 2));
+  /* size outside, band inside: the biggest legible name wins, and nearness only decides
+     between two bands that would carry the same one */
+  for (const size of [13, 11, 10, 9].filter(v => v <= top)) {
+    ctx.font = font(size, wide > 420 ? 600 : 400);
+    for (const r of bands) {
+      const p = bandPlan(b, r, size);
+      /* One WORD per frame, not one path per frame: a single-child chain repeats its parent's
+         name, and plates are taken biggest first, so the outermost keeps it and the inner one
+         inherits it — which is what the rail's `parent/child/child` already says. */
+      /* and not with a nearer tower standing over the words. The band is its own ground and
+         no child of its own is on it, but a SIBLING nearer the eye can rise across it. */
+      if (!p || painted.has(p.text) || (!flat() && buried(b, p.pts))) continue;
+      take(b, p.box, 'plate', p.text, p);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(p.q[0][0], p.q[0][1]);
+      for (let i = 1; i < 4; i++) ctx.lineTo(p.q[i][0], p.q[i][1]);
+      /* clipped to its own band, which is the whole promise: whatever the projection does to
+         the strip, no part of the word can land on anything but this folder's ground */
+      ctx.closePath(); ctx.clip();
+      ctx.globalAlpha = wide > 420 ? .94 : wide > 200 ? .78 : .58;
+      ctx.translate(p.at[0], p.at[1]); ctx.rotate(p.th);
+      ctx.strokeStyle = 'rgba(2,8,12,.8)'; ctx.lineWidth = 3;
+      ctx.strokeText(p.text, 2, 0);
+      ctx.fillStyle = 'rgb(226,248,255)';
+      ctx.fillText(p.text, 2, 0);
+      ctx.restore();
+      return true;
+    }
+  }
+  return false;
 }
 
 /* The callout, and the ONLY thing in the whole design that may float — and only in the city,
@@ -1794,10 +2105,10 @@ function pill(b, by) {
   ctx.font = font(11, 600);
   ctx.textBaseline = 'alphabetic';
   const p = project(b.x + b.w / 2, b.y + b.h / 2, b.z1);
-  const w = ctx.measureText(b.n.name).width;
+  const w = mw(b.n.name);
   const box = [p[0] - w / 2 - 5, p[1] - 26, w + 10, 17];
-  if (box[0] < 2 || box[1] < 2 || box[0] + box[2] > W - 2 || box[1] + box[3] > H - 2) return false;
-  take(b, box, by + '\u00b7pill');
+  if (!onStage(box)) return false;
+  take(b, box, by + '\u00b7pill', b.n.name);
   ctx.fillStyle = 'rgba(6,11,16,.86)';
   ctx.beginPath(); ctx.roundRect(box[0], box[1], box[2], box[3], 4); ctx.fill();
   ctx.strokeStyle = 'rgba(127,232,255,.34)'; ctx.lineWidth = 1; ctx.stroke();
@@ -1824,17 +2135,18 @@ function callout(b, by) {
     ctx.stroke(); ctx.restore();
     return;
   }
-  const p = facePlan(it, SIZE_ON);
+  const p = facePlan(it);
   /* A plan cell too small for its own name gets none: the rim marks which box it is and the
      rail says what it is called, which is where the reader is already reading. */
   if (p) drawFace(it, p, 1, by); else pill(it, by);
 }
 
-/* Once a name is up it may shrink to SIZE_OFF before it goes, which is the hysteresis; the
-   fade is what stops it popping, and CALM makes the fade a cut. */
-function held(path, k, up) {
+/* The fade is what stops a name popping, and CALM makes the fade a cut. It is the only thing
+   in the labelling that carries anything over from the frame before, and it is deliberately
+   the one thing nothing else reads. */
+function held(path, k, on) {
   const had = FADES.get(path);
-  const a = Math.max(0, Math.min(1, (had === undefined ? 0 : had) + (up ? k : -k)));
+  const a = Math.max(0, Math.min(1, (had === undefined ? 0 : had) + (on ? k : -k)));
   if (a <= 0.01) { FADES.delete(path); return 0; }
   FADES.set(path, a);
   return a;
@@ -1844,6 +2156,8 @@ function names(now) {
   const k = CALM ? 1 : Math.min(1, Math.max(1, now - (nameT || now)) / NAME_MS);
   nameT = now;
   labels.length = 0; named.clear(); overlaid.length = 0; marked.length = 0;
+  painted.clear(); inked.clear(); volBB = volIx = null;
+  if (!flat()) labels.push([BADGE[0], H - 26, BADGE[1], 18]);
 
   /* Plates first, biggest first: at the zoom where a folder's name is the useful one it must
      not lose its place to a file standing on it. */
@@ -1854,28 +2168,84 @@ function names(now) {
      budget is spent on what it was drawn to. */
   const cand = [];
   for (const b of view.boxes) if (b.file && !b.ghost) {
-    const r = bboxOf(quadOf(b));
-    if (r[2] < 10 || r[3] < 8) { FADES.delete(b.path); continue; }
-    cand.push([r[2] * r[3], b]);
+    const q = quadOf(b), r = bboxOf(q);
+    /* the cheap no, from the character floor and the smallest rung: a face this small cannot
+       carry a legible name at any size, and asking properly costs a text measurement */
+    if (r[2] < roomFor(b.n.name, SIZE_OFF) || r[3] < SIZE_OFF + 2) {
+      FADES.delete(b.path); continue;
+    }
+    cand.push([r[2] * r[3], b, q]);
   }
   cand.sort((a, c) => c[0] - a[0]);
   const cap = flat() ? 400 : CITY_CAP;
-  let spent = 0;
-  for (const [, b] of cand) {
-    const up = FADES.has(b.path);
+  let spent = 0, more = 0, looked = 0;
+  for (const [, b, q] of cand) {
     /* Past the budget it fades out rather than vanishing, and it may not hold its place by
-       having been there first — the cap is on what is drawn, or it is not a cap. */
-    if (spent >= cap) { held(b.path, k, false); continue; }
-    const p = facePlan(b, up ? SIZE_OFF : SIZE_ON);
-    const a = held(b.path, k, !!p);
-    if (a > 0.01 && p) { drawFace(b, p, a, 'zoom'); spent++; }
+       having been there first — the cap is on what is drawn, or it is not a cap. But it is
+       COUNTED: CodeCharta says `+N more` rather than dropping names in silence, and an
+       absence nobody explains is the same defect as an absence nobody can predict. */
+    if (spent >= cap) {
+      if (looked < BADGE_LOOK) { looked++; if (facePlan(b, q)) more++; }
+      held(b.path, k, false);
+      continue;
+    }
+    const p = facePlan(b, q);
+    /* and not a word the frame already carries: three cells reading `Evid…ts.swift` look
+       like one file drawn three times. The reader keeps the biggest and the rest stay
+       anonymous, which is honest — a string that cannot tell two files apart names neither. */
+    const ok = !!p && !painted.has(p.text);
+    const a = held(b.path, k, ok);
+    if (a > 0.01 && ok) { drawFace(b, p, a, 'zoom'); spent++; }
   }
+  withheld = more + (looked >= BADGE_LOOK ? 0.5 : 0);
 
   if (state.pinned) callout(state.pinned, 'pin');
   if (state.hover && state.hover !== state.pinned) callout(state.hover, 'hover');
   if (HITS && HITS.size && HITS.size <= 40)
     for (const path of HITS) { const b = view.seat.get(path);
       if (b && !named.has(path)) callout(b, 'hit'); }
+  moreBadge();
+  nameBar(state.hover);
+}
+
+/* Said, not silent: how many names the budget is holding back. Its corner is CLAIMED before
+   any name is placed and drawn after all of them, so it can neither be written over nor write
+   over anything — and the claim stands even on the frames it has nothing to say, because a
+   corner that is a badge sometimes and a caption other times is a flicker of its own. Only
+   the city claims it: the plan's budget of four hundred never bites. */
+const BADGE = [12, 96];   // where it sits in from the left, and how wide it may grow
+let withheld = 0;
+function moreBadge() {
+  if (withheld < 1) return;
+  const t = '+' + Math.floor(withheld) + (withheld % 1 ? '+' : '') + ' more';
+  ctx.save();
+  ctx.font = font(10, 500);
+  ctx.textBaseline = 'middle';
+  const w = mw(t);
+  ctx.fillStyle = 'rgba(6,11,16,.8)';
+  ctx.beginPath(); ctx.roundRect(BADGE[0], H - 26, w + 16, 18, 4); ctx.fill();
+  ctx.strokeStyle = 'rgba(127,232,255,.24)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = '#8fb4c2';
+  ctx.fillText(t, BADGE[0] + 8, H - 17);
+  ctx.restore();
+}
+
+/* THE FALLBACK SURFACE. A name that has nowhere to sit is said somewhere standing rather than
+   not said at all — FoamTree's title bar below `maxLabelSizeForTitleBar`. It speaks only when
+   the map could not: a box carrying its own name is answered where it stands, and two answers
+   to one question is what made the labels read as debris. Never the reading panel, because
+   that is what a CLICK is for. */
+let barTxt = '';
+function nameBar(b) {
+  const t = b && b.n && !b.ghost && !named.has(b.path) ? b.n.name : '';
+  if (t === barTxt) return;
+  barTxt = t;
+  const el = $('hovname');
+  el.hidden = !t;
+  if (!t) return;
+  const seg = b.path.split('/');
+  const where = seg.slice(Math.max(0, seg.length - 3), seg.length - 1).join('/');
+  el.innerHTML = (where ? `<span>${esc(where)}/</span>` : '') + `<b>${esc(t)}</b>`;
 }
 
 /* ---------- the animated layer ---------- */
@@ -1927,7 +2297,10 @@ function frame(now) {
   if (state.pinned && state.pinned.w !== undefined) pinMark(state.pinned, now);
   if (state.hover && state.hover !== state.pinned) hoverRim(state.hover);
   /* Every name goes on after the rims, so a stroke never crosses a letter. */
+  const nT0 = performance.now();
   names(now);
+  nt.push(performance.now() - nT0);
+  if (nt.length > 240) nt = nt.slice(-120);
 
   ft.push(performance.now() - t0);
   if (ft.length > 240) ft = ft.slice(-120);
