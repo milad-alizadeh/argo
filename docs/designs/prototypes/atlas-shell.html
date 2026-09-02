@@ -58,19 +58,27 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .drow .ct { font: var(--t-footnote) var(--mono); color: var(--text-3); }
 
-  .frow { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: baseline;
-    padding: 5px 9px; border-radius: 6px; cursor: pointer; }
+  /* Two lines, not one: the name is what you are looking for and the path is what tells
+     two of the same name apart, so they are a title and its subtitle rather than one long
+     string competing with itself for the row. */
+  .frow { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start;
+    padding: 6px 9px; border-radius: 6px; cursor: pointer; min-width: 0; }
+  /* the measure belongs beside the name, not floating between the two lines */
+  .frow em, .frow i { padding-top: 2px; }
   .frow:hover { background: rgba(126,214,240,.08); }
   .frow[aria-selected="true"] { background: rgba(127,232,255,.15); }
-  /* the path is clipped from its left, so the basename is the part that always survives */
-  .frow .p { direction: rtl; text-align: left; white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; font: var(--t-callout) var(--mono); }
-  .frow .p > * { direction: ltr; unicode-bidi: embed; }
-  .frow .p s { color: var(--text-off); text-decoration: none; }
-  .frow .p b { color: var(--text-1); font-weight: 400; }
+  .frow .p { min-width: 0; }
+  .frow .p b { display: block; font: 400 var(--t-callout) var(--mono); color: var(--text-1);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* the directory is clipped from its LEFT, because its last segment is the telling one */
+  .frow .p s { display: block; direction: rtl; text-align: left; text-decoration: none;
+    font: var(--t-footnote) var(--mono); color: var(--text-off); margin-top: 1px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .frow .p s > span { direction: ltr; unicode-bidi: embed; }
   .frow em { font: var(--t-footnote) var(--mono); font-style: normal; color: var(--text-3); }
   .frow i { font: var(--t-footnote) var(--sans); font-style: normal; opacity: .85;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 118px; }
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 112px;
+    text-align: right; }
 
   /* a boolean is a switch */
   .sws { display: flex; align-items: center; gap: 10px; cursor: pointer;
@@ -401,7 +409,7 @@ function DomainList() {
 function fileRow(f, withDomain) {
   return `<div class="frow" data-file="${f.i}"
     aria-selected="${!!(S.sel && S.sel.kind === 'file' && S.sel.i === f.i)}" title="${esc(f.path)}">
-    <span class="p"><s>${esc(f.dir)}</s><b>${esc(f.name)}</b></span>
+    <span class="p"><b>${esc(f.name)}</b><s><span>${esc(f.dir.replace(/\/$/, ''))}</span></s></span>
     ${withDomain ? `<i style="color:${COL(f.dom)}">${esc(DOMAINS[f.dom][0])}</i>`
                  : `<em>${f.cx}</em>`}</div>`;
 }
