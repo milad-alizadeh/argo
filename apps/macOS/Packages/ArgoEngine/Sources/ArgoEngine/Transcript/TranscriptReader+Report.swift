@@ -33,16 +33,21 @@ extension TranscriptReader {
         }
         return [.toolCallOutcome(ToolCallOutcome(
             id: callID,
-            status: report.status,
-            // `derived`: the text is read off an external record rather than owned by Argo.
-            result: report.text.map { .output(OutputEvidence(tier: .derived, text: $0)) },
-            endedAtMs: message.timestampMs,
-            // The notification states the delegate's spend in a shape of its own — a token TOTAL
-            // rather than the host's four counters — which no reading here can honestly fill.
-            usage: nil,
-            // The join key onto the delegate's own transcript, which this outcome replaces the
-            // launch result's copy of. Dropped, it would orphan the Subagent.
-            subagentID: report.subagentID,
+            resolution: ToolCallOutcome.Resolution(
+                status: report.status,
+                // `derived`: the text is read off an external record rather than owned by Argo.
+                result: report.text.map { .output(OutputEvidence(tier: .derived, text: $0)) },
+                endedAtMs: message.timestampMs,
+            ),
+            delegated: ToolCallOutcome.Delegated(
+                // The notification states the delegate's spend in a shape of its own — a token
+                // TOTAL rather than the host's four counters — which no reading here can honestly
+                // fill.
+                usage: nil,
+                // The join key onto the delegate's own transcript, which this outcome replaces the
+                // launch result's copy of. Dropped, it would orphan the Subagent.
+                subagentID: report.subagentID,
+            ),
         ))]
     }
 
@@ -71,11 +76,13 @@ extension TranscriptReader {
             )),
             .toolCallOutcome(ToolCallOutcome(
                 id: id,
-                status: report.status,
-                // `derived`: the text is read off an external record rather than owned by Argo.
-                result: report.text.map { .output(OutputEvidence(tier: .derived, text: $0)) },
-                endedAtMs: message.timestampMs,
-                usage: nil,
+                resolution: ToolCallOutcome.Resolution(
+                    status: report.status,
+                    // `derived`: the text is read off an external record, not owned by Argo.
+                    result: report.text.map { .output(OutputEvidence(tier: .derived, text: $0)) },
+                    endedAtMs: message.timestampMs,
+                ),
+                delegated: ToolCallOutcome.Delegated(usage: nil),
             )),
         ]
     }

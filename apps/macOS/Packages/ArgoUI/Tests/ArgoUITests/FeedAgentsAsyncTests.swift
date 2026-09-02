@@ -13,11 +13,12 @@ struct FeedAgentsAsyncTests {
         .toolCall(FeedFixture.call("away", tool: "Agent", kind: .delegate, naming: "review")),
         .toolCallOutcome(ToolCallOutcome(
             id: "away",
-            status: .inProgress,
-            result: nil,
-            endedAtMs: nil,
-            usage: nil,
-            subagentID: "a-away",
+            resolution: ToolCallOutcome.Resolution(
+                status: .inProgress,
+                result: nil,
+                endedAtMs: nil,
+            ),
+            delegated: ToolCallOutcome.Delegated(usage: nil, subagentID: "a-away"),
         )),
     ]
 
@@ -25,11 +26,8 @@ struct FeedAgentsAsyncTests {
     /// this fix leans on to put the rail away again.
     private static let reported = ToolCallOutcome(
         id: "away",
-        status: .completed,
-        result: nil,
-        endedAtMs: nil,
-        usage: nil,
-        subagentID: "a-away",
+        resolution: ToolCallOutcome.Resolution(status: .completed, result: nil, endedAtMs: nil),
+        delegated: ToolCallOutcome.Delegated(usage: nil, subagentID: "a-away"),
     )
 
     private func rows(_ events: [TranscriptEvent]) -> [FeedRow] {

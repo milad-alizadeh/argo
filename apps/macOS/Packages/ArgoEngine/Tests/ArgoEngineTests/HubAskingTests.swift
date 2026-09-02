@@ -25,10 +25,12 @@ struct HubAskingTests {
     private static func answer(id: String) -> TranscriptEvent {
         .toolCallOutcome(ToolCallOutcome(
             id: id,
-            status: .completed,
-            result: nil,
-            endedAtMs: nowMs,
-            usage: nil,
+            resolution: ToolCallOutcome.Resolution(
+                status: .completed,
+                result: nil,
+                endedAtMs: nowMs,
+            ),
+            delegated: ToolCallOutcome.Delegated(usage: nil),
         ))
     }
 

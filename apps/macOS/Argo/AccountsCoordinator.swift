@@ -77,7 +77,8 @@ final class AccountsCoordinator {
         self.bindings = ProjectBindings(projects: projects, accounts: store)
         self.authorization = ProviderAuthorization(accounts: store)
         self.poll = TicketPoll(
-            port: ProviderTickets(), health: health, items: ticketLedger,
+            port: ProviderTickets(),
+            ledgers: TicketPoll.Ledgers(health: health, items: ticketLedger),
         )
     }
 

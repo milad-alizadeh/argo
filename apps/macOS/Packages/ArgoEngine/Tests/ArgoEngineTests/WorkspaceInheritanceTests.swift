@@ -75,6 +75,10 @@ struct WorkspaceInheritanceTests {
     }
 
     private static func workspace(onBranch branch: String) -> WorkspaceProjection {
-        WorkspaceProjection(kind: .worktree, branch: branch, dirty: 0, divergence: nil)
+        WorkspaceProjection(
+            kind: .worktree,
+            refs: WorkspaceProjection.Refs(branch: branch),
+            drift: WorkspaceProjection.Drift(dirty: 0, divergence: nil),
+        )
     }
 }

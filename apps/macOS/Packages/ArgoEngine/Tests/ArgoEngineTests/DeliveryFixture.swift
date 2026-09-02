@@ -84,8 +84,12 @@ extension WorkspaceProjection {
     /// detached HEAD and a Session with no Delivery.
     static func on(_ branch: String?) -> WorkspaceProjection {
         WorkspaceProjection(
-            kind: .worktree, branch: branch, dirty: 0,
-            divergence: UpstreamDivergence(ahead: 0, behind: 0),
+            kind: .worktree,
+            refs: WorkspaceProjection.Refs(branch: branch),
+            drift: WorkspaceProjection.Drift(
+                dirty: 0,
+                divergence: UpstreamDivergence(ahead: 0, behind: 0),
+            ),
         )
     }
 }

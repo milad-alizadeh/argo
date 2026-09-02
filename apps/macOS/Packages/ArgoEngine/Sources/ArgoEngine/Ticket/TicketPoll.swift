@@ -22,18 +22,38 @@ public actor TicketPoll {
     /// backlog as it was when the reader last clicked something.
     public typealias Landing = @Sendable () async -> Void
 
-    public init(
-        port: TicketReading,
-        health: ConnectionHealthLedger,
-        items: TicketLedger,
-        sleep: @escaping Sleeper = { try await Task.sleep(for: $0) },
-        now: @escaping @Sendable () -> Date = Date.init,
-    ) {
+    /// The two ledgers one read writes into: how the connection fared, and the Tickets it landed.
+    public struct Ledgers: Sendable {
+        public let health: ConnectionHealthLedger
+        public let items: TicketLedger
+
+        public init(health: ConnectionHealthLedger, items: TicketLedger) {
+            self.health = health
+            self.items = items
+        }
+    }
+
+    /// Where the loop gets time from: how it waits between reads, and how it reads the moment.
+    /// Both are injectable, so a test drives the loop without spending the interval.
+    public struct Pacing: Sendable {
+        public let sleep: Sleeper
+        public let now: @Sendable () -> Date
+
+        public init(
+            sleep: @escaping Sleeper = { try await Task.sleep(for: $0) },
+            now: @escaping @Sendable () -> Date = Date.init,
+        ) {
+            self.sleep = sleep
+            self.now = now
+        }
+    }
+
+    public init(port: TicketReading, ledgers: Ledgers, pacing: Pacing = Pacing()) {
         self.port = port
-        self.health = health
-        self.items = items
-        self.sleep = sleep
-        self.now = now
+        self.health = ledgers.health
+        self.items = ledgers.items
+        self.sleep = pacing.sleep
+        self.now = pacing.now
     }
 
     /// Tell the poll who to raise on. Called before the first `point`, which is the only thing that

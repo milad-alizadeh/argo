@@ -67,10 +67,12 @@ struct SessionSpendTests {
             .usage(usage(1000)),
             .toolCallOutcome(ToolCallOutcome(
                 id: "call-1",
-                status: .completed,
-                result: nil,
-                endedAtMs: 2000,
-                usage: usage(40000),
+                resolution: ToolCallOutcome.Resolution(
+                    status: .completed,
+                    result: nil,
+                    endedAtMs: 2000,
+                ),
+                delegated: ToolCallOutcome.Delegated(usage: usage(40000)),
             )),
         ])
 
@@ -91,10 +93,12 @@ struct SessionSpendTests {
             .usage(usage(1000)),
             .toolCallOutcome(ToolCallOutcome(
                 id: "call-1",
-                status: .completed,
-                result: nil,
-                endedAtMs: 2000,
-                usage: nil,
+                resolution: ToolCallOutcome.Resolution(
+                    status: .completed,
+                    result: nil,
+                    endedAtMs: 2000,
+                ),
+                delegated: ToolCallOutcome.Delegated(usage: nil),
             )),
         ])
 

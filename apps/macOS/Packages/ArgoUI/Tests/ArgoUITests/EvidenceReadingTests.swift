@@ -128,14 +128,15 @@ struct EvidenceReadingTests {
             ending: .succeeded,
             evidence: [.diff(DiffEvidence(
                 tier: .direct,
-                change: change,
-                destination: nil,
-                added: 2,
-                removed: 0,
-                hunks: [DiffHunk(oldStart: 1, newStart: 1, lines: [
-                    DiffLine(side: .add, text: "## What I found"),
-                    DiffLine(side: .add, text: "The ramp had drifted navy."),
-                ])],
+                mutation: DiffEvidence.Mutation(change: change, destination: nil),
+                patch: DiffEvidence.Patch(
+                    added: 2,
+                    removed: 0,
+                    hunks: [DiffHunk(oldStart: 1, newStart: 1, lines: [
+                        DiffLine(side: .add, text: "## What I found"),
+                        DiffLine(side: .add, text: "The ramp had drifted navy."),
+                    ])],
+                ),
             ))],
             repeats: 1,
             spend: nil,

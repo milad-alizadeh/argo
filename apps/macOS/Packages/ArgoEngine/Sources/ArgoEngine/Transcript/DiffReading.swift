@@ -91,10 +91,14 @@ func diffEvidence(of call: ResolvedCall) -> DiffEvidence? {
         ?? fileChange(hunks, before: raw.stringField("originalFile") ?? "", after: after)
     return DiffEvidence(
         tier: .direct,
-        change: change,
-        destination: declaredDestination(raw, change),
-        added: count(hunks, .add),
-        removed: count(hunks, .del),
-        hunks: hunks,
+        mutation: DiffEvidence.Mutation(
+            change: change,
+            destination: declaredDestination(raw, change),
+        ),
+        patch: DiffEvidence.Patch(
+            added: count(hunks, .add),
+            removed: count(hunks, .del),
+            hunks: hunks,
+        ),
     )
 }

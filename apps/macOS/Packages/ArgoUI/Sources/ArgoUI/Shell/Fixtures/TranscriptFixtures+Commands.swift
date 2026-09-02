@@ -21,15 +21,17 @@ extension TranscriptFixtures {
         )),
         .toolCallOutcome(ToolCallOutcome(
             id: "ran-failed",
-            status: .failed,
-            result: .output(OutputEvidence(
-                tier: .direct,
-                text: "Source input did not pass lint check.\n"
-                    + "FeedCommandLine.swift:31:1: warning: (indent) Indent code in accordance "
-                    + "with the scope level.",
-            )),
-            endedAtMs: nil,
-            usage: nil,
+            resolution: ToolCallOutcome.Resolution(
+                status: .failed,
+                result: .output(OutputEvidence(
+                    tier: .direct,
+                    text: "Source input did not pass lint check.\n"
+                        + "FeedCommandLine.swift:31:1: warning: (indent) Indent code in accordance "
+                        + "with the scope level.",
+                )),
+                endedAtMs: nil,
+            ),
+            delegated: ToolCallOutcome.Delegated(usage: nil),
         )),
     ]
 

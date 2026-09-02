@@ -7,8 +7,16 @@ import Testing
 @Suite("Workspace holders and tier")
 struct WorkspaceProjectionTests {
     private static let read = WorkspaceProjection(
-        kind: .worktree, branch: "argo/#259", baseRef: "origin/main", headSha: "aaa",
-        dirty: 2, divergence: UpstreamDivergence(ahead: 1, behind: 3),
+        kind: .worktree,
+        refs: WorkspaceProjection.Refs(
+            branch: "argo/#259",
+            baseRef: "origin/main",
+            headSha: "aaa",
+        ),
+        drift: WorkspaceProjection.Drift(
+            dirty: 2,
+            divergence: UpstreamDivergence(ahead: 1, behind: 3),
+        ),
     )
 
     @Test

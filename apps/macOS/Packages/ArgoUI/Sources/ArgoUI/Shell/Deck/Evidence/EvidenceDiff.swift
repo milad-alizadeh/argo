@@ -135,16 +135,17 @@ private struct EvidenceUnreadablePatch: View {
 #Preview("Evidence patch — a modify, with its context") {
     EvidenceDiff(diff: DiffEvidence(
         tier: .direct,
-        change: .modify,
-        destination: nil,
-        added: 1,
-        removed: 1,
-        hunks: [DiffHunk(oldStart: 86, newStart: 86, lines: [
-            DiffLine(side: .context, text: "    private var outcome: some View {"),
-            DiffLine(side: .del, text: "        .foregroundStyle(diffAdded)"),
-            DiffLine(side: .add, text: "        .foregroundStyle(argo.color.diff.added)"),
-            DiffLine(side: .context, text: "    }"),
-        ])],
+        mutation: DiffEvidence.Mutation(change: .modify, destination: nil),
+        patch: DiffEvidence.Patch(
+            added: 1,
+            removed: 1,
+            hunks: [DiffHunk(oldStart: 86, newStart: 86, lines: [
+                DiffLine(side: .context, text: "    private var outcome: some View {"),
+                DiffLine(side: .del, text: "        .foregroundStyle(diffAdded)"),
+                DiffLine(side: .add, text: "        .foregroundStyle(argo.color.diff.added)"),
+                DiffLine(side: .context, text: "    }"),
+            ])],
+        ),
     ))
     .frame(width: 460, height: 240)
     .background(ArgoPalette.graphite.surface.sunken)
@@ -154,11 +155,8 @@ private struct EvidenceUnreadablePatch: View {
 #Preview("Evidence patch — a change whose patch could not be read") {
     EvidenceDiff(diff: DiffEvidence(
         tier: .direct,
-        change: .modify,
-        destination: nil,
-        added: 0,
-        removed: 0,
-        hunks: [],
+        mutation: DiffEvidence.Mutation(change: .modify, destination: nil),
+        patch: DiffEvidence.Patch(added: 0, removed: 0, hunks: []),
     ))
     .frame(width: 460, height: 160)
     .background(ArgoPalette.graphite.surface.sunken)

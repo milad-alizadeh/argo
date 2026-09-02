@@ -104,10 +104,15 @@ struct EvidenceStepTests {
     }
 
     private static let patch = DiffEvidence(
-        tier: .direct, change: .modify, destination: nil, added: 1, removed: 1,
-        hunks: [DiffHunk(oldStart: 1, newStart: 1, lines: [
-            DiffLine(side: .del, text: "let a = 1"),
-            DiffLine(side: .add, text: "let a = 2"),
-        ])],
+        tier: .direct,
+        mutation: DiffEvidence.Mutation(change: .modify, destination: nil),
+        patch: DiffEvidence.Patch(
+            added: 1,
+            removed: 1,
+            hunks: [DiffHunk(oldStart: 1, newStart: 1, lines: [
+                DiffLine(side: .del, text: "let a = 1"),
+                DiffLine(side: .add, text: "let a = 2"),
+            ])],
+        ),
     )
 }

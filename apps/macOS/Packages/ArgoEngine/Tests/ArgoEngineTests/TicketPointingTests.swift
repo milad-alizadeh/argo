@@ -8,7 +8,10 @@ import Testing
 @Suite("Ticket pointing")
 struct TicketPointingTests {
     private func poll(_ port: ScriptedTickets) -> TicketPoll {
-        TicketPoll(port: port, health: ConnectionHealthLedger(), items: TicketLedger())
+        TicketPoll(
+            port: port,
+            ledgers: TicketPoll.Ledgers(health: ConnectionHealthLedger(), items: TicketLedger()),
+        )
     }
 
     @Test
@@ -57,9 +60,10 @@ struct TicketPointingTests {
     private func waiting(_ items: TicketLedger, _ wait: PollWait) -> TicketPoll {
         TicketPoll(
             port: ScriptedTickets([.success([Self.ticket])]),
-            health: ConnectionHealthLedger(),
-            items: items,
-            sleep: { _ in await wait.reach(); try await Task.sleep(for: .seconds(600)) },
+            ledgers: TicketPoll.Ledgers(health: ConnectionHealthLedger(), items: items),
+            pacing: TicketPoll.Pacing(
+                sleep: { _ in await wait.reach(); try await Task.sleep(for: .seconds(600)) },
+            ),
         )
     }
 
@@ -86,9 +90,10 @@ struct TicketPointingTests {
         let wait = PollWait()
         let poll = TicketPoll(
             port: port,
-            health: ConnectionHealthLedger(),
-            items: TicketLedger(),
-            sleep: { _ in await wait.reach(); try await Task.sleep(for: .seconds(600)) },
+            ledgers: TicketPoll.Ledgers(health: ConnectionHealthLedger(), items: TicketLedger()),
+            pacing: TicketPoll.Pacing(
+                sleep: { _ in await wait.reach(); try await Task.sleep(for: .seconds(600)) },
+            ),
         )
 
         await poll.point(.ready(.stub()), at: "P1")
@@ -108,9 +113,10 @@ struct TicketPointingTests {
         let wait = PollWait()
         let poll = TicketPoll(
             port: port,
-            health: ConnectionHealthLedger(),
-            items: TicketLedger(),
-            sleep: { _ in await wait.reach(); try await Task.sleep(for: .seconds(600)) },
+            ledgers: TicketPoll.Ledgers(health: ConnectionHealthLedger(), items: TicketLedger()),
+            pacing: TicketPoll.Pacing(
+                sleep: { _ in await wait.reach(); try await Task.sleep(for: .seconds(600)) },
+            ),
         )
 
         await poll.point(.ready(.stub()), at: "P1")

@@ -66,29 +66,51 @@ public enum FileChange: String, Sendable, Equatable {
 /// Zero hunks is the honest reading of a binary or unreadable patch — a renderer says "no diff
 /// available" rather than drawing an empty block, and never invents lines to fill it.
 public struct DiffEvidence: Sendable, Equatable {
+    /// What the edit did to the file as a whole — see `FileChange`, and `destination` for the one
+    /// change that has somewhere else to name.
+    public struct Mutation: Sendable, Equatable {
+        public let change: FileChange
+        /// Where a moved file went, in the host's own characters. `nil` for every other change,
+        /// and for a move whose destination the host did not name.
+        public let destination: String?
+
+        public init(change: FileChange, destination: String?) {
+            self.change = change
+            self.destination = destination
+        }
+    }
+
+    /// The change itself as the record reported it: how many lines came and went, and the runs of
+    /// them it carried. The counts are the record's own and are not re-derived from the hunks,
+    /// which a bounded patch does not carry all of.
+    public struct Patch: Sendable, Equatable {
+        public let added: Int
+        public let removed: Int
+        public let hunks: [DiffHunk]
+
+        public init(added: Int, removed: Int, hunks: [DiffHunk]) {
+            self.added = added
+            self.removed = removed
+            self.hunks = hunks
+        }
+    }
+
     public let tier: Tier
+    // Flat, so a reader of one fact does not walk a group to reach it. Each is documented on the
+    // `Mutation` or `Patch` slot the initializer takes it from.
     public let change: FileChange
-    /// Where a moved file went, in the host's own characters. `nil` for every other change, and for
-    /// a move whose destination the host did not name.
     public let destination: String?
     public let added: Int
     public let removed: Int
     public let hunks: [DiffHunk]
 
-    public init(
-        tier: Tier,
-        change: FileChange,
-        destination: String?,
-        added: Int,
-        removed: Int,
-        hunks: [DiffHunk],
-    ) {
+    public init(tier: Tier, mutation: Mutation, patch: Patch) {
         self.tier = tier
-        self.change = change
-        self.destination = destination
-        self.added = added
-        self.removed = removed
-        self.hunks = hunks
+        self.change = mutation.change
+        self.destination = mutation.destination
+        self.added = patch.added
+        self.removed = patch.removed
+        self.hunks = patch.hunks
     }
 }
 

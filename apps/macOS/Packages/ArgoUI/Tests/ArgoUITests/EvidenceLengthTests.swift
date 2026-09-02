@@ -32,11 +32,8 @@ struct EvidenceLengthTests {
         ))
         let patch = ToolResult.diff(DiffEvidence(
             tier: .direct,
-            change: .modify,
-            destination: nil,
-            added: 8,
-            removed: 2,
-            hunks: [],
+            mutation: DiffEvidence.Mutation(change: .modify, destination: nil),
+            patch: DiffEvidence.Patch(added: 8, removed: 2, hunks: []),
         ))
         let empty = ToolResult.output(OutputEvidence(tier: .direct, text: ""))
 
