@@ -41,6 +41,24 @@ enum PerfBudgets {
     /// and a reload decided at the seam 0.29 µs against 1.21 ms. Rule 3's 1.3, as above.
     static let rowsCompareFlat = 1.3
 
+    /// `FeedScaleTests` — telling two same-named files apart grows with the record and not with
+    /// the square of it.
+    ///
+    /// Recorded: 754 paths looked at over the long reading's 456 contents, and 7 540 over ten
+    /// copies of it · M4 Pro · either · exact. A pass that asked every path which others share its
+    /// name looks at a hundred times as many — 207 936 and 20 793 600.
+    ///
+    /// The same claim in seconds rides along here and BINDS nothing (ADR-0028 Rule 8): a quotient
+    /// of 9.1–9.9 under a bare inline `40`, loaded or idle · Apple silicon laptop · debug · least
+    /// of 5. It is a figure and not a bound because its arms are the same pass over ten times the
+    /// resident working set, which is a difference `CLOCK_THREAD_CPUTIME_ID` charges to the larger
+    /// arm in every trial — 3.98 to 4.10 of it on the same shape in `FeedTypesetCostTests`, and a
+    /// bias in every trial is not one a least-of-N can remove.
+    ///
+    /// Ten is the record's own multiple rather than a tolerance: ten copies name the same distinct
+    /// paths, so the count is linear exactly.
+    static let labellingLooksFold = 10
+
     /// `SessionsRoomReadingCostTests` — how much cheaper a repeat reading at the same stamp is than
     /// the cold one, with Rule 7's 3x spent on it.
     ///

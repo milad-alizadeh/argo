@@ -197,14 +197,16 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   assumed. A COUNT is control flow: a ruler measure, a Core Text pass, a whole-document walk, a
   geometry derivation, a cache miss and a retained byte happen the same number of times under
   `-Onone` and under `-O`, so debug costs those claims nothing and Rule 8's sweep is what made that
-  most of the suite. Eleven claims are CPU quotients and they are what a release run re-records.
+  most of the suite. Ten claims are CPU quotients and they are what a release run re-records.
   Seven were named when this bullet was written — `HubRosterCostTests` (1),
   `CockpitPresentationCostTests` (2), `FeedRowsCompareCostTests` (2),
   `SessionsRoomReadingCostTests` (2) — and four more only by the #1065 amendment below, which is
-  the second time this census has been short. Four others were quotients and are now counts,
-  because Rule 8's first instruction had a count available in all four: the roster memo's own fold
-  count and the prose store's hit rate when #991 swept, the join's own rebuild count in #1064, and
-  the roster's fold count again for `SubagentCostTests` in #1065. All seven named above
+  the second time this census has been short; one of those four is a count now, leaving
+  `ProseTextSizeCostTests` (2) and `FeedRowShapeTests` (1) beside the seven. Five others were
+  quotients and are now counts, because Rule 8's first instruction had a count available in all
+  five: the roster memo's own fold count and the prose store's hit rate when #991 swept, the join's
+  own rebuild count in #1064, the roster's fold count again for `SubagentCostTests` in #1065, and
+  the labelling pass's own count of the paths it looked at in #1066. All seven named above
   hold unchanged optimised, and so does every count beside them: `ArgoEngine` 1 222 tests
   and `ArgoUI` 2 035 tests pass in release with no budget touched.
 
@@ -262,6 +264,52 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   > arms from 500 lookups to 20 000, which fixes the resolution and not the bias. It has held
   > since, and the count that would replace it is the fold count the case beside it already
   > asserts, so it stands. Named here so the next red run is read as this, and not as a busy box.
+
+  > **Amendment — 2026-09-02 (#1066).** Two of the four that sweep found are examined here, and
+  > only one of them could be migrated. `ProseTextSizeCostTests` is left as #1065 judged it, both
+  > its halves being the same warm read of the same fixture; `HubRosterCostTests`'s `session(id:)`
+  > stands where #1065 left it, for the reason stated there.
+  >
+  > **`FeedScaleTests` is the one that could.** Its claim — cost grows with the record and not with
+  > the square of it — is about the pass that tells two same-named files apart, and that pass now
+  > reports the paths it LOOKED AT: one per address to build its index, then one per rival at each
+  > address it labels. Ten copies of a reading name the same DISTINCT paths, so an indexed pass
+  > reads exactly ten times the looks where one that asked every path which others share its name
+  > reads a hundred — 754 against 7 540 today, and 207 936 against 20 793 600 with the index taken
+  > out. `DistinguishingLabel.labelling` hands the count back per call, which is the same per-value
+  > rule `HubJoin.rebuilds` and `HubRosterMemo.folds` follow for a stored one. Its inline `40` is
+  > RETIRED rather than moved, because a bound left in place reads as live; the 9.1–9.9 it was
+  > written against sit beside `PerfBudgets.labellingLooksFold` as figures gated by nothing.
+  >
+  > **What the count cannot see is stated on the case rather than implied:** the four folds either
+  > side of that pass, and a rewrite that scanned the whole list per address without counting its
+  > own looks. The second is the limit every count in this suite carries — `HubJoin.rebuilds` is
+  > equally blind to a rebuild that stops bumping it, and #1065 said the same of a
+  > `subagentReading(of:)` re-implemented over `hub.sessions`. What a count holds is the pass that
+  > reports it, and that is a smaller claim than a quotient over the whole projection made. It is
+  > also the only one of the two that is exact, which is the trade this rule asks for.
+  >
+  > **`FeedRowShapeTests` is the one that could not, and it is left standing with its inline
+  > `1.1`.** Its arms are one `NSHostingController` re-rooted per row against one per shape, and
+  > the whole of the saving is a rebuilt SwiftUI view graph against a diffed one. Both arms call
+  > `sizeThatFits` exactly once a row, so every count Argo can take is EQUAL across them: what is
+  > measured happens inside the framework, and it is irreducibly a duration. The claim is also not
+  > a regression gate — `a reading is measured through one ruler per shape it lays out` is that,
+  > and it is already a count — but the argument for keeping the split at all. #1007 had been here
+  > already: `1.4` was a dev Mac's figure, the runner read 1.19, and what landed was the paired
+  > SIGN over interleaved trials with `1.1` as a floor under both readings. **A sign over paired
+  > arms is not a quotient held inside what its halves can differ by**, and the bias runs the safe
+  > way — the split holds a controller per shape against the shared arm's one, so
+  > `CLOCK_THREAD_CPUTIME_ID` charges the cheaper arm the larger resident set. Rule 8's own remedy
+  > where no count exists is to drop the claim and keep the readings as figures, which would take
+  > the split's justification out of the tree; that is a decision and not a migration, so it is
+  > named here and not made.
+  >
+  > **The census is now ten CPU quotients across six suites**, and this sweep — on the clock plus a
+  > division, as #1065's was — found nothing that one did not. `ProseCacheCostTests` and
+  > `MediaMemoryCostTests` each read two clocks and gate on neither: the first says so in its own
+  > assertion message, and the second's two divisions are of BYTES. `MinimapFigureRecording` is the
+  > recording harness rather than a gate.
 
   > **Amendment — 2026-09-02 (#1024).** "Before the budgets bind" assumed that a `macos-26`
   > recording would make a SECOND bindable. It does not, and this bullet is the last place in the

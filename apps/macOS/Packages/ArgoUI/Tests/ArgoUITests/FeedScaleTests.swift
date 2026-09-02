@@ -11,22 +11,45 @@ struct FeedScaleTests {
     /// Cost has to grow with the record, not with the square of it: the pass that tells two
     /// same-named files apart can easily ask every path about every other one.
     ///
-    /// A RATIO, and 40x is not a tolerance to widen when this goes red: it is the gap between the
-    /// ~10x a linear pass costs at tenfold the events and the ~100x a quadratic one does. It reads
-    /// 9.1-9.9 here, loaded or idle.
+    /// Said in the PATHS that pass looked at and never in the seconds it took, which is ADR-0028
+    /// Rule 8's first instruction: a count is exactly the same idle and loaded where thread CPU is
+    /// only approximately so. The readings the old `40x` was written against are
+    /// `PerfBudgets.labellingLooksFold`, gated by nothing.
     ///
-    /// Both sides are the CPU the pass SPENT rather than the seconds that passed, taken as the
-    /// cheapest of several runs — a wall clock on a shared machine measures the machine, and noise
-    /// is one-sided, so the minimum is the estimate that holds under load.
+    /// EXACTLY ten rather than a bound, because ten copies of a reading name the same DISTINCT
+    /// paths: an indexed pass looks once at each of ten times the addresses and then at the same
+    /// rivals it found once. A pass that asked every path which others share its name looks at all
+    /// of them at every address, which is a hundred times as many.
+    ///
+    /// Two things the count does NOT see, stated because Rule 8 drops a claim rather than implying
+    /// it. The four folds either side of this pass, each a walk of a run — none was what the
+    /// seconds here were watching, and the doc comment above named this pass and no other. And a
+    /// rewrite that scanned the whole list per address without counting its own looks: this is the
+    /// pass's own tally, as every count in this suite is, so what it holds is that the looks stay
+    /// linear in the pass that reports them.
     @Test
-    func `ten times the events costs nothing like a hundred times the work`() {
-        let once = TranscriptFixtures.longTranscript
+    func `ten times the addresses is ten times the looks, not a hundred`() {
+        let once = FeedProjection.contents(of: TranscriptFixtures.longTranscript)
         let tenfold = (0 ..< 10).flatMap { _ in once }
 
-        let short = leastCPUSeconds { _ = FeedProjection.rows(from: once) }
-        let long = leastCPUSeconds { _ = FeedProjection.rows(from: tenfold) }
+        let short = FeedProjection.toldApart(once)
+        let long = FeedProjection.toldApart(tenfold)
 
-        #expect(long < short * 40)
+        // A pass nothing reached counts zero as well as a linear one, and a reading in which no
+        // two files share a name is one look an address however the pass is written. So the
+        // counter is live and past the index it builds, and the fixture really does hold a rival:
+        // a name this pass had to put a parent in front of.
+        #expect(short.looks > once.count)
+        #expect(short.contents.contains { Self.isQualified($0) })
+        #expect(long.looks == short.looks * PerfBudgets.labellingLooksFold)
+    }
+
+    /// A file the pass had to name by more than its leaf, which is what says two of them shared a
+    /// name in this reading.
+    private static func isQualified(_ content: FeedRow.Content) -> Bool {
+        guard case let .call(call) = content, case let .file(file) = call.subject
+        else { return false }
+        return file.qualifier != nil
     }
 
     /// The folds take a real share off without emptying the feed.

@@ -20,9 +20,7 @@ enum FeedProjection {
         asking: FeedAskProjection.Asking = .none,
     )
         -> [FeedRow] {
-        let answered = outcomes(in: events)
-        let within = workingDirectory(in: events)
-        let read = events.compactMap { content(of: $0, answeredBy: answered, within: within) }
+        let read = contents(of: events)
         // In this order, and the order is load-bearing. Collapse a run of one call first, so the
         // survey counts the work rather than the lines left over from it; tell same-named files
         // apart BEFORE the fold, so a read that ends up inside a survey still carries the parent
@@ -32,7 +30,7 @@ enum FeedProjection {
         let work = offering(
             FeedUnreadableRun.folded(
                 FeedGalleryFold.galleried(
-                    FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read))),
+                    FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read)).contents),
                 ),
             ),
             asking,
@@ -129,6 +127,14 @@ enum FeedProjection {
         }
     }
 
+    /// Every row the record itself could put in the feed, in the record's own order, BEFORE any
+    /// fold takes one out of it. The stage every pass above runs over.
+    static func contents(of events: [TranscriptEvent]) -> [FeedRow.Content] {
+        let answered = outcomes(in: events)
+        let within = workingDirectory(in: events)
+        return events.compactMap { content(of: $0, answeredBy: answered, within: within) }
+    }
+
     /// The `switch` carries no `default`, so an event kind added to the domain fails this build
     /// rather than being silently dropped by the surface that should have drawn it.
     private static func content(
@@ -222,26 +228,5 @@ enum FeedProjection {
         -> Bool {
         guard case let .ask(ask) = content else { return false }
         return ask.isPending && FeedAskProjection.matches(live, ask.ask)
-    }
-
-    /// Two files of the same name take the shortest parent that tells them apart — the roster's
-    /// rule for two workspaces, shared (#419). Computed over the WHOLE feed rather than per row,
-    /// because whether a name is ambiguous is a fact about the feed it sits in, not about the file.
-    private static func toldApart(_ contents: [FeedRow.Content]) -> [FeedRow.Content] {
-        let labels = DistinguishingLabel.labels(for: contents.map(path(in:)))
-        return zip(contents, labels).map { content, label in qualified(content, as: label) }
-    }
-
-    private static func path(in content: FeedRow.Content) -> String? {
-        guard case let .call(call) = content,
-              case let .file(file) = call.subject else { return nil }
-        return file.path
-    }
-
-    private static func qualified(_ content: FeedRow.Content, as label: String?) -> FeedRow
-        .Content {
-        guard case let .call(call) = content, case let .file(file) = call.subject, let label
-        else { return content }
-        return .call(call.naming(file.qualified(as: label)))
     }
 }

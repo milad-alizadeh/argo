@@ -9,9 +9,29 @@ enum DistinguishingLabel {
     /// `nil` where a path has no components to name it by; the caller owns how it spells that
     /// absence.
     static func labels(for paths: [String?]) -> [String?] {
+        labelling(paths).labels
+    }
+
+    /// The same labels, and how many paths the pass LOOKED AT to reach them: one look per path to
+    /// build the index, and one per rival at each address it labels. A pass that asked every path
+    /// which others share its name looks at all of them at every address, which is the same count
+    /// squared.
+    ///
+    /// That count is what `FeedScaleTests` gates this rule at, because "grows with the record and
+    /// not with the square of it" is a COUNT and never a duration (ADR-0028 Rule 8): a count is
+    /// exactly the same idle and loaded. Returned per call rather than tallied on a static, which
+    /// every suite running beside that one would share. Counted in both configurations, because an
+    /// accumulator in a pass that already runs is control flow rather than an instrument.
+    static func labelling(_ paths: [String?]) -> (labels: [String?], looks: Int) {
         let components = paths.map(components(of:))
         let rivalry = rivalry(among: components)
-        return components.map { label(for: $0, among: rivalry[$0.last ?? "", default: []]) }
+        var looks = components.count
+        let labels = components.map { path -> String? in
+            let sharing = rivalry[path.last ?? "", default: []]
+            looks += sharing.count
+            return label(for: path, among: sharing)
+        }
+        return (labels, looks)
     }
 
     /// Every DISTINCT path that ends in a given name, indexed by that name.
