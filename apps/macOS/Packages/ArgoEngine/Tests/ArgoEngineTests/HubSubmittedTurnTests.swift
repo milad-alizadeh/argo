@@ -10,8 +10,9 @@ import Testing
 /// be the DERIVED one, which reads `idle` throughout.
 ///
 /// The claim covers one window, and it has to: a Turn opened on Argo's own act and closed by
-/// nothing would stand over an agent that finished hours ago (#585). Three things end it, and the
-/// last test is the reason it may not come back afterwards.
+/// nothing would stand over an agent that finished hours ago (#585). Three things end it — the
+/// record, the delivery watch, the process — and one test each. Two more say what may NOT reach it:
+/// a later Turn nobody of ours typed, and a Session Argo holds no claim on.
 @Suite("Hub submitted turn")
 @MainActor
 struct HubSubmittedTurnTests {
@@ -98,6 +99,23 @@ struct HubSubmittedTurnTests {
         fixture.host.endLastProcess(exitCode: 0)
 
         #expect(fixture.hub.session(id: claim.value)?.status == .ended)
+    }
+
+    /// The posture gate, and it is structural rather than a guard: the submission is filed against
+    /// a CLAIM, and a Session Argo never spawned has none to file one against. So an external
+    /// Session mid-Turn reads exactly what it read before #1048 — DERIVED, and quiet, because
+    /// nothing corroborates the open Turn its record carries.
+    @Test
+    func `an external Session mid-Turn gains no claim of Argo's own`() async {
+        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo-external-turn"))
+        let observed = hubTestObservation(id: "somebody-elses-session", events: [
+            .prompt(text: "Started somewhere else", images: [], atMs: 1000),
+        ])
+
+        await hubObserveToEnd(hub, observed)
+
+        #expect(hub.sessions.first?.statusReading
+            == SessionStatusReading(tier: .derived, status: .idle))
     }
 
     /// A spawned Session whose CLI has written a record, with the stream still open so a test can
