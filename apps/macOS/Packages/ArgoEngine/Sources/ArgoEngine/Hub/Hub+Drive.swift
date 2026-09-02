@@ -91,9 +91,25 @@ public extension Hub {
     internal func makeDelivery() -> TurnDelivery {
         TurnDelivery(TurnDelivery.Watch(
             records: { [weak self] sessionID in self?.session(id: sessionID)?.events.count ?? 0 },
+            submitted: { [weak self] submission, sessionID in
+                self?.rememberSubmittedTurn(submission, for: sessionID)
+            },
             retype: { [weak self] sessionID in self?.adapters.resubmit(sessionID) ?? false },
             lost: { [weak self] text, sessionID in self?.rememberLostTurn(text, for: sessionID) },
         ))
+    }
+
+    /// File the Turn Argo just typed at a Session (#1048), against the CLAIM for the reason a lost
+    /// one is filed there: a fresh Session is re-keyed to its own id the moment its record lands.
+    ///
+    /// A Session with no claim is one Argo cannot type at, so there is no Turn of ours to report —
+    /// which is what keeps an external Session off a status only a channel Argo owns can support.
+    private func rememberSubmittedTurn(
+        _ submission: SessionTurnSubmission,
+        for sessionID: String,
+    ) {
+        guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
+        claims.setSubmittedTurn(submission, for: claim)
     }
 
     /// File a Turn the CLI never heard (#682), against the CLAIM like every other drive fact: a
