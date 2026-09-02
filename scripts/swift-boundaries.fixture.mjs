@@ -13,6 +13,20 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 const SCRIPT = path.join(REPO_ROOT, 'scripts/swift-boundaries.sh')
 export const ENGINE = 'apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub'
 export const SHELL = 'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell'
+// The file edge 6's cases put their subject in, and the config it reads its cap off.
+export const ACTIONS = `${SHELL}/CockpitActions.swift`
+export const CONFIG = 'apps/macOS/.swiftlint.yml'
+export const wideInit = (count) =>
+  `struct CockpitActions {\n    init(\n${Array.from(
+    { length: count },
+    (_, i) => `        slot${i}: Int,\n`,
+  ).join('')}    ) {}\n}\n`
+// A struct with no written init, so Swift synthesizes the memberwise one — the shape a regroup
+// produces by construction and the shape SwiftLint and the written-init scanner both miss.
+export const wideStruct = (count, extra = '') =>
+  `struct Picked {\n${Array.from({ length: count }, (_, i) => `    let slot${i}: Int\n`).join(
+    '',
+  )}${extra}}\n`
 
 // `internalOnly` is the trap: keyword-less at struct indentation, and internal to the engine, so
 // ArgoUI cannot see it and the gate must not demand it. `HubSession`'s own `resumeID` is this.

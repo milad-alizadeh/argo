@@ -56,12 +56,16 @@ holding one, so every public engine fact must land in the mapping or be named on
 why not. Adding a public fact to `HubSession` fails the build until you say which it is; swapping
 two same-typed facts between slots fails it too.
 
-The sixth extends the parameter cap to initializers, which SwiftLint's own rule cannot see. It
-reads `function_parameter_count`'s own `error:` out of `.swiftlint.yml` — one cap, one place, and
-no second number to drift above it. The ratchet is the **named list** of grandfathered inits
-beside that rule: an init over the cap fails unless a `# INIT: <file> <count> — <why>` line names
-it, and a line naming an init that is no longer over the cap fails too, so the list can only
-shrink. The script prints the cap in force on every run.
+The sixth extends the parameter cap to initializers, which SwiftLint's own rule cannot see —
+**written inits and the memberwise init Swift synthesizes for a struct alike**, since width
+moved into a value type is width hidden rather than removed. It reads
+`function_parameter_count`'s own `error:` out of `.swiftlint.yml` — one cap, one place, and no
+second number to drift above it. The ratchet is the **named list** of grandfathered inits beside
+that rule: an init over the cap fails unless a `# INIT: <file> <count> — <why>` line names it,
+and a line naming an init that is no longer over the cap fails too, so the list can only shrink.
+The script prints the cap in force on every run. The cap is on the **declaration**, not the call
+site, and the one shape edge 6 skips is a struct whose memberwise init a `private` stored
+property makes private — both stated at the rule.
 
 The JS/TS boundary gates are dormant — no subject since ADR-0023 retired the Electron
 cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-0021, ADR-0023.
