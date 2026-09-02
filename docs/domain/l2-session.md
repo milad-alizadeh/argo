@@ -71,7 +71,7 @@
   once anything at all has spoken: a Permission, a question, a drive report or a companion report
   is itself proof the CLI is up, and each of them outranks it.
 
-  A **seventh value, `unknown`**, is the degrade-down rule made reachable: a Session whose record
+  An **eighth value, `unknown`**, is the degrade-down rule made reachable: a Session whose record
   carries no Turn boundary at all is `unknown`, not `idle` — nothing observed is a different claim
   from observed to be quiet.
 
