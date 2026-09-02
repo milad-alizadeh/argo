@@ -199,9 +199,10 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   `-Onone` and under `-O`, so debug costs those claims nothing and Rule 8's sweep is what made that
   most of the suite. Seven claims are CPU quotients and they are what a release run re-records:
   `HubRosterCostTests` (1), `CockpitPresentationCostTests` (2), `FeedRowsCompareCostTests` (2),
-  `SessionsRoomReadingCostTests` (2). Three more were quotients and are now counts, because Rule
-  8's first instruction had a count available in all three: the roster memo's own fold count and
-  the prose store's hit rate when #991 swept, and the join's own rebuild count in #1064. All seven
+  `SessionsRoomReadingCostTests` (2). Four more were quotients and are now counts, because Rule
+  8's first instruction had a count available in all four: the roster memo's own fold count and
+  the prose store's hit rate when #991 swept, the join's own rebuild count in #1064, and the
+  roster's fold count again for `SubagentCostTests` in #PRNUM. All seven
   hold unchanged optimised, and so does every count beside them: `ArgoEngine` 1 222 tests
   and `ArgoUI` 2 035 tests pass in release with no budget touched.
 
@@ -223,6 +224,32 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   > inline rather than in `PerfBudgets`, and it runs on the same hosted runner. It is not migrated
   > here — the count it wants is the roster's, not the join's — and until it is, it is the next
   > suite that can redden `main` without a regression under it.
+
+  > **Amendment — 2026-09-02 (#PRNUM).** That one is migrated. `SubagentCostTests` now counts
+  > `HubRosterMemo.folds` — the roster's counter, which `HubRosterCostTests` already gates on —
+  > across 2 000 Subagent batches at 4 rows and at 200, and reads zero at both. The roster is read
+  > beside every batch on purpose: a fold is only ever paid on a READ, so a batch that republished
+  > the whole roster would cost nothing until something looked, and the cockpit looks once per
+  > scene pass. Its inline `1.3` is RETIRED rather than moved, because a bound left in place reads
+  > as live; the readings it was taken at sit in `PerfBudgets.subagentReadingFolds` as figures
+  > gated by nothing, which is also where Rule 7 says a figure lives.
+  >
+  > **The census was short by more than one, and the reason is that `*CostTests` is a convention
+  > rather than a mechanism.** Swept on the clock and the division instead of on the file name —
+  > `cpuSeconds`, `leastCPUSeconds`, `pairedCPUSeconds`, `threadCPUSeconds`, over two measured
+  > halves — four more gated quotients appear that no revision of this bullet has ever named:
+  > `ProseTextSizeCostTests` (2), which landed after the census and whose halves are the same warm
+  > read of the same fixture, and `FeedScaleTests` (1) and `FeedRowShapeTests` (1), which sit
+  > outside the naming convention entirely and gate on a bare `40` and a bare `1.1` — two more
+  > bounds Rule 7 wants in `PerfBudgets`. None was in #991's release run, so the "all seven hold
+  > unchanged optimised" above does not speak for them.
+  >
+  > One quotient the census DOES name is this same shape at a smaller factor, and it is left
+  > standing deliberately: `HubRosterCostTests`'s `session(id:)` case divides 20 000 lookups over
+  > 8 rows by the same 20 000 over 64, an eightfold difference in resident set under a 1.3 bound.
+  > It has not reddened `main`, and the count that would replace it is the fold count the case
+  > beside it already asserts. Named here so the next red run is read as this, and not as a busy
+  > box.
 
   > **Amendment — 2026-09-02 (#1024).** "Before the budgets bind" assumed that a `macos-26`
   > recording would make a SECOND bindable. It does not, and this bullet is the last place in the
