@@ -315,6 +315,16 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   > `MediaMemoryCostTests` each read two clocks and gate on neither: the first says so in its own
   > assertion message, and the second's two divisions are of BYTES. `MinimapFigureRecording` is the
   > recording harness rather than a gate.
+  >
+  > **And one of the ten reddened a runner while this was being written, which is the argument
+  > rather than an anecdote about it.** `CockpitPresentationCostTests`' equal-comparison case read
+  > **1.3045** against its `1.3` on the `macos` job — a 30% excursion from the 0.997–1.002 recorded
+  > beside it — on a branch touching nothing it measures, with `main` green on the same code, and
+  > it passed on a re-run with no change at all. It is the first of the seven the census named from
+  > the start to be caught doing this, and it is the same shape as the three already migrated: two
+  > arms alike in kind but not in resident working set, held to a bound inside what the machine can
+  > move them by. The count that would replace it has not been looked for. Named here so the next
+  > red run is read as this.
 
   > **Amendment — 2026-09-02 (#1024).** "Before the budgets bind" assumed that a `macos-26`
   > recording would make a SECOND bindable. It does not, and this bullet is the last place in the
