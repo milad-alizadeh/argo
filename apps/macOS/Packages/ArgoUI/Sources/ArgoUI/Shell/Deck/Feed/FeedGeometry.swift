@@ -32,8 +32,9 @@ import SwiftUI
     private var width: CGFloat?
     private var ink: FeedCellEnvironment.Ink?
     /// How long the reading on screen is, which is how many heights may be kept — see
-    /// `hold(rows:)`.
-    private var rows = 0
+    /// `hold(rows:)`. Unstated until a reading says so, and never a stated ZERO: an `apply`
+    /// carrying no rows would otherwise be the one thing left that empties a store on an arrival.
+    private var rows: Int?
     /// Monotonic, and stamped on every hit as well as on every write, so eviction can name the
     /// least recently ASKED-FOR entry rather than merely the oldest one.
     private var uses = 0
@@ -69,12 +70,11 @@ import SwiftUI
         evict()
     }
 
-    /// Measured heights surrendered — all of them, or the grounds named.
-    func drop(_ grounds: [Ground]? = nil) {
-        guard let grounds else { return held.removeAll() }
-        for ground in grounds {
-            held[ground] = nil
-        }
+    /// Every measured height surrendered. All of them or none: a height is filed under what it is
+    /// a fact ABOUT, so a row that changed is already unfindable and a row that did not is still
+    /// true — there is no third case for a caller to name.
+    func drop() {
+        held.removeAll()
     }
 
     /// How long the reading is, which is how many heights may be held — the ceiling ADR-0028
@@ -85,13 +85,11 @@ import SwiftUI
     /// That is what needs a ceiling: a live transcript rewrites its last row as the call in it is
     /// answered, and every version nobody will ask for again is one of these entries.
     ///
-    /// Twice the reading and never more, cut back to the reading itself: a Session with ten rows
-    /// cannot go on holding the previous one's four hundred, and the room in between is what keeps
-    /// a re-write from evicting a height the same pass is about to ask for. At exactly one per row
-    /// a single rewritten row puts the store one over, the eviction takes the least recently used
-    /// height — which is a row at the top of the document, not the orphan — and re-measuring THAT
-    /// row puts it one over again: a whole-document re-measure walked out of a one-row rewrite.
-    /// `FeedRemeasureCostTests` reads 57 measurements against its 2 with the headroom taken away.
+    /// Twice the reading, cut back to it. The headroom is load-bearing rather than slack: at one
+    /// height per row exactly, a single rewritten row puts the store one over, the eviction takes
+    /// the least recently used height — a row at the top of the document, not the orphan — and
+    /// re-measuring THAT row puts it one over again, walking a whole-document re-measure out of a
+    /// one-row rewrite (`FeedRemeasureCostTests`).
     ///
     /// Least recently ASKED-FOR goes first, which is what makes an orphan the entry that leaves:
     /// every height still true of a row on screen is touched by the next whole-document walk, and
@@ -102,7 +100,7 @@ import SwiftUI
     }
 
     private func evict() {
-        guard held.count > rows * 2 else { return }
+        guard let rows, rows > 0, held.count > rows * 2 else { return }
         let kept = held.sorted { $0.value.usedAt > $1.value.usedAt }.prefix(rows)
         held = Dictionary(uniqueKeysWithValues: kept.map { ($0.key, $0.value) })
     }

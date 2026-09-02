@@ -49,7 +49,7 @@ struct MinimapCostTests {
     /// measured twice — the store gained an entry for every measure the pass paid — and not one
     /// row left unmeasured, since asking the whole document again costs nothing.
     @Test
-    func `the feed's measure pass costs one ruler measure a row`() throws {
+    func `the feed's measure pass costs one ruler measure per distinct row`() throws {
         let rows = Fixture.rows(301, tag: "measure")
         let laid = Fixture.laid(rows)
         let table = try #require(laid.table)
@@ -61,6 +61,10 @@ struct MinimapCostTests {
 
         #expect(measured == laid.geometry.count)
         #expect(laid.measurements == measured)
+        // And anchored to the reading rather than left to float: every message of this fixture is
+        // made distinct by its tag (`MinimapCostFixture.rows`), so a pass that measured fewer than
+        // there are messages would be answering one row with another's height.
+        #expect(measured >= rows.count { $0.kind.isMessage })
     }
 
     /// Reading the whole session, which happens on every reshape. It walks every row, so it must

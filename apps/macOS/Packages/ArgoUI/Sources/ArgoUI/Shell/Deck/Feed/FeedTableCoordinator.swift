@@ -203,16 +203,11 @@ import SwiftUI
         place()
     }
 
-    /// Measured heights surrendered — all of them for a re-wrap, or the rows named.
-    ///
-    /// Named rows go by their GROUND, which is what the store files a height under. Without a
-    /// model there is nothing to name one with, and nothing is surrendered.
-    func dropMeasuredHeights(_ rows: IndexSet? = nil) {
-        guard let rows else { return geometry.drop() }
-        guard let model else { return }
-        geometry.drop(rows
-            .filter { shown.indices.contains($0) }
-            .map { FeedGeometry.Ground(at: $0, of: model) })
+    /// Every measured height surrendered, for the one thing that retires all of them at once: a
+    /// re-wrap. No caller names rows any more — a row whose ground moved is already unfindable, and
+    /// a named drop could only surrender a height still true of the row as it stands.
+    func dropMeasuredHeights() {
+        geometry.drop()
     }
 
     /// Where the reading's measured heights are kept, when the shell keeps them somewhere that
@@ -235,7 +230,8 @@ import SwiftUI
             cell?.host.rootView = model.content(at: row, hasCursor: row == cursorRow)
         }
         guard remeasuring, !rows.isEmpty else { return }
-        dropMeasuredHeights(rows)
+        // Noted, never dropped: the rows whose rendered fact changed answer `nil` by their own
+        // ground, and the rest are still standing at the height they were measured at.
         // Zero duration: this is a correction, not motion. Left to the default, every unfolded
         // prompt would ease the rows below it down.
         NSAnimationContext.runAnimationGroup { pass in

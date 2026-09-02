@@ -14,9 +14,8 @@ extension FeedTableCoordinator {
             return
         case .visible:
             tailing?.cancel()
-            let rows = visibleRows()
-            dropMeasuredHeights(rows)
-            note(rows, on: table)
+            // Noted and not dropped, for `remeasureEverything`'s reason one scope down.
+            note(visibleRows(), on: table)
         case .all:
             remeasureEverything(on: table)
         case .rebuild:

@@ -95,7 +95,6 @@ struct FeedGeometryTests {
     func `a re-ink keeps nothing`() {
         let geometry = FeedGeometry()
         let model = FeedTableFixture.model(showing: Self.rows)
-        geometry.hold(rows: Self.rows.count)
         geometry.settle(at: Self.pane.width, in: model.environment)
         geometry.record(120, under: Self.ground(at: 1, of: model))
         var reinked = model
@@ -161,7 +160,6 @@ struct FeedGeometryTests {
     @Test
     func `a fold is part of what a height is true of`() {
         let geometry = FeedGeometry()
-        geometry.hold(rows: Self.rows.count)
         let folded = FeedTableFixture.model(showing: Self.rows)
         geometry.record(900, under: Self.ground(at: 1, of: folded))
         var unfolded = folded
@@ -177,7 +175,6 @@ struct FeedGeometryTests {
     @Test
     func `whether a row is open is part of what a height is true of`() {
         let geometry = FeedGeometry()
-        geometry.hold(rows: Self.rows.count)
         let shut = FeedTableFixture.model(showing: Self.rows)
         geometry.record(30, under: Self.ground(at: 1, of: shut))
         var open = shut
@@ -194,7 +191,6 @@ struct FeedGeometryTests {
     @Test
     func `the row above is part of what a height is true of`() {
         let geometry = FeedGeometry()
-        geometry.hold(rows: Self.rows.count)
         let model = FeedTableFixture.model(showing: Self.rows)
         geometry.record(120, under: Self.ground(at: 1, of: model))
         var moved = Self.rows
