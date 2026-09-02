@@ -25,6 +25,24 @@ enum AgentsRailCopy {
     static let hide = "Hide background agents"
     static let show = "Show background agents"
 
+    /// The Agents that have landed, held out of the list so the live ones are not lost among them
+    /// (#1090). The count ALONE is drawn; the chevron beside it is what says it opens.
+    static func finished(_ count: Int) -> String {
+        "\(count) finished"
+    }
+
+    /// What a reader who cannot see the chevron hears instead.
+    static func revealFinished(_ count: Int) -> String {
+        "Show \(finished(count))"
+    }
+
+    static func hideFinished(_ count: Int) -> String {
+        "Hide \(finished(count))"
+    }
+
     /// Every line the rail draws, for the suite that holds the rename.
-    static let all = [agents, header(running: 2), main, collapsed, hide, show]
+    static let all = [
+        agents, header(running: 2), main, collapsed, hide, show,
+        finished(3), revealFinished(3), hideFinished(3),
+    ]
 }

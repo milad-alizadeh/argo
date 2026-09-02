@@ -10,6 +10,9 @@ import SwiftUI
 package struct AgentsRailStrip: View {
     @Environment(\.argo) private var argo
 
+    /// What the rail LISTS — `AgentsRail` hands its own `AgentsRailListing.listed` straight down,
+    /// so a dot is here exactly when a chip would be. Expanding the column is what reaches the
+    /// finished ones; 28 points has no room for the disclosure that does.
     let agents: [FeedAgent]
     /// The same control the expanded rail writes, so both forms answer a click identically — what
     /// selecting does is the control's (`AgentsRailControl.select`), never each form's own.

@@ -249,6 +249,35 @@ selection.
   `4.1M in background agents`. #1014 scoped itself to the rail and left that line saying
   `in subagents`; it was brought over afterwards, and `cockpit-session-header.md` records it there.
 
+### C3a.1c — AMENDMENT (#1090): the list answers the same question its heading does
+Amends C3a.1 on WHICH delegations the dense row list holds. Everything else in both it and C3a.1b
+stands: two sections, one header style, flat rows, no cards, `Main` at the head, `Background
+Agents · N running` over it, detail pane driven by the selection.
+
+- **The list holds what is RUNNING, and the ones that have landed sit behind a disclosure at the
+  foot.** C3a.1's row list "scales to ~30" — and it did, by holding every delegation the Session
+  ever made. In use that answers *who is working* with thirty rows of yesterday's work and the two
+  live ones lost inside it. The foot of the rail draws **`N finished`** with a disclosure chevron,
+  in the count line's own treatment (`ArgoTypography.sectionLabel`, `text.tertiary`, no filled
+  ground), and opening it lists them in place.
+- **Why this and not a sort.** Putting the live ones first was the other option and is worse: a
+  chip would move under the reader's cursor the moment its Agent reported. The order stays the
+  record's — handover order — in both halves.
+- **Reachable, never gone.** A Subagent that finished is how its spend is read at all, and the rail
+  is the only way into its reading, so the disclosure is a fold and not a filter. The rail itself
+  still appears for any Session that **delegated** anything, so a Session whose fan-out has all
+  landed gets a rail holding only its disclosure rather than no rail at all.
+- **The Agent the feed is scoped onto is never hidden**, whatever its state. Hiding it would
+  strand the reader inside a Subagent's feed with no chip to come back from.
+- **The count line is unchanged and still counts every delegation's state**, so the heading cannot
+  disagree with the list under it. This amendment is what makes C3a.1b's "the count is of what is
+  RUNNING, which is the question the rail is glanced at to answer" true of the whole column rather
+  than of one line in it.
+- **The collapsed strip lists the same Agents**, one dot each. It carries no disclosure — there is
+  no room in 28 points, and expanding the column is how the finished ones are reached.
+- **Consistent with D33**, the constraint C3a.1b was held to: the column loses rows and gains one
+  quiet line. No new weight, no card, no second focal plane against the feed.
+
 ### C1.3 — Header has NO actions at all
 - **Decision:** The header carries no action buttons and no `⋯` menu. It is glance-only: title · spec line · ctx arc, plus the inline `intent ↗` / branch links. Every action that a menu might have held is either not a header concern or not a thing:
   - **Rename** → done in the terminal (or by editing the linked ticket); not a header control.

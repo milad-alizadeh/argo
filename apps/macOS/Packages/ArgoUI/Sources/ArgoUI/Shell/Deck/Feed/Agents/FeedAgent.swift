@@ -8,11 +8,12 @@ package struct FeedAgent: Equatable, Sendable, Identifiable {
     package let id: Int
     /// What it was handed, verbatim — the brief the delegating call named.
     let label: String
-    /// Whether the delegation is still unresolved AND the Session that delegated it is running —
-    /// see `FeedAgents.running(of:)`. Synchronously the first half is the gap between the call
-    /// and its result; a backgrounded launch is answered at once and stays unresolved until its
-    /// report lands as a second outcome (#908), which is why the second half is here at all: a
-    /// report that never lands leaves a pending call nothing will ever close (#1076).
+    /// Whether the delegation is still unresolved, AND the Session that delegated it is running,
+    /// AND its handover is inside `DelegationCeiling` — see `FeedAgents.running(of:)`.
+    /// Synchronously the first is the gap between the call and its result; a backgrounded launch is
+    /// answered at once and stays unresolved until its report lands as a second outcome (#908),
+    /// which is why the other two are here at all: a report that never lands leaves a pending call
+    /// nothing will ever close, in a dead Session (#1076) and in a live one alike (#1090).
     let isRunning: Bool
     /// What it reported spending, where anything is reported at all. Synchronously `nil` means
     /// still working — the figure arrives with the result. A backgrounded agent never reports one:

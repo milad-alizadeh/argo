@@ -23,10 +23,16 @@ struct AgentsRailSpecimen: View {
         /// switch's result rather than a deck mounted onto the destination — the row heights are
         /// this reading's and the lane maps this document, or neither is (#1012).
         case rescoped
-        /// The same fan-out beside a Session that is NOT running: the rail still lists what was
-        /// handed over, and says so quietly — no running dot, `0 running` on the count line, and no
-        /// clock on a delegation whose report never landed (#1076).
+        /// The same fan-out beside a Session that is NOT running: `0 running` on the count line, no
+        /// clock on a delegation whose report never landed (#1076), and — since #1090 — a column
+        /// holding none of them. What was handed over is behind the disclosure at the foot, which
+        /// is the whole rail when nothing is at work.
         case quiet
+        /// A Session that IS running, holding delegations from yesterday whose reports never
+        /// landed — the state #1090 was written from, and the one `quiet` cannot show because there
+        /// the Session had gone. The rail lists the one live Agent, says `1 running`, and holds the
+        /// three stale ones behind the disclosure at the foot (`AgentsRailFixture.staleRows`).
+        case stale
         /// The rail as its dot strip, with the feed taking the width back.
         case collapsed
         /// The strip while the feed is scoped onto an Agent — the state that proves the way back
@@ -61,7 +67,12 @@ struct AgentsRailSpecimen: View {
     }
 
     private var feed: [FeedRow] {
-        subject == .sole ? AgentsRailFixture.soleAgentRows : FeedProjection.previewRows
+        switch subject {
+        case .sole: AgentsRailFixture.soleAgentRows
+        case .stale: AgentsRailFixture.staleRows
+        case .scoped, .rescoped, .quiet, .collapsed, .collapsedScoped:
+            FeedProjection.previewRows
+        }
     }
 
     /// Index 2 is the preview transcript's one ANSWERED delegation, and so the only chip with a
@@ -91,6 +102,12 @@ struct AgentsRailSpecimen: View {
 
 #Preview("Agents rail — the same fan-out, beside a session that is not running") {
     AgentsRailSpecimen(subject: .quiet)
+        .frame(width: 1000, height: 620)
+        .argoAppearance()
+}
+
+#Preview("Agents rail — a running session holding yesterday's delegations") {
+    AgentsRailSpecimen(subject: .stale)
         .frame(width: 1000, height: 620)
         .argoAppearance()
 }

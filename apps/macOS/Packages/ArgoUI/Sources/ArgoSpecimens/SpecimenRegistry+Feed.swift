@@ -88,6 +88,9 @@ extension SpecimenRegistry {
         // The same twenty, collapsed. Twenty dots fit a column twenty names overflow, which is the
         // whole argument for the strip.
         SpecimenEntry("agentsFanOutCollapsed") { AgentsFanOutSpecimen(isCollapsed: true) },
+        // The disclosure's other side: the finished Agents back in the column beside the live ones
+        // (#1090), which is the only state the rail holds every delegation at once.
+        SpecimenEntry("agentsFanOutRevealed") { AgentsFanOutSpecimen(showingFinished: true) },
         // The three below are rendered BESIDE the feed on the whole deck, because what they have to
         // settle is the seam and the hierarchy rather than the rail's own insides.
         SpecimenEntry("agentsRailSole") { AgentsRailSpecimen(subject: .sole) },
@@ -98,6 +101,9 @@ extension SpecimenRegistry {
         // and the one nothing rendered until now (#1003's "Not covered").
         SpecimenEntry("agentsRailRescoped") { AgentsRailSpecimen(subject: .rescoped) },
         SpecimenEntry("agentsRailQuiet") { AgentsRailSpecimen(subject: .quiet) },
+        // A running Session holding yesterday's delegations — the lie #1089 could not reach, and
+        // the disclosure the finished ones now sit behind (#1090).
+        SpecimenEntry("agentsRailStale") { AgentsRailSpecimen(subject: .stale) },
         SpecimenEntry("agentsRailCollapsed") { AgentsRailSpecimen(subject: .collapsed) },
         // Collapsed AND scoped: the one state where the way back out of a Subagent could still go
         // missing, since the strip has no room for the word Main (#1013).
