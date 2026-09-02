@@ -46,6 +46,21 @@ enum PerfBudgets {
     /// (Rule 8) — two unlike halves can move 3.8x on the machine alone.
     static let rosterLookupFlat = 1.3
 
+    /// `SubagentCostTests` — a Subagent's batch, and the reading it feeds, may not fold the roster,
+    /// whatever that roster holds.
+    ///
+    /// Recorded: 0 folds over 2 000 batches, at 4 rows and at 200 · either · exact. Routing the
+    /// batch back into the join makes it one per batch at both. A READ moves no stamp, so that
+    /// half of the old quotient's claim is dropped rather than restated — see the suite.
+    ///
+    /// The same claim in seconds rides along here and BINDS nothing (ADR-0028 Rule 8, #1065): a
+    /// quotient of 0.99, 1.00 and 0.99 over three runs · Apple silicon laptop · debug · least of
+    /// 10, interleaved, with the same defect reading 37x. It is a figure and not a bound because
+    /// its halves are fifty times apart in resident working set, which is a difference
+    /// `CLOCK_THREAD_CPUTIME_ID` charges to the larger arm in every trial — the failure mode that
+    /// took `HubJoinCostTests` off a quotient.
+    static let subagentReadingFolds = 0
+
     /// `MediaMemoryCostTests` — what a whole observed working set retains for its pictures, against
     /// what ONE of its Sessions would weigh held.
     ///
