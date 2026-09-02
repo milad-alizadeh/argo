@@ -138,7 +138,7 @@ function_parameter_count:
   # INIT: DeckIntents.swift 10 — one closure per thing the deck's vessel does; every intent is
   # INIT: FeedCall.swift 10 — one tool call as a sentence, a slot per part of it
   # INIT: TicketsRoomProjection.swift 10 — Row, one backlog row, a field per column plus its
-  # INIT: ClaimFacts.swift 9 — everything Argo knows about one claim, under one key
+  # INIT: ClaimFacts.swift 11 — everything Argo knows about one claim, under one key
   # INIT: FeedTable.swift 9 — the feed's AppKit scroller, whose slots are what the SwiftUI half
   # INIT: FeedTableModel.swift 9 — everything the AppKit half of the feed needs from the SwiftUI
   # INIT: GitHubPullRequest.swift 9 — one pull request as GitHub's REST API serves it, parsed at
@@ -156,7 +156,7 @@ function_parameter_count:
   # INIT: PermissionPromptProjection.swift 7 — Prompt, one permission request as the composer draws
   # INIT: ProjectMenuProjection.swift 7 — Row, one project in the menu, a field per thing the row
   # INIT: TicketsChromeProjection.swift 7 — Reading, the Tickets chrome's whole reading, heading
-  # INIT: AgentSpawn.swift 6 — what Argo just started, before its CLI has written a record
+  # INIT: AgentSpawn.swift 7 — what Argo just started, before its CLI has written a record
   # INIT: AgentSpawnPlan.swift 6 — everything one spawn was decided to be, before anything has
   # INIT: ClaudeSessionDriver.swift 6 — the driver's collaborators, one per thing a Claude Session
   # INIT: CodexSessionDriver.swift 6 — the driver's collaborators, one per thing a Codex Session is
@@ -192,7 +192,7 @@ function_parameter_count:
   # INIT: MinimapRect.swift 5 — one drawn rectangle of the miniature, its place beside how it is
   # INIT: MinimapRow.swift 5 — one feed row as the lane needs it; deliberately cheap, one per row
   # INIT: ModeControlLabel.swift 5 — everything the Mode control SAYS, for one reading and one held
-  # INIT: RecordDirectoryFixture.swift 5 — FixtureTranscript, one transcript to lay down in a
+  # INIT: RecordDirectoryFixture.swift 6 — FixtureTranscript, one transcript to lay down in a
   # INIT: SessionHeaderProjection+Context.swift 5 — Context, the context gauge's reading, its tier
   # INIT: SessionHeaderProjection+Handoff.swift 5 — Handoff, the hand-off control's words, its tier
   # INIT: SessionOwnershipLedger.swift 5 — Window, one stretch of ownership, open while the PTY
