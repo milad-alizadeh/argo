@@ -143,7 +143,7 @@ final class AccountsCoordinator {
         } catch let refusal as BindingRefusal {
             note = ConnectNote(refusal: refusal)
         } catch {
-            note = ConnectNote(refusal: .unreadable(error.localizedDescription))
+            note = ConnectNote(unreadable: error)
         }
         await refresh()
     }

@@ -1,7 +1,8 @@
 import ArgoEngine
 
-/// Every way connecting can fail, said in the user's words. The engine's refusals carry no copy at
-/// all; `unreadable` and `refused` put the provider's own sentence in the `why` verbatim.
+/// Every way connecting can fail, said in the user's words. `BindingRefusal` is Argo's own
+/// vocabulary throughout — `unreadable` reads as a provider's voice but every engine site that
+/// raises one writes the sentence itself, so none of these carries output to open (§5).
 public extension ConnectNote {
     init(refusal: BindingRefusal) {
         switch refusal {
@@ -80,7 +81,7 @@ public extension ConnectNote {
         case let .refused(code, description):
             self.init(
                 what: "\(name) refused the sign-in.",
-                why: description.isEmpty ? code : description,
+                verbatim: description.isEmpty ? code : description,
                 fix: "Read \(name)'s reason above, then try again.",
             )
         }
@@ -97,7 +98,7 @@ public extension ConnectNote {
     init(grant: Error, provider: AccountProvider) {
         self = Self.said(grant, by: provider)
             // A failure that is not the flow's own: the transport, or the registry write behind it.
-            ?? ConnectNote(refusal: .unreadable(grant.localizedDescription))
+            ?? ConnectNote(unreadable: grant)
     }
 
     private static func said(_ grant: Error, by provider: AccountProvider) -> ConnectNote? {

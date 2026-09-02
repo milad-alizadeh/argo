@@ -72,7 +72,7 @@ struct ComposerLostTurnTests {
 
         let note = ComposerSeamNote.note(for: draft, enteredAtMs: 0)
 
-        #expect(note == .notice(ComposerDraft.lost))
+        #expect(note == .notice(ComposerSeamLine(ComposerDraft.lost)))
     }
 
     private static var dropped: SessionAttachment {

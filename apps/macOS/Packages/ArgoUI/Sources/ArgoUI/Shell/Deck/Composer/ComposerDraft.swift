@@ -21,9 +21,15 @@ struct ComposerDraft: Equatable {
     /// What Argo did to this draft that the reader did not do — a drop the adapter would not take
     /// (#540), or the clearing an interrupt leaves behind (#541). Quieter than `refusal` and
     /// outranked by it.
-    var notice: String?
+    ///
+    /// Mutated through `say(_:)`, so it and the output behind it move together.
+    private(set) var notice: String?
     /// Why the last send was refused, and `nil` the moment one goes through.
     private(set) var refusal: String?
+    /// What the port printed behind `refusal`, and `nil` where Argo worded that line itself (§5).
+    private(set) var refusalOutput: RawOutput?
+    /// What the port printed behind `notice`, on the same rule.
+    private(set) var noticeOutput: RawOutput?
     /// The follow-ups typed while a Turn was running, oldest first — they are sent in the order
     /// they were typed.
     private(set) var queued: [QueuedTurn]
@@ -79,11 +85,27 @@ struct ComposerDraft: Equatable {
     /// Put the draft to the Session through `deliver`. A refusal keeps every character where it
     /// was typed and every chip where it was dropped — a failed send must never clear the field.
     mutating func send(via deliver: ComposerSend) {
-        refusal = Self.refusal(putting: text, attaching: attachments, via: deliver)
+        refused(by: Self.refusal(putting: text, attaching: attachments, via: deliver))
         guard refusal == nil else { return }
         text = ""
         attachments = []
-        notice = nil
+        say(nil)
+    }
+
+    /// Stand under a refusal, or take the standing one away. Every mutation of the pair goes
+    /// through here, so the seam's gesture cannot open one refusal's output under another's line.
+    /// The memberwise init is the one other writer, and it takes a bare sentence: a fixture has no
+    /// port to have printed anything.
+    private mutating func refused(by line: ComposerSeamLine?) {
+        refusal = line?.detail
+        refusalOutput = line?.output
+    }
+
+    /// Say something about this draft that the reader did not do, or take back what was said. Pairs
+    /// the notice with its output on the same rule `refused(by:)` states.
+    mutating func say(_ line: ComposerSeamLine?) {
+        notice = line?.detail
+        noticeOutput = line?.output
     }
 
     /// The one way a Turn leaves the field: it goes now if the Session is free and waits if it is
@@ -95,8 +117,8 @@ struct ComposerDraft: Equatable {
         queued.append(QueuedTurn(text: text, attachments: attachments))
         text = ""
         attachments = []
-        refusal = nil
-        notice = nil
+        refused(by: nil)
+        say(nil)
     }
 
     /// Deliver what was waiting, oldest first, when the Turn it was waiting on ends. A refusal
@@ -104,15 +126,15 @@ struct ComposerDraft: Equatable {
     mutating func flush(via deliver: ComposerSend) {
         guard !queued.isEmpty else { return }
         while let next = queued.first {
-            if let refused = Self.refusal(
+            if let line = Self.refusal(
                 putting: next.text,
                 attaching: next.attachments,
                 via: deliver,
             ) {
-                return refusal = refused
+                return refused(by: line)
             }
             queued.removeFirst()
-            refusal = nil
+            refused(by: nil)
         }
     }
 
@@ -135,17 +157,15 @@ struct ComposerDraft: Equatable {
     mutating func stopped(via interrupt: () throws -> Void) {
         do {
             try interrupt()
-        } catch let refused as SessionDriveError {
-            return refusal = refused.detail
         } catch {
-            return refusal = error.localizedDescription
+            return refused(by: ComposerSeamLine(error))
         }
         guard !isClear else { return }
         text = ""
         attachments = []
         queued = []
-        refusal = nil
-        notice = Self.cleared
+        refused(by: nil)
+        say(ComposerSeamLine(Self.cleared))
     }
 
     /// The seam's sentence for it. Named rather than written at the call site, so the test that
@@ -160,7 +180,7 @@ struct ComposerDraft: Equatable {
     mutating func modeRefused(_ error: any Error) {
         heldMode = nil
         isWalkingMode = false
-        notice = (error as? SessionDriveError)?.detail ?? error.localizedDescription
+        say(ComposerSeamLine(error))
     }
 
     /// The rung landed. It takes back only the sentence IT put up — a notice about something else,
@@ -169,7 +189,7 @@ struct ComposerDraft: Equatable {
         heldMode = nil
         isWalkingMode = false
         guard notice == Self.held(mode) else { return }
-        notice = nil
+        say(nil)
     }
 
     /// A rung the port refused because a Turn is running (#653, #940): kept for the boundary
@@ -177,7 +197,7 @@ struct ComposerDraft: Equatable {
     mutating func modeHeld(_ mode: SessionMode) {
         heldMode = mode
         isWalkingMode = false
-        notice = Self.held(mode)
+        say(ComposerSeamLine(Self.held(mode)))
     }
 
     /// The rung to walk now the Turn has ended, and `nil` where there is none or a walk is already
@@ -211,7 +231,7 @@ struct ComposerDraft: Equatable {
     /// would put the same Turn back twice.
     mutating func turnLost(_ text: String) -> Bool {
         guard notice != Self.lost else { return false }
-        notice = Self.lost
+        say(ComposerSeamLine(Self.lost))
         guard !isSendable else { return true }
         self.text = text
         return true
@@ -237,20 +257,18 @@ struct ComposerDraft: Equatable {
     }
 
     /// Why `deliver` would not take these words, and `nil` when it did — the one place a thrown
-    /// error becomes a sentence.
+    /// error becomes a sentence, and what the port printed behind it.
     private static func refusal(
         putting text: String,
         attaching attachments: [SessionAttachment],
         via deliver: ComposerSend,
     )
-        -> String? {
+        -> ComposerSeamLine? {
         do {
             try deliver(text, attachments)
             return nil
-        } catch let refused as SessionDriveError {
-            return refused.detail
         } catch {
-            return error.localizedDescription
+            return ComposerSeamLine(error)
         }
     }
 }

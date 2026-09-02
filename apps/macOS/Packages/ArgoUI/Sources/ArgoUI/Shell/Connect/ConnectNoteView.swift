@@ -16,15 +16,12 @@ struct ConnectNoteView: View {
                 .foregroundStyle(ArgoOperationalState.failure.tint(in: argo.color))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
-                Text(note.what)
-                    .argoText(ArgoTypography.rowTitle)
-                    .foregroundStyle(argo.color.text.primary)
-                Text(note.why)
-                    .argoText(ArgoTypography.rowMeta)
-                    .foregroundStyle(argo.color.text.secondary)
-                Text(note.fix)
-                    .argoText(ArgoTypography.rowMeta)
-                    .foregroundStyle(argo.color.text.primary)
+                lines
+                // Below the fix: a control between the three lines would come before the remedy
+                // it is quieter than. Absent where Argo wrote the middle line itself (§5).
+                if let output = note.output {
+                    RawOutputDisclosure(output: output)
+                }
             }
             .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: ArgoSpacing.flush)
@@ -33,6 +30,23 @@ struct ConnectNoteView: View {
         .background {
             RoundedRectangle(cornerRadius: ArgoRadius.control)
                 .fill(ArgoOperationalState.failure.ground(in: argo.color))
+        }
+        // `contain` and not `combine`: a combined note swallows the gesture beside it.
+        .accessibilityElement(children: .contain)
+    }
+
+    /// The three parts, spoken as the one sentence they are.
+    private var lines: some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
+            Text(note.what)
+                .argoText(ArgoTypography.rowTitle)
+                .foregroundStyle(argo.color.text.primary)
+            Text(note.why)
+                .argoText(ArgoTypography.rowMeta)
+                .foregroundStyle(argo.color.text.secondary)
+            Text(note.fix)
+                .argoText(ArgoTypography.rowMeta)
+                .foregroundStyle(argo.color.text.primary)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(note.spoken)

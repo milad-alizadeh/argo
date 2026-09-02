@@ -28,7 +28,8 @@ struct ComposerModeAskTests {
         draft.modeRefused(refused)
 
         #expect(draft.notice == refused.detail)
-        #expect(ComposerSeamNote.note(for: draft, enteredAtMs: 0) == .notice(refused.detail))
+        #expect(ComposerSeamNote.note(for: draft, enteredAtMs: 0)
+            == .notice(ComposerSeamLine(refused.detail)))
     }
 
     /// A rung that landed takes back only the sentence IT put up — the Turn the reader stopped is

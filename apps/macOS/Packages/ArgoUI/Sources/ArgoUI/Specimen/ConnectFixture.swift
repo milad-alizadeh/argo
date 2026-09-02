@@ -187,6 +187,7 @@ enum ConnectFixture {
         ("connectScopesUnreadable", scopesUnreadable),
         ("connectScopesUnauthorized", scopesUnauthorized),
         ("connectRefused", refused),
+        ("connectRefusedAtLength", refusedAtLength),
         ("connectBroken", broken),
         ("connectPluginMissing", pluginMissing),
         ("connectPluginFailed", pluginFailed),
