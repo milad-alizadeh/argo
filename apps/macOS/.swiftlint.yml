@@ -77,6 +77,10 @@ function_parameter_count:
   # it, and the list below — never a narrower reading of the cap — is where a width that is the
   # shape of the thing gets to say so.
   #
+  # What edge 6 still does not see, said out loud rather than left to be discovered: a written
+  # `init` whose `(` is on the next line, and the second branch of a conditional nested two deep.
+  # Both were checked; neither occurs here. A shape not on this list is a bug, not a licence.
+  #
   # A struct whose memberwise init Swift made private is SKIPPED, because no other file can call it
   # and no width can cross into it. That is most of ArgoUI, where a view holds `@State private
   # var`, and its real seam is a written init or its own file. What seals it is a private property
