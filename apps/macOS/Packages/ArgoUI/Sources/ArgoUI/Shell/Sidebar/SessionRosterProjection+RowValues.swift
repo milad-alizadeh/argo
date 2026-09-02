@@ -14,12 +14,12 @@ extension SessionRosterProjection.Row {
     }
 
     /// What the Session is working on: the folder it runs in, the label the roster tells that
-    /// folder apart by, its branch, and the command it opened with.
+    /// folder apart by, its branch, and the one fact its meta line leads with.
     struct Work {
         let location: String?
         let worktree: String?
         let branch: String?
-        let runKind: String?
+        let toldApart: String?
     }
 
     /// What the Session is doing right now, drawn and spoken — the dot's reading, its word, and

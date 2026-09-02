@@ -1,10 +1,12 @@
 import ArgoEngine
 
-/// The Sessions the ticket-title renders are drawn from (#745) — three on one ticket, one on
-/// another, and one on no ticket at all.
+/// The Sessions the ticket-title renders are drawn from (#745, #1072) — three on one ticket, one
+/// on another, and one on no ticket at all.
 ///
-/// Three on one is the case worth a render: they share a title and are told apart only by the run
-/// kind on the secondary line, which is the question the ticket left open for a reviewer's eye.
+/// Three on one is the case worth a render: the ticket names none of them apart, so each keeps its
+/// own derived title and `#741` rides the secondary line — except on the row whose title already
+/// carries the number. One of the three opened on prose, which is the shape #1072 was reported
+/// against. Whether three rows still read as three is what a reviewer's eye is for.
 enum TicketFixture {
     /// Projected through `SessionRosterProjection` exactly as the shell projects it, so a PNG is
     /// evidence about the row the app draws.
@@ -18,15 +20,18 @@ enum TicketFixture {
     private static let sessions = [
         session(id: "implement", title: "/implement 741", issue: anchorFeed, status: .running),
         session(id: "review", title: "/code-review", issue: anchorFeed, minutesAgo: 12),
-        session(id: "pixels", title: "/pixel-review 741", issue: anchorFeed, minutesAgo: 41),
+        session(
+            id: "captions", title: "Write a caption for the prototypes folder",
+            issue: anchorFeed, minutesAgo: 41,
+        ),
         session(
             id: "other",
             title: "/implement 736",
             issue: .init(number: 736, title: "Draw a markdown file as the document it is"),
             minutesAgo: 3 * 60,
         ),
-        // The row nothing resolved a ticket for: the derived title stands, and the run kind is NOT
-        // said a second time on the line below it.
+        // The row nothing resolved a ticket for: the derived title stands, and with no number to
+        // put on the line below it that line says nothing.
         session(id: "unlinked", title: "Have a look at what the roster is doing", minutesAgo: 90),
     ]
 

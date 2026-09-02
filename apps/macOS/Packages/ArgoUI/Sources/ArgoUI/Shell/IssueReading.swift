@@ -10,4 +10,15 @@ enum IssueReading {
     static func words(number: Int, title: String?) -> String {
         ["#\(number)", title].compactMap(\.self).joined(separator: " — ")
     }
+
+    /// Whether a title already names this Ticket as a word of its own — `#741` as the words above
+    /// spell it, or the bare `741` a `/implement 741` opened with.
+    ///
+    /// A word and not a substring: the `852` inside `…/issues/852` is not a number the row is
+    /// saying to anyone, and a row reading exactly that is what #1072 was reported against.
+    static func names(number: Int, in title: String) -> Bool {
+        let spellings = Set(["#\(number)", "\(number)"])
+        let words = title.split(whereSeparator: \.isWhitespace)
+        return words.contains { spellings.contains(String($0)) }
+    }
 }
