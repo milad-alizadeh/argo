@@ -1,5 +1,3 @@
-import Foundation
-
 /// A skill to put in a live fixture's Project before the CLI starts, which is the one moment
 /// `claude` reads them.
 enum LiveSkill {

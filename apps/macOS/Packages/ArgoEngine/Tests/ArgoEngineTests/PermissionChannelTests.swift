@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// A gated call over a real hook: it blocks the agent and raises a Permission in the roster, and

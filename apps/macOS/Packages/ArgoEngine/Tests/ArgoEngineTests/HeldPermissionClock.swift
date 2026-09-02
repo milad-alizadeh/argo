@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 
 /// The gate's own clock, fired by hand rather than by seconds (#826).
 ///

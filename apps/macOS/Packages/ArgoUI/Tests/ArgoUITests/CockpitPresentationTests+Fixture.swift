@@ -1,7 +1,6 @@
 import ArgoEngine
 @testable import ArgoUI
 import Foundation
-import Testing
 
 extension CockpitPresentationTests {
     /// The Hub half of the projection, which is the half with a derivation in it. The Projects are

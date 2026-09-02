@@ -1,6 +1,5 @@
 import ArgoEngine
 @testable import ArgoUI
-import Foundation
 import Testing
 
 /// What shape each feed row hands the lane (#382).

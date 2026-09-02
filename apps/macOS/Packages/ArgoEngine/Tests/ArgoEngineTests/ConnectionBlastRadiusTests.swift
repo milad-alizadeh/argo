@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// How far a revoked grant reaches, asked of the real registries rather than a stub.

@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// What a Linear write answers with, and what it does when Linear says no.

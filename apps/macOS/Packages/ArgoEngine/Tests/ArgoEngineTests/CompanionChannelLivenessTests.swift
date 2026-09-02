@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// The four states as the roster reads them (#493): a real socket, a real dial, and a real hang-up.

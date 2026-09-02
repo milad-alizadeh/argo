@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// The Permission half of the port's claims, run against EVERY adapter (#549).

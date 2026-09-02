@@ -1,5 +1,4 @@
 @testable import ArgoUI
-import Foundation
 import Testing
 
 /// A prose row's markdown, as the lane reads it (#382): the same words at the same face and the

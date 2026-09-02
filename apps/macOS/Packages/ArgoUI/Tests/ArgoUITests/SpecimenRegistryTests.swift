@@ -1,5 +1,4 @@
 @testable import ArgoUI
-import SwiftUI
 import Testing
 
 /// The two things about the registry no type can hold: nothing stops two entries sharing a name,

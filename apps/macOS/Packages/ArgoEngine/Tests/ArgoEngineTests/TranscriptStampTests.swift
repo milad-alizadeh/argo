@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// The stamp the cockpit compares a Session's whole decoded stream BY, and the one thing that can

@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// The clock a raise arms, and every way it has to be disarmed: it runs out and the request is

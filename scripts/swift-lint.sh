@@ -15,6 +15,38 @@ if [ ! -d "$APP_DIR" ]; then
   exit 1
 fi
 
+# SwiftLint with no config to discover lints against its OWN defaults and passes, so a missing
+# file would take every cap in it with it and say nothing.
+if [ ! -f "$APP_DIR/.swiftlint.yml" ]; then
+  echo "swift-lint: no $APP_DIR/.swiftlint.yml — SwiftLint would lint against its defaults" >&2
+  echo "and report success having checked none of the house caps." >&2
+  exit 1
+fi
+
+# `lint` reads `analyzer_rules` and then ignores it: those rules fire under `swiftlint analyze`
+# alone. So a rule listed there while nothing in the repo runs `analyze` is a gate that has never
+# run on a single file, reading as coverage in the config and enforcing nothing (#1043) — the same
+# green-because-nothing-looked shape as a filtered build (#925). Checked before the tool guard, so
+# a machine without SwiftLint still fails on it rather than skipping past.
+declared=$(find "$APP_DIR" -name '.swiftlint.yml' ! -path '*/.build/*' -exec \
+  grep -lE '^[[:space:]]*analyzer_rules:' {} + || true)
+if [ -n "$declared" ]; then
+  # An INVOCATION lifts the refusal, not a mention: the pattern refuses a line whose first `#` comes
+  # before the command, so the comment that would say why nobody runs it cannot stand in for running
+  # it. This file is excluded because the message below names the command, and a guard its own
+  # wording satisfies is no guard. Every other file under `scripts/` counts whatever its extension,
+  # and so does the workflow — all three of the ticket's placements can wire it (#1043).
+  runners=$(find scripts .github/workflows -type f ! -name "$(basename "$0")" 2>/dev/null || true)
+  # shellcheck disable=SC2086 # the file list is passed by word splitting, and holds no spaces
+  if ! grep -qE '^[^#]*swiftlint[[:space:]]+analyze' package.json $runners; then
+    echo "swift-lint: analyzer_rules is declared in $declared, and nothing in package.json," >&2
+    echo "scripts/ or .github/workflows/ runs 'swiftlint analyze' — 'lint' ignores the key, so" >&2
+    echo "those rules enforce nothing on any file. Remove it, or add a gate that runs" >&2
+    echo "'swiftlint analyze' (docs/agents/quality-gates.md)." >&2
+    exit 1
+  fi
+fi
+
 # shellcheck source=scripts/swift-tool-guard.sh
 . "$(dirname "$0")/swift-tool-guard.sh"
 

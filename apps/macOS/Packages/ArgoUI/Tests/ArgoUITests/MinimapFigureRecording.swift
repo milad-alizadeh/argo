@@ -1,4 +1,3 @@
-import AppKit
 @testable import ArgoUI
 import Foundation
 import Testing

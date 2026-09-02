@@ -1,5 +1,4 @@
 @testable import ArgoUI
-import Foundation
 
 /// Words for the lane's suites to measure, where a test cares how many LINES they make and not what
 /// they say.

@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// ADR-0010: workspace identity attaches to any Agent, and an Agent owning none inherits its

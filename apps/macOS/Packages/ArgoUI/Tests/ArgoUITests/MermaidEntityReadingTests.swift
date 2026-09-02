@@ -1,5 +1,4 @@
 @testable import ArgoUI
-import Foundation
 import Testing
 
 /// What an `erDiagram` source says, and what it does not.

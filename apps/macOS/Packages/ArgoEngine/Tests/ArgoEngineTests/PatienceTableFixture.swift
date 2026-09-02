@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 
 /// One blocked request, carrying the two things a `PatienceTable` has to know about it and the one
 /// thing a gate's policy reads above it.

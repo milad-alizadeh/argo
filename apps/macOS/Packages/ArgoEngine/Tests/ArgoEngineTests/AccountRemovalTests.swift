@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// Forgetting an identity: the token goes with it, and whatever was reading through it is named

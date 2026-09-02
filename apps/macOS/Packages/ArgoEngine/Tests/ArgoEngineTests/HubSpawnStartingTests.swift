@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// The `starting` a spawn is published in, and what ends it. A spawned CLI writes no record until

@@ -7,6 +7,9 @@
 
 included:
   - Argo
+  # The e2e target is compiled by the project and was outside this list until #1043, so the caps
+  # read as covering the app while 22 files were never linted.
+  - ArgoE2ETests
   - Packages/ArgoUI/Sources
   - Packages/ArgoEngine/Sources
   - Packages/ArgoEngine/Tests
@@ -18,8 +21,11 @@ excluded:
   - Argo.xcodeproj
   - Packages/ArgoEngine/Tests/ArgoEngineTests/Fixtures
 
-analyzer_rules:
-  - unused_import
+# No `analyzer_rules:` here, deliberately. An analyzer rule runs under `swiftlint analyze` and
+# nowhere else, and nothing in this repo runs it, so `unused_import` sat in this file from #393 to
+# #1043 having never looked at a file. Reinstating it means wiring `analyze` into a gate first —
+# `scripts/swift-lint.sh` fails on the key otherwise. What the rule reported when it was finally
+# run (495 violations, and wrong often enough that only a rebuild says which): quality-gates.md.
 
 # --- the caps (code-style.md) ---
 

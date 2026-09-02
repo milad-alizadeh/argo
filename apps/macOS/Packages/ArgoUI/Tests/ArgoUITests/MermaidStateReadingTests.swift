@@ -1,5 +1,4 @@
 @testable import ArgoUI
-import Foundation
 import Testing
 
 /// What a `stateDiagram-v2` source says, and what it does not.

@@ -1,5 +1,3 @@
-import Foundation
-
 /// One issue as GitHub serves it, written the way GitHub writes it — so a listing test exercises
 /// the decoder rather than a convenient subset of it.
 struct IssueJSON {

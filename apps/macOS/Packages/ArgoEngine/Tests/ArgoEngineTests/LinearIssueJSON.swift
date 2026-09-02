@@ -1,6 +1,3 @@
-@testable import ArgoEngine
-import Foundation
-
 /// One Linear issue as its GraphQL API serves it, spelled once so a suite states the ONE field it
 /// is about. The sibling of `IssueJSON`, and shaped by the same rule: every default is the quiet
 /// case, so a test that says nothing is testing nothing by accident.

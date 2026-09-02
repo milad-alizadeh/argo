@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 
 /// A workflow-capable Ticket provider, as a SECOND conformant of the write port.
 ///

@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// Watching for the CLI to answer a Turn that was typed at it (#682).

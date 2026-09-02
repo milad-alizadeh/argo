@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// What a standing allow does to the gate (#572), and the three things the ticket asked of one: it

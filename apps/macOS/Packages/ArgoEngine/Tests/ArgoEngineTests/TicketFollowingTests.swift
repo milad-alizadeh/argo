@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// What a ticket read by the number a link named does to the listing the room draws from (#895).

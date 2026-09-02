@@ -1,5 +1,4 @@
 @testable import ArgoEngine
-import Foundation
 import Testing
 
 /// How far the product in flight has got, read off what was observed (`CONTEXT.md` L4).
