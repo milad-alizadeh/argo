@@ -12,17 +12,9 @@
     ],
     "long": [
       "A coding agent writes its whole account of itself to a file on disk, one JSON record per line.",
-      "Argo watches the directory holding those files, follows each file from where it last stopped, and types every line it reads.",
-      "The typed events fold into one in-memory reading per Session, which the cockpit restates as values and draws as rows.",
-      "Nothing on this path writes to an agent. A Session Argo never started is read exactly the same way as one it spawned."
-    ],
-    "parts": [
-      "e-discovery",
-      "e-hub",
-      "e-transcript",
-      "u-shell",
-      "u-deck",
-      "u-feed"
+      "Argo watches the directory that holds those files, follows each file from where it last stopped, and types every line it reads.",
+      "The typed events fold into one in-memory projection per Session, which the cockpit restates as values and draws as rows.",
+      "Nothing on this path writes to an agent. A Session Argo never started is read exactly the same way as one it started itself."
     ],
     "concepts": [
       "c-transcript-event",
@@ -30,102 +22,127 @@
       "c-cockpit-presentation"
     ],
     "steps": [
-      [
-        "The record directory wakes Argo",
-        "A coding agent appends a line to its transcript file. An FSEvents watch over the whole record directory reports the change, coalesced into one wake per second. The watch is recursive because a Session started while Argo runs is a new file, in a folder that may also be new.",
-        [
+      {
+        "title": "The record directory wakes Argo",
+        "prose": "A coding agent appends a line to its transcript file. An FSEvents watch over the whole record directory reports the change, coalesced into one wake per second. The watch is recursive because a Session started while Argo runs is a new file, in a directory that can also be new.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/RecordDirectoryWatcher.swift",
           22
-        ]
-      ],
-      [
-        "The wake reaches a sweep",
-        "One task sits on the watcher's stream and re-runs the sweep on every burst. The Project it sweeps for is captured once, so an answer arriving after a switch is dropped.",
-        [
+        ],
+        "actor": "e-discovery",
+        "kind": "call",
+        "from": "agent-process"
+      },
+      {
+        "title": "The wake reaches a sweep",
+        "prose": "One task sits on the watcher's stream and re-runs the sweep on every burst. The Project it sweeps for is captured once, so an answer arriving after a switch is dropped.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/WorkingSetSweep.swift",
           37
-        ]
-      ],
-      [
-        "The sweep picks the files that belong here",
-        "The sweep keeps transcripts written in the last 24 hours whose working directory sits under this Project's root. Anything quieter than that is history, still on disk to be opened deliberately. A transcript whose folder cannot be read belongs to no Project here.",
-        [
+        ],
+        "actor": "e-hub",
+        "kind": "call"
+      },
+      {
+        "title": "The sweep picks the files that belong here",
+        "prose": "The sweep keeps transcripts written in the last 24 hours whose working directory sits under this Project's root. Anything quieter than that is history, still on disk to be opened deliberately. A transcript whose directory Argo cannot read belongs to no Project here.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Discovery/SessionDiscovery.swift",
           44
-        ]
-      ],
-      [
-        "The tail hands over whole lines only",
-        "One read cursor per file reads from where it stopped. A record can be half written when the watcher fires, so a trailing partial line stays in a carry buffer until the rest arrives.",
-        [
+        ],
+        "actor": "e-discovery",
+        "kind": "call"
+      },
+      {
+        "title": "The tail hands over whole lines only",
+        "prose": "One read cursor per file reads from where it stopped. A record can be half written when the watcher fires, so a trailing partial line stays in a carry buffer until the rest arrives.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptTail.swift",
           49
-        ]
-      ],
-      [
-        "One line becomes one typed record",
-        "Each line parses into a record named by its own `type` field. A line whose type nothing recognises becomes `.unknown` and keeps its raw bytes, so an unread record is a value and never a silent drop.",
-        [
+        ],
+        "actor": "e-transcript",
+        "kind": "call"
+      },
+      {
+        "title": "One line becomes one typed record",
+        "prose": "Each line parses into a record named by its own `type` field. A line whose type nothing recognizes becomes `.unknown` and keeps its raw bytes, so an unread record is a value and never a silent drop.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptRecord.swift",
           68
-        ]
-      ],
-      [
-        "The reader remembers every open call",
-        "A tool call declares an id. The reader files the call's kind, name and target under that id, because the result answering it arrives in a record written later.",
-        [
+        ],
+        "actor": "e-transcript",
+        "kind": "self"
+      },
+      {
+        "title": "The reader remembers every open call",
+        "prose": "A tool call declares an id. The reader files the call's kind, name and target under that id, because the result answering it arrives in a record written later.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptReader.swift",
           202
-        ]
-      ],
-      [
-        "The result is read against the call it answers",
-        "When a result lands, the reader looks up the call that opened it. The call's kind decides whether the result reads as a patch, a picture or printed output. A result quoting an id this file never opened is left alone.",
-        [
+        ],
+        "actor": "e-transcript",
+        "kind": "self"
+      },
+      {
+        "title": "The result is read against the call it answers",
+        "prose": "When a result lands, the reader looks up the call that opened it. The call's kind decides whether the result reads as a patch, a picture or printed output. A result quoting an id this file never opened is left alone.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptReader+Outcome.swift",
           71
-        ]
-      ],
-      [
-        "One read's worth of events folds into the join",
-        "The tail delivers batches, not single lines. The join applies a whole batch and rebuilds once for it, and the first batch is the backfill of what the file already held.",
-        [
+        ],
+        "actor": "e-transcript",
+        "kind": "self"
+      },
+      {
+        "title": "One read's worth of events folds into the join",
+        "prose": "The tail delivers batches, not single lines. The join applies a whole batch and rebuilds once for it, and the first batch is the backfill of what the file already held.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/TranscriptWatch.swift",
           220
-        ]
-      ],
-      [
-        "Each event moves one fact about the Session",
-        "The Session applies every event in order. A prompt opens a Turn, a stop reason ends it, and a usage record moves the spend. The events are kept as well, because the feed is drawn from them.",
-        [
+        ],
+        "actor": "e-hub",
+        "kind": "call"
+      },
+      {
+        "title": "Each event moves one fact about the Session",
+        "prose": "The Session applies every event in order. A prompt opens a Turn, a stop reason ends it, and a usage record moves the spend. The events are kept as well, because the feed is drawn from them.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift",
           153
-        ]
-      ],
-      [
-        "Live state becomes values, in one file only",
-        "One file in the cockpit may read live Hub state, and this is it. The initialiser here restates every public fact of a Session as a value. A fact with no slot must be named on a `not-projected:` line beside it.",
-        [
+        ],
+        "actor": "e-hub",
+        "kind": "self"
+      },
+      {
+        "title": "Live state becomes values, in one file only",
+        "prose": "Exactly one file in the cockpit reads live Hub state, and this is it. The initializer here restates every public fact of a Session as a value. A fact with no slot must be named on a `not-projected:` line beside it.",
+        "at": [
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation+Hub.swift",
           119
-        ]
-      ],
-      [
-        "The event stream becomes rows",
-        "One pass over the events builds the feed. It pairs each call with the outcome that answered it, and folds a run of looking into one survey line. Every character goes on untouched.",
-        [
+        ],
+        "actor": "u-shell",
+        "kind": "call"
+      },
+      {
+        "title": "The event stream becomes rows",
+        "prose": "One pass over the events builds the feed. It pairs each call with the outcome that answered it, and folds a run of looking into one survey line. Every character goes on untouched.",
+        "at": [
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/SessionsRoomReading.swift",
           57
-        ]
-      ],
-      [
-        "The row is drawn as what it is",
-        "Each row switches on its own content. A prompt, a message, a thought and a call each draw as a different view. The table cell holding one is recycled by row shape.",
-        [
+        ],
+        "actor": "u-deck",
+        "kind": "call"
+      },
+      {
+        "title": "The row is drawn as what it is",
+        "prose": "Each row switches on its own content. A prompt, a message, a thought and a call each draw as a different view. The table recycles the cell that holds one by row shape.",
+        "at": [
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRowView.swift",
           13
-        ]
-      ]
+        ],
+        "actor": "u-feed",
+        "kind": "call"
+      }
     ],
     "claims": {
       "steps": {
@@ -155,21 +172,15 @@
     "name": "A typed message reaches an agent",
     "line": "The user types a message in the cockpit, and it arrives at the agent as keystrokes at a real terminal prompt.",
     "short": [
-      "There is no API on the other end of a claude Session. The agent is a terminal program reading a descriptor.",
+      "There is no API on the other end of a claude Session. The agent is a terminal program that reads a descriptor.",
       "So a message is delivered as a bracketed paste and a Return, and Argo then checks that the agent heard it."
     ],
     "long": [
-      "Argo owns the pseudo-terminal of every agent it spawned, and never draws it.",
-      "A message travels from the composer's field, through the draft, to the one port that says what Argo may do to a Session.",
-      "The adapter behind that port turns the message into the keystrokes a person would have typed, and writes them to the descriptor.",
-      "Typing is not hearing. The adapter starts a watch on the Session's own record count, and types another Return where nothing was written back.",
+      "Argo owns the pseudo-terminal of every agent it started, and never draws it.",
+      "A message travels from the composer's field, through the draft, to the one port that says what Argo can do to a Session.",
+      "The adapter behind that port turns the message into the keystrokes a person types, and writes them to the descriptor.",
+      "A message Argo typed is not a message the agent heard. The adapter starts a watch on the Session's own record count, and types another Return where nothing came back.",
       "A codex Session takes none of this. Its adapter sends a JSON-RPC line to the server's own input, with no keystrokes and nothing to retype."
-    ],
-    "parts": [
-      "u-composer",
-      "u-shell",
-      "e-drive",
-      "e-spawn"
     ],
     "concepts": [
       "c-drive-port",
@@ -178,102 +189,129 @@
       "c-session-provenance"
     ],
     "steps": [
-      [
-        "The key lands on the field",
-        "The composer's field is an `NSTextView`. Its `keyDown` reads each key as an intent, and a plain Return calls the submit closure rather than inserting a newline.",
-        [
+      {
+        "title": "The key lands on the field",
+        "prose": "The composer's field is an `NSTextView`. Its `keyDown` reads each key as an intent, and a plain Return calls the submit closure rather than inserting a newline.",
+        "at": [
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerTextInput.swift",
           23
-        ]
-      ],
-      [
-        "Every keystroke writes the draft back",
-        "The delegate copies the field's string into the draft on every change. The draft is the truth, and the field is written back only when the two disagree, so a caret mid-sentence stays where it is.",
-        [
+        ],
+        "actor": "u-composer",
+        "kind": "call",
+        "from": "person"
+      },
+      {
+        "title": "Every keystroke writes the draft back",
+        "prose": "The delegate copies the field's string into the draft on every change. The draft is the truth, and the field is written back only when the two disagree, so a caret mid-sentence stays where it is.",
+        "at": [
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerTextView.swift",
           98
-        ]
-      ],
-      [
-        "The draft decides now or later",
-        "A submit sends at once when the Session is free. A Session already running a Turn takes the words into a queue instead, so two messages never arrive as one.",
-        [
+        ],
+        "actor": "u-composer",
+        "kind": "self"
+      },
+      {
+        "title": "The draft decides now or later",
+        "prose": "A submit sends at once when the Session is free. A Session already running a Turn takes the words into a queue instead, so two messages never arrive as one.",
+        "at": [
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/ComposerDraft.swift",
           92
-        ]
-      ],
-      [
-        "A held message rejoins the path when the turn ends",
-        "A message the draft queued waits for the turn in flight to finish. A held autonomy rung is walked first, and then the queue goes, oldest first.",
-        [
+        ],
+        "actor": "u-composer",
+        "kind": "self"
+      },
+      {
+        "title": "A held message rejoins the path when the Turn ends",
+        "prose": "A message the draft queued waits for the Turn in flight to finish. Argo walks a held autonomy rung first, and then the queue goes, oldest first.",
+        "at": [
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/SessionComposer+Turn.swift",
           78
-        ]
-      ],
-      [
-        "The intent is bound to one Session",
-        "The shell hands the composer a closure that already names the selected Session. No view holds a driver, and a composer with nothing selected is handed a closure that does nothing.",
-        [
+        ],
+        "actor": "u-composer",
+        "kind": "self"
+      },
+      {
+        "title": "The intent is bound to one Session",
+        "prose": "The shell hands the composer a closure that already names the selected Session. No view holds a driver, and a composer with nothing selected is handed a closure that does nothing.",
+        "at": [
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift",
           40
-        ]
-      ],
-      [
-        "Files go first, then the words that name them",
-        "Attachments are written down and their absolute paths come back. The message names those paths, so the agent's own read pulls the bytes in. Both halves share one throwing path.",
-        [
+        ],
+        "actor": "u-shell",
+        "kind": "call"
+      },
+      {
+        "title": "Files go first, then the words that name them",
+        "prose": "Attachments are written down and their absolute paths come back. The message names those paths, so the agent's own read pulls the bytes in. Both halves share one throwing path.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionDriver+Turn.swift",
           13
-        ]
-      ],
-      [
-        "The port says what Argo may do to a Session",
-        "`send` is one member of the drive port, beside interrupt, decide and answer. It is synchronous and throwing, because a keystroke either reaches a descriptor or it does not.",
-        [
+        ],
+        "actor": "e-drive",
+        "kind": "call"
+      },
+      {
+        "title": "The port says what Argo can do to a Session",
+        "prose": "`send` is one member of the drive port, beside interrupt, decide and answer. It is synchronous and throwing, because a keystroke either reaches a descriptor or it does not.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/SessionDriver.swift",
           13
-        ]
-      ],
-      [
-        "The adapter finds the live terminal",
-        "The claude adapter asks the claim registry which live claim owns this Session. A Session whose process has gone has no live claim, so the send refuses instead of writing nowhere.",
-        [
+        ],
+        "actor": "e-drive",
+        "kind": "self"
+      },
+      {
+        "title": "The adapter finds the live terminal",
+        "prose": "The claude adapter asks the claim registry which live claim owns this Session. A Session whose process has gone has no live claim, so the send refuses instead of writing nowhere.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeSessionDriver.swift",
           40
-        ]
-      ],
-      [
-        "The message is spelled as keystrokes",
-        "The text goes as a bracketed paste, and the Return that submits it goes after it. A bare newline at that prompt submits, so a multi-line message written straight through would arrive as one message per line.",
-        [
+        ],
+        "actor": "e-drive",
+        "kind": "self"
+      },
+      {
+        "title": "The message is spelled as keystrokes",
+        "prose": "The text goes as a bracketed paste, and the Return that submits it goes after it. A bare newline at that prompt submits, so a multi-line message written straight through arrives as one message per line.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeTurn.swift",
           12
-        ]
-      ],
-      [
-        "Two writes, with a pause between them",
-        "The terminal table writes the paste and then the Return, with a gap of 150 milliseconds between them. A terminal program handles one read as one batch, and an `@` inside the paste can otherwise swallow the Return. A message typed while another is still being typed waits for it whole.",
-        [
+        ],
+        "actor": "e-drive",
+        "kind": "self"
+      },
+      {
+        "title": "Two writes, with a pause between them",
+        "prose": "The terminal table writes the paste and then the Return, with a gap of 150 milliseconds between them. A terminal program handles one read as one batch, and an `@` inside the paste can otherwise swallow the Return. A message typed while another is still being typed waits for it whole.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentTerminals.swift",
           111
-        ]
-      ],
-      [
-        "The bytes reach the descriptor",
-        "The process host turns the text into UTF-8 bytes and sends them to the pseudo-terminal the spawn opened. This is the last point on the path where the message is Argo's.",
-        [
+        ],
+        "actor": "e-spawn",
+        "kind": "call"
+      },
+      {
+        "title": "The bytes reach the descriptor",
+        "prose": "The process host turns the text into UTF-8 bytes and sends them to the pseudo-terminal the start opened. This is the last point on the path where the message is Argo's.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoTerminal/SwiftTermProcessHost.swift",
           61
-        ]
-      ],
-      [
-        "Written is not heard",
-        "The adapter starts a watch on the Session's record count. Three seconds of silence buys another Return, twice over, and after that the message is filed as lost and given back to the composer.",
-        [
+        ],
+        "actor": "terminal",
+        "kind": "call",
+        "to": "agent-process"
+      },
+      {
+        "title": "Written is not heard",
+        "prose": "The adapter starts a watch on the Session's record count. Three seconds of silence buys another Return, twice over, and after that the message is filed as lost and given back to the composer.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/TurnDelivery.swift",
           59
-        ]
-      ]
+        ],
+        "actor": "e-drive",
+        "kind": "loop",
+        "to": "u-composer"
+      }
     ],
     "claims": {
       "steps": {
@@ -301,24 +339,18 @@
     "depth": 0,
     "parent": "argo",
     "name": "A blocked tool call waits for an answer",
-    "line": "A spawned claude agent tries to use a tool. Its hook blocks on a socket Argo listens to, and the user's answer goes back down it.",
+    "line": "A claude agent Argo started tries to use a tool. Its hook blocks on a socket Argo listens to, and the user's answer goes back down it.",
     "short": [
       "The claude agent's own permission dialog sits in a terminal nobody is looking at.",
       "So Argo installs a hook that asks Argo instead, and the cockpit answers for the person."
     ],
     "long": [
-      "Every claude Session Argo spawns is given a plugin that registers a `PreToolUse` hook over the gated tools.",
+      "Argo gives every claude Session it starts a plugin that registers a `PreToolUse` hook over the gated tools.",
       "The hook sends the call's payload down a Unix socket that belongs to that one Session, and blocks on one reply line.",
       "Argo decides. The top autonomy rung and a standing allow both let a call through without troubling anyone.",
       "Everything else becomes a prompt in the cockpit, and the reply vocabulary going back has two words only, `allow` and `deny`.",
-      "Argo's own clock is shorter than the hook's, so a call nobody answers is refused by Argo and said to be Argo's refusal.",
+      "Argo's own clock is shorter than the hook's, so Argo refuses a call nobody answers, and says the refusal is its own.",
       "A codex Session has no plugin and no socket. Its approval is a request the server blocks on, answered with a response on the adapter's own clock."
-    ],
-    "parts": [
-      "e-companion",
-      "e-drive",
-      "e-hub",
-      "u-composer"
     ],
     "concepts": [
       "c-claim",
@@ -327,102 +359,133 @@
       "c-session-provenance"
     ],
     "steps": [
-      [
-        "Argo binds one socket per claim, at spawn",
-        "The gate opens with the spawn, long before any tool is called. The socket sits in a directory only this user can open, and its path goes to exactly one agent.",
-        [
+      {
+        "title": "Argo binds one socket per claim, at the start",
+        "prose": "The gate opens with the start, long before any tool call. The socket sits in a directory only this user can open, and its path goes to exactly one agent.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionSocket.swift",
           55
-        ]
-      ],
-      [
-        "The plugin puts a gate on the tool",
-        "The companion plugin registers a `PreToolUse` hook over the gated tool names, pointed at that socket. The CLI runs the hook before every matching call and obeys what it prints.",
-        [
+        ],
+        "actor": "e-companion",
+        "kind": "call"
+      },
+      {
+        "title": "The plugin puts a gate on the tool",
+        "prose": "The companion plugin registers a `PreToolUse` hook over the gated tool names, pointed at that socket. The CLI runs the hook before every matching call and obeys what it prints.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/Plugin/hooks.json",
           9
-        ]
-      ],
-      [
-        "The hook dials Argo and blocks",
-        "The hook collapses the payload to one line, sends it down the socket, and reads one reply line back. Every failure to reach Argo denies, because a gate that fails open is worse than no gate at all.",
-        [
+        ],
+        "actor": "e-companion",
+        "kind": "self"
+      },
+      {
+        "title": "The hook dials Argo and blocks",
+        "prose": "The hook collapses the payload to one line, sends it down the socket, and reads one reply line back. Every failure to reach Argo denies, because a gate that fails open is worse than no gate at all.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/Plugin/permission-hook.sh",
           26
-        ]
-      ],
-      [
-        "The gate takes the line",
-        "One handler answers every line that arrives on that claim's socket. It is where the permission policy lives, above the waiting.",
-        [
+        ],
+        "actor": "e-companion",
+        "kind": "call",
+        "from": "agent-process"
+      },
+      {
+        "title": "The gate takes the line",
+        "prose": "One handler answers every line that arrives on that claim's socket. It is where the permission policy lives, above the waiting.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
           154
-        ]
-      ],
-      [
-        "A question is routed away first",
-        "The same hook matcher catches `AskUserQuestion`. A question goes to its own table and never becomes a Permission. The rung and the standing allows below wave a boundary through, and answer nothing.",
-        [
+        ],
+        "actor": "e-drive",
+        "kind": "call"
+      },
+      {
+        "title": "Argo routes a question away first",
+        "prose": "The same hook matcher catches `AskUserQuestion`. A question goes to its own table and never becomes a Permission. The rung and the standing allows in the next step wave a boundary through, and answer nothing.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
           162
-        ]
-      ],
-      [
-        "Two ways a call never becomes a prompt",
-        "The top autonomy rung asks nothing, and Argo's gate honours that. A tool this Session has already granted a standing allow is let through on the next check down.",
-        [
+        ],
+        "actor": "e-drive",
+        "kind": "alt"
+      },
+      {
+        "title": "Two ways a call never becomes a prompt",
+        "prose": "The top autonomy rung asks nothing, and Argo's gate honours that. A tool this Session has already granted a standing allow is let through on the next check down.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
           174
-        ]
-      ],
-      [
-        "The waiting prompt is published under its claim",
-        "A call that survives both checks is minted as a request with an id, and published. The claim is the key, because a fresh CLI has not written a record yet and has no Session id to be filed under.",
-        [
+        ],
+        "actor": "e-drive",
+        "kind": "alt"
+      },
+      {
+        "title": "Argo publishes the waiting prompt under its claim",
+        "prose": "Argo builds a call that survives both checks into a request with an id, and publishes it. The claim is the key, because a fresh CLI wrote no record yet and has no Session id to file it under.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/ClaimLedger.swift",
           28
-        ]
-      ],
-      [
-        "The person is offered three answers",
-        "The prompt draws Allow, Deny, and a standing allow for that tool. Return allows and Escape denies.",
-        [
+        ],
+        "actor": "e-hub",
+        "kind": "call"
+      },
+      {
+        "title": "Argo offers the person three answers",
+        "prose": "The prompt draws Allow, Deny, and a standing allow for that tool. Return allows and Escape denies.",
+        "at": [
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Composer/PermissionPromptFooter.swift",
           13
-        ]
-      ],
-      [
-        "The answer is routed back to the claim",
-        "The adapter turns the Session id into its live claim and names the request being answered. A request that is no longer waiting raises `nothingPending` rather than spending the answer on its neighbour.",
-        [
+        ],
+        "actor": "u-composer",
+        "kind": "call",
+        "to": "person"
+      },
+      {
+        "title": "Argo routes the answer back to the claim",
+        "prose": "The adapter turns the Session id into its live claim and names the request being answered. A request that is no longer waiting raises `nothingPending` rather than spending the answer on its neighbor.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/ClaudeSessionDriver.swift",
           102
-        ]
-      ],
-      [
-        "A standing allow releases what is already waiting",
-        "The grant is recorded against the claim, and every call already waiting for that same tool is allowed on the same word. The grant can be taken back later, and the next call to that tool simply asks again.",
-        [
+        ],
+        "actor": "e-drive",
+        "kind": "call",
+        "from": "person"
+      },
+      {
+        "title": "A standing allow releases what is already waiting",
+        "prose": "Argo records the grant against the claim, and allows every call already waiting for that same tool on the same word. The user can revoke the grant later, and the next call to that tool asks again.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
           135
-        ]
-      ],
-      [
-        "Two words go back down the socket",
-        "The reply is `allow` or `deny`, and never `ask`. An `ask` would fall through to the CLI's own dialog, which is hidden and has no reader.",
-        [
+        ],
+        "actor": "e-drive",
+        "kind": "self"
+      },
+      {
+        "title": "Two words go back down the socket",
+        "prose": "The reply is `allow` or `deny`, and never `ask`. An `ask` falls through to the CLI's own dialog, which is hidden and nobody reads.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionReply.swift",
           14
-        ]
-      ],
-      [
-        "Or nobody answers, and Argo refuses instead",
-        "This is the other way out, never a step after the one above. Argo waits a day and the hook is told to wait a minute longer. An unanswered call is denied by Argo, and published as an expiry.",
-        [
+        ],
+        "actor": "e-drive",
+        "kind": "return",
+        "answers": 3,
+        "to": "agent-process"
+      },
+      {
+        "title": "Or nobody answers, and Argo refuses instead",
+        "prose": "This is the other way out, and never a step after the answer path. Argo waits a day, and Argo tells the hook to wait a minute longer. Argo denies an unanswered call, and publishes it as an expiry.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
           148
-        ]
-      ]
+        ],
+        "actor": "e-drive",
+        "kind": "alt",
+        "answers": 3,
+        "to": "agent-process"
+      }
     ],
     "claims": {
       "steps": {
@@ -453,16 +516,10 @@
     ],
     "long": [
       "An app launched from Finder inherits almost no environment, so Argo asks the user's login shell what their real `PATH` is.",
-      "The program is resolved to an absolute path before the fork, which turns the commonest failure into a sentence the cockpit can repeat.",
+      "Argo resolves the program to an absolute path before the fork, which turns the commonest failure into a sentence the cockpit can repeat.",
       "A claim opens first. It is one act of ownership, and the roster carries a row under the claim's own id before any transcript exists.",
-      "Argo mints the transcript id a fresh claude CLI is told to write, so the claim and the command line name one file.",
-      "The companion plugin is written out per claim with that claim's sockets baked in, and the file appearing later is what binds the two."
-    ],
-    "parts": [
-      "e-hub",
-      "e-drive",
-      "e-companion",
-      "e-spawn"
+      "Argo builds the transcript id a fresh claude CLI is told to write, so the claim and the command line name one file.",
+      "Argo writes the companion plugin per claim, with that claim's sockets in it. The file that appears later is what binds the two."
     ],
     "concepts": [
       "c-claim",
@@ -471,118 +528,149 @@
       "c-honesty-tier"
     ],
     "steps": [
-      [
-        "The window is asked for a new agent",
-        "The Hub checks it has a process host at all, and that the working directory is a folder. Both refusals carry words fit to repeat to the user.",
-        [
+      {
+        "title": "The window is asked for a new agent",
+        "prose": "The Hub checks it has a process host at all, and that the working directory is a directory. Both refusals carry words fit to repeat to the user.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
           16
-        ]
-      ],
-      [
-        "Argo mints the transcript a fresh claude must write",
-        "A claude spawn mints a transcript id here. Codex picks its own, so nothing is minted for it. The claim and the command line then name one file, and the row can never bind to an agent somebody else started.",
-        [
+        ],
+        "actor": "e-hub",
+        "kind": "call",
+        "from": "person"
+      },
+      {
+        "title": "Argo builds the transcript id a fresh claude must write",
+        "prose": "A claude start builds a transcript id here. Codex picks its own, so Argo builds none for it. The claim and the command line then name one file, and the row can never bind to an agent somebody else started.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
           32
-        ]
-      ],
-      [
-        "The claim opens",
-        "A claim is one act of ownership, with an id of its own. It waits for exactly the transcript it named, rather than for whatever file appears next.",
-        [
+        ],
+        "actor": "e-hub",
+        "kind": "self"
+      },
+      {
+        "title": "The claim opens",
+        "prose": "A claim is one act of ownership, with an id of its own. It waits for exactly the transcript it named, rather than for whatever file appears next.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership.swift",
           76
-        ]
-      ],
-      [
-        "The gate's socket is granted first",
-        "Opening this claim's gate creates its socket and answers the path. The grant is minted with the invitation, because the hook is the only thing that carries it.",
-        [
+        ],
+        "actor": "e-hub",
+        "kind": "self"
+      },
+      {
+        "title": "Argo opens the gate's socket first",
+        "prose": "Argo opens this claim's gate, which creates its socket and answers the path. It builds the grant with the invitation, because the hook is the only thing that carries it.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift",
           74
-        ]
-      ],
-      [
-        "The plugin is written out for this claim",
-        "The bundle is materialized under a folder named for the claim, and only a CLI that takes the plugin is invited at all. The one thing it must say is which socket to talk down, which is not known until the claim exists.",
-        [
+        ],
+        "actor": "e-drive",
+        "kind": "call"
+      },
+      {
+        "title": "Argo writes the plugin for this claim",
+        "prose": "Argo builds the bundle under a directory named for the claim, and invites only a CLI that takes the plugin. The one thing it must say is which socket to talk down, and that is not known until the claim exists.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionPlugin.swift",
           29
-        ]
-      ],
-      [
-        "Only then is the launch built",
-        "The invitation goes into the launcher, which is why it is made first. What comes back is the program, the folder, the argv and the environment, as one value the process host can execute.",
-        [
+        ],
+        "actor": "e-companion",
+        "kind": "call"
+      },
+      {
+        "title": "Argo builds the launch only then",
+        "prose": "The invitation goes into the launcher, which is why Argo builds it first. What comes back is the program, the directory, the argv and the environment, as one value the process host can execute.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentSpawnPlan+Launch.swift",
           17
-        ]
-      ],
-      [
-        "The user's real search path is read from their shell",
-        "Argo runs the login shell, interactive and login both, and takes the last line it prints. Reading only one of the two startup files is the same failure with a different cause.",
-        [
+        ],
+        "actor": "e-spawn",
+        "kind": "call"
+      },
+      {
+        "title": "Argo reads the real search path from the login shell",
+        "prose": "Argo runs the login shell, interactive and login both, and takes the last line it prints. A read of only one of the two startup files is the same failure with a different cause.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/LoginShellPath.swift",
           20
-        ]
-      ],
-      [
-        "The program is resolved to an absolute path",
-        "The host execs an absolute path, so the lookup happens here and not inside the forked child. A missing CLI becomes a refusal instead of a child that dies without a word.",
-        [
+        ],
+        "actor": "e-spawn",
+        "kind": "self"
+      },
+      {
+        "title": "Argo resolves the program to an absolute path",
+        "prose": "The host execs an absolute path, so the lookup happens here and not inside the forked child. A missing CLI becomes a refusal instead of a child that dies without a word.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentExecutable.swift",
           11
-        ]
-      ],
-      [
-        "The environment is inherited, then corrected",
-        "The agent gets this process's whole environment, less what this CLI must not inherit. The shell's search path and a real terminal type go over the top, and the invitation made above adds its own variables.",
-        [
+        ],
+        "actor": "e-spawn",
+        "kind": "self"
+      },
+      {
+        "title": "Argo inherits the environment, then corrects it",
+        "prose": "The agent gets this process's whole environment, less what this CLI must not inherit. The shell's search path and a real terminal type go over the top, and the invitation made above adds its own variables.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentLauncher.swift",
           59
-        ]
-      ],
-      [
-        "The command line is built in one fixed order",
-        "The companion's flags come first, then the flags that pick the CLI's surface — none for claude, `app-server` for codex. The autonomy rung follows, then the chain to resume or the transcript to name. An opening prompt goes last, because a positional before a flag would be read as its value.",
-        [
+        ],
+        "actor": "e-spawn",
+        "kind": "self"
+      },
+      {
+        "title": "Argo builds the command line in one fixed order",
+        "prose": "The companion's flags come first, then the flags that pick the CLI's surface — none for claude, `app-server` for codex. The autonomy rung follows, then the chain to resume or the transcript to name. An opening prompt goes last, because the CLI reads a positional before a flag as its value.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Spawn/AgentSpawnPlan+Launch.swift",
           18
-        ]
-      ],
-      [
-        "The process starts and the table adopts it",
-        "The host turns the launch into a live pseudo-terminal. The terminal table adopts it under the claim, which is what makes the Session steerable from this moment on.",
-        [
+        ],
+        "actor": "e-spawn",
+        "kind": "self"
+      },
+      {
+        "title": "The process starts and the table adopts it",
+        "prose": "The host turns the launch into a live pseudo-terminal. The terminal table adopts it under the claim, which is what lets Argo drive the Session from this moment on.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
           94
-        ]
-      ],
-      [
-        "The row goes onto the roster",
-        "Publishing happens the moment the process exists, because a claude CLI writes no record until its first prompt. The row carries the rung the spawn picked and the ticket it named, both filed under the claim.",
-        [
+        ],
+        "actor": "e-hub",
+        "kind": "call",
+        "to": "agent-process"
+      },
+      {
+        "title": "The row goes onto the roster",
+        "prose": "Argo publishes the row the moment the process exists, because a claude CLI writes no record until its first prompt. The row carries the rung the start picked and the ticket it named, both filed under the claim.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
           47
-        ]
-      ],
-      [
-        "The transcript appears and the claim binds",
-        "The file turns up under the id the spawn named, and the claim takes that Session as its own. This is the first moment the durable record of ownership can be written, because until now Argo owned an agent and not a Session.",
-        [
+        ],
+        "actor": "e-hub",
+        "kind": "self"
+      },
+      {
+        "title": "The transcript appears and the claim binds",
+        "prose": "The file appears under the id Argo named, and the claim takes that Session as its own. This is the first moment Argo can write the durable record of ownership, because until now Argo owned an agent and not a Session.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/SessionOwnership+Binding.swift",
           17
-        ]
-      ],
-      [
-        "The provisional row stands down",
-        "Reconciliation runs after the reading is applied and binds every observed Session it can. A claim that binds loses the row published for it at spawn, so the agent is drawn once rather than twice.",
-        [
+        ],
+        "actor": "e-hub",
+        "kind": "call",
+        "from": "agent-process"
+      },
+      {
+        "title": "Argo removes the provisional row",
+        "prose": "Reconciliation runs after Argo applies the projection, and binds every observed Session it can. A claim that binds loses the row published for it at the start, so Argo draws the agent once rather than twice.",
+        "at": [
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift",
           190
-        ]
-      ]
+        ],
+        "actor": "e-hub",
+        "kind": "self"
+      }
     ],
     "claims": {
       "steps": {
@@ -613,10 +701,10 @@
       "`managed` still has a live process. `orphaned` was Argo's and lost it. `external` was never Argo's."
     ],
     "long": [
-      "Argo shares its folders with agents nobody in Argo started, so it must never claim one of those as its own.",
-      "The question is narrow on purpose. A Session is `managed` or `orphaned` only when a claim names it, and closeness in time or folder counts for nothing.",
-      "`orphaned` survives a restart because the record of past ownership is written to a file. The process does not survive, so an orphaned Session cannot be steered until it is resumed.",
-      "The word decides what the cockpit may offer. Sending a message, answering a permission, and walking the autonomy rung all need a live claim."
+      "Argo shares its directories with agents nobody in Argo started, so it must never claim one of those as its own.",
+      "The question is narrow on purpose. A Session is `managed` or `orphaned` only when a claim names it, and closeness in time or directory counts for nothing.",
+      "`orphaned` survives a restart because the record of past ownership is written to a file. The process does not survive, so Argo cannot drive an orphaned Session until it is resumed.",
+      "The word decides what the cockpit can offer. A message, a permission answer, and a walk up the autonomy rung all need a live claim."
     ],
     "evidence": [
       [
@@ -660,15 +748,15 @@
     "name": "the claim",
     "line": "One claim is one act of ownership: it ties a process Argo started to the Session that process turns out to be.",
     "short": [
-      "A spawned agent exists before its transcript does, so Argo needs a handle that is older than the Session id.",
+      "An agent Argo started exists before its transcript does, so Argo needs a handle that is older than the Session id.",
       "That handle is the claim, and almost everything Argo owns about a live agent is keyed by it."
     ],
     "long": [
-      "A claim opens at spawn, with an id of its own. The roster shows a row under that id straight away, so a new agent is visible before it has written anything.",
-      "Argo tells a fresh CLI which transcript to write, and the claim names the same file. When the file appears, the claim binds to it and the provisional row stands down.",
-      "The match is on that name and nothing weaker. A folder and a start time also fit an agent Argo never started.",
-      "The terminal, the permission gate, the standing allows and the plugin folder are all keyed by claim. The claim outlives every re-keying the Session goes through.",
-      "The claim closes when the process exits. Nothing can be steered afterwards, and the durable record of ownership is what later grades that Session `orphaned`."
+      "A claim opens at the start, with an id of its own. The roster draws a row under that id straight away, so a new agent is visible before it writes anything.",
+      "Argo tells a fresh CLI which transcript to write, and the claim names the same file. When the file appears, the claim binds to it, and Argo removes the provisional row.",
+      "The match is on that name and nothing weaker. A directory and a start time also fit an agent Argo never started.",
+      "The terminal, the permission gate, the standing allows and the plugin directory are all keyed by claim. The claim outlives every re-keying the Session goes through.",
+      "The claim closes when the process exits. Argo can drive nothing afterwards, and the durable record of ownership is what later grades that Session `orphaned`."
     ],
     "evidence": [
       [
@@ -715,16 +803,16 @@
     "depth": 0,
     "parent": "argo",
     "name": "how we know a fact",
-    "line": "Every fact on screen says how Argo knows it: `direct` for Argo's own act, `derived` for an outside reading, `convention` for the companion channel.",
+    "line": "Every fact on screen says how Argo knows it: `direct` for Argo's own act, `derived` for an outside observation, `convention` for the companion channel.",
     "short": [
       "One Session mixes all three, so the tier belongs to the fact and never to the Session.",
-      "Where two readings disagree, the lower tier wins. Argo never draws a false `direct`."
+      "Where two observations disagree, the lower tier wins. Argo never draws a false `direct`."
     ],
     "long": [
       "Argo mostly watches files other programs wrote, and a watcher that overstates what it knows is worse than one that says less.",
       "`direct` is reserved for Argo's own acts. Argo chose the program, so the agent name is direct. Argo's clock refused a permission, so the expiry is direct.",
-      "`derived` covers everything read from outside. It is either inferred from a signal or quoted verbatim from an outside authority, and a verbatim reading is never reworded.",
-      "`convention` covers what the companion plugin reported. It never existed in a transcript, and only a Session Argo spawned can produce one.",
+      "`derived` covers everything read from outside. It is either inferred from a signal or quoted verbatim from an outside authority, and Argo never rewords a verbatim quote.",
+      "`convention` covers what the companion plugin reported. It never existed in a transcript, and only a Session Argo started can produce one.",
       "The rule has teeth in the timing as well as the wording. Argo's permission clock is shorter than the hook's, which is what makes an unanswered call Argo's own refusal rather than a guess."
     ],
     "evidence": [
@@ -766,17 +854,17 @@
     "depth": 0,
     "parent": "argo",
     "name": "the turn",
-    "line": "One turn is one exchange, from the prompt that opened it to the stop reason that ended it.",
+    "line": "One Turn is one exchange, from the prompt that opened it to the stop reason that ended it.",
     "short": [
-      "A Session has at most one turn in flight, which is why stopping needs nothing else named.",
-      "A turn also bounds attention: a question only waits while the turn that asked it is open."
+      "A Session has at most one Turn in flight, which is why a stop needs nothing else named.",
+      "A Turn also bounds attention: a question waits only while the Turn that asked it is open."
     ],
     "long": [
-      "The record does not label turns. Argo opens one on a prompt and ends it on a stop reason read from the agent's own record.",
-      "The word `tool_use` is a pause inside a turn and never its end, because the agent stopped to call a tool and will speak again.",
-      "A delegated subagent writes into the same file. Those records do not open or close the root Session's turn, because the work is the child's.",
-      "Ending a turn drops every question that turn had waiting, answered or not. Three facts move together under that one rule.",
-      "The composer reads the same fact. A message typed while a turn runs is queued rather than sent, so two messages never arrive as one."
+      "The record does not label Turns. Argo opens one on a prompt and ends it on a stop reason read from the agent's own record.",
+      "The word `tool_use` is a pause inside a Turn and never its end, because the agent stopped to call a tool and will speak again.",
+      "A delegated Subagent writes into the same file. Those records do not open or close the root Session's Turn, because the work is the child's.",
+      "The end of a Turn drops every question that Turn had waiting, answered or not. Three facts move together under that one rule.",
+      "The composer reads the same fact. A message typed while a Turn runs is queued rather than sent, so two messages never arrive as one."
     ],
     "evidence": [
       [
@@ -817,17 +905,17 @@
     "depth": 0,
     "parent": "argo",
     "name": "the drive port and its adapters",
-    "line": "One protocol states everything Argo can do to a Session, and the adapter behind it is chosen per Session.",
+    "line": "One protocol states everything Argo can do to a Session, and Argo chooses the adapter behind it per Session.",
     "short": [
       "Everything else in the engine observes a Session. This is the one thing that acts on one.",
       "Two CLIs sit behind it, and neither one is named by any view."
     ],
     "long": [
       "The port has eight members: send, interrupt, decide, answer, set the rung, declare the surface, attach files, and revoke a standing allow.",
-      "Every member is keyed by Session, and the router picks the adapter from that key. A joint answer would refuse one CLI the moment the other became reachable.",
+      "Every member is keyed by Session, and the router picks the adapter from that key. A joint answer refuses one CLI the moment the other becomes reachable.",
       "One member states rather than acts. The surface declares what this adapter can do, so a control the adapter cannot serve is never drawn.",
-      "The same shape appears again under the adapter. Starting a process is a port too, because the real host links a windowing framework and the spawn has to be provable without a window.",
-      "The pattern is what lets Argo test a spawn, a message and a permission answer with no terminal anywhere in the test."
+      "The same shape appears again under the adapter. A process start is a port too, because the real host links a windowing framework, and a test must check the start with no window.",
+      "The pattern is what lets Argo test a start, a message and a permission answer with no terminal anywhere in the test."
     ],
     "evidence": [
       [
@@ -875,11 +963,11 @@
       "The restatement must be total: a fact with no slot has to be named and explained."
     ],
     "long": [
-      "The cockpit takes a value and draws it. That makes every reading testable without a window, and makes a screen reproducible from a fixture.",
-      "One initialiser reads live state, and only one. That single file is checked by a build gate rather than by review.",
-      "The restatement is total by another gate. Adding a public fact to the Session fails the build until that fact lands on a slot of its own name. A `not-projected:` line with a reason is the other way past it.",
+      "The cockpit takes a value and draws it. That makes every projection testable with no window, and makes a screen reproducible from a fixture.",
+      "One initializer reads live state, and only one. A build gate checks that single file rather than a reviewer.",
+      "The restatement is total by another gate. A new public fact on the Session fails the build until that fact lands on a slot of its own name. A `not-projected:` line with a reason is the other way past it.",
       "Swapping two facts of the same type between slots fails as well, so the check is about identity and not about types lining up.",
-      "The cost of this rule is a long comment block. What it buys is that nothing on screen can quietly stop tracking the state it claims to show."
+      "The cost of this rule is a long comment block. What it buys is that nothing on screen can quietly stop tracking the state it claims to draw."
     ],
     "evidence": [
       [
@@ -932,10 +1020,10 @@
     ],
     "long": [
       "The reader turns each line into a record, and each record into the events it carried. Zero events is an ordinary answer for a line that is only plumbing.",
-      "A line nothing recognises still becomes a value that keeps its raw bytes, so an unknown record can be counted rather than lost.",
+      "A line nothing recognizes still becomes a value that keeps its raw bytes, so an unknown record can be counted rather than lost.",
       "Text the agent wrote travels verbatim. A message and a thought are separate events, because a final message routinely contradicts its own reasoning.",
-      "Events arrive in batches, and the batch is carried through rather than flattened. The first batch is what says the file has been read at all.",
-      "Folding these into turns, plans and subagents happens above, where the whole Session is in memory."
+      "Events arrive in batches, and the batch is carried through rather than flattened. The first batch is what says Argo read the file at all.",
+      "The fold into Turns, plans and Subagents happens above, where the whole Session is in memory."
     ],
     "evidence": [
       [
@@ -979,14 +1067,14 @@
     "name": "the specimen",
     "line": "One named state the app can be launched straight into and photographed, without anybody driving it there by hand.",
     "short": [
-      "Most screens here cannot be reached in an ordinary checkout, because there are no Sessions in it.",
+      "Most screens here cannot be reached in an ordinary Project, because there are no Sessions in it.",
       "A specimen names the state and supplies the fixture, so the app can be told to draw it."
     ],
     "long": [
-      "An entry is one value holding a name and the view that name draws. It cannot be half written: no name without a rendering, and no rendering nothing can address.",
-      "The registry lists every entry, grouped in the order a reader meets the app. A name it does not know resolves to nothing rather than to somebody else's state.",
+      "An entry is one value holding a name and the view that name draws. It cannot be half written: no name without a drawing, and no drawing nothing can address.",
+      "The registry lists every entry, grouped in the order a newcomer meets the app. A name it does not know resolves to nothing rather than to somebody else's state.",
       "The app answers a `--list-specimens` flag off that registry, so the render script asks the app for the list rather than parsing the source.",
-      "This is how a visual change is checked at all. Nothing on the build machine renders a view, so a screen has to be photographed on purpose."
+      "This is how a visual change is checked at all. Nothing on the build machine draws a view, so somebody must photograph a screen on purpose."
     ],
     "evidence": [
       [

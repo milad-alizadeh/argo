@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Atlas — Route</title>
+<link rel="stylesheet" href="atlas-tokens.css">
+<style>
+  body { overflow: hidden; }
+  #root { height: 100%; display: flex; flex-direction: column; }
+
+  /* ---------- picker ---------- */
+  .picker { height: 100%; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: var(--s-region); padding: var(--s-region); }
+  .picker-head { max-width: 640px; text-align: center; }
+  .picker-head h1 { font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
+  .picker-head p { color: var(--text-2); font-size: var(--t-title3); margin-top: var(--s-comfortable); }
+  .cards { display: grid; grid-template-columns: repeat(3, 300px); gap: var(--s-loose); }
+  .card { background: var(--raised); border: 1px solid var(--hairline); border-radius: var(--r-popover);
+          padding: var(--s-loose); text-align: left; display: flex; flex-direction: column;
+          gap: var(--s-base); min-height: 210px;
+          transition: background var(--m-state) var(--ease-out), border-color var(--m-state) var(--ease-out); }
+  .card:hover { background: var(--overlay); border-color: var(--subtle); }
+  .card .n { font: 600 var(--t-footnote)/1 var(--mono); letter-spacing: .1em; color: var(--text-3); text-transform: uppercase; }
+  .card h2 { font-size: var(--t-title2); font-weight: 600; letter-spacing: -.01em; }
+  .card p { color: var(--text-2); font-size: var(--t-callout); }
+  .card .meta { margin-top: auto; color: var(--text-3); font: var(--t-footnote)/1.4 var(--mono); }
+
+  /* ---------- chrome ---------- */
+  .bar { display: flex; align-items: center; gap: var(--s-comfortable);
+         padding: var(--s-base) var(--s-loose); border-bottom: 1px solid var(--hairline);
+         background: var(--base); flex: 0 0 auto; }
+  .bar .home { font-size: var(--t-callout); color: var(--text-2); padding: 3px var(--s-base);
+               border-radius: var(--r-control); }
+  .bar .home:hover { background: var(--hover); color: var(--text-1); }
+  .bar .title { font-size: var(--t-callout); color: var(--text-1); font-weight: 590; }
+  .bar .count { font: var(--t-footnote)/1 var(--mono); color: var(--text-3); }
+  .ticks { display: flex; gap: 3px; margin-left: auto; }
+  .tick { width: 16px; height: 3px; border-radius: 2px; background: var(--subtle);
+          transition: background var(--m-selection) var(--ease-out); }
+  .tick.done { background: var(--text-off); }
+  .tick.now { background: var(--accent); }
+
+  main { flex: 1 1 auto; display: grid; grid-template-columns: 1fr 420px; min-height: 0; }
+
+  /* ---------- figure ---------- */
+  .figwrap { min-width: 0; display: flex; flex-direction: column; padding: var(--s-loose) var(--s-loose) var(--s-comfortable);
+             border-right: 1px solid var(--hairline); background: var(--sunken); }
+  .fig { flex: 1 1 auto; min-height: 0; }
+  .fig svg { display: block; width: 100%; height: 100%; }
+  .legend { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: var(--s-base) var(--s-loose);
+            padding-top: var(--s-comfortable); margin-top: var(--s-base);
+            border-top: 1px solid var(--hairline); }
+  .lg { display: flex; align-items: center; gap: var(--s-snug); font-size: var(--t-footnote); color: var(--text-3); }
+  .lg svg { width: 34px; height: 12px; flex: 0 0 auto; }
+  .lg i { width: 12px; height: 12px; border-radius: 2px; display: block; flex: 0 0 auto; }
+
+  /* ---------- prose ---------- */
+  .prose { min-width: 0; overflow-y: auto; padding: var(--s-region) var(--s-section);
+           display: flex; flex-direction: column; gap: var(--s-loose); background: var(--base); }
+  .eyebrow { font: 600 var(--t-footnote)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
+  .prose h2 { font-size: 21px; line-height: 1.25; font-weight: 600; letter-spacing: -.015em; }
+  .prose p { color: var(--text-2); font-size: var(--t-title3); line-height: 1.55; }
+  .prose p + p { margin-top: var(--s-comfortable); }
+  .src { margin-top: auto; padding-top: var(--s-comfortable); border-top: 1px solid var(--hairline);
+         font: var(--t-footnote)/1.5 var(--mono); color: var(--text-off); word-break: break-all; }
+  .src b { color: var(--text-3); font-weight: 400; }
+
+  /* ---------- gate ---------- */
+  .gate { display: flex; flex-direction: column; gap: var(--s-comfortable); }
+  .gate .opts { display: flex; flex-direction: column; gap: var(--s-base); }
+  .opt { text-align: left; border: 1px solid var(--subtle); border-radius: var(--r-control);
+         padding: var(--s-comfortable); font-size: var(--t-body); color: var(--text-1); line-height: 1.45;
+         background: var(--raised); display: flex; gap: var(--s-comfortable); align-items: flex-start;
+         transition: background var(--m-state) var(--ease-out), border-color var(--m-state) var(--ease-out); }
+  .opt:hover:not([disabled]) { background: var(--overlay); }
+  .opt .k { font: var(--t-footnote)/1.5 var(--mono); color: var(--text-3); flex: 0 0 auto; }
+  .opt[data-state="right"] { border-color: var(--accent); background: var(--selection-ground); }
+  .opt[data-state="wrong"] { border-color: var(--attention); background: var(--raised); color: var(--text-3); }
+  .opt[data-state="dim"] { opacity: .45; }
+  .verdict { font-size: var(--t-body); color: var(--text-1); border-left: 2px solid var(--accent);
+             padding-left: var(--s-comfortable); }
+  .verdict b { font-weight: 600; }
+  .verdict.miss { border-left-color: var(--attention); }
+
+  /* ---------- footer ---------- */
+  footer { flex: 0 0 auto; display: flex; align-items: center; gap: var(--s-base);
+           padding: var(--s-comfortable) var(--s-loose); border-top: 1px solid var(--hairline); background: var(--base); }
+  .nav { border: 1px solid var(--subtle); border-radius: var(--r-control); padding: 5px 14px;
+         font-size: var(--t-callout); color: var(--text-1); background: var(--control);
+         transition: background var(--m-state) var(--ease-out); }
+  .nav:hover:not([disabled]) { background: var(--hover); }
+  .nav[disabled] { opacity: .35; cursor: default; }
+  .nav.primary { background: var(--selection-ground); border-color: var(--accent); }
+  footer .hint { margin-left: auto; font: var(--t-footnote)/1 var(--mono); color: var(--text-off); }
+  footer .step-line { font-size: var(--t-callout); color: var(--text-3); margin-left: var(--s-base); }
+
+  /* ---------- svg classes ---------- */
+  .b-fill  { fill: var(--raised); }
+  .b-fill-c{ fill: var(--overlay); }
+  .b-fill-x{ fill: none; }
+  .b-line  { stroke: var(--subtle); stroke-width: 1.5; }
+  .b-line-c{ stroke: var(--strong); stroke-width: 2; }
+  .t-1 { fill: var(--text-1); font-family: var(--sans); }
+  .t-2 { fill: var(--text-2); font-family: var(--sans); }
+  .t-3 { fill: var(--text-3); font-family: var(--sans); }
+  .t-m { fill: var(--text-3); font-family: var(--mono); }
+  .past { opacity: .38; }
+  .lit .b-line, .lit .b-line-c { stroke: var(--accent); }
+  .lit .t-1, .lit .t-2 { fill: var(--text-1); }
+  .edge { stroke: var(--text-off); stroke-width: 1.5; fill: none; }
+  .edge.data { stroke-dasharray: 5 4; }
+  .edge.now { stroke: var(--accent); stroke-width: 2; }
+  .lifeline { stroke: var(--subtle); stroke-width: 1; stroke-dasharray: 3 5; }
+  .frame { fill: none; stroke: var(--subtle); stroke-width: 1; stroke-dasharray: 2 4; }
+  .frame.now { stroke: var(--accent); }
+  .ghost rect, .ghost path { fill: none; stroke: var(--text-off); stroke-width: 1.5;
+                             stroke-dasharray: 5 6; opacity: .62; }
+  .ghost path { opacity: .32; }
+  .reveal { animation: fade var(--m-reveal) var(--ease-out) both; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .reveal { animation: none; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="atlas-content.js"></script>
+<script>
+const A = window.ATLAS;
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ---------------------------------------------------------------- text wrap */
+function wrap(text, max) {
+  const out = []; let line = '';
+  for (const w of String(text).split(/\s+/)) {
+    if (!line) { line = w; }
+    else if ((line + ' ' + w).length <= max) { line += ' ' + w; }
+    else { out.push(line); line = w; }
+  }
+  if (line) out.push(line);
+  return out;
+}
+function tspans(text, x, y, max, lh, cls) {
+  return wrap(text, max).map((l, i) =>
+    `<text class="${cls}" x="${x}" y="${y + i * lh}" text-anchor="middle">${esc(l)}</text>`).join('');
+}
+
+/* ------------------------------------------------------- technology labels */
+const TECH = {
+  'person': 'a human being',
+  'agent-process': 'child process · the CLI',
+  'terminal': 'ArgoTerminal · SwiftTerm',
+  'app': 'app target · SwiftUI',
+  'observe': 'command-line executable',
+  'engine': 'ArgoEngine · no UI framework',
+  'ui': 'Swift package · SwiftUI'
+};
+function techOf(id) {
+  if (TECH[id]) return TECH[id];
+  const n = A[id];
+  if (!n) return 'outside Argo';
+  if (n.parent === 'engine') return 'ArgoEngine · Swift';
+  if (n.parent === 'ui') return 'ArgoUI · SwiftUI';
+  return 'Argo · Swift';
+}
+
+/* ================================================================ FIGURE 1
+   Context: Argo centre, the nine boundary edges from argo.leaving.        */
+const EXT = A.argo.leaving.map((e, i) => ({ i, name: e[1], cargo: e[2], sense: e[3] }));
+const EXT_TECH = [
+  'child process · claude or codex CLI',
+  'unix domain sockets, one pair per agent',
+  'JSONL transcript files',
+  'HTTP APIs',
+  'macOS Keychain',
+  'browser + redirect on 127.0.0.1',
+  'git, read by running the command',
+  'the process table, read by running a command',
+  'files on disk under Application Support'
+];
+const LEFT = [0, 2, 6, 7], RIGHT = [1, 3, 4, 5, 8];
+
+/* The footprint of an edge the route has not reached yet: outline, no label. */
+function ghostSlot(x, y, w, h, side, my, midY, CX) {
+  const cxEdge = side === 'L' ? CX - 240 : CX + 240;
+  const exEdge = side === 'L' ? x + w : x;
+  const bend = side === 'L' ? cxEdge - 34 : cxEdge + 34;
+  return `<g class="ghost"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8"/>
+    <path d="M ${cxEdge} ${midY} H ${bend} V ${my} H ${exEdge + (side === 'L' ? 12 : -12)}"/></g>`;
+}
+
+function ctxFigure(shown, now, legend) {
+  const W = 1800, H = 780, CX = 900;
+  const bw = 280, bh = 94;
+  const rowY = (k, n) => 40 + k * 140 + (5 - n) * 70;
+  const parts = [];
+  const centreH = 132, centreY = H / 2 - centreH / 2;
+
+  const drawSide = (ids, side) => ids.forEach((idx, k) => {
+    const e = EXT[idx];
+    const y = rowY(k, ids.length);
+    const x = side === 'L' ? 30 : W - 30 - bw;
+    if (!shown.has(idx)) {
+      legend.add('ghost');
+      parts.push(ghostSlot(x, y, bw, bh, side, y + bh / 2, centreY + centreH / 2, CX));
+      return;
+    }
+    const hot = now.has(idx);
+    const cls = hot ? 'lit' : (shown.has(idx) ? 'past' : '');
+    legend.add(e.sense); if (hot) { legend.add('now'); legend.add('nowbox'); }
+    legend.add('ext');
+    const nameLines = wrap(e.name, 28);
+    const techLines = wrap(EXT_TECH[idx], 26);
+    const ty = y + 26;
+    parts.push(`<g class="${cls} reveal">
+      <rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="8" class="b-fill b-line"/>
+      ${nameLines.map((l, i) => `<text class="t-1" x="${x + bw / 2}" y="${ty + i * 18}" text-anchor="middle" font-size="14.5" font-weight="590">${esc(l)}</text>`).join('')}
+      ${techLines.map((l, i) => `<text class="t-m" x="${x + bw / 2}" y="${ty + nameLines.length * 18 + 6 + i * 14}" text-anchor="middle" font-size="10.5">${esc(l)}</text>`).join('')}
+    </g>`);
+    // elbow: centre box edge -> horizontal run -> external box edge
+    const cxEdge = side === 'L' ? CX - 240 : CX + 240;
+    const exEdge = side === 'L' ? x + bw : x;
+    const my = y + bh / 2;
+    const midY = centreY + centreH / 2;
+    const bend = side === 'L' ? cxEdge - 34 : cxEdge + 34;
+    const d = `M ${cxEdge} ${midY} H ${bend} V ${my} H ${exEdge + (side === 'L' ? 12 : -12)}`;
+    parts.push(`<path d="${d}" class="edge ${e.sense === 'data' ? 'data' : ''} ${hot ? 'now' : ''}"
+       marker-end="url(#ah${hot ? '-now' : ''})" ${hot ? '' : 'opacity=".55"'}/>`);
+    const lx = (bend + exEdge + (side === 'L' ? 12 : -12)) / 2;
+    const lines = wrap(e.cargo, 28);
+    parts.push(`<g ${hot ? '' : 'class="past"'}>${lines.map((l, i) =>
+      `<text class="${hot ? 't-1' : 't-3'}" x="${lx}" y="${my - 12 - (lines.length - 1 - i) * 15}" text-anchor="middle" font-size="12.5">${esc(l)}</text>`).join('')}</g>`);
+  });
+  drawSide(LEFT, 'L'); drawSide(RIGHT, 'R');
+
+  legend.add('sys');
+  parts.push(`<g>
+    <rect x="${CX - 240}" y="${centreY}" width="480" height="${centreH}" rx="10" class="b-fill-c b-line-c"/>
+    <text class="t-1" x="${CX}" y="${centreY + 44}" text-anchor="middle" font-size="21" font-weight="600">Argo</text>
+    <text class="t-2" x="${CX}" y="${centreY + 70}" text-anchor="middle" font-size="13">macOS app · Swift and SwiftUI · ${A.argo.lines.toLocaleString()} lines</text>
+    <text class="t-3" x="${CX}" y="${centreY + 96}" text-anchor="middle" font-size="12.5">starts coding agents, watches them work, talks back</text>
+  </g>`);
+
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${DEFS}${parts.join('')}</svg>`;
+}
+
+/* ================================================================ FIGURE 2
+   Layer stack: vertical position is the layer.                            */
+const LAYERS = {
+  engine:   { x: 300, y: 470, w: 620, h: 112, name: 'ArgoEngine', sub: 'Swift package · links no UI framework',
+              note: A.engine.lines.toLocaleString() + ' lines · 21 folders' },
+  observe:  { x: 62,  y: 470, w: 200, h: 112, name: 'argo-observe', sub: 'command-line executable',
+              note: A.observe.lines + ' lines · no window' },
+  ui:       { x: 300, y: 320, w: 620, h: 112, name: 'ArgoUI', sub: 'Swift package · SwiftUI',
+              note: A.ui.lines.toLocaleString() + ' lines · draws from values' },
+  app:      { x: 300, y: 170, w: 620, h: 112, name: 'The app target', sub: 'app target · SwiftUI App',
+              note: A.app.lines + ' lines · declares no View' },
+  terminal: { x: 980, y: 395, w: 300, h: 112, name: 'ArgoTerminal', sub: 'Swift package · SwiftTerm',
+              note: A.terminal.lines + ' lines · links AppKit' }
+};
+function stackFigure(shown, now, legend) {
+  const W = 1500, H = 700, parts = [];
+  parts.push(`<text class="t-m" x="24" y="150" font-size="11">higher = composes what is below</text>`);
+  parts.push(`<path d="M 30 566 V 168" class="edge" opacity=".4" marker-end="url(#ah)"/>`);
+  for (const id of ['engine', 'observe', 'ui', 'app', 'terminal']) {
+    const L = LAYERS[id], hot = now.has(id);
+    if (!shown.has(id)) {
+      legend.add('ghost');
+      parts.push(`<g class="ghost"><rect x="${L.x}" y="${L.y}" width="${L.w}" height="${L.h}" rx="8"/></g>`);
+      continue;
+    }
+    legend.add('target'); if (hot) legend.add('nowbox');
+    parts.push(`<g class="${hot ? 'lit' : 'past'} reveal">
+      <rect x="${L.x}" y="${L.y}" width="${L.w}" height="${L.h}" rx="8" class="${id === 'terminal' ? 'b-fill' : 'b-fill-c'} ${hot ? 'b-line-c' : 'b-line'}"/>
+      <text class="t-1" x="${L.x + L.w / 2}" y="${L.y + 40}" text-anchor="middle" font-size="18" font-weight="600">${esc(L.name)}</text>
+      <text class="t-2" x="${L.x + L.w / 2}" y="${L.y + 64}" text-anchor="middle" font-size="12.5">${esc(L.sub)}</text>
+      <text class="t-m" x="${L.x + L.w / 2}" y="${L.y + 88}" text-anchor="middle" font-size="10.5">${esc(L.note)}</text>
+    </g>`);
+  }
+  if (shown.has('terminal')) {
+    legend.add('call');
+    parts.push(`<path d="M 920 451 H 980" class="edge ${now.has('terminal') ? 'now' : ''}" marker-end="url(#ah${now.has('terminal') ? '-now' : ''})"/>`);
+    parts.push(`<g>${tspans('the AgentProcessHost and TerminalScreen protocols, filled by a real pseudo-terminal', 1130, 600, 34, 16, now.has('terminal') ? 't-1' : 't-3')}</g>`);
+    parts.push(`<path d="M 1130 512 V 578" class="edge" opacity=".35"/>`);
+  } else {
+    parts.push(`<g class="ghost"><path d="M 920 451 H 980"/></g>`);
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${DEFS}${parts.join('')}</svg>`;
+}
+
+/* ================================================================ FIGURE 3
+   Sequence: participants are columns, time downward, one arrow per step.   */
+const SELF_W = 44;
+function seqFigure(flowId, order, upto, nowIdx, legend) {
+  const steps = A[flowId].steps;
+  const W = 1560, HEAD = 118, Y0 = 186, PITCH = 54;
+  const H = Y0 + Math.max(12, steps.length) * PITCH + 40;
+  const colW = W / order.length, cx = i => colW * i + colW / 2;
+  const idxOf = id => order.indexOf(id);
+  const parts = [];
+
+  order.forEach((id, i) => {
+    const n = A[id], x = cx(i), bw = Math.min(colW - 22, 240);
+    const involved = steps.slice(0, upto + 1).some(s => s.actor === id || s.from === id || s.to === id);
+    const nameLines = wrap(n.name, 24);
+    const techLines = wrap(techOf(id), 24);
+    parts.push(`<g class="${involved ? '' : 'past'}">
+      <rect x="${x - bw / 2}" y="10" width="${bw}" height="${HEAD - 18}" rx="8" class="b-fill b-line"/>
+      ${nameLines.map((l, k) => `<text class="t-1" x="${x}" y="${32 + k * 16}" text-anchor="middle" font-size="12.5" font-weight="590">${esc(l)}</text>`).join('')}
+      ${techLines.map((l, k) => `<text class="t-m" x="${x}" y="${36 + nameLines.length * 16 + k * 13}" text-anchor="middle" font-size="9.5">${esc(l)}</text>`).join('')}
+      <path d="M ${x} ${HEAD} V ${H - 20}" class="lifeline"/>
+    </g>`);
+  });
+  legend.add('part'); legend.add('lifeline');
+
+  // one pass to resolve every arrow's endpoints, so a frame knows who it spans
+  const live = steps.slice(0, upto + 1);
+  let seen = null;
+  const ends = live.map(s => {
+    const target = s.to || s.actor;
+    const source = s.from || (s.to ? s.actor : (s.kind === 'self' ? s.actor : (seen || s.actor)));
+    seen = s.actor;
+    return { a: idxOf(source), b: idxOf(target) };
+  });
+  const textW = t => String(t).length * 6.4;
+  const rightEdgeOf = (s, e) => {
+    if (e.a === e.b) return cx(e.a) + SELF_W + 14 + textW(s.title);
+    const x1 = cx(e.a) + (e.b > e.a ? 9 : -9), x2 = cx(e.b) + (e.b > e.a ? -9 : 9);
+    const label = s.title + (s.answers ? `  (answers ${s.answers})` : '');
+    return Math.max(120, Math.min(W - 120, (x1 + x2) / 2)) + textW(label) / 2;
+  };
+
+  // alt / loop frames over contiguous runs, spanning only the lifelines inside
+  let run = null;
+  const flush = () => {
+    if (!run) return;
+    const y1 = Y0 + run.a * PITCH - 30, y2 = Y0 + run.b * PITCH + 20;
+    const hot = nowIdx >= run.a && nowIdx <= run.b;
+    let lo = order.length, hi = 0, right = 0;
+    for (let i = run.a; i <= run.b; i++) {
+      lo = Math.min(lo, ends[i].a, ends[i].b);
+      hi = Math.max(hi, ends[i].a, ends[i].b);
+      right = Math.max(right, rightEdgeOf(live[i], ends[i]));
+    }
+    const fx = Math.max(18, cx(lo) - colW / 2 + 12);
+    const fw = Math.min(W - 18, Math.max(cx(hi) + colW / 2 - 12, right + 14)) - fx;
+    parts.push(`<g class="reveal"><rect x="${fx}" y="${y1}" width="${fw}" height="${y2 - y1}" rx="6" class="frame ${hot ? 'now' : ''}"/>
+      <rect x="${fx}" y="${y1}" width="52" height="19" rx="4" class="frame ${hot ? 'now' : ''}" fill="var(--sunken)"/>
+      <text class="t-m" x="${fx + 26}" y="${y1 + 13.5}" text-anchor="middle" font-size="10.5">${run.kind}</text></g>`);
+    legend.add(run.kind);
+    run = null;
+  };
+  live.forEach((s, i) => {
+    if (s.kind === 'alt' || s.kind === 'loop') {
+      if (run && run.kind === s.kind && run.b === i - 1) run.b = i; else { flush(); run = { kind: s.kind, a: i, b: i }; }
+    } else flush();
+  });
+  flush();
+
+  live.forEach((s, i) => {
+    const y = Y0 + i * PITCH, hot = i === nowIdx;
+    const { a, b } = ends[i];
+    const cls = `edge ${s.kind === 'return' ? 'data' : ''} ${hot ? 'now' : ''}`;
+    const tcls = hot ? 't-1' : 't-3';
+    const mark = `url(#ah${hot ? '-now' : ''})`;
+    legend.add(s.kind === 'return' ? 'return' : (s.kind === 'self' ? 'self' : 'msg'));
+    let lx;
+    if (a === b) {
+      const x = cx(a), top = y - 12, bot = y + 12, r = 8;
+      parts.push(`<path d="M ${x} ${top} H ${x + SELF_W - r} A ${r} ${r} 0 0 1 ${x + SELF_W} ${top + r}
+        V ${bot - r} A ${r} ${r} 0 0 1 ${x + SELF_W - r} ${bot} H ${x + 2}" class="${cls}" marker-end="${mark}"/>`);
+      lx = x + SELF_W + 14;
+      parts.push(`<text class="${tcls}" x="${lx}" y="${y + 4}" font-size="12.5">${esc(s.title)}</text>`);
+    } else {
+      const x1 = cx(a) + (b > a ? 9 : -9), x2 = cx(b) + (b > a ? -9 : 9);
+      parts.push(`<path d="M ${x1} ${y} H ${x2}" class="${cls}" marker-end="${mark}"/>`);
+      lx = (x1 + x2) / 2;
+      const clamped = Math.max(120, Math.min(W - 120, lx));
+      const note = s.answers ? `  (answers ${s.answers})` : '';
+      parts.push(`<text class="${tcls}" x="${clamped}" y="${y - 13}" text-anchor="middle" font-size="12.5">${esc(s.title + note)}</text>`);
+      lx = x1;
+    }
+    const nx = a === b ? cx(a) - 22 : cx(a) + (b > a ? -16 : 16);
+    parts.push(`<g class="${hot ? '' : 'past'}"><circle cx="${nx}" cy="${y}" r="9" class="${hot ? 'b-fill-c b-line-c' : 'b-fill b-line'}"/>
+      <text class="t-m" x="${nx}" y="${y + 3.5}" text-anchor="middle" font-size="10">${i + 1}</text></g>`);
+    if (!hot) { /* past steps keep their label dim via t-3 */ }
+  });
+
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${DEFS}${parts.join('')}</svg>`;
+}
+
+const DEFS = `<defs>
+  <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 1 L 9 5 L 0 9 z" fill="var(--text-off)"/></marker>
+  <marker id="ah-now" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 1 L 9 5 L 0 9 z" fill="var(--accent)"/></marker>
+</defs>`;
+
+/* -------------------------------------------------------------- legend map */
+const LEGEND = {
+  sys:      ['box', 'var(--overlay)', 'the system in scope'],
+  ext:      ['box', 'var(--raised)', 'external system, outside Argo'],
+  target:   ['box', 'var(--overlay)', 'one build target'],
+  part:     ['box', 'var(--raised)', 'participant, and the target it lives in'],
+  call:     ['line-solid', '', 'a call: one side asks, the other answers'],
+  data:     ['line-dash', '', 'data flow: written here, read there'],
+  msg:      ['line-solid', '', 'a message, numbered in time order'],
+  self:     ['line-self', '', 'the participant acts on itself'],
+  return:   ['line-dash', '', 'a return: the answer to an earlier message'],
+  now:      ['line-now', '', 'the step you are on'],
+  nowbox:   ['boxnow', '', 'what this step adds'],
+  lifeline: ['line-life', '', 'a lifeline: time runs down it'],
+  alt:      ['frame', '', 'alt: branches, only one of which runs'],
+  loop:     ['frame', '', 'loop: repeated until it settles'],
+  ghost:    ['ghostbox', '', 'still to come on this route']
+};
+function legendHTML(set) {
+  const order = ['sys', 'ext', 'target', 'part', 'lifeline', 'msg', 'call', 'data', 'self', 'return', 'alt', 'loop', 'ghost', 'nowbox', 'now'];
+  return order.filter(k => set.has(k)).map(k => {
+    const [shape, fill, label] = LEGEND[k];
+    let g;
+    if (shape === 'boxnow') g = `<i style="background:var(--overlay);border:1px solid var(--accent)"></i>`;
+    else if (shape === 'ghostbox') g = `<i style="border:1px dashed var(--subtle);opacity:.4"></i>`;
+    else if (shape === 'box') g = `<i style="background:${fill};border:1px solid var(--subtle)"></i>`;
+    else if (shape === 'frame') g = `<i style="border:1px dashed var(--subtle)"></i>`;
+    else {
+      const st = { 'line-solid': 'stroke:var(--text-off)', 'line-dash': 'stroke:var(--text-off);stroke-dasharray:5 4',
+                   'line-now': 'stroke:var(--accent);stroke-width:2', 'line-life': 'stroke:var(--subtle);stroke-dasharray:3 5',
+                   'line-self': 'stroke:var(--text-off)' }[shape];
+      g = shape === 'line-self'
+        ? `<svg viewBox="0 0 34 12"><path d="M 4 3 h 18 v 6 h -18" fill="none" style="${st}"/></svg>`
+        : `<svg viewBox="0 0 34 12"><path d="M 2 6 H 30" fill="none" style="${st}"/><path d="M 28 3 L 33 6 L 28 9 z" fill="${shape === 'line-now' ? 'var(--accent)' : 'var(--text-off)'}" ${shape === 'line-life' ? 'opacity="0"' : ''}/></svg>`;
+    }
+    return `<span class="lg">${g}<span>${esc(label)}</span></span>`;
+  }).join('');
+}
+
+/* ==================================================================== ROUTES */
+const fw = A['f-write'].steps, fp = A['f-permission'].steps;
+const ORDER_W = ['person', 'u-composer', 'u-shell', 'e-drive', 'e-spawn', 'terminal', 'agent-process'];
+const ORDER_P = ['person', 'u-composer', 'e-hub', 'e-drive', 'e-companion', 'agent-process'];
+
+const ctx = (shown, now) => ({ kind: 'ctx', shown: new Set(shown), now: new Set(now) });
+const stk = (shown, now) => ({ kind: 'stack', shown: new Set(shown), now: new Set(now) });
+
+function flowStep(flowId, order, i, head, prose) {
+  const s = A[flowId].steps[i];
+  return { h: head || s.title, p: prose ? prose.concat([s.prose]) : [s.prose],
+           src: s.at, fig: { kind: 'seq', flow: flowId, order, upto: i, now: i } };
+}
+
+const ROUTES = [
+  {
+    id: 'what', n: 'What Argo is',
+    line: 'From the outside in: the boundary first, then the five build targets, then the one rule that explains their shape.',
+    steps: [
+      { h: 'One window, one repository',
+        p: [A.argo.line + ' Everything on this route is drawn from the program itself, and the boundary comes before the parts.',
+            'Start with the box and nothing else. Argo is one macOS app, written in Swift, scoped to a single git repository at a time. The next six screens add one thing outside it at a time, and each line is labelled with what actually crosses it.'],
+        fig: ctx([], []) },
+      { h: 'It starts the agent itself',
+        p: ['The first thing outside Argo is the agent. Argo does not attach to a CLI somebody else launched: it starts the process, chooses its argv and its environment, and keeps hold of the pseudo-terminal that process reads from.',
+            'What crosses this line is not a request. It is keystrokes, from a program to a program that thinks a person is typing.'],
+        fig: ctx([0], [0]) },
+      { h: 'It reads what the agent writes',
+        p: ['The agent keeps its own record. Every turn it takes is appended as a line of JSON to a transcript file on disk, and that file belongs to the CLI, not to Argo.',
+            'So the second edge is a tail on a directory. Argo reads only the transcripts whose working directory sits inside this repository. This is the observing direction, and it works whether or not Argo started the agent.'],
+        fig: ctx([0, 2], [2]) },
+      { h: 'And the agent can call back',
+        p: ['An agent that has to ask something cannot wait in a terminal nobody is looking at. So Argo opens a socket per agent and hands the path to that one process.',
+            'The cargo on this edge runs both ways: what the agent reports, and the answer to what it asks. Route three walks that answer end to end.'],
+        fig: ctx([0, 2, 1], [1]) },
+      { h: 'The machine around it',
+        p: ['Three more edges are the machine Argo is standing on. It runs git to learn the branch and what the working tree holds, it reads the process table to learn whether an agent it can see is still alive, and it keeps its own few facts in Application Support.',
+            'Note how little Argo stores. Almost everything on the screen is derived from somebody else’s file, and the small store holds only the facts nobody else states.'],
+        fig: ctx([0, 2, 1, 6, 7, 8], [6, 7, 8]) },
+      { h: 'And the world beyond it',
+        p: ['The last three edges leave the machine. Argo signs in through the browser, which comes back as a redirect to a port on 127.0.0.1, keeps one token per identity in the keychain, and reads and writes tickets and deliveries over HTTP.',
+            'That is the whole boundary: nine edges, and now you have seen every one. Nothing else about Argo can surprise you from outside.'],
+        fig: ctx([0, 1, 2, 3, 4, 5, 6, 7, 8], [3, 4, 5]) },
+      { h: 'Inside: the part with no window',
+        p: ['Now open the box. The figure changes kind: from here vertical position means layer, and a box higher up composes the boxes under it.',
+            A.engine.line + ' It is the biggest thing in Argo, and it draws nothing.',
+            'The proof that it draws nothing is the small target beside it. argo-observe is ' + A.observe.lines + ' lines that point the engine at one transcript and print what each record means, with no window over it at all.'],
+        fig: stk(['engine', 'observe'], ['engine', 'observe']) },
+      { h: 'Inside: the part that draws',
+        p: [A.ui.line + ' It sits above the engine and takes values from it, which is why almost none of it needs a running agent to test.',
+            'On top of both is the app target. It opens one window, holds three long-lived boxes, and is held under 600 lines by a build check. It derives nothing and declares no view.'],
+        fig: stk(['engine', 'observe', 'ui', 'app'], ['ui', 'app']) },
+      { gate: {
+          q: 'One rule governs this stack: ArgoEngine may import no SwiftUI, AppKit, Cocoa or ArgoUI, so swift test runs all of it with no window. But the terminal library Argo needs links AppKit on macOS. What did Argo do?',
+          options: [
+            { t: 'Let the engine link AppKit for that one file, and keep the rule as a convention.' },
+            { t: 'Move the one adapter that cannot obey the rule out into a target of its own.', ok: true },
+            { t: 'Draw the terminal in ArgoUI instead, where AppKit is already allowed.' }
+          ],
+          right: 'The adapter left. The engine declares two protocols — one for a live process, one for painting raw bytes into rows — and a separate target fills them with a real SwiftTerm pseudo-terminal.',
+          wrong: 'The adapter left, rather than the rule bending. The engine declares two protocols — one for a live process, one for painting raw bytes into rows — and a separate target fills them with a real SwiftTerm pseudo-terminal.'
+        },
+        h: 'Predict: where does the terminal go?',
+        fig: stk(['engine', 'observe', 'ui', 'app'], []) },
+      { h: 'One rule decides the shape',
+        p: ['ArgoTerminal is ' + A.terminal.lines + ' lines in two files, and it exists for exactly one reason: the terminal library links AppKit, and the engine may not.',
+            'The rule is not a review note. It is checked by scripts/swift-boundaries.sh, and a stray import stops the build with every offending line printed. That is why a target this small is a target at all.',
+            'You have now seen the whole outside and the whole inside. The two routes beside this one walk a single message across it.'],
+        src: A.argo.rules.find(r => r.id === 'engine-links-no-ui').enforced_at,
+        fig: stk(['engine', 'observe', 'ui', 'app', 'terminal'], ['terminal']) }
+    ]
+  },
+  {
+    id: 'write', n: 'How a message reaches an agent',
+    line: 'Twelve steps from a key press in the cockpit to bytes at a descriptor. There is no API on the other end.',
+    steps: [
+      flowStep('f-write', ORDER_W, 0, 'A key lands on the field',
+        ['This route follows one message all the way down. The figure is a sequence: each column is a participant, time runs downward, and one numbered arrow is added per step.',
+         'It begins outside the program, with a person typing.']),
+      flowStep('f-write', ORDER_W, 1, null,
+        ['The field is not the truth. Watch which way the copy goes.']),
+      flowStep('f-write', ORDER_W, 2, null,
+        ['Return does not always mean send now.']),
+      flowStep('f-write', ORDER_W, 3, null,
+        ['So a queued message rejoins this same path later, at this same point.']),
+      flowStep('f-write', ORDER_W, 4, null,
+        ['The words now leave the composer. Notice what the composer is not given.']),
+      flowStep('f-write', ORDER_W, 5, null,
+        ['The message crosses into the engine here, and attachments are settled before any text moves.']),
+      flowStep('f-write', ORDER_W, 6, null,
+        ['One small port carries everything Argo may do to a running session.']),
+      flowStep('f-write', ORDER_W, 7, null,
+        ['Below the port sits one adapter per CLI. This is the claude one.']),
+      { gate: {
+          q: 'The engine has the words and has found the live agent. How does the message actually arrive?',
+          options: [
+            { t: 'As a JSON request to the CLI’s API, over the socket Argo already holds.' },
+            { t: 'As bracketed-paste keystrokes and a Return, written to a pseudo-terminal.', ok: true },
+            { t: 'Appended to the transcript file, which the agent is tailing.' }
+          ],
+          right: 'There is no API on the other end of a claude session. The agent is a terminal program reading a descriptor, so the message is spelled as keystrokes and a Return, exactly as a person would have typed it.',
+          wrong: 'There is no API on the other end of a claude session. The agent is a terminal program reading a descriptor, so the message is spelled as keystrokes and a Return, exactly as a person would have typed it.'
+        },
+        h: 'Predict: how does it arrive?',
+        fig: { kind: 'seq', flow: 'f-write', order: ORDER_W, upto: 7, now: -1 } },
+      flowStep('f-write', ORDER_W, 8, null,
+        ['So the message is typed, not sent. And a paste is one thing while a Return is another.']),
+      flowStep('f-write', ORDER_W, 9, null,
+        ['Two writes, because a terminal reads in batches and a batch can swallow the Return.']),
+      flowStep('f-write', ORDER_W, 10, null,
+        ['This is the boundary you met on route one, crossed for real.']),
+      flowStep('f-write', ORDER_W, 11, null,
+        ['Writing bytes is not proof of arrival, so the path ends with a check rather than a success.'])
+    ]
+  },
+  {
+    id: 'permission', n: 'How a permission is answered',
+    line: 'A gated tool call blocks inside the agent while the cockpit asks a person. Twelve steps, two branches and one reply.',
+    steps: [
+      flowStep('f-permission', ORDER_P, 0, null,
+        ['The other direction. An agent that wants to run a gated tool must be stopped, asked about, and released.',
+         'The machinery for that is in place before any tool is called — the gate opens at spawn.']),
+      flowStep('f-permission', ORDER_P, 1, null,
+        ['Argo does not patch the CLI. It ships a plugin the CLI already knows how to load.']),
+      flowStep('f-permission', ORDER_P, 2, null,
+        ['This is the step that stops the agent. Everything after it happens while the agent is blocked.']),
+      flowStep('f-permission', ORDER_P, 3, null,
+        ['The line has crossed into Argo. Policy lives above the waiting, not inside it.']),
+      flowStep('f-permission', ORDER_P, 4, null,
+        ['The first branch: not every blocked call is a permission at all.']),
+      flowStep('f-permission', ORDER_P, 5, null,
+        ['The second branch: two ways a call is decided with nobody asked.']),
+      flowStep('f-permission', ORDER_P, 6, null,
+        ['A call that survives both branches becomes something the window can draw.']),
+      flowStep('f-permission', ORDER_P, 7, null,
+        ['Only now does a human see anything. The agent has been blocked this whole time.']),
+      flowStep('f-permission', ORDER_P, 8, null,
+        ['The answer comes back in, and has to find the one request it belongs to.']),
+      flowStep('f-permission', ORDER_P, 9, null,
+        ['A standing allow is not only about the future.']),
+      { gate: {
+          q: 'The person pressed Allow. How does that answer reach the blocked agent?',
+          options: [
+            { t: 'Argo types allow into the agent’s terminal, the same way it types a message.' },
+            { t: 'Argo writes one reply line back down the socket the hook is still blocked on.', ok: true },
+            { t: 'Argo re-runs the tool call itself and hands the agent the result.' }
+          ],
+          right: 'The answer never travels as keystrokes. The hook has been sitting on one socket read since step 3, and the whole answer is one line back down it — with a vocabulary of exactly two words.',
+          wrong: 'Not keystrokes — that is the write path, and this is a different one. The hook has been sitting on one socket read since step 3, and the whole answer is one line back down it, with a vocabulary of exactly two words.'
+        },
+        h: 'Predict: how does the answer travel?',
+        fig: { kind: 'seq', flow: 'f-permission', order: ORDER_P, upto: 9, now: -1 } },
+      flowStep('f-permission', ORDER_P, 10, null,
+        ['Two words, and the third one the CLI understands is deliberately never sent.']),
+      flowStep('f-permission', ORDER_P, 11, null,
+        ['The last branch is the one where nobody ever answers, and Argo makes the refusal its own.'])
+    ]
+  }
+];
+
+/* ==================================================================== STATE */
+let state = { route: null, step: 0, answered: null };
+
+function readURL() {
+  const q = new URLSearchParams(location.search);
+  const r = ROUTES.find(x => x.id === q.get('route'));
+  state.route = r || null;
+  state.step = r ? Math.max(0, Math.min(r.steps.length - 1, (parseInt(q.get('step'), 10) || 1) - 1)) : 0;
+  const a = q.get('answer');
+  state.answered = (r && a !== null && r.steps[state.step].gate) ? parseInt(a, 10) : null;
+}
+function writeURL() {
+  const u = state.route
+    ? `?route=${state.route.id}&step=${state.step + 1}${state.answered === null ? '' : '&answer=' + state.answered}`
+    : location.pathname;
+  history.replaceState(null, '', u);
+}
+function go(route, step) {
+  state.route = route; state.step = step; state.answered = null; writeURL(); render();
+}
+
+/* =================================================================== RENDER */
+function renderPicker() {
+  return `<div class="picker">
+    <div class="picker-head">
+      <h1>Argo, three ways in</h1>
+      <p>Each route is a short story with one idea per screen. Pick one; the picture is built up as you go, and back and next are the whole of the navigation.</p>
+    </div>
+    <div class="cards">${ROUTES.map((r, i) => `
+      <button class="card" data-route="${r.id}">
+        <span class="n">Route ${i + 1}</span>
+        <h2>${esc(r.n)}</h2>
+        <p>${esc(r.line)}</p>
+        <span class="meta">${r.steps.length} steps${r.steps.some(s => s.gate) ? ' · 1 question' : ''}</span>
+      </button>`).join('')}</div>
+  </div>`;
+}
+
+function figureFor(step) {
+  const legend = new Set(); let svg;
+  const f = step.fig;
+  if (f.kind === 'ctx') svg = ctxFigure(f.shown, f.now, legend);
+  else if (f.kind === 'stack') svg = stackFigure(f.shown, f.now, legend);
+  else svg = seqFigure(f.flow, f.order, f.upto, f.now, legend);
+  if (f.kind === 'seq' && f.now >= 0) legend.add('now');
+  return `<div class="figwrap"><div class="fig">${svg}</div><div class="legend">${legendHTML(legend)}</div></div>`;
+}
+
+function proseFor(r, step) {
+  if (step.gate) {
+    const picked = state.answered;
+    const opts = step.gate.options.map((o, i) => {
+      let st = '';
+      if (picked !== null) st = o.ok ? 'right' : (picked === i ? 'wrong' : 'dim');
+      return `<button class="opt" data-opt="${i}" ${picked !== null ? 'disabled' : ''} ${st ? `data-state="${st}"` : ''}>
+        <span class="k">${'ABC'[i]}</span><span>${esc(o.t)}</span></button>`;
+    }).join('');
+    const ok = picked !== null && step.gate.options[picked].ok;
+    const verdict = picked === null ? '' :
+      `<p class="verdict ${ok ? '' : 'miss'}"><b>${ok ? 'Right.' : 'Not that one.'}</b> ${esc(ok ? step.gate.right : step.gate.wrong)}</p>`;
+    return `<div class="prose">
+      <span class="eyebrow">Commit to an answer</span>
+      <h2>${esc(step.h)}</h2>
+      <p>${esc(step.gate.q)}</p>
+      <div class="gate"><div class="opts">${opts}</div>${verdict}</div>
+    </div>`;
+  }
+  return `<div class="prose">
+    <span class="eyebrow">${esc(r.n)}</span>
+    <h2>${esc(step.h)}</h2>
+    <div>${step.p.map(p => `<p>${esc(p)}</p>`).join('')}</div>
+    ${step.src ? `<div class="src"><b>in the source:</b><br>${esc(step.src[0])}<br>line ${step.src[1]}</div>` : ''}
+  </div>`;
+}
+
+function render() {
+  const root = document.getElementById('root');
+  if (!state.route) { root.innerHTML = renderPicker(); writeURL(); return; }
+  const r = state.route, i = state.step, step = r.steps[i];
+  const blocked = !!(step.gate && state.answered === null);
+  root.innerHTML = `
+    <div class="bar">
+      <button class="home">← all routes</button>
+      <span class="title">${esc(r.n)}</span>
+      <span class="count">step ${i + 1} / ${r.steps.length}</span>
+      <span class="ticks">${r.steps.map((_, k) =>
+        `<span class="tick ${k === i ? 'now' : (k < i ? 'done' : '')}"></span>`).join('')}</span>
+    </div>
+    <main>${figureFor(step)}${proseFor(r, step)}</main>
+    <footer>
+      <button class="nav" id="back" ${i === 0 ? 'disabled' : ''}>← Back</button>
+      <button class="nav primary" id="next" ${i === r.steps.length - 1 || blocked ? 'disabled' : ''}>Next →</button>
+      <span class="step-line">${blocked ? 'Pick an answer to go on.' : (i === r.steps.length - 1 ? 'End of the route.' : esc(r.steps[i + 1].gate ? 'Next: a question' : r.steps[i + 1].h))}</span>
+      <span class="hint">← → to move · esc for the routes</span>
+    </footer>`;
+
+  root.querySelector('.home').onclick = () => go(null, 0);
+  root.querySelector('#back').onclick = () => { if (i > 0) go(r, i - 1); };
+  root.querySelector('#next').onclick = () => { if (!blocked && i < r.steps.length - 1) go(r, i + 1); };
+  root.querySelectorAll('[data-opt]').forEach(b => b.onclick = () => {
+    state.answered = parseInt(b.dataset.opt, 10); writeURL(); render();
+  });
+}
+
+document.addEventListener('click', e => {
+  const c = e.target.closest('.card');
+  if (c) go(ROUTES.find(r => r.id === c.dataset.route), 0);
+});
+document.addEventListener('keydown', e => {
+  if (!state.route) return;
+  const r = state.route, i = state.step;
+  const blocked = !!(r.steps[i].gate && state.answered === null);
+  if (e.key === 'ArrowRight' && !blocked && i < r.steps.length - 1) go(r, i + 1);
+  if (e.key === 'ArrowLeft' && i > 0) go(r, i - 1);
+  if (e.key === 'Escape') go(null, 0);
+});
+window.addEventListener('popstate', () => { readURL(); render(); });
+readURL(); render();
+</script>
+</body>
+</html>

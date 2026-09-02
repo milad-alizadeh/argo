@@ -8,12 +8,12 @@
     "line": "The part of Argo with no window: it reads what agents write, drives the agents it started, and talks to GitHub and Linear.",
     "lines": 20622,
     "short": [
-      "ArgoEngine does every job that does not draw a pixel. It tails the JSONL records two coding CLIs append to, and folds them into one live picture per repository. It also starts those CLIs itself, and carries a turn and a permission decision back to each. Nothing here imports AppKit, so `swift test` exercises all of it from the command line."
+      "ArgoEngine does every job that does not draw a pixel. It tails the JSONL records two coding CLIs append to, and folds them into one live model per repository. It also starts those CLIs itself, and carries a Turn and a permission decision back to each. Nothing here imports AppKit, so `swift test` exercises all of it from the command line."
     ],
     "long": [
-      "ArgoEngine holds twenty-one folders and about twenty thousand lines of Swift. The reading side finds transcript files, turns each appended line into a typed event, and folds those events into one row per session. The Hub is where that fold happens, and it is the largest folder here. The edges below are read as data flow, not as import direction.",
-      "The writing side reaches two CLIs by two mechanisms. For claude, Argo runs a pseudo-terminal, writes bracketed-paste keystrokes, and installs a companion plugin that dials a unix socket to answer each permission. For codex, Argo runs the app server on plain pipes and speaks JSON-RPC for both the turn and the approval. A separate reader learns the CLI's own slash commands, by typing `/help` into a hidden session.",
-      "A third group reaches off the machine. It signs into GitHub and Linear, and keeps each token in the keychain. A Binding joins one repository to one account per port, so a fully connected repository holds two. Git and the process table are read by running the commands and parsing what they print."
+      "ArgoEngine holds 21 source groups and about 20,000 lines of Swift. The observing side finds transcript files, turns each appended line into a typed event, and folds those events into one row per Session. The Hub is where that fold happens, and it is the largest group here. The edges drawn on this part are data flow, and not import direction.",
+      "The writing side reaches two CLIs by two mechanisms. For claude, Argo runs a pseudo-terminal, writes bracketed-paste keystrokes, and installs a companion plugin that dials a unix socket to answer each permission. For codex, Argo runs the app server on plain pipes and speaks JSON-RPC for both the Turn and the approval. A separate reader learns the CLI's own slash commands, by typing `/help` into a hidden Session.",
+      "A third group reaches off the machine. It signs into GitHub and Linear, and keeps each token in the keychain. A Binding joins one Project to one Account per port, so a fully connected Project holds two. Argo reads git and the process table by running the commands and parsing what they print."
     ],
     "inside": [
       "e-transcript",
@@ -38,153 +38,36 @@
       "e-storage",
       "e-launch"
     ],
-    "among": [
-      [
-        "e-discovery",
-        "e-transcript",
-        "the head of a file, parsed only far enough to find its working directory"
-      ],
-      [
-        "e-transcript",
-        "e-session",
-        "one typed event per record line, in the vocabulary Session declares"
-      ],
-      [
-        "e-transcript",
-        "e-skills",
-        "the SKILL.md under a directory a load record only named"
-      ],
-      [
-        "e-discovery",
-        "e-hub",
-        "which transcript files belong to this repository, re-swept on every change"
-      ],
-      [
-        "e-transcript",
-        "e-hub",
-        "batches of typed events, in record order, as each tailed file grows"
-      ],
-      [
-        "e-hub",
-        "e-session",
-        "the signals one status word is read from, and the remembered rung"
-      ],
-      [
-        "e-hub",
-        "e-spawn",
-        "a spawn plan, and the one call that adopts either kind of process"
-      ],
-      [
-        "e-hub",
-        "e-repository",
-        "the branch, the dirty count and the worktree list git reported"
-      ],
-      [
-        "e-hub",
-        "e-drive",
-        "the permission channel, the two adapters, and the turn nobody has heard yet"
-      ],
-      [
-        "e-drive",
-        "e-spawn",
-        "the keystrokes for one turn, paced as two writes into the claim's terminal"
-      ],
-      [
-        "e-drive",
-        "e-codex",
-        "a turn as a JSON-RPC line, and an approval decision as a response"
-      ],
-      [
-        "e-drive",
-        "e-session",
-        "the rung a call is judged by, and the stance an adapter reports back"
-      ],
-      [
-        "e-drive",
-        "e-companion",
-        "the unix socket object that accepts the claude hook's decision"
-      ],
-      [
-        "e-spawn",
-        "e-companion",
-        "the socket path and plugin directory folded into a claude agent's argv"
-      ],
-      [
-        "e-commands",
-        "e-spawn",
-        "one hidden launch, started only to read the built-in list off its screen"
-      ],
-      [
-        "e-ticket",
-        "e-account",
-        "the live grant each provider read is handed"
-      ],
-      [
-        "e-hub",
-        "e-handoff",
-        "which session handed its work to which, keyed by claim"
-      ],
-      [
-        "e-binding",
-        "e-account",
-        "the account record and the live token every read goes out with"
-      ],
-      [
-        "e-ticket",
-        "e-binding",
-        "one resolved binding, carrying the grant, the scope and the provider"
-      ],
-      [
-        "e-ticket",
-        "e-health",
-        "whether that read landed, filed against the binding it went through"
-      ],
-      [
-        "e-delivery",
-        "e-repository",
-        "the branch each worktree is on, which is the join key"
-      ],
-      [
-        "e-ticket",
-        "e-annotation",
-        "the resolved ticket title, saved against the session id"
-      ],
-      [
-        "e-launch",
-        "e-project",
-        "the folders this launch named, resolved to repository roots"
-      ],
-      [
-        "e-hub",
-        "e-storage",
-        "the session-ownership ledger, written whole as one JSON file"
-      ]
-    ],
     "leaving": [
       [
         "engine",
         "terminal",
-        "the AgentProcessHost protocol, which ArgoTerminal fills with a real SwiftTerm pseudo-terminal"
+        "the AgentProcessHost protocol, which ArgoTerminal fills with a real SwiftTerm pseudo-terminal",
+        "call"
       ],
       [
         "engine",
         "terminal",
-        "the TerminalScreen protocol, which paints raw terminal bytes into text rows"
+        "the TerminalScreen protocol, which paints raw terminal bytes into text rows",
+        "call"
       ],
       [
         "engine",
         "ui",
-        "one HubSession value per session, restated by the one cockpit file allowed to read live state"
+        "one HubSession value per session, restated by the one cockpit file allowed to read live state",
+        "data"
       ],
       [
         "engine",
         "observe",
-        "the event stream, printed one line per event by the argo-observe command"
+        "the event stream, printed one line per event by the argo-observe command",
+        "data"
       ],
       [
         "engine",
         "app",
-        "the registry, the Hub, the ticket resolver and the pointing, composed into one window"
+        "the registry, the Hub, the ticket resolver and the pointing, composed into one window",
+        "data"
       ]
     ],
     "anchors": [
@@ -264,7 +147,39 @@
           "apps/macOS/Argo/CockpitCoordinator.swift"
         ]
       }
-    }
+    },
+    "groups": [
+      {
+        "id": "reading",
+        "name": "Reading what the agents write",
+        "line": "It finds transcript files, turns each appended line into a typed event, and folds those events into one row per session.",
+        "path": "ArgoEngine/{Transcript, Session, Discovery, Hub}"
+      },
+      {
+        "id": "writing",
+        "name": "Starting and driving the agents",
+        "line": "It reaches two CLIs by two mechanisms, a pseudo-terminal for claude and the app server on plain pipes for codex.",
+        "path": "ArgoEngine/{Drive, Spawn, Commands, Companion, Codex, Handoff}"
+      },
+      {
+        "id": "off-machine",
+        "name": "Talking to GitHub, Linear and git",
+        "line": "It signs into GitHub and Linear, keeps each token in the keychain, and reads git by running the commands.",
+        "path": "ArgoEngine/{Account, Binding, Ticket, Delivery, Repository, Health}"
+      },
+      {
+        "id": "plumbing",
+        "name": "Shared services the rest write through",
+        "line": "What is left holds the registry of repositories, the annotations, the launch arguments and the one file helper the others write through.",
+        "path": "ArgoEngine/{Project, Skills, Annotation, Storage, Launch}"
+      }
+    ],
+    "path": "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine",
+    "key": [
+      0,
+      2,
+      9
+    ]
   },
   "e-transcript": {
     "id": "e-transcript",
@@ -276,12 +191,12 @@
     "lines": 1778,
     "bottom": true,
     "short": [
-      "The `claude` CLI appends one JSON object per line to a transcript file. `transcriptLines(at:)` tails that file and yields batches of raw lines, the backfill first and new writes after. `TranscriptRecord.parse(line:)` decodes one line into a `MessageRecord` or one of the smaller record kinds. `TranscriptReader` then fans each record out into zero or more typed events."
+      "The `claude` CLI appends one JSON object per line to a transcript file. A tail follows that file and yields batches of raw lines, the backfill first and new writes after. A parser decodes one line into a message record or one of the smaller record kinds. `TranscriptReader` then fans each record out into zero or more typed events."
     ],
     "long": [
-      "Reading is stateful, because a transcript never repeats itself. `TranscriptReader` is an actor that remembers every open tool call by its id, so a later `tool_result` line is read against the call it answers. It also keeps a plan ledger, because some hosts write a to-do list one entry at a time.",
-      "Two readings reach past the line in hand. Media reading follows an image path and loads the picture the record only names. Skill reading opens the `SKILL.md` under the directory a load record cites. Both arrive as injected closures, so a test supplies fixtures instead of a disk.",
-      "Nothing here decides what a session is. This code produces events in record order and stops. The fold into one row per resume chain belongs to the Hub, and the words those events are spoken in are declared beside them."
+      "The reader keeps state, because a transcript never repeats itself. `TranscriptReader` is an actor that remembers every open tool call by its id, so it reads a later `tool_result` line against the call it answers. It also keeps a plan ledger, because some hosts write a to-do list one entry at a time.",
+      "Two paths reach past the line in hand. The media path follows an image path and loads the picture the record only names. The skill path opens the `SKILL.md` under the directory a load record cites. Both arrive as injected closures, so a test supplies fixtures instead of a disk.",
+      "Nothing here decides what a Session is. This code produces events in record order and stops. The fold into one row per resume chain belongs to the Hub, and a sibling group declares the words those events are spoken in."
     ],
     "inside": [],
     "among": [],
@@ -289,17 +204,20 @@
       [
         "e-transcript",
         "e-session",
-        "one typed event per record line, in the vocabulary Session declares"
+        "one typed event per record line, in the vocabulary Session declares",
+        "data"
       ],
       [
         "e-transcript",
         "e-skills",
-        "the SKILL.md under a directory a load record only named"
+        "the SKILL.md under a directory a load record only named",
+        "call"
       ],
       [
         "e-transcript",
         "e-hub",
-        "batches of events, in record order, as the tailed file grows"
+        "batches of events, in record order, as the tailed file grows",
+        "data"
       ]
     ],
     "anchors": [
@@ -364,7 +282,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubJoin.swift"
         ]
       }
-    }
+    },
+    "group": "reading",
+    "key": [
+      5,
+      0,
+      3
+    ]
   },
   "e-session": {
     "id": "e-session",
@@ -376,12 +300,12 @@
     "lines": 872,
     "bottom": true,
     "short": [
-      "This folder opens no file and makes no network call. It declares `TranscriptEvent`, the enum every reader produces and every consumer matches on. It declares `ToolCall`, `Plan`, `Usage`, `StopReason` and `SessionMode`, the four-rung autonomy ladder. `SessionStatus` is then a pure function from gathered signals to one of seven words."
+      "This group opens no file and makes no network call. It declares `TranscriptEvent`, the enum every reader produces and every consumer matches on. It declares `ToolCall`, `Plan`, `Usage`, `StopReason` and `SessionMode`, the four-rung autonomy ladder. `SessionStatus` is then a pure function from gathered signals to one of seven words."
     ],
     "long": [
-      "One value ties it together. `SessionSignals` bundles what is known about a session at one moment. That means where the facts came from, whether a process is alive, whether a turn is open, the last stop reason, and any pending question.",
-      "`SessionStatus` reads that bundle and answers running, permission, asking, idle, stopped, ended or unknown. The rule is to degrade down, so an ambiguous reading resolves to the quieter word rather than the louder one.",
-      "`SessionModeStore` is the one part here that touches a file. It remembers the rung the user last picked, through the same owned-file helper the other small stores use. Nothing else in this folder calls into another folder of the engine."
+      "One value ties it together. `SessionSignals` bundles what Argo knows about a Session at one moment. That means where the facts came from, whether a process is alive, whether a Turn is open, the last stop reason, and any pending question.",
+      "`SessionStatus` reads that bundle and answers running, permission, asking, idle, stopped, ended or unknown. The rule is to degrade down, so an ambiguous observation resolves to the quieter word rather than the louder one.",
+      "`SessionModeStore` is the one part here that touches a file. It remembers the rung the user last picked, through the same owned-file helper the other small stores use. Nothing else in this group calls into another group of the engine."
     ],
     "inside": [],
     "among": [],
@@ -389,7 +313,8 @@
       [
         "e-session",
         "e-storage",
-        "the last-picked mode rung, written whole as one JSON file"
+        "the last-picked mode rung, written whole as one JSON file",
+        "data"
       ]
     ],
     "anchors": [
@@ -453,7 +378,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionModeStore.swift"
         ]
       }
-    }
+    },
+    "group": "reading",
+    "key": [
+      0,
+      1,
+      2
+    ]
   },
   "e-discovery": {
     "id": "e-discovery",
@@ -465,12 +396,12 @@
     "lines": 584,
     "bottom": true,
     "short": [
-      "The CLI writes one directory per project and never says which repository a file belongs to. `SessionDiscovery` answers that cheaply. It first drops every file outside a modified-time window. It then opens each survivor at the head only, reads its working directory, and keeps the ones sitting inside the project root."
+      "The CLI writes one directory per project and never says which repository a file belongs to. `SessionDiscovery` answers that cheaply. It first drops every file outside a modified-time window. It then opens each survivor at the head only, reads its working directory, and keeps the ones sitting inside the Project root."
     ],
     "long": [
-      "The order is the whole design. Opening every transcript in a busy home directory is the expensive mistake, so the cheap filter runs first. `TranscriptOrigin` reuses the line parser to pull one field out of a file's head, without building any events.",
-      "`ProjectScope.contains(cwd:projectRoot:)` matches on whole path segments, after one shared resolver has spelled both paths. A symlinked checkout and its real path are one repository, and they must not become two.",
-      "Two more readers sit here. `ProcessLivenessReader` runs `ps` and answers the set of working directories a live CLI is in. `SubagentTranscripts.beside(_:)` walks the folder next to a parent transcript and lists the child agents' own files."
+      "The order is the whole design. To open every transcript in a busy home directory is the expensive mistake, so the cheap filter runs first. `TranscriptOrigin` reuses the line parser to pull one field out of a file's head, and it builds no events.",
+      "The scope check matches on whole path segments, after one shared resolver spells both paths. A symlinked working directory and its real path are one Project, and they must not become two.",
+      "Two more readers sit here. `ProcessLivenessReader` runs `ps` and answers the set of working directories a live CLI is in. `SubagentTranscripts` walks the directory next to a parent transcript and lists the child agents' own files."
     ],
     "inside": [],
     "among": [],
@@ -478,17 +409,20 @@
       [
         "e-discovery",
         "e-transcript",
-        "the first lines of a file, parsed only for its working directory"
+        "the first lines of a file, parsed only for its working directory",
+        "call"
       ],
       [
         "e-discovery",
         "e-spawn",
-        "which CLI wrote the record directory being walked"
+        "which CLI wrote the record directory being walked",
+        "call"
       ],
       [
         "e-discovery",
         "e-hub",
-        "the set of transcript files this repository owns, re-swept on every change"
+        "the set of transcript files this repository owns, re-swept on every change",
+        "data"
       ]
     ],
     "anchors": [
@@ -553,7 +487,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub.swift"
         ]
       }
-    }
+    },
+    "group": "reading",
+    "key": [
+      0,
+      2,
+      6
+    ]
   },
   "e-hub": {
     "id": "e-hub",
@@ -561,16 +501,16 @@
     "depth": 2,
     "parent": "engine",
     "name": "Assembling the live picture",
-    "line": "It folds every tailed transcript into one row per session, and stamps in everything Argo separately knows.",
+    "line": "It folds every tailed transcript into one row per Session, and stamps in everything Argo separately knows.",
     "lines": 3043,
     "bottom": true,
     "short": [
-      "`Hub` is the observable object the cockpit reads. It holds the tails and the join over them. It also holds the ledger of what spawned agents reported, the pseudo-terminals Argo owns, and the drivers that steer them. Its `sessions` property hands out one `HubSession` per resume chain, ready to draw."
+      "`Hub` is the observable object the cockpit reads. It holds the tails and the join over them. It also holds the ledger of what started agents reported, the pseudo-terminals Argo owns, and the drivers that act on them. Its `sessions` property hands out one `HubSession` per resume chain, ready to draw."
     ],
     "long": [
-      "`HubJoin` does the fold. It keeps one entry per tailed file, plus a map from record id to the file that first claimed it. That map is what keeps a resumed chain from being counted twice. `HubSession` is then a pure fold over events into title, working directory, model, branch, mode, spend and turn state.",
-      "Two clocks drive it. `WorkingSetSweep` re-asks discovery whenever the record directory changes. `WorldReadings` polls for live process working directories and git state, because a process that exits writes nothing Argo could watch for.",
-      "The Hub also publishes rows no transcript has yet. When Argo starts an agent itself, the spawn writes a provisional row straight away. That row retires once a real record binds to the same claim. The roster then stamps each row with liveness, workspace, pending permissions, standing allows and the handoff target."
+      "`HubJoin` does the fold. It keeps one entry per tailed file, plus a map from record id to the file that first claimed it. That map is what stops Argo from counting a resumed chain twice. `HubSession` is then a pure fold over events into title, working directory, model, branch, mode, spend and Turn state.",
+      "Two clocks drive it. `WorkingSetSweep` re-asks discovery whenever the record directory changes. `WorldReadings` polls for live process working directories and git state, because a process that exits writes nothing Argo can watch for.",
+      "The Hub also publishes rows no transcript has yet. When Argo starts an agent itself, the start writes a provisional row straight away. That row retires once a real record binds to the same claim. The roster then stamps each row with liveness, workspace, pending permissions, standing allows and the handoff target."
     ],
     "inside": [],
     "among": [],
@@ -578,57 +518,68 @@
       [
         "e-hub",
         "e-discovery",
-        "which transcript files belong to this repository, re-swept on every change"
+        "which transcript files belong to this repository, re-swept on every change",
+        "call"
       ],
       [
         "e-hub",
         "e-transcript",
-        "one live event stream per tailed file, started and cancelled here"
+        "one live event stream per tailed file, started and cancelled here",
+        "call"
       ],
       [
         "e-hub",
         "e-repository",
-        "the branch, the dirty count and the worktree list git reported"
+        "the branch, the dirty count and the worktree list git reported",
+        "call"
       ],
       [
         "e-hub",
         "e-companion",
-        "one socket per claim, and every fact the plugin reports over it"
+        "one socket per claim, and every fact the plugin reports over it",
+        "call"
       ],
       [
         "e-hub",
         "e-drive",
-        "the permission channel, the two drivers, and the turn nobody has heard yet"
+        "the permission channel, the two drivers, and the turn nobody has heard yet",
+        "data"
       ],
       [
         "e-hub",
         "e-spawn",
-        "a spawn plan, and the table of pseudo-terminals it fills"
+        "a spawn plan, and the table of pseudo-terminals it fills",
+        "call"
       ],
       [
         "e-hub",
         "e-handoff",
-        "which session handed its work to which, keyed by claim"
+        "which session handed its work to which, keyed by claim",
+        "data"
       ],
       [
         "e-hub",
         "e-launch",
-        "the repository and transcripts to point at, on connect and on every re-point"
+        "the repository and transcripts to point at, on connect and on every re-point",
+        "call"
       ],
       [
         "e-hub",
         "e-project",
-        "the registry file location, and the scope test for a spawn's directory"
+        "the registry file location, and the scope test for a spawn's directory",
+        "call"
       ],
       [
         "e-hub",
         "e-session",
-        "the remembered mode rung a spawned session starts at"
+        "the remembered mode rung a spawned session starts at",
+        "data"
       ],
       [
         "e-hub",
         "e-storage",
-        "the session-ownership ledger, written whole as one JSON file"
+        "the session-ownership ledger, written whole as one JSON file",
+        "data"
       ]
     ],
     "anchors": [
@@ -726,7 +677,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Roster.swift"
         ]
       }
-    }
+    },
+    "group": "reading",
+    "key": [
+      0,
+      3,
+      2
+    ]
   },
   "e-drive": {
     "id": "e-drive",
@@ -734,16 +691,16 @@
     "depth": 2,
     "parent": "engine",
     "name": "Typing at the agent and answering it",
-    "line": "It carries a turn and a permission decision to a running agent, by a different mechanism for each of the two CLIs.",
+    "line": "It carries a Turn and a permission decision to a running agent, by a different mechanism for each of the two CLIs.",
     "lines": 2243,
     "bottom": true,
     "short": [
-      "This is the half of Argo that acts on an agent rather than watching one. `SessionAdapters` routes every act to one of two adapters, chosen per session. For claude, a turn becomes bracketed-paste keystrokes in a pseudo-terminal, and a permission is answered on a unix socket. For codex, that same turn is a JSON-RPC line on the server's stdin, and an approval is a JSON-RPC response."
+      "This is the half of Argo that acts on an agent rather than watching one. `SessionAdapters` routes every act to one of two adapters, chosen per Session. For claude, a Turn becomes bracketed-paste keystrokes in a pseudo-terminal, and Argo answers a permission on a unix socket. For codex, that same Turn is a JSON-RPC line on the server's stdin, and an approval is a JSON-RPC response."
     ],
     "long": [
       "The claude keystrokes are literal. `ClaudeTurn` wraps the text in the escape sequences that start and end a bracketed paste. It then sends Return as a carriage return, in a second write. `TurnDelivery` then watches the record, because that Return can be eaten in silence and the failure looks like nothing.",
-      "The claude gate is a real server. `grant(_:)` creates a `.gate.sock` file named for the claim, and the spawned CLI's hook dials that path. `PermissionReply` builds the exact hook JSON the CLI expects. `PermissionChannel` calls itself the claude adapter's channel, and the codex adapter uses none of it.",
-      "Two pieces serve both adapters. A shared patience table times each unanswered prompt out, and Argo's own clock refuses it rather than waiting. `AttachmentStore` writes a pasted picture outside the checkout, so a turn has a path it can name."
+      "The claude gate is a real server. `grant(_:)` creates a `.gate.sock` file named for the claim, and the hook of the CLI Argo started dials that path. `PermissionReply` builds the exact hook JSON the CLI expects. `PermissionChannel` calls itself the claude adapter's channel, and the codex adapter uses none of it.",
+      "Two pieces serve both adapters. A shared patience table times out each unanswered prompt, and Argo's own clock refuses it rather than waiting. `AttachmentStore` writes a pasted picture outside the Project directory, so a Turn has a path it can name."
     ],
     "inside": [],
     "among": [],
@@ -751,27 +708,32 @@
       [
         "e-drive",
         "e-spawn",
-        "the paced keystrokes for one turn, written into the claim's terminal"
+        "the paced keystrokes for one turn, written into the claim's terminal",
+        "data"
       ],
       [
         "e-drive",
         "e-companion",
-        "the socket object that does the accept, the read and the write"
+        "the socket object that does the accept, the read and the write",
+        "call"
       ],
       [
         "e-drive",
         "e-codex",
-        "a turn and an approval decision, handed to the thread that speaks JSON-RPC"
+        "a turn and an approval decision, handed to the thread that speaks JSON-RPC",
+        "data"
       ],
       [
         "e-drive",
         "e-session",
-        "the rung a call is judged by, and the stance the adapter reports back"
+        "the rung a call is judged by, and the stance the adapter reports back",
+        "data"
       ],
       [
         "e-drive",
         "e-hub",
-        "the claim id, the current rung, and the waiting permission published to the ledger"
+        "the claim id, the current rung, and the waiting permission published to the ledger",
+        "data"
       ]
     ],
     "anchors": [
@@ -878,7 +840,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Drive/PermissionChannel.swift"
         ]
       }
-    }
+    },
+    "group": "writing",
+    "key": [
+      15,
+      0,
+      10
+    ]
   },
   "e-spawn": {
     "id": "e-spawn",
@@ -890,12 +858,12 @@
     "lines": 788,
     "bottom": true,
     "short": [
-      "`AgentLauncher` finds the CLI executable and the login shell's PATH, then assembles one launch value. A host turns that into a real process, on a pseudo-terminal for claude and on plain pipes for codex. `AgentTerminals` adopts both kinds by claim, and drains the bytes into a bounded replay buffer. It also offers the two write paths every keystroke takes."
+      "`AgentLauncher` finds the CLI executable and the login shell's PATH, then builds one launch value. A host turns that into a real process, on a pseudo-terminal for claude and on plain pipes for codex. `AgentTerminals` adopts both kinds by claim, and drains the bytes into a bounded replay buffer. It also offers the two write paths every keystroke takes."
     ],
     "long": [
       "The fork itself does not happen here. `AgentProcessHost` is a protocol with one method, and two implementations fill it in production. The SwiftTerm pseudo-terminal links AppKit and lives in a sibling target. The codex pipe host links nothing and stays inside the engine.",
-      "Two writes exist, and the difference is timing. A plain write sends one burst. A paced write sends two bursts with a gap between them. That gap is what a bracketed paste followed by Return needs, in order to land as a submitted turn.",
-      "`AgentSpawnPlan` describes one spawn before it happens: which CLI, which directory, which rung, which claim. `AgentSpawn` is the roster row Argo puts up before that CLI has written anything. `SpawnServices` bundles what the Hub needs, including both host slots and the files that remember ownership, chain and rung."
+      "Two writes exist, and the difference is timing. A plain write sends one burst. A paced write sends two bursts with a gap between them. That gap is what a bracketed paste followed by Return needs, to land as a submitted Turn.",
+      "`AgentSpawnPlan` describes one start before it happens: which CLI, which directory, which rung, which claim. `AgentSpawn` is the roster row Argo puts up before that CLI writes anything. `SpawnServices` bundles what the Hub needs, including both host slots and the files that remember ownership, chain and rung."
     ],
     "inside": [],
     "among": [],
@@ -903,22 +871,26 @@
       [
         "e-spawn",
         "e-companion",
-        "the socket path and plugin directory folded into a claude agent's argv"
+        "the socket path and plugin directory folded into a claude agent's argv",
+        "data"
       ],
       [
         "e-spawn",
         "e-codex",
-        "the launch value, started on plain pipes by the second host implementation"
+        "the launch value, started on plain pipes by the second host implementation",
+        "data"
       ],
       [
         "e-spawn",
         "e-hub",
-        "the claim id every adopted process is keyed by"
+        "the claim id every adopted process is keyed by",
+        "data"
       ],
       [
         "e-spawn",
         "e-handoff",
-        "the seed a freshly started session is opened on"
+        "the seed a freshly started session is opened on",
+        "data"
       ]
     ],
     "anchors": [
@@ -1022,7 +994,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub+Spawn.swift"
         ]
       }
-    }
+    },
+    "group": "writing",
+    "key": [
+      0,
+      3,
+      4
+    ]
   },
   "e-commands": {
     "id": "e-commands",
@@ -1034,11 +1012,11 @@
     "lines": 478,
     "bottom": true,
     "short": [
-      "The CLI publishes its built-in commands nowhere Argo can read. So `HelpPanelSession` starts a second, throwaway process on its own pseudo-terminal, resizes it, and types `/help`, Return and Tab. The raw bytes are painted into text rows, and `HelpPanel.commands(on:)` parses those rows by indentation."
+      "The CLI publishes its built-in commands nowhere Argo can read. So `HelpPanelSession` starts a second, throwaway process on its own pseudo-terminal, resizes it, and types `/help`, Return and Tab. A terminal screen draws the raw bytes into text rows, and `HelpPanel` reads those rows by indentation."
     ],
     "long": [
-      "This is the second place in the engine that starts a process and writes keystrokes into it. It never joins the shared terminal table, because nobody should ever see this session. It calls the process host directly and writes to the process directly.",
-      "Painting the bytes needs a terminal emulator, which the engine does not link. `TerminalScreen` is the protocol for it, and a sibling target supplies the real one.",
+      "This is the second place in the engine that starts a process and writes keystrokes into it. It never joins the shared terminal table, because nobody must ever see this Session. It calls the process host directly and writes to the process directly.",
+      "A terminal emulator draws the bytes, and the engine does not link one. `TerminalScreen` is the protocol for it, and a sibling target supplies the real one.",
       "The read is expensive, so it happens once per CLI version. `BuiltinCommandStore` caches the answer in a file keyed by that version. `CommandCatalog` then joins the curated built-ins with the skills read off disk, which is what the slash-command picker draws."
     ],
     "inside": [],
@@ -1047,17 +1025,20 @@
       [
         "e-commands",
         "e-spawn",
-        "one launch, started and typed into without joining the shared terminal table"
+        "one launch, started and typed into without joining the shared terminal table",
+        "call"
       ],
       [
         "e-commands",
         "e-skills",
-        "the skills read off disk, joined with the built-ins into one list"
+        "the skills read off disk, joined with the built-ins into one list",
+        "call"
       ],
       [
         "e-commands",
         "e-storage",
-        "the read command list, cached against the CLI version"
+        "the read command list, cached against the CLI version",
+        "data"
       ]
     ],
     "anchors": [
@@ -1123,7 +1104,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Commands/BuiltinCommandStore.swift"
         ]
       }
-    }
+    },
+    "group": "writing",
+    "key": [
+      5,
+      7,
+      0
+    ]
   },
   "e-companion": {
     "id": "e-companion",
@@ -1135,12 +1122,12 @@
     "lines": 932,
     "bottom": true,
     "short": [
-      "All of this serves claude only. `CompanionPlugin` writes a real plugin directory for a spawned claude agent. Its `mcp.json` points the CLI at `/usr/bin/nc -U <socket>`, so the agent's own tool calls arrive on a socket Argo owns. `CompanionEndpoint` answers `initialize`, `tools/list` and `tools/call` as JSON-RPC, one object per line."
+      "All of this serves claude only. `CompanionPlugin` writes a real plugin directory for a claude agent Argo started. Its `mcp.json` points the CLI at `/usr/bin/nc -U <socket>`, so the agent's own tool calls arrive on a socket Argo owns. `CompanionEndpoint` answers `initialize`, `tools/list` and `tools/call` as JSON-RPC, one object per line."
     ],
     "long": [
-      "Three tools are offered, and they carry facts no transcript holds: report a status, ask the user, and report an outcome. Each call becomes a fact and folds into a report. This is the convention tier, arriving over the plugin rather than read out of a file.",
-      "The same directory carries the permission hook. `hooks.json` registers a pre-tool hook over Bash, Edit, Write, MultiEdit, NotebookEdit, WebFetch and AskUserQuestion. `CompanionInvitation` records why both `--mcp-config` and `--plugin-dir` go on argv. A `--settings` file was tried first and registered nothing, and an unregistered hook fails silently open.",
-      "The default is to refuse. When the socket answers nothing, the script prints a deny decision reading that Argo could not be reached to ask. None of this reaches codex, because `takesCompanionPlugin` is false for it. A codex spawn gets no plugin, no socket and no hook, and raises its approvals over its own protocol."
+      "The plugin offers three tools, and they carry facts no transcript holds: report a status, ask the user, and report an outcome. Each call becomes a fact and folds into a report. This is the convention tier, which arrives over the plugin rather than out of a file.",
+      "The same directory carries the permission hook. `hooks.json` registers a pre-tool hook over Bash, Edit, Write, MultiEdit, NotebookEdit, WebFetch and AskUserQuestion. `CompanionInvitation` records why both `--mcp-config` and `--plugin-dir` go on argv. Argo tried a `--settings` file first and it registered nothing, and an unregistered hook fails silently open.",
+      "The default is to refuse. When the socket answers nothing, the script prints a deny decision saying that Argo cannot be reached to ask. None of this reaches codex, because `takesCompanionPlugin` is false for it. A codex start gets no plugin, no socket and no hook, and raises its approvals over its own protocol."
     ],
     "inside": [],
     "among": [],
@@ -1148,22 +1135,26 @@
       [
         "e-companion",
         "e-hub",
-        "the claim id each socket is keyed by, and every fact reported on it"
+        "the claim id each socket is keyed by, and every fact reported on it",
+        "data"
       ],
       [
         "e-companion",
         "e-session",
-        "the status word a report call names"
+        "the status word a report call names",
+        "data"
       ],
       [
         "e-companion",
         "e-drive",
-        "the hook timeout, taken from the gate's own patience"
+        "the hook timeout, taken from the gate's own patience",
+        "call"
       ],
       [
         "e-companion",
         "e-spawn",
-        "a refusal, when the socket or the plugin cannot be created"
+        "a refusal, when the socket or the plugin cannot be created",
+        "data"
       ]
     ],
     "anchors": [
@@ -1268,7 +1259,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Companion/CompanionPlugin.swift"
         ]
       }
-    }
+    },
+    "group": "writing",
+    "key": [
+      0,
+      2,
+      4
+    ]
   },
   "e-codex": {
     "id": "e-codex",
@@ -1280,12 +1277,12 @@
     "lines": 1068,
     "bottom": true,
     "short": [
-      "The second CLI is driven differently. `CodexProcessHost` starts the codex app server on plain pipes rather than a pseudo-terminal, and `CodexLineBuffer` reassembles its bytes into lines. `CodexServerMessage` sorts each line into an answer, a failure, a request or a notification, by which JSON-RPC fields it carries."
+      "Argo drives the second CLI differently. `CodexProcessHost` starts the codex app server on plain pipes rather than a pseudo-terminal, and `CodexLineBuffer` reassembles its bytes into lines. `CodexServerMessage` sorts each line into an answer, a failure, a request or a notification, by which JSON-RPC fields it carries."
     ],
     "long": [
-      "`CodexThread` is the state machine for one claim. It sends an initialize, then a thread start, then a turn start or a turn interrupt. Turns typed before the thread is ready are queued, and status notifications are read into a session status.",
-      "`CodexApprovals` is this CLI's permission gate. The server asks before running a command or changing a file, and Argo replies with a JSON-RPC result naming accept or decline.",
-      "A file-change approval arrives without its diff. `CodexPatch` joins the patch notifications onto the waiting approval by item id, so the user sees what they are approving. The server keeps no clock, so an unanswered approval is declined by Argo's own patience table."
+      "`CodexThread` is the state machine for one claim. It sends an initialize, then a thread start, then a Turn start or a Turn interrupt. The thread queues Turns typed before it is ready, and reads status notifications into a Session status.",
+      "`CodexApprovals` is this CLI's permission gate. The server asks before it runs a command or changes a file, and Argo replies with a JSON-RPC result naming accept or deny.",
+      "A file-change approval arrives without its diff. `CodexPatch` joins the patch notifications onto the waiting approval by item id, so the user sees what they are approving. The server keeps no clock, so Argo's own patience table denies an unanswered approval."
     ],
     "inside": [],
     "among": [],
@@ -1293,22 +1290,26 @@
       [
         "e-codex",
         "e-drive",
-        "an approval turned into a permission, and the decision that answers it"
+        "an approval turned into a permission, and the decision that answers it",
+        "data"
       ],
       [
         "e-codex",
         "e-spawn",
-        "the launch value, started as a pipe process rather than a terminal"
+        "the launch value, started as a pipe process rather than a terminal",
+        "call"
       ],
       [
         "e-codex",
         "e-hub",
-        "the claim id each thread is keyed by"
+        "the claim id each thread is keyed by",
+        "data"
       ],
       [
         "e-codex",
         "e-session",
-        "the rung a thread starts under, and the status a notification sets"
+        "the rung a thread starts under, and the status a notification sets",
+        "data"
       ]
     ],
     "anchors": [
@@ -1375,7 +1376,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Codex/CodexStance.swift"
         ]
       }
-    }
+    },
+    "group": "writing",
+    "key": [
+      0,
+      5,
+      6
+    ]
   },
   "e-handoff": {
     "id": "e-handoff",
@@ -1383,16 +1390,16 @@
     "depth": 2,
     "parent": "engine",
     "name": "Passing work to a fresh session",
-    "line": "It types a handoff command into a running session, waits for the brief file, and starts a new session on it.",
+    "line": "It types a handoff command into a running Session, waits for the brief file, and starts a new Session on it.",
     "lines": 353,
     "bottom": true,
     "short": [
-      "The handoff runs in three acts. `SessionHandoff.run` types a handoff command with an absolute brief path into the live session's terminal. It then polls for that markdown file until the file is not empty or the deadline passes. Only then does it start a fresh session opened on the brief."
+      "The handoff runs in three acts. `SessionHandoff` types a handoff command with an absolute brief path into the live Session's terminal. It then polls for that markdown file until the file is not empty or the deadline passes. Only then does it start a fresh Session opened on the brief."
     ],
     "long": [
-      "The order is deliberate. The new session is spawned last, and the original is marked as handed off only after that spawn succeeds. A failed handoff leaves the first session untouched.",
-      "`HandoffLedger` records the edge in two halves. A live link is keyed by claim the moment the spawn returns. A durable chain of links is written whole as JSON. A claim-only link gets the CLI's real session id once the new agent's first record lands.",
-      "`HandoffHost` is only a protocol here. Typing, polling and spawning all reach real machinery that is supplied from outside this folder."
+      "The order is deliberate. Argo starts the new Session last, and marks the original as handed off only after that start succeeds. A failed handoff leaves the first Session untouched.",
+      "`HandoffLedger` records the edge in two halves. A live link is keyed by claim the moment the start returns. The ledger writes a durable chain of links whole as JSON. A claim-only link gets the CLI's real Session id once the new agent's first record lands.",
+      "`HandoffHost` is only a protocol here. It types, polls and starts through real machinery that a caller outside this group supplies."
     ],
     "inside": [],
     "among": [],
@@ -1400,17 +1407,20 @@
       [
         "e-handoff",
         "e-spawn",
-        "the seed value the fresh session is started from"
+        "the seed value the fresh session is started from",
+        "call"
       ],
       [
         "e-handoff",
         "e-hub",
-        "the claim id each link is keyed by, and the folder the chain file sits beside"
+        "the claim id each link is keyed by, and the folder the chain file sits beside",
+        "data"
       ],
       [
         "e-handoff",
         "e-storage",
-        "the handoff chain, written whole as one JSON file"
+        "the handoff chain, written whole as one JSON file",
+        "data"
       ]
     ],
     "anchors": [
@@ -1466,7 +1476,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Handoff/HandoffChainStore.swift"
         ]
       }
-    }
+    },
+    "group": "writing",
+    "key": [
+      0,
+      1,
+      3
+    ]
   },
   "e-account": {
     "id": "e-account",
@@ -1478,11 +1494,11 @@
     "lines": 1966,
     "bottom": true,
     "short": [
-      "Two flows exist, one per provider. GitHub uses the device flow, posting for a device code and then polling for a token until one arrives. Linear uses authorization code with a proof key, and claims a local redirect listener before the browser is sent anywhere."
+      "Two flows exist, one per provider. GitHub uses the device flow. Argo posts for a device code, then polls for a token until one arrives. Linear uses authorization code with a proof key, and claims a local redirect listener before it sends the browser anywhere."
     ],
     "long": [
-      "Identity is confirmed with a real read, never assumed. GitHub answers a user request, and Linear answers a viewer query. The resulting `AccountRecord` is keyed by the provider's own stable id rather than by the login, which can change.",
-      "The token and the record are stored apart. `KeychainGrantStore` puts the access token in the macOS login keychain, one item per account. `AccountRegistryStore` writes only the non-secret records to a JSON file in application support, and holds no token at all.",
+      "Argo checks identity with a real read, and never assumes it. GitHub answers a user request, and Linear answers a viewer query. The `AccountRecord` that comes back is keyed by the provider's own stable id rather than by the login, which can change.",
+      "Argo stores the token and the record apart. `KeychainGrantStore` puts the access token in the macOS login keychain, one item per Account. `AccountRegistryStore` writes only the non-secret records to a JSON file in application support, and holds no token at all.",
       "Day-to-day reads split by shape. `GitHubCall` makes REST requests and decodes snake case. `LinearCall` makes one GraphQL post, where a refusal arrives as a success with an errors body. Both go out through one transport protocol, so a test never opens a socket."
     ],
     "inside": [],
@@ -1491,7 +1507,8 @@
       [
         "e-account",
         "e-binding",
-        "which projects still use an account, asked before that account is removed"
+        "which projects still use an account, asked before that account is removed",
+        "call"
       ]
     ],
     "anchors": [
@@ -1576,7 +1593,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/ProjectBindingIndex.swift"
         ]
       }
-    }
+    },
+    "group": "off-machine",
+    "key": [
+      0,
+      7,
+      8
+    ]
   },
   "e-binding": {
     "id": "e-binding",
@@ -1584,16 +1607,16 @@
     "depth": 2,
     "parent": "engine",
     "name": "Pointing a project at an account",
-    "line": "It joins one repository to one account through one port, and proves the token can see the scope before saving it.",
+    "line": "It joins one Project to one Account through one port, and checks that the token can see the scope before it saves the Binding.",
     "lines": 673,
     "bottom": true,
     "short": [
-      "A `ProjectBinding` is a port, an account id and a provider-side scope such as an owner and repository, or a Linear team. `ProjectBindings.bind` does not save one on trust. It loads the account, fetches its grant, and asks a provider check whether that grant can actually see the scope."
+      "A `ProjectBinding` is a port, an Account id and a provider-side scope such as an owner and repository, or a Linear team. `ProjectBindings` does not save one on trust. It loads the Account, fetches its grant, and asks a provider check whether that grant can see the scope."
     ],
     "long": [
       "The two checks are one request each. `GitHubScopeCheck` asks for the repository and treats a decodable answer as visible. `LinearScopeCheck` asks for the team by id and reads a null team as not visible.",
-      "`resolve(port:for:)` is the read-time half. It answers unbound, broken or ready. A ready answer is a `ResolvedBinding` carrying the binding, the account record and the live grant together, which is what every provider read is handed.",
-      "No token is cached here. Every resolve re-reads the keychain through the account store, so a revoked grant fails at the next read rather than at the next launch."
+      "`resolve(port:for:)` is the read-time half. It answers unbound, broken or ready. A ready answer is a `ResolvedBinding` carrying the Binding, the Account record and the live grant together, and that is what every provider read takes.",
+      "Nothing here caches a token. Every resolve re-reads the keychain through the Account store, so a revoked grant fails at the next read rather than at the next launch."
     ],
     "inside": [],
     "among": [],
@@ -1601,12 +1624,14 @@
       [
         "e-binding",
         "e-account",
-        "the account record and the live grant, re-read on every resolve"
+        "the account record and the live grant, re-read on every resolve",
+        "call"
       ],
       [
         "e-binding",
         "e-project",
-        "the bindings stored on each project record, loaded and written back"
+        "the bindings stored on each project record, loaded and written back",
+        "call"
       ]
     ],
     "anchors": [
@@ -1681,7 +1706,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Binding/ProjectBindingIndex.swift"
         ]
       }
-    }
+    },
+    "group": "off-machine",
+    "key": [
+      1,
+      0,
+      5
+    ]
   },
   "e-ticket": {
     "id": "e-ticket",
@@ -1689,16 +1720,16 @@
     "depth": 2,
     "parent": "engine",
     "name": "Reading and writing tickets",
-    "line": "It lists, fetches, creates and edits tickets on GitHub or Linear, through whichever binding the repository holds.",
+    "line": "It lists, fetches, creates and edits tickets on GitHub or Linear, through whichever Binding the Project holds.",
     "lines": 2732,
     "bottom": true,
     "short": [
-      "`Ticket` is a provider-agnostic value that is never saved, and is rebuilt on every poll. `GitHubTickets` fills it over REST, listing a repository's issues and then reading sub-issue and blocked-by edges per issue, several at a time. `LinearTickets` fills it over GraphQL, paging a team-issues query."
+      "A `Ticket` is a provider-agnostic value. Argo never saves one, and builds it again on every poll. `GitHubTickets` fills it over REST. It lists a repository's issues, then reads sub-issue and blocked-by edges per issue, several at a time. `LinearTickets` fills it over GraphQL, and pages a team-issues query."
     ],
     "long": [
-      "Every call is keyed off a resolved binding, so a GitHub token can never reach Linear. `ProviderTickets` routes reads by provider, and the writes side builds a writer for one binding.",
-      "There are no webhooks, so `TicketPoll` re-reads on a repeating interval. `TicketWriter` applies a write and adopts the result into the in-memory ledger a room draws from. It then files the success or the failure against that binding's health.",
-      "Two small readers derive intent. `WorkCommand` decides which slash command a session should open a ticket with, and at which rung. `DesignedScreens` reads the designs folder off the checkout, to know whether a screen already has a design."
+      "Every call is keyed off a resolved Binding, so a GitHub token can never reach Linear. `ProviderTickets` routes reads by provider, and the writes side builds a writer for one Binding.",
+      "There are no webhooks, so `TicketPoll` re-reads on a repeating interval. `TicketWriter` applies a write and adopts the result into the in-memory ledger a room draws from. It then files the success or the failure against that Binding's health.",
+      "Two small readers derive intent. `WorkCommand` decides which slash command a Session opens a ticket with, and at which rung. `DesignedScreens` reads the designs directory in the Project, to know whether a screen already has a design."
     ],
     "inside": [],
     "among": [],
@@ -1706,22 +1737,26 @@
       [
         "e-ticket",
         "e-binding",
-        "one resolved binding, carrying the grant, the scope and the provider"
+        "one resolved binding, carrying the grant, the scope and the provider",
+        "call"
       ],
       [
         "e-ticket",
         "e-health",
-        "whether the read or the write landed, filed against that binding"
+        "whether the read or the write landed, filed against that binding",
+        "data"
       ],
       [
         "e-ticket",
         "e-annotation",
-        "the resolved ticket title, saved against the session id"
+        "the resolved ticket title, saved against the session id",
+        "call"
       ],
       [
         "e-ticket",
         "e-session",
-        "the rung a work command starts a session at"
+        "the rung a work command starts a session at",
+        "data"
       ]
     ],
     "anchors": [
@@ -1798,7 +1833,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Ticket/WorkCommand.swift"
         ]
       }
-    }
+    },
+    "group": "off-machine",
+    "key": [
+      0,
+      1,
+      2
+    ]
   },
   "e-delivery": {
     "id": "e-delivery",
@@ -1806,16 +1847,16 @@
     "depth": 2,
     "parent": "engine",
     "name": "The branch's pull request, checks and reviews",
-    "line": "It assembles what the code host holds for each branch, and joins it to local git on the branch name.",
+    "line": "It builds what the code host holds for each branch, and joins it to local git on the branch name.",
     "lines": 686,
     "bottom": true,
     "short": [
-      "A `Delivery` is derived per branch and never saved. `GitHubDeliveries` reads it over REST. It lists the open pull requests for what is in flight, and asks per branch for one that may already be merged. It carries the host's own words for state, check names and review verdicts, unrenamed."
+      "A `Delivery` is derived per branch and never saved. `GitHubDeliveries` reads it over REST. It lists the open pull requests for what is in flight, and asks per branch whether one is already merged. It carries the host's own words for state, check names and review verdicts, unrenamed."
     ],
     "long": [
-      "`DeliveryDerivation` does the join. The local half comes from the workspace readings git already produced, and never from a second git read. Two readers of one fact are two chances to disagree about it.",
-      "The branch is the join key, and a delivery holds no sessions. A teammate's pull request has zero of them by construction, and still appears in the room.",
-      "`DeliveryLedger` holds the current answer in memory. `DeliveryAssertionStore` is the one exception that is written down, because it records what Argo itself asserted rather than what it observed."
+      "`DeliveryDerivation` does the join. The local half comes from the workspace observations git already produced, and never from a second git read. Two readers of one fact are two chances to disagree about it.",
+      "The branch is the join key, and a delivery holds no Sessions. A teammate's pull request has zero of them by construction, and still appears in the room.",
+      "`DeliveryLedger` holds the current answer in memory. `DeliveryAssertionStore` is the one exception Argo writes down, because it records what Argo itself asserted rather than what it observed."
     ],
     "inside": [],
     "among": [],
@@ -1823,22 +1864,26 @@
       [
         "e-delivery",
         "e-repository",
-        "the branch each worktree is on, which is the join key"
+        "the branch each worktree is on, which is the join key",
+        "call"
       ],
       [
         "e-delivery",
         "e-account",
-        "the live grant every code-host read goes out with"
+        "the live grant every code-host read goes out with",
+        "call"
       ],
       [
         "e-delivery",
         "e-health",
-        "whether the host read landed, filed against the binding"
+        "whether the host read landed, filed against the binding",
+        "data"
       ],
       [
         "e-delivery",
         "e-storage",
-        "the assertions Argo made, written whole as one JSON file"
+        "the assertions Argo made, written whole as one JSON file",
+        "data"
       ]
     ],
     "anchors": [
@@ -1914,7 +1959,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Delivery/DeliveryAssertionStore.swift"
         ]
       }
-    }
+    },
+    "group": "off-machine",
+    "key": [
+      0,
+      1,
+      4
+    ]
   },
   "e-repository": {
     "id": "e-repository",
@@ -1929,9 +1980,9 @@
       "Three readers, three commands. `CheckoutReader` runs `git rev-parse` for the top level, the branch and the short SHA. `WorkspaceReader` runs `git status --porcelain` and asks for the upstream head. `WorktreeEnumerationReader` runs `git worktree list --porcelain` and parses the entries."
     ],
     "long": [
-      "Each reader is exposed as a closure type rather than as a class. `CheckoutRead`, `WorkspaceRead` and `WorktreeEnumerationRead` are the shapes, and the engine is composed from one value holding all of them.",
+      "This group exposes each reader as a closure type rather than as a class. `CheckoutRead`, `WorkspaceRead` and `WorktreeEnumerationRead` are the shapes, and the engine takes one value holding all of them.",
       "A test supplies its own closures and needs no repository on disk. Production supplies the git-backed ones, and nothing else in the engine shells out to git.",
-      "The output values are plain data. `CheckoutProjection` carries the head, `WorkspaceProjection` carries the working context including the branch, and `WorktreeEntry` names one working tree. No code in this folder calls into another folder of the engine."
+      "The output values are plain data. `CheckoutProjection` carries the head, `WorkspaceProjection` carries the working context including the branch, and `WorktreeEntry` names one working tree. No code in this group calls into another group of the engine."
     ],
     "inside": [],
     "among": [],
@@ -1998,7 +2049,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository"
         ]
       }
-    }
+    },
+    "group": "off-machine",
+    "key": [
+      6,
+      3,
+      4
+    ]
   },
   "e-project": {
     "id": "e-project",
@@ -2010,12 +2067,12 @@
     "lines": 553,
     "bottom": true,
     "short": [
-      "`ProjectRegistryStore` is an actor owning the registry file in application support, and the only thing that writes it. A `ProjectRecord` has a stable id and a mutable path, so a folder that moves re-points the project it already was. Each record carries at most one binding per port."
+      "`ProjectRegistryStore` is an actor that owns the registry file in application support, and the only thing that writes it. A `ProjectRecord` has a stable id and a mutable path, so a directory that moves re-points the Project it already was. Each record carries at most one Binding per port."
     ],
     "long": [
-      "`LaunchProject.resolve` decides where a launch points. An explicit override wins, then the active registered project, then the folder the process started in. Pointing is not registering, because registration is a deliberate act rather than a side effect.",
-      "A registry that cannot be read is an empty one. Launching into an empty strip is recoverable, and refusing to launch is not.",
-      "`CockpitPointing` is the value the window strip is drawn from and moved by. Its acts describe a gesture, and a move says what the registry and the Hub should each do about it."
+      "`LaunchProject` decides where a launch points. An explicit override wins, then the active registered Project, then the directory the process started in. To point is not to register, because registration is a deliberate act rather than a side effect.",
+      "A registry Argo cannot read is an empty one. A launch into an empty strip is recoverable, and a refusal to launch is not.",
+      "`CockpitPointing` is the value the window strip draws from, and the value a gesture moves. Its acts describe a gesture, and a move says what the registry and the Hub must each do about it."
     ],
     "inside": [],
     "among": [],
@@ -2023,12 +2080,14 @@
       [
         "e-project",
         "e-binding",
-        "the bindings stored on each project record"
+        "the bindings stored on each project record",
+        "data"
       ],
       [
         "e-project",
         "e-repository",
-        "the git top level a folder sits in, asked through the engine"
+        "the git top level a folder sits in, asked through the engine",
+        "call"
       ]
     ],
     "anchors": [
@@ -2088,7 +2147,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Project/ProjectRegistryStore.swift"
         ]
       }
-    }
+    },
+    "group": "plumbing",
+    "key": [
+      4,
+      0,
+      3
+    ]
   },
   "e-skills": {
     "id": "e-skills",
@@ -2096,16 +2161,16 @@
     "depth": 2,
     "parent": "engine",
     "name": "Listing the skills a session can load",
-    "line": "It walks the skill folders on disk, reads each SKILL.md frontmatter, and answers one command per skill.",
+    "line": "It walks the skill directories on disk, reads each SKILL.md frontmatter, and answers one command per skill.",
     "lines": 502,
     "bottom": true,
     "short": [
-      "`SkillReading.skills(forProjectAt:)` walks the skill directories for one repository and for the user's own folder. `SkillCatalog` opens a `SKILL.md` per skill plus two JSON files, and `SkillFrontmatter` reads the name and description out of each. The answer is a list of commands the picker draws."
+      "`SkillReading` walks the skill directories for one Project and for the user's own directory. `SkillCatalog` opens a `SKILL.md` per skill plus two JSON files, and `SkillFrontmatter` reads the name and description out of each. The answer is a list of commands the picker draws."
     ],
     "long": [
-      "It is an actor because the walk is disk work and its caller draws the caret. Nothing is cached, because when to walk again belongs to the caller, which is the only place that knows what a stale list would cost.",
-      "Plugins are read from the CLI's own record. `InstalledPlugins` decodes the installed-plugins file under the user's home, and `EnabledPlugins` reads the settings that say which of them are on.",
-      "`SkillLoad` faces the other way. A transcript record names only a directory, so the reader opens the `SKILL.md` under it and returns what it found, or why it could not. No code here calls into another folder of the engine."
+      "It is an actor because the walk is disk work and its caller draws the caret. It caches nothing, because when to walk again belongs to the caller, which is the only place that knows the cost of a stale list.",
+      "Argo reads plugins from the CLI's own record. `InstalledPlugins` decodes the installed-plugins file under the user's home, and `EnabledPlugins` reads the settings that say which of them are on.",
+      "`SkillLoad` faces the other way. A transcript record names only a directory, so the reader opens the `SKILL.md` under it and returns what it found, or why it cannot. No code here calls into another group of the engine."
     ],
     "inside": [],
     "among": [],
@@ -2166,7 +2231,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Skills"
         ]
       }
-    }
+    },
+    "group": "plumbing",
+    "key": [
+      1,
+      2,
+      4
+    ]
   },
   "e-annotation": {
     "id": "e-annotation",
@@ -2174,16 +2245,16 @@
     "depth": 2,
     "parent": "engine",
     "name": "What the user said about a session",
-    "line": "It holds the archived flag, the name and the ticket a person attached to a session, and writes them to one file.",
+    "line": "It holds the archived flag, the name and the ticket a person attached to a Session, and writes them to one file.",
     "lines": 268,
     "bottom": true,
     "short": [
-      "This is the only thing Argo records about a session by hand rather than by observation. `SessionAnnotations` is keyed by the session's stable chain id and holds three fields: archived, an explicit name, and the last resolved ticket title. Empty annotations are dropped, so absence stays the honest default."
+      "This is the only thing Argo records about a Session by hand rather than by observation. `SessionAnnotations` is keyed by the Session's stable chain id and holds three fields: archived, an explicit name, and the last resolved ticket title. Argo drops empty annotations, so absence stays the honest default."
     ],
     "long": [
-      "`SessionAnnotationStore` is an actor owning one JSON file in application support. Every mutation loads, transitions and writes the whole set in one hop, so two windows archiving at once cannot lose each other's decision.",
-      "Archiving is the only act that ever clears a row off the roster. Nothing derived from a transcript, a branch or a merge calls it.",
-      "A file that cannot be read annotates nothing, and the roster then draws every session. That is a state one gesture recovers from, and refusing to draw the roster is not."
+      "`SessionAnnotationStore` is an actor that owns one JSON file in application support. Every mutation loads, transitions and writes the whole set in one hop, so two windows that archive at once cannot lose each other's decision.",
+      "Only an archive clears a row off the roster. Nothing derived from a transcript, a branch or a merge calls it.",
+      "A file Argo cannot read annotates nothing, and the roster then draws every Session. One gesture recovers from that state, and a refusal to draw the roster is not recoverable."
     ],
     "inside": [],
     "among": [],
@@ -2191,7 +2262,8 @@
       [
         "e-annotation",
         "e-ticket",
-        "the resolved ticket title held on one annotation"
+        "the resolved ticket title held on one annotation",
+        "data"
       ]
     ],
     "anchors": [
@@ -2240,7 +2312,12 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Annotation/SessionAnnotations.swift"
         ]
       }
-    }
+    },
+    "group": "plumbing",
+    "key": [
+      0,
+      3
+    ]
   },
   "e-health": {
     "id": "e-health",
@@ -2248,16 +2325,16 @@
     "depth": 2,
     "parent": "engine",
     "name": "Whether a connection is landing",
-    "line": "It records why a read through a binding failed, and answers healthy, stale or needs-reconnect.",
+    "line": "It records why a read through a Binding failed, and answers healthy, stale or needs-reconnect.",
     "lines": 307,
     "bottom": true,
     "short": [
-      "`ConnectionHealthLedger` is an actor holding what Argo has observed about each binding's connection. A read that lands clears the binding's own fault and the account's refusal too, because proof outranks the record of a refusal. `BindingHealth` turns a fault and a last-success date into one of three words."
+      "`ConnectionHealthLedger` is an actor that holds what Argo observed about each Binding's connection. A read that lands clears the Binding's own fault and the Account's refusal too, because a real read outranks the record of a refusal. `BindingHealth` turns a fault and a last-success date into one of three words."
     ],
     "long": [
-      "Nothing here is saved, and nothing here holds fetched data. Health is rebuilt by the next poll, so a launch never opens on a failure it has not observed since. A failed poll also cannot blank a ticket list this type has never seen.",
-      "The two levels are stored the way they fail. A binding-level cause is filed under the binding it happened to. An account-level refusal is filed under the account once, and every binding naming that account derives the damage by asking.",
-      "`ProviderFetchError` maps both providers' transport errors into one vocabulary: offline, unreachable and rate-limited. Two ports failing the same way must reach the ledger as one word."
+      "This group saves nothing, and holds no fetched data. The next poll builds health again, so a launch draws no failure until Argo observes one again. A failed poll also cannot blank a ticket list this type never saw.",
+      "The ledger stores the two levels the way they fail. It files a Binding-level cause under the Binding it happened to. It files an Account-level refusal under the Account once, and every Binding that names that Account derives the damage by asking.",
+      "`ProviderFetchError` maps both providers' transport errors into one vocabulary: offline, unreachable and rate-limited. Two ports that fail the same way must reach the ledger as one word."
     ],
     "inside": [],
     "among": [],
@@ -2265,12 +2342,14 @@
       [
         "e-health",
         "e-binding",
-        "the binding and repository id a reading is filed under"
+        "the binding and repository id a reading is filed under",
+        "data"
       ],
       [
         "e-health",
         "e-account",
-        "the transport error a provider read failed with"
+        "the transport error a provider read failed with",
+        "data"
       ]
     ],
     "anchors": [
@@ -2325,7 +2404,13 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Health/ProviderFetchError.swift"
         ]
       }
-    }
+    },
+    "group": "off-machine",
+    "key": [
+      0,
+      2,
+      5
+    ]
   },
   "e-storage": {
     "id": "e-storage",
@@ -2337,12 +2422,12 @@
     "lines": 41,
     "bottom": true,
     "short": [
-      "`OwnedStateFile` is forty-one lines and does one thing. It decodes a whole JSON file into a value, or answers the empty value when it cannot. It encodes and writes atomically, and drops a failed write in silence, because the value the caller already holds is the answer either way."
+      "`OwnedStateFile` does one thing. It decodes a whole JSON file into a value, or answers the empty value when it cannot. It encodes and writes atomically, and drops a failed write in silence, because the value the caller already holds is the answer either way."
     ],
     "long": [
-      "Its file URL is optional, and nothing there means remember nothing. A test or a render harness that named no folder must not read or write the machine's real state.",
-      "It is synchronous and main-actor rather than an actor, because its callers are main-actor methods that cannot await. Every mutation reads, transitions and writes in one hop, so two windows changing the same state lose nothing of each other's.",
-      "Five other folders build on it: the handoff chain, the delivery assertions, the built-in command cache, the session-ownership ledger and the remembered mode rung. It calls into none of them."
+      "Its file URL is optional, and nothing there means remember nothing. A test or a render harness that named no directory must not read or write the machine's real state.",
+      "It is synchronous and main-actor rather than an actor, because its callers are main-actor methods that cannot await. Every mutation reads, transitions and writes in one hop, so two windows that change the same state lose nothing of each other's.",
+      "Five other groups build on it: the handoff chain, the delivery assertions, the built-in command cache, the Session-ownership ledger and the remembered mode rung. It calls into none of them."
     ],
     "inside": [],
     "among": [],
@@ -2388,7 +2473,11 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Storage"
         ]
       }
-    }
+    },
+    "group": "plumbing",
+    "key": [
+      0
+    ]
   },
   "e-launch": {
     "id": "e-launch",
@@ -2396,7 +2485,7 @@
     "depth": 2,
     "parent": "engine",
     "name": "What this process was started against",
-    "line": "One value holding the folder the process started in, the repository override, and the transcripts a harness named.",
+    "line": "One value that holds the directory the process started in, the repository override, and the transcripts a harness named.",
     "lines": 117,
     "bottom": true,
     "short": [
@@ -2404,7 +2493,7 @@
     ],
     "long": [
       "The override does not register anything. It points the Hub for this launch only, because registration is a deliberate act and not a side effect of a screenshot script.",
-      "`resolvingRoots(through:)` resolves both folders to the repository root each sits in. The registry holds roots, and a launch may name any folder inside one. Without this step, a launch inside a registered repository draws that repository twice."
+      "`resolvingRoots(through:)` resolves both directories to the repository root each sits in. The registry holds roots, and a launch can name any directory inside one. Without this step, a launch inside a registered repository draws that repository twice."
     ],
     "inside": [],
     "among": [],
@@ -2412,12 +2501,14 @@
       [
         "e-launch",
         "e-project",
-        "both launch folders, resolved to the repository roots the registry holds"
+        "both launch folders, resolved to the repository roots the registry holds",
+        "call"
       ],
       [
         "e-launch",
         "e-hub",
-        "the repository and transcripts to point at, on connect and on every re-point"
+        "the repository and transcripts to point at, on connect and on every re-point",
+        "data"
       ]
     ],
     "anchors": [
@@ -2462,6 +2553,11 @@
           "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub.swift"
         ]
       }
-    }
+    },
+    "group": "plumbing",
+    "key": [
+      0,
+      3
+    ]
   }
 }

@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Atlas Workbench — one part at a time</title>
+<link rel="stylesheet" href="atlas-tokens.css">
+<style>
+  /* ---- shell ------------------------------------------------------- */
+  body { display: flex; flex-direction: column; }
+
+  .bar {
+    display: flex; align-items: center; gap: var(--s-comfortable);
+    height: 40px; flex: 0 0 40px; padding: 0 var(--s-comfortable);
+    background: var(--base); border-bottom: 1px solid var(--hairline);
+  }
+  .bar .brand {
+    font: 600 var(--t-subheadline)/1 var(--sans);
+    letter-spacing: .09em; text-transform: uppercase; color: var(--text-3);
+    padding-right: var(--s-base); border-right: 1px solid var(--hairline);
+  }
+  .navbtns { display: flex; gap: 2px; }
+  .navbtns button {
+    width: 24px; height: 24px; border-radius: var(--r-marker);
+    color: var(--text-2); font: var(--t-body)/1 var(--sans);
+  }
+  .navbtns button:hover:not(:disabled) { background: var(--hover); }
+  .navbtns button:disabled { color: var(--text-off); cursor: default; }
+
+  .trail { display: flex; align-items: center; gap: 2px; overflow: hidden; flex: 1 1 auto; min-width: 0; }
+  .trail .earlier {
+    font: var(--t-footnote)/1 var(--mono); color: var(--text-off);
+    padding-right: var(--s-tight); white-space: nowrap;
+  }
+  .trail button {
+    font: var(--t-callout)/1 var(--sans); color: var(--text-3);
+    padding: 4px 6px; border-radius: var(--r-marker); white-space: nowrap;
+    max-width: 150px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .trail button:hover { background: var(--hover); color: var(--text-2); }
+  .trail button.now { background: var(--selected); color: var(--text-1); }
+  .trail .sep { color: var(--text-off); font-size: var(--t-footnote); }
+
+  .aspects { display: flex; gap: 2px; background: var(--sunken); padding: 2px; border-radius: var(--r-control); }
+  .aspects button {
+    font: var(--t-callout)/1 var(--sans); color: var(--text-3);
+    padding: 5px 9px; border-radius: var(--r-marker); white-space: nowrap;
+  }
+  .aspects button:hover { color: var(--text-1); }
+  .aspects button[aria-pressed="true"] { background: var(--selection-ground); color: var(--text-1); }
+
+  main { flex: 1 1 auto; display: flex; min-height: 0; }
+
+  /* ---- index pane -------------------------------------------------- */
+  .index {
+    flex: 0 0 260px; width: 260px; display: flex; flex-direction: column;
+    background: var(--base); border-right: 1px solid var(--hairline); min-height: 0;
+  }
+  .searchwrap { padding: var(--s-base); border-bottom: 1px solid var(--hairline); }
+  .searchwrap input {
+    width: 100%; background: var(--sunken); border: 1px solid var(--subtle);
+    border-radius: var(--r-control); color: var(--text-1);
+    font: var(--t-body)/1 var(--sans); padding: 6px 8px;
+  }
+  .searchwrap input::placeholder { color: var(--text-off); }
+  .searchwrap input:focus { outline: none; border-color: var(--accent); }
+  .searchnote { font: var(--t-footnote)/1.4 var(--sans); color: var(--text-off); padding-top: var(--s-tight); }
+
+  .tree { overflow-y: auto; flex: 1 1 auto; padding-bottom: var(--s-section); }
+  .heading {
+    font: 600 var(--t-footnote)/1 var(--sans); letter-spacing: .08em; text-transform: uppercase;
+    color: var(--text-off); padding: var(--s-comfortable) var(--s-base) var(--s-tight);
+  }
+  .grouphead {
+    font: var(--t-footnote)/1.3 var(--sans); color: var(--text-off);
+    padding: var(--s-base) var(--s-base) 2px calc(var(--s-base) + 12px);
+  }
+  .row {
+    display: flex; align-items: baseline; gap: var(--s-snug);
+    width: 100%; text-align: left; padding: 4px var(--s-base);
+    color: var(--text-2); font: var(--t-callout)/1.35 var(--sans);
+  }
+  .row .rname { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row:hover { background: var(--hover); color: var(--text-1); }
+  .row[aria-current="true"] { background: var(--selected); color: var(--text-1); font-weight: 600; }
+  .row.d1 { padding-left: calc(var(--s-base) + 10px); }
+  .row.d2 { padding-left: calc(var(--s-base) + 22px); }
+  .badges { display: flex; gap: var(--s-tight); flex: 0 0 auto; }
+  .badge {
+    font: var(--t-footnote)/1 var(--mono); color: var(--text-off);
+    border: 1px solid var(--hairline); border-radius: var(--r-marker); padding: 1px 3px;
+  }
+  .row[aria-current="true"] .badge { color: var(--text-3); border-color: var(--subtle); }
+
+  /* ---- graph pane -------------------------------------------------- */
+  .graphpane { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; background: var(--desktop); }
+  .graphhead { padding: var(--s-base) var(--s-comfortable) var(--s-snug); border-bottom: 1px solid var(--hairline); }
+  .graphhead .why { font: var(--t-footnote)/1.5 var(--sans); color: var(--text-3); max-width: 900px; }
+  .graphhead .why b { color: var(--text-2); font-weight: 600; }
+  .headline { display: flex; align-items: center; gap: var(--s-base); margin-bottom: var(--s-tight); flex-wrap: wrap; }
+  .headline h1 { font: 600 var(--t-title3)/1.2 var(--sans); }
+  .kindtag {
+    font: var(--t-footnote)/1 var(--mono); color: var(--text-3);
+    border: 1px solid var(--subtle); border-radius: var(--r-marker); padding: 2px 5px;
+  }
+  .order { margin-left: auto; display: flex; align-items: center; gap: var(--s-snug); }
+  .order label { font: var(--t-footnote)/1 var(--sans); color: var(--text-off); }
+  .order select {
+    background: var(--control); color: var(--text-1); border: 1px solid var(--subtle);
+    border-radius: var(--r-marker); font: var(--t-footnote)/1 var(--sans); padding: 3px 5px;
+  }
+  .canvas { flex: 1 1 auto; overflow: auto; }
+  .canvas svg { display: block; }
+
+  .legend {
+    flex: 0 0 auto; border-top: 1px solid var(--hairline); background: var(--base);
+    padding: var(--s-snug) var(--s-comfortable); display: flex; gap: var(--s-loose);
+    flex-wrap: wrap; align-items: center;
+  }
+  .lgitem { display: flex; align-items: center; gap: var(--s-snug); }
+  .lgitem span { font: var(--t-footnote)/1.3 var(--sans); color: var(--text-3); }
+  .lgitem svg { display: block; }
+
+  /* ---- graph marks ------------------------------------------------- */
+  .node { cursor: pointer; }
+  .node .plate { transition: fill var(--m-selection) var(--ease-out); }
+  .node:hover .plate { fill: var(--overlay); }
+  .node.active { cursor: default; }
+  .nlabel { font: 600 12px/1 var(--sans); fill: var(--text-1); }
+  .nsub   { font: 10px/1 var(--sans); fill: var(--text-3); }
+  .nmeta  { font: 9px/1 var(--mono); fill: var(--text-off); }
+  .elabel { font: 10px/1 var(--sans); fill: var(--text-3); }
+  .colhead { font: 600 10px/1 var(--sans); fill: var(--text-2); letter-spacing: .07em; }
+  .colnote { font: 10px/1 var(--sans); fill: var(--text-off); }
+  .edge { fill: none; stroke: var(--strong); stroke-width: 1; }
+  .edge.call { stroke-dasharray: 5 3; }
+  .bundle .plate { fill: none; stroke: var(--subtle); stroke-dasharray: 3 3; }
+  .bundle:hover .plate { fill: var(--hover); }
+
+  /* ---- reading pane ------------------------------------------------ */
+  .reading {
+    flex: 0 0 380px; width: 380px; display: flex; flex-direction: column;
+    background: var(--base); border-left: 1px solid var(--hairline); min-height: 0;
+  }
+  .read { overflow-y: auto; flex: 1 1 auto; padding: var(--s-comfortable); }
+  .crumbs { font: var(--t-footnote)/1.4 var(--sans); color: var(--text-off); margin-bottom: var(--s-snug); }
+  .crumbs button { color: var(--accent); font: inherit; }
+  .crumbs button:hover { color: var(--accent-bright); text-decoration: underline; }
+  .read h2 { font: 600 var(--t-title3)/1.25 var(--sans); margin-bottom: var(--s-snug); }
+  .read .lede { font: var(--t-body)/1.5 var(--sans); color: var(--text-1); margin-bottom: var(--s-comfortable); }
+  .read p { font: var(--t-callout)/1.6 var(--sans); color: var(--text-2); margin-bottom: var(--s-base); }
+  .sect { margin-top: var(--s-loose); }
+  .sect h3 {
+    font: 600 var(--t-footnote)/1 var(--sans); letter-spacing: .08em; text-transform: uppercase;
+    color: var(--text-off); margin-bottom: var(--s-snug);
+  }
+  .anchor {
+    display: block; width: 100%; text-align: left; padding: var(--s-snug);
+    border-radius: var(--r-marker); border: 1px solid transparent;
+  }
+  .anchor:hover { background: var(--hover); }
+  .anchor .p { font: 10px/1.4 var(--mono); color: var(--text-3); word-break: break-all; }
+  .anchor .w { font: var(--t-callout)/1.45 var(--sans); color: var(--text-2); }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--s-tight); }
+  .chip {
+    font: var(--t-footnote)/1.3 var(--sans); color: var(--text-2);
+    background: var(--control); border-radius: var(--r-marker); padding: 3px 6px;
+  }
+  .chip:hover { background: var(--marked); color: var(--text-1); }
+  .stat { font: var(--t-footnote)/1.5 var(--mono); color: var(--text-off); }
+  .stepitem { padding: var(--s-snug) 0; border-bottom: 1px solid var(--hairline); }
+  .stepitem .t { font: 600 var(--t-callout)/1.4 var(--sans); color: var(--text-1); }
+  .stepitem .n { font: 9px/1 var(--mono); color: var(--text-off); }
+  .stepitem p { margin: var(--s-tight) 0 var(--s-tight); }
+  .ruleitem { padding: var(--s-snug) 0; border-bottom: 1px solid var(--hairline); }
+  .ruleitem .s { font: var(--t-callout)/1.5 var(--sans); color: var(--text-1); }
+  .more { font: var(--t-footnote)/1 var(--sans); color: var(--accent); padding: var(--s-tight) 0; }
+
+  /* ---- docked answer panel ----------------------------------------- */
+  .dock { flex: 0 0 auto; border-top: 1px solid var(--subtle); background: var(--raised); display: flex; flex-direction: column; min-height: 0; }
+  .dock.open { flex: 0 1 46%; }
+  .qbar { display: flex; flex-wrap: wrap; gap: var(--s-tight); padding: var(--s-base); }
+  .qbar button {
+    font: var(--t-footnote)/1 var(--sans); color: var(--text-2);
+    background: var(--control); border-radius: var(--r-control); padding: 5px 8px;
+  }
+  .qbar button:hover { background: var(--marked); color: var(--text-1); }
+  .qbar button[aria-pressed="true"] { background: var(--selection-ground); color: var(--text-1); }
+  .dockbody { overflow-y: auto; padding: 0 var(--s-base) var(--s-base); }
+  .dockbody .cap { font: var(--t-footnote)/1.5 var(--sans); color: var(--text-off); padding-bottom: var(--s-snug); }
+  .ans { display: block; width: 100%; text-align: left; padding: var(--s-snug); border-radius: var(--r-marker); border-top: 1px solid var(--hairline); }
+  .ans:hover { background: var(--hover); }
+  .ans .who { font: 600 var(--t-callout)/1.35 var(--sans); color: var(--text-1); }
+  .ans .cargo { font: var(--t-footnote)/1.5 var(--sans); color: var(--text-2); }
+  .ans .sense { font: 9px/1 var(--mono); color: var(--text-off); }
+  .empty { font: var(--t-footnote)/1.5 var(--sans); color: var(--text-off); padding: var(--s-base) var(--s-snug); }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">Atlas</div>
+  <div class="navbtns">
+    <button id="back" title="Back (Alt+Left)">&#9664;</button>
+    <button id="fwd" title="Forward (Alt+Right)">&#9654;</button>
+  </div>
+  <nav class="trail" id="trail" aria-label="Trail"></nav>
+  <div class="aspects" id="aspects" role="group" aria-label="Aspect"></div>
+</header>
+
+<main>
+  <aside class="index" aria-label="Index">
+    <div class="searchwrap">
+      <input id="q" type="search" placeholder="Search parts, flows, concepts  ( / )" autocomplete="off">
+      <div class="searchnote" id="qnote"></div>
+    </div>
+    <div class="tree" id="tree"></div>
+  </aside>
+
+  <section class="graphpane" aria-label="Neighbourhood">
+    <div class="graphhead">
+      <div class="headline">
+        <h1 id="ghName"></h1>
+        <span class="kindtag" id="ghKind"></span>
+        <div class="order">
+          <label for="ord">order by</label>
+          <select id="ord">
+            <option value="degree">edges it touches</option>
+            <option value="lines">source lines</option>
+            <option value="name">name, A–Z</option>
+          </select>
+        </div>
+      </div>
+      <div class="why" id="ghWhy"></div>
+    </div>
+    <div class="canvas" id="canvas"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <aside class="reading" aria-label="Reading">
+    <div class="read" id="read"></div>
+    <div class="dock" id="dock">
+      <div class="qbar" id="qbar"></div>
+      <div class="dockbody" id="dockbody" hidden></div>
+    </div>
+  </aside>
+</main>
+
+<script src="atlas-content.js"></script>
+<script>
+(function () {
+"use strict";
+const A = window.ATLAS;
+const ids = Object.keys(A);
+
+/* ================= derived indexes ================================== */
+const incoming = {};                     // id -> [edge]
+const outgoing = {};                     // id -> [edge]
+for (const id of ids) {
+  for (const e of (A[id].leaving || [])) {
+    (outgoing[e[0]] = outgoing[e[0]] || []).push(e);
+    (incoming[e[1]] = incoming[e[1]] || []).push(e);
+  }
+}
+const conceptParts = {};                 // concept id -> [part id]
+for (const id of ids) for (const c of (A[id].concepts || [])) (conceptParts[c] = conceptParts[c] || []).push(id);
+
+const flowsTouching = {};                // node id -> [{flow, steps:[i]}]
+const FLOWS = ids.filter(i => A[i].kind === "flow");
+for (const fid of FLOWS) {
+  const f = A[fid];
+  f.steps.forEach((s, i) => {
+    for (const p of [s.actor, s.from, s.to]) {
+      if (!p) continue;
+      const bag = flowsTouching[p] = flowsTouching[p] || {};
+      (bag[fid] = bag[fid] || []).push(i);
+    }
+  });
+  for (const c of (f.concepts || [])) {
+    const bag = flowsTouching[c] = flowsTouching[c] || {};
+    bag[fid] = bag[fid] || [];
+  }
+}
+const RULES = A.argo.rules || [];
+function rulesFor(id) {
+  const n = A[id]; if (!n) return [];
+  const needle = n.name.toLowerCase();
+  return RULES.filter(r => r.statement.toLowerCase().includes(needle));
+}
+function degree(id) {
+  const n = A[id]; if (!n) return 0;
+  return (outgoing[id] || []).length + (incoming[id] || []).length + (n.inside || []).length;
+}
+
+/* ================= the mark table — legend is generated from it ====== */
+const MARKS = [
+  { key: "container", what: "Container — parts live inside it",   shape: "rect",   ground: "var(--overlay)", stroke: "var(--strong)",   dash: null,    w: 600 },
+  { key: "part",      what: "Part — a folder of source",          shape: "rect",   ground: "var(--raised)",  stroke: "var(--subtle)",   dash: null,    w: 500 },
+  { key: "flow",      what: "Flow — an ordered path through parts",shape: "pill",  ground: "var(--raised)",  stroke: "var(--subtle)",   dash: null,    w: 500 },
+  { key: "concept",   what: "Concept — a word the code spells",    shape: "cut",   ground: "var(--raised)",  stroke: "var(--subtle)",   dash: null,    w: 500 },
+  { key: "external",  what: "Outside Argo — not ours to read",     shape: "rect",   ground: "none",           stroke: "var(--subtle)",   dash: "2 3",   w: 500 },
+  { key: "world",     what: "Off the machine — no node behind it", shape: "rect",   ground: "none",           stroke: "var(--hairline)", dash: "2 3",   w: 400 },
+  { key: "rule",      what: "Boundary rule — a build failure",     shape: "cut",    ground: "none",           stroke: "var(--subtle)",   dash: "2 3",   w: 500 },
+  { key: "bundle",    what: "Collapsed group — always counted",    shape: "rect",   ground: "none",           stroke: "var(--subtle)",   dash: "3 3",   w: 500 }
+];
+const MARK = Object.fromEntries(MARKS.map(m => [m.key, m]));
+const SENSES = [
+  { key: "data", what: "data — a value handed over", dash: null },
+  { key: "call", what: "call — one part asks another", dash: "5 3" }
+];
+const BADGES = [
+  { key: "inside",  glyph: "▣", what: "has parts inside" },
+  { key: "anchors", glyph: "§", what: "has source anchors" },
+  { key: "flow",    glyph: "⇝", what: "stands on a flow" },
+  { key: "outside", glyph: "↱", what: "is outside Argo" }
+];
+
+function markOf(id) {
+  const n = A[id];
+  if (!n) return "world";
+  if (n.kind === "flow") return "flow";
+  if (n.kind === "concept") return "concept";
+  if (n.external) return "external";
+  if ((n.inside || []).length) return "container";
+  return "part";
+}
+function nameOf(id) { return A[id] ? A[id].name : id; }
+
+/* ================= text measuring =================================== */
+const mctx = document.createElement("canvas").getContext("2d");
+const F_LABEL = '600 12px -apple-system, "SF Pro Text", system-ui, sans-serif';
+const F_SUB   = '10px -apple-system, "SF Pro Text", system-ui, sans-serif';
+function wrap(text, maxW, font) {
+  mctx.font = font;
+  const out = []; let cur = "";
+  for (const w of String(text).split(/\s+/)) {
+    const t = cur ? cur + " " + w : w;
+    if (!cur || mctx.measureText(t).width <= maxW) cur = t; else { out.push(cur); cur = w; }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+function clamp(lines, max) {
+  if (lines.length <= max) return { lines: lines, cut: 0 };
+  const kept = lines.slice(0, max);
+  kept[max - 1] = kept[max - 1].replace(/\s+\S*$/, "") + " …";
+  return { lines: kept, cut: lines.length - max };
+}
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+/* ================= state ============================================ */
+const ASPECTS = [
+  { key: "structure", label: "Structure",  basis: "Edges are the part's own <b>leaving</b> list, the reverse index of every other part's leaving list, its <b>inside</b> list and its parent." },
+  { key: "flow",      label: "Flow",       basis: "Edges are the steps of every flow this node stands on, drawn between the parts two consecutive steps happen in." },
+  { key: "concept",   label: "Concepts",   basis: "Edges join a part to each concept its reading spells out, taken from the part's <b>concepts</b> list." },
+  { key: "rule",      label: "Rules",      basis: "Edges are the six boundary rules whose statement names this node, matched on the node's own name." }
+];
+const SHOW = 6;          // per column, before a bundle
+const SHOW_KIDS = 10;    // children band, before a bundle
+let at = "argo";
+let aspect = "structure";
+let ordering = "degree";
+let expand = { in: false, out: false, kids: false };
+let question = null;
+let hist = [], hix = -1;
+
+/* ================= neighbourhood ==================================== */
+// Every entry: {id, cargo, sense, dir}
+function structureEdges(id) {
+  const ins = (incoming[id] || []).map(e => ({ id: e[0], cargo: e[2], sense: e[3], dir: "in" }));
+  const outs = (outgoing[id] || []).map(e => ({ id: e[1], cargo: e[2], sense: e[3], dir: "out" }));
+  const n = A[id];
+  if (n.kind === "concept") {
+    (conceptParts[id] || []).forEach(p => ins.push({
+      id: p, sense: "data", dir: "in",
+      cargo: A[p].kind === "flow" ? "the flow's reading leans on this concept"
+                                  : "the reading of " + A[p].name + " spells the concept out"
+    }));
+  }
+  if (n.kind === "flow") {
+    (n.parts || []).forEach(p => {
+      const hits = n.steps.map((s, i) => i).filter(i => n.steps[i].actor === p);
+      if (hits.length) {
+        outs.push({ id: p, sense: n.steps[hits[0]].kind === "call" ? "call" : "data", dir: "out",
+          cargo: "step " + hits.map(i => i + 1).join(", ") + " of " + n.steps.length + " — " + n.steps[hits[0]].title });
+        return;
+      }
+      const ends = n.steps.map((s, i) => i).filter(i => n.steps[i].from === p || n.steps[i].to === p);
+      if (ends.length) outs.push({ id: p, sense: "data", dir: "out",
+        cargo: "no step happens here — it is only the end of step " + ends.map(i => i + 1).join(", ") });
+    });
+  }
+  return { ins: ins, outs: outs };
+}
+function flowEdges(id) {
+  const ins = [], outs = [];
+  const bag = flowsTouching[id] || {};
+  for (const fid of Object.keys(bag)) {
+    const f = A[fid], hits = bag[fid];
+    outs.push({ id: fid, sense: "data", dir: "out",
+      cargo: hits.length ? "step " + hits.map(i => i + 1).join(", ") + " of " + f.steps.length + " happens here"
+                         : "the flow's reading names this concept" });
+    for (const i of hits) {
+      const s = f.steps[i];
+      const prev = i > 0 ? f.steps[i - 1] : null;
+      const next = i + 1 < f.steps.length ? f.steps[i + 1] : null;
+      const sense = s.kind === "call" ? "call" : "data";
+      if (s.from && s.from !== id) ins.push({ id: s.from, sense: sense, dir: "in", cargo: f.name + " · " + s.title });
+      if (s.to && s.to !== id) outs.push({ id: s.to, sense: sense, dir: "out", cargo: f.name + " · " + s.title });
+      if (prev && prev.actor && prev.actor !== id) ins.push({ id: prev.actor, sense: prev.kind === "call" ? "call" : "data", dir: "in", cargo: f.name + " · before: " + prev.title });
+      if (next && next.actor && next.actor !== id) outs.push({ id: next.actor, sense: next.kind === "call" ? "call" : "data", dir: "out", cargo: f.name + " · next: " + next.title });
+    }
+  }
+  return { ins: dedupe(ins), outs: dedupe(outs) };
+}
+function dedupe(list) {
+  const seen = new Set(), out = [];
+  for (const e of list) { const k = e.id + "|" + e.cargo; if (!seen.has(k)) { seen.add(k); out.push(e); } }
+  return out;
+}
+function conceptEdges(id) {
+  const n = A[id], ins = [], outs = [];
+  if (n.kind === "concept") {
+    (conceptParts[id] || []).forEach(p => ins.push({ id: p, sense: "data", dir: "in",
+      cargo: A[p].kind === "flow" ? "the flow's reading leans on this concept" : "the reading of " + A[p].name + " spells the concept out" }));
+    for (const fid of FLOWS) if ((A[fid].concepts || []).includes(id))
+      ins.push({ id: fid, sense: "data", dir: "in", cargo: "the flow's reading leans on this concept" });
+  } else {
+    (n.concepts || []).forEach(c => outs.push({ id: c, sense: "data", dir: "out", cargo: "spelled out here, in this part's own words" }));
+    for (const kid of (n.inside || [])) for (const c of (A[kid].concepts || []))
+      outs.push({ id: c, sense: "data", dir: "out", cargo: "spelled out inside, in " + A[kid].name });
+  }
+  return { ins: dedupe(ins), outs: dedupe(outs) };
+}
+function ruleEdges(id) {
+  const ins = rulesFor(id).map(r => ({ id: "rule:" + r.id, rule: r, sense: "call", dir: "in", cargo: r.statement }));
+  return { ins: ins, outs: [] };
+}
+function neighbourhood(id) {
+  if (aspect === "flow") return flowEdges(id);
+  if (aspect === "concept") return conceptEdges(id);
+  if (aspect === "rule") return ruleEdges(id);
+  return structureEdges(id);
+}
+const ORDER_WORDS = {
+  degree: "the number of edges each one touches across the whole atlas, most first",
+  lines: "the number of source lines behind each one, largest first",
+  name: "name, A to Z"
+};
+function rank(list) {
+  const key = e => {
+    if (ordering === "name") return nameOf(e.id);
+    if (ordering === "lines") return -((A[e.id] && A[e.id].lines) || 0);
+    return -degree(e.id);
+  };
+  return list.slice().sort((a, b) => {
+    const ka = key(a), kb = key(b);
+    if (ka < kb) return -1; if (ka > kb) return 1;
+    return nameOf(a.id) < nameOf(b.id) ? -1 : 1;
+  });
+}
+
+/* ================= graph drawing ==================================== */
+const CARD_W = 196, CENTER_W = 236, PAD = 18, ROW_GAP = 16, LANE_MIN = 150;
+
+function shapePath(mark, x, y, w, h) {
+  const m = MARK[mark];
+  if (m.shape === "pill") return { tag: "rect", attrs: 'x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (h / 2) + '"' };
+  if (m.shape === "cut") {
+    const c = 8;
+    const d = "M" + (x + c) + "," + y + " H" + (x + w - c) + " L" + (x + w) + "," + (y + c) +
+              " V" + (y + h - c) + " L" + (x + w - c) + "," + (y + h) + " H" + (x + c) +
+              " L" + x + "," + (y + h - c) + " V" + (y + c) + " Z";
+    return { tag: "path", attrs: 'd="' + d + '"' };
+  }
+  return { tag: "rect", attrs: 'x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="6"' };
+}
+function plate(mark, x, y, w, h, activeGround) {
+  const m = MARK[mark], s = shapePath(mark, x, y, w, h);
+  const fill = activeGround ? "var(--selection-ground)" : m.ground;
+  return "<" + s.tag + " class=\"plate\" " + s.attrs +
+    ' fill="' + fill + '" stroke="' + m.stroke + '" stroke-width="1"' +
+    (m.dash ? ' stroke-dasharray="' + m.dash + '"' : "") + "/>";
+}
+function badgeStrip(id) {
+  const n = A[id]; if (!n) return [];
+  const out = [];
+  if ((n.inside || []).length) out.push(BADGES[0].glyph + " " + n.inside.length);
+  if ((n.anchors || []).length) out.push(BADGES[1].glyph + " " + n.anchors.length);
+  if (flowsTouching[id]) out.push(BADGES[2].glyph + " " + Object.keys(flowsTouching[id]).length);
+  if (n.external) out.push(BADGES[3].glyph);
+  return out;
+}
+function cardBox(id, w, extraNote) {
+  const nm = clamp(wrap(nameOf(id), w - 20, F_LABEL), 2);
+  const notes = [];
+  const n = A[id];
+  if (n && (n.inside || []).length) notes.push(n.inside.length + (id === at ? " inside, drawn below" : " inside, not drawn here"));
+  if (extraNote) notes.push(extraNote);
+  const noteLines = notes.length ? clamp(wrap(notes.join(" · "), w - 20, F_SUB), 2).lines : [];
+  const badges = badgeStrip(id);
+  const h = 12 + nm.lines.length * 15 + (noteLines.length ? noteLines.length * 13 + 2 : 0) + (badges.length ? 14 : 0) + 8;
+  return { nameLines: nm.lines, noteLines: noteLines, badges: badges, h: Math.max(h, 44) };
+}
+function drawCard(id, box, x, y, w, mark, cls) {
+  let s = '<g class="node ' + (cls || "") + '" data-id="' + esc(id) + '" tabindex="0" role="button" aria-label="' + esc(nameOf(id)) + '">';
+  s += plate(mark, x, y, w, box.h, cls === "active");
+  let ty = y + 18;
+  for (const l of box.nameLines) { s += '<text class="nlabel" x="' + (x + 10) + '" y="' + ty + '">' + esc(l) + "</text>"; ty += 15; }
+  for (const l of box.noteLines) { s += '<text class="nsub" x="' + (x + 10) + '" y="' + (ty + 2) + '">' + esc(l) + "</text>"; ty += 13; }
+  if (box.badges.length) s += '<text class="nmeta" x="' + (x + 10) + '" y="' + (ty + 6) + '">' + esc(box.badges.join("   ")) + "</text>";
+  s += "</g>";
+  return s;
+}
+
+function buildGraph(width) {
+  const nb = neighbourhood(at);
+  const insAll = rank(nb.ins), outsAll = rank(nb.outs);
+  const showIn = expand.in ? insAll.length : Math.min(SHOW, insAll.length);
+  const showOut = expand.out ? outsAll.length : Math.min(SHOW, outsAll.length);
+  const ins = insAll.slice(0, showIn), outs = outsAll.slice(0, showOut);
+  const hidIn = insAll.length - showIn, hidOut = outsAll.length - showOut;
+
+  const W = Math.max(width, 860);
+  let lane = (W - 2 * PAD - 2 * CARD_W - CENTER_W) / 2;
+  if (lane < LANE_MIN) lane = LANE_MIN;
+  const inX = PAD, cx = PAD + CARD_W + lane, outX = cx + CENTER_W + lane;
+  const labelW = lane - 46;
+
+  // rows — several edges to the same neighbour share one card
+  let cutLabels = 0;
+  function column(list, hidden, side) {
+    const rows = []; let y = 78;
+    const order = [], byId = new Map();
+    for (const e of list) {
+      const k = e.rule ? "rule:" + e.rule.id : e.id;
+      if (!byId.has(k)) { byId.set(k, { e: e, cargos: [] }); order.push(k); }
+      byId.get(k).cargos.push({ text: e.cargo, sense: e.sense });
+    }
+    for (const k of order) {
+      const g = byId.get(k), e = g.e;
+      const mark = e.rule ? "rule" : markOf(e.id);
+      const box = e.rule ? { nameLines: clamp(wrap("rule · " + e.rule.id, CARD_W - 20, F_LABEL), 2).lines, noteLines: clamp(wrap("stops the build · " + (e.rule.adr || "no ADR"), CARD_W - 20, F_SUB), 1).lines, badges: [], h: 60 }
+                          : cardBox(e.id, CARD_W);
+      const many = g.cargos.length > 1;
+      const lines = [];
+      g.cargos.forEach(c => {
+        const w = clamp(wrap((many ? "· " : "") + c.text, labelW, F_SUB), many ? 3 : 4);
+        if (w.cut) cutLabels++;
+        w.lines.forEach(l => lines.push(l));
+      });
+      const lab = { lines: lines.slice(0, 8) };
+      const labH = lab.lines.length * 13;
+      const h = Math.max(box.h, labH + 26);
+      rows.push({ e: e, cargos: g.cargos, box: box, mark: mark, lab: lab, h: h, y: y, cy: y + h / 2 });
+      y += h + ROW_GAP;
+    }
+    if (hidden > 0) {
+      const h = 46;
+      rows.push({ bundle: hidden, side: side, h: h, y: y, cy: y + h / 2 });
+      y += h + ROW_GAP;
+    }
+    return { rows: rows, bottom: y };
+  }
+  const colIn = column(ins, hidIn, "in");
+  const colOut = column(outs, hidOut, "out");
+
+  const activeNote = A[at].lines ? A[at].lines.toLocaleString() + " source lines"
+    : A[at].kind === "concept" ? (conceptParts[at] || []).length + " readings spell it"
+    : A[at].kind === "flow" ? A[at].steps.length + " steps through " + (A[at].parts || []).length + " parts"
+    : "outside Argo";
+  const activeBox = cardBox(at, CENTER_W, activeNote);
+  const centreH = Math.max(activeBox.h + 34, 96);
+  const colH = Math.max(colIn.bottom, colOut.bottom, 78 + centreH);
+  const ay = Math.max(78, (colH - centreH) / 2);
+  const parent = A[at] && A[at].parent;
+  const parentBox = parent ? cardBox(parent, CENTER_W) : null;
+  const parentY = ay - 40 - (parentBox ? parentBox.h : 0);
+  const topPad = parentBox && parentY < 74 ? 74 - parentY : 0;
+
+  // children band
+  const kidsAll = (aspect === "structure" && A[at] ? (A[at].inside || []) : []);
+  const showKids = expand.kids ? kidsAll.length : Math.min(SHOW_KIDS, kidsAll.length);
+  const kids = kidsAll.slice(0, showKids);
+  const hidKids = kidsAll.length - showKids;
+
+  let svg = "", H = colH + topPad + 40;
+  const shift = topPad;
+
+  // column headers
+  const inHead = aspect === "rule" ? "RULES THAT BIND IT" : "REACHING IN";
+  svg += '<text class="colhead" x="' + inX + '" y="' + (46 + shift) + '">' + inHead + "</text>";
+  svg += '<text class="colnote" x="' + inX + '" y="' + (62 + shift) + '">' +
+         esc(insAll.length ? (ins.length + " of " + insAll.length + " drawn") : "none") + "</text>";
+  svg += '<text class="colhead" x="' + outX + '" y="' + (46 + shift) + '">REACHING OUT</text>';
+  svg += '<text class="colnote" x="' + outX + '" y="' + (62 + shift) + '">' +
+         esc(outsAll.length ? (outs.length + " of " + outsAll.length + " drawn") : "none") + "</text>";
+
+  // parent
+  if (parentBox) {
+    const py = parentY + shift;
+    svg += '<path class="edge" d="M' + (cx + CENTER_W / 2) + "," + (py + parentBox.h) + " V" + (ay + shift) + '"/>';
+    svg += '<text class="elabel" x="' + (cx + CENTER_W / 2 + 8) + '" y="' + (py + parentBox.h + 24) + '">inside this</text>';
+    svg += drawCard(parent, parentBox, cx, py, CENTER_W, markOf(parent), "");
+  }
+
+  // edges + cards, one path per cargo, each landing on its own anchor
+  const slots = col => col.rows.reduce((s, r) => s + (r.bundle ? 1 : r.cargos.length), 0);
+  const nIn = slots(colIn), nOut = slots(colOut);
+  let slot = 0;
+  colIn.rows.forEach((r, i) => {
+    const y = r.y + shift, cy = r.cy + shift;
+    const mx = cx - 16 - (i % 4) * 7;
+    if (r.bundle) {
+      const aY = ay + shift + centreH * (++slot) / (nIn + 1);
+      svg += '<path class="edge" d="M' + (inX + CARD_W) + "," + cy + " H" + mx + " C" + (mx + 10) + "," + cy + " " + (cx - 24) + "," + aY + " " + cx + "," + aY + '" marker-end="url(#arw)" stroke-dasharray="1 4"/>';
+      svg += bundleCard(inX, y, CARD_W, r.h, r.bundle, "in");
+      return;
+    }
+    r.cargos.forEach((c, j) => {
+      const aY = ay + shift + centreH * (++slot) / (nIn + 1);
+      const ey = cy + (j - (r.cargos.length - 1) / 2) * 9;
+      svg += '<path class="edge ' + c.sense + '" d="M' + (inX + CARD_W) + "," + ey + " H" + (mx - j * 5) + " C" + (mx + 12) + "," + ey + " " + (cx - 26) + "," + aY + " " + cx + "," + aY + '" marker-end="url(#arw)"/>';
+    });
+    let ly = cy - 10 - (r.lab.lines.length - 1) * 13;
+    svg += labelGround(inX + CARD_W + 14, ly, labelW, r.lab.lines.length);
+    for (const l of r.lab.lines) { svg += '<text class="elabel" x="' + (inX + CARD_W + 14) + '" y="' + ly + '">' + esc(l) + "</text>"; ly += 13; }
+    svg += drawCard(r.e.rule ? "rule:" + r.e.rule.id : r.e.id, r.box, inX, y, CARD_W, r.mark, r.e.rule ? "norm" : "");
+  });
+  slot = 0;
+  colOut.rows.forEach((r, i) => {
+    const y = r.y + shift, cy = r.cy + shift;
+    const ax = cx + CENTER_W, mx = outX - 16 + (i % 4) * 7;
+    if (r.bundle) {
+      const aY = ay + shift + centreH * (++slot) / (nOut + 1);
+      svg += '<path class="edge" d="M' + ax + "," + aY + " C" + (ax + 26) + "," + aY + " " + (mx - 10) + "," + cy + " " + mx + "," + cy + " H" + outX + '" marker-end="url(#arw)" stroke-dasharray="1 4"/>';
+      svg += bundleCard(outX, y, CARD_W, r.h, r.bundle, "out");
+      return;
+    }
+    r.cargos.forEach((c, j) => {
+      const aY = ay + shift + centreH * (++slot) / (nOut + 1);
+      const ey = cy + (j - (r.cargos.length - 1) / 2) * 9;
+      svg += '<path class="edge ' + c.sense + '" d="M' + ax + "," + aY + " C" + (ax + 26) + "," + aY + " " + (mx - 12) + "," + ey + " " + (mx + j * 5) + "," + ey + " H" + outX + '" marker-end="url(#arw)"/>';
+    });
+    let ly = cy - 10 - (r.lab.lines.length - 1) * 13;
+    svg += labelGround(outX - 14 - labelW, ly, labelW, r.lab.lines.length);
+    for (const l of r.lab.lines) { svg += '<text class="elabel" x="' + (outX - 14 - labelW) + '" y="' + ly + '">' + esc(l) + "</text>"; ly += 13; }
+    svg += drawCard(r.e.id, r.box, outX, y, CARD_W, r.mark, "");
+  });
+
+  // active node
+  svg += drawCard(at, activeBox, cx, ay + shift, CENTER_W, markOf(at), "active");
+
+  // children band
+  if (kidsAll.length) {
+    const railY = Math.max(colH, ay + centreH) + shift + 46;
+    svg += '<path class="edge" d="M' + (cx + CENTER_W / 2) + "," + (ay + shift + activeBox.h) + " V" + (railY - 14) + '"/>';
+    svg += '<text class="colhead" x="' + PAD + '" y="' + (railY - 26) + '">INSIDE IT</text>';
+    svg += '<text class="colnote" x="' + (PAD + 70) + '" y="' + (railY - 26) + '">' +
+           esc(kids.length + " of " + kidsAll.length + " drawn, ordered as the source lists them") + "</text>";
+    svg += '<path class="edge" d="M' + PAD + "," + (railY - 14) + " H" + (W - PAD) + '"/>';
+    const chipW = 168, gapx = 12, perRow = Math.max(1, Math.floor((W - 2 * PAD + gapx) / (chipW + gapx)));
+    let cxp = PAD, cyp = railY + 4, rowH = 0;
+    kids.forEach((k, i) => {
+      if (i % perRow === 0 && i) { cyp += rowH + 12; cxp = PAD; rowH = 0; }
+      const box = cardBox(k, chipW);
+      rowH = Math.max(rowH, box.h);
+      if (i < perRow) svg += '<path class="edge" d="M' + (cxp + 20) + "," + (railY - 14) + " V" + cyp + '"/>';
+      svg += drawCard(k, box, cxp, cyp, chipW, markOf(k), "");
+      cxp += chipW + gapx;
+    });
+    let bottom = cyp + rowH;
+    if (hidKids > 0) {
+      if (kids.length % perRow === 0 && kids.length) { cyp += rowH + 12; cxp = PAD; }
+      svg += bundleCard(cxp, cyp, chipW, 46, hidKids, "kids");
+      bottom = Math.max(bottom, cyp + 46);
+    }
+    H = bottom + 34;
+  }
+
+  const defs = '<defs><marker id="arw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">' +
+    '<path d="M0,0 L8,4 L0,8 z" fill="var(--strong)"/></marker></defs>';
+  return { svg: '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + " " + H + '">' + defs + svg + "</svg>",
+           counts: { insAll: insAll.length, outsAll: outsAll.length, hidIn: hidIn, hidOut: hidOut,
+                     kidsAll: kidsAll.length, hidKids: hidKids, cutLabels: cutLabels } };
+}
+// a label sits on its own ground so a crossing edge never runs through the words
+function labelGround(x, firstBaseline, w, lines) {
+  return '<rect x="' + (x - 5) + '" y="' + (firstBaseline - 11) + '" width="' + (w + 10) +
+    '" height="' + (lines * 13 + 5) + '" fill="var(--desktop)" opacity=".92"/>';
+}
+function bundleCard(x, y, w, h, n, side) {
+  const label = n + " more";
+  const sub = side === "kids" ? "parts inside · click to draw them" : (side === "in" ? "reaching in · click to draw them" : "reaching out · click to draw them");
+  let s = '<g class="node bundle" data-bundle="' + side + '" tabindex="0" role="button" aria-label="show ' + n + ' more">';
+  s += plate("bundle", x, y, w, h);
+  s += '<text class="nlabel" x="' + (x + 10) + '" y="' + (y + 20) + '">' + esc(label) + "</text>";
+  s += '<text class="nsub" x="' + (x + 10) + '" y="' + (y + 35) + '">' + esc(clamp(wrap(sub, w - 20, F_SUB), 1).lines[0]) + "</text>";
+  s += "</g>";
+  return s;
+}
+
+/* ================= legend =========================================== */
+function renderLegend() {
+  const used = new Set();
+  const svgEl = document.querySelector("#canvas svg");
+  if (svgEl) svgEl.querySelectorAll("g.node").forEach(g => {
+    const id = g.getAttribute("data-id");
+    used.add(g.classList.contains("bundle") ? "bundle" : (id && id.startsWith("rule:") ? "rule" : markOf(id)));
+  });
+  let h = "";
+  for (const m of MARKS) {
+    if (!used.has(m.key)) continue;
+    const s = shapePath(m.key, 1, 1, 26, 14);
+    h += '<div class="lgitem"><svg width="28" height="16"><' + s.tag + " " + s.attrs +
+      ' fill="' + (m.ground === "none" ? "none" : m.ground) + '" stroke="' + m.stroke + '" stroke-width="1"' +
+      (m.dash ? ' stroke-dasharray="' + m.dash + '"' : "") + '/></svg><span>' + esc(m.what) + "</span></div>";
+  }
+  const senseUsed = new Set();
+  if (svgEl) svgEl.querySelectorAll("path.edge").forEach(p => SENSES.forEach(s => { if (p.classList.contains(s.key)) senseUsed.add(s.key); }));
+  for (const s of SENSES) {
+    if (!senseUsed.has(s.key)) continue;
+    h += '<div class="lgitem"><svg width="34" height="10"><path d="M1,5 H29" stroke="var(--strong)" stroke-width="1"' +
+      (s.dash ? ' stroke-dasharray="' + s.dash + '"' : "") + ' marker-end="url(#lgarw)"/>' +
+      '<defs><marker id="lgarw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--strong)"/></marker></defs>' +
+      '</svg><span>' + esc(s.what) + "</span></div>";
+  }
+  for (const b of BADGES) h += '<div class="lgitem"><span class="badge">' + b.glyph + "</span><span>" + esc(b.what) + "</span></div>";
+  document.getElementById("legend").innerHTML = h;
+}
+
+/* ================= index pane ======================================= */
+function badgeHTML(id) {
+  return '<span class="badges">' + badgeStrip(id).map(b => '<span class="badge">' + esc(b) + "</span>").join("") + "</span>";
+}
+function rowHTML(id, depth) {
+  return '<button class="row d' + depth + '" data-id="' + esc(id) + '" data-search="' +
+    esc((nameOf(id) + " " + id + " " + ((A[id] && A[id].line) || "")).toLowerCase()) + '">' +
+    '<span class="rname">' + esc(nameOf(id)) + "</span>" + badgeHTML(id) + "</button>";
+}
+function buildTree() {
+  let h = '<div class="heading">Parts</div>' + rowHTML("argo", 0);
+  for (const cid of (A.argo.inside || [])) {
+    h += rowHTML(cid, 1);
+    const c = A[cid];
+    if (!(c.inside || []).length) continue;
+    for (const g of (c.groups || [])) {
+      h += '<div class="grouphead" data-group="1">' + esc(g.name) + "</div>";
+      for (const k of c.inside) if (A[k].group === g.id) h += rowHTML(k, 2);
+    }
+    for (const k of c.inside) if (!(c.groups || []).some(g => g.id === A[k].group)) h += rowHTML(k, 2);
+  }
+  h += '<div class="heading">Flows</div>';
+  for (const f of FLOWS) h += rowHTML(f, 0);
+  h += '<div class="heading">Concepts</div>';
+  for (const c of ids.filter(i => A[i].kind === "concept")) h += rowHTML(c, 0);
+  document.getElementById("tree").innerHTML = h;
+}
+function filterTree() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const tree = document.getElementById("tree");
+  let shown = 0;
+  tree.querySelectorAll(".row").forEach(r => {
+    const hit = !q || r.getAttribute("data-search").includes(q);
+    r.hidden = !hit; if (hit) shown++;
+  });
+  tree.querySelectorAll(".heading, .grouphead").forEach(hd => { hd.hidden = !!q; });
+  document.getElementById("qnote").textContent = q
+    ? shown + " of " + ids.length + " nodes match “" + q + "”"
+    : ids.length + " nodes · 50 parts, 4 flows, 8 concepts";
+}
+
+/* ================= reading pane ===================================== */
+function crumbHTML(id) {
+  const chain = []; let c = id;
+  while (c) { chain.unshift(c); c = A[c] && A[c].parent; }
+  return chain.map((c, i) => i === chain.length - 1
+    ? "<span>" + esc(nameOf(c)) + "</span>"
+    : '<button data-id="' + esc(c) + '">' + esc(nameOf(c)) + "</button>").join(" › ");
+}
+function renderReading() {
+  const n = A[at];
+  let h = '<div class="crumbs">' + crumbHTML(at) + "</div>";
+  h += "<h2>" + esc(n.name) + "</h2>";
+  h += '<div class="lede">' + esc(n.line) + "</div>";
+  for (const p of (n.short || [])) h += "<p>" + esc(p) + "</p>";
+  if ((n.long || []).length) {
+    h += '<details><summary class="more">The longer reading (' + n.long.length + " paragraphs)</summary>";
+    for (const p of n.long) h += "<p>" + esc(p) + "</p>";
+    h += "</details>";
+  }
+  const stats = [];
+  if (n.lines) stats.push(n.lines.toLocaleString() + " source lines");
+  if ((n.inside || []).length) stats.push(n.inside.length + " parts inside");
+  if (n.kind === "concept") stats.push((conceptParts[at] || []).length + " readings spell it");
+  else if (n.kind === "flow") stats.push(n.steps.length + " steps through " + (n.parts || []).length + " parts");
+  else stats.push(degree(at) + " edges touch it");
+  h += '<div class="sect"><div class="stat">' + esc(stats.join("  ·  ")) + "</div></div>";
+
+  if ((n.groups || []).length) {
+    h += '<div class="sect"><h3>How the parts inside group up</h3>';
+    for (const g of n.groups) h += '<div class="stepitem"><div class="t">' + esc(g.name) + '</div><p>' + esc(g.line) + "</p></div>";
+    h += "</div>";
+  }
+  if (n.kind === "flow") {
+    h += '<div class="sect"><h3>' + n.steps.length + " steps</h3>";
+    n.steps.forEach((s, i) => {
+      h += '<div class="stepitem"><div class="n">STEP ' + (i + 1) + " · " + esc(s.kind) + "</div>" +
+        '<div class="t">' + esc(s.title) + "</div><p>" + esc(s.prose) + "</p>" +
+        '<div class="chips"><button class="chip" data-id="' + esc(s.actor) + '">in ' + esc(nameOf(s.actor)) + "</button>" +
+        (s.from ? '<button class="chip" data-id="' + esc(s.from) + '">from ' + esc(nameOf(s.from)) + "</button>" : "") +
+        (s.to ? '<button class="chip" data-id="' + esc(s.to) + '">to ' + esc(nameOf(s.to)) + "</button>" : "") +
+        "</div>" +
+        (s.at ? '<div class="anchor"><span class="p">' + esc(s.at[0]) + ":" + s.at[1] + "</span></div>" : "") +
+        "</div>";
+    });
+    h += "</div>";
+  }
+  const ev = n.anchors || n.evidence;
+  if ((ev || []).length) {
+    h += '<div class="sect"><h3>' + (n.anchors ? "Source anchors" : "Evidence") + " (" + ev.length + ")</h3>";
+    for (const a of ev) h += '<div class="anchor"><div class="w">' + esc(a[2]) + '</div><div class="p">' + esc(a[0]) + ":" + a[1] + "</div></div>";
+    h += "</div>";
+  }
+  if ((n.concepts || []).length) {
+    h += '<div class="sect"><h3>Concepts it spells</h3><div class="chips">' +
+      n.concepts.map(c => '<button class="chip" data-id="' + esc(c) + '">' + esc(nameOf(c)) + "</button>").join("") + "</div></div>";
+  }
+  if (n.kind === "concept" && (conceptParts[at] || []).length) {
+    h += '<div class="sect"><h3>Parts that spell it</h3><div class="chips">' +
+      conceptParts[at].map(c => '<button class="chip" data-id="' + esc(c) + '">' + esc(nameOf(c)) + "</button>").join("") + "</div></div>";
+  }
+  if ((RULES.length && at === "argo") || rulesFor(at).length) {
+    const rs = at === "argo" ? RULES : rulesFor(at);
+    h += '<div class="sect"><h3>Boundary rules' + (at === "argo" ? "" : " that name it") + " (" + rs.length + ")</h3>";
+    for (const r of rs) h += '<div class="ruleitem"><div class="s">' + esc(r.statement) + '</div><div class="stat">' +
+      esc(r.enforced_at[0] + ":" + r.enforced_at[1] + (r.adr ? "  ·  " + r.adr : "")) + "</div></div>";
+    h += "</div>";
+  }
+  document.getElementById("read").innerHTML = h;
+  document.getElementById("read").scrollTop = 0;
+}
+
+/* ================= docked answers =================================== */
+const QUESTIONS = [
+  { key: "in",  label: "Who reaches this?",     cap: "Every part whose own leaving list names this one. Nothing here changes the active node until you click a row." },
+  { key: "out", label: "What does it reach?",   cap: "This part's whole leaving list, in the source order, with the cargo it hands over." },
+  { key: "flow",label: "Which flows touch it?", cap: "Every flow with a step whose actor, from or to is this node." },
+  { key: "anch",label: "Where is it in source?",cap: "Every anchor recorded for this node, path and line, unshortened." }
+];
+function renderDock() {
+  const bar = document.getElementById("qbar");
+  bar.innerHTML = QUESTIONS.map(q => '<button data-q="' + q.key + '" aria-pressed="' + (question === q.key) + '">' +
+    esc(q.label) + "</button>").join("") + (question ? '<button data-q="close">Close</button>' : "");
+  const body = document.getElementById("dockbody"), dock = document.getElementById("dock");
+  if (!question) { body.hidden = true; dock.classList.remove("open"); return; }
+  body.hidden = false; dock.classList.add("open");
+  const q = QUESTIONS.find(x => x.key === question);
+  let h = '<div class="cap">' + esc(q.cap) + "</div>";
+  if (question === "in" || question === "out") {
+    const list = question === "in" ? (incoming[at] || []) : (outgoing[at] || []);
+    if (!list.length) h += '<div class="empty">Nothing. No edge in the atlas runs that way.</div>';
+    for (const e of list) {
+      const other = question === "in" ? e[0] : e[1];
+      h += '<button class="ans" data-id="' + esc(other) + '">' +
+        '<span class="who">' + esc(nameOf(other)) + (A[other] ? "" : "  (off the machine)") + "</span>" +
+        '<div class="cargo">' + esc(e[2]) + "</div>" +
+        '<div class="sense">' + esc(e[3]) + "</div></button>";
+    }
+  } else if (question === "flow") {
+    const bag = flowsTouching[at] || {};
+    if (!Object.keys(bag).length) h += '<div class="empty">No flow step happens here.</div>';
+    for (const fid of Object.keys(bag)) {
+      const f = A[fid], hits = bag[fid];
+      h += '<button class="ans" data-id="' + esc(fid) + '"><span class="who">' + esc(f.name) + "</span>" +
+        '<div class="cargo">' + (hits.length ? hits.map(i => "step " + (i + 1) + " · " + f.steps[i].title).join("<br>") : "named in the flow's reading") + "</div>" +
+        '<div class="sense">' + f.steps.length + " steps</div></button>";
+    }
+  } else {
+    const ev = A[at].anchors || A[at].evidence || [];
+    if (!ev.length) h += '<div class="empty">This node records no anchor.</div>';
+    for (const a of ev) h += '<div class="ans"><span class="who">' + esc(a[2]) + '</span><div class="cargo" style="font-family:var(--mono);font-size:10px">' + esc(a[0]) + ":" + a[1] + "</div></div>";
+  }
+  body.innerHTML = h;
+  body.scrollTop = 0;
+}
+
+/* ================= trail ============================================ */
+function renderTrail() {
+  const el = document.getElementById("trail");
+  const start = Math.max(0, hist.length - 7);
+  let h = start > 0 ? '<span class="earlier">' + start + " earlier</span>" : "";
+  for (let i = start; i < hist.length; i++) {
+    if (i > start) h += '<span class="sep">›</span>';
+    h += '<button data-hix="' + i + '"' + (i === hix ? ' class="now"' : "") + ">" + esc(nameOf(hist[i])) + "</button>";
+  }
+  el.innerHTML = h;
+  document.getElementById("back").disabled = hix <= 0;
+  document.getElementById("fwd").disabled = hix >= hist.length - 1;
+}
+
+/* ================= render =========================================== */
+function renderHead(counts) {
+  const n = A[at];
+  document.getElementById("ghName").textContent = n.name;
+  document.getElementById("ghKind").textContent = markOf(at);
+  const asp = ASPECTS.find(a => a.key === aspect);
+  const st = structureEdges(at);
+  const structureTotal = st.ins.length + st.outs.length + (n.inside || []).length;
+  const shownTotal = counts.insAll + counts.outsAll;
+  let dropped = "";
+  if (aspect !== "structure") {
+    dropped = " This filter drops the <b>" + structureTotal + "</b> structure edges and draws <b>" + shownTotal + "</b> of its own.";
+  }
+  const hid = [];
+  if (counts.hidIn) hid.push(counts.hidIn + " reaching in");
+  if (counts.hidOut) hid.push(counts.hidOut + " reaching out");
+  if (counts.hidKids) hid.push(counts.hidKids + " inside");
+  const hidText = hid.length
+    ? " <b>" + hid.join(", ") + "</b> " + (hid.length > 1 ? "are" : "is") + " collapsed into the dashed “more” marks — click one to draw them."
+    : " Nothing is collapsed: everything in this neighbourhood is drawn.";
+  document.getElementById("ghWhy").innerHTML =
+    "<b>" + esc(asp.label) + ".</b> " + asp.basis + dropped +
+    " One hop only — no neighbour's own neighbours are drawn, and the parent above is drawn under every filter." +
+    " Neighbours are ordered by <b>" + ORDER_WORDS[ordering] + "</b>." + hidText +
+    (counts.cutLabels ? " <b>" + counts.cutLabels + "</b> edge label" + (counts.cutLabels > 1 ? "s are" : " is") +
+      " cut at the ellipsis; the whole text is in the reading, and in the answer panel below it." : "");
+}
+function render() {
+  const canvas = document.getElementById("canvas");
+  const g = buildGraph(canvas.clientWidth - 4);
+  canvas.innerHTML = g.svg;
+  renderHead(g.counts);
+  renderLegend();
+  renderReading();
+  renderDock();
+  renderTrail();
+  document.querySelectorAll("#tree .row").forEach(r =>
+    r.setAttribute("aria-current", r.getAttribute("data-id") === at ? "true" : "false"));
+  document.querySelectorAll("#aspects button").forEach(b =>
+    b.setAttribute("aria-pressed", b.getAttribute("data-aspect") === aspect ? "true" : "false"));
+}
+function go(id, opts) {
+  if (!A[id] || id === at) return;
+  at = id; expand = { in: false, out: false, kids: false };
+  if (!opts || !opts.replaceHistory) {
+    hist = hist.slice(0, hix + 1); hist.push(id); hix = hist.length - 1;
+    history.pushState({ at: id }, "", "?at=" + encodeURIComponent(id));
+  }
+  render();
+}
+function jump(i) {
+  if (i < 0 || i >= hist.length) return;
+  hix = i; at = hist[i]; expand = { in: false, out: false, kids: false };
+  history.pushState({ at: at }, "", "?at=" + encodeURIComponent(at));
+  render();
+}
+
+/* ================= wiring =========================================== */
+document.getElementById("aspects").innerHTML = ASPECTS.map(a =>
+  '<button data-aspect="' + a.key + '">' + esc(a.label) + "</button>").join("");
+document.getElementById("aspects").addEventListener("click", e => {
+  const b = e.target.closest("button[data-aspect]"); if (!b) return;
+  aspect = b.getAttribute("data-aspect"); expand = { in: false, out: false, kids: false }; render();
+});
+document.getElementById("ord").addEventListener("change", e => { ordering = e.target.value; render(); });
+document.getElementById("canvas").addEventListener("click", e => {
+  const bun = e.target.closest("[data-bundle]");
+  if (bun) { expand[bun.getAttribute("data-bundle")] = true; render(); return; }
+  const g = e.target.closest("g.node"); if (!g) return;
+  const id = g.getAttribute("data-id"); if (id && A[id]) go(id);
+});
+document.getElementById("canvas").addEventListener("keydown", e => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const t = document.activeElement; if (!t || !t.closest) return;
+  e.preventDefault(); t.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+});
+document.body.addEventListener("click", e => {
+  const b = e.target.closest("[data-id]");
+  if (b && !e.target.closest("#canvas")) { const id = b.getAttribute("data-id"); if (A[id]) { go(id); return; } }
+  const t = e.target.closest("[data-hix]"); if (t) { jump(+t.getAttribute("data-hix")); return; }
+  const q = e.target.closest("[data-q]");
+  if (q) { const k = q.getAttribute("data-q"); question = (k === "close" || question === k) ? null : k; renderDock(); }
+});
+document.getElementById("back").addEventListener("click", () => jump(hix - 1));
+document.getElementById("fwd").addEventListener("click", () => jump(hix + 1));
+document.getElementById("q").addEventListener("input", filterTree);
+window.addEventListener("keydown", e => {
+  if (e.key === "/" && document.activeElement.id !== "q") { e.preventDefault(); document.getElementById("q").focus(); }
+  if (e.altKey && e.key === "ArrowLeft") jump(hix - 1);
+  if (e.altKey && e.key === "ArrowRight") jump(hix + 1);
+});
+window.addEventListener("popstate", e => {
+  const id = (e.state && e.state.at) || new URLSearchParams(location.search).get("at");
+  if (id && A[id]) { at = id; expand = { in: false, out: false, kids: false }; render(); }
+});
+let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(render, 120); });
+
+buildTree();
+filterTree();
+const start = new URLSearchParams(location.search).get("at");
+at = (start && A[start]) ? start : "argo";
+hist = [at]; hix = 0;
+const params = new URLSearchParams(location.search);
+if (params.get("ask")) question = params.get("ask");
+if (ASPECTS.some(a => a.key === params.get("aspect"))) aspect = params.get("aspect");
+(params.get("open") || "").split(",").forEach(k => { if (k in expand) expand[k] = true; });
+render();
+})();
+</script>
+</body>
+</html>

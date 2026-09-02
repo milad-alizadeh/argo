@@ -18,10 +18,12 @@ for (const file of readdirSync(dir).filter(f => f.endsWith('.json')).sort()) {
 
 /* Which part spells which concept is DERIVED, never written down twice. A concept's evidence
    names a file, and a part's anchors name the directories it covers. The longest directory that
-   is a prefix of the evidence path owns that concept. */
+   is a prefix of the evidence path owns that concept. Only leaf parts compete, because a
+   container's anchors also point into its children's directories and would win every tie. */
+const isLeaf = n => n.bottom === true || (n.inside || []).length === 0;
 const covers = {};
 for (const [id, n] of Object.entries(atlas)) {
-  if (n.kind !== 'part') continue;
+  if (n.kind !== 'part' || !isLeaf(n) || n.external) continue;
   covers[id] = [...new Set((n.anchors || []).map(([p]) => p.slice(0, p.lastIndexOf('/'))))];
 }
 for (const [cid, c] of Object.entries(atlas)) {
@@ -37,6 +39,28 @@ for (const [cid, c] of Object.entries(atlas)) {
     atlas[best].concepts = atlas[best].concepts || [];
     if (!atlas[best].concepts.includes(cid)) atlas[best].concepts.push(cid);
   }
+}
+
+/* What runs between a container's children is DERIVED from those children's own `leaving` edges.
+   Each entry is [from, to, cargo, sense], and both directions of one pair survive because `sense`
+   says which is the data handoff and which is the call. */
+for (const [cid, c] of Object.entries(atlas)) {
+  if (!(c.inside || []).length) continue;
+  const held = new Set(c.inside);
+  c.among = c.inside.flatMap(id => (atlas[id]?.leaving || [])
+    .filter(([, to]) => held.has(to))
+    .map(([, to, cargo, sense]) => [id, to, cargo, sense]));
+}
+
+/* Which parts a flow crosses is DERIVED from its own steps, in the order the flow first reaches
+   each one. A hand-written list beside the steps drifts from them. */
+for (const n of Object.values(atlas)) {
+  if (n.kind !== 'flow') continue;
+  const seen = [];
+  for (const s of n.steps || []) for (const id of [s.from, s.actor, s.to]) {
+    if (id && !seen.includes(id)) seen.push(id);
+  }
+  n.parts = seen;
 }
 
 /* A chart cannot draw an id that no node defines, so say so before it renders. */

@@ -11,9 +11,9 @@
       "ArgoUI draws the whole macOS cockpit. It reads one Hub and turns it into a plain value called `CockpitPresentation`. That value goes down to the roster, the deck, the toolbar and the Tickets room. The user types into a composer, and those words reach a running agent process through the engine's `SessionDriver`."
     ],
     "long": [
-      "The window is a split view. On the leading side the roster lists Sessions. On the trailing side an opaque deck fills the pane, and which room the window is in decides what the deck holds. The Sessions room puts four zones across that deck — the rail, the reading, the overview lane and the evidence panel. A glass canopy floats over the top edge, and one glass vessel sits at the foot.",
-      "Almost nothing here holds state. `CockpitPresentation+Hub.swift` is the single file allowed to read a live Hub. A build script fails the build if any other file here names one. Every surface below takes values and closures. The same view renders from a live Session, from a fixture, or from a preview.",
-      "The cockpit is not a viewer. `CockpitActions.drive` is the engine's `SessionDriver`, and the composer's send closure calls it with the text and the attachments the user assembled. The permission prompt answers a blocked agent the same way, and the mode picker walks the autonomy ladder one rung at a time. Three smaller sets sit beside all of that. They are the fixtures every specimen is built from, the Binding health that gates a provider write, and the focus reader behind every ring."
+      "The window is a split view. On the leading side the roster lists Sessions. On the trailing side an opaque deck fills the pane, and which room the window is in decides what the deck holds. The Sessions room puts four zones across that deck — the rail, the reading, the overview lane and the evidence panel. A bar floats over the top edge, and the box you type into sits at the bottom.",
+      "Almost nothing here holds state. `CockpitPresentation+Hub.swift` is the one file that reads a live Hub. A build script fails the build if any other file here names one. Every other surface in ArgoUI takes values and closures. The same view draws from a live Session, from a fixture, or from a preview.",
+      "The cockpit is not a viewer. `CockpitActions.drive` is the engine's `SessionDriver`, and the composer's send closure calls it with the text and the attachments the user added. The permission prompt answers a blocked agent the same way, and the mode picker walks the autonomy ladder one rung at a time. Three smaller sets sit beside all of that. They are the fixtures every specimen is built from, the Binding health that gates a provider write, and the focus reader behind every ring."
     ],
     "inside": [
       "u-shell",
@@ -38,158 +38,42 @@
       "u-contract",
       "u-specimen"
     ],
-    "among": [
-      [
-        "u-shell",
-        "u-sidebar",
-        "the Session rows and the id the window has selected"
-      ],
-      [
-        "u-shell",
-        "u-deck",
-        "the selected Session, its feed rows, and the closures that drive it"
-      ],
-      [
-        "u-shell",
-        "u-toolbar",
-        "the active Project, the checkout head and the connection chip reading"
-      ],
-      [
-        "u-shell",
-        "u-tickets",
-        "the Project's ticket listing and the ticket number the room is open on"
-      ],
-      [
-        "u-shell",
-        "u-connect",
-        "the Connect panel's reading and whether the panel is up"
-      ],
-      [
-        "u-deck",
-        "u-feed",
-        "the rows to draw, and which row the reader opened"
-      ],
-      [
-        "u-feed",
-        "u-composer",
-        "the vessel the feed column builds, and the clearance under it"
-      ],
-      [
-        "u-deck",
-        "u-composer",
-        "which vessel to draw, plus the send, stop and mode closures"
-      ],
-      [
-        "u-deck",
-        "u-header",
-        "the header value for the Session above the reading"
-      ],
-      [
-        "u-deck",
-        "u-minimap",
-        "the feed's table handle, which carries the measured row heights"
-      ],
-      [
-        "u-deck",
-        "u-evidence",
-        "the tool results kept for the row the reader opened"
-      ],
-      [
-        "u-deck",
-        "u-plan",
-        "the newest plan the record carries"
-      ],
-      [
-        "u-feed",
-        "u-agents",
-        "the delegation calls the rail lists as chips"
-      ],
-      [
-        "u-feed",
-        "u-ask",
-        "a question, and whether Argo's gate still holds it open"
-      ],
-      [
-        "u-feed",
-        "u-call",
-        "one tool call as a line, or a run of quiet calls folded into a survey"
-      ],
-      [
-        "u-feed",
-        "u-media",
-        "a run of pictures folded into one gallery row"
-      ],
-      [
-        "u-feed",
-        "u-prose",
-        "a message or a thought, measured and drawn at the reading width"
-      ],
-      [
-        "u-prose",
-        "u-mermaid",
-        "a mermaid fence, read into a plan and laid out once per source"
-      ],
-      [
-        "u-minimap",
-        "u-prose",
-        "the wrapped line widths a paragraph's miniature rects are drawn from"
-      ],
-      [
-        "u-media",
-        "u-evidence",
-        "the decoded picture state and the bounded bitmap cache behind it"
-      ],
-      [
-        "u-tickets",
-        "u-connect",
-        "whether the bound port admits a write, and why it does not"
-      ],
-      [
-        "u-specimen",
-        "u-shell",
-        "a fixture presentation, so a named state renders with no Hub behind it"
-      ],
-      [
-        "u-contract",
-        "u-atoms",
-        "the palette, the type roles and the spacing every control reads"
-      ],
-      [
-        "u-atoms",
-        "u-deck",
-        "the chrome bar material and the focus ring the zones draw with"
-      ]
-    ],
     "leaving": [
       [
         "ui",
         "engine",
-        "one Turn of text and attachments, put to a Session over SessionDriver"
+        "one Turn of text and attachments, put to a Session over SessionDriver",
+        "call"
       ],
       [
         "ui",
         "engine",
-        "a permission decision, an ask answer and a mode change, all keyed by Session id"
+        "a permission decision, an ask answer and a mode change, all keyed by Session id",
+        "call"
       ],
       [
         "ui",
         "engine",
-        "the Hub's Sessions, checkout head and connection, read in one file only"
+        "the Hub's Sessions, checkout head and connection, read in one file only",
+        "call"
       ],
       [
         "ui",
         "engine",
-        "TranscriptEvent values, which the feed and the plan both project into rows"
+        "TranscriptEvent values, which the feed and the plan both project into rows",
+        "call"
       ],
       [
         "ui",
         "app",
-        "the intents the shell raises — add a Project, reveal it, spawn a Session"
+        "the intents the shell raises — add a Project, reveal it, spawn a Session",
+        "call"
       ],
       [
         "ui",
         "app",
-        "the specimen a launch names, so the render harness draws one state and stops"
+        "the specimen a launch names, so the render harness draws one state and stops",
+        "call"
       ]
     ],
     "concepts": [],
@@ -260,7 +144,45 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenLaunch.swift"
         ]
       }
-    }
+    },
+    "groups": [
+      {
+        "id": "rooms",
+        "name": "The window and its tabs",
+        "line": "The window splits in two. The tab you are on decides what fills the right side.",
+        "path": "ArgoUI/{Shell, Shell/Sidebar, Shell/Toolbar, Shell/Connect, Shell/Tickets}"
+      },
+      {
+        "id": "zones",
+        "name": "The four columns of the session view",
+        "line": "The session view has four columns: the list of agents, the transcript, a scroll map, and a details pane.",
+        "path": "ArgoUI/Shell/{Deck, Deck/Feed, Deck/Feed/Agents, Deck/Evidence, Deck/Minimap}"
+      },
+      {
+        "id": "canopy-vessel",
+        "name": "The header bar and the input bar",
+        "line": "A bar floats over the top edge, and the box you type into sits at the bottom.",
+        "path": "ArgoUI/Shell/Deck/{Header, Composer, Plan}"
+      },
+      {
+        "id": "rows",
+        "name": "The kinds of row in the transcript",
+        "line": "Each kind of row carries its own content and draws itself, instead of sharing one text field.",
+        "path": "ArgoUI/Shell/Deck/Feed/{Ask, Call, Media, Prose}"
+      },
+      {
+        "id": "modules",
+        "name": "Shared pieces every screen uses",
+        "line": "No single screen owns these. Every screen uses them.",
+        "path": "No one folder — ArgoUI/{Atoms, Focus, VisualContract, Specimen}, plus Shell/Deck/Feed/Prose/Mermaid and Shell/Fixtures"
+      }
+    ],
+    "path": "apps/macOS/Packages/ArgoUI/Sources/ArgoUI",
+    "key": [
+      3,
+      0,
+      2
+    ]
   },
   "u-shell": {
     "id": "u-shell",
@@ -272,12 +194,12 @@
     "lines": 2546,
     "bottom": true,
     "short": [
-      "This is where a window starts. `CockpitPresentation` carries the Projects, the Sessions, the git head and the connection state as plain values. `CockpitPresentation+Hub.swift` builds that value, and it is the only file in ArgoUI permitted to read live Hub state. Everything below takes the value and never reaches past it."
+      "This is where a window starts. `CockpitPresentation` carries the Projects, the Sessions, the git head and the connection state as plain values. `CockpitPresentation+Hub.swift` builds that value, and it is the only file in ArgoUI permitted to read live Hub state. Every other file takes the value and never reaches past it."
     ],
     "long": [
-      "The window's whole input is one struct. It lists the registered Projects, the Session the Hub reports, the checkout head and the connection. A build script enforces the seam. No other file in this target may name the Hub, and the projection must account for every public fact `HubSession` carries or the build fails.",
-      "Beside the value sits `CockpitActions`, the closures the shell raises. Adding a Project, revealing a folder and writing the registry are all the app target's work, so a view only says what it wants. One field is different. `drive` is the engine's `SessionDriver`. `CockpitView+Intents.swift` binds its `send` to the Session the composer addresses. A user's typing reaches a live agent this way.",
-      "`CockpitNavigationModel` holds ids and nothing else — the room, the selected Session, the open ticket, the seam widths. Restoration reads a stale id and repoints rather than resurrecting a Session. `CockpitView` is the one view that reads that model, and `SessionState` fixes the single word and colour each status is worth. The menu bar's items are published from here too. `NavigateCommands` moves the room, and `SessionCommands` renames or archives whatever the roster has selected."
+      "The window's whole input is one struct. It lists the registered Projects, the Session the Hub reports, the checkout head and the connection. A build script enforces the seam. No other file in this target names the Hub, and the projection must account for every public fact `HubSession` carries or the build fails.",
+      "Beside the value sits `CockpitActions`, the closures the shell raises. The app target does the work of adding a Project, revealing a directory and writing the registry, so a view only says what it wants. One field is different. `drive` is the engine's `SessionDriver`. `CockpitView+Intents.swift` binds its `send` to the Session the composer addresses. A user's typing reaches a live agent this way.",
+      "`CockpitNavigationModel` holds ids and nothing else — the room, the selected Session, the open ticket, the seam widths. Restoration reads a stale id and repoints rather than resurrecting a Session. `CockpitView` is the one view that reads that model, and `SessionState` fixes the single word and color each status is worth. This file also publishes the menu bar's items. `NavigateCommands` moves the room, and `SessionCommands` renames or archives whatever the roster selected."
     ],
     "inside": [],
     "among": [],
@@ -285,32 +207,38 @@
       [
         "u-shell",
         "u-sidebar",
-        "the projected Session rows and the id the window selected"
+        "the projected Session rows and the id the window selected",
+        "data"
       ],
       [
         "u-shell",
         "u-deck",
-        "the selected Session, its rows, and the send, stop and decide closures"
+        "the selected Session, its rows, and the send, stop and decide closures",
+        "data"
       ],
       [
         "u-shell",
         "u-toolbar",
-        "the active Project, the checkout head and the connection chip reading"
+        "the active Project, the checkout head and the connection chip reading",
+        "data"
       ],
       [
         "u-shell",
         "u-tickets",
-        "the Project's ticket listing and the ticket the deck is open on"
+        "the Project's ticket listing and the ticket the deck is open on",
+        "data"
       ],
       [
         "u-shell",
         "u-connect",
-        "the panel reading, and the port health that qualifies it"
+        "the panel reading, and the port health that qualifies it",
+        "data"
       ],
       [
         "u-shell",
         "engine",
-        "one Turn of text and attachments, put to a Session over SessionDriver"
+        "one Turn of text and attachments, put to a Session over SessionDriver",
+        "call"
       ]
     ],
     "concepts": [],
@@ -405,7 +333,21 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift"
         ]
       }
-    }
+    },
+    "group": "rooms",
+    "region": {
+      "parent": null,
+      "z": 0,
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView.swift",
+        121
+      ]
+    },
+    "key": [
+      0,
+      4,
+      6
+    ]
   },
   "u-sidebar": {
     "id": "u-sidebar",
@@ -413,16 +355,16 @@
     "depth": 2,
     "parent": "ui",
     "name": "The session roster",
-    "line": "It lists the Sessions on the sidebar and holds their order still while somebody is reading.",
+    "line": "It lists the Sessions on the sidebar and holds their order still while somebody reads.",
     "lines": 1333,
     "bottom": true,
     "short": [
       "The roster is the window's leading pane. It projects each Session into a row carrying a title, a worktree label, a state word and a clock. The list sits under the rooms strip. It also decides the published order, because the Hub sorts by newest activity and that key moves every time either agent writes."
     ],
     "long": [
-      "`SessionRosterProjection` turns a `CockpitPresentation.Session` into a `Row`. The row carries the title, the slash command it opened with, and the state word. It also carries the shortest worktree suffix that tells this Session apart from its neighbours. Archived Sessions go to a second list behind the foot, which is a decision the projection makes rather than the view.",
-      "`RosterListing` runs that projection and then publishes the rows in the order `RosterOrder` is holding. `ShellSidebar` freezes that order for as long as the window is front, and lets it re-settle while the window is not. A roster that re-sorted under the pointer would move the row the reader was about to click.",
-      "`SessionNavigator` draws the list. Archiving and renaming are closures with inert defaults, so a preview or a specimen draws the gesture with no store wired behind it. The renaming row is held above the rows, because the menu bar's Rename opens it too."
+      "`SessionRosterProjection` turns a `CockpitPresentation.Session` into a `Row`. The row carries the title, the slash command it opened with, and the state word. It also carries the shortest worktree suffix that tells this Session apart from its neighbors. Archived Sessions go to a second list behind the foot, which is a decision the projection makes rather than the view.",
+      "`RosterListing` runs that projection and then publishes the rows in the order `RosterOrder` holds. `ShellSidebar` freezes that order for as long as the window is front, and lets it re-settle while the window is not. A roster that re-sorts under the pointer moves the row the user is about to click.",
+      "`SessionNavigator` draws the list. The archive and the rename act are closures with inert defaults, so a preview or a specimen draws the gesture with no store behind it. The rename row sits above the rows, because the menu bar's Rename opens it too."
     ],
     "inside": [],
     "among": [],
@@ -430,22 +372,26 @@
       [
         "u-sidebar",
         "u-shell",
-        "the selected Session id, written back through a binding"
+        "the selected Session id, written back through a binding",
+        "data"
       ],
       [
         "u-sidebar",
         "u-shell",
-        "archive and rename requests, keyed by chain id"
+        "archive and rename requests, keyed by chain id",
+        "call"
       ],
       [
         "u-sidebar",
         "u-atoms",
-        "the state dot, the badge and the selected row ground"
+        "the state dot, the badge and the selected row ground",
+        "call"
       ],
       [
         "u-sidebar",
         "u-contract",
-        "the palette and the type roles a row is set in"
+        "the palette and the type roles a row is set in",
+        "call"
       ]
     ],
     "concepts": [],
@@ -504,7 +450,21 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionRow.swift"
         ]
       }
-    }
+    },
+    "group": "rooms",
+    "region": {
+      "parent": "u-shell",
+      "z": 0,
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView.swift",
+        122
+      ]
+    },
+    "key": [
+      0,
+      4,
+      1
+    ]
   },
   "u-toolbar": {
     "id": "u-toolbar",
@@ -520,8 +480,8 @@
     ],
     "long": [
       "`ShellToolbar` declares the items. Everything here is `.navigation`, which is the window's leading region over the sidebar. The Session title is deliberately absent, because the `.principal` slot parked it against the scope vessel and pushed the rooms picker into an overflow menu.",
-      "`ConnectionChip` is a factual exception chip. A healthy connection draws nothing at all. One chip serves two subjects. It reports Argo's own observation of the checkout, and the health of the active Project's provider Bindings. A second failure chrome would be a second failure language for the same reader.",
-      "`ProjectMenuProjection` turns the registered set into menu rows, so the menu's honesty claims are values a test can hold. An unreachable folder keeps its place and says `folder not found` in words. A Project nothing has observed carries no Session count rather than a zero."
+      "`ConnectionChip` is a factual exception chip. A healthy connection draws nothing at all. One chip serves two subjects. It reports Argo's own observation of the checkout, and the health of the active Project's provider Bindings. A second failure chrome is a second failure language for the same user.",
+      "`ProjectMenuProjection` turns the registered set into menu rows, so the menu's honesty claims are values a test can hold. An unreachable directory keeps its place and says `folder not found` in words. A Project nothing observed carries no Session count rather than a zero."
     ],
     "inside": [],
     "among": [],
@@ -529,22 +489,26 @@
       [
         "u-toolbar",
         "u-shell",
-        "select, add, locate, reveal and forget a Project, as raised intents"
+        "select, add, locate, reveal and forget a Project, as raised intents",
+        "call"
       ],
       [
         "u-toolbar",
         "u-connect",
-        "the port health reading the chip rolls up, and the panel it opens"
+        "the port health reading the chip rolls up, and the panel it opens",
+        "call"
       ],
       [
         "u-toolbar",
         "u-deck",
-        "the evidence panel toggle, which the deck owns as a binding"
+        "the evidence panel toggle, which the deck owns as a binding",
+        "call"
       ],
       [
         "u-toolbar",
         "u-atoms",
-        "the badge, the glyph and the chrome bar material"
+        "the badge, the glyph and the chrome bar material",
+        "call"
       ]
     ],
     "concepts": [],
@@ -604,7 +568,21 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ConnectionChips.swift"
         ]
       }
-    }
+    },
+    "group": "rooms",
+    "region": {
+      "parent": "u-shell",
+      "z": 0,
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView.swift",
+        140
+      ]
+    },
+    "key": [
+      0,
+      1,
+      2
+    ]
   },
   "u-connect": {
     "id": "u-connect",
@@ -612,15 +590,15 @@
     "depth": 2,
     "parent": "ui",
     "name": "Connecting a project",
-    "line": "It sets a Project up against its providers and says whether a write may be attempted.",
+    "line": "It configures a Project against its providers and says whether Argo can attempt a write.",
     "lines": 2171,
     "bottom": true,
     "short": [
-      "This is the panel a new Project is created in, and the panel Project Settings re-enters. Three rows in a fixed order — a folder, the two ports, and the companion plugin — completable in any order. It also reads how each Binding is doing, and folds that into the one toolbar chip and into every write control."
+      "This is the panel that creates a new Project, and the panel Project Settings re-enters. Three rows stand in a fixed order — a directory, the two ports, and the companion plugin. The user can complete them in any order. It also reads how each Binding is doing, and folds that into the one toolbar chip and into every write control."
     ],
     "long": [
-      "`ConnectPanel` renders `ConnectReading` through a projection, so its honesty claims are values rather than view code. A folder alone makes a Project, and it is the floor everything else unlocks. `WelcomeScreen` says what Argo does in three benefit rows before anything is asked of the user, with no honesty tiers on screen.",
-      "A grant hands back its challenge before it starts waiting, and `DeviceCodeCard` draws that wait. GitHub's challenge carries a code to type. Linear's is a redirect and carries none, so the code row is simply absent rather than filled with something to look at.",
+      "`ConnectPanel` draws `ConnectReading` through a projection, so its honesty claims are values rather than view code. A directory alone makes a Project, and it is the floor everything else unlocks. `WelcomeScreen` says what Argo does in three benefit rows before Argo asks the user for anything, with no honesty tiers on screen.",
+      "A grant hands back its challenge before it waits, and `DeviceCodeCard` draws that wait. GitHub's challenge carries a code to type. Linear's is a redirect and carries none, so the code row is absent rather than filled with something to look at.",
       "`ConnectionHealthReading` pairs each port with the Account it reads through and that Binding's health. `WriteAdmission` answers the one question a control needs. Attempt it, refuse it and name this identity, or draw nothing where there is no Binding. `WriteControlState` folds that with where the last attempt got to, and nothing here auto-retries."
     ],
     "inside": [],
@@ -629,22 +607,26 @@
       [
         "u-connect",
         "u-toolbar",
-        "the rolled-up chip reading, and nothing when every Binding is healthy"
+        "the rolled-up chip reading, and nothing when every Binding is healthy",
+        "data"
       ],
       [
         "u-connect",
         "u-tickets",
-        "whether the ticket port admits a write, and the refusal's own words"
+        "whether the ticket port admits a write, and the refusal's own words",
+        "data"
       ],
       [
         "u-connect",
         "u-shell",
-        "the readings that qualify a Session — whether a ticket provider is bound"
+        "the readings that qualify a Session — whether a ticket provider is bound",
+        "data"
       ],
       [
         "u-connect",
         "engine",
-        "a grant to start, a scope set to save, and the Account records read back"
+        "a grant to start, a scope set to save, and the Account records read back",
+        "call"
       ]
     ],
     "concepts": [],
@@ -716,7 +698,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Connect/ConnectPanelActions.swift"
         ]
       }
-    }
+    },
+    "group": "rooms",
+    "region": {
+      "parent": "u-shell",
+      "z": 1,
+      "room": "connect",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView.swift",
+        146
+      ]
+    },
+    "key": [
+      0,
+      2,
+      4
+    ]
   },
   "u-tickets": {
     "id": "u-tickets",
@@ -728,12 +725,12 @@
     "lines": 4859,
     "bottom": true,
     "short": [
-      "The Tickets room fills both halves of the window's split view. The sidebar carries the saved views and the Next-up hero. The deck carries the backlog list on the left and one ticket on the right. Starting a ticket spawns a Session, seeds its first turn with the command the ticket asks for, and takes the window to the Sessions room."
+      "The Tickets room fills both halves of the window's split view. The sidebar carries the saved views and the Next-up hero. The deck carries the backlog list on the left and one ticket on the right. A ticket start opens a Session, seeds its first Turn with the command the ticket asks for, and takes the window to the Sessions room."
     ],
     "long": [
-      "`TicketsReading` is the room's whole input — the provider's items, which of them a Session has claimed, and whether every live Session's link was read. `TicketsRoomProjection` folds that into one `Room` value. The sidebar's counts are arithmetic over the same list the deck draws, computed once, so a rail can never disagree with the rows beside it.",
-      "`BacklogList` is the leading pane, banded by priority over the tree's roots. `TicketDetail` is the trailing pane, one scrolling column with no inner split. At the ideal window it is about 480 points wide. A second column inside it would leave neither half readable. The facts sit in a strip under the title instead.",
-      "`TicketsToolbar` puts every control the room has on the window's one row, read left to right. `NextUp` states one ticket worth picking up, or which of three reasons there is none. `TicketStart` resolves the command from the ticket's labels and the designs this checkout has settled, then hands the seeded turn to the spawn."
+      "`TicketsReading` is the room's whole input — the provider's items, which of them a Session claimed, and whether every live Session's link was read. `TicketsRoomProjection` folds that into one `Room` value. The sidebar's counts are arithmetic over the same list the deck draws, computed once, so a rail can never disagree with the rows beside it.",
+      "`BacklogList` is the leading pane, banded by priority over the tree's roots. `TicketDetail` is the trailing pane, one scrolling column with no inner split. At the ideal window it is about 480 points wide. A second column inside it leaves neither half readable. The facts sit in a strip under the title instead.",
+      "`TicketsToolbar` puts every control the room has on the window's one row, read left to right. `NextUp` states one ticket worth taking, or which of three reasons there is none. `TicketStart` resolves the command from the ticket's labels and the designs this Project settled, then hands the seeded Turn to the start."
     ],
     "inside": [],
     "among": [],
@@ -741,22 +738,26 @@
       [
         "u-tickets",
         "u-shell",
-        "a Start intent — spawn a Session, seed its first turn, switch room"
+        "a Start intent — spawn a Session, seed its first turn, switch room",
+        "call"
       ],
       [
         "u-tickets",
         "u-connect",
-        "the write admission that greys the compose control, and its refusal words"
+        "the write admission that greys the compose control, and its refusal words",
+        "call"
       ],
       [
         "u-tickets",
         "u-atoms",
-        "the label chips, the delivery dot and the disclosure twist"
+        "the label chips, the delivery dot and the disclosure twist",
+        "call"
       ],
       [
         "u-tickets",
         "engine",
-        "Ticket values, delivery facts and the one ticket a link asks to be read"
+        "Ticket values, delivery facts and the one ticket a link asks to be read",
+        "call"
       ]
     ],
     "concepts": [],
@@ -834,7 +835,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Tickets/Toolbar/NewTicketComposer.swift"
         ]
       }
-    }
+    },
+    "group": "rooms",
+    "region": {
+      "parent": "u-shell",
+      "z": 0,
+      "room": "tickets",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView.swift",
+        117
+      ]
+    },
+    "key": [
+      0,
+      1,
+      2
+    ]
   },
   "u-deck": {
     "id": "u-deck",
@@ -842,16 +858,16 @@
     "depth": 2,
     "parent": "ui",
     "name": "The deck and its zones",
-    "line": "It is the opaque plane filling the detail pane, and it decides which zones open at this width.",
+    "line": "It is the opaque plane that fills the detail pane, and it decides which zones open at this width.",
     "lines": 1203,
     "bottom": true,
     "short": [
-      "The deck is one surface, flush to the window. `InstrumentDeckShell` paints it and switches on the room. In the Sessions room, `DeckContentRow` lays the zones across it — rail, reading, overview lane, then the evidence panel outboard. A glass canopy floats over the top edge, and one glass vessel sits at the foot."
+      "The deck is one surface, flush to the window. `InstrumentDeckShell` draws it and switches on the room. In the Sessions room, `DeckContentRow` lays the zones across it — rail, reading, overview lane, then the evidence panel outboard. A bar floats over the top edge, and the box you type into sits at the bottom."
     ],
     "long": [
-      "`DeckZoning` decides which zones exist at a given width and how wide each one opens. It is rebuilt from the width `GeometryReader` reports on every layout pass, so it holds no state. `DeckSeams` carries the widths the reader dragged, passed in from above. The zone tree is rebuilt on every Session switch, and a seam owned inside it would lose its drag.",
-      "The slot at the bottom is singular. `DeckVessel` is an enum with four cases — the composer, a pending permission prompt, a reason there is no field, or nothing selected. `resolve` fixes the order. An undriveable Session outranks everything, because a prompt whose gate died with the process answers nothing.",
-      "`DeckIntents` carries what that vessel does, beside the value that says what it draws. Send, decide, revoke, stop and set-mode are all closures with inert defaults. That split lets a specimen render the vessel with no terminal behind it. The same view draws a live agent and a screenshot."
+      "`DeckZoning` decides which zones exist at a given width and how wide each one opens. The deck builds it again from the width `GeometryReader` reports on every layout pass, so it holds no state. `DeckSeams` carries the widths the user dragged, handed down from the caller. The zone tree is rebuilt on every Session switch, and a seam owned inside it loses its drag.",
+      "The slot at the bottom is singular. `DeckVessel` is an enum with four cases — the composer, a pending permission prompt, a reason there is no field, or nothing selected. `resolve` fixes the order. A Session Argo cannot drive outranks everything, because a prompt whose gate died with the process answers nothing.",
+      "`DeckIntents` carries what that vessel does, beside the value that says what it draws. Send, decide, revoke, stop and set-mode are all closures with inert defaults. That split lets a specimen draw the vessel with no terminal behind it. The same view draws a live agent and a screenshot."
     ],
     "inside": [],
     "among": [],
@@ -859,42 +875,50 @@
       [
         "u-deck",
         "u-feed",
-        "the rows, the open row, and whether a seam is being dragged"
+        "the rows, the open row, and whether a seam is being dragged",
+        "data"
       ],
       [
         "u-deck",
         "u-composer",
-        "the resolved vessel case, and the closures that reach the Session"
+        "the resolved vessel case, and the closures that reach the Session",
+        "data"
       ],
       [
         "u-deck",
         "u-header",
-        "the header value the canopy and the tab line draw"
+        "the header value the canopy and the tab line draw",
+        "data"
       ],
       [
         "u-deck",
         "u-minimap",
-        "the feed's table handle, which the lane maps without touching the rows"
+        "the feed's table handle, which the lane maps without touching the rows",
+        "data"
       ],
       [
         "u-deck",
         "u-evidence",
-        "the kept results of the row the reader opened"
+        "the kept results of the row the reader opened",
+        "data"
       ],
       [
         "u-deck",
         "u-plan",
-        "the plan in force, drawn as a pill floating over the vessel"
+        "the plan in force, drawn as a pill floating over the vessel",
+        "data"
       ],
       [
         "u-deck",
         "u-agents",
-        "the Session's Subagents, and which one the feed is scoped to"
+        "the Session's Subagents, and which one the feed is scoped to",
+        "data"
       ],
       [
         "u-deck",
         "u-tickets",
-        "the two views the Tickets room fills the split view's slots with"
+        "the two views the Tickets room fills the split view's slots with",
+        "call"
       ]
     ],
     "concepts": [],
@@ -966,7 +990,21 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/InstrumentDeckShell.swift"
         ]
       }
-    }
+    },
+    "group": "zones",
+    "region": {
+      "parent": "u-shell",
+      "z": 0,
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/InstrumentDeckShell.swift",
+        70
+      ]
+    },
+    "key": [
+      0,
+      1,
+      2
+    ]
   },
   "u-header": {
     "id": "u-header",
@@ -974,16 +1012,16 @@
     "depth": 2,
     "parent": "ui",
     "name": "The session header",
-    "line": "It states which Session the deck is showing, what it is running on, and how full its context is.",
+    "line": "It states which Session the deck draws, what it is running on, and how full its context is.",
     "lines": 1256,
     "bottom": true,
     "short": [
-      "Above the reading, the canopy names the Session and the tab line carries its instruments. `SessionHeaderProjection` builds one `Header` value with the branch, the access mark, the elapsed time, the model name and the spend. The context bar under it shows how much of the window is held, with both policy thresholds standing as ticks."
+      "Above the reading, the canopy names the Session and the tab line carries its instruments. `SessionHeaderProjection` builds one `Header` value with the branch, the access mark, the elapsed time, the model name and the spend. The context bar under it states how much of the window is held, with both policy thresholds standing as ticks."
     ],
     "long": [
-      "Every fact is optional where Argo has not read it. The checkout kind is `nil` until git has been read, because a mark is a claim that the folder is a worktree. The access mark says whether Argo can steer this Session at all. Managed, external and orphaned each carry their word and colour together.",
-      "`ContextBar` measures its own width before drawing, because the fill and both ticks are fractions of the track. The ticks let a reader judge the reading before it changes colour, which is the point of drawing thresholds rather than only a state.",
-      "`SessionHeaderProjection` is split across files by subject — the facts, the context, the guide, the handoff and the spend. `SessionHandoffButton` hands the shown Session's work to a fresh one. Its closure is inert by default, so a specimen draws the button without spawning anything."
+      "Every fact is optional where Argo did not read it. The checkout kind is `nil` until Argo reads git, because a mark is a claim that the directory is a worktree. The access mark says whether Argo can drive this Session at all. Managed, external and orphaned each carry their word and color together.",
+      "`ContextBar` measures its own width before it draws, because the fill and both ticks are fractions of the track. The ticks let the user judge the fill before it changes color, which is the point of drawing thresholds rather than only a state.",
+      "`SessionHeaderProjection` is split across files by subject — the facts, the context, the guide, the handoff and the spend. `SessionHandoffButton` hands the drawn Session's work to a fresh one. Its closure is inert by default, so a specimen draws the button and starts nothing."
     ],
     "inside": [],
     "among": [],
@@ -991,22 +1029,26 @@
       [
         "u-header",
         "u-deck",
-        "the header value the canopy and the tab line render"
+        "the header value the canopy and the tab line render",
+        "call"
       ],
       [
         "u-header",
         "u-shell",
-        "the handoff request, performed as a spawn by the app"
+        "the handoff request, performed as a spawn by the app",
+        "call"
       ],
       [
         "u-header",
         "u-contract",
-        "the operational colour a state word is set in"
+        "the operational colour a state word is set in",
+        "call"
       ],
       [
         "u-header",
         "engine",
-        "the Session's usage totals, model name and workspace branch"
+        "the Session's usage totals, model name and workspace branch",
+        "call"
       ]
     ],
     "concepts": [],
@@ -1060,7 +1102,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Header/SessionHeaderProjection+Handoff.swift"
         ]
       }
-    }
+    },
+    "group": "canopy-vessel",
+    "region": {
+      "parent": "u-deck",
+      "z": 1,
+      "room": "sessions",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/SessionsDeck.swift",
+        70
+      ]
+    },
+    "key": [
+      0,
+      4,
+      3
+    ]
   },
   "u-composer": {
     "id": "u-composer",
@@ -1072,12 +1129,12 @@
     "lines": 4723,
     "bottom": true,
     "short": [
-      "The composer is the glass vessel at the foot of the deck. It holds the field, the attachment tray, the queued turns, the mode picker and the seam that repeats a refusal. Pressing Return calls a send closure that ends at the engine's `SessionDriver`, which puts the text to the agent's own prompt. Acceptance draws nothing here — the words come back as the user's row in the feed."
+      "The composer is the glass vessel at the foot of the deck. It holds the field, the attachment tray, the queued Turns, the mode picker and the seam that repeats a refusal. A Return calls a send closure that ends at the engine's `SessionDriver`, which puts the text to the agent's own prompt. Acceptance draws nothing here — the words come back as the user's row in the feed."
     ],
     "long": [
-      "The field is an `NSTextView` built by hand, wrapped in `ComposerTextView`. TextKit 1 is chosen for the measurement. `usedRect` counts the empty fragment a trailing newline leaves, which is the line Shift-Return just made. `ComposerKeyIntent` decides what a keystroke means before the text view acts, keyed on virtual codes so a Dvorak layout changes nothing.",
-      "What the user typed lives in `ComposerDrafts`, keyed by Session, so leaving and coming back finds the draft where it was. `ComposerDraft` carries the words, the attachment order, the queued follow-ups and the reason the last send was refused. The attachment order is the contract, because it is the order the Turn names the paths in. `ComposerDrop` and `ComposerPasteboard` turn a dropped or pasted thing into an attachment on the tray. Both take pixels as well as a file URL, because a screenshot dragged from the macOS preview has no file yet.",
-      "`ComposerMenus` runs the `/` and `@` pickers. Each list is read once when its menu opens, and never on the keystrokes after. Neither the installed skills nor the workspace tree changes while a word is typed. When the agent blocks on a decision, `PermissionPrompt` replaces the field in the same slot. Where a Session cannot be driven at all, `ComposerUnavailable` takes the slot as a row and says why in one line."
+      "The field is built by hand rather than taken whole from the framework, and it is built that way for two reasons. Argo measures the text itself, because the vessel's height follows what the user typed. And `ComposerKeyIntent` decides what a keystroke means before the text view acts, so a plain Return submits the Turn. The keyboard layout the user types on changes none of that.",
+      "What the user typed lives in `ComposerDrafts`, keyed by Session, so a user who leaves and comes back finds the draft where it was. `ComposerDraft` carries the words, the attachment order, the queued follow-ups and the reason the last send was refused. The attachment order is the contract, because it is the order the Turn names the paths in. `ComposerDrop` and `ComposerPasteboard` turn a dropped or pasted thing into an attachment on the tray. Both take pixels as well as a file URL, because a screenshot dragged from the macOS preview has no file yet.",
+      "`ComposerMenus` runs the `/` and `@` pickers. It reads each list once when its menu opens, and never on the keystrokes after. Neither the installed skills nor the workspace tree changes while a word is typed. When the agent blocks on a decision, `PermissionPrompt` replaces the field in the same slot. Where Argo cannot drive a Session at all, `ComposerUnavailable` takes the slot as a row and says why in one line."
     ],
     "inside": [],
     "among": [],
@@ -1085,22 +1142,26 @@
       [
         "u-composer",
         "u-deck",
-        "the send, stop, decide and set-mode closures the vessel was handed"
+        "the send, stop, decide and set-mode closures the vessel was handed",
+        "call"
       ],
       [
         "u-composer",
         "u-shell",
-        "the resolved Turn, which `CockpitView+Intents` binds to a Session id"
+        "the resolved Turn, which `CockpitView+Intents` binds to a Session id",
+        "call"
       ],
       [
         "u-composer",
         "u-atoms",
-        "the focus ring, the glyphs and the floating glass the vessel sits on"
+        "the focus ring, the glyphs and the floating glass the vessel sits on",
+        "call"
       ],
       [
         "u-composer",
         "engine",
-        "text plus attachments, a permission decision, and a mode rung"
+        "text plus attachments, a permission decision, and a mode rung",
+        "call"
       ]
     ],
     "concepts": [],
@@ -1196,7 +1257,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift"
         ]
       }
-    }
+    },
+    "group": "canopy-vessel",
+    "region": {
+      "parent": "u-feed",
+      "z": 1,
+      "room": "sessions",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedColumn.swift",
+        32
+      ]
+    },
+    "key": [
+      0,
+      2,
+      7
+    ]
   },
   "u-feed": {
     "id": "u-feed",
@@ -1212,8 +1288,8 @@
     ],
     "long": [
       "A row carries its own payload rather than a shared text field. A prompt keeps its verbatim words and any pasted images. A message and a thought keep the agent's characters untouched. Runs of quiet looking fold into a survey row, and runs of pictures fold into a gallery row. A Turn in flight is in no record, so `FeedWorking` arrives beside the stream and `FeedIonLoop` drives the one moving pass on screen.",
-      "`FeedTableCoordinator` is the AppKit half. It holds the scroll view, the table, the measured-height cache, the rulers and the keyboard's focused row. It also keeps the rows it has drawn, the two re-measure tasks, and the counts a suite asks a re-measure's cost with. Where the reading lands is not its decision. `FeedScrollPolicy` owns that, because five places used to answer the question and disagreed.",
-      "`FeedGeometry` keeps measured heights above every view identity a Session switch destroys. Each height is stored with the whole of what it describes. A height that is no longer true simply stops being found. There is no invalidation order to get right. `FeedTableHandle` is the shared authority the overview lane reads the same geometry through."
+      "`FeedTableCoordinator` is the AppKit half. One object owns the table, the measured heights and the keyboard's focused row. Where the reading lands is not its decision. `FeedScrollPolicy` owns that, because five places used to answer the question and disagreed.",
+      "`FeedGeometry` keeps measured heights above every view identity a Session switch destroys. Each height is stored with the whole of what it describes. A height that is no longer true stops being found. There is no invalidation order to get right. `FeedTableHandle` is the shared authority the overview lane reads the same geometry through."
     ],
     "inside": [],
     "among": [],
@@ -1221,47 +1297,56 @@
       [
         "u-feed",
         "u-composer",
-        "the vessel the feed column builds, and the clearance the rows leave under it"
+        "the vessel the feed column builds, and the clearance the rows leave under it",
+        "data"
       ],
       [
         "u-feed",
         "u-prose",
-        "a message or a thought, with the measured width it must wrap to"
+        "a message or a thought, with the measured width it must wrap to",
+        "data"
       ],
       [
         "u-feed",
         "u-call",
-        "one call, or a run of quiet calls to fold into a survey line"
+        "one call, or a run of quiet calls to fold into a survey line",
+        "data"
       ],
       [
         "u-feed",
         "u-media",
-        "a run of picture results, folded into one gallery row"
+        "a run of picture results, folded into one gallery row",
+        "data"
       ],
       [
         "u-feed",
         "u-ask",
-        "a question row, and whether Argo can still answer it"
+        "a question row, and whether Argo can still answer it",
+        "data"
       ],
       [
         "u-feed",
         "u-agents",
-        "the delegation calls the rail turns into chips"
+        "the delegation calls the rail turns into chips",
+        "data"
       ],
       [
         "u-feed",
         "u-minimap",
-        "the table handle carrying measured heights, gutters and the offset"
+        "the table handle carrying measured heights, gutters and the offset",
+        "data"
       ],
       [
         "u-feed",
         "u-evidence",
-        "the results kept on the row the reader opened"
+        "the results kept on the row the reader opened",
+        "data"
       ],
       [
         "u-feed",
         "engine",
-        "TranscriptEvent values, plus the usage totals a row reports"
+        "TranscriptEvent values, plus the usage totals a row reports",
+        "call"
       ]
     ],
     "concepts": [],
@@ -1364,7 +1449,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedView+ComposerEdge.swift"
         ]
       }
-    }
+    },
+    "group": "zones",
+    "region": {
+      "parent": "u-deck",
+      "z": 0,
+      "room": "sessions",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckContentRow.swift",
+        4
+      ]
+    },
+    "key": [
+      2,
+      0,
+      1
+    ]
   },
   "u-agents": {
     "id": "u-agents",
@@ -1372,16 +1472,16 @@
     "depth": 2,
     "parent": "ui",
     "name": "The agents rail",
-    "line": "It lists who else is working, and selecting one re-scopes the single feed onto that Subagent.",
+    "line": "It lists who else is working, and a selection re-scopes the single feed onto that Subagent.",
     "lines": 612,
     "bottom": true,
     "short": [
-      "The rail sits inboard of the reading. `FeedAgents` reads the delegation calls out of the rows on screen, one chip per Subagent, in handover order. Clicking a chip does not open a second feed. It re-scopes the one feed, and Escape comes back to the Session's own reading."
+      "The rail sits inboard of the reading. `FeedAgents` reads the delegation calls out of the rows on screen, one chip per Subagent, in handover order. A click on a chip does not open a second feed. It re-scopes the one feed, and Escape comes back to the Session's own reading."
     ],
     "long": [
-      "The rail is a list of chips rather than cards. A fan-out is the state it exists for, and it must hold about thirty. A grid of cards dies at that width. The rail is navigation and the feed stays the reading surface, which is why a chip re-scopes rather than duplicating.",
-      "One row is one child. A delegation is never collapsed into another, so two agents handed the same brief keep two chips, two endings and two spends. `FeedScope` addresses a Subagent by the delegation that started it, and not by the CLI's own id.",
-      "The rail's visibility and its chips are one reading, so a count cannot disagree with the list it counts. The deck still decides whether the rail appears at all, from the same reading the chips came from. `AgentMeter` and `AgentsRailStrip` draw the collapsed dot form when the seam is dragged narrow."
+      "The rail is a list of chips rather than cards. A fan-out is the state it exists for, and it must hold about thirty. A grid of cards dies at that width. The rail is navigation and the feed stays the reading surface, which is why a chip re-scopes the one feed and never makes a second.",
+      "One row is one child. The rail never collapses one delegation into another, so two agents handed the same brief keep two chips, two endings and two spends. `FeedScope` addresses a Subagent by the delegation that started it, and not by the CLI's own id.",
+      "The rail's visibility and its chips are one projection, so a count cannot disagree with the list it counts. The deck still decides whether the rail appears at all, from the same projection the chips came from. `AgentMeter` and `AgentsRailStrip` draw the collapsed dot form when the user drags the seam narrow."
     ],
     "inside": [],
     "among": [],
@@ -1389,17 +1489,20 @@
       [
         "u-agents",
         "u-feed",
-        "the scope the feed filters its rows down to, and Escape back to the Session"
+        "the scope the feed filters its rows down to, and Escape back to the Session",
+        "call"
       ],
       [
         "u-agents",
         "u-deck",
-        "whether there is anything to show, which decides if the zone opens"
+        "whether there is anything to show, which decides if the zone opens",
+        "call"
       ],
       [
         "u-agents",
         "u-atoms",
-        "the chip ground, the badge and the state dot"
+        "the chip ground, the badge and the state dot",
+        "call"
       ]
     ],
     "concepts": [],
@@ -1453,7 +1556,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckZoning.swift"
         ]
       }
-    }
+    },
+    "group": "zones",
+    "region": {
+      "parent": "u-deck",
+      "z": 0,
+      "room": "sessions",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckContentRow.swift",
+        4
+      ]
+    },
+    "key": [
+      3,
+      0,
+      2
+    ]
   },
   "u-ask": {
     "id": "u-ask",
@@ -1465,12 +1583,12 @@
     "lines": 1077,
     "bottom": true,
     "short": [
-      "An ask row is the feed's one attention state. `FeedAsk` holds the engine's `Ask` whole, plus whether the record answered it and what came back. A pending question is the only attention-coloured thing on the reading surface. An answered one is history and resolves quiet."
+      "An ask row is the feed's one attention state. `FeedAsk` holds the engine's `Ask` whole, plus whether the record answered it and what came back. A pending question is the only attention-colored thing on the reading surface. An answered one is history and resolves quiet."
     ],
     "long": [
-      "Pendingness is read from the existence of a result, not from its content. A question answered with an unreadable payload is settled, and the degrade-down rule says it must resolve quietly. That is why `isAnswered` and `answer` are separate fields rather than one optional.",
-      "`FeedAskProjection` answers two things the row cannot see for itself. Is the row on screen the question the gate is actually holding open, and can this Session be driven at all. Their absences mean opposite things, so `Asking` keeps them apart.",
-      "`FeedAskOfferList` draws the offered choices and `FeedAskAnswerRow` draws what was chosen. The answer travels keyed by the roster's Session id and by the gate's ask id. A Session with two questions up cannot otherwise say which one is on screen."
+      "A question is pending while no result exists. The content of that result changes nothing. A question answered with an unreadable payload is settled, and the degrade-down rule says it must resolve quietly. That is why `isAnswered` and `answer` are separate fields rather than one optional.",
+      "`FeedAskProjection` answers two things the row cannot see for itself. Is the row on screen the question the gate holds open? Can Argo drive this Session at all? Their absences mean opposite things, so `Asking` keeps them apart.",
+      "`FeedAskOfferList` draws the offered choices and `FeedAskAnswerRow` draws what the user chose. The answer travels keyed by the roster's Session id and by the gate's ask id. A Session with two questions up cannot otherwise say which one is on screen."
     ],
     "inside": [],
     "among": [],
@@ -1478,22 +1596,26 @@
       [
         "u-ask",
         "u-feed",
-        "the ask row the projection places in the stream's own order"
+        "the ask row the projection places in the stream's own order",
+        "call"
       ],
       [
         "u-ask",
         "u-shell",
-        "the chosen answer, keyed by Session id and ask id together"
+        "the chosen answer, keyed by Session id and ask id together",
+        "call"
       ],
       [
         "u-ask",
         "u-contract",
-        "the attention colour a pending question is set in"
+        "the attention colour a pending question is set in",
+        "call"
       ],
       [
         "u-ask",
         "engine",
-        "the `Ask` value verbatim, and the answer put back through the gate"
+        "the `Ask` value verbatim, and the answer put back through the gate",
+        "call"
       ]
     ],
     "concepts": [],
@@ -1547,7 +1669,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView+Intents.swift"
         ]
       }
-    }
+    },
+    "group": "rows",
+    "region": {
+      "parent": "u-feed",
+      "z": 0,
+      "room": "sessions",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRowView.swift",
+        35
+      ]
+    },
+    "key": [
+      0,
+      2,
+      4
+    ]
   },
   "u-call": {
     "id": "u-call",
@@ -1559,11 +1696,11 @@
     "lines": 1276,
     "bottom": true,
     "short": [
-      "A call row is a mark, a verb, the subject it named, and what it produced. `FeedCall` is deliberately sentence-shaped rather than tabular. Columns and a right-hand rail turned an earlier attempt into a log table. The row has no slot for a timestamp, and no field a renderer must reserve width for."
+      "A call row is a mark, a verb, the subject it named, and what it produced. `FeedCall` is deliberately sentence-shaped rather than tabular. Columns and a right-hand rail turned an earlier attempt into a log table. The row has no slot for a timestamp, and no field a view must reserve width for."
     ],
     "long": [
-      "`FeedSurveyFold` gathers consecutive quiet calls into one survey row. The run breaks at every loud row, so a fold never reaches across a mutation. That rule is what keeps the fold honest — a reader scanning collapsed lines can still see every change the agent made.",
-      "`FeedCall.Churn` carries what a mutation did in lines, but only where the record actually carried a patch to count. `Ending` says how the call finished. Results are held as a list, because one row can stand for a run of calls, and only results with something in them are kept.",
+      "`FeedSurveyFold` gathers consecutive quiet calls into one survey row. The run breaks at every loud row, so a fold never reaches across a mutation. That rule is what keeps the fold honest — a user who scans the collapsed lines can still see every change the agent made.",
+      "`FeedCall.Churn` carries what a mutation did in lines, but only where the record carried a patch to count. `Ending` says how the call finished. The row holds results as a list, because one row can stand for a run of calls. It keeps only the results with something in them.",
       "`FeedCallLine` and `FeedCommandLine` draw the line. `FeedQuietCommand` decides which shell calls are quiet enough to fold. `FeedCallLineIon` carries the running treatment while a call is still in flight."
     ],
     "inside": [],
@@ -1572,22 +1709,26 @@
       [
         "u-call",
         "u-feed",
-        "the call and survey rows the projection emits into the stream"
+        "the call and survey rows the projection emits into the stream",
+        "call"
       ],
       [
         "u-call",
         "u-evidence",
-        "the kept results a row hands the panel when it is opened"
+        "the kept results a row hands the panel when it is opened",
+        "data"
       ],
       [
         "u-call",
         "u-agents",
-        "the delegation calls the rail reads its chips from"
+        "the delegation calls the rail reads its chips from",
+        "data"
       ],
       [
         "u-call",
         "engine",
-        "the tool call and its outcome, paired by id"
+        "the tool call and its outcome, paired by id",
+        "call"
       ]
     ],
     "concepts": [],
@@ -1641,7 +1782,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/FeedEvidence.swift"
         ]
       }
-    }
+    },
+    "group": "rows",
+    "region": {
+      "parent": "u-feed",
+      "z": 0,
+      "room": "sessions",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRowView.swift",
+        20
+      ]
+    },
+    "key": [
+      0,
+      4,
+      2
+    ]
   },
   "u-media": {
     "id": "u-media",
@@ -1653,12 +1809,12 @@
     "lines": 422,
     "bottom": true,
     "short": [
-      "Screenshots are the one kind of result that gets worse the smaller it is drawn. `FeedGallery` folds a run of them into a single row of thumbnails. Six filenames say only that six reads happened, while six thumbnails say what the agent was looking at. Clicking one opens `FeedLightbox` over the whole deck."
+      "Screenshots are the one kind of result that gets worse the smaller it is drawn. `FeedGallery` folds a run of them into a single row of thumbnails. Six filenames say only that six reads happened, while six thumbnails say what the agent was looking at. A click on one opens `FeedLightbox` over the whole deck."
     ],
     "long": [
-      "A run of one is still a gallery, and that is the difference from the survey fold. Collapsing a single read loses an address and saves nothing, while one thumbnail is a picture where there was a filename. The treatment does not change with the count.",
-      "`FeedShot` settles whether a result is a picture from the file's own signature, which decodes nothing and holds nothing. Decoding happens only where a picture is actually drawn, through `MediaShowing` and the bounded cache behind it.",
-      "The lightbox covers the whole deck rather than the feed column, because a deck-width screenshot does not fit in a reading measure. Everything is a way out — the scrim is the button, and Escape answers. Its caption carries the whole path and the provenance, which is more than the thumbnail said."
+      "A run of one is still a gallery, and that is the difference from the survey fold. A collapsed single read loses an address and saves nothing, while one thumbnail is a picture where there was a filename. The treatment does not change with the count.",
+      "`FeedShot` settles whether a result is a picture from the file's own signature. It decodes nothing and holds nothing. Argo decodes a picture only where it draws one, through `MediaShowing` and the bounded cache behind it.",
+      "The lightbox covers the whole deck rather than the feed column, because a deck-width screenshot does not fit in the feed width. Everything is a way out — the scrim is the button, and Escape answers. Its caption carries the whole path and the provenance, which is more than the thumbnail said."
     ],
     "inside": [],
     "among": [],
@@ -1666,17 +1822,20 @@
       [
         "u-media",
         "u-feed",
-        "the gallery row the fold produces, in the stream's own order"
+        "the gallery row the fold produces, in the stream's own order",
+        "call"
       ],
       [
         "u-media",
         "u-evidence",
-        "the decoded picture state and the bounded bitmap cache behind it"
+        "the decoded picture state and the bounded bitmap cache behind it",
+        "call"
       ],
       [
         "u-media",
         "u-deck",
-        "the lightbox, which covers the whole plane rather than one zone"
+        "the lightbox, which covers the whole plane rather than one zone",
+        "call"
       ]
     ],
     "concepts": [],
@@ -1731,7 +1890,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Media/FeedLightbox.swift"
         ]
       }
-    }
+    },
+    "group": "rows",
+    "region": {
+      "parent": "u-feed",
+      "z": 0,
+      "room": "sessions",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRowView.swift",
+        30
+      ]
+    },
+    "key": [
+      0,
+      1,
+      3
+    ]
   },
   "u-prose": {
     "id": "u-prose",
@@ -1743,12 +1917,12 @@
     "lines": 1764,
     "bottom": true,
     "short": [
-      "A message and a thought are the same shape, and only the ink moves. `FeedMarkdown` breaks the text into blocks — paragraphs, lists, fences and pipe tables. `ProseMetrics` asks Core Text what those words actually measure, because both the feed and the overview lane need widths a character count cannot give."
+      "A message and a thought are the same shape, and only the ink moves. `FeedMarkdown` breaks the text into blocks — paragraphs, lists, fences and pipe tables. `ProseMetrics` asks Core Text what those words measure, because both the feed and the overview lane need widths a character count cannot give."
     ],
     "long": [
       "`MarkedProse` gives each inline mark the treatment it earns. A code span gets a ground rather than a hue, so the ink stays the voice's. A marked run inside a thought stays quieter than one inside a message. It reads the agent's own backticks and never guesses at a language inside them.",
       "`MarkdownTable` reads a pipe table, and what makes it a table is the delimiter row. One line of pipes on its own is a sentence with pipes in it. `MarkdownTableLayout` then places real `Text` views on rects the widths decided, because only the layout system can do that.",
-      "Every measurement is cached, since callers ask per row and per cell. `ProseCache` empties whole at its ceiling rather than evicting by age, because a miss costs one parse of one string. The wrapped answers are dropped when the reading measure moves, which is the seam under the reader's finger."
+      "Every measurement is cached, because callers ask per row and per cell. `ProseCache` empties whole at its ceiling rather than evicting by age, because a miss costs one parse of one string. The cache drops the wrapped answers when the feed width moves, which is the seam under the user's finger."
     ],
     "inside": [],
     "among": [],
@@ -1756,22 +1930,26 @@
       [
         "u-prose",
         "u-feed",
-        "a measured block of prose at the row's reading width"
+        "a measured block of prose at the row's reading width",
+        "call"
       ],
       [
         "u-prose",
         "u-mermaid",
-        "a mermaid fence, handed on to be read and laid out"
+        "a mermaid fence, handed on to be read and laid out",
+        "call"
       ],
       [
         "u-prose",
         "u-minimap",
-        "the wrapped line widths the lane draws its paragraph rects from"
+        "the wrapped line widths the lane draws its paragraph rects from",
+        "data"
       ],
       [
         "u-prose",
         "u-contract",
-        "the type roles and the span ground a marked run is set in"
+        "the type roles and the span ground a marked run is set in",
+        "call"
       ]
     ],
     "concepts": [],
@@ -1837,7 +2015,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapProse+Rects.swift"
         ]
       }
-    }
+    },
+    "group": "rows",
+    "region": {
+      "parent": "u-feed",
+      "z": 0,
+      "room": "sessions",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedRowView.swift",
+        17
+      ]
+    },
+    "key": [
+      0,
+      1,
+      2
+    ]
   },
   "u-mermaid": {
     "id": "u-mermaid",
@@ -1852,9 +2045,9 @@
       "Argo draws mermaid itself. `MermaidScan` walks a source line left to right, because such a line cannot be split on any single character. Each type has its own reader, and every reader produces the same `MermaidPlan`. `MermaidView` draws a plan and knows nothing about what read it."
     ],
     "long": [
-      "Eleven mermaid types have a reader here — flowchart, sequence, mindmap, pie, state, quadrant, journey, timeline, class, entity and gantt. `MermaidDiagram.read` asks each in turn, and the first that recognises the header answers. `Kind` carries ten cases and not eleven. A class diagram and an entity diagram both land on `compartmented`, because compartmented boxes joined by annotated relationships describe both.",
-      "Fourteen directories and 101 files sit below the top level of `Mermaid/`. Three readers — `MermaidFlowchart`, `MermaidSequence` and `MermaidPie` — sit at that top level, with their parsing and placement in the matching directories. The atlas stops at three depths, so the anchors below are a way into that work rather than a map of it.",
-      "The laid-out plan is cached on the diagram's source text. The renderer and the overview lane must read one layout, and the text is the only key both hold. `MermaidLayout` answers the same size at every proposal, since the plan behind it does not change with width. A diagram wider than the prose column scrolls, because shrinking it would take the words down with it."
+      "Eleven mermaid types have a reader here — flowchart, sequence, mindmap, pie, state, quadrant, journey, timeline, class, entity and gantt. `MermaidDiagram` asks each in turn, and the first that recognizes the header answers. `Kind` carries ten cases and not eleven. A class diagram and an entity diagram both land on `compartmented`, because compartmented boxes joined by annotated relationships describe both.",
+      "Most of `Mermaid/` sits in directories under its top level. Three readers — `MermaidFlowchart`, `MermaidSequence` and `MermaidPie` — sit at that top level, with their parsing and placement in the matching directories. The atlas stops at three depths, so the anchors on this part are a way into that work rather than a map of it.",
+      "The laid-out plan is cached on the diagram's source text. The view that draws it and the overview lane must read one layout, and the text is the only key both hold. `MermaidLayout` answers the same size at every proposal, because the plan behind it does not change with width. A diagram wider than the prose column scrolls, because it cannot shrink without taking the words down with it."
     ],
     "inside": [],
     "among": [],
@@ -1862,17 +2055,20 @@
       [
         "u-mermaid",
         "u-prose",
-        "the laid-out plan a fence becomes, cached on its source text"
+        "the laid-out plan a fence becomes, cached on its source text",
+        "data"
       ],
       [
         "u-mermaid",
         "u-minimap",
-        "the same plan's rects, so the lane maps a diagram it never re-lays"
+        "the same plan's rects, so the lane maps a diagram it never re-lays",
+        "data"
       ],
       [
         "u-mermaid",
         "u-contract",
-        "the diagram ink roles and the type the captions are set in"
+        "the diagram ink roles and the type the captions are set in",
+        "call"
       ]
     ],
     "concepts": [],
@@ -1961,7 +2157,13 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapMermaid+Rects.swift"
         ]
       }
-    }
+    },
+    "group": "modules",
+    "key": [
+      0,
+      4,
+      3
+    ]
   },
   "u-evidence": {
     "id": "u-evidence",
@@ -1969,16 +2171,16 @@
     "depth": 2,
     "parent": "ui",
     "name": "The evidence panel",
-    "line": "It shows what an opened call produced — patches, output and pictures — beside the feed that named it.",
+    "line": "It draws what an opened call produced — patches, output and pictures — beside the feed that named it.",
     "lines": 2250,
     "bottom": true,
     "short": [
       "The panel sits outboard of everything else on the deck. It takes evidence values, never a Session and never a selection, because the deck owns which row is open. A patch can be read two ways where it is markdown — the diff itself, or the document that patch made."
     ],
     "long": [
-      "`FeedEvidence` gathers what a row's calls kept. `EvidenceDiff` draws hunks with the host's own line numbers on both sides. `EvidenceOutput` draws command output, and `EvidenceMedia` draws pictures. Only markdown offers the second reading, because every other language already is its source.",
-      "Syntax colouring runs through `SyntaxHighlight`, which loads highlight.js into one JavaScript context for the whole app. A hunk is highlighted whole and then cut back into lines. A line on its own is not a parse — the middle of a block comment reads as code. Every failure returns nothing and the characters are drawn plain.",
-      "`SyntaxColouring.Reading` is the only thing a surface may draw from, and one function makes one. That turns the narrowing rule into a compiler check rather than a test. `MediaCache` holds decoded pictures, bounded by what a window can actually show. It lives on the main actor, because every surface that draws one is a view."
+      "`FeedEvidence` gathers what a row's calls kept. `EvidenceDiff` draws hunks with the host's own line numbers on both sides. `EvidenceOutput` draws command output, and `EvidenceMedia` draws pictures. Only markdown can be drawn two ways, because every other language already is its source.",
+      "`SyntaxHighlight` colors the syntax, and one engine serves the whole app. It highlights a hunk whole and then divides it into lines. A line on its own is not a parse — the middle of a block comment reads as code. Every failure returns nothing, and the surface draws the characters plain.",
+      "`SyntaxColouring.Reading` is the only value a surface draws from, and one function makes one. That turns the narrowing rule into a compiler check rather than a test. `MediaCache` holds decoded pictures, bounded by what a window can draw. It lives on the main actor, because every surface that draws one is a view."
     ],
     "inside": [],
     "among": [],
@@ -1986,27 +2188,32 @@
       [
         "u-evidence",
         "u-deck",
-        "the panel's own width, and Escape closing it back to the reading"
+        "the panel's own width, and Escape closing it back to the reading",
+        "call"
       ],
       [
         "u-evidence",
         "u-feed",
-        "the row id the panel is showing, resolved against the live rows"
+        "the row id the panel is showing, resolved against the live rows",
+        "call"
       ],
       [
         "u-evidence",
         "u-media",
-        "the decoded bitmap and the showing state a thumbnail draws through"
+        "the decoded bitmap and the showing state a thumbnail draws through",
+        "data"
       ],
       [
         "u-evidence",
         "u-prose",
-        "the rendered document a markdown patch is read as"
+        "the rendered document a markdown patch is read as",
+        "call"
       ],
       [
         "u-evidence",
         "engine",
-        "the tool results the engine kept, addressed by call id"
+        "the tool results the engine kept, addressed by call id",
+        "call"
       ]
     ],
     "concepts": [],
@@ -2078,7 +2285,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/EvidenceDocument.swift"
         ]
       }
-    }
+    },
+    "group": "zones",
+    "region": {
+      "parent": "u-deck",
+      "z": 0,
+      "room": "sessions",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckContentRow.swift",
+        4
+      ]
+    },
+    "key": [
+      0,
+      1,
+      2
+    ]
   },
   "u-minimap": {
     "id": "u-minimap",
@@ -2090,12 +2312,12 @@
     "lines": 2176,
     "bottom": true,
     "short": [
-      "The lane is pinned to the feed it maps, and nothing may come between them. It takes the feed's table handle rather than the rows, because everything it draws is geometry the table already measured. A lane that summed anything else would put a rect where its row is not."
+      "The lane is pinned to the feed it maps, and nothing comes between them. It takes the feed's table handle rather than the rows, because everything it draws is geometry the table already measured. A lane that sums anything else puts a rect where its row is not."
     ],
     "long": [
-      "`MinimapGeometry` is the arithmetic. Row starts are a prefix sum, so a row's position is a lookup rather than a walk. The miniature is taller than the lane at any real session length. Its scale comes from the widths, and not from what would fit vertically. The lane therefore shows a window onto it.",
-      "`MinimapGeometry` holds no scroll offset at all. Everything in it is still. The lane can freeze one geometry for a whole drag, and repaint nothing while the reader scrolls.",
-      "`MinimapLaneView` draws in three separate Core Animation planes over the deck. The rects are a bitmap of one band, rasterised only when that band's content changes. The viewport rectangle is a second plane, moved inside a `CATransaction` with actions disabled. The annotations are a third, and the only one a pointer moving over the lane touches."
+      "`MinimapGeometry` is the arithmetic. Row starts are a prefix sum, so a row's position is a lookup rather than a walk. The miniature is taller than the lane at any real Session length. Its scale comes from the widths, and not from what fits vertically. So the lane draws a window onto it.",
+      "`MinimapGeometry` holds no scroll offset at all. Everything in it is still. The lane can freeze one geometry for a whole drag, and draw nothing again while the user scrolls.",
+      "`MinimapLaneView` keeps the three things it draws on separate layers over the deck, because each of them changes on its own clock. The rects are a bitmap of one band, and Argo draws that band again only when its content changes. The viewport rectangle moves without a redraw of the rects. The annotations are the only layer a pointer moving over the lane touches."
     ],
     "inside": [],
     "among": [],
@@ -2103,22 +2325,26 @@
       [
         "u-minimap",
         "u-feed",
-        "a scroll target, written through the shared table handle"
+        "a scroll target, written through the shared table handle",
+        "call"
       ],
       [
         "u-minimap",
         "u-feed",
-        "the measured heights and gutters it reads back through that handle"
+        "the measured heights and gutters it reads back through that handle",
+        "call"
       ],
       [
         "u-minimap",
         "u-prose",
-        "the wrapped line widths a paragraph's rects are drawn at"
+        "the wrapped line widths a paragraph's rects are drawn at",
+        "call"
       ],
       [
         "u-minimap",
         "u-mermaid",
-        "the diagram plan's rects, so the lane never lays a diagram out again"
+        "the diagram plan's rects, so the lane never lays a diagram out again",
+        "call"
       ]
     ],
     "concepts": [],
@@ -2177,7 +2403,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Minimap/MinimapMermaid+Rects.swift"
         ]
       }
-    }
+    },
+    "group": "zones",
+    "region": {
+      "parent": "u-deck",
+      "z": 0,
+      "room": "sessions",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckContentRow.swift",
+        4
+      ]
+    },
+    "key": [
+      0,
+      1,
+      4
+    ]
   },
   "u-plan": {
     "id": "u-plan",
@@ -2192,9 +2433,9 @@
       "A plan is standing state, not a moment. `PlanProjection` reads the last `.plan` event the record carries and nothing else, because the agent delivers its complete list every time. `PlanPill` draws it as one floating line saying where the agent is and how far along."
     ],
     "long": [
-      "The read walks the events in reverse and stops at the first plan it finds. A long transcript therefore does not collect every plan on the way to keeping one. This is the sibling of the feed's own projection over the same events. The feed reads a sequence of moments, and this reads one standing fact.",
-      "The pill sits on a standing surface above the dock rather than in the feed. A plan in the stream would appear again on every revision, and the reader would have to work out which entry is current. `PlanStepList` opens the whole list when the pill is expanded.",
-      "`PlanShowing` carries whether the list is revealed and whether the keyboard is on it. Both are parameters rather than internal state, because a screenshot cannot click and those states are otherwise unreachable in a render."
+      "The read walks the events in reverse and stops at the first plan it finds. So a long transcript does not collect every plan on the way to keeping one. This is the sibling of the feed's own projection over the same events. The feed reads a sequence of moments, and this reads one standing fact.",
+      "The pill sits on a standing surface above the dock rather than in the feed. A plan in the stream appears again on every revision, and the user must then work out which entry is current. `PlanStepList` opens the whole list when the user expands the pill.",
+      "`PlanShowing` carries whether the list is revealed and whether the keyboard is on it. Both are parameters rather than internal state, because a screenshot cannot click, and those states are otherwise unreachable when Argo draws one."
     ],
     "inside": [],
     "among": [],
@@ -2202,17 +2443,20 @@
       [
         "u-plan",
         "u-deck",
-        "the plan reading, drawn beside the rows and never among them"
+        "the plan reading, drawn beside the rows and never among them",
+        "call"
       ],
       [
         "u-plan",
         "u-atoms",
-        "the floating glass and the focus ring the pill draws"
+        "the floating glass and the focus ring the pill draws",
+        "call"
       ],
       [
         "u-plan",
         "engine",
-        "the transcript's plan events and their entries"
+        "the transcript's plan events and their entries",
+        "call"
       ]
     ],
     "concepts": [],
@@ -2266,7 +2510,22 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Plan/PlanProjection.swift"
         ]
       }
-    }
+    },
+    "group": "canopy-vessel",
+    "region": {
+      "parent": "u-feed",
+      "z": 1,
+      "room": "sessions",
+      "evidence": [
+        "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/FeedColumn.swift",
+        31
+      ]
+    },
+    "key": [
+      3,
+      0,
+      2
+    ]
   },
   "u-atoms": {
     "id": "u-atoms",
@@ -2278,11 +2537,11 @@
     "lines": 793,
     "bottom": true,
     "short": [
-      "These are the pieces no single surface owns. A badge carries a count and a glyph draws a symbol at a contract size. A chrome bar applies the window's material, and a focus ring draws the keyboard cursor. Each one reads the visual contract and takes no colour of its own choosing."
+      "These are the pieces no single surface owns. A badge carries a count and a glyph draws a symbol at a contract size. A chrome bar applies the window's material, and a focus ring draws the keyboard cursor. Each one reads the visual contract and takes no color of its own choosing."
     ],
     "long": [
       "`ArgoBadge` is the pattern for all of them. It takes no hue, because a badge marks a kind of fact and not one of the four operational states. It is a capsule and not a circle, so a number is never cut. Its minimum width equals its height, so one digit still reads as a disc.",
-      "`ArgoFocusVisibility` answers a question SwiftUI cannot. There is no `:focus-visible` on this platform, and a view is focused whether a key or a click put it there. This watches the last event the app saw. Every surface drawing its own ring asks first, so a pointer user never sees a keyboard cursor.",
+      "`ArgoFocusVisibility` answers a question SwiftUI cannot. There is no `:focus-visible` on this platform, and a view is focused whether a key or a click put it there. This watches the last event the app saw. Every surface that draws its own ring asks first, so a pointer user never sees a keyboard cursor.",
       "`ArgoChromeBar` gives the window toolbar and the deck canopy the same material. One material across both is what makes them read as one bar rather than as two surfaces meeting."
     ],
     "inside": [],
@@ -2291,22 +2550,26 @@
       [
         "u-atoms",
         "u-contract",
-        "the palette, the type roles, the spacing and the icon sizes it reads"
+        "the palette, the type roles, the spacing and the icon sizes it reads",
+        "call"
       ],
       [
         "u-atoms",
         "u-deck",
-        "the chrome bar material the canopy and the toolbar share"
+        "the chrome bar material the canopy and the toolbar share",
+        "data"
       ],
       [
         "u-atoms",
         "u-sidebar",
-        "the selected row ground, the state label and the badge"
+        "the selected row ground, the state label and the badge",
+        "data"
       ],
       [
         "u-atoms",
         "u-composer",
-        "the focus ring and the floating glass the vessel is drawn on"
+        "the focus ring and the floating glass the vessel is drawn on",
+        "data"
       ]
     ],
     "concepts": [],
@@ -2367,7 +2630,13 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Atoms/ArgoFloatingGlass.swift"
         ]
       }
-    }
+    },
+    "group": "modules",
+    "key": [
+      0,
+      1,
+      2
+    ]
   },
   "u-contract": {
     "id": "u-contract",
@@ -2375,16 +2644,16 @@
     "depth": 2,
     "parent": "ui",
     "name": "The visual contract",
-    "line": "It names every colour, type role, spacing step and motion the cockpit is allowed to draw with.",
+    "line": "It names every color, type role, spacing step and motion the cockpit is allowed to draw with.",
     "lines": 1750,
     "bottom": true,
     "short": [
-      "Nothing in this target picks a colour or a size by hand. `ArgoTheme` carries the palette in force and reaches every view through the `\\.argo` environment value. `ArgoTypography` names the handful of text roles, and `ArgoSpacing` names the rhythm. Argo ships one appearance — graphite, near-black, with Ion Blue."
+      "Nothing in this target picks a color or a size by hand. `ArgoTheme` carries the palette in force and reaches every view through the `\\.argo` environment value. `ArgoTypography` names the handful of text roles, and `ArgoSpacing` names the rhythm. Argo ships one appearance — graphite, near-black, with Ion Blue."
     ],
     "long": [
-      "Only colour changes between appearances. Type, geometry, elevation and motion do not, which is why `ArgoTheme` carries a palette and a colour scheme together and nothing else. A light palette under a dark scheme is a mismatch no palette value can fix.",
-      "`GraphitePalette` was sampled from the approved study rather than chosen. The comments say so at the values, and every text and state ink is measured for contrast against the base surface. Re-sampling is the instruction before any of them moves.",
-      "`ArgoOperationalState` is the small set of state colours — running, attention, idle and failure. There is no colour for `unknown`, and the absence is the honest rendering. `ArgoTypeScale` maps each role onto one of Apple's macOS text styles, so nothing here carries a fixed point size."
+      "Only color changes between appearances. Type, geometry, elevation and motion do not, which is why `ArgoTheme` carries a palette and a color scheme together and nothing else. A light palette under a dark scheme is a mismatch no palette value can fix.",
+      "`GraphitePalette` comes from the approved study rather than from a choice. The comments say so at the values, and each text and state ink is measured for contrast against the base surface. The instruction before any of them moves is to sample the study again.",
+      "`ArgoOperationalState` is the small set of state colors — running, attention, idle and failure. There is no color for `unknown`, and that absence is the honest answer. `ArgoTypeScale` maps each role onto one of Apple's macOS text styles, so nothing here carries a fixed point size."
     ],
     "inside": [],
     "among": [],
@@ -2392,17 +2661,20 @@
       [
         "u-contract",
         "u-atoms",
-        "the palette, the type roles and the spacing, through the environment"
+        "the palette, the type roles and the spacing, through the environment",
+        "data"
       ],
       [
         "u-contract",
         "u-deck",
-        "the layout tokens the zone widths and seam floors are read from"
+        "the layout tokens the zone widths and seam floors are read from",
+        "data"
       ],
       [
         "u-contract",
         "u-specimen",
-        "the appearance a rendered specimen is wrapped in"
+        "the appearance a rendered specimen is wrapped in",
+        "data"
       ]
     ],
     "concepts": [],
@@ -2469,7 +2741,13 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenScreen.swift"
         ]
       }
-    }
+    },
+    "group": "modules",
+    "key": [
+      0,
+      3,
+      4
+    ]
   },
   "u-specimen": {
     "id": "u-specimen",
@@ -2481,12 +2759,12 @@
     "lines": 7054,
     "bottom": true,
     "short": [
-      "Nothing on CI renders a view, and most cockpit states cannot be reached by hand. The app launched against an ordinary checkout shows no Sessions at all. `SpecimenRegistry` addresses every judged state by a name the command line can pass. `TranscriptFixtures` supplies the transcripts those states are built from."
+      "Nothing on CI draws a view, and the user cannot reach most cockpit states by hand. The app opened on an ordinary Project draws no Sessions at all. `SpecimenRegistry` addresses every judged state by a name the command line can pass. `TranscriptFixtures` supplies the transcripts those states are built from."
     ],
     "long": [
-      "`SpecimenEntry` pairs a name with what that name draws, as one value. An entry cannot be half-written — there is no name without a rendering, and no rendering nothing can address. The content closure is built on demand, so one launch runs one fixture rather than the whole catalog.",
-      "`SpecimenLaunch` settles the launch arguments before any window is built, and the app target dispatches on the result rather than deciding it. That keeps the decision inside a package a test can reach. `scripts/specimens.sh` asks the running app for the list rather than parsing this source.",
-      "`TranscriptFixtures` is one name for a catalog spread over files by subject — the work, the long run, the folded stretch of looking, the shots. Every shard is an extension on the same enum, and the builders are shared because Swift's `private` inside an extension is file-scoped."
+      "`SpecimenEntry` pairs a name with what that name draws, as one value. An entry cannot be half-written — there is no name without a drawing, and no drawing nothing can address. The content closure is built on demand, so one launch runs one fixture rather than the whole catalog.",
+      "`SpecimenLaunch` settles the launch arguments before Argo builds any window, and the app target dispatches on the result rather than deciding it. That keeps the decision inside a package a test can reach. `scripts/specimens.sh` asks the running app for the list rather than parsing this source.",
+      "`TranscriptFixtures` is one name for a catalog spread over files by subject — the work, the long run, the folded stretch of looking, the shots. Every shard is an extension on the same enum, and the builders are shared."
     ],
     "inside": [],
     "among": [],
@@ -2494,22 +2772,26 @@
       [
         "u-specimen",
         "u-shell",
-        "a fixture presentation and inert actions, so a window draws with no Hub"
+        "a fixture presentation and inert actions, so a window draws with no Hub",
+        "data"
       ],
       [
         "u-specimen",
         "u-feed",
-        "fixture transcript events, projected into rows the same way live ones are"
+        "fixture transcript events, projected into rows the same way live ones are",
+        "data"
       ],
       [
         "u-specimen",
         "u-contract",
-        "the appearance every rendered specimen is wrapped in"
+        "the appearance every rendered specimen is wrapped in",
+        "call"
       ],
       [
         "u-specimen",
         "app",
-        "the entry a launch names, and the ending that stops before drawing"
+        "the entry a launch names, and the ending that stops before drawing",
+        "data"
       ]
     ],
     "concepts": [],
@@ -2570,6 +2852,12 @@
           "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenLaunch.swift"
         ]
       }
-    }
+    },
+    "group": "modules",
+    "key": [
+      0,
+      3,
+      1
+    ]
   }
 }

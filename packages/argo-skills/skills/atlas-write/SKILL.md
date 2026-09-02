@@ -63,13 +63,34 @@ paragraph fresh over that lifted view. Never join the sentences of the children 
 Two prose lengths, `short` and `long`. There is no third.
 
 Write both in Simplified Technical English. Use 25 words per sentence, one topic per paragraph,
-six sentences at most, and the active voice. Read every sentence aloud. Use the words the code
-uses for its own types and folders.
+six sentences at most, and the active voice. Read every sentence aloud.
 
 Say what the part **does** before you say what it is. "It reads the file the agent writes, and
 turns each line into a typed event" teaches. "The parsing layer" does not.
 
 **Done when** the longest sentence in the node holds 25 words or fewer.
+
+### Names come from the job, never from the source
+
+A name in the atlas is read by somebody who has never opened the repository. **A word being in
+the code is not a reason to use it.** The code is named by people who already know the answer,
+and a team's pet metaphors are the first thing a newcomer cannot decode.
+
+Test every name you write against one question: would a competent stranger know what this is?
+
+- **Name the group by what its parts do.** `Deck/{Header, Composer, Plan}` is "the header bar and
+  the input bar", not "the canopy and the vessel" — even though the source says canopy, and even
+  though a test file says vessel.
+- **Never name a thing by what it is not.** "Modules, not regions" is not a name.
+- **A word is allowed only if it is plain English, or the project publishes a glossary that
+  defines it.** An identifier, a type name, a folder name and a comment are none of those.
+- **Paths, types and identifiers stay verbatim** — in the anchor, the path field, and inline code.
+  They are evidence. They are not headings.
+- If the team's own word is genuinely load-bearing, put the plain name in the heading and the
+  team's word beside it once, in the prose that defines it.
+
+This is the difference between an atlas and an insider's index. A reader who needs the insider
+words does not need the atlas.
 
 ## 5. Flows and concepts
 

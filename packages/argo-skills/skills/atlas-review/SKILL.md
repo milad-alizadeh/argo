@@ -78,14 +78,41 @@ step 4.
 **Done when** every child directory of the node's own path is either mentioned in the node, or
 named in your omission list.
 
-## 6. Report
+## 6. Check every name against a stranger
+
+A claim can be true and still unreadable. Names in the atlas are read by somebody who has never
+opened the repository, so check each name, heading and group label on its own.
+
+Mark a name **insider** when it fails any of these:
+
+- It uses a word that appears only in the source — an identifier, type, folder or comment — and
+  is not plain English and not defined in a glossary the project publishes. Grep for the word: if
+  every hit is source or a test, the name is insider. `grep -ril "<word>"` is the whole check.
+- It is a metaphor the code happens to spell. "The canopy and the vessel" for
+  `Deck/{Header, Composer, Plan}` is insider even though both words are in the repository.
+- It names the thing by what it is not — "Modules, not regions".
+- It restates a layer instead of a job — "the parsing layer", "the presentation tier".
+
+For each, give the plain name you would use. This is not a style note: an insider name makes the
+node useless to the only reader who needed it.
+
+**Done when** every name in the node is marked `plain` or `insider`, with a replacement for each
+insider one.
+
+## 7. Report
 
 One markdown table, sorted so `false` rows come first, then `cannot tell`, then `true`:
 
 | node | claim | verdict | evidence |
 |---|---|---|---|
 
-Then the omission list, then one line giving the claim count and the false count.
+Then the insider-name table:
+
+| name | why it fails | plain name |
+|---|---|---|
+
+Then the omission list, then one line giving the claim count, the false count and the insider
+count.
 
 Fix nothing, and write no file. A `false` row is the writer's work, and a checker that edits the
 node stops being an independent reading of it.

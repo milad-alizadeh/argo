@@ -1,0 +1,364 @@
+<!doctype html>
+<!-- PROTOTYPE — throwaway. Two shapes over one map: nested tree, isometric city. ?v=1|2 -->
+<meta charset="utf-8">
+<title>Argo · the map</title>
+<link rel="stylesheet" href="atlas-tokens.css">
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  #app { height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+  header { padding: 18px 34px 10px; }
+  header h1 { font: 600 var(--t-title2)/1.2 var(--sans); }
+  header em { font-style: normal; font-weight: 400; font-size: var(--t-body); color: var(--text-3); }
+  #stage { position: relative; overflow: hidden; }
+  footer { padding: 10px 34px 12px; min-height: 58px; border-top: 1px solid var(--hairline);
+           padding-right: 430px; }
+  footer .name { font-weight: 600; }
+  footer .name span { font: var(--t-footnote) var(--mono); color: var(--text-off); font-weight: 400; }
+  footer .said { color: var(--text-2); }
+  footer .idle { color: var(--text-3); }
+  footer .where { font: var(--t-footnote) var(--mono); color: var(--text-3); margin-top: 2px; }
+
+  #bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px;
+         display: flex; align-items: center; gap: 3px; padding: 5px 5px 5px 14px; z-index: 60;
+         background: rgba(38,41,46,.97); backdrop-filter: blur(16px);
+         border: 1px solid var(--strong); border-radius: 999px;
+         box-shadow: 0 10px 30px rgba(0,0,0,.6); }
+  #bar .lab { font: var(--t-footnote) var(--mono); text-transform: uppercase;
+              letter-spacing: .12em; color: var(--text-3); padding-right: 9px; }
+  #bar button { padding: 8px 18px; border-radius: 999px; font-size: var(--t-body); color: var(--text-2); }
+  #bar button:hover { color: var(--text-1); background: var(--hover); }
+  #bar button[aria-pressed="true"] { background: var(--accent); color: #0b1622; font-weight: 600; }
+  #bar kbd { font: var(--t-footnote) var(--mono); color: var(--text-off); padding: 0 4px 0 6px; }
+
+  /* ---------- 1 · TREE (nested, in relief) ---------- */
+  .rf { position: absolute; inset: 0; }
+  .rf .cell { position: absolute; border-radius: 9px;
+              background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.012));
+              border: 1px solid rgba(255,255,255,.07);
+              box-shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 6px 16px rgba(0,0,0,.30); }
+  .rf .cell.g { background: rgba(255,255,255,.014); box-shadow: none;
+                border-color: rgba(255,255,255,.05); border-radius: 7px; }
+  .rf .cell.p { background: linear-gradient(180deg, #26282c, #1f2125); border-radius: 6px;
+                box-shadow: 0 1px 0 rgba(255,255,255,.045) inset, 0 3px 9px rgba(0,0,0,.34);
+                transition: transform var(--m-state) var(--ease-out),
+                            box-shadow var(--m-state) var(--ease-out),
+                            border-color var(--m-state) var(--ease-out); }
+  .rf .cell.p:hover { transform: translateY(-2px); border-color: rgba(62,155,255,.45);
+                      box-shadow: 0 1px 0 rgba(255,255,255,.09) inset, 0 10px 22px rgba(0,0,0,.46); }
+  .rf .cell > b { position: absolute; left: 12px; top: 9px; right: 12px;
+                  font: 600 var(--t-callout)/1.3 var(--sans); color: var(--text-1); }
+  .rf .cell.g > b { left: 10px; top: 7px; font: var(--t-footnote)/1.25 var(--sans);
+                    color: var(--text-3); text-transform: uppercase; letter-spacing: .07em; }
+  /* the group's folder, on the figure — not only on hover */
+  .rf .cell.g > u { position: absolute; left: 10px; top: 21px; right: 10px; text-decoration: none;
+                    font: var(--t-footnote)/1.3 var(--mono); color: var(--text-off);
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rf .cell.p > b { left: 11px; top: 8px; font: 400 var(--t-subheadline)/1.3 var(--sans);
+                    color: var(--text-2); }
+  .rf .cell.p:hover > b { color: var(--text-1); }
+  .rf .cell.p > i { position: absolute; left: 11px; bottom: 7px; font-style: normal;
+                    font: var(--t-footnote) var(--mono); color: var(--text-off); }
+  .rf .cell.t > i { position: absolute; right: 12px; bottom: 9px; font-style: normal;
+                    font: var(--t-footnote) var(--mono); color: var(--text-off); }
+  .rf .cell.t > u { position: absolute; left: 12px; bottom: 9px; text-decoration: none;
+                    font: var(--t-footnote) var(--mono); color: var(--text-off); }
+
+  /* ---------- 2 · CITY ---------- */
+  svg { display: block; }
+  /* every face carries an edge, or adjacent blocks read as one solid */
+  .cy polygon { stroke-linejoin: round; }
+  .cy .top { fill: #3c4047; stroke: #5a6068; stroke-width: 1; }
+  .cy .left { fill: #202327; stroke: #34383e; stroke-width: 1; }
+  .cy .right { fill: #2d3136; stroke: #43474e; stroke-width: 1; }
+  /* the two plates a building stands on: district, then group */
+  .cy .plot-top { fill: #191b1e; stroke: rgba(255,255,255,.13); stroke-width: 1; }
+  .cy .plot-left { fill: #101215; stroke: rgba(255,255,255,.07); }
+  .cy .plot-right { fill: #15171a; stroke: rgba(255,255,255,.09); }
+  .cy .block-top { fill: #212428; stroke: rgba(255,255,255,.11); stroke-width: 1; }
+  .cy .block-left { fill: #14161a; stroke: rgba(255,255,255,.06); }
+  .cy .block-right { fill: #1b1e22; stroke: rgba(255,255,255,.08); }
+  .cy .gl { font: 9.5px var(--sans); fill: var(--text-3); text-transform: uppercase;
+            letter-spacing: .07em; pointer-events: none;
+            paint-order: stroke; stroke: rgba(0,0,0,.6); stroke-width: 2.4px; }
+  .cy .hit { cursor: default; }
+  .cy .hit:hover .top { fill: #4d81ab; }
+  .cy .hit:hover .left { fill: #22415b; }
+  .cy .hit:hover .right { fill: #2d5878; }
+  .cy .dl { font: 600 11px var(--sans); fill: var(--text-1); }
+  .cy .dp { font: 9.5px var(--mono); fill: var(--text-off); }
+  .cy .bl { font: 10px var(--sans); fill: var(--text-1); pointer-events: none;
+            paint-order: stroke; stroke: rgba(0,0,0,.55); stroke-width: 2.4px; }
+  .cy .bn { font: 9px var(--mono); fill: rgba(255,255,255,.5); pointer-events: none;
+            paint-order: stroke; stroke: rgba(0,0,0,.5); stroke-width: 2.2px; }
+</style>
+
+<div id="app">
+  <header id="head"></header>
+  <div id="stage"></div>
+  <footer id="detail"></footer>
+</div>
+<div id="bar"></div>
+
+<script src="atlas-content.js"></script>
+<script>
+const A = window.ATLAS, $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString('en-US');
+const ORDER = ['ui', 'engine', 'app', 'terminal', 'observe'];
+const sum = ps => ps.reduce((s, p) => s + p.size, 0);
+
+function model() {
+  return ORDER.map(id => {
+    const t = A[id], byG = {};
+    for (const cid of (t.inside || [])) { const c = A[cid]; if (c) (byG[c.group] = byG[c.group] || []).push(c); }
+    const groups = (t.groups || []).map(g => ({
+      id: t.id + '/' + g.id, name: g.name, said: g.line, where: g.path,
+      parts: (byG[g.id] || []).map(c => ({
+        id: c.id, name: c.name, size: c.lines, said: c.line,
+        where: c.anchors && c.anchors[0] ? c.anchors[0][0] : null,
+      })).sort((a, b) => b.size - a.size),
+    })).sort((a, b) => sum(b.parts) - sum(a.parts));
+    const size = groups.length ? groups.reduce((s, g) => s + sum(g.parts), 0) : t.lines;
+    return { id, name: t.name, size, said: t.line, where: t.path, groups };
+  });
+}
+
+function detail(it) {
+  const d = $('detail');
+  if (!it) { d.innerHTML = `<div class="idle">Point at any part to read what it does.</div>`; return; }
+  d.innerHTML = `<div class="name">${it.name}${it.size ? ` <span>${fmt(it.size)} ln</span>` : ''}</div>`
+    + `<div class="said">${it.said || ''}</div>`
+    + (it.where ? `<div class="where">${it.where}</div>` : '');
+}
+
+const el = (n, a = {}) => { const e = document.createElementNS('http://www.w3.org/2000/svg', n);
+  for (const k in a) e.setAttribute(k, a[k]); return e; };
+const clip = (s, px, per = 6.1) => {
+  const max = Math.floor(px / per);
+  return s.length > max ? s.slice(0, Math.max(0, max - 1)) + '…' : s;
+};
+/* a folder list is long; keep the tail, which is the part that differs */
+const clipPath = (s, px) => {
+  const max = Math.floor(px / 5.5);
+  return s.length > max ? '…' + s.slice(-(max - 1)) : s;
+};
+
+function squarify(items, x, y, w, h) {
+  const out = []; let rest = items.slice().sort((a, b) => b.size - a.size);
+  let area = { x, y, w, h }, remaining = rest.reduce((s, i) => s + i.size, 0) || 1;
+  while (rest.length) {
+    const horiz = area.w >= area.h, side = horiz ? area.h : area.w;
+    let row = [], rowSum = 0, best = Infinity;
+    for (const it of rest) {
+      const trySum = rowSum + it.size;
+      const thick = (trySum / remaining) * (horiz ? area.w : area.h);
+      const worst = Math.max(...[...row, it].map(o => {
+        const along = (o.size / trySum) * side; return Math.max(thick / along, along / thick);
+      }));
+      if (worst > best && row.length) break;
+      row.push(it); rowSum = trySum; best = worst;
+    }
+    const thick = (rowSum / remaining) * (horiz ? area.w : area.h);
+    let along = horiz ? area.y : area.x;
+    for (const it of row) {
+      const len = (it.size / rowSum) * side;
+      out.push(horiz ? { it, x: area.x, y: along, w: thick, h: len }
+                     : { it, x: along, y: area.y, w: len, h: thick });
+      along += len;
+    }
+    if (horiz) { area.x += thick; area.w -= thick; } else { area.y += thick; area.h -= thick; }
+    remaining -= rowSum; rest = rest.slice(row.length);
+  }
+  return out;
+}
+
+/* ================= 1 · TREE ================= */
+function tree(host, data) {
+  host.className = 'rf';
+  const W = host.clientWidth - 68, H = host.clientHeight - 8;
+
+  for (const { it: t, x, y, w, h } of squarify(data, 0, 0, W, H)) {
+    host.append(slab('cell t', t.name, x, y, w, h, t,
+                     fmt(t.size) + ' ln', t.where ? clipPath(t.where, w - 130) : ''));
+    if (!t.groups.length || w < 150 || h < 100) continue;
+    for (const g of squarify(t.groups.map(gr => ({ ...gr, size: sum(gr.parts) })),
+                             x + 9, y + 32, w - 18, h - 46)) {
+      host.append(slab('cell g', clip(g.it.name, g.w - 20, 5.7), g.x, g.y, g.w, g.h, g.it,
+                       '', clipPath(g.it.where, g.w - 20)));
+      if (g.w < 104 || g.h < 78) continue;
+      for (const p of squarify(g.it.parts, g.x + 6, g.y + 36, g.w - 12, g.h - 42))
+        host.append(slab('cell p', p.w > 68 && p.h > 26 ? p.it.name : '', p.x, p.y, p.w, p.h, p.it,
+                         p.w > 92 && p.h > 44 ? fmt(p.it.size) : ''));
+    }
+  }
+
+  function slab(cls, label, x, y, w, h, it, meta, path) {
+    const d = document.createElement('div');
+    d.className = cls;
+    d.style.cssText = `left:${x + 34}px;top:${y}px;width:${Math.max(0, w - 5)}px;height:${Math.max(0, h - 5)}px;`;
+    if (label) d.innerHTML = `<b>${label}</b>`;
+    if (path) d.innerHTML += `<u>${path}</u>`;
+    if (meta) d.innerHTML += `<i>${meta}</i>`;
+    if (cls.includes(' p')) {
+      d.onmouseenter = () => detail(it);
+      d.onmouseleave = () => detail(null);
+    }
+    return d;
+  }
+}
+
+/* ================= 2 · CITY ================= */
+function city(host, data) {
+  const W = host.clientWidth - 68, H = host.clientHeight - 14;
+  const svg = el('svg', { width: W, height: H, class: 'cy' });
+  svg.style.margin = '0 34px';
+
+  const kx = .86, ky = .43, lift = Math.min(290, H * .33);
+  const S = Math.min((W - 60) / (2 * kx), (H - lift - 60) / (2 * ky));
+  const OX = W / 2, OY = lift + 26;
+  const P = (x, y, z = 0) => [(x - y) * kx + OX, (x + y) * ky + OY - z];
+
+  /* Footprint counts parts. Height is the line count against the biggest part.
+     So a tall tower is one large file; a wide flat block is many small ones. */
+  const maxLn = Math.max(...data.flatMap(t => t.groups.flatMap(g => g.parts.map(p => p.size))),
+                         ...data.filter(t => !t.groups.length).map(t => t.size));
+  const count = t => t.groups.length ? t.groups.reduce((s, g) => s + g.parts.length, 0) : 1;
+  const solids = [], districts = [], plots = [], blocks = [];
+
+  /* Three nested levels, each on its own raised plate with a wide street around it,
+     so the picture is a tree you can see the depth of rather than one field of blocks. */
+  const DM = 30, GM = 16, BM = 5;
+  const DZ = 7, GZ = 6;              /* plate thicknesses: district, then group */
+
+  /* `size` is the footprint weight at every level, so each real node travels as `real` */
+  const targets = data.map(t => ({ ...t, size: count(t), real: t }));
+  for (const { it: t, x, y, w, h } of squarify(targets, 0, 0, S, S)) {
+    const d = { x: x + DM / 2, y: y + DM / 2, w: w - DM, h: h - DM };
+    plots.push(d);
+    /* the name goes at the near corner, in front of the skyline, never over it */
+    districts.push({ t: t.real, at: P(d.x + d.w / 2, d.y + d.h), w: d.w });
+    const groups = t.groups.length ? t.groups
+      : [{ name: t.name, parts: [t.real] }];
+    for (const g of squarify(groups.map(gr => ({ ...gr, size: gr.parts.length })),
+                             d.x + GM / 2, d.y + GM / 2, d.w - GM, d.h - GM)) {
+      const b = { x: g.x + GM / 2, y: g.y + GM / 2, w: g.w - GM, h: g.h - GM,
+                  name: g.it.name, at: P(g.x + GM / 2, g.y + GM / 2) };
+      blocks.push(b);
+      for (const p of squarify(g.it.parts.map(pp => ({ size: 1, real: pp })),
+                               b.x + BM / 2, b.y + BM / 2, b.w - BM, b.h - BM)) {
+        solids.push({ x: p.x + BM / 2, y: p.y + BM / 2, w: p.w - BM, h: p.h - BM,
+                      z0: DZ + GZ, z1: DZ + GZ + 5 + (p.it.real.size / maxLn) * lift,
+                      part: p.it.real });
+      }
+    }
+  }
+
+  /* plates first, far to near, so the near ones overlap correctly */
+  for (const p of [...plots].sort((a, b) => (a.x + a.y) - (b.x + b.y)))
+    box(p.x, p.y, p.w, p.h, 0, DZ, 'plot');
+  for (const b of [...blocks].sort((a, b) => (a.x + a.y) - (b.x + b.y)))
+    box(b.x, b.y, b.w, b.h, DZ, DZ + GZ, 'block');
+
+  /* a group's name sits on its own plate, at the back corner */
+  for (const b of blocks) {
+    if (b.w * kx < 62) continue;
+    const c = P(b.x + b.w / 2, b.y, DZ + GZ);
+    const nm = el('text', { x: c[0], y: c[1] - 5, 'text-anchor': 'middle', class: 'gl' });
+    nm.textContent = clip(b.name, (b.w + b.h) * kx * .58, 5.2);
+    svg.append(nm);
+  }
+
+  /* painter's order: far blocks first, so near ones overlap them */
+  solids.sort((a, b) => (a.x + a.y) - (b.x + b.y));
+  for (const { x, y, w, h, z0, z1, part } of solids) {
+    const g = box(x, y, w, h, z0, z1, '', el('g'));
+    g.classList.add('hit');
+    g.addEventListener('mouseenter', () => detail(part));
+    g.addEventListener('mouseleave', () => detail(null));
+
+    /* a label on the roof, while the roof is wide enough to hold one */
+    const room = (w + h) * kx * .52;
+    if (room > 58) {
+      const c = P(x + w / 2, y + h / 2, z1);
+      const nm = el('text', { x: c[0], y: c[1] + 2, 'text-anchor': 'middle', class: 'bl' });
+      nm.textContent = clip(part.name, room, 5.4); svg.append(nm);
+      if (room > 84) {
+        const ln = el('text', { x: c[0], y: c[1] + 14, 'text-anchor': 'middle', class: 'bn' });
+        ln.textContent = fmt(part.size) + ' ln'; svg.append(ln);
+      }
+    }
+  }
+
+  /* district names, in front of the skyline */
+  for (const { t, at, w } of districts) {
+    const nm = el('text', { x: at[0], y: at[1] + 17, 'text-anchor': 'middle', class: 'dl' });
+    nm.textContent = t.name; svg.append(nm);
+    if (t.where) {
+      const pt = el('text', { x: at[0], y: at[1] + 29, 'text-anchor': 'middle', class: 'dp' });
+      pt.textContent = clipPath(t.where, Math.max(140, w * kx * 1.6)); svg.append(pt);
+    }
+  }
+  host.append(svg);
+
+  function poly(pts, cls) {
+    return el('polygon', { points: pts.map(p => p.join(',')).join(' '), class: cls });
+  }
+
+  /* one extruded box between two heights: two walls and a roof */
+  function box(x, y, w, h, z0, z1, kind, into) {
+    const g = into || el('g');
+    const pre = kind ? kind + '-' : '';
+    g.append(poly([P(x, y + h, z0), P(x + w, y + h, z0), P(x + w, y + h, z1), P(x, y + h, z1)], pre + 'left'));
+    g.append(poly([P(x + w, y, z0), P(x + w, y + h, z0), P(x + w, y + h, z1), P(x + w, y, z1)], pre + 'right'));
+    g.append(poly([P(x, y, z1), P(x + w, y, z1), P(x + w, y + h, z1), P(x, y + h, z1)], pre + 'top'));
+    svg.append(g);
+    return g;
+  }
+}
+
+/* ---------- switcher ---------- */
+const VARIANTS = [
+  { n: 'Tree', f: tree, head: 'What Argo is made of',
+    sub: 'nested by containment, sized by line count — each group shows its folders' },
+  { n: 'City', f: city, head: 'A city of parts',
+    sub: 'footprint counts the parts, height is the line count' },
+];
+let cur = Math.min(1, Math.max(0, (+new URLSearchParams(location.search).get('v') || 1) - 1));
+
+function draw() {
+  const v = VARIANTS[cur];
+  $('head').innerHTML = `<h1>${v.head} <em>${v.sub}</em></h1>`;
+  const st = $('stage'); st.innerHTML = '';
+  const host = document.createElement('div');
+  host.style.cssText = 'position:absolute;inset:0';
+  st.append(host);
+  v.f(host, model());
+  detail(null);
+  [...$('bar').querySelectorAll('button')].forEach((b, i) => b.setAttribute('aria-pressed', i === cur));
+  history.replaceState(null, '', `?v=${cur + 1}`);
+}
+
+const lab = document.createElement('span');
+lab.className = 'lab'; lab.textContent = 'Shape'; $('bar').append(lab);
+VARIANTS.forEach((v, i) => {
+  const b = document.createElement('button');
+  b.textContent = v.n; b.onclick = () => { cur = i; draw(); };
+  $('bar').append(b);
+});
+/* the third shape is a separate page — it draws 1,547 files from ccsh, not the 45 authored parts */
+const cc = document.createElement('a');
+cc.href = 'atlas-codecharta.html';
+cc.textContent = 'CodeCharta';
+cc.style.cssText = 'padding:8px 18px;border-radius:999px;font-size:var(--t-body);'
+  + 'color:var(--accent);text-decoration:none';
+cc.onmouseenter = () => cc.style.background = 'var(--hover)';
+cc.onmouseleave = () => cc.style.background = 'transparent';
+$('bar').append(cc);
+
+const kb = document.createElement('kbd'); kb.textContent = '1–2'; $('bar').append(kb);
+addEventListener('keydown', e => {
+  if (e.key === '1' || e.key === '2') { cur = +e.key - 1; draw(); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { cur = 1 - cur; draw(); }
+});
+addEventListener('resize', draw);
+draw();
+</script>
