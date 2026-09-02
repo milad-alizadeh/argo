@@ -18,8 +18,15 @@ configuration names, how to build the optimised app, and what that is worth:
 `docs/agents/build-configurations.md`.
 
 Running the suites optimised is how a seconds-side cost budget gets re-recorded against code the
-optimiser has seen (ADR-0028). It is deliberately not on CI: the counts are the half a debug build
-cannot get wrong, and they gate every push.
+optimiser has seen (ADR-0028). It is deliberately not on the `macos` job: the counts are the half a
+debug build cannot get wrong, and they gate every push.
+
+One optimised run has a workflow of its own — `figures.yml`, on `macos-26`, on manual dispatch,
+running `apps/macOS/scripts/record-figures.sh` and uploading what it read. It re-records the seven
+seconds-side FIGURES in `ArgoUITests/PerfBudgets` and nothing else; the eight CPU quotients
+ADR-0028 names are gates, and they run in debug here on every push like every other count. **It is
+not a gate itself**, for the reason `PerfBudgets.figureMachine` gives, and the only thing it checks
+is the fold between its two arms — armed the day a quiet runner's figures land (#1024).
 
 Biome's escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries) are TypeScript-only and
 so have no subject since ADR-0023. Dormant, like the boundary gates — the per-file caps still

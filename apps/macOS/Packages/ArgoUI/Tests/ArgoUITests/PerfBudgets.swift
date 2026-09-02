@@ -4,7 +4,9 @@
 /// **PROVISIONAL — these are a loaded laptop's figures, not `macos-26`'s (#1024).** ADR-0028's
 /// Consequences require re-recording on `macos-26`, in release, BEFORE the seconds-side budgets
 /// bind, and that has not happened. Nothing here goes red or green on a second today — every gate
-/// in the suite is a count — but the block ADR-0028 names is still up.
+/// in the suite is a count — but the block ADR-0028 names is still up. `figureMachine` below is
+/// that block as a value rather than as prose: while it says `.loadedLaptop`, no `Figure` offers
+/// a fold and nothing downstream can bind to one.
 ///
 /// Every entry reads the same way, and an entry that cannot fill the shape does not belong here:
 ///
@@ -151,9 +153,39 @@ enum PerfBudgets {
         let debug: Double
         let release: Double
 
-        /// What the optimiser is worth on this path — the debug figure over the release one.
-        var optimiserFold: Double {
-            (debug / release * 100).rounded() / 100
+        /// What the optimiser is worth on this path — the debug figure over the release one — and
+        /// `nil` off a loaded laptop, where the quotient is the load average's as much as the
+        /// optimiser's: the arms moved from 131 to 215 between them (#998).
+        ///
+        /// It is the one quantity here a gate could ever hold: its two halves are the SAME work in
+        /// the same shape, which is what ADR-0028 Rule 8 asks of a quotient. `figureMachine` says
+        /// why the seconds beside it are not.
+        var optimiserFold: Double? {
+            guard figureMachine == .quietRunner else { return nil }
+            return (debug / release * 100).rounded() / 100
         }
+    }
+
+    /// Where every `Figure` above was taken, and the whole of what may be built on them. This is
+    /// the ONE place that argument is stated; everything else cites it.
+    ///
+    /// A second is never bindable on either machine. `CLOCK_THREAD_CPUTIME_ID` still charges the
+    /// cycles a thread stalls while on-core, so a reading carries whatever else the box was doing
+    /// — 3.8x of it on a pointer-chase (`CostMeasure`, ADR-0028 Rule 8). A GitHub-hosted runner is
+    /// quieter than a laptop with thirty agent builds on it and is still a shared, virtualised box
+    /// with no clock guarantee, so `.quietRunner` ends these figures' PROVISIONAL status and
+    /// nothing more (ADR-0028 Consequences, amended by #1024). What it arms is `optimiserFold`.
+    ///
+    /// One value for the block rather than a field each figure carries: all seven come off one
+    /// interleaved run, and a file where they could differ would invite a half-recorded set. It is
+    /// also the single line a real recording changes.
+    static let figureMachine = Machine.loadedLaptop
+
+    /// The two machines a `Figure` can come off, and no third.
+    enum Machine: String {
+        /// #953's M4 Pro with thirty other agent builds on it. A shape, never a number.
+        case loadedLaptop = "loaded-laptop"
+        /// `.github/workflows/figures.yml` — a `macos-26` runner running nothing but the harness.
+        case quietRunner = "quiet-runner"
     }
 }

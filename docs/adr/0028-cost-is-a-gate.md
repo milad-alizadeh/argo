@@ -204,6 +204,19 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   the roster memo's own fold count, and the prose store's hit rate. All eight hold unchanged
   optimised, and so does every count beside them: `ArgoEngine` 1 222 tests
   and `ArgoUI` 2 035 tests pass in release with no budget touched.
+
+  > **Amendment — 2026-09-02 (#1024).** "Before the budgets bind" assumed that a `macos-26`
+  > recording would make a SECOND bindable. It does not, and this bullet is the last place in the
+  > ADR that reads as though it might. A GitHub-hosted runner is a shared, virtualised box with no
+  > clock guarantee of its own — quieter than the laptop these were taken on, and still not a
+  > machine an absolute may be asserted against; that is Rule 8's own argument applied to the box
+  > rather than to the quotient. So a recording on `macos-26` ends the figures' PROVISIONAL status
+  > and nothing more. **What binds, then, is the fold between the two configurations of one
+  > figure** — same fixture, same call, same cold-or-warm state, `-Onone` against `-O` — which is
+  > alike by construction and so the one quotient Rule 8 admits without an argument. The seconds
+  > stay figures, gated by nothing, exactly as Rule 8's last paragraph says of a claim no count can
+  > see. `.github/workflows/figures.yml` is the run, `apps/macOS/scripts/record-figures.sh` the
+  > harness, and `PerfBudgets.figureMachine` is the switch that arms the fold check.
 - **What `-O` is actually worth on these paths: 1.0x to 1.3x on six of the seven measured, and
   3.7x on the seventh** (#953, and #998 for the same seven against `main`). So the whole epic being
   sized in debug did not inflate its figures by an order of magnitude, and the fixes it justified
