@@ -99,21 +99,21 @@ sh apps/macOS/scripts/record-figures.sh          # five interleaved rounds, both
 ```
 
 That is the trap below already handled: it builds both configurations before it times either,
-alternates the arms, takes the least of N per arm, and refuses a run in which any figure went
-missing from any arm — which is what an env-gated suite quietly not running looks like. Underneath
-it is `swift test -c release -Xswiftc -DDEBUG` in the package directory, timing thread CPU and
-never a wall clock (`CostMeasure`).
+alternates the arms, takes the least of N per arm, and refuses a run in which any of the seven
+figures it NAMES went missing from any arm — which is what an env-gated suite quietly not running
+looks like. Underneath it is `swift test -c release -Xswiftc -DDEBUG` in the package directory,
+timing thread CPU and never a wall clock (`CostMeasure`).
 
 **Run it on a quiet machine, which is not this laptop.** `.github/workflows/figures.yml` runs it
-on `macos-26` on manual dispatch and uploads what it read; ADR-0028's Consequences want that run
-before the seconds-side budgets bind, and #1024 is what tracks it. The job records and uploads —
-it neither commits a figure nor gates on one, because a hosted runner is a shared box too and its
-seconds bind nothing. The one thing either can hold is the FOLD between the two arms, whose halves
-are the same work in the same shape (ADR-0028 Rule 8).
+on `macos-26` on manual dispatch and uploads what it read; #1024 is what tracks that run. It
+records and uploads rather than committing or gating, and the reason — a hosted runner is a shared
+box too, so only the FOLD between the two arms binds — is stated once, at
+`PerfBudgets.figureMachine`, and amended into ADR-0028's Consequences.
 
 The trap the harness exists to have solved: **interleave the two configurations** — debug,
-release, debug, release — and take the LEAST of N rounds per arm. A machine stepping its clock or picking up a neighbour drifts over a run, and
-running one arm to completion before the other lands that drift on whichever arm was in flight.
+release, debug, release — and take the LEAST of N rounds per arm. A machine stepping its clock or
+picking up a neighbour drifts over a run, and running one arm to completion before the other lands
+that drift on whichever arm was in flight.
 The first attempt here ran three debug passes and then three release passes and read the measure
 pass as *slower* optimised, purely because the load average had gone from 131 to 215 in between.
 That is recorded because the mistake is easy and its answer does not look wrong.

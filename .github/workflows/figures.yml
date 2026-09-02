@@ -1,6 +1,12 @@
-# Records ADR-0028's seconds-side figures on `macos-26`, in both configurations, and uploads what
-# it read. It is the run ADR-0028's Consequences ask for before the seconds-side budgets bind, and
-# what #1024 is open for.
+# Records the seven seconds-side figures in `ArgoUITests/PerfBudgets` on `macos-26`, in both
+# configurations, and uploads what it read. That is #1024's subject and the whole of this job's
+# scope.
+#
+# What it does NOT cover, so that a green run is not read as more than it is: ADR-0028's
+# Consequences also name eight CPU quotients across five cost suites, two of them
+# (`HubJoinCostTests`, `HubRosterCostTests`) in `ArgoEngine`, which this job never builds. Those
+# are GATES and they run in debug on every push, where a count cannot get them wrong — see
+# `docs/agents/quality-gates.md`. This job re-records FIGURES, which is a different thing.
 #
 # It RECORDS AND UPLOADS. It does not commit, and it does not gate:
 #
@@ -24,12 +30,20 @@ name: figures
 on:
   workflow_dispatch:
     inputs:
+      # No `type:` — `workflow_dispatch` has string, choice, boolean and environment, and no
+      # number. `record-figures.sh` refuses a non-count itself, before it builds anything.
       rounds:
         description: Interleaved rounds per configuration. The least of them is the figure.
         default: "5"
 
 permissions:
   contents: read
+
+# Serialised, never cancelled: two dispatches are two hour-long macOS jobs, and a recording
+# cancelled halfway is worse than one that waited — it uploads an incomplete set of arms.
+concurrency:
+  group: figures
+  cancel-in-progress: false
 
 jobs:
   record:
@@ -59,19 +73,18 @@ jobs:
           xcodebuild -version
           swift --version
 
-      # `pipefail` because the script's exit status is the whole verdict and `tee`'s is not.
-      # `2>&1` so a failure's reason lands in the artifact rather than only in the log.
+      # `shell: bash` is named for `pipefail`, which it brings and the default `bash -e` does not:
+      # the script's exit status is the whole verdict and `tee`'s is not. `2>&1` so a failure's
+      # reason lands in the artifact rather than only in the run log.
       - name: Record the figures, interleaved
         shell: bash
-        run: |
-          set -o pipefail
-          sh apps/macOS/scripts/record-figures.sh 2>&1 | tee figures.txt
+        run: sh apps/macOS/scripts/record-figures.sh 2>&1 | tee figures.txt
 
       # `always()`: a run that failed its completeness check is exactly the run whose log somebody
       # needs to read.
       - name: Upload what it read
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: figures-${{ github.sha }}
           path: figures.txt

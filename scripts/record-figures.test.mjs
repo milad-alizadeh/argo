@@ -53,18 +53,31 @@ exit ${exitCode}
   chmodSync(path.join(bin, 'swift'), 0o755)
 }
 
+// The seven the script names in FIGURES: a run short of one of them is a failure, so a stub that
+// wants to reach the summary has to answer with all seven.
+const SEVEN =
+  'feed-measure-pass-cold session-reading-warm band-paint-cold band-paint-warm' +
+  ' sixty-scrolled-frames thirty-seam-frames markdown-band-cold'
+
 // Two rounds of two arms, four distinct readings, so the least of each arm is not the first one
-// the run saw. 3.00 over 2.00 is a fold of 1.50.
+// the run saw. 3.00 over 2.00 is a fold of 1.50. `$skip` is the slug a case wants dropped, and
+// `$only` the arm to drop it from — an empty arm drops it from both.
 const READINGS = `case "$arm/$round" in
   debug/1) fresh=9.00 ;;
   debug/2) fresh=3.00 ;;
   release/1) fresh=6.00 ;;
   release/2) fresh=2.00 ;;
 esac
-echo "FIGURE band-paint-cold fresh=\${fresh}ms recorded-debug=1.00ms recorded-release=1.00ms on=$ON fold=$FOLD"`
+for slug in ${SEVEN}; do
+  if [ "$slug" = "$skip" ] && { [ -z "$only" ] || [ "$only" = "$arm" ]; }; then continue; fi
+  echo "FIGURE $slug fresh=\${fresh}ms recorded-debug=1.00ms recorded-release=1.00ms on=$ON fold=$FOLD"
+done`
 const twoRounds = { ARGO_FIGURE_ROUNDS: '2' }
-const loaded = (extra = '') =>
-  READINGS.replace('$ON', 'loaded-laptop').replace('$FOLD', 'unbound') + extra
+const dropping = (skip = '', only = '') => `skip=${skip}\nonly=${only}\n`
+const loaded = (extra = '', skip, only) =>
+  dropping(skip, only) +
+  READINGS.replace('$ON', 'loaded-laptop').replace('$FOLD', 'unbound') +
+  extra
 
 check('record-figures.sh skips where Swift cannot run', () => {
   const result = run(RECORD, BARE)
@@ -87,16 +100,29 @@ check('record-figures.sh builds both configurations before it times anything', (
   assert.equal(result.argv.filter((arg) => arg === '--build-tests').length, 2)
 })
 
+// The three flags the run is worth nothing without: `--filter`, or every other suite in the
+// package lands on the measurement; `-c release`, or both arms are the same arm; and `-Xswiftc
+// -DDEBUG`, without which the test target does not COMPILE optimised at all (#991). One release
+// build plus one release round per round, so three of each at two rounds.
+check('record-figures.sh filters to the harness and spells the release arm in full', () => {
+  swiftPrinting(loaded())
+  const result = run(RECORD, { ...ON_DARWIN, env: twoRounds })
+  assert.equal(result.status, 0, result.output)
+  const count = (arg) => result.argv.filter((one) => one === arg).length
+  assert.equal(count('--filter'), 4, result.argv.join(' '))
+  assert.equal(count('MinimapFigureRecording'), 4)
+  assert.equal(count('release'), 3)
+  assert.equal(count('-DDEBUG'), 3)
+})
+
 check('record-figures.sh interleaves the arms and takes the least of each', () => {
   swiftPrinting(loaded())
   const result = run(RECORD, { ...ON_DARWIN, env: twoRounds })
   assert.equal(result.status, 0, result.output)
-  assert.deepEqual(readFileSync(ARMS, 'utf8').trim().split('\n'), [
-    'debug',
-    'release',
-    'debug',
-    'release',
-  ])
+  assert.equal(
+    readFileSync(ARMS, 'utf8').trim().split('\n').join(','),
+    'debug,release,debug,release',
+  )
   assert.match(result.output, /band-paint-cold\s+3\.00\s+2\.00\s+1\.50/)
 })
 
@@ -115,16 +141,46 @@ check('record-figures.sh fails when the harness printed no figure at all', () =>
   assert.match(result.output, /not one figure printed/)
 })
 
-check('record-figures.sh fails when a figure is missing from one arm', () => {
-  swiftPrinting(
-    loaded(
-      '\n[ "$arm" = release ] || echo "FIGURE seam fresh=1.00ms on=loaded-laptop fold=unbound"',
-    ),
-  )
+// Both halves of the completeness claim. The second is the one a set built from what ARRIVED
+// cannot make: a case that fell over in both arms prints nothing anywhere, so only the named list
+// in the script can miss it.
+for (const [where, only] of [
+  ['one arm', 'release'],
+  ['every arm, so nothing printed it at all', ''],
+]) {
+  check(`record-figures.sh fails when a figure is missing from ${where}`, () => {
+    swiftPrinting(loaded('', 'thirty-seam-frames', only))
+    const result = run(RECORD, { ...ON_DARWIN, env: twoRounds })
+    assert.equal(result.status, 1, result.output)
+    assert.match(result.output, /thirty-seam-frames read 0 times in (debug|release)/)
+  })
+}
+
+check('record-figures.sh fails on a figure it was never told to expect', () => {
+  swiftPrinting(`${loaded()}\necho "FIGURE seam fresh=1.00ms on=loaded-laptop fold=unbound"`)
   const result = run(RECORD, { ...ON_DARWIN, env: twoRounds })
   assert.equal(result.status, 1, result.output)
-  assert.match(result.output, /seam read 0 times in release, not once per round \(2\)/)
+  assert.match(result.output, /seam is not a figure this run expects/)
 })
+
+// A reading of zero is a field this parser did not find, never a fast path — and it is the
+// denominator of the fold two lines further on.
+check('record-figures.sh refuses a reading of zero rather than dividing by it', () => {
+  swiftPrinting(loaded().replace('release/2) fresh=2.00', 'release/2) fresh=0.00'))
+  const result = run(RECORD, { ...ON_DARWIN, env: twoRounds })
+  assert.equal(result.status, 1, result.output)
+  assert.match(result.output, /read 0 ms in release/)
+})
+
+for (const rounds of ['nine', '0']) {
+  check(`record-figures.sh refuses ARGO_FIGURE_ROUNDS=${rounds} before it builds anything`, () => {
+    swiftPrinting(loaded())
+    const result = run(RECORD, { ...ON_DARWIN, env: { ARGO_FIGURE_ROUNDS: rounds } })
+    assert.equal(result.status, 1, result.output)
+    assert.match(result.output, /is a round count/)
+    assert.deepEqual(result.argv, [])
+  })
+}
 
 check('record-figures.sh surfaces a non-zero swift exit', () => {
   swiftPrinting(loaded(), 3)
@@ -134,8 +190,8 @@ check('record-figures.sh surfaces a non-zero swift exit', () => {
 })
 
 // The other side of the binding switch: once `PerfBudgets.figureMachine` is a quiet runner's, the
-// suite prints a fold and this script holds the fresh one to Rule 7's 3x, both ways.
-const quiet = (fold) => READINGS.replace('$ON', 'quiet-runner').replace('$FOLD', fold)
+// suite prints a fold and this script holds the fresh one to 3x either way.
+const quiet = (fold) => dropping() + READINGS.replace('$ON', 'quiet-runner').replace('$FOLD', fold)
 
 check('record-figures.sh checks the fold once the figures are a quiet runner’s', () => {
   swiftPrinting(quiet('1.40x'))
@@ -144,15 +200,16 @@ check('record-figures.sh checks the fold once the figures are a quiet runner’s
   assert.match(result.output, /every fold within 3x/)
 })
 
+// The recorded fold is named in each message, so neither case can pass on the other's failure.
 for (const [what, fold] of [
   ['above', '0.10x'],
   ['below', '9.00x'],
 ]) {
-  check(`record-figures.sh fails when the fresh fold is ${what} Rule 7’s 3x`, () => {
+  check(`record-figures.sh fails when the fresh fold is ${what} 3x of the recorded one`, () => {
     swiftPrinting(quiet(fold))
     const result = run(RECORD, { ...ON_DARWIN, env: twoRounds })
     assert.equal(result.status, 1, result.output)
-    assert.match(result.output, /band-paint-cold folds 1\.50 against a recorded/)
+    assert.match(result.output, new RegExp(`folds 1\\.50 against a recorded ${fold}`))
   })
 }
 

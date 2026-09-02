@@ -8,11 +8,8 @@
 # because the load average went from 131 to 215 in between (#998). Least of N because CPU noise
 # is one-sided: a miss, a fault, a frequency step and a preemption only ever ADD (`CostMeasure`).
 #
-# It asserts no second and never will. A hosted runner is a shared, virtualised box, so an
-# absolute-seconds gate here would go red on the machine rather than on the code — #918's flake
-# at CI scale. The one quantity it CAN hold is a quotient whose two halves are the same work in
-# the same shape (ADR-0028 Rule 8): the optimiser fold, debug over release, of one figure. That
-# check arms itself the day the figures are recorded on a quiet runner and says so until then.
+# It asserts no second and never will; the fold between its two arms is the whole of what it can
+# check, and why is stated once, at `PerfBudgets.figureMachine`.
 #
 #   sh apps/macOS/scripts/record-figures.sh              # five interleaved rounds
 #   ARGO_FIGURE_ROUNDS=1 sh apps/macOS/scripts/record-figures.sh
@@ -34,6 +31,28 @@ if ! command -v swift >/dev/null 2>&1; then
 fi
 
 ROUNDS=${ARGO_FIGURE_ROUNDS:-5}
+case "$ROUNDS" in
+  '' | *[!0-9]* | 0)
+    echo "record-figures: ARGO_FIGURE_ROUNDS is a round count, not $ROUNDS" >&2
+    exit 1
+    ;;
+esac
+
+# The figures the harness records, named HERE and not derived from what a run printed. A case that
+# fails, throws or is skipped in BOTH arms prints nothing at all, and a set built from what arrived
+# cannot miss what never arrived — the same hole `swift test` exiting 0 on a failed run leaves
+# (#918). A renamed figure fails this run until the list moves with it, which is the direction the
+# drift should break in.
+#
+# One line, in two pieces: awk's `-v` refuses a raw newline in a value, and finds out at the far
+# end of a twenty-minute run.
+FIGURES='feed-measure-pass-cold session-reading-warm band-paint-cold band-paint-warm'
+FIGURES="$FIGURES sixty-scrolled-frames thirty-seam-frames markdown-band-cold"
+
+# The arms, named once. The summary counts each figure per arm, so an arm added here and not
+# there would be an arm nothing checks — the same silent gap the list above closes.
+ARMS='debug release'
+
 READINGS=$(mktemp)
 ROUND_OUT=$(mktemp)
 trap 'rm -f "$READINGS" "$ROUND_OUT"' EXIT INT TERM
@@ -48,7 +67,8 @@ swift build --build-tests -c release -Xswiftc -DDEBUG
 
 round=1
 while [ "$round" -le "$ROUNDS" ]; do
-  for configuration in debug release; do
+  # shellcheck disable=SC2086 # ARMS is a word list, which is the point of it being one.
+  for configuration in $ARMS; do
     case "$configuration" in
       debug) flags='' ;;
       release) flags='-c release -Xswiftc -DDEBUG' ;;
@@ -84,4 +104,5 @@ if [ ! -s "$READINGS" ]; then
   exit 1
 fi
 
-awk -v rounds="$ROUNDS" -f "$APP_DIR/scripts/record-figures.awk" "$READINGS"
+awk -v rounds="$ROUNDS" -v expected="$FIGURES" -v arms="$ARMS" \
+  -f "$APP_DIR/scripts/record-figures.awk" "$READINGS"
