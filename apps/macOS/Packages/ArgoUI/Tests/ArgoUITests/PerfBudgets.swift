@@ -4,7 +4,10 @@
 /// **PROVISIONAL — these are a loaded laptop's figures, not `macos-26`'s (#1024).** ADR-0028's
 /// Consequences require re-recording on `macos-26`, in release, BEFORE the seconds-side budgets
 /// bind, and that has not happened. Nothing here goes red or green on a second today — every gate
-/// in the suite is a count — but the block ADR-0028 names is still up.
+/// in the suite is a count — but the block ADR-0028 names is still up. `figureMachine` below is
+/// that block as a value rather than as prose: while it says `.loadedLaptop`, no `Figure` offers
+/// a fold and nothing downstream can bind to one. The run that lifts it is
+/// `.github/workflows/figures.yml`, whose harness is `apps/macOS/scripts/record-figures.sh`.
 ///
 /// Every entry reads the same way, and an entry that cannot fill the shape does not belong here:
 ///
@@ -151,9 +154,32 @@ enum PerfBudgets {
         let debug: Double
         let release: Double
 
-        /// What the optimiser is worth on this path — the debug figure over the release one.
-        var optimiserFold: Double {
-            (debug / release * 100).rounded() / 100
+        /// What the optimiser is worth on this path — the debug figure over the release one — and
+        /// `nil` off a loaded laptop, where the quotient is the load average's as much as the
+        /// optimiser's: the arms moved from 131 to 215 between them (#998).
+        ///
+        /// It is the one quantity here a gate could ever hold. Its two halves are the SAME work in
+        /// the same shape, which is what ADR-0028 Rule 8 asks of a quotient and what the seconds
+        /// beside it can never be — those are the box's as much as the code's.
+        var optimiserFold: Double? {
+            guard figureMachine == .quietRunner else { return nil }
+            return (debug / release * 100).rounded() / 100
         }
+    }
+
+    /// Where every `Figure` above was taken, and the whole of what may be built on them.
+    ///
+    /// One value for the block rather than a field each figure carries: all seven come off one
+    /// interleaved run, and a file where they could differ would invite a half-recorded set. It is
+    /// also the single line a real recording changes (#1024).
+    static let figureMachine = Machine.loadedLaptop
+
+    /// The two machines a `Figure` can come off, and no third.
+    enum Machine: String {
+        /// #953's M4 Pro with thirty other agent builds on it. A shape, never a number.
+        case loadedLaptop = "loaded-laptop"
+        /// A `macos-26` runner running nothing but the harness. Still a shared, virtualised box,
+        /// so its seconds bind nothing either — only the fold across its two arms does.
+        case quietRunner = "quiet-runner"
     }
 }

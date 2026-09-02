@@ -1,0 +1,77 @@
+# Records ADR-0028's seconds-side figures on `macos-26`, in both configurations, and uploads what
+# it read. It is the run ADR-0028's Consequences ask for before the seconds-side budgets bind, and
+# what #1024 is open for.
+#
+# It RECORDS AND UPLOADS. It does not commit, and it does not gate:
+#
+#   - not a commit, because which reading is honest is a judgement — the machine, the arms, and
+#     whether the box was quiet all go into `PerfBudgets` beside the number, and a bot that writes
+#     one lands a figure nobody weighed. The artifact is what a person reads and lands.
+#   - not a gate on seconds, because a hosted runner is a shared, virtualised box with no clock
+#     guarantee, and an absolute-seconds assert on one goes red on the machine rather than on the
+#     code — #918's flake, at CI scale, on the suite ADR-0028 wrote to replace exactly that.
+#
+# The one thing it does check is a quotient of two readings of the same work in the same shape:
+# the optimiser fold, debug over release, per figure (ADR-0028 Rule 8). That check arms itself the
+# day `PerfBudgets.figureMachine` says `.quietRunner`, and says so until then.
+#
+# Its own workflow rather than a job in `ci.yml`: this is not a gate, it must not be reached by
+# ci.yml's `cancel-in-progress` (a dispatch cancelled by the next push wastes an hour of macOS
+# minutes for nothing), and a permanently-skipped job in the default workflow is one more green
+# row on every PR that means nothing.
+name: figures
+
+on:
+  workflow_dispatch:
+    inputs:
+      rounds:
+        description: Interleaved rounds per configuration. The least of them is the figure.
+        default: "5"
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    name: record the seconds-side figures
+    # Pinned for the same reason `ci.yml` pins it — and here it is the SUBJECT: a figure is worth
+    # only the name of the machine beside it, and macos-latest moves on GitHub's schedule.
+    runs-on: macos-26
+    # Two clean builds and 2N filtered test runs. Generous because the alternative to a run that
+    # times out is a run somebody repeats.
+    timeout-minutes: 90
+    env:
+      # A skip here would upload an empty log and read as a recording. `record-figures.sh` has a
+      # completeness check of its own; this is the half that covers a missing toolchain.
+      ARGO_REQUIRE_SWIFT_TOOLS: "1"
+      XCODE_APP: /Applications/Xcode_26.6.app
+      ARGO_FIGURE_ROUNDS: ${{ inputs.rounds }}
+    steps:
+      - uses: actions/checkout@v5
+
+      # No `./.github/actions/setup`, and no build-products cache. Neither is needed — nothing
+      # here runs through bun or turbo — and the cache would hand a measurement whatever an
+      # earlier run's incremental build left, which is one more thing between the figure and the
+      # code it is supposed to be of.
+      - name: Select the pinned Xcode
+        run: |
+          sudo xcode-select -s "$XCODE_APP"
+          xcodebuild -version
+          swift --version
+
+      # `pipefail` because the script's exit status is the whole verdict and `tee`'s is not.
+      # `2>&1` so a failure's reason lands in the artifact rather than only in the log.
+      - name: Record the figures, interleaved
+        shell: bash
+        run: |
+          set -o pipefail
+          sh apps/macOS/scripts/record-figures.sh 2>&1 | tee figures.txt
+
+      # `always()`: a run that failed its completeness check is exactly the run whose log somebody
+      # needs to read.
+      - name: Upload what it read
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: figures-${{ github.sha }}
+          path: figures.txt

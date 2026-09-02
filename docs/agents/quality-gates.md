@@ -18,8 +18,15 @@ configuration names, how to build the optimised app, and what that is worth:
 `docs/agents/build-configurations.md`.
 
 Running the suites optimised is how a seconds-side cost budget gets re-recorded against code the
-optimiser has seen (ADR-0028). It is deliberately not on CI: the counts are the half a debug build
-cannot get wrong, and they gate every push.
+optimiser has seen (ADR-0028). It is deliberately not on the `macos` job: the counts are the half a
+debug build cannot get wrong, and they gate every push.
+
+The optimised run has a workflow of its own instead — `figures.yml`, on `macos-26`, on manual
+dispatch, running `apps/macOS/scripts/record-figures.sh` and uploading what it read. **It is not a
+gate**, and its own header says why: a hosted runner is a shared, virtualised box, so an
+absolute-seconds assert on one goes red on the machine rather than on the code. The only thing it
+checks is the fold between its two arms, and only once `PerfBudgets.figureMachine` says a quiet
+runner recorded them (#1024).
 
 Biome's escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries) are TypeScript-only and
 so have no subject since ADR-0023. Dormant, like the boundary gates — the per-file caps still
