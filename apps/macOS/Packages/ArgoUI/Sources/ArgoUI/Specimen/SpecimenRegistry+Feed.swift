@@ -105,6 +105,13 @@ extension SpecimenRegistry {
         // A row arriving at the end must not move the row somebody is looking at.
         SpecimenEntry("feedArriving") { ArrivingFeedSpecimen() },
         SpecimenEntry("emptyFeed") { SpecimenScene.sessions([]) },
+        // A record read at its two ends, with the seam where its middle is missing (#404 AC4). The
+        // whole deck rather than the rows alone: what the still has to settle is that the rule
+        // carries between two turns of ordinary work, and that no spend is rolled up at the foot
+        // of a reading that does not have all of it.
+        SpecimenEntry("feedExcerpted") {
+            SpecimenScene.sessions(FeedProjection.previewExcerptedRows)
+        },
         // The keyboard cursor, on the two shapes a row can be: the bubble it has to hug, and the
         // line that fills the measure. Unreachable without an arrow key, so unreachable in a still
         // any other way (#533).

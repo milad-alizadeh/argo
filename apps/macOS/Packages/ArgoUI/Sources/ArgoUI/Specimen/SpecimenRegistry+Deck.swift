@@ -17,6 +17,10 @@ extension SpecimenRegistry {
             SpecimenScene.sessions(FeedProjection.longRows, held: FeedProjection.longHeldRowID)
                 .argoWithoutTransparency()
         },
+        // The two no-selection states, which read as one thing until #404. Both are the WHOLE
+        // window, for the reason `UnselectedDeckSpecimen` gives.
+        SpecimenEntry("deckUnselected") { UnselectedDeckSpecimen() },
+        SpecimenEntry("deckNoSessions") { RosterSpecimen(presentation: .emptyPreview) },
         SpecimenEntry("planPill") { PlanSpecimen(plan: PlanFixture.working) },
         // Reachable only by hovering or tabbing.
         SpecimenEntry("openPlanPill") {

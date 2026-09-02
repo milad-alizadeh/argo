@@ -72,9 +72,10 @@ extension SessionHeaderProjection {
     /// Also `nil` on a BOUNDED reading, which is the same withholding the spend totals get
     /// (`HubSession+Spend`): the stretch a launch sweep skipped reads here as one gap above the
     /// cutoff, so a sum over the two ends understates the work and would render as a whole figure.
-    /// Read off the seam's own event rather than off the extent, which no surface is handed.
+    /// The predicate is named once — `[TranscriptEvent].isBoundedReading` — and the feed's own
+    /// roll-up spends the same one.
     static func worked(across events: [TranscriptEvent]) -> Int? {
-        guard !events.contains(.excerpted) else { return nil }
+        guard !events.isBoundedReading else { return nil }
         let moments = moments(in: events)
         guard moments.count > 1 else { return nil }
         return zip(moments, moments.dropFirst()).reduce(0) { worked, pair in
