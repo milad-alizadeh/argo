@@ -9,18 +9,17 @@ import Testing
 /// `HubJoin.apply(_:ofSubagent:to:)`, which rebuilt every Session and the whole chain graph for one
 /// child's bytes; the readings live beside the roster now, so the count ought to be zero by
 /// construction. That is exactly why it stays: "by construction" is what a future change quietly
-/// undoes, and wiring the batch or the read back through the roster is the regression this
-/// restructure makes easy to write.
+/// undoes, and routing a child's batch back into the join is the regression this restructure makes
+/// easy to write.
 ///
-/// Asserted as a COUNT of folds and never in seconds, which is ADR-0028 Rule 8's first instruction:
-/// a count is EXACTLY the same idle and loaded where thread CPU is only approximately so. What the
-/// CPU quotient here could not be held to, and why, is that ADR's #1064 and #1065 amendments; the
-/// seconds it read are `PerfBudgets.subagentReadingFolds` and they bind nothing.
+/// The count and the readings it replaced are `PerfBudgets.subagentReadingFolds` (ADR-0028 Rule 8,
+/// and that ADR's #1064 and #1065 amendments for why the quotient could not be held to).
 ///
-/// It is the neighbour of `HubJoinCostTests`, not a copy of it: that one counts what a SESSION's
-/// own batch rebuilds inside the join, and this one counts what a CHILD's batch folds on a roster
-/// the path no longer touches at all. The count is the roster's for that reason —
-/// `HubRosterMemo.folds`, the same counter `HubRosterCostTests` gates on.
+/// What the count does NOT see, stated because Rule 8 drops a claim rather than implying it: the
+/// stamp is the only thing a fold can watch, and a READ does not move one. So the WRITE half is
+/// held here — a batch back in the join moves `joinRevision` — and a `subagentReading(of:)`
+/// re-implemented over `hub.sessions` would be a memo HIT, folding nothing and passing green while
+/// costing the whole roster. The quotient covered that half; no count in the tree does.
 @Suite("Subagent cost")
 @MainActor
 struct SubagentCostTests {
@@ -37,12 +36,12 @@ struct SubagentCostTests {
         let overTwoHundredRows = Self.foldsOfBatches(against: large)
 
         // A reading answers nothing for an id or a path it does not hold, and a loop that reads
-        // nothing folds nothing — so the events landing are what stops an id that drifted from the
-        // one being tailed reading as a green zero.
+        // nothing folds nothing — so the events landing are what stops a fixture whose id or path
+        // drifted from reading as a green zero.
         #expect(small.subagentReading(of: Self.agentID)?.count == Self.batches)
         #expect(large.subagentReading(of: Self.agentID)?.count == Self.batches)
         #expect(overFourRows == PerfBudgets.subagentReadingFolds)
-        #expect(overTwoHundredRows == overFourRows)
+        #expect(overTwoHundredRows == PerfBudgets.subagentReadingFolds)
     }
 
     /// Enough batches that a per-batch fold is unmistakable, and few enough that the reading under
@@ -76,8 +75,8 @@ struct SubagentCostTests {
         return hub.roster.folds - before
     }
 
-    /// What a batch folds from the tail's write to the lane's read — both halves, because either
-    /// one wired back through the roster is the regression this holds.
+    /// What a batch folds from the tail's write to the lane's read. The write is the half a fold
+    /// count can see, per the limit stated above.
     ///
     /// The roster is READ beside every batch because a fold is only ever paid on a read: a batch
     /// that republished the whole roster would cost nothing here until something looked at it, and
