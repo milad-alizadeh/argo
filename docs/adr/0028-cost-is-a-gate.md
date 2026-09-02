@@ -265,25 +265,30 @@ were made of — a ruler measure, a Core Text pass — and gate that instead.
   > since, and the count that would replace it is the fold count the case beside it already
   > asserts, so it stands. Named here so the next red run is read as this, and not as a busy box.
 
-  > **Amendment — 2026-09-02 (#1066).** Two of the four that sweep found are examined here, and
-  > only one of them could be migrated. `ProseTextSizeCostTests` is left as #1065 judged it, both
-  > its halves being the same warm read of the same fixture; `HubRosterCostTests`'s `session(id:)`
-  > stands where #1065 left it, for the reason stated there.
+  > **Amendment — 2026-09-02 (#1066).** Of the four that sweep found, the two written on a bare
+  > inline literal are taken up here, and only one of them could be migrated. The other two stand
+  > where #1065 left them: `ProseTextSizeCostTests`, both its halves being the same warm read of
+  > the same fixture, and `HubRosterCostTests`'s `session(id:)`, for the reason stated there.
   >
   > **`FeedScaleTests` is the one that could.** Its claim — cost grows with the record and not with
   > the square of it — is about the pass that tells two same-named files apart, and that pass now
-  > reports the paths it LOOKED AT: one per address to build its index, then one per rival at each
-  > address it labels. Ten copies of a reading name the same DISTINCT paths, so an indexed pass
-  > reads exactly ten times the looks where one that asked every path which others share its name
-  > reads a hundred — 754 against 7 540 today, and 207 936 against 20 793 600 with the index taken
-  > out. `DistinguishingLabel.labelling` hands the count back per call, which is the same per-value
-  > rule `HubJoin.rebuilds` and `HubRosterMemo.folds` follow for a stored one. Its inline `40` is
-  > RETIRED rather than moved, because a bound left in place reads as live; the 9.1–9.9 it was
-  > written against sit beside `PerfBudgets.labellingLooksFold` as figures gated by nothing.
+  > reports the paths it LOOKED AT: one per path to build its index, then one per DISTINCT
+  > same-named path — itself included — at each address it labels. Ten copies of a reading name the
+  > same distinct paths, so an indexed pass reads exactly ten times the looks where one that asked
+  > every path which others share its name reads a hundred — 754 against 7 540 today, and 207 936
+  > against 20 793 600 with the index taken out. `DistinguishingLabel.labelling` hands the count
+  > back per call, which is the same per-value rule `HubJoin.rebuilds` and `HubRosterMemo.folds`
+  > follow for a stored one. The recorded 754 is gated exactly as well as the fold, because a fold
+  > alone would hold a tally that had stopped seeing the rivalry term — the term the quadratic is
+  > in. Its inline `40` is RETIRED rather than moved, because a bound left in place reads as live;
+  > the 9.1–9.9 it was written against sit beside `PerfBudgets.labellingLooks`, gated by nothing.
   >
-  > **What the count cannot see is stated on the case rather than implied:** the four folds either
-  > side of that pass, and a rewrite that scanned the whole list per address without counting its
-  > own looks. The second is the limit every count in this suite carries — `HubJoin.rebuilds` is
+  > **What the count cannot see is stated on the case rather than implied.** The old assertion ran
+  > `FeedProjection.rows(from:)` on both arms, so the projection stage, the four folds and
+  > `offering` were held against superlinear growth as a side effect; this one measures the
+  > labelling pass alone. And a rewrite that scanned the whole list per address without counting
+  > its own looks would not be seen. The second is the limit every count in this suite carries —
+  > `HubJoin.rebuilds` is
   > equally blind to a rebuild that stops bumping it, and #1065 said the same of a
   > `subagentReading(of:)` re-implemented over `hub.sessions`. What a count holds is the pass that
   > reports it, and that is a smaller claim than a quotient over the whole projection made. It is

@@ -12,16 +12,14 @@ enum DistinguishingLabel {
         labelling(paths).labels
     }
 
-    /// The same labels, and how many paths the pass LOOKED AT to reach them: one look per path to
-    /// build the index, and one per rival at each address it labels. A pass that asked every path
-    /// which others share its name looks at all of them at every address, which is the same count
-    /// squared.
+    /// The same labels, and how many paths the pass LOOKED AT to reach them: one per path to build
+    /// the index, then one per DISTINCT same-named path — itself included — at each address it
+    /// labels. A pass that asked every path which others share its name looks at all of them at
+    /// every address, which is that count squared.
     ///
-    /// That count is what `FeedScaleTests` gates this rule at, because "grows with the record and
-    /// not with the square of it" is a COUNT and never a duration (ADR-0028 Rule 8): a count is
-    /// exactly the same idle and loaded. Returned per call rather than tallied on a static, which
-    /// every suite running beside that one would share. Counted in both configurations, because an
-    /// accumulator in a pass that already runs is control flow rather than an instrument.
+    /// `FeedScaleTests` gates the pass on it instead of on a duration (ADR-0028 Rule 8). Returned
+    /// per call rather than tallied on a static, which every suite running beside that one would
+    /// share.
     static func labelling(_ paths: [String?]) -> (labels: [String?], looks: Int) {
         let components = paths.map(components(of:))
         let rivalry = rivalry(among: components)
