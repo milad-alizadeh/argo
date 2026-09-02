@@ -30,7 +30,7 @@ struct BlockageMark: View {
         // One rung wider than the numeral alone took. The glyph's box is tight to its ring, so at
         // `tight` the ring crowds the capsule's own stroke — rendered, not guessed.
         .padding(.horizontal, ArgoSpacing.snug)
-        .frame(minHeight: ArgoBacklogList.blockageMark)
+        .frame(minHeight: ArgoBacklogList.trailingMark)
         .background(Capsule().strokeBorder(ink.color, lineWidth: ArgoStroke.hairline))
         // Rigid for the `#id`'s reason: a mark that gave up width would set its own glyph and
         // digits down the column rather than let the title take the squeeze.

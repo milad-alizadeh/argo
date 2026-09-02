@@ -12,7 +12,9 @@ extension TicketsView {
         case nothing
         /// The provider's dependency edges (#820).
         case edges
-        /// The roster join — which live Session is on which ticket (#894).
+        /// The roster join — which live Session is on which ticket (#894). Read wherever a
+        /// provider was bound to join AGAINST: a live Session that named no ticket leaves the
+        /// count short rather than unread, and the view says so beside it (#1074).
         case claims
 
         /// Whether this ground was read, given what was read of each.

@@ -80,17 +80,34 @@ enum TicketsFixture {
         )
     }
 
-    /// A live Session on the machine whose own ticket link Argo could not name (#894) — so the
-    /// claim join is INCOMPLETE and `In progress` counts nothing rather than counting the two it
-    /// could see. The other three views are unaffected: their ground was read.
+    /// Two live Sessions whose own ticket link Argo could not name, so the claim join is SHORT by
+    /// two and says so (#1074). The other three views are unaffected: their ground was read.
     ///
     /// A fixture of its own because no other one reaches this state: every reading here sets
-    /// `claimed` outright, which asserts the join was whole. No render had ever drawn the absent
-    /// count until this one.
+    /// `claimed` outright, which asserts every live Session was placed.
     static let unjoinedClaims = TicketsReading(
         items: items,
         claimed: [388, 609],
-        claimsAreWhole: false,
+        claimsUnplaced: 2,
+        provider: bound,
+        project: project,
+        showing: 388,
+    )
+
+    /// The main reading with #272 claimed as well, which makes it claimed AND blocked — the row no
+    /// other fixture reaches (#1074). A delta on `reading` rather than a listing of its own, so the
+    /// other three claims cannot drift from the room every other render draws.
+    static var claimedAndBlocked: TicketsReading {
+        var reading = reading
+        reading.claimed.insert(272)
+        return reading
+    }
+
+    /// Nothing bound to join against, so no live Session's link could be read at ALL and the count
+    /// is genuinely nothing rather than partial. The unread half of the pair above, drawn.
+    static let unreadClaims = TicketsReading(
+        items: items,
+        claimsUnread: 1,
         provider: bound,
         project: project,
         showing: 388,

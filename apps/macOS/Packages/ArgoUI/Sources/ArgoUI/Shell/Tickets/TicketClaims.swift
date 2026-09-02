@@ -1,12 +1,44 @@
-/// The claim join as the views take it: which tickets live Sessions hold, and whether that set is
-/// the whole answer (#894).
-///
-/// The two travel together because counting the first without the second is the false zero: a
-/// Session Argo could not join holds a ticket nobody can name, and a count that quietly dropped it
-/// says "nothing is in progress" about a machine with an agent running on it.
+import ArgoEngine
+
+/// The claim join as the views take it (#894, #1074): which tickets live Sessions hold, and how
+/// many live Sessions the join could not place.
 struct TicketClaims: Equatable, Sendable {
+    /// The tickets placed. The sidebar counts these and a backlog row marks itself off the same
+    /// set, so the mark and the count cannot disagree about which tickets are claimed.
     let numbers: Set<Int>
-    /// False where any LIVE Session's own link could not be read, which makes the count absent
-    /// rather than short (`CONTEXT.md` degrade-down).
-    let areWhole: Bool
+    /// Live Sessions that named no ticket, so `numbers` is short by this many. The count is still
+    /// printed and states this beside it (#1074).
+    var unplaced = 0
+    /// Live Sessions nobody could have read a link for at all. This is what takes the count
+    /// ABSENT: no join happened, so there is no partial answer to state.
+    var unread = 0
+
+    /// Whether the claim ground was read at all. One `unread` Session sinks it: with nothing to
+    /// link TO, "n tickets are claimed" is a number off a join that never happened.
+    var wasRead: Bool {
+        unread == 0
+    }
+}
+
+extension TicketClaims {
+    /// The join over the live Sessions' own link readings — the one place the three readings are
+    /// mapped onto the two numbers.
+    ///
+    /// One exhaustive `switch` and no `default`, so a fourth reading fails to compile here rather
+    /// than being counted nowhere.
+    init(over readings: [CockpitPresentation.Session.TicketLinkReading]) {
+        var placed: Set<Int> = []
+        var short = 0
+        var blind = 0
+        for reading in readings {
+            switch reading {
+            case let .linked(issue): placed.insert(issue.number)
+            case .unlinked: short += 1
+            case .unread: blind += 1
+            }
+        }
+        self.numbers = placed
+        self.unplaced = short
+        self.unread = blind
+    }
 }

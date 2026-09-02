@@ -6,19 +6,20 @@ extension TicketsRoomProjection {
     ///
     /// `Unblocked` and `Blocked` partition the open set and always sum to `All open`
     /// (`cockpit-work-room.md`), so the pair can only be counted where EVERY open ticket's edges
-    /// were read. `In progress` is the same rule over the other join: it can only be counted where
-    /// every live Session's own link was read (#894). Where one was not, the count is absent
-    /// rather than short — a number that has silently dropped what nobody could ask about is worse
-    /// than no number.
+    /// were read. `In progress` rests on the other join, and #1074 split what "read" means there:
+    /// a live Session nobody could read a link FOR takes the count absent, because no join
+    /// happened; a live Session that named no ticket leaves it SHORT, and the view carries how
+    /// short beside the number.
     static func views(of open: [Ticket], claims: TicketClaims) -> [ViewReading] {
         let edged = open.allSatisfy { $0.blockage != .unread }
         return TicketsView.allCases.map { view in
-            guard view.ground.isRead(edges: edged, claims: claims.areWhole) else {
+            guard view.ground.isRead(edges: edged, claims: claims.wasRead) else {
                 return ViewReading(id: view, count: nil)
             }
             return ViewReading(
                 id: view,
                 count: items(of: open, in: view, claimed: claims.numbers).count,
+                unplaced: view.ground == .claims ? claims.unplaced : 0,
             )
         }
     }

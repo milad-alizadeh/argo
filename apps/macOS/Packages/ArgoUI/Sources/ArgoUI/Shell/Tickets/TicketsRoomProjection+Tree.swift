@@ -77,6 +77,7 @@ extension TicketsRoomProjection {
                 labels: item.labels,
                 children: newest(siblings).map(node),
                 blockage: blockage(of: item),
+                isClaimed: reading.claimed.contains(item.number),
                 touched: item.updatedAt,
             )
         }

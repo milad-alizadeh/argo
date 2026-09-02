@@ -21,32 +21,28 @@ extension TicketsReading {
     /// host is read (#258), so every backlog dot draws the hollow ring `absent` means rather than a
     /// state nobody established.
     static func live(_ sources: Sources, showing: Int?) -> TicketsReading {
-        TicketsReading(
+        let claims = TicketClaims(over: links(in: sources.sessions))
+        return TicketsReading(
             items: sources.items,
-            claimed: claims(in: sources.sessions),
-            claimsAreWhole: live(in: sources.sessions).allSatisfy(\.ticket.isRead),
+            claimed: claims.numbers,
+            claimsUnplaced: claims.unplaced,
+            claimsUnread: claims.unread,
             provider: TicketsProvider(reading: sources.health),
             project: sources.project,
             showing: showing,
         )
     }
 
-    /// Which tickets a Session is on. DIRECT — no provider carries a claim, and Argo's own
-    /// roster is the only thing that knows one.
+    /// The link readings a claim can be placed from. Read ONCE and asked three ways — which
+    /// tickets they hold, how many named none, and how many nobody could read at all — so the
+    /// count and its shortfall cannot disagree about which Sessions they were derived over.
     ///
     /// LIVE Sessions only. An ended Session's branch still names the ticket it was cut for, and
     /// counting that as a claim would leave `In progress` filling up for the life of the machine.
-    private static func claims(in sessions: [CockpitPresentation.Session]) -> Set<Int> {
-        Set(live(in: sessions).compactMap { $0.ticket.link?.number })
-    }
-
-    /// The Sessions a claim can come from. Read once and asked twice — which tickets they hold,
-    /// and whether that answer is complete — so the count and its honesty cannot disagree about
-    /// which Sessions they were derived over.
-    private static func live(
+    private static func links(
         in sessions: [CockpitPresentation.Session],
     )
-        -> [CockpitPresentation.Session] {
-        sessions.filter(\.isLive)
+        -> [CockpitPresentation.Session.TicketLinkReading] {
+        sessions.filter(\.isLive).map(\.ticket)
     }
 }
