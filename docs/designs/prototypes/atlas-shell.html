@@ -62,11 +62,38 @@
     padding: 5px 9px; border-radius: 6px; cursor: pointer; }
   .frow:hover { background: rgba(126,214,240,.08); }
   .frow[aria-selected="true"] { background: rgba(127,232,255,.15); }
-  .frow b { font: 400 var(--t-callout) var(--mono); color: var(--text-1);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* the path is clipped from its left, so the basename is the part that always survives */
+  .frow .p { direction: rtl; text-align: left; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; font: var(--t-callout) var(--mono); }
+  .frow .p > * { direction: ltr; unicode-bidi: embed; }
+  .frow .p s { color: var(--text-off); text-decoration: none; }
+  .frow .p b { color: var(--text-1); font-weight: 400; }
   .frow em { font: var(--t-footnote) var(--mono); font-style: normal; color: var(--text-3); }
-  .frow i { font: var(--t-footnote) var(--sans); font-style: normal; color: var(--text-3);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .frow i { font: var(--t-footnote) var(--sans); font-style: normal; opacity: .85;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 118px; }
+
+  /* a boolean is a switch */
+  .sws { display: flex; align-items: center; gap: 10px; cursor: pointer;
+    font: var(--t-callout) var(--sans); color: var(--text-2); white-space: nowrap; }
+  .sws input { position: absolute; opacity: 0; pointer-events: none; }
+  .sws i { width: 30px; height: 17px; border-radius: 999px; flex: none; position: relative;
+    background: rgba(150,180,200,.16); border: 1px solid rgba(150,180,200,.2);
+    transition: background 160ms var(--ease-out), border-color 160ms var(--ease-out); }
+  .sws i::after { content: ''; position: absolute; left: 2px; top: 1.5px; width: 12px; height: 12px;
+    border-radius: 50%; background: #9fb4bf; transition: transform 160ms var(--ease-out),
+    background 160ms var(--ease-out); }
+  .sws input:checked + i { background: rgba(127,232,255,.32); border-color: rgba(127,232,255,.55); }
+  .sws input:checked + i::after { transform: translateX(13px); background: #cdf3ff; }
+  .sws input:focus-visible + i { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
+
+  /* rebuilding the map is a control, not a page action, so it sits with the controls */
+  .redo { flex: none; width: 27px; height: 27px; border-radius: 7px; display: grid;
+    place-items: center; color: var(--text-2); background: rgba(126,214,240,.08);
+    border: 1px solid rgba(126,214,240,.2); }
+  .redo:hover { background: rgba(126,214,240,.2); color: var(--text-1); }
+  .redo svg { width: 13px; height: 13px; }
+  .redo.spin svg { animation: turn 620ms var(--ease-out); }
+  @keyframes turn { to { transform: rotate(360deg); } }
 
   .note { font: var(--t-callout)/1.55 var(--sans); color: var(--text-2); }
   .toks { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
@@ -102,6 +129,37 @@
     radial-gradient(120% 90% at 50% 12%, #0e1a21 0%, #060a0d 72%); }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
+  /* the legend belongs on the thing it explains, and says only what the channels
+     currently say — so it is rewritten whenever a channel or a filter changes */
+  #maplegend { position: absolute; left: 16px; bottom: 16px; z-index: 55; width: 218px;
+    padding: 11px 13px 12px; background: rgba(9,20,26,.8); backdrop-filter: blur(16px);
+    border: 1px solid rgba(126,214,240,.18); border-radius: 10px; }
+  #maplegend .row { display: flex; justify-content: space-between; gap: 8px;
+    font: var(--t-footnote) var(--mono); color: var(--text-3); margin-top: 4px; }
+  #maplegend .hues { display: flex; gap: 2px; margin-top: 7px; }
+  #maplegend .hues i { flex: 1; height: 6px; border-radius: 1px; transition: opacity 140ms; }
+  #maplegend .lit { display: flex; align-items: center; gap: 7px; margin-top: 8px;
+    font: var(--t-callout) var(--sans); color: var(--text-1); }
+  #maplegend .lit i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+
+  /* a selected domain lends its hue to the panel that is about it, so the map and the
+     words agree without anyone having to match a swatch twice */
+  #ctx { padding: 13px 16px 12px; border-bottom: 1px solid rgba(126,214,240,.12);
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--dh) 15%, transparent), transparent); }
+  #ctx .top { display: flex; align-items: center; gap: 8px; }
+  #ctx .top i { width: 10px; height: 10px; border-radius: 3px; background: var(--dh); flex: none; }
+  #ctx h4 { font: 600 var(--t-body) var(--sans); color: var(--text-1); }
+  #ctx .all { margin-left: auto; font: var(--t-footnote) var(--mono); color: var(--dh);
+    cursor: pointer; white-space: nowrap; }
+  #ctx .all:hover { text-decoration: underline; }
+  #ctx p { font: var(--t-callout)/1.5 var(--sans); color: var(--text-2); margin-top: 7px; }
+  #ctx .row { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px;
+    font: var(--t-footnote) var(--mono); color: var(--text-3); }
+  #split[style] .drow[aria-selected="true"], #split[style] .frow[aria-selected="true"] {
+    background: color-mix(in srgb, var(--dh) 22%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dh) 45%, transparent); }
+
   /* ─── shell A · two rails ───────────────────────────────────────────────── */
   body[data-shell="a"] #app { height: 100%; display: grid;
     grid-template-columns: 288px 1fr 348px; }
@@ -123,7 +181,7 @@
 
   /* ─── shell B · dock + fixed two-region panel ───────────────────────────── */
   body[data-shell="b"] #app { height: 100%; display: grid; grid-template-columns: 1fr 356px; }
-  #dock { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%); z-index: 60;
+  #dock { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); z-index: 60;
     display: flex; align-items: center; gap: 14px; padding: 10px 16px;
     background: rgba(9,20,26,.86); backdrop-filter: blur(18px);
     border: 1px solid rgba(126,214,240,.22); border-radius: 12px;
@@ -236,6 +294,7 @@ const DOMAINS = [
   ['Connection Health','Reads provider connections and refused-grant faults into one chip that stays silent when healthy.',['connection','health','checkout','fault'],18],
 ];
 const DIRS = ['ArgoUI/Feed','ArgoEngine/Session','ArgoUI/Deck','ArgoEngine/Hub','ArgoUI/Panels','ArgoEngine/Ports'];
+const SUBS = ['', 'Rows/', 'Model/', 'Support/', 'Layout/', 'Fixtures/'];
 const TAIL = ['View','Model','Store','Row','State','Reader','Writer','Kind','Layout','Tests'];
 let rnd = 20260902;
 const R = () => (rnd = (rnd * 1103515 + 12345) % 2147483647) / 2147483647;
@@ -244,9 +303,11 @@ const FILES = [];
 DOMAINS.forEach((d, di) => {
   for (let i = 0; i < d[3]; i++) {
     const t = d[2][(i * 7) % d[2].length];
-    const name = t[0].toUpperCase() + t.slice(1) + TAIL[(i * 3) % TAIL.length] + '.swift';
+    const name = t[0].toUpperCase() + t.slice(1) + TAIL[(i * 3) % TAIL.length]
+      + (i > 9 ? String.fromCharCode(65 + (i % 17)) : '') + '.swift';
+    const dir = DIRS[(di + i) % DIRS.length] + '/' + SUBS[(i * 5) % SUBS.length];
     FILES.push({
-      dom: di, name, path: DIRS[(di + i) % DIRS.length] + '/' + name,
+      dom: di, name, dir, path: dir + name,
       loc: 20 + Math.round(R() * 620), cx: 1 + Math.round(R() * 44),
       commits: 1 + Math.round(R() * 60), authors: 1 + Math.round(R() * 4),
       note: R() < 0.08,
@@ -260,9 +321,9 @@ const COL = i => `hsl(${HUE(i).toFixed(0)} 60% 58%)`;
 /* ══ state ═══════════════════════════════════════════════════════════════════ */
 const url = new URLSearchParams(location.search);
 const S = {
-  shell: (url.get('shell') || 'a').toLowerCase(),
+  shell: (url.get('shell') || 'b').toLowerCase(),
   area: 'loc', height: 'cx', colour: 'domain',
-  mode: 'tint', noTests: false,
+  arrange: 'folders', noTests: false,
   q: '', sel: null,            // {kind:'domain'|'file', i}
   drawer: true, gear: false,
 };
@@ -285,10 +346,7 @@ const selDom = () => S.sel ? (S.sel.kind === 'domain' ? S.sel.i : FILES[S.sel.i]
 
 /* ══ content pieces — written once, arranged three ways ══════════════════════ */
 function Provenance() {
-  return `<div class="prov"><b>argo</b> · 1,037 files · 17 domains<br>
-    e83b0a1b · built 2 min ago<br><span style="display:inline-block;margin-top:5px">
-    <span class="tier d">MEASURED</span>size, churn
-    <span class="tier w" style="margin-left:6px">WRITTEN</span>names, notes</span></div>`;
+  return `<div class="prov"><b>argo</b> · 1,037 files · 17 domains</div>`;
 }
 function Encoding(compact) {
   const sel = (k, opts) => `<select data-set="${k}">` + opts.map(o =>
@@ -304,13 +362,19 @@ function Encoding(compact) {
     <label class="ctl">Height${sel('height', H)}</label>
     <label class="ctl">Colour${sel('colour', C)}</label>`;
 }
+/* "Folders / Tint / Regroup" was two questions wearing one control: where a box SITS and
+   what colour it IS. Tint was never a third arrangement — it is folders arranged, domains
+   coloured, which the Colour channel already says. So this asks one question only. */
 function Grouping() {
-  const b = (v, t) => `<button data-mode="${v}" aria-pressed="${S.mode === v}">${t}</button>`;
-  return `<div class="seg">${b('off', 'Folders')}${b('tint', 'Tint')}${b('group', 'Regroup')}</div>`;
+  const b = (v, t) => `<button data-mode="${v}" aria-pressed="${S.arrange === v}">${t}</button>`;
+  return `<div class="seg">${b('folders', 'Folders')}${b('domains', 'Domains')}</div>`;
 }
-function Filters() {
-  return `<label class="chk"><input type="checkbox" data-t="noTests"${S.noTests ? ' checked' : ''}>Hide test files</label>`;
+/* 6 · a boolean is a switch. A checkbox is for a set you pick several of. */
+function Switch(key, label) {
+  return `<label class="sws"><span>${label}</span>
+    <input type="checkbox" data-t="${key}"${S[key] ? ' checked' : ''}><i></i></label>`;
 }
+function Filters() { return Switch('noTests', 'Hide test files'); }
 function Legend() {
   if (S.colour !== 'domain')
     return `<div class="eyebrow">Colour · ${S.colour === 'cx' ? 'Complexity' : 'Authors'}</div>
@@ -332,13 +396,30 @@ function DomainList() {
     <i class="sw" style="background:${COL(i)}"></i>
     <span class="nm">${esc(d[0])}</span><span class="ct">${d[3]}</span></div>`).join('');
 }
-function FileList(list, withDomain, cap = 80) {
+/* A basename alone is not an address — half a repo is called index.ts. The path is the row,
+   clipped from the left so the name always survives the clip. */
+function fileRow(f, withDomain) {
+  return `<div class="frow" data-file="${f.i}"
+    aria-selected="${!!(S.sel && S.sel.kind === 'file' && S.sel.i === f.i)}" title="${esc(f.path)}">
+    <span class="p"><s>${esc(f.dir)}</s><b>${esc(f.name)}</b></span>
+    ${withDomain ? `<i style="color:${COL(f.dom)}">${esc(DOMAINS[f.dom][0])}</i>`
+                 : `<em>${f.cx}</em>`}</div>`;
+}
+/* 5 · the list has no end and no button. It grows as it is scrolled, in place, so the
+   scroll position it grew from is never lost. */
+const PAGE = 60;
+let LIST = [], LIST_DOM = false, shown = 0;
+function FileList(list, withDomain) {
+  LIST = list; LIST_DOM = withDomain; shown = Math.min(PAGE, list.length);
   if (!list.length) return `<div class="pad idle">Nothing matches all of those words.</div>`;
-  return list.slice(0, cap).map(f => `<div class="frow" data-file="${f.i}"
-      aria-selected="${!!(S.sel && S.sel.kind === 'file' && S.sel.i === f.i)}" title="${esc(f.path)}">
-      <b>${esc(f.name)}</b>${withDomain ? `<i>${esc(DOMAINS[f.dom][0])}</i>`
-                                        : `<em>${f.cx}</em>`}</div>`).join('')
-    + (list.length > cap ? `<div class="pad prov">…and ${list.length - cap} more</div>` : '');
+  return `<div id="rows">${list.slice(0, shown).map(f => fileRow(f, withDomain)).join('')}</div>`;
+}
+function more() {
+  const el = document.getElementById('rows');
+  if (!el || shown >= LIST.length) return;
+  const next = LIST.slice(shown, shown + PAGE);
+  shown += next.length;
+  el.insertAdjacentHTML('beforeend', next.map(f => fileRow(f, LIST_DOM)).join(''));
 }
 function DomainBody(di) {
   const d = DOMAINS[di];
@@ -346,7 +427,8 @@ function DomainBody(di) {
     <h3 class="name" style="margin-top:5px">${esc(d[0])}</h3>
     <p class="note" style="margin-top:9px">${esc(d[1])}</p>
     <div class="toks">${d[2].map(t => `<span>${esc(t)}</span>`).join('')}</div>
-    <div class="prov" style="margin-top:12px">${d[3]} files · named by a model that read five of them</div>`;
+    <div class="prov" style="margin-top:12px"><span class="tier w">WRITTEN</span>${d[3]} files,
+      grouped by measurement; named by a model that read five of them</div>`;
 }
 function FileBody(fi) {
   const f = FILES[fi], d = DOMAINS[f.dom];
@@ -364,8 +446,11 @@ function FileBody(fi) {
       transcript events into the row state the feed draws.</p>` : ''}`;
 }
 function Empty(where) {
-  return `<div class="pad idle">Nothing selected. Click a box on the map, or a domain
-    ${where}. <kbd>Esc</kbd> clears.</div>`;
+  const sd = selDom();
+  return `<div class="pad idle">${sd === null
+    ? `No file open. Click a box on the map, or a domain ${where}.`
+    : `No file open. Pick one from ${esc(DOMAINS[sd][0])} ${where}, or click a lit box.`}
+    <kbd>Esc</kbd> clears.</div>`;
 }
 
 /* ══ the stand-in map ════════════════════════════════════════════════════════
@@ -402,7 +487,7 @@ function build() {
   const pool = S.noTests ? FILES.filter(f => !/Tests\.swift$/.test(f.name)) : FILES;
   BOXES = []; PLATES = [];
   const N = 100, GAP = 1.6;
-  if (S.mode === 'group') {
+  if (S.arrange === 'domains') {
     const groups = DOMAINS.map((d, i) => ({
       it: i, v: pool.filter(f => f.dom === i).reduce((s, f) => s + val(f, S.area), 0) || 1 }))
       .sort((a, b) => b.v - a.v);
@@ -446,11 +531,11 @@ function fitCamera() {
 }
 function tint(f) {
   if (HITSET && !HITSET.has(f)) return ['hsl(202 8% 26%)', 'hsl(202 8% 19%)', 'hsl(202 8% 15%)'];
-  const sd = selDom();
-  if (sd !== null && S.mode !== 'off' && f.dom !== sd)
+  const lit = HOVER_DOM !== null ? HOVER_DOM : selDom();
+  if (lit !== null && f.dom !== lit)
     return ['hsl(202 8% 28%)', 'hsl(202 8% 21%)', 'hsl(202 8% 16%)'];
   let h, s, l;
-  if (S.colour === 'domain' && S.mode !== 'off') { h = HUE(f.dom); s = 58; l = 56; }
+  if (S.colour === 'domain') { h = HUE(f.dom); s = 58; l = 56; }
   else if (S.colour === 'cx') { const u = Math.min(1, f.cx / 40); h = 200 - u * 168; s = 62; l = 34 + u * 22; }
   else if (S.colour === 'authors') { const u = Math.min(1, (f.authors - 1) / 4); h = 200 - u * 168; s = 62; l = 34 + u * 22; }
   else { const u = Math.min(1, f.cx / 40); h = 196; s = 24 + u * 30; l = 32 + u * 26; }
@@ -485,7 +570,7 @@ function draw() {
     quad(P(b.x,b.y,b.z), P(x2,b.y,b.z), P(x2,y2,b.z), P(b.x,y2,b.z), c[0]);
   }
   // plate labels, only in regroup, only where the plate can hold the word
-  if (S.mode === 'group') {
+  if (S.arrange === 'domains') {
     ctx.font = '600 11px ' + getComputedStyle(document.body).fontFamily;
     for (const p of PLATES) {
       const w = ctx.measureText(DOMAINS[p.dom][0]).width;
@@ -526,7 +611,14 @@ function draw() {
     }
   }
 }
-let SEL_PT = null;
+let SEL_PT = null, HOVER_DOM = null, REDOING = false;
+/* Redraw the canvas and the legend only: rebuilding the list under the pointer would pull
+   the row out from under the pointer that is hovering it. */
+function relight() {
+  draw();
+  const l = document.getElementById('maplegend');
+  if (l) l.outerHTML = MapLegend();
+}
 function placeCard() {
   const c = document.getElementById('card');
   if (!c || !SEL_PT) return;
@@ -611,28 +703,37 @@ function shellA() {
    Nothing replaces anything, so there is no Back and nothing to navigate. */
 function shellB() {
   const sd = selDom();
-  let head, list;
-  if (HITS) { head = `${HITS.length} found`; list = FileList(HITS, true); }
-  else if (sd !== null) { head = esc(DOMAINS[sd][0]) + ' · files';
-    list = FileList(domFiles(sd).sort((a, b) => b.cx - a.cx), false); }
-  else { head = '17 domains'; list = DomainList(); }
+  /* A domain, once chosen, stays said. It becomes the standing context over its own file
+     list — so opening a file ADDS a fact instead of replacing the one you came for — and it
+     lends its hue to the panel, which is the hue the map is now lit in. */
+  const ctx = sd === null || HITS ? '' : `<div id="ctx">
+      <div class="top"><i></i><h4>${esc(DOMAINS[sd][0])}</h4>
+        <span class="all" data-go="root">All domains</span></div>
+      <p>${esc(DOMAINS[sd][1])}</p>
+      <div class="row"><span>${DOMAINS[sd][3]} files</span>
+        <span>${DOMAINS[sd][2].join(' · ')}</span></div></div>`;
 
-  const insp = !S.sel ? Empty('above')
-    : S.sel.kind === 'file' ? `<div class="pad">${FileBody(S.sel.i)}</div>`
-    : `<div class="pad">${DomainBody(S.sel.i)}</div>`;
+  const list = HITS ? FileList(HITS, true)
+    : sd !== null ? FileList(domFiles(sd).sort((a, b) => b.cx - a.cx), false)
+    : DomainList();
+  const head = HITS ? `${HITS.length} file${HITS.length === 1 ? '' : 's'} found`
+    : sd !== null ? 'Files, most complex first' : '17 domains';
+
+  const insp = !S.sel || S.sel.kind === 'domain' ? Empty('above')
+    : `<div class="pad">${FileBody(S.sel.i)}</div>`;
 
   return `<div id="stage"><canvas></canvas>
       <div id="dock">${Encoding(true)}<div class="div"></div>
-        ${Grouping()}
-        <div class="div"></div>${Filters()}</div>
+        ${Grouping()}<div class="div"></div>${Filters()}
+        <div class="div"></div>${Redo()}</div>
+      ${MapLegend()}
     </div>
-    <div id="split">
+    <div id="split"${sd === null ? '' : ` style="--dh:${COL(sd)}"`}>
       <section id="index">
         <div class="sec">${Search('q')}</div>
-        <div class="sec" style="padding-bottom:8px;border-bottom:0">
-          <div class="eyebrow">${head}${sd !== null && !HITS
-            ? ` <a data-go="root" style="color:#7fe8ff;cursor:pointer;float:right">all domains</a>` : ''}</div>
-        </div>
+        ${ctx}
+        <div class="sec" style="padding:12px 16px 7px;border-bottom:0">
+          <div class="eyebrow">${head}</div></div>
         <div class="grow" style="padding:0 8px 12px">${list}</div>
       </section>
       <section id="inspect"><div class="grow">${insp}</div>
@@ -640,6 +741,46 @@ function shellB() {
           ${Provenance()}</div>
       </section>
     </div>`;
+}
+
+/* The map is derived from a repo that keeps moving, so rebuilding it is an ordinary
+   control and lives with the controls, not in a menu. */
+function Redo() {
+  return `<button class="redo${REDOING ? ' spin' : ''}" id="redo" title="Rebuild the map from the repo">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+      stroke-linecap="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.7-3.97"/><path d="M13.6 2.2v3h-3"/>
+    </svg></button>`;
+}
+
+/* 2 · the legend says exactly what the channels currently say, over exactly the files
+   currently drawn — so hiding the tests moves the numbers under it. */
+function MapLegend() {
+  const pool = S.noTests ? FILES.filter(f => !/Tests[A-Z]?\.swift$/.test(f.name)) : FILES;
+  const K = { loc: ['Lines of code', f => f.loc], cx: ['Complexity', f => f.cx],
+              commits: ['Commits', f => f.commits], authors: ['Authors', f => f.authors] };
+  const span = k => { const g = K[k][1]; let lo = Infinity, hi = -Infinity;
+    for (const f of pool) { const v = g(f); if (v < lo) lo = v; if (v > hi) hi = v; }
+    return lo + '–' + hi; };
+  const lit = HOVER_DOM !== null ? HOVER_DOM : selDom();
+  const colour = S.colour === 'domain'
+    ? `<div class="hues">${DOMAINS.map((d, i) =>
+        `<i style="background:${COL(i)};opacity:${lit === null || lit === i ? 1 : .16}"></i>`).join('')}</div>
+       ${lit === null ? `<div class="row"><span>one hue per domain</span><span>17</span></div>`
+         : `<div class="lit"><i style="background:${COL(lit)}"></i>${esc(DOMAINS[lit][0])}</div>`}`
+    : `<div class="hues">${[0,1,2,3,4].map(i =>
+        `<i style="background:hsl(${200 - i * 42} 62% ${32 + i * 9}%)"></i>`).join('')}</div>
+       <div class="row"><span>${K[S.colour][0].toLowerCase()}</span><span>${span(S.colour)}</span></div>`;
+  return `<div id="maplegend">
+    <div class="eyebrow">Colour · ${S.colour === 'domain' ? 'Domain' : K[S.colour][0]}</div>
+    ${colour}
+    <div class="row" style="margin-top:9px"><span>Area · ${K[S.area][0].toLowerCase()}</span>
+      <span>${span(S.area)}</span></div>
+    <div class="row"><span>Height · ${K[S.height][0].toLowerCase()}</span>
+      <span>${span(S.height)}</span></div>
+    <div class="row" style="margin-top:7px;color:var(--text-off)">
+      <span>${pool.length} files${S.noTests ? ', tests hidden' : ''}</span>
+      <span>${S.arrange === 'domains' ? 'by domain' : 'by folder'}</span></div>
+  </div>`;
 }
 
 /* ══ shell C · command surface ═══════════════════════════════════════════════
@@ -687,6 +828,19 @@ function shellC() {
     ${card}`;
 }
 
+/* A prototype cannot read the repo, so this re-rolls the mock measurements — enough to
+   prove the control puts a moving map back under the same selection. */
+function rebuildMap() {
+  REDOING = true; render();
+  setTimeout(() => {
+    for (const f of FILES) {
+      f.loc = 20 + Math.round(R() * 620); f.cx = 1 + Math.round(R() * 44);
+      f.commits = 1 + Math.round(R() * 60); f.authors = 1 + Math.round(R() * 4);
+    }
+    REDOING = false; render();
+  }, 620);
+}
+
 /* ══ render and wiring ═══════════════════════════════════════════════════════ */
 const app = document.getElementById('app');
 function render(keepFocus) {
@@ -694,7 +848,9 @@ function render(keepFocus) {
   const act = document.activeElement, focused = act && act.id === 'q';
   const at = focused ? act.selectionStart : 0;
   build();
+  const keep = [...app.querySelectorAll('.grow')].map(g => g.scrollTop);
   app.innerHTML = S.shell === 'a' ? shellA() : S.shell === 'b' ? shellB() : shellC();
+  [...app.querySelectorAll('.grow')].forEach((g, i) => { if (keep[i]) g.scrollTop = keep[i]; });
   cv = app.querySelector('canvas'); ctx = cv && cv.getContext('2d');
   requestAnimationFrame(() => { draw(); placeCard(); });
   if (focused || keepFocus) {
@@ -718,13 +874,14 @@ document.addEventListener('change', e => {
   if (t) { S[t] = e.target.checked; render(); }
 });
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-shell],[data-mode],[data-dom],[data-file],[data-go],#tab,#gear');
+  const t = e.target.closest('[data-shell],[data-mode],[data-dom],[data-file],[data-go],#tab,#gear,#redo');
   if (!t) return;
+  if (t.id === 'redo') { rebuildMap(); return; }
   if (t.dataset.shell) {
     S.shell = t.dataset.shell;
     history.replaceState(null, '', '?shell=' + S.shell);
     S.gear = false; render();
-  } else if (t.dataset.mode) { S.mode = t.dataset.mode; render(); }
+  } else if (t.dataset.mode) { S.arrange = t.dataset.mode; render(); }
   else if (t.id === 'tab') { S.drawer = !S.drawer; render(); }
   else if (t.id === 'gear') { S.gear = !S.gear; render(); }
   else if (t.dataset.go === 'root') { S.sel = null; S.q = ''; refind(); render(); }
@@ -745,6 +902,17 @@ app.addEventListener('click', e => {
   S.sel = i === null ? null : { kind: 'file', i };
   render();
 });
+document.addEventListener('pointerover', e => {
+  const r = e.target.closest && e.target.closest('.drow');
+  const d = r ? +r.dataset.dom : null;
+  if (d === HOVER_DOM) return;
+  HOVER_DOM = d; relight();
+});
+document.addEventListener('scroll', e => {
+  const el = e.target;
+  if (!el.classList || !el.classList.contains('grow')) return;
+  if (el.scrollTop + el.clientHeight > el.scrollHeight - 320) more();
+}, true);
 addEventListener('resize', () => requestAnimationFrame(draw));
 render();
 </script>
