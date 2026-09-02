@@ -8,6 +8,7 @@ import Testing
 ///
 /// The vocabulary is `cockpit-work-room.md` — **the two narrowings, decided**.
 @Suite("Backlog search")
+@MainActor
 struct BacklogSearchTests {
     private static func room(matching query: String, in view: TicketsView = .allOpen)
         -> TicketsRoomProjection.Room {

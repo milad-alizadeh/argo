@@ -6,6 +6,7 @@ import Testing
 /// under its parent whatever its own priority is, so a band's header stands over rows that can
 /// disagree with it — and where one does, the row says so rather than the header speaking for it.
 @Suite("Priority groups the backlog roots")
+@MainActor
 struct TicketsBacklogBandsTests {
     private static var roots: [TicketsRoomProjection.Row] {
         TicketsRoomProjection.room(from: TicketsFixture.reading).backlog

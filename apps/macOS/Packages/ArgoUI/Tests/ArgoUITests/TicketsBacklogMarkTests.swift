@@ -9,6 +9,7 @@ import Testing
 /// (`cockpit-work-room.md` — the trailing region): the blockage mark is a state and does not
 /// contend, and the caption holds exactly one fact.
 @Suite("The backlog row's trailing region")
+@MainActor
 struct TicketsBacklogMarkTests {
     private static func item(_ number: Int, blockedBy: [TicketBlocker]?) -> Ticket {
         Ticket(
@@ -185,6 +186,7 @@ struct TicketsBacklogMarkTests {
 /// Which ONE fact the caption slot carries. The four candidates are ordered here and nowhere else,
 /// so a fifth has to be placed in this list rather than race the others for the slot.
 @Suite("The backlog row's caption")
+@MainActor
 struct TicketsBacklogCaptionTests {
     private static let now = Date(timeIntervalSince1970: 1_700_000_000)
 

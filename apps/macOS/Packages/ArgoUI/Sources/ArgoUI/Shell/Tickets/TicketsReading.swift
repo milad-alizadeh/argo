@@ -8,7 +8,10 @@ import ArgoEngine
 ///
 /// Every per-ticket fact the provider owns lives on the `Ticket` itself — status, labels,
 /// priority, type, body and the edges (#820). What is left here is what no provider carries.
-struct TicketsReading: Sendable {
+/// `Equatable` because it is `TicketsRoomMemo`'s stamp: the whole reading is what the room is
+/// derived from, so comparing it whole is what makes a remembered room impossible to serve for a
+/// listing that has moved. A field added below joins the stamp by construction.
+struct TicketsReading: Sendable, Equatable {
     /// The provider's items in the order it served them, closed ones included: a parent's roll-up
     /// counts children the backlog does not draw.
     var items: [Ticket] = []

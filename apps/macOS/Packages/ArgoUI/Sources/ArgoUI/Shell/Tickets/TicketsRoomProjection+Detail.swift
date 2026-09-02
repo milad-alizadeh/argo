@@ -54,35 +54,37 @@ extension TicketsRoomProjection {
         let total: Int
     }
 
-    static func ticket(in reading: TicketsReading) -> Detail? {
-        guard let number = reading.showing,
-              let item = reading.items.first(where: { $0.number == number })
-        else { return nil }
+    /// The detail the deck is open on, derived on EVERY pass from the live selection — the one
+    /// thing about the room the selected number is an input to, and so the one thing
+    /// `TicketsRoomMemo` does not remember. Every ticket it names is reached through the listing's
+    /// index, so opening one costs the shape of that ticket rather than the size of the backlog.
+    @MainActor
+    static func ticket(_ showing: Int?, in listing: TicketsListing) -> Detail? {
+        guard let number = showing, let item = listing.item(number) else { return nil }
         return Detail(
             id: number,
             title: item.title,
             status: item.status,
-            bucket: item.state(claimed: reading.claims.numbers.contains(number)),
+            bucket: item.state(claimed: listing.isClaimed(number)),
             priority: item.priority,
             type: item.type,
             labels: item.labels,
-            deliveries: reading.deliveryFacts[number] ?? [],
-            children: children(of: item, in: reading),
-            blockedBy: item.blockedBy?.map { blocker($0.number, in: reading) } ?? [],
+            deliveries: listing.deliveries(of: number),
+            children: children(of: item, in: listing),
+            blockedBy: item.blockedBy?.map { blocker($0.number, in: listing) } ?? [],
             body: item.body,
         )
     }
 
     /// The open children in the PARENT's own order. A parent whose children are all closed keeps
     /// the section.
-    private static func children(of item: Ticket, in reading: TicketsReading) -> Children? {
+    @MainActor
+    private static func children(of item: Ticket, in listing: TicketsListing) -> Children? {
         guard !item.children.isEmpty else { return nil }
-        let known = item.children.compactMap { number in
-            reading.items.first { $0.number == number }
-        }
+        let known = item.children.compactMap { listing.item($0) }
         return Children(
             open: known.filter { $0.closure == .open }
-                .map { child($0, delivery: reading.deliveries[$0.number] ?? .absent) },
+                .map { child($0, delivery: listing.delivery(of: $0.number)) },
             closed: known.count { $0.closure != .open },
             total: item.children.count,
         )
@@ -94,12 +96,8 @@ extension TicketsRoomProjection {
     }
 
     /// A blocker, named from whatever the poll reached — never a stand-in.
-    private static func blocker(_ number: Int, in reading: TicketsReading) -> Link {
-        Link(
-            id: number,
-            title: reading.items.first { $0.number == number }?.title,
-            delivery: .absent,
-            trailing: nil,
-        )
+    @MainActor
+    private static func blocker(_ number: Int, in listing: TicketsListing) -> Link {
+        Link(id: number, title: listing.item(number)?.title, delivery: .absent, trailing: nil)
     }
 }

@@ -12,8 +12,13 @@ enum TicketsFixture {
 
     /// The room the fixture derives to. Held here so a preview of one PART of the room draws from
     /// the same reading the whole room does, rather than from a literal beside it that can drift.
+    ///
+    /// `@MainActor` because the projection is: it goes through `TicketsRoomMemo`, whose store is
+    /// the shell's own and is read on the pass that draws.
+    @MainActor
     static let room = TicketsRoomProjection.room(from: reading)
 
+    @MainActor
     static func room(showing number: Int) -> TicketsRoomProjection.Room {
         TicketsRoomProjection.room(from: reading(showing: number))
     }

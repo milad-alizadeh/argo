@@ -9,6 +9,7 @@ import Testing
 /// Every case here is a claim about the Sessions on the roster; the Binding's health is
 /// `TicketsReadingLiveTests` and the listing is `TicketsServedItemTests`.
 @Suite("Tickets room progress count")
+@MainActor
 struct TicketsProgressCountTests {
     @Test
     func `a live Session on a ticket claims it`() {

@@ -6,6 +6,7 @@ import Testing
 /// over the same list the deck draws, so a count that disagrees with the rows under it is the one
 /// defect a render cannot show.
 @Suite("Tickets room projection")
+@MainActor
 struct TicketsRoomProjectionTests {
     /// Drawn, not rooted: the backlog nests (#814), so what the list puts on screen is the tree
     /// flattened rather than the roots alone.

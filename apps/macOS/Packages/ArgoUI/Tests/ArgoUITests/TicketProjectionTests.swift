@@ -6,6 +6,7 @@ import Testing
 /// two link sections. Every claim here is about what Argo is entitled to SAY: a fact nobody read is
 /// absent, and an absence is never dressed up as an answer.
 @Suite("The ticket's facts and its sections")
+@MainActor
 struct TicketProjectionTests {
     // MARK: - The fact strip
 

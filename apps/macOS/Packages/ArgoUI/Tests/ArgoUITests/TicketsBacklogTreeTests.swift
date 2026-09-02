@@ -7,6 +7,7 @@ import Testing
 /// anybody editing a literal — and the two ways an edge can lie (a second parent, a cycle) resolve
 /// by a rule of Argo's own rather than by the order the provider's array happened to come in.
 @Suite("The backlog nests")
+@MainActor
 struct TicketsBacklogTreeTests {
     /// #607, by its number rather than by its place in the list.
     private static var parent: TicketsRoomProjection.Row? {

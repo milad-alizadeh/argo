@@ -7,9 +7,12 @@ extension TicketsReading {
     /// The pool in rank order. A total order, so the same listing always yields the same pick: the
     /// number is the last key, and it breaks the tie the three ranking inputs left rather than
     /// ranking anything itself.
+    @MainActor
     func ranked(_ pool: [Ticket]) -> [Ticket] {
-        pool
-            .map { (item: $0, rank: rank(of: $0)) }
+        guard !pool.isEmpty else { return [] }
+        let places = TicketChartPlaces(of: items)
+        return pool
+            .map { (item: $0, rank: rank(of: $0, in: places)) }
             .sorted { $0.rank < $1.rank }
             .map(\.item)
     }
@@ -22,8 +25,9 @@ extension TicketsReading {
         return pool.compactMap(\.updatedAt).allSatisfy { touched <= $0 }
     }
 
-    private func rank(of item: Ticket) -> Rank {
-        let place = sequence(of: item.number)
+    @MainActor
+    private func rank(of item: Ticket, in places: TicketChartPlaces) -> Rank {
+        let place = places.place(of: item.number)
         return Rank(
             rung: item.priorityRung.rung,
             chart: place?.chart ?? .max,
@@ -31,26 +35,6 @@ extension TicketsReading {
             age: item.updatedAt.map { Int($0.timeIntervalSince1970) } ?? .max,
             number: item.number,
         )
-    }
-
-    /// Which chart holds this ticket and where in it — both indices, and both the PROVIDER's own
-    /// author order: the order it served its charts in, which is the order `CHARTS` draws, and the
-    /// order it served that chart's `children` in.
-    ///
-    /// Two indices and not one, so a ticket is never ranked against one in another chart by its
-    /// position alone: nobody sequenced two PRDs against each other, but the provider did serve one
-    /// before the other, and that is a fact rather than an invention.
-    ///
-    /// `nil` for a ticket in no chart, which sorts BEHIND every ticket in one: a PRD's sequence is
-    /// somebody stating an order, and an unsequenced ticket does not overtake one on a statement
-    /// nobody made.
-    private func sequence(of number: Int) -> (chart: Int, child: Int)? {
-        for (chart, parent) in items.enumerated() where parent.isChartShaped {
-            if let child = parent.children.firstIndex(of: number) {
-                return (chart, child)
-            }
-        }
-        return nil
     }
 }
 

@@ -6,6 +6,7 @@ import Testing
 /// lie about what you are filtered to, and the room's two vacancies are different pages: an empty
 /// backlog keeps New ticket, an unbound provider keeps nothing.
 @Suite("Tickets chrome projection")
+@MainActor
 struct TicketsChromeProjectionTests {
     private static func reading(
         of view: TicketsView = .allOpen,

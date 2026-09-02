@@ -6,6 +6,7 @@ import Testing
 /// mechanism — the poll writes the listing, the roster writes the claims, and both are inputs to a
 /// pure derivation.
 @Suite("Next-up cadence")
+@MainActor
 struct NextUpCadenceTests {
     private static let pool = [
         TicketsFixture.candidate(1, priority: "high", day: 5),
