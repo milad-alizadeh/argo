@@ -223,12 +223,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         observedModeCount += 1
     }
 
-    /// A detached checkout makes the CLI write the literal `HEAD`, which is not a ref anybody can
-    /// check out. Read here, as the fact enters the Hub, so no surface has to know the convention.
-    private static func branchName(_ observed: String) -> String? {
-        observed == "HEAD" ? nil : observed
-    }
-
     /// The latest time wins, and an absent one says nothing: a record with no timestamp is not a
     /// Session that ran at the epoch.
     ///
