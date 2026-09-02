@@ -1,37 +1,12 @@
 import XCTest
 
-/// The launch every feed case shares, and the gestures all of them drive it with. Cases differ in
-/// exactly one thing — which named state the app opens on. `@MainActor` because `XCUIApplication()`
-/// is isolated to it under Swift 6.
+/// The gestures every feed case drives the deck with. The launch itself is `E2ECase`'s.
 @MainActor
-class FeedE2ECase: XCTestCase {
-    /// Which named state the app opens on. Every case answers it; the base answers it for none.
-    var specimen: String {
-        preconditionFailure("A feed case must name the specimen it opens on.")
-    }
-
-    let app = XCUIApplication()
-
+class FeedE2ECase: E2ECase {
     /// The feed zone. A fresh query each time it is asked for, which is what makes it honest after
     /// something has re-laid the column out.
     var feed: XCUIElement {
         element(labelled: "Feed")
-    }
-
-    override func setUp() async throws {
-        try await super.setUp()
-        continueAfterFailure = false
-        app.launchArguments += ["--specimen", specimen]
-        app.launch()
-        XCTAssertTrue(
-            app.wait(for: .runningForeground, timeout: 30),
-            "Argo did not reach the foreground.",
-        )
-    }
-
-    override func tearDown() async throws {
-        app.terminate()
-        try await super.tearDown()
     }
 
     func element(labelled label: String) -> XCUIElement {

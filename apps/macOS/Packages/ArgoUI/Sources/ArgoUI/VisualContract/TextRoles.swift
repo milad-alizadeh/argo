@@ -13,16 +13,20 @@ public extension ArgoPalette {
         /// Machine facts and non-essential detail.
         public let tertiary: ArgoColor
         public let disabled: ArgoColor
-        /// On an Ion Blue fill.
+        /// On an Ion Blue fill — the loud rung, at full strength. Named for the GROUND it is read
+        /// against and legible on that one alone: it is 1.24:1 on the deck. As of #1071 it is also
+        /// a row voice, and the only one the selected backlog row is set in.
         public let onAccent: ArgoColor
 
         /// WCAG AA for body text. Every voice a row is SET in — `primary`, `secondary`,
         /// `tertiary` — clears it on `surface.base` AND on `interaction.selectionGround`, which
         /// are the two grounds a row is read on that the contract can name; an unselected
         /// sidebar row takes the platform's own material, so `base` stands in for it and the
-        /// render is what checks the stand-in. `disabled` is an absence rather than a voice and
-        /// `onAccent` exists only on a fill, so neither is held to it here. Stated because #922
-        /// was a ramp chosen against ONE ground and read on another.
+        /// render is what checks the stand-in. `disabled` is an absence rather than a voice, so it
+        /// is not held to it there — but it IS one of three voices on the third ground, the loud
+        /// accent under a selected backlog row, where `onAccent` carries all three
+        /// (`LoudSelectionGroundTests`, #1071). Stated because #922 was a ramp chosen against ONE
+        /// ground and read on another.
         static let contrastFloor = 4.5
 
         public init(

@@ -120,13 +120,18 @@ final class ClaimLedger {
         }
     }
 
+    /// The one write, and the one publish rule with it: a fact that did not move is not published
+    /// (#858, ADR-0028 Rule 1). The revision is a dependency of every view that draws a Session,
+    /// and the companion channel republishes `live` on every peer event one agent's socket sees.
     private func update(
         _ claim: SessionOwnership.ClaimID,
         _ change: (inout ClaimFacts) -> Void,
     ) {
         var facts = byClaim[claim] ?? ClaimFacts()
         change(&facts)
-        byClaim[claim] = facts.isEmpty ? nil : facts
+        let published = facts.isEmpty ? nil : facts
+        guard byClaim[claim] != published else { return }
+        byClaim[claim] = published
         revision += 1
     }
 }

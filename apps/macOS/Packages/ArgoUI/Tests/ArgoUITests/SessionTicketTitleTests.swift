@@ -72,7 +72,7 @@ struct SessionTicketTitleTests {
         let row = try #require(SessionRosterProjection.rows(from: [linked]).first)
 
         // The verb, off the title and onto the line with room for it (#745).
-        #expect(row.runKind == "/implement")
+        #expect(row.toldApart == "/implement")
         #expect(row.announcement.contains("/implement"))
     }
 
@@ -80,7 +80,7 @@ struct SessionTicketTitleTests {
     func `the run kind is not said twice on a Session whose title is still the command`() throws {
         let row = try #require(SessionRosterProjection.rows(from: [Self.session()]).first)
 
-        #expect(row.runKind == nil)
+        #expect(row.toldApart == nil)
     }
 
     @Test
@@ -91,20 +91,20 @@ struct SessionTicketTitleTests {
 
         let row = try #require(SessionRosterProjection.rows(from: [linked]).first)
 
-        #expect(row.runKind == nil)
+        #expect(row.toldApart == nil)
     }
 
     @Test
     func `the roster the ticket specimens render carries the case the ticket is about`() {
         // The `ticketRoster` PNGs are the only evidence this rendering has, so the fixture has to
-        // carry both several Sessions sharing one ticket and a row that resolved none.
+        // carry several Sessions sharing one ticket, one that owns its ticket alone, and a row
+        // that resolved none.
         let rows = TicketFixture.rows
-        let shared = rows.filter { $0.title.hasPrefix("#741 — ") }
 
-        #expect(shared.count == 3)
-        // Told apart by the secondary line alone, which is the judgement the render is for.
-        #expect(Set(shared.compactMap(\.runKind)).count == 3)
-        #expect(rows.contains { $0.runKind == nil })
+        // Every row reads differently, which is the judgement the render is for (#1072).
+        #expect(Set(rows.map(\.title)).count == rows.count)
+        #expect(rows.contains { $0.toldApart == "#741" })
+        #expect(rows.contains { $0.title.hasPrefix("#736 — ") })
     }
 
     private static func session(

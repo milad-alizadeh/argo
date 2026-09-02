@@ -63,7 +63,9 @@ struct AgentChip: View {
 
 #Preview("Agent chips — running, and landed with what it spent") {
     VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-        ForEach(FeedAgents.all(in: FeedProjection.previewRows)) { AgentChip(agent: $0) }
+        ForEach(FeedAgents.all(in: FeedProjection.previewRows, of: .running)) {
+            AgentChip(agent: $0)
+        }
     }
     .padding(ArgoSpacing.comfortable)
     .frame(width: ArgoAgentsRail.width)
@@ -73,7 +75,7 @@ struct AgentChip: View {
 
 #Preview("Agent chips — the selected one, against the ones beside it") {
     VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-        ForEach(FeedAgents.all(in: FeedProjection.previewRows)) { agent in
+        ForEach(FeedAgents.all(in: FeedProjection.previewRows, of: .running)) { agent in
             AgentChip(agent: agent, isSelected: agent.id == 1, scope: {})
         }
     }

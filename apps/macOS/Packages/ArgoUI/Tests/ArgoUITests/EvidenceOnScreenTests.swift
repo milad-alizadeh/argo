@@ -11,7 +11,7 @@ struct EvidenceOnScreenTests {
     @Test
     func `a scoped feed opens the newest evidence in the subagent's rows`() throws {
         let reading = Self.reading
-        let agent = try #require(FeedAgents.all(in: reading.feed)
+        let agent = try #require(FeedAgents.all(in: reading.feed, of: .running)
             .first { Self.readings.hasReading(of: $0) })
 
         let scoped = Self.readings.reading(of: reading.feed, under: .subagent(agent.id))

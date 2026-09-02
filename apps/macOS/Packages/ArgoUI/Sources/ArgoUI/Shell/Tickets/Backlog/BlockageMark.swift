@@ -25,6 +25,10 @@ struct BlockageMark: View {
     @Environment(\.argo) private var argo
 
     let blockage: TicketsRoomProjection.Blockage
+    /// The opaque ground to lay under the mark, where the surface under it is not one the Route's
+    /// inks can be read on — a selected backlog row's loud ground reads both at 1.2:1 (#1071).
+    /// `nil` on the deck, which is the ground they were chosen against.
+    var backdrop: ArgoColor?
 
     var body: some View {
         ArgoGlyph(Self.symbol, .inline)
@@ -32,6 +36,7 @@ struct BlockageMark: View {
             // The claim mark's box, so the two sit on one vertical whether a row carries one of
             // them or both.
             .frame(minHeight: ArgoBacklogList.trailingMark)
+            .argoTrailingMarkPlate(backdrop)
             .fixedSize()
             .help(help)
             // The row speaks the mark as part of one sentence — see `BacklogRow.announcement`.

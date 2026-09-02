@@ -92,6 +92,7 @@ the next surface grill inherits them, and keep the detail in the ticket sections
   2. **Linked ticket** — if the session links to a ticket, title = the ticket's name.
   3. **Conversation-derived** — otherwise an inferred label from what the session is doing.
   The rail shows the *same* resolved title, so rail ↔ header always match. The live task lives in the Activity now-head, not the title.
+  - **Amended by [#1072](https://github.com/milad-alizadeh/argo/issues/1072) — 2026-09-02:** step 2 holds only where the ticket names ONE row of the rail. Where several of a ticket's Sessions would draw it, each rail row takes its conversation-derived name and the ticket moves to that row's secondary line, so the rail and the header differ on exactly those rows. See `cockpit-spec.md` §4.2.
 - **Why:** The header is the session's fixed frame; a title that rewrites every turn breaks rail↔header correspondence and is disorienting. A fallback chain gives a stable, meaningful name whether or not the user named it or linked a ticket.
 - **Open knock-on:** when the title is ticket-derived, the `intent #<n> ↗` chip partly duplicates it — resolved in C1.2 (meta row).
 - **HTML change:** `H_RUN.title` → `'Auth refactor'` (conversation-derived example); removed `taskTitle:true` (drops the running caret). `H_IDLE`/`H_EXT` already identity-based.

@@ -14,10 +14,12 @@ enum SessionRosterProjection {
         /// Absent for a Session in the Project's own checkout, and absent again where Argo has
         /// not read git — a label is a claim that the folder IS a worktree.
         let worktree: String?
-        /// The slash command this Session opened with, on the same second line (#745). Absent for
-        /// a Session whose title IS that command already — the roster's own defect was every row
-        /// leading with `/implement`, and saying it twice on one row is the same waste.
-        let runKind: String?
+        /// The one fact on that second line that tells this Session from the rows beside it, at
+        /// the leading edge: the slash command it opened with where the Ticket holds the title
+        /// (#745), and the Ticket itself where the title fell back to the Session's own derived
+        /// name (#1072). Never both — the slot says whatever the title is not saying, and a row
+        /// with nothing left to add draws nothing.
+        let toldApart: String?
         /// Never drawn either: the branch belongs to the session header. Kept so the row's copy
         /// action can still hand it over.
         let branch: String?
@@ -58,7 +60,7 @@ enum SessionRosterProjection {
             self.rename = identity.rename
             self.location = work.location
             self.worktree = work.worktree
-            self.runKind = work.runKind
+            self.toldApart = work.toldApart
             self.branch = work.branch
             self.isReadOnly = availability.isReadOnly
             self.lock = availability.lock
@@ -76,7 +78,7 @@ enum SessionRosterProjection {
                 title,
                 stateWord,
                 isReadOnly ? "Read-only Session" : nil,
-                runKind,
+                toldApart,
                 worktree.map { "in \($0)" },
                 spokenClock,
             ]
@@ -104,77 +106,61 @@ enum SessionRosterProjection {
         rows(from: sessions, archived: true, now: now)
     }
 
-    /// What the foot of the roster says, read and heard — one value, so nothing guards the same
-    /// emptiness twice.
-    struct Foot: Equatable {
-        let label: String
-        let announcement: String
-    }
-
-    /// Whether the roster draws what is behind its foot — the reader's own toggle, OR the selection
-    /// sitting back there.
-    ///
-    /// The second clause is the roster's decision and not the view's, which is why it is here where
-    /// a test can reach it. The deck renders whatever the selection names, so a foot shut over the
-    /// selected Session leaves the roster drawing NO row for the Session the feed is drawing: the
-    /// two surfaces then name two different Sessions, which `CONTEXT.md` Honesty tier forbids.
-    /// Archiving the row being read is the way into that state.
-    static func isArchiveOpen(showing: Bool, selection: String?, in archived: [Row]) -> Bool {
-        guard let selection, !showing else { return showing }
-        return archived.contains { $0.id == selection }
-    }
-
-    /// The foot, and `nil` where there is nothing behind it (`cockpit-spec.md` §4.1).
-    static func archivedFoot(_ archived: [Row]) -> Foot? {
-        guard archived.isEmpty == false else { return nil }
-        let count = archived.count
-        return Foot(
-            label: "Archived (\(count))",
-            // Said in words for the reader who is hearing it, because `(2)` reads out as
-            // punctuation.
-            announcement: "Archived, \(count) Session\(count == 1 ? "" : "s")",
-        )
-    }
-
     private static func rows(
         from sessions: [CockpitPresentation.Session], archived: Bool, now: Date,
     )
         -> [Row] {
         let nowMs = now.epochMs
-        // Labelled before the split and filtered after: the kept rows and the archived ones are
-        // drawn in one column, so a worktree told apart only from its own list would come out
+        // Decided before the split and filtered after: the kept rows and the archived ones are
+        // drawn in one column, so a Session told apart only from its own list would come out
         // reading the same as one in the other.
-        return zip(sessions, worktrees(of: sessions))
+        return zip(sessions, decided(across: sessions))
             .filter { session, _ in session.isArchived == archived }
-            .map { session, worktree in
-                let clock = clock(for: session, nowMs: nowMs)
-                return Row(
-                    identity: Row.Identity(
-                        id: session.id,
-                        // The name the user set, ahead of the issue's and the derived one
-                        // (#502, story 19).
-                        title: SessionTitle.resolved(for: session),
-                        rename: SessionRenameProjection.rename(for: session),
-                    ),
-                    work: Row.Work(
-                        location: session.workspaceLocation,
-                        worktree: worktree,
-                        branch: session.workspace?.branch,
-                        runKind: runKind(for: session),
-                    ),
-                    activity: Row.Activity(
-                        state: SessionState.role(for: session.status),
-                        stateWord: SessionState.word(for: session.status),
-                        clock: clock,
-                        spokenClock: spokenClock(clock, nowMs: nowMs),
-                    ),
-                    availability: Row.Availability(
-                        isReadOnly: isReadOnly(session.access),
-                        lock: lock(for: session.access),
-                        isArchived: session.isArchived,
-                    ),
-                )
-            }
+            .map { session, decided in row(for: session, decided: decided, nowMs: nowMs) }
+    }
+
+    /// What the two whole-roster passes settled for one Session: the name it draws and the label
+    /// its workspace goes by. Neither is answerable from the Session alone.
+    private struct Decided {
+        let naming: SessionTitle.Naming
+        let worktree: String?
+    }
+
+    private static func decided(across sessions: [CockpitPresentation.Session]) -> [Decided] {
+        zip(SessionTitle.namings(across: sessions), worktrees(of: sessions)).map(Decided.init)
+    }
+
+    private static func row(
+        for session: CockpitPresentation.Session, decided: Decided, nowMs: Int,
+    )
+        -> Row {
+        let clock = clock(for: session, nowMs: nowMs)
+        return Row(
+            identity: Row.Identity(
+                id: session.id,
+                // The name the user set, ahead of the issue's and the derived one (#502, story 19)
+                // — and the issue's only where it names this row alone (#1072).
+                title: decided.naming.title,
+                rename: SessionRenameProjection.rename(for: session, naming: decided.naming),
+            ),
+            work: Row.Work(
+                location: session.workspaceLocation,
+                worktree: decided.worktree,
+                branch: session.workspace?.branch,
+                toldApart: toldApart(for: session, naming: decided.naming),
+            ),
+            activity: Row.Activity(
+                state: SessionState.role(for: session.status),
+                stateWord: SessionState.word(for: session.status),
+                clock: clock,
+                spokenClock: spokenClock(clock, nowMs: nowMs),
+            ),
+            availability: Row.Availability(
+                isReadOnly: isReadOnly(session.access),
+                lock: lock(for: session.access),
+                isArchived: session.isArchived,
+            ),
+        )
     }
 
     /// The label each row spends on its workspace, decided across the WHOLE roster in one pass:
@@ -192,11 +178,21 @@ enum SessionRosterProjection {
         })
     }
 
-    /// The verb, on the secondary line and only where the title is not already saying it (#745):
-    /// the ticket freed the title, and a row whose title is still `/implement 745` would otherwise
-    /// read the command twice.
-    private static func runKind(for session: CockpitPresentation.Session) -> String? {
-        guard !SessionTitle.drawsDerivedTitle(for: session) else { return nil }
+    /// The first fact the title is not already saying, in the row's one leading meta slot.
+    ///
+    /// The Ticket, where the title fell back to the derived name or the user renamed the row — it
+    /// is then the fact the row is missing (#1072). The slash command otherwise, which is where
+    /// the ticket freeing the title put it (#745). Nothing at all for a row whose title already
+    /// carries both, like `/implement 741`, because saying either twice is the waste #745 named.
+    private static func toldApart(
+        for session: CockpitPresentation.Session, naming: SessionTitle.Naming,
+    )
+        -> String? {
+        if let number = session.ticket.link?.number,
+           !IssueReading.names(number: number, in: naming.title) {
+            return IssueReading.words(number: number, title: nil)
+        }
+        guard !naming.drawsDerivedTitle else { return nil }
         return SessionRunKind.command(inDerivedTitle: session.title)
     }
 

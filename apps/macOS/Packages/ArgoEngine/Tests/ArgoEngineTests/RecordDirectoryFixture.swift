@@ -12,6 +12,9 @@ struct FixtureTranscript {
     /// (`TranscriptExcerpt.sideByteLimit`), so a whole reading of it and an excerpt are different
     /// values. Zero writes the one-line record every other suite here expects.
     var fillerRecords = 0
+    /// A file whose records are not JSON at all — `cockpit-failure-states-spec.md` §8's case.
+    /// There is a file, and nothing in it parses, so it reports no `cwd` however far it is read.
+    var isUnparseable = false
 }
 
 /// A CLI record directory built on disk: a directory per project, holding transcripts whose `cwd`
@@ -82,6 +85,7 @@ struct RecordDirectoryFixture {
     /// A user record is the smallest line that carries a `cwd`. One with none stands for a
     /// transcript whose opening records name no working directory.
     private static func record(for transcript: FixtureTranscript) -> String {
+        guard !transcript.isUnparseable else { return "not a record at all\nnor is this\n" }
         guard let cwd = transcript.cwd else { return "{\"type\":\"user\"}\n" }
         let opening = "{\"type\":\"user\",\"cwd\":\"\(cwd)\"}"
         guard transcript.fillerRecords > 0 else { return opening + "\n" }

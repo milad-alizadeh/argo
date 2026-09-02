@@ -836,6 +836,76 @@ its approved study are authoritative for the replacement look and feel.
   `.focused()` does not make a sidebar's `NSTableView` first responder in a still frame. So this
   goes the way the swiped row went — it is an XCUITest claim, not a render (`ArgoE2ETests`), and
   the specimen was not kept. `roster` remains the frame the ground itself is judged on.
+- **Amended by [#1071](https://github.com/milad-alizadeh/argo/issues/1071) — 2026-09-02: the
+  backlog's selected row keeps the LOUD rung, and takes `text.onAccent` on it. #922's refusal of a
+  ground-dependent ramp is REVERSED, for this one ground only.** The backlog is the one selection
+  placement that never went through `.argoSelectedRowGround(isSelected:)`, so the row was drawn on
+  whatever the platform filled it with and set in the neutral ramp regardless: on the accent at
+  full strength the title read 1.28:1, the `#id` 1.00:1 — `text.tertiary` and Ion Blue have the
+  same luminance to three decimal places — and the caption 2.68:1. The floor is 4.5:1. It is the
+  same failure as #922, in a new place: a ramp chosen against one ground and read on another.
+
+  **The alternative, considered and declined.** Quiet the backlog's ground to
+  `interaction.selectionGround` like every other list. It needs no new role and the existing ramp
+  already reads 5.87:1 / 4.61:1 there. It was declined because the loud fill on the row the reader
+  is working IN is wanted — the backlog is the room's subject, not a rail beside it.
+
+  **What the reversal is, exactly.** #922 rejected lifting an ink on a selected row because "a
+  rung of this ramp is a loudness, and a loudness that changes with its ground is not one". That
+  stands for the neutral ramp, on both grounds it was about. What is reversed is its generality:
+  where the ground is the accent at FULL strength, the row is not set off that ramp at all. It
+  takes `text.onAccent`, which is named for the ground it is read against and is legible on that
+  ground alone — 7.05:1 on the accent and 1.24:1 on the deck. So the ramp is not ground-dependent;
+  a third ground has an ink of its own, and the contract now names it.
+
+  **One ink for all three voices.** The band that clears the floor on this ground ends near
+  `#323232` — every value in it reads as one near-black at a glance — so there is no room for
+  three loudnesses in it. The selected row keeps its hierarchy in face and size, which is where a
+  filled control has always kept it, and `4d` and `#963` are as readable as the words. A rail's
+  demotion goes the same way: there is no quieter rung here to demote to.
+
+  **Argo lays this ground itself, and that is what makes the reading absolute.** The platform draws
+  TWO fills for one state — the `AccentColor` asset at full strength while the list is first
+  responder, `#464646` while it is not — and their luminances are five times apart. A floor of
+  4.5:1 on the light one forces a near-black ink and on the dark one a near-white, so no single ink
+  clears the floor on both; `LoudSelectionGroundTests` proves that by sweeping the greys. So the
+  row draws `interaction.accent` as an opaque `listRowBackground`, covering whichever fill the
+  platform put there, exactly as the roster's quiet ground does and for the same stated reason: it
+  holds its colour while the list is not first responder, because this is the row the reader is
+  working in.
+
+  **What that costs, said out loud:** the band no longer says whether the arrow keys will move the
+  backlog or the pane beside it — the platform's own loud-to-grey was the only cue, and both rails
+  gave the same one up in #875 for the same trade. Selection is what this ground says; keyboard
+  focus is the focus ring's to say.
+
+  - **Anything carrying its own ground is laid on the DECK's, not on this one.** A label chip
+    washes the provider's hue at `labelGroundWash` and carries its word to a ratio measured
+    against `surface.base`; the blockage mark strokes a capsule over nothing at all and spends
+    `state.idle` or `state.failure` inside it, both of which read at 1.2:1 on the accent. Neither
+    is re-coloured — the hue is a reading of the tracker, and the mark's ink is the Route's. Each
+    is handed the deck's own surface as an opaque backdrop, so every hue on the row is read
+    exactly where it was chosen (`BacklogRowInk.backdrop`).
+  - **What is NOT fixed here, and is recorded rather than left to be rediscovered:** the delivery
+    dot. Its five hues are 6pt marks with no ground of their own, and `open` is `interaction
+    .accent` itself — invisible on this ground, and the `absent` ring the shipping room draws
+    reads 2.30:1 off the render, under the 3:1 a mark is held to. A backdrop cannot save a mark
+    the size of the ink, so it needs a keyline or a lift of its own, and that is the dot's
+    decision rather than the ramp's. Nothing reads a code host yet (#258), so every dot the
+    shipping room draws is that ring.
+  - **The emphasised state still has no PNG, and the reason is one rung deeper than #922 put it.**
+    It is not only that `.focused()` leaves the table a non-responder: a specimen render is of an
+    app that is not the ACTIVE one, and macOS draws emphasised selection only in the key window of
+    the active app. Measured here rather than assumed — on `ticketsRoom` the band reads the
+    unemphasised `#464646` with `AXFocused` set on the backlog outline exactly as it does without
+    it, so no capture route reaches the state. What the render DOES settle is the ground: before,
+    the platform's own fill under `text.secondary` at 4.22:1; after, `interaction.accent` —
+    `#5799F8` off a P3 capture, which is `#3E9BFF` in the sRGB the contract is written in — under
+    `#05070A`. The readings are held absolutely by `LoudSelectionGroundTests`, and the claim only a
+    click can make is `BacklogSelectionE2ETests`: the band is the loud rung with the list first
+    responder, and the SAME band once focus has left it.
+
+  ![The selected backlog row before and after #1071](renders/1071-selected-backlog-row.png)
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.

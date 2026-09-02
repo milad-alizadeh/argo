@@ -63,14 +63,20 @@ struct HubJoin {
     /// Admit a transcript to the working set, unsettled — present for the records it is about to
     /// claim, absent from the roster until its file has been read. Re-adding one already here
     /// changes nothing.
-    mutating func add(_ observation: TranscriptObservation) {
-        guard positions[observation.id] == nil else { return }
+    ///
+    /// Answers whether anything MOVED, which is what `TranscriptWatch.mutate` publishes on (#858).
+    /// The four writes a test drives directly carry `@discardableResult`; the two that exist only
+    /// for that answer do not, so the compiler holds them.
+    @discardableResult
+    mutating func add(_ observation: TranscriptObservation) -> Bool {
+        guard positions[observation.id] == nil else { return false }
         positions[observation.id] = transcripts.count
         transcripts.append(HubTranscript(observation: observation))
         // The set has moved and nothing has refolded the roster — this transcript can be a chain's
         // new link or the second path onto one uuid, and which of those it is nobody knows until
         // its file has been read.
         roster.holdWrites()
+        return true
     }
 
     /// Read one transcript again from the beginning, keeping its place in the set and the row it
@@ -80,30 +86,50 @@ struct HubJoin {
     /// and the feed needs the whole file (`TranscriptExcerpt`). The first reading is dropped rather
     /// than added to, so nothing it saw is counted twice — and the row on screen stands, stale
     /// rather than absent, until the new one settles.
-    mutating func reread(_ observation: TranscriptObservation) {
-        guard let index = position(of: observation.id) else { return }
+    mutating func reread(_ observation: TranscriptObservation) -> Bool {
+        guard let index = position(of: observation.id) else { return false }
         transcripts[index] = HubTranscript(observation: observation)
         // The reading under one row has been thrown away and no fold has been retaken: the same
         // staleness `add` opens, reached by a third path into it.
         roster.holdWrites()
+        return true
     }
 
-    mutating func remove(transcriptID: String) {
+    /// Take a whole join in place of this one — a Project repointed onto its retained join, or a
+    /// teardown emptying it. Two EMPTY joins are the same join, so a repoint with nothing retained
+    /// for the Project publishes no roster.
+    mutating func replace(with fresh: HubJoin) -> Bool {
+        let moved = !isEmpty || !fresh.isEmpty
+        self = fresh
+        return moved
+    }
+
+    /// Drop one transcript's row. A transcript the set never held drops nothing.
+    @discardableResult
+    mutating func remove(transcriptID: String) -> Bool {
+        guard position(of: transcriptID) != nil else { return false }
         transcripts.removeAll { $0.id == transcriptID }
         // Every position after the one dropped has moved, so the table is taken again whole.
         positions = Dictionary(transcripts.enumerated().map { ($1.id, $0) }) { first, _ in first }
         recordOwners = recordOwners.filter { $0.value != transcriptID }
         rebuild()
+        return true
     }
 
     /// Apply one read's worth of events, rebuilding once for the batch rather than once per event.
     /// Applying also SETTLES the transcript: the first batch a tail delivers is the backfill of
     /// what its file already held. A batch for a transcript no longer in the set applies nothing.
-    mutating func apply(_ events: [TranscriptEvent], to transcriptID: String) {
-        guard let index = position(of: transcriptID) else { return }
+    @discardableResult
+    mutating func apply(_ events: [TranscriptEvent], to transcriptID: String) -> Bool {
+        guard let index = position(of: transcriptID) else { return false }
         let before = HubJoinFacts(of: transcripts[index].session)
         // A backfill is a transcript joining the published set, which is a move of the set itself.
         var moved = !transcripts[index].isSettled
+        // Nothing in the batch and the transcript already settled: no event to append and no
+        // record to claim, so no row moves. Every tail that ENDS takes this path (#858). A batch
+        // with events in it always moves one, folded fact or not — the stream's stamp is what the
+        // cockpit compares two readings by, and an event moves that.
+        guard !events.isEmpty || moved else { return false }
         for event in events {
             transcripts[index].session.apply(event)
             if case let .recordIdentity(uuid) = event {
@@ -117,16 +143,19 @@ struct HubJoin {
         // reproduced by hand. Anything else — a chain, a duplicated uuid, a held roster — refolds.
         guard !moved, roster.replace(transcripts[index].session, from: transcriptID) else {
             rebuild()
-            return
+            return true
         }
         isOrdered = false
+        return true
     }
 
     /// Settle a transcript whose tail ended without ever delivering a backfill — a file that could
     /// not be opened, or a tail stopped mid-read. Without it the roster waits forever.
-    mutating func settle(transcriptID: String) {
-        guard let index = position(of: transcriptID), !transcripts[index].isSettled else { return }
-        apply([], to: transcriptID)
+    @discardableResult
+    mutating func settle(transcriptID: String) -> Bool {
+        guard let index = position(of: transcriptID), !transcripts[index].isSettled
+        else { return false }
+        return apply([], to: transcriptID)
     }
 
     /// The earliest transcript to claim a record keeps it: a resume chain is walked from its root,

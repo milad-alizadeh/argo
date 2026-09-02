@@ -81,3 +81,20 @@ extension EnvironmentValues {
     /// once and would freeze every age at whatever instant first read the key.
     @Entry var backlogNow: Date?
 }
+
+extension View {
+    /// The opaque plate a trailing mark is laid on where the row's own ground is not one the
+    /// Route's inks can be read on — a selected row's loud accent (#1071). `nil` on the deck,
+    /// which is the ground those inks were chosen against, and no plate is drawn at all.
+    ///
+    /// Shared by both marks in the region: carrying its own ink is what makes a mark need the
+    /// plate, and since #1074 both of them do.
+    func argoTrailingMarkPlate(_ backdrop: ArgoColor?) -> some View {
+        padding(.horizontal, backdrop == nil ? ArgoSpacing.flush : ArgoSpacing.tight)
+            .background {
+                if let backdrop {
+                    Capsule().fill(backdrop.color)
+                }
+            }
+    }
+}

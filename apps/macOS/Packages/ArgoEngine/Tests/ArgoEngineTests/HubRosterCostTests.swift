@@ -32,8 +32,9 @@ struct HubRosterCostTests {
         for _ in 0 ..< 200 {
             _ = hub.sessions
         }
-        // The stamp MOVING still folds, so the count is a memo and not a frozen roster.
-        hub.claims.setLostTurn(nil, for: Self.probe)
+        // The stamp MOVING still folds, so the count is a memo and not a frozen roster. A fact
+        // that moves, since #858: a claim republished with what it already held publishes nothing.
+        hub.claims.setLostTurn("a Turn nobody heard", for: Self.probe)
         _ = hub.sessions
 
         #expect(hub.roster.folds == folded + 1)

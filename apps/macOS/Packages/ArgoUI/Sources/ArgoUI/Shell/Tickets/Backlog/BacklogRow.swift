@@ -10,7 +10,6 @@ import SwiftUI
 /// The INDENT is the row's, not the list's: `List` insets a whole section, and what moves here is
 /// one row against its siblings.
 struct BacklogRow: View {
-    @Environment(\.argo) private var argo
     /// How wide the pane drawing this row is. The chips are RIGID — they would take the title's
     /// last characters rather than give up their own — so under `ArgoBacklogList.labelsAppearAt`
     /// they stand down instead. Read from the room rather than measured here: a row inside a
@@ -25,6 +24,9 @@ struct BacklogRow: View {
     let drawn: TicketsRoomProjection.Drawn
     /// Whether the twist points down. Meaningless on a leaf, whose slot draws nothing.
     let isOpen: Bool
+    /// Every ink this row spends, told once against the ground under it. Handed in because the
+    /// GROUND is one of them and only the outline can lay that (#1071).
+    let ink: BacklogRowInk
     /// `nil` on a leaf. Passed in rather than derived: who owns the fold is the outline's business,
     /// and the row only needs to know whether it has one.
     let toggle: (() -> Void)?
@@ -46,16 +48,13 @@ struct BacklogRow: View {
             DeliveryDot(reading: row.delivery)
             Text("#\(row.id)")
                 .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
+                .foregroundStyle(ink.machine)
                 // RIGID, so the title is the only thing the row squeezes. Without it a row
                 // carrying label chips sets the number down the column, one digit per line.
                 .fixedSize()
             Text(row.title)
                 .argoText(ArgoTypography.body)
-                // A rail is on screen for a descendant's sake rather than for its own match, so its
-                // title takes the demotion the `#id` beside it already carries — without it the
-                // heading's `1 result` stands over three rows a reader would count as three (#873).
-                .foregroundStyle(row.isRail ? argo.color.text.tertiary : argo.color.text.secondary)
+                .foregroundStyle(ink.title)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: ArgoBacklogList.gap)
@@ -63,12 +62,12 @@ struct BacklogRow: View {
             // Inboard of both marks below, which is what leaves an already-blocked row drawn
             // exactly where it was when the claim mark was added (#1074).
             if row.isClaimed {
-                ClaimMark()
+                ClaimMark(backdrop: ink.backdrop)
             }
             // Inboard of the caption, so the caption keeps the trailing edge it has always been
             // right-aligned to and an unblocked row is drawn exactly where it was.
             if let blockage = row.blockage {
-                BlockageMark(blockage: blockage)
+                BlockageMark(blockage: blockage, backdrop: ink.backdrop)
             }
             caption
         }
@@ -83,12 +82,12 @@ struct BacklogRow: View {
         let reading = BacklogRowLabels(row.labels)
         if !reading.shown.isEmpty, paneWidth >= ArgoBacklogList.labelsAppearAt {
             HStack(spacing: ArgoBacklogList.labelGap) {
-                ForEach(reading.shown) { LabelChip(label: $0) }
+                ForEach(reading.shown) { LabelChip(label: $0, backdrop: ink.backdrop) }
                 // Counted rather than listed: the row has no width for the rest, and silence about
                 // them would leave a ticket whose distinguishing label is third looking like one
                 // with two labels.
                 if let marker = reading.marker {
-                    LabelChip(counting: marker)
+                    LabelChip(counting: marker, backdrop: ink.backdrop)
                 }
             }
             .lineLimit(1)
@@ -113,7 +112,7 @@ struct BacklogRow: View {
     private func captionText(_ fact: String) -> some View {
         Text(fact)
             .argoText(ArgoTypography.machineCaption)
-            .foregroundStyle(argo.color.text.disabled)
+            .foregroundStyle(ink.caption)
             // Rigid for the id's reason: `2/9` is one fact, not a column of two.
             .fixedSize()
     }
@@ -146,8 +145,14 @@ struct BacklogRow: View {
 
     return List {
         ForEach(TicketsRoomProjection.drawn(high, shut: [])) { drawn in
-            BacklogRow(drawn: drawn, isOpen: true, toggle: drawn.isParent ? {} : nil)
+            // The ground with the ink, the way the outline pairs them: an ink for a selected row
+            // over the deck would preview a state the app never draws.
+            let ink = BacklogRowInk(
+                isSelected: drawn.id == 272, isRail: drawn.row.isRail, palette: .graphite,
+            )
+            BacklogRow(drawn: drawn, isOpen: true, ink: ink, toggle: drawn.isParent ? {} : nil)
                 .previewSafeListRow()
+                .listRowBackground(ink.ground.color)
         }
     }
     .listStyle(.inset)
