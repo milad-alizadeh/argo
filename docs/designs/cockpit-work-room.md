@@ -301,9 +301,12 @@ which answers "what should I pick up" and must never offer something finished.
 
 **The read is the view's, not the poll's.** Opening the view reads its first page; the minute
 cadence never touches it. The closed set is large, it is not needed to answer "what should I pick
-up", and the room already opens on round-trips it apologises for (#888). It asks for **no edges**,
-which is most of what keeps it cheap next to the open listing — so a closed row draws no blockage
-mark and no roll-up, which is the correct absence rather than a `0/N`.
+up", and the room already opens on round-trips it apologises for (#888). It asks for **no edges**
+where an edge costs a request — which is GitHub, where a closed row therefore draws no blockage
+mark and no roll-up. That is the correct absence rather than a `0/N` nobody established. Linear
+serves children and dependency edges inside the issue fragment itself, so a closed row there does
+carry them: each provider states what it actually read, which is the degrade-down rule and not an
+inconsistency to iron out.
 
 **The count is absent until that read has answered**, on the same rule `Blocked` follows over
 unread edges (#820). Opening onto `0` is the number that tells a reader they have finished nothing.

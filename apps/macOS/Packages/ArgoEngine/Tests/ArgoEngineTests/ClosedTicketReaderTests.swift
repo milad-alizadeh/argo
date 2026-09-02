@@ -66,7 +66,23 @@ struct ClosedTicketReaderTests {
     }
 
     @Test
-    func `the next page resumes at the cursor and is appended to the one in hand`() async throws {
+    func `the next page is appended to the one already in hand`() async throws {
+        let fixture = try BindingFixture()
+        defer { fixture.remove() }
+        let bound = try await Self.bound(fixture, Self.paged())
+        await bound.reader.open(forProject: bound.projectID)
+
+        await bound.reader.extend(forProject: bound.projectID)
+
+        let listing = await bound.items.closedListing(of: bound.projectID)
+        #expect(listing?.items.count == ClosedTicketPage.size + 1)
+        #expect(listing?.items.last?.number == 400)
+    }
+
+    /// It resumes rather than re-reading: two requests for two pages, and the second was asked for
+    /// at the cursor the first came back with.
+    @Test
+    func `the next page is asked for at the cursor the first served`() async throws {
         let fixture = try BindingFixture()
         defer { fixture.remove() }
         let api = Self.paged()
@@ -75,11 +91,8 @@ struct ClosedTicketReaderTests {
 
         await bound.reader.extend(forProject: bound.projectID)
 
-        let listing = await bound.items.closedListing(of: bound.projectID)
-        #expect(listing?.items.count == ClosedTicketPage.size + 1)
-        #expect(listing?.items.last?.number == 400)
-        #expect(listing?.hasMore == false)
         #expect(await api.urls().count == 2)
+        #expect(await api.urls().last?.contains("page=2") == true)
     }
 
     /// A `Load more` that read the first page again would answer a different question than the row

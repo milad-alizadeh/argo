@@ -30,15 +30,25 @@ struct ClosedTicketReadingTests {
     }
 
     @Test
-    func `opening replaces the listing, and the cursor with it`() async {
+    func `opening replaces the listing rather than adding to it`() async {
         let items = TicketLedger()
         await items.openClosed(Self.page([9, 8], next: "2"), for: Self.project)
 
         await items.openClosed(Self.page([9], next: nil), for: Self.project)
 
-        let listing = await items.closedListing(of: Self.project)
-        #expect(listing?.items.map(\.number) == [9])
-        #expect(listing?.hasMore == false)
+        #expect(await items.closedListing(of: Self.project)?.items.map(\.number) == [9])
+    }
+
+    /// The cursor is replaced with it. A first page that kept the old one would leave `Load more`
+    /// standing over a listing the provider has since served the last page of.
+    @Test
+    func `opening replaces the cursor too`() async {
+        let items = TicketLedger()
+        await items.openClosed(Self.page([9, 8], next: "2"), for: Self.project)
+
+        await items.openClosed(Self.page([9], next: nil), for: Self.project)
+
+        #expect(await items.closedListing(of: Self.project)?.hasMore == false)
     }
 
     @Test

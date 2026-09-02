@@ -60,15 +60,19 @@ enum TicketsRoomProjection {
             // failing all session — is the false DIRECT the tier rules exist to refuse
             // (`CONTEXT.md` L2 · degrade-down).
             guard hasAnswered else { return .unread(provider: provider.name) }
-            return view.source == .open
-                ? .nothingOpen(provider: provider.name)
-                : .nothingClosed(provider: provider.name)
+            switch view.source {
+            case .open: return .nothingOpen(provider: provider.name)
+            case .closed: return .nothingClosed(provider: provider.name)
+            }
         }
 
         /// Whether the read this view's set comes from has landed — the poll for four of the views,
         /// and its own bounded read for `Closed`, which no tick ever makes.
         private var hasAnswered: Bool {
-            view.source == .open ? provider?.hasAnswered == true : closedWasRead
+            switch view.source {
+            case .open: provider?.hasAnswered == true
+            case .closed: closedWasRead
+            }
         }
 
         /// Nothing read, and nothing bound. The room a deck draws before anything has answered —
@@ -195,8 +199,10 @@ enum TicketsRoomProjection {
             view: view,
             // The VIEW's own set, before the query narrowed it: opening `Closed` on a Project with
             // nothing open must draw the closed rows rather than the open set's nothing.
-            hasItems: !(view.source == .open ? sets.open : sets.closed).isEmpty,
-            closedHasMore: reading.closedListing?.hasMore == true,
+            hasItems: !sets.items(for: view.source).isEmpty,
+            // Only in the view the page is behind. `Load more` in `All open` would grow the list
+            // with rows that view cannot hold — the control-that-does-nothing, one worse (#900).
+            closedHasMore: view.source == .closed && reading.closedListing?.hasMore == true,
             closedWasRead: sets.closedWasRead,
             // Over the whole open set, never the view on screen: the hero answers "what should I
             // pick up", and opening `Blocked` must not turn that into "nothing is unblocked".

@@ -23,12 +23,27 @@ extension TicketsRoomProjection {
                 open: reading.items.filter { $0.closure == .open },
                 // The numbers the closed READ answered with, never every closed ticket in hand: a
                 // ticket followed by number (#895) is here for the roll-up and is not the listing.
+                //
+                // Still closure-checked, and the check is not redundant: a ticket the read
+                // answered with can be REOPENED, and `TicketLedger.items(of:)` then serves the
+                // poll's fresher open copy under the same number. Membership alone would list it
+                // here, counted, drawing no closure word for a closure that was withdrawn.
                 closed: reading.items.filter {
-                    reading.closedListing?.numbers.contains($0.number) == true
+                    $0.closure != .open && reading.closedListing?.numbers
+                        .contains($0.number) == true
                 },
                 claims: reading.claims,
                 closedWasRead: reading.closedListing != nil,
             )
+        }
+
+        /// The items a view is defined over. A `switch` and never a ternary on `.open`: a third
+        /// source has to be answered here rather than falling quietly to the closed side.
+        func items(for source: TicketsView.Source) -> [Ticket] {
+            switch source {
+            case .open: open
+            case .closed: closed
+            }
         }
 
         /// What each view's count rests on having been read. `edges` is asked of the OPEN set alone
@@ -68,8 +83,8 @@ extension TicketsRoomProjection {
 
     /// The items one view holds. The list and the count beside it both come through here.
     static func items(of sets: Sets, in view: TicketsView) -> [Ticket] {
-        let source = view.source == .open ? sets.open : sets.closed
-        return source.filter { view.admits($0, claimed: sets.claims.numbers.contains($0.number)) }
+        sets.items(for: view.source)
+            .filter { view.admits($0, claimed: sets.claims.numbers.contains($0.number)) }
     }
 
     /// The blockage worth marking on a backlog row, and `nil` where the row marks nothing (#896).

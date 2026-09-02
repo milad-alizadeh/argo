@@ -52,6 +52,12 @@ struct TicketsRoom {
 
         /// Nothing reads anything, for a `#Preview` and a specimen with no provider behind them.
         static let inert = ClosedReads(open: {}, more: {})
+
+        /// What counts as an OPENING of the view — the pair a change of either half is one.
+        struct Opening: Equatable {
+            let view: TicketsView
+            let project: String?
+        }
     }
 
     /// What the room's chrome HOLDS rather than reads — the query, which outlives the pane and is
@@ -97,10 +103,12 @@ struct TicketsRoom {
             // own `unread` vacancy, so a task inside the branch that draws the rows would be
             // waiting on the read that is waiting on it.
             //
-            // Keyed on the view, which is what "opening the view is the only thing that reads the
-            // closed set" means: every switch INTO `Closed` reads its first page, and no tick ever
-            // does (#1075).
-            .task(id: room.view) {
+            // Keyed on the view AND the Project, which is what "opening the view is the only thing
+            // that reads the closed set" means: every switch INTO `Closed` reads its first page,
+            // and no tick ever does (#1075). The Project is in the key because switching one while
+            // sitting in `Closed` moves no view — a reader would otherwise be left on the `unread`
+            // page until they navigated away and back.
+            .task(id: ClosedReads.Opening(view: room.view, project: room.project)) {
                 guard room.view.source == .closed else { return }
                 await closedReads.open()
             }

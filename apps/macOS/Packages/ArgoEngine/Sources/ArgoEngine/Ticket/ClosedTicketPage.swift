@@ -2,9 +2,7 @@ import Foundation
 
 /// One page of a Project's CLOSED Tickets, and whether the provider has another behind it (#1075).
 ///
-/// The closed set is unbounded where the open one is not, so it is read a page at a time and never
-/// whole. That bound is the whole reason it is a second port method rather than a state argument on
-/// `TicketPort.list`: a listing a poll runs on a cadence has no business carrying a cursor.
+/// The closed set is unbounded where the open one is not, so it is read a page at a time.
 public struct ClosedTicketPage: Equatable, Sendable {
     /// The page's Tickets, in the order the provider served them — which both adapters sort by
     /// `updatedAt` descending, so the page boundary and the row order are the same order.

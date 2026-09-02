@@ -117,6 +117,43 @@ struct BacklogList: View {
         .argoAppearance()
 }
 
+// The `Closed` view's own shape (#1075): flat, no priority headers, every row stating its own
+// closure, and the foot that reads the page behind this one.
+#Preview("Backlog list — closed, flat, with another page behind it") {
+    @Previewable @State var selection: Int? = 264
+    @Previewable @State var shut: Set<Int> = []
+    let room = TicketsRoomProjection.room(from: TicketsFixture.closedMore, in: .closed)
+
+    BacklogList(
+        rows: room.backlog,
+        selection: $selection,
+        shut: $shut,
+        header: TicketsChromeProjection.reading(of: room, in: .closed, showing: selection),
+        more: {},
+    )
+    .frame(width: ArgoBacklogList.width, height: 420)
+    .argoDeckSurface()
+    .argoAppearance()
+    .environment(\.backlogNow, TicketsFixture.asOf)
+}
+
+// …and the last page, where the foot is not drawn at all.
+#Preview("Backlog list — closed, the provider served its last page") {
+    @Previewable @State var shut: Set<Int> = []
+    let room = TicketsRoomProjection.room(from: TicketsFixture.closedRead, in: .closed)
+
+    BacklogList(
+        rows: room.backlog,
+        selection: .constant(nil),
+        shut: $shut,
+        header: TicketsChromeProjection.reading(of: room, in: .closed, showing: nil),
+    )
+    .frame(width: ArgoBacklogList.width, height: 420)
+    .argoDeckSurface()
+    .argoAppearance()
+    .environment(\.backlogNow, TicketsFixture.asOf)
+}
+
 #Preview("Backlog list — the provider answered with nothing") {
     BacklogList(rows: [], selection: .constant(nil), shut: .constant([]))
         .frame(width: ArgoBacklogList.width, height: 320)

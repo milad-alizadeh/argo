@@ -3,11 +3,8 @@ import Foundation
 /// Reading a Project's CLOSED Tickets a page at a time, end to end: resolve the Binding, pick the
 /// adapter that speaks its provider, read one page, and keep what came back (#1075).
 ///
-/// `TicketFollower`'s sibling, and deliberately not the poll's. `TicketPoll` runs on a cadence and
-/// the room already opens on round-trips it apologises for (#888); the closed set is large, answers
-/// "what did I finish" rather than "what should I pick up", and nothing is waiting on it between
-/// ticks. So it is raised by the VIEW — `open` when the reader opens it, `extend` when they press
-/// `Load more` — and there is no path to it through the poll at all.
+/// Raised by the VIEW and never by a cadence — `open` when the reader opens it, `extend` when they
+/// press `Load more`. There is no path to this read through `TicketPoll` at all.
 public struct ClosedTicketReader: Sendable {
     private let bindings: ProjectBindings
     private let items: TicketLedger
