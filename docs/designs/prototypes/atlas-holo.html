@@ -1606,14 +1606,21 @@ function said(path, folder) {
 /* A band answers "is this file in the top 15%", which makes a 58 the same pixel as a 20.
    The extreme is what a reader comes to a map like this for, so the colour channel's own
    top of the pile is listed outright. It re-sorts when that channel changes. */
+/* Whatever is picked above scopes this: a repo-wide ranking sitting under one selected domain
+   is a list nobody asked for, and the same list scoped is the drill-down — which is also why
+   there is no tree here. A domain holds up to a hundred and seventy files, and a row you can
+   expand into a hundred and seventy more is the thing this panel keeps being too long for. */
 function topList() {
   if (!view) return '';
   const k = state.colour;
+  const only = state.dom !== 'off' && state.domSel !== null && DOM;
   const rows = view.boxes.filter(b => b.file)
+    .filter(b => !only || (DOM.byPath.get(b.path) || {}).id === state.domSel)
     .map(b => ({ path: b.path, name: b.n.name, v: at(b.n, k) }))
     .sort((a, b) => b.v - a.v).slice(0, 12);
   if (!rows.length) return '';
-  return `<div class="ties"><h4>Highest ${esc(DESC[k].title)}</h4>`
+  const where = only ? ` in ${esc(domName(DOM.clusters[DOM.rank.get(state.domSel)]))}` : '';
+  return `<div class="ties"><h4>Highest ${esc(DESC[k].title)}${where}</h4>`
     + rows.map(r => `<div class="tie" data-go="${esc(r.path)}" title="Go to this file">`
         + `<span>${esc(r.name)}</span><b>${fmt(r.v)}</b>`
         + `<em>${esc(r.path.split('/').slice(0, -1).slice(-2).join('/'))}</em></div>`).join('')
