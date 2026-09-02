@@ -1,6 +1,7 @@
 import AppKit
 @testable import ArgoSpecimens
 @testable import ArgoUI
+import ProseText
 import Testing
 
 /// The reading the lane's cost cases and its figure recording both measure over.

@@ -1,6 +1,7 @@
 import AppKit
 import ArgoDesign
 @testable import ArgoUI
+import ProseText
 import Testing
 
 /// A line's box is read off the face the platform RESOLVES, and everything measuring a line it

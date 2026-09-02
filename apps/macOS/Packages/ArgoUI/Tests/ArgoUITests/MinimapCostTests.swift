@@ -1,6 +1,7 @@
 import AppKit
 @testable import ArgoSpecimens
 @testable import ArgoUI
+import ProseText
 import Testing
 
 /// What the overview lane COSTS, counted in the two units the cost is actually made of: a ruler

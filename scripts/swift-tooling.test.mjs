@@ -101,15 +101,23 @@ for (const [configuration, environment, flags] of [
   ['debug', {}, []],
   ['release', { ARGO_TEST_CONFIGURATION: 'release' }, ['-c', 'release', '-Xswiftc', '-DDEBUG']],
 ]) {
-  check(`swift-test.sh runs ${configuration} on a clean report, for both packages`, () => {
+  check(`swift-test.sh runs ${configuration} on a clean report, for every package`, () => {
     swiftWriting(suite('errors="0" tests="9" failures="0"'))
     const result = run(TEST, { ...REPORTING, env: environment })
     assert.equal(result.status, 0, result.output)
     assert.match(result.output, new RegExp(`ArgoEngine \\(${configuration}\\)`))
     assert.match(result.output, /ArgoUI clean, 0 failures across 9 reported tests/)
-    // Both invocations in order: the report path, then whatever flags the configuration adds.
+    assert.match(result.output, /ArgoMermaid clean, 0 failures across 9 reported tests/)
+    // Every invocation in order: the report path, then whatever flags the configuration adds.
     const passed = result.argv.filter((arg) => arg !== 'test' && !arg.endsWith('.xml'))
-    assert.deepEqual(passed, ['--xunit-output', ...flags, '--xunit-output', ...flags])
+    assert.deepEqual(passed, [
+      '--xunit-output',
+      ...flags,
+      '--xunit-output',
+      ...flags,
+      '--xunit-output',
+      ...flags,
+    ])
   })
 }
 

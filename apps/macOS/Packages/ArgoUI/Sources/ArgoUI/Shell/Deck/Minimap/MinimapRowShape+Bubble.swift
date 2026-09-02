@@ -1,4 +1,5 @@
 import CoreGraphics
+import ProseText
 
 // A prompt as the lane draws it: whatever was pasted in, above the words, inside a bubble held
 // against the trailing edge — the shape `FeedPrompt` draws.

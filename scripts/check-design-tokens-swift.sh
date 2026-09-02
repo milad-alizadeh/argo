@@ -34,7 +34,9 @@ set -u
 # Every Swift source that CONSUMES the contract. `ArgoDesign` itself is absent because it declares
 # them, and the two test targets are absent because a test states a value on purpose — an
 # assertion about #D73A4A has to spell #D73A4A.
-SRC_DIRS="apps/macOS/Packages/ArgoUI/Sources apps/macOS/Packages/ArgoDesign/Sources/ArgoAtoms apps/macOS/Argo"
+SRC_DIRS="apps/macOS/Packages/ArgoUI/Sources apps/macOS/Packages/ArgoDesign/Sources/ArgoAtoms\
+ apps/macOS/Packages/ArgoDesign/Sources/ProseText apps/macOS/Packages/ArgoMermaid/Sources\
+ apps/macOS/Argo"
 # The module the exemption is: named here so a rename fails loudly rather than exempting nothing.
 DESIGN_TARGET="apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign"
 ALLOW_FILE="$(dirname "$0")/design-tokens-swift-allow.txt"

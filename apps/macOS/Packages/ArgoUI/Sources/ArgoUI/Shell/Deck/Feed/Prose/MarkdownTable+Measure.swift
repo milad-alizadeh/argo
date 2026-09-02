@@ -1,4 +1,5 @@
 import Foundation
+import ProseText
 
 // A pipe table's geometry: what its columns ask for, what they are dealt, and how tall each row
 // comes out. ONE answer, used by the layout that places the real cells and by the lane that maps

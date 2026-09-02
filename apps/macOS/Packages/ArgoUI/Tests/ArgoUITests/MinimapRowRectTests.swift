@@ -1,6 +1,7 @@
 import ArgoDesign
 @testable import ArgoUI
 import Foundation
+import ProseText
 import Testing
 
 /// What a row reports it drew (#382 as amended).

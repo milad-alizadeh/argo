@@ -1,4 +1,6 @@
 import Foundation
+import MermaidLayout
+import ProseText
 
 /// One block of a prose row, as the lane needs it to lay the block out again exactly as
 /// `FeedMarkdown` laid it out: the same words, at the same face, at the same indent. Built once per

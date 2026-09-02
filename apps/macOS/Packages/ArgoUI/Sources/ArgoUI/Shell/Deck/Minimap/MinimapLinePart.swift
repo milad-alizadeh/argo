@@ -1,4 +1,5 @@
 import Foundation
+import ProseText
 
 /// One piece of a row the feed says in a single line, as the row draws it: the words, the face they
 /// are set in, and the ink they take.

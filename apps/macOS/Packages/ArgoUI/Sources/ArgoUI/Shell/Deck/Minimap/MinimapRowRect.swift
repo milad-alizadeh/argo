@@ -1,4 +1,5 @@
 import Foundation
+import ProseText
 
 /// One rectangle a feed row draws, in the ROW's own coordinates: points down from the row's top,
 /// and points across from the drawable's leading edge.

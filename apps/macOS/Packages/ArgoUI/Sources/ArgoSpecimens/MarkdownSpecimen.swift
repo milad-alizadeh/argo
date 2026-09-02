@@ -1,5 +1,6 @@
 import ArgoDesign
 import ArgoUI
+import ProseText
 import SwiftUI
 
 /// One message carrying every block, at the measure the feed reads at.

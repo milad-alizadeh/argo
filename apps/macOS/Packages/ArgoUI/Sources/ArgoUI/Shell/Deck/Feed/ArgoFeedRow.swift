@@ -1,4 +1,5 @@
 import ArgoDesign
+import ProseText
 import SwiftUI
 
 /// What one feed row is measured at. Every GAP names a step of `ArgoSpacing`; a bare number is a
@@ -64,11 +65,13 @@ public enum ArgoFeedRow {
     /// Between the last line of a Turn's messages and the chip under it. Tighter than `gap`.
     public static let copyChipStep: CGFloat = ArgoSpacing.tight
 
-    /// The rung the feed's BODY is set on — prose and call lines alike. Markup keeps its own steps.
-    public static let proseRung: ArgoTypeScale = .body
+    /// The rung the feed's BODY is set on — prose and call lines alike. Markup keeps its own
+    /// steps. Named there and not here because the ruler that measures a line needs it — see
+    /// `ProseRhythm`.
+    public static let proseRung: ArgoTypeScale = ProseRhythm.proseRung
 
     /// The line height the body is set at.
-    public static let lineHeight: CGFloat = 20
+    public static let lineHeight: CGFloat = ProseRhythm.lineHeight
 
     /// The gutter a patch's line numbers sit in. Wide enough for four digits.
     public static let diffGutterWidth: CGFloat = 32
@@ -77,7 +80,7 @@ public enum ArgoFeedRow {
     /// rung and not `ArgoTypography.machine`'s: the feed draws its mono as
     /// `.system(.body, design: .monospaced)`, which keeps the BODY's line box and changes only the
     /// advances, so the chrome role's `callout` is a box nothing in the feed stands in (#1026).
-    static let machineRung: ArgoTypeScale = proseRung
+    static let machineRung: ArgoTypeScale = ProseRhythm.machineRung
 
     /// How far the way-back-to-the-newest control floats above the bottom of the feed. Stacked
     /// above the plan pill's lane, not beside it: side by side, a narrow deck draws the centred
@@ -140,24 +143,19 @@ public enum ArgoFeedRow {
     /// How much of a long prompt stands before it is folded.
     public static let collapsedPromptLines = 6
 
-    /// The extra leading that puts the body role on `lineHeight`. Floored at zero: a line height
-    /// under the font's own is not something leading can express.
-    ///
-    /// Off the DRAWN box and not the ladder's nominal number, because leading is added to the box
-    /// the platform resolves: the two differ at every rung by an amount with no fixed sign, so a
-    /// line whose leading came off the nominal one stood over the height its name promises here and
-    /// under it on another machine — #1026.
+    /// The extra leading that puts the body role on `lineHeight` — see `ProseRhythm`, which the
+    /// feed's ruler reads it from.
     @MainActor public static var proseLineSpacing: CGFloat {
-        max(0, lineHeight - proseRung.drawnLineBox)
+        ProseRhythm.proseLineSpacing
     }
 
     /// The same rhythm for machine output. Tighter than prose.
     @MainActor public static var machineLineSpacing: CGFloat {
-        max(0, machineLineHeight - machineRung.drawnLineBox)
+        ProseRhythm.machineLineSpacing
     }
 
     /// What a line of output is set at, inside the evidence panel.
-    static let machineLineHeight: CGFloat = 18
+    static let machineLineHeight: CGFloat = ProseRhythm.machineLineHeight
 }
 
 public extension View {

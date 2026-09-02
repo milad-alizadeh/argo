@@ -21,6 +21,8 @@ let package = Package(
         .package(path: "../ArgoEngine"),
         // The token contract and the primitives over it, one layer below every view here (#1088).
         .package(path: "../ArgoDesign"),
+        // The `mermaid` renderer, which is a package rather than a leaf of the feed (#1087).
+        .package(path: "../ArgoMermaid"),
         // Syntax highlighting: highlight.js under a SwiftUI surface, MIT. A grammar per language is
         // a solved problem and not one to hand-roll (`rules/dependencies.md`), and this one ships
         // Xcode's own theme, which is the theme the panel wants.
@@ -34,6 +36,9 @@ let package = Package(
                 "HighlightSwift",
                 .product(name: "ArgoDesign", package: "ArgoDesign"),
                 .product(name: "ArgoAtoms", package: "ArgoDesign"),
+                .product(name: "ProseText", package: "ArgoDesign"),
+                .product(name: "MermaidLayout", package: "ArgoMermaid"),
+                .product(name: "MermaidView", package: "ArgoMermaid"),
             ],
         ),
         // Sample data, and nothing that draws: the transcripts the cockpit is judged against and
@@ -50,8 +55,18 @@ let package = Package(
                 "ArgoFixtures",
                 .product(name: "ArgoDesign", package: "ArgoDesign"),
                 .product(name: "ArgoAtoms", package: "ArgoDesign"),
+                .product(name: "MermaidLayout", package: "ArgoMermaid"),
+                .product(name: "MermaidView", package: "ArgoMermaid"),
             ],
         ),
-        .testTarget(name: "ArgoUITests", dependencies: ["ArgoUI", "ArgoFixtures", "ArgoSpecimens"]),
+        .testTarget(
+            name: "ArgoUITests",
+            dependencies: [
+                "ArgoUI",
+                "ArgoFixtures",
+                "ArgoSpecimens",
+                .product(name: "MermaidLayout", package: "ArgoMermaid"),
+            ],
+        ),
     ],
 )

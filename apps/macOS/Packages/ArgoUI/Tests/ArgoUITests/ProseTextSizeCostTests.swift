@@ -1,5 +1,6 @@
 import AppKit
 @testable import ArgoUI
+import ProseText
 import Testing
 
 /// What #1027's freshness check costs the feed's hot measurement path, and what the alternative it

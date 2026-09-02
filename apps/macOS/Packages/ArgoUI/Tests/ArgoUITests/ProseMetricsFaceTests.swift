@@ -1,6 +1,7 @@
 import AppKit
 import ArgoDesign
 @testable import ArgoUI
+import ProseText
 import Testing
 
 /// Every claim is anchored on the SANS width of the same characters — a hard-coded point value

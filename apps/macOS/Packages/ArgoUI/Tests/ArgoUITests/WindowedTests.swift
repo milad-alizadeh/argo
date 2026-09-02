@@ -1,4 +1,5 @@
 import AppKit
+@testable import ArgoUI
 
 /// Whether a claim that needs a REAL window can be made here.
 ///

@@ -1,5 +1,6 @@
 @testable import ArgoUI
 import Foundation
+import ProseText
 import Testing
 
 /// What the reading cache promises. Two claims, and they are the whole of it: a string is read
