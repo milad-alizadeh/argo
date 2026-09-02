@@ -17,3 +17,12 @@ public extension HubSession {
         transcript.stamp
     }
 }
+
+/// One reading that is a CONVENTION rather than a value: a detached checkout makes the CLI write
+/// the literal `HEAD`, which is not a ref anybody can check out. Read as the fact enters the Hub,
+/// so no surface has to know it. Internal rather than `public`, so ADR-0027 has nothing to project.
+extension HubSession {
+    static func branchName(_ observed: String) -> String? {
+        observed == "HEAD" ? nil : observed
+    }
+}
