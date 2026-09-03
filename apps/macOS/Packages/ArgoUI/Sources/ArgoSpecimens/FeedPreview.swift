@@ -86,8 +86,11 @@ struct FeedPreview: View {
                 )
                 if showsOverview {
                     DeckSeparator()
-                    MinimapLane(feed: table, naming: naming)
-                        .frame(width: ArgoLayout.minimapLaneWidth(sharing: proxy.size.width))
+                    MinimapLaneZone(
+                        feed: table,
+                        width: ArgoLayout.minimapLaneWidth(sharing: proxy.size.width),
+                        naming: naming,
+                    )
                 }
             }
         }

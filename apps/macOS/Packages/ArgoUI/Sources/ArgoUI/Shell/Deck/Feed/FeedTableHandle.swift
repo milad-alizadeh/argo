@@ -32,7 +32,7 @@ import SwiftUI
     /// Observable, because it is the one fact the SwiftUI half of the deck renders off: the feed
     /// and the overview lane appear in the frame this turns true, and the provisional word stands
     /// in the frames before it. Written by the coordinator, which is where a pass lands.
-    private(set) var isSettled = false
+    package private(set) var isSettled = false
     /// The last row present when following broke — what `FeedTail.newMessages` counts from.
     private(set) var leftAt: FeedRow.ID?
 
