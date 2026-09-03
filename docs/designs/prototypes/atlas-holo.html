@@ -1396,6 +1396,12 @@ function upOf(b) { let p = b.up; while (p && p.ghost) p = p.up; return p || null
 /* The scope is READ OFF the camera rather than kept beside it, so the crumb, the rail and
    the reading can never name a folder the map is not standing in. */
 function scopeTo(b) {
+  /* A NEW SCOPE IS A NEW COLOUR ON THE MAP, so it repaints here and dissolves like every
+     other colour change. The treemap hid this: its flight repaints every frame anyway. The
+     city does not fly, so a scope chosen there was true in the crumb and in the rail and
+     nowhere on the map — the hush arrived later, whenever something else happened to
+     redraw. The snapshot must be taken before the scope moves, which is why it is first. */
+  beginFade();
   const root = tree();
   const chain = [];
   for (let x = b; x && x !== root; x = x.up) if (!x.ghost) chain.unshift(x);
@@ -1404,6 +1410,7 @@ function scopeTo(b) {
   state.folder = chain.length ? chain[chain.length - 1].path : null;
   state.folderName = chain.length ? chain[chain.length - 1].n.name : null;
   closePage();
+  rebuild();
   railIndex(); key(view.lo, view.hi); detail(null); railMark();
 }
 function setAim(b) {
@@ -2990,6 +2997,20 @@ function chainDown(box) {
   return { box: b, name: names.join('/') };
 }
 
+/* A GHOST IS NOT A PLACE — it holds no files of its own, so the map neither draws it nor
+   names it and the camera cannot stand on it. A rail row for one is therefore a row that
+   does nothing at all when clicked, which is how `Packages` sat at the top of the list
+   doing nothing. chainDown already folds a ghost with ONE child into the row below it; a
+   ghost that FORKS is folded the other way, into one row per folder the map does name, so
+   every row in the rail leads somewhere. */
+function namedDirs(box) {
+  return box.kids.filter(k => !k.file).flatMap(k => {
+    const d = chainDown(k);
+    if (!d.box.ghost) return [d];
+    return namedDirs(d.box).map(x => ({ box: x.box, name: d.name + '/' + x.name }));
+  });
+}
+
 /* The tree is rebuilt whenever area or height changes, so where you are is held as a path
    and looked up again — a kept box reference would be a box nothing draws. */
 function folderAt(path) {
@@ -3014,7 +3035,7 @@ function goFolder(i) {
 
 function folderIndex() {
   const here = folderAt(state.folder);
-  const dirs = here.kids.filter(k => !k.file).map(chainDown)
+  const dirs = namedDirs(here)
     .sort((a, b) => leaves(b.box.n).length - leaves(a.box.n).length);
   ctxBar();
 
