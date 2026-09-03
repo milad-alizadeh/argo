@@ -140,7 +140,7 @@ function_parameter_count:
   # INIT: TicketsRoomProjection.swift 10 — Row, one backlog row, a field per column plus its
   # INIT: ClaimFacts.swift 11 — everything Argo knows about one claim, under one key
   # INIT: FeedTable.swift 9 — the feed's AppKit scroller, whose slots are what the SwiftUI half
-  # INIT: FeedTableModel.swift 9 — everything the AppKit half of the feed needs from the SwiftUI
+  # INIT: FeedTableModel.swift 8 — everything the AppKit half of the feed needs from the SwiftUI
   # INIT: GitHubPullRequest.swift 9 — one pull request as GitHub's REST API serves it, parsed at
   # INIT: PullRequestJSON.swift 9 — the GitHub pull-request fixture, written the way GitHub writes
   # INIT: TicketsRoomProjection.swift 9 — Room, the Tickets room's whole reading

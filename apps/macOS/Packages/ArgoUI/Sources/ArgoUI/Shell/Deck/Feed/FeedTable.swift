@@ -10,9 +10,12 @@ import SwiftUI
 /// every flawless long feed on this platform actually stands on: it owns the offset, recycles
 /// cells, measures rows lazily, and keeps the reading still through a re-wrap, none of which this
 /// layer has to re-implement. The rows themselves stay SwiftUI, hosted per cell.
+///
+/// One table per reading, all of them inside one `FeedDeckStack` and exactly one shown (ADR-0030,
+/// Rule 4). This representable never re-points a table at another reading: it asks the store which
+/// deck this reading is, and hands a model to that deck alone.
 struct FeedTable: NSViewRepresentable {
-    /// Which reading this is, so the coordinator can tell another Session's rows from this one's
-    /// next batch — see `FeedReading`.
+    /// Which reading this is — which DECK, since the store keys them on it. See `FeedReading`.
     package let reading: FeedReading
     package let rows: [FeedRow]
     let selection: FeedRowSelection
@@ -21,40 +24,26 @@ struct FeedTable: NSViewRepresentable {
     let isUnderComposer: Bool
     let washed: FeedRow.ID?
     @Binding var unfolded: Set<FeedRow.ID>
-    let handle: FeedTableHandle
+    /// Every deck the reader has open, from the one view above every switch that would destroy
+    /// them — see `KeptDecks`.
+    let decks: KeptDecks
 
-    func makeCoordinator() -> FeedTableCoordinator {
-        FeedTableCoordinator()
+    func makeNSView(context _: Context) -> FeedDeckStack {
+        FeedDeckStack()
     }
 
-    func makeNSView(context: Context) -> NSScrollView {
-        let view = context.coordinator.makeScrollView()
-        bind(context.coordinator, through: context.environment)
-        context.coordinator.apply(model(in: context))
-        return view
-    }
-
-    func updateNSView(_: NSScrollView, context: Context) {
-        bind(context.coordinator, through: context.environment)
-        context.coordinator.apply(model(in: context))
-    }
-
-    /// The two halves of one authority: the handle reaches the table through the coordinator, and
-    /// the coordinator reaches the policy through the handle.
-    ///
-    /// The measured heights come the other way. They are the shell's where the shell holds them,
-    /// because this representable is destroyed on every room switch and they must not be (#858).
-    private func bind(_ coordinator: FeedTableCoordinator, through values: EnvironmentValues) {
-        handle.coordinator = coordinator
-        coordinator.handle = handle
+    func updateNSView(_ stack: FeedDeckStack, context: Context) {
+        let deck = decks.show(reading, opening: held)
         // Per READING and not per shell: one store shared across Sessions is overwritten by
-        // whichever was looked at last, so coming back re-measures. See `FeedGeometries`.
-        coordinator.keep(values.argoFeedGeometries?.geometry(for: reading))
+        // whichever was looked at last, so coming back re-measures. See `FeedGeometries`. Taken
+        // before the model, so nothing already measured is thrown away by the first apply.
+        deck.coordinator.keep(context.environment.argoFeedGeometries?.geometry(for: reading))
+        stack.show(deck, of: decks.decks)
+        deck.coordinator.apply(model(in: context))
     }
 
     private func model(in context: Context) -> FeedTableModel {
         FeedTableModel(
-            reading: reading,
             rows: rows,
             selection: selection,
             held: held,

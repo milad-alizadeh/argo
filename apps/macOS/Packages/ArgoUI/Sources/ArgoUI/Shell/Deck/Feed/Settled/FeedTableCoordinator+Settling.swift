@@ -47,9 +47,15 @@ extension FeedTableCoordinator {
     }
 
     /// The table emptied without the document being — see `settleIfOwed`.
+    ///
+    /// A deck holding a document keeps drawing it. The empty feed is the shell's deferral, not a
+    /// reading that emptied: the pass that paints a click hands the deck it is coming back to no
+    /// rows (`DrawnSession`), and a deck that blanked itself for that pass would throw away the
+    /// offset the reader left it at — which is the whole of what ADR-0030 Rule 4 keeps.
     private func drawNothing() {
-        guard !shown.isEmpty else { return }
+        guard !shown.isEmpty, !geometry.isSettled else { return }
         shown = []
+        handle?.drawing(0)
         table?.reloadData()
         notedReshape()
     }
@@ -169,6 +175,7 @@ extension FeedTableCoordinator {
         on table: NSTableView,
     ) {
         shown = rows
+        handle?.drawing(rows.count)
         guard !freshly, !stale.isEmpty else {
             // The reading OPENS here. `openAfresh` reopened the policy on the rows the table had,
             // which for a reading nobody had measured yet was none of them — so where a landing is

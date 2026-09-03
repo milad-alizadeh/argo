@@ -167,6 +167,15 @@ import SwiftUI
         NotificationCenter.default.removeObserver(self)
     }
 
+    /// The deck this draws was evicted (`KeptDecks`). Whatever is in flight is dropped with it: the
+    /// answer on its way is a document of a reading nothing will draw again.
+    func retire() {
+        settling?.cancel()
+        settlingFor = nil
+        quieting?.cancel()
+        finishedQuiet()
+    }
+
     /// A fresh reading, reported to the policy as the difference from the shown one.
     ///
     /// A model in which nothing DRAWN changed is applied and left alone. `updateNSView` runs on
@@ -174,20 +183,13 @@ import SwiftUI
     /// on each of those re-rendered every visible cell at drag rate, which was the jitter the
     /// seam had and the window's own resize did not.
     func apply(_ fresh: FeedTableModel) {
-        // Before anything is resolved against it: a table that replaced another under this handle
-        // is a fresh reading, and the policy answering it is the last one's.
-        handle?.reopenIfOwed(held: fresh.held)
         let staleEnvironment = model?.environment
-        // Asked of the model that stands, before it is replaced. `model != nil` and not the reading
-        // alone: the FIRST apply is a mount, not a switch.
-        let switched = model != nil && model?.reading != fresh.reading
         model = fresh
         guard table != nil else { return }
-        if switched {
-            openAfresh()
-        } else {
-            touchUp(against: fresh, from: staleEnvironment)
-        }
+        // No switch arm, and there is no longer one to have: a coordinator is made per reading and
+        // kept with its deck (`KeptDecks`), so the only reading it is ever applied is its own.
+        // ADR-0030 Rule 4 replaced ADR-0028 Rule 5's re-pointed table, and `openAfresh` with it.
+        touchUp(against: fresh, from: staleEnvironment)
         // The rows themselves are NOT taken here. What the table draws changes in one place only —
         // the turn a settled document lands on (`FeedTableCoordinator+Settling`) — because the
         // rows and the heights they are drawn at have to change together or the feed spends a
@@ -240,6 +242,7 @@ import SwiftUI
         geometry.surrender()
         shown = []
         handle?.settled(false)
+        handle?.drawing(0)
         table?.reloadData()
     }
 

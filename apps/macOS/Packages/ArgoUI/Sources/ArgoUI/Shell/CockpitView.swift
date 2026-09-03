@@ -62,6 +62,14 @@ public struct CockpitView: View {
     /// Session looked at last overwrites the one the reader is coming back to. See `FeedGeometries`
     /// (#858).
     @State var feedGeometries = FeedGeometries()
+    /// Every Session the reader has opened this launch, each with its own deck — table, scroll
+    /// position and folds — kept off screen while they are elsewhere and shown again unchanged
+    /// (ADR-0030, Rule 4). Held HERE for the reason the heights beside it are: this is the one view
+    /// above `InstrumentDeckShell`'s room `switch`, which destroys the whole feed zone.
+    ///
+    /// A tighter bound than the heights: six decks against twenty readings, so a Session pushed out
+    /// of the decks still re-opens over geometry nothing has to measure again. See `KeptDecks`.
+    @State var feedDecks = KeptDecks()
     /// Which Session the shell has already drawn — what says whether this pass may take a reading
     /// at all. See `DrawnSession`.
     @State private var drawn = DrawnSession()

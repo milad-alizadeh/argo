@@ -47,9 +47,9 @@ struct FeedPreview: View {
     @State private var step: Int?
     @State private var lit: FeedShot?
     @FocusState private var focus: FeedFocus?
-    /// The one handle both surfaces hold — see `FeedTableHandle`. Seeded with `held`, so a still
-    /// shows the detached state from its first frame.
-    @State private var table: FeedTableHandle
+    /// This surface's own decks — see `KeptDecks`. One reading and nothing to switch to, so a
+    /// preview keeps its own rather than reaching for a shell's.
+    @State private var decks = KeptDecks()
 
     init(
         rows: [FeedRow],
@@ -61,7 +61,12 @@ struct FeedPreview: View {
         self.showsOverview = showsOverview
         self.held = held
         _open = State(initialValue: open)
-        _table = State(initialValue: FeedTableHandle(held: held))
+    }
+
+    /// The preview's one deck, seeded with `held` so a still shows the detached state from its
+    /// first frame.
+    private var table: FeedTableHandle {
+        decks.show(.unattached, opening: held).handle
     }
 
     var body: some View {
@@ -76,7 +81,7 @@ struct FeedPreview: View {
                     )
                     .homing(onto: table),
                     held: held,
-                    table: table,
+                    decks: decks,
                     opensUnfolded: opensUnfolded,
                 )
                 if showsOverview {
