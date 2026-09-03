@@ -151,28 +151,21 @@
        measured, not asserted. See the design's own notes for the arithmetic. */
 
     /* 1 · MEASURE RAMP — three ordered bands for one continuous measure.
-       Viridis hues at t = 0.15 / 0.50 / 0.90, carried to the pigment weight the light model
-       was tuned for. Of eleven published sequential schemes viridis is the only one that
-       clears Argo's palette at all: plasma and rocket collide with state.failure, magma with
-       attention, inferno with destructive, YlGnBu with running, cividis and mako with the
-       selection ground. Luminance rises 0.280 -> 0.507 -> 0.677, so rank reads without the
-       legend.
+       A TRAFFIC LIGHT: green, amber, red. It is the convention CodeCharta uses and the one
+       every reader already owns, and it is the whole reason a band is legible before the
+       legend is read. Luminance is not the ordering channel here — the hue is.
 
-       WHAT THIS REPLACES, and why it is worth a contract change: the prototype's own bands
-       sat 0.031 / 0.071 / 0.093 from state.running, state.attention and state.failure — they
-       WERE the operational-state palette. A complex file and a crashed session were the same
-       red.
-
-       STATED EXEMPTION, on the model of SeriesRoles' spent and ordinary rungs. Against the
-       four roles a reader could actually confuse a band with, every band clears the floor —
-       nearest is state.idle at 0.257. Against selectionGround the quiet band measures 0.240,
-       under the 0.25 floor. It is exempt because selectionGround is the ground under a
-       selected LIST ROW and never appears on the map, so the two are never in one field of
-       view. Full-strength viridis clears it at 0.265 and is the fallback if that ever stops
-       being true. */
-    --ramp-quiet:    #4D426C;   /* nearest state role: idle      at 0.407 */
-    --ramp-middling: #45928E;   /* nearest state role: idle      at 0.257 */
-    --ramp-hot:      #A5B851;   /* nearest state role: attention at 0.265 */
+       The bands are near the operational-state palette (green 0.169 from state.idle, amber
+       0.212 from state.attention, red 0.203 from state.failure) and take a STATED EXEMPTION
+       from the 0.25 separation floor, on the model of SeriesRoles' spent and ordinary rungs.
+       The exemption is deliberate rather than tolerated: no state role is ever drawn on the
+       map, so nothing is in one field of view with a band, and the shared reading is the
+       POINT — amber means the same thing on a roof as it does on a chip. A viridis ramp was
+       tried, cleared every role, and was rejected on sight: it reads as a heatmap rather than
+       a place, and it throws away the one thing a reader does not have to be taught. */
+    --ramp-quiet:    #609884;   /* green  — half the files */
+    --ramp-middling: #BC9658;   /* amber  */
+    --ramp-hot:      #C26450;   /* red    — the top 15% */
 
     /* 2 · DOMAIN WHEEL — domains are categorical and their COUNT belongs to the repository,
        so the token is the rule rather than the colours: hue = i/n around the wheel at a
