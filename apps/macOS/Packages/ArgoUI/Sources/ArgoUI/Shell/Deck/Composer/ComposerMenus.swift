@@ -64,19 +64,26 @@ struct ComposerMenus {
     /// Whether Escape has put a menu away over a line that would still open one. Not `private`,
     /// for the reason `cursor` isn't.
     var isDismissed = false
-    /// Whether `AddButton` has `AddMenu` open — the third surface these coordinate, beside `/` and
-    /// `@` (design decision 11, #689). At most one of the three ever stands: opening this one, or
-    /// either sigil's, puts the others away.
+    /// `AddButton`'s own two states, beside either sigil's listing (design decision 11, #689). At
+    /// most one of the three ever stands: opening `AddMenu`, or requesting a sigil's listing off
+    /// one of its rows, puts the sigil-typed derive and the other state away — ONE value rather
+    /// than an `isAddOpen` flag beside a `requested: Sigil?` that could otherwise both be set.
     ///
     /// Not `private`: the rules that open and pick off it live in `ComposerMenus+Add.swift`, and
     /// Swift's `private` is file-scoped — the same reason `ComposerDraft.attachments` isn't one.
-    var isAddOpen = false
-    /// The sigil `AddMenu` asked for DIRECTLY, and `nil` where none did. Set by
-    /// `addMenuPicked(_:)` rather than by typing the sigil: the field stays exactly as the reader
-    /// left it, and the listing behind it is the same untyped one `/` or `@` alone would open —
-    /// `ComposerMenu.commands(for: "/", in:)`, `ComposerMenu.files(for: "@", in:touched:)`. Not
-    /// `private`, for the reason `isAddOpen` isn't.
-    var requested: ComposerMenu.Sigil?
+    enum AddState: Equatable {
+        case closed
+        /// `AddMenu` itself, the two-row drawer.
+        case open
+        /// The sigil `AddMenu` asked for DIRECTLY, off one of its rows — set by
+        /// `addMenuPicked(_:)` rather than by typing the sigil: the field stays exactly as the
+        /// reader left it, and the listing behind it is the same untyped one `/` or `@` alone
+        /// would open — `ComposerMenu.commands(for: "/", in:)`,
+        /// `ComposerMenu.files(for: "@", in:touched:)`.
+        case requested(ComposerMenu.Sigil)
+    }
+
+    var addState = AddState.closed
 
     /// The menu the line opens, and `nil` where none does — `AddMenu` while it is open, else
     /// whichever sigil's listing.
@@ -85,16 +92,17 @@ struct ComposerMenus {
     /// opens only at the head of the line, `@` only on a token the reader is still typing. So the
     /// `/` derive is asked first and the `@` derive answers whatever it declined.
     func listing(on line: ComposerMenuLine) -> ComposerMenu.Listing? {
-        guard !isDismissed, !isAddOpen else { return nil }
-        if let requested {
-            return requestedListing(requested, on: line)
+        guard !isDismissed else { return nil }
+        switch addState {
+        case .closed: return commandListing(on: line) ?? fileListing(on: line)
+        case .open: return nil
+        case let .requested(sigil): return requestedListing(sigil, on: line)
         }
-        return commandListing(on: line) ?? fileListing(on: line)
     }
 
     /// Whether `AddMenu` itself — the two-row drawer, not either sigil's full listing — is open.
     var isAddMenuOpen: Bool {
-        isAddOpen
+        addState == .open
     }
 
     /// The row the keyboard is on, for the list to ink.
@@ -137,10 +145,9 @@ struct ComposerMenus {
     /// It answers whether it DID anything, because the field holds the keyboard: an Escape this
     /// swallowed with no menu open is an Escape the permission footer's `esc denies` never sees.
     @discardableResult mutating func dismissed(on line: ComposerMenuLine) -> Bool {
-        let hadAddOpen = isAddOpen
+        let hadAddOpen = addState == .open
         let hadListing = !hadAddOpen && listing(on: line) != nil
-        isAddOpen = false
-        requested = nil
+        addState = .closed
         isDismissed = hadListing
         return hadAddOpen || hadListing
     }
@@ -160,10 +167,9 @@ struct ComposerMenus {
         let wasDismissed = isDismissed
         isDismissed = false
         // Typing means the reader has moved from browsing `AddMenu` — or a requested full listing
-        // it opened — to writing, so both go. A pick's own insertion fires this too, which is
-        // exactly what is meant to close them: see `addMenuPicked(_:)`.
-        isAddOpen = false
-        requested = nil
+        // it opened — to writing, so it closes. A pick's own insertion fires this too, which is
+        // exactly what is meant to close it: see `addMenuPicked(_:)`.
+        addState = .closed
         // The HEAD of the previous line, and not `ComposerMenu.command(in:)`'s full rule: a space
         // or a second slash closes the menu without the reader having left the command they are
         // typing, and re-reading on those made a held-down space a walk every second keystroke.
@@ -180,8 +186,7 @@ struct ComposerMenus {
         workspaceFiles = nil
         catalog = nil
         isDismissed = false
-        isAddOpen = false
-        requested = nil
+        addState = .closed
         // Whatever was in flight for the last Session is an answer to nobody's question now.
         asked += 1
         return asking(commands: line.canRunCommands, on: line, from: "")
@@ -223,7 +228,7 @@ struct ComposerMenus {
     /// The ids of whichever menu is open, in drawing order — what the cursor walks and what ⏎ picks
     /// out of, so neither can fall out of step with the list on screen.
     private func ids(on line: ComposerMenuLine) -> [String] {
-        guard !isAddOpen else { return ComposerMenu.addRows(on: line).map(\.id) }
+        guard addState != .open else { return ComposerMenu.addRows(on: line).map(\.id) }
         return listing(on: line)?.rows.map(\.id) ?? []
     }
 

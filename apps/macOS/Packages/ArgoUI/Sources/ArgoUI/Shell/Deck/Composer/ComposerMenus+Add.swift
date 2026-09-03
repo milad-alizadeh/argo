@@ -4,21 +4,20 @@ extension ComposerMenus {
     /// `AddButton` was clicked with nothing open — puts either sigil's listing away and opens
     /// `AddMenu` in its place.
     mutating func addOpened() {
-        isAddOpen = true
+        addState = .open
         isDismissed = false
-        requested = nil
     }
 
     /// `AddButton` was clicked again, or its row's pick already closed it — see
     /// `addMenuPicked(_:)`.
     mutating func addClosed() {
-        isAddOpen = false
+        addState = .closed
     }
 
     /// The `AddMenu` row the keyboard cursor is on, for ⏎ to take — `nil` where the menu is not
     /// open, which is what leaves ⏎ to `picked(on:)` on every other line.
     func addMenuPick(on line: ComposerMenuLine) -> ComposerMenu.AddRow? {
-        guard isAddOpen else { return nil }
+        guard addState == .open else { return nil }
         return ComposerMenu.addRows(on: line).first { $0.id == current }
     }
 
@@ -26,9 +25,8 @@ extension ComposerMenus {
     /// decision 11). Puts `AddMenu` away and opens the SAME full listing typing the row's own
     /// sigil would, off the one catalog or tree both already share.
     @discardableResult mutating func addMenuPicked(_ row: ComposerMenu.AddRow) -> Asks {
-        isAddOpen = false
+        addState = .requested(row.sigil)
         isDismissed = false
-        requested = row.sigil
         guard row.sigil == .command else {
             return Asks(generation: Generation(count: asked), commands: false, files: true)
         }

@@ -328,6 +328,14 @@ Extraction evidence, in the order it arrived:
 
 ## Amended during the build — #689
 
+- **The `+` control's own absence rule reads `workspaceRoot` and `canRunCommands`, not
+  `canAttach`.** The acceptance criterion says "a Session that declares neither attachments nor
+  commands draws no `+` at all", but the Files row is no longer an attachment (design decision 12)
+  — a drop and a paste answer to `canAttach` on their own, through `AttachmentDropTarget`, which
+  `+` was never part of. Gating the CONTROL on `canAttach` would show `+` for a Session that can
+  attach by drop but has no Workspace and no command surface, opening onto an empty `AddMenu`.
+  `ComposerFooter.canAdd` is `!ComposerMenu.addRows(on: line).isEmpty` instead, which is the
+  reading decision 12 actually asks for.
 - **The row spec table names no icon, but `plus.png` draws one per row** — a folder before "Files
   in this Workspace", a mark before "Skills & commands". The render is the spec where the table is
   silent (`cockpit-composer-picker.md`'s own framing). `ArgoSymbol.addMenuFiles` and

@@ -33,6 +33,16 @@ extension SpecimenRegistry {
                 opening: .commands,
             )
         },
+        // A `codex`-shaped Session: no command surface, so `AddMenu` carries the Files row alone —
+        // a section whose capability the adapter does not declare is absent, not shown empty.
+        SpecimenEntry("composerPlusFilesOnly") {
+            ComposerSpecimen(composer: ComposerSpecimen.mentionsNoCommands, opening: .addMenu)
+        },
+        // The other partial section: a command surface with no Workspace known yet, so only
+        // Skills & commands shows.
+        SpecimenEntry("composerPlusCommandsOnly") {
+            ComposerSpecimen(composer: ComposerSpecimen.commands, opening: .addMenu)
+        },
         // A Session offering neither a Workspace nor a command surface draws no `+` at all —
         // absent, never disabled (design decision 9 read for this control).
         SpecimenEntry("composerPlusAbsent") {

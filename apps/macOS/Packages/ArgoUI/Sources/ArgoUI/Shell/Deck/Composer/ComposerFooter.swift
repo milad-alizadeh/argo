@@ -23,7 +23,10 @@ struct ComposerFooter: View {
     /// Stop that Turn. Inert by default, for the reason `canAdd` is `false` by default.
     package var stop: () -> Void = {}
     /// Whether `AddMenu` would have at least one row — `false` takes `AddButton` off the row
-    /// entirely rather than greying it (design decision 9, 11).
+    /// entirely rather than greying it (design decision 9, 11). Read off `ComposerMenuLine`
+    /// (`workspaceRoot`, `canRunCommands`) and DELIBERATELY not off `canAttach`: a drop and a
+    /// paste answer to `canAttach` on their own, through `AttachmentDropTarget`, and `+` no longer
+    /// opens a file picker of its own for `canAttach` to gate (design decision 12).
     var canAdd = false
     var isAddMenuOpen = false
     var toggleAddMenu: () -> Void = {}

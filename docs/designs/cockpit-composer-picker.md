@@ -1,5 +1,6 @@
-<!-- status: approved
+<!-- status: built
      approved-at: 02a85207
+     built-at: c48dc716
      prototype: prototype/590-picker -->
 
 # The composer's command menu and Add menu
