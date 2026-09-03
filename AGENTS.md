@@ -40,14 +40,8 @@ touch (each rule's `paths:` frontmatter states its scope):
 
 ### Module boundaries
 
-`apps/macOS`'s layers, `ArgoEngine` ⊥ `ArgoDesign` → `ArgoAtoms` / `ProseText` →
-`MermaidLayout` → `MermaidView` → `ArgoUI` ⊥ the app target, are nine gates in
-`scripts/swift-boundaries.sh` (in `quality:swift`, on CI and in pre-commit). Each failure message
-states its rule. The four you hit most: **exactly one file in `ArgoUI` reads live Hub state**; a
-public `HubSession` fact lands in the cockpit mapping or on a `not-projected:` line; an initializer
-over the parameter cap needs a named `# INIT:` line in `.swiftlint.yml`; a colour, rhythm step,
-radius, stroke or type size is declared only in `ArgoDesign`. The edges in full, with their
-reasoning: `docs/agents/module-boundaries.md`.
+`apps/macOS`'s package layering is nine gates in `scripts/swift-boundaries.sh`, and each failure
+message states its rule. The edges and their reasoning: `docs/agents/module-boundaries.md`.
 
 ### Quality gates
 
