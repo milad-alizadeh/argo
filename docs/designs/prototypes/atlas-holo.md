@@ -1,5 +1,10 @@
 # Atlas prototype — what we chose
 
+> **Approved.** This exploration is closed. The design that came out of it is
+> `docs/designs/cockpit-atlas.html`, with a render per state under `docs/designs/renders/`,
+> and that is what `design-to-code` builds against. Edit the design, not this file — the
+> prototype is kept as the evidence behind the choice.
+
 Throwaway prototype for #650, part of map #643. This records the decisions so the next
 session does not re-litigate them. The prototype itself is `atlas-holo.html`.
 
