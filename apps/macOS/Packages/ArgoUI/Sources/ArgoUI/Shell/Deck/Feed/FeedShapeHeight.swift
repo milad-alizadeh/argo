@@ -16,7 +16,7 @@ import ProseText
 ///
 /// A value rather than a namespace so the pass's own two facts — how the row stands, and the
 /// measure it is drawn across — are stated once instead of threaded through every arm.
-@MainActor struct FeedShapeHeight {
+struct FeedShapeHeight {
     /// The reader's state, which three shapes change shape under.
     let standing: FeedRowStanding
     /// The column the row's content is drawn across — `FeedRowMeasure.measure(atWidth:)`.

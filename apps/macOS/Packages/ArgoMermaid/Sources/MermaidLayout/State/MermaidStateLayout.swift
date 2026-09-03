@@ -4,7 +4,6 @@ import Foundation
 // states the graph, names the figures a machine is drawn with, and hands the pass's own placements
 // back as one plan (#863).
 
-@MainActor
 extension MermaidState {
     var laid: MermaidPlan {
         let laid = MermaidLayered.of(graph)
@@ -107,7 +106,7 @@ extension MermaidState.Figure {
 extension MermaidState.Figure {
     /// How much room this figure needs. Only a figure that carries words is measured; the marks
     /// are the size the measure sheet says.
-    @MainActor func box(of label: String, on direction: MermaidDirection) -> CGSize {
+    func box(of label: String, on direction: MermaidDirection) -> CGSize {
         switch self {
         case .state: MermaidWords.box(of: label)
         case .note: MermaidWords.box(of: label, in: MermaidMeasure.edgeFace)

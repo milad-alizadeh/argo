@@ -15,8 +15,8 @@ struct MinimapLaneTests {
     private static let column = MinimapLaneFixture.column
     private static let width = MinimapLaneFixture.width
 
-    private static func mounted(over rows: [FeedRow]) -> MinimapLaneFixture.Mounted {
-        MinimapLaneFixture.mounted(over: rows)
+    private static func mounted(over rows: [FeedRow]) async -> MinimapLaneFixture.Mounted {
+        await MinimapLaneFixture.mounted(over: rows)
     }
 
     private static func pointer(_ kind: NSEvent.EventType, at laneY: CGFloat) -> NSEvent? {
@@ -24,8 +24,8 @@ struct MinimapLaneTests {
     }
 
     @Test
-    func `scrolling the reading moves the viewport rectangle`() {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `scrolling the reading moves the viewport rectangle`() async {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
         let atRest = deck.lane.viewportFrame
 
         deck.feed.settle(at: 900, over: nil)
@@ -34,8 +34,8 @@ struct MinimapLaneTests {
     }
 
     @Test
-    func `scrolling inside the rasterised band repaints nothing in the lane`() {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `scrolling inside the rasterised band repaints nothing in the lane`() async {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
         let drawn = deck.lane.rectRedraws
         let rects = deck.lane.rectsFrame
 
@@ -48,8 +48,9 @@ struct MinimapLaneTests {
     }
 
     @Test
-    func `the miniature is taller than the lane and slides the head of it off the top`() throws {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `the miniature is taller than the lane and slides the head of it off the top`(
+    ) async throws {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
         let lane = deck.lane.geometry
         #expect(lane.miniatureHeight > Self.column.height)
         #expect(lane.laneOffset(at: lane.offsetRange.lowerBound) == 0)
@@ -65,8 +66,8 @@ struct MinimapLaneTests {
     /// The band is taller than the lane, so something has to clip it — but not the lane itself,
     /// which lets a Turn's label out to the reading beside it.
     @Test
-    func `the band is clipped to the lane it hangs out of`() {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `the band is clipped to the lane it hangs out of`() async {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
 
         #expect(deck.lane.rectsFrame.height > Self.column.height)
         #expect(deck.lane.clipsRectsOnly)
@@ -75,8 +76,8 @@ struct MinimapLaneTests {
     /// Once, for the whole travel from one end of the session to the other. How big the band that
     /// gets drawn is belongs to `MinimapBandTests`.
     @Test
-    func `leaving the band draws the new one, and only the new one`() {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `leaving the band draws the new one, and only the new one`() async {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
         let drawn = deck.lane.rectRedraws
 
         deck.feed.settle(at: .greatestFiniteMagnitude, over: nil)
@@ -85,8 +86,8 @@ struct MinimapLaneTests {
     }
 
     @Test
-    func `a reading that has not changed shape is not re-rasterised`() {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `a reading that has not changed shape is not re-rasterised`() async {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
         let drawn = deck.lane.rectRedraws
 
         deck.lane.refresh()
@@ -95,8 +96,8 @@ struct MinimapLaneTests {
     }
 
     @Test
-    func `a click on the lane takes the reading to what was clicked`() throws {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `a click on the lane takes the reading to what was clicked`() async throws {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
         deck.feed.settle(at: 4000, over: nil)
 
         try deck.lane.mouseDown(with: #require(Self.pointer(.leftMouseDown, at: 40)))
@@ -108,8 +109,8 @@ struct MinimapLaneTests {
     /// The ticket asks for a click on a Turn to scroll the feed TO it, so the reading opens at the
     /// Turn's head rather than centred on wherever inside it the hand happened to land.
     @Test
-    func `a click on a Turn opens the reading at that Turn`() throws {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `a click on a Turn opens the reading at that Turn`() async throws {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
         deck.feed.settle(at: 0, over: nil)
         let laneY: CGFloat = 200
         let named = try #require(deck.lane.geometry.block(atMiniatureY: laneY))
@@ -124,8 +125,8 @@ struct MinimapLaneTests {
     /// D25's map may not depend on colour, and under Increased Contrast a shape has to clear the
     /// surface it sits on before it has to sit under the words.
     @Test
-    func `the runs are drawn louder under Increased Contrast`() {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `the runs are drawn louder under Increased Contrast`() async {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
         let quiet = deck.lane.rectRedraws
 
         deck.lane.raisesContrast = true
@@ -134,8 +135,8 @@ struct MinimapLaneTests {
     }
 
     @Test
-    func `a scrub down the lane carries the reading with it`() throws {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `a scrub down the lane carries the reading with it`() async throws {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
         deck.feed.settle(at: 0, over: nil)
         try deck.lane.mouseDown(with: #require(Self.pointer(.leftMouseDown, at: 40)))
         let clicked = try #require(deck.feed.offset())
@@ -148,10 +149,14 @@ struct MinimapLaneTests {
     /// The reading stops widening at its measure, so past that the miniature stops compressing —
     /// a wider deck gets a wider lane rather than a denser one.
     @Test
-    func `a zone wider than the reading measure does not compress the lane further`() throws {
+    func `a zone wider than the reading measure does not compress the lane further`() async throws {
         let wide = CGSize(width: 1200, height: Self.column.height)
         let handle = FeedTableHandle()
-        let table = FeedTableFixture.laidOut(FeedProjection.longRows, in: wide, through: handle)
+        let table = await FeedTableFixture.laidOut(
+            FeedProjection.longRows,
+            in: wide,
+            through: handle,
+        )
 
         #expect(try #require(table.reading()).columnWidth == ArgoFeedRow.column)
     }
@@ -159,8 +164,8 @@ struct MinimapLaneTests {
     /// The lit range is an area, not an outline — and a brighter area under the pointer. Both are a
     /// ground on one layer, so lighting it repaints no rects.
     @Test
-    func `the lit range brightens under the pointer without repainting the rects`() {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `the lit range brightens under the pointer without repainting the rects`() async {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
         let rest = deck.lane.viewportGround
         let drawn = deck.lane.rectRedraws
 
@@ -173,9 +178,9 @@ struct MinimapLaneTests {
     /// One scrollbar, not two. The lit rectangle already stands for the visible range, and the
     /// platform's own knob would draw BETWEEN the reading and its map.
     @Test
-    func `the reading never draws a scrollbar of its own`() throws {
+    func `the reading never draws a scrollbar of its own`() async throws {
         let handle = FeedTableHandle()
-        let table = FeedTableFixture.laidOut(
+        let table = await FeedTableFixture.laidOut(
             FeedProjection.longRows, in: Self.column, through: handle,
         )
         #expect(try !#require(table.scroller).hasVerticalScroller)
@@ -186,8 +191,8 @@ struct MinimapLaneTests {
     }
 
     @Test
-    func `the viewport rectangle stays inside the lane at either end of the reading`() {
-        let deck = Self.mounted(over: FeedProjection.longRows)
+    func `the viewport rectangle stays inside the lane at either end of the reading`() async {
+        let deck = await Self.mounted(over: FeedProjection.longRows)
 
         deck.feed.settle(at: -.greatestFiniteMagnitude, over: nil)
         #expect(deck.lane.viewportFrame.minY >= 0)
@@ -199,12 +204,13 @@ struct MinimapLaneTests {
     }
 
     @Test
-    func `a row arriving mid-scrub does not reflow the lane under the hand`() throws {
-        let deck = Self.mounted(over: Array(FeedProjection.longRows.dropLast(20)))
+    func `a row arriving mid-scrub does not reflow the lane under the hand`() async throws {
+        let deck = await Self.mounted(over: Array(FeedProjection.longRows.dropLast(20)))
         try deck.lane.mouseDown(with: #require(Self.pointer(.leftMouseDown, at: 200)))
         let frozen = deck.lane.geometry
 
         deck.table.apply(FeedTableFixture.model(showing: FeedProjection.longRows))
+        await FeedTableFixture.settled(deck.table)
 
         #expect(deck.lane.geometry == frozen)
         try deck.lane.mouseUp(with: #require(Self.pointer(.leftMouseUp, at: 200)))
@@ -214,8 +220,8 @@ struct MinimapLaneTests {
     /// A feed append lands below what the lane is showing, so it costs no pixels at all — the band
     /// is compared on its rects rather than on the reading, and those did not move.
     @Test
-    func `a row arriving below the band draws nothing`() {
-        let deck = Self.mounted(over: Array(FeedProjection.longRows.dropLast(20)))
+    func `a row arriving below the band draws nothing`() async {
+        let deck = await Self.mounted(over: Array(FeedProjection.longRows.dropLast(20)))
         deck.feed.settle(at: 0, over: nil)
         let drawn = deck.lane.rectRedraws
 

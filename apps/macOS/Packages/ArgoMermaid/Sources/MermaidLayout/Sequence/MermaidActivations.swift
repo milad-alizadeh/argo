@@ -5,7 +5,6 @@ import Foundation
 /// Both come out of ONE walk down the events, because they are the same fact asked twice: an arrow
 /// lands on the bar of the run it belongs to rather than on the line behind it, so an endpoint
 /// cannot be placed without knowing how deep that lifeline is at that moment.
-@MainActor
 struct MermaidActivations {
     /// Every bar, placed.
     let bars: [CGRect]
@@ -51,7 +50,6 @@ struct MermaidActivations {
 
 private extension MermaidActivations {
     /// The walk itself: which lifelines are running, and how deep.
-    @MainActor
     struct Walk {
         let stage: MermaidStage
         /// Per participant, the start of every run still open on it, outermost first.

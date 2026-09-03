@@ -60,10 +60,15 @@ public extension ProseFace {
     /// The font itself. AppKit's own preferred font for the rung, so this and the `Text` on screen
     /// read one table — see `ArgoTypeScale+AppKit`.
     ///
+    /// Off the main actor since ADR-0030, along with every metric below it: the whole-document
+    /// measure pass reads them from several threads at once. `NSFont.preferredFont` is itself
+    /// `nonisolated` and the font objects are immutable, so what the annotation stated was this
+    /// repo's convention rather than the platform's requirement (`ArgoTypeScale.drawnLineBox`).
+    ///
     /// The mono is built at the SANS' RESOLVED size, never at `rung.size`: that is the HIG's
     /// documented number, which stands still while the platform's own moves with the Accessibility
     /// text setting — see `ArgoTypeScale.drawnLineBox`.
-    @MainActor var font: NSFont {
+    var font: NSFont {
         let sans = NSFont.preferredFont(forTextStyle: rung.appKitStyle)
         let design = isMachine
             ? NSFont.monospacedSystemFont(ofSize: sans.pointSize, weight: .regular)
@@ -82,7 +87,7 @@ public extension ProseFace {
 
     /// The same font with tabular figures, which is what SwiftUI's `monospacedDigit()` asks for.
     /// Unchanged where the family has no such variant to offer.
-    @MainActor private static func tabular(_ font: NSFont) -> NSFont {
+    private static func tabular(_ font: NSFont) -> NSFont {
         let feature: [NSFontDescriptor.FeatureKey: Int] = [
             .typeIdentifier: kNumberSpacingType,
             .selectorIdentifier: kMonospacedNumbersSelector,
@@ -107,7 +112,7 @@ public extension ProseFace {
     /// Read off the rung's own face even for the mono, because that is what SwiftUI does:
     /// `.system(.body, design: .monospaced)` is the BODY text style in another design, so it keeps
     /// the body's line height and only its advances change.
-    @MainActor var lineBox: CGFloat {
+    var lineBox: CGFloat {
         ProseLineBox.of(self)
     }
 
@@ -116,12 +121,12 @@ public extension ProseFace {
     /// between two of them. Measured: a body block of eight lines draws at 154 where snapped
     /// advances would put it at 156, and a `## heading` of one line draws at its rounded box
     /// rather than at its box plus its leading.
-    @MainActor var step: CGFloat {
+    var step: CGFloat {
         lineBox(under: .fractional) + leading
     }
 
     /// Where a line's box starts, counted down from the run's top.
-    @MainActor func y(ofLine line: Int) -> CGFloat {
+    func y(ofLine line: Int) -> CGFloat {
         CGFloat(max(0, line)) * step
     }
 
@@ -130,7 +135,7 @@ public extension ProseFace {
     /// One box and `n − 1` advances, not `n` of each: SwiftUI's `lineSpacing` is the leading
     /// BETWEEN lines, so a run's last line adds no trailing gap. Multiplying the step by the line
     /// count instead overstates every wrapped paragraph and every table row by one gap.
-    @MainActor func height(ofLines lines: Int) -> CGFloat {
+    func height(ofLines lines: Int) -> CGFloat {
         guard lines > 0 else { return 0 }
         return lineBox + CGFloat(lines - 1) * step
     }
@@ -143,7 +148,7 @@ public extension ProseFace {
     /// it is the RUNG's face that carries it, mono or not: SF Mono reports no leading at all, while
     /// a monospaced run advances exactly as far as the sans beside it. Measured on both faces at
     /// two rungs.
-    @MainActor func unleadedHeight(ofLines lines: Int) -> CGFloat {
+    func unleadedHeight(ofLines lines: Int) -> CGFloat {
         guard lines > 0 else { return 0 }
         let sans = ProseFace(rung: rung, isBold: isBold)
         return lineBox + CGFloat(lines - 1) * (sans.lineBox(under: .fractional) + sans.font.leading)
@@ -151,7 +156,7 @@ public extension ProseFace {
 
     /// The candidate box under a NAMED rule — what `ProseLineBox` chooses between, and what makes
     /// the rule this machine is NOT drawing through testable at all.
-    @MainActor func lineBox(under engine: ProseEngine) -> CGFloat {
+    func lineBox(under engine: ProseEngine) -> CGFloat {
         let font = ProseFace(rung: rung, isBold: isBold).font
         switch engine {
         case .fractional: return font.ascender - font.descender
@@ -161,7 +166,7 @@ public extension ProseFace {
         }
     }
 
-    @MainActor func height(ofLines lines: Int, under engine: ProseEngine) -> CGFloat {
+    func height(ofLines lines: Int, under engine: ProseEngine) -> CGFloat {
         guard lines > 0 else { return 0 }
         return lineBox(under: engine) + CGFloat(lines - 1) * step
     }
@@ -169,7 +174,7 @@ public extension ProseFace {
     /// The extra leading the feed sets this face at — the machine's own for the mono, prose's
     /// otherwise, which is exactly the pair `FeedProseText` and `FeedMarkdownFence` apply, and so
     /// the one `ProseLineBox` sets its own probe at.
-    @MainActor var leading: CGFloat {
+    var leading: CGFloat {
         isMachine ? ProseRhythm.machineLineSpacing : ProseRhythm.proseLineSpacing
     }
 

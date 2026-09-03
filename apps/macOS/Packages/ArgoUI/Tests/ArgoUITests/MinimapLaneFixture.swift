@@ -20,9 +20,9 @@ enum MinimapLaneFixture {
         let table: FeedTableCoordinator
     }
 
-    static func mounted(over rows: [FeedRow]) -> Mounted {
+    static func mounted(over rows: [FeedRow]) async -> Mounted {
         let feed = FeedTableHandle()
-        let table = FeedTableFixture.laidOut(rows, in: column, through: feed)
+        let table = await FeedTableFixture.laidOut(rows, in: column, through: feed)
         let lane = MinimapLaneView(
             frame: NSRect(x: 0, y: 0, width: width, height: column.height),
         )

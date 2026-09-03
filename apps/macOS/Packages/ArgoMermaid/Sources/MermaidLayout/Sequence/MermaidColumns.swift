@@ -8,7 +8,6 @@ import ProseText
 /// the arrow that carries it, so two lifelines a long word joins have to stand at least that far
 /// apart or the word is drawn over the lifeline next door. A column's place is settled by what is
 /// drawn across it rather than by a step of the rhythm.
-@MainActor
 struct MermaidColumns {
     /// One per participant, in the order the diagram names them.
     let centres: [CGFloat]

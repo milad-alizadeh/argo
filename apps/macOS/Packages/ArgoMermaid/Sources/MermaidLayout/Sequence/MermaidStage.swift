@@ -6,7 +6,6 @@ import ProseText
 ///
 /// One value rather than three arguments threaded through every pass — which is also what keeps
 /// each of those passes inside the house's parameter cap.
-@MainActor
 struct MermaidStage {
     let diagram: MermaidSequence
     let columns: MermaidColumns

@@ -65,6 +65,19 @@ struct FeedVacancyTests {
         #expect(vacancy.words(overdue: false) == vacancy.words)
     }
 
+    /// The indicator, on the same clock and on the one state that is a WAIT (ADR-0030, Rule 3).
+    ///
+    /// The other three empties are settled facts about the window, and something moving under a
+    /// settled fact would say Argo is still working on it — which is the misreading `unread` exists
+    /// to stop one pane lower.
+    @Test(arguments: [FeedVacancy.silent, .unselected, .noSessions])
+    func `only the undrawn deck ever shows the activity indicator`(vacancy: FeedVacancy) {
+        #expect(!FeedVacancy.unread.isWorking(overdue: false))
+        #expect(FeedVacancy.unread.isWorking(overdue: true))
+        #expect(!vacancy.isWorking(overdue: true))
+        #expect(!vacancy.isWorking(overdue: false))
+    }
+
     /// A claim about the SURFACE, unchanged: an agent can be busy in kinds this feed does not draw
     /// yet, so a selected Session's empty reading may not be read as a quiet Session.
     @Test

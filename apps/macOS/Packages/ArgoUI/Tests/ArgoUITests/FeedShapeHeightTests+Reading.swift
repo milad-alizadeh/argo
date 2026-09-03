@@ -23,9 +23,10 @@ extension FeedShapeHeightTests {
     /// it included, because that step is inside the height the table asks for.
     private static func holds(_ rows: [FeedRow], at width: CGFloat) {
         let model = FeedTableFixture.model(showing: rows)
+        let stamp = FeedMeasureStamp(of: model, atWidth: width)
         let measure = FeedRowMeasure.measure(atWidth: width)
         for at in rows.indices {
-            let standing = FeedRowStanding(at: at, of: model)
+            let standing = stamp.standing(at: at)
             let step = FeedRow.step(to: rows[at], from: at > 0 ? rows[at - 1] : nil)
             let worked = step + FeedShapeHeight(standing: standing, measure: measure)
                 .height(of: rows[at].content)

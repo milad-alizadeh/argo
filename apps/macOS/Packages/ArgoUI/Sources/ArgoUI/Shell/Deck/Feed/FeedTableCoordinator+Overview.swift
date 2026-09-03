@@ -20,9 +20,24 @@ extension FeedTableCoordinator {
             viewportHeight: scroller.contentView.bounds.height,
             topInset: scroller.contentInsets.top,
             bottomInset: scroller.contentInsets.bottom,
-            // The feed's own statement that its heights are not final — see `deferredPasses`.
-            isProvisional: deferredPasses > 0,
+            // The feed's own statement that what it holds is not a geometry of what it is drawing:
+            // no document at all, a pass owed or in flight, or a document measured at a width the
+            // table has since left. A lane that walked then would map the reading at positions
+            // about to be replaced — which is the whole of what ADR-0030 took away.
+            isProvisional: !geometry.isSettled || isMeasuring
+                || geometry.settled?.stamp.width != table.bounds.width,
         )
+    }
+
+    /// The table's own frame moved — which is the width the rows were measured across, so the
+    /// document may owe a pass, and the lane may owe a walk.
+    ///
+    /// The two are answered from ONE report because they are one event: the mount that first gives
+    /// the table a width and the drag that changes it are the same notification, and a stamp read
+    /// from anywhere else would be read at a width the table is not drawing at.
+    func reshaped() {
+        settleIfOwed()
+        notedReshape()
     }
 
     /// The reading changed shape, passed on to whoever is mapping it.
@@ -34,10 +49,9 @@ extension FeedTableCoordinator {
         handle?.readingReshaped?()
     }
 
-    /// The shape of the reading — every row's measured height and the gutters around them.
-    ///
-    /// The heights are the table's OWN, not a second measure: a lane summing anything else would
-    /// put a mark where the row it stands for is not.
+    /// The shape of the reading — every row's settled height and the gutters around them. `nil`
+    /// while the document is being measured, because a map of a document nobody has measured is a
+    /// map that is about to be wrong (ADR-0030, Rule 7).
     package func reading() -> MinimapReading? {
         readingStamp().flatMap(reading(at:))
     }
@@ -45,7 +59,7 @@ extension FeedTableCoordinator {
     /// The same reading, against a stamp the caller already holds — so a reader that decided to
     /// walk walks against the very facts it made the decision on.
     package func reading(at stamp: MinimapReadingStamp) -> MinimapReading? {
-        guard let table else { return nil }
+        guard geometry.isSettled else { return nil }
         // This is the whole-document walk `ProseCache` derives its ceiling from: every prose row
         // below asks `ProseReading.structure(of:)`, so a store smaller than the reading would be
         // emptied before the walk reached its end and hit nothing on the next one.
@@ -53,7 +67,10 @@ extension FeedTableCoordinator {
         return MinimapReading(
             rows: stamp.rows.indices.map { MinimapRow(
                 stamp.rows[$0],
-                height: measuredHeight(at: $0, in: table),
+                // The settled document's own height, never a second measure: a lane summing
+                // anything else would put a mark where the row it stands for is not (ADR-0030,
+                // Rule 7).
+                height: geometry.height(at: $0) ?? 0,
                 under: $0 > 0 ? stamp.rows[$0 - 1] : nil,
                 // The reader's own fold, which is the one state that changes a row's SHAPE rather
                 // than only its height. Off the stamp, which took it from the model the cells are

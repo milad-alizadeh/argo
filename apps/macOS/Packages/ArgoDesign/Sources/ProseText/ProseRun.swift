@@ -42,7 +42,7 @@ public struct ProseSpan: Equatable {
 
 public extension ProseRun {
     /// How tall the run stands — the same arithmetic the feed's height is summed from.
-    @MainActor var height: CGFloat {
+    var height: CGFloat {
         face.height(ofLines: lines.count)
     }
 
@@ -51,13 +51,13 @@ public extension ProseRun {
     /// The line box less what hangs under the first baseline, which is `ProseBaseline`'s MEASURED
     /// number rather than the font's ascent: the engine's own leading is in it and the font's
     /// metrics are not.
-    @MainActor func baseline(ofLine at: Int) -> CGFloat {
+    func baseline(ofLine at: Int) -> CGFloat {
         face.lineBox - ProseBaseline.under(face) + face.y(ofLine: at)
     }
 
     /// Every marked run of every line, placed. The links a surface hit-tests and the grounds it
     /// draws come from this one walk, so a ground and a pointer cannot land in different places.
-    @MainActor var spans: [ProseSpan] {
+    var spans: [ProseSpan] {
         lines.enumerated().flatMap { at, line in
             Self.runs(of: line).compactMap { placed($0, onLine: at) }
         }
@@ -65,7 +65,7 @@ public extension ProseRun {
 
     /// A glyph run's own typographic box, exactly as a text renderer reports it: the run's advance
     /// wide, its own ascent over its own descent tall, hung off the line's baseline.
-    @MainActor func rect(of run: CTRun, onLine at: Int) -> CGRect {
+    func rect(of run: CTRun, onLine at: Int) -> CGRect {
         var ascent: CGFloat = 0
         var descent: CGFloat = 0
         let width = CGFloat(CTRunGetTypographicBounds(run, CFRange(), &ascent, &descent, nil))
@@ -88,7 +88,7 @@ public extension ProseRun {
     }
 
     /// One glyph run placed, or `nil` where the record marked it as nothing.
-    @MainActor private func placed(_ run: CTRun, onLine at: Int) -> ProseSpan? {
+    private func placed(_ run: CTRun, onLine at: Int) -> ProseSpan? {
         let marks = CTRunGetAttributes(run) as NSDictionary
         let url = marks[NSAttributedString.Key.link] as? URL
         let isCode = Self.isCode(marks)

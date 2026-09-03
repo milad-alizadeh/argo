@@ -17,6 +17,10 @@ import SwiftUI
 /// The clock times the BLANK and not the click. Two switches that never leave `unread` between
 /// them share one, and that is the reading the reader has actually been given: they have been in
 /// front of a deck with nothing on it for the whole of it.
+///
+/// Past the delay the word is joined by `FeedReadingIon`. A first open of the largest Session can
+/// take up to three seconds to measure (ADR-0030, Rule 3), and a word alone held that long reads as
+/// a hang rather than as work.
 package struct FeedSilence: View {
     @Environment(\.argo) private var argo
     @Environment(\.argoFeedVacancy) private var vacancy
@@ -35,14 +39,24 @@ package struct FeedSilence: View {
     }
 
     package var body: some View {
-        Text(vacancy.words(overdue: overdue ?? isOverdue))
-            .argoText(ArgoTypography.body)
-            .foregroundStyle(argo.color.text.disabled)
-            // SYNCHRONOUS, and beside the task rather than inside it: a `.task` body runs after
-            // the render that re-keyed it, so a reset written there lands a frame late — and one
-            // frame with the word still up is exactly the flash the delay exists to prevent.
-            .onChange(of: vacancy) { _, _ in isOverdue = false }
-            .task(id: vacancy) { await wait() }
+        VStack(spacing: ArgoSpacing.snug) {
+            Text(vacancy.words(overdue: isPast))
+                .argoText(ArgoTypography.body)
+                .foregroundStyle(argo.color.text.disabled)
+            if vacancy.isWorking(overdue: isPast) {
+                FeedReadingIon()
+            }
+        }
+        // SYNCHRONOUS, and beside the task rather than inside it: a `.task` body runs after
+        // the render that re-keyed it, so a reset written there lands a frame late — and one
+        // frame with the word still up is exactly the flash the delay exists to prevent.
+        .onChange(of: vacancy) { _, _ in isOverdue = false }
+        .task(id: vacancy) { await wait() }
+    }
+
+    /// Whether the wait has run past the delay — the render's own answer where one seeded it.
+    private var isPast: Bool {
+        overdue ?? isOverdue
     }
 
     /// Cancelled by SwiftUI the moment the vacancy changes, so a deck that filled inside the delay

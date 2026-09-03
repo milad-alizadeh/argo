@@ -48,20 +48,38 @@ public struct ProseCache<Value> {
     }
 
     public mutating func reading(of text: String, read: (String) -> Value) -> Value {
-        if let known = readings[text] {
-            #if DEBUG
-                cost.hits += 1
-            #endif
+        if let known = peek(text) {
             return known
         }
-        #if DEBUG
-            cost.misses += 1
-        #endif
         let reading = read(text)
-        readings[text] = reading
+        store(reading, of: text)
+        return reading
+    }
+
+    /// What is held for `text`, and the hit or the miss counted for it. Split out of `reading`
+    /// because the read itself is Core Text, which is the one thing a lock over this store may not
+    /// be held across (`ProseStore`): the whole-document pass fills it from several threads at
+    /// once, and a lock that covered the typesetting would make the pass serial again.
+    public mutating func peek(_ text: String) -> Value? {
+        guard let known = readings[text] else {
+            #if DEBUG
+                cost.misses += 1
+            #endif
+            return nil
+        }
+        #if DEBUG
+            cost.hits += 1
+        #endif
+        return known
+    }
+
+    /// One reading kept. Idempotent: two threads that missed on the same string both arrive here
+    /// with the same answer, and the second overwrites the first with its equal.
+    public mutating func store(_ reading: Value, of text: String) {
+        let isFresh = readings.updateValue(reading, forKey: text) == nil
+        guard isFresh else { return }
         arrivals.append(text)
         dropOldest()
-        return reading
     }
 
     /// The oldest readings dropped until the store is inside its ceiling.

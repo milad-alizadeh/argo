@@ -5,7 +5,6 @@ import Foundation
 /// A sequence diagram's vertical extent is its event count and nothing else — there is no ranking
 /// and no ordering pass, because the source already stated the order. Every event takes the room it
 /// needs and the next one starts under it.
-@MainActor
 struct MermaidSequenceRows {
     /// One per event, in event order.
     let tops: [CGFloat]

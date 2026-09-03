@@ -24,7 +24,7 @@ struct FeedReadingSwitchTests {
     /// ONCE, however many times they come back to it.
     @Test
     func `coming back to a Session already read measures not one row again`() async {
-        let deck = FeedSwitchDeck()
+        let deck = await FeedSwitchDeck()
 
         await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
         let firstAlpha = deck.coordinator.measurements
@@ -74,7 +74,7 @@ struct FeedReadingSwitchTests {
     /// Session that opened mid-scroll.
     @Test
     func `the reader's place in one reading is not carried into the next`() async throws {
-        let deck = FeedSwitchDeck()
+        let deck = await FeedSwitchDeck()
         await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
         let scroller = try #require(deck.coordinator.scroller)
         // The reader scrolls up off the end, which breaks the follow and names where they left.
@@ -94,7 +94,7 @@ struct FeedReadingSwitchTests {
     /// there, in a reading the reader has not arrowed into.
     @Test
     func `the keyboard's row does not follow the reader into another Session`() async {
-        let deck = FeedSwitchDeck()
+        let deck = await FeedSwitchDeck()
         await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
         deck.coordinator.focusedRow = 40
 
@@ -140,7 +140,7 @@ struct FeedReadingSwitchTests {
     /// opens where the last one was left, which is the one place nobody asked to be.
     @Test
     func `a reading that arrives in a standing table opens at its own end`() async throws {
-        let deck = FeedSwitchDeck()
+        let deck = await FeedSwitchDeck()
         await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
 
         await deck.show(FeedSwitchFixture.bravoRows, of: FeedSwitchFixture.bravo)

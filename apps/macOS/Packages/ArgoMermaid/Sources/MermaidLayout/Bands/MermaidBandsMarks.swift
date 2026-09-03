@@ -5,7 +5,6 @@ import Foundation
 /// One walk rather than a pass per kind of mark, because the captions are paired with
 /// `MermaidBands.labels` BY POSITION: a second pass appending them in its own order is one edit
 /// away from naming a band with a task's own words.
-@MainActor
 struct MermaidBandsMarks {
     private let metrics: MermaidBandsMetrics
     private(set) var figures: [MermaidFigure] = []

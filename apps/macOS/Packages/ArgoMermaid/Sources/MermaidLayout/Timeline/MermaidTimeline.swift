@@ -47,7 +47,7 @@ extension MermaidTimeline {
         bands.labels
     }
 
-    @MainActor var laid: MermaidPlan {
+    var laid: MermaidPlan {
         bands.laid
     }
 }

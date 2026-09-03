@@ -140,6 +140,16 @@ public enum ArgoFeedRow {
     /// How brightly it glows parked, with movement off. Below `ArgoElevation.bloom` because a still
     /// has no travel to read the ion by, and at that strength it would read as a drawn rule.
     public static let workingThreadStillGlow: Double = 0.4
+    /// The lane the deck's own activity indicator crosses while Argo measures a Session, and the
+    /// ion that crosses it — see `FeedReadingIon`. A LENGTH and not a share of the column, because
+    /// this one sits under a centred word rather than across the reading: it has to read as a
+    /// fixed small thing beside that word at any window width.
+    public static let readingIonLane: CGFloat = 96
+    public static let readingIonLength: CGFloat = 28
+    /// Where the ion starts and ends, in multiples of its own length — both bounds clear of the
+    /// lane, as `workingThreadTravel` is and for the same reason.
+    public static let readingIonTravel: ClosedRange<CGFloat> = -1.05 ... 3.4
+
     /// How much of a long prompt stands before it is folded.
     public static let collapsedPromptLines = 6
 

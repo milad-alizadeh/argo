@@ -8,7 +8,6 @@ import ProseText
 /// again, whichever band they are in. That is what makes the headings read across the axis as one
 /// line and the rows under them as one stack, and it is what makes a row's box independent of what
 /// its neighbour wrote — so two rows of one column cannot overlap by arithmetic.
-@MainActor
 struct MermaidBandsMetrics {
     let bands: MermaidBands
 

@@ -75,9 +75,9 @@ public struct MermaidDiagram: Equatable, Sendable {
     /// The captions the diagram sets, in the order its plan places them. Width-independent, because
     /// the view builds one `Text` per label before SwiftUI has told it a measure.
     ///
-    /// `@MainActor` because a Gantt chart's are: which dates its axis is marked at is a question
-    /// about how wide the words on them RUN, and nothing here measures words off the main actor.
-    @MainActor package var labels: [MermaidLabel] {
+    /// A Gantt chart's are not free: which dates its axis is marked at is a question about how wide
+    /// the words on them RUN, which is a Core Text pass rather than arithmetic.
+    package var labels: [MermaidLabel] {
         switch kind {
         case let .flowchart(flowchart): flowchart.labels
         case let .sequence(sequence): sequence.labels
@@ -99,7 +99,7 @@ public struct MermaidDiagram: Equatable, Sendable {
     /// draws, so it is SCROLLED where the prose column cannot hold it rather than reflowed to fit.
     /// A layout with nothing to reflow against cannot answer two widths two ways, which is what
     /// makes the drawn height and the reported height the same number by construction (#860).
-    @MainActor var laid: MermaidPlan {
+    var laid: MermaidPlan {
         switch kind {
         case let .flowchart(flowchart): flowchart.laid
         case let .sequence(sequence): sequence.laid
@@ -119,7 +119,7 @@ public extension MermaidDiagram {
     /// This diagram's one layout, memoised on its source — see `MermaidPlans`. The renderer AND the
     /// overview lane both come here, which is what makes their heights match by construction
     /// (#860).
-    @MainActor var plan: MermaidPlan {
+    var plan: MermaidPlan {
         MermaidPlans.of(self)
     }
 }

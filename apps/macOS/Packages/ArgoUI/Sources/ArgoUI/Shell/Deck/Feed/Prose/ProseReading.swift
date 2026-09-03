@@ -10,22 +10,32 @@ import SwiftUI
 /// Keyed by the text and nothing else. A cache in the strict sense — rebuildable from the string
 /// alone, bounded, correct to drop at any moment — and NOT a field on `FeedRow`, whose projection
 /// stays verbatim.
-@MainActor
+/// Read from any thread since ADR-0030: the whole-document measure pass comes through here for
+/// every prose row it settles, off the main actor and in parallel, while the surfaces draw out of
+/// the same stores — so each is lock-guarded and none of the locks is held across the read it
+/// answers with (`ProseStore`).
 enum ProseReading {
-    private static var scans = ProseCache<[MarkdownBlock]>()
-    private static var structures = ProseCache<[MinimapProseBlock]>()
+    private static let scans = ProseStore<[MarkdownBlock]>()
+    private static let structures = ProseStore<[MinimapProseBlock]>()
     /// The placed blocks of a row, one store per measure they were placed across — `ProseMetrics`'
     /// own arrangement, and for its reason: a single store would be emptied at every frame of a
     /// seam drag, which asks at a different measure each time.
-    private static var frames: [CGFloat: ProseCache<FeedProseFrame>] = [:]
+    ///
+    /// The MAIN ACTOR's, alone among the stores here, because a placed frame holds the `CTLine`s it
+    /// was placed from and a lock may only hand across a thread what is `Sendable` (`ProseStore`).
+    /// It is the SURFACES' store either way: a view body is evaluated far more often than its text
+    /// changes, so a drawn row is placed once and inked from then on. The whole-document measure
+    /// pass does not come through here at all — it asks `FeedProseFrame.of(text:across:)` for each
+    /// row once, which is the same pure function over the same string at the same measure.
+    @MainActor private static var frames: [CGFloat: ProseCache<FeedProseFrame>] = [:]
     private static let measuresHeld = 8
     /// The rows a walk asked to be held, applied to every store — including the ones a later
     /// measure has yet to open. Raising the stores that exist would leave the next seam position
     /// evicting its own head.
-    private static var held = 0
+    private static let held = ProseTally(0)
     /// The text setting the placements were made at. Every offset in a frame moved when the reader
     /// moved it, so they are dropped whole rather than kept at a size nothing is drawn in (#1027).
-    private static var placedAt = ProseTextSize.epoch()
+    private static let placedAt = ProseTally(ProseTextSize.epoch())
 
     /// The agent's own inline marks. Held in `ProseMarks`, under the feed, because every width the
     /// feed measures rests on it — this name is where the rest of the feed asks.
@@ -45,13 +55,14 @@ enum ProseReading {
 
     /// A prose row's blocks, placed — the one value the table's height and the surface's ink both
     /// come from (ADR-0030, Rule 2).
-    static func frame(of text: String, across measure: CGFloat) -> FeedProseFrame {
+    @MainActor static func frame(of text: String, across measure: CGFloat) -> FeedProseFrame {
         guard measure > 0 else { return FeedProseFrame() }
         atCurrentSize()
         if frames[measure] == nil, frames.count >= measuresHeld {
             frames.removeAll()
         }
-        var store = frames[measure] ?? ProseCache<FeedProseFrame>(ceiling: max(1, held))
+        var store = frames[measure]
+            ?? ProseCache<FeedProseFrame>(ceiling: max(1, held.withLock { $0 }))
         let placed = store.reading(of: text) { _ in
             FeedProseFrame.of(text: text, across: measure)
         }
@@ -71,9 +82,14 @@ enum ProseReading {
     static func holding(rows: Int) {
         structures.hold(atLeast: rows)
         scans.hold(atLeast: rows)
-        held = max(held, rows)
-        for measure in frames.keys {
-            frames[measure]?.hold(atLeast: rows)
+        held.withLock { $0 = max($0, rows) }
+        // The frames are the main actor's, so they are held only where a caller is already there —
+        // and a pass that is not has nothing in them to hold.
+        guard Thread.isMainThread else { return }
+        MainActor.assumeIsolated {
+            for measure in frames.keys {
+                frames[measure]?.hold(atLeast: rows)
+            }
         }
     }
 
@@ -81,9 +97,13 @@ enum ProseReading {
     /// rule, applied to the one store here whose values are lengths rather than words.
     private static func atCurrentSize() {
         let epoch = ProseTextSize.epoch()
-        guard epoch != placedAt else { return }
-        placedAt = epoch
-        frames.removeAll()
+        let moved = placedAt.withLock { at -> Bool in
+            guard at != epoch else { return false }
+            at = epoch
+            return true
+        }
+        guard moved, Thread.isMainThread else { return }
+        MainActor.assumeIsolated { frames.removeAll() }
     }
 
     #if DEBUG

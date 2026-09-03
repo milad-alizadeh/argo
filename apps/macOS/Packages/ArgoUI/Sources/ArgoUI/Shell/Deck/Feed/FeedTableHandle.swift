@@ -40,6 +40,14 @@ import SwiftUI
 
     /// Whether the reading is still following the Session.
     private(set) var isFollowing: Bool
+
+    /// Whether a settled document stands under this table — whether the deck may draw the reading
+    /// at all (ADR-0030, Rule 3).
+    ///
+    /// Observable, because it is the one fact the SwiftUI half of the deck renders off: the feed
+    /// and the overview lane appear in the frame this turns true, and the provisional word stands
+    /// in the frames before it. Written by the coordinator, which is where a pass lands.
+    private(set) var isSettled = false
     /// The last row present when following broke — what `FeedTail.newMessages` counts from.
     private(set) var leftAt: FeedRow.ID?
 
@@ -75,6 +83,12 @@ import SwiftUI
     /// not observable, because it is taken off the policy directly rather than mirrored.
     package var isOpeningOwed: Bool {
         policy.isOpeningOwed
+    }
+
+    /// A settled document landed under this table, or the one that stood was surrendered.
+    func settled(_ isSettled: Bool) {
+        guard self.isSettled != isSettled else { return }
+        self.isSettled = isSettled
     }
 
     /// Another reading in the same table — see `FeedScrollPolicy.reopen(on:held:)`. Called by the

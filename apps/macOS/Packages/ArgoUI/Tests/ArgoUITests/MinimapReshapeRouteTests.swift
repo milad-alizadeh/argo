@@ -34,8 +34,8 @@ struct MinimapReshapeRouteTests {
     /// The lane's half, at runtime: a document frame notification reaches nothing, because the lane
     /// no longer asked for one. This fails if the observer comes back.
     @Test
-    func `the lane hears no document frame notification of its own`() throws {
-        let deck = MinimapLaneFixture.mounted(over: FeedProjection.longRows)
+    func `the lane hears no document frame notification of its own`() async throws {
+        let deck = await MinimapLaneFixture.mounted(over: FeedProjection.longRows)
         deck.lane.layoutSubtreeIfNeeded()
         let noticed = deck.lane.reshapeNotices
         let document = try #require(deck.table.scroller?.documentView)
@@ -49,13 +49,15 @@ struct MinimapReshapeRouteTests {
     /// the case reporting anything by hand: the rows grow, AppKit resizes the reading, and the lane
     /// maps the document it now has.
     @Test
-    func `a reading that grows reshapes the lane over the handle`() {
-        let deck = MinimapLaneFixture.mounted(over: Array(FeedProjection.longRows.dropLast(20)))
+    func `a reading that grows reshapes the lane over the handle`() async {
+        let deck = await MinimapLaneFixture
+            .mounted(over: Array(FeedProjection.longRows.dropLast(20)))
         deck.lane.layoutSubtreeIfNeeded()
         let mapped = deck.lane.geometry.documentHeight
         let noticed = deck.lane.reshapeNotices
 
         deck.table.apply(FeedTableFixture.model(showing: FeedProjection.longRows))
+        await FeedTableFixture.settled(deck.table)
         deck.table.scroller?.layoutSubtreeIfNeeded()
         deck.lane.layoutSubtreeIfNeeded()
 

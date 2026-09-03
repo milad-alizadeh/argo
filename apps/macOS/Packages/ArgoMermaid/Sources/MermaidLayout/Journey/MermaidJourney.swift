@@ -63,7 +63,7 @@ extension MermaidJourney {
         bands.labels
     }
 
-    @MainActor var laid: MermaidPlan {
+    var laid: MermaidPlan {
         bands.laid
     }
 }

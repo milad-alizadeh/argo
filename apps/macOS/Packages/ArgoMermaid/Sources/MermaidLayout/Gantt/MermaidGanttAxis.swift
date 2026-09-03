@@ -10,7 +10,6 @@ import Foundation
 /// diagram is as big as the thing it draws and is scrolled rather than reflowed, so there is no
 /// second measure for a second answer to be given at — which is what keeps the drawn height and
 /// the reported height one number (#861).
-@MainActor
 enum MermaidGanttAxis {
     struct Tick: Equatable, Sendable {
         let at: Date
@@ -117,7 +116,6 @@ enum MermaidGanttAxis {
     }
 }
 
-@MainActor
 extension MermaidGantt {
     /// The marks on this chart's axis, at the width the chart draws itself at. Read by `labels`
     /// and by the layout, so the words the view builds and the places the plan sets them are one

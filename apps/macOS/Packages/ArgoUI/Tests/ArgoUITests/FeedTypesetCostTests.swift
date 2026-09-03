@@ -52,15 +52,21 @@ struct FeedTypesetCostTests {
         }
     }
 
-    /// Every height in a reading taken again, from a store that has just been emptied.
-    private static func remeasured(_ rows: [FeedRow]) -> FeedTableCoordinator {
-        let coordinator = FeedTableFixture.laidOut(rows, in: Self.pane, through: FeedTableHandle())
-        coordinator.dropMeasuredHeights()
-        let table = coordinator.table
-        for at in rows.indices {
-            _ = table.map { coordinator.measuredHeight(at: at, in: $0) }
+    /// Every height in a reading, taken row by row exactly as the pass takes them — one
+    /// measurement per row and no second walk (ADR-0030, Rule 3).
+    ///
+    /// Synchronous, and the pass's own `height(at:of:)` rather than the task group over it: the
+    /// counters these cases read are shared with the two thousand other tests in this process, and
+    /// a case that suspends hands them to whatever runs next. What is being counted is what a row
+    /// COSTS, which is the same number however the pass splits the rows across cores.
+    private static func measured(_ rows: [FeedRow]) -> Int {
+        ProseReading.holding(rows: rows.count)
+        let model = FeedTableFixture.model(showing: rows)
+        let stamp = FeedMeasureStamp(of: model, atWidth: Self.pane.width)
+        for index in rows.indices {
+            _ = FeedMeasurePass.height(at: index, of: stamp)
         }
-        return coordinator
+        return rows.count
     }
 
     /// The claim at the length the argument is about: a whole document of prose is given a height
@@ -68,10 +74,8 @@ struct FeedTypesetCostTests {
     @Test
     func `a whole document of four thousand prose rows is measured once a row`() {
         let rows = Self.prose(Self.rows)
-        ProseReading.holding(rows: rows.count)
-        let coordinator = Self.remeasured(rows)
 
-        #expect(coordinator.measurements >= Self.rows)
+        #expect(Self.measured(rows) == Self.rows)
     }
 
     /// The same claim as a shape rather than as a length: thirteen times the rows is thirteen times
@@ -79,11 +83,11 @@ struct FeedTypesetCostTests {
     /// holds for the whole target, since there is no ruler left to count.
     @Test
     func `a prose reading of any length is measured once a row`() {
-        let short = Self.remeasured(Self.prose(300))
-        let long = Self.remeasured(Self.prose(Self.rows))
+        let short = Self.measured(Self.prose(300))
+        let long = Self.measured(Self.prose(Self.rows))
 
-        #expect(short.measurements >= 300)
-        #expect(long.measurements >= Self.rows)
+        #expect(short == 300)
+        #expect(long == Self.rows)
     }
 
     /// What an arithmetic row costs: nothing at all. A call, a mark and a survey are worked out
@@ -96,11 +100,14 @@ struct FeedTypesetCostTests {
     func `a document of four thousand worked-out rows pays no glyph work`() {
         // Warm: the first row of any shape settles its faces, and a face is a fact about the
         // PROCESS rather than about the document being measured.
-        _ = Self.remeasured(Self.worked(2))
-        let before = ProseMetrics.typesets
-        _ = Self.remeasured(Self.worked(Self.rows))
+        _ = Self.measured(Self.worked(2))
 
-        #expect(ProseMetrics.typesets == before)
+        // Counted for THIS caller and not for the process: since ADR-0030 the whole-document
+        // measure pass typesets off the main actor, so a case reading the shared counter either
+        // side of its own work is counting whatever else was measuring beside it.
+        let paid = ProseMetrics.typesets { _ = Self.measured(Self.worked(Self.rows)) }
+
+        #expect(paid == 0)
     }
 
     /// A document of rows that are worked out rather than typeset — the shapes ADR-0030 Rule 1

@@ -45,7 +45,7 @@ struct FeedShapeHeightTests {
     func `every shape stands where the ruler lays it out`(width: CGFloat) {
         for row in Self.rows {
             let model = Self.model(for: row)
-            let standing = FeedRowStanding(at: 0, of: model)
+            let standing = FeedMeasureStamp(of: model, atWidth: width).standing(at: 0)
             let worked = FeedShapeHeight(
                 standing: standing, measure: FeedRowMeasure.measure(atWidth: width),
             ).height(of: row.content)

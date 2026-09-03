@@ -22,20 +22,18 @@ struct FeedRemeasureCostTests {
     private static let rewritten = 10
 
     /// The settle every width burst ends in, over a reading nothing has touched since it was
-    /// measured. Zero, and it has to be zero at BOTH ends — the frame it lands in and the tail
-    /// behind it — because the tail is the same work served in slices.
+    /// measured. Zero, because the reading is already a settled document at that width and there
+    /// is nothing for a pass to be about (`FeedMeasureDelta.settled`).
     @Test
-    func `a full re-measure of an unchanged reading measures nothing`() async throws {
-        let laid = FeedSwitchDeck()
+    func `a full re-measure of an unchanged reading measures nothing`() async {
+        let laid = await FeedSwitchDeck()
         await laid.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
         let measured = laid.coordinator.measurements
         #expect(measured >= FeedSwitchFixture.alphaRows.count)
 
         laid.coordinator.settleAfterResize()
-        let inTheFrame = laid.coordinator.measurements
-        try await #require(laid.coordinator.tailing).value
+        await FeedTableFixture.settled(laid.coordinator)
 
-        #expect(inTheFrame == measured)
         #expect(laid.coordinator.measurements == measured)
     }
 
@@ -43,11 +41,12 @@ struct FeedRemeasureCostTests {
     /// changed answers `nil` to the height question by itself, so a reading that came back
     /// rewritten is re-measured where it moved and nowhere else.
     ///
-    /// Two rows, exactly: the one that was rewritten, and the one BELOW it — `FeedGeometry.Ground`
-    /// carries the row above, because the gap above a row is inside that row's height.
+    /// One row, exactly. The row BELOW it is not among them: the gap above a row is inside that
+    /// row's height, but the gap is decided by the pair's KINDS alone (`FeedRow.step(to:from:)`),
+    /// and a message that grew a line is the same kind of row it was.
     @Test
     func `a row the reading rewrote is measured again and its neighbours are not`() async throws {
-        let laid = FeedSwitchDeck()
+        let laid = await FeedSwitchDeck()
         await laid.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
         let table = try #require(laid.coordinator.table)
         let was = laid.coordinator.measuredHeight(at: Self.rewritten, in: table)
@@ -63,7 +62,7 @@ struct FeedRemeasureCostTests {
         )
         await laid.show(grown, of: FeedSwitchFixture.alpha)
 
-        #expect(laid.coordinator.measurements - before == 2)
+        #expect(laid.coordinator.measurements - before == 1)
         #expect(laid.coordinator.measuredHeight(at: Self.rewritten, in: table) > was)
     }
 
@@ -82,8 +81,10 @@ struct FeedRemeasureCostTests {
     /// Mounted in a real window, because a windowless table lays nothing out for `.rebuild`: its
     /// `reloadData` marks and defers.
     @Test(arguments: [FeedRemeasure.none, .visible, .rebuild])
-    func `a re-measure short of the settled pass forces no layout`(scope: FeedRemeasure) throws {
-        let mounted = try Self.mounted()
+    func `a re-measure short of the settled pass forces no layout`(
+        scope: FeedRemeasure,
+    ) async throws {
+        let mounted = try await Self.mounted()
         let before = try mounted.layouts
 
         mounted.coordinator.remeasure(scope)
@@ -96,13 +97,11 @@ struct FeedRemeasureCostTests {
     /// AppKit for its heights NOW rather than at the next layout. Exactly one, not merely more than
     /// none — the whole complaint was a pass per frame.
     @Test
-    func `the settled re-measure forces one layout and no more`() throws {
-        let mounted = try Self.mounted()
+    func `the settled re-measure forces one layout and no more`() async throws {
+        let mounted = try await Self.mounted()
         let before = try mounted.layouts
 
         mounted.coordinator.remeasure(.all)
-        // The tail is another suite's claim, and one left running measures rows under the next.
-        mounted.coordinator.tailing?.cancel()
 
         #expect(try mounted.layouts == before + 1)
     }
@@ -115,9 +114,9 @@ struct FeedRemeasureCostTests {
     /// A reading laid out in a real window, which is where a forced layout can be seen at all. The
     /// window and the two values the shell keeps come back with the coordinator: the coordinator
     /// holds its scroll view weakly, and the window is what holds the table.
-    private static func mounted() throws -> Mounted {
+    private static func mounted() async throws -> Mounted {
         let kept = FeedTableFixture.Kept(handle: FeedTableHandle(), geometry: FeedGeometry())
-        let coordinator = FeedTableFixture.laidOut(
+        let coordinator = await FeedTableFixture.laidOut(
             Self.wrapping, in: FeedSwitchDeck.pane, keeping: kept,
         )
         let scroller = try #require(coordinator.scroller)

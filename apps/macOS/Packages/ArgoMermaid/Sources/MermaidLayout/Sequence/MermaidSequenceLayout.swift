@@ -8,7 +8,6 @@ import Foundation
 // lane — which is the whole claim of #859's spine, tested here for the first time by a second
 // diagram type actually using it.
 
-@MainActor
 extension MermaidSequence {
     var laid: MermaidPlan {
         guard !participants.isEmpty else { return .empty }
