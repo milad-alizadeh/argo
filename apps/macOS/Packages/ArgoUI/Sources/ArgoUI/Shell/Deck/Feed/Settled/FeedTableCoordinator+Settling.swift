@@ -44,7 +44,7 @@ extension FeedTableCoordinator {
             // frame thrown away, so the pass waits for the quiet after the last one and the rows
             // ride the drag at the wrap they have (ADR-0030, Rule 6). Nothing is surrendered
             // there: blanking the deck on a drag frame is the flash the delay exists to stop.
-            if geometry.settled?.stamp.isReading(of: stamp) != true {
+            if geometry.settled?.stamp.stands(under: stamp) != true {
                 surrenderDocument()
             } else if !promptly {
                 return settleWhenQuiet()
@@ -90,12 +90,15 @@ extension FeedTableCoordinator {
 
     /// The document that stands, put on screen where the table is not already drawing it.
     private func adoptSettled() {
-        guard let table, let document = geometry.settled, shown != document.stamp.rows else {
-            return
-        }
+        guard let table, let document = geometry.settled else { return }
+        guard shown != document.stamp.rows else { return }
         let stale = shown
         show(document.stamp.rows, against: stale, freshly: stale.isEmpty, on: table)
         handle?.settled(true)
+        // The same walk the landing takes, and this path needs it MORE: no pass runs here, so
+        // nothing will ever correct AppKit's row geometry afterwards (#1132). Whole document,
+        // because a table built fresh over a kept store has resolved none of it.
+        converge(table)
         place()
     }
 
@@ -180,9 +183,29 @@ extension FeedTableCoordinator {
     /// the heights it draws them at and the document the overview lane maps all change together,
     /// so there is no frame in which the feed is showing one reading's rows at another's heights.
     private func landed(_ document: FeedSettledDocument?, for stamp: FeedMeasureStamp) {
-        guard let document, let table, settlingFor == stamp else { return }
+        // The latch comes back FIRST, and on every way out of here (#1132). Nothing else can give
+        // it back: the only other writes to it are the ones a pass makes when it STARTS. So a pass
+        // that returns with no document — or returns to a deck `KeptDecks` has evicted, since
+        // `table` is weak — would leave a permanently `isMeasuring` coordinator, which is a
+        // permanently provisional lane, which is a lane that never walks again and draws one
+        // reading's miniature over another's feed until the app is quit (ADR-0030, Rule 3).
+        guard settlingFor == stamp else { return }
         settlingFor = nil
+        // With the latch, and for the same reason. `surrendersHeld` IS `settlingFor != nil`, so a
+        // hold left armed past the line above can never fire: the clock runs out, reads that no
+        // pass is in flight, and returns — leaving the deck drawing rows at a wrap that is no
+        // longer true, with nothing on its way to replace them. ADR-0030 Rule 6 holds the stale
+        // document so a drag does not blank the deck AND gives it up so the reader is not left in
+        // front of it; this is the second half.
         releaseHold()
+        // A table that has gone is a deck `KeptDecks` evicted, and its document is kept ON PURPOSE
+        // — surrendering it here would throw away the store that makes coming back free (#858).
+        //
+        // A nil document is not reachable and is not handled as though it were: a pass returns one
+        // only when a row went unmeasured, which happens only under cancellation, and every writer
+        // of `settlingFor` cancels the pass in the same breath — so a cancelled pass always meets a
+        // changed stamp and dies on the guard above.
+        guard let document, let table else { return }
         // Read BEFORE the heights move and landed after them — that pair IS the holding, and it is
         // what keeps a late Result from scrolling the reader away from what they were reading.
         let held = handle?.resolve(.rowsMeasured(anchor: anchor()))
@@ -197,6 +220,10 @@ extension FeedTableCoordinator {
         // `reloadData` marks and defers, so a lane reading the document height here would read the
         // one the table had before. Safe on this path and not on the ones #955 is about — this is
         // a turn of the main actor of its own, not a frame-change handler.
+        // Before the layout, not after: the walk tiles the table, and a walk taken on the far side
+        // of the layout would be a second one. `FeedRemeasureCostTests` holds the landing to
+        // exactly one.
+        converge(table)
         scroller?.layoutSubtreeIfNeeded()
         land(held?.landing ?? .stay, over: nil)
     }
@@ -216,6 +243,55 @@ extension FeedTableCoordinator {
             try? await Task.sleep(for: .seconds(ArgoMotion.unreadDelay))
             guard !Task.isCancelled else { return }
             self?.surrenderHeld()
+        }
+    }
+
+    /// AppKit's own row geometry brought up to the document that just landed (#1132).
+    ///
+    /// `NSTableView` sizes its document view lazily: until something asks after a row, that row
+    /// stands at `rowHeight` — the three-line placeholder — however tall the delegate says it is.
+    /// Over the 459-row synthetic the table's document view read 33 096pt against a settled
+    /// document of 41 759, and placed the last row 8 663pt above where it belongs. A fifth of the
+    /// reading.
+    ///
+    /// It does not converge by scrolling and it does not converge by tiling: `tile()` moved it
+    /// nothing, `noteHeightOfRows` over every row moved it 938pt, and setting the frame outright
+    /// was taken straight back by the next tile. It converges only as rows are ASKED after — so
+    /// left alone the scrollable range grows under the reader as they scroll, which is the jitter,
+    /// and the overview lane maps the settled document's own heights (Rule 7) against a table that
+    /// does not yet agree it has them, which is the miniature drawn past the end of the feed.
+    ///
+    /// One walk is what converges it, and it costs 0.58µs a row measured cold. ADR-0028 Rule 2
+    /// forbids work proportional to the document in a NOTIFICATION HANDLER; this is a turn of the
+    /// main actor of its own, on the path that already lays the whole reading out a line above.
+    ///
+    /// WHOLE document, every time, and a tail append is not an exception. Walking only from the
+    /// first row whose height moved looks sound — everything above it was converged by the landing
+    /// before — but it is not: `show` reloads the table, and a reload drops AppKit's row cache
+    /// wholesale rather than from the changed row down. Measured, an append of twelve rows to the
+    /// 459-row synthetic left the table 8 819pt short of its own document that way. This is the
+    /// Rule 1 shape ADR-0028 warns about, kept deliberately, because the alternative is a document
+    /// the reader can scroll past the end of.
+    ///
+    /// It must run after `FeedMeasureStamp.rewraps` learned to compare the measure rather than the
+    /// width: a tile taken from inside these getters reports a frame change, and while that was
+    /// read as a re-wrap this walk would have started a whole-document pass per landing.
+    ///
+    /// WHERE it is called from is load-bearing, and not for the reason the re-entrancy guard above
+    /// might suggest. `landed` runs in the settling Task's continuation, OUTSIDE `settleIfOwed`, so
+    /// `isDecidingSettle` is not holding anything here: `rect(ofRow:)` tiles, the tile resizes the
+    /// table, `FeedTableView.setFrameSize` reports it, and `settleIfOwed` re-enters freely. What
+    /// stops it recurring is that `geometry.settle` and `show` have ALREADY run by this line, so
+    /// the nested decision reads `.settled`, reaches `adoptSettled`, finds `shown` is that
+    /// document's own rows, and returns. Move this call above those two and it becomes a loop.
+    ///
+    /// `adoptSettled` calls it too, and there the re-entrancy really is held by `isDecidingSettle`:
+    /// that path runs inside `settleIfOwed`.
+    private func converge(_ table: FeedTableView) {
+        let rows = table.numberOfRows
+        walkedRows(rows)
+        for index in 0 ..< rows {
+            _ = table.rect(ofRow: index)
         }
     }
 

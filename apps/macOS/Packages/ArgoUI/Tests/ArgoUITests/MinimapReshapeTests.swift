@@ -113,6 +113,12 @@ struct MinimapReshapeTests {
         deck.lane.layoutSubtreeIfNeeded()
 
         deck.table.apply(FeedTableFixture.model(showing: FeedProjection.longRows))
+        // The grown reading has to LAND before the lane can hold it: a reshape posts a notice, and
+        // a notice cannot conjure heights nobody has measured (ADR-0030 Rule 3). Awaited here since
+        // #1132 because the lane's compression is a function of the whole reading — the deck left
+        // on the pre-growth document draws every rect a fraction off, where before the two readings
+        // shared a scale and differed only past the band.
+        await FeedTableFixture.settled(deck.table)
         for _ in 0 ..< Self.posted {
             try Self.postReshape(on: deck)
         }

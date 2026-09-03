@@ -75,9 +75,12 @@ struct MinimapLaneTests {
 
     /// Once, for the whole travel from one end of the session to the other. How big the band that
     /// gets drawn is belongs to `MinimapBandTests`.
+    ///
+    /// Over the DEEP session: since #1132 a reading the lane fits into itself has no band to leave,
+    /// and this claim is about the one that does (`MinimapLaneFixture.deepRows`).
     @Test
     func `leaving the band draws the new one, and only the new one`() async {
-        let deck = await Self.mounted(over: FeedProjection.longRows)
+        let deck = await Self.mounted(over: MinimapLaneFixture.deepRows)
         let drawn = deck.lane.rectRedraws
 
         deck.feed.settle(at: .greatestFiniteMagnitude, over: nil)
@@ -229,5 +232,41 @@ struct MinimapLaneTests {
         deck.lane.refresh()
 
         #expect(deck.lane.rectRedraws == drawn)
+    }
+}
+
+/// What the lane REPAINTS, and when. An extension so the suite's own body stays inside its length
+/// gate; the fixture the case mounts is shared with every case above.
+@MainActor
+extension MinimapLaneTests {
+    /// And the band the lane keeps is only kept while it is still the band the lane would build.
+    ///
+    /// The band is clamped to the miniature, so a session that GREW builds a taller one — and the
+    /// shorter band already on the layer still covers the window, because the window is what the
+    /// reader sees and that did not move. Kept on the strength of covering alone, the rows the
+    /// session grew by are never painted: the map stops short of the reading, with no scroll and no
+    /// resize to ever dislodge it. The case a live Session is in on every arriving message (#1132).
+    @Test
+    func `a reading that grew is painted down to its new foot`() async throws {
+        // The FITTED session, where the band is clamped to the miniature rather than to the lane's
+        // three-lane reach — the deep session's band is the reach at either length, so growing it
+        // could not say anything about this.
+        let rows = FeedProjection.longRows
+        let deck = await Self.mounted(over: Array(rows.dropLast(20)))
+        deck.lane.layoutSubtreeIfNeeded()
+        let short = try #require(deck.lane.drawnRects.last).y
+
+        deck.table.apply(FeedTableFixture.model(showing: rows))
+        await FeedTableFixture.settled(deck.table)
+        deck.lane.layoutSubtreeIfNeeded()
+
+        // Against a lane opened on the grown reading from nothing, which is what the deck is now
+        // showing a reading of: same rows, same widths, so the same pixels or the map is wrong.
+        let fresh = await Self.mounted(over: rows)
+        fresh.lane.layoutSubtreeIfNeeded()
+        let grown = try #require(deck.lane.drawnRects.last).y
+
+        #expect(grown > short, "the band ends at \(grown), and ended at \(short) before")
+        #expect(deck.lane.drawnRects == fresh.lane.drawnRects)
     }
 }

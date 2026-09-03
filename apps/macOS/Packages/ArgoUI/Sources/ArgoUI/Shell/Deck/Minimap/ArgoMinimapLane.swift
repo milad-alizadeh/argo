@@ -69,6 +69,12 @@ public enum ArgoMinimapLane {
     /// hairline, and a rectangle too thin to see is one nobody can grab.
     public static let viewportMinimumHeight: CGFloat = 24
 
+    /// How many wrapped texts one row of the miniature asks for, for the store the paint holds
+    /// (`MinimapGeometry.rects(in:)`). Four, over a measured two: the worst reading the design has
+    /// is a heading and a paragraph a row — 600 Core Text passes over 300 rows — and a list or a
+    /// table asks for more. `ProseCache.cap` is what bounds it whatever this says.
+    public static let textsPerRow = 4
+
     /// How many lane-heights of the miniature are held as pixels at once. Three, so the reader has
     /// a lane-height of slack in either direction before a redraw — and no more, because the band
     /// is what bounds the lane's memory.

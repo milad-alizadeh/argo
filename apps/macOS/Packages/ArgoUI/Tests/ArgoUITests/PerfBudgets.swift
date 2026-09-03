@@ -70,6 +70,23 @@ enum PerfBudgets {
     /// and a reload decided at the seam 0.29 µs against 1.21 ms. Rule 3's 1.3, as above.
     static let rowsCompareFlat = 1.3
 
+    /// How many times the converge walk may run for one landing, and for one adopt (#1132).
+    ///
+    /// Recorded: exactly 1 walk over exactly the document's rows — 200 rows walked once on a mount
+    /// and its landing, once again over 212 when the reading grew, once on an adopt · Apple silicon
+    /// laptop · debug · exact. Counted rather than timed, and counted at the walk rather than at
+    /// the delegate: `show` notes every row before the walk runs and `noteHeightOfRows` asks
+    /// eagerly, so by the time `converge` reaches a row AppKit already has its height and the walk
+    /// asks the delegate for nothing. A gate on the delegate's asks stayed green with both
+    /// `converge` calls deleted.
+    ///
+    /// The counterfactuals the walk itself was read against, on the 459-row synthetic: `tile()`
+    /// alone moved the table's height not at all, `noteHeightOfRows` over every row moved it 938pt
+    /// of the 8 663 owed, and setting the frame outright was taken back by the next tile. Walking
+    /// only from the first row whose height moved is also not sound — `show` reloads, and a reload
+    /// drops the row cache wholesale, which left a twelve-row append 8 819pt short.
+    static let convergeWalksPerLanding = 1
+
     /// `FeedScaleTests` — telling two same-named files apart grows with the record and not with
     /// the square of it.
     ///

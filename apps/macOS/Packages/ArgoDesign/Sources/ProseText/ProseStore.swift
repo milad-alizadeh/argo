@@ -86,10 +86,16 @@ public struct ProseMeasuredStore<Value: Sendable>: ~Copyable, Sendable {
     private let stores: Mutex<[CGFloat: ProseCache<Value>]>
     /// How many measures are kept before the lot is dropped.
     private let measuresHeld: Int
+    /// The floor every store here is opened at, raised by `hold(atLeast:)`. Kept beside the stores
+    /// rather than in them because a measure that arrives LATER — a seam let go at a fresh width,
+    /// the first paint after a room switch — opens its store after the walk that holds it and
+    /// would otherwise open at the literal, which is the ceiling ADR-0028 Rule 4 forbids.
+    private let holding: Mutex<Int>
 
     public init(measuresHeld: Int = 8) {
         self.stores = Mutex([:])
         self.measuresHeld = measuresHeld
+        self.holding = Mutex(0)
     }
 
     public func reading(
@@ -107,15 +113,18 @@ public struct ProseMeasuredStore<Value: Sendable>: ~Copyable, Sendable {
             if held[measure] == nil, held.count >= measuresHeld {
                 held.removeAll()
             }
-            var store = held[measure] ?? ProseCache<Value>(ceiling: ceiling)
+            var store = held[measure]
+                ?? ProseCache<Value>(ceiling: max(ceiling, holding.withLock { $0 }))
             store.store(reading, of: text)
             held[measure] = store
         }
         return reading
     }
 
-    /// Every measure's store held to what a whole-document walk is about to cross.
+    /// Every measure's store held to what a whole-document walk is about to cross, and every
+    /// store opened after it too.
     public func hold(atLeast entries: Int) {
+        holding.withLock { $0 = max($0, entries) }
         stores.withLock { held in
             for measure in held.keys {
                 held[measure]?.hold(atLeast: entries)

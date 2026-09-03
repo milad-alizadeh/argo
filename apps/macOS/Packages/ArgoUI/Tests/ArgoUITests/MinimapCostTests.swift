@@ -28,6 +28,10 @@ import Testing
 struct MinimapCostTests {
     private typealias Fixture = MinimapCostFixture
 
+    /// Short enough to fit an 800pt lane at this fixture's own grain, and long enough that fitting
+    /// it is a claim: a hundred rows of the projection's prose.
+    private static let fitting = 100
+
     /// How many rows a band spans — the exact range `rects(in:)` walks, which is the whole of what
     /// "bounded by the band rather than by the session" claims.
     private static func rowsIn(_ band: ClosedRange<CGFloat>, of geometry: MinimapGeometry) -> Int {
@@ -80,16 +84,52 @@ struct MinimapCostTests {
     /// the same band, so it is EXACTLY the same rows walked. And a band far down the miniature is
     /// worth a band, not a position — within a row or two of the head's, because the rows it lands
     /// on are of their own heights. The two readings are `PerfBudgets.bandPositionSlack`.
+    /// Both lengths are past the lane's grain, which since #1132 is where a band is a band at all:
+    /// under it the lane fits the whole session into itself and the band IS the session, bounded
+    /// instead by the arithmetic the case below this one states.
     @Test
     func `painting a band is bounded by the band rather than by the session`() async throws {
-        let short = try await Fixture.geometry(over: Fixture.rows(301, tag: "band"))
-        let long = try await Fixture.geometry(over: Fixture.rows(1204, tag: "wide"))
+        let short = try await Fixture.geometry(over: Fixture.rows(602, tag: "band"))
+        let long = try await Fixture.geometry(over: Fixture.rows(2408, tag: "wide"))
 
-        #expect(Self.rowsIn(Fixture.band, of: long) == Self.rowsIn(Fixture.band, of: short))
-        #expect(Self.rowsIn(Fixture.band, of: long) < 1204)
+        // Within a rounding of each other rather than equal to the row: past the grain the scale
+        // follows the reading's own lower quartile row, and four times the same cyclic fixture does
+        // not land on exactly the same quartile. A few rows in six hundred is that rounding; four
+        // times the session would be four times the band.
+        let bands = (short: Self.rowsIn(Fixture.band, of: short), long: Self.rowsIn(
+            Fixture.band, of: long,
+        ))
+        #expect(abs(bands.long - bands.short) <= bands.short / 20, "\(bands)")
+        #expect(bands.long < 602)
         let below = long.miniatureHeight / 2 ... long.miniatureHeight / 2 + Fixture.lane.height
         #expect(Self.rowsIn(below, of: long)
             < PerfBudgets.bandPositionSlack * Self.rowsIn(Fixture.band, of: long))
+    }
+
+    /// And the OTHER regime, which #1132 added and which has no band to be bounded by: a session
+    /// the lane fits into itself is painted whole, every row of it, in one pass.
+    ///
+    /// What bounds that is the grain, and the bound is worth stating because it is not obvious. The
+    /// lane only fits a session while three rows in four still earn a mark and the gap under it, so
+    /// the most rows a fitted miniature can hold is the lane's own height over that — 400 for an
+    /// 800pt lane, whatever the session's length in points. Past that the grain holds the scale,
+    /// the miniature stands taller than the lane, and the band above bounds it again.
+    @Test
+    func `a session the lane fits is painted whole, and the grain bounds how much that is`(
+    ) async throws {
+        let fitted = try await Fixture.geometry(over: Fixture.rows(Self.fitting, tag: "fit"))
+        #expect(fitted.miniatureHeight <= Fixture.lane.height)
+
+        let mark = ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap
+        let ceiling = Int(Fixture.lane.height / mark)
+        #expect(Self.rowsIn(Fixture.band, of: fitted) == Self.fitting)
+        #expect(Self.rowsIn(Fixture.band, of: fitted) <= ceiling)
+
+        // The ceiling really is a ceiling: a session past it does NOT fit, so no fitted paint is
+        // ever worth more rows than this — the row count of a fitted band is what the lane's own
+        // height allows, not what the session brought.
+        let past = try await Fixture.geometry(over: Fixture.rows(ceiling + 1, tag: "past"))
+        #expect(past.miniatureHeight > Fixture.lane.height)
     }
 
     /// The repaint the reader feels: the second look at a band the lane already painted comes off
@@ -205,9 +245,15 @@ struct MinimapCostTests {
 
         // A heading and a paragraph a row, so a row is worth more than one pass — and still it is
         // the band's rows it is worth, not the session's. The readings are
-        // `PerfBudgets.markdownPassesPerRow`, and the repaint's a quarter for the reason the
-        // repaint case above sets out.
+        // `PerfBudgets.markdownPassesPerRow`.
         #expect(cold <= PerfBudgets.markdownPassesPerRow * Self.rowsIn(Fixture.band, of: geometry))
+
+        // And the repaint comes off the caches here as it does above, which since #1132 it only
+        // does because the paint HOLDS the wrapped store to what it is about to ask for
+        // (`MinimapGeometry.rects(in:)`). The band can be a whole session now, and a row of headed
+        // markdown asks for more than one text: left at the store's own literal the cold paint
+        // evicted its own head before it reached its foot and every repaint paid every parse
+        // again — ADR-0028 Rule 4's named defect, and a 4x loosening of this very line.
         #expect((ProseMetrics.typesets - warm) * PerfBudgets.repaintOffCachesFraction <= cold)
     }
 }

@@ -77,7 +77,7 @@ struct FeedRemeasureCostTests {
     /// `.visible` and `.rebuild` each leave a pass owing that the next layout pays for, so each of
     /// them reads one with the guard removed. `.none` reads zero either way — it is held by the
     /// early return rather than by the guard — and is here because removing that return is the same
-    /// defect. The case below is what says the counter can see a forced layout at all.
+    /// defect. `a forced layout is counted` is what says the counter can see one at all.
     ///
     /// Mounted in a real window, because a windowless table lays nothing out for `.rebuild`: its
     /// `reloadData` marks and defers.
@@ -93,18 +93,41 @@ struct FeedRemeasureCostTests {
         #expect(try mounted.layouts == before)
     }
 
-    /// The one scope that does force a layout, and the control on the case above: `.all` is reached
-    /// from a notification only through the 250 ms settle timer, and it is the pass that asks
-    /// AppKit for its heights NOW rather than at the next layout. Exactly one, not merely more than
-    /// none — the whole complaint was a pass per frame.
+    /// The settled scope asks AppKit for its heights NOW rather than at the next layout, and since
+    /// #1132 it does that without a layout at all.
+    ///
+    /// It used to force exactly one. The landing now walks `rect(ofRow:)` over the reading
+    /// (`FeedTableCoordinator.converge`), which is what resolves AppKit's own row geometry — and
+    /// resolving it directly leaves the `layoutSubtreeIfNeeded` that follows with nothing owed. So
+    /// the claim is stronger than the one it replaces, not weaker: the heights are asked for
+    /// eagerly, as `.all` promises, and the layout the old landing spent doing it is saved.
+    ///
+    /// Still `==` and not `<=`: the complaint behind this suite was a pass per frame, and a bound
+    /// that only says "not many" is a bound that cannot see one come back.
     @Test
-    func `the settled re-measure forces one layout and no more`() async throws {
+    func `the settled re-measure asks for the heights without a layout`() async throws {
         let mounted = try await Self.mounted()
         let before = try mounted.layouts
 
         mounted.coordinator.remeasure(.all)
 
-        #expect(try mounted.layouts == before + 1)
+        #expect(try mounted.layouts == before)
+    }
+
+    /// The positive control the four cases above rest on, and the reason it has to exist: every one
+    /// of them now asserts that the counter did NOT move, so a `layouts` that stopped incrementing
+    /// — or a fixture whose table never lays out at all — would leave the lot of them green while
+    /// saying nothing. This is the case that fails if the instrument breaks.
+    @Test
+    func `a forced layout is counted`() async throws {
+        let mounted = try await Self.mounted()
+        let table = try #require(mounted.coordinator.table)
+        let before = try mounted.layouts
+
+        table.needsLayout = true
+        mounted.coordinator.scroller?.layoutSubtreeIfNeeded()
+
+        #expect(try mounted.layouts > before)
     }
 
     /// A reading long enough that most of it is off screen, every row wrapping the pane.

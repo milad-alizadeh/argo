@@ -83,6 +83,7 @@ package final class MinimapLaneView: NSView {
     /// feed does not already know. See `MinimapReadingStamp` for why a height is not a sound stamp.
     private var read: MinimapReading?
     private var readAt: MinimapReadingStamp?
+
     /// Whether a pass has already asked for another one — see `waitForSettle()`.
     private var isWaiting = false
 
@@ -311,5 +312,38 @@ package final class MinimapLaneView: NSView {
         guard let palette else { return nil }
         let lit = palette.text.primary
         return (isLit ? palette.state.muted(lit) : palette.state.wash(lit)).cgColor
+    }
+}
+
+/// The reading the lane holds, given up when another deck arrives under it (#1132). An extension
+/// so the view's own body stays inside its length gate; `private` members are reachable from here
+/// because this is the same file.
+extension MinimapLaneView {
+    /// Everything the lane holds ABOUT A PARTICULAR READING, given up (#1132).
+    ///
+    /// The view is reused across a Session switch: the zone is placed at one structural position
+    /// with no `.id`, and torn down only over an unsettled feed — which a deck the reader has
+    /// opened before never is. So the reading, its stamp and the geometry derived from it would
+    /// otherwise cross into a feed they say nothing about.
+    ///
+    /// The geometry is the half that matters. Where the arriving deck has no settled document yet
+    /// — for a live Session, every visit, because its reading grew while the reader was away —
+    /// `refresh()` returns above the line that writes it, so the old one simply stays painted
+    /// against an offset that means nothing in the space it is drawing. Nothing retires it
+    /// afterwards: the reshape notice that would is dropped, because on a revisited deck the
+    /// document lands during `apply()` while this lane's closure is still nil.
+    ///
+    /// The pixels go with it, for the same reason — `refresh()` returns without painting, so a lane
+    /// that only dropped the reading would keep the previous deck's marks on screen. Together they
+    /// make `MinimapReadingStamp`'s promise true of what the reader SEES: where what the lane holds
+    /// is another reading's, it draws nothing at all.
+    func forgetReading() {
+        read = nil
+        readAt = nil
+        geometry = MinimapGeometry(MinimapReading(), lane: .zero)
+        derivation += 1
+        drawnBand = nil
+        paintedAt = nil
+        settleViewport()
     }
 }

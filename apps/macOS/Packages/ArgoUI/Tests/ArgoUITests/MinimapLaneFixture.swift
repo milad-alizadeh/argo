@@ -1,5 +1,6 @@
 import AppKit
 import ArgoDesign
+@testable import ArgoSpecimens
 @testable import ArgoUI
 
 /// A lane over a laid-out feed, for the suites that need a real one: `MinimapLaneTests` for what a
@@ -10,6 +11,26 @@ enum MinimapLaneFixture {
     /// The lane's own width, taken the way the deck takes it — so the compression under every claim
     /// is the shipped one.
     static let width = ArgoLayout.minimapLaneWidth(sharing: column.width)
+
+    /// A session deep enough to have a fold: since #1132 the lane fits a reading into itself
+    /// wherever the average row still earns a mark and a gap, so the claims about a miniature that
+    /// SLIDES — and about the band that holds only part of it — need a session past that grain.
+    ///
+    /// Past it by the band's own three lane-heights, which is what the redraw claims turn on: at
+    /// the grain a row is worth two points, so a band of 3 × 480 points is 720 rows and the travel
+    /// has to leave it. The rows are `FeedProjection.longRows` taken round again with their text
+    /// made distinct, because two rows of identical prose share a wrapped store entry and would
+    /// measure a cache rather than a session.
+    static let deepRows: [FeedRow] = {
+        let base = FeedProjection.longRows
+        return (0 ..< 900).map { at in
+            let row = base[at % base.count]
+            guard case let .message(text) = row.content else {
+                return FeedRow(id: at, content: row.content)
+            }
+            return FeedRow(id: at, content: .message("\(text) [deep/\(at)]"))
+        }
+    }()
 
     /// Both references down to the table are weak in the running app — the deck owns the handle and
     /// SwiftUI owns the coordinator. A fixture that let either go would leave a lane attached to

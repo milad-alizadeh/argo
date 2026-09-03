@@ -308,3 +308,37 @@ Agents · N running` over it, detail pane driven by the selection.
   not a gutter on the dock.
 - **Everything else about the seam stands:** flush shared boundary, no rounded container, no
   shadow, no glass (D34), and no disclosure control while there is nothing to reveal (D36).
+
+## Section C5 — Minimap lane
+
+### C5.1 — The lane FITS the session it maps, until the rows stop being marks (#1132)
+- **Decision:** the miniature's compression is the tightest of three: the lane's width over the
+  feed column's (the ceiling, so a short reading is never magnified), the lane's own height over
+  the whole scroll (so the session is mapped **whole**), and the **grain** — the compression at
+  which **three rows in four** are still drawn as one mark plus the gap that keeps it off their
+  neighbour.
+  A session past the grain stands taller than the lane again and slides inside it, exactly as
+  before.
+- **Reverses the width-only ratio** the lane shipped with (#658), which is where the miniature's
+  scale came from at every length. On a real session that put 57,000 points of reading into a
+  9,500-point miniature behind an 800-point lane: the reader could see **8%** of the map at once,
+  and had to scroll the map of the thing they were scrolling.
+- **Why:** a map you scroll to read is not a map. The lane's whole claim is that it mimics the
+  feed's structure at a glance, and at a fourteenth on screen there is no structure to see. Fitting
+  makes the lit rectangle walk the lane end to end, which is also what makes its position mean
+  anything.
+- **The grain is what stops it going too far.** Compressing past a mark and a gap a row does not
+  map the session more finely, it merges neighbours: `MinimapGeometry.isCrowded` starts dropping
+  every other row and the lane fills with one smear — the exact failure #658 was written against.
+- **The grain is measured off the lower QUARTILE row, never the mean.** A transcript is mostly
+  one-line messages with a long tool output every so often, and the mean is the statistic that tail
+  moves freely. Measured over a real 459-row session: a mean of 91pt against a median of 34 and a
+  lower quartile of 26, and a grain taken off the mean starved **329 of the 459 rows** — 72% of the
+  map smeared, on the ordinary shape of a transcript. Off the quartile it is 20 rows, and the
+  starved share is bounded by a quarter by construction. The cost of that honesty is reach: the
+  same session shows about a quarter of itself at once rather than 87%, against a tenth before.
+- **What the arithmetic bounds.** The lane only fits while the reading's quartile row still earns a
+  mark and a gap, so a fitted paint asks for at most the lane's height over a mark and a gap — 400
+  rows in an 800pt lane, whatever the session's length in points. So it is bounded by the lane,
+  never by the session, and past that the band bounds it as it always did. The wrapped-text store
+  is held to what that paint asks for, which is `ProseCache`'s own rule (ADR-0028 Rule 4).

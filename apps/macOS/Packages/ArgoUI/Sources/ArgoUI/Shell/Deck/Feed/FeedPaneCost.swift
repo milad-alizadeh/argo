@@ -19,3 +19,25 @@ struct FeedPaneCost {
     /// what holds it.
     var nestings = 0
 }
+
+/// What bringing AppKit's own row geometry up to the settled document costs (#1132, ADR-0028
+/// Rules 7 and 8).
+///
+/// Its own reading rather than a fifth field on `FeedPaneCost`: that one is what ONE clip-view
+/// notification costs, and this is what a landing and an adopt cost — different paths, different
+/// occasions, and four is the cap on a list a memberwise init takes (#755, edge 6).
+struct FeedConvergeCost {
+    /// How many times the walk has run, and how many rows it walked over all of them.
+    ///
+    /// The WALK and not the heights it asks for. `show` notes every row before the walk reaches it
+    /// and `noteHeightOfRows` asks eagerly, so by the time `converge` runs, AppKit has the heights
+    /// and the walk itself asks the delegate for nothing at all — a counter on the delegate's
+    /// height accessor stays green with both `converge` calls deleted, which is a gate that cannot
+    /// see its own subject. What the walk costs is the rows it visits, so that is what is counted.
+    ///
+    /// A count rather than a duration because that is what the regression IS: a landing that walked
+    /// twice, an adopt that walked a third time, a walk moved inside a loop. Each of those is an
+    /// integer here and noise in a stopwatch.
+    var walks = 0
+    var walkedRows = 0
+}

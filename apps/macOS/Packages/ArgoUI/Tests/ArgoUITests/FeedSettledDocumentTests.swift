@@ -42,59 +42,6 @@ struct FeedSettledDocumentTests {
         #expect(try Self.heights(of: table).allSatisfy { $0 > 0 })
     }
 
-    /// Off the main actor, said as what a reader would feel: the main thread is free for the whole
-    /// of the pass, so a document of any size never costs a dropped frame.
-    ///
-    /// Measured as the longest the main actor was unavailable while the pass ran, by a clock that
-    /// only the main actor advances. A pass that had run there would show up as one gap as long as
-    /// the pass itself.
-    ///
-    /// A pass runs first and is not watched. The line box a face stands at is measured through a
-    /// hosting ruler, which IS the main actor's, and a face is a fact about the process rather than
-    /// about the document — so the first pass of a launch warms whatever faces it meets and every
-    /// pass after it is the steady state this claim is about (`ProseWarmth`).
-    @Test
-    func `the main thread is not blocked for longer than a frame while the pass runs`() async {
-        let stamp = Self.stamp(of: Self.rows)
-        _ = await FeedMeasurePass.settle(stamp)
-        let control = MainActorWatch()
-        let idle = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(Self.watched))
-            control.finished()
-        }
-        await control.run()
-        await idle.value
-
-        let watch = MainActorWatch()
-        let pass = Task { @MainActor in
-            let document = await FeedMeasurePass.settle(stamp)
-            watch.finished()
-            return document
-        }
-        await watch.run()
-
-        #expect(await pass.value?.count == Self.rows.count)
-        // A frame, or whatever this box was already taking the main actor away for — the suite runs
-        // its two thousand other cases beside this one, and a machine that starves the watch while
-        // NOTHING is measuring is a machine, not a defect. The control is the same loop over the
-        // same span with no pass under it, so a pass that ran on the main actor still fails: it
-        // would show up as one gap as long as itself.
-        let allowed = max(Self.frame, control.longestGap)
-        #expect(
-            watch.longestGap <= allowed,
-            "gap \(watch.longestGap)s against an idle \(control.longestGap)s",
-        )
-        // The watch really ran: a loop that never ticked would report a gap of zero and pass.
-        #expect(watch.ticks > 1)
-        #expect(control.ticks > 1)
-    }
-
-    /// One frame at 60 Hz. What a gap has to stay under for the reader never to see one.
-    private static let frame: TimeInterval = 1.0 / 60
-    /// How long the control watch runs — comfortably longer than the pass it is a control for, so
-    /// the two loops are asked the same question over the same kind of span.
-    private static let watched = 250
-
     /// Rows appended at the tail are measured and inserted with every other height untouched —
     /// ADR-0030 Rule 5, and the whole of what a live Session does to a document.
     ///
@@ -241,5 +188,47 @@ struct FeedSettledDocumentTests {
 
     private static func laidOut(_ rows: [FeedRow]) async -> FeedTableCoordinator {
         await FeedTableFixture.laidOut(rows, in: pane, through: FeedTableHandle())
+    }
+}
+
+/// The pass runs off the main actor, measured as what the reader would feel. An extension so the
+/// suite's own body stays inside its length gate; the private members it reads are in this file.
+extension FeedSettledDocumentTests {
+    /// Off the main actor, said as the count it is: not one chunk of the pass runs on the main
+    /// thread, so a document of any size never costs the reader a dropped frame (ADR-0030 Rule 3,
+    /// ADR-0028 Rule 8).
+    ///
+    /// A COUNT and not a stopwatch, and the stopwatch it replaces is worth recording. That gate
+    /// watched a clock only the main actor advances and compared the pass's longest gap against an
+    /// idle control's. It was load-sensitive at first and then, once the load was absorbed, BLIND:
+    /// run inside the whole suite — the way CI runs it — a 120ms block injected into the pass
+    /// passed, because on a loaded box the idle control reads whole seconds too and the ceiling it
+    /// sets swallows the block. Every version of that comparison trades one for the other, because
+    /// both halves are measuring the machine.
+    ///
+    /// A chunk that ran on the main thread is one whatever it cost, idle or loaded, and it is the
+    /// thing the claim is actually about.
+    ///
+    /// A pass runs first and is not counted. The line box a face stands at is measured through a
+    /// hosting ruler, which IS the main actor's, and a face is a fact about the process rather than
+    /// about the document — so the first pass of a launch warms whatever faces it meets and every
+    /// pass after it is the steady state this claim is about (`ProseWarmth`).
+    @Test
+    func `not one chunk of the pass runs on the main thread`() async {
+        let stamp = Self.stamp(of: Self.rows)
+        _ = await FeedMeasurePass.settle(stamp)
+
+        // Called FROM the main actor, which is where the coordinator calls it from: a pass awaited
+        // off it could be off the main thread for reasons that have nothing to do with the pass.
+        let (ran, document) = await FeedMeasurePass.ran {
+            await FeedMeasurePass.settle(stamp)
+        }
+
+        #expect(document?.count == Self.rows.count)
+        // The counter really ran: a pass nobody counted reports zero of everything and passes.
+        // Not `> 1`: how many chunks a document splits into is `activeProcessorCount`'s, and a
+        // single-core runner would redden a gate about where the chunks RAN.
+        #expect(ran.chunks > 0, "the counter must have seen the pass at all")
+        #expect(ran.onMainThread == 0, "\(ran.onMainThread) of \(ran.chunks) chunks")
     }
 }

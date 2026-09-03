@@ -23,6 +23,17 @@ public enum ProseMetrics {
     /// frame.
     private static let lays = ProseMeasuredStore<ProseLay>()
 
+    /// The wrapped store held to what a walk is about to ask it for — `ProseCache`'s own rule,
+    /// forwarded because `lays` is private here.
+    ///
+    /// Its caller is the overview lane, which since #1132 draws a whole session's shapes in one
+    /// band, and asks for more than one text a row: a heading and a paragraph apiece measured 600
+    /// asks over 300 rows. Left at the literal 512 the paint evicted its own head before it reached
+    /// its foot, so every repaint of a fitted session paid every parse again (ADR-0028 Rule 4).
+    public static func holding(texts: Int) {
+        lays.hold(atLeast: texts)
+    }
+
     /// The setting the stores were filled at — see `atCurrentSize()`.
     private static let readAt = ProseTally(ProseTextSize.epoch())
 

@@ -82,9 +82,15 @@ struct MinimapRectTests {
         #expect(lane.rects(in: 0 ... 600).map(\.height) == [ArgoMinimapLane.rectMinimumHeight])
     }
 
-    /// The whole reason #658 exists. At `feedAtScale`'s length the lane squeezed the whole session
-    /// into its own height and every rect fell to the floor. At the feed's own ratio a modest row
-    /// is several points tall, whatever the length.
+    /// The whole reason #658 exists, said as what the reader can actually tell apart. At
+    /// `feedAtScale`'s length the lane squeezed the whole session into its own height and every row
+    /// landed on top of the one above it, so the map was one smear.
+    ///
+    /// The claim is no longer that a rect is TALLER than the floor — since #1132 the lane
+    /// compresses to fit wherever it can, and at a real session's length the grain holds it exactly
+    /// where the average row is worth a mark and the gap that keeps it off its neighbour. So the
+    /// claim is that every row in the band still gets a mark of its own, and that no two of them
+    /// are drawn closer than a mark and a gap.
     @Test
     func `a session at a real length still has rects that can be told apart`() {
         let reading = MinimapReading(
@@ -93,9 +99,15 @@ struct MinimapRectTests {
             viewportHeight: 600,
         )
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: 600))
-        let head = lane.rects(in: 0 ... 600).map(\.height)
-        #expect(!head.isEmpty)
-        #expect(head.allSatisfy { $0 > ArgoMinimapLane.rectMinimumHeight })
+        let head = lane.rects(in: 0 ... 600)
+        let rows = lane.row(startingAtOrBefore: 600 / lane.scale)
+        let apart = ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap
+
+        // DISTINCT positions, not marks. Every row contributes at least one rect at any scale —
+        // `rects(at:)` resets its crowding watermark per row, so a mark per row is true of a lane
+        // squeezed to one smear too, and counting marks would be a claim about nothing.
+        #expect(Set(head.map(\.y)).count >= rows, "\(head.count) marks for \(rows) rows")
+        #expect(zip(head, head.dropFirst()).allSatisfy { $1.y == $0.y || $1.y - $0.y >= apart })
     }
 
     /// Two rows of one line each read as the same weight, whatever spacing the feed put around

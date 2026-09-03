@@ -52,6 +52,7 @@ package extension MinimapLaneView {
         // reading's first reshape. `MinimapReadingStamp` says why a height cannot stand for a
         // document; this is the fact it cannot see.
         reshapedTo = nil
+        forgetReading()
         watched = scroller
         refresh()
     }

@@ -10,15 +10,27 @@ import Testing
 /// wrong row and reads as a scroll bug, three surfaces away from the sum that was wrong.
 ///
 /// The numbers are chosen to divide, and to divide in binary so no expectation below is a rounding
-/// story: a 100pt lane beside an 800pt column compresses exactly eight to one.
+/// story: 12,000 points of reading fitted into a 600pt lane compresses exactly twenty to one.
 @Suite("Minimap geometry")
 struct MinimapGeometryTests {
     private static let lane = CGSize(width: 100, height: 600)
 
-    /// 111 rows of 100pt in an 800pt column: 11,100pt of reading, 600 of it on screen.
+    /// 120 rows of 100pt in an 800pt column: 12,000pt of reading, 600 of it on screen. Long enough
+    /// that the widths' ratio would not fit it, and short enough that the lane fits it anyway —
+    /// the compression is 600 over 12,000, and the whole session is mapped at once.
     private static func long() -> MinimapReading {
         MinimapReading(
-            rows: rows(Array(repeating: 100, count: 111)), columnWidth: 800, viewportHeight: 600,
+            rows: rows(Array(repeating: 100, count: 120)), columnWidth: 800, viewportHeight: 600,
+        )
+    }
+
+    /// The other regime: 1,000 rows of 100pt, which is 100,000pt of reading. Fitting that in 600
+    /// points would draw each row at six hundredths of a point, far under the mark-and-gap the lane
+    /// needs to draw two rows as two — so the grain holds the compression at two points per row's
+    /// 100, and the miniature stands taller than the lane again, sliding inside it (#658).
+    private static func vast() -> MinimapReading {
+        MinimapReading(
+            rows: rows(Array(repeating: 100, count: 1000)), columnWidth: 800, viewportHeight: 600,
         )
     }
 
@@ -32,30 +44,48 @@ struct MinimapGeometryTests {
         MinimapGeometry(reading, lane: lane)
     }
 
-    @Test
-    func `the compression is the lane's width over the feed column's`() {
-        #expect(Self.geometry(Self.long()).scale == 0.125)
+    /// A reading short enough that neither the lane's height nor the grain binds — what is left is
+    /// the widths' own ratio, and the cap on it.
+    private static func short(columnWidth: CGFloat) -> MinimapReading {
+        MinimapReading(rows: rows([200, 200]), columnWidth: columnWidth, viewportHeight: 300)
     }
 
+    /// The claim the lane is for: a session of any length the lane can draw is mapped WHOLE, so
+    /// the reader is never scrolling the map of the thing they are scrolling (#1132).
     @Test
-    func `a column narrower than the lane is drawn at its own size rather than magnified`() {
-        var reading = Self.long()
-        reading.columnWidth = 80
-        #expect(Self.geometry(reading).scale == 1)
+    func `the compression is what puts the whole session in the lane`() {
+        #expect(Self.geometry(Self.long()).scale == 0.05)
+    }
+
+    /// And the width is the ceiling on it, not the ratio: fitting must never MAGNIFY the reading.
+    @Test
+    func `the lane's width caps the compression, so a short reading is never magnified`() {
+        #expect(Self.geometry(Self.short(columnWidth: 80)).scale == 1)
+        // The same reading against a column it would be compressed for — the cap binds one way.
+        #expect(Self.geometry(Self.short(columnWidth: 800)).scale == 0.125)
     }
 
     @Test
     func `a column not yet laid out compresses nothing`() {
-        var reading = Self.long()
-        reading.columnWidth = 0
-        #expect(Self.geometry(reading).scale == 1)
+        #expect(Self.geometry(Self.short(columnWidth: 0)).scale == 1)
     }
 
     @Test
-    func `the miniature is taller than the lane, so the rest of it is below the fold`() {
+    func `a session the lane can hold is drawn in it whole, with nothing below the fold`() {
         let lane = Self.geometry(Self.long())
-        #expect(lane.miniatureHeight == 1387.5)
-        #expect(lane.laneTravel == 787.5)
+        #expect(lane.miniatureHeight == 600)
+        #expect(lane.laneTravel == 0)
+    }
+
+    /// Past the grain the lane stops compressing, because a row thinner than the smallest mark it
+    /// draws maps nothing — so the miniature stands taller than the lane and slides again (#658).
+    @Test
+    func `a session past the lane's grain is taller than the lane and slides inside it`() {
+        let lane = Self.geometry(Self.vast())
+        #expect(lane.scale
+            == (ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap) / 100)
+        #expect(lane.miniatureHeight == 2000)
+        #expect(lane.laneTravel == 1412)
     }
 
     @Test
@@ -84,7 +114,7 @@ struct MinimapGeometryTests {
         reading.bottomInset = 24
         let lane = Self.geometry(reading)
         #expect(lane.offsetRange.lowerBound == -24)
-        #expect(lane.offsetRange.upperBound == 10524)
+        #expect(lane.offsetRange.upperBound == 11424)
     }
 
     @Test
@@ -99,7 +129,7 @@ struct MinimapGeometryTests {
 
     @Test
     func `the viewport rectangle stands for the visible range at the same compression`() {
-        #expect(Self.geometry(Self.long()).viewportHeightInLane == 75)
+        #expect(Self.geometry(Self.long()).viewportHeightInLane == 30)
     }
 
     @Test
@@ -115,7 +145,7 @@ struct MinimapGeometryTests {
     @Test
     func `the reading at its end puts the viewport rectangle at the foot of the lane`() {
         let lane = Self.geometry(Self.long())
-        #expect(lane.viewportY(at: lane.offsetRange.upperBound) == 525)
+        #expect(lane.viewportY(at: lane.offsetRange.upperBound) == 570)
     }
 
     /// The floor draws the lit range taller than it truly is, and the miniature slides that much
@@ -128,7 +158,8 @@ struct MinimapGeometryTests {
         )
         let lane = Self.geometry(reading)
         #expect(lane.viewportHeightInLane == ArgoMinimapLane.viewportMinimumHeight)
-        // A tenth of a point: the compression here is 1/80, which no binary fraction lands on.
+        // A tenth of a point: the compression here is the width's 1/80, which no binary fraction
+        // lands on.
         #expect(abs(lane.viewportY(at: lane.offsetRange.upperBound) - 576) < 0.1)
     }
 
@@ -151,11 +182,12 @@ struct MinimapGeometryTests {
         #expect(lane.laneOffset(at: lane.offsetRange.lowerBound) == 0)
     }
 
+    /// Only of a session past the grain, which is the only one with a fold left to be below.
     @Test @MainActor
     func `the head of the session is off the top of the lane once the reader is far into it`() {
-        let lane = Self.geometry(Self.long())
+        let lane = Self.geometry(Self.vast())
         let end = lane.laneOffset(at: lane.offsetRange.upperBound)
-        #expect(end == 787.5)
+        #expect(end == 1412)
         #expect(lane.rects(in: end ... end + Self.lane.height).allSatisfy { $0.y > 0 })
     }
 
@@ -172,7 +204,7 @@ struct MinimapGeometryTests {
     func `a scrub past either end of the lane stops at the end of the reading`() {
         let lane = Self.geometry(Self.long())
         #expect(lane.offset(forLaneY: -400) == 0)
-        #expect(lane.offset(forLaneY: 4000) == 10500)
+        #expect(lane.offset(forLaneY: 4000) == 11400)
     }
 
     @Test
@@ -180,5 +212,32 @@ struct MinimapGeometryTests {
         let lane = Self.geometry(Self.long())
         let landed = lane.offset(centringLaneY: 400)
         #expect(abs(lane.viewportY(at: landed) + lane.viewportHeightInLane / 2 - 400) < 0.001)
+    }
+}
+
+/// How the compression answers a reading whose rows are NOT all one size, which is every real one.
+/// An extension so the suite's own body stays inside its length gate.
+extension MinimapGeometryTests {
+    /// The shape a real transcript actually has: mostly one-line messages, with a long tool output
+    /// or a gallery every so often. The compression has to hold for the MANY short rows, and the
+    /// mean is the one statistic the long tail moves freely — 90% of this reading is 20pt and its
+    /// mean is 98, so a grain taken off the mean draws those 810 rows at 0.41pt each, a fifth of
+    /// the floor, and 270 of 300 adjacent pairs in the head band land closer than a mark and a gap.
+    /// That is the smear #658 is about, arriving on the ordinary reading rather than the extreme
+    /// one. Measured on a real 459-row session: 329 of 459 rows starved off the mean, 20 off the
+    /// lower quartile.
+    @Test
+    func `a reading of many short rows and a few long ones keeps the short ones apart`() {
+        let heights = (0 ..< 900).map { $0.isMultiple(of: 10) ? CGFloat(800) : CGFloat(20) }
+        let reading = MinimapReading(
+            rows: Self.rows(heights), columnWidth: 800, viewportHeight: 600,
+        )
+        let lane = Self.geometry(reading)
+        let apart = ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap
+
+        // The quartile, not the mean: the short rows are what the lane is mostly drawing.
+        #expect(lane.scale == apart / 20)
+        let starved = heights.filter { $0 * lane.scale < apart }.count
+        #expect(starved <= heights.count / 4, "\(starved) of \(heights.count) rows starved")
     }
 }

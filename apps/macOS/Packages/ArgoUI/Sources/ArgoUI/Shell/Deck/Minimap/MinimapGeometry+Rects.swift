@@ -1,4 +1,6 @@
+import ArgoDesign
 import Foundation
+import ProseText
 
 // The rows' own reported shapes at the lane's scale, at their true chronological positions — and
 // only for the band of the miniature the lane currently holds as pixels, which is what bounds the
@@ -46,7 +48,14 @@ extension MinimapGeometry {
         guard scale > 0, !reading.rows.isEmpty else { return [] }
         let head = (band.lowerBound - lineInLane) / scale - reading.topInset
         let foot = band.upperBound / scale - reading.topInset
-        return (row(startingAtOrBefore: head) ... row(startingAtOrBefore: foot)).flatMap(rects(at:))
+        let rows = row(startingAtOrBefore: head) ... row(startingAtOrBefore: foot)
+        // The wrapped store held to what this walk is about to ask it for, before a row of it is
+        // read (ADR-0028 Rule 4, #1132). Since the lane fits a session into itself the band can be
+        // the whole document, and a row asks for more than one text — so at the store's own literal
+        // the walk evicted its own head before it reached its foot and every repaint paid every
+        // parse. `textsPerRow` is what a row of headed markdown actually asks for.
+        ProseMetrics.holding(texts: rows.count * ArgoMinimapLane.textsPerRow)
+        return rows.flatMap(rects(at:))
     }
 
     /// One row's reported rects, scaled into the lane.

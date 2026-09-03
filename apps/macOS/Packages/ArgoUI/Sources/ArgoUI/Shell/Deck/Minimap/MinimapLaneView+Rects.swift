@@ -17,7 +17,14 @@ extension MinimapLaneView {
             of: geometry.miniatureHeight,
             reach: bounds.height * ArgoMinimapLane.bandLaneHeights,
         )
-        if let drawn = drawnBand, drawn.covers(window) {
+        // The band already on the layer is kept while it still covers what the lane shows — that is
+        // what makes a scroll a compositor move. Only while it is still the band this lane would
+        // build, though: a band is clamped to the miniature, so a reading that GREW builds a taller
+        // one, and an old shorter band can still cover the window while ending above the new foot.
+        // Kept blindly, the rows the session grew by are never painted — the lane's map stops short
+        // of the reading, which is the shape of #1132's complaint and what fitting the whole
+        // session into the lane made ordinary rather than rare.
+        if let drawn = drawnBand, drawn.height == band.height, drawn.covers(window) {
             band = drawn
         }
         paint(band)
