@@ -98,8 +98,7 @@ struct DeckContentRow: View {
                 )
                 DeckSeparator()
                     .argoUnderCanopy()
-                MinimapLane(feed: table)
-                    .frame(width: zoning.laneWidth)
+                MinimapLaneZone(feed: table, width: zoning.laneWidth)
                     .argoUnderCanopy()
                 panel(zoning)
             }
