@@ -28,10 +28,14 @@ enum DelegationCeiling {
     /// bounds — how long a report can still be in flight — the way `recentActivityWindowMs` is.
     static let reportWindowMs = 4 * 60 * 60 * 1000
 
-    /// Whether a delegation handed over at `handedOverAtMs` has stood open past the ceiling.
-    /// `false` for one the record did not date, per the note above.
-    static func passed(handedOverAtMs: Int?, nowMs: Int) -> Bool {
-        guard let handedOverAtMs else { return false }
-        return nowMs - handedOverAtMs > reportWindowMs
+    /// Whether the silence since `sinceMs` has run past the ceiling. `false` for a moment the
+    /// record did not date, per the note above.
+    ///
+    /// Neutrally named because it bounds two silences, not one: a delegation whose report has not
+    /// landed, and — on the same argument, for the same reason — an external Session whose
+    /// transcript has not moved, which is what lets it go on claiming a Ticket (#1118).
+    static func passed(sinceMs: Int?, nowMs: Int) -> Bool {
+        guard let sinceMs else { return false }
+        return nowMs - sinceMs > reportWindowMs
     }
 }

@@ -1,4 +1,5 @@
 import ArgoEngine
+import Foundation
 
 /// The room's reading assembled from what the app actually holds (#820) — the poll's listing, the
 /// roster, and how the Binding behind them is reading.
@@ -23,10 +24,17 @@ extension TicketsReading {
     /// Nothing is invented where a read has not happened: `deliveries` stays empty until a code
     /// host is read (#258), so every backlog dot draws the hollow ring `absent` means rather than a
     /// state nobody established.
-    static func live(_ sources: Sources, showing: Int?) -> TicketsReading {
+    ///
+    /// `nowMs` is what the claim ceiling below is measured against, defaulted on `FeedAgents`'s
+    /// reasoning: every shipping caller wants the real clock, and a suite that passed one is the
+    /// only place a fixed moment is worth having.
+    static func live(
+        _ sources: Sources, showing: Int?, at nowMs: Int = Date().epochMs,
+    )
+        -> TicketsReading {
         TicketsReading(
             items: sources.tickets.items,
-            claims: TicketClaims(over: links(in: sources.sessions)),
+            claims: TicketClaims(over: links(in: sources.sessions, at: nowMs)),
             provider: TicketsProvider(reading: sources.health),
             project: sources.project,
             showing: showing,
@@ -40,12 +48,14 @@ extension TicketsReading {
     /// tickets they hold, how many named none, and how many nobody could read at all — so the
     /// count and its shortfall cannot disagree about which Sessions they were derived over.
     ///
-    /// LIVE Sessions only. An ended Session's branch still names the ticket it was cut for, and
-    /// counting that as a claim would leave `In progress` filling up for the life of the machine.
+    /// The set is `holdsClaim`'s and not `isLive`'s (#1118). An ended Session's branch still names
+    /// the ticket it was cut for, and so does a `stopped` one from last spring — the second is the
+    /// one that had `In progress` reading 82 with one row beneath it, because every status but
+    /// `ended` is live enough to open and none of them is live enough to be WORKING on something.
     private static func links(
-        in sessions: [CockpitPresentation.Session],
+        in sessions: [CockpitPresentation.Session], at nowMs: Int,
     )
         -> [CockpitPresentation.Session.TicketLinkReading] {
-        sessions.filter(\.isLive).map(\.ticket)
+        sessions.filter { $0.holdsClaim(at: nowMs) }.map(\.ticket)
     }
 }
