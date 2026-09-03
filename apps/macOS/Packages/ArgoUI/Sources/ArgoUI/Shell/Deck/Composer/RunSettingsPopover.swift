@@ -1,3 +1,4 @@
+import ArgoAtoms
 import ArgoDesign
 import ArgoEngine
 import SwiftUI
@@ -41,22 +42,41 @@ struct RunSettingsPopover: View {
         .scrollContentBackground(.hidden)
     }
 
-    /// Rows with a checkmark, which is what `.inline` draws for the selected tag. Optional on
-    /// purpose: a Session whose records have named no model ticks NOTHING rather than the first
-    /// row, for the reason an inexact Mode reading ticks nothing (#545).
+    /// Rows with a checkmark, drawn rather than picked.
+    ///
+    /// **Corrected in build.** The design says `Picker(…).pickerStyle(.inline)`, and rendered
+    /// inside a grouped `Form` that control draws RADIO BUTTONS and re-synthesises each row from
+    /// its tag's label alone — so the name vanished and only the trailing note was left. Neither
+    /// half of what the design asks for survived: not the checkmark, and not the two-part row.
+    ///
+    /// Three buttons draw both. It is the same argument the design already makes about the pop-up
+    /// button it rejected: the control was chosen for what it would draw, and this is what it
+    /// draws here.
     private var models: some View {
-        Picker("Model", selection: modelSelection) {
-            ForEach(facts.models) { model in
-                LabeledContent(model.name) {
-                    Text(model.note)
-                        .argoText(ArgoTypography.caption)
-                        .foregroundStyle(argo.color.text.secondary)
-                }
-                .tag(Optional(model))
-            }
+        ForEach(facts.models) { model in
+            Button { control.acts.setModel(model.id) } label: { row(model) }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(model == facts.tickedModel ? [.isSelected] : [])
         }
-        .pickerStyle(.inline)
-        .labelsHidden()
+    }
+
+    /// The tick, the name, and the note the design sets beside it. A Session whose records have
+    /// named no model ticks NOTHING rather than the first row, for the reason an inexact Mode
+    /// reading ticks nothing (#545) — and the mark's SPACE is held either way, so the names do not
+    /// shift when the tick moves.
+    private func row(_ model: RunFactsModel) -> some View {
+        HStack(spacing: ArgoSpacing.snug) {
+            ArgoGlyph(ArgoSymbol.chosen, .inline)
+                .foregroundStyle(argo.color.interaction.accent)
+                .opacity(model == facts.tickedModel ? 1 : 0)
+            Text(model.name).argoText(ArgoTypography.body)
+            Spacer(minLength: ArgoSpacing.base)
+            Text(model.note)
+                .argoText(ArgoTypography.caption)
+                .foregroundStyle(argo.color.text.secondary)
+        }
+        // Or only the words take the click, and the gap between name and note does nothing.
+        .contentShape(Rectangle())
     }
 
     /// Five stops, not the four the approved design drew — `claude --effort` documents
@@ -92,13 +112,6 @@ struct RunSettingsPopover: View {
     /// What this popover says, unwrapped once so the body above reads as the design does.
     private var facts: RunFacts {
         control.facts
-    }
-
-    private var modelSelection: Binding<RunFactsModel?> {
-        Binding(
-            get: { facts.tickedModel },
-            set: { picked in picked.map { control.acts.setModel($0.id) } },
-        )
     }
 
     private var effortSelection: Binding<SessionEffort?> {

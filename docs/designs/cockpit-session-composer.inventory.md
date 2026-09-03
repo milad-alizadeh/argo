@@ -277,6 +277,15 @@ names — is answered on it rather than in a view.
 `ArgoRunSettings.width` is the popover's own 264, held beside the view for the reason
 `ArgoComposerVessel`'s numbers are: a second spelling of a design measurement drifts.
 
+**One control the design named did not draw what the design asked for, and `pixel-review` caught
+it.** The Model list is specified as `Picker(…).pickerStyle(.inline)`; rendered inside the grouped
+`Form` it draws RADIO BUTTONS and re-synthesises each row from its tag's label alone, so the model
+NAME vanished and only the trailing note survived — neither the checkmark nor the two-part row the
+design draws. Three plain `Button` rows draw both. This is the same argument the design already
+makes about the pop-up button it rejected: the control was chosen for what it would draw, and this
+is what it draws in this container. Effort stays the stock segmented picker, which draws exactly
+what the design asks.
+
 **Two rows this ticket changed rather than added.** `ComposerFooter.facts` went from `String?` to
 `RunFacts`, and `SessionHeaderProjection.agent` lost its `model:` parameter entirely — the header
 states the CLI alone now (design decision 2, acceptance criterion 7).
