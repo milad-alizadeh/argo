@@ -1,6 +1,11 @@
 /// The one implemented appearance: near-black graphite with Ion Blue. Every neutral is a true
 /// grey with at most a few points of cool lift — more than that and the surfaces start to tint.
 public extension ArgoPalette {
+    /// The quietest voice, spelled once. It is `text.tertiary` AND the ink every inferred label on
+    /// the map is drawn in (#1142) — two roles, one value, and a literal written twice is a value
+    /// that drifts on whichever of the two is edited first (`rules/house.md`).
+    private static let quietestVoice = ArgoColor(hex: 0x929AA1)
+
     static let graphite = ArgoPalette(
         surface: SurfaceRoles(
             // Sampled from the approved study, not chosen — see D17. Re-sample before moving
@@ -31,7 +36,7 @@ public extension ArgoPalette {
             secondary: ArgoColor(hex: 0xA8AEB5),
             // The quietest voice, so the rung `TextRoles.contrastFloor` binds hardest on. It is
             // read on three grounds, not just the deck, and clears the floor on each.
-            tertiary: ArgoColor(hex: 0x929AA1),
+            tertiary: quietestVoice,
             disabled: ArgoColor(hex: 0x4E545A),
             onAccent: ArgoColor(hex: 0x05070A),
             // There is no `code` ink. A marked span is drawn on `surface.marked` and keeps the
@@ -88,5 +93,36 @@ public extension ArgoPalette {
         ]), // Source code takes no ink from this palette: the evidence panel reads a patch in
         // Xcode's
         // own dark theme (`SyntaxTheme`).
+        atlas: AtlasRoles(
+            // A traffic light, and the one family here that knowingly sits inside the 0.25 held
+            // between a hue and an operational state — the exemption is stated on `MeasureRoles`
+            // and measured in `MeasureRampTests`.
+            measure: MeasureRoles(
+                quiet: ArgoColor(hex: 0x609884),
+                middling: ArgoColor(hex: 0xBC9658),
+                hot: ArgoColor(hex: 0xC26450),
+            ),
+            // Measured, not chosen: at 0.44 the worst case over every domain count from 2 to 40 is
+            // 0.282 from anything else drawn on the map. See `DomainWheel`.
+            domain: DomainWheel(
+                saturationLeast: 0.14,
+                saturationFull: 0.44,
+                lightness: 0.47,
+                turn: 137.508,
+            ),
+            materials: MaterialRoles(
+                desktop: ArgoColor(hex: 0x0D0E10),
+                plate1: ArgoColor(hex: 0x263138),
+                plate2: ArgoColor(hex: 0x1E282E),
+                plate3: ArgoColor(hex: 0x182127),
+                fog: ArgoColor(hex: 0x1A3440),
+                unassigned: ArgoColor(hex: 0x566068),
+                hushed: ArgoColor(hex: 0x2E383F),
+                // The same value `text.tertiary` is, by name rather than by a second literal.
+                // `AtlasMaterialTests` states the identity as a claim as well, so a future
+                // appearance that splits them has to say so out loud.
+                inferred: quietestVoice,
+            ),
+        ),
     )
 }

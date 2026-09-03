@@ -26,6 +26,34 @@ public struct ArgoColor: Sendable, Hashable {
         )
     }
 
+    /// A colour named by where it sits on the wheel rather than by its channels — the notation a
+    /// RULE is written in, where the hues are not decided in advance. `ArgoPalette.DomainWheel` is
+    /// the one caller: a repository's domain count is not the contract's to know.
+    ///
+    /// Hue is in degrees and wraps, so a rank past the end of the wheel comes back round rather
+    /// than clamping onto the last colour.
+    public init(hue degrees: Double, saturation: Double, lightness: Double) {
+        let turned = degrees.truncatingRemainder(dividingBy: 360)
+        let sixth = (turned < 0 ? turned + 360 : turned) / 60
+        let chroma = (1 - abs(2 * lightness - 1)) * saturation
+        let second = chroma * (1 - abs(sixth.truncatingRemainder(dividingBy: 2) - 1))
+        let dimmest = lightness - chroma / 2
+        // Which channel leads is the sextant of the wheel the hue landed in.
+        let channels: [Double] = switch Int(sixth) {
+        case 0: [chroma, second, 0]
+        case 1: [second, chroma, 0]
+        case 2: [0, chroma, second]
+        case 3: [0, second, chroma]
+        case 4: [second, 0, chroma]
+        default: [chroma, 0, second]
+        }
+        self.init(
+            red: channels[0] + dimmest,
+            green: channels[1] + dimmest,
+            blue: channels[2] + dimmest,
+        )
+    }
+
     public var color: Color {
         Color(.sRGB, red: red, green: green, blue: blue, opacity: opacity)
     }
@@ -43,6 +71,43 @@ public struct ArgoColor: Sendable, Hashable {
 
     public func opacity(_ opacity: Double) -> ArgoColor {
         ArgoColor(red: red, green: green, blue: blue, opacity: opacity)
+    }
+
+    /// The same hue laid down as a ground or an edge rather than drawn as an ink. One call for
+    /// every family that does it — `StateRoles` and `InteractionRoles` both spell it this way, so
+    /// neither can drift on what a wash is worth.
+    func tinted(_ tint: ArgoTint) -> ArgoColor {
+        opacity(tint.rawValue)
+    }
+
+    /// The same pigment, lit. Every channel by the same factor and nothing else touched, which is
+    /// the whole of `ArgoLight`'s rule: a lit face is the colour of its legend swatch, darker or
+    /// brighter, never a different hue and never washed toward white.
+    ///
+    /// Clamped at the top, so a factor above one brightens until the channel runs out rather than
+    /// wrapping. Alpha is untouched: lighting a thing does not make it less present.
+    public func scaled(by factor: Double) -> ArgoColor {
+        ArgoColor(
+            red: min(red * factor, 1),
+            green: min(green * factor, 1),
+            blue: min(blue * factor, 1),
+            opacity: opacity,
+        )
+    }
+
+    /// The colour `fraction` of the way from this one to another, alpha included — what a pass
+    /// resolves to between two of its stops. Spent by `ArgoRamp.color(at:)`; no surface mixes two
+    /// roles by hand.
+    func mixed(with other: ArgoColor, by fraction: Double) -> ArgoColor {
+        func between(_ from: Double, _ to: Double) -> Double {
+            from + (to - from) * fraction
+        }
+        return ArgoColor(
+            red: between(red, other.red),
+            green: between(green, other.green),
+            blue: between(blue, other.blue),
+            opacity: between(opacity, other.opacity),
+        )
     }
 
     /// No ground at all — a role's absence, spelled once and in the contract's own type.

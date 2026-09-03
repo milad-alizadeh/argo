@@ -15,7 +15,7 @@ struct ArgoRampTests {
     func `every ramp is in the catalog the specimen draws`(
         _ appearance: (name: String, palette: ArgoPalette),
     ) {
-        #expect(appearance.palette.ramps.map(\.name) == ["ion"])
+        #expect(appearance.palette.ramps.map(\.name) == ["ion", "measure"])
     }
 
     /// A gradient whose stops are out of order draws bands rather than a pass, and SwiftUI does not

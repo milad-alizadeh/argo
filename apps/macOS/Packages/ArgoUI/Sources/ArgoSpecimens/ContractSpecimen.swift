@@ -12,7 +12,7 @@ import SwiftUI
 /// adding a role adds a swatch.
 ///
 /// It renders whatever appearance is in the environment — nothing here knows it is dark.
-struct ContractSpecimen: View {
+struct ContractSpecimen: View, SpecimenSheet {
     @Environment(\.argo) var argo
 
     var body: some View {
@@ -39,23 +39,6 @@ struct ContractSpecimen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .argoDeckSurface()
-    }
-
-    func label(_ name: String) -> some View {
-        Text(name)
-            .argoText(ArgoTypography.machineCaption)
-            .foregroundStyle(argo.color.text.tertiary)
-            .frame(width: 132, alignment: .leading)
-    }
-
-    /// What a role is waiting on, when nothing draws it yet — drawn in the attention ink so an
-    /// unjudged value cannot be mistaken for a settled one at a glance.
-    @ViewBuilder func unwired(_ note: String?) -> some View {
-        if let note {
-            Text("unwired · waits on \(note)")
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.state.attention)
-        }
     }
 
     private var states: some View {
@@ -138,19 +121,6 @@ struct ContractSpecimen: View {
                     .foregroundStyle(argo.color.text.secondary)
                 }
             }
-        }
-    }
-
-    func section(
-        _ title: String,
-        @ViewBuilder content: () -> some View,
-    )
-        -> some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-            Text(title)
-                .argoText(ArgoTypography.sectionLabel)
-                .foregroundStyle(argo.color.text.tertiary)
-            content()
         }
     }
 
