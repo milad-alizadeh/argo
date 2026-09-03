@@ -140,6 +140,58 @@ struct FeedSettledDocumentTests {
         #expect(Array(after.prefix(at)) == Array(stood.prefix(at)))
     }
 
+    /// The overview lane and the feed arrive together. There is no frame in which one of them is
+    /// showing the reading and the other is not, because both read the same document — a lane with
+    /// nothing to map answers `nil` rather than a map of the reading it last had.
+    @Test
+    func `the Minimap has nothing to map until the feed has a document, and both then`(
+    ) async throws {
+        let handle = FeedTableHandle()
+        let table = FeedTableFixture.mounting(
+            Self.rows,
+            in: Self.pane,
+            keeping: FeedTableFixture.Kept(handle: handle, geometry: FeedGeometry()),
+        )
+
+        #expect(table.reading() == nil)
+        #expect(table.readingStamp()?.isProvisional == true)
+
+        await FeedTableFixture.settled(table)
+
+        #expect(table.readingStamp()?.isProvisional == false)
+        let reading = try #require(table.reading())
+        #expect(reading.rows.count == Self.rows.count)
+        // The lane maps the very heights the table draws, or a mark stands beside a row it is not
+        // a mark for.
+        #expect(try reading.rows.map(\.height) == (Self.heights(of: table)))
+    }
+
+    /// A Result that arrives while the reader is part-way down does not move what they are reading:
+    /// the anchor is read before the heights change and landed after them (ADR-0030, Rule 5).
+    @Test
+    func `a row replaced in place holds the row the reader was on`() async throws {
+        // The handle is kept by the CASE. A coordinator holds its handle weakly — the deck owns it
+        // in the app — so a case that let it go would be asserting over a table with no policy to
+        // answer where the reading should land, which answers `stay` to everything.
+        let handle = FeedTableHandle()
+        let table = await FeedTableFixture.laidOut(Self.rows, in: Self.pane, through: handle)
+        let scroller = try #require(table.scroller)
+        table.settle(at: Self.pane.height * 3, over: nil)
+        scroller.layoutSubtreeIfNeeded()
+        let anchored = try #require(table.anchor())
+
+        var answered = Self.rows
+        answered[1] = FeedRow(
+            id: 1,
+            content: .message(String(repeating: "A Result far above the reader. ", count: 20)),
+        )
+        table.apply(FeedTableFixture.model(showing: answered))
+        await FeedTableFixture.settled(table)
+
+        // The same row, still the same distance into it — the row above the viewport's top edge.
+        #expect(table.anchor()?.row == anchored.row)
+    }
+
     /// The reader scrolls the whole document and comes back, and not one row has moved. This is the
     /// property every defect ADR-0030 names is the absence of: a height corrected as its row
     /// scrolled into view is a document whose total height keeps changing under the scroller.

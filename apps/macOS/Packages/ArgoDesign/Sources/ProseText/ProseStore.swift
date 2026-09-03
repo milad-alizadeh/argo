@@ -49,7 +49,7 @@ public struct ProseStore<Value: Sendable>: ~Copyable, Sendable {
     /// cannot compute the answer where it stands is allowed to make: `ProseLineBox` off the main
     /// actor, where the answer comes from a hosting ruler.
     public func held(_ text: String) -> Value? {
-        cache.withLock { $0.peek(text) }
+        cache.withLock { $0.holding(text) }
     }
 
     /// See `ProseCache.hold(atLeast:)`.

@@ -141,10 +141,6 @@ import Testing
         coordinator.scroller?.layoutSubtreeIfNeeded()
     }
 
-    /// How many landings one wait follows through. Two would do — a pass, and the warm behind it —
-    /// and a handful keeps a suite that drives a reading in several steps from having to know.
-    private static let settlePasses = 8
-
     /// A frame change as AppKit posts it — the seam the deck's ONE frame observer is registered
     /// at, the feed's on the clip view.
     static func postFrameChange(on view: NSView) {

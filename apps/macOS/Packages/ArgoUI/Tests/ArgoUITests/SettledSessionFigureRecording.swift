@@ -1,4 +1,6 @@
+import ArgoEngine
 import ArgoFixtures
+@testable import ArgoUI
 import Foundation
 import Testing
 
@@ -32,5 +34,35 @@ struct SettledSessionFigureRecording {
         print("FIGURE settled-session-real records=\(real.counts["records"] ?? 0) "
             + "rows=\(real.counts["rows"] ?? 0) differences=\(differences.count)")
         #expect(differences.isEmpty, "\(differences)")
+    }
+
+    /// What the whole-document pass costs over the REAL Session — the figure ADR-0030's three
+    /// seconds were agreed against, which no machine without the transcript can record.
+    ///
+    /// A figure and not a gate: the gate is `SettledSessionCostTests`, on the synthetic, because a
+    /// budget nothing on CI can measure is a budget that never fails. This is what says the
+    /// synthetic stands for the real Session in COST as well as in shape.
+    @Test
+    func `the real Session's own settle pass`() async throws {
+        let lines = try SettledSessionReading.lines(of: SettledSessionFixture.real)
+        let rows = await FeedProjection.rows(from: TranscriptReader().read(lines: lines))
+        let stamp = await FeedMeasureStamp(
+            of: FeedTableFixture.model(showing: rows), atWidth: ArgoFeedRow.column,
+        )
+
+        let serial = await MainActor.run {
+            cpuSeconds {
+                for index in rows.indices {
+                    _ = FeedMeasurePass.height(at: index, of: stamp)
+                }
+            }
+        }
+        let waited = await elapsedSeconds { _ = await FeedMeasurePass.settle(stamp) }
+
+        print("FIGURE settled-session-real-pass rows=\(rows.count) "
+            + "serial-cpu=\((serial * 1000).rounded() / 1000)s "
+            + "wall=\((waited * 1000).rounded() / 1000)s "
+            + "budget=\(PerfBudgets.settledDocument)s")
+        #expect(serial < PerfBudgets.settledDocument)
     }
 }

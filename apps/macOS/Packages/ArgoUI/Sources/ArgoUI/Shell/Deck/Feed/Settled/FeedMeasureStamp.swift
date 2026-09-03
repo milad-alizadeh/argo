@@ -53,11 +53,6 @@ struct FeedMeasureStamp: Equatable, Sendable {
     func isReading(of other: FeedMeasureStamp) -> Bool {
         rows.isSameReading(as: other.rows)
     }
-
-    /// Whether a pass taken for `other` would answer this stamp exactly.
-    func describes(_ other: FeedMeasureStamp) -> Bool {
-        self == other
-    }
 }
 
 extension FeedMeasureStamp {

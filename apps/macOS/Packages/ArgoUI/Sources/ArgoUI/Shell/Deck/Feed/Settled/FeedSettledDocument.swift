@@ -3,12 +3,8 @@ import CoreGraphics
 /// A reading at a width, with a FINAL height for every row of it. The one seam ADR-0030 Rule 3
 /// adds, and the value the table, the overview lane and the deck's provisional state all read.
 ///
-/// Complete or absent, never partial. That is the whole of the design: five feed defects in a year
-/// — #473, #476, #477, the seam shake (#858) and the overprint on `9f6cd7d4` — were one bug, which
-/// is that a row nobody had looked at stood at an estimate and was corrected when it scrolled in.
-/// A document whose total height moves under the scroller cannot be mapped and cannot be scrolled
-/// to the end of. So there is no half-measured document to hand anybody: until every row has been
-/// measured this value does not exist, and the deck says so (`FeedVacancy.unread`).
+/// Complete or absent, never partial: until every row has been measured this value does not exist,
+/// and the deck says so (`FeedVacancy.unread`).
 ///
 /// It is `Sendable` because the pass that makes it runs off the main actor and across cores
 /// (`FeedMeasurePass`), and it carries the STAMP it was made against so nothing can consume it

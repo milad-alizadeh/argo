@@ -44,7 +44,7 @@ extension FeedTableCoordinator {
         remeasure(decision.remeasure)
         land(decision.landing, over: pace)
         if decision.settle == .whenQuiet {
-            settleSoon()
+            settleWhenQuiet()
         }
     }
 
@@ -88,6 +88,7 @@ extension FeedTableCoordinator {
     /// go, when the width is finally a fact rather than a frame of a drag.
     func settleAfterResize() {
         quieting?.cancel()
+        finishedQuiet()
         decide(.resizeEnded(anchor: anchor()))
         settleIfOwed()
     }
@@ -154,28 +155,17 @@ extension FeedTableCoordinator {
             passes -= 1
             pane = scroller.contentView.bounds.size
         }
-        // The width the rows were measured across may have moved with the pane. Armed rather than
-        // run: a drag is a burst, and one document a frame is twenty-nine thrown away — see
-        // `settleWhenQuiet(at:)`.
+        // The width the rows were measured across may have moved with the pane.
         settleIfOwed()
         // Out of passes with the clip still moving: nothing else will post for the size it is at
-        // now, so the settle timer is what lays the reading out against it.
+        // now, so the quiet wait is what lays the reading out against it.
         guard !hasLaidOut(pane) else { return }
-        settleSoon()
+        settleWhenQuiet()
     }
 
-    /// One settle per burst: each width frame pushes the full pass back, and only the quiet after
-    /// the last one runs it. `settleAfterResize` retires this timer.
-    private func settleSoon() {
-        quieting?.cancel()
-        quieting = Task { [weak self] in await self?.settleWhenQuiet() }
-    }
-
-    /// The quiet after the last width frame, and the full pass it was waiting for. A pass run
-    /// mid-burst is a document measured against a width that is about to move.
-    private func settleWhenQuiet() async {
-        try? await Task.sleep(for: .milliseconds(250))
-        guard !Task.isCancelled else { return }
+    /// What the quiet wait reports to the policy — the burst is over, at whatever width it ended
+    /// on.
+    func settleElapsed() {
         let live = model?.isResizing == true || table?.inLiveResize == true
         decide(.settleElapsed(stillLive: live, anchor: anchor()))
     }

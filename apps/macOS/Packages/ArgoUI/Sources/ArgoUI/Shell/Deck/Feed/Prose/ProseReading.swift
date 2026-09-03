@@ -95,15 +95,18 @@ enum ProseReading {
 
     /// Drops the placements taken at a size the reader has since moved off — `ProseMetrics`' own
     /// rule, applied to the one store here whose values are lengths rather than words.
-    private static func atCurrentSize() {
+    @MainActor private static func atCurrentSize() {
         let epoch = ProseTextSize.epoch()
+        // The epoch is taken only where the drop it calls for can happen. Consumed off the main
+        // actor it would be swallowed: `placedAt` would move on, and the frames the reader has
+        // moved the text size away from would never be dropped.
         let moved = placedAt.withLock { at -> Bool in
             guard at != epoch else { return false }
             at = epoch
             return true
         }
-        guard moved, Thread.isMainThread else { return }
-        MainActor.assumeIsolated { frames.removeAll() }
+        guard moved else { return }
+        frames.removeAll()
     }
 
     #if DEBUG

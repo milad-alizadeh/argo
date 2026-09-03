@@ -7,10 +7,9 @@ import ProseText
 /// the ink — and hands back a height for every row of it, or for the rows it was asked about. What
 /// to measure is `FeedMeasureDelta`'s and when to draw it is the coordinator's.
 ///
-/// Why it can run here at all: a row's height is arithmetic or Core Text and no longer a SwiftUI
-/// layout pass (ADR-0030, Rule 1), and Core Text framesetters are per-row and thread-safe. The
-/// stores under it were the main actor's by this repo's convention rather than the platform's, and
-/// ADR-0030 is where that convention was spent — see `ProseStore`.
+/// Core Text framesetters are per-row and thread-safe, and a row's height is arithmetic or Core
+/// Text rather than a SwiftUI layout pass (ADR-0030, Rule 1) — which is what lets this run here at
+/// all. The stores under it are lock-guarded for the same reason (`ProseStore`).
 enum FeedMeasurePass {
     /// Every row of the stamp, measured. `nil` only where the stamp holds no rows to measure,
     /// which is not a document.
@@ -20,7 +19,11 @@ enum FeedMeasurePass {
         // so every pass pays every parse (`ProseCache`).
         ProseReading.holding(rows: stamp.rows.count)
         let measured = await measure(IndexSet(stamp.rows.indices), of: stamp)
-        let heights = stamp.rows.indices.map { measured[$0] ?? FeedMeasurePass.unmeasured }
+        // A row the pass did not answer for is a pass a fresher stamp cancelled part-way, and there
+        // is no number to stand in for it: an estimate inside a settled document is the fallback
+        // ADR-0030 Rule 1 deletes the ruler to be rid of. Nothing at all is the honest answer, and
+        // the deck already has a state for it.
+        let heights = stamp.rows.indices.compactMap { measured[$0] }
         return FeedSettledDocument(stamp: stamp, heights: heights)
     }
 
@@ -49,10 +52,6 @@ enum FeedMeasurePass {
         }
         return await across(rows, of: stamp)
     }
-
-    /// What a row that could not be measured at all stands at — a row index outside the stamp,
-    /// which `settle` cannot produce and which exists so the map above has no optional in it.
-    private static let unmeasured = FeedTableCoordinator.estimatedRowHeight
 
     /// The rows split into chunks, one child task each.
     ///
@@ -91,7 +90,7 @@ enum FeedMeasurePass {
     /// Rounded UP to a whole point: a non-integral row height still blurs baselines on current
     /// macOS, and up rather than to-nearest so text is never clipped by rounding.
     static func height(at index: Int, of stamp: FeedMeasureStamp) -> CGFloat {
-        guard stamp.rows.indices.contains(index) else { return unmeasured }
+        guard stamp.rows.indices.contains(index) else { return 0 }
         let row = stamp.rows[index]
         let step = FeedRow.step(to: row, from: index > 0 ? stamp.rows[index - 1] : nil)
         let shape = FeedShapeHeight(standing: stamp.standing(at: index), measure: stamp.measure)

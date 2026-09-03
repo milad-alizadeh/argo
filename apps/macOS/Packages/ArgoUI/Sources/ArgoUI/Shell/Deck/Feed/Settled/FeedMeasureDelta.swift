@@ -3,10 +3,9 @@ import Foundation
 /// What a fresh stamp owes the settled document that stands: nothing, some rows, or the lot.
 ///
 /// ADR-0030 Rule 5 is this type. A settled document changes in exactly two ways — rows appended at
-/// the tail, and one row whose Result arrived and changed its height — and both are `rows`, which
-/// leaves every other height untouched by construction rather than by care. `whole` is the re-wrap:
-/// another width or another ink, where not one height taken against the old stamp is true of the
-/// new one.
+/// the tail, and one row whose Result arrived and changed its height — and both are `rows`.
+/// `whole` is the re-wrap: another width or another ink, where not one height taken against the old
+/// stamp is true of the new one.
 enum FeedMeasureDelta: Equatable {
     /// The document that stands is still a document of this stamp.
     case settled

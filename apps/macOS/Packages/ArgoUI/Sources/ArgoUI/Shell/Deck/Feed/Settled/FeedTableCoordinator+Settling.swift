@@ -37,7 +37,7 @@ extension FeedTableCoordinator {
             // ride the drag at the wrap they have (ADR-0030, Rule 6). Nothing is surrendered
             // there: blanking the deck on a drag frame is the flash the delay exists to stop.
             guard geometry.settled?.stamp.isReading(of: stamp) != true else {
-                return settleWhenQuiet(at: stamp)
+                return settleWhenQuiet()
             }
             surrenderDocument()
             settle(stamp, measuring: nil)
@@ -67,20 +67,21 @@ extension FeedTableCoordinator {
 
     /// The quiet after the last frame of a width burst, and the pass it was waiting for.
     ///
-    /// Its own task, because a burst must not cancel the document being measured under it: the
-    /// rows on screen are drawn at the wrap the standing document gave them until a fresh one
-    /// lands, and cancelling that would leave the reader looking at nothing.
-    private func settleWhenQuiet(at _: FeedMeasureStamp) {
-        // The pass already running is measuring the width the reader has just left, so its answer
-        // is a document nobody will ever be shown. Retired rather than let finish: the rows on
-        // screen stand at the wrap the SETTLED document gave them either way, and a drag that let
-        // every frame's pass run to the end would measure the document once a frame.
+    /// The ONE wait, reached from both places a burst is seen: a pane that resolved to another
+    /// size, and a stamp whose width no longer matches the document that stands. Two waits was two
+    /// timers on the same 250 ms, and `isMeasuring` could only see one of them.
+    ///
+    /// The pass already running is retired with it. Its answer is a document of the width the
+    /// reader has just left, and the rows on screen stand at the wrap the SETTLED document gave
+    /// them either way — where a drag that let every frame's pass finish would measure the whole
+    /// document once a frame.
+    func settleWhenQuiet() {
         settling?.cancel()
         settlingFor = nil
-        rewrapping?.cancel()
-        rewrapping = Task { [weak self] in
+        quieting?.cancel()
+        quieting = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(Self.quietMilliseconds))
-            guard !Task.isCancelled else { return self?.finishedRewrap() ?? () }
+            guard !Task.isCancelled else { return self?.finishedQuiet() ?? () }
             self?.settleAfterQuiet()
         }
     }
@@ -90,7 +91,8 @@ extension FeedTableCoordinator {
     /// It measures rather than asking again: `settleIfOwed` would read the same re-wrap it read
     /// when it armed this wait and arm another, which is a wait that never ends.
     private func settleAfterQuiet() {
-        finishedRewrap()
+        finishedQuiet()
+        settleElapsed()
         guard let table, let model, table.bounds.width > 0 else { return }
         let stamp = FeedMeasureStamp(of: model, atWidth: table.bounds.width)
         guard case .whole = FeedMeasureDelta.between(geometry.settled, and: stamp) else {
@@ -106,9 +108,9 @@ extension FeedTableCoordinator {
     /// One pass in flight at a time. A fresher stamp cancels the one before it: its answer is a
     /// document of a reading, a width or a standing that has since moved.
     private func settle(_ stamp: FeedMeasureStamp, measuring owed: IndexSet?) {
-        guard settlingFor?.describes(stamp) != true else { return }
-        rewrapping?.cancel()
-        finishedRewrap()
+        guard settlingFor != stamp else { return }
+        quieting?.cancel()
+        finishedQuiet()
         settling?.cancel()
         settlingFor = stamp
         let measuring = owed?.count ?? stamp.rows.count
@@ -139,7 +141,7 @@ extension FeedTableCoordinator {
     /// the heights it draws them at and the document the overview lane maps all change together,
     /// so there is no frame in which the feed is showing one reading's rows at another's heights.
     private func landed(_ document: FeedSettledDocument?, for stamp: FeedMeasureStamp) {
-        guard let document, let table, settlingFor?.describes(stamp) == true else { return }
+        guard let document, let table, settlingFor == stamp else { return }
         settlingFor = nil
         // Read BEFORE the heights move and landed after them — that pair IS the holding, and it is
         // what keeps a late Result from scrolling the reader away from what they were reading.

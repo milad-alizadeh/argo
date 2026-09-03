@@ -47,12 +47,8 @@ import SwiftUI
     /// The whole-document measure pass in flight — see `FeedTableCoordinator+Settling`.
     var settling: Task<Void, Never>?
     /// The quiet a width burst is waited out in, before the pass that answers its last frame —
-    /// its own task, because a burst must not cancel the document being measured under it.
+    /// see `settleWhenQuiet()`. One wait, and both places a burst is seen arm this one.
     var quieting: Task<Void, Never>?
-    /// The quiet a width burst is waited out in before the pass that answers its last frame — see
-    /// `settleWhenQuiet(at:)`. Its own task, because a burst must not cancel the document being
-    /// measured under it.
-    var rewrapping: Task<Void, Never>?
 
     /// Whether a settle decision is on the stack — see `settleIfOwed()`.
     var isDecidingSettle = false
@@ -64,14 +60,14 @@ import SwiftUI
     /// is armed and has not started. The one question every surface over the geometry asks besides
     /// "is there a document", and the two together are what `isProvisional` means to the lane.
     var isMeasuring: Bool {
-        settlingFor != nil || rewrapping != nil
+        settlingFor != nil || quieting != nil
     }
 
     /// The quiet-wait finished or was retired. Cleared HERE and not where it is armed, because a
     /// `Task` property is assigned once and never cleared, so a finished wait looks exactly like a
     /// running one.
-    func finishedRewrap() {
-        rewrapping = nil
+    func finishedQuiet() {
+        quieting = nil
     }
 
     /// The measure run out — every pass in flight, and every pass a burst has armed but not
@@ -81,7 +77,7 @@ import SwiftUI
     /// start another, and a width burst arms one per frame.
     func measured(over passes: Int = 12) async {
         for _ in 0 ..< passes where isMeasuring {
-            await rewrapping?.value
+            await quieting?.value
             await settling?.value
         }
     }

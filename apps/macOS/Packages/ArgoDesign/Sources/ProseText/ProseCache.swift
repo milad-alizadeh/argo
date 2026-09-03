@@ -60,6 +60,13 @@ public struct ProseCache<Value> {
     /// because the read itself is Core Text, which is the one thing a lock over this store may not
     /// be held across (`ProseStore`): the whole-document pass fills it from several threads at
     /// once, and a lock that covered the typesetting would make the pass serial again.
+    /// What is held for `text`, counted for neither side. The ask a caller makes when it cannot
+    /// compute the answer itself, so its miss is not a walk's miss — see `ProseStore.held(_:)`,
+    /// and `ProseCacheCostTests`, which gates the counters this would inflate.
+    public func holding(_ text: String) -> Value? {
+        readings[text]
+    }
+
     public mutating func peek(_ text: String) -> Value? {
         guard let known = readings[text] else {
             #if DEBUG
