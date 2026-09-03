@@ -155,9 +155,6 @@ Live under `skills/`, one `SKILL.md` per folder, and install from the `milad-ali
 entries in the manifest. Add more by dropping another folder here (with any supporting files
 colocated inside it), pushing to `main`, then adding the name to the lock.
 
-- [`scaffold-project`](skills/scaffold-project/SKILL.md) — interactive scaffolder for a
-  new project of any stack (interview → monorepo vs single → install the stack's LSP →
-  lay out the folders).
 - [`setup-quality-gates`](skills/setup-quality-gates/SKILL.md) — resolves each mechanical
   intent (function length, complexity, parameter count, type escape hatches, duplication, dead
   exports, import boundaries, test hygiene) to a real rule in whatever linter the project already

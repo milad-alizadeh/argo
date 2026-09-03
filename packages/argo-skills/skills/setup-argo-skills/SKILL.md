@@ -22,10 +22,9 @@ recommendation, then ask one grouped multi-select question with the recommendati
 | Choice | Delegates to | Recommend when | Order |
 |---|---|---|---|
 | Quality gates as errors, plus the one-page prose residue | `setup-quality-gates` | always | 1 |
-| Design infra | `setup-design-infra` | project has UI | 2 |
-| Design foundations, the token values | `setup-design-foundations` | UI with no settled scale | 3, fills 2 |
-| Always-on task tracking | this skill, below | always | 4 |
-| Guardrail hooks | scaffolder `--hooks` | user runs git worktrees | 5 |
+| Design infra and the token values | `setup-design-infra` | project has UI | 2 |
+| Always-on task tracking | this skill, below | always | 3 |
+| Guardrail hooks | scaffolder `--hooks` | user runs git worktrees | 4 |
 | Audit what every session loads | `audit-agent-context` | always | last, since every step above adds to the bill |
 
 Done when the user has answered the one question.
@@ -56,4 +55,4 @@ Maintain a live to-do list for any task with **three or more distinct steps**, e
 
 Skills installed or updated (lock delta), infra installed per piece, anything deferred with
 the reason, and how to re-run any single piece (`/setup-<piece>`). If design infra was
-installed, point at `ask-argo` for the route.
+installed, the next step is `/prototype` on the first screen.

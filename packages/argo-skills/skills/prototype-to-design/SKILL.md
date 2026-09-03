@@ -9,11 +9,18 @@ description: Approve one prototype variant as the design, once per screen, befor
 artifacts everything downstream needs: an HTML design that speaks only the token contract,
 and a render of it. `design-to-code` then runs once per ticket against them.
 
+A prototype settles one of two things. Unsettled *behaviour* ("does this state model work?")
+goes `/prototype` → `/handoff` → `/to-spec`, and never through here. Unsettled *appearance*
+("what should this screen look like?") goes `/prototype` → here → `/to-spec` → `/to-tickets`
+→ `/design-to-code` per ticket → `/pixel-review`, because a UI prototype's decision is a set
+of measurements and prose loses every one of them. Both: the behaviour prototype first, cheap
+and throwaway, then the appearance route.
+
 ## Gate
 
 Needs a prototype whose variant is agreed. If the user has not picked one, stop and ask. If
 the token contract is missing a whole family the prototype uses (no typography roles, no
-spacing steps), stop and ask the user to run `/setup-design-foundations` with the prototype
+spacing steps), stop and ask the user to run `/setup-design-infra` (phase B) with the prototype
 as raw material, then come back.
 
 ## 1. Drop the losing variants

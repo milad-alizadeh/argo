@@ -1,17 +1,18 @@
 ---
 name: setup-design-infra
-description: Install the design-to-code machinery: token-contract slots, docs/designs/ with a browser token mirror, the no-raw-values check, a render command, stack.md, and the one-page design rule.
+description: Install the design-to-code machinery (token contract, docs/designs/ with a browser token mirror, the no-raw-values check, a render command, stack.md, the one-page design rule) and settle the token values from observed usage, blessed by the user; re-run as an audit of drift.
 disable-model-invocation: true
 ---
 
 # Setup Design Infra
 
 The contract is a set of named design decisions (tokens plus component names), and designs,
-apps and every framework rendering of them speak only in those names. This skill installs
-the structure; `setup-design-foundations` fills in the values. Every path, glob and command
-installed must resolve to something real in this repo.
+apps and every framework rendering of them speak only in those names. Phase A installs the
+structure; phase B settles the values in it. `prototype-to-design` reconciles a screen
+against those values and never designs a scale. Every path, glob and command installed must
+resolve to something real in this repo.
 
-## 1. Detect the target stack
+## A1. Detect the target stack
 
 Look before asking (`tailwindcss` in the manifest? `react-native` / `tamagui`? a
 `Package.swift` with a UI module? both?), confirm with the user, then pick the shape:
@@ -23,15 +24,15 @@ Look before asking (`tailwindcss` in the manifest? `react-native` / `tamagui`? a
 | Native (Swift / Kotlin) | a constants source in the UI module | consumed directly by views |
 | Multi-platform | DTCG `tokens.json` | a Style Dictionary build → per-target outputs; look up its current docs before wiring |
 
-## 2. Install or complete the token contract
+## A2. Install or complete the token contract
 
 If a token layer exists, extend it, never replace it. The contract has one slot per family
-(`setup-design-foundations` names the families); most projects that "have tokens" have only
+(`references/foundations.md` names the five); most projects that "have tokens" have only
 colours.
 
-Done when each family has a named slot, populated or marked `TODO: setup-design-foundations`.
+Done when each family has a named slot, populated or marked `TODO: phase B`.
 
-## 3. Install the design scaffolding
+## A3. Install the design scaffolding
 
 - `docs/designs/` with a `README.md` index.
 - `docs/designs/tokens.css`, the browser mirror of the contract. When the contract is CSS,
@@ -42,7 +43,7 @@ Done when each family has a named slot, populated or marked `TODO: setup-design-
 
 Done when the three files exist and the template resolves every `var(--…)` it names.
 
-## 4. Install the no-raw-values check
+## A4. Install the no-raw-values check
 
 Copy `templates/check-design-tokens.sh` to `scripts/`, substitute `{{SRC_DIRS}}` (the dirs to
 scan) and `{{EXCLUDE_FILES}}` (token files where raw values are legal), add
@@ -53,7 +54,7 @@ file; keep the allowlist mechanism. If the codebase fails, seed the allowlist wi
 current offenders and file one debt ticket listing them, so the check is green on install
 and the debt visible.
 
-## 5. Install the render method
+## A5. Install the render method
 
 `pixel-review` and `design-to-code` need one UI state rendered deterministically. Recommend
 from what is present: `.storybook/` → Storybook; a native isolated-state harness → that
@@ -65,7 +66,52 @@ targets record the project's own capture command and confirm it captures the win
 
 Done when the render command produces one PNG when run.
 
-## 6. Write `stack.md` and the design rule
+## B1. Gather the raw material
+
+Read `references/foundations.md` first: the shape of each family and how a value is judged.
+From whatever exists, in order: moodboard or specimen pages, the flagship prototype, the
+app's existing styles, reference screenshots. If nothing exists, generate one throwaway
+specimen page per family and review it with the user first.
+
+Done when there is one histogram (value × use-count) per property: size, weight, tracking,
+line-height, space, radius, duration, colour.
+
+## B2. Design each family from the histograms
+
+Cluster the observed values, choose the role set (drop roles the product doesn't use, invent
+none), pin each role to a clean value at most a snap away from its cluster, complete each
+tuple from the dominant observed pairing, and snap off-step observations to a neighbour.
+
+Done when every observed value maps to exactly one proposed token or a named component-local
+exception, with every row where judgement moved a value flagged, and by how much.
+
+## B3. Bless checkpoint
+
+Present one table per family: observed cluster → proposed token (name and value), judgement
+rows called out with alternatives. The user adjusts and blesses.
+
+Done when the user has answered each family's table; an unanswered table blocks B4.
+
+## B4. Land the contract and its specimen
+
+Every family, every theme variant, full tuples, in the slots A2 made, with the framework
+wiring in the same change; regenerate the mirror with the command A3 recorded. Then
+`docs/designs/foundations.html` imports the mirror and renders every role: a line per type
+role, spacing blocks, the core ramps plus semantic chips per theme, radius and motion demos.
+It styles only via `var(--token)`, so it always shows the current contract; link it first in
+the designs README.
+
+Done when the no-raw-values check passes on the contract's consumers and every token name in
+the contract appears in the specimen (grep both, diff empty).
+
+## B5. Re-base approved designs, when values moved
+
+Snapped jitter (≤1px) leaves existing designs untouched. When the bless deliberately moved
+values, translate each approved design through the mapping tables (substitute each raw value
+for its token), re-render the PNG beside it, and match each visible delta to the mapping row
+that explains it.
+
+## C. Write `stack.md` and the design rule
 
 `docs/designs/stack.md` answers five questions and nothing else; every later design skill
 reads it instead of hardcoding a framework:
@@ -96,10 +142,17 @@ own spelling (grep the stack for the constructs you name before writing them):
 Add a **Visual verification** section to the project doc pointing at `stack.md` and
 `rules/design.md`.
 
-## 7. Verify and report
+## D. Verify and report
 
 A deliberately bad line makes the check fail and removing it makes it pass; the template
 opens and renders with the token vocabulary; the render command produces a PNG; the mirror
-generator run twice produces no diff. Report the stack, families installed against missing,
-where the check is wired, the render method, allowlist debt, and the next step:
-`setup-design-foundations` if any family is missing, otherwise `/prototype` the first screen.
+generator run twice produces no diff. Report the stack, families settled against missing,
+which judgement calls moved values and by how much, where the check is wired, the render
+method, allowlist debt, and the next step: `/prototype` the first screen.
+
+## Re-running as an audit
+
+Re-extract current usage (approved designs plus app source), compare against the contract,
+and present only the drift: tokens nothing uses, values nothing names, families still
+missing, jitter that leaked into the contract. Fix through the same bless → land → specimen
+loop (B3–B5).

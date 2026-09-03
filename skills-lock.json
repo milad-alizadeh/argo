@@ -1,12 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "ask-argo": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/ask-argo/SKILL.md",
-      "computedHash": "4a61723a9d0181d8c18ae9adde1e85f35c220bd60cd0535e0821435600e23b0e"
-    },
     "ask-matt": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -133,23 +127,11 @@
       "skillPath": "skills/engineering/resolving-merge-conflicts/SKILL.md",
       "computedHash": "63b2dcadbe9124caeb3448f1378286fe18dcefb2494f60e136831b8b4986ca27"
     },
-    "scaffold-project": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/scaffold-project/SKILL.md",
-      "computedHash": "e86efb0b87541f4fdd1868376ee8cf7d870b28f0c6eb5f708fc6b1d06c89b47c"
-    },
     "setup-argo-skills": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/setup-argo-skills/SKILL.md",
       "computedHash": "a02f9dcac8a0ef338d9d40834f89363889c190284169eeb1cffaf37f03793573"
-    },
-    "setup-design-foundations": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/setup-design-foundations/SKILL.md",
-      "computedHash": "ab8d39d8cc5bf969245a65767097dab1e244118b0257debd875a5746f22eb572"
     },
     "setup-design-infra": {
       "source": "milad-alizadeh/argo",

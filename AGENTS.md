@@ -112,7 +112,7 @@ without it drifts from what was agreed and nothing downstream can tell that drif
 The route in full — `/prototype` explores variants, `prototype-to-design` approves one and lands
 it with a render, `design-to-code` builds it per ticket, `pixel-review` judges the pixels. This
 is a **repo rule, not a skill description**: which tickets take the design route depends on what
-is in `docs/designs/`, which no portable skill can know. `ask-argo` maps the rest.
+is in `docs/designs/`, which no portable skill can know.
 
 ## Visual verification
 
