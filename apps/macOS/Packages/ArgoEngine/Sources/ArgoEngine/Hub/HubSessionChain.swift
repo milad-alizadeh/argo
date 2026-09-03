@@ -34,11 +34,13 @@ struct HubTranscript {
     }
 
     /// The reading a batch lands in. The first batch after a reread lands in the fresh one, so
-    /// nothing the stale reading saw is counted twice.
-    mutating func beginBatch() {
-        guard let fresh = rereading else { return }
+    /// nothing the stale reading saw is counted twice. Answers whether the reading was swapped,
+    /// which is a move of the row.
+    mutating func beginBatch() -> Bool {
+        guard let fresh = rereading else { return false }
         session = fresh
         rereading = nil
+        return true
     }
 
     /// A reread whose tail delivered nothing. The stale reading stays as it was.

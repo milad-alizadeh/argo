@@ -108,6 +108,20 @@ struct HubJoinTests {
         #expect(join.sessions.first?.events.filter { $0 == .message(markdown: "first") }.count == 1)
     }
 
+    /// A reread whose tail ends without a backfill — the file could not be opened again — leaves
+    /// the stale reading standing rather than an empty one in its place.
+    @Test
+    func `a reread that delivers nothing keeps the stale reading`() {
+        var join = settledJoin()
+
+        join.reread(hubTestObservation(id: "session", events: []))
+        join.settle(transcriptID: "session")
+        join.apply([.message(markdown: "later")], to: "session")
+
+        #expect(join.sessions.map(\.title) == ["Reading"])
+        #expect(join.sessions.first?.events.contains(.message(markdown: "later")) == true)
+    }
+
     /// A row that has stood on the roster stands through the next sweep too, whatever its leaf
     /// says. A Session resumed from a file outside the window has a leaf nobody in the set owns,
     /// and holding it back on every sweep that admits a file — every new Session on the machine —

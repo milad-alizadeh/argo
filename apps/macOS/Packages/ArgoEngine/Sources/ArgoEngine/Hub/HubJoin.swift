@@ -90,11 +90,9 @@ struct HubJoin {
     /// than added to, so nothing it saw is counted twice — and the row on screen stands, stale
     /// rather than absent, until the new one settles.
     ///
-    /// Stands through OTHER transcripts' batches too, which is what "stands" has to mean on an
-    /// active machine: the transcript stays settled and its stale reading in the fold, so a refold
-    /// taken for someone else's batch keeps the row. Only the batch addressed to this transcript
-    /// swaps the reading (`HubTranscript.beginBatch`). Nothing published moves, so this answers
-    /// `false` (#858, #1134).
+    /// Stands through OTHER transcripts' batches too: the transcript stays settled with its stale
+    /// reading in the fold, and only its own batch swaps the reading (`HubTranscript.beginBatch`).
+    /// Nothing published moves, so this answers `false` (#858, #1134).
     mutating func reread(_ observation: TranscriptObservation) -> Bool {
         guard let index = position(of: observation.id) else { return false }
         transcripts[index].reread(observation)
@@ -128,12 +126,11 @@ struct HubJoin {
     @discardableResult
     mutating func apply(_ events: [TranscriptEvent], to transcriptID: String) -> Bool {
         guard let index = position(of: transcriptID) else { return false }
-        let before = HubJoinFacts(of: transcripts[index].session)
         // A backfill is a transcript joining the published set, which is a move of the set itself.
-        // A reread's backfill replaces a row already in it and is a move of that row — and every
-        // batch that follows lands in the fresh reading, never in the stale one it replaced.
-        var moved = !transcripts[index].isSettled || transcripts[index].rereading != nil
-        transcripts[index].beginBatch()
+        // A reread's backfill replaces a row already in it and is a move of that row.
+        var moved = !transcripts[index].isSettled
+        moved = transcripts[index].beginBatch() || moved
+        let before = HubJoinFacts(of: transcripts[index].session)
         // Nothing in the batch and the transcript already settled: no event to append and no
         // record to claim, so no row moves. Every tail that ENDS takes this path (#858). A batch
         // with events in it always moves one, folded fact or not — the stream's stamp is what the

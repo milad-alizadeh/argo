@@ -14,8 +14,9 @@
 ///
 /// Held back ONCE, though: a transcript that has stood on the roster stands through every later
 /// sweep, whatever its link says. A Session resumed from a file outside the window declares a leaf
-/// nobody in the set owns, and re-asking the question on every sweep that admits a file — every
-/// new Session on the machine — took that row away for the length of each read (#1134).
+/// nobody in the set owns, and re-asking on every sweep took that row away for the length of each
+/// read (#1134). The trade: a parent admitted AFTER its continuation stood absorbs it when it
+/// settles — one move, on the rare sweep that widens the window, instead of a vanish on every one.
 struct HubJoinPublishable {
     /// The transcripts to fold, in the join's own order — which is what keeps the rows already on
     /// screen in the order they are already in.
@@ -26,7 +27,7 @@ struct HubJoinPublishable {
     let isComplete: Bool
 
     /// `standing` is the ids the previous fold published — what stays published now.
-    init(of transcripts: [HubTranscript], owners: [String: String], standing: Set<String> = []) {
+    init(of transcripts: [HubTranscript], owners: [String: String], standing: Set<String>) {
         let unsettled = Set(transcripts.lazy.filter { !$0.isSettled }.map(\.sessionID))
         guard !unsettled.isEmpty else {
             self.transcripts = transcripts
