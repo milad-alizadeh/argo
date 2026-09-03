@@ -4,8 +4,9 @@ import { readFileSync } from 'node:fs'
 
 const read = (file) => readFileSync(file, 'utf8')
 const LINT_CONFIG =
-  /(^|\/)(biome\.jsonc?|eslint\.config\.\w+|\.eslintrc(\.\w+)?|\.oxlintrc\.json|\.swiftlint\.yml|ruff\.toml|\.golangci\.ya?ml|phpstan\.neon|\.jscpd\.json)$/
-const ESCAPE_HATCH = /`(any|as!|try!|@ts-ignore|swiftlint:disable|eslint-disable|noqa|nolint)`/g
+  /(^|\/)(biome\.jsonc?|eslint\.config\.\w+|\.eslintrc(\.\w+)?|\.oxlintrc\.json|\.swiftlint\.yml|\.swiftformat|ruff\.toml|pyproject\.toml|setup\.cfg|\.golangci\.ya?ml|clippy\.toml|\.rubocop\.yml|detekt\.ya?ml|phpstan\.neon|\.editorconfig|\.jscpd\.json)$/
+const ESCAPE_HATCH =
+  /`(any|as!|try!|@ts-ignore|@ts-expect-error|biome-ignore|swiftlint:disable|eslint-disable|noqa|type: ignore|nolint|#\[allow|unsafe|rubocop:disable|@Suppress(Warnings)?|interface\{\})`/g
 const CAP = /\b\d{1,3}\s*(lines?|parameters?|params|levels?|arguments?)\b/gi
 const SELF_CHECK = /^#+ .*(self-check|checklist before you finish|before you finish)/im
 

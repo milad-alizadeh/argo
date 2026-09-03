@@ -85,19 +85,15 @@ package build never touched.
 
 ## Where an exemption goes
 
-Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule doesn't
+Exemptions live in **four** files, each entry labelled **KIND** (permanent — the rule doesn't
 apply to that category) or **RATCHET** (debt; the list may only shrink):
 
 | File | Covers |
 |---|---|
 | `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
 | `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
-| the module map's `placement` block | the folder rules — `allow`/`ratchet`/`exclude`, each value its own reason |
 | `scripts/design-tokens-swift-allow.txt` | design constants outside `ArgoDesign` — one `grep -E` pattern per line with a comment line above it saying why. Both halves are gates: an entry with no reason is refused, and so is one that matches nothing any more |
 | `.swiftlint.yml` | the Swift caps, ratchets inline — including the initializer cap that `swift-boundaries.sh` edge 6 reads from there and SwiftLint itself cannot check. That one's ratchet is a named list, not a number: `# INIT: <file> <count> — <why>`, one line per grandfathered init, and edge 6 fails a stale line as well as an unnamed init (#992) |
-
-The placement gates fail on a **stale** exemption too: an entry naming no file is deleted, not
-left to re-authorise a future breach.
 
 Two caps have no rule to enforce them and live in `rules/` prose only: `as` assertions, and
 exhaustive `switch` over a union.
@@ -140,17 +136,3 @@ Prove a config change by effect, one of:
 2. Plant a throwaway clone pair inside an ignored path and another outside; confirm only the
    outside pair is reported.
 
-## Why placement is a pre-commit gate, not just CI
-
-A misplaced file caught in CI becomes a follow-up ticket written after the session that produced
-it has ended. Caught pre-commit, it is fixed by whoever still has the context.
-
-The `PreToolUse(Write)` hook (`scripts/placement-guard.mjs`) pushes that one step earlier still —
-it denies the file's creation before anything imports it. It shares its root-pattern derivation
-with the gate, so the two cannot drift.
-
-## Why ADR-0021 made every module declare an entry
-
-The predecessor gate guarded **one hardcoded path**, so every module added after it was silently
-exempt — and flattened. Requiring every module to declare what may sit loose at its root, and
-FAILING a module with no entry, is what closes that.

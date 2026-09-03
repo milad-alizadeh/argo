@@ -163,12 +163,6 @@
       "skillPath": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
       "computedHash": "552b0f48b9fe054aa93c5d432fefbd7bd9645e3f2d20b4e22432453a81800b21"
     },
-    "setup-module-boundaries": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/setup-module-boundaries/SKILL.md",
-      "computedHash": "6e1bb5111374b95b94d3c36d840e1531917937268d1d858876c79dd3738fbbff"
-    },
     "setup-quality-gates": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",

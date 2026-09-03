@@ -17,8 +17,9 @@ one page of prose that is left. Two rules bind every step:
 ## 1. Detect the toolchain
 
 Write down, with a value or "none": the linter that already runs here and its config file
-(`biome.jsonc`, `eslint.config.*`, `.oxlintrc.json`, `ruff.toml`, `.golangci.yml`,
-`phpstan.neon`; whatever is here wins, one gate set per language in a polyglot repo); its
+(`biome.jsonc`, `eslint.config.*`, `.oxlintrc.json`, `ruff.toml` or `pyproject.toml`,
+`.golangci.yml`, `.swiftlint.yml`, `clippy.toml`, `detekt.yml`, `.rubocop.yml`, `.editorconfig`
+analyzer rules; whatever is here wins, one gate set per language in a polyglot repo); its
 installed version; the package manager and lint/test scripts; the pre-commit setup; the CI
 workflows; whether `rules/` exists. No linter at all: install the ecosystem's current default,
 configured minimally, then continue. A previous unfinished run of this skill (staged configs,
@@ -35,7 +36,7 @@ Each row is an intent with a target, not a rule name.
 | 3 | Positional parameters | 3 max |
 | 4 | Nested ternaries | forbidden |
 | 5 | `any` (or the language's opt-out type) | forbidden |
-| 6 | Assertion escape hatches (`as`, non-null `!`, `@ts-ignore`) | forbidden |
+| 6 | Escape hatches: casts, force-unwraps, and the linter's own suppression comment | forbidden |
 | 7 | `else` after a returning branch | forbidden |
 | 8 | Non-exhaustive switch over a union | error |
 | 9 | Unused variables and imports | error |
@@ -45,10 +46,9 @@ Each row is an intent with a target, not a rule name.
 | 13 | Imports that bypass a module's public entry or cross a layer | error |
 | 14 | Circular dependencies between modules | error |
 | 15 | Focused or skipped tests, committed | error |
-| 16 | A file loose at a module root, a kind-folder, an unearned shared symbol | error |
 
-Intents 1–9 are ordinary lint rules; 10–15 get their own tools (§4); 16 belongs to
-`setup-module-boundaries`, whose scripts you wire into `quality` without reimplementing them.
+Intents 1–9 are ordinary lint rules; 10–15 get their own tools (§4). Where a file may live is
+prose in `house.md` (group by domain, never by kind), since no tool reads that judgement.
 **9 and 12 are two intents**: an unused-variable rule reads one file and sees an unimported
 export as used, so "dead code is gated" is false until 12 has a tool. **A missing intent is
 not a gap to fill**: a language with no gradual-typing escape has no intent 5, one whose
@@ -64,6 +64,11 @@ compiler rejects unused variables has 9 for free. Mark those **n/a**, distinct f
 | oxlint | `oxlint --rules` |
 | Ruff | `ruff rule <code>`, `ruff linter` |
 | golangci-lint | `golangci-lint help linters` lists linters, not the rules inside them |
+| SwiftLint | `swiftlint rules`; `swiftlint rules <id>` prints one with its parameters |
+| clippy | `cargo clippy -- -W help` lists every lint with its default level |
+| detekt | `detekt --generate-config` writes the full rule set with defaults |
+| RuboCop | `rubocop --show-cops` |
+| .NET analyzers | the rule id in `.editorconfig`; `dotnet build -warnaserror` is the only proof |
 
 - One intent may need several rules (6 is usually three) or none. Set the number and the
   `error` severity explicitly even where they match the default.
@@ -83,31 +88,36 @@ Done when every intent has a verified rule name, or an n/a or prose-only verdict
 
 ## 4. The intents that need their own tool
 
-- **Duplication (10).** A copy-paste detector (`jscpd` is language-agnostic; `dupl` for Go,
-  PMD-CPD on the JVM) with a minimum clone size, a threshold that exits non-zero, and ignores
+- **Duplication (10).** A copy-paste detector (`jscpd` reads every language here, Swift and
+  Rust included; `dupl` for Go, PMD-CPD on the JVM) with a minimum clone size, a threshold that exits non-zero, and ignores
   for generated output, lockfiles, snapshots and vendored code.
-- **File length (11).** The linter's per-file rule where one exists; note what it counts, since
-  a comment-skipping cap is looser than a raw count. Otherwise copy
-  `templates/file-length-check.mjs` verbatim (Node 22+ or Bun) and run it with the source
+- **File length (11).** The linter's per-file rule where one exists (`file_length` in SwiftLint,
+  `max-lines` in ESLint); note what it counts, since a comment-skipping cap is looser than a raw
+  count. Otherwise copy `templates/file-length-check.mjs` verbatim (Node 22+ or Bun, present
+  wherever the skills installer ran) and run it with the source
   globs and cap; record exemptions with `--exempt-from <file>`, one glob per line with a
   reason, kind exemptions separate from ratchet debt.
 - **Dead public surface (12).** A whole-graph pass: `knip` for JS/TS, `deadcode` for Go,
-  `vulture` for Python; Rust's compiler already reports it, so n/a. Ratchet the first run.
+  `vulture` for Python, Periphery for Swift, detekt's `UnusedPrivateMember` plus the compiler's
+  unused warnings as errors on Kotlin; Rust's compiler already reports it, so n/a. Ratchet the first run.
   knip's per-file ignore leaves that file unguarded for every future dead export, its
   configuration hints will suggest deleting deliberate prospective ignores, and its `project`
   globs are an enumerated scope: label each of those where it lives.
-- **The import graph (13, 14).** `dependency-cruiser` for JS/TS, `import-linter` for Python,
-  `go-arch-lint` or `depguard` for Go, ArchUnit on the JVM. Go's compiler rejects cycles, so 14
-  is n/a there. On TypeScript set `tsPreCompilationDeps: true`, since compilation erases
-  `import type` and a deep type-only import otherwise exits 0; prove it with a planted
-  type-only deep import. The module → public-entry map is data the config compiles, owned by
-  `setup-module-boundaries`; a module missing from the map is added to the map, never fixed by
-  loosening a pattern. Land 13 as a ratchet on any existing repo.
-- **Placement (16).** `setup-module-boundaries` §5 owns it; wire its three scripts into
-  `quality` and count their first-run breaches like any other ratchet.
+- **The import graph (13, 14).** Layering first (a `core` never imports a feature, a `client`
+  never imports `server`), privacy second, and privacy by the cheapest mechanism the ecosystem
+  has: a manifest `exports` field for a published package, an `internal/` folder (Go's compiler
+  enforces it; elsewhere one rule that forbids importing `internal/` from outside its parent),
+  a barrel only where one already exists, since a barrel costs cold start, HMR and tree-shaking.
+  Tools: `dependency-cruiser` for JS/TS, `import-linter` for Python, `go-arch-lint` or `depguard`
+  for Go, ArchUnit on the JVM, a grep over `import` lines for Swift and Kotlin, where the compiler
+  owns privacy. Go's compiler rejects cycles, so 14 is n/a there. On TypeScript set
+  `tsPreCompilationDeps: true`, since compilation erases `import type` and a deep type-only
+  import otherwise exits 0; prove it with a planted type-only deep import. A new module gets its
+  own rule, never a loosened pattern. Land 13 as a ratchet on any existing repo.
 - **Test hygiene (15).** `no-focused-tests` / `no-disabled-tests` from the test plugin
   (`eslint-plugin-vitest`, `eslint-plugin-jest`, or the ecosystem's equivalent); n/a where the
-  ecosystem has no focus mechanism.
+  ecosystem has no focus mechanism; on Swift Testing and XCTest, a grep for a focused trait or
+  a commented-out test is the tool.
 
 ## 5. Land it on an existing codebase: ratchet, never loosen
 
@@ -160,8 +170,8 @@ nothing a linter could check.
 Then add a **Rules and gates** section to the project doc that exists (`AGENTS.md`; `CLAUDE.md`
 too only if it does not merely import `AGENTS.md`; never create a stub for the other): the
 script name, what it gates, every file holding exemptions (a duplication config's ignore list
-is one), that a new violation is fixed or ratcheted and never suppressed inline, and a pointer
-at `rules/house.md`. Claim only what fired: "dead code" only if intent 12 has a tool, "every
+is one), that a new violation is fixed or ratcheted and never suppressed inline, and a pointer at
+`rules/house.md`. Claim only what fired: "dead code" only if intent 12 has a tool, "every
 rule an error" only after the warn count is zero. Grep the installed prose for `{{` and ship
 zero hits. Where the doc already carries a Rules section, replace it in place.
 

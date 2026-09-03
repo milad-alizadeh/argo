@@ -22,11 +22,10 @@ recommendation, then ask one grouped multi-select question with the recommendati
 | Choice | Delegates to | Recommend when | Order |
 |---|---|---|---|
 | Quality gates as errors, plus the one-page prose residue | `setup-quality-gates` | always | 1 |
-| Module boundaries | `setup-module-boundaries` | monorepo or layered app | 2 |
-| Design infra | `setup-design-infra` | project has UI | 3 |
-| Design foundations, the token values | `setup-design-foundations` | UI with no settled scale | 4, fills 3 |
-| Always-on task tracking | this skill, below | always | 5 |
-| Guardrail hooks | scaffolder `--hooks` | user runs git worktrees | 6 |
+| Design infra | `setup-design-infra` | project has UI | 2 |
+| Design foundations, the token values | `setup-design-foundations` | UI with no settled scale | 3, fills 2 |
+| Always-on task tracking | this skill, below | always | 4 |
+| Guardrail hooks | scaffolder `--hooks` | user runs git worktrees | 5 |
 | Audit what every session loads | `audit-agent-context` | always | last, since every step above adds to the bill |
 
 Done when the user has answered the one question.
