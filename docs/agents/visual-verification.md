@@ -15,6 +15,12 @@ looking at a surface you are building.
 width is part of the state. Entries live in `ArgoSpecimens/SpecimenRegistry+*.swift`, and
 `Argo --list-specimens` prints every name.
 
+**Hold a click on one point** — `swift scripts/HoldClick.swift <pid> <x> <y> <out-prefix>`, against
+an app left up with `ARGO_KEEP_RUNNING=1`. It captures the window mid-press and after release, the
+one state a still specimen has no name for (#1137). It moves the real pointer and presses the real
+button, so it is under the same rule as an e2e run: say so and wait. Its header records what a
+scripted press does and does not draw.
+
 **Drive it like a user** — `sh scripts/e2e-test.sh`, also from `apps/macOS`. The only tests here
 that click; every other Swift test builds a projection and asserts on it.
 
