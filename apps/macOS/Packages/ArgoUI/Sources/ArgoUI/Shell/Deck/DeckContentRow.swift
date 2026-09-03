@@ -98,9 +98,7 @@ struct DeckContentRow: View {
                 )
                 DeckSeparator()
                     .argoUnderCanopy()
-                MinimapLane(feed: table)
-                    .frame(width: zoning.laneWidth)
-                    .argoUnderCanopy()
+                lane(zoning)
                 panel(zoning)
             }
             // One transaction for the whole re-flow: two zones move on the one fact — the panel
@@ -112,6 +110,27 @@ struct DeckContentRow: View {
             // so that is where focus still is.
             .onExitCommand(perform: dismissTopmost)
             .environment(\.deckIsResizing, isResizing)
+        }
+    }
+
+    /// The overview lane, on screen only over a settled document — absent, never approximate
+    /// (ADR-0030, Rule 7). A lane fed a document nobody has measured would draw marks at positions
+    /// the pass is about to replace, which is the map moving under the reader that D25's amendment
+    /// names.
+    ///
+    /// Its COLUMN stays either way. The lane's width is taken out of what the feed is drawn
+    /// across, so a lane that came and went with the document would change the width its rows were
+    /// measured at — which owes another whole-document pass, whose landing changes the width back.
+    /// Reserving the space is what keeps the arrival of the lane from being the thing that
+    /// invalidates it.
+    @ViewBuilder private func lane(_ zoning: DeckZoning) -> some View {
+        if table.isSettled {
+            MinimapLane(feed: table)
+                .frame(width: zoning.laneWidth)
+                .argoUnderCanopy()
+        } else {
+            Color.clear
+                .frame(width: zoning.laneWidth)
         }
     }
 

@@ -46,6 +46,15 @@ extension SpecimenRegistry {
                 .argoDeckSurface()
                 .environment(\.argoFeedVacancy, .unread)
         },
+        // The same state on the WHOLE deck, which is where lane 5's half of it is visible: the
+        // overview lane is ABSENT while the document is being measured, never a second and
+        // approximate map (ADR-0030, Rule 7). Its column is held open beside the reading, because
+        // the lane's width comes out of what the rows are measured across — see
+        // `DeckContentRow.lane(_:)`.
+        SpecimenEntry("deckUnreadLane") {
+            SpecimenScene.sessions([])
+                .environment(\.argoFeedVacancy, .unread)
+        },
         // The deck mid-drag: the reading at the width it was measured across, cut off by a pane the
         // reader has narrowed since (ADR-0030, Rule 6). See `FrozenResizeSpecimen`.
         SpecimenEntry("deckFrozenResize") { FrozenResizeSpecimen() },

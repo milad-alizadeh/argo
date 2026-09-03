@@ -81,8 +81,16 @@ struct FeedPreview: View {
                 )
                 if showsOverview {
                     DeckSeparator()
-                    MinimapLane(feed: table, naming: naming)
-                        .frame(width: ArgoLayout.minimapLaneWidth(sharing: proxy.size.width))
+                    // Gated exactly as the deck gates it (`DeckContentRow.lane(_:)`): the lane is
+                    // absent over a document nobody has measured, and its column is held open
+                    // either way so its arrival is not what changes the width its rows were
+                    // measured across.
+                    let lane = ArgoLayout.minimapLaneWidth(sharing: proxy.size.width)
+                    if table.isSettled {
+                        MinimapLane(feed: table, naming: naming).frame(width: lane)
+                    } else {
+                        Color.clear.frame(width: lane)
+                    }
                 }
             }
         }
