@@ -169,12 +169,6 @@
       "skillPath": "packages/argo-skills/skills/setup-module-boundaries/SKILL.md",
       "computedHash": "6e1bb5111374b95b94d3c36d840e1531917937268d1d858876c79dd3738fbbff"
     },
-    "setup-output-style": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/setup-output-style/SKILL.md",
-      "computedHash": "ce056da763a36928ab2165ab8cbf3be59937f78e94090fa493e846bae6696d09"
-    },
     "setup-quality-gates": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
