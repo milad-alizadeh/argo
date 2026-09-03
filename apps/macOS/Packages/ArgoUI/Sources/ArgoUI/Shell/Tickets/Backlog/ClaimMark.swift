@@ -10,17 +10,12 @@ struct ClaimMark: View {
 
     @Environment(\.argo) private var argo
 
-    /// The opaque ground to lay under the mark, for `BlockageMark`'s reason (#1071): a selected
-    /// row's loud accent is not a ground `state.running` was chosen against.
-    var backdrop: ArgoColor?
-
     var body: some View {
         ArgoGlyph(Self.symbol, .inline)
             .foregroundStyle(TicketsView.inProgress.ink(argo).color)
             // The blockage mark's box, so the two sit on one vertical whether a row carries one
             // of them or both.
             .frame(minHeight: ArgoBacklogList.trailingMark)
-            .argoTrailingMarkPlate(backdrop)
             .fixedSize()
             .help("A live Session is on this ticket.")
             // The row speaks the mark as part of one sentence — see `BacklogRow.announcement`.

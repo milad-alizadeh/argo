@@ -15,35 +15,41 @@ struct LabelChip: View {
     /// The label this chip draws, where it is one. `nil` says this chip is Argo's own overflow
     /// count rather than a provider label, which has no hue to spend either way.
     var label: TicketLabel?
-    /// The opaque ground to lay the chip's own wash over, where the surface under the chip is not
-    /// one its hues were read against — a selected backlog row, whose ground is the loud rung of
-    /// the brand hue (#1071). `nil` on the deck, which is what `ink` already measures against.
-    var backdrop: ArgoColor?
+    /// The opaque surface the chip sits on. BOTH readings are taken against it — the word is
+    /// carried away from it, and the chip's wash resolves over it — so a chip on a selected
+    /// backlog row reads exactly as one on the deck does (#1165). `nil` says the deck, which is
+    /// where every chip outside the backlog's rows sits.
+    var readOn: ArgoColor?
 
-    init(label: TicketLabel, backdrop: ArgoColor? = nil) {
+    init(label: TicketLabel, on readOn: ArgoColor? = nil) {
         self.word = label.name
         self.label = label
-        self.backdrop = backdrop
+        self.readOn = readOn
     }
 
     /// Argo's own marker over the labels a row had no width for. Neutral by construction: it counts
     /// labels rather than being one, so no provider colour could be right for it.
-    init(counting word: String, backdrop: ArgoColor? = nil) {
+    init(counting word: String, on readOn: ArgoColor? = nil) {
         self.word = word
-        self.backdrop = backdrop
+        self.readOn = readOn
     }
 
-    /// Read here rather than at the call site because the treatment needs the surface the chip sits
-    /// on, and that is a palette fact only a view holds — see `LabelInk`.
+    /// The surface every reading below is taken against: what the caller says the chip sits on, or
+    /// the deck. Resolved here rather than at the call site because the fallback is a palette fact
+    /// only a view holds — see `LabelInk`.
+    private var under: ArgoColor {
+        readOn ?? argo.color.surface.base
+    }
+
     private var ink: LabelInk? {
-        label.flatMap { LabelInk($0, on: argo.color.surface.base) }
+        label.flatMap { LabelInk($0, on: under) }
     }
 
-    /// The chip's own wash, made OPAQUE where it is handed a backdrop: the word is carried to a
-    /// ratio against the deck, so a wash composited onto anything else is a reading nobody took.
+    /// The chip's own wash, resolved OPAQUE over that surface: the word is carried to a ratio
+    /// against it, so a wash left translucent over some other ground is a reading nobody took. On
+    /// the deck this resolves to exactly what the translucent wash drew.
     private var ground: ArgoColor {
-        let own = ink?.ground ?? argo.color.surface.control
-        return backdrop.map(own.composited(over:)) ?? own
+        (ink?.ground ?? argo.color.surface.control).composited(over: under)
     }
 
     var body: some View {

@@ -1,3 +1,4 @@
+import ArgoAtoms
 import ArgoUI
 import SwiftUI
 
@@ -8,14 +9,15 @@ import SwiftUI
         ForEach(TicketsRoomProjection.drawn(
             TicketsRoomProjection.bands(of: TicketsFixture.room.backlog)[0], shut: [],
         )) { drawn in
-            // The ground with the ink, the way the outline pairs them: an ink for a selected row
-            // over the deck would preview a state the app never draws.
+            // The ground with the ink, the way the outline pairs them: an ink read on the
+            // selection ground over the deck would preview a state the app never draws.
+            let isSelected = drawn.id == 272
             let ink = BacklogRowInk(
-                isSelected: drawn.id == 272, isRail: drawn.row.isRail, palette: .graphite,
+                isSelected: isSelected, isRail: drawn.row.isRail, palette: .graphite,
             )
             BacklogRow(drawn: drawn, isOpen: true, ink: ink, toggle: drawn.isParent ? {} : nil)
                 .previewSafeListRow()
-                .listRowBackground(ink.ground.color)
+                .argoSelectedRowGround(isSelected: isSelected)
         }
     }
     .listStyle(.inset)
