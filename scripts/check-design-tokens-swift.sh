@@ -2,7 +2,7 @@
 # Design-token guardrail for SwiftUI — the repo's only one, since the CSS sibling it was
 # written against retired with the Electron cockpit. The bargain is unchanged: it fails when
 # a design constant escapes the token contract, and a finding is
-# fixed by snapping to an existing token or promoting a named one (rules/design-system.md),
+# fixed by snapping to an existing token or promoting a named one (rules/swift.md),
 # never by allowlisting, unless it is pre-existing debt tracked in a ticket.
 #
 # Scope is deliberately narrow and greppable. It looks at colour construction, the type
@@ -119,7 +119,7 @@ if [ -n "$findings" ]; then
   printf '%s\n\n' "$findings"
   count=$(printf '%s\n' "$findings" | wc -l | tr -d ' ')
   echo "check:design-tokens-swift — $count design constant(s) outside the token contract."
-  echo "Fix: snap to an existing token or promote a named one (rules/design-system.md)."
+  echo "Fix: snap to an existing token or promote a named one (rules/swift.md)."
   echo "Colours come from ArgoColor, type from ArgoTypography, the rest from ArgoSpacing/Radius/Stroke/Motion."
   exit 1
 fi

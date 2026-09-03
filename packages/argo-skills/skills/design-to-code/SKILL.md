@@ -58,8 +58,8 @@ Show the user the inventory and which blocks stayed inline, and get a nod.
 
 ## 4. Harden
 
-Build or relocate each extracted component per the `ui-components` and `design-system`
-rules, placed by its `location`, with a colocated isolated-state case per `stack.md` for the
+Build or relocate each extracted component per the target repo's `rules/`, placed by its
+`location`, with a colocated isolated-state case per `stack.md` for the
 states it has. Add a screen-level case for the assembled view, composed from the child
 cases, with connected logic in a wrapper outside it.
 

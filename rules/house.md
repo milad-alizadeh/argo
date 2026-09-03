@@ -19,6 +19,10 @@ config keeps it, never inline (`docs/agents/quality-gates.md`).
   once; a cast or an all-optional model standing in for a check is a bug moved inward.
 - **One source of truth.** A literal in two call sites is extracted before the second paste.
   A new variant of an existing kind is one new file plus one registration line.
+- **Group by domain, never by kind.** `Tickets/`, not `Helpers/` or `Utils/`; a helper is born
+  beside its only caller and hoists on the third.
+- **Tokens by name.** Every colour, spacing, radius, duration and type size is a named token
+  from the design package, never an inline literal or hex.
 - **Only what's needed.** No config knob, layer or hook for a need that doesn't exist yet.
   Delete dead code on sight.
 

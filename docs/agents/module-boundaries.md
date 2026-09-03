@@ -8,8 +8,7 @@ never touches a package boundary does not pay for it.
 `apps/macOS`'s layers — `ArgoEngine` ⊥ `ArgoDesign` → `ArgoAtoms` / `ProseText` →
 `MermaidLayout` → `MermaidView` → `ArgoUI` ⊥ the app target — are enforced by
 `scripts/swift-boundaries.sh` (in `quality:swift`, on the `macos` CI job and in pre-commit).
-Every edge is checkable from imports and declarations alone, which is why they are gates rather
-than review notes. Four of the nine are ADR-0022's layering; the sharpest of those is **exactly
+Four of the nine are ADR-0022's layering; the sharpest of those is **exactly
 one file in `ArgoUI` may read live Hub state** — the Hub → cockpit projection. Everything else
 takes a value.
 

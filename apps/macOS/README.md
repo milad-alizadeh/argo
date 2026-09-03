@@ -107,8 +107,7 @@ so does CI, with SwiftFormat in `--check` mode rather than rewriting.
 | Duplication | `jscpd`, Swift included | `.jscpd.json` |
 
 The numbers are `biome.jsonc`'s numbers: a 200-line function is as unreadable in Swift as in
-TypeScript. `rules/swift.md` is the prose half — how Swift spells `rules/house.md`,
-plus the SwiftUI section that extends `rules/swift.md`.
+TypeScript. `rules/swift.md` is the prose half: how Swift spells `rules/house.md`, plus the views.
 
 Boundaries are checkable by imports and declarations alone, which is why they are gates rather
 than review notes: **ArgoEngine** never imports a UI framework, **ArgoDesign** imports nothing of

@@ -95,8 +95,8 @@ apply to that category) or **RATCHET** (debt; the list may only shrink):
 | `scripts/design-tokens-swift-allow.txt` | design constants outside `ArgoDesign` — one `grep -E` pattern per line with a comment line above it saying why. Both halves are gates: an entry with no reason is refused, and so is one that matches nothing any more |
 | `.swiftlint.yml` | the Swift caps, ratchets inline — including the initializer cap that `swift-boundaries.sh` edge 6 reads from there and SwiftLint itself cannot check. That one's ratchet is a named list, not a number: `# INIT: <file> <count> — <why>`, one line per grandfathered init, and edge 6 fails a stale line as well as an unnamed init (#992) |
 
-Two caps have no rule to enforce them and live in `rules/` prose only: `as` assertions, and
-exhaustive `switch` over a union.
+Two rules have no linter and live in `rules/house.md` prose only: a cast standing in for a
+check, and the exhaustive construct over a closed set.
 
 ## Why the exemption reasons live in sidecars
 

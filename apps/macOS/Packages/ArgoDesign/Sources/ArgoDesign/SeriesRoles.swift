@@ -70,7 +70,7 @@ public extension ArgoPalette {
         /// Every rung of one hue, quietest first.
         ///
         /// The ramp is DERIVED, so no reflected list can see it and the specimen has to draw it by
-        /// hand — beside the full rung, so the weights are judged together. `design-system.md` asks
+        /// hand — beside the full rung, so the weights are judged together. `rules/swift.md` asks
         /// that of every derived role, and it is the gate that catches a rung nobody looked at.
         public func ramp(_ index: Int) -> [(name: String, color: ArgoColor)] {
             Weight.allCases.map { ("\(name(index)) \($0)", hue(index, at: $0)) }

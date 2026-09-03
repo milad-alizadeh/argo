@@ -43,7 +43,8 @@ advertised window. Report bytes and tokens, never a percentile against other rep
 ## 2. Find what does not earn its place
 
 Run the bundled script first; it measures checks 2 and 6–10 mechanically and prints a file
-and a byte count per finding:
+and a byte count per finding. Its layout is Claude Code's; on another harness, list that
+harness's always-on sources by hand and price them the same way:
 
 ```bash
 node <this-skill-dir>/scripts/audit-bloat.mjs <repo-root>

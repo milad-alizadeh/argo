@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 // Prices everything a project loads into an agent session and names the bloat in it.
 // Read-only; prints a report. Usage: node audit-bloat.mjs [repo-root]
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+// The layout it knows is Claude Code's (.claude/, ~/.claude/); for another harness, list
+// that harness's always-on sources by hand and price them the same way.
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 import { documentChecks } from './checks.mjs'
+import { kilobytes, markdownUnder, read, relativeTo, row, section, size } from './report.mjs'
 import { sectionFlags } from './sections.mjs'
-import { scanSkills } from './skills.mjs'
+import { scanSkills, skillSizes } from './skills.mjs'
 
 const root = path.resolve(process.argv[2] ?? '.')
 // A linked worktree's `.git` is a file naming the main checkout's gitdir. The harness reads
@@ -14,31 +17,13 @@ const root = path.resolve(process.argv[2] ?? '.')
 const harnessRoot = (() => {
   const dotGit = path.join(root, '.git')
   if (!existsSync(dotGit) || statSync(dotGit).isDirectory()) return root
-  const m = readFileSync(dotGit, 'utf8').match(/^gitdir:\s*(.+?)\/\.git\/worktrees\//m)
-  return m ? path.resolve(m[1]) : root
+  const match = readFileSync(dotGit, 'utf8').match(/^gitdir:\s*(.+?)\/\.git\/worktrees\//m)
+  return match ? path.resolve(match[1]) : root
 })()
-const SKIP_DIRS = new Set(['node_modules', '.git', 'worktrees', '.build', 'build', 'dist', '.next'])
 const TOKENS_PER_BYTE = 1 / 2.6
 const WORKING_REGION = 120_000
-
-const walk = (dir, out = []) => {
-  if (!existsSync(dir)) return out
-  for (const entry of readdirSync(dir)) {
-    if (SKIP_DIRS.has(entry)) continue
-    const full = path.join(dir, entry)
-    if (statSync(full).isDirectory()) walk(full, out)
-    else out.push(full)
-  }
-  return out
-}
-const rel = (file) =>
-  file.startsWith(root) ? path.relative(root, file) : file.replace(homedir(), '~')
-const read = (file) => readFileSync(file, 'utf8')
-const size = (file) => statSync(file).size
-const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`
+const relative = relativeTo(root)
 const tokens = (bytes) => Math.round(bytes * TOKENS_PER_BYTE)
-const section = (title) => console.log(`\n## ${title}\n`)
-const row = (...cells) => console.log(cells.join('  '))
 
 // --- 1. always-on sources ---
 section('Always-on sources (bytes ÷ 2.6 ≈ tokens)')
@@ -47,27 +32,29 @@ const addSource = (label, file) => {
   if (!file || !existsSync(file) || alwaysOn.has(file)) return
   alwaysOn.set(file, label)
   // An @import pastes the whole file into every request; resolve the chain transitively.
-  for (const m of read(file).matchAll(/^@([^\s]+)$/gm)) {
-    addSource(`import from ${rel(file)}`, path.resolve(path.dirname(file), m[1]))
+  for (const match of read(file).matchAll(/^@([^\s]+)$/gm)) {
+    addSource(`import from ${relative(file)}`, path.resolve(path.dirname(file), match[1]))
   }
 }
 for (const name of ['CLAUDE.md', 'AGENTS.md', 'CLAUDE.local.md'])
   addSource('root', path.join(root, name))
 addSource('user-global', path.join(homedir(), '.claude', 'CLAUDE.md'))
-for (const f of walk(path.join(harnessRoot, '.claude', 'rules')))
-  if (f.endsWith('.md')) addSource('.claude/rules (auto-loaded)', f)
+for (const file of markdownUnder(path.join(harnessRoot, '.claude', 'rules')))
+  addSource('.claude/rules (auto-loaded)', file)
 
 let settings = {}
 try {
   settings = JSON.parse(read(path.join(harnessRoot, '.claude', 'settings.json')))
-} catch {}
+} catch {
+  // No settings file, or one that is not JSON: there is then no output style and no hook.
+}
 if (settings.outputStyle) {
   const styleName = `${settings.outputStyle.toLowerCase().replace(/\s+/g, '-')}.md`
-  for (const dir of [
+  for (const directory of [
     path.join(harnessRoot, '.claude', 'output-styles'),
     path.join(homedir(), '.claude', 'output-styles'),
   ]) {
-    addSource(`output style "${settings.outputStyle}"`, path.join(dir, styleName))
+    addSource(`output style "${settings.outputStyle}"`, path.join(directory, styleName))
   }
 }
 const memoryIndex = path.join(
@@ -84,21 +71,21 @@ if (harnessRoot !== root) row('         ', `harness root: ${harnessRoot}`, '(lin
 let total = 0
 for (const [file, label] of alwaysOn) {
   total += size(file)
-  row(kb(size(file)).padStart(9), rel(file), `(${label})`)
+  row(kilobytes(size(file)).padStart(9), relative(file), `(${label})`)
 }
 
-const { frontmatterBytes, skillBodies } = scanSkills({ root: harnessRoot, walk, read, size })
+const { frontmatterBytes, skills } = scanSkills(harnessRoot)
 total += frontmatterBytes
 row(
-  kb(frontmatterBytes).padStart(9),
-  `skill frontmatter, ${skillBodies.length} skills`,
+  kilobytes(frontmatterBytes).padStart(9),
+  `skill frontmatter, ${skills.length} skills`,
   '(name + description, every turn)',
 )
 
-const rulesBytes = walk(path.join(root, 'rules'))
-  .filter((f) => f.endsWith('.md'))
-  .reduce((n, f) => n + size(f), 0)
-if (rulesBytes) row(kb(rulesBytes).padStart(9), 'rules/', '(pull: reached by pointer, not counted)')
+const rules = markdownUnder(path.join(root, 'rules'))
+const rulesBytes = rules.reduce((sum, file) => sum + size(file), 0)
+if (rulesBytes)
+  row(kilobytes(rulesBytes).padStart(9), 'rules/', '(pull: reached by pointer, not counted)')
 
 const mcp = path.join(harnessRoot, '.mcp.json')
 if (existsSync(mcp)) {
@@ -111,7 +98,7 @@ if (existsSync(mcp)) {
 }
 
 console.log(
-  `\ntotal measurable: ${kb(total)} ≈ ${tokens(total)} tokens = ${((tokens(total) / WORKING_REGION) * 100).toFixed(0)}% of a ${WORKING_REGION / 1000}k working region, re-sent every turn`,
+  `\ntotal measurable: ${kilobytes(total)} ≈ ${tokens(total)} tokens = ${((tokens(total) / WORKING_REGION) * 100).toFixed(0)}% of a ${WORKING_REGION / 1000}k working region, re-sent every turn`,
 )
 
 // --- 2. hooks that can inject context per tool call ---
@@ -124,26 +111,15 @@ for (const [event, entries] of Object.entries(settings.hooks ?? {})) {
 }
 
 // --- 3. per-section view of each always-on file and each rule (pull, but read whole) ---
-const rules = walk(path.join(root, 'rules')).filter((f) => f.endsWith('.md'))
-const refsIn = sectionFlags({ files: [...alwaysOn.keys(), ...rules], read, rel, row, section, kb })
+sectionFlags({ files: [...alwaysOn.keys(), ...rules], relative })
 
-// --- 4. skills by body size ---
-section('Skill bodies over 8 KB (billed when they fire; disclose reference into sibling files)')
-for (const s of skillBodies.filter((s) => s.bytes > 8 * 1024).sort((a, b) => b.bytes - a.bytes))
-  row(kb(s.bytes).padStart(9), s.name)
-section(
-  'Skill descriptions over 300 bytes (always-on; front-load the trigger, one clause per branch)',
-)
-for (const s of skillBodies.filter((s) => s.description.length > 300))
-  row(String(s.description.length).padStart(9), s.name)
+// --- 4. skills by body and description size ---
+skillSizes(skills)
 
+// --- 5. the document checks ---
 documentChecks({
   root,
   rules,
-  corpus: [...alwaysOn.keys(), ...rules, ...skillBodies.map((s) => s.file)],
-  refsIn,
-  rel,
-  row,
-  section,
-  walk,
+  corpus: [...alwaysOn.keys(), ...rules, ...skills.map((skill) => skill.file)],
+  relative,
 })

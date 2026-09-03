@@ -96,7 +96,7 @@ Two names the design does not freeze were extracted anyway:
 - **The Deliveries heading.** `GroupLabel("Deliveries")` — #812 already extracted that atom, and
   this is its fourth caller.
 - **`TicketLinkRow`.** Private to `TicketLinkList`, its only owner. Same tier, one caller: it is
-  that molecule's part, not its peer (`ui-components.md` — naming follows the tree).
+  that molecule's part, not its peer (`rules/swift.md` — naming follows the tree).
 - **Both vacancy pages, as separate views.** ONE `TicketsRoomVacancy` serves them, because the point of
   the pair is the contrast: two views would let the two sentences drift until only one of them still
   said which nothing it was. The design freezes one name for both, and this is why. Which of the two

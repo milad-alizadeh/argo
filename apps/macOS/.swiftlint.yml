@@ -27,7 +27,7 @@ excluded:
 # `scripts/swift-lint.sh` fails on the key otherwise. What the rule reported when it was finally
 # run (495 violations, and wrong often enough that only a rebuild says which): quality-gates.md.
 
-# --- the caps (code-style.md) ---
+# --- the caps (rules/house.md points here) ---
 
 file_length:
   # 150 code lines is the house ceiling. SwiftLint can skip comment-only lines but has no
@@ -245,7 +245,7 @@ identifier_name:
     error: 50
   allowed_symbols: ["_"]
   # EXEMPTION pr, ci — #258, 2026-08-27. `CONTEXT.md` L4 spells two of the five lifecycle nodes
-  # exactly this way, and code-style.md exempts a domain's own acronyms from the min length.
+  # exactly this way, and rules/house.md exempts a domain's own acronyms from the min length.
   excluded: [id, x, y, to, at, on, up, pr, ci]
 
 type_name:
@@ -254,7 +254,7 @@ type_name:
   max_length:
     error: 50
 
-# --- the escape hatches (swift-style.md "No escape hatches") ---
+# --- the escape hatches (rules/swift.md) ---
 
 opt_in_rules:
   - force_unwrapping

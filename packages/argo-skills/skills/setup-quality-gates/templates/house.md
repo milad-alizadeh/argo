@@ -23,6 +23,8 @@ fires, fix the code or ratchet the exemption where the config keeps it, never in
 - **Group by domain, never by kind.** `checkout/`, not `utils/` or `types/`; a helper is born
   beside its only caller and hoists on the third. Callers import a module's public entry
   ({{PUBLIC_ENTRY}}), never a leaf.
+- **Tokens by name.** In UI code every colour, spacing, radius, duration and type size is a
+  named token, never an inline literal or hex.
 - **Only what's needed.** No config knob, layer or hook for a need that doesn't exist yet.
   Delete dead code on sight.
 
