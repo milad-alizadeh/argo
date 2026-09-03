@@ -31,3 +31,9 @@ apps/macOS/buildServer.json
 .cursor/skills/
 .codex/skills/
 .rtk/.rtk
+
+# A real transcript, for the local figure recording over the largest Session (ADR-0030). The
+# repository is public and a transcript is somebody's own words, so the whole directory is
+# ignored rather than one name — what is committed is the synthetic of it, under
+# apps/macOS/Packages/ArgoUI/Sources/ArgoFixtures/Fixtures.
+apps/macOS/Fixtures/
