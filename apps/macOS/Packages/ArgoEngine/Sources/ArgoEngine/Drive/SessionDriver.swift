@@ -57,6 +57,21 @@ public protocol SessionDriver {
     /// answers when the walk is done, so the caller's refusal covers the whole of it.
     func setMode(_ mode: SessionMode, for sessionID: String) async throws
 
+    /// Put the Session on a named model (#558). The id is the CLI's OWN — an alias it takes, or a
+    /// full model name — and it is passed through untouched: Argo's readable table is for the
+    /// composer's ink and has no business narrowing what may be asked for.
+    ///
+    /// `async` because an adapter may have to wait to place one — not because this one does. Unlike
+    /// `setMode`, it does NOT answer when the last byte has gone: the line is typed the way a Turn
+    /// is, as a paste and a Return a pause apart, and only the paste is written before this
+    /// returns. What it answers is that a live surface took the line, which is the same promise
+    /// `send` makes about a Turn.
+    func setModel(_ modelID: String, for sessionID: String) async throws
+
+    /// Put the Session on one rung of the effort scale (#558). Beside `setModel` and never folded
+    /// into it: they are two knobs, an adapter can expose one alone, and `surface(of:)` says which.
+    func setEffort(_ effort: SessionEffort, for sessionID: String) async throws
+
     /// What the adapter behind this Session DECLARES about itself (#761) — the one member that
     /// states rather than acts, and the only place a new capability is added.
     ///
@@ -130,6 +145,14 @@ public enum SessionDriveError: Error, Equatable {
     /// `Auto` among them, which is nothing at an idle prompt and a widened boundary while a tool
     /// call is in flight.
     case modeBusy
+    /// Model or Effort was asked for on an adapter that declares neither (#558). Unreachable from
+    /// the composer, which draws no control an adapter has not declared — so this answers the race
+    /// where a Session's surface changed under a popover that was already open.
+    case runFactsUnsupported
+    /// Model or Effort was asked for mid-Turn (#558). The CLI takes each as a line typed at its own
+    /// prompt, and a line typed mid-Turn is QUEUED as the next prompt rather than run — so it would
+    /// land in the feed as something the user said, long after the popover said it had been set.
+    case runFactsBusy
     /// A rung was asked for while a walk was still under way (#653). The ring is stepped one
     /// keystroke at a time, so a second walk would count its distance from a stance the first has
     /// already left and interleave its keystrokes — landing the Session on a rung nobody picked.
@@ -151,6 +174,12 @@ public enum SessionDriveError: Error, Equatable {
         // states the refusal and leaves the remedy to whoever is holding the intent.
         case .modeBusy: "The Mode cannot be walked while a Turn is running"
         case .modeWalking: "A Mode change is already under way on this Session"
+        case .runFactsUnsupported:
+            "This adapter does not choose its own Model or Effort"
+        // The remedy is left unnamed for the reason `modeBusy` leaves it: stopping the Turn is not
+        // the only way past this, and the wait is the expected way.
+        case .runFactsBusy:
+            "Model and Effort cannot be changed while a Turn is running"
         case .cannotAttach:
             "This adapter takes no attachments — dropped files are refused rather than "
                 + "silently dropped."

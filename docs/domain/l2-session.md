@@ -109,6 +109,22 @@
   cluster below. A Session (root-Agent) fact, not per-Subagent. DIRECT for managed, tier-gated
   for external.
 
+- **Model** and **Effort** — the CLI's OWN two knobs, which Argo states and sets and never
+  interprets: which model the Session runs on, and how hard it is told to think. **DERIVED** on the
+  way in — `model` off an assistant record, `effort` off a top-level record field — and rendered
+  VERBATIM either way: a model id Argo's readable table has never heard of is a model, not an
+  error, and an effort word off the scale is a level a newer CLI grew. Either unread is `unknown`
+  rather than a plausible value.
+
+  **Neither is Mode**, and the separation is load-bearing (#558): Mode is Argo's standing autonomy
+  stance and settles how far the agent may act before it stops, while these two settle what does
+  the acting. Stating them together on one control would imply that changing the model changes how
+  often you are asked. They sit on the composer beside Mode and NOT on the deck header, because a
+  value stated in two places is one you keep in sync by eye.
+
+  Whether either can be SET is declared per adapter, not discovered: an adapter that exposes
+  neither draws no control for them at all.
+
 - **`SessionFacts` — dissolved, not an entity.** git facts (`dirty/unpushed/headSha`) →
   **Workspace**; code-host facts (`pr/ci/review`) → **Delivery**; liveness/mode → **Session
   status/Mode**.

@@ -66,6 +66,9 @@ public extension CockpitPresentation {
         public let id: String
         public let title: String
         public let model: String?
+        /// The CLI's own word for the effort level, verbatim and unread (#558) — `ClaudeEffort`
+        /// says what it means on the scale, and the composer states whatever this is either way.
+        public let effort: String?
         public let workspaceLocation: String?
         /// Which agent program is running (`CONTEXT.md` L2). Absent where Argo cannot say, which
         /// is every Session read from a record whose CLI it did not recognise.
@@ -185,6 +188,7 @@ public extension CockpitPresentation {
             self.access = access
             self.status = status
             self.model = chain.model
+            self.effort = chain.effort
             self.cli = chain.cli
             self.entry = chain.entry
             self.lastSeenAtMs = chain.lastSeenAtMs

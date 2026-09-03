@@ -133,7 +133,7 @@ extension CockpitPresentation.Session {
             access: Access(provenance: session.provenance),
             status: session.status,
             chain: Chain(
-                program: .init(cli: session.cli, model: session.model, entry: session.entry),
+                program: Chain.Program(observed: session),
                 span: .init(startedAtMs: session.startedAtMs, lastSeenAtMs: session.lastSeenAtMs),
                 handedOffTo: session.handedOffTo,
                 companionChannel: session.companionChannel,
@@ -283,5 +283,18 @@ extension CockpitPresentation.Session.Access {
         case .external: .external
         case .orphaned: .orphaned
         }
+    }
+}
+
+/// What is running the chain, read off the Hub's own reading of it.
+///
+/// Its own initializer rather than four arguments at the one call site: all four are read off the
+/// same records at the same moment, and grouping them is what `Program` exists for (ADR-0027).
+extension CockpitPresentation.Session.Chain.Program {
+    init(observed session: HubSession) {
+        self.init(
+            cli: session.cli, model: session.model,
+            effort: session.effort, entry: session.entry,
+        )
     }
 }

@@ -11,7 +11,11 @@ extension ComposerSpecimen {
     static let composer = SessionComposerProjection.Composer(
         sessionID: "specimen",
         placeholder: "Message Claude Code…",
-        facts: "Opus 5",
+        facts: RunFacts(
+            model: "claude-opus-5",
+            effort: .exactly(.medium, cli: "medium"),
+            chooses: .both,
+        ),
         standingAllows: [],
         isRunning: false,
         mode: .exactly(.code, cli: "acceptEdits"),
@@ -172,7 +176,9 @@ extension ComposerSpecimen {
     static let mentionsNoCommands = SessionComposerProjection.Composer(
         sessionID: composer.sessionID,
         placeholder: "Message Codex…",
-        facts: composer.facts,
+        // Neither knob (#558): Argo reads no model and no effort off this surface, so the fact line
+        // states what it has and opens onto nothing.
+        facts: RunFacts(model: nil, effort: .unknown(cli: nil)),
         standingAllows: [],
         isRunning: false,
         mode: composer.mode,

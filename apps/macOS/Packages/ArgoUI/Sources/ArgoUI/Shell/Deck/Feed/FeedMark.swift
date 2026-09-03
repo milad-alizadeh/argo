@@ -29,6 +29,15 @@ package enum FeedMark: Equatable, Sendable {
     /// The CLI Argo started has not spoken yet (`FeedWorking`). A wait on the process rather than
     /// on the agent, so it ends on the first bytes off the PTY rather than on a record.
     case starting
+    /// What the Session runs at MOVED here (#558) — a model or an effort level, in the CLI's own
+    /// word. The one mark about a standing setting rather than about the record's shape, and it is
+    /// here for the reason Mode is NOT: Mode never changes what a past Turn was, while a Turn that
+    /// ran on Sonnet under a composer now reading Opus is a lie the record must not tell.
+    ///
+    /// Only a CHANGE draws one. The opening reading is not news — it is what the composer states,
+    /// and a row saying so on every Session's first record would be punctuation before the
+    /// sentence.
+    case runFactChanged(FeedRunFact)
     /// A stretch of the record was not read — the seam a bounded read leaves between a transcript's
     /// two ends (`TranscriptExcerpt`). Drawn rather than skipped, because a feed that stitches a
     /// head to a tail with nothing between them reads as one continuous conversation and is not one
@@ -45,7 +54,7 @@ extension FeedMark {
         switch self {
         case .permissionExpired: .attention
         case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .working, .starting,
-             .excerpted:
+             .excerpted, .runFactChanged:
             .boundary
         }
     }
@@ -79,6 +88,9 @@ extension FeedMark {
         case .starting: FeedWorking.startingWords
         // What is missing and why, in the reader's terms rather than the mechanism's.
         case .excerpted: "earlier records not read yet"
+        // The CLI's own word, in the composer's own vocabulary for it — `model · Sonnet 5`. Named
+        // rather than "settings changed", because which of the two moved is the whole of the news.
+        case let .runFactChanged(fact): fact.words
         }
     }
 
@@ -91,7 +103,7 @@ extension FeedMark {
         switch self {
         case .turnEnded, .interrupted: true
         case .compacted, .spent, .handedOff, .permissionExpired, .working, .starting,
-             .excerpted: false
+             .excerpted, .runFactChanged: false
         }
     }
 
@@ -124,6 +136,9 @@ extension FeedMark {
         // A sentence, for the reason the two above get one, and it names what is being waited on:
         // the records are on disk and about to be read, not gone.
         case .excerpted: "Earlier records in this Session have not been read yet"
+        // A sentence, and it says what MOVED: the caption is two nouns, which read out is a pair
+        // of words with no verb between them.
+        case let .runFactChanged(fact): fact.spoken
         }
     }
 }

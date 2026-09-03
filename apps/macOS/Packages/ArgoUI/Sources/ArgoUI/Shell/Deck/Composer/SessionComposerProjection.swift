@@ -14,6 +14,10 @@ package enum SessionComposerProjection {
         /// Whether the CLI resolves an `@path` itself (#687). Where it does not, Argo names the
         /// file on its own line, so `@` is offered on both adapters where `/` is offered on one.
         var resolvesMentions = false
+        /// Which of the CLI's own two knobs this adapter can be SET on (#558). One value, the way
+        /// the port declares it: a knob it does not answer for leaves its section OUT of the
+        /// run-settings popover — absent, not disabled.
+        var chooses = RunFactKnobs()
     }
 
     package struct Composer: Equatable {
@@ -22,10 +26,10 @@ package enum SessionComposerProjection {
         /// `Message Claude Code…` — addressed to the agent by name, because the field is how the
         /// user speaks to it.
         package let placeholder: String
-        /// What the Session runs at — `Opus 5` — stated on the composer and nowhere else once
-        /// #558 moves it off the header (design decision 2). Effort joins it there too, when it
-        /// is a value something actually holds.
-        package let facts: String?
+        /// What the Session runs at — `Opus 5 · Medium` — stated on the composer and nowhere else
+        /// (design decision 2, #558). The whole reading, because what the trigger says, what the
+        /// popover ticks and which sections it draws are all things this one value settles.
+        package let facts: RunFacts
         /// What this Session has stopped asking about (#572). Empty for a Session holding none,
         /// which draws no tray.
         let standingAllows: [StandingAllow]
@@ -72,7 +76,7 @@ package enum SessionComposerProjection {
         package init(
             sessionID: String,
             placeholder: String,
-            facts: String?,
+            facts: RunFacts,
             standingAllows: [StandingAllow],
             isRunning: Bool,
             mode: SessionModeReading,
@@ -116,7 +120,13 @@ package enum SessionComposerProjection {
         return Composer(
             sessionID: session.id,
             placeholder: isRunning ? queuePlaceholder : placeholder(addressing: session.cli),
-            facts: session.model.map(ReadableModelName.readable),
+            facts: RunFacts(
+                model: session.model,
+                // Read here rather than held: `effort` comes off the records verbatim, and what it
+                // means on the scale is the engine's to say (`ClaudeEffort`).
+                effort: session.effort.map(ClaudeEffort.reading) ?? .unknown(cli: nil),
+                chooses: can.chooses,
+            ),
             standingAllows: StandingAllowProjection.allows(for: session),
             isRunning: isRunning,
             mode: session.mode,

@@ -61,6 +61,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
 
     public private(set) var cwd: String?
     public private(set) var model: String?
+    /// The CLI's own word for the effort level, latest reading and nothing yet where no record said
+    /// one (#558). Verbatim like `observedMode`: what it means on Argo's scale is `ClaudeEffort`'s
+    /// to say, and nothing here reads it.
+    public private(set) var effort: String?
     public private(set) var branch: String?
     /// The rung Argo ITSELF put this Session on — off the spawn, or off a later set. The only
     /// place Plan can come from: the CLI reports Read Only's boundary for both (ADR-0025).
@@ -187,8 +191,10 @@ extension HubSession {
             name.state(observedTitle)
         case let .cwd(observedCwd):
             cwd = observedCwd
-        case let .model(observedModel):
-            model = observedModel
+        // The CLI's own two knobs, both verbatim and latest-wins (#558). One line each: they are
+        // the two shortest arms in this switch, and spreading them costs the body its ceiling.
+        case let .model(observedModel): model = observedModel
+        case let .effort(observedEffort): effort = observedEffort
         case let .branch(observedBranch):
             branch = Self.branchName(observedBranch)
         case let .entry(cli):
@@ -266,6 +272,7 @@ extension HubSession {
         transcript.merge(continuation.transcript)
         cwd = continuation.cwd ?? cwd
         model = continuation.model ?? model
+        effort = continuation.effort ?? effort
         // The later half of the chain wins where it read one, and says nothing where it did not: a
         // resume file with no `usage` in it yet is not a Session that has emptied its context.
         contextTokens = continuation.contextTokens ?? contextTokens

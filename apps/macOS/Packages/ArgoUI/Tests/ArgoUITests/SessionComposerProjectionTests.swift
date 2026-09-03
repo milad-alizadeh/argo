@@ -13,7 +13,7 @@ struct SessionComposerProjectionTests {
 
         #expect(composer.sessionID == "session-a")
         #expect(composer.placeholder == "Message Claude Code…")
-        #expect(composer.facts == "Opus 5")
+        #expect(composer.facts.words == "Opus 5 · Medium")
         #expect(!composer.isRunning)
     }
 
@@ -76,14 +76,16 @@ struct SessionComposerProjectionTests {
         #expect(composer.placeholder == "Message the agent…")
     }
 
-    /// Composed of what is present: no model is no facts, never a placeholder keeping the line
-    /// company.
+    /// The line no longer goes missing (#558): it is one of TWO facts now, so an absent model would
+    /// leave a fact line stating half of what it is for. `unknown` on the missing half is the
+    /// degrade-down answer, and the effort beside it is still stated.
     @Test
-    func `a Session whose record named no model states no facts`() throws {
+    func `a Session whose record named no model states unknown for it alone`() throws {
         let composer = try #require(
             SessionComposerProjection.composer(for: session(access: .managed, model: nil)),
         )
-        #expect(composer.facts == nil)
+        #expect(composer.facts.words == "unknown · Medium")
+        #expect(composer.facts.tickedModel == nil)
     }
 
     /// An id the model table does not know is stated verbatim — ugly-but-true beats the nearest
@@ -95,7 +97,52 @@ struct SessionComposerProjectionTests {
                 for: session(access: .managed, model: "brand-new-model"),
             ),
         )
-        #expect(composer.facts == "brand-new-model")
+        #expect(composer.facts.modelWords == "brand-new-model")
+    }
+
+    /// The same rule on the other knob (#558): a level off Argo's own ladder states itself rather
+    /// than rounding to a neighbour, and the id it came in as is still readable behind it.
+    @Test
+    func `an effort level Argo does not recognise is stated verbatim`() throws {
+        let composer = try #require(
+            SessionComposerProjection.composer(
+                for: session(access: .managed, effort: "ludicrous"),
+            ),
+        )
+        #expect(composer.facts.words == "Opus 5 · ludicrous")
+        #expect(composer.facts.effort.rung == nil)
+    }
+
+    /// Neither fact established reads as the WORD, on both halves — never a plausible value.
+    @Test
+    func `a Session whose records named neither fact reads unknown`() throws {
+        let composer = try #require(
+            SessionComposerProjection.composer(
+                for: session(access: .managed, model: nil, effort: nil),
+            ),
+        )
+        #expect(composer.facts.words == "unknown · unknown")
+        #expect(!composer.facts.isDefault)
+    }
+
+    /// Declared, not discovered (#558): a projection built with no capabilities draws no popover,
+    /// so the fact line has nothing to open.
+    @Test
+    func `an adapter declaring neither knob leaves the facts unopenable`() throws {
+        let composer = try #require(
+            SessionComposerProjection.composer(for: session(access: .managed)),
+        )
+        #expect(!composer.facts.canOpen)
+    }
+
+    @Test
+    func `an adapter declaring one knob is openable on that one alone`() throws {
+        let composer = try #require(SessionComposerProjection.composer(
+            for: session(access: .managed),
+            can: .init(chooses: RunFactKnobs(effort: true)),
+        ))
+        #expect(composer.facts.canOpen)
+        #expect(!composer.facts.chooses.model)
     }
 
     /// The stance is carried WHOLE rather than reduced to a rung: the `≈` and the CLI's own word
@@ -120,6 +167,7 @@ struct SessionComposerProjectionTests {
         status: SessionStatus = .running,
         cli: AgentCLI? = .claude,
         model: String? = "claude-opus-5",
+        effort: String? = "medium",
         mode: SessionModeReading = .unknown(cli: nil),
     )
         -> CockpitPresentation.Session {
@@ -128,7 +176,7 @@ struct SessionComposerProjectionTests {
             title: "Restore the sessions Warp closed",
             access: access,
             status: status,
-            chain: .init(program: .init(cli: cli, model: model)),
+            chain: .init(program: .init(cli: cli, model: model, effort: effort)),
             autonomy: .init(mode: mode),
         )
     }

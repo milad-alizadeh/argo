@@ -61,6 +61,18 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
         remember(SessionModeSet(mode: mode, recordsWhenSet: before), sessionID)
     }
 
+    /// Passed straight through, and nothing is remembered (#558). What `setMode` files exists
+    /// because the ring is walked from a reading that a set invalidates; a model and an effort are
+    /// NAMED rather than walked to, and the CLI's own next record is what states where they landed.
+    /// Filing them here would be a second answer to a question the transcript already answers.
+    func setModel(_ modelID: String, for sessionID: String) async throws {
+        try await base.setModel(modelID, for: sessionID)
+    }
+
+    func setEffort(_ effort: SessionEffort, for sessionID: String) async throws {
+        try await base.setEffort(effort, for: sessionID)
+    }
+
     func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
         try base.revokeStandingAllow(toolName, for: sessionID)
     }

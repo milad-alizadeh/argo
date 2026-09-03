@@ -32,7 +32,7 @@ struct SessionHeaderGuideTests {
         #expect(said["Cached"] == "28.1M")
         #expect(said["Started"] == "2h ago")
         #expect(said["Worked"] == "20m")
-        #expect(said["Agent"] == "Claude Code · Opus 5")
+        #expect(said["Agent"] == "Claude Code")
         // The marks hang off the branch, because nothing else in the deck renders them.
         #expect(said["Branch"] == "argo/#694-context-guide · 3 uncommitted files")
         // The term is already `Issue`, so the value is not `Issue #694` a second time.

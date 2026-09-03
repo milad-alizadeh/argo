@@ -51,11 +51,10 @@ extension SessionHeaderProjection {
         ].compactMap(\.self)
     }
 
-    /// The CLI and a readable model name — `Claude Code · Opus 5`. Composed of what is present,
-    /// never of placeholders: a record naming a model but no CLI reads as the model alone.
-    static func agent(cli: AgentCLI?, model: String?) -> String? {
-        let parts = [cli?.readableName, model.map(ReadableModelName.readable)].compactMap(\.self)
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    /// The CLI, and the CLI ALONE — `Claude Code`. Model and Effort are the composer's, and a
+    /// value stated in two places is one you keep in sync by eye (#558, design decision 2).
+    static func agent(cli: AgentCLI?) -> String? {
+        cli?.readableName
     }
 
     /// The Issue row for a Session's Ticket reading (#894). A bound provider and no link reads as

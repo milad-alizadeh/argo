@@ -13,6 +13,10 @@ package enum ComposerMenusOpening {
     /// The full listing picking `AddMenu`'s Skills & commands row would open — the same one `/`
     /// does.
     case commands
+    /// The run-settings popover the footer's fact line opens (#558). Not a menu of the LINE like
+    /// the three above — nothing about it reads the draft — but it is the composer's other thing
+    /// that opens, and a Specimen reaches every one of them through this one hook.
+    case runSettings
 }
 
 /// Which menu the composer's line has open, where the keyboard is in it, and what each event does

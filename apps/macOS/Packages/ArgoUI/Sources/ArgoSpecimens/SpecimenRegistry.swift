@@ -24,6 +24,7 @@ public enum SpecimenRegistry {
         + commands
         + mentions
         + add
+        + runFacts
         + connect
         + project
         + tickets

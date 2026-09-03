@@ -19,7 +19,9 @@ extension SessionComposer {
     /// property itself.
     func applyOpening() {
         switch opening {
-        case .closed:
+        // Neither opens a menu of the LINE: `closed` opens nothing, and the run settings are the
+        // footer's own popover, which `ComposerFooter` is handed the flag for directly.
+        case .closed, .runSettings:
             return
         case .addMenu:
             menus.addOpened()

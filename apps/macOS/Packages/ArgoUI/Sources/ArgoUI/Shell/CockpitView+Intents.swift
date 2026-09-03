@@ -19,7 +19,7 @@ extension CockpitView {
             revoke: revoke,
             lostTurnSeen: lostTurnSeen(driven),
             stop: stop(driven),
-            setMode: setMode(driven),
+            settings: settings(for: driven),
             spawnBeside: spawnBeside,
             commands: actions.composer.skills,
             files: files(in: vessel.composer?.workspaceRoot),
@@ -54,11 +54,17 @@ extension CockpitView {
         return { try actions.drive.interrupt(sessionID) }
     }
 
-    /// Putting that Session on a rung (#545), bound the way `stop` is — and `async` because the
-    /// port's walk is: the ring is stepped one keystroke at a time (#653).
-    private func setMode(_ sessionID: String?) -> (SessionMode) async throws -> Void {
-        guard let sessionID else { return { _ in } }
-        return { try await actions.drive.setMode($0, for: sessionID) }
+    /// The three standing things the footer can put that Session on (#545, #558), bound the way
+    /// `stop` is and inert together with nothing selected — which is also the state with no footer
+    /// to press them from. `async` because the port's are: a rung is walked a keystroke at a time
+    /// (#653), and the other two reach the CLI as a line typed at its prompt.
+    private func settings(for sessionID: String?) -> SessionSettingIntents {
+        guard let sessionID else { return SessionSettingIntents() }
+        return SessionSettingIntents(
+            setMode: { try await actions.drive.setMode($0, for: sessionID) },
+            setModel: { try await actions.drive.setModel($0, for: sessionID) },
+            setEffort: { try await actions.drive.setEffort($0, for: sessionID) },
+        )
     }
 
     /// What the composer is holding, out of the store that outlives the deck.

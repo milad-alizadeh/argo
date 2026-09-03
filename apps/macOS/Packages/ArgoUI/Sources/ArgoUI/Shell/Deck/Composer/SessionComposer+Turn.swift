@@ -59,7 +59,7 @@ extension SessionComposer {
     /// waiting on a boundary that has already gone by.
     func walk(to mode: SessionMode) async {
         do {
-            try await intents.setMode(mode)
+            try await intents.settings.setMode(mode)
             draft.modeLanded(mode)
         } catch {
             guard (error as? SessionDriveError) == .modeBusy, composer.isRunning else {
@@ -82,6 +82,44 @@ extension SessionComposer {
     func honour(_ held: SessionMode) async {
         await walk(to: held)
         draft.flush(via: sending)
+    }
+
+    /// Ask the Session for a model, and for an effort rung (#558).
+    ///
+    /// In a `Task` for the reason `ask(for:)` is: the picker's setter cannot wait, and the line
+    /// reaches the CLI as a paste and a Return a pause apart. A refusal goes to the seam and
+    /// NOTHING is held — unlike a rung, neither is queued for the Turn's boundary: the composer
+    /// keeps showing what the CLI is still on, which is the true reading either way.
+    func askForModel(_ modelID: String) {
+        Task {
+            do { try await intents.settings.setModel(modelID) } catch { draft.runFactRefused(error)
+            }
+        }
+    }
+
+    func askForEffort(_ effort: SessionEffort) {
+        Task {
+            do { try await intents.settings.setEffort(effort) } catch { draft.runFactRefused(error)
+            }
+        }
+    }
+
+    /// Mode, Model and Effort all back where a fresh Session starts (#558) — the one act the
+    /// popover's reset makes, and the reason its sentence NAMES all three.
+    ///
+    /// Ordered Mode first, and each awaited: they are three separate lines at one prompt, and
+    /// firing them together would interleave three pastes into one input batch. The first refusal
+    /// stops the rest, because a reset that landed on two of three is not the state it named.
+    func resetRunFacts() {
+        Task {
+            do {
+                try await intents.settings.setMode(RunFacts.defaultMode)
+                try await intents.settings.setModel(RunFactsModel.default.id)
+                try await intents.settings.setEffort(RunFacts.defaultEffort)
+            } catch {
+                draft.runFactRefused(error)
+            }
+        }
     }
 
     /// The seam's remedy, which is not the same act as pressing send: what it puts back is

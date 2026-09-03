@@ -28,12 +28,12 @@ struct ComposerModeHeldTests {
             composer: isRunning ? ComposerSpecimen.running : ComposerSpecimen.composer,
             intents: DeckIntents(
                 send: { text, _ in log.acts.append("send \(text)") },
-                setMode: { mode in
+                settings: SessionSettingIntents(setMode: { mode in
                     log.acts.append("walk \(mode)")
                     if let refusal {
                         throw refusal
                     }
-                },
+                }),
                 draft: Binding(get: { log.draft }, set: { log.draft = $0 }),
             ),
         )

@@ -29,7 +29,14 @@ struct ClaudeSessionDriver: SessionDriver {
     /// the same burst is expanded by the CLI, so Argo naming the file again would hand the same
     /// bytes over twice (#687).
     func surface(of _: String) -> DriveSurface {
-        DriveSurface(takesAttachments: true, runsCommands: true, resolvesMentions: true)
+        DriveSurface(
+            takesAttachments: true,
+            runsCommands: true,
+            resolvesMentions: true,
+            // Both, because `/model` and `/effort` are this CLI's own commands and reach the same
+            // input machinery a Turn does — the mechanism `runsCommands` is already true for.
+            chooses: .both,
+        )
     }
 
     func send(_ text: String, to sessionID: String) throws {
@@ -96,6 +103,32 @@ struct ClaudeSessionDriver: SessionDriver {
                 throw SessionDriveError.notDrivable
             }
             await ClaudeModeCycle.pace()
+        }
+    }
+
+    /// `/model <id>` at the prompt. Nothing is walked and nothing is counted: unlike a rung, a
+    /// model is NAMED rather than reached, so the Session's own reading is not read here at all —
+    /// only whether a Turn is in flight, which is what would queue the line instead of running it.
+    func setModel(_ modelID: String, for sessionID: String) async throws {
+        try await run(ClaudeRunFacts.modelLine(modelID), on: sessionID)
+    }
+
+    func setEffort(_ effort: SessionEffort, for sessionID: String) async throws {
+        try await run(ClaudeRunFacts.effortLine(effort), on: sessionID)
+    }
+
+    /// One slash command typed at the prompt, the way a Turn is typed. It does NOT go through
+    /// `send`: `send` opens a Turn watch (#682) and clears the composer's draft on the CLI hearing
+    /// it, and neither belongs to a line that sets a knob rather than asking for work.
+    private func run(_ line: String, on sessionID: String) async throws {
+        guard let claim = ownership.ownerOf(sessionID: sessionID) else {
+            throw SessionDriveError.notDrivable
+        }
+        // Mid-Turn the CLI queues a typed line as the NEXT prompt rather than running it, so it
+        // would surface in the feed as something the user said. Refused with the reason instead.
+        guard !stance(sessionID).isRunning else { throw SessionDriveError.runFactsBusy }
+        guard terminals.write(ClaudeTurn.keystrokes(for: line), to: claim) else {
+            throw SessionDriveError.notDrivable
         }
     }
 

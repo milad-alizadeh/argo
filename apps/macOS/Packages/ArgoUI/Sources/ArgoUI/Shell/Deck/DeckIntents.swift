@@ -18,9 +18,10 @@ package struct DeckIntents {
     var lostTurnSeen: () -> Void = {}
     /// Stopping the Turn in flight (#541); a Session blocked on a Permission has nothing to stop.
     package var stop: () throws -> Void = {}
-    /// Putting the Session on a rung of the Mode ladder (#545); refused rungs reach the seam.
-    /// Async because the port's walk is: the ring is stepped one keystroke at a time (#653).
-    var setMode: (SessionMode) async throws -> Void = { _ in }
+    /// The three standing things the footer can put the Session on — its Mode rung, its Model and
+    /// its Effort (#545, #558). One value because they are one row of controls and one act binds
+    /// them: the popover's reset sets all three.
+    var settings = SessionSettingIntents()
     /// The exit the undriveable line offers: a fresh Session in the shown one's folder.
     var spawnBeside: () async -> Void = {}
     /// Every skill installed for this Project (#685). A closure and not a value, because it is READ
@@ -49,7 +50,7 @@ package struct DeckIntents {
         revoke: @escaping (String) -> Void = { _ in },
         lostTurnSeen: @escaping () -> Void = {},
         stop: @escaping () throws -> Void = {},
-        setMode: @escaping (SessionMode) async throws -> Void = { _ in },
+        settings: SessionSettingIntents = SessionSettingIntents(),
         spawnBeside: @escaping () async -> Void = {},
         commands: @escaping () async -> CommandCatalog = { CommandCatalog.empty },
         files: @escaping () async -> [String] = { [] },
@@ -60,7 +61,7 @@ package struct DeckIntents {
         self.revoke = revoke
         self.lostTurnSeen = lostTurnSeen
         self.stop = stop
-        self.setMode = setMode
+        self.settings = settings
         self.spawnBeside = spawnBeside
         self.commands = commands
         self.files = files

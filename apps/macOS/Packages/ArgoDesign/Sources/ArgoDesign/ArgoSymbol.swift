@@ -170,6 +170,9 @@ public enum ArgoSymbol {
     /// A stance Argo cannot place on the ladder — not a rung, so it is never offered as one.
     public static let modeUnknown = "questionmark"
 
+    /// Putting what a Session runs at back where it started (#558).
+    public static let reset = "arrow.counterclockwise"
+
     /// What a file the panel is open on is written in — one mark per language FAMILY, since the
     /// extension beside it is what names the language. Markup has none on purpose: the nearest
     /// glyph is the same chevrons with one word different.
