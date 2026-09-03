@@ -14,7 +14,7 @@ struct SessionHeaderTooltipTests {
         let lines = try #require(header.tooltip).components(separatedBy: "\n")
 
         #expect(lines.count == 6)
-        #expect(lines[0] == "Claude Code · Opus 5")
+        #expect(lines[0] == "Claude Code")
         // The marks hang off the branch, on the line the fact line drew them on.
         #expect(lines[1] == "On argo/#692-titlebar-title, in a worktree of its own "
             + "· 3 uncommitted files")
@@ -61,7 +61,7 @@ struct SessionHeaderTooltipTests {
         ))
 
         #expect(header.spend == nil)
-        #expect(header.tooltip == "Claude Code · Opus 5")
+        #expect(header.tooltip == "Claude Code")
     }
 
     /// Absent, not empty: `.help("")` still draws a tooltip chip over the title, which reads as a

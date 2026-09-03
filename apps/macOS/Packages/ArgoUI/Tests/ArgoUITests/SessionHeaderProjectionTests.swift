@@ -19,7 +19,7 @@ struct SessionHeaderProjectionTests {
         // Not a mark reading "managed", and not an empty one: no mark at all.
         #expect(header.access == nil)
         // The title, then the Session's own facts — and nothing where a posture would have gone.
-        #expect(header.announcement.hasPrefix("Session, Claude Code · Opus 5"))
+        #expect(header.announcement.hasPrefix("Session, Claude Code"))
         #expect(header.announcement.hasSuffix("On main"))
     }
 

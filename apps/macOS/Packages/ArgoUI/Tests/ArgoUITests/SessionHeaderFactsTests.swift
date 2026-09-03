@@ -79,30 +79,25 @@ struct SessionHeaderFactsTests {
     }
 
     @Test
-    func `the header says the CLI and a readable model name`() {
-        #expect(header(cli: .claude, model: "claude-opus-5").agent == "Claude Code · Opus 5")
+    func `the header says the CLI, and the CLI alone`() {
+        #expect(header(cli: .claude, model: "claude-opus-5").agent == "Claude Code")
+    }
+
+    /// The model came off this line in #558, when Model and Effort became things the composer SETS
+    /// — a value stated in two places is one you keep in sync by eye, and the composer is the place
+    /// a reader can act on it (design decision 2). The readable-name rules the assertions above
+    /// used to make are still made, in `SessionComposerProjectionTests`, where the fact now lives.
+    @Test
+    func `the model is not repeated here, whatever the record named`() {
+        #expect(header(cli: .claude, model: "claude-opus-5").agent == "Claude Code")
+        #expect(header(cli: .claude, model: "gpt-9-turbo").agent == "Claude Code")
+        #expect(header(cli: .claude, model: nil).agent == "Claude Code")
     }
 
     @Test
-    func `a model id the table does not know renders verbatim`() {
-        // A model released this morning is still what this Session is running.
-        #expect(header(cli: .claude, model: "gpt-9-turbo").agent == "Claude Code · gpt-9-turbo")
-        #expect(header(cli: nil, model: "some-unreleased-model").agent == "some-unreleased-model")
-    }
-
-    @Test
-    func `a pinned snapshot still reads as the model it is a snapshot of`() {
-        // The date a provider pins a snapshot with is not a different model.
-        #expect(header(cli: nil, model: "claude-opus-4-1-20250805").agent == "Opus 4.1")
-        // Eight digits after a hyphen, and nothing else: a name that merely ENDS in a number
-        // keeps it.
-        #expect(header(cli: nil, model: "claude-opus-4-5").agent == "Opus 4.5")
-        #expect(header(cli: nil, model: "mystery-1234").agent == "mystery-1234")
-    }
-
-    @Test
-    func `a Session whose record named neither CLI nor model says nothing about either`() {
-        // Rather than `Unknown · Unknown`, which is Argo inventing two facts to fill a line.
+    func `a Session whose record named no CLI says nothing`() {
+        // Rather than `Unknown`, which is Argo inventing a fact to fill a line.
+        #expect(header(cli: nil, model: "claude-opus-5").agent == nil)
         #expect(header(cli: nil, model: nil).agent == nil)
     }
 
@@ -153,7 +148,7 @@ struct SessionHeaderFactsTests {
         // Each mark says what it COUNTS, once, in the same order the header draws it.
         #expect(header.announcement == [
             "Session",
-            "Claude Code · Opus 5",
+            "Claude Code",
             "Issue #510",
             "On argo/#510, in a worktree of its own",
             "2 uncommitted files",

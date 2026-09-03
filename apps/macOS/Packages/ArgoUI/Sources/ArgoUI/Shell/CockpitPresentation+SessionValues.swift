@@ -17,15 +17,23 @@ public extension CockpitPresentation.Session {
         public struct Program: Equatable, Sendable {
             public let cli: AgentCLI?
             public let model: String?
+            /// The CLI's own word for the effort level, verbatim and unread (#558). Beside `model`
+            /// because they are the CLI's own two knobs and are read off the same records at the
+            /// same moment — what the composer states, and neither of them Argo's own.
+            public let effort: String?
             /// `interactive` by default, which is degrade-down rather than a guess — see
             /// `SessionEntry`.
             public let entry: SessionEntry
 
             public init(
-                cli: AgentCLI? = nil, model: String? = nil, entry: SessionEntry = .interactive,
+                cli: AgentCLI? = nil,
+                model: String? = nil,
+                effort: String? = nil,
+                entry: SessionEntry = .interactive,
             ) {
                 self.cli = cli
                 self.model = model
+                self.effort = effort
                 self.entry = entry
             }
         }
@@ -43,6 +51,7 @@ public extension CockpitPresentation.Session {
 
         public let cli: AgentCLI?
         public let model: String?
+        public let effort: String?
         public let entry: SessionEntry
         public let startedAtMs: Int?
         public let lastSeenAtMs: Int?
@@ -57,6 +66,7 @@ public extension CockpitPresentation.Session {
         ) {
             self.cli = program.cli
             self.model = program.model
+            self.effort = program.effort
             self.entry = program.entry
             self.startedAtMs = span.startedAtMs
             self.lastSeenAtMs = span.lastSeenAtMs

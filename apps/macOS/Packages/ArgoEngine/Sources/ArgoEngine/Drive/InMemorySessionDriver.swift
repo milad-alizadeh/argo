@@ -30,6 +30,8 @@ public final class InMemorySessionDriver: SessionDriver {
     private var answers: [String: [(ask: String, answer: AskAnswer)]] = [:]
     private var revocations: [String: [String]] = [:]
     private var modes: [String: [SessionMode]] = [:]
+    private var models: [String: [String]] = [:]
+    private var efforts: [String: [SessionEffort]] = [:]
 
     public init() {}
 
@@ -99,6 +101,30 @@ public final class InMemorySessionDriver: SessionDriver {
         modes[sessionID, default: []].append(mode)
     }
 
+    /// Records the id VERBATIM, which is the claim a surface has to be able to make about this one:
+    /// the composer offers a short list, and what is asked for is whatever was picked (#558).
+    public func setModel(_ modelID: String, for sessionID: String) async throws {
+        try refuseUnlessChosen(\.choosesModel)
+        models[sessionID, default: []].append(modelID)
+    }
+
+    public func setEffort(_ effort: SessionEffort, for sessionID: String) async throws {
+        try refuseUnlessChosen(\.choosesEffort)
+        efforts[sessionID, default: []].append(effort)
+    }
+
+    /// The declared capability first, then the standing refusal — in that order, so a test that
+    /// takes a knob off this fake gets the adapter's own answer rather than whatever `refusal`
+    /// happens to be set to.
+    private func refuseUnlessChosen(_ knob: KeyPath<DriveSurface, Bool>) throws {
+        guard declaredSurface[keyPath: knob] else {
+            throw SessionDriveError.runFactsUnsupported
+        }
+        if let refusal {
+            throw refusal
+        }
+    }
+
     public func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
         if let refusal {
             throw refusal
@@ -145,5 +171,15 @@ public final class InMemorySessionDriver: SessionDriver {
     /// The rungs one Session was put on, in the order they were asked for.
     public func rungs(for sessionID: String) -> [SessionMode] {
         modes[sessionID] ?? []
+    }
+
+    /// The model ids one Session was asked for, verbatim and in order (#558).
+    public func modelsAsked(for sessionID: String) -> [String] {
+        models[sessionID] ?? []
+    }
+
+    /// The effort rungs one Session was asked for, in order (#558).
+    public func effortsAsked(for sessionID: String) -> [SessionEffort] {
+        efforts[sessionID] ?? []
     }
 }

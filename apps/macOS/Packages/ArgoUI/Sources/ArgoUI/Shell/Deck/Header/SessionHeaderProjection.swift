@@ -206,7 +206,7 @@ package enum SessionHeaderProjection {
             identity: Header.Identity(
                 // The same chain the roster row reads, through the same function (#502, story 19).
                 title: SessionTitle.resolved(for: session),
-                agent: agent(cli: session.cli, model: session.model),
+                agent: agent(cli: session.cli),
                 issue: row(for: session.ticket),
                 checkout: checkout(for: session.workspace),
                 marks: marks(for: session.workspace),

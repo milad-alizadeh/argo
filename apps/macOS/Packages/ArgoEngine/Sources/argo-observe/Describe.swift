@@ -52,6 +52,8 @@ func describe(_ event: TranscriptEvent) -> String {
         "cwd         \(cwd)"
     case let .model(model):
         "model       \(model)"
+    case let .effort(cli):
+        "effort      \(cli)"
     case let .branch(branch):
         "branch      \(branch)"
     case let .mode(cli):

@@ -74,6 +74,21 @@ struct CodexSessionDriver: SessionDriver {
         thread.setMode(mode)
     }
 
+    /// Neither knob, and REFUSED rather than accepted quietly (#558). Argo reads no model and no
+    /// effort off this surface — a `codex` thread's records carry neither — so a set here would put
+    /// the composer on a value nothing could ever read back, which is the false DIRECT the honesty
+    /// tiers exist to stop. `surface(of:)` declares both `false`, so the popover never draws the
+    /// control that would reach this.
+    func setModel(_: String, for sessionID: String) async throws {
+        guard thread(for: sessionID) != nil else { throw SessionDriveError.notDrivable }
+        throw SessionDriveError.runFactsUnsupported
+    }
+
+    func setEffort(_: SessionEffort, for sessionID: String) async throws {
+        guard thread(for: sessionID) != nil else { throw SessionDriveError.notDrivable }
+        throw SessionDriveError.runFactsUnsupported
+    }
+
     /// A JSON-RPC response to the request the server is blocked on (#549) — the whole of how an
     /// approval is decided on this surface. Keyed by request like `claude`'s, and for the same
     /// reason: a Session can have more than one call waiting, so answering "whatever is pending"

@@ -109,19 +109,7 @@ package struct SessionComposer: View {
                 dismiss: { menus.dismissed(on: line) },
                 attach: take,
             )
-            ComposerFooter(
-                mode: composer.mode,
-                facts: composer.facts,
-                isSendable: draft.isSendable,
-                isRunning: composer.isRunning,
-                send: submit,
-                stop: interrupt,
-                canAdd: !ComposerMenu.addRows(on: line).isEmpty,
-                isAddMenuOpen: menus.isAddMenuOpen,
-                toggleAddMenu: toggleAddMenu,
-                heldMode: draft.heldMode,
-                setMode: ask,
-            )
+            footer
         }
         // Asymmetric on purpose: the trailing edge ends in a 26pt control and the leading edge
         // in text, so the two are held off the rim by different amounts.
@@ -159,7 +147,9 @@ package struct SessionComposer: View {
     ///
     /// Over `AddMenu`, ⏎ does not insert at all — it OPENS the row's section (design decision 11),
     /// the same act a click makes; see `open(_:)`.
-    private func submit() {
+    /// Not `private`: Swift scopes that to the file, and `SessionComposer+Footer.swift` hands this
+    /// to the send control — the same reason `menus` and `line` are not private either.
+    func submit() {
         if let row = menus.addMenuPick(on: line) {
             return open(row)
         }

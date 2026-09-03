@@ -1,4 +1,4 @@
-# Session composer — build inventory (#538, #539, #540, #546, #608)
+# Session composer — build inventory (#538, #539, #540, #546, #558, #608)
 
 What assembling the composer's send slice actually forced out of
 [`cockpit-session-composer.md`](cockpit-session-composer.md), per ticket. Names were frozen at
@@ -257,18 +257,41 @@ thing this state must not look like.
 - `ModeControlLabel` — what the control SAYS, which is the reading unless a rung is being held for
   the Turn's end, in which case it is that rung under `≈`, ticking nothing (#940).
 
-## Stayed inline
+## Extracted — #558 (Model and Effort)
 
-- **Run facts** — one `Text` in `ComposerFooter`. It becomes `RunFactsButton` + popover when
-  #558 makes Model/Effort real choices; a control that opens onto nothing today would be a
-  promise the footer cannot keep.
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `RunFactsButton` | atom | `ArgoUI/Shell/Deck/Composer/` — the footer's own part | `facts: RunFacts`, `mode: SessionModeReading`, `setModel: (String) -> Void`, `setEffort: (SessionEffort) -> Void`, `reset: () -> Void`, `isOpenedForRender: Bool` | one `Text` at `ArgoTypography.machineCaption`, or a `.plain` `Button` around it holding `RunSettingsPopover` | frozen table, `RunFactsButton` |
+| `RunSettingsPopover` | molecule | same | `facts: RunFacts`, `mode: SessionModeReading`, and the same three acts | `Form` with `Picker(.inline)` · `Picker(.segmented).controlSize(.small)` · a reset `Button` | frozen table, `RunSettingsPopover` |
+
+Extraction evidence: both names are in the design's frozen-names table — a contract settled at
+approval — and both carry states the happy path never renders. `RunFactsButton` has a whole side
+where it is NOT a button (an adapter declaring neither knob), and the popover has three: a reading
+off Argo's own tables, a section omitted for an undeclared knob, and an inert reset.
+
+`RunFacts` and `RunFactsModel` are the derived view-model behind them, not components:
+`SessionComposerProjection.Composer.facts` is one of these, and every question the two views ask —
+what the trigger says, which ink it takes, which sections draw, which row ticks, what the reset
+names — is answered on it rather than in a view.
+
+`ArgoRunSettings.width` is the popover's own 264, held beside the view for the reason
+`ArgoComposerVessel`'s numbers are: a second spelling of a design measurement drifts.
+
+**Two rows this ticket changed rather than added.** `ComposerFooter.facts` went from `String?` to
+`RunFacts`, and `SessionHeaderProjection.agent` lost its `model:` parameter entirely — the header
+states the CLI alone now (design decision 2, acceptance criterion 7).
+
+**One row it added to the FEED**, which is not this design's surface but is where criterion 6
+lands: `FeedMark.runFactChanged(FeedRunFact)`, drawn wherever the record says a model or an effort
+moved after the opening reading. It is punctuation like every other mark and takes the boundary ink.
+
+## Stayed inline
 - **The feed's bottom edge under the vessel** — clearance (`FeedTail`), fade mask and way-back
   lift are `FeedView`'s own (`isUnderComposer`): facts about the reading, not a component.
 - **Vessel placement** — the `section`/`loose` insets live at the one call site in `FeedColumn`.
 
 ## Deliberately absent — owned by sibling tickets
 
-`RunFactsButton` +
-`RunSettingsPopover` (#558) · `SendButton`'s **Stop** state, which
+`SendButton`'s **Stop** state, which
 `queued.png` draws and #541 owns — it needs an interrupt on the drive port, and a square that
 stops nothing would be the promise decision 9 refuses to make about attachments.

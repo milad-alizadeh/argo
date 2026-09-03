@@ -27,7 +27,9 @@ extension SessionHeaderProjection {
         [Fact(term: "Context", value: context(tokens: session.contextTokens).reading)]
             + telemetry(from: session, worked: worked ?? .read(across: session.events))
             + [
-                agent(cli: session.cli, model: session.model)
+                // The CLI alone here too (#558): the guide is the header's own surface, and
+                // the header does not repeat what the composer states.
+                agent(cli: session.cli)
                     .map { Fact(term: "Agent", value: $0) },
                 checkout(for: session.workspace)
                     .map { Fact(term: "Branch", value: branchReading($0, in: session)) },

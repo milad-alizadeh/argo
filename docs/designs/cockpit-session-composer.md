@@ -150,11 +150,25 @@ sections: **Model** as an inline list with checkmarks, **Effort** as a four-stop
 scale. It has **no second layer** — three model names fit inline, so nothing opens on top of
 anything.
 
+> **Corrected in build (#558): the Effort scale has FIVE stops, not four.** `run.png` draws
+> `Low · Medium · High · Max`, which was the CLI's whole ladder when the study was made.
+> `claude --help`, read at 2.1.257 on 2026-09-03, documents `--effort <level>` as
+> `low, medium, high, xhigh, max` — so the shipped control is
+> `Low · Medium · High · XHigh · Max`. This is not a widening of the design's intent: the scale is
+> the CLI's and the design never owned its rungs, and a four-stop control could not set a value the
+> CLI can be on. It would also break the read-back — a Session sitting on `xhigh` would tick no
+> segment, which is the state reserved for a level Argo has genuinely never heard of.
+>
+> `XHigh` rather than `X-High`: the hyphen reads as a sixth thing rather than as the rung above
+> High. What does NOT change is the argument the four-stop drawing was making — the control is
+> segmented because the scale is *ordered*, and one more rung does not make it a set of equals.
+> The render is stale on this one measurement and current on everything else in the popover.
+
 ## Controls are stock, not bespoke
 
 | In the study | In the app |
 |---|---|
-| `.seg` (Effort) | `Picker(…).pickerStyle(.segmented).controlSize(.small)` |
+| `.seg` (Effort) | `Picker(…).pickerStyle(.segmented).controlSize(.small)` — five stops, per the note above |
 | `.modemenu` (Mode) | `Menu`, indicator and all — bespoke from #608, stock again since #875 |
 | the field | **`NSTextView` behind an `NSViewRepresentable`** (#734) — see the note under this table |
 | `.picklist` (Model) | `Picker(…).pickerStyle(.inline)` |
@@ -269,6 +283,28 @@ chips are still drawn, both for reasons stated where they are measured.)
 2. **Model and Effort are on the composer too, and the deck header states the CLI alone.** A
    value stated in two places is one you keep in sync by eye. (The rejected alternative put them
    on the header's fact line.)
+
+   **Both halves landed in #558**, and the header's half was a deletion: `Claude Code · Opus 5`
+   became `Claude Code`, on the identity line and in the hover guide alike. The guide was not an
+   exception to argue over — it is the header's own surface, and a fact repeated there is repeated.
+
+   **What the composer states is a READING, not a setting** (added in build, #558). Both facts come
+   back off the CLI's own records — `message.model`, and `effort` as a top-level record field — and
+   both are rendered verbatim: an id Argo's table has never heard of states itself, a level off the
+   ladder states itself and ticks no segment, and either absent reads `unknown` rather than a
+   plausible value. The Model list gains a row for a reading that is not one of the three offered,
+   so the tick always has somewhere honest to land.
+
+   **A change mid-Session is stated in the feed** (added in build, #558). A Turn that ran on Sonnet,
+   read under a composer now saying Opus, is a Turn the reader attributes to the wrong model — so
+   `model · Sonnet 5` and `effort · High` are drawn as marks where the record says they moved. Only
+   a CHANGE draws one: the opening reading is what the composer already states, and a row saying so
+   on every Session's first record would be punctuation before the sentence.
+
+   **An adapter that chooses neither knob draws no trigger at all** (added in build, #558) — the
+   facts stay words on the footer, which is what `codex` gets, because Argo reads no model and no
+   effort off that surface and a control that could not be read back would be a false DIRECT. That
+   is design decision 9's rule, applied to this control.
 3. **Acceptance is the echo, not a toast.** The field clears, the words appear in the feed as
    the user's own, the status flips to *Running*. A 1.4s accent wash marks the new row; there is
    no fourth signal.

@@ -26,6 +26,7 @@ extension CockpitView {
             canAttach: surface.takesAttachments,
             canRunCommands: surface.runsCommands,
             resolvesMentions: surface.resolvesMentions,
+            chooses: surface.chooses,
         )
     }
 

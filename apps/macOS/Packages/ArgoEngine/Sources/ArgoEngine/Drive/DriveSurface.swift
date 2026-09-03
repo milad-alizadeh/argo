@@ -21,9 +21,51 @@ public struct DriveSurface: Equatable, Sendable {
     /// exactly as an attachment does — so `@` is offered on both.
     public let resolvesMentions: Bool
 
-    public init(takesAttachments: Bool, runsCommands: Bool, resolvesMentions: Bool) {
+    /// Which of the CLI's own two knobs this surface can be SET on (#558). One value rather than
+    /// two flags on the line above, because they are one declaration about one thing — see
+    /// `RunFactKnobs`.
+    public let chooses: RunFactKnobs
+
+    public init(
+        takesAttachments: Bool,
+        runsCommands: Bool,
+        resolvesMentions: Bool,
+        chooses: RunFactKnobs = RunFactKnobs(),
+    ) {
         self.takesAttachments = takesAttachments
         self.runsCommands = runsCommands
         self.resolvesMentions = resolvesMentions
+        self.chooses = chooses
     }
+
+    /// Whether this surface can be put on a named model. DECLARED and never discovered: an adapter
+    /// that answers `false` has its Model section left OUT of the run-settings popover rather than
+    /// drawn greyed, because a control that cannot work gives no reason for not working.
+    public var choosesModel: Bool {
+        chooses.model
+    }
+
+    public var choosesEffort: Bool {
+        chooses.effort
+    }
+}
+
+/// Which of Model and Effort an adapter can be SET on (#558) — a declaration, never a discovery.
+///
+/// Two answers and not one: they are the CLI's own two knobs, an adapter may well expose one and
+/// not the other, and a joint answer would take both sections off the popover for the sake of
+/// either. `false` on both is the honest default — a surface that has said nothing has declared
+/// nothing.
+public struct RunFactKnobs: Equatable, Sendable {
+    public let model: Bool
+    public let effort: Bool
+
+    public init(model: Bool = false, effort: Bool = false) {
+        self.model = model
+        self.effort = effort
+    }
+
+    /// An adapter that can be put on both, which is `claude`'s answer: `/model` and `/effort` reach
+    /// the same input machinery a Turn does.
+    public static let both = RunFactKnobs(model: true, effort: true)
 }

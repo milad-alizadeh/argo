@@ -19,8 +19,9 @@ public struct MessageRecord: Sendable, Equatable {
     /// result is a user record with none. Read as a stance for the reason `case permissionMode`
     /// below states (#629).
     public let permissionMode: String?
-    /// Only an assistant record names one.
-    public let model: String?
+    /// What the record says the run was ON — the CLI's own two knobs, verbatim (#558). One value
+    /// because they are read together and travel together everywhere after this.
+    public let run: RunReading
     public let stopReason: String?
     public let usage: Usage?
     public let content: [ContentBlock]
@@ -40,6 +41,23 @@ public struct MessageRecord: Sendable, Equatable {
         /// A delegated subagent's record, written into the parent's own file. Its Turns are the
         /// child's, so the root Session's Turn is neither opened nor closed by one.
         public let isSidechain: Bool
+    }
+}
+
+/// What a record says the run was on: the model that answered, and the effort it answered under
+/// (#558). Both in the CLI's OWN words and unread — what either means is read later, by
+/// `ReadableModelName` and `ClaudeEffort`, and never here.
+///
+/// They sit in two different places in the JSON — `model` is the message's, `effort` is the
+/// record's own field beside `cwd` — and that difference is the host's filing, not a difference in
+/// what they are.
+public struct RunReading: Sendable, Equatable {
+    public let model: String?
+    public let effort: String?
+
+    public init(model: String?, effort: String?) {
+        self.model = model
+        self.effort = effort
     }
 }
 
@@ -132,7 +150,10 @@ extension MessageRecord {
         )
         self.entrypoint = record.stringField("entrypoint")
         self.permissionMode = record.stringField("permissionMode")
-        self.model = message?.stringField("model")
+        self.run = RunReading(
+            model: message?.stringField("model"),
+            effort: record.stringField("effort"),
+        )
         self.stopReason = message?.stringField("stop_reason")
         self.usage = Usage(reported: message?["usage"])
         self.content = ContentBlock.blocks(from: message?["content"])

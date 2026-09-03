@@ -96,8 +96,8 @@ extension SessionHeaderProjection {
             // A skill load carries no moment of its own: the CLI expands a body as part of the
             // prompt beside it, and that prompt's own timestamp is already counted. The seam is
             // handled above, where it withholds the figure entire.
-            case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .branch, .mode,
-                 .entry,
+            case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .effort,
+                 .branch, .mode, .entry,
                  .message, .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine,
                  .skillLoaded, .excerpted: nil
             }

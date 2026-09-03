@@ -19,6 +19,10 @@ public enum TranscriptEvent: Sendable, Equatable {
     case cwd(String)
     /// The model id off an assistant record. Its LATEST reading is what the session is on now.
     case model(String)
+    /// The effort level the records report, in the CLI's OWN word for it and unread — what it means
+    /// on Argo's own scale is `SessionEffort`'s to say (#558). Latest reading wins, like the model
+    /// above and for the same reason: `/effort` moves it mid-session and the file keeps both.
+    case effort(cli: String)
     /// The branch the records report. Latest reading wins: a run can switch branch mid-session.
     case branch(String)
     /// How the process was started, in the CLI's OWN word for it and unread — what it means on

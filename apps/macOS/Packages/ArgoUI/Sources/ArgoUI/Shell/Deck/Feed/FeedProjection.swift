@@ -103,7 +103,7 @@ package enum FeedProjection {
         case let .toolCallOutcome(outcome): outcome.usage
         case .prompt, .message, .thought, .toolCall, .recordIdentity, .headLeaf, .originSession,
              .title, .cwd,
-             .model, .branch, .mode, .entry, .turnEnded, .plan, .compaction, .queued,
+             .model, .effort, .branch, .mode, .entry, .turnEnded, .plan, .compaction, .queued,
              .unreadableLine, .skillLoaded, .excerpted: nil
         }
     }
@@ -132,7 +132,13 @@ package enum FeedProjection {
     static func contents(of events: [TranscriptEvent]) -> [FeedRow.Content] {
         let answered = outcomes(in: events)
         let within = workingDirectory(in: events)
-        return events.compactMap { content(of: $0, answeredBy: answered, within: within) }
+        let opening = openingRunFacts(in: events)
+        return events.enumerated().compactMap { index, event in
+            if let fact = runFact(of: event) {
+                return opening.contains(index) ? nil : .mark(.runFactChanged(fact))
+            }
+            return content(of: event, answeredBy: answered, within: within)
+        }
     }
 
     /// The `switch` carries no `default`, so an event kind added to the domain fails this build
@@ -180,8 +186,10 @@ package enum FeedProjection {
         // The seam of a bounded read, drawn where it happened: everything above it is older than
         // everything below it, with a stretch of the record missing between the two.
         case .excerpted: .mark(.excerpted)
+        // `.model` and `.effort` are read by `contents(of:)` above, which is the one place that
+        // can tell an opening reading from a change — this switch sees one event at a time.
         case .toolCallOutcome, .usage, .recordIdentity, .headLeaf, .originSession, .title, .cwd,
-             .model, .branch, .mode, .entry, .plan, .queued: nil
+             .model, .effort, .branch, .mode, .entry, .plan, .queued: nil
         }
     }
 

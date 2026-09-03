@@ -11,6 +11,7 @@
 struct TranscriptContextCursor {
     private var lastCwd: String?
     private var lastModel: String?
+    private var lastEffort: String?
     private var lastBranch: String?
     private var lastOriginSessionID: String?
     private var lastEntrypoint: String?
@@ -33,9 +34,13 @@ struct TranscriptContextCursor {
             lastBranch = branch
             events.append(.branch(branch))
         }
-        if let model = message.model, model != lastModel {
+        if let model = message.run.model, model != lastModel {
             lastModel = model
             events.append(.model(model))
+        }
+        if let effort = message.run.effort, effort != lastEffort {
+            lastEffort = effort
+            events.append(.effort(cli: effort))
         }
         return events
     }

@@ -19,8 +19,16 @@ enum DrivenCLI: CaseIterable, Sendable {
     var surface: DriveSurface {
         switch self {
         case .claude:
-            DriveSurface(takesAttachments: true, runsCommands: true, resolvesMentions: true)
+            DriveSurface(
+                takesAttachments: true,
+                runsCommands: true,
+                resolvesMentions: true,
+                // `/model` and `/effort` reach the same input machinery a Turn does (#558).
+                chooses: .both,
+            )
         case .codex:
+            // Neither knob: Argo reads no model and no effort off this surface, so a set here
+            // would put the composer on a value nothing could ever read back (#558).
             DriveSurface(takesAttachments: true, runsCommands: false, resolvesMentions: false)
         }
     }

@@ -183,6 +183,16 @@ package struct ComposerDraft: Equatable {
         say(ComposerSeamLine(error))
     }
 
+    /// The port's reason a Model or Effort did not land (#558), on the seam the same way — no words
+    /// are at risk here either, so there is nothing for Retry to put back.
+    ///
+    /// It touches NO held state, which is what separates it from `modeRefused` above: a rung can be
+    /// kept for the Turn's boundary, and these two are not. The composer goes on showing what the
+    /// CLI is still on, which was never wrong.
+    mutating func runFactRefused(_ error: any Error) {
+        say(ComposerSeamLine(error))
+    }
+
     /// The rung landed. It takes back only the sentence IT put up — a notice about something else,
     /// the Turn the reader stopped or the one the CLI never heard, is not this act's to erase.
     mutating func modeLanded(_ mode: SessionMode) {
