@@ -2,8 +2,9 @@ import AppKit
 
 // How a re-measure is PAID for. Which rows a decision names is `FeedScrollPolicy`'s and where the
 // reading lands afterwards is the scrolling half's; what is here is the one fact those two cannot
-// see: a height AppKit asks for is a full SwiftUI layout against the ruler, so a pass that asks for
-// N of them inside one block is N layouts inside one frame (#856).
+// see: a height AppKit asks for is worked out or typeset on the spot, so a pass that asks for N
+// of them inside one block pays all of it inside one frame (#856). It was a full SwiftUI layout a
+// row until ADR-0030, which is where the figures below come from.
 
 extension FeedTableCoordinator {
     func remeasure(_ scope: FeedRemeasure) {
@@ -46,7 +47,8 @@ extension FeedTableCoordinator {
     /// The full re-measure, chunked so it yields.
     ///
     /// `noteHeightOfRows` makes AppKit ask the delegate for each noted height synchronously, and a
-    /// height with no cached answer is a full SwiftUI layout. So this NOTES rather than drops: the
+    /// height with no cached answer is measured again there and then. So this NOTES rather than
+    /// drops: the
     /// `Ground` a height was kept under already answers `nil` for a row that changed, and the width
     /// and the ink are the store's own — a re-wrap has retired every height before this runs
     /// (`FeedGeometry.settle(at:in:)`). Dropping on top of that made a `.all` pass over an

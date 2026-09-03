@@ -101,6 +101,20 @@ public extension ProseFace {
         return lineBox + CGFloat(lines - 1) * step
     }
 
+    /// How tall `lines` stand with NO leading added — a `Text` the feed sets without
+    /// `.lineSpacing`, which is every run outside the reading's own prose: an ask card's question,
+    /// an option's words, a raw unreadable line.
+    ///
+    /// The advance is then the font's own — its fractional box plus the leading it carries — and
+    /// it is the RUNG's face that carries it, mono or not: SF Mono reports no leading at all, while
+    /// a monospaced run advances exactly as far as the sans beside it. Measured on both faces at
+    /// two rungs.
+    @MainActor func unleadedHeight(ofLines lines: Int) -> CGFloat {
+        guard lines > 0 else { return 0 }
+        let sans = ProseFace(rung: rung, isBold: isBold)
+        return lineBox + CGFloat(lines - 1) * (sans.lineBox(under: .fractional) + sans.font.leading)
+    }
+
     /// The candidate box under a NAMED rule — what `ProseLineBox` chooses between, and what makes
     /// the rule this machine is NOT drawing through testable at all.
     @MainActor func lineBox(under engine: ProseEngine) -> CGFloat {

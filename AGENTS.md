@@ -48,7 +48,7 @@ touch (each rule's `paths:` frontmatter states its scope):
 `MermaidLayout` → `MermaidView` → `ArgoUI` ⊥ the app target — are enforced by
 `scripts/swift-boundaries.sh` (in `quality:swift`, on the `macos` CI job and in pre-commit).
 Every edge is checkable from imports and declarations alone, which is why they are gates rather
-than review notes. Four of the eight are ADR-0022's layering; the sharpest of those is **exactly
+than review notes. Four of the nine are ADR-0022's layering; the sharpest of those is **exactly
 one file in `ArgoUI` may read live Hub state** — the Hub → cockpit projection. Everything else
 takes a value.
 
@@ -99,6 +99,16 @@ import anything that draws. The app target links `ArgoSpecimens`, which is the o
 the harness is reached by launch argument on the real binary, and that is what makes a specimen
 render evidence rather than a preview. A `#Preview` that needs sample data belongs in
 `ArgoSpecimens` with it.
+
+The ninth is ADR-0030 Rule 1, on where a row's height comes from: **no file under
+`Sources/ArgoUI` may name `NSHostingController` or `sizeThatFits(in:)`**. A height is arithmetic
+(`FeedShapeHeight`) or Core Text (`FeedRowMeasure`), and the hosting ruler those replaced survives
+only as the test oracle in `FeedShapeHeightTests`. Two spellings and no third: `NSHostingView` is
+how a cell DRAWS, and the `Layout` protocol's own `sizeThatFits(proposal:subviews:cache:)` is not
+AppKit's. What stays is the FACE probes in `ProseText`, held by the same edge to three named files:
+they measure a face once per face per process — the box its engine stands a line in, what an empty
+run collapses to, how far a line hangs below its baseline — and every formula rests on those. None
+is a row and none is per row.
 
 The JS/TS boundary gates are dormant — no subject since ADR-0023 retired the Electron
 cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-0021, ADR-0023.

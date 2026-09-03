@@ -1,7 +1,8 @@
 import AppKit
 
 // The one place a row's height comes from, and the fork in it: a prose row is typeset by
-// `FeedRowMeasure`, and every other row is laid out for real against the ruler. In front of both
+// `FeedRowMeasure` and every other row is worked out by `FeedShapeHeight`. Neither asks SwiftUI —
+// the ruler left production with ADR-0030 and survives only as the test oracle. In front of both
 // stands `FeedGeometry`, which is what lets a height outlive the table that took it (#858).
 
 extension FeedTableCoordinator {
@@ -26,9 +27,8 @@ extension FeedTableCoordinator {
         return height
     }
 
-    /// The row measured, by whichever of the two paths can answer for it. The step above the row is
-    /// added here rather than inside either: it is the cell's own padding, and the same number
-    /// whatever the row draws (`FeedRow.step(to:from:)`).
+    /// The row worked out. The step above it is added here rather than inside a formula: it is the
+    /// cell's own padding, and the same number whatever the row draws (`FeedRow.step(to:from:)`).
     private func measure(
         at index: Int,
         of model: FeedTableModel,
@@ -37,19 +37,10 @@ extension FeedTableCoordinator {
         -> CGFloat {
         let row = model.rows[index]
         let step = FeedRow.step(to: row, from: index > 0 ? model.rows[index - 1] : nil)
-        if let typeset = FeedRowMeasure.height(
-            of: row.content,
-            chip: FeedCopy.drawsChip(of: model.rows, at: index),
-            across: FeedRowMeasure.measure(atWidth: width),
-        ) {
-            noted(layout: false)
-            return step + typeset
-        }
-        let ruler = ruler(for: row.content.shape)
-        ruler.rootView = model.content(at: index)
-        noted(layout: true)
-        return ruler.sizeThatFits(
-            in: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude),
-        ).height
+        noted()
+        return step + FeedShapeHeight(
+            standing: FeedRowStanding(at: index, of: model),
+            measure: FeedRowMeasure.measure(atWidth: width),
+        ).height(of: row.content)
     }
 }

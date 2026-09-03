@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// It decides nothing about WHERE the reading lands — that is `FeedScrollPolicy`'s, reached through
 /// the handle. What stays here is AppKit facts only: the scroll view, the table, the
-/// measured-height cache, the rulers, and the keyboard's focused row.
+/// measured-height cache, and the keyboard's focused row.
 @MainActor final class FeedTableCoordinator: NSObject {
     var model: FeedTableModel?
     /// The shared scroll authority, which holds the policy this coordinator reports to.
@@ -64,7 +64,7 @@ import SwiftUI
     /// budget: automatic heights answer through the constraint engine, where an `NSHostingView`
     /// runs THREE full SwiftUI layout passes per row scrolled in (its min, ideal and max size
     /// constraints). Profiled, not surmised — the stutter was that tower. A delegate height is
-    /// one `sizeThatFits` against the ruler below, paid once per row per width.
+    /// one arithmetic or Core Text measure, paid once per row per width (ADR-0030).
     ///
     /// A reference, and OUTLIVING this coordinator wherever the shell hands one in: the deck is
     /// destroyed and rebuilt on a room switch, and heights held here alone were measured again
@@ -81,9 +81,6 @@ import SwiftUI
     /// about, and the only honest way for a suite to ask what a re-measure COST rather than what it
     /// left behind.
     private(set) var measurements = 0
-    /// How many of those were a full SwiftUI layout against a ruler rather than a Core Text
-    /// typeset — see `FeedRowMeasure`. The two counts are the whole of what the routing claims.
-    private(set) var layouts = 0
 
     /// The pane size the reading was last laid out against. Written when a derivation RUNS rather
     /// than when a notification arrives, so it can only ever name a size that was laid out.
@@ -102,21 +99,10 @@ import SwiftUI
         private(set) var paneCost = FeedPaneCost()
     #endif
 
-    /// The views content is measured in — never installed in a window, and building no sizing
-    /// constraints of their own: `sizeThatFits` is asked directly.
-    ///
-    /// One per `FeedRow.Content.Shape` — see that type, which states what the split costs and
-    /// why. Ten controllers is the ceiling, because `Shape` has ten cases: an enum key rather than
-    /// a cache, so nothing here needs evicting (ADR-0028 Rule 4).
-    /// Read and written only through `FeedTableCoordinator+Rulers`, which is where the reason for
-    /// keeping one per shape is stated.
-    var rulers: [FeedRow.Content.Shape: NSHostingController<AnyView>] = [:]
-
-    /// One measurement paid for, and whether a layout pass is what paid. Here rather than beside
-    /// `measuredHeight` because a `private(set)` is writable in this file alone.
-    func noted(layout: Bool) {
+    /// One measurement paid for. Here rather than beside `measuredHeight` because a `private(set)`
+    /// is writable in this file alone.
+    func noted() {
         measurements += 1
-        layouts += layout ? 1 : 0
     }
 
     /// One frame notification arrived — see `FeedPaneCost`.
@@ -191,9 +177,6 @@ import SwiftUI
         } else if fresh.rows.isSameReading(as: stale) {
             touchUp(against: fresh, from: staleEnvironment)
         } else {
-            // The reading boundary: the rulers still hold the last one's live rows, and this one
-            // is about to measure its own through them.
-            surrenderRulers()
             decide(.rowsChanged(from: stale, to: fresh.rows))
         }
         // The seam letting go is the moment the width is final: one full re-measure squares
