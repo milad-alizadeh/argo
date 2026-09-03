@@ -80,7 +80,6 @@ just that piece. Order matters only where noted.
 - **`/setup-module-boundaries`** — public-entry-only import rules and folder placement
   gates.
 - **`/setup-task-tracking`** — the live to-do list convention.
-- **`/setup-output-style`** — how the agent talks back.
 
 ## Standalone
 
