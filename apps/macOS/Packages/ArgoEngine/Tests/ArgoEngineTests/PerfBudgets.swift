@@ -33,6 +33,26 @@ enum PerfBudgets {
     /// still.
     static let batchRebuilds = 0
 
+    /// `TranscriptFoldCostTests` — no single write may fold more of a read than
+    /// `TranscriptFold.events`, whatever the file's length.
+    ///
+    /// Recorded: 200 events a slice against a batch of 4 801 · exact. The count is the gate; the
+    /// seconds below are why the count is 200 and BIND nothing (ADR-0028 Rule 8).
+    ///
+    /// Measured as the longest the main actor was unavailable while one whole read landed, by a
+    /// clock only the main actor advances — a wall clock, for `MainActorWatch`'s reason: what is
+    /// being measured IS a wait, and what it is held against is a frame. Over a 60 MB transcript of
+    /// 4 801 records at 13 KB — the shape `SessionSelectionCostTests` records its own figures at —
+    /// the gap is **3.6 ms folded whole against 0.5 ms in slices**, least of 3 each · M4 Pro ·
+    /// debug. Neither is a dropped frame at that size; the point is that the first grows with the
+    /// file and the second does not.
+    ///
+    /// **The same run is also what says #1166's two seconds are not here.** That read takes 0.70 s
+    /// wall against 3.6 ms of fold, so 99.5% of the wait is the read itself — off the main actor,
+    /// and untouched by this. The ticket's own repro at 238 MB scales to about 2.8 s, which is the
+    /// two seconds it reported.
+    static let foldSlice = 200
+
     /// `HubRosterCostTests` — one `session(id:)` may not cost more as the roster grows.
     ///
     /// Recorded: 0.68 µs at both 8 rows and 64, over 32 observed Sessions · Apple silicon laptop ·

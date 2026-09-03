@@ -19,6 +19,10 @@ struct HubTranscript {
     /// stale reading stays published until the new one lands, so a refold taken for some other
     /// transcript's batch in the meantime cannot drop the row (#1134).
     private(set) var rereading: HubSession?
+    /// Whether part of the read in flight has been folded into the reading above without being
+    /// published — see `HubJoin.stage`. The apply that closes the read publishes the whole of it,
+    /// so it moves the row whatever its own last slice held.
+    private(set) var isStaged = false
 
     init(observation: TranscriptObservation) {
         self.id = observation.id
@@ -33,6 +37,32 @@ struct HubTranscript {
         rereading = HubSession(observation: observation)
     }
 
+    /// Fold part of a read into the reading it belongs to, publishing nothing: the fresh reading
+    /// while one is being read again, and the transcript's own while its first read is still
+    /// landing. Either way the row on screen stands on what it already had.
+    ///
+    /// Mutated through the optional rather than through a local copy: a local would put a second
+    /// reference on the stream behind it, and every event of the slice would then copy it.
+    mutating func stage(_ events: [TranscriptEvent]) {
+        isStaged = true
+        guard rereading != nil else {
+            for event in events {
+                session.apply(event)
+            }
+            return
+        }
+        for event in events {
+            rereading?.apply(event)
+        }
+    }
+
+    /// Whether anything was staged since the last publish, taken rather than read: the write that
+    /// takes it is the one that publishes the slices it stands for.
+    mutating func takeStaged() -> Bool {
+        defer { isStaged = false }
+        return isStaged
+    }
+
     /// The reading a batch lands in. The first batch after a reread lands in the fresh one, so
     /// nothing the stale reading saw is counted twice. Answers whether the reading was swapped,
     /// which is a move of the row.
@@ -43,9 +73,11 @@ struct HubTranscript {
         return true
     }
 
-    /// A reread whose tail delivered nothing. The stale reading stays as it was.
+    /// A reread whose tail delivered nothing. The stale reading stays as it was — and so do the
+    /// slices staged into the fresh one, which go with the reading they were folded into.
     mutating func abandonReread() {
         rereading = nil
+        isStaged = false
     }
 }
 

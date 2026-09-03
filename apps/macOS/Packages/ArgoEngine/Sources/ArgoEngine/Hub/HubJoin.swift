@@ -36,6 +36,9 @@ struct HubJoin {
         /// How many whole-set rebuilds this join paid, counted rather than timed (ADR-0028 Rule
         /// 8). Per value, because a static one would be shared by every suite running beside this.
         private(set) var rebuilds = 0
+        /// The most events any ONE write folded into this join — what bounds how long a single
+        /// write can hold the main actor (`TranscriptFold`). Counted for `rebuilds`' reason.
+        private(set) var largestFold = 0
     #endif
 
     var isEmpty: Bool {
@@ -120,16 +123,48 @@ struct HubJoin {
         return true
     }
 
+    /// Fold one slice of a read into the transcript's reading, publishing NOTHING.
+    ///
+    /// What a read longer than `TranscriptFold.events` lands in, so no single write holds the main
+    /// actor for the length of a file (#1166). The row on screen stands on the reading it already
+    /// had — the stale one while a transcript is read again, and no row at all while a transcript
+    /// is read for the first time — until `apply` below closes the read and publishes the whole of
+    /// it at once. A slice for a transcript no longer in the set folds nothing.
+    ///
+    /// Always answers `false`: nothing published moved, which is exactly the claim (#858, #1134).
+    /// The records it claims are claimed as they are folded, because ownership is resolved by which
+    /// transcript claimed a record FIRST and a slice held back would put this file behind a tail
+    /// that started after it.
+    @discardableResult
+    mutating func stage(_ events: [TranscriptEvent], to transcriptID: String) -> Bool {
+        guard let index = position(of: transcriptID), !events.isEmpty else { return false }
+        countFold(of: events)
+        transcripts[index].stage(events)
+        for event in events {
+            guard case let .recordIdentity(uuid) = event else { continue }
+            _ = rememberOwner(of: uuid, transcriptID: transcriptID)
+        }
+        return false
+    }
+
     /// Apply one read's worth of events, rebuilding once for the batch rather than once per event.
     /// Applying also SETTLES the transcript: the first batch a tail delivers is the backfill of
     /// what its file already held. A batch for a transcript no longer in the set applies nothing.
+    ///
+    /// It is also what CLOSES a read that landed in slices (`stage`), publishing every one of them
+    /// under this one write — so a batch longer than `TranscriptFold.events` reaches the roster in
+    /// exactly the state it would have reached it in whole.
     @discardableResult
     mutating func apply(_ events: [TranscriptEvent], to transcriptID: String) -> Bool {
         guard let index = position(of: transcriptID) else { return false }
+        countFold(of: events)
         // A backfill is a transcript joining the published set, which is a move of the set itself.
         // A reread's backfill replaces a row already in it and is a move of that row.
         var moved = !transcripts[index].isSettled
         moved = transcripts[index].beginBatch() || moved
+        // A read that landed in slices publishes here, whatever its LAST slice held: the events
+        // before it are already in the reading and nothing has been published for them yet.
+        moved = transcripts[index].takeStaged() || moved
         let before = HubJoinFacts(of: transcripts[index].session)
         // Nothing in the batch and the transcript already settled: no event to append and no
         // record to claim, so no row moves. Every tail that ENDS takes this path (#858). A batch
@@ -186,6 +221,14 @@ struct HubJoin {
 
     private func position(of transcriptID: String) -> Int? {
         positions[transcriptID]
+    }
+
+    /// Record how much one write folded, which is what `TranscriptFold` bounds. Spelled once and
+    /// called from both writes that fold events, so neither can grow without the count seeing it.
+    private mutating func countFold(of events: [TranscriptEvent]) {
+        #if DEBUG
+            largestFold = max(largestFold, events.count)
+        #endif
     }
 
     /// Folded over the transcripts that have been READ, which is the whole set once a sweep has
