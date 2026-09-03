@@ -54,14 +54,14 @@ extension FeedProseFrame {
         for (at, block) in ProseReading.structure(of: text).enumerated() {
             let beside = read.indices.contains(at) ? read[at] : nil
             y += at > 0 ? ArgoFeedRow.blockStep : 0
-            let height = standing(block, read: beside, across: measure)
-            if let part = part(of: block, read: beside, across: measure) {
+            let drawn = drawn(block, read: beside, across: measure)
+            if let part = drawn.part {
                 frame.parts.append(Placed(
                     part: part,
-                    rect: CGRect(x: 0, y: y, width: measure, height: height),
+                    rect: CGRect(x: 0, y: y, width: measure, height: drawn.height),
                 ))
             }
-            y += height
+            y += drawn.height
         }
         frame.height = y
         return frame
@@ -73,27 +73,34 @@ extension FeedProseFrame {
         ArgoSpacing.flush + ArgoFeedRow.copyChipStep + ArgoFeedRow.copyChipSide
     }
 
-    /// One block as the thing that draws it. `nil` where the two readings came apart on a block
-    /// that draws itself — nothing has ever seen them do it, and a missing part leaves a gap rather
-    /// than moving every block under it.
-    private static func part(
-        of block: MinimapProseBlock,
+    /// One block as the thing that draws it, and the height it stands at — ONE answer, because the
+    /// two are the same fact about the same typeset. A part is `nil` where the two readings came
+    /// apart on a block that draws itself: nothing has ever seen them do it, and a missing part
+    /// leaves a gap rather than moving every block under it.
+    private static func drawn(
+        _ block: MinimapProseBlock,
         read: MarkdownBlock?,
         across measure: CGFloat,
     )
-        -> FeedProsePart? {
+        -> (part: FeedProsePart?, height: CGFloat) {
         guard case let .prose(words) = block else {
-            return read.map { .laid($0) }
+            return (read.map { .laid($0) }, standing(block, read: read, across: measure))
         }
         let indent = words.indent
-        return .words(
-            run: ProseMetrics.run(
-                of: words.text, across: max(0, measure - indent), in: words.face,
-            ),
+        let run = ProseMetrics.run(
+            of: words.text, across: max(0, measure - indent), in: words.face,
+        )
+        let part = FeedProsePart.words(
+            run: run,
+            // Tabular figures, as `FeedMarker` sets them: a marker that re-measures per digit
+            // moves the words beside it.
             marker: words.marker.map {
-                ProseMetrics.run(of: $0, across: ArgoFeedRow.markerWidth, in: words.face)
+                ProseMetrics.run(of: $0, across: ArgoFeedRow.markerWidth, in: words.face.tabular)
             },
             indent: indent,
         )
+        // Rounded UP to a whole point, because a run of glyphs sizes itself to whole points: a
+        // stack of three blocks pays three roundings rather than one over the sum.
+        return (part, ceil(words.face.height(ofLines: run.lines.count)))
     }
 }

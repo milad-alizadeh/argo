@@ -103,7 +103,11 @@ extension MinimapProseWords {
     /// A list item's marker, trailing-aligned in its own column exactly as `FeedMarkdown` sets it.
     @MainActor private func marker(ink: FeedInk) -> [MinimapRowRect] {
         guard let marker else { return [] }
-        let width = min(ArgoFeedRow.markerWidth, ProseMetrics.width(of: marker, in: face))
+        // The face the marker is DRAWN in, tabular figures included, so the lane and the surface
+        // put its column's edge in one place — `FeedProseFrame`.
+        let width = min(
+            ArgoFeedRow.markerWidth, ProseMetrics.width(of: marker, in: face.tabular),
+        )
         return [MinimapRowRect(
             y: 0,
             height: face.lineBox,

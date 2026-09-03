@@ -15,6 +15,10 @@ public struct ProseFace: Hashable, Sendable {
     public var isItalic = false
     /// Set in the mono: a command, a count, a patch. Wider per character than the interface sans.
     public var isMachine = false
+    /// TABULAR figures: every digit the same advance. What a list marker is set with, so `9.` and
+    /// `10.` do not re-measure their own column — `FeedMarker`'s rule, kept where the marker is
+    /// both drawn and mapped.
+    public var isTabular = false
 
     /// Spelled out because the memberwise one a struct synthesises is internal, and every face in
     /// the feed and in a diagram is built through it.
@@ -26,6 +30,13 @@ public struct ProseFace: Hashable, Sendable {
         self.rung = rung
         self.isBold = isBold
         self.isMachine = isMachine
+    }
+
+    /// This same face with tabular figures — a list marker's column.
+    public var tabular: ProseFace {
+        var face = self
+        face.isTabular = true
+        return face
     }
 
     public static let body = ProseFace()
@@ -54,9 +65,10 @@ public extension ProseFace {
     /// text setting — see `ArgoTypeScale.drawnLineBox`.
     @MainActor var font: NSFont {
         let sans = NSFont.preferredFont(forTextStyle: rung.appKitStyle)
-        let base = isMachine
+        let design = isMachine
             ? NSFont.monospacedSystemFont(ofSize: sans.pointSize, weight: .regular)
             : sans
+        let base = isTabular ? Self.tabular(design) : design
         var traits: NSFontTraitMask = []
         if isBold {
             traits.insert(.boldFontMask)
@@ -66,6 +78,18 @@ public extension ProseFace {
         }
         guard !traits.isEmpty else { return base }
         return NSFontManager.shared.convert(base, toHaveTrait: traits)
+    }
+
+    /// The same font with tabular figures, which is what SwiftUI's `monospacedDigit()` asks for.
+    /// Unchanged where the family has no such variant to offer.
+    @MainActor private static func tabular(_ font: NSFont) -> NSFont {
+        let feature: [NSFontDescriptor.FeatureKey: Int] = [
+            .typeIdentifier: kNumberSpacingType,
+            .selectorIdentifier: kMonospacedNumbersSelector,
+        ]
+        let descriptor = font.fontDescriptor
+            .addingAttributes([.featureSettings: [feature]])
+        return NSFont(descriptor: descriptor, size: font.pointSize) ?? font
     }
 
     /// This same face in the mono, which is what a `code` span inside it is set in.
@@ -155,6 +179,6 @@ public extension ProseFace {
     /// that drops what it holds when that number moves is cheaper than a key that carries it — see
     /// `ProseTextSize` and `ProseMetrics.atCurrentSize()` (#1027).
     var key: String {
-        "\(rung)\u{0}\(isBold)\u{0}\(isItalic)\u{0}\(isMachine)"
+        "\(rung)\u{0}\(isBold)\u{0}\(isItalic)\u{0}\(isMachine)\u{0}\(isTabular)"
     }
 }

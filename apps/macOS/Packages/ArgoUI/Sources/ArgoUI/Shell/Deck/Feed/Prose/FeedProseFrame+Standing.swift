@@ -7,11 +7,12 @@ import ProseText
 // walk (ADR-0030, Rule 2).
 
 extension FeedProseFrame {
-    /// One block at the height it is drawn.
+    /// One block that lays ITSELF out, at the height it is drawn. Words never reach here — those
+    /// are counted off the very run the surface inks, in `FeedProseFrame.drawn(_:read:across:)`.
     ///
-    /// Glyphs are rounded UP to a whole point, because a run sizes itself to whole points: a stack
-    /// of three blocks pays three roundings rather than one over the sum. A table and a diagram are
-    /// not glyphs — each states its own size through its own layout — so neither is rounded here.
+    /// A fence is glyphs on a ground and rounds up to a whole point like any other run. A table and
+    /// a diagram are not glyphs — each states its own size through its own layout — so neither is
+    /// rounded here.
     static func standing(
         _ block: MinimapProseBlock,
         read: MarkdownBlock?,
@@ -19,8 +20,6 @@ extension FeedProseFrame {
     )
         -> CGFloat {
         switch block {
-        case let .prose(words):
-            ceil(words.face.height(ofLines: lines(of: words, across: measure)))
         case let .fence(lines, hasInfo):
             read.flatMap(emptyFence).map { fence(hasInfo: hasInfo, over: ceil($0)) }
                 ?? ceil(fence(hasInfo: hasInfo, over: ProseFace.machine.height(ofLines: lines)))
@@ -28,15 +27,11 @@ extension FeedProseFrame {
             table.laid(across: measure).height
         case let .diagram(diagram):
             diagram.mapped(across: measure).height
+        // Words, which the caller answered for off the run it built. No formula here could be
+        // anything but a second model of the same wrap.
+        case .prose:
+            0
         }
-    }
-
-    /// How many lines the words broke into — counted off the very run the surface inks, so the
-    /// height and the drawing cannot disagree about the wrap.
-    private static func lines(of words: MinimapProseWords, across measure: CGFloat) -> Int {
-        ProseMetrics.run(
-            of: words.text, across: max(0, measure - words.indent), in: words.face,
-        ).lines.count
     }
 
     /// The one construct the block list's own height is wrong about: a fence with an EMPTY body,

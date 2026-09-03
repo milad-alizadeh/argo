@@ -8,9 +8,9 @@ import ProseText
 extension ProseSurface {
     override func draw(_ dirty: NSRect) {
         super.draw(dirty)
-        guard let context = NSGraphicsContext.current?.cgContext, let ink = showing?.ink
-        else { return }
-        let marked = ink.voiced(theme.color.text.tertiary)
+        guard let context = NSGraphicsContext.current?.cgContext, let showing else { return }
+        let ink = showing.ink
+        let marked = ink.voiced(showing.marker)
         for part in placed.parts {
             guard case let .words(run, marker, indent) = part.part else { continue }
             guard part.rect.intersects(dirty) else { continue }

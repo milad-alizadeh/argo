@@ -26,7 +26,9 @@ package struct FeedMarkdown: View {
     /// handed a proposal, and the words wrap across whatever it is given.
     private var showing: (CGFloat) -> ProseShowing {
         { measure in
-            ProseShowing(text: text, measure: measure, ink: ink)
+            ProseShowing(
+                text: text, measure: measure, ink: ink, marker: argo.color.text.tertiary,
+            )
         }
     }
 

@@ -103,8 +103,9 @@ public extension ProseRun {
                 inked(url: url, isCode: Self.isCode(marks), ink: inking.ink).cgColor,
             )
             CTRunDraw(run, context, CFRange())
-            guard url != nil else { continue }
-            underline(run, in: context)
+            guard url != nil, let font = marks[NSAttributedString.Key.font] as? NSFont
+            else { continue }
+            underline(run, in: font, on: context)
         }
     }
 
@@ -118,9 +119,7 @@ public extension ProseRun {
 
     /// The rule under a link's words, at the font's own underline position and thickness — drawn
     /// here because a `CTRun` carries no underline attribute of its own.
-    private func underline(_ run: CTRun, in context: CGContext) {
-        let marks = CTRunGetAttributes(run) as NSDictionary
-        guard let font = marks[NSAttributedString.Key.font] as? NSFont else { return }
+    private func underline(_ run: CTRun, in font: NSFont, on context: CGContext) {
         var start = CGPoint.zero
         CTRunGetPositions(run, CFRange(location: 0, length: 1), &start)
         let width = CGFloat(CTRunGetTypographicBounds(run, CFRange(), nil, nil, nil))

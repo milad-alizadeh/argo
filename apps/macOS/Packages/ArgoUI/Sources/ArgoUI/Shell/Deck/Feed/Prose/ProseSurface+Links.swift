@@ -58,10 +58,21 @@ extension ProseSurface {
     }
 
     override func mouseDown(with event: NSEvent) {
-        guard let url = link(at: convert(event.locationInWindow, from: nil)) else {
+        guard press(at: convert(event.locationInWindow, from: nil)) else {
             super.mouseDown(with: event)
             return
         }
+    }
+
+    /// A press at a point in this view's own coordinates: the link under it opened, or nothing done
+    /// and `false` said, so the press falls through to the row.
+    ///
+    /// Named apart from `mouseDown` because an `NSEvent` carries a window and a test has none —
+    /// and what the claim is about is which destination a point opens, not how the point arrived.
+    @discardableResult
+    func press(at point: CGPoint) -> Bool {
+        guard let url = link(at: point) else { return false }
         open(url)
+        return true
     }
 }

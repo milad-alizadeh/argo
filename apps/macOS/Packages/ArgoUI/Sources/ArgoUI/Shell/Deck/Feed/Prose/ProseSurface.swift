@@ -12,6 +12,9 @@ struct ProseShowing: Equatable {
     var text: String
     var measure: CGFloat
     var ink: ProseInk
+    /// A list marker's own quieter ink — `FeedMarker`'s. Held here rather than read off the theme
+    /// at draw time, so a palette that moved is a showing that differs and a repaint that happens.
+    var marker: ArgoColor
 }
 
 /// A prose row drawn by the Core Text frame that MEASURED it (ADR-0030, Rule 2).
@@ -64,8 +67,11 @@ final class ProseSurface: NSView {
     }
 
     /// The row placed at `showing`'s measure. Skipped whole where nothing moved, which is most
-    /// evaluations. PURE — it reads the stores and writes this view's own two fields, so it is safe
-    /// to call from a sizing pass; everything that touches the view tree waits for `layout()`.
+    /// evaluations.
+    ///
+    /// Safe to call from a SIZING pass: it writes this view's own fields and marks it for layout,
+    /// and touches no subview. Adding one mid-measure re-enters the layout pass the measure is part
+    /// of, which AppKit ends by throwing.
     @MainActor func show(_ showing: ProseShowing, theme: ArgoTheme) {
         self.theme = theme
         guard showing != self.showing else { return }

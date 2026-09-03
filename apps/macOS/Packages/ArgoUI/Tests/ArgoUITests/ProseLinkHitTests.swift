@@ -17,12 +17,19 @@ struct ProseLinkHitTests {
     private static func surface(_ text: String) -> ProseSurface {
         let surface = ProseSurface()
         surface.show(
-            ProseShowing(text: text, measure: measure, ink: ink),
+            ProseShowing(
+                text: text,
+                measure: measure,
+                ink: ink,
+                marker: ArgoPalette.graphite.text.tertiary,
+            ),
             theme: .graphite,
         )
         return surface
     }
 
+    /// The feed's own ink, through the contract's own names: a test that spelled the inset and the
+    /// radius by hand would go on passing after a token moved and stop exercising what ships.
     private static var ink: ProseInk {
         let palette = ArgoPalette.graphite
         return ProseInk(
@@ -31,28 +38,30 @@ struct ProseLinkHitTests {
             span: nil,
             marked: ProseMarkedInk(
                 ground: palette.surface.marked,
-                inset: CGSize(width: 3, height: 1),
-                radius: 4,
+                inset: CGSize(
+                    width: ArgoFeedRow.markedSpanInsetX,
+                    height: ArgoFeedRow.markedSpanInsetY,
+                ),
+                radius: ArgoRadius.marker,
             ),
         )
     }
 
     @Test
-    func `a press inside a link's words opens that link`() {
+    func `a press inside a link's words opens that link`() throws {
         let surface = Self.surface("The suite is green, per [ADR-0021](https://example.com/adr).")
-        let place = try? #require(surface.links.first)
         #expect(surface.links.count == 1)
-        #expect(place?.url.absoluteString == "https://example.com/adr")
-        let inside = CGPoint(x: place?.rect.midX ?? 0, y: place?.rect.midY ?? 0)
-        #expect(surface.link(at: inside) == place?.url)
+        let place = try #require(surface.links.first)
+        #expect(place.url.absoluteString == "https://example.com/adr")
+        #expect(surface.link(at: CGPoint(x: place.rect.midX, y: place.rect.midY)) == place.url)
     }
 
     @Test
-    func `a press outside every link opens nothing`() {
+    func `a press outside every link opens nothing`() throws {
         let surface = Self.surface("The suite is green, per [ADR-0021](https://example.com/adr).")
-        let place = surface.links.first
+        let place = try #require(surface.links.first)
         #expect(surface.link(at: CGPoint(x: 2, y: 2)) == nil)
-        #expect(surface.link(at: CGPoint(x: (place?.rect.maxX ?? 0) + 24, y: 2)) == nil)
+        #expect(surface.link(at: CGPoint(x: place.rect.maxX + 24, y: 2)) == nil)
     }
 
     /// Two links in one row, each answering for its own words — the case a single rectangle over
@@ -66,21 +75,31 @@ struct ProseLinkHitTests {
         for place in surface.links {
             #expect(surface.link(at: CGPoint(x: place.rect.midX, y: place.rect.midY)) == place.url)
         }
-        let first = surface.links.first
-        let second = surface.links.last
-        #expect(first?.url != second?.url)
+        #expect(surface.links.first?.url != surface.links.last?.url)
     }
 
     /// A link inside a list item is offset by the marker column, and a press has to land on the
     /// words rather than where they would have been without it.
     @Test
-    func `a link inside a list item is placed past its marker`() {
+    func `a link inside a list item is placed past its marker`() throws {
         let surface = Self.surface("- see [the record](https://example.com/record)")
-        let place = surface.links.first
-        #expect((place?.rect.minX ?? 0) >= ArgoFeedRow.markerWidth)
-        #expect(surface.link(
-            at: CGPoint(x: place?.rect.midX ?? 0, y: place?.rect.midY ?? 0),
-        ) == place?.url)
+        let place = try #require(surface.links.first)
+        #expect(place.rect.minX >= ArgoFeedRow.markerWidth)
+        #expect(surface.link(at: CGPoint(x: place.rect.midX, y: place.rect.midY)) == place.url)
+    }
+
+    /// The press itself, end to end: what a click on a link's words actually opens, and that a
+    /// click anywhere else opens nothing and falls through to the row.
+    @Test
+    func `a press opens the destination the record named`() throws {
+        let surface = Self.surface("The suite is green, per [ADR-0021](https://example.com/adr).")
+        var opened: [URL] = []
+        surface.open = { opened.append($0) }
+        let place = try #require(surface.links.first)
+        #expect(surface.press(at: CGPoint(x: place.rect.midX, y: place.rect.midY)))
+        #expect(opened.map(\.absoluteString) == ["https://example.com/adr"])
+        #expect(!surface.press(at: CGPoint(x: place.rect.maxX + 24, y: 2)))
+        #expect(opened.count == 1)
     }
 
     /// Every rectangle sits inside the row's own frame: a link drawn past the foot would be a link
