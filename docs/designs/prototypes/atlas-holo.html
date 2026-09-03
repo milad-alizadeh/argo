@@ -1363,20 +1363,13 @@ function setDom(mode) {
    same picture, larger. Nothing reflows, nothing dissolves, nothing is redrawn: the only
    thing that changes is the camera, which is why it can be continuous at all.
 
-   The wheel rides ONE LEG at a time. A leg runs from where the parent is seated to where the
-   aim is seated, and a box is seated when its width OR its height meets the window edge —
-   the whole of it on screen and nothing of its siblings. Inside a leg the wheel is a plain
-   continuous zoom, reversible, exactly as far as the notch says. At the top of the leg it
-   STOPS: that plate is the view. One more notch inward adopts the child under the pointer
-   and the next leg starts; one more outward hands the aim back to the parent.
+   The wheel does not scrub that scale by hand. A notch is read for its direction only and
+   fires the same flight a click does — in, the child under the pointer; out, the parent —
+   because the two gestures mean the same thing and a reader who learns one has learned both.
 
-   The pan is not free. A leg interpolates from the parent's centred camera to the aim's
-   centred camera on the progress the SCALE has made, so whatever the pointer is over, the
-   thing being zoomed into ends up in the middle of the window rather than wherever the
-   cursor happened to leave it. */
+   The flight always lands CENTRED, at the scale where the box's width or its height meets
+   the window edge: the whole of it on screen and nothing of its siblings. */
 const SEAT = 1.0;        // seated: the box's longer axis meets the window edge
-const RIDE = 0.0016;     // how much of a wheel notch becomes scale
-const EPS = 1e-6;
 
 /* Layout coordinates to canvas pixels, through the camera that is drawing right now. Exact
    in plan view, where the projection is flat and `raw` is affine. */
@@ -1398,7 +1391,6 @@ function seatCam(b, fill) {
   const k = fill * Math.min(W / Math.abs(q[0] - p[0]), H / Math.abs(q[1] - p[1]));
   return { scale: k, ox: W / 2 - (p[0] + q[0]) / 2 * k, oy: H / 2 - (p[1] + q[1]) / 2 * k };
 }
-const seatScale = b => seatCam(b, SEAT).scale;
 
 /* WHERE THE CAMERA IS COMING IN ON. Null is the root, which is the whole map and the one
    place the ride bottoms out — there is nothing outside it to pull back to. */
@@ -1421,12 +1413,6 @@ function downUnder(b, mx, my) {
   }
   return null;
 }
-/* The two ends of the leg the aim is on. */
-const legEnds = b => ({
-  from: b === tree() ? camFor(null, 1) : seatCam(upOf(b) || tree(), SEAT),
-  to: seatCam(b, SEAT),
-});
-
 /* The scope is READ OFF the camera rather than kept beside it, so the crumb, the rail and
    the reading can never name a folder the map is not standing in. */
 function scopeTo(b) {
@@ -1446,30 +1432,32 @@ function setAim(b) {
   scopeTo(aimBox());
 }
 
-/* ONE WHEEL NOTCH. Retarget only at the ends of the leg, then ride. */
-function ride(dy, mx, my) {
+/* THE WHEEL IS THE CLICK, WITHOUT THE AIMING. A notch carries no distance worth honouring —
+   a mouse wheel says 120 and a trackpad says 3 for the same flick of the hand — so it is read
+   for its DIRECTION and nothing else, and it does exactly what a click does: in, the child
+   under the pointer; out, the parent. Same flight, same landing, one level per gesture.
+
+   A gesture is not an event. A trackpad sends a burst of them and then coasts, so the first
+   event of a burst acts and the rest of the burst is swallowed: a new gesture is one that
+   arrives after a gap, with no flight still early in its travel. Late in a flight the wheel
+   is live again, because a second flick while the camera is nearly there is a reader asking
+   for the next level, not the same one twice. */
+const WHEEL_GAP = 140;     // quiet for this long, and the next event starts a new gesture
+const WHEEL_LIVE = 0.55;   // ... or the flight is this far along, whichever comes first
+let wheelAt = 0;
+function wheelStep(dy, mx, my) {
+  const now = performance.now();
+  const fresh = now - wheelAt > WHEEL_GAP;
+  wheelAt = now;
+  if (!fresh) return;
+  if (fly && now - fly.t0 < SNAP_MS * WHEEL_LIVE) return;
   const root = tree();
-  let b = aimBox();
-  const inward = dy < 0;
-  if (inward && cam.scale >= seatScale(b) - EPS) {
-    const d = downUnder(b, mx, my);
-    if (!d) return;                 // seated, and nothing under the pointer to go on into
-    b = d;
-  } else if (!inward && b !== root && cam.scale <= legEnds(b).from.scale + EPS) {
-    b = upOf(b) || root;
-  }
-  if (b !== aimBox()) setAim(b);
-  const { from, to } = legEnds(b);
-  const lo = Math.min(from.scale, to.scale), hi = Math.max(from.scale, to.scale);
-  const s = Math.min(hi, Math.max(lo, cam.scale * Math.exp(-dy * RIDE)));
-  /* The pan rides on the progress the scale has already made, so the two cannot disagree
-     about where they are — and a degenerate leg (a folder that fills its parent) lands. */
-  const d = to.scale - from.scale;
-  const f = Math.abs(d) > EPS ? (s - from.scale) / d : 1;
-  cam.scale = s;
-  cam.ox = from.ox + (to.ox - from.ox) * f;
-  cam.oy = from.oy + (to.oy - from.oy) * f;
-  rebuild();
+  if (dy < 0) { const d = downUnder(aimBox(), mx, my); if (d) goTo(d); return; }
+  /* Out of the root there is no parent, so the last notch out is the one that undoes the
+     first notch in: back to the opening framing, which is what fit() and the reset agree on. */
+  if (aimBox() !== root) return void goTo(upOf(aimBox()) || root);
+  const e = camFor(null, 1);
+  if (Math.abs(cam.scale - e.scale) > 0.5) flyTo(e);
 }
 
 /* A CLICK IS THE SAME ARRIVAL, flown. It is one flight and not one per level, because with
@@ -2393,7 +2381,12 @@ function plateName(b) {
       /* clipped to its own band, which is the whole promise: whatever the projection does to
          the strip, no part of the word can land on anything but this folder's ground */
       ctx.closePath(); ctx.clip();
-      ctx.globalAlpha = wide > 420 ? .94 : wide > 200 ? .78 : .58;
+      /* One weight for every folder name. The ramp that faded a narrow plate's caption was
+         sized for a map you looked at from one altitude; now that a level is something you
+         stand in, two folders side by side are two folders, and a name half as bright as
+         its neighbour reads as a different KIND of thing rather than a smaller one. Size
+         and position already say which is which. */
+      ctx.globalAlpha = .94;
       ctx.translate(p.at[0], p.at[1]); ctx.rotate(p.th);
       ctx.strokeStyle = 'rgba(2,8,12,.8)'; ctx.lineWidth = 3;
       ctx.strokeText(p.text, 2, 0);
@@ -3359,10 +3352,18 @@ function key(lo, hi) {
   $('keyFootHi').textContent = 'top 15%';
 }
 
+/* "Back to the opening view" is the whole view and not just its camera: a reset that left a
+   folder scoped, a plate rimmed and a reading open would put the reader back at the top of a
+   map still dressed for wherever they had been. */
 function reset() {
   cityYaw = YAW; cityPitch = PITCH;
   setFlat(state.plan ? 1 : 0);
-  fit(); rebuild(); rise(); stamp();
+  closePage(); hideDef();
+  aim = null;
+  state.hover = state.pinned = state.peek = null; state.peekKey = '';
+  state.folder = null; state.folderName = null; state.trail = [];
+  selectDomain(null);
+  fit(); rebuild(); rise(); detail(null); railIndex(); railMark(); stamp();
 }
 
 /* ---------- the orbit ---------- */
@@ -3663,10 +3664,11 @@ Promise.all([
      a plain zoom about the pointer, bounded off the fitted scale. */
   cv.onwheel = e => {
     e.preventDefault();
-    fly = null;                       // a hand on the wheel outranks a flight still travelling
     const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
     state.hover = null;
-    if (state.plan) return ride(e.deltaY, mx, my);
+    /* Only the city's free zoom writes the camera under a flight, and it has to end one. */
+    if (!state.plan) fly = null;
+    if (state.plan) return wheelStep(e.deltaY, mx, my);
     const base = baseScale();
     const want = cam.scale * Math.exp(-e.deltaY * 0.0014);
     const next = Math.min(base * 90, Math.max(base * 0.5, want)) / cam.scale;
