@@ -47,9 +47,9 @@ package struct SessionNavigator: View {
         // 26 the style's capsule is a fixed neutral, and neither `.tint` nor the `AccentColor`
         // asset moves it by a value — both measured off a render with a scarlet probe (#875,
         // amending D30, which recorded the asset as the route). Nor does the style stop drawing
-        // it: the ground below COVERS the capsule, which is why it is opaque (#922) — on the row
-        // THIS view calls selected, and only there. The platform draws its fill on whichever row
-        // its own selection names, so the two must never be allowed to name different rows.
+        // it on its own, and it paints the row under a held click before the binding moves: the
+        // probe under each row's ground switches the table's own selection drawing off (#1137), so
+        // the ground is the only selection paint in the roster.
         .listStyle(.sidebar)
         // Over the whole list, not the chevron alone: dropping the section's `isExpanded:` gave up
         // the system's own expansion, so the rows arrive on this instead of in the click's frame.
@@ -113,16 +113,16 @@ package struct SessionNavigator: View {
 
         // A fold takes neither tag nor selection, deliberately: `ForEach` tags a row with its
         // `Identifiable` id whether or not `.tag` is written, so leaving `.tag` off never kept the
-        // platform off a fold — and a fold is the one row the ground below never covers.
-        // `selectionDisabled` is how the app refuses that fill everywhere else (`BacklogList`). It
+        // platform off a fold — and a fold is the one row that carries no ground, and so no probe.
+        // `selectionDisabled` is how the app refuses selection there, as `BacklogList` does. It
         // is archived and renamed through the runs under it, so it carries neither gesture either.
         if row.takesSelection {
             drawn
-                // Holds its colour while the list is not first responder, where the platform greys
-                // its own selection out: this is the one piece of state a reader tracks all day.
-                // First responder, the platform's own fill is the `AccentColor` asset at full
-                // strength, so a row this misses is not a quiet miss — it is a saturated blue row
-                // (D30, 2026-08-31).
+                // Holds its colour while the list is not first responder, where the platform would
+                // grey its own selection out: this is the one piece of state a reader tracks all
+                // day. The platform's own fill is switched off under it (`SidebarSelectionFill`),
+                // so a row this misses draws no selection at all rather than the wrong one
+                // (D30, 2026-08-31; #1137).
                 .argoSelectedRowGround(isSelected: reading.isSelected(row))
                 .tag(row.id)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
