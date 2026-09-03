@@ -124,6 +124,22 @@ enum SessionHeaderFixture {
         spend: .init(contextTokens: 67175),
     ))
 
+    /// No Ticket provider bound at all (#1092): the tab line's Issue link and the panel's `Issue`
+    /// row both draw nothing, which is `unread`'s own reading and not `unlinked`'s repairable one.
+    static let unread = SessionHeaderProjection.header(from: CockpitPresentation.Session(
+        id: "header-unread",
+        title: "Read the deck's own chrome layout",
+        access: .managed,
+        status: .idle,
+        chain: .init(program: .init(cli: .claude, model: "claude-opus-5")),
+        work: .init(
+            location: "/Users/milad/Developer/argo",
+            workspace: .init(kind: .worktree, branch: "argo/#1092-session-ticket-link"),
+            ticket: .unread,
+        ),
+        spend: .init(contextTokens: 67175),
+    ))
+
     static func header(for access: CockpitPresentation.Session.Access)
         -> SessionHeaderProjection.Header {
         SessionHeaderProjection.header(from: session(
@@ -149,7 +165,12 @@ enum SessionHeaderFixture {
             handedOffTo: handedOffTo,
         ))
     }
+}
 
+/// The private builders behind the fixtures above. Split from the enum body so the catalog of
+/// named fixtures can keep growing without the type itself hitting the length cap that exists to
+/// keep a body readable in one screen — these are read once, not browsed.
+extension SessionHeaderFixture {
     /// The external posture is given the branch that does not fit, deliberately: the branch sits
     /// immediately BEFORE the access mark on the line, so a long name is what crowds the mark out.
     private static func branch(for access: CockpitPresentation.Session.Access) -> String {

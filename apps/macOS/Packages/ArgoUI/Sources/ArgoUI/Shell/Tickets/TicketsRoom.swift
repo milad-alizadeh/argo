@@ -17,6 +17,9 @@ package struct TicketsRoom {
     @Binding var cockpitRoom: CockpitRoom
     /// Which ticket the deck is open on. Held above the room, because the ticket outlives the pane.
     @Binding var ticket: Int?
+    /// Which Session the Sessions room is open on — the whole window's, like `cockpitRoom`. What
+    /// the head's claimant line writes before switching `cockpitRoom` to `.sessions` (#1092).
+    @Binding var session: CockpitPresentation.Session.ID?
     /// Which view is open. Above the room too, and for a sharper reason: `room.backlog` is already
     /// filtered to it, so the selection has to be settled before the room is derived.
     @Binding var view: TicketsView
@@ -96,6 +99,15 @@ package struct TicketsRoom {
         NextUpIntents(open: { ticket = $0 }, starting: starting)
     }
 
+    /// What pressing the ticket head's claimant line does (#1092) — point the window at the
+    /// Session and switch into its room, the way `TicketStart.run` does after a spawn. A named
+    /// method rather than an inline closure, so the round trip with `argoOpenTicket` is testable
+    /// without rendering a view.
+    func openSession(_ id: CockpitPresentation.Session.ID) {
+        session = id
+        cockpitRoom = .sessions
+    }
+
     /// What the room puts in the WINDOW's row: every control the room has, on one line — the reason
     /// is `TicketsToolbar`'s.
     var toolbar: TicketsToolbar {
@@ -172,7 +184,12 @@ package struct TicketsRoom {
             // chips — see `ArgoBacklogList.labelsAppearAt`.
             .environment(\.backlogPaneWidth, seated)
             DeckSeam(width: $backlogWidth, limits: limits, growsRightward: true)
-            TicketDetail(ticket: room.ticket, unreadNumber: room.unreadNumber) { ticket = $0 }
+            TicketDetail(
+                ticket: room.ticket,
+                unreadNumber: room.unreadNumber,
+                open: { ticket = $0 },
+                openSession: openSession,
+            )
         }
     }
 
@@ -181,6 +198,7 @@ package struct TicketsRoom {
         room: TicketsRoomProjection.Room,
         cockpitRoom: Binding<CockpitRoom>,
         ticket: Binding<Int?>,
+        session: Binding<CockpitPresentation.Session.ID?>,
         view: Binding<TicketsView>,
         backlogWidth: Binding<CGFloat>,
         shut: Binding<Set<Int>>,
@@ -193,6 +211,7 @@ package struct TicketsRoom {
         self.room = room
         _cockpitRoom = cockpitRoom
         _ticket = ticket
+        _session = session
         _view = view
         _backlogWidth = backlogWidth
         _shut = shut

@@ -690,6 +690,26 @@ nothing is centred; past it the deck grows and the line length does not.
 **The head is title-first**: id in the machine caption, title on `sessionTitle`, then the status
 pair. No scope badge, no produced-by field (#272).
 
+**Amended #1092: the head names its live claimant.** A fourth line, under the status pair, in the
+same `headStep` rhythm the three above it already keep — no new measurement, because the head's
+own spacing already fits a fourth child. It is the ticket's own route to the Session working it,
+the join `TicketClaims` carries since #1092 widened it from a bare count to a claimant.
+
+One claimant is a route: the diamond `ClaimMark.symbol` — reused rather than a second glyph for
+"a live Session is on this", #939's own rule — beside the Session's name, both in
+`interaction.accent`, the ink this app spends on every other link. Pressing it does what
+`TicketStart.run(on:in:)` already does after a spawn: `navigation.session` then
+`navigation.room = .sessions`, the established gesture and not a second one.
+
+Two or more claimants is a fact the head states rather than a route it cannot honestly offer:
+`n Sessions are on this`, in `text.tertiary` and not a button. Naming one of the two silently
+would be a claim nobody made, and `Ticket.oldestFirst`'s tie-break is the wrong tool here — that
+order settles a contested PARENT edge, a different question, and borrowing it would give one rule
+two meanings.
+
+No claimant draws no row at all — not an empty one, the same absence rule the rest of this head
+already follows.
+
 **The provider's word and Argo's bucket, without a contradiction.** The word is set verbatim in
 `control`; the bucket follows it behind a 10pt hairline divider, in lowercase machine caption on
 `text.disabled`. The two read as a label and its filing, not as two competing claims.
@@ -866,7 +886,7 @@ for; anything not listed is stock used directly.
 | ~~`ModeMenu`~~ | — | **gone (#872)** | the four Mode rungs. The rung is the composer's, over a live Session (#608) |
 | `BacklogSearchField` | atom | `.searchable` field | searches the list; sits at the trailing edge |
 | `TicketDetail` | organism | a `ScrollView` | one column; no inner split |
-| `TicketHead` | molecule | a `VStack` of `Text` | id, title, status pair |
+| `TicketHead` | molecule | a `VStack` of `Text` | id, title, status pair, then the claimant line (#1092) |
 | `StatusPair` | atom | `HStack` + `Divider` | the provider's word, and Argo's bucket only where it is not the same word (#893) |
 | `TicketFactStrip` | molecule | a wrapping `HStack` above a `Divider` | priority · type · bucket · labels |
 | `DeliveryChip` | molecule | `Button(.plain)` opening a URL | deep-links; two on one ticket are two of these |

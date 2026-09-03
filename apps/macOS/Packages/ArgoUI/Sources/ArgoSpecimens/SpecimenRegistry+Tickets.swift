@@ -145,6 +145,15 @@ extension SpecimenRegistry {
         SpecimenEntry("closedTicket") {
             TicketDetailSpecimen(reading: TicketsFixture.reading(showing: 264))
         },
+        // The head's own route (#1092): one live Session on the ticket, named and pressable.
+        SpecimenEntry("claimedTicketHead") {
+            TicketDetailSpecimen(reading: TicketsFixture.reading(showing: 388))
+        },
+        // …and the head's other honest state: two live Sessions, so the head states the count
+        // rather than silently picking one to route to.
+        SpecimenEntry("twoClaimantsTicketHead") {
+            TicketDetailSpecimen(reading: TicketsFixture.claimedAndBlocked)
+        },
         // A link followed to a number nothing has been read for: while the read is in flight, and
         // after one that came back with nothing. Not an empty pane, which means "nothing selected".
         SpecimenEntry("unreadTicketNumber") {

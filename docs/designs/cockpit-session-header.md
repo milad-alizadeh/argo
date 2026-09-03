@@ -61,6 +61,30 @@ because the movement is itself the signal that a line was crossed.
 put it — it annotates that label rather than the tab line. The prototype draws it outside; the
 shipped placement supersedes it.
 
+### Amended #1092: the Ticket link takes the tab line's other empty edge
+
+The Issue row #894 built reached one surface — a line of text inside the ⓘ panel — and nothing
+about it was pressable. `TabLineInstruments` is the trailing group and already spoken for; the
+line's LEADING edge is where the ticket goes, ahead of the tabs zone, which draws nothing at all
+until #401–#404 land (`DeckSlot`'s own placeholder). That is the one stretch of this 40pt line
+that was empty, and it is where a reader's eye already lands first.
+
+`SessionIssueLink` draws the three readings `TicketLinkReading` carries, the same three the ⓘ
+panel's `Issue` row already draws from `row(for:)`:
+
+- **`.link`** is a route: `ArgoSymbol.ticketsRoom` beside the label, both in `interaction.accent` —
+  the same ink `FeedMarkLine`'s handoff link spends and the ticket head's own claimant line spends
+  back. Pressing it is `navigation.ticket` then `navigation.room = .tickets`, the mirror of
+  `TicketStart`'s own room switch and of the head's route back.
+- **`.unlinked`** states the reading in `text.tertiary` with no route — nothing names a Ticket to
+  open, and the repair is cutting a branch that does, not a click here. The same word the ⓘ
+  panel's row already carries, `Header.unlinkedWord`.
+- **`nil`** (`.unread`, no Ticket provider bound) draws nothing at all, the same absence rule the
+  panel's own row follows: with nothing to link TO there are no Tickets to attach.
+
+No measurement changes: the link sets on the line at its own intrinsic width, in the same
+`ArgoSpacing.loose` gap the tabs and the instruments already keep between them.
+
 ## Measurements
 
 | Measurement | Value | Source |

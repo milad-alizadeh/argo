@@ -21,6 +21,7 @@ struct NextUpActionTests {
             room: TicketsFixture.room,
             cockpitRoom: .constant(.tickets),
             ticket: Binding(get: { held.ticket }, set: { held.ticket = $0 }),
+            session: .constant(nil),
             view: Binding(get: { held.view }, set: { held.view = $0 }),
             backlogWidth: .constant(ArgoBacklogList.width),
             shut: .constant([]),

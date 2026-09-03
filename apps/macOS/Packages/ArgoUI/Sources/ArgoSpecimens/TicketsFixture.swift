@@ -96,7 +96,7 @@ package enum TicketsFixture {
     package static func reading(showing: Int) -> TicketsReading {
         TicketsReading(
             items: items,
-            claims: TicketClaims(numbers: [388, 609, 763]),
+            claims: TicketClaims(claimants: namedClaimants),
             deliveries: [388: .open, 609: .merged, 275: .failing, 763: .draft],
             deliveryFacts: deliveryFacts,
             provider: bound,
@@ -104,6 +104,31 @@ package enum TicketsFixture {
             showing: showing,
         )
     }
+
+    /// The claim join's three placed tickets, named (#1092) — each the one live Session on it, so
+    /// the head's route and the row's mark come off the same claimant a reader could actually open.
+    /// One claimant per ticket draws its own ticket's words as its name, the real shape a Session
+    /// takes when it is the only one on a ticket (`SessionTitle.namesOneRow`).
+    package static let namedClaimants: [Int: [TicketClaims.Claimant]] = [
+        388: [TicketClaims.Claimant(id: "session-388", name: title(388))],
+        609: [TicketClaims.Claimant(id: "session-609", name: title(609))],
+        763: [TicketClaims.Claimant(id: "session-763", name: title(763))],
+    ]
+
+    private static func title(_ number: Int) -> String {
+        guard let item = items.first(where: { $0.number == number }) else {
+            preconditionFailure("TicketsFixture.title: no item #\(number)")
+        }
+        return item.title
+    }
+
+    /// #272 with a SECOND live Session on it too — the head's other honest state (#1092): two
+    /// claimants, neither of which may draw the ticket's own words as a name
+    /// (`SessionTitle.namesOneRow`), so both take names of their own.
+    package static let twoClaimants: [TicketClaims.Claimant] = [
+        .init(id: "session-272-a", name: "Fix the generic node tree crash"),
+        .init(id: "session-272-b", name: "/implement 272"),
+    ]
 
     /// Two live Sessions whose own ticket link Argo could not name, so the claim join is SHORT by
     /// two and says so (#1074). The other three views are unaffected: their ground was read.
@@ -121,10 +146,16 @@ package enum TicketsFixture {
     /// The main reading with #272 claimed as well, which makes it claimed AND blocked — the row no
     /// other fixture reaches (#1074). A delta on `reading` rather than a listing of its own, so the
     /// other three claims cannot drift from the room every other render draws.
+    ///
+    /// #272 is claimed by TWO Sessions (#1092) — the head's other honest state, which needs a
+    /// blocked-and-claimed row anyway, so this is the one fixture that reaches it without a
+    /// listing of its own.
     package static var claimedAndBlocked: TicketsReading {
         var reading = reading
+        var claimants = reading.claims.claimants
+        claimants[272] = twoClaimants
         reading.claims = TicketClaims(
-            numbers: reading.claims.numbers.union([272]),
+            claimants: claimants,
             unplaced: reading.claims.unplaced,
             unread: reading.claims.unread,
         )

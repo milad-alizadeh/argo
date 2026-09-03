@@ -1,8 +1,9 @@
 import ArgoDesign
 import SwiftUI
 
-/// The deck's one chrome row: the tabs on the leading edge, `TabLineInstruments` on the trailing
-/// one. The tabs are still a placeholder (#401–#404).
+/// The deck's one chrome row: the Ticket link, then the tabs, on the leading edge —
+/// `TabLineInstruments` on the trailing one. The tabs are still a placeholder (#401–#404); the
+/// Ticket link is the one thing ahead of them that draws (#1092).
 package struct SessionTabLine: View {
     /// Absent when nothing is selected. The line holds its height and says nothing — every zone
     /// below the canopy is inset by it.
@@ -11,6 +12,7 @@ package struct SessionTabLine: View {
 
     package var body: some View {
         HStack(spacing: ArgoSpacing.loose) {
+            SessionIssueLink(row: header?.issue)
             // The slot takes what the instruments leave, which is what holds the tabs leading.
             DeckSlot(zone: .tabs)
             TabLineInstruments(header: header, handOff: handOff)

@@ -62,6 +62,9 @@ extension CockpitView {
         // What the chain link at the foot of a handed-off reading does. Injected here because
         // this is the one view that holds the navigation.
         .environment(\.argoOpenSession) { fresh in navigation.session = fresh }
+        // What the tab line's Ticket link does (#1092) — the mirror of the Session link above,
+        // reaching the OTHER room rather than another row of this one.
+        .environment(\.argoOpenTicket) { navigation.openTicket($0) }
         // What a waiting ask row's options and its `Answer` do (#712). Injected here for the
         // reason above: the rows are hosted per table cell, and this is where the Session the
         // answer addresses is known.

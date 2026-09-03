@@ -34,7 +34,7 @@ extension TicketsReading {
         -> TicketsReading {
         TicketsReading(
             items: sources.tickets.items,
-            claims: TicketClaims(over: links(in: sources.sessions, at: nowMs)),
+            claims: TicketClaims(over: claimants(in: sources.sessions, at: nowMs)),
             provider: TicketsProvider(reading: sources.health),
             project: sources.project,
             showing: showing,
@@ -44,18 +44,21 @@ extension TicketsReading {
         )
     }
 
-    /// The link readings a claim can be placed from. Read ONCE and asked three ways — which
-    /// tickets they hold, how many named none, and how many nobody could read at all — so the
+    /// The Sessions a claim can be placed from. Read ONCE and asked three ways — which tickets
+    /// they hold and who, how many named none, and how many nobody could read at all — so the
     /// count and its shortfall cannot disagree about which Sessions they were derived over.
     ///
     /// The set is `holdsClaim`'s and not `isLive`'s (#1118). An ended Session's branch still names
     /// the ticket it was cut for, and so does a `stopped` one from last spring — the second is the
     /// one that had `In progress` reading 82 with one row beneath it, because every status but
     /// `ended` is live enough to open and none of them is live enough to be WORKING on something.
-    private static func links(
+    ///
+    /// Sessions rather than their link readings alone (#1092): the head names WHICH Session, so the
+    /// join needs the identity beside the reading, not the reading on its own.
+    private static func claimants(
         in sessions: [CockpitPresentation.Session], at nowMs: Int,
     )
-        -> [CockpitPresentation.Session.TicketLinkReading] {
-        sessions.filter { $0.holdsClaim(at: nowMs) }.map(\.ticket)
+        -> [CockpitPresentation.Session] {
+        sessions.filter { $0.holdsClaim(at: nowMs) }
     }
 }

@@ -37,6 +37,12 @@ struct TicketsListing {
         reading.claims.numbers.contains(number)
     }
 
+    /// Which live Session(s) took this ticket, named well enough to route to (#1092). Empty on
+    /// every ticket `isClaimed` reads false for — the two come off one `TicketClaims` value.
+    func claimants(of number: Int) -> [TicketClaims.Claimant] {
+        reading.claims.claimants[number] ?? []
+    }
+
     /// The one mark a Delivery spends on a ticket, `absent` where nothing was read (#258).
     func delivery(of number: Int) -> DeliveryReading {
         reading.deliveries[number] ?? .absent

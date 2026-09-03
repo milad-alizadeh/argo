@@ -151,6 +151,30 @@ struct TicketsBacklogMarkTests {
         #expect(ClaimMark.symbol == TicketsView.inProgress.symbol)
     }
 
+    /// The head's claimant line and the row's claim mark come off ONE `TicketClaims` value, through
+    /// two different code paths — `TicketsListing.claimants(of:)` for the head, `isClaimed` for the
+    /// row — so the agreement is CHECKED over the whole open set, the shape this file already uses
+    /// for `blockage` and `isClaimed` (#1092).
+    @Test
+    func `the head names a claimant exactly where the row carries a claim mark`() {
+        let reading = TicketsFixture.claimedAndBlocked
+        let open = reading.items.filter { $0.closure == .open }
+
+        for item in open {
+            let room = TicketsRoomProjection.room(from: reading.opened(at: item.number))
+            let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
+            let marked = drawn.first { $0.id == item.number }?.row.marks.isClaimed == true
+            let named = !(room.ticket?.claimants.isEmpty ?? true)
+
+            #expect(named == marked)
+        }
+
+        // #272's two claimants ride along, so this test also proves the head does not silently
+        // pick one where the row above already marked it claimed by more than a single Session.
+        let two = TicketsRoomProjection.room(from: reading.opened(at: 272))
+        #expect(two.ticket?.claimants.count == 2)
+    }
+
     /// …and one INK. Agreeing on shape while disagreeing on colour is the same two concepts #939
     /// removed, so the sidebar glyph and the row mark read `TicketsView.ink` rather than naming a
     /// palette role each.
