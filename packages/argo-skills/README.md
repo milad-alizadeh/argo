@@ -160,6 +160,14 @@ colocated inside it), pushing to `main`, then adding the name to the lock.
   exports, import boundaries, test hygiene) to a real rule in whatever linter the project already
   runs, as an error, wired to a script, pre-commit and CI; then writes the one page of prose no
   linter can check (`rules/house.md`).
+- [`atlas-write`](skills/atlas-write/SKILL.md) — generate a Project Atlas: the real parts of
+  a codebase found from its manifests and imports, each written as what is inside it, the
+  edges among those, the edges that leave it, and a paragraph over all of that, every claim
+  anchored to a `path:line`.
+- [`atlas-review`](skills/atlas-review/SKILL.md) — fact-check an emitted atlas node against
+  the code, in a context that never saw it written. Splits the node into claims, resolves
+  every anchor, settles each relation at a call site, and marks each `true`, `false` or
+  `cannot tell`. It reports and never edits.
 
 ### Provenance
 

@@ -1,0 +1,1104 @@
+<!doctype html>
+<!-- PROTOTYPE — throwaway. Not the map. This asks one question only: what is the SYSTEM that
+     decides where each piece of Atlas information lives? Three answers, switchable at the
+     bottom (?shell=a|b|c). The map underneath is a cheap stand-in with real domain names and
+     real interaction, because a grey rectangle makes an information layout impossible to judge. -->
+<meta charset="utf-8">
+<title>Atlas · information layout</title>
+<link rel="stylesheet" href="atlas-tokens.css">
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  body { background: #06090c; }
+
+  /* ─── shared vocabulary ───────────────────────────────────────────────────
+     Every shell draws from these. If a piece looks different between shells it
+     is because the shell moved it, never because it was restyled. */
+  .eyebrow { font: var(--t-footnote) var(--mono); text-transform: uppercase;
+             letter-spacing: .12em; color: #5c8b99; }
+
+  .field { position: relative; }
+  .field input { width: 100%; box-sizing: border-box; padding: 8px 40px 8px 30px;
+    border-radius: 8px; color: var(--text-1); font: var(--t-callout) var(--sans);
+    background: rgba(140,170,190,.07); border: 1px solid rgba(150,180,200,.14); }
+  .field input::placeholder { color: var(--text-off); }
+  .field input:focus { outline: none; border-color: rgba(127,232,255,.45);
+    background: rgba(127,232,255,.07); }
+  .field .mag { position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: #5c8b99; font-size: 12px; pointer-events: none; }
+  .field .n { position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+    font: var(--t-footnote) var(--mono); color: #7fe8ff; pointer-events: none; }
+
+  .ctl { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 9px;
+         font: var(--t-footnote) var(--mono); text-transform: uppercase;
+         letter-spacing: .1em; color: #7fa7b4; }
+  .ctl select { width: 100%; font: var(--t-callout) var(--sans); color: var(--text-1);
+    background: rgba(126,214,240,.08); border: 1px solid rgba(126,214,240,.2);
+    border-radius: 6px; padding: 4px 7px; text-transform: none; letter-spacing: 0; }
+  .seg { display: flex; }
+  .seg button { flex: 1; padding: 4px 0; font: var(--t-callout) var(--sans);
+    color: var(--text-2); background: rgba(126,214,240,.07);
+    border: 1px solid rgba(126,214,240,.2); border-left-width: 0; }
+  .seg button:first-child { border-left-width: 1px; border-radius: 6px 0 0 6px; }
+  .seg button:last-child { border-radius: 0 6px 6px 0; }
+  .seg button[aria-pressed="true"] { background: rgba(126,214,240,.22);
+    border-color: rgba(126,214,240,.45); color: var(--text-1); }
+  .chk { display: flex; align-items: center; gap: 8px; font: var(--t-callout) var(--sans);
+         color: var(--text-2); cursor: pointer; }
+  .chk input { accent-color: #7fe8ff; }
+
+  /* a domain row — the one component every shell shares, and the reason none of them
+     needs to rebuild its list when the selection changes */
+  .drow { display: grid; grid-template-columns: 10px 1fr auto; gap: 9px; align-items: center;
+    padding: 6px 9px; border-radius: 7px; cursor: pointer; }
+  .drow:hover { background: rgba(126,214,240,.08); }
+  .drow[aria-selected="true"] { background: rgba(127,232,255,.15);
+    box-shadow: inset 0 0 0 1px rgba(127,232,255,.28); }
+  .drow .sw { width: 10px; height: 10px; border-radius: 3px; }
+  .drow .nm { font: var(--t-callout) var(--sans); color: var(--text-1);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drow .ct { font: var(--t-footnote) var(--mono); color: var(--text-3); }
+
+  /* Two lines, not one: the name is what you are looking for and the path is what tells
+     two of the same name apart, so they are a title and its subtitle rather than one long
+     string competing with itself for the row. */
+  .frow { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start;
+    padding: 6px 9px; border-radius: 6px; cursor: pointer; min-width: 0; }
+  /* the measure belongs beside the name, not floating between the two lines */
+  .frow em, .frow i { padding-top: 2px; }
+  .frow:hover { background: rgba(126,214,240,.08); }
+  .frow[aria-selected="true"] { background: rgba(127,232,255,.15); }
+  .frow .p { min-width: 0; }
+  .frow .p b { display: block; font: 400 var(--t-callout) var(--mono); color: var(--text-1);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* the directory is clipped from its LEFT, because its last segment is the telling one */
+  .frow .p s { display: block; direction: rtl; text-align: left; text-decoration: none;
+    font: var(--t-footnote) var(--mono); color: var(--text-off); margin-top: 1px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .frow .p s > span { direction: ltr; unicode-bidi: embed; }
+  .frow em { font: var(--t-footnote) var(--mono); font-style: normal; color: var(--text-3); }
+  .frow i { font: var(--t-footnote) var(--sans); font-style: normal; opacity: .85;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 112px;
+    text-align: right; }
+
+  /* A boolean is a switch, and the switch is the button itself: a checkbox hidden under a
+     label fired no change event here, which is a whole class of bug a real control cannot
+     have. role="switch" + aria-checked is what a screen reader wants anyway. */
+  .sws { width: 30px; height: 17px; border-radius: 999px; flex: none; position: relative;
+    background: rgba(150,180,200,.16); border: 1px solid rgba(150,180,200,.2);
+    transition: background 160ms var(--ease-out), border-color 160ms var(--ease-out); }
+  .sws::after { content: ''; position: absolute; left: 1px; top: 1px; width: 12px; height: 12px;
+    border-radius: 50%; background: #9fb4bf; transition: transform 160ms var(--ease-out),
+    background 160ms var(--ease-out); }
+  .sws[aria-checked="true"] { background: rgba(127,232,255,.32);
+    border-color: rgba(127,232,255,.55); }
+  .sws[aria-checked="true"]::after { transform: translateX(13px); background: #cdf3ff; }
+
+  /* rebuilding the map is a control, not a page action, so it sits with the controls */
+  .redo { flex: none; width: 27px; height: 27px; border-radius: 7px; display: grid;
+    place-items: center; color: var(--text-2); background: rgba(126,214,240,.08);
+    border: 1px solid rgba(126,214,240,.2); }
+  .redo:hover { background: rgba(126,214,240,.2); color: var(--text-1); }
+  .redo svg { width: 13px; height: 13px; }
+
+  /* Each layout is a picture of itself, which a dropdown of three names is not — and three
+     names in a menu is a fourth menu in a row that already has three. */
+  .iseg { display: flex; gap: 0; }
+  .iseg button { width: 30px; height: 27px; display: grid; place-items: center;
+    color: var(--text-3); background: rgba(126,214,240,.07);
+    border: 1px solid rgba(126,214,240,.2); border-left-width: 0; }
+  .iseg button:first-child { border-left-width: 1px; border-radius: 7px 0 0 7px; }
+  .iseg button:last-child { border-radius: 0 7px 7px 0; }
+  .iseg button:hover { color: var(--text-1); background: rgba(126,214,240,.16); }
+  .iseg button[aria-pressed="true"] { background: rgba(126,214,240,.22);
+    border-color: rgba(126,214,240,.45); color: var(--text-1); }
+  .iseg svg { width: 15px; height: 15px; }
+  .redo.spin svg { animation: turn 620ms var(--ease-out); }
+  @keyframes turn { to { transform: rotate(360deg); } }
+
+  .note { font: var(--t-callout)/1.55 var(--sans); color: var(--text-2); }
+  .toks { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+  .toks span { font: var(--t-footnote) var(--mono); color: #7fa7b4; padding: 2px 6px;
+    border-radius: 4px; background: rgba(126,214,240,.09); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    font: var(--t-callout) var(--sans); color: var(--text-1); padding: 3px 9px 3px 7px;
+    border-radius: 20px; background: rgba(126,214,240,.11);
+    border: 1px solid rgba(126,214,240,.25); }
+  .chip:hover { background: rgba(126,214,240,.2); }
+  .chip i { width: 8px; height: 8px; border-radius: 2px; }
+
+  table.m { width: 100%; border-collapse: collapse; }
+  table.m th { text-align: left; font: var(--t-footnote) var(--mono); font-weight: 400;
+    text-transform: uppercase; letter-spacing: .1em; color: #5c8b99; padding-bottom: 5px;
+    border-bottom: 1px solid rgba(126,214,240,.16); }
+  table.m td { padding: 4px 0; font-size: var(--t-callout); color: var(--text-2);
+    border-bottom: 1px solid rgba(126,214,240,.07); }
+  table.m td.v { text-align: right; font-family: var(--mono); color: var(--text-1); }
+
+  /* A gauge is a number and its rank in one block. The bands are clipped to round their
+     ends; the needle is not, because a file at 100% sits where a clip would eat it. */
+  .facts { display: flex; flex-wrap: wrap; gap: 4px 13px; margin-top: 11px;
+    font: var(--t-callout) var(--sans); color: var(--text-3); }
+  .facts b { font-family: var(--mono); color: var(--text-1); font-weight: 500; }
+  .gauges { margin-top: 14px; display: flex; flex-direction: column; gap: 11px; }
+  .gauge .gh { display: flex; align-items: baseline; gap: 8px;
+    font: var(--t-footnote) var(--mono); text-transform: uppercase;
+    letter-spacing: .09em; color: #5c8b99; }
+  .gauge .gh b { margin-left: auto; font: 600 var(--t-callout) var(--mono);
+    color: var(--text-1); letter-spacing: 0; text-transform: none; }
+  .gauge .track { position: relative; height: 8px; margin: 6px 0 4px; }
+  .gauge .bars { display: flex; height: 100%; border-radius: 3px; overflow: hidden; }
+  .gauge .bars i { height: 100%; }
+  .gauge .track u { position: absolute; top: -3px; width: 2px; height: 14px; margin-left: -1px;
+    background: var(--text-1); border-radius: 1px; box-shadow: 0 0 0 1px rgba(0,0,0,.6); }
+  .gauge .gn { font: var(--t-footnote)/1.5 var(--sans); color: var(--text-3); }
+
+  .prov { font: var(--t-footnote)/1.6 var(--mono); color: var(--text-3); }
+  .prov b { color: var(--text-2); font-weight: 400; }
+  .tier { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 9px;
+    letter-spacing: .08em; margin-right: 5px; }
+  .tier.d { background: rgba(127,232,255,.16); color: #7fe8ff; }
+  .tier.w { background: rgba(232,178,74,.16); color: var(--attention); }
+
+  .legend { display: flex; gap: 3px; margin-top: 7px; }
+  .legend i { flex: 1; height: 5px; border-radius: 1px; }
+
+  /* ─── stage ─────────────────────────────────────────────────────────────── */
+  #stage { position: relative; overflow: hidden; background:
+    radial-gradient(120% 90% at 50% 12%, #0e1a21 0%, #060a0d 72%); }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* a selected domain lends its hue to the panel that is about it, so the map and the
+     words agree without anyone having to match a swatch twice */
+/* The back control owns a gutter and everything else hangs off it, so the way out is in
+   the one place a reader looks for it and the name, the note and the counts all share a
+   single left edge instead of each starting somewhere new. The domain's hue is the whole
+   left border, which is a bigger, quieter swatch than a 10px square. */
+  #ctx { display: grid; grid-template-columns: 26px 1fr; gap: 0 11px;
+    padding: 12px 16px 13px; border-bottom: 1px solid rgba(126,214,240,.12);
+    border-left: 3px solid var(--dh);
+    background: linear-gradient(100deg,
+      color-mix(in srgb, var(--dh) 13%, transparent), transparent 62%); }
+  #ctx .back { grid-row: 1; width: 26px; height: 26px; border-radius: 7px;
+    display: grid; place-items: center; color: var(--text-2);
+    background: color-mix(in srgb, var(--dh) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--dh) 34%, transparent); }
+  #ctx .back:hover { background: color-mix(in srgb, var(--dh) 34%, transparent);
+    color: var(--text-1); }
+  #ctx .back svg { width: 13px; height: 13px; }
+  #ctx h4 { grid-column: 2; align-self: center; font: 600 var(--t-title3) var(--sans);
+    color: var(--text-1); line-height: 26px; overflow-wrap: anywhere; }
+  #ctx p { grid-column: 2; font: var(--t-callout)/1.5 var(--sans); color: var(--text-2);
+    margin-top: 6px; }
+  #ctx .row { grid-column: 2; margin-top: 9px; font: var(--t-footnote)/1.6 var(--mono);
+    color: var(--text-off); }
+  #ctx .row b { color: var(--text-2); font-weight: 400; }
+  #split[style] .drow[aria-selected="true"], #split[style] .frow[aria-selected="true"] {
+    background: color-mix(in srgb, var(--dh) 22%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dh) 45%, transparent); }
+
+  /* ─── shell A · two rails ───────────────────────────────────────────────── */
+  body[data-shell="a"] #app { height: 100%; display: grid;
+    grid-template-columns: 288px 1fr 348px; }
+  #left, #right { background: #0a1014; display: flex; flex-direction: column; min-height: 0; }
+  #left { border-right: 1px solid rgba(126,214,240,.14); }
+  #right { border-left: 1px solid rgba(126,214,240,.14); }
+  .sec { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
+    border-bottom: 1px solid rgba(126,214,240,.1); }
+  .grow { flex: 1; overflow-y: auto; min-height: 0; }
+
+  /* the breadcrumb is shell A's whole idea: one stack, always visible, never a mystery */
+  #crumb { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    padding: 13px 16px; border-bottom: 1px solid rgba(126,214,240,.14);
+    font: var(--t-footnote) var(--mono); }
+  #crumb a { color: #7fe8ff; cursor: pointer; }
+  #crumb a:hover { text-decoration: underline; }
+  #crumb s { color: var(--text-off); text-decoration: none; }
+  #crumb .here { color: var(--text-1); }
+
+  /* ─── shell B · dock + fixed two-region panel ───────────────────────────── */
+  body[data-shell="b"] #app { height: 100%; display: grid;
+    grid-template-columns: 236px 1fr 356px; grid-template-areas: 'side map rail'; }
+  body[data-shell="b"].nosb #app { grid-template-columns: 0 1fr 356px; }
+  body[data-shell="b"] #stage { grid-area: map; }
+  body[data-shell="b"] #split { grid-area: rail; }
+  body[data-shell="b"].nosb #side { display: none; }
+  /* A sidebar, the way every other surface in the app has one: a column of the window,
+     flush to its edge, with a hairline against what it borders. Not a card floating on
+     the map — a floating card is a popover, and these controls are not transient. */
+  #side { grid-area: side; background: var(--sunken); min-height: 0;
+    border-right: 1px solid var(--hairline); display: flex; flex-direction: column; }
+  #side > header { display: flex; align-items: center; gap: 8px; height: 38px;
+    padding: 0 8px 0 14px; border-bottom: 1px solid var(--hairline); flex: none; }
+  #side > header h5 { font: 600 var(--t-callout) var(--sans); color: var(--text-1);
+    margin-right: auto; }
+  .sbtn { width: 26px; height: 24px; border-radius: var(--r-control); display: grid;
+    place-items: center; color: var(--text-2); flex: none; }
+  .sbtn:hover { background: var(--hover); color: var(--text-1); }
+  .sbtn svg { width: 14px; height: 14px; }
+  .sbtn.spin svg { animation: turn 620ms var(--ease-out); }
+
+  #side .body { flex: 1; overflow-y: auto; min-height: 0; padding: 4px 0 10px; }
+  /* group header, group, group header, group — the shape a settings sidebar has */
+  .sbsec { padding: 10px 14px 12px; }
+  .sbsec + .sbsec { border-top: 1px solid var(--hairline); }
+  .sbsec > h6 { font: var(--t-footnote) var(--mono); font-weight: 400;
+    text-transform: uppercase; letter-spacing: .1em; color: var(--text-off);
+    margin-bottom: 9px; }
+  /* a labelled row: name on the left, its control on the right, one baseline */
+  .srow { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px;
+    min-height: 26px; font: var(--t-callout) var(--sans); color: var(--text-2); }
+  .srow + .srow { margin-top: 7px; }
+  .srow select { font: var(--t-callout) var(--sans); color: var(--text-1);
+    background: var(--control); border: 1px solid var(--subtle);
+    border-radius: var(--r-control); padding: 3px 6px; max-width: 118px; }
+  .srow .seg { width: 138px; }
+  .srow .iseg { width: 68px; }
+  .srow .iseg button { flex: 1; width: auto; height: 24px; }
+  .srow .seg button { padding: 3px 0; }
+
+  /* the legend is a section of the sidebar like any other, and it sits at its foot
+     because it describes what the sections above it just did */
+  #legend .row { display: flex; justify-content: space-between; gap: 8px;
+    font: var(--t-footnote)/1.7 var(--mono); color: var(--text-3); }
+  #legend .hues { display: flex; gap: 2px; margin: 2px 0 5px; }
+  #legend .hues i { flex: 1; height: 6px; border-radius: 1px; transition: opacity 140ms; }
+  #legend .lit { display: flex; align-items: center; gap: 7px; margin-bottom: 5px;
+    font: var(--t-callout) var(--sans); color: var(--text-1); }
+  #legend .lit i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  #legend .sub { font: var(--t-footnote) var(--mono); color: var(--text-off);
+    margin-bottom: 5px; }
+
+  /* when the sidebar is away, the control that brings it back sits where it was */
+  #reveal { position: absolute; left: 12px; top: 12px; z-index: 60;
+    background: rgba(30,32,36,.82); backdrop-filter: blur(14px);
+    border: 1px solid var(--subtle); }
+
+  /* index on top, inspector below — both permanent, so nothing ever replaces anything */
+  #split { display: flex; flex-direction: column; min-height: 0;
+    background: #0a1014; border-left: 1px solid rgba(126,214,240,.14); }
+  #index { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+  /* One height, always: a panel that grew and shrank with what was picked moved the list
+     above it every time, which is worse than the space it saved. 46% was simply too much. */
+  #inspect { display: flex; flex-direction: column; flex: 0 0 300px; }
+  #inspect { border-top: 1px solid rgba(126,214,240,.22); background: #0c1519;
+    overflow-y: auto; }
+  /* the inner region must contribute its real height, or the row above sizes to nothing
+     and the panel clips what it is showing */
+  #inspect > .grow { flex: none; min-height: auto; overflow: visible; }
+
+  /* ─── shell C · command surface ─────────────────────────────────────────── */
+  body[data-shell="c"] #app { height: 100%; position: relative; }
+  body[data-shell="c"] #stage { position: absolute; inset: 0; }
+  #cmd { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); z-index: 70;
+    width: 540px; background: rgba(9,20,26,.9); backdrop-filter: blur(20px);
+    border: 1px solid rgba(126,214,240,.25); border-radius: 12px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.7); overflow: hidden; }
+  #cmd .top { display: flex; align-items: center; gap: 10px; padding: 10px 13px; }
+  #cmd .top .mag { color: #5c8b99; }
+  #cmd input { flex: 1; background: none; border: 0; outline: none; color: var(--text-1);
+    font: var(--t-body) var(--sans); }
+  #cmd input::placeholder { color: var(--text-off); }
+  #cmd .pal { max-height: 46vh; overflow-y: auto; border-top: 1px solid rgba(126,214,240,.16);
+    padding: 6px; }
+  #cmd .pal h5 { font: var(--t-footnote) var(--mono); text-transform: uppercase;
+    letter-spacing: .12em; color: #5c8b99; font-weight: 400; padding: 8px 9px 4px; }
+  #drawer { position: absolute; left: 0; top: 0; bottom: 0; z-index: 65; width: 268px;
+    background: rgba(8,15,19,.93); backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(126,214,240,.18);
+    display: flex; flex-direction: column; transition: transform 220ms var(--ease-out); }
+  #drawer.shut { transform: translateX(-268px); }
+  #tab { position: absolute; left: 0; top: 50%; transform: translateY(-50%); z-index: 64;
+    writing-mode: vertical-rl; padding: 18px 7px; cursor: pointer;
+    font: var(--t-footnote) var(--mono); letter-spacing: .16em; text-transform: uppercase;
+    color: #7fa7b4; background: rgba(9,20,26,.85); backdrop-filter: blur(14px);
+    border: 1px solid rgba(126,214,240,.2); border-left: 0; border-radius: 0 8px 8px 0; }
+  /* selection is a card at the box, not a rail — the map keeps the whole window */
+  #card { position: absolute; z-index: 68; width: 318px; padding: 14px 15px 15px;
+    background: rgba(9,20,26,.94); backdrop-filter: blur(20px);
+    border: 1px solid rgba(127,232,255,.35); border-radius: 12px;
+    box-shadow: 0 18px 46px rgba(0,0,0,.72); }
+  #card .x { position: absolute; right: 9px; top: 7px; color: var(--text-3); cursor: pointer;
+    font-size: 15px; line-height: 1; padding: 3px 6px; }
+  #card .x:hover { color: var(--text-1); }
+  #gear { position: absolute; right: 18px; top: 18px; z-index: 70; }
+  #gearp { position: absolute; right: 18px; top: 58px; z-index: 70; width: 252px;
+    padding: 13px 14px; display: flex; flex-direction: column; gap: 10px;
+    background: rgba(9,20,26,.92); backdrop-filter: blur(20px);
+    border: 1px solid rgba(126,214,240,.22); border-radius: 12px;
+    box-shadow: 0 14px 40px rgba(0,0,0,.65); }
+  .ghost { font: var(--t-callout) var(--sans); color: var(--text-1);
+    background: rgba(9,20,26,.85); backdrop-filter: blur(14px);
+    border: 1px solid rgba(126,214,240,.22); border-radius: 8px; padding: 6px 11px; }
+  .ghost:hover { background: rgba(126,214,240,.18); }
+
+  .pad { padding: 14px 16px; }
+  h3.name { font: 600 var(--t-title3)/1.25 var(--sans); overflow-wrap: anywhere; }
+  .idle { font: var(--t-callout)/1.55 var(--sans); color: var(--text-3); }
+  .idle kbd { font: var(--t-footnote) var(--mono); color: var(--text-1);
+    background: rgba(126,214,240,.09); border: 1px solid rgba(126,214,240,.2);
+    border-radius: 4px; padding: 1px 5px; }
+
+  /* ─── the switcher ──────────────────────────────────────────────────────── */
+  #switch { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 200;
+    display: flex; align-items: center; gap: 4px; padding: 5px;
+    background: rgba(4,8,11,.9); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,.14); border-radius: 999px;
+    box-shadow: 0 10px 34px rgba(0,0,0,.7); }
+  #switch button { padding: 6px 15px; border-radius: 999px; font: var(--t-callout) var(--sans);
+    color: var(--text-3); }
+  #switch button:hover { color: var(--text-1); }
+  #switch button[aria-pressed="true"] { background: rgba(255,255,255,.11); color: var(--text-1); }
+  #switch .tag { font: var(--t-footnote) var(--mono); color: var(--text-off);
+    padding: 0 10px 0 9px; text-transform: uppercase; letter-spacing: .1em; }
+</style>
+
+<div id="app"></div>
+<div id="switch"></div>
+
+<script>
+/* ══ mock model ══════════════════════════════════════════════════════════════
+   Real domain names and real model-written notes, from atlas-notes.json. The file
+   list under each is invented; the point is the shape of the information, not its truth. */
+const DOMAINS = [
+  ['Reading Surface','Renders and scrolls the transcript itself — the feed table, its prose, and the minimap that mirrors it.',['minimap','table','cockpit','prose'],118],
+  ['Turn Feed','Renders the live transcript as rows — calls, pictures, cursor, and ask prompts — folding raw events into readable UI state.',['ask','feed','call','agents'],104],
+  ['Session Roster','Reads live process, git worktree, and transcript state from disk to maintain the roster of running Sessions.',['roster','transcript','workspace','fixtures'],96],
+  ['CLI Session Driving','Spawns and drives a Session against a live CLI, covering launch, rung selection, input delivery, and the approval protocol.',['codex','mode','agent','driver'],88],
+  ['Design System Contract','Defines and tests the shared visual language — palette, typography, spacing, motion — plus the primitives that render it.',['palette','room','tickets','chrome'],81],
+  ['Permission Gate','Runs the socket hook channel that pauses a spawned agent on a gated tool call and relays the allow or deny decision.',['permission','companion','prompt','standing'],72],
+  ['Delivery Pipeline','Derives each branch Delivery from local git and the code host, and tracks it through commits, PR, CI, review, and merge.',['delivery','derivation','assertion','stage'],68],
+  ['Evidence Rendering','Renders what a tool call produced — diffs, syntax-coloured code, and decoded media — as read-only evidence.',['evidence','media','syntax','diff'],64],
+  ['The Composer','Renders and drives the message-entry vessel — draft state, attachments, and the slash and at menus.',['composer','attachment','menu','files'],57],
+  ['Projects and Accounts','Registers repositories and provider accounts on this machine and connects them through scope-checked bindings.',['project','registry','git','account'],54],
+  ['Diagram Rendering','Reads mermaid source text, lays out flowchart, class, sequence, and gantt diagrams, and draws them at prose scale.',['mermaid','gantt','layout','state'],49],
+  ['Ticket Integration','Connects Argo to external issue trackers, reading and writing tickets and rendering them in the sidebar.',['ticket','linear','next','write'],44],
+  ['Plan And Status','Reads live turn signals and plan events to derive one honest running, idle, asking or stopped state.',['plan','liveness','status','pill'],38],
+  ['Deck Layout','Computes and tests how the deck zones — rail, feed, minimap, evidence panel — divide the window width.',['deck','zoning','sessions','canopy'],33],
+  ['Session Header & Handoff','Renders the per-Session header line and the context-handoff offer inside it, plus the resume path.',['handoff','header','context','resume'],29],
+  ['Accounts And Skills','Links GitHub and Linear accounts to ports and discovers installed skills, so the panel and the CLI agree.',['connect','skill','panel','command'],24],
+  ['Connection Health','Reads provider connections and refused-grant faults into one chip that stays silent when healthy.',['connection','health','checkout','fault'],18],
+];
+const DIRS = ['ArgoUI/Feed','ArgoEngine/Session','ArgoUI/Deck','ArgoEngine/Hub','ArgoUI/Panels','ArgoEngine/Ports'];
+const SUBS = ['', 'Rows/', 'Model/', 'Support/', 'Layout/', 'Fixtures/'];
+const TAIL = ['View','Model','Store','Row','State','Reader','Writer','Kind','Layout','Tests'];
+let rnd = 20260902;
+const R = () => (rnd = (rnd * 1103515 + 12345) % 2147483647) / 2147483647;
+
+const FILES = [];
+DOMAINS.forEach((d, di) => {
+  for (let i = 0; i < d[3]; i++) {
+    const t = d[2][(i * 7) % d[2].length];
+    const name = t[0].toUpperCase() + t.slice(1) + TAIL[(i * 3) % TAIL.length]
+      + (i > 9 ? String.fromCharCode(65 + (i % 17)) : '') + '.swift';
+    const dir = DIRS[(di + i) % DIRS.length] + '/' + SUBS[(i * 5) % SUBS.length];
+    FILES.push({
+      dom: di, name, dir, path: dir + name,
+      loc: 20 + Math.round(R() * 620), cx: 1 + Math.round(R() * 44),
+      commits: 1 + Math.round(R() * 60), authors: 1 + Math.round(R() * 4),
+      /* skewed young, the way a repo is: most files are recent, a few are the founding ones */
+      age: 6 + Math.round(R() * R() * 2600),
+      note: R() < 0.08,
+    });
+  }
+});
+FILES.forEach((f, i) => f.i = i);
+const HUE = i => (196 + i * 137.508) % 360;
+const COL = i => `hsl(${HUE(i).toFixed(0)} 60% 58%)`;
+
+/* ══ state ═══════════════════════════════════════════════════════════════════ */
+const url = new URLSearchParams(location.search);
+const S = {
+  shell: (url.get('shell') || 'b').toLowerCase(),
+  area: 'loc', height: 'cx', colour: 'domain',
+  arrange: 'folders', view: '3d', noTests: false, ctl: true, leg: true,
+  q: '', sel: null,            // {kind:'domain'|'file', i}
+  drawer: true, gear: false,
+};
+if (!'abc'.includes(S.shell)) S.shell = 'a';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let HITS = null;
+let HITSET = null;
+function refind() {
+  const q = S.q.trim().toLowerCase();
+  if (!q) { HITS = HITSET = null; return; }
+  const w = q.split(/\s+/);
+  HITS = FILES.filter(f => {
+    const hay = (f.path + ' ' + DOMAINS[f.dom][0] + ' ' + DOMAINS[f.dom][2].join(' ')).toLowerCase();
+    return w.every(t => hay.includes(t));
+  });
+  HITSET = new Set(HITS);
+}
+const domFiles = di => FILES.filter(f => f.dom === di);
+const selDom = () => S.sel ? (S.sel.kind === 'domain' ? S.sel.i : FILES[S.sel.i].dom) : null;
+
+/* ══ content pieces — written once, arranged three ways ══════════════════════ */
+function Provenance() {
+  return `<div class="prov"><b>argo</b> · 1,037 files · 17 domains</div>`;
+}
+function Encoding(compact) {
+  const sel = (k, opts) => `<select data-set="${k}">` + opts.map(o =>
+    `<option value="${o[0]}"${S[k] === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('') + `</select>`;
+  const A = [['loc', 'Lines of code'], ['commits', 'Commits'], ['cx', 'Complexity']];
+  const H = [['cx', 'Complexity'], ['authors', 'Authors'], ['commits', 'Commits']];
+  const C = [['domain', 'Domain'], ['cx', 'Complexity'], ['authors', 'Authors']];
+  if (compact) return `
+    <div class="grp"><span>Area</span>${sel('area', A)}</div>
+    <div class="grp"><span>Height</span>${sel('height', H)}</div>
+    <div class="grp"><span>Colour</span>${sel('colour', C)}</div>`;
+  return `<label class="ctl">Area${sel('area', A)}</label>
+    <label class="ctl">Height${sel('height', H)}</label>
+    <label class="ctl">Colour${sel('colour', C)}</label>`;
+}
+/* "Folders / Tint / Regroup" was two questions wearing one control: where a box SITS and
+   what colour it IS. Tint was never a third arrangement — it is folders arranged, domains
+   coloured, which the Colour channel already says. So this asks one question only. */
+function Grouping() {
+  const b = (v, t) => `<button data-mode="${v}" aria-pressed="${S.arrange === v}">${t}</button>`;
+  return `<div class="seg">${b('folders', 'Folders')}${b('domains', 'Domains')}</div>`;
+}
+function Switch(key) {
+  return `<button class="sws" role="switch" data-t="${key}"
+    aria-checked="${!!S[key]}"></button>`;
+}
+function Filters() { return Row('Hide test files', Switch('noTests')); }
+function Legend() {
+  if (S.colour !== 'domain')
+    return `<div class="eyebrow">Colour · ${S.colour === 'cx' ? 'Complexity' : 'Authors'}</div>
+      <div class="legend">${[0,1,2,3,4].map(i =>
+        `<i style="background:hsl(${200 - i * 42} 62% ${32 + i * 9}%)"></i>`).join('')}</div>
+      <div class="prov" style="margin-top:5px">low → high</div>`;
+  return `<div class="eyebrow">Colour · Domain</div>
+    <div class="prov" style="margin-top:5px">One hue per domain. A file too near two of them to
+    call is drawn pale.</div>`;
+}
+function Search(id) {
+  return `<div class="field"><span class="mag">⌕</span>
+    <input id="${id}" type="search" placeholder="Find a file or a domain" value="${esc(S.q)}">
+    <span class="n">${HITS ? HITS.length : ''}</span></div>`;
+}
+function DomainList() {
+  const sd = selDom();
+  return DOMAINS.map((d, i) => `<div class="drow" data-dom="${i}" aria-selected="${sd === i}">
+    <i class="sw" style="background:${COL(i)}"></i>
+    <span class="nm">${esc(d[0])}</span><span class="ct">${d[3]}</span></div>`).join('');
+}
+/* A basename alone is not an address — half a repo is called index.ts. The path is the row,
+   clipped from the left so the name always survives the clip. */
+function fileRow(f, withDomain) {
+  return `<div class="frow" data-file="${f.i}"
+    aria-selected="${!!(S.sel && S.sel.kind === 'file' && S.sel.i === f.i)}" title="${esc(f.path)}">
+    <span class="p"><b>${esc(f.name)}</b><s><span>${esc(f.dir.replace(/\/$/, ''))}</span></s></span>
+    ${withDomain ? `<i style="color:${COL(f.dom)}">${esc(DOMAINS[f.dom][0])}</i>`
+                 : `<em>${f.cx}</em>`}</div>`;
+}
+/* 5 · the list has no end and no button. It grows as it is scrolled, in place, so the
+   scroll position it grew from is never lost. */
+const PAGE = 60;
+let LIST = [], LIST_DOM = false, shown = 0;
+function FileList(list, withDomain) {
+  LIST = list; LIST_DOM = withDomain; shown = Math.min(PAGE, list.length);
+  if (!list.length) return `<div class="pad idle">Nothing matches all of those words.</div>`;
+  return `<div id="rows">${list.slice(0, shown).map(f => fileRow(f, withDomain)).join('')}</div>`;
+}
+function more() {
+  const el = document.getElementById('rows');
+  if (!el || shown >= LIST.length) return;
+  const next = LIST.slice(shown, shown + PAGE);
+  shown += next.length;
+  el.insertAdjacentHTML('beforeend', next.map(f => fileRow(f, LIST_DOM)).join(''));
+}
+/* A raw measure is close to meaningless on its own: 12 says nothing until you know it beats
+   two files in three. So every measure is drawn as its own rank among the files on the map. */
+const SORTED = {};
+const sorted = k => SORTED[k] || (SORTED[k] = FILES.map(f => f[k]).sort((a, b) => a - b));
+function rank(v, k) {
+  const s = sorted(k);
+  let lo = 0, hi = s.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (s[m] < v) lo = m + 1; else hi = m; }
+  return s.length ? lo / s.length : 0;
+}
+/* the same ramp the map lights its boxes with, so the bands under the needle are the
+   colours the reader has already learnt outside this panel */
+const BAND = u => `hsl(${(200 - u * 168).toFixed(0)} 62% ${(34 + u * 22).toFixed(0)}%)`;
+
+/* short enough to sit inline beside the counts, in whatever unit is legible at that size */
+const AGE = d => d < 14 ? d + 'd' : d < 60 ? Math.round(d / 7) + 'w'
+  : d < 730 ? Math.round(d / 30.4) + 'mo' : (d / 365).toFixed(1) + 'y';
+
+/* `word` is what the rank means for this measure — "higher" reads wrong under an age. */
+function Gauge(label, value, r, word) {
+  return `<div class="gauge">
+    <div class="gh"><span>${label}</span><b>${value}</b></div>
+    <div class="track"><div class="bars">
+      <i style="background:${BAND(.18)};flex:50"></i>
+      <i style="background:${BAND(.58)};flex:35"></i>
+      <i style="background:${BAND(.92)};flex:15"></i></div>
+      <u style="left:${(r * 100).toFixed(1)}%"></u></div>
+    <div class="gn">${r > 0.995 ? 'At the very top — nothing on this map scores higher.'
+      : word + ' than ' + Math.round(r * 100) + '% of the files here.'}</div>
+  </div>`;
+}
+
+function DomainBody(di) {
+  const d = DOMAINS[di];
+  return `<div class="eyebrow">Domain</div>
+    <h3 class="name" style="margin-top:5px">${esc(d[0])}</h3>
+    <p class="note" style="margin-top:9px">${esc(d[1])}</p>
+    <div class="toks">${d[2].map(t => `<span>${esc(t)}</span>`).join('')}</div>
+    <div class="prov" style="margin-top:12px"><span class="tier w">WRITTEN</span>${d[3]} files,
+      grouped by measurement; named by a model that read five of them</div>`;
+}
+function FileBody(fi) {
+  const f = FILES[fi], d = DOMAINS[f.dom];
+  return `<div class="eyebrow">File</div>
+    <h3 class="name" style="margin-top:5px">${esc(f.name)}</h3>
+    <div class="prov" style="margin-top:6px">${esc(f.path)}</div>
+    <div style="margin-top:11px"><span class="chip" data-dom="${f.dom}">
+      <i style="background:${COL(f.dom)}"></i>${esc(d[0])}</span></div>
+    <div class="facts"><span><b>${f.loc}</b> lines</span><span><b>${f.authors}</b> ${
+      f.authors === 1 ? 'author' : 'authors'}</span><span><b>${f.commits}</b> commits</span>
+      <span><b>${AGE(f.age)}</b> old</span></div>
+    <div class="gauges">
+      ${Gauge('Complexity', f.cx, rank(f.cx, 'cx'), 'Higher')}
+    </div>
+
+    ${f.note ? `<p class="note" style="margin-top:13px">A model read this file: it folds raw
+      transcript events into the row state the feed draws.</p>` : ''}`;
+}
+function Empty(where) {
+  const sd = selDom();
+  return `<div class="pad idle">${sd === null
+    ? `No file open. Click a box on the map, or a domain ${where}.`
+    : `No file open. Pick one from ${esc(DOMAINS[sd][0])} ${where}, or click a lit box.`}
+    <kbd>Esc</kbd> clears.</div>`;
+}
+
+/* ══ the stand-in map ════════════════════════════════════════════════════════
+   A strip treemap of domains, each holding a strip treemap of its files, drawn in one
+   fixed isometric camera. Enough to click, enough to judge a layout against. */
+function strip(items, x, y, w, h) {
+  const out = [], total = items.reduce((s, i) => s + i.v, 0) || 1;
+  const k = (w * h) / total;
+  let cy = y, i = 0;
+  while (i < items.length && cy < y + h - .5) {
+    let j = i, sum = items[i].v, best = Infinity;
+    for (let m = i; m < items.length; m++) {
+      const s2 = m === i ? items[i].v : sum + items[m].v;
+      const rh = s2 * k / w;
+      let a = 0;
+      for (let q = i; q <= m; q++) { const iw = items[q].v * k / rh; a += Math.max(iw / rh, rh / iw); }
+      a /= (m - i + 1);
+      if (a <= best) { best = a; j = m; sum = s2; } else break;
+    }
+    const rh = Math.min(sum * k / w, y + h - cy);
+    let cx = x;
+    for (let m = i; m <= j; m++) {
+      const ww = items[m].v * k / rh;
+      out.push({ it: items[m].it, x: cx, y: cy, w: ww, h: rh });
+      cx += ww;
+    }
+    cy += rh; i = j + 1;
+  }
+  return out;
+}
+const val = (f, k) => k === 'loc' ? f.loc : k === 'cx' ? f.cx : f.commits;
+let BOXES = [], PLATES = [];
+function build() {
+  const pool = S.noTests ? FILES.filter(f => !/Tests\.swift$/.test(f.name)) : FILES;
+  BOXES = []; PLATES = [];
+  const N = 100, GAP = 1.6;
+  if (S.arrange === 'domains') {
+    const groups = DOMAINS.map((d, i) => ({
+      it: i, v: pool.filter(f => f.dom === i).reduce((s, f) => s + val(f, S.area), 0) || 1 }))
+      .sort((a, b) => b.v - a.v);
+    for (const g of strip(groups, 0, 0, N, N)) {
+      PLATES.push({ dom: g.it, x: g.x, y: g.y, w: g.w, h: g.h });
+      const fs = pool.filter(f => f.dom === g.it)
+        .map(f => ({ it: f, v: val(f, S.area) || 1 })).sort((a, b) => b.v - a.v);
+      push(strip(fs, g.x + GAP, g.y + GAP, Math.max(1, g.w - GAP * 2), Math.max(1, g.h - GAP * 2)));
+    }
+  } else {
+    const dirs = [...new Set(pool.map(f => f.path.split('/').slice(0, 2).join('/')))];
+    const groups = dirs.map(d => ({ it: d,
+      v: pool.filter(f => f.path.startsWith(d + '/')).reduce((s, f) => s + val(f, S.area), 0) || 1 }))
+      .sort((a, b) => b.v - a.v);
+    for (const g of strip(groups, 0, 0, N, N)) {
+      PLATES.push({ dir: g.it, x: g.x, y: g.y, w: g.w, h: g.h });
+      const fs = pool.filter(f => f.path.startsWith(g.it + '/'))
+        .map(f => ({ it: f, v: val(f, S.area) || 1 })).sort((a, b) => b.v - a.v);
+      push(strip(fs, g.x + GAP, g.y + GAP, Math.max(1, g.w - GAP * 2), Math.max(1, g.h - GAP * 2)));
+    }
+  }
+  function push(rs) {
+    for (const r of rs) if (r.w > .35 && r.h > .35)
+      BOXES.push({ f: r.it, x: r.x, y: r.y, w: r.w * .88, h: r.h * .88,
+                   z: 1 + (S.height === 'cx' ? r.it.cx * .32
+                        : S.height === 'authors' ? r.it.authors * 2.6 : r.it.commits * .16) });
+  }
+  BOXES.sort((a, b) => (a.x + a.y) - (b.x + b.y));
+}
+let cv, ctx, W = 0, H = 0, SC = 1, OX = 0, OY = 0;
+/* Flat is not a different renderer, only a different camera: the sides collapse to
+   nothing on their own and the top face IS the treemap rectangle. */
+const iso = (x, y, z) => S.view === 'flat'
+  ? [x - 50, y - 50]
+  : [(x - y) * 0.866, (x + y) * 0.5 - z * 0.72];
+const P = (x, y, z) => { const p = iso(x, y, z); return [p[0] * SC + OX, p[1] * SC + OY]; };
+function fitCamera() {
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (const c of [[0,0,0],[100,0,0],[0,100,0],[100,100,0],[0,0,26],[100,0,26],[0,100,26],[100,100,26]]) {
+    const p = iso(c[0], c[1], c[2]);
+    x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]);
+  }
+  /* the dock floats over the top of the stage, so the map is fitted to what is left
+     under it rather than to the whole rectangle it would otherwise be clipped by */
+  SC = Math.min(W / (x1 - x0), H / (y1 - y0)) * 0.9;
+  OX = W / 2 - ((x0 + x1) / 2) * SC; OY = H / 2 - ((y0 + y1) / 2) * SC;
+}
+function tint(f) {
+  if (HITSET && !HITSET.has(f)) return ['hsl(202 8% 26%)', 'hsl(202 8% 19%)', 'hsl(202 8% 15%)'];
+  const lit = HOVER_DOM !== null ? HOVER_DOM : selDom();
+  if (lit !== null && f.dom !== lit)
+    return ['hsl(202 8% 28%)', 'hsl(202 8% 21%)', 'hsl(202 8% 16%)'];
+  let h, s, l;
+  if (S.colour === 'domain') { h = HUE(f.dom); s = 58; l = 56; }
+  else if (S.colour === 'cx') { const u = Math.min(1, f.cx / 40); h = 200 - u * 168; s = 62; l = 34 + u * 22; }
+  else if (S.colour === 'authors') { const u = Math.min(1, (f.authors - 1) / 4); h = 200 - u * 168; s = 62; l = 34 + u * 22; }
+  else { const u = Math.min(1, f.cx / 40); h = 196; s = 24 + u * 30; l = 32 + u * 26; }
+  return [`hsl(${h.toFixed(0)} ${s}% ${l}%)`,
+          `hsl(${h.toFixed(0)} ${s}% ${(l * .68).toFixed(0)}%)`,
+          `hsl(${h.toFixed(0)} ${s}% ${(l * .5).toFixed(0)}%)`];
+}
+function quad(a, b, c, d, fill) {
+  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+  ctx.lineTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+}
+function draw() {
+  if (!cv) return;
+  const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  if (!r.width) return;
+  W = r.width; H = r.height;
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  fitCamera();
+  // ground
+  quad(P(0,0,0), P(100,0,0), P(100,100,0), P(0,100,0), 'rgba(120,190,220,.045)');
+  for (const p of PLATES) {
+    quad(P(p.x,p.y,0), P(p.x+p.w,p.y,0), P(p.x+p.w,p.y+p.h,0), P(p.x,p.y+p.h,0),
+      p.dom !== undefined ? `hsl(${HUE(p.dom).toFixed(0)} 40% 20% / .55)` : 'rgba(140,200,230,.06)');
+  }
+  for (const b of BOXES) {
+    const c = tint(b.f), x2 = b.x + b.w, y2 = b.y + b.h;
+    quad(P(x2,b.y,b.z), P(x2,y2,b.z), P(x2,y2,0), P(x2,b.y,0), c[1]);
+    quad(P(b.x,y2,b.z), P(x2,y2,b.z), P(x2,y2,0), P(b.x,y2,0), c[2]);
+    quad(P(b.x,b.y,b.z), P(x2,b.y,b.z), P(x2,y2,b.z), P(b.x,y2,b.z), c[0]);
+  }
+  // plate labels, only in regroup, only where the plate can hold the word
+  if (S.arrange === 'domains') {
+    ctx.font = '600 11px ' + getComputedStyle(document.body).fontFamily;
+    for (const p of PLATES) {
+      const w = ctx.measureText(DOMAINS[p.dom][0]).width;
+      const a = P(p.x, p.y, 0), b2 = P(p.x + p.w, p.y, 0);
+      if (b2[0] - a[0] < w + 14) continue;
+      ctx.fillStyle = 'rgba(6,11,16,.72)';
+      ctx.fillRect(a[0] + 3, a[1] - 15, w + 10, 15);
+      ctx.fillStyle = '#cfeaf5'; ctx.fillText(DOMAINS[p.dom][0], a[0] + 8, a[1] - 4);
+    }
+  }
+  // names on a small enough result set — the search is when a box may say its own name
+  if (HITS && HITS.length && HITS.length <= 30) {
+    ctx.font = '600 11px ' + getComputedStyle(document.body).fontFamily;
+    const put = [];
+    for (const b of BOXES) {
+      if (!HITSET.has(b.f)) continue;
+      const p = P(b.x + b.w / 2, b.y + b.h / 2, b.z);
+      const t = b.f.name, w = ctx.measureText(t).width;
+      const bx = [p[0] - w / 2 - 5, p[1] - 25, w + 10, 16];
+      if (put.some(q => bx[0] < q[0] + q[2] && q[0] < bx[0] + bx[2] && bx[1] < q[1] + q[3] && q[1] < bx[1] + bx[3])) continue;
+      put.push(bx);
+      ctx.fillStyle = 'rgba(6,11,16,.85)'; ctx.fillRect(bx[0], bx[1], bx[2], bx[3]);
+      ctx.strokeStyle = 'rgba(127,232,255,.3)'; ctx.strokeRect(bx[0] + .5, bx[1] + .5, bx[2] - 1, bx[3] - 1);
+      ctx.fillStyle = '#dcf6ff'; ctx.fillText(t, p[0] - w / 2, bx[1] + 12);
+    }
+  }
+  // the selected box gets a ring, in every shell
+  if (S.sel && S.sel.kind === 'file') {
+    const b = BOXES.find(b => b.f.i === S.sel.i);
+    if (b) {
+      const x2 = b.x + b.w, y2 = b.y + b.h;
+      ctx.strokeStyle = '#7fe8ff'; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      const pts = [P(b.x,b.y,b.z), P(x2,b.y,b.z), P(x2,y2,b.z), P(b.x,y2,b.z)];
+      ctx.moveTo(pts[0][0], pts[0][1]); pts.slice(1).forEach(p => ctx.lineTo(p[0], p[1]));
+      ctx.closePath(); ctx.stroke();
+      SEL_PT = P(x2, y2, b.z);
+    }
+  }
+}
+let SEL_PT = null, HOVER_DOM = null, REDOING = false;
+/* Redraw the canvas and the legend only: rebuilding the list under the pointer would pull
+   the row out from under the pointer that is hovering it. */
+function relight() {
+  draw();
+  const l = document.getElementById('legend');
+  if (l) l.outerHTML = MapLegend();
+}
+function placeCard() {
+  const c = document.getElementById('card');
+  if (!c || !SEL_PT) return;
+  c.style.left = Math.max(16, Math.min(SEL_PT[0] + 18, innerWidth - c.offsetWidth - 16)) + 'px';
+  c.style.top = Math.max(78, Math.min(SEL_PT[1] - 30, innerHeight - c.offsetHeight - 70)) + 'px';
+}
+function pick(mx, my) {
+  for (let i = BOXES.length - 1; i >= 0; i--) {
+    const b = BOXES[i], x2 = b.x + b.w, y2 = b.y + b.h;
+    const q = [P(b.x,b.y,b.z), P(x2,b.y,b.z), P(x2,y2,b.z), P(b.x,y2,b.z)];
+    if (inQuad(mx, my, q)) return b.f.i;
+  }
+  return null;
+}
+function inQuad(px, py, q) {
+  let s = 0;
+  for (let i = 0; i < 4; i++) {
+    const a = q[i], b = q[(i + 1) % 4];
+    const c = (b[0] - a[0]) * (py - a[1]) - (b[1] - a[1]) * (px - a[0]);
+    if (c === 0) continue;
+    if (s === 0) s = Math.sign(c); else if (Math.sign(c) !== s) return false;
+  }
+  return true;
+}
+</script>
+
+<script>
+/* ══ shell A · two rails ═════════════════════════════════════════════════════
+   The system: the LEFT rail is the question you are asking of the map — how it is drawn,
+   what is in it, what you searched for. The RIGHT rail is the answer you are pointing at,
+   and it is a browser with one visible stack: Atlas › Domain › File. Left never reacts to
+   a selection; right never holds a control. A domain's note lives on the domain step. A
+   file cites its domain as a chip and never restates it. */
+function shellA() {
+  const sd = selDom();
+  const crumb = [];
+  crumb.push(S.sel || HITS ? `<a data-go="root">Atlas</a>` : `<span class="here">Atlas</span>`);
+  if (HITS) {
+    crumb.push(`<s>›</s>`, S.sel ? `<a data-go="hits">${HITS.length} matches</a>`
+                                 : `<span class="here">${HITS.length} matches</span>`);
+  } else if (sd !== null) {
+    crumb.push(`<s>›</s>`, S.sel.kind === 'file'
+      ? `<a data-dom="${sd}">${esc(DOMAINS[sd][0])}</a>`
+      : `<span class="here">${esc(DOMAINS[sd][0])}</span>`);
+  }
+  if (S.sel && S.sel.kind === 'file')
+    crumb.push(`<s>›</s>`, `<span class="here">${esc(FILES[S.sel.i].name)}</span>`);
+
+  let body;
+  if (S.sel && S.sel.kind === 'file') body = `<div class="pad">${FileBody(S.sel.i)}</div>`;
+  else if (S.sel && S.sel.kind === 'domain') body =
+    `<div class="pad">${DomainBody(S.sel.i)}</div>
+     <div class="sec" style="border-top:1px solid rgba(126,214,240,.1);border-bottom:0">
+       <div class="eyebrow">Files, most complex first</div></div>
+     <div style="padding:0 8px 14px">${FileList(
+        domFiles(S.sel.i).sort((a, b) => b.cx - a.cx), false)}</div>`;
+  else if (HITS) body = `<div class="sec" style="border-bottom:0">
+       <div class="eyebrow">${HITS.length} file${HITS.length === 1 ? '' : 's'} found</div></div>
+     <div style="padding:0 8px 14px">${FileList(HITS, true)}</div>`;
+  else body = `<div class="sec" style="border-bottom:0"><div class="eyebrow">17 domains</div></div>
+     <div style="padding:0 8px 14px">${DomainList()}</div>`;
+
+  return `<aside id="left">
+      <div class="sec">${Provenance()}</div>
+      <div class="sec">${Search('q')}${Filters()}</div>
+      <div class="sec"><div class="eyebrow">Encoding</div>${Encoding(false)}${Grouping()}</div>
+      <div class="grow"></div>
+      <div class="sec" style="border-bottom:0;border-top:1px solid rgba(126,214,240,.1)">${Legend()}</div>
+    </aside>
+    <div id="stage"><canvas></canvas></div>
+    <aside id="right">
+      <div id="crumb">${crumb.join('')}</div>
+      <div class="grow">${body}</div>
+    </aside>`;
+}
+
+/* ══ shell B · dock over the map, one panel in two permanent halves ══════════
+   The system: controls are not information, so they leave the rail entirely and live on a
+   dock over the map, where the thing they change is. The rail is then all content, split
+   once and never again: the INDEX on top always shows a list (domains, or the search's
+   results, or a domain's files), the INSPECTOR below always shows the one thing selected.
+   Nothing replaces anything, so there is no Back and nothing to navigate. */
+function shellB() {
+  const sd = selDom();
+  /* A domain, once chosen, stays said. It becomes the standing context over its own file
+     list — so opening a file ADDS a fact instead of replacing the one you came for — and it
+     lends its hue to the panel, which is the hue the map is now lit in. */
+  const ctx = sd === null || HITS ? '' : `<div id="ctx">
+      <button class="back" data-go="root" title="All domains" aria-label="All domains">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg>
+      </button>
+      <h4>${esc(DOMAINS[sd][0])}</h4>
+      <p>${esc(DOMAINS[sd][1])}</p>
+      <div class="row"><b>${DOMAINS[sd][3]} files</b>
+        &nbsp;·&nbsp; ${DOMAINS[sd][2].join(' · ')}</div></div>`;
+
+  const list = HITS ? FileList(HITS, true)
+    : sd !== null ? FileList(domFiles(sd).sort((a, b) => b.cx - a.cx), false)
+    : DomainList();
+  const head = HITS ? `${HITS.length} file${HITS.length === 1 ? '' : 's'} found`
+    : sd !== null ? 'Files, most complex first' : '17 domains';
+
+  const insp = !S.sel || S.sel.kind === 'domain' ? Empty('above')
+    : `<div class="pad">${FileBody(S.sel.i)}</div>`;
+
+  return `${Sidebar()}
+    <div id="stage"><canvas></canvas>${S.ctl ? '' :
+      `<button id="reveal" class="sbtn" data-open="ctl" title="Show sidebar">${SIDEBAR_ICON}</button>`}</div>
+    <div id="split"${sd === null ? '' : ` style="--dh:${COL(sd)}"`}>
+      <section id="index">
+        <div class="sec">${Search('q')}</div>
+        ${ctx}
+        <div class="sec" style="padding:12px 16px 7px;border-bottom:0">
+          <div class="eyebrow">${head}</div></div>
+        <div class="grow" style="padding:0 8px 12px">${list}</div>
+      </section>
+      <section id="inspect"><div class="grow">${insp}</div>
+        <div class="sec" style="border-bottom:0;border-top:1px solid rgba(126,214,240,.1)">
+          ${Provenance()}</div>
+      </section>
+    </div>`;
+}
+
+/* Each layout drawn as what it is: three columns, a stage with a split panel, a bare
+   stage with a bar over it. */
+/* Standing over the model, or looking straight down at the plan. Each drawn as what it
+   is: a solid seen in three quarters, and a treemap seen flat on. */
+const VIEWS = {
+  '3d': ['3D city', '<path d="M8 1.6 14 5v6l-6 3.4L2 11V5z"/><path d="M2 5l6 3.4L14 5"/>'
+          + '<path d="M8 8.4v6"/>'],
+  flat: ['Treemap', '<rect x="1.6" y="2.6" width="12.8" height="10.8" rx="1.4"/>'
+          + '<path d="M7 2.6v10.8M7 8h7.4M10.8 8v5.4"/>'],
+};
+function LayoutPicker() {
+  return `<div class="iseg">${Object.entries(VIEWS).map(([k, [name, d]]) =>
+    `<button data-view="${k}" aria-pressed="${S.view === k}" title="${name}"
+       aria-label="${name}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+       stroke-width="1.3" stroke-linejoin="round">${d}</svg></button>`).join('')}</div>`;
+}
+
+/* One shape for every field in the sidebar: its name on the left, its control on the
+   right. A control with no name beside it is a puzzle, whatever it is made of. */
+const Row = (label, ctl) => `<div class="srow"><span>${label}</span>${ctl}</div>`;
+
+const SIDEBAR_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+  stroke-width="1.3" stroke-linejoin="round"><rect x="1.6" y="2.8" width="12.8" height="10.4"
+  rx="1.6"/><path d="M6.2 2.8v10.4"/></svg>`;
+
+/* Every control the map has, in the sidebar every other surface in this app uses:
+   labelled rows under group headings, and the legend as the last group because it
+   describes what the groups above it just did. */
+function Sidebar() {
+  const sel = (k, opts) => `<select data-set="${k}">` + opts.map(o =>
+    `<option value="${o[0]}"${S[k] === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('') + `</select>`;
+  return `<aside id="side">
+    <header><h5>Map</h5>
+      ${Redo()}
+      <button class="sbtn" data-open="ctl" title="Hide sidebar">${SIDEBAR_ICON}</button>
+    </header>
+    <div class="body">
+      <div class="sbsec"><h6>Encoding</h6>
+        ${Row('Area', sel('area', [['loc', 'Lines of code'], ['commits', 'Commits'], ['cx', 'Complexity']]))}
+        ${Row('Height', sel('height', [['cx', 'Complexity'], ['authors', 'Authors'], ['commits', 'Commits']]))}
+        ${Row('Colour', sel('colour', [['domain', 'Domain'], ['cx', 'Complexity'], ['authors', 'Authors']]))}
+      </div>
+      <div class="sbsec"><h6>Arrangement</h6>
+        ${Row('Group by', Grouping())}
+        ${Row('View', LayoutPicker())}
+      </div>
+      <div class="sbsec"><h6>Filters</h6>
+        ${Row('Hide test files', Switch('noTests'))}
+        ${Row('Show legend', Switch('leg'))}
+      </div>
+      ${MapLegend()}
+    </div>
+  </aside>`;
+}
+
+/* The map is derived from a repo that keeps moving, so rebuilding it is an ordinary
+   control and lives with the controls, not in a menu. */
+function Redo() {
+  return `<button class="sbtn${REDOING ? ' spin' : ''}" id="redo" title="Rebuild the map from the repo">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+      stroke-linecap="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.7-3.97"/><path d="M13.6 2.2v3h-3"/>
+    </svg></button>`;
+}
+
+/* 2 · the legend says exactly what the channels currently say, over exactly the files
+   currently drawn — so hiding the tests moves the numbers under it. */
+function MapLegend() {
+  if (!S.leg) return '';
+  const pool = S.noTests ? FILES.filter(f => !/Tests[A-Z]?\.swift$/.test(f.name)) : FILES;
+  const K = { loc: ['Lines of code', f => f.loc], cx: ['Complexity', f => f.cx],
+              commits: ['Commits', f => f.commits], authors: ['Authors', f => f.authors] };
+  const span = k => { const g = K[k][1]; let lo = Infinity, hi = -Infinity;
+    for (const f of pool) { const v = g(f); if (v < lo) lo = v; if (v > hi) hi = v; }
+    return lo + '–' + hi; };
+  const lit = HOVER_DOM !== null ? HOVER_DOM : selDom();
+  const colour = S.colour === 'domain'
+    ? `<div class="hues">${DOMAINS.map((d, i) =>
+        `<i style="background:${COL(i)};opacity:${lit === null || lit === i ? 1 : .16}"></i>`).join('')}</div>
+       ${lit === null ? `<div class="sub">one hue per domain · 17</div>`
+         : `<div class="lit"><i style="background:${COL(lit)}"></i>${esc(DOMAINS[lit][0])}</div>`}`
+    : `<div class="hues">${[0,1,2,3,4].map(i =>
+        `<i style="background:hsl(${200 - i * 42} 62% ${32 + i * 9}%)"></i>`).join('')}</div>
+       <div class="sub">${K[S.colour][0].toLowerCase()} · ${span(S.colour)}</div>`;
+  return `<div class="sbsec" id="legend">
+    <h6>Legend · colour is ${S.colour === 'domain' ? 'domain' : K[S.colour][0].toLowerCase()}</h6>
+    ${colour}
+    <div class="row"><span>Area · ${K[S.area][0].toLowerCase()}</span><span>${span(S.area)}</span></div>
+    <div class="row"><span>Height · ${K[S.height][0].toLowerCase()}</span><span>${span(S.height)}</span></div>
+    <div class="row" style="color:var(--text-off)">
+      <span>${pool.length} files${S.noTests ? ', tests hidden' : ''}</span>
+      <span>${S.arrange === 'domains' ? 'by domain' : 'by folder'}</span></div>
+  </div>`;
+}
+
+/* ══ shell C · command surface ═══════════════════════════════════════════════
+   The system: the map gets the whole window, and every piece of information is summoned
+   rather than parked. One command bar is the single entry — it searches files and jumps to
+   domains in the same list. The domain index is a drawer you can shut. A selection opens a
+   card at the box itself, so the eye never leaves the thing it clicked. */
+function shellC() {
+  const sd = selDom();
+  const pal = S.q.trim() ? (() => {
+    const q = S.q.trim().toLowerCase();
+    const ds = DOMAINS.map((d, i) => [d, i]).filter(([d]) =>
+      d[0].toLowerCase().includes(q) || d[2].some(t => t.includes(q)));
+    return (ds.length ? `<h5>Domains</h5>` + ds.map(([d, i]) =>
+        `<div class="drow" data-dom="${i}"><i class="sw" style="background:${COL(i)}"></i>
+         <span class="nm">${esc(d[0])}</span><span class="ct">${d[3]}</span></div>`).join('') : '')
+      + `<h5>${HITS.length} file${HITS.length === 1 ? '' : 's'}</h5>` + FileList(HITS, true, 40);
+  })() : '';
+
+  const card = S.sel ? `<div id="card" style="left:${
+      Math.max(16, Math.min((SEL_PT ? SEL_PT[0] : 400) + 14, innerWidth - 334))}px;top:${
+      Math.max(78, Math.min((SEL_PT ? SEL_PT[1] : 300) - 40, innerHeight - 320))}px">
+      <span class="x" data-go="root">✕</span>
+      ${S.sel.kind === 'file' ? FileBody(S.sel.i) : DomainBody(S.sel.i)}
+      ${S.sel.kind === 'domain' ? `<div style="margin-top:12px;max-height:150px;overflow-y:auto">
+        ${FileList(domFiles(S.sel.i).sort((a, b) => b.cx - a.cx), false, 30)}</div>` : ''}
+    </div>` : '';
+
+  return `<div id="stage"><canvas></canvas></div>
+    <div id="tab">Domains</div>
+    <aside id="drawer" class="${S.drawer ? '' : 'shut'}">
+      <div class="sec"><div class="eyebrow">17 domains</div></div>
+      <div class="grow" style="padding:0 8px 12px">${DomainList()}</div>
+      <div class="sec" style="border-bottom:0;border-top:1px solid rgba(126,214,240,.1)">
+        ${Provenance()}</div>
+    </aside>
+    <div id="cmd"><div class="top"><span class="mag">⌕</span>
+        <input id="q" placeholder="Search files, jump to a domain…" value="${esc(S.q)}">
+        <span class="prov">${HITS ? HITS.length + ' hits' : '⌘K'}</span></div>
+      ${pal ? `<div class="pal">${pal}</div>` : ''}</div>
+    <button id="gear" class="ghost">Encoding ▾</button>
+    ${S.gear ? `<div id="gearp">${Encoding(false)}${Grouping()}${Filters()}
+        <div style="border-top:1px solid rgba(126,214,240,.12);padding-top:9px">${Legend()}</div>
+      </div>` : ''}
+    ${card}`;
+}
+
+/* A prototype cannot read the repo, so this re-rolls the mock measurements — enough to
+   prove the control puts a moving map back under the same selection. */
+function rebuildMap() {
+  REDOING = true; render();
+  setTimeout(() => {
+    for (const f of FILES) {
+      f.loc = 20 + Math.round(R() * 620); f.cx = 1 + Math.round(R() * 44);
+      f.commits = 1 + Math.round(R() * 60); f.authors = 1 + Math.round(R() * 4);
+      f.age = 6 + Math.round(R() * R() * 2600);
+    }
+    for (const k in SORTED) delete SORTED[k];
+    REDOING = false; render();
+  }, 620);
+}
+
+/* ══ render and wiring ═══════════════════════════════════════════════════════ */
+const app = document.getElementById('app');
+function render(keepFocus) {
+  document.body.dataset.shell = S.shell;
+  document.body.classList.toggle('nosb', !S.ctl);
+  const act = document.activeElement, focused = act && act.id === 'q';
+  const at = focused ? act.selectionStart : 0;
+  build();
+  const keep = [...app.querySelectorAll('.grow')].map(g => g.scrollTop);
+  app.innerHTML = S.shell === 'a' ? shellA() : S.shell === 'b' ? shellB() : shellC();
+  [...app.querySelectorAll('.grow')].forEach((g, i) => { if (keep[i]) g.scrollTop = keep[i]; });
+  cv = app.querySelector('canvas'); ctx = cv && cv.getContext('2d');
+  requestAnimationFrame(() => { draw(); placeCard(); });
+  if (focused || keepFocus) {
+    const q = document.getElementById('q');
+    if (q) { q.focus(); try { q.setSelectionRange(at, at); } catch {} }
+  }
+  const sw = document.getElementById('switch');
+  sw.hidden = false;
+  sw.innerHTML = `<span class="tag">Layout</span>` + [['a', 'Two rails'], ['b', 'Dock + index'],
+    ['c', 'Command']].map(([k, t]) =>
+    `<button data-shell="${k}" aria-pressed="${S.shell === k}">${t}</button>`).join('');
+}
+document.addEventListener('input', e => {
+  if (e.target.id !== 'q') return;
+  S.q = e.target.value; refind();
+  if (S.q.trim()) S.sel = null;
+  render(true);
+});
+document.addEventListener('change', e => {
+  const set = e.target.dataset.set;
+  if (set) { S[set] = e.target.value; render(); }
+});
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-shell],[data-mode],[data-view],[data-open],[data-t],[data-dom],[data-file],[data-go],#tab,#gear,#redo');
+  if (!t) return;
+  if (t.dataset.open) { S[t.dataset.open] = !S[t.dataset.open]; render(); return; }
+  if (t.dataset.t) { S[t.dataset.t] = !S[t.dataset.t]; render(); return; }
+  if (t.id === 'redo') { rebuildMap(); return; }
+  if (t.dataset.shell) {
+    S.shell = t.dataset.shell;
+    history.replaceState(null, '', '?shell=' + S.shell);
+    S.gear = false; render();
+  } else if (t.dataset.mode) { S.arrange = t.dataset.mode; render(); }
+  else if (t.dataset.view) { S.view = t.dataset.view; render(); }
+  else if (t.id === 'tab') { S.drawer = !S.drawer; render(); }
+  else if (t.id === 'gear') { S.gear = !S.gear; render(); }
+  else if (t.dataset.go === 'root') { S.sel = null; S.q = ''; refind(); render(); }
+  else if (t.dataset.go === 'hits') { S.sel = null; render(); }
+  else if (t.dataset.dom !== undefined) { S.sel = { kind: 'domain', i: +t.dataset.dom }; render(); }
+  else if (t.dataset.file !== undefined) { S.sel = { kind: 'file', i: +t.dataset.file }; render(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { S.sel = null; render(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault(); const q = document.getElementById('q'); if (q) q.focus();
+  }
+});
+app.addEventListener('click', e => {
+  if (!e.target.matches('canvas')) return;
+  const r = cv.getBoundingClientRect();
+  const i = pick(e.clientX - r.left, e.clientY - r.top);
+  S.sel = i === null ? null : { kind: 'file', i };
+  render();
+});
+document.addEventListener('pointerover', e => {
+  const r = e.target.closest && e.target.closest('.drow');
+  const d = r ? +r.dataset.dom : null;
+  if (d === HOVER_DOM) return;
+  HOVER_DOM = d; relight();
+});
+document.addEventListener('scroll', e => {
+  const el = e.target;
+  if (!el.classList || !el.classList.contains('grow')) return;
+  if (el.scrollTop + el.clientHeight > el.scrollHeight - 320) more();
+}, true);
+addEventListener('resize', () => requestAnimationFrame(draw));
+render();
+</script>

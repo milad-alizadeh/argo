@@ -1,0 +1,239 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Atlas · class diagram — three readings</title>
+<!-- PROTOTYPE — three radically different answers to ONE question: how do the types in a
+     repository relate? Data: node atlas-types.mjs → atlas-types.json (2072 types, 4041 edges,
+     read out of this repo's own Swift). Nothing here is mocked and nothing here is Argo-shaped:
+     the extractor is a language pack per language, and a repo with no pack draws nothing.
+
+     PLATE   a drafting sheet. One type, its neighbours, drafted UML with real arrowheads.
+     ORRERY  one type at the centre of rings, one ring per kind of relation.
+     LEDGER  no edges drawn at all — the whole graph as a dependency matrix.
+
+     Switch with the bar at the bottom, or ?v=plate|orrery|ledger&t=TypeName. -->
+<style>
+  :root {
+    --ground: #0b0f12;    --sheet: #0e141a;   --panel: #111920;
+    --rule: #1d2830;      --rule2: #27343d;
+    --ink: #d8e4ec;       --mid: #91a3b0;     --mute: #5f717e;
+    --struct: #7fe8ff;    --class: #ffb061;   --enum: #b79bff;
+    --protocol: #5ce6a8;  --actor: #ff7a9c;
+    --hold: #7fe8ff;      --conform: #5ce6a8; --use: #5b6f7d;  --nest: #b79bff;
+    --sans: -apple-system, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--ground); color: var(--ink); font: 13px/1.5 var(--sans);
+    display: grid; grid-template-columns: 268px 1fr; overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+  /* ---- the index rail ------------------------------------------------------------- */
+  #rail { border-right: 1px solid var(--rule); display: flex; flex-direction: column; min-height: 0; background: var(--sheet); }
+  #head { padding: 14px 14px 10px; border-bottom: 1px solid var(--rule); }
+  .brand { font: 600 11px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--mid); }
+  .brand b { color: var(--ink); font-weight: 600; }
+  #q {
+    width: 100%; margin-top: 10px; padding: 7px 9px; background: #0a0e12;
+    border: 1px solid var(--rule2); border-radius: 5px; color: var(--ink);
+    font: 12px var(--mono); outline: none;
+  }
+  #q:focus { border-color: #38505e; }
+  #q::placeholder { color: var(--mute); }
+
+  /* Four stacked lists in one column is what made this rail unreadable: every axis competed
+     for the same height and the type list — the one a reader is actually in — lost. So the rail
+     shows ONE list at a time, chosen by a segmented control, at the full height of the column.
+     Kind is the exception: five cheap toggles that belong beside the search, not in a list. */
+  #kinds { display: flex; flex-wrap: wrap; gap: 4px 5px; margin-top: 10px; }
+  .ktog {
+    display: flex; align-items: center; gap: 5px; padding: 3px 8px;
+    border: 1px solid transparent; border-radius: 20px;
+    font: 11px var(--sans); color: var(--mute); opacity: .5;
+  }
+  .ktog:hover { background: #16202a; }
+  .ktog[aria-pressed="true"] { opacity: 1; color: var(--ink); border-color: var(--rule2); background: #131c24; }
+  .ktog i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .ktog i.dim { background: var(--mid); }
+  #tabs { display: flex; border-bottom: 1px solid var(--rule); flex: none; }
+  #tabs button {
+    flex: 1; padding: 9px 0 7px; border-bottom: 2px solid transparent;
+    font: 600 10px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--mute);
+  }
+  #tabs button:hover { color: var(--mid); }
+  #tabs button[aria-pressed="true"] { color: var(--ink); border-bottom-color: #7fe8ff; background: #121a21; }
+  #count { padding: 8px 14px; font: 10px var(--mono); color: var(--mute); letter-spacing: .05em; }
+  #list { flex: 1 1 auto; min-height: 200px; overflow: auto; padding-bottom: 60px; }
+  .grp {
+    position: sticky; top: 0; z-index: 1; background: var(--sheet);
+    padding: 9px 14px 5px; font: 600 10px var(--sans); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--mute); border-bottom: 1px solid var(--rule);
+  }
+  .row { display: flex; gap: 8px; align-items: baseline; padding: 4px 14px; cursor: pointer; }
+  .row:hover { background: #16202a; }
+  .row[aria-selected="true"] { background: rgba(127, 232, 255, .14); }
+  .row .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; align-self: center; }
+  .row .nm { font: 12px var(--mono); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .dg { font: 10px var(--mono); color: var(--mute); }
+  .row.dim .nm { color: var(--mute); }
+
+  /* ---- the stage ------------------------------------------------------------------ */
+  /* The card is a COLUMN, not a floating panel. Floated over the drawing it ate the right
+     third of every plate — the title block, half the outgoing column — and a reader had no
+     way to tell an occluded box from an absent one. */
+  #stage { display: grid; grid-template-columns: minmax(0, 1fr) auto; min-width: 0; overflow: hidden; }
+  #view { position: relative; overflow: hidden; min-width: 0; }
+  #view > * { position: absolute; inset: 0; }
+  svg { display: block; width: 100%; height: 100%; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #empty {
+    display: grid; place-content: center; text-align: center; color: var(--mute);
+    font: 12px var(--mono); letter-spacing: .06em; pointer-events: none;
+  }
+  .canvas-wrap { position: relative; }
+  .canvas-wrap svg { cursor: grab; }
+  .canvas-wrap svg:active { cursor: grabbing; }
+  .zoom-hud {
+    position: absolute; top: 14px; right: 14px; z-index: 10;
+    display: flex; flex-direction: column; gap: 1px;
+    background: rgba(14, 20, 26, .93); border: 1px solid var(--rule2); border-radius: 6px;
+    overflow: hidden;
+  }
+  .zoom-hud button {
+    width: 30px; height: 28px; display: grid; place-content: center;
+    font: 15px/1 var(--mono); color: var(--mute); border-bottom: 1px solid var(--rule2);
+  }
+  .zoom-hud button:last-child { border-bottom: 0; }
+  /* `#view > *` stretches its children to fill the stage, which is right for a canvas and wrong
+     for a button sitting on top of one. */
+  #view > .back-btn { inset: 14px auto auto 14px; }
+  .back-btn {
+    position: absolute; top: 14px; left: 14px; z-index: 10; text-align: left;
+    display: flex; align-items: center; gap: 7px; padding: 7px 12px 8px;
+    background: rgba(14, 20, 26, .93); border: 1px solid var(--rule2); border-radius: 6px;
+    font: 600 10px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--mid);
+  }
+  .back-btn:hover { color: var(--ink); border-color: #3a4d59; }
+  .back-btn span { font: 13px/1 var(--mono); }
+  .back-btn b {
+    font: 400 10px var(--mono); letter-spacing: .02em; text-transform: none;
+    color: var(--mute); padding-left: 10px; margin-left: 3px; border-left: 1px solid var(--rule2);
+  }
+  .zoom-hud button:hover { color: var(--ink); background: #16202a; }
+
+  /* ---- the bottom bar -------------------------------------------------------------- */
+  #bar {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 20;
+    display: flex; gap: 2px; padding: 4px; background: rgba(11, 15, 18, .86);
+    border: 1px solid var(--rule2); border-radius: 9px; backdrop-filter: blur(14px);
+    box-shadow: 0 10px 34px rgba(0, 0, 0, .55);
+  }
+  #bar button {
+    padding: 7px 15px 8px; border-radius: 6px; text-align: left;
+    font: 600 11px/1.25 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--mute);
+  }
+  #bar button small { display: block; font: 400 9px/1.4 var(--mono); letter-spacing: .02em; text-transform: none; opacity: .72; }
+  #bar button:hover { color: var(--mid); }
+  #bar button[aria-pressed="true"] { background: #1c2933; color: var(--ink); }
+
+  /* ---- the reading card ------------------------------------------------------------ */
+  #card {
+    width: 312px; margin: 16px 16px 74px 0; align-self: start; max-height: calc(100% - 90px);
+    overflow: auto; background: rgba(14, 20, 26, .93); border: 1px solid var(--rule2);
+    border-radius: 8px; padding: 14px 15px 15px;
+  }
+  #card[hidden] { display: none; }
+  #card .kind { font: 600 10px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
+  #card h2 { margin: 4px 0 2px; font: 500 19px var(--mono); letter-spacing: -.01em; }
+  #card .where { font: 10px var(--mono); color: var(--mute); word-break: break-all; line-height: 1.55; }
+  #card .doc { margin: 10px 0 0; font: 12px/1.55 var(--sans); color: var(--ink); }
+  #card dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 12px 0 0; }
+  #card dt { font: 10px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
+  #card dd { margin: 0; font: 11px var(--mono); }
+  #card h3 {
+    margin: 14px 0 6px; padding-top: 10px; border-top: 1px solid var(--rule);
+    font: 600 10px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--mute);
+  }
+  #card .mem { font: 11px/1.7 var(--mono); color: var(--mid); }
+  #card .mem b { color: var(--ink); font-weight: 400; }
+  #card .lnk { color: var(--struct); cursor: pointer; }
+  #card .lnk:hover { text-decoration: underline; }
+
+  /* ---- drafting sheet -------------------------------------------------------------- */
+  .tick { stroke: var(--rule2); stroke-width: 1; }
+  .box-fill { fill: #101820; stroke: var(--rule2); }
+  .box-fill.on { stroke: #4b6675; }
+  .name { font: 500 13px var(--mono); fill: var(--ink); }
+  .stereo { font: 9px var(--mono); fill: var(--mute); letter-spacing: .1em; }
+  .member { font: 10.5px var(--mono); fill: var(--mid); }
+  .more { font: 9.5px var(--mono); fill: var(--mute); }
+  .elabel { font: 9.5px var(--mono); fill: var(--mute); }
+  .colhead { font: 600 9.5px var(--sans); letter-spacing: .16em; fill: var(--mute); }
+  .titleblock line { stroke: var(--rule2); }
+  .titleblock .k { font: 9px var(--sans); letter-spacing: .12em; fill: var(--mute); }
+  .titleblock .v { font: 10.5px var(--mono); fill: var(--ink); }
+
+  .hit { cursor: pointer; }
+
+  /* ---- orrery ---------------------------------------------------------------------- */
+  .ring { fill: none; stroke: #1b262e; }
+  .ringlab { font: 9px var(--sans); letter-spacing: .2em; fill: var(--mute); text-transform: uppercase; }
+  .spoke { fill: none; }
+  .sat { font: 11px var(--mono); }
+  .core { font: 500 22px var(--mono); fill: var(--ink); }
+  .coresub { font: 10px var(--mono); fill: var(--mute); letter-spacing: .08em; }
+
+  /* ---- ledger ---------------------------------------------------------------------- */
+  #ledgerwrap { display: grid; grid-template-rows: 1fr auto; }
+  #readout {
+    position: absolute; left: 18px; bottom: 18px; z-index: 12; pointer-events: none;
+    font: 11px/1.7 var(--mono); color: var(--mid); background: rgba(11, 15, 18, .9);
+    border: 1px solid var(--rule2); border-radius: 6px; padding: 8px 11px; min-width: 240px;
+  }
+  #readout b { color: var(--ink); font-weight: 400; }
+  #readout .rel { letter-spacing: .1em; text-transform: uppercase; font-size: 9px; }
+  /* Above the diagonal is the emptiest quarter of any dependency matrix, which is exactly
+     where a legend can sit without hiding a cell. */
+  #legend {
+    position: absolute; right: 22px; top: 22px; z-index: 11;
+    font: 10px/1.9 var(--mono); color: var(--mute); text-align: right;
+  }
+  #caption {
+    position: absolute; left: 20px; top: 20px; z-index: 11;
+    font: 11px/1.75 var(--mono); color: var(--mid); pointer-events: none;
+  }
+  #caption h4 {
+    margin: 0 0 4px; font: 500 20px var(--mono); color: var(--ink); letter-spacing: -.01em;
+  }
+  #legend .sw { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 7px; }
+  #legend h4 { margin: 0 0 5px; font: 600 9px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
+</style>
+
+<aside id="rail">
+  <div id="head">
+    <div class="brand">Atlas · <b>type graph</b></div>
+    <input id="q" placeholder="search types  /" spellcheck="false" autocomplete="off">
+    <div id="kinds"></div>
+  </div>
+  <div id="tabs"></div>
+  <div id="count"></div>
+  <div id="list"></div>
+</aside>
+
+<main id="stage">
+  <div id="view"></div>
+  <aside id="card" hidden></aside>
+</main>
+
+<nav id="bar"></nav>
+
+<script src="vendor/elk.bundled.js"></script>
+<script src="vendor/d3.v7.min.js"></script>
+<script src="atlas-class.js"></script>
+<script src="atlas-class-plate.js"></script>
+<script src="atlas-class-wheel.js"></script>
+<script src="atlas-class-ledger.js"></script>
+<script src="atlas-class-domain.js"></script>

@@ -1,0 +1,1076 @@
+<!doctype html>
+<!-- PROTOTYPE — throwaway. Stock CodeCharta data, drawn here. No authored content, no model.
+     Data: ccsh unifiedparser + ccsh gitlogparser + ccsh merge  →  atlas-cc.json (1547 files). -->
+<meta charset="utf-8">
+<title>Argo · CodeCharta</title>
+<link rel="stylesheet" href="atlas-tokens.css">
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  #app { height: 100%; display: grid; grid-template-rows: auto 1fr; }
+  #main { display: grid; grid-template-columns: 1fr 330px; min-height: 0; }
+
+  header { padding: 16px 30px 8px; display: flex; align-items: baseline; gap: 14px; }
+  header h1 { font: 600 var(--t-title3)/1.2 var(--sans); }
+  header .count { margin-left: auto; font: var(--t-footnote) var(--mono); color: var(--text-3); }
+
+  #stage { position: relative; overflow: hidden; }
+  /* the width/height attributes carry the backing store and are also CSS hints, so the
+     element must be pinned to the stage or a retina canvas lays out at twice its size */
+  canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* the side panel: one place a fact appears, and it holds its size so the map
+     never reflows when the pointer moves across it */
+  #side { border-left: 1px solid var(--hairline); background: var(--ground-2, #17191c);
+          display: flex; flex-direction: column; min-height: 0; }
+  #read { flex: 1; overflow-y: auto; padding: 16px 18px 18px; }
+  #read .kind { font: var(--t-footnote) var(--mono); text-transform: uppercase;
+                letter-spacing: .12em; color: var(--text-off); }
+  #read .name { font: 600 var(--t-title3)/1.25 var(--sans); margin-top: 5px;
+                overflow-wrap: anywhere; }
+  #read .where { font: var(--t-footnote)/1.45 var(--mono); color: var(--text-3);
+                 margin-top: 6px; overflow-wrap: anywhere; }
+  #read .pin { margin-top: 9px; font: var(--t-footnote) var(--mono); color: var(--accent); }
+
+  #read table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  #read th { text-align: left; font: var(--t-footnote) var(--mono); text-transform: uppercase;
+             letter-spacing: .1em; color: var(--text-off); font-weight: 400;
+             padding-bottom: 6px; border-bottom: 1px solid var(--hairline); }
+  #read td { padding: 5px 0; font-size: var(--t-callout); color: var(--text-2);
+             border-bottom: 1px solid rgba(255,255,255,.045); }
+  #read td.v { text-align: right; font: var(--t-callout) var(--mono); color: var(--text-1); }
+  #read tr.zero td { color: var(--text-off); }
+  #read tr.on td { color: var(--text-1); }
+  #read tr.on td.k::before { content: '●'; color: var(--accent); font-size: 8px;
+                             vertical-align: 2px; margin-right: 6px; }
+  #read .idle { color: var(--text-3); font-size: var(--t-callout); line-height: 1.5; }
+  #read .idle b { color: var(--text-2); font-weight: 600; }
+  #read .idle kbd { font: var(--t-footnote) var(--mono); color: var(--text-1);
+                    background: var(--raised); border: 1px solid var(--subtle);
+                    border-radius: 4px; padding: 1px 5px; }
+
+  /* one panel, top left, over the map: the three channels, the reset, and the help.
+     It sits on the stage rather than the window, so it travels with the map, not the page. */
+  #bar { position: absolute; left: 16px; top: 16px; z-index: 60; width: 268px;
+         display: flex; flex-direction: column; gap: 9px; padding: 13px 14px 12px;
+         background: rgba(38,41,46,.94); backdrop-filter: blur(16px);
+         border: 1px solid var(--strong); border-radius: 12px;
+         box-shadow: 0 10px 30px rgba(0,0,0,.55); }
+  #bar label { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: 9px;
+               font: var(--t-footnote) var(--mono); text-transform: uppercase;
+               letter-spacing: .1em; color: var(--text-3); }
+  #bar select { width: 100%; font: var(--t-callout) var(--sans); color: var(--text-1);
+                background: var(--raised); border: 1px solid var(--subtle);
+                border-radius: 6px; padding: 4px 7px; text-transform: none; letter-spacing: 0; }
+  #bar button { font: var(--t-callout) var(--sans); color: var(--text-1);
+                background: var(--raised); border: 1px solid var(--subtle);
+                border-radius: 6px; padding: 5px 12px; white-space: nowrap; }
+  #bar button:hover { background: var(--hover); border-color: var(--strong); }
+  #bar .rule { height: 1px; background: var(--hairline); margin: 2px -14px 1px; }
+  #bar .help { font: var(--t-footnote)/1.65 var(--sans); color: var(--text-3); }
+  #bar .reads { font: var(--t-footnote)/1.6 var(--sans); color: var(--text-3);
+                padding: 8px 0 1px; border-top: 1px solid var(--hairline); margin-top: 2px; }
+  #bar .reads b { color: var(--text-1); font-weight: 600; }
+  #bar .help b { color: var(--text-2); font-weight: 600; }
+  #bar kbd { font: var(--t-footnote) var(--mono); color: var(--text-1);
+             background: var(--raised); border: 1px solid var(--subtle);
+             border-radius: 4px; padding: 0 5px; }
+  #bar label.check { display: flex; grid-template-columns: none; gap: 7px; cursor: pointer;
+                     letter-spacing: .04em; color: var(--text-2); text-transform: none;
+                     font: var(--t-callout) var(--sans); }
+  #bar label.check input { accent-color: #78b6ff; margin: 0; }
+
+  #read .ties { margin-top: 18px; }
+  #read .ties h4 { font: var(--t-footnote) var(--mono); text-transform: uppercase;
+                   letter-spacing: .1em; color: var(--text-off); font-weight: 400;
+                   padding-bottom: 6px; border-bottom: 1px solid var(--hairline); }
+  #read .tie { display: flex; gap: 10px; padding: 5px 0; font-size: var(--t-callout);
+               color: var(--text-2); border-bottom: 1px solid rgba(255,255,255,.045); }
+  #read .tie span { overflow-wrap: anywhere; }
+  #read .tie b { margin-left: auto; font: var(--t-callout) var(--mono); color: #78b6ff; }
+  /* A basename alone hides the only interesting part: a tie inside one folder is ordinary,
+     and a tie across two packages is the finding. So the twin carries where it lives. */
+  #read .tie { flex-wrap: wrap; cursor: pointer; border-radius: 5px;
+               padding: 5px 6px; margin: 0 -6px; }
+  #read .tie:hover { background: rgba(120,182,255,.08); }
+  #read .tie em { flex-basis: 100%; font-style: normal; font: var(--t-footnote) var(--mono);
+                  color: var(--text-off); overflow-wrap: anywhere; }
+  #read .tie i { flex-basis: 100%; font-style: normal; margin-top: 4px;
+                 font: var(--t-footnote)/1.5 var(--sans); color: var(--text-3); }
+
+  /* the legend, bottom right of the map, on the stage and never hidden */
+  #key { position: absolute; right: 16px; bottom: 16px; z-index: 60; width: 186px;
+         padding: 10px 12px 9px; border-radius: 10px;
+         background: rgba(38,41,46,.94); backdrop-filter: blur(16px);
+         border: 1px solid var(--strong); box-shadow: 0 10px 30px rgba(0,0,0,.55);
+         font: var(--t-footnote) var(--mono); color: var(--text-3); }
+  #key .lead { text-transform: uppercase; letter-spacing: .1em; color: var(--text-off); }
+  #key #keyName { color: var(--text-2); }
+  #key .ramp { display: flex; align-items: center; gap: 0; margin: 7px 0 4px;
+               border-radius: 3px; overflow: hidden; }
+  #key .ramp i { flex: 1; height: 9px; }
+  #key .ends { display: flex; justify-content: space-between; color: var(--text-2); }
+  #key .foot { color: var(--text-off); margin-top: 1px; }
+
+  /* the colour channel, drawn on the bands the buildings use */
+  #read .gauge { margin-top: 16px; }
+  #read .gh { display: flex; align-items: baseline; font: var(--t-footnote) var(--mono);
+              text-transform: uppercase; letter-spacing: .1em; color: var(--text-off); }
+  #read .gh b { margin-left: auto; font: 600 var(--t-title3) var(--mono);
+                color: var(--text-1); letter-spacing: 0; }
+  /* The needle stands proud of the bands, so the bands are clipped and the needle is not —
+     a file in the top percent sits at the very end, where a clip would eat it. */
+  #read .track { position: relative; margin: 8px 0 5px; height: 10px; }
+  #read .bars { display: flex; height: 100%; border-radius: 3px; overflow: hidden; }
+  #read .bars i { height: 100%; }
+  #read .track u { position: absolute; top: -3px; width: 2px; height: 16px;
+                   margin-left: -1px; background: var(--text-1); border-radius: 1px;
+                   box-shadow: 0 0 0 1px rgba(0,0,0,.6); }
+  #read .ends { display: flex; justify-content: space-between;
+                font: var(--t-footnote) var(--mono); color: var(--text-off); }
+  #read .note { margin-top: 7px; font: var(--t-footnote)/1.5 var(--sans); color: var(--text-3); }
+  #read tr[title] { cursor: help; }
+
+  /* A question mark is a thing you can point at. A dotted underline is a thing you have to
+     already know is there, which makes it no help to the reader who needs it most. */
+  .ask { width: 15px; height: 15px; margin-left: 6px; padding: 0; flex: none;
+         border: 1px solid var(--subtle); border-radius: 50%; background: none;
+         color: var(--text-3); font: 10px/1 var(--mono); cursor: pointer; }
+  .ask:hover, .ask[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+  #pop { position: fixed; z-index: 90; width: 268px; padding: 12px 13px;
+         border-radius: 10px; background: rgba(30,33,37,.98); backdrop-filter: blur(20px);
+         border: 1px solid var(--strong); box-shadow: 0 16px 44px rgba(0,0,0,.6);
+         font: var(--t-footnote)/1.55 var(--sans); color: var(--text-2); }
+  #pop h5 { margin: 0 0 6px; font: var(--t-footnote) var(--mono); text-transform: uppercase;
+            letter-spacing: .1em; color: var(--text-off); }
+  #pop p { margin: 0 0 8px; }
+  #pop p:last-child { margin: 0; }
+  #pop .src { color: var(--text-off); }
+  #pop[hidden] { display: none; }
+
+  /* The written layer is drawn differently from every measured one, on purpose: a reader
+     must be able to tell at a glance which lines are counted and which are read. */
+  #read .said { margin-top: 16px; padding: 11px 12px; border-radius: 8px;
+                background: rgba(120,182,255,.055); border: 1px solid rgba(120,182,255,.16); }
+  #read .said p { margin: 0; font: var(--t-callout)/1.55 var(--sans); color: var(--text-1); }
+  #read .said .flag { display: block; margin-top: 8px; font: var(--t-footnote)/1.5 var(--mono);
+                      color: #78b6ff; }
+  /* the same mark as the one on the roofs, so the sentence and the map agree */
+  .dot { color: #dceaff; font-size: 9px; vertical-align: 2px; }
+</style>
+
+<div id="app">
+  <header>
+    <h1>Argo, as CodeCharta sees it</h1>
+    <div class="count" id="count"></div>
+  </header>
+  <div id="main">
+    <div id="stage"><canvas id="cv"></canvas>
+  <div id="bar">
+    <label>Area <select id="mArea"></select></label>
+    <label>Height <select id="mHeight"></select></label>
+    <label>Colour <select id="mColour"></select></label>
+    <div class="reads" id="reads"></div>
+    <button id="reset" title="Back to the opening view (R)">Reset view</button>
+    <label class="check" title="The file pairs that keep changing in the same commit (T)">
+      <input type="checkbox" id="ties"> Strongest ties</label>
+    <div class="rule"></div>
+    <div class="help">
+      <b>Drag</b> to pan · <b>scroll</b> to zoom<br>
+      <b>&#8997; option-drag</b> to turn and tilt<br>
+      <kbd>R</kbd> resets the view
+    </div>
+    <div class="rule"></div>
+    <div class="help">Point at a file to see the ones that change with it.</div>
+  </div>
+  <div id="pop" hidden></div>
+    <div id="key">
+    <div class="lead">Colour &#183; <span id="keyName"></span></div>
+    <div class="ramp"><i style="background:#4e8a63"></i><i style="background:#a8873c"></i><i style="background:#a8523f"></i></div>
+    <div class="ends"><span id="keyLo"></span><span id="keyHi"></span></div>
+    <div class="ends foot"><span>half the files</span><span>top 15%</span></div>
+  </div>
+  </div>
+    <aside id="side">
+      <div id="read"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => (Math.round(n * 10) / 10).toLocaleString('en-US');
+
+/* the plan square, in its own units */
+const PLAN = 1000;                  // the plan is laid out in a square this wide
+const HMAX = 150;                   // the tallest building, in plan units
+/* The tree is 86 folders deep in places, and a plate drawn at full strength at every
+   level turns the ground into a flight of steps. Both fall away with depth: the outer
+   two or three levels are the ones that carry the structure, and below that a folder
+   only needs a gutter wide enough to separate its files from its neighbour's. */
+/* The margin is the plate: it is the only part of a folder that is not under a building,
+   so it is also the only part you can point at. Wide enough to hit at a glance, and the
+   wall under it thick enough to be a target in its own right at the levels that carry
+   the structure. */
+const MARGIN = [0, 24, 19, 15, 12, 10, 9, 8];   // gap around a folder's contents, by rank
+const PLATE = [10, 8, 6.5, 5, 4, 3.5, 3, 3];   // how thick a folder's plate is, by rank
+/* A folder that holds no files of its own is never drawn, so the gutter it takes is a
+   rim you can see and cannot click. It keeps just enough to separate its children. */
+const GHOST_GAP = 3;
+
+let DATA = null, DESC = {}, state = null;
+/* path -> [[other path, temporal coupling], ...], strongest first. gitlogparser counts
+   the commits that touched both files; the studio draws these as the lines between
+   blocks. It is the one relation in the data — nothing here reads an import. */
+const LINKS = new Map();
+/* 999 pairs drawn at once is a ball of wool. The switch shows the strongest of them;
+   pointing at a file always shows that file's own, however the switch is set. */
+let TOP_TIES = [];
+const TIE_CAP = 160;
+
+/* ---------- squarified treemap (Bruls, Huizing & van Wijk 1999) ---------- */
+function squarify(items, x, y, w, h) {
+  const out = [];
+  const total = items.reduce((s, i) => s + i.v, 0) || 1;
+  let rest = items.slice().sort((a, b) => b.v - a.v);
+  let area = { x, y, w, h }, remaining = total;
+
+  while (rest.length) {
+    const horizontal = area.w >= area.h;
+    const side = horizontal ? area.h : area.w;
+    let row = [], rowSum = 0, best = Infinity;
+    for (const item of rest) {
+      const trySum = rowSum + item.v;
+      const thick = (trySum / remaining) * (horizontal ? area.w : area.h);
+      const worst = Math.max(...[...row, item].map(it => {
+        const along = (it.v / trySum) * side || 1e-6;
+        return Math.max(thick / along, along / thick);
+      }));
+      if (worst > best && row.length) break;
+      row.push(item); rowSum = trySum; best = worst;
+    }
+    const thick = (rowSum / remaining) * (horizontal ? area.w : area.h);
+    let along = horizontal ? area.y : area.x;
+    for (const it of row) {
+      const len = (it.v / rowSum) * side;
+      out.push(horizontal ? { it, x: area.x, y: along, w: thick, h: len }
+                          : { it, x: along, y: area.y, w: len, h: thick });
+      along += len;
+    }
+    if (horizontal) { area.x += thick; area.w -= thick; }
+    else { area.y += thick; area.h -= thick; }
+    remaining -= rowSum;
+    rest = rest.slice(row.length);
+  }
+  return out;
+}
+
+/* ---------- metrics ---------- */
+const at = (n, k) => (n.attributes && n.attributes[k]) || 0;
+
+/* A folder's value on any metric is the sum of its files, which is what the
+   studio does too — it keeps a parent's footprint equal to its contents. */
+function roll(n, k) {
+  if (n.type === 'File') return at(n, k);
+  return (n.children || []).reduce((s, c) => s + roll(c, k), 0);
+}
+function leaves(n, out = []) {
+  if (n.type === 'File') out.push(n); else (n.children || []).forEach(c => leaves(c, out));
+  return out;
+}
+
+/* Every file with the path the boxes are keyed by, built the same way layout() builds it, so
+   a row in the panel can travel to a box. It is needed before the first draw, which is why
+   it walks the tree rather than reading the drawn boxes. */
+let PATHS = null;
+function filePaths() {
+  if (PATHS) return PATHS;
+  PATHS = [];
+  (function walk(n, base) {
+    const here = base ? base + '/' + n.name : n.name;
+    if (n.type === 'File') PATHS.push({ n, path: here });
+    else (n.children || []).forEach(c => walk(c, here));
+  })(DATA, '');
+  return PATHS;
+}
+
+/* ---------- layout ---------- */
+function layout(root, mArea, mHeight, maxH) {
+  /* `rank` counts the plates you can actually see above a box, which is not the same as
+     its depth in the tree: Packages, Sources and ArgoEngine-inside-ArgoEngine are folders
+     of the build, not places in the code, and none of them is drawn. Sizing the gutters by
+     depth spent the room on those, and left the plate you wanted a rim two pixels wide. */
+  function walk(n, x, y, w, h, depth, rank, path) {
+    const here = path ? path + '/' + n.name : n.name;
+    if (n.type === 'File') {
+      const z = maxH ? (at(n, mHeight) / maxH) * HMAX : 0;
+      return { n, x, y, w, h, depth: rank, path: here, z0: 0, z1: Math.max(2, z), file: true, kids: [] };
+    }
+    /* A folder holding nothing but other folders owns no ground of its own. It still
+       divides the plan, but it is not drawn, not named and not pickable — the plate you
+       point at is always one that holds files. */
+    const ghost = !(n.children || []).some(c => c.type === 'File');
+    const t = ghost ? 0 : PLATE[Math.min(rank, PLATE.length - 1)];
+    const me = { n, x, y, w, h, depth: rank, path: here, z0: -t, z1: 0, file: false, ghost, kids: [] };
+    const m = ghost ? GHOST_GAP : MARGIN[Math.min(rank + 1, MARGIN.length - 1)];
+    const ix = x + m, iy = y + m, iw = w - m * 2, ih = h - m * 2;
+    if (iw <= 2 || ih <= 2) return me;
+    const kids = (n.children || [])
+      .map(c => ({ c, v: roll(c, mArea) })).filter(k => k.v > 0);
+    for (const b of squarify(kids.map(k => ({ v: k.v, c: k.c })), ix, iy, iw, ih))
+      me.kids.push(walk(b.it.c, b.x, b.y, b.w, b.h, depth + 1, rank + (ghost ? 0 : 1), here));
+    return me;
+  }
+  return walk(root, 0, 0, PLAN, PLAN, 0, 0, '');
+}
+
+/* A plate always sits behind everything standing on it, whichever way the plan is
+   turned — so the order is the tree, and only siblings are sorted by depth. */
+function paintOrder(box, out = []) {
+  out.push(box);
+  const kids = box.kids.slice();
+  for (const k of kids) k.d = depth(k.x + k.w / 2, k.y + k.h / 2);
+  kids.sort((a, b) => a.d - b.d);
+  for (const k of kids) paintOrder(k, out);
+  return out;
+}
+
+/* ---------- colour ---------- */
+/* The studio bands a metric at two percentiles of what is on screen and paints
+   the three bands. Nothing is a hue for its own sake — the band is the fact. */
+const BAND = [
+  { top: '#4e8a63', left: '#28453380', right: '#365f45' },
+  { top: '#a8873c', left: '#53431d80', right: '#75612c' },
+  { top: '#a8523f', left: '#54281f80', right: '#763a2d' },
+];
+function bands(k) {
+  const v = sorted(k);
+  if (!v.length) return [0, 0];
+  const q = p => v[Math.min(v.length - 1, Math.floor(p * v.length))];
+  return [q(0.5), q(0.85)];
+}
+
+/* One measure over every file, in order, kept because a bare 12 says nothing: the reader
+   needs to know whether 12 is the calm end of this repo or the wild one. */
+const SORTS = new Map();
+function sorted(k) {
+  if (!SORTS.has(k)) SORTS.set(k, leaves(DATA).map(f => at(f, k)).sort((a, b) => a - b));
+  return SORTS.get(k);
+}
+
+/* Two measures over the same files, as one number. It answers the question a colour ramp
+   always raises: is the red telling me anything the size did not already say? Nothing here
+   is asserted — the correlation is computed from the same values the map is drawn from. */
+function corr(j, k) {
+  const f = leaves(DATA);
+  const a = f.map(n => at(n, j)), b = f.map(n => at(n, k));
+  const ma = a.reduce((x, y) => x + y, 0) / a.length;
+  const mb = b.reduce((x, y) => x + y, 0) / b.length;
+  let ab = 0, aa = 0, bb = 0;
+  for (let i = 0; i < a.length; i++) {
+    const u = a[i] - ma, v = b[i] - mb;
+    ab += u * v; aa += u * u; bb += v * v;
+  }
+  return aa && bb ? ab / Math.sqrt(aa * bb) : 0;
+}
+
+/* said only when it is worth saying: a channel does not correlate with itself, and a weak
+   correlation is the absence of a finding rather than one */
+const CORRS = new Map();
+function twin(k) {
+  const a = state.area;
+  if (k === a) return '';
+  const id = k + '|' + a;
+  if (!CORRS.has(id)) CORRS.set(id, corr(k, a));
+  const r = CORRS.get(id);
+  if (r < 0.5) return '';
+  return `\n\nMoves with ${DESC[a].title} across all `
+    + `${leaves(DATA).length.toLocaleString('en-US')} files: r = ${r.toFixed(2)}. `
+    + `Much of this colour is size.`;
+}
+
+/* the share of files that score lower than this one, which is the position on the gauge */
+function rank(v, k) {
+  const s = sorted(k);
+  let i = 0;
+  while (i < s.length && s[i] < v) i++;
+  return s.length ? i / s.length : 0;
+}
+
+/* ---------- camera ---------- */
+/* Still axonometric — no perspective, no engine. Turning the plan under a fixed
+   projection gives orbit; the y multiplier is the pitch, from ground to overhead. */
+/* The opening view. Yaw 45° puts both plan axes across the screen, which is what makes
+   a city read as a city rather than as a wall; pitch 35.3° is the true isometric angle,
+   where a unit cube's three visible faces come out equal. */
+const YAW = Math.PI / 4, PITCH = 0.6155;
+const cam = { yaw: YAW, pitch: PITCH, scale: 1, ox: 0, oy: 0 };
+const C = PLAN / 2;
+
+/* An orthographic camera over a horizontal plan: yaw turns the plan under it, pitch
+   is the angle it looks down from. Across the screen nothing is foreshortened; into
+   the screen everything is foreshortened by sin(pitch), and height by cos(pitch).
+   Scaling the across axis by a constant instead — which is what a hard-coded pair of
+   multipliers does — stretches the whole picture and shears it as it turns. */
+/* The eye sits a finite distance from the plan and everything divides by how far away it
+   is, which is what makes a receding floor read as a floor. CodeCharta's own studio does
+   the same — its bundle builds `new PerspectiveCamera(45, ...)` — and an orthographic view
+   of a big plan at a low tilt reads as a shear instead, because nothing converges.
+   EYE is the distance that frames this plan at that same 45° field of view. */
+const EYE = PLAN * 1.7;
+
+function raw(x, y, z) {
+  const dx = x - C, dy = y - C;
+  const sy = Math.sin(cam.yaw), cy = Math.cos(cam.yaw);
+  const sp = Math.sin(cam.pitch), cp = Math.cos(cam.pitch);
+  const across = dx * cy - dy * sy;
+  const into = dx * sy + dy * cy;
+  const away = EYE + into * cp - z * sp;      // distance along the view axis
+  return [across / away, -(into * sp + z * cp) / away];
+}
+
+function project(x, y, z) {
+  const [px, py] = raw(x, y, z);
+  return [px * cam.scale + cam.ox, py * cam.scale + cam.oy];
+}
+
+/* A hand-turned view lands a degree or two off square, and a lopsided diamond reads as a
+   broken projection rather than as a near miss. Angles within 2.5° of a multiple of the
+   step fall onto it; anywhere else the drag is free. */
+function snap(a, step) {
+  const near = Math.round(a / step) * step;
+  return Math.abs(a - near) < 0.044 ? near : a;
+}
+
+/* how near a plan point is to the eye — larger is nearer, which is what both the paint
+   order and the choice of visible walls ask for */
+const depth = (x, y) =>
+  -((x - C) * Math.sin(cam.yaw) + (y - C) * Math.cos(cam.yaw));
+
+/* the zoom at which the whole city fits the stage, at whatever angle it is turned to */
+function baseScale() { return extent().k; }
+
+/* The picture's real extent, measured rather than assumed. The tallest tower is nowhere
+   near a corner, so a formula that reserves the full height at the far corner leaves the
+   map sitting high with a band of nothing under it. */
+function extent() {
+  const st = $('stage'), W = st.clientWidth, H = st.clientHeight, pad = 34;
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const b of boxesNow()) {
+    for (const [x, y] of [[b.x, b.y], [b.x + b.w, b.y], [b.x + b.w, b.y + b.h], [b.x, b.y + b.h]]) {
+      for (const z of [b.z0, b.z1]) {
+        const [px, py] = raw(x, y, z);
+        x0 = Math.min(x0, px); x1 = Math.max(x1, px);
+        y0 = Math.min(y0, py); y1 = Math.max(y1, py);
+      }
+    }
+  }
+  const k = Math.min((W - pad * 2) / (x1 - x0), (H - pad * 2) / (y1 - y0));
+  return { k, mx: (x0 + x1) / 2, my: (y0 + y1) / 2 };
+}
+
+/* the layout of the moment: the drawn one when there is one, else a fresh one, because
+   the first fit runs before anything has been drawn */
+function boxesNow() {
+  if (view) return view.boxes;
+  const files = leaves(DATA);
+  const maxH = Math.max(...files.map(f => at(f, state.height)), 1);
+  return paintOrder(layout(DATA, state.area, state.height, maxH));
+}
+
+function fit() {
+  const st = $('stage'), W = st.clientWidth, H = st.clientHeight;
+  const e = extent();
+  cam.scale = e.k;
+  cam.ox = W / 2 - e.mx * e.k;
+  cam.oy = H / 2 - e.my * e.k;
+}
+
+/* ---------- draw ---------- */
+const cv = $('cv'), ctx = cv.getContext('2d');
+let view = null;   // { boxes, lo, hi }
+const labels = [];  // the screen rects of the names already written this frame
+
+function render() {
+  const st = $('stage');
+  const W = st.clientWidth, H = st.clientHeight, dpr = devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  /* One tree, one layout, one set of colour bands. Zooming is the only way in, so a
+     building's colour means the same thing wherever you are looking from. */
+  const root = DATA;
+  const files = leaves(root);
+  const maxH = Math.max(...files.map(f => at(f, state.height)), 1);
+  const boxes = paintOrder(layout(root, state.area, state.height, maxH));
+  const [lo, hi] = bands(state.colour);
+  view = { boxes, lo, hi };
+
+  for (const b of boxes) drawBox(b, view);
+  /* biggest plate first, so the name that survives a collision is the one with the
+     most ground behind it rather than whichever the tree happened to reach first */
+  labels.length = 0;
+  for (const b of [...boxes].filter(b => !b.file && !b.ghost).sort((a, c) => c.w * c.h - a.w * a.h))
+    plateLabel(b);
+  /* Ties are drawn last, over the city, because a line that disappears behind a tower
+     is worse than one that floats. The near end is whatever the pointer holds. */
+  const seat = new Map();
+  for (const b of boxes) if (b.file) seat.set(b.path, b);
+  if (state.ties) drawTies(seat, TOP_TIES, .34, 1);
+  const focus = state.hover && state.hover.file ? state.hover
+              : state.pinned && state.pinned.file ? state.pinned : null;
+  if (focus) drawTies(seat, (LINKS.get(focus.path) || []).map(([o, v]) => [focus.path, o, v]),
+                      .95, 1.9);
+
+  /* the pinned one stays lit after the pointer has gone, so the panel and the map agree */
+  if (state.pinned) {
+    const still = boxes.find(b => b.path === state.pinned.path);
+    if (still) drawBox(still, view, true);
+  }
+  if (state.hover) drawBox(state.hover, view, true);
+
+  $('count').textContent = `${files.length.toLocaleString('en-US')} files · ${DESC[state.area].title} ${fmt(roll(root, state.area))} total`;
+  key(lo, hi);
+}
+
+/* One tie: an arc between two roofs, bowed away from the ground by a share of the
+   distance it spans, so a pair of neighbours is a shallow hop and a pair on opposite
+   sides of the map is a high one. */
+function drawTies(seat, list, alpha, width) {
+  ctx.lineCap = 'round';
+  for (const [from, to, v] of list) {
+    const a = seat.get(from), b = seat.get(to);
+    if (!a || !b) continue;
+    const p = project(a.x + a.w / 2, a.y + a.h / 2, a.z1);
+    const q = project(b.x + b.w / 2, b.y + b.h / 2, b.z1);
+    const run = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (run < 3) continue;
+    ctx.strokeStyle = `rgba(120,182,255,${(alpha * v).toFixed(3)})`;
+    ctx.lineWidth = width * (0.5 + v);
+    ctx.beginPath();
+    ctx.moveTo(...p);
+    ctx.quadraticCurveTo((p[0] + q[0]) / 2, (p[1] + q[1]) / 2 - run * 0.34, ...q);
+    ctx.stroke();
+  }
+}
+
+/* The two walls you can see depend on which way the plan is turned, so they are
+   found each frame rather than fixed to the +x and +y sides. */
+function nearWalls(x, y, w, h) {
+  const c = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
+  let near = 0, best = -Infinity;
+  c.forEach((p, i) => { const d = depth(p[0], p[1]); if (d > best) { best = d; near = i; } });
+  return [[c[(near + 3) % 4], c[near]], [c[near], c[(near + 1) % 4]]];
+}
+
+function drawBox(b, v, lit) {
+  if (b.ghost) return;
+  const { x, y, w, h, z0, z1 } = b;
+
+  /* A plate is the ground its buildings stand on, so filling it hides the very thing
+     you are pointing at. A folder is marked by its edge; only a building is filled. */
+  if (lit && !b.file) { outline(b); return; }
+
+  let top, left, right;
+  if (b.file) {
+    const val = at(b.n, state.colour);
+    const band = BAND[val > v.hi ? 2 : val > v.lo ? 1 : 0];
+    top = band.top; left = band.left; right = band.right;
+  } else {
+    /* two shades, not one per level: a ramp that keeps climbing reads as a ziggurat */
+    top = b.depth < 2 ? '#1b1d21' : '#212429';
+    left = '#101215'; right = '#171a1e';
+  }
+
+  const mid = project(x + w / 2, y + h / 2, 0)[0];
+  /* a wall thinner than a couple of units is a dark hairline that only adds noise */
+  if (b.file || z1 - z0 >= 2) {
+    for (const [a, e] of nearWalls(x, y, w, h)) {
+      const face = (project(a[0], a[1], 0)[0] + project(e[0], e[1], 0)[0]) / 2 < mid ? left : right;
+      quad(project(a[0], a[1], z0), project(e[0], e[1], z0),
+           project(e[0], e[1], z1), project(a[0], a[1], z1), face);
+    }
+  }
+
+  const r = [project(x, y, z1), project(x + w, y, z1),
+             project(x + w, y + h, z1), project(x, y + h, z1)];
+  quad(r[0], r[1], r[2], r[3], top);
+
+  /* an edge on the roof, or a run of neighbours reads as one solid slab */
+  const rw = Math.max(...r.map(p => p[0])) - Math.min(...r.map(p => p[0]));
+  if (rw > 5 || !b.file) {
+    /* the edge fades with depth too, so a deep folder is a seam and not a frame */
+    const a = 0.13 / (1 + b.depth * 0.7);
+    ctx.strokeStyle = b.file ? 'rgba(0,0,0,.45)' : `rgba(255,255,255,${a.toFixed(3)})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(...r[0]); r.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
+    ctx.stroke();
+  }
+
+  /* A focused block keeps its band: the band is the fact the reader is pointing at, and a
+     fill that replaced it would answer the question by erasing it. The mark is a rim. */
+  if (lit) rim(b);
+
+  /* Twenty-five noted files among fifteen hundred is a needle in a field, so the note has to
+     be visible from the map rather than found by pointing at things until one appears. */
+  if (b.file && NOTES.files && NOTES.files[b.path] && rw > 7) {
+    const cx = (r[0][0] + r[2][0]) / 2, cy = (r[0][1] + r[2][1]) / 2;
+    const rad = Math.max(1.6, Math.min(3.4, rw * 0.09));
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, 7);
+    ctx.fillStyle = '#dceaff'; ctx.fill();
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(10,14,20,.75)'; ctx.stroke();
+  }
+}
+
+/* The focused building's own silhouette in the accent: the roof rim, and the standing edges
+   of the two walls you can see, so a block reads as picked from above and from the side.
+   The dark pass under it is what keeps the rim off a pale roof from vanishing into it. */
+function rim(b) {
+  const { x, y, w, h, z0, z1 } = b;
+  const r = [project(x, y, z1), project(x + w, y, z1),
+             project(x + w, y + h, z1), project(x, y + h, z1)];
+  const posts = [];
+  for (const [a, e] of nearWalls(x, y, w, h))
+    for (const p of [a, e]) posts.push([project(p[0], p[1], z0), project(p[0], p[1], z1)]);
+
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  for (const [width, paint] of [[3.4, 'rgba(6,10,16,.7)'], [1.6, '#3E9BFF']]) {
+    ctx.lineWidth = width; ctx.strokeStyle = paint;
+    ctx.beginPath();
+    ctx.moveTo(...r[0]); r.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
+    for (const [a, e] of posts) { ctx.moveTo(...a); ctx.lineTo(...e); }
+    ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
+}
+
+/* the plate's own edge, plus a wash on the two walls that face you */
+function outline(b) {
+  const { x, y, w, h, z0, z1 } = b;
+  for (const [a, e] of nearWalls(x, y, w, h))
+    quad(project(a[0], a[1], z0), project(e[0], e[1], z0),
+         project(e[0], e[1], z1), project(a[0], a[1], z1), 'rgba(62,155,255,.20)');
+
+  const r = [project(x, y, z1), project(x + w, y, z1),
+             project(x + w, y + h, z1), project(x, y + h, z1)];
+  ctx.fillStyle = 'rgba(62,155,255,.10)';
+  ctx.beginPath();
+  ctx.moveTo(...r[0]); r.slice(1).forEach(p => ctx.lineTo(...p)); ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#3E9BFF'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  ctx.stroke();
+}
+
+function quad(a, b, c, d, fill) {
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.moveTo(...a); ctx.lineTo(...b); ctx.lineTo(...c); ctx.lineTo(...d);
+  ctx.closePath(); ctx.fill();
+}
+
+/* A name is earned by how big the plate is on screen, never by how deep it sits. That
+   is what makes zooming a way in: the folders you approach name themselves. */
+function plateLabel(b) {
+  const c = [[b.x, b.y], [b.x + b.w, b.y], [b.x + b.w, b.y + b.h], [b.x, b.y + b.h]];
+  const px = c.map(p => project(p[0], p[1], 0)[0]);
+  const wide = Math.max(...px) - Math.min(...px);
+  if (wide < 90) return;
+
+  /* the far corner, which is the top of the plate on screen and never behind a building */
+  let far = c[0], best = Infinity;
+  for (const p of c) { const d = depth(p[0], p[1]); if (d < best) { best = d; far = p; } }
+  const inward = [far[0] < b.x + b.w / 2 ? 5 : -5, far[1] < b.y + b.h / 2 ? 5 : -5];
+  const p = project(far[0] + inward[0], far[1] + inward[1], 0);
+
+  const size = wide > 420 ? 13 : wide > 200 ? 11 : 10;
+  const fade = wide > 420 ? .92 : wide > 200 ? .72 : .5;
+  ctx.font = `${wide > 420 ? 600 : 400} ${size}px -apple-system, sans-serif`;
+
+  /* Squarify seats the largest child in its parent's own corner, so a nested chain aims
+     every one of its names at the same point. Labels are placed largest first, and a name
+     that would land on one already written is dropped — zoom in and it gets its turn. */
+  const tw = ctx.measureText(b.n.name).width;
+  const box = [p[0] + 4, p[1] - size - 3, tw + 8, size + 7];
+  /* a name half off the stage reads as a different, shorter name */
+  const st = $('stage');
+  if (box[0] < 2 || box[1] < 2 ||
+      box[0] + box[2] > st.clientWidth - 2 || box[1] + box[3] > st.clientHeight - 2) return;
+  for (const q of labels)
+    if (box[0] < q[0] + q[2] && q[0] < box[0] + box[2] &&
+        box[1] < q[1] + q[3] && q[1] < box[1] + box[3]) return;
+  labels.push(box);
+
+  ctx.fillStyle = `rgba(255,255,255,${fade})`;
+  ctx.strokeStyle = 'rgba(0,0,0,.78)'; ctx.lineWidth = 2.8;
+  ctx.strokeText(b.n.name, p[0] + 4, p[1] - 3);
+  ctx.fillText(b.n.name, p[0] + 4, p[1] - 3);
+}
+
+/* ---------- hit test ---------- */
+/* Front to back over the same order the painter used, so the topmost wins. */
+function pick(mx, my) {
+  const v = view; if (!v) return null;
+  for (let i = v.boxes.length - 1; i >= 0; i--) {
+    const b = v.boxes[i];
+    if (!b.file) continue;
+    if (inBox(b, mx, my)) return b;
+  }
+  for (let i = v.boxes.length - 1; i >= 0; i--) {
+    const b = v.boxes[i];
+    if (b.file || b.ghost) continue;
+    if (inBox(b, mx, my)) return b;
+  }
+  return null;
+}
+function inBox(b, mx, my) {
+  const { x, y, w, h, z0, z1 } = b;
+  const faces = [[project(x, y, z1), project(x + w, y, z1),
+                  project(x + w, y + h, z1), project(x, y + h, z1)]];
+  for (const [a, e] of nearWalls(x, y, w, h))
+    faces.push([project(a[0], a[1], z0), project(e[0], e[1], z0),
+                project(e[0], e[1], z1), project(a[0], a[1], z1)]);
+  return faces.some(f => inTri(mx, my, f[0], f[1], f[2]) || inTri(mx, my, f[0], f[2], f[3]));
+}
+function inTri(px, py, a, b, c) {
+  const s = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1]);
+  if (!s) return false;
+  const u = ((b[1] - c[1]) * (px - c[0]) + (c[0] - b[0]) * (py - c[1])) / s;
+  const w = ((c[1] - a[1]) * (px - c[0]) + (a[0] - c[0]) * (py - c[1])) / s;
+  return u >= 0 && w >= 0 && u + w <= 1;
+}
+
+/* ---------- the written layer ---------- */
+/* Optional by construction. A repo with no notes beside it draws the same map with the same
+   numbers and simply says nothing extra — the page never waits for it and never blames it. */
+let NOTES = { files: {}, pairs: [] };
+const PAIR_NOTES = new Map();
+const pairKey = (a, b) => [a, b].sort().join('\u0000');
+
+function loadNotes() {
+  return fetch('atlas-notes.json').then(r => r.ok ? r.json() : null).then(j => {
+    if (!j) return;
+    NOTES = j;
+    for (const n of j.pairs || []) PAIR_NOTES.set(pairKey(n.pair[0], n.pair[1]), n.note);
+  }).catch(() => {});
+}
+
+/* Said, not counted. The flag is the question the measurements asked, kept beside the answer
+   so a note can never read as an unprompted opinion about somebody's code. */
+function said(path, folder) {
+  const n = (folder ? NOTES.folders : NOTES.files || {})[path];
+  if (!n) return '';
+  const why = (n.why || []).join(' ');
+  return `<div class="said"><p>${esc(n.note)}</p>`
+    + (why ? `<span class="flag">${esc(why)}</span>` : '')
+    + `</div>`;
+}
+
+/* Every noted file, in one place, because a mark on a roof tells you where to look and this
+   tells you what there is to look at. Both are needed: one is a map, the other is an index. */
+function noteIndex() {
+  const all = Object.keys(NOTES.files || {});
+  if (!all.length) return '';
+  return `<div class="ties"><h4>${all.length} files carry a note</h4>`
+    + all.map(k => `<div class="tie" data-go="${esc(k)}" title="Go to this file">`
+        + `<span>${esc(k.split('/').pop())}</span>`
+        + `<em>${esc(k.split('/').slice(0, -1).slice(-2).join('/'))}</em></div>`).join('')
+    + `</div>`;
+}
+
+/* The top band says "over the threshold" and nothing more, so a 58 and a 20 are the same
+   colour and the worst file in the repo cannot be found by looking. This is that answer,
+   ranked on whatever the colour channel is set to — the bands themselves are unchanged. */
+const TOP_N = 12;
+function topList() {
+  const k = state.colour;
+  const rows = filePaths().slice().sort((a, b) => at(b.n, k) - at(a.n, k)).slice(0, TOP_N);
+  if (!rows.length || !at(rows[0].n, k)) return '';
+  return `<div class="ties"><h4>Highest ${esc(DESC[k].title)}</h4>`
+    + rows.map(({ n, path }) =>
+        `<div class="tie" data-go="${esc(path)}" title="Go to this file">`
+        + `<span>${esc(n.name)}</span><b>${fmt(at(n, k))}</b>`
+        + `<em>${esc(path.split('/').slice(0, -1).slice(-2).join('/'))}</em></div>`).join('')
+    + `</div>`;
+}
+
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ---------- chrome ---------- */
+/* Twelve measures come out of ccsh and five of them say nothing here. Three are zero on
+   most files, because the parser fills them only for languages it knows deeply. Comment
+   lines and plain lines of code both count comments, so a file with a long licence header
+   reads as a big file; rloc counts the code and nothing else, which is the size we want. */
+const METRICS = ['rloc', 'complexity', 'number_of_functions', 'max_parameters_per_function',
+  'number_of_commits', 'number_of_authors', 'age_in_weeks'];
+
+/* The panel reads whatever the pointer is over, and holds the last pinned thing
+   when it is over nothing — so a reading survives the trip to the controls. */
+function detail(b) {
+  const d = $('read');
+  const it = b || state.pinned;
+
+  if (!it) {
+    d.innerHTML = `<div class="idle">
+      <p>Point at anything to read it here. <b>Click</b> to pin it,
+      <kbd>Esc</kbd> to let go. Folder names appear as you zoom towards them.</p>
+      <p style="margin-top:10px">Every number here is measured from the code and its history.
+      Plates carry a written caption, and the files marked <b class="dot">\u25cf</b> carry a
+      note. Both are read, never counted.</p></div>` + topList() + noteIndex();
+    wireRead();
+    return;
+  }
+
+  const n = it.n, live = state.area, h = state.height, c = state.colour;
+  const rows = it.file
+    ? METRICS.filter(k => k !== c).map(k => {
+        const v = at(n, k), on = k === live || k === h;
+        return `<tr class="${on ? 'on' : v ? '' : 'zero'}" title="${DESC[k].description}">`
+             + `<td class="k">${DESC[k].title}</td><td class="v">${fmt(v)}</td></tr>`;
+      })
+    : [['Files', leaves(n).length], [DESC[live].title, roll(n, live)],
+       [DESC[h].title, roll(n, h)], [DESC[c].title, roll(n, c)]]
+        .map(([k, v]) => `<tr><td class="k">${k}</td><td class="v">${fmt(v)}</td></tr>`);
+
+  /* A percentage next to a basename is a fact nobody can use. The row carries the folder,
+     because a tie across two packages is the finding and a tie inside one is not; it carries
+     the shared idea when one was written; and it takes you there when you click it. */
+  const ties = (it.file && LINKS.get(it.path) || []).slice(0, 6);
+  const tieHTML = ties.length ? `<div class="ties"><h4>Changes with</h4>`
+    + ties.map(([o, v]) => {
+        const note = PAIR_NOTES.get(pairKey(it.path, o));
+        return `<div class="tie" data-go="${esc(o)}" title="Go to this file">`
+          + `<span>${esc(o.split('/').pop())}</span><b>${Math.round(v * 100)}%</b>`
+          + `<em>${esc(o.split('/').slice(0, -1).slice(-2).join('/'))}</em>`
+          + (note ? `<i>${esc(note)}</i>` : '') + `</div>`;
+      }).join('')
+    + `</div>` : '';
+
+  /* The colour channel is the one measure a number cannot carry: 12 is meaningless until
+     you know it beats two files in three. So it is drawn on the same three bands the
+     buildings are painted with, and the needle sits where this file falls among them. */
+  const cval = it.file ? at(n, c) : roll(n, c);
+  const r = it.file ? rank(cval, c) : null;
+  /* Asked, not hovered: a definition is what the reader wants once, on purpose, and a
+     tooltip is only found by the reader who already suspected it was there. */
+  const gauge = !it.file ? '' : `<div class="gauge">
+      <div class="gh"><span>${DESC[c].title}</span>`
+    + `<button class="ask" data-def="${c}" aria-expanded="false" `
+    + `aria-label="What does ${DESC[c].title} mean?">?</button>`
+    + `<b>${fmt(cval)}</b></div>
+      <div class="track"><div class="bars"><i style="background:#4e8a63;flex:50"></i>`
+    + `<i style="background:#a8873c;flex:35"></i><i style="background:#a8523f;flex:15"></i></div>`
+    + `<u style="left:${(r * 100).toFixed(1)}%"></u></div>
+      <div class="ends"><span>lowest here</span><span>highest</span></div>
+      <div class="note">${r > 0.995 ? 'At the very top of this repo — nothing scores higher.'
+        : 'Higher than ' + Math.round(r * 100) + '% of the files in this repo.'}</div>
+    </div>`;
+
+  d.innerHTML = `<div class="kind">${it.file ? 'File' : 'Folder'}${b ? '' : ' · pinned'}</div>`
+    + `<div class="name">${n.name}</div>`
+    + `<div class="where">${it.path}</div>`
+    + (it.file ? '' : `<div class="pin">${leaves(n).length} files inside · zoom in to see them</div>`)
+    + said(it.path, !it.file)
+    + gauge
+    + `<table><tr><th>Measure</th><th class="v" style="text-align:right">Value</th></tr>`
+    + rows.join('') + `</table>` + tieHTML;
+  wireRead();
+}
+
+/* ---------- popover ---------- */
+/* One popover element, moved and refilled, because two of them on screen at once is a bug
+   the user has to close twice. */
+function showDef(btn, k) {
+  const pop = $('pop'), r = btn.getBoundingClientRect();
+  /* Anchored to the panel's edge, not the button's: a popover that covers the number it is
+     explaining makes the reader close it to check what they were looking at. */
+  const edge = $('side').getBoundingClientRect().left;
+  const extra = twin(k);
+  pop.innerHTML = `<h5>${esc(DESC[k].title)}</h5><p>${esc(DESC[k].description)}</p>`
+    + (extra ? `<p>${esc(extra.trim())}</p>` : '')
+    + `<p class="src">Measured for every file by the analyzer. Not an opinion.</p>`;
+  pop.hidden = false;
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(edge, r.left) - w - 12) + 'px';
+  pop.style.top = Math.max(8, Math.min(r.top - 6, innerHeight - h - 8)) + 'px';
+  btn.setAttribute('aria-expanded', 'true');
+}
+
+function hideDef() {
+  $('pop').hidden = true;
+  for (const b of document.querySelectorAll('.ask[aria-expanded="true"]'))
+    b.setAttribute('aria-expanded', 'false');
+}
+
+/* The panel is rebuilt on every pointer move, so its controls are wired where they are
+   built rather than once at boot. */
+function wireRead() {
+  for (const b of $('read').querySelectorAll('.ask'))
+    b.onclick = e => { e.stopPropagation();
+      b.getAttribute('aria-expanded') === 'true' ? hideDef() : showDef(b, b.dataset.def); };
+  for (const t of $('read').querySelectorAll('.tie[data-go]'))
+    t.onclick = () => {
+      const box = view.boxes.find(x => x.path === t.dataset.go);
+      if (box) { state.pinned = box; detail(null); render(); }
+    };
+}
+
+/* The legend is never hidden. A colour that means something only while you remember
+   what you picked in a menu is a colour that means nothing by the second minute. */
+function key(lo, hi) {
+  /* The three menus name measures, not shapes. This says which shape each one drives, so
+     the map can be read without first working out what "area" turned into on screen. */
+  $('reads').innerHTML = `Each block is a file. Its <b>ground</b> is ${DESC[state.area].title}, `
+    + `its <b>height</b> is ${DESC[state.height].title}, its <b>colour</b> is `
+    + `${DESC[state.colour].title}. A plate is a folder.`
+    + (Object.keys(NOTES.files || {}).length
+        ? ` Files marked <b class="dot">\u25cf</b> carry a written note.` : '');
+  for (const [id, k] of [['mArea', 'area'], ['mHeight', 'height'], ['mColour', 'colour']])
+    $(id).title = DESC[state[k]].description;
+  $('keyName').textContent = DESC[state.colour].title;
+  $('keyLo').textContent = '≤ ' + fmt(lo);
+  $('keyHi').textContent = '> ' + fmt(hi);
+}
+
+function reset() {
+  cam.yaw = YAW; cam.pitch = PITCH;
+  fit(); render(); stamp();
+}
+
+/* the three channels and the camera live in the URL, so a view can be sent to somebody */
+function stamp() {
+  history.replaceState(null, '',
+    `?area=${state.area}&height=${state.height}&colour=${state.colour}`
+    + `&yaw=${cam.yaw.toFixed(3)}&pitch=${cam.pitch.toFixed(3)}${state.ties ? '&ties=1' : ''}`);
+}
+
+
+/* ---------- boot ---------- */
+Promise.all([fetch('atlas-cc.json').then(r => r.json()), loadNotes()]).then(([j]) => {
+  DATA = j.nodes[0];
+  DESC = j.attributeDescriptors;
+  for (const [a, b, v] of j.edges || []) {
+    if (!LINKS.has(a)) LINKS.set(a, []);
+    if (!LINKS.has(b)) LINKS.set(b, []);
+    LINKS.get(a).push([b, v]); LINKS.get(b).push([a, v]);
+  }
+  for (const list of LINKS.values()) list.sort((x, y) => y[1] - x[1]);
+  TOP_TIES = (j.edges || []).slice(0, TIE_CAP);
+  /* Three channels that say three different things. Colour is whole-file complexity,
+     not max-per-function: half the files score 0 on that one, so it bands them all green. */
+  const q = new URLSearchParams(location.search);
+  const metricParam = (k, d) => METRICS.includes(q.get(k)) ? q.get(k) : d;
+  state = { area: metricParam('area', 'rloc'),
+            height: metricParam('height', 'number_of_commits'),
+            colour: metricParam('colour', 'complexity'),
+            hover: null, pinned: null, ties: q.get('ties') === '1' };
+
+  for (const [id, k] of [['mArea', 'area'], ['mHeight', 'height'], ['mColour', 'colour']]) {
+    const sel = $(id);
+    for (const m of METRICS) {
+      const o = document.createElement('option');
+      o.value = m; o.textContent = DESC[m].title; sel.append(o);
+    }
+    sel.value = state[k];
+    /* the panel's idle list is ranked on the colour channel, so it is rebuilt with the map */
+    sel.onchange = () => { state[k] = sel.value; state.hover = null;
+                           render(); detail(null); stamp(); };
+  }
+
+  /* ---------- the camera, on the mouse ---------- */
+  let drag = null, moved = 0;
+
+  /* Panning and turning are different intentions, so they get different gestures. A plain
+     drag moves the map, which is what a drag means everywhere else; turning is the rarer
+     and more disorienting act, so it asks for option first. The choice is read once, at
+     the press, so letting go of option mid-drag cannot swap the gesture under the hand. */
+  cv.onmousedown = e => {
+    drag = { x: e.clientX, y: e.clientY, turn: e.altKey || e.button === 2,
+             ox: cam.ox, oy: cam.oy, yaw: cam.yaw, pitch: cam.pitch,
+             scale: cam.scale };
+    moved = 0;
+    cv.style.cursor = drag.turn ? 'move' : 'grabbing';
+    e.preventDefault();
+  };
+
+  addEventListener('mousemove', e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    moved = Math.max(moved, Math.abs(dx) + Math.abs(dy));
+    if (!drag.turn) { cam.ox = drag.ox + dx; cam.oy = drag.oy + dy; }
+    else {
+      /* A turn moves the model and nothing else. The city's middle is the plan's own
+         centre, and project() sends that to exactly (ox, oy) — so pinning it means
+         leaving the pan and the zoom alone, not correcting them afterwards. Every one
+         of them is restored from the press, so a long drag cannot accumulate drift. */
+      cam.yaw = snap(drag.yaw + dx * 0.006, Math.PI / 4);
+      /* pitch, clamped: flat on is unreadable, straight down loses every height */
+      cam.pitch = snap(Math.min(1.45, Math.max(0.10, drag.pitch + dy * 0.0028)), PITCH);
+      cam.ox = drag.ox; cam.oy = drag.oy; cam.scale = drag.scale;
+    }
+    state.hover = null; render();
+  });
+
+  addEventListener('mouseup', () => {
+    if (!drag) return;
+    drag = null; cv.style.cursor = 'default'; stamp();
+  });
+
+  cv.oncontextmenu = e => e.preventDefault();
+
+  /* zoom about the pointer, so the thing under the cursor stays under it */
+  cv.onwheel = e => {
+    e.preventDefault();
+    const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    /* bounded against the fitted scale, not against itself — a per-event clamp is no
+       clamp at all, and zoom is now the only way into a folder */
+    const base = baseScale();
+    const want = cam.scale * Math.exp(-e.deltaY * 0.0014);
+    const next = Math.min(base * 90, Math.max(base * 0.5, want)) / cam.scale;
+    cam.ox = mx - (mx - cam.ox) * next;
+    cam.oy = my - (my - cam.oy) * next;
+    cam.scale *= next;
+    state.hover = null; render();
+  };
+
+  cv.onmousemove = e => {
+    if (drag) return;
+    const r = cv.getBoundingClientRect();
+    const hit = pick(e.clientX - r.left, e.clientY - r.top);
+    if (hit === state.hover) return;
+    state.hover = hit; render(); detail(hit);
+  };
+  cv.onmouseleave = () => { if (drag) return; state.hover = null; render(); detail(null); };
+  cv.onclick = e => {
+    if (moved > 4) return;              // a drag that ended on a plate is not a click
+    const r = cv.getBoundingClientRect();
+    const hit = pick(e.clientX - r.left, e.clientY - r.top);
+    if (!hit) return;
+    /* pin it so the numbers stay while the pointer goes to the controls */
+    state.pinned = state.pinned && state.pinned.path === hit.path ? null : hit;
+    render(); detail(hit);
+  };
+  addEventListener('keydown', e => {
+    if (e.key === "Escape") { state.pinned = null; render(); detail(null); }
+    if (e.key === "r" || e.key === "R") reset();
+    if (e.key === 'Escape') hideDef();
+    if (e.key === "t" || e.key === "T") { $('ties').checked = !state.ties; $('ties').onchange(); }
+  });
+  $('reset').onclick = reset;
+  /* A popover that only closes on its own button is a popover you close by reloading. */
+  addEventListener('mousedown', e => { if (!e.target.closest('#pop, .ask')) hideDef(); });
+  addEventListener('resize', hideDef);
+  $('ties').checked = state.ties;
+  $('ties').onchange = () => { state.ties = $('ties').checked; render(); stamp(); };
+  addEventListener('resize', () => { fit(); render(); });
+
+  const num = (k, d, lo, hi) => {
+    const n = parseFloat(q.get(k));
+    return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d;
+  };
+  cam.yaw = num("yaw", YAW, -Math.PI * 2, Math.PI * 2);
+  cam.pitch = num("pitch", PITCH, 0.10, 1.45);
+  fit();
+  detail(null); render();
+});
+</script>
