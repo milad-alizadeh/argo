@@ -58,6 +58,17 @@ struct FeedTypesetHeightTests {
         "Words, then a fence with no blank line before it:\n```swift\nlet a = 1\n```",
         "- a bullet long enough that its words wrap and have to stay inside their own column "
             + "rather than running back under the marker",
+        // The blocks that used to be declined and reach the ruler instead (ADR-0030 Rule 1): the
+        // two that size themselves, and the fence whose empty body collapses onto another box.
+        "| a | b |\n|---|---|\n| 1 | 2 |",
+        "Words above the table.\n\n| a | b |\n|---|---|\n| 1 | 2 |",
+        "| Rule | Where it is spelled |\n|---|---|\n| A column is as wide as its widest cell wants "
+            + "to be, which takes more than one line to say | `FeedMarkdownTable` |",
+        "```mermaid\ngraph TD\n  Reader --> Layout\n  Reader --> Plan\n```",
+        "Words, then a diagram:\n\n```mermaid\ngraph TD\n  A --> B\n```",
+        "```text\n\n```",
+        "```\n```",
+        "Words, and then an empty fence.\n\n```swift\n\n```",
         "**Bold** and *italic* and `code` and [a link](https://example.com) in one paragraph long "
             + "enough to wrap, because an inline mark changes the face a run is set in.",
     ]
@@ -83,12 +94,12 @@ struct FeedTypesetHeightTests {
         ruler.sizingOptions = []
         defer { ruler.rootView = AnyView(EmptyView()) }
         var typesetRows = 0
-        for at in rows.indices {
-            guard let typeset = FeedRowMeasure.height(
-                of: rows[at].content,
+        for at in rows.indices where rows[at].kind.isProse && !rows[at].kind.isPrompt {
+            let typeset = FeedRowMeasure.height(
+                ofProse: rows[at].kind.words ?? "",
                 chip: FeedCopy.drawsChip(of: rows, at: at),
                 across: FeedRowMeasure.measure(atWidth: width),
-            ) else { continue }
+            )
             typesetRows += 1
             ruler.rootView = model.content(at: at)
             let drawn = ruler.sizeThatFits(
@@ -104,30 +115,24 @@ struct FeedTypesetHeightTests {
         #expect(typesetRows == Self.prose.count * 3)
     }
 
-    /// The rows that must NOT be typeset, named: every shape whose chrome is not glyphs, and the
-    /// markdown blocks that size themselves. A shape that starts answering here is a shape whose
-    /// agreement nobody has checked.
+    /// The blocks a naive typeset declines, and the claim ADR-0030 Rule 1 turned that into: a
+    /// prose row is answered whatever it holds. A table and a diagram size THEMSELVES, so each is
+    /// taken at the height its own layout gives it rather than rounded like a run of glyphs, and a
+    /// fence with an empty body is taken at the box its `Text("")` really collapses onto.
+    ///
+    /// They were the last rows in the feed reaching a ruler. Held at the same zero tolerance as
+    /// every other prose row, at the same widths, by the case above — this one is here to say the
+    /// corpus really does carry them, because a claim over a corpus that quietly lost its hard
+    /// cases is a claim about nothing.
     @Test
-    func `every other shape is left to the ruler`() {
-        let others: [FeedRow.Content] = [
-            .prompt(text: "ask", shots: []),
-            .message("| a | b |\n|---|---|\n| 1 | 2 |"),
-            .message("```mermaid\ngraph TD\n  A --> B\n```"),
-            .message("Words above the table.\n\n| a | b |\n|---|---|\n| 1 | 2 |"),
-            // A fence with nothing in it — see `FeedRowMeasure.isTypeset`.
-            .message("```text\n\n```"),
-            .thought("```\n```"),
-            .message("Words, and then an empty fence.\n\n```swift\n\n```"),
-        ] + FeedProjection.previewRows.map(\.content).filter { content in
-            switch content {
-            case .message, .thought, .prompt: false
-            default: true
-            }
-        }
-        for content in others {
-            #expect(FeedRowMeasure.height(
-                of: content, chip: false, across: FeedRowMeasure.measure(atWidth: 460),
-            ) == nil)
+    func `the blocks that used to decline are in the corpus`() {
+        let held = [
+            "| a | b |\n|---|---|\n| 1 | 2 |",
+            "```mermaid\ngraph TD\n  A --> B\n```",
+            "```text\n\n```",
+        ]
+        for block in held {
+            #expect(Self.prose.contains { $0.contains(block) }, "the corpus lost \(block)")
         }
     }
 }

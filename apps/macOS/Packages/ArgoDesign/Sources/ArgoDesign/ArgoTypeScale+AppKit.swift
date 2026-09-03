@@ -30,10 +30,12 @@ public extension ArgoTypeScale {
     /// on another, because `size` is a constant where the resolved face answers to the platform and
     /// its text setting. `ArgoTextStyle.nominalLineBox` is that other number, under its own name.
     ///
-    /// `@MainActor` is not the compiler's requirement — `preferredFont` is `nonisolated`. It is
-    /// this repo's: the setting behind the answer is app-wide live state, and `ProseFace.font`
-    /// already reads it from the main actor.
-    @MainActor var drawnLineBox: CGFloat {
+    /// `@MainActor` was not the compiler's requirement — `preferredFont` is `nonisolated` — but
+    /// this repo's, on the grounds that the setting behind the answer is app-wide live state and
+    /// `ProseFace.font` read it from the main actor. ADR-0030 moved that reader off: the
+    /// whole-document measure pass asks for a line box from several threads at once, and the
+    /// convention was the only thing standing in its way.
+    var drawnLineBox: CGFloat {
         let font = NSFont.preferredFont(forTextStyle: appKitStyle)
         return font.ascender - font.descender
     }

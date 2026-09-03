@@ -6,7 +6,6 @@ import Foundation
 // own words are placed clear of them, and the points' names are placed clear of both — because a
 // point cannot give way, being the data itself.
 
-@MainActor
 extension MermaidQuadrant {
     var laid: MermaidPlan {
         let field = MermaidQuadrantField(self)

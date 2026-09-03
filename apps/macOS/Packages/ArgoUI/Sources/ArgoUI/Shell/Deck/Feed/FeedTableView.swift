@@ -14,6 +14,10 @@ final class FeedTableView: NSTableView {
     /// A key the table's own handling scrolled by — Space paging, Home, End. Reported so the
     /// follow latch reads the landing; a paged scroll is the reader's as much as a wheel's.
     var keyScrolled: (() -> Void)?
+    /// The window's live resize beginning — the moment the geometry freezes. The seam's own drag
+    /// arrives as a model flag instead (`FeedTableModel.isResizing`); this is the other hand on an
+    /// edge, and AppKit is the only thing that can report it.
+    var liveResizeBegan: (() -> Void)?
     /// The window's live resize ending — the moment the deferred full re-measure runs.
     var liveResizeEnded: (() -> Void)?
     /// The reading's own frame changing — its SHAPE, which the clip view's frame cannot say. A
@@ -37,6 +41,28 @@ final class FeedTableView: NSTableView {
         layouts += 1
         super.layout()
     }
+
+    /// Whether the reader has hold of an edge — the deck's seam or the window's own frame
+    /// (ADR-0030, Rule 6).
+    ///
+    /// Frozen, the reading stays at the width it was MEASURED across and the clip view shows
+    /// whatever fits. That is the whole of "clipped and unreflowed": a width AppKit moves at drag
+    /// rate is a width every visible cell re-lays out against, over a document whose heights are
+    /// not allowed to follow it — so the reader would be shown prose wrapped one way at heights
+    /// taken for another, for every frame of the drag.
+    ///
+    /// Let go, the size AppKit last asked for is applied at once, so the reading catches the pane
+    /// up in one step rather than waiting for the next thing that happens to resize it.
+    var isFrozen = false {
+        didSet {
+            guard !isFrozen, let owed = owedSize else { return }
+            owedSize = nil
+            setFrameSize(owed)
+        }
+    }
+
+    /// The size AppKit asked for while the width was frozen — see `isFrozen`.
+    private var owedSize: NSSize?
 
     /// How the reader is working. The app's one reader by default; a suite hands the table its own
     /// rather than share a mutable global between cases.
@@ -99,8 +125,26 @@ final class FeedTableView: NSTableView {
         ArgoPasteboard.put(words)
     }
 
+    override func viewWillStartLiveResize() {
+        super.viewWillStartLiveResize()
+        liveResizeBegan?()
+    }
+
     override func viewDidEndLiveResize() {
         super.viewDidEndLiveResize()
+        liveResizeEnded?()
+    }
+
+    /// The table taken out of its window, which is the OTHER way a drag ends.
+    ///
+    /// AppKit sends `viewDidEndLiveResize` to the views in the window it is resizing, so a view
+    /// removed from that window mid-drag never hears the end of the drag it is in. A reading frozen
+    /// for a drag that can no longer end is a reading nothing measures again, so the end is
+    /// reported here too — the deck that goes off screen under the reader's hand comes back
+    /// measurable.
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard window == nil else { return }
         liveResizeEnded?()
     }
 
@@ -108,9 +152,15 @@ final class FeedTableView: NSTableView {
     /// document's own frame notification used to be. Reported unconditionally, for the reason that
     /// notification was: a size that did not move is the routine case, and the decision about it
     /// belongs to whoever is mapping the reading.
+    ///
+    /// The WIDTH is refused while the reading is frozen. Height still follows: a document that grew
+    /// is the rows the coordinator has already put up, and refusing that would draw the reading
+    /// short of its own end.
     override func setFrameSize(_ newSize: NSSize) {
-        super.setFrameSize(newSize)
-        reshaped?()
+        defer { reshaped?() }
+        guard isFrozen else { return super.setFrameSize(newSize) }
+        owedSize = newSize
+        super.setFrameSize(NSSize(width: frame.width, height: newSize.height))
     }
 
     private func isActivation(_ event: NSEvent) -> Bool {

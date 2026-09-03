@@ -7,7 +7,7 @@ import Foundation
 // `MermaidGraph`, which is why a state machine lays out through the very same four passes (#863).
 
 extension MermaidFlowchart {
-    @MainActor var graph: MermaidGraph {
+    var graph: MermaidGraph {
         MermaidGraph(
             direction: direction,
             nodes: nodes.map {
@@ -28,7 +28,7 @@ extension MermaidFlowchart {
     /// One node's box: the room its words need, grown to what the FIGURE around them adds. Every
     /// one of those growths is `MermaidWords`', so a flowchart and a mindmap widen a hexagon by
     /// the same point.
-    @MainActor private static func box(of node: Node) -> CGSize {
+    private static func box(of node: Node) -> CGSize {
         let words = MermaidWords.box(of: node.label)
         switch node.shape {
         case .circle: return MermaidWords.squared(words)

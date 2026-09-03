@@ -1,4 +1,4 @@
-# SwiftLint — the arithmetic half of rules/swift-style.md and rules/code-style.md, as a
+# SwiftLint — the arithmetic half of rules/swift.md and rules/house.md, as a
 # build failure. Every rule here is an ERROR: a warning is a note nobody reads, and the
 # caps are the rules. Exemptions are ratchets, listed at the bottom with a reason.
 #
@@ -27,7 +27,7 @@ excluded:
 # `scripts/swift-lint.sh` fails on the key otherwise. What the rule reported when it was finally
 # run (495 violations, and wrong often enough that only a rebuild says which): quality-gates.md.
 
-# --- the caps (code-style.md) ---
+# --- the caps (rules/house.md points here) ---
 
 file_length:
   # 150 code lines is the house ceiling. SwiftLint can skip comment-only lines but has no
@@ -54,7 +54,7 @@ closure_body_length:
   # The same 50 as a function body, deliberately. A SwiftUI `body` IS a closure, so a tighter
   # cap here would hold view code to a stricter ceiling than the JSX it is the counterpart of
   # — and biome gates that at 50. The fix when it fires is the same either way: the nested
-  # layers are subviews (rules/swift-style.md, "a body is a composition").
+  # layers are subviews (rules/swift.md, "a body is a composition").
   error: 50
   warning: 50
 
@@ -115,7 +115,7 @@ function_parameter_count:
   # INIT: SessionSeed.swift 5 — what a New Session opens with
   # INIT: LiveClaudeFixture.swift 5 — a live-CLI fixture's collaborators
   # INIT: CockpitPresentation.swift 5 — the cockpit reading's parts
-  # INIT: ComposerSpecimen.swift 5 — the composer specimen's inputs
+  # INIT: ComposerSpecimen.swift 6 — the composer specimen's inputs, `opening` (#689) among them
   # INIT: TextRoles.swift 5 — one colour per text role
   #
   # And the SYNTHESIZED memberwise inits, which edge 6 could not see until #1060. Grandfathered by
@@ -132,15 +132,15 @@ function_parameter_count:
   # INIT: FeedRowKind.swift 12 — Kind, what a row IS, one flag per question the feed asks of it
   # INIT: FrameProbeSummary.swift 12 — one measurement window reduced to the figures a frame budget
   # INIT: LinearIssue.swift 11 — one issue as Linear's GraphQL API serves it, edges included
-  # INIT: TicketsRoom.swift 11 — the room's view, whose slots are the Bindings the cockpit owns
-  # INIT: TicketsRoomProjection+Detail.swift 11 — Detail, everything the trailing pane draws about
+  # INIT: TicketsRoom.swift 12 — the room's view, widened for `session` (#1092), the whole
+  # INIT: TicketsRoomProjection+Detail.swift 12 — Detail, widened for `claimants` (#1092), off
   # INIT: ConnectPanelProjection.swift 10 — Panel, the connect panel's whole reading, one slot per
   # INIT: DeckIntents.swift 10 — one closure per thing the deck's vessel does; every intent is
   # INIT: FeedCall.swift 10 — one tool call as a sentence, a slot per part of it
   # INIT: TicketsRoomProjection.swift 10 — Row, one backlog row, a field per column plus its
   # INIT: ClaimFacts.swift 11 — everything Argo knows about one claim, under one key
   # INIT: FeedTable.swift 9 — the feed's AppKit scroller, whose slots are what the SwiftUI half
-  # INIT: FeedTableModel.swift 9 — everything the AppKit half of the feed needs from the SwiftUI
+  # INIT: FeedTableModel.swift 8 — everything the AppKit half of the feed needs from the SwiftUI
   # INIT: GitHubPullRequest.swift 9 — one pull request as GitHub's REST API serves it, parsed at
   # INIT: PullRequestJSON.swift 9 — the GitHub pull-request fixture, written the way GitHub writes
   # INIT: TicketsRoomProjection.swift 9 — Room, the Tickets room's whole reading
@@ -169,7 +169,8 @@ function_parameter_count:
   # INIT: ResolvedCall.swift 6 — one call as the record left it, with the two places a result can
   # INIT: SessionHeaderProjection+HeaderValues.swift 6 — Identity, the header's leading half, in
   # INIT: SessionOwnership.swift 6 — Claim, one stretch of ownership as the ledger records it
-  # INIT: ComposerMenu.swift 5 — Listing, the menu surface, its sections beside what the line
+  # INIT: ComposerMenu.swift 6 — Listing, the menu surface, its sections beside what the line and
+  # `dropping` a pick takes with it (#689)
   # INIT: ConnectPanelProjection+Ports.swift 5 — Picker, an open scope picker, with its Account
   # INIT: EngineReads.swift 5 — the reads an Engine is composed from, as ONE value; the clump is
   # INIT: FeedAskLine.swift 5 — Waiting, what a held-open question offers
@@ -245,7 +246,7 @@ identifier_name:
     error: 50
   allowed_symbols: ["_"]
   # EXEMPTION pr, ci — #258, 2026-08-27. `CONTEXT.md` L4 spells two of the five lifecycle nodes
-  # exactly this way, and code-style.md exempts a domain's own acronyms from the min length.
+  # exactly this way, and rules/house.md exempts a domain's own acronyms from the min length.
   excluded: [id, x, y, to, at, on, up, pr, ci]
 
 type_name:
@@ -254,7 +255,7 @@ type_name:
   max_length:
     error: 50
 
-# --- the escape hatches (swift-style.md "No escape hatches") ---
+# --- the escape hatches (rules/swift.md) ---
 
 opt_in_rules:
   - force_unwrapping
@@ -294,7 +295,7 @@ disabled_rules:
   # SwiftFormat owns wrapping and blank lines; two formatters disagreeing is a loop.
   - opening_brace
   - trailing_comma
-  # `todo` is a warning-shaped rule in an errors-only config, and rules/comments.md already
+  # `todo` is a warning-shaped rule in an errors-only config, and rules/house.md already
   # says where a TODO may live.
   - todo
 
@@ -302,7 +303,7 @@ custom_rules:
   unchecked_sendable:
     name: "@unchecked Sendable"
     regex: '@unchecked\s+Sendable'
-    message: "A promise to the concurrency checker that nothing verifies — make the type a value type, or put it behind an actor (rules/swift-style.md)."
+    message: "A promise to the concurrency checker that nothing verifies — make the type a value type, or put it behind an actor (rules/swift.md)."
     severity: error
 
   swiftlint_disable:

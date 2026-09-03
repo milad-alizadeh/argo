@@ -27,8 +27,8 @@ struct MinimapScrollBuildTests {
     }
 
     @Test
-    func `a scroll inside the painted band builds no rects`() {
-        let mounted = MinimapLaneFixture.mounted(over: Self.rows)
+    func `a scroll inside the painted band builds no rects`() async {
+        let mounted = await MinimapLaneFixture.mounted(over: Self.rows)
         let built = mounted.lane.rectBuilds
         let drawn = mounted.lane.rectRedraws
 
@@ -44,8 +44,8 @@ struct MinimapScrollBuildTests {
     /// The other half: skipping the build must not skip a repaint the reader needs. A reading that
     /// reshapes derives afresh, and the stamp no longer matches.
     @Test
-    func `a reshaped reading builds again`() {
-        let mounted = MinimapLaneFixture.mounted(over: Self.rows)
+    func `a reshaped reading builds again`() async {
+        let mounted = await MinimapLaneFixture.mounted(over: Self.rows)
         let built = mounted.lane.rectBuilds
 
         mounted.lane.refresh()
@@ -56,8 +56,8 @@ struct MinimapScrollBuildTests {
     /// And a scroll far enough to leave the band paints a new one, which is the case the whole
     /// band mechanism exists for. Without this, a lane that built nothing ever would pass above.
     @Test
-    func `a scroll out of the painted band paints a new one`() {
-        let mounted = MinimapLaneFixture.mounted(over: Self.rows)
+    func `a scroll out of the painted band paints a new one`() async {
+        let mounted = await MinimapLaneFixture.mounted(over: Self.rows)
         let drawn = mounted.lane.rectRedraws
 
         Self.scroll(mounted, through: 12000)

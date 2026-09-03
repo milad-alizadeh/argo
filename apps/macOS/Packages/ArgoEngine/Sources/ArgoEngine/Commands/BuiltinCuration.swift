@@ -13,7 +13,7 @@ enum BuiltinCuration {
     /// already draws the surface, so the CLI's own version of it would land somewhere the cockpit
     /// does not draw. Everything not named here is R3: a prompt, or an act on the Session's state.
     ///
-    /// A pure-data catalog, which is the one file shape `code-style.md` exempts from the ceiling.
+    /// A pure-data catalog, which is the one file shape `.swiftlint.yml` exempts from the ceiling.
     private static let vetoed: Set<String> = [
         // R1 — terminal chrome, TUI-only panels and dialogs, and interactive setup wizards.
         "agents", "artifacts", "background", "bug", "chrome", "color", "config", "debug",

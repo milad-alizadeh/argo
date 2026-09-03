@@ -24,6 +24,9 @@ struct ComposerSpecimen: View {
     /// The Workspace tree the `@` menu draws (#687). Empty by default, for the reason `commands`
     /// is: a case that is not about the menu cannot accidentally list a file.
     let files: [String]
+    /// What `AddMenu`, or the listing behind one of its rows, should already show — `.closed` by
+    /// default, so a case that is not about `+` cannot accidentally open it (#689).
+    let opening: ComposerMenusOpening
 
     init(
         composer: SessionComposerProjection.Composer = ComposerSpecimen.composer,
@@ -31,12 +34,14 @@ struct ComposerSpecimen: View {
         isDropTargeted: Bool = false,
         commands: CommandCatalog = CommandCatalog.empty,
         files: [String] = [],
+        opening: ComposerMenusOpening = .closed,
     ) {
         self.composer = composer
         _held = State(initialValue: draft)
         self.isDropTargeted = isDropTargeted
         self.commands = commands
         self.files = files
+        self.opening = opening
     }
 
     /// A send that goes nowhere, and the two menus reading the fixtures this case was built with.
@@ -51,9 +56,14 @@ struct ComposerSpecimen: View {
                 .focusable()
                 .focused($parked)
                 .focusEffectDisabled()
-            SessionComposer(composer: composer, intents: intents, isDropTargeted: isDropTargeted)
-                .padding(.horizontal, ArgoSpacing.section)
-                .padding(.bottom, ArgoSpacing.loose)
+            SessionComposer(
+                composer: composer,
+                intents: intents,
+                isDropTargeted: isDropTargeted,
+                opening: opening,
+            )
+            .padding(.horizontal, ArgoSpacing.section)
+            .padding(.bottom, ArgoSpacing.loose)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .argoDeckSurface()
@@ -192,79 +202,4 @@ struct ComposerSpecimen: View {
             editedAtMs: anHourAgo,
         )
     }
-}
-
-#Preview("Composer specimen — typing") {
-    ComposerSpecimen(draft: ComposerSpecimen.typing)
-        .frame(width: 900, height: 320)
-        .argoAppearance()
-}
-
-#Preview("Composer specimen — at the six-line ceiling") {
-    ComposerSpecimen(draft: ComposerSpecimen.ceiling)
-        .frame(width: 900, height: 420)
-        .argoAppearance()
-}
-
-#Preview("Composer specimen — a refused send") {
-    ComposerSpecimen(draft: ComposerSpecimen.refused)
-        .frame(width: 900, height: 320)
-        .argoAppearance()
-}
-
-#Preview("Composer specimen — a draft that was kept") {
-    ComposerSpecimen(draft: ComposerSpecimen.kept)
-        .frame(width: 900, height: 320)
-        .argoAppearance()
-}
-
-#Preview("Composer specimen — a queued follow-up") {
-    ComposerSpecimen(composer: ComposerSpecimen.running, draft: ComposerSpecimen.queued)
-        .frame(width: 900, height: 320)
-        .argoAppearance()
-}
-
-#Preview("Composer specimen — standing allows") {
-    ComposerSpecimen(composer: ComposerSpecimen.standing)
-        .frame(width: 900, height: 320)
-        .argoAppearance()
-}
-
-#Preview("Composer specimen — three attachments") {
-    ComposerSpecimen(draft: ComposerSpecimen.attached)
-        .frame(width: 900, height: 320)
-        .argoAppearance()
-}
-
-#Preview("Composer specimen — a pasted image") {
-    ComposerSpecimen(draft: ComposerSpecimen.pasted)
-        .frame(width: 900, height: 320)
-        .argoAppearance()
-}
-
-#Preview("Composer specimen — a file held over the vessel") {
-    ComposerSpecimen(isDropTargeted: true)
-        .frame(width: 900, height: 320)
-        .argoAppearance()
-}
-
-#Preview("Composer specimen — an adapter that takes no attachments") {
-    ComposerSpecimen(
-        composer: ComposerSpecimen.noAttach,
-        draft: ComposerSpecimen.refusedAttachment,
-    )
-    .frame(width: 900, height: 320)
-    .argoAppearance()
-}
-
-#Preview("Composer specimen — a stance the ladder has no rung for") {
-    ComposerSpecimen(composer: ComposerSpecimen.nearly)
-        .frame(width: 900, height: 320)
-        .argoAppearance()
-}
-
-#Preview("Composer specimen — a stance Argo cannot establish") {
-    ComposerSpecimen(composer: ComposerSpecimen.unknownMode)
-        .frame(width: 900, height: 320)
-        .argoAppearance()
 }

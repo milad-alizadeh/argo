@@ -13,12 +13,18 @@
     // KIND — the companion plugin's `Plugin/` resources are TEMPLATES, not documents: they
     // carry `__ARGO_*__` placeholders that the spawn substitutes, and one of them stands where
     // a number goes, which is not JSON until it is written out.
+    //
+    // KIND — `ArgoFixtures/Fixtures` is written by `argo-synthesise` and read by a test. Its
+    // shape file is a RECORD of what the fixture beside it holds, so formatting it here would
+    // put every regeneration one whitespace edit away from a red build for a document nobody
+    // reads by hand.
     "includes": [
       "**",
       "!docs",
       "!**/*.xcodeproj",
       "!**/*.xcassets",
-      "!**/ArgoEngine/Companion/Plugin"
+      "!**/ArgoEngine/Companion/Plugin",
+      "!**/ArgoFixtures/Fixtures"
     ]
   },
   "formatter": {
@@ -58,11 +64,11 @@
         "noTsIgnore": "error"
       },
       "style": {
-        // The 150-line per-file ceiling (rules/file-structure.md). Counts LINES OF CODE:
+        // The 150-line per-file ceiling (rules/house.md). Counts LINES OF CODE:
         // blank lines are skipped by the option, and comment lines are not counted by the
         // rule at all — a heavily-commented file is judged on the code you must hold in
         // your head, not on how far it scrolls. That is a statement about this linter, not
-        // a comment budget; rules/comments.md sets that.
+        // a comment budget; rules/house.md sets that.
         "noExcessiveLinesPerFile": {
           "level": "error",
           "options": {
@@ -140,7 +146,7 @@
     },
     // KIND: declarative catalogs the line ceiling does not apply to. A story is a named
     // state, not logic, so length here is coverage and the repetition between stories is the
-    // point (rules/design-studies.md). No workspace writes stories today — the rule is the
+    // point. No workspace writes stories today — the rule is the
     // category's, and it stands ready rather than being re-argued when one does.
     {
       "includes": ["**/*.stories.tsx"],

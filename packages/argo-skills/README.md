@@ -21,7 +21,7 @@ app, and the installed skills carry everything they need with them:
 
 - The scaffolder installs into the **current working directory**, so you point it at
   whatever project you're setting up.
-- Each skill is **self-contained** — supporting files (e.g. `setup-rules/rules/*.md`)
+- Each skill is **self-contained** — supporting files (e.g. `setup-quality-gates/templates/`)
   live inside the skill folder and travel with it on install, so a skill works the
   same in any project without reading back into this package.
 
@@ -155,16 +155,11 @@ Live under `skills/`, one `SKILL.md` per folder, and install from the `milad-ali
 entries in the manifest. Add more by dropping another folder here (with any supporting files
 colocated inside it), pushing to `main`, then adding the name to the lock.
 
-- [`scaffold-project`](skills/scaffold-project/SKILL.md) — interactive scaffolder for a
-  new project of any stack (interview → monorepo vs single → install the stack's LSP →
-  lay out the folders).
-- [`setup-rules`](skills/setup-rules/SKILL.md) — install Argo's engineering rule set into
-  a project, adapting every path to the detected structure. Its rule templates ship in
-  its own `rules/` folder so it's self-contained per project.
-- [`setup-quality-gates`](skills/setup-quality-gates/SKILL.md) — the mechanical companion
-  to `setup-rules`: resolves each cap (function length, complexity, parameter count, type
-  escape hatches, duplication) to a real rule in whatever linter the project already runs,
-  as an error, wired to a script, pre-commit and CI.
+- [`setup-quality-gates`](skills/setup-quality-gates/SKILL.md) — resolves each mechanical
+  intent (function length, complexity, parameter count, type escape hatches, duplication, dead
+  exports, import boundaries, test hygiene) to a real rule in whatever linter the project already
+  runs, as an error, wired to a script, pre-commit and CI; then writes the one page of prose no
+  linter can check (`rules/house.md`).
 - [`atlas-write`](skills/atlas-write/SKILL.md) — generate a Project Atlas: the real parts of
   a codebase found from its manifests and imports, each written as what is inside it, the
   edges among those, the edges that leave it, and a paragraph over all of that, every claim
@@ -176,7 +171,7 @@ colocated inside it), pushing to `main`, then adding the name to the lock.
 
 ### Provenance
 
-Several rules in `setup-rules/rules/` and the whole gate list in `setup-quality-gates`
+`setup-quality-gates`' house rules and gate list
 were shaped by the tenet set at [prickles.org](https://prickles.org) (Lewis, A., 2026 —
 CC BY-NC 4.0). The tenets there are the map of what's worth enforcing; the prose here is
 Argo's own, in Argo's forbidden-list voice.

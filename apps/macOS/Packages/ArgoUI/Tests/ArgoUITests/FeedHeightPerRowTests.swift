@@ -72,19 +72,30 @@ struct FeedHeightPerRowTests {
     }
 
     /// The same claim one scope down, where it can be asked without a table: rows 1 and 5 of that
-    /// reading say the same words under the same words, and are still two questions. The second has
-    /// no answer until it has been measured itself.
+    /// reading say the same words under the same kind of row, and are still two rows. Rewriting
+    /// the first owes the first and nothing else — a document keyed on what a row SAYS would owe
+    /// both, or neither.
     @Test
-    func `a height recorded for one row answers for that row alone`() {
-        let geometry = FeedGeometry()
-        let model = FeedTableFixture.model(showing: Self.repeated)
+    func `a row rewritten owes that row alone`() async throws {
         #expect(Self.repeated[1].content == Self.repeated[5].content)
+        let model = FeedTableFixture.model(showing: Self.repeated)
+        let stamp = FeedMeasureStamp(of: model, atWidth: Self.pane.width)
+        let settled = try #require(await FeedMeasurePass.settle(stamp))
+        var rewritten = Self.repeated
+        rewritten[1] = FeedRow(id: 1, content: .message("It grew while nobody watched."))
 
-        geometry.record(120, at: 1, under: FeedGeometry.Ground(at: 1, of: model))
+        let delta = FeedMeasureDelta.between(
+            settled,
+            and: FeedMeasureStamp(
+                of: FeedTableFixture.model(showing: rewritten), atWidth: Self.pane.width,
+            ),
+        )
 
-        #expect(geometry.height(at: 1, under: FeedGeometry.Ground(at: 1, of: model)) == 120)
-        #expect(geometry.height(at: 5, under: FeedGeometry.Ground(at: 5, of: model)) == nil)
+        #expect(delta == .rows(IndexSet(integer: 1)))
     }
+
+    /// The width every case here measures at — a deck column, wide enough that prose wraps.
+    private static let pane = CGSize(width: 460, height: 300)
 
     /// The heights a reading that came through an excerpt stands at are the heights a cold one
     /// does — per ROW, because a total that agreed over rows that did not would put every mark in
@@ -125,7 +136,7 @@ struct FeedHeightPerRowTests {
         await deck.show(Self.repeated, of: Self.session)
         let reading = try Self.read(deck)
         let lane = MinimapGeometry(reading, lane: CGSize(width: 60, height: 300))
-        let document = try #require(deck.scroller?.documentView?.frame.height)
+        let document = try #require(deck.scroller.documentView?.frame.height)
         #expect(abs(lane.documentHeight - document) < 0.5)
 
         #expect(lane.isScrollable)

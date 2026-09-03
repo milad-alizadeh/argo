@@ -26,11 +26,12 @@ struct DeckContentRow: View {
     var rail = AgentsRailControl.inert
     /// One flag for both seams — only one of them can be dragged at a time.
     @State private var isResizing = false
-    /// The reading's scroll authority, held here because two zones share it: the feed drives it and
-    /// the minimap maps it.
-    @State private var table: FeedTableHandle
+    /// Every deck the reader has open, where the shell above keeps them — see `KeptDecks`.
+    @Environment(\.argoFeedDecks) private var kept
+    /// The decks a surface with no shell above it keeps: a preview, a specimen, a `#Preview`.
+    /// Never both — `decks` below picks one, and everything under this view is handed that one.
+    @State private var ownDecks = KeptDecks()
 
-    /// Seeds the handle with `held`, which has to be true before the first frame.
     init(
         content: DeckContent,
         slot: DeckVesselControl = .inert,
@@ -46,13 +47,28 @@ struct DeckContentRow: View {
         self.intents = slot.intents
         self.seams = seams
         self.rail = rail
-        _table = State(initialValue: FeedTableHandle(held: content.picked.held))
+    }
+
+    /// The shell's decks, or this view's own where nothing above keeps any.
+    private var decks: KeptDecks {
+        kept ?? ownDecks
+    }
+
+    /// This reading's deck, opened here and nowhere else. The feed draws through it and the minimap
+    /// maps the same one, which is what keeps the two surfaces from ever disagreeing about where
+    /// the
+    /// reading is — and it is handed DOWN as a value, so no view below decides which deck it is on.
+    ///
+    /// This is the one call that opens a deck, which is what makes the store's order the reader's
+    /// own: the pass that draws a reading is the pass that says they are reading it.
+    private var deck: KeptDeck {
+        decks.show(reading, opening: held)
     }
 
     /// The deck's selection with the keyboard's way home wired onto the reading's table — the copy
     /// every surface here closes through. See `FeedRowSelection.homing(onto:)`.
     private var routed: FeedRowSelection {
-        selection.homing(onto: table)
+        selection.homing(onto: deck.handle)
     }
 
     /// Who else is working, read off the SESSION's rows — never off `scoped`, which is what the
@@ -82,10 +98,10 @@ struct DeckContentRow: View {
                         .frame(width: zoning.railWidth)
                     railEdge(zoning)
                 }
-                // NO `.id(rail.scope)`: destroying the column to re-key its state took the
-                // table, the ten rulers and every measured height with it. What a scope switch
-                // actually invalidates is named instead — `reading` carries the scope, and
-                // everything keyed on a row position resets on it (`FeedReading`).
+                // NO `.id(rail.scope)`: destroying the column to re-key its state took the table
+                // and every measured height with it. A scope is half of the reading, and a reading
+                // is which DECK — so scoping onto a Subagent shows that scope's own kept deck and
+                // hides this one, with nothing re-keyed and nothing destroyed (`KeptDecks`).
                 FeedColumn(
                     reading: reading,
                     feed: scoped,
@@ -94,12 +110,11 @@ struct DeckContentRow: View {
                     held: held,
                     vessel: vessel,
                     intents: intents,
-                    table: table,
+                    deck: deck,
                 )
                 DeckSeparator()
                     .argoUnderCanopy()
-                MinimapLane(feed: table)
-                    .frame(width: zoning.laneWidth)
+                MinimapLaneZone(feed: deck.handle, width: zoning.laneWidth)
                     .argoUnderCanopy()
                 panel(zoning)
             }
@@ -115,9 +130,9 @@ struct DeckContentRow: View {
         }
     }
 
-    private func zoning(in deck: CGFloat, feed: [FeedRow], agents: [FeedAgent]) -> DeckZoning {
+    private func zoning(in width: CGFloat, feed: [FeedRow], agents: [FeedAgent]) -> DeckZoning {
         DeckZoning(
-            deck: deck,
+            deck: width,
             feed: feed,
             agents: agents,
             open: selection.open,

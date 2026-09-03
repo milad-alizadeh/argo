@@ -31,7 +31,7 @@ extension ContractSpecimen {
 
     /// One hue's three weights, stacked and touching, with the full rung at the bottom where the
     /// run reads as a row of hues — the two dimmed rungs are DERIVED, so nothing reflected can put
-    /// them on this sheet and only drawing them by hand does (`design-system.md`, #905).
+    /// them on this sheet and only drawing them by hand does (`rules/swift.md`, #905).
     private func rung(_ index: Int) -> some View {
         VStack(spacing: ArgoStroke.hairline) {
             ForEach(argo.color.series.ramp(index), id: \.name) { weight in

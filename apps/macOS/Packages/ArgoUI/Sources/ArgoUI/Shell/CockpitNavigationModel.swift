@@ -65,6 +65,15 @@ public final class CockpitNavigationModel {
         ticketsQuery = ""
     }
 
+    /// What the tab line's Issue link does (#1092) — point the window at the Ticket and switch
+    /// into its room, the mirror of `TicketsRoom.openSession`. A named method rather than an
+    /// inline closure, so the round trip with `TicketsRoom.openSession` is testable without
+    /// rendering a view.
+    func openTicket(_ number: Int) {
+        ticket = number
+        room = .tickets
+    }
+
     /// Repoints a selection that no longer names a live Session, falling back to the first.
     /// An empty roster leaves it `nil` — there is nothing honest to point at.
     func reconcile(against sessionIDs: [CockpitPresentation.Session.ID]) {

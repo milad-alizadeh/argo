@@ -36,4 +36,16 @@ guard let number = match?[kCGWindowNumber as String] as? Int else {
     fail("no on-screen window owned by pid \(pid)")
 }
 
-print(number)
+// `--bounds` adds the window's frame in global display points, `id x y width height`, for a caller
+// that has to place a pointer inside it (`HoldClick.swift`). The bare form stays one number, which
+// is what `screenshot.sh` reads.
+if CommandLine.arguments.contains("--bounds") {
+    guard let dictionary = match?[kCGWindowBounds as String] as? NSDictionary,
+          let bounds = CGRect(dictionaryRepresentation: dictionary)
+    else {
+        fail("window \(number) reports no bounds")
+    }
+    print(number, Int(bounds.minX), Int(bounds.minY), Int(bounds.width), Int(bounds.height))
+} else {
+    print(number)
+}

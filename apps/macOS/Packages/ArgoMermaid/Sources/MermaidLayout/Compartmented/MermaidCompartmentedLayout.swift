@@ -5,7 +5,6 @@ import ProseText
 // — this states the graph, draws the compartments the pass measured room for, and finishes each
 // line with the terminal the source asked for (#865).
 
-@MainActor
 extension MermaidCompartmented {
     var laid: MermaidPlan {
         let laid = MermaidLayered.of(graph)

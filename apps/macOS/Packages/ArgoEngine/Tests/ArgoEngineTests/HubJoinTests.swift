@@ -72,6 +72,74 @@ struct HubJoinTests {
         #expect(join.sessions.first?.events.contains(.message(markdown: "the agent said")) == true)
     }
 
+    /// Selecting a Session reads its file again, whole. A long file takes seconds, and for those
+    /// seconds the row on screen is the STALE reading, never an absent one: a row that vanishes
+    /// under the click and comes back reads as data loss (#1134).
+    ///
+    /// The other transcript's batch is the part that bites: on an active machine some Session is
+    /// always writing, and its batch refolds the roster while the reread is still unsettled.
+    @Test
+    func `a reread keeps the row published, stale, until the new reading settles`() {
+        var join = settledJoin()
+        join.add(hubTestObservation(id: "other", events: []))
+        join.apply([.title("Other")], to: "other")
+
+        join.reread(hubTestObservation(id: "session", events: []))
+        join.apply([.message(markdown: "still writing")], to: "other")
+
+        #expect(join.sessions.map(\.id).sorted() == ["other", "session"])
+        #expect(join.sessions.compactMap(\.title).sorted() == ["Other", "Reading"])
+    }
+
+    /// And the reading it replaces is dropped the moment the new one lands, so nothing the first
+    /// reading saw is counted twice.
+    @Test
+    func `the reading a reread replaces is dropped when the new one lands`() {
+        var join = settledJoin()
+        join.apply([.message(markdown: "first")], to: "session")
+
+        join.reread(hubTestObservation(id: "session", events: []))
+        join.apply(
+            [.title("Whole"), .message(markdown: "first"), .message(markdown: "second")],
+            to: "session",
+        )
+
+        #expect(join.sessions.map(\.title) == ["Whole"])
+        #expect(join.sessions.first?.events.filter { $0 == .message(markdown: "first") }.count == 1)
+    }
+
+    /// A reread whose tail ends without a backfill — the file could not be opened again — leaves
+    /// the stale reading standing rather than an empty one in its place.
+    @Test
+    func `a reread that delivers nothing keeps the stale reading`() {
+        var join = settledJoin()
+
+        join.reread(hubTestObservation(id: "session", events: []))
+        join.settle(transcriptID: "session")
+        join.apply([.message(markdown: "later")], to: "session")
+
+        #expect(join.sessions.map(\.title) == ["Reading"])
+        #expect(join.sessions.first?.events.contains(.message(markdown: "later")) == true)
+    }
+
+    /// A row that has stood on the roster stands through the next sweep too, whatever its leaf
+    /// says. A Session resumed from a file outside the window has a leaf nobody in the set owns,
+    /// and holding it back on every sweep that admits a file — every new Session on the machine —
+    /// is the row that vanishes mid-scroll and comes back (#1134).
+    @Test
+    func `a row already on the roster stands while a sweep admits an unread transcript`() {
+        var join = settledJoin()
+        join.apply([.headLeaf(uuid: "outside-the-window")], to: "session")
+        join.add(hubTestObservation(id: "other", events: []))
+        join.apply([.title("Other")], to: "other")
+        #expect(join.sessions.map(\.id).sorted() == ["other", "session"])
+
+        join.add(hubTestObservation(id: "swept", events: []))
+        join.apply([.message(markdown: "still writing")], to: "other")
+
+        #expect(join.sessions.map(\.id).sorted() == ["other", "session"])
+    }
+
     /// One transcript, read and published.
     private func settledJoin() -> HubJoin {
         var join = HubJoin()

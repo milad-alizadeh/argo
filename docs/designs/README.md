@@ -12,8 +12,7 @@ the renders the app itself produces.
 `apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign/` **is** the contract: the colour
 roles, Apple's macOS type scale, spacing, radii, elevation and motion, each a value with a
 documented reason. Tokens only — the shared views drawn with them are `ArgoAtoms`, and a
-surface's own measures live in that surface's directory under `Shell/`. `rules/design-system.md`
-lists all three populations by file. `ArgoUI/Specimen/ContractSpecimen.swift` is the
+surface's own measures live in that surface's directory under `Shell/` (`rules/swift.md`). `ArgoUI/Specimen/ContractSpecimen.swift` is the
 contract's living specimen — every role enumerated on the surfaces it is read against:
 
 ```sh
@@ -22,7 +21,7 @@ cd apps/macOS && ARGO_SPECIMEN=contract sh scripts/screenshot.sh out.png
 
 It replaces the deleted `foundations.html`, and it is good at that job for the same reason the
 page was: it renders the real tokens rather than a copy, so it cannot drift. It is the one
-non-disposable design artifact (`rules/designs.md`).
+non-disposable design artifact (`rules/swift.md`).
 
 **It cannot go partial, either.** Each role group's `all` array is what the specimen iterates,
 and a `Mirror`-based assertion in `VisualContractTests` fails the build if a stored role is
@@ -99,7 +98,7 @@ under `docs/adr/`.
 | `cockpit-surface-matrix.md` | The surface × state matrix | Every cockpit surface and the states it must render — the testable spec the app is checked against |
 | `cockpit-session-composer.md` + `composer/` | **Approved composer design** (#536, under #535 / ADR-0024) | The composer that replaces the Session terminal, its attachment chips, the run-settings popover and the Permission prompt. Twenty-one state renders in `composer/` are the spec; the doc carries the measurements and the frozen component names |
 | `cockpit-composer-picker.md` + `composer-picker/` | **Approved command-menu design** (#590, under #535) | How a skill, a command or a file is reached from the composer: the menu `/` opens over the vessel, the `@` file menu, and the two-row `AddMenu` behind the footer's `+`. A **menu, not glass** — D14 rations glass away from a surface hanging off the field. Twenty state renders in `composer-picker/` are the spec; the doc carries the measurements, the frozen names and the `AttachButton` → `AddButton` rename |
-| `cockpit-composer-picker.inventory.md` | Command-menu build inventory | What #685's build actually extracted from that design — `CommandMenu` and its three parts, the cursor and the derive — what stayed in `SessionComposer`, and the one thing the renders exposed that the design could not: the list is counted, not capped |
+| `cockpit-composer-picker.inventory.md` | Command-menu build inventory | What each ticket under #707 actually extracted from that design, appended per ticket — #685, #686, #687, #688 and #689 — what stayed in `SessionComposer`, and the one thing the renders exposed that the design could not: the list is counted, not capped. It closes with the record of the seven frozen names #751 and #752 renamed |
 | `cockpit-session-composer.inventory.md` | Composer build inventory | What each ticket's build actually extracted from the design, one row per component, appended per ticket — #538 (send) so far |
 | `cockpit-feed-working.md` + `working/` | **Approved in-flight design** | What the feed draws while a Session is `running`: the ion across a pending call's type, the thread across the measure while thinking, and the rule that only ever one of them shows. Four renders in `working/` are the spec; the doc carries the measurements and the seven contract changes it needs. **The feed's one loop**, under D12's live-operational-signal bound — and not D13's `Ion Trace` |
 | `cockpit-feed-working.inventory.md` | In-flight build inventory | What each ticket's build actually extracted from that design, one row per component, appended per ticket — #615 (a call in flight) and #616 (thinking) so far, plus the contract values each promoted |
@@ -111,6 +110,7 @@ under `docs/adr/`.
 | `cockpit-work-room.md` + `.html` + `work-room/` | **Approved Tickets-room design** (#609, under #607) | The room #376's shell had a tab for and nothing behind. The sidebar is NOT the backlog: it holds views at 280 plus the Next-up hero, and the backlog moves into the deck as a 520pt disclosure tree with priority over its roots, the ticket beside it. Mail's toolbar placement, one Liquid Glass material on every vessel, `Start` naming the command it will send and going to the Session it starts (#899), both room-level vacancies, and the Route re-skinned onto graphite/Ion with #334's geometry untouched. Thirteen state renders in `work-room/` are the spec; the `.html` is the same room explorable by `?state=`; the doc carries the measurements, the frozen names and the one proposed role |
 | `cockpit-work-room.inventory.md` | Tickets-room build inventory | What each ticket's build actually extracted from that design, one row per component — #812 (the views sidebar, the flat backlog and the ticket), #815 (the fact strip, the Delivery chips and the one link list) and #817 (the Next-up hero), plus what stayed inline, the `sessionTitle` role it promoted, the three places the design's own names and counts do not match the contract, the six honesty calls #815 had to make where the explorable knew more than Swift can, and the three claims the hero refuses to make |
 | `cockpit-feed-ask.inventory.md` | Ask build inventory | What #712's build actually extracted from that design — the four frozen names, the held-answer value the settle rule forced out, and the keycap a second caller promoted — plus what stayed inline |
+| `selection-accent.md` | **Where Ion Blue is spent** | The six placements and their two weights, the opaque selection ground (#922), the loud backlog row (#1071), and why the asset is the only route to the loud half |
 | `cockpit-roster-archive-foot.md` | **The roster's `Archived (n)` foot** | The one disclosure at the foot of the Sessions roster: anatomy, states, motion, keyboard, and the SwiftUI mechanic that stops the sidebar `Section` drawing a second chevron |
 | `cockpit-session-interior-decisions.md` | Session-interior decision log | Roster rows, dot-carries-state, zero-state, panel natures. Behaviour lineage; its master–detail *layout* was superseded by the single feed |
 

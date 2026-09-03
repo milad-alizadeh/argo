@@ -65,16 +65,11 @@ enum FeedFixture {
 
     /// A picture as a record answers a call with one. `bytes: nil` is the call the record answered
     /// without any — the honest absence, and the only shot that opens nothing.
-    ///
-    /// The bytes are a real one-pixel PNG rather than an arbitrary string, because half of what
-    /// the gallery does with a shot depends on the image decoding at all.
     static func shot(_ tier: Tier, bytes: String? = onePixelPNG) -> ToolResult {
         .media(MediaEvidence(tier: tier, mediaType: "image/png", bytes: bytes.map { .held($0) }))
     }
 
-    /// The smallest thing that is genuinely a PNG: one opaque pixel.
-    static let onePixelPNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z"
-        + "8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="
+    static let onePixelPNG = TranscriptFixtures.onePixelPNG
 
     /// Two handovers, the second answered: one Subagent still working and one landed, which is the
     /// pair every claim about the rail is made against. Shared, because two suites make claims

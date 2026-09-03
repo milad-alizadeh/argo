@@ -42,6 +42,26 @@ enum PerfBudgets {
     /// green on the same code (#1068).
     static let presentationCompareReads = 0
 
+    /// `SessionSelectionCostTests` — how many streams the pass between the mouse-down and the
+    /// frame that paints the selected ground still asks for, at either transcript length.
+    ///
+    /// Recorded: 3 reads of `Stream.events` over a roster of two running managed Sessions, at 728
+    /// events each and at 5 824 · M4 Pro · either · exact. The three are NAMED, because a count
+    /// nobody can account for is a budget rather than a finding:
+    ///
+    /// - two `SessionRosterProjection.openTurnStartMs`, one per running managed row, each bounded
+    ///   by the OPEN Turn since it started walking backwards from the tail;
+    /// - one `TouchedFiles.touched`, the composer's `@` picker over the selected Session — the one
+    ///   walk left on this pass that is still linear in the transcript, and named here rather than
+    ///   cut because the composer is drawn from the pass and cannot be deferred without the deck's
+    ///   one slot changing height under the click.
+    ///
+    /// The reading itself is not among them and cannot be: `the pass that paints a fresh selection
+    /// takes no reading` gates that at zero directly, off `SessionsRoomReading.tally`. This number
+    /// is the OTHER half — that what is left does not follow the length, which is Rule 3's claim
+    /// and why the case carries the two sizes.
+    static let selectionPassReads = 3
+
     /// `FeedRowsCompareCostTests` — asking whether the fresh rows are the reading that stands may
     /// not scale with the reading.
     ///
@@ -166,11 +186,30 @@ enum PerfBudgets {
     /// the gate, as `repeatReadingFold` above; never rounded down to fit a red run.
     static let keyedTextSizeFold = 5.55 / 3
 
+    /// `SettledSessionCostTests` — the largest Session Argo has been given, measured whole before
+    /// a row of it is drawn (ADR-0030, Rule 3).
+    ///
+    /// Three seconds, agreed in the grilling session #1109 records: a first open of a 63 MB Session
+    /// may take that long, and a document whose geometry is still moving is not accepted at any
+    /// speed. Recorded: 0.100 s of thread CPU over the checked-in synthetic's 459 rows taken
+    /// serially, against 0.020 s of wall clock for the same document across cores · M4 Pro,
+    /// loaded · debug · single pass, because a first pass over a cold prose cache IS the
+    /// measurement.
+    ///
+    /// The one SECONDS budget in this file, and the one place a seconds budget is sound: what is
+    /// bounded is what the reader WAITS, which is wall-clock by definition, and the bound is a
+    /// ceiling somebody agreed to sit through rather than a ratio (`elapsedSeconds`). The slack is
+    /// the argument — thirty times the recorded pass — so a loaded box moves the figure and
+    /// not the verdict, while a pass that went back to a SwiftUI layout a row would read minutes.
+    static let settledDocument = 3.0
+
     /// The seconds `MinimapFigureRecording` re-records, one entry a figure it prints.
     ///
-    /// Recorded: over the 301-row reading · M4 Pro, **loaded**, load average 125–164 on 12 cores ·
-    /// both, as the two halves · the least of five interleaved rounds, each figure cold or
-    /// least-of-N inside a round as its case describes.
+    /// Recorded: over the 301-row reading · M4 Pro, **loaded** · both, as the two halves · the
+    /// least of five interleaved rounds, each figure cold or least-of-N inside a round as its case
+    /// describes. Re-recorded whole on the same box for #1111, which is why every figure moved:
+    /// a prose row is now measured by the frame that draws it, so the measure pass no longer builds
+    /// the lane's rectangles on its way past.
     ///
     /// Interleaved because a box picking up a neighbour drifts over a run: five debug rounds
     /// followed by five release ones read the measure pass as SLOWER optimised, purely because the
@@ -179,20 +218,20 @@ enum PerfBudgets {
     /// Nothing gates on these — a seconds gate on a shared laptop reads the box (`CostMeasure`).
     /// What they are for is the question no count can answer: what the app that SHIPS costs
     /// (ADR-0028 Consequences, and #998).
-    static let feedMeasurePass = Figure(debug: 158.76, release: 154.97)
+    static let feedMeasurePass = Figure(debug: 87.18, release: 79.42)
     /// A warm walk of the whole session, which happens on every reshape. The one path here the
     /// optimiser is worth more than a rounding error on, and ADR-0028 says why.
-    static let sessionReading = Figure(debug: 1.08, release: 0.29)
+    static let sessionReading = Figure(debug: 1.10, release: 0.28)
     /// One band painted cold — the Core Text pass.
-    static let bandPaintCold = Figure(debug: 4.36, release: 3.61)
+    static let bandPaintCold = Figure(debug: 4.44, release: 3.37)
     /// The same band repainted, which is what the reader feels on a scroll.
-    static let bandPaintWarm = Figure(debug: 1.42, release: 1.11)
+    static let bandPaintWarm = Figure(debug: 1.29, release: 0.89)
     /// One second of reading at frame rate inside the band the lane holds.
-    static let sixtyScrolledFrames = Figure(debug: 92.89, release: 72.67)
+    static let sixtyScrolledFrames = Figure(debug: 75.47, release: 54.95)
     /// Thirty frames of a seam drag: the worst case the design has.
-    static let thirtySeamFrames = Figure(debug: 90.55, release: 76.70)
+    static let thirtySeamFrames = Figure(debug: 80.27, release: 61.74)
     /// A band of nothing but long markdown, cold — the ceiling.
-    static let markdownBandCold = Figure(debug: 8.46, release: 7.82)
+    static let markdownBandCold = Figure(debug: 9.04, release: 7.65)
 
     /// One recorded figure in milliseconds, in each of the two configurations. Both halves, because
     /// the gap is the finding: until #953 every figure in the epic was a `-Onone` number.

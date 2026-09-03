@@ -5,7 +5,7 @@ public extension CockpitPresentation {
     /// chain id, and whether there is a Ticket provider to have read a link through (#894).
     ///
     /// One value rather than two parameters, because both cross the same seam, neither is a Hub
-    /// fact, and the projection's initialisers are already at the cap (rules/code-style.md).
+    /// fact, and the projection's initialisers are already at the cap (rules/house.md).
     struct Readings: Equatable, Sendable {
         public let annotations: SessionAnnotations
         /// Whether the active Project has a Ticket Binding. The one fact that separates a Session

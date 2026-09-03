@@ -38,9 +38,7 @@ const SOURCE_ROOT = resolve(STARTER_DIR, '..', '..')
 // explicit because they document the intended audience.
 const SKILL_AGENTS = ['claude-code', 'cursor', 'codex']
 // The full guardrail set copied into every target: the neutral descriptor, every script its
-// projected commands invoke (plus module-map.mjs, which placement-guard imports rather than
-// being named by a command — a hook that copies its entry point and not its imports is a hook
-// that throws on first use), and the worktree contract the edit-guard's deny message cites (so
+// projected commands invoke, and the worktree contract the edit-guard's deny message cites (so
 // the rules land with the enforcement). Lockstep with hooks.json: a command added there whose
 // script is missing here projects a hook pointing at nothing.
 const HOOK_ASSETS = [
@@ -49,8 +47,6 @@ const HOOK_ASSETS = [
   'scripts/worktree-guard.mjs',
   'scripts/worktree-name-guard.mjs',
   'scripts/worktree-gc.sh',
-  'scripts/placement-guard.mjs',
-  'scripts/module-map.mjs',
   'docs/agents/worktrees.md',
 ]
 // Seeded on every install (not only --hooks: RTK filters are inert until the consumer runs
@@ -221,6 +217,22 @@ function selectedNames(manifest, selection) {
 
 const argv = process.argv.slice(2)
 const has = (...flags) => flags.some((f) => argv.includes(f))
+const KNOWN_FLAGS = ['--dry-run', '-n', '--skill', '--hooks', '--no-hooks', '--help', '-h']
+if (has('--help', '-h')) {
+  console.log(
+    `argo-skills — install Argo's skill bundle into the current project.\n\n` +
+      `  npx github:milad-alizadeh/argo [--dry-run|-n] [--skill a,b] [--hooks|--no-hooks]\n\n` +
+      `  --dry-run   print what would be installed, install nothing\n` +
+      `  --skill     install a subset (comma- or space-separated names from skills-lock.json)\n` +
+      `  --hooks     also install the guardrail hooks (worktree guards, reaper)\n`,
+  )
+  process.exit(0)
+}
+// An unrecognised flag used to fall through into a real install; refuse it instead.
+const unknownFlag = argv.find(
+  (a) => a.startsWith('-') && !KNOWN_FLAGS.includes(a) && !SCOPE_FLAGS.includes(a),
+)
+if (unknownFlag) fail(`unknown flag ${unknownFlag} — see --help`)
 const dryRun = has('--dry-run', '-n')
 // Guardrail hooks are opt-in: they impose Argo's worktree discipline (apps/+packages/
 // edit guard, worktree reaper) on the project, so a consumer chooses them explicitly.

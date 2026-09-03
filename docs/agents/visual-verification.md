@@ -15,6 +15,12 @@ looking at a surface you are building.
 width is part of the state. Entries live in `ArgoSpecimens/SpecimenRegistry+*.swift`, and
 `Argo --list-specimens` prints every name.
 
+**Hold a click on one point** — `swift scripts/HoldClick.swift <pid> <x> <y> <out-prefix>`, against
+an app left up with `ARGO_KEEP_RUNNING=1`. It captures the window mid-press and after release, the
+one state a still specimen has no name for (#1137). It moves the real pointer and presses the real
+button, so it is under the same rule as an e2e run: say so and wait. Its header records what a
+scripted press does and does not draw.
+
 **Drive it like a user** — `sh scripts/e2e-test.sh`, also from `apps/macOS`. The only tests here
 that click; every other Swift test builds a projection and asserts on it.
 
@@ -58,7 +64,7 @@ is the only source for rhythm, density and type size. Prose in the decision log 
 satisfied while the approved pixels are not.
 
 The rhythm itself lives in `ArgoDesign`, rendered by the `foundations` specimen.
-That, not an HTML page, is the living token contract (`rules/design-system.md`). The directory
+That, not an HTML page, is the living token contract (`rules/swift.md`). The directory
 holds tokens only: the shared views drawn with them are `ArgoAtoms`, and one surface's own
 measures — the feed's column, the composer's vessel, the minimap's lane, the plan pill, the
 toolbar's vessel, the context bar, the Connect panel, the agents rail, the roster's foot — sit in
@@ -87,8 +93,8 @@ Mac happens to have on it.
 Four conditions decide whether a red case is a regression or the weather. A red baseline cannot
 tell a bug from a toggle, so check these before believing a failure (#764).
 
-- **Full Keyboard Access must be on** — `rules/ui-components.md` owns the setting and its
-  name. With it off no plain `Button` is a Tab stop, so every case that walks the deck by
+- **Full Keyboard Access must be on** — System Settings › Keyboard › Keyboard navigation
+  (`AppleKeyboardUIMode`), not the Accessibility item that still carries the older name. With it off no plain `Button` is a Tab stop, so every case that walks the deck by
   Tab — `DeckKeyboardE2ETests`, `PlanPillE2ETests` — fails on a machine where the product is
   perfect. DeckKeyboard's failure text says so and prints the ring it walked; PlanPill's
   only says the keyboard never reached the pill.

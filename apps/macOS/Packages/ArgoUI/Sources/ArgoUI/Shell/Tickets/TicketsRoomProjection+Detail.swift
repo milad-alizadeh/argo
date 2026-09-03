@@ -13,6 +13,9 @@ extension TicketsRoomProjection {
         /// What Argo files that word under. Beside it rather than instead of it: neither does the
         /// other's job.
         let bucket: TicketState
+        /// The live Session(s) on this ticket, off the same `TicketClaims` value the backlog row's
+        /// mark reads (#1092). Empty on every ticket `bucket` is not `.claimed` for.
+        package let claimants: [TicketClaims.Claimant]
         /// The provider's own priority word, absent where nothing was read.
         let priority: String?
         /// The provider's own type word, absent on the same terms.
@@ -66,6 +69,7 @@ extension TicketsRoomProjection {
             title: item.title,
             status: item.status,
             bucket: item.state(claimed: listing.isClaimed(number)),
+            claimants: listing.claimants(of: number),
             priority: item.priority,
             type: item.type,
             labels: item.labels,

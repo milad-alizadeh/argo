@@ -36,8 +36,9 @@ extension FeedTableCoordinator {
         table.stepFocus = { [weak self] delta in self?.step(focusBy: delta) }
         table.activateFocused = { [weak self] in self?.activateFocusedRow() ?? false }
         table.keyScrolled = { [weak self] in self?.reportFollowing() }
-        table.liveResizeEnded = { [weak self] in self?.settleAfterResize() }
-        table.reshaped = { [weak self] in self?.notedReshape() }
+        table.liveResizeBegan = { [weak self] in self?.dragBegan() }
+        table.liveResizeEnded = { [weak self] in self?.dragEnded() }
+        table.reshaped = { [weak self] in self?.reshaped() }
         table.keyboardMoved = { [weak self] isHere in self?.noteKeyboard(isHere) }
         table.focusedWords = { [weak self] in self?.focusedWords }
         return table

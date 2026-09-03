@@ -97,12 +97,12 @@ check('non-agentGated command is byte-identical across harnesses', () => {
 // matcher / timeout / statusMessage; session-end carries no matcher.
 check('projects PascalCase event keys with the right group shapes', () => {
   const b = project(descriptor, 'codex').hooksBlock
-  assert.equal(b.PreToolUse.length, 3)
+  assert.equal(b.PreToolUse.length, 2)
   // Matchers, not just the count: widening one is what a token-cost regression looks like,
   // and every count-based assertion here stays green through it.
   assert.deepEqual(
     b.PreToolUse.map((g) => g.matcher),
-    ['Edit|Write', 'Bash|EnterWorktree', 'Write'],
+    ['Edit|Write', 'Bash|EnterWorktree'],
   )
   assert.equal(b.SessionEnd.length, 1)
   const end = b.SessionEnd[0]

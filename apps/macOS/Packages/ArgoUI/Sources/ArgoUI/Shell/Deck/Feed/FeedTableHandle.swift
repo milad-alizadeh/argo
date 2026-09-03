@@ -8,38 +8,31 @@ import SwiftUI
 /// same reason: a scroll is an act, not a state, and modelling one as state means inventing a token
 /// that changes whenever the act should happen.
 @MainActor @Observable package final class FeedTableHandle {
-    /// The table this handle drives. Replaced wholesale when the rail scopes the feed onto a
-    /// Subagent: `FeedColumn` is keyed to that scope, so the table, its scroll view and its
-    /// coordinator are all built again under this one handle. That swap is the reading changing,
-    /// and both things below are what it means.
+    /// The table this handle drives — its deck's own, set once when the deck is made and never
+    /// re-pointed (`KeptDeck`). A handle belongs to one reading for its life.
     @ObservationIgnored weak var coordinator: FeedTableCoordinator? {
         didSet {
             guard let coordinator, coordinator !== oldValue else { return }
-            // NOT `oldValue != nil`: a weak reference zeroed by the old table's deinit does not run
-            // this observer at all, so whether one stood is a fact the handle has to keep itself.
-            // Owed rather than done here, because the fresh reading's own `held` is not known until
-            // it is applied — see `reopenIfOwed(held:)`.
-            owesReopen = hasTable
-            hasTable = true
             tableChanged?()
         }
     }
 
-    /// The overview lane re-attaching, because nothing else tells it: the lane's notifications are
-    /// registered on the views the swap discarded, and the deck update that starts the swap runs
-    /// before the replacement exists. One slot, for the one lane the deck puts beside a feed.
+    /// The overview lane hearing that a table now stands under this handle. The lane attaches
+    /// before the deck has built its scroller in the ordinary mount, and nothing else tells it.
     @ObservationIgnored var tableChanged: (() -> Void)?
-
-    /// Whether a table has ever stood under this handle — see `coordinator`.
-    @ObservationIgnored private var hasTable = false
-    /// Whether the reading under this handle was replaced and the policy has yet to be started
-    /// over for it.
-    @ObservationIgnored private var owesReopen = false
 
     @ObservationIgnored private var policy: FeedScrollPolicy
 
     /// Whether the reading is still following the Session.
     private(set) var isFollowing: Bool
+
+    /// Whether a settled document stands under this table — whether the deck may draw the reading
+    /// at all (ADR-0030, Rule 3).
+    ///
+    /// Observable, because it is the one fact the SwiftUI half of the deck renders off: the feed
+    /// and the overview lane appear in the frame this turns true, and the provisional word stands
+    /// in the frames before it. Written by the coordinator, which is where a pass lands.
+    package private(set) var isSettled = false
     /// The last row present when following broke — what `FeedTail.newMessages` counts from.
     private(set) var leftAt: FeedRow.ID?
 
@@ -50,17 +43,6 @@ import SwiftUI
     /// decisions about one kind of event, and #971 asked for them to be reached from one
     /// registration — see `FeedTableCoordinator.notedReshape()`.
     @ObservationIgnored var readingReshaped: (() -> Void)?
-
-    /// Another reading opened in the SAME table — a Session switch, or the rail scoping onto a
-    /// Subagent. Set by the overview lane as it attaches, beside `readingReshaped`.
-    ///
-    /// A separate announcement because the reshape is not one: a replaced reading is reported to
-    /// the lane through the table's own `setFrameSize`, and the lane answers that by asking whether
-    /// the document's HEIGHT moved. Two readings that differ in every row can stand at the same
-    /// height — both shorter than the pane is the ordinary case — and the lane then goes on drawing
-    /// the map of the reading that left. `MinimapReadingStamp` says why a height cannot stand for a
-    /// document; this is the fact it cannot see.
-    @ObservationIgnored var readingReplaced: (() -> Void)?
 
     /// Seeded with the row the reading opens held at, so both facts are already true before the
     /// first frame — which is what lets a still show the detached state without anybody scrolling.
@@ -75,6 +57,26 @@ import SwiftUI
     /// not observable, because it is taken off the policy directly rather than mirrored.
     package var isOpeningOwed: Bool {
         policy.isOpeningOwed
+    }
+
+    /// A settled document landed under this table, or the one that stood was surrendered.
+    func settled(_ isSettled: Bool) {
+        guard self.isSettled != isSettled else { return }
+        self.isSettled = isSettled
+    }
+
+    /// Whether the table has a reading ON SCREEN — rows realised, at heights it measured.
+    ///
+    /// The deck's provisional word is drawn off this rather than off the rows the shell handed
+    /// down, and the two are not the same question now that a deck is kept: the shell hands the
+    /// deck it is coming back to an empty feed for the pass that paints the click (`DrawnSession`),
+    /// and that deck is already drawing the reading those rows are on their way back to.
+    private(set) var isDrawing = false
+
+    /// Reported where the table's rows land or leave (`FeedTableCoordinator.show`).
+    func drawing(_ hasRows: Bool) {
+        guard isDrawing != hasRows else { return }
+        isDrawing = hasRows
     }
 
     /// Another reading in the same table — see `FeedScrollPolicy.reopen(on:held:)`. Called by the
@@ -99,22 +101,6 @@ import SwiftUI
     /// The keyboard onto a row — the deck's half of `FeedRowSelection.close()`.
     package func focus(onto id: FeedRow.ID) {
         coordinator?.focus(onto: id)
-    }
-
-    /// The policy started over for a reading that replaced the last one, because every rule in it
-    /// is about the rows it was resolving against. Carried across a swap, the follow latch says the
-    /// reader left an end they never reached, `leftAt` counts new messages from a row this reading
-    /// does not have, and the opening it already made parks the fresh feed wherever the last one
-    /// was being read.
-    ///
-    /// Asked by the table applying its FIRST model, which is where the reading it opens held at is
-    /// known — the swap itself carries no rows yet, and `FeedRow.ID` is a dense position, so the
-    /// row the last reading was held at names a different line in this one.
-    func reopenIfOwed(held: FeedRow.ID?) {
-        guard owesReopen else { return }
-        owesReopen = false
-        policy = FeedScrollPolicy(held: held)
-        publish()
     }
 
     /// The policy's two published facts, mirrored out only when they actually change. An

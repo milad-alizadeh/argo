@@ -2,7 +2,6 @@ import Foundation
 import ProseText
 
 /// The square a quadrant chart plots on, and everything placed against it.
-@MainActor
 struct MermaidQuadrantField {
     let chart: MermaidQuadrant
     let rect: CGRect

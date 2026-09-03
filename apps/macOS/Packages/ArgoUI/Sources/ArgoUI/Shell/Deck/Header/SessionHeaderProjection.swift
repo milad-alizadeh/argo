@@ -72,6 +72,11 @@ package enum SessionHeaderProjection {
         /// is the repair.
         static let unlinkedWord = "No ticket linked"
 
+        /// …and what it says instead once there IS a backlog to pick from (#1092). The ellipsis is
+        /// the only thing on this line that says a press opens a choice rather than a room, and the
+        /// word is a verb because the reading above is one a reader can now act on.
+        static let linkVerb = "Link a ticket…"
+
         /// The linked Ticket as the header says it: `Issue #400`, never a bare `#400`. The
         /// detail is the issue's own title where the provider gave one, absent where it did not.
         struct IssueLink: Equatable, Sendable {

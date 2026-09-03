@@ -6,7 +6,6 @@ import Foundation
 ///
 /// One value rather than a handful of measurements threaded through the layout — the axis, its
 /// ticks and every bar are placed against ONE arithmetic instead of three that have to agree.
-@MainActor
 struct MermaidGanttChart {
     let gantt: MermaidGantt
     let span: ClosedRange<Date>

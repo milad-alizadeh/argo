@@ -13,7 +13,7 @@ extension FeedRow.Content {
     /// build the same `FeedProse`, but they are two arms of that switch, so SwiftUI gives them
     /// separate structural identity and rebuilds across them anyway. Folding them cost 13% of the
     /// measure pass and bought nothing.
-    enum Shape: String, Sendable {
+    enum Shape: String, Sendable, CaseIterable {
         case prompt
         case message
         case thought

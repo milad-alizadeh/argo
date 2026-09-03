@@ -135,38 +135,43 @@ struct FeedPromptFoldTests {
     /// The same claim where the reader actually meets it: the height the TABLE caches for the row,
     /// through the coordinator the deck builds. Applying a second model that names the prompt is
     /// how the reader lets the fold out.
-    private func rowHeight(unfolded: Set<FeedRow.ID>) -> CGFloat {
-        unfolding(to: unfolded).first ?? 0
+    private func rowHeight(unfolded: Set<FeedRow.ID>) async -> CGFloat {
+        await unfolding(to: unfolded).first ?? 0
     }
 
-    /// Every height the table gives for the row across one press: the first answer after the fold
-    /// changes, and the answer once the reading has settled. A press the reader sees as ONE step is
-    /// a row whose answers are all the same number.
-    private func unfolding(to unfolded: Set<FeedRow.ID>) -> [CGFloat] {
+    /// Every height the table gives for the row across one press: the answer the fresh document
+    /// landed with, and the answer once the reading has been noted again. A press the reader sees
+    /// as ONE step is a row whose answers are all the same number — which since ADR-0030 is by
+    /// construction, because the row is drawn at the height it had until the document that holds
+    /// the new one is complete.
+    private func unfolding(to unfolded: Set<FeedRow.ID>) async -> [CGFloat] {
         let rows = [FeedRow(id: 0, content: .prompt(text: Self.long, shots: []))]
         let handle = FeedTableHandle()
-        let coordinator = FeedTableFixture.laidOut(
+        let coordinator = await FeedTableFixture.laidOut(
             rows,
             in: CGSize(width: ArgoFeedRow.column, height: 800),
             through: handle,
         )
         guard let table = coordinator.table else { return [] }
         coordinator.apply(FeedTableFixture.model(showing: rows, unfolded: unfolded))
+        await FeedTableFixture.settled(coordinator)
         let first = coordinator.tableView(table, heightOfRow: 0)
         coordinator.remeasure(.all)
         return [first, coordinator.tableView(table, heightOfRow: 0)]
     }
 
     @Test
-    func `letting the fold out grows the row by exactly the lines it was hiding`() {
+    func `letting the fold out grows the row by exactly the lines it was hiding`() async {
         let hidden = prose(lines: wholeLines) - prose(lines: ArgoFeedRow.collapsedPromptLines)
-        let grew = rowHeight(unfolded: [0]) - rowHeight(unfolded: [])
+        let out = await rowHeight(unfolded: [0])
+        let folded = await rowHeight(unfolded: [])
+        let grew = out - folded
         #expect(abs(grew - hidden) <= Self.slack)
     }
 
     @Test
-    func `the row the press lands on is one height, not a wrong one and then a right one`() {
-        let across = unfolding(to: [0])
+    func `the row the press lands on is one height, not a wrong one and then a right one`() async {
+        let across = await unfolding(to: [0])
         #expect(across.count == 2)
         #expect(across.first == across.last)
     }

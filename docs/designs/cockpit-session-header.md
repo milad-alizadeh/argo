@@ -61,6 +61,62 @@ because the movement is itself the signal that a line was crossed.
 put it — it annotates that label rather than the tab line. The prototype draws it outside; the
 shipped placement supersedes it.
 
+### Amended #1092: the Ticket link takes the tab line's other empty edge
+
+The Issue row #894 built reached one surface — a line of text inside the ⓘ panel — and nothing
+about it was pressable. `TabLineInstruments` is the trailing group and already spoken for; the
+line's LEADING edge is where the ticket goes, ahead of the tabs zone, which draws nothing at all
+until #401–#404 land (`DeckSlot`'s own placeholder). That is the one stretch of this 40pt line
+that was empty, and it is where a reader's eye already lands first.
+
+`SessionIssueLink` draws the three readings `TicketLinkReading` carries, the same three the ⓘ
+panel's `Issue` row already draws from `row(for:)`:
+
+- **`.link`** is a route: `ArgoSymbol.ticketsRoom` beside the label, both in `interaction.accent` —
+  the same ink `FeedMarkLine`'s handoff link spends and the ticket head's own claimant line spends
+  back. Pressing it is `navigation.ticket` then `navigation.room = .tickets`, the mirror of
+  `TicketStart`'s own room switch and of the head's route back.
+- **`.unlinked`** states the reading in `text.tertiary`. With a backlog behind it, that reading is
+  also the repair — see below.
+- **`nil`** (`.unread`, no Ticket provider bound) draws nothing at all, the same absence rule the
+  panel's own row follows: with nothing to link TO there are no Tickets to attach.
+
+No measurement changes: the link sets on the line at its own intrinsic width, in the same
+`ArgoSpacing.loose` gap the tabs and the instruments already keep between them.
+
+### Amended #1092: the unlinked reading is the repair, because most branches name no ticket
+
+The route above lit up for almost nobody, and the reason is upstream of it. `TicketLink.number`
+derives a Ticket from `#<N>` in a branch or from a `ticket-<N>-` worktree folder, and a checkout
+named after WORDS — `ticket-hub-roster` on `argo/hub-roster`, which is how most of this repo's own
+work is cut — carries neither. Those Sessions read `.unlinked`, so the tab line drew a dead-end
+word, no claim was ever placed, and the ticket head at the other end had nobody to name. The route
+was built and both of its ends were empty.
+
+So `.unlinked` stops being a statement about a branch and becomes the gesture that fixes it:
+
+- With tickets to pick from, the line reads **`Link a ticket…`** in `interaction.accent` — the ink
+  every other pressable thing on this line takes. The reading it replaces is quiet because it is a
+  statement; this one is an offer, and the ellipsis says the press opens a choice rather than a
+  room. Pressing it opens the open backlog, newest first. Choosing writes a **pin**: Argo's own
+  record that this
+  Session is on that Ticket, held in `sessions.json` beside the rename, and DIRECT, because the
+  reader said it.
+- With nothing to pick — no backlog read, no pin to drop — it stays `Header.unlinkedWord`, the
+  reading it was. A picker that would refuse every press is not drawn.
+- On a **`.link`**, the press stays the route and the same picker sits on the secondary click:
+  re-linking is the rarer act, and a Session pinned to the wrong Ticket has no other repair. The
+  menu ends in `Unlink from this Ticket`, which is only ever drawn over a pin — dropping it gives
+  the derived link straight back.
+
+A pin outranks both a branch number and the number a spawn claimed. Both spawn and pin are DIRECT;
+the pin wins because it is the later of the two and the only one a reader can revise. Moving a pin
+drops the title held for the ticket it moved off, so no ticket's words are ever printed under
+another ticket's number.
+
+The measurement is unchanged: `Link a ticket…` is nine characters wider than the word it replaces
+and the line is intrinsically sized.
+
 ## Measurements
 
 | Measurement | Value | Source |

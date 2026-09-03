@@ -5,7 +5,6 @@ import Foundation
 /// A note's BOX takes the container role and only its words take the note's, which is not a
 /// contradiction: the ground is what stops the lifeline behind it running through the text, and the
 /// quieter ink on the words is what still reads it as an aside.
-@MainActor
 enum MermaidNotes {
     static func drawn(_ stage: MermaidStage)
         -> (figures: [MermaidFigure], captions: [MermaidCaption]) {

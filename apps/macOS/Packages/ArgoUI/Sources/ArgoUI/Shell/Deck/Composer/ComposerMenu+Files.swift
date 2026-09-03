@@ -22,6 +22,7 @@ extension ComposerMenu {
             sections: rows.isEmpty ? [] : [section],
             query: mention.query,
             sigil: .file,
+            dropping: mention.query.count + 1,
         )
     }
 

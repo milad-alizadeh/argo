@@ -7,7 +7,6 @@ import Foundation
 // It produces the very same `MermaidPlan`, drawn by the very same view and mapped by the very same
 // lane, on one figure the spine did not have before (#859).
 
-@MainActor
 extension MermaidPie {
     var laid: MermaidPlan {
         guard !slices.isEmpty else { return .empty }

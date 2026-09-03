@@ -111,9 +111,10 @@ struct FeedScopeSwitchTests {
 
     // MARK: - the table the rows land in
 
-    /// The claim at the far end of the path: the `NSTableView` the deck holds is showing the scoped
-    /// rows, not the ones it was handed before. A scope switch is another `FeedReading` of the same
-    /// Session, and the table is never destroyed for one (ADR-0028 Rule 5).
+    /// The claim at the far end of the path: the `NSTableView` on screen is showing the scoped
+    /// rows, not the ones the deck beside it holds. A scope switch is another `FeedReading` of the
+    /// same Session, so it is another kept deck — and each table is asked, because the two decks
+    /// stand side by side with one of them hidden (ADR-0030, Rule 4).
     @Test
     func `a scope switch puts the subagent's rows in the table`() async throws {
         let deck = FeedSwitchDeck()
@@ -125,13 +126,12 @@ struct FeedScopeSwitchTests {
         await deck.show(sessionRows, of: session)
         await deck.show(subagentRows, of: scoped)
 
-        let table = try #require(deck.coordinator.table)
         #expect(deck.coordinator.shown == subagentRows)
-        #expect(table.numberOfRows == subagentRows.count)
+        #expect(try #require(deck.coordinator.table).numberOfRows == subagentRows.count)
 
         await deck.show(sessionRows, of: session)
         #expect(deck.coordinator.shown == sessionRows)
-        #expect(table.numberOfRows == sessionRows.count)
+        #expect(try #require(deck.coordinator.table).numberOfRows == sessionRows.count)
     }
 }
 
@@ -147,18 +147,19 @@ struct HostedFeedScopeSwitchTests {
     /// A → B → A, counted at the table. `a-two` reported two lines and `a-one` reported one, so the
     /// count alone says which reading is up — and the middle one is what a stale memo swallows.
     @Test(.enabled(if: WindowedTests.areAvailable))
-    func `clicking a chip re-scopes the feed the deck is drawing`() throws {
+    func `clicking a chip re-scopes the feed the deck is drawing`() async throws {
         let deck = HostedDeck()
+        await deck.settled()
         let session = try deck.drawnRows
 
-        try deck.scope(onto: "a-one")
+        try await deck.scope(onto: "a-one")
         #expect(try deck.drawnRows == 1)
-        try deck.scope(onto: "a-two")
+        try await deck.scope(onto: "a-two")
         #expect(try deck.drawnRows == 2)
-        try deck.scope(onto: "a-one")
+        try await deck.scope(onto: "a-one")
         #expect(try deck.drawnRows == 1)
 
-        deck.scopeBack()
+        await deck.scopeBack()
         #expect(try deck.drawnRows == session)
         #expect(session > 2)
     }
@@ -167,19 +168,20 @@ struct HostedFeedScopeSwitchTests {
     /// would answer for it now. A reading drawn at the heights AppKit cached for the one it
     /// replaced comes up as short rows separated by the last reading's empty runs (#1012).
     @Test(.enabled(if: WindowedTests.areAvailable))
-    func `a scoped reading is laid out at its own row heights`() throws {
+    func `a scoped reading is laid out at its own row heights`() async throws {
         let deck = HostedDeck()
+        await deck.settled()
         for _ in 0 ..< 12 {
-            deck.grow()
+            await deck.grow()
         }
 
         for subagent in ["a-one", "a-two", "a-one"] {
-            try deck.scope(onto: subagent)
+            try await deck.scope(onto: subagent)
             for (row, height) in try deck.heights().enumerated() {
                 #expect(height.drawn == height.asked, "Row \(row) of \(subagent) is drawn stale.")
             }
         }
-        deck.scopeBack()
+        await deck.scopeBack()
         for (row, height) in try deck.heights().enumerated() {
             #expect(height.drawn == height.asked, "Row \(row) of the Session is drawn stale.")
         }
@@ -189,16 +191,18 @@ struct HostedFeedScopeSwitchTests {
     /// Subagent. The stamp under which both readings are remembered moves on every line, and the
     /// scoped reading must neither follow the Session's growth nor be dropped by it.
     @Test(.enabled(if: WindowedTests.areAvailable))
-    func `a session that goes on talking does not pull the reader out of a subagent`() throws {
+    func `a session that goes on talking does not pull the reader out of a subagent`(
+    ) async throws {
         let deck = HostedDeck()
+        await deck.settled()
         let session = try deck.drawnRows
-        try deck.scope(onto: "a-two")
+        try await deck.scope(onto: "a-two")
 
-        deck.grow()
-        deck.grow()
+        await deck.grow()
+        await deck.grow()
 
         #expect(try deck.drawnRows == 2)
-        deck.scopeBack()
+        await deck.scopeBack()
         #expect(try deck.drawnRows == session + 2)
     }
 }

@@ -23,6 +23,47 @@ extension SpecimenRegistry {
         // window, for the reason `UnselectedDeckSpecimen` gives.
         SpecimenEntry("deckUnselected") { UnselectedDeckSpecimen() },
         SpecimenEntry("deckNoSessions") { RosterSpecimen(presentation: .emptyPreview) },
+        // The third: a Session IS selected and Argo has not read it yet, which is the state every
+        // switch passes through and the one a large Session sits in while its document is measured
+        // (ADR-0030, Rule 3). SEEDED overdue rather than waited for — the word is held back
+        // `ArgoMotion.unreadDelay`, and a specimen that raced its own subject's timer would render
+        // blank and read as a broken harness.
+        //
+        // Overdue is also the only state with anything under the word: past the delay it gains the
+        // activity indicator, which is the half of this entry #1112 added.
+        SpecimenEntry("deckUnread") {
+            FeedSilence(overdue: true)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .argoDeckSurface()
+                .environment(\.argoFeedVacancy, .unread)
+        },
+        // The same state INSIDE the delay: the word held back and the indicator with it, which is
+        // what every switch that resolves quickly looks like. Rendered because "nothing at all" is
+        // a claim a still can make and prose cannot (#1106).
+        SpecimenEntry("deckUnreadHeld") {
+            FeedSilence(overdue: false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .argoDeckSurface()
+                .environment(\.argoFeedVacancy, .unread)
+        },
+        // The whole deck with no document under it, which is where lane 5's half of the state can
+        // be LOOKED at: the overview lane is absent and its column is held open beside the reading
+        // (ADR-0030, Rule 7; `MinimapLaneZone`). Read beside `deckCanopy`, where the same column
+        // carries the lane, so the pair shows the swap and shows the width not moving with it.
+        //
+        // Said plainly, because a still cannot: this reaches the state through a reading with no
+        // ROWS, not through one being measured. Both are `FeedTableHandle.isSettled` being false
+        // and there is no third way to draw this column, but a measure is seconds long and a
+        // render that raced one would come out blank. That the lane and the feed's own word flip
+        // on the one fact is `FeedSettledDocumentTests`', where it can be asserted rather than
+        // photographed.
+        SpecimenEntry("deckUnreadLane") {
+            SpecimenScene.sessions([])
+                .environment(\.argoFeedVacancy, .unread)
+        },
+        // The deck mid-drag: the reading at the width it was measured across, cut off by a pane the
+        // reader has narrowed since (ADR-0030, Rule 6). See `FrozenResizeSpecimen`.
+        SpecimenEntry("deckFrozenResize") { FrozenResizeSpecimen() },
         SpecimenEntry("planPill") { PlanSpecimen(plan: PlanFixture.working) },
         // Reachable only by hovering or tabbing.
         SpecimenEntry("openPlanPill") {

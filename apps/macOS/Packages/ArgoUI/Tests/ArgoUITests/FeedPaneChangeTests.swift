@@ -24,9 +24,13 @@ struct FeedPaneChangeTests {
         let scroller: NSScrollView
     }
 
-    private static func laidOut() throws -> Feed {
+    private static func laidOut() async throws -> Feed {
         let handle = FeedTableHandle()
-        let table = FeedTableFixture.laidOut(FeedProjection.longRows, in: column, through: handle)
+        let table = await FeedTableFixture.laidOut(
+            FeedProjection.longRows,
+            in: column,
+            through: handle,
+        )
         let scroller = try #require(table.scroller)
         // The fixture frames the scroller before the handle is attached, so the width it was built
         // at was nobody's decision. One notice with the handle in place is the mounted state every
@@ -41,8 +45,8 @@ struct FeedPaneChangeTests {
     }
 
     @Test
-    func `a frame notification carrying no resize derives no geometry`() throws {
-        let feed = try Self.laidOut()
+    func `a frame notification carrying no resize derives no geometry`() async throws {
+        let feed = try await Self.laidOut()
         let cost = feed.table.paneCost
 
         for _ in 0 ..< Self.posted {
@@ -62,8 +66,8 @@ struct FeedPaneChangeTests {
     /// could fail here however broken that path became. What the pane path costs is
     /// `FeedPaneChangeTests`' other claims; what a scroll costs is this one.
     @Test
-    func `a reader scrolling a settled reading re-measures nothing`() throws {
-        let feed = try Self.laidOut()
+    func `a reader scrolling a settled reading re-measures nothing`() async throws {
+        let feed = try await Self.laidOut()
         let measured = feed.table.measurements
         let clip = feed.scroller.contentView
 
@@ -80,8 +84,8 @@ struct FeedPaneChangeTests {
     }
 
     @Test
-    func `a pane that genuinely resizes derives once`() throws {
-        let feed = try Self.laidOut()
+    func `a pane that genuinely resizes derives once`() async throws {
+        let feed = try await Self.laidOut()
         let derived = feed.table.paneCost.derivations
 
         Self.resize(feed, to: 500)
@@ -98,9 +102,9 @@ struct FeedPaneChangeTests {
     /// at the handler is the same notification either way, on the same stack.
     @Test
     func `a notification arriving mid-derivation is not derived inside the one it interrupted`()
-        throws {
+        async throws {
         let handle = FeedTableHandle()
-        let table = FeedTableFixture.laidOut(
+        let table = await FeedTableFixture.laidOut(
             FeedProjection.longRows, in: Self.column, through: handle,
         )
         let clip = try #require(table.scroller).contentView
@@ -125,12 +129,16 @@ struct FeedPaneChangeTests {
     /// guard itself is proved by the claim above, which posts the notice from inside a derivation
     /// rather than waiting for a window server to.
     @Test(.enabled(if: WindowedTests.areAvailable))
-    func `a window mount converges without nesting a derivation`() throws {
+    func `a window mount converges without nesting a derivation`() async throws {
         // Built rather than taken from `laidOut()`: a mount is precisely the case where no pane has
         // been laid out yet, and it is the first derivation whose forced layout re-fires.
         let handle = FeedTableHandle()
-        let table = FeedTableFixture.laidOut(
-            FeedProjection.longRows, in: Self.column, through: handle,
+        // `mounting` and not `laidOut`: a mount is precisely the state before the first document
+        // has landed, and a table settled outside a window would have done its deriving there.
+        let table = FeedTableFixture.mounting(
+            FeedProjection.longRows,
+            in: Self.column,
+            keeping: FeedTableFixture.Kept(handle: handle, geometry: FeedGeometry()),
         )
         let feed = try Feed(table: table, handle: handle, scroller: #require(table.scroller))
         let window = NSWindow(
@@ -139,6 +147,12 @@ struct FeedPaneChangeTests {
         )
 
         window.contentView = feed.scroller
+        window.layoutIfNeeded()
+        await FeedTableFixture.settled(feed.table)
+        // One notice with the reading on screen, as `laidOut()` posts for the cases below. A mount
+        // forces no layout of its own any more — the document lands before a row is drawn, so
+        // nothing inside the mount resizes the clip view that would otherwise post one (#963).
+        FeedTableFixture.postFrameChange(on: feed.scroller.contentView)
         window.layoutIfNeeded()
 
         #expect(feed.table.paneCost.nestings == 0)
@@ -155,8 +169,8 @@ struct FeedPaneChangeTests {
     /// policy to answer it. Recording that size as laid out would lose it: nothing would derive it
     /// when the deck came back, because the pane would already look answered.
     @Test
-    func `a resize no policy answered is not remembered as laid out`() throws {
-        let feed = try Self.laidOut()
+    func `a resize no policy answered is not remembered as laid out`() async throws {
+        let feed = try await Self.laidOut()
         let held = feed.table.handle
         feed.table.handle = nil
 
@@ -173,8 +187,8 @@ struct FeedPaneChangeTests {
 
     /// A fix that made scrolling cheap by making resize wrong would be no fix at all.
     @Test
-    func `a pane resize keeps a detached reading on the row the reader was on`() throws {
-        let feed = try Self.laidOut()
+    func `a pane resize keeps a detached reading on the row the reader was on`() async throws {
+        let feed = try await Self.laidOut()
         feed.handle.settle(at: 1200, over: nil)
         let held = try #require(feed.table.anchor())
 
@@ -186,8 +200,8 @@ struct FeedPaneChangeTests {
     }
 
     @Test
-    func `a pane resize under a following reading keeps the newest line on screen`() throws {
-        let feed = try Self.laidOut()
+    func `a pane resize under a following reading keeps the newest line on screen`() async throws {
+        let feed = try await Self.laidOut()
         #expect(feed.handle.isFollowing)
 
         Self.resize(feed, to: 500)

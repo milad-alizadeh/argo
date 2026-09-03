@@ -49,7 +49,7 @@ import SwiftUI
     /// The two facts that re-ink the whole reading and retire its measured heights, as one value —
     /// so a store that has to remember what its heights were drawn under remembers two scalars
     /// rather than the whole of this, which carries a palette and two closures (#858).
-    struct Ink: Equatable {
+    struct Ink: Equatable, Sendable {
         let colorScheme: ColorScheme
         let dynamicTypeSize: DynamicTypeSize
     }

@@ -14,16 +14,19 @@ import Testing
 struct MinimapAgreementTests {
     private static let column = CGSize(width: 620, height: 480)
 
-    private static func lane(over rows: [FeedRow]) -> MinimapGeometry? {
+    private static func lane(over rows: [FeedRow]) async -> MinimapGeometry? {
         let handle = FeedTableHandle()
-        let table = FeedTableFixture.laidOut(rows, in: column, through: handle)
+        let table = await FeedTableFixture.laidOut(rows, in: column, through: handle)
         guard let reading = table.reading() else { return nil }
         return MinimapGeometry(reading, lane: CGSize(width: 112, height: column.height))
     }
 
     /// Every row, as the content height the table gave it beside the extent it reported.
-    private static func compared(_ rows: [FeedRow]) -> [(measured: CGFloat, reported: CGFloat)] {
-        guard let lane = lane(over: rows) else { return [] }
+    private static func compared(_ rows: [FeedRow]) async -> [(
+        measured: CGFloat,
+        reported: CGFloat,
+    )] {
+        guard let lane = await lane(over: rows) else { return [] }
         return lane.reading.rows.map { row in
             // The step above a row is drawn INSIDE its cell, so the content gets what is left.
             let content = row.height - row.topStep
@@ -47,8 +50,8 @@ struct MinimapAgreementTests {
     }
 
     @Test
-    func `every row of the preview reading reports what the table measured it at`() {
-        let compared = Self.compared(FeedProjection.previewRows)
+    func `every row of the preview reading reports what the table measured it at`() async {
+        let compared = await Self.compared(FeedProjection.previewRows)
         #expect(!compared.isEmpty)
         #expect(compared.allSatisfy { Self.agrees($0) })
     }
@@ -56,8 +59,8 @@ struct MinimapAgreementTests {
     /// The markdown reading is the one the complaints came from: a pipe table, a fence, a heading,
     /// a list and a prompt in one feed.
     @Test
-    func `every row of the markdown reading reports what the table measured it at`() {
-        let compared = Self.compared(FeedProjection.previewMarkdownRows)
+    func `every row of the markdown reading reports what the table measured it at`() async {
+        let compared = await Self.compared(FeedProjection.previewMarkdownRows)
         #expect(!compared.isEmpty)
         #expect(compared.allSatisfy { Self.agrees($0) })
     }
@@ -65,9 +68,9 @@ struct MinimapAgreementTests {
     /// The guarantee. Whatever a row reports, the lane holds it inside the row's own scaled band —
     /// so a rect can never stand over the row below the one it belongs to.
     @Test
-    func `everything the lane draws stays inside the row it belongs to`() {
+    func `everything the lane draws stays inside the row it belongs to`() async {
         for rows in [FeedProjection.previewRows, FeedProjection.previewMarkdownRows] {
-            guard let lane = Self.lane(over: rows) else {
+            guard let lane = await Self.lane(over: rows) else {
                 Issue.record("the fixture laid out no reading")
                 continue
             }

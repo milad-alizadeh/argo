@@ -39,16 +39,30 @@ public struct ProsePlace: Equatable, Sendable {
     }
 }
 
+/// One wrap, held as both answers about it: the lines themselves and the reduction of them the
+/// overview lane reads. Two typesets of one string is how a drawn row and its map came apart, so
+/// there is one — see `ProseRun`.
+struct ProseTypeset {
+    var run: ProseRun
+    var lay: ProseLay
+}
+
 extension ProseMetrics {
-    static func laid(out text: String, across measure: CGFloat, in face: ProseFace) -> ProseLay {
+    static func laid(out text: String, across measure: CGFloat, in face: ProseFace)
+        -> ProseTypeset {
         let string = typeset(ProseMarks.marked(text), in: face)
-        guard string.length > 0, measure > 0 else { return ProseLay() }
+        guard string.length > 0, measure > 0 else {
+            return ProseTypeset(run: ProseRun(lines: [], face: face), lay: ProseLay())
+        }
         let lines = broken(string, across: measure)
-        return ProseLay(
-            widths: lines.map {
-                min(measure, CGFloat(CTLineGetTypographicBounds($0, nil, nil, nil)))
-            },
-            links: places(of: links(in: string), on: lines, across: measure),
+        return ProseTypeset(
+            run: ProseRun(lines: lines, face: face),
+            lay: ProseLay(
+                widths: lines.map {
+                    min(measure, CGFloat(CTLineGetTypographicBounds($0, nil, nil, nil)))
+                },
+                links: places(of: links(in: string), on: lines, across: measure),
+            ),
         )
     }
 

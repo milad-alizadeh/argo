@@ -31,9 +31,11 @@ enum MinimapCostFixture {
         }
     }
 
-    static func laid(_ rows: [FeedRow]) -> FeedTableCoordinator {
+    /// A table with its settled document already on screen — which is what a laid-out reading
+    /// means since ADR-0030: nothing is drawn and nothing can be mapped until the pass lands.
+    static func laid(_ rows: [FeedRow]) async -> FeedTableCoordinator {
         ProseReading.holding(rows: rows.count)
-        return FeedTableFixture.laidOut(rows, in: column, through: FeedTableHandle())
+        return await FeedTableFixture.laidOut(rows, in: column, through: FeedTableHandle())
     }
 
     /// A lane over a session, and the geometry it holds still.
@@ -44,8 +46,8 @@ enum MinimapCostFixture {
     /// 620 its entries can be evicted mid-case by whatever measured there before it, which is a
     /// fact about the suite and not about the lane. Caught as a 1-in-19 flake in exactly that case.
     static func geometry(over rows: [FeedRow], atWidth width: CGFloat = column.width)
-        throws -> MinimapGeometry {
-        var reading = try #require(Self.laid(rows).reading())
+        async throws -> MinimapGeometry {
+        var reading = try #require(await Self.laid(rows).reading())
         reading.columnWidth = width
         return MinimapGeometry(reading, lane: Self.lane)
     }

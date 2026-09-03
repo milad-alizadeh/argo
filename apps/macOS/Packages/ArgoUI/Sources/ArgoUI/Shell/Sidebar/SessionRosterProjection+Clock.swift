@@ -61,18 +61,22 @@ extension SessionRosterProjection {
     ///
     /// `queued` is ignored on purpose: whether a Turn is actually open is the status's claim
     /// (`SessionStatus.read`), and this scan is consulted only once it says `running`.
+    ///
+    /// **Backwards, and it stops at the boundary** (ADR-0028 Rule 1). The answer is a fact about
+    /// the OPEN Turn, so reading it cost a walk of every Turn that had already ended — once per
+    /// running Session, on every pass of the shell's body, including the one between a click and
+    /// the frame it asks for. Walking back, the last `turnEnded` is where the open Turn begins and
+    /// there is nothing behind it worth reading; `start` is overwritten by each earlier prompt, so
+    /// what survives to the boundary is the first prompt of the Turn — the same answer the forward
+    /// walk built with a flag.
     private static func openTurnStartMs(_ events: [TranscriptEvent]) -> Int? {
         var start: Int?
-        var isOpen = false
-        for event in events {
+        for event in events.reversed() {
             switch event {
             case let .prompt(_, _, atMs):
-                guard !isOpen else { break }
-                isOpen = true
                 start = atMs
             case .turnEnded:
-                isOpen = false
-                start = nil
+                return start
             default:
                 break
             }

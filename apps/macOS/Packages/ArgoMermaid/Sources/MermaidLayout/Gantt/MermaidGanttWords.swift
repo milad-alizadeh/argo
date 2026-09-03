@@ -6,7 +6,6 @@ import ProseText
 /// Bare metrics and not `MermaidWords`, which measures a label IN A BOX: a tick's date, a section's
 /// heading and a task's name each stand free on the surface, so the node inset and the 44pt floor
 /// under a one-letter node would both widen them past what they are.
-@MainActor
 enum MermaidGanttWords {
     /// A tick's own date, at the quiet face every word on the axis is set in.
     static func width(of text: String) -> CGFloat {

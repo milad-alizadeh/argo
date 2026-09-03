@@ -6,7 +6,6 @@ import Foundation
 /// The bands are the whole argument for non-overlap. Siblings take disjoint bands and a subtree
 /// never leaves its own, so two nodes at one depth cannot meet; the columns are laid end to end
 /// with a gap between, so two at different depths cannot either.
-@MainActor
 struct MermaidTidy {
     let sizes: [CGSize]
     let children: [[Int]]

@@ -1,135 +1,120 @@
 ---
 name: setup-design-infra
-description: Install a project's design→code machinery — token contract, docs/designs/ scaffolding, no-raw-values check, render method, and the stack.md every later design skill reads instead of hardcoding a framework.
+description: Install the design-to-code machinery (token contract, docs/designs/ with a browser token mirror, the no-raw-values check, a render command, stack.md, the one-page design rule) and settle the token values from observed usage, blessed by the user; re-run as an audit of drift.
 disable-model-invocation: true
 ---
 
 # Setup Design Infra
 
-Make the design→code handoff survivable in *this* project. The system rests on one
-idea: **the contract is a set of named design decisions** (tokens + component
-names). Designs, apps, and every framework rendering of them speak only in those
-names.
-
-The *prose* rules
-(`design-system.md`, `designs.md`, `ui-components.md`) come from `setup-rules`
-— run that first if the repo has no `rules/` yet. The token *values* come from
-`setup-design-foundations` — run that next.
-
-**Golden rule: adapt, don't dump.** Every path, glob, and command installed must
+The contract is a set of named design decisions (tokens plus component names), and designs,
+apps and every framework rendering of them speak only in those names. Phase A installs the
+structure; phase B settles the values in it. `prototype-to-design` reconciles a screen
+against those values and never designs a scale. Every path, glob and command installed must
 resolve to something real in this repo.
 
-## 1. Detect the target stack
+## A1. Detect the target stack
 
-Look before asking: `tailwindcss` in package.json? `tamagui` / `react-native`? A
-`Package.swift` with a UI module? Both web and native (a monorepo)? Confirm with the
-user, then pick the token-layer shape:
+Look before asking (`tailwindcss` in the manifest? `react-native` / `tamagui`? a
+`Package.swift` with a UI module? both?), confirm with the user, then pick the shape:
 
 | Stack | Token contract | Wiring |
 |---|---|---|
-| Web + Tailwind | one CSS custom-property file (`:root` + theme variants) | `@theme inline` block maps vars → utilities |
-| React Native / Tamagui | `tokens.ts` feeding `createTokens()` | Tamagui config imports it |
-| Native (Swift / Kotlin) | a constants source in the UI module (e.g. `VisualContract/`) | consumed directly by views |
-| Multi-platform | DTCG `tokens.json` (W3C design-tokens format) | Style Dictionary build → per-target outputs |
+| Web + Tailwind | one CSS custom-property file (`:root` + theme variants) | `@theme inline` maps vars → utilities |
+| React Native / Tamagui | `tokens.ts` feeding `createTokens()` | the Tamagui config imports it |
+| Native (Swift / Kotlin) | a constants source in the UI module | consumed directly by views |
+| Multi-platform | DTCG `tokens.json` | a Style Dictionary build → per-target outputs; look up its current docs before wiring |
 
-For multi-platform, **look up the current Style Dictionary docs online before
-wiring** — don't hand-author config from memory. The JSON is then the only
-hand-edited file; the CSS/TS outputs are generated and never edited.
+## A2. Install or complete the token contract
 
-## 2. Install or complete the token contract
+If a token layer exists, extend it, never replace it. The contract has one slot per family
+(`references/foundations.md` names the five); most projects that "have tokens" have only
+colours.
 
-If a token layer already exists, **extend, never replace**. The contract must cover
-all four families before the handoff works; most projects that "have tokens" have
-only colors:
+Done when each family has a named slot, populated or marked `TODO: phase B`.
 
-1. **Color roles** — semantic (`background`, `foreground`, `muted`, `border`, status
-   roles), themed per variant (light/dark).
-2. **Typography roles** — a small fixed ramp (micro / label / body / body-lg / title
-   / display), each a **full tuple**: size + line-height + weight + letter-spacing.
-   Named by role, never by value.
-3. **Spacing roles** — the rhythm steps the design actually uses.
-4. **Radii / durations / opacity** as used.
+## A3. Install the design scaffolding
 
-This skill installs the *structure*; the values are design work. When families are
-missing, run `setup-design-foundations` next. Never derive
-a scale inline here.
+- `docs/designs/` with a `README.md` index.
+- `docs/designs/tokens.css`, the browser mirror of the contract. When the contract is CSS,
+  mirror it; otherwise this is an export step, a small generator or a Style Dictionary target
+  wired into the same command that builds the app or runs quality, never a hand copy.
+- `docs/designs/design-template.html` from `templates/design-template.html`, and a
+  `docs/designs/kit.js` seeded with one render function, since the template loads it.
 
-## 3. Install the design scaffolding
+Done when the three files exist and the template resolves every `var(--…)` it names.
 
-- Create `docs/designs/` + a `README.md` index (per the `designs` rule).
-- Install `docs/designs/tokens.css` — the **browser mirror** of the contract, so a
-  design in a browser speaks the app's real vocabulary.
+## A4. Install the no-raw-values check
 
-  When the contract is already CSS, mirror it. When it is **not** — a Swift
-  `VisualContract`, a Kotlin theme, a DTCG source — this is an **export step**:
-  a small generator (or a Style Dictionary target) writes the mirror from the
-  contract. Wire the generator into the same command that builds the app or runs
-  quality, so the mirror cannot silently fall behind. **A hand-copied mirror is the
-  bug this step exists to prevent** — it is the one place where a native project
-  quietly stops being framework-agnostic.
-- Seed a `design-template.html` that imports `tokens.css`, styles only via
-  `var(--token)`, and shows the `data-component="PascalCaseName"` region-naming
-  convention inline as a worked example.
+Copy `templates/check-design-tokens.sh` to `scripts/`, substitute `{{SRC_DIRS}}` (the dirs to
+scan) and `{{EXCLUDE_FILES}}` (token files where raw values are legal), add
+`"check:design-tokens": "sh scripts/check-design-tokens.sh"`, and wire it into the existing
+lint workflow and pre-commit hook. On React Native, adapt the patterns to quoted hex literals
+and numeric style-object values; on native targets, to a literal colour or size in a view
+file; keep the allowlist mechanism. If the codebase fails, seed the allowlist with the
+current offenders and file one debt ticket listing them, so the check is green on install
+and the debt visible.
 
-## 4. Install the no-raw-values check
+## A5. Install the render method
 
-Copy `templates/check-design-tokens.sh` (next to this SKILL.md), substitute its
-placeholders, and make it executable:
+`pixel-review` and `design-to-code` need one UI state rendered deterministically. Recommend
+from what is present: `.storybook/` → Storybook; a native isolated-state harness → that
+harness, launched by state name; `docs/designs/` populated → the designs via `file://`; a
+`dev` script → the dev server; several → the app's harness for built screens, the designs for
+unbuilt ones. For browser targets copy `templates/screenshot-states.mjs` to `scripts/` (it
+needs Playwright; use the project's devDependency or note `npx playwright`). For native
+targets record the project's own capture command and confirm it captures the window.
 
-| Placeholder | Meaning | Example |
-|---|---|---|
-| `{{SRC_DIRS}}` | space-separated dirs to scan | `apps/web/src/components` |
-| `{{EXCLUDE_FILES}}` | token/theme files where raw values are legal | `tokens.css globals.css` |
+Done when the render command produces one PNG when run.
 
-- Add a root script: `"check:design-tokens": "sh scripts/check-design-tokens.sh"`.
-- Wire it into CI (append a step to an existing lint/boundaries workflow rather than
-  adding a new one, when possible) and into the pre-commit hook if the repo has one.
-- **For React Native targets**, adapt the patterns at install time: quoted hex
-  literals and numeric `fontSize:`/`padding:` style-object literals instead of
-  Tailwind arbitrary values. **For native targets**, the equivalent is a literal
-  colour/size in a view file. Keep the same allowlist mechanism.
-- Run it once. If the existing codebase fails, seed the allowlist with the current
-  offenders **and file one debt ticket** listing them — the check must be green on
-  install, and the debt visible, or it gets disabled within a week.
+## B1. Gather the raw material
 
-## 5. Install the render method
+Read `references/foundations.md` first: the shape of each family and how a value is judged.
+From whatever exists, in order: moodboard or specimen pages, the flagship prototype, the
+app's existing styles, reference screenshots. If nothing exists, generate one throwaway
+specimen page per family and review it with the user first.
 
-`pixel-review` and `design-to-code` both need to render one UI state deterministically.
-What varies per project is *how*. Detect it — recommend, don't present a blank menu:
+Done when there is one histogram (value × use-count) per property: size, weight, tracking,
+line-height, space, radius, duration, colour.
 
-- `.storybook/` present → **Storybook** (best: stories enumerate states).
-- A native app with an isolated-state harness (a specimen catalog, a preview target)
-  → **that harness**, launched by state name.
-- `docs/designs/` populated → **the designs themselves**, screenshotted via `file://`.
-- A `dev`/`start` script serving UI → **dev server**.
-- Several present → the app's own harness for built screens, the designs for unbuilt
-  ones; say so.
+## B2. Design each family from the histograms
 
-Then install the mechanics:
+Cluster the observed values, choose the role set (drop roles the product doesn't use, invent
+none), pin each role to a clean value at most a snap away from its cluster, complete each
+tuple from the dominant observed pairing, and snap off-step observations to a neighbour.
 
-- **Browser targets** — copy `templates/screenshot-states.mjs` to
-  `scripts/screenshot-states.mjs`. It needs Playwright: use the project's existing
-  `playwright` devDependency if there is one; otherwise note that `pixel-review` will
-  run it via `npx playwright`.
-- **Native targets** — there is no generic script. Record the project's own capture
-  command in `stack.md` instead, and confirm it captures the **window**, not the
-  screen.
+Done when every observed value maps to exactly one proposed token or a named component-local
+exception, with every row where judgement moved a value flagged, and by how much.
 
-Confirm anything non-obvious with the user: custom ports, auth walls, build steps,
-OS permissions the first capture will prompt for.
+## B3. Bless checkpoint
 
-### Optional — pixel-diff regression tests
+Present one table per family: observed cluster → proposed token (name and value), judgement
+rows called out with alternatives. The user adjusts and blesses.
 
-A distinct layer, separate opt-in: committed screenshot baselines with a CI gate, so
-blessed UI can't drift silently. Offer it only when the project has an
-enumerable-state harness **and** CI; if accepted, generate baselines in **one**
-environment only (CI or a container — cross-OS font rendering false-positives
-otherwise), animations disabled, dynamic regions masked.
+Done when the user has answered each family's table; an unanswered table blocks B4.
 
-## 6. Write `stack.md` — the file that makes the other skills portable
+## B4. Land the contract and its specimen
 
-`docs/designs/stack.md`. Five questions, answered for this repo, and nothing else.
-Every later design skill reads it instead of hardcoding a framework.
+Every family, every theme variant, full tuples, in the slots A2 made, with the framework
+wiring in the same change; regenerate the mirror with the command A3 recorded. Then
+`docs/designs/foundations.html` imports the mirror and renders every role: a line per type
+role, spacing blocks, the core ramps plus semantic chips per theme, radius and motion demos.
+It styles only via `var(--token)`, so it always shows the current contract; link it first in
+the designs README.
+
+Done when the no-raw-values check passes on the contract's consumers and every token name in
+the contract appears in the specimen (grep both, diff empty).
+
+## B5. Re-base approved designs, when values moved
+
+Snapped jitter (≤1px) leaves existing designs untouched. When the bless deliberately moved
+values, translate each approved design through the mapping tables (substitute each raw value
+for its token), re-render the PNG beside it, and match each visible delta to the mapping row
+that explains it.
+
+## C. Write `stack.md` and the design rule
+
+`docs/designs/stack.md` answers five questions and nothing else; every later design skill
+reads it instead of hardcoding a framework:
 
 ```markdown
 # Design stack
@@ -137,26 +122,37 @@ Every later design skill reads it instead of hardcoding a framework.
 - **Token contract** — <path>. The only place raw values live.
 - **Browser mirror** — docs/designs/tokens.css, generated by <command>.
 - **Components live in** — <path(s)>, and the rule for choosing between them.
-- **Isolated-state mechanism** — <stories | specimen catalog | preview target>,
-  added by <what a new state costs>.
+- **Isolated-state mechanism** — <stories | specimen catalog | preview target>, added by <what a new state costs>.
 - **Render a state** — <command>, output <where>.
 ```
 
-Keep it to those five. A stack file that grows prose is one nobody re-reads.
+Then write `rules/design.md`, the one page of design prose no check enforces, in this stack's
+own spelling (grep the stack for the constructs you name before writing them):
 
-Also append a short **Visual verification** section to the project's `AGENTS.md`
-pointing at `stack.md`, so an agent that never runs this wizard still finds the
-render method.
+- every visual constant is a token reached by name, never a literal at a call site, and a
+  missing value is added to the contract first;
+- tokens are named by role, never by value, and the role set stays small;
+- every string the user reads goes through the one text primitive that applies the type ramp;
+- every unit is placed in a tier (atom, molecule, organism) before it is written, and an
+  existing primitive is never re-implemented inline;
+- a screen is a thin container that resolves state and a pure View that takes a value;
+- a settled design in `docs/designs/` is a spec, never a source, and the directory holds the
+  agreed-latest set only.
 
-## 7. Verify and report
+Add a **Visual verification** section to the project doc pointing at `stack.md` and
+`rules/design.md`.
 
-- A deliberately-bad line (e.g. `text-[13px]`, or a literal colour in a view) makes
-  the check fail; removing it makes it pass.
-- `design-template.html` opens in a browser and renders with the token vocabulary.
-- The render command in `stack.md` produces one PNG when run.
-- The mirror generator, run twice, produces no diff the second time.
+## D. Verify and report
 
-Report: stack detected, token families installed vs still missing, where the check is
-wired, the render method, allowlist debt if any — and the next step: run
-`setup-design-foundations` if any family is missing, otherwise `/prototype` the first
-screen.
+A deliberately bad line makes the check fail and removing it makes it pass; the template
+opens and renders with the token vocabulary; the render command produces a PNG; the mirror
+generator run twice produces no diff. Report the stack, families settled against missing,
+which judgement calls moved values and by how much, where the check is wired, the render
+method, allowlist debt, and the next step: `/prototype` the first screen.
+
+## Re-running as an audit
+
+Re-extract current usage (approved designs plus app source), compare against the contract,
+and present only the drift: tokens nothing uses, values nothing names, families still
+missing, jitter that leaked into the contract. Fix through the same bless → land → specimen
+loop (B3–B5).

@@ -17,12 +17,4 @@ bunx lint-staged
 # --- quality gates: the caps lint can't express (installed by setup-quality-gates) ---
 # Per-file caps are biome's, and lint-staged already ran it over the staged files
 # (style/noExcessiveLinesPerFile carries the 150-line ceiling; exemptions in biome.jsonc).
-#
-# The three PLACEMENT gates used to run here and no longer do: they read a
-# `<workspace>/scripts/module-boundaries.json` module map, and retiring the Electron cockpit
-# left this repo with no workspace that declares one. The scripts stay in `scripts/` — they
-# are what `scaffold.mjs --hooks` ships to consumers, and what a future TypeScript workspace
-# would wire back into `quality`. `scripts/placement-guard.mjs` is unaffected: it finds its
-# map by walking ancestors, so with none present it simply permits, here and in a consumer
-# alike. ADR-0021's rule is dormant, not withdrawn.
 # --- end quality gates ---

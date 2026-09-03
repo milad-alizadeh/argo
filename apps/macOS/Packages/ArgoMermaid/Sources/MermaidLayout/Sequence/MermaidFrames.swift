@@ -6,7 +6,6 @@ import Foundation
 /// Read off the flat event list with a stack, which is what makes nesting fall out rather than be
 /// handled: an inner block opens after its outer one and closes before it, so the stack alone says
 /// which frame each event belongs to and how deep it is.
-@MainActor
 enum MermaidFrames {
     static func drawn(_ stage: MermaidStage)
         -> (figures: [MermaidFigure], captions: [MermaidCaption]) {
@@ -44,7 +43,6 @@ enum MermaidFrames {
 }
 
 /// One frame, placed: its own box, and a rule across it at each divider.
-@MainActor
 struct MermaidFrame {
     let opened: Int
     let figures: [MermaidFigure]

@@ -161,7 +161,7 @@ struct ComposerMenuCommandsTests {
     }
 
     /// Over a list of commands with both halves of the catalog already read, which is what every
-    /// claim in this suite is about — the built-in half's own state is `CommandMenuBuiltinTests`.
+    /// claim in this suite is about — the built-in half's own state is `ComposerMenuBuiltinTests`.
     private func projected(
         for text: String,
         over commands: [Command],

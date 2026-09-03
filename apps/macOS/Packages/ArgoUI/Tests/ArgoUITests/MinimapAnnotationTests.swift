@@ -11,8 +11,8 @@ import Testing
 @Suite("Minimap annotations")
 @MainActor
 struct MinimapAnnotationTests {
-    private static func mounted() -> MinimapLaneFixture.Mounted {
-        MinimapLaneFixture.mounted(over: FeedProjection.longRows)
+    private static func mounted() async -> MinimapLaneFixture.Mounted {
+        await MinimapLaneFixture.mounted(over: FeedProjection.longRows)
     }
 
     private static func pointer(_ kind: NSEvent.EventType, at laneY: CGFloat) -> NSEvent? {
@@ -20,13 +20,14 @@ struct MinimapAnnotationTests {
     }
 
     @Test
-    func `a lane nobody is pointing at marks no Turn`() {
-        #expect(Self.mounted().lane.marking.isEmpty)
+    func `a lane nobody is pointing at marks no Turn`() async {
+        let deck = await Self.mounted()
+        #expect(deck.lane.marking.isEmpty)
     }
 
     @Test
-    func `the pointer marks the Turn it is over`() throws {
-        let deck = Self.mounted()
+    func `the pointer marks the Turn it is over`() async throws {
+        let deck = await Self.mounted()
 
         try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: 120)))
 
@@ -36,8 +37,8 @@ struct MinimapAnnotationTests {
     }
 
     @Test
-    func `the pointer leaving the lane unmarks what it named`() throws {
-        let deck = Self.mounted()
+    func `the pointer leaving the lane unmarks what it named`() async throws {
+        let deck = await Self.mounted()
         try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: 120)))
 
         // A move event: `NSEvent.mouseEvent` refuses to build an exit one, and the handler reads
@@ -64,8 +65,8 @@ struct MinimapAnnotationTests {
     /// Turn's rows — the last as much as the prompt's own — names the same Turn with the same
     /// words, which is the ticket's acceptance and the claim nothing here previously made.
     @Test
-    func `the pointer names one Turn from every row of it`() throws {
-        let deck = Self.mounted()
+    func `the pointer names one Turn from every row of it`() async throws {
+        let deck = await Self.mounted()
         let (turn, laneYs) = try Self.secondTurn(deck)
 
         for laneY in laneYs {
@@ -78,8 +79,8 @@ struct MinimapAnnotationTests {
     /// where the row after its last one begins. A mark ending at the prompt's own foot would name
     /// the Turn from one bubble's worth of the lane and nowhere else.
     @Test
-    func `the mark spans the Turn from its first row to past its last`() throws {
-        let deck = Self.mounted()
+    func `the mark spans the Turn from its first row to past its last`() async throws {
+        let deck = await Self.mounted()
         let (turn, laneYs) = try Self.secondTurn(deck)
         let slide = deck.lane.geometry.laneOffset(at: deck.feed.offset() ?? 0)
         let head = deck.lane.geometry.rectY(row: turn.rows.lowerBound) - slide
@@ -95,8 +96,8 @@ struct MinimapAnnotationTests {
     /// leave the pointer unheard everywhere else, and the mark would read as covering the prompt
     /// however right the block underneath it was. One zone, the lane's whole height.
     @Test
-    func `the pointer is heard over the lane's whole height`() {
-        let lane = Self.mounted().lane
+    func `the pointer is heard over the lane's whole height`() async {
+        let lane = await Self.mounted().lane
 
         lane.updateTrackingAreas()
 
@@ -107,8 +108,8 @@ struct MinimapAnnotationTests {
     /// The whole reason the annotations are their own layer. A pointer crossing the lane must not
     /// cost the miniature a single rasterise.
     @Test
-    func `naming a Turn repaints nothing in the miniature`() throws {
-        let deck = Self.mounted()
+    func `naming a Turn repaints nothing in the miniature`() async throws {
+        let deck = await Self.mounted()
         let drawn = deck.lane.rectRedraws
 
         try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: 60)))
@@ -121,8 +122,8 @@ struct MinimapAnnotationTests {
     /// A Turn is many points tall, so most of a pointer's travel across the lane is inside the one
     /// it is already naming — and re-drawing the same annotation is a bitmap for nothing.
     @Test
-    func `a pointer moving inside the Turn it already named draws nothing again`() throws {
-        let deck = Self.mounted()
+    func `a pointer moving inside the Turn it already named draws nothing again`() async throws {
+        let deck = await Self.mounted()
         try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: 120)))
         let drawn = deck.lane.annotationRedraws
 
@@ -132,8 +133,8 @@ struct MinimapAnnotationTests {
     }
 
     @Test
-    func `holding shift and command marks every Turn on screen at once`() throws {
-        let deck = Self.mounted()
+    func `holding shift and command marks every Turn on screen at once`() async throws {
+        let deck = await Self.mounted()
         try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: 120)))
 
         deck.lane.readModifiers([.shift, .command])
@@ -144,8 +145,8 @@ struct MinimapAnnotationTests {
     /// Labels drawn on top of each other are none of them, so the lane drops the WORDS from any
     /// that would not fit.
     @Test
-    func `no two Turns are labelled closer together than a label can be read`() {
-        let deck = Self.mounted()
+    func `no two Turns are labelled closer together than a label can be read`() async {
+        let deck = await Self.mounted()
         deck.lane.readModifiers([.shift, .command])
 
         let labelled = deck.lane.marking
@@ -180,8 +181,8 @@ struct MinimapAnnotationTests {
 
     /// Whatever the crowding costs a label, every Turn named at once still has a line to stand on.
     @Test
-    func `every Turn named at once keeps a line`() {
-        let deck = Self.mounted()
+    func `every Turn named at once keeps a line`() async {
+        let deck = await Self.mounted()
         deck.lane.readModifiers([.shift, .command])
 
         let annotated = deck.lane.marking

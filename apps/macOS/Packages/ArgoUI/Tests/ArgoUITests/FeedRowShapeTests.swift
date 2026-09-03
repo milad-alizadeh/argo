@@ -12,8 +12,9 @@ import Testing
 /// constantly, so a single pool hands almost every recycled cell the wrong tree — and that build is
 /// what a scroll pays per row it exposes, and what the ruler pays per row on every re-measure.
 ///
-/// Both halves of the split get a claim here, because they are separate mechanisms that fail
-/// separately: the cells recycle by shape, and the rulers are kept by shape.
+/// The split has one subject now. The rulers left production with ADR-0030 — a row's height is
+/// arithmetic or Core Text — so what is left to keep by shape is the CELL pool, which is what a
+/// scroll pays per row it exposes.
 @Suite("Feed row shape")
 @MainActor
 struct FeedRowShapeTests {
@@ -45,10 +46,10 @@ struct FeedRowShapeTests {
     }
 
     @Test
-    func `a cell is recycled only onto a row of its own shape`() throws {
+    func `a cell is recycled only onto a row of its own shape`() async throws {
         let rows = FeedProjection.longRows
         let handle = FeedTableHandle()
-        let coordinator = FeedTableFixture.laidOut(rows, in: Self.column, through: handle)
+        let coordinator = await FeedTableFixture.laidOut(rows, in: Self.column, through: handle)
         let table = try #require(coordinator.table)
 
         // Every cell the table hands back carries its own shape's identifier, so AppKit's pool can
@@ -65,40 +66,14 @@ struct FeedRowShapeTests {
         #expect(seen.count >= 5)
     }
 
-    /// The ruler half, which no assertion about heights can make: a reading measured through one
-    /// controller lands on exactly the same heights and costs twice as much.
-    ///
-    /// One ruler per shape the reading LAYS OUT, which since `FeedRowMeasure` is no longer every
-    /// shape it holds: a prose row is typeset from Core Text, so it builds no tree and needs no
-    /// controller. Named as the shapes Core Text declined rather than as a count, so a shape that
-    /// quietly stopped being recycled fails here, and so does one that quietly started being
-    /// typeset without a height claim beside it.
-    @Test
-    func `a reading is measured through one ruler per shape it lays out`() {
-        let rows = FeedProjection.longRows
-        let handle = FeedTableHandle()
-        let coordinator = FeedTableFixture.laidOut(rows, in: Self.column, through: handle)
-        let measure = FeedRowMeasure.measure(atWidth: Self.column.width)
-        let laidOut = Set(
-            rows
-                .filter {
-                    FeedRowMeasure.height(of: $0.content, chip: false, across: measure) == nil
-                }
-                .map(\.content.shape),
-        )
-
-        // The fixture measures every row on the way in, so every shape it lays out has a ruler.
-        #expect(coordinator.rulerShapes == laidOut)
-        #expect(Set(rows.map(\.content.shape)).subtracting(laidOut) == [.message, .thought])
-        #expect(coordinator.rulerShapes.count >= 4)
-    }
-
     /// The cost, as a comparison between two arms measured in the same run — a wall-clock budget
     /// would measure the machine (see `CostMeasure`), and the arms move together on any box.
     ///
     /// This one measures the framework rather than the feed: it is what says the split is worth
-    /// keeping at all, and `a reading is measured through one ruler per shape it lays out` is what
-    /// says the feed is still taking it.
+    /// keeping at all, and `a cell is recycled only onto a row of its own shape` is what says the
+    /// feed is still taking it. The two arms are hosting controllers because that is the cheapest
+    /// way to ask the framework the question; the feed's own cells are `NSHostingView`s, and they
+    /// pay the same rebuild.
     ///
     /// **How much** it saves does NOT survive a change of machine, and a gate written to one
     /// machine's figure is a gate that fails on the other. The same fixture, warmed, least of

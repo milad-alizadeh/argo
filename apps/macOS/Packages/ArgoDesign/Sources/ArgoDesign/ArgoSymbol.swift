@@ -131,6 +131,12 @@ public enum ArgoSymbol {
     /// same act.
     public static let attach = "plus"
 
+    /// `AddMenu`'s two rows (#689, `cockpit-composer-picker.md`, `plus.png`) — a folder for the
+    /// in-app Workspace tree, and the feed's own mark for a skill reused for the row that also
+    /// names a built-in command.
+    public static let addMenuFiles = "folder"
+    public static let addMenuCommands = skill
+
     /// An attachment chip's mark when the file is not a picture, or the bytes yield no thumbnail.
     public static let attachedImage = "photo"
     public static let attachedFile = "doc"

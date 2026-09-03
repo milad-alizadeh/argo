@@ -7,8 +7,9 @@
 # Edges 1-4 are ADR-0022's layering; edge 5 is ADR-0027, on the projection between two of its
 # layers; edge 6 is the parameter cap on the one declaration shape SwiftLint cannot see; edge 7 is
 # the token contract's own module; edge 8 is the direction between ArgoUI and the dev-tool targets
-# beside it (#1085). Each is checkable by looking at imports, declarations and size alone — which
-# is the whole reason they are gates rather than review notes.
+# beside it (#1085); edge 9 is ADR-0030 Rule 1, that no view asks SwiftUI how tall a row is. Each is
+# checkable by looking at imports, declarations and size alone — which is the whole reason they are
+# gates rather than review notes.
 set -eu
 
 APP_DIR="apps/macOS"
@@ -557,7 +558,7 @@ $SWIFTLINT_CONFIG; $sealed skipped, memberwise init sealed private"
   )
   hits=$(printf '%s\n' "$verdict" | sed -n 's/^over|//p')
   if [ -n "$hits" ]; then
-    report "these initializers are over the $INIT_CAP-parameter cap (rules/code-style.md, #755)" \
+    report "these initializers are over the $INIT_CAP-parameter cap (apps/macOS/.swiftlint.yml, #755)" \
       "$hits" \
       "Group the list by the reading each parameter comes from and pass one value per reading, the" \
       "way CockpitPresentation.Session does. Nothing here is grandfathered by being new: the list" \
@@ -614,7 +615,7 @@ else
       "cycle, and the layering below it stops meaning anything."
   fi
 
-  # Tokens only (rules/design-system.md). A family here may still extend `View` with a modifier
+  # Tokens only (rules/swift.md). A family here may still extend `View` with a modifier
   # that applies its own value — that is the value being reached by name — so it is the TYPE that
   # is checked, exactly as edge 3 checks the app target's.
   hits=$(grep -rnE '(struct|class|enum) +[A-Za-z0-9_]+ *: *[^{]*\b(View|ViewModifier|LabelStyle)\b' \
@@ -623,7 +624,7 @@ else
     report "ArgoDesign declares a view — it holds tokens, and the views built out of them are ArgoAtoms" \
       "$hits" \
       "Otherwise the literal check above exempts whatever is moved in here, which is the folder-name" \
-      "escape hatch this edge was written to close (rules/design-system.md, #772, #1088)."
+      "escape hatch this edge was written to close (rules/swift.md, #772, #1088)."
   fi
 fi
 
@@ -667,6 +668,52 @@ for target in ArgoSpecimens ArgoFixtures; do
       "every file in the tree."
   fi
 done
+
+# 9. Nothing in ArgoUI measures through SwiftUI (ADR-0030 Rule 1). A row's height is arithmetic or
+#    Core Text — `FeedShapeHeight` and `FeedRowMeasure` — and the hosting ruler it replaced is a
+#    TEST ORACLE now, held in `FeedShapeHeightTests` and `FeedTypesetHeightTests`. A fallback is the
+#    one thing that cannot be allowed back: an estimate that appears only where a formula is missing
+#    is an estimate nobody sees until the document moves under a reader (#473, #476, #477, #858).
+#
+#    Two spellings and no third. `NSHostingController` is the vehicle a detached ruler needs —
+#    `NSHostingView` is not, since that is how a cell DRAWS — and `sizeThatFits(in:)` is AppKit's own
+#    ask, which the `Layout` protocol's `sizeThatFits(proposal:subviews:cache:)` does not match.
+#
+#    What is out of scope is the FACE probes, and they are named rather than exempted by module:
+#    `ProseText` measures three things about a face once per face per process — the box its engine
+#    stands one line in, what an empty run collapses to, and how far a line hangs below its own
+#    baseline — and every formula above rests on those answers. None is a row and none is per row.
+#    The list below is the whole of that licence, so a fourth ruler in that module fails here.
+if [ ! -d "$UI_SOURCES/ArgoUI" ]; then
+  report "edge 9 cannot see its own subject — $UI_SOURCES/ArgoUI is missing" \
+    "Point UI_SOURCES at its new home: a grep over a path that is not there matches nothing."
+else
+  hits=$(grep -rnE 'NSHostingController|sizeThatFits\(in:' "$UI_SOURCES/ArgoUI" \
+    --include='*.swift' 2>/dev/null || true)
+  if [ -n "$hits" ]; then
+    report "ArgoUI measures through SwiftUI — a row's height is arithmetic or Core Text (ADR-0030)" \
+      "$hits" \
+      "State the shape's formula in FeedShapeHeight and hold it against the ruler in" \
+      "FeedShapeHeightTests, which is the only place the ruler still lives."
+  fi
+fi
+
+# The face probes under it, held to the three files that may hold one. `ProseProbe` is the ruler
+# itself; the two beside it are the questions asked through it.
+PROSE_SOURCES="$APP_DIR/Packages/ArgoDesign/Sources/ProseText"
+if [ ! -d "$PROSE_SOURCES" ]; then
+  report "edge 9 cannot see the face probes — $PROSE_SOURCES has moved" \
+    "Point PROSE_SOURCES at their new home: a grep over a path that is not there matches nothing."
+else
+  hits=$(grep -rlE 'NSHostingController|sizeThatFits\(in:' "$PROSE_SOURCES" \
+    --include='*.swift' 2>/dev/null |
+    grep -vE '/(ProseProbe|ProseLineBox|ProseBaseline)\.swift$' || true)
+  if [ -n "$hits" ]; then
+    report "ProseText grew a ruler outside the three files that may hold one (ADR-0030)" "$hits" \
+      "A face probe goes through ProseProbe and is asked once per face per process. Anything" \
+      "measured per ROW is a formula, and it belongs in FeedShapeHeight."
+  fi
+fi
 
 if [ "$failed" -eq 1 ]; then
   echo "" >&2

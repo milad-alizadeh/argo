@@ -148,7 +148,7 @@ All **ships**, and #712 changes none of it. `FeedAskOptions`, as #534 built it.
 It sits between `ArgoIconSize.inline` (10), too small to aim at, and `chipDismissDiameter` (18),
 which is a control's whole hit area rather than a box drawn beside a label.
 
-It is a **proposal** and not yet in `ArgoComposerVessel`, per `rules/designs.md`: the token
+It is a **proposal** and not yet in `ArgoComposerVessel`, per `rules/swift.md`: the token
 lands with the view that reads it, in #712. Everything else on this screen snapped to a token
 that already existed.
 

@@ -5,7 +5,6 @@ import Foundation
 ///
 /// The words themselves are `MermaidWords`, which every diagram type measures through — a mindmap
 /// and a flowchart set the same label at the same size or the feed has two rhythms in it.
-@MainActor
 enum MermaidMindmapBox {
     static func size(of node: MermaidMindmap.Node, atDepth depth: Int) -> CGSize {
         grown(

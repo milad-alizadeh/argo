@@ -6,7 +6,6 @@ import Foundation
 // The captions go down in `MermaidGantt.labels`' own order — the title, then the ticks, then every
 // line of the gutter — which is the pairing `MermaidLayout` places its subviews by.
 
-@MainActor
 extension MermaidGantt {
     var laid: MermaidPlan {
         guard let chart = MermaidGanttChart(self) else { return .empty }
@@ -19,7 +18,6 @@ extension MermaidGantt {
     }
 }
 
-@MainActor
 extension MermaidGanttChart {
     /// The axis and the rules dropped from its ticks, all in the shared `axis` role — the scale
     /// the chart is measured against rather than a thing it is about.

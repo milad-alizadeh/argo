@@ -8,7 +8,6 @@ import ProseText
 // `Text` to one caption by position alone — a line that kept no place would move every label after
 // it onto the wrong box.
 
-@MainActor
 extension MermaidCompartments {
     /// The room the whole box needs: its widest line, and every band's own words stacked with the
     /// breathing room each band keeps around them.

@@ -6,21 +6,53 @@ import AppKit
 // interface sans (#766).
 
 extension ProseMetrics {
-    /// The marked words with `face` over them and its mono over every `code` run.
+    /// The marked words with `face` over them, its mono over every `code` run, and the agent's own
+    /// emphasis over the runs it wrote between asterisks.
     ///
-    /// The mono takes the BLOCK's rung and weight, not the run's: `face.font` is stamped over the
-    /// whole string first, so a run's own bold is already gone by here.
+    /// The emphasis is part of the typeset because it is part of the DRAWING: this string is what
+    /// `ProseRun` inks (ADR-0030, Rule 2), and a bold run stamped flat would come out at the wrong
+    /// weight and the wrong width in one go.
+    ///
+    /// The mono still takes the BLOCK's rung, not the run's — `.system(.body, design: .monospaced)`
+    /// keeps the body's box and changes only the advances — but it takes the RUN's weight, so a
+    /// backticked word inside a bold sentence stays bold.
     static func typeset(_ marked: AttributedString, in face: ProseFace) -> NSAttributedString {
         let string = NSMutableAttributedString(attributedString: NSAttributedString(marked))
         let whole = NSRange(location: 0, length: string.length)
         string.addAttribute(.font, value: face.font, range: whole)
-        let mono = face.monospaced.font
+        // Uncoloured, and SAID to be: Core Text's own default foreground is black, and a run with
+        // no colour of its own is drawn in that black rather than in whatever the context is
+        // filling with — unless this flag says to take the context's. Without it a paragraph came
+        // out one shade off its own dark ground.
+        //
+        // Uncoloured because the ink is the DRAWING's to decide: one typeset answers for a message
+        // and for the quieter thought beside it (`ProseRun.draw(at:ink:in:)`).
+        string.removeAttribute(.foregroundColor, range: whole)
+        string.addAttribute(
+            NSAttributedString.Key(kCTForegroundColorFromContextAttributeName as String),
+            value: true,
+            range: whole,
+        )
         // Collected before any is applied: mutating an attribute mid-enumeration is undefined even
         // when the key read and the key written differ.
-        for range in codeRuns(of: string, in: whole) {
-            string.addAttribute(.font, value: mono, range: range)
+        for (range, intent) in inlineRuns(of: string, in: whole) {
+            string.addAttribute(.font, value: emphasised(face, by: intent).font, range: range)
         }
         return string
+    }
+
+    /// This face under the marks one run carries. Bold and italic are the agent's; `code` swaps the
+    /// design and leaves the rung and the weight where they were.
+    private static func emphasised(
+        _ face: ProseFace,
+        by intent: InlinePresentationIntent,
+    )
+        -> ProseFace {
+        var run = face
+        run.isBold = face.isBold || intent.contains(.stronglyEmphasized)
+        run.isItalic = intent.contains(.emphasized)
+        run.isMachine = face.isMachine || intent.contains(.code)
+        return run
     }
 
     /// The floor under a column holding these words: the widest unbreakable word MEASURED, one word
@@ -32,14 +64,15 @@ extension ProseMetrics {
             .max() ?? 0
     }
 
-    private static func codeRuns(of string: NSAttributedString, in whole: NSRange) -> [NSRange] {
-        var ranges: [NSRange] = []
+    /// Every run the markdown read left a mark on, with the marks it left.
+    private static func inlineRuns(of string: NSAttributedString, in whole: NSRange)
+        -> [(NSRange, InlinePresentationIntent)] {
+        var runs: [(NSRange, InlinePresentationIntent)] = []
         string.enumerateAttribute(.inlinePresentationIntent, in: whole) { value, range, _ in
-            guard let raw = (value as? NSNumber)?.uintValue,
-                  InlinePresentationIntent(rawValue: raw).contains(.code) else { return }
-            ranges.append(range)
+            guard let raw = (value as? NSNumber)?.uintValue else { return }
+            runs.append((range, InlinePresentationIntent(rawValue: raw)))
         }
-        return ranges
+        return runs
     }
 
     /// Ranges of the MARKED string rather than of a plain copy of it — splitting the rendered

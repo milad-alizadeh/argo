@@ -29,7 +29,7 @@
 # defaults disagree on `nonisolated` vs access control — one owner, and it is the linter.
 --disable wrapMultilineStatementBraces, organizeDeclarations, blankLinesAroundMark, modifierOrder
 
-# Header comments are written by hand or not at all — see rules/comments.md.
+# Header comments are written by hand or not at all — see rules/house.md.
 --header ignore
 
 --exclude build,.build,Argo.xcodeproj

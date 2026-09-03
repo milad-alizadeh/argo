@@ -9,7 +9,7 @@ import Foundation
 /// Nothing is cached, for `SkillCatalog`'s reason: a design landed while the app is open is in the
 /// very next answer.
 public struct DesignedScreens {
-    /// Where a settled design lives, relative to the Project's root (`rules/designs.md`).
+    /// Where a settled design lives, relative to the Project's root (`rules/swift.md`).
     static let folder = "docs/designs"
     /// What a study's file name begins with. The studies here are all of one app's cockpit, so the
     /// prefix is what separates a screen's study from the index and the reference shots beside it.

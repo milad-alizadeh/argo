@@ -153,7 +153,7 @@ struct TurnClockProjectionTests {
         #expect(TurnClockPhrase.spoken(seconds: seconds) == spoken)
     }
 
-    private func session(
+    func session(
         access: CockpitPresentation.Session.Access = .managed,
         status: SessionStatus,
         lastSeenAtMs: Int? = nil,
@@ -169,11 +169,11 @@ struct TurnClockProjectionTests {
         )
     }
 
-    private func rows(_ session: CockpitPresentation.Session) -> [SessionRosterProjection.Row] {
+    func rows(_ session: CockpitPresentation.Session) -> [SessionRosterProjection.Row] {
         SessionRosterProjection.rows(from: [session], now: now)
     }
 
-    private func msAgo(_ seconds: Int) -> Int {
+    func msAgo(_ seconds: Int) -> Int {
         now.epochMs - seconds * 1000
     }
 }

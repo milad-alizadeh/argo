@@ -9,7 +9,7 @@ one-command scaffolder that installs them — plus a curated third-party
 ```
 packages/argo-skills/   the project-AGNOSTIC source of Argo's skills (the toolkit)
   skills/               Argo's own skills — one SKILL.md folder each, supporting
-                        files (e.g. setup-rules/rules/) colocated so each is self-contained
+                        files (e.g. setup-quality-gates/templates/) colocated so each is self-contained
   bin/scaffold.mjs      installs the manifest with one `npx skills add` per source
 apps/                   consumers (e.g. the cockpit app) — set up per project, not source
 skills-lock.json        the bundle manifest — every skill by name, third-party and own

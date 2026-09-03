@@ -7,7 +7,6 @@ import Foundation
 // no column can change that, so one too wide for the prose it sits in is scrolled rather than
 // reflowed — which is what lets the renderer and the lane read one geometry.
 
-@MainActor
 extension MermaidMindmap {
     var laid: MermaidPlan {
         let steps = walk

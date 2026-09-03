@@ -8,7 +8,6 @@ import ProseText
 /// One value rather than four measurements threaded through the layout, and the place the rows'
 /// arithmetic is done ONCE — the swatch, the name and the reading of a row are placed against one
 /// geometry rather than three that have to agree.
-@MainActor
 struct MermaidPieLegend {
     /// One row's words, held together rather than as two lists indexed alike: a name and the
     /// reading beside it ARE one row, and two lists are one off-by-one away from naming the wrong

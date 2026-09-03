@@ -17,8 +17,8 @@ struct FeedKeyboardCopyTests {
         FeedRow(id: 2, content: .call(RowKindFixture.answeredCall)),
     ]
 
-    private static func reading() -> FeedTableCoordinator {
-        FeedTableFixture.laidOut(
+    private static func reading() async -> FeedTableCoordinator {
+        await FeedTableFixture.laidOut(
             rows,
             in: CGSize(width: 460, height: 800),
             through: FeedTableHandle(),
@@ -26,15 +26,15 @@ struct FeedKeyboardCopyTests {
     }
 
     @Test
-    func `a reading nobody has arrowed through has nothing to take`() {
-        let coordinator = Self.reading()
+    func `a reading nobody has arrowed through has nothing to take`() async {
+        let coordinator = await Self.reading()
 
         #expect(coordinator.focusedWords == nil)
     }
 
     @Test
-    func `the cursor's own row is what the key takes, verbatim`() {
-        let coordinator = Self.reading()
+    func `the cursor's own row is what the key takes, verbatim`() async {
+        let coordinator = await Self.reading()
 
         coordinator.step(focusBy: 1)
         coordinator.step(focusBy: 1)
@@ -44,8 +44,8 @@ struct FeedKeyboardCopyTests {
 
     /// The key is the menu's verb, and the menu offers a prompt.
     @Test
-    func `a focused prompt answers the key`() {
-        let coordinator = Self.reading()
+    func `a focused prompt answers the key`() async {
+        let coordinator = await Self.reading()
 
         coordinator.step(focusBy: 1)
 
@@ -55,8 +55,8 @@ struct FeedKeyboardCopyTests {
     /// A call is a line Argo composed from the record, so the key falls through rather than pasting
     /// Argo's own words.
     @Test
-    func `a focused call has nothing to hand over`() {
-        let coordinator = Self.reading()
+    func `a focused call has nothing to hand over`() async {
+        let coordinator = await Self.reading()
 
         for _ in 1 ... 3 {
             coordinator.step(focusBy: 1)
@@ -68,8 +68,8 @@ struct FeedKeyboardCopyTests {
 
     /// Edit ▸ Copy greys out where there is nothing to take.
     @Test
-    func `the menu item is offered only where there is something to take`() {
-        let coordinator = Self.reading()
+    func `the menu item is offered only where there is something to take`() async {
+        let coordinator = await Self.reading()
         guard let table = coordinator.table else {
             Issue.record("the fixture built no table")
             return
@@ -91,8 +91,8 @@ struct FeedKeyboardCopyTests {
     /// what
     /// it found: this is the reader's own pasteboard.
     @Test
-    func `the responder action puts the focused row's words on the pasteboard`() {
-        let coordinator = Self.reading()
+    func `the responder action puts the focused row's words on the pasteboard`() async {
+        let coordinator = await Self.reading()
         let board = NSPasteboard.general
         let before = board.string(forType: .string)
         defer { before.map { ArgoPasteboard.put($0) } }

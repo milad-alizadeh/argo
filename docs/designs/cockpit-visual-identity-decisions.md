@@ -519,6 +519,16 @@ its approved study are authoritative for the replacement look and feel.
   outgrow its true share of the scroll — but the old per-event ceiling cut a long message's block at
   its head and left the rest of its span as dead lane, which read as a hole in the session. The cap's
   claim survives as the extent itself: weight is the row's real length, never more.
+- **Amended by [ADR-0030](../adr/0030-geometry-is-settled-before-it-is-shown.md) — 2026-09-03:**
+  **the lane is drawn only over settled heights, and never over an estimate.** The 08-13 amendment
+  made the rows report their own geometry; until now the lane could still be handed a document whose
+  off-screen rows were estimated and corrected as they scrolled into view, so the map and the scroll
+  ratio disagreed and the map moved under the reader. The lane now appears in the same frame as the
+  feed, after every row has its final height, and a row's vertical span in the lane is its true share
+  of the settled document — position coincides with the scroller or the map is wrong. The weight cap
+  above stays a cap on what is DRAWN inside that span, never on the span. While the document is
+  being measured the lane is absent, not provisional: the deck stands in the status vocabulary's
+  `Argo has not read this Session yet`, and there is no second, approximate map.
 
 ## D26 — Heavy evidence summarizes, then expands inline
 
@@ -923,6 +933,29 @@ its approved study are authoritative for the replacement look and feel.
   judged on.
 
   **Still not reopened, a fifth time:** the leading Ion Blue rail. Selection is the ground alone.
+- **Amended by [#1137](https://github.com/milad-alizadeh/argo/issues/1137) — 2026-09-03: the
+  platform's fill is switched OFF, not covered.** The 2026-08-31 boundary had a case it did not
+  name: time. `NSTableView` moves its own selection to the pressed row on mouse-DOWN, and Argo's
+  ground follows the `List` binding, which the row writes on mouse-UP (`SessionRow`'s tap gesture,
+  which the title carries so it can also take a double-click). For the length of every held click
+  the two named different rows, and the pressed one wore the emphasised accent at full strength
+  beside the row still on Argo's ground. No rule about which row the ground is drawn on can close a
+  gap that is between two moments of one click.
+
+  So `argoSelectedRowGround` now carries a probe (`SidebarSelectionFill`) that reaches the table
+  under it and sets `selectionHighlightStyle = .none`. The platform draws no selection in any rail
+  that takes the ground — the roster and the Work room's view list — and the ground is the ONLY
+  selection paint there, at rest, under a held click, and whether or not the list is first
+  responder. The backlog is untouched: its rows lay the loud rung themselves (#1071) and never went
+  through the ground. `SidebarSelectionFillTests` holds the property; the held click is judged off
+  the frames below, both on macOS 26.5.1, since a still specimen has no pressed state to show.
+  That `.sidebar` honours the property was measured there and not assumed. The before frame is a
+  hand on the mouse, deliberately: a synthetic press (`scripts/HoldClick.swift`) never drew the
+  platform's fill on the old code, and a human hold drew it within a second.
+
+  ![A held click on the roster before and after #1137](renders/1137-pressed-row.png)
+
+  **Still not reopened, a sixth time:** the leading Ion Blue rail. Selection is the ground alone.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.

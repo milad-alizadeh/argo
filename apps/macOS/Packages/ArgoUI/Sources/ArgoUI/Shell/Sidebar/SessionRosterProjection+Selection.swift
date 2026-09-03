@@ -1,8 +1,9 @@
 extension SessionRosterProjection {
     /// The roster's ONE selected state, read by both halves that draw it: the `List`, which is
-    /// told which rows it may select at all, and the ground Argo paints over the platform's own
-    /// capsule (`argoSelectedRowGround`). Two readings of "is this row selected" is two selected
-    /// states on screen the moment they disagree.
+    /// told which rows it may select at all, and the ground Argo paints as the row's only
+    /// selection, the platform's own switched off under it (`argoSelectedRowGround`). Two
+    /// readings of "is this row selected" is two selected states on screen the moment they
+    /// disagree.
     struct Selection {
         /// What the reader's selection names — the `List`'s binding, verbatim.
         let named: String?

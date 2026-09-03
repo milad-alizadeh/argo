@@ -7,10 +7,6 @@ import SwiftUI
 /// environment rides along because an `NSHostingView` inherits nothing from the hierarchy above it
 /// — a cell drawn without it renders the theme's defaults rather than the cockpit's.
 @MainActor struct FeedTableModel {
-    /// WHICH reading these rows are — see `FeedReading`. The one field the coordinator reads as an
-    /// identity rather than as content: a fresh one means another Session or another scope, and
-    /// every per-row fact it holds is about a reading that has gone.
-    package var reading: FeedReading
     package var rows: [FeedRow]
     var selection: FeedRowSelection
     /// Which row the reading opens held at — see `FeedView.held`.

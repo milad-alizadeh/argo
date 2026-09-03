@@ -1,16 +1,8 @@
 #!/bin/sh
-# Design-token guardrail: fails when a design constant escapes the token
-# contract inside component source — a raw hex color, or a Tailwind arbitrary
-# value carrying a unit/color (text-[13px], p-[7px], bg-[#4a5ee0]).
-#
-# Scope is deliberately narrow and greppable: it does NOT parse style={{}}
-# objects or computed values — those are covered by the design-system rule and
-# review. A finding is fixed by snapping to an existing token or promoting a
-# new one (see rules/design-system.md — "fix the contract, not the symptom"),
-# never by allowlisting, unless it is pre-existing debt tracked in a ticket.
-#
-# Allowlist: scripts/design-tokens-allow.txt, one grep -E pattern per line
-# (matched against the full "path:line:content" finding). Comments with #.
+# Fails when a design constant escapes the token contract inside component source: a raw hex
+# colour, or a Tailwind arbitrary value carrying a unit or colour. A finding is fixed by snapping
+# to a token or promoting one, never by allowlisting, unless it is tracked debt.
+# Allowlist: scripts/design-tokens-allow.txt, one grep -E pattern per line, comments with #.
 set -u
 
 SRC_DIRS="{{SRC_DIRS}}"
@@ -32,11 +24,6 @@ findings=$(
       '#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?\b|#[0-9a-fA-F]{3}\b' $SRC_DIRS 2>/dev/null
     grep -rEn --include='*.tsx' --include='*.ts' $exclude_args \
       -- '-\[[^]]*(#|[0-9]+(\.[0-9]+)?(px|rem|em|ms|vh|vw|%))[^]]*\]' $SRC_DIRS 2>/dev/null
-    # 3. OPTIONAL — enable when the project removes Tailwind's stock text scale
-    #    (@theme `--text-*: initial`) in favour of role utilities; a stock class
-    #    like text-sm then silently no-ops, so it must fail the check instead:
-    # grep -rEn --include='*.tsx' --include='*.ts' $exclude_args \
-    #   -- '(^|[^a-zA-Z0-9_-])text-(xs|sm|base|lg|[0-9]?xl)($|[^a-zA-Z0-9-])' $SRC_DIRS 2>/dev/null
   } | sort -u
 )
 
@@ -56,7 +43,7 @@ if [ -n "$findings" ]; then
   printf '%s\n\n' "$findings"
   count=$(printf '%s\n' "$findings" | wc -l | tr -d ' ')
   echo "check:design-tokens — $count design constant(s) outside the token contract."
-  echo "Fix: snap to an existing token or promote a named one (rules/design-system.md)."
+  echo "Fix: snap to an existing token or promote a named one (rules/design.md)."
   exit 1
 fi
 
