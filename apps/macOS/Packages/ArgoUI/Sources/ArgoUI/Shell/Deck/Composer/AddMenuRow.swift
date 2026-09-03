@@ -6,7 +6,7 @@ import SwiftUI
 /// mark that leads it (design decision 11, `cockpit-composer-picker.md`, `plus.png`).
 ///
 /// The label is set in `body`, not `machine` — it names a SECTION of the drawer rather than a
-/// pickable thing, which is what a `CommandMenuRow` or `FileMenuRow` names. The key trails at
+/// pickable thing, which is what a `ComposerMenuRow` names. The key trails at
 /// `machineCaption` in `disabled`, quiet the way a hint is rather than a mark the reader is meant
 /// to read first.
 struct AddMenuRow: View {
