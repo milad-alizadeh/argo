@@ -5,6 +5,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 import { documentChecks } from './checks.mjs'
+import { sectionFlags } from './sections.mjs'
 import { scanSkills } from './skills.mjs'
 
 const root = path.resolve(process.argv[2] ?? '.')
@@ -94,8 +95,7 @@ row(
   '(name + description, every turn)',
 )
 
-const rulesDir = path.join(root, 'rules')
-const rulesBytes = walk(rulesDir)
+const rulesBytes = walk(path.join(root, 'rules'))
   .filter((f) => f.endsWith('.md'))
   .reduce((n, f) => n + size(f), 0)
 if (rulesBytes) row(kb(rulesBytes).padStart(9), 'rules/', '(pull: reached by pointer, not counted)')
@@ -123,30 +123,9 @@ for (const [event, entries] of Object.entries(settings.hooks ?? {})) {
   }
 }
 
-// --- 3. per-section view of each always-on file ---
-section('Sections of always-on files (flags: >1.5 KB, ≥3 issue refs, >300 B of code, >5 negations)')
-const sectionsOf = (text) => {
-  const parts = text.split(/^(?=#{1,3} )/m)
-  return parts.map((p) => ({
-    heading: (p.match(/^#{1,3} (.*)$/m)?.[1] ?? '(preamble)').trim(),
-    text: p,
-  }))
-}
-const refsIn = (text) => (text.match(/(^|[\s(])#\d{2,5}\b/g) ?? []).length
-const codeIn = (text) => (text.match(/```[\s\S]*?```/g) ?? []).join('').length
-const negationsIn = (text) =>
-  (text.match(/\b(never|do not|don't|not a|no longer)\b/gi) ?? []).length
-for (const [file] of alwaysOn) {
-  for (const s of sectionsOf(read(file))) {
-    const bytes = s.text.length
-    const flags = []
-    if (bytes > 1500) flags.push('long: runbook or reference to disclose?')
-    if (refsIn(s.text) >= 3) flags.push(`${refsIn(s.text)} issue refs: history as justification?`)
-    if (codeIn(s.text) > 300) flags.push('code block: a cache of the environment?')
-    if (negationsIn(s.text) > 5) flags.push(`${negationsIn(s.text)} negations`)
-    if (flags.length) row(kb(bytes).padStart(9), `${rel(file)} › ${s.heading}`, flags.join('; '))
-  }
-}
+// --- 3. per-section view of each always-on file and each rule (pull, but read whole) ---
+const rules = walk(path.join(root, 'rules')).filter((f) => f.endsWith('.md'))
+const refsIn = sectionFlags({ files: [...alwaysOn.keys(), ...rules], read, rel, row, section, kb })
 
 // --- 4. skills by body size ---
 section('Skill bodies over 8 KB (billed when they fire; disclose reference into sibling files)')
@@ -158,7 +137,6 @@ section(
 for (const s of skillBodies.filter((s) => s.description.length > 300))
   row(String(s.description.length).padStart(9), s.name)
 
-const rules = walk(path.join(root, 'rules')).filter((f) => f.endsWith('.md'))
 documentChecks({
   root,
   rules,

@@ -62,7 +62,8 @@ Each check ends in a byte count and a named file, or it did not run.
    build output and vendored copies, since one stale hit in any of those clears a dead subject
    as live.
 4. **Inlined runbooks.** Step-by-step procedures and troubleshooting in an always-on file are
-   read once a task starts, which makes them pull material.
+   read once a task starts, which makes them pull material. The script's section pass also
+   covers `rules/`: pull material is read whole when it loads, so its bloat is paid per task.
 5. **Per-tool-call hook injection.** Read the hook config for hooks that return context, run
    one against a realistic payload, count the bytes, multiply by plausible call counts. No
    byte-count of files can see this, and it is the only cost that grows with session length.
