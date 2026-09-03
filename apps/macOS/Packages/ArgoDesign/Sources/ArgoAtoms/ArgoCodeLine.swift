@@ -12,7 +12,7 @@ public struct ArgoCodeLine: View {
         /// A numbered file, and how wide the column is. No number is a line the numbering does
         /// not reach — a removed line is not in the file the gutter counts. The width comes from
         /// the caller because it is a MEASURE: how wide four digits sit is the reading surface's
-        /// property, not the contract's (rules/design-system.md).
+        /// property, not the contract's (rules/swift.md).
         case number(Int?, width: CGFloat)
     }
 

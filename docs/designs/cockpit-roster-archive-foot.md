@@ -146,7 +146,7 @@ The older
 [Disclosure Triangles guidance](https://dev.os9.ca/techpubs/mac/HIGOS8Guide/thig-24.html) gives ⌘→ /
 ⌘← for a disclosure and the current HIG is silent, so there is no convention to bind either.
 
-That local call is now the cockpit's contract, in `rules/ui-components.md` under **How a control is
+That local call is now the cockpit's contract, in `rules/swift.md` under **How a control is
 reached from the keyboard**: the foot is a real `Button`, so Full Keyboard Access reaches it and
 VoiceOver reaches it with the setting off. It is not a gap to be patched here.
 

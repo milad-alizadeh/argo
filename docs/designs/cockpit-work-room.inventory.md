@@ -96,7 +96,7 @@ Two names the design does not freeze were extracted anyway:
 - **The Deliveries heading.** `GroupLabel("Deliveries")` — #812 already extracted that atom, and
   this is its fourth caller.
 - **`TicketLinkRow`.** Private to `TicketLinkList`, its only owner. Same tier, one caller: it is
-  that molecule's part, not its peer (`ui-components.md` — naming follows the tree).
+  that molecule's part, not its peer (`rules/swift.md` — naming follows the tree).
 - **Both vacancy pages, as separate views.** ONE `TicketsRoomVacancy` serves them, because the point of
   the pair is the contrast: two views would let the two sentences drift until only one of them still
   said which nothing it was. The design freezes one name for both, and this is why. Which of the two
@@ -164,7 +164,7 @@ A fourth, found by `pixel-review` on #818's pair and left standing:
 ### Two numbers this build did not take from the design
 
 - **`labelInsetY` is `ArgoSpacing.hair` 2, where `.label` sets `padding: 1px`.** The rhythm has no
-  1, and `rules/design-system.md` says snap rather than promote a rung for one call site.
+  1, and `rules/swift.md` says snap rather than promote a rung for one call site.
   `ArgoBadge` spends the same step for the same reason. Not in the measurement table.
 - **The head-to-strip gap is `ArgoSpacing.section` 24.** The design reaches ~20 there as two
   stacked CSS paddings rather than as a step, and 24 is the rung under the measurement off

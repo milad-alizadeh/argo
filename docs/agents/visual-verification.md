@@ -58,7 +58,7 @@ is the only source for rhythm, density and type size. Prose in the decision log 
 satisfied while the approved pixels are not.
 
 The rhythm itself lives in `ArgoDesign`, rendered by the `foundations` specimen.
-That, not an HTML page, is the living token contract (`rules/design-system.md`). The directory
+That, not an HTML page, is the living token contract (`rules/swift.md`). The directory
 holds tokens only: the shared views drawn with them are `ArgoAtoms`, and one surface's own
 measures — the feed's column, the composer's vessel, the minimap's lane, the plan pill, the
 toolbar's vessel, the context bar, the Connect panel, the agents rail, the roster's foot — sit in
@@ -87,8 +87,8 @@ Mac happens to have on it.
 Four conditions decide whether a red case is a regression or the weather. A red baseline cannot
 tell a bug from a toggle, so check these before believing a failure (#764).
 
-- **Full Keyboard Access must be on** — `rules/ui-components.md` owns the setting and its
-  name. With it off no plain `Button` is a Tab stop, so every case that walks the deck by
+- **Full Keyboard Access must be on** — System Settings › Keyboard › Keyboard navigation
+  (`AppleKeyboardUIMode`), not the Accessibility item that still carries the older name. With it off no plain `Button` is a Tab stop, so every case that walks the deck by
   Tab — `DeckKeyboardE2ETests`, `PlanPillE2ETests` — fails on a machine where the product is
   perfect. DeckKeyboard's failure text says so and prints the ring it walked; PlanPill's
   only says the keyboard never reached the pill.

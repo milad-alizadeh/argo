@@ -5,7 +5,7 @@ that can't all be fixed now, so today's are recorded as scoped exemptions.
 
 An exemption written wide is a permanent allowlist wearing a ratchet's label. These
 are the four ways one comes out wider than intended, and where the reasons have to
-live so the list keeps shrinking. **Every failure below has shipped.**
+live so the list keeps shrinking.
 
 ## Scope every exemption as narrowly as the tool allows
 

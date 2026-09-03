@@ -558,7 +558,7 @@ $SWIFTLINT_CONFIG; $sealed skipped, memberwise init sealed private"
   )
   hits=$(printf '%s\n' "$verdict" | sed -n 's/^over|//p')
   if [ -n "$hits" ]; then
-    report "these initializers are over the $INIT_CAP-parameter cap (rules/code-style.md, #755)" \
+    report "these initializers are over the $INIT_CAP-parameter cap (apps/macOS/.swiftlint.yml, #755)" \
       "$hits" \
       "Group the list by the reading each parameter comes from and pass one value per reading, the" \
       "way CockpitPresentation.Session does. Nothing here is grandfathered by being new: the list" \
@@ -615,7 +615,7 @@ else
       "cycle, and the layering below it stops meaning anything."
   fi
 
-  # Tokens only (rules/design-system.md). A family here may still extend `View` with a modifier
+  # Tokens only (rules/swift.md). A family here may still extend `View` with a modifier
   # that applies its own value — that is the value being reached by name — so it is the TYPE that
   # is checked, exactly as edge 3 checks the app target's.
   hits=$(grep -rnE '(struct|class|enum) +[A-Za-z0-9_]+ *: *[^{]*\b(View|ViewModifier|LabelStyle)\b' \
@@ -624,7 +624,7 @@ else
     report "ArgoDesign declares a view — it holds tokens, and the views built out of them are ArgoAtoms" \
       "$hits" \
       "Otherwise the literal check above exempts whatever is moved in here, which is the folder-name" \
-      "escape hatch this edge was written to close (rules/design-system.md, #772, #1088)."
+      "escape hatch this edge was written to close (rules/swift.md, #772, #1088)."
   fi
 fi
 

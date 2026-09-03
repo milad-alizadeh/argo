@@ -81,7 +81,7 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
         switch self {
         case .prompt: palette.text.primary
         // A message, a call and a picture frame share one rung. A rung is a loudness and not a
-        // meaning (`rules/design-system.md`); what tells them apart is that one is ragged lines,
+        // meaning (`rules/swift.md`); what tells them apart is that one is ragged lines,
         // one is a slab, and one is a frame.
         case .message, .command, .media: palette.text.secondary
         case .thought, .unreadable: palette.text.tertiary

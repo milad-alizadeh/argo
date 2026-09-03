@@ -767,7 +767,7 @@ The Route's own component names stay #334's to freeze. This design does not name
 
 ## Measurements
 
-Surface sheets, beside the surface, per `rules/design-system.md` — a measure is not a token.
+Surface sheets, beside the surface, per `rules/swift.md` — a measure is not a token.
 
 ### `ArgoTicketsSidebar` — `ArgoUI/Shell/Tickets/Sidebar/`
 

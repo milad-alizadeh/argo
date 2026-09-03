@@ -107,8 +107,7 @@ so does CI, with SwiftFormat in `--check` mode rather than rewriting.
 | Duplication | `jscpd`, Swift included | `.jscpd.json` |
 
 The numbers are `biome.jsonc`'s numbers: a 200-line function is as unreadable in Swift as in
-TypeScript. `rules/swift-style.md` is the prose half — how Swift spells `rules/code-style.md`,
-plus the SwiftUI section that extends `rules/ui-components.md`.
+TypeScript. `rules/swift.md` is the prose half: how Swift spells `rules/house.md`, plus the views.
 
 Boundaries are checkable by imports and declarations alone, which is why they are gates rather
 than review notes: **ArgoEngine** never imports a UI framework, **ArgoDesign** imports nothing of
@@ -132,8 +131,7 @@ one surface directory, and they left as `ArgoToolbarVessel`, `ArgoContextBar`, `
 `ArgoAgentsRail` and `ArgoRosterFoot`.
 
 What is left of `ArgoLayout` is the exception that is not one: the splits between panes describe
-the window, which is every surface and so no single one. `rules/design-system.md` lists all three
-populations by file.
+the window, which is every surface and so no single one.
 
 ## Screenshots
 

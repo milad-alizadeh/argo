@@ -12,7 +12,7 @@ import Foundation
 /// later, and first appearance is what decides it.
 ///
 /// `JSONSerialization` rather than a `Codable` model, which is the one place this file departs
-/// from `swift-style.md`: the pass has to hand back every field it did not model, and a decoded
+/// from `rules/swift.md`: the pass has to hand back every field it did not model, and a decoded
 /// type carries only the fields it declares.
 package struct SyntheticTranscript {
     private var identifiers = SyntheticIdentifiers()

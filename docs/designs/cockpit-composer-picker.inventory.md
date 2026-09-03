@@ -29,7 +29,7 @@ Extraction evidence, in the order it arrived:
 - **`CommandMenuCursor`** — it had its second caller before the first row was drawn. "Navigable by
   keyboard alone" is a behaviour, and a `@State private var marked: String?` inside the view would
   have left it assertable only by rendering.
-- **`CommandMenuProjection`** — the container/View split `ui-components.md` requires. Every rule the
+- **`CommandMenuProjection`** — the container/View split `rules/swift.md` requires. Every rule the
   design states about ORDER is here rather than in a `body`.
 
 ## What stayed inline
@@ -197,7 +197,7 @@ Extraction evidence, in the order it arrived:
 - **`SkillLoadedMarker`** — a known cross-screen unit, and three states the happy path does not
   render: the body Argo read, the file it could not, and the one with nothing behind it. The third
   draws no chevron, which is a branch a still has to be able to reach.
-- **`FeedSkillLoad`** — the container/View split `ui-components.md` requires. It also carries the
+- **`FeedSkillLoad`** — the container/View split `rules/swift.md` requires. It also carries the
   one fact the engine's `SkillLoad` cannot answer alone: whether the file read lies outside the
   Session's tree, which needs the projection's own `FeedPath`.
 
@@ -293,4 +293,4 @@ carrying a leading ellipsis.
 
 The width matters to the case. The specimen's default window is wide enough that every path fits,
 which is exactly why this survived the first render of the same case — `ARGO_WINDOW_SIZE` is part of
-the state here, the way `rules/designs.md` says it is for anything laid out in columns.
+the state here, the way `rules/swift.md` says it is for anything laid out in columns.

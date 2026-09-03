@@ -3,7 +3,7 @@ import SwiftUI
 
 /// What the Tickets room's sidebar is measured at (`docs/designs/cockpit-work-room.md` — the
 /// sidebar, views not tickets). Beside the surface rather than in the contract: a measure read by
-/// one surface is not a token (`rules/design-system.md`).
+/// one surface is not a token (`rules/swift.md`).
 enum ArgoTicketsSidebar {
     /// A FLOOR, not a frame: macOS scales sidebar row height with the reader's own setting, and a
     /// frame would refuse it — the same reason `ArgoRosterFoot.minimumHeight` is one.

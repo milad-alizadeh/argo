@@ -4,7 +4,7 @@ import Foundation
 /// ids belong to the providers, so the lookup's fallback is the id VERBATIM rather than a family
 /// guessed off its prefix.
 ///
-/// A pure data catalog, the one file shape `code-style.md` exempts from the line ceiling.
+/// A pure data catalog, the one file shape `.swiftlint.yml` exempts from the line ceiling.
 enum ReadableModelName {
     /// Provider ids, exactly as a transcript spells them, without any date suffix — see
     /// `undated(_:)`, which strips one before the second lookup.

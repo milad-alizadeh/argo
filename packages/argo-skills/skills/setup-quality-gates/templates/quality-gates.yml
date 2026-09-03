@@ -1,9 +1,4 @@
-# Mechanical quality gates. Fails the PR on any cap breach — function length, complexity,
-# parameter count, type escape hatches, dead code, duplication, file length.
-# Installed by the setup-quality-gates skill; the caps themselves live in the linter config.
-#
-# Every gate is an error, not a warning. A new violation is fixed or ratcheted in the
-# exemption list — never suppressed inline.
+# Runs the repo's `quality` script on every PR; the caps live in the linter config.
 name: quality-gates
 
 on:

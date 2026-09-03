@@ -52,7 +52,7 @@ hand before anything is done to it.
 
 ## What the human does
 
-Classify each member the sweep names. `rules/design-system.md` gives four answers and only one of
+Classify each member the sweep names. `rules/swift.md` gives four answers and only one of
 them is a deletion:
 
 | category | what it looks like | what to do |

@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// `LabeledContent` inside a `Form`, not a box of its own: the platform already draws the ground,
 /// the inset, the label column and the alignment with every other settings row
-/// (`ui-components.md`, "don't hand-roll what the platform provides").
+/// (`rules/swift.md`, "don't hand-roll what the platform provides").
 ///
 /// The three rows are independent and completable in any order (#265), so they are peers in one
 /// section rather than steps: no numbering, no chevrons.

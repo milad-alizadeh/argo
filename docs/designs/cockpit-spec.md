@@ -483,8 +483,7 @@ retires. The target slice set:
 - `shared/` (renderer-shared) — the primitive kit plus the status-word/tone vocabulary every room
   reads.
 
-`apps/desktop/scripts/module-boundaries.json` is updated **in the same change** as any slice add,
-split or rename. The existing layer rules (domains ⊥ domains; every domain → renderer-shared;
+The layer rules are updated **in the same change** as any slice add, split or rename. The existing layer rules (domains ⊥ domains; every domain → renderer-shared;
 renderer-shared imports no domain) carry over to the room slices unchanged, as does the Electron
 main ⊥ preload ⊥ renderer isolation.
 
@@ -601,7 +600,7 @@ UI** (ships heuristic-seeded; earns a ticket only if the heuristic proves wrong 
 
 ### Downstream phases — not skipped, not owned here
 
-- **Phase 2** — design foundations into the token contract (`/setup-design-foundations`, a new
+- **Phase 2** — design foundations into the token contract (`setup-design-infra` phase B, a new
   `foundations.html`). **Per-surface density settles here** — #178's audit moved it from open fog
   to out of scope for Phase 1, because every landed surface spec defers it. The prototypes are
   structurally real and visually approximate on purpose.
