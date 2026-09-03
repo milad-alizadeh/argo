@@ -7,7 +7,7 @@
    read here is shape — a module whose chords all cross the centre is a module with no interior
    structure, and one whose chords hug the rim is a module that is really several. */
 
-const WR = 372, WLAB = 384;
+const WR = 380, WLAB = 392;
 
 function wheel() {
   const home = BY.get(state.sel);
@@ -22,58 +22,103 @@ function wheel() {
     || (DEG.get(y.id) - DEG.get(x.id)) || x.name.localeCompare(y.name));
   const N = shown.length;
   const at = new Map(shown.map((t, i) => [t.id, i]));
-  const ang = i => -Math.PI / 2 + (i + .5) * (Math.PI * 2 / N);
-  const P = (i, r) => [Math.cos(ang(i)) * r, Math.sin(ang(i)) * r];
+  const edges = D.edges.filter(e => at.has(e.from) && at.has(e.to));
 
-  const VW = 1500, VH = 1080;
-  const svg = el('svg', { viewBox: `${-VW / 2} ${-VH / 2} ${VW} ${VH}`, preserveAspectRatio: 'xMidYMid meet' });
-  svg.appendChild(el('rect', { x: -VW / 2, y: -VH / 2, width: VW, height: VH, fill: '#0b0f12' }));
+  const M = Array.from({ length: N }, () => new Array(N).fill(0));
+  const top = new Map();
+  let weight = 0;
+  for (const e of edges) {
+    const i = at.get(e.from), j = at.get(e.to), k = i * N + j;
+    M[i][j] += e.n;
+    weight += e.n;
+    if (!top.has(k) || RELS.indexOf(e.rel) < RELS.indexOf(top.get(k))) top.set(k, e.rel);
+  }
+  /* A chord layout gives a type angle in proportion to its traffic, and half of any module's
+     types have no traffic inside it at all — left alone their groups are a zero-width slot and
+     their names land on top of the neighbour's. The diagonal is space nobody can see (a chord
+     from a type to itself is dropped below), so it is where a floor can be paid: every name
+     keeps a slot, and real traffic still decides most of the circle. */
+  const floor = Math.max(1, weight * 1.3 / N);
+  for (let i = 0; i < N; i++) M[i][i] += floor;
+
+  /* Sorted subgroups put a type's heaviest partner at the leading edge of its own arc, so the
+     ribbons leave a hub fanned by weight rather than by rim order. */
+  const layout = d3.chordDirected()
+    .padAngle(Math.PI * 2 * 0.07 / N)
+    .sortSubgroups(d3.descending)
+    .sortChords(d3.descending)(M);
+  const arc = d3.arc();
+  const ribbon = d3.ribbonArrow().radius(WR - 6).padAngle(1 / WR).headRadius(15);
+  const mid = g => (g.startAngle + g.endAngle) / 2;
+  const P = (a, r) => [Math.sin(a) * r, -Math.cos(a) * r];
+
+  /* The view bar floats over the bottom of the stage, which is exactly where the six o'clock
+     names land. There is headroom at the top and none at the bottom, so the wheel is set off
+     centre rather than made smaller — a smaller wheel costs every name, not three. */
+  const VW = 1200, VH = 1160, LIFT = 34;
+  const svg = el('svg', { viewBox: `${-VW / 2} ${-VH / 2 + LIFT} ${VW} ${VH}`, preserveAspectRatio: 'xMidYMid meet' });
+  svg.appendChild(el('rect', { x: -VW / 2, y: -VH / 2 + LIFT, width: VW, height: VH, fill: '#0b0f12' }));
 
   /* Kind bands: one arc per contiguous run of the same kind. */
-  const step = Math.PI * 2 / N;
   let run = 0;
   for (let i = 1; i <= N; i++) {
     if (i < N && shown[i].kind === shown[run].kind) continue;
-    const a0 = ang(run) - step / 2, a1 = ang(i - 1) + step / 2;
-    const arc = (r, s0, s1) => `${Math.cos(s0) * r} ${Math.sin(s0) * r} A ${r} ${r} 0 ${s1 - s0 > Math.PI ? 1 : 0} 1 ${Math.cos(s1) * r} ${Math.sin(s1) * r}`;
     svg.appendChild(el('path', {
-      d: `M ${arc(WR + 8, a0 + .004, a1 - .004)}`, fill: 'none',
-      stroke: KCOLOR[shown[run].kind], 'stroke-width': 3, opacity: .8,
+      d: arc({
+        innerRadius: WR + 5, outerRadius: WR + 8,
+        startAngle: layout.groups[run].startAngle, endAngle: layout.groups[i - 1].endAngle,
+      }),
+      fill: KCOLOR[shown[run].kind], opacity: .8,
     }));
     run = i;
   }
 
-  /* Chords under the rim, so a name is never covered by a line. */
-  const chords = el('g');
-  const lit = new Set([home.id]);
-  const edges = D.edges.filter(e => at.has(e.from) && at.has(e.to));
-  for (const e of edges) {
-    const on = e.from === home.id || e.to === home.id;
-    const [x1, y1] = P(at.get(e.from), WR - 4), [x2, y2] = P(at.get(e.to), WR - 4);
-    if (on) { lit.add(e.from); lit.add(e.to); }
-    chords.appendChild(el('path', {
-      d: `M${x1} ${y1} Q 0 0 ${x2} ${y2}`, fill: 'none', stroke: RCOLOR[e.rel],
-      'stroke-width': on ? 1.7 : .75, opacity: on ? .95 : .10,
+  /* Chords under the rim, so a name is never covered by a line. The layout's own draw order
+     puts the heaviest at the bottom; the selection's own chords need to be above ALL of them,
+     which is a second pass and not a sort key the layout can take. */
+  const dim = el('g'), lit = el('g');
+  const near = new Set([home.id]);
+  for (const c of layout) {
+    if (c.source.index === c.target.index) continue;
+    const a = shown[c.source.index], b = shown[c.target.index];
+    const on = a.id === home.id || b.id === home.id;
+    if (on) { near.add(a.id); near.add(b.id); }
+    const ink = RCOLOR[top.get(c.source.index * N + c.target.index)];
+    /* A ribbon is as wide as the relation is heavy, so a single `holds` between two types is a
+       hairline and the selection's own chord can be the thinnest thing on the page. The stroke
+       is a floor on visibility, not decoration: without it the lit set is invisible on a module
+       whose types touch each other once. */
+    (on ? lit : dim).appendChild(el('path', {
+      d: ribbon(c), fill: ink, opacity: on ? .9 : .16,
+      stroke: on ? ink : null, 'stroke-width': on ? 1.4 : null,
     }));
   }
-  svg.appendChild(chords);
+  svg.appendChild(dim);
+  svg.appendChild(lit);
 
   shown.forEach((t, i) => {
-    const on = lit.has(t.id), me = t.id === home.id;
-    const [nx, ny] = P(i, WR - 4);
-    const g = el('g', { class: 'hit' });
-    g.appendChild(el('circle', { cx: nx, cy: ny, r: me ? 5.5 : on ? 3.4 : 2.2, fill: KCOLOR[t.kind], opacity: on ? 1 : .45 }));
-    const a = ang(i), flip = Math.cos(a) < 0;
-    const [lx, ly] = P(i, WLAB);
-    g.appendChild(el('text', {
-      class: 'sat', x: flip ? -6 : 6, y: 3.4,
-      transform: `translate(${lx} ${ly}) rotate(${(flip ? a + Math.PI : a) * 180 / Math.PI})`,
+    const g = layout.groups[i], a = mid(g);
+    const on = near.has(t.id), me = t.id === home.id;
+    const [nx, ny] = P(a, WR);
+    const node = el('g', { class: 'hit' });
+    /* The dot is two pixels across and the name is set away from it, so the whole slot is the
+       target: on a rim of 96 anything smaller is a click nobody can land. */
+    node.appendChild(el('path', {
+      d: arc({ innerRadius: WR - 10, outerRadius: WR + 14, startAngle: g.startAngle, endAngle: g.endAngle }),
+      fill: '#0b0f12', opacity: 0,
+    }));
+    node.appendChild(el('circle', { cx: nx, cy: ny, r: me ? 5.5 : on ? 3.4 : 2.2, fill: KCOLOR[t.kind], opacity: on ? 1 : .45 }));
+    const flip = a > Math.PI;
+    const [lx, ly] = P(a, WLAB);
+    node.appendChild(el('text', {
+      class: 'sat', x: flip ? -6 : 6, y: 3.6,
+      transform: `translate(${lx} ${ly}) rotate(${a * 180 / Math.PI - 90 + (flip ? 180 : 0)})`,
       'text-anchor': flip ? 'end' : 'start',
       fill: me ? '#ffffff' : on ? '#d8e4ec' : '#55666f',
       style: me ? 'font-weight:600' : '',
     }, t.name));
-    g.onclick = () => select(t.id);
-    svg.appendChild(g);
+    node.onclick = () => select(t.id);
+    svg.appendChild(node);
   });
 
   const inner = edges.filter(e => e.from === home.id || e.to === home.id).length;

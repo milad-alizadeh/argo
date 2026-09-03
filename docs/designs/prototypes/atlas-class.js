@@ -107,7 +107,11 @@ const passes = t => state.kinds.has(t.kind) && (state.tests || !t.test)
 
 function rail() {
   const hits = D.types.filter(passes);
-  $('count').textContent = `${hits.length} types · ${D.edges.length} relations`;
+  /* The relation count has to be the count of what the filter LEFT, or the header reads
+     "1349 types · 4041 relations" while 2890 of them are the only ones any view can draw. */
+  const on = new Set(hits.map(t => t.id));
+  const rel = D.edges.filter(e => on.has(e.from) && on.has(e.to)).length;
+  $('count').textContent = `${hits.length} types · ${rel} relations`;
   const byMod = new Map();
   for (const t of hits) (byMod.get(t.module) || byMod.set(t.module, []).get(t.module)).push(t);
   let html = '', n = 0;
