@@ -60,6 +60,7 @@ struct SpecimenRegistryTests {
             SpecimenRegistry.vessel,
             SpecimenRegistry.commands,
             SpecimenRegistry.mentions,
+            SpecimenRegistry.add,
             SpecimenRegistry.connect,
             SpecimenRegistry.project,
             SpecimenRegistry.tickets,

@@ -20,6 +20,10 @@ enum ComposerMenu {
         /// nothing to say about what matched, so it carries its status strip and NOT the zero line:
         /// "nothing matched" is a statement about a catalog that was looked in.
         var isReading = false
+        /// How many trailing characters of the draft a pick takes with it — the query plus the
+        /// sigil that opened it. `AddMenu` opens the SAME listing with this at `0` (design decision
+        /// 11, #689): the sigil there was never typed, so a pick has nothing of its own to drop.
+        var dropping: Int
 
         /// Every row, in drawing order — what the keyboard cursor walks, so it cannot fall out of
         /// step with the sections it walks through.
@@ -40,7 +44,7 @@ enum ComposerMenu {
         /// head and is closed by the first space, and `@` is the last token with no space in it.
         /// So the sigil plus what was typed after it is exactly what a pick replaces.
         func pick(_ row: Row) -> Pick {
-            Pick(text: row.insert, dropping: query.count + 1)
+            Pick(text: row.insert, dropping: dropping)
         }
     }
 

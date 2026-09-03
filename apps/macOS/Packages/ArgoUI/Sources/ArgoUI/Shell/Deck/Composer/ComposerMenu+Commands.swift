@@ -15,6 +15,7 @@ extension ComposerMenu {
             query: query,
             sigil: .command,
             status: status(of: catalog.builtins),
+            dropping: query.count + 1,
         )
     }
 
@@ -27,6 +28,7 @@ extension ComposerMenu {
             sigil: .command,
             status: Status(words: readingSkills, mark: .waiting),
             isReading: true,
+            dropping: query.count + 1,
         )
     }
 

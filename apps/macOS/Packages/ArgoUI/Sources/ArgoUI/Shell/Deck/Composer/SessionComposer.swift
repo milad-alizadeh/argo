@@ -27,12 +27,20 @@ package struct SessionComposer: View {
     @State private var enteredAtMs = 0
 
     /// Which menu the line has open and where the keyboard is in it. None of it survives a close.
-    @State private var menus = ComposerMenus()
+    /// Not `private`: `SessionComposer+Add.swift` mutates it too, and Swift's `private` is
+    /// file-scoped — the same reason `composer`, `draft` and `intents` above aren't either.
+    @State var menus = ComposerMenus()
+    /// What `menus` should already show the instant this View appears — a Specimen's own hook
+    /// (#689). Production always passes `.closed`: every render that opens something does it
+    /// through the click or keystroke a reader would, never through this seam. Not `private`, for
+    /// the reason `menus` isn't.
+    let opening: ComposerMenusOpening
 
     package init(
         composer: SessionComposerProjection.Composer,
         intents: DeckIntents = .inert,
         isDropTargeted: Bool = false,
+        opening: ComposerMenusOpening = .closed,
     ) {
         self.composer = composer
         self.intents = intents
@@ -40,6 +48,7 @@ package struct SessionComposer: View {
         // draft the way every other SwiftUI surface does.
         _draft = intents.draft
         self.isDropTargeted = isDropTargeted
+        self.opening = opening
     }
 
     package var body: some View {
@@ -107,7 +116,9 @@ package struct SessionComposer: View {
                 isRunning: composer.isRunning,
                 send: submit,
                 stop: interrupt,
-                attach: footerAttach,
+                canAdd: !ComposerMenu.addRows(on: line).isEmpty,
+                isAddMenuOpen: menus.isAddMenuOpen,
+                toggleAddMenu: toggleAddMenu,
                 heldMode: draft.heldMode,
                 setMode: ask,
             )
@@ -130,6 +141,10 @@ package struct SessionComposer: View {
         .onChange(of: draft.text) { was, _ in lineChanged(from: was) }
         .onChange(of: composer.sessionID, initial: true) { _, _ in
             read(menus.sessionChanged(to: line))
+            // In the SAME pass as the line above, and never a second `onChange`: `sessionChanged`
+            // itself puts `opening` away (design decision 9's rule read for this seam — a fresh
+            // arrival opens nothing until asked), so applying it after is what makes it stick.
+            applyOpening()
         }
         .onChange(of: menus.listing(on: line), initial: true) { _, _ in menus.settle(on: line) }
     }
@@ -141,7 +156,13 @@ package struct SessionComposer: View {
     /// with arguments is the common case, and sending on ⏎ makes the argument impossible to type.
     /// Answered here rather than by an `onKeyPress` above the field, because a `TextField` takes
     /// Return itself and there is no intercepting it from outside.
+    ///
+    /// Over `AddMenu`, ⏎ does not insert at all — it OPENS the row's section (design decision 11),
+    /// the same act a click makes; see `open(_:)`.
     private func submit() {
+        if let row = menus.addMenuPick(on: line) {
+            return open(row)
+        }
         if let picked = menus.picked(on: line) {
             return draft.take(picked)
         }
@@ -157,8 +178,8 @@ package struct SessionComposer: View {
         )
     }
 
-    /// The line as the menus read it.
-    private var line: ComposerMenuLine {
+    /// The line as the menus read it. Not `private`, for the reason `menus` isn't.
+    var line: ComposerMenuLine {
         ComposerMenuLine(draft.text, on: composer)
     }
 
@@ -168,7 +189,10 @@ package struct SessionComposer: View {
     /// The gap above the vessel is the design's `base` less what the stack already contributes,
     /// spelled as the arithmetic so moving either step keeps the gap.
     @ViewBuilder private var menu: some View {
-        if let listing = menus.listing(on: line) {
+        if menus.isAddMenuOpen {
+            AddMenu(rows: ComposerMenu.addRows(on: line), current: menus.current, pick: open)
+                .padding(.bottom, ArgoSpacing.base - ArgoSpacing.tight)
+        } else if let listing = menus.listing(on: line) {
             ComposerMenuList(listing: listing, current: menus.current) {
                 draft.take(listing.pick($0))
             }
@@ -185,8 +209,8 @@ package struct SessionComposer: View {
     /// happens somewhere other than the thread drawing the caret.
     ///
     /// The skills answer carries the token it was asked with, so a read overtaken by a later one
-    /// or by a Session change lands nowhere.
-    private func read(_ asks: ComposerMenus.Asks) {
+    /// or by a Session change lands nowhere. Not `private`, for the reason `menus` isn't.
+    func read(_ asks: ComposerMenus.Asks) {
         if asks.commands {
             Task { await menus.commandsAnswered(intents.commands(), to: asks.generation) }
         }

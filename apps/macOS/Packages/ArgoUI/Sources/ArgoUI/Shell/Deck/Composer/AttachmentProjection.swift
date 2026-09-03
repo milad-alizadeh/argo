@@ -42,8 +42,4 @@ enum AttachmentProjection {
     /// What the vessel reads while something is held over it. Four words on the study's wash, and
     /// the only sentence a drag-over draws — the rim says the rest.
     static let dropTarget = "Drop to attach"
-
-    /// What the `+` says. A control with no word on it needs one somewhere, and the tooltip and the
-    /// screen reader take the same sentence rather than two half-descriptions of one act.
-    static let attach = "Attach a file"
 }

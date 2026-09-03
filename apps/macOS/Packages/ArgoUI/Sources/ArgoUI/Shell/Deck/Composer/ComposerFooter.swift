@@ -2,13 +2,13 @@ import ArgoDesign
 import ArgoEngine
 import SwiftUI
 
-/// The control row under the field: attach, the stance, what the Session runs at, and send.
+/// The control row under the field: `+`, the stance, what the Session runs at, and send.
 ///
-/// The `+` is ABSENT rather than disabled for an adapter that takes no attachments — capability is
-/// declared, not discovered (design decision 9), and a greyed control gives no reason. The run
-/// facts are words rather than a control for a different reason: #558 is where Model and Effort
-/// become choices, and a popover that opened onto nothing would be a promise this footer cannot
-/// keep.
+/// The `+` is ABSENT rather than disabled for a Session offering neither a Workspace nor a
+/// command surface — capability is declared, not discovered (design decision 9), and a greyed
+/// control gives no reason. The run facts are words rather than a control for a different reason:
+/// #558 is where Model and Effort become choices, and a popover that opened onto nothing would be
+/// a promise this footer cannot keep.
 struct ComposerFooter: View {
     @Environment(\.argo) private var argo
 
@@ -20,11 +20,13 @@ struct ComposerFooter: View {
     /// Whether a Turn is in flight, which is what turns the trailing control into Stop (#541).
     var isRunning = false
     let send: () -> Void
-    /// Stop that Turn. Inert by default, for the reason `attach` is absent by default.
+    /// Stop that Turn. Inert by default, for the reason `canAdd` is `false` by default.
     package var stop: () -> Void = {}
-    /// What the `+` does, and `nil` for a Session whose adapter declares no attachments — which is
-    /// what takes the control off the row entirely.
-    var attach: (([SessionAttachment]) -> Void)?
+    /// Whether `AddMenu` would have at least one row — `false` takes `AddButton` off the row
+    /// entirely rather than greying it (design decision 9, 11).
+    var canAdd = false
+    var isAddMenuOpen = false
+    var toggleAddMenu: () -> Void = {}
     /// A rung picked while a Turn was running, held for the boundary (#940). It is what the picker
     /// draws while it waits, under `≈` — never as the rung the Session stands on.
     var heldMode: SessionMode?
@@ -33,8 +35,8 @@ struct ComposerFooter: View {
 
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
-            if let attach {
-                AddButton(attach: attach)
+            if canAdd {
+                AddButton(isOpen: isAddMenuOpen, toggle: toggleAddMenu)
             }
             Spacer()
             ModePicker(reading: mode, heldMode: heldMode, setMode: setMode)
@@ -55,7 +57,7 @@ struct ComposerFooter: View {
         facts: "Opus 5",
         isSendable: true,
         send: {},
-        attach: { _ in },
+        canAdd: true,
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)
@@ -69,7 +71,7 @@ struct ComposerFooter: View {
         facts: nil,
         isSendable: false,
         send: {},
-        attach: { _ in },
+        canAdd: true,
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)
@@ -77,7 +79,7 @@ struct ComposerFooter: View {
     .argoAppearance()
 }
 
-#Preview("Composer footer — an adapter that takes no attachments") {
+#Preview("Composer footer — a Session offering neither files nor commands") {
     ComposerFooter(
         mode: .exactly(.code, cli: "acceptEdits"),
         facts: "Opus 5",
@@ -97,7 +99,7 @@ struct ComposerFooter: View {
         isSendable: false,
         isRunning: true,
         send: {},
-        attach: { _ in },
+        canAdd: true,
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)
@@ -112,7 +114,7 @@ struct ComposerFooter: View {
         isSendable: false,
         isRunning: true,
         send: {},
-        attach: { _ in },
+        canAdd: true,
         heldMode: .auto,
     )
     .padding(ArgoSpacing.section)
@@ -127,7 +129,7 @@ struct ComposerFooter: View {
         facts: "Opus 5",
         isSendable: true,
         send: {},
-        attach: { _ in },
+        canAdd: true,
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)

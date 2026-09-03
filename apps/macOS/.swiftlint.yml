@@ -115,7 +115,7 @@ function_parameter_count:
   # INIT: SessionSeed.swift 5 — what a New Session opens with
   # INIT: LiveClaudeFixture.swift 5 — a live-CLI fixture's collaborators
   # INIT: CockpitPresentation.swift 5 — the cockpit reading's parts
-  # INIT: ComposerSpecimen.swift 5 — the composer specimen's inputs
+  # INIT: ComposerSpecimen.swift 6 — the composer specimen's inputs, `opening` (#689) among them
   # INIT: TextRoles.swift 5 — one colour per text role
   #
   # And the SYNTHESIZED memberwise inits, which edge 6 could not see until #1060. Grandfathered by
@@ -169,7 +169,8 @@ function_parameter_count:
   # INIT: ResolvedCall.swift 6 — one call as the record left it, with the two places a result can
   # INIT: SessionHeaderProjection+HeaderValues.swift 6 — Identity, the header's leading half, in
   # INIT: SessionOwnership.swift 6 — Claim, one stretch of ownership as the ledger records it
-  # INIT: ComposerMenu.swift 5 — Listing, the menu surface, its sections beside what the line
+  # INIT: ComposerMenu.swift 6 — Listing, the menu surface, its sections beside what the line and
+  # `dropping` a pick takes with it (#689)
   # INIT: ConnectPanelProjection+Ports.swift 5 — Picker, an open scope picker, with its Account
   # INIT: EngineReads.swift 5 — the reads an Engine is composed from, as ONE value; the clump is
   # INIT: FeedAskLine.swift 5 — Waiting, what a held-open question offers
