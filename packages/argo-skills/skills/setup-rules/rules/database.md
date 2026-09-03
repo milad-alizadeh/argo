@@ -74,10 +74,3 @@ code, which is every process during a deploy.
 Steps 1 and 3 are separate deploys. A single migration that renames a column is only safe on
 a database nobody is using.
 
-## Self-check before you finish
-
-1. Does this change alter the schema anywhere other than `{{MIGRATIONS_DIR}}`?
-2. Have the generated types been regenerated and committed in this same change?
-3. Is any invariant enforced in code but not in the schema?
-4. Does any query live outside the data-access tier, or carry an interpolated value?
-5. Does this migration drop or rename something that running code still reads?

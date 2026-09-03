@@ -5,20 +5,18 @@ paths:
 
 # File Structure Rules
 
-Where code lives, and which parts of a module the rest of the codebase may see. These
-rules are about structure rather than syntax, so they bind **every language in this
-repo**. One thing differs per language — what a module's public entry *is* — and this
-repo's is `{{PUBLIC_ENTRY}}`.
+Where code lives, and which parts of a module the rest of the codebase may see. Structure
+rather than syntax, so it binds every language in the repo. This repo's module entry is
+`{{PUBLIC_ENTRY}}`.
 
-## Folder-split hygiene — extract before you dump
+Where the repo runs placement gates (`setup-module-boundaries`: a file loose at a module root,
+a kind-folder, an unearned shared symbol) and a boundary linter (imports that bypass an entry
+or cross a layer), those fail the build and this file does not restate their numbers.
 
-When a file nears the line ceiling (`code-style.md` owns that number) or a folder root
-accumulates 5+ peer files doing related things, extract into a subfolder. Do this proactively while authoring a
-feature, not as a follow-up cleanup task.
+## Extract before you dump
 
-### The split pattern
-
-One file becomes a folder of focused units behind one entry:
+When a file nears the line ceiling, a folder root accumulates 5+ peer files, or two files
+share a prefix (`orderCreate`, `orderCancel`), extract into a subfolder behind one entry:
 
 ```
 thing/
@@ -27,125 +25,56 @@ thing/
   partB              # one focused unit
 ```
 
-The entry file is the **orchestrator** — wiring and re-exports only. No business logic
-lives there; that belongs in named leaf files. Callers keep importing `thing`, and the
-language resolves the entry for them — zero import churn.
+The entry is wiring and re-exports only; no business logic lives there. Callers keep
+importing `thing`. Do this while authoring a feature, not as a follow-up.
 
-### When to extract
+## Group by domain, not by file type
 
-- A file passes the line ceiling `code-style.md` sets
-- A folder root has 5+ peer files that fall into natural sub-domains
-- Two or more files share a prefix (`orderCreate`, `orderCancel`) — that prefix is the
-  subfolder name
+Folders are named by what the code is for: `checkout/`, `user-profile/`, never `utils/`.
+**Kind-folders are banned**: `schemas/`, `types/`, `utils/`, `helpers/`, `constants/`,
+`validators/`, `handlers/` as grouping folders become junk drawers, and deleting a feature
+leaves orphans in each. A feature's schema, types and validation live inside its folder.
 
-### Group by domain, not by file type
+Not banned, because none is a grouping folder you chose: a file named after its kind inside a
+domain folder (`checkout/schema`), a folder the framework or a tool reserves (a router
+directory, a migrations folder), and a vendored-primitive folder a component kit generates
+into. An existing kind-folder outside those is debt: leave it until you next touch that
+feature, and don't add to it.
 
-Folders are named by **what the code is for** (feature/domain), never by what the
-files syntactically are. `checkout/`, `user-profile/`, `settings/` beat `utils/`.
+## Shared code is earned: hoist on the third caller
 
-**Kind-folders are banned:** never create `schemas/`, `types/`, `utils/`,
-`helpers/`, `constants/`, `interfaces/`, `validators/`, `handlers/` as grouping
-folders. They become junk drawers: touching one feature means hopping across five
-kind-buckets, and deleting a feature leaves orphans in each. A feature's schema,
-types, and validation live INSIDE that feature's folder (`checkout/schema`, not
-`schemas/checkout`).
+A helper is born next to its only caller. With two callers, copy it or hoist; with three,
+hoist. Two destinations: the **shared tier** (`{{SHARED_TIER}}`) for anything naming a domain
+term, and the **generic tier** (`{{GENERIC_TIER}}`) for what would stand alone as its own
+package, importing nothing from the app. Neither exists until a third caller creates it.
 
-Three things this does **not** ban, because none of them is a grouping folder you chose:
+**Imports flow upward only.** A domain may import both tiers; shared may import generic;
+generic imports neither. A sibling-domain import means the shared thing wants hoisting; a
+domain type inside the generic tier means that file wants demoting.
 
-- **A file named after its kind inside a domain folder** — `checkout/schema`,
-  `orders/types`. The domain is the folder; the kind is only the file's one concept.
-- **A folder the framework or a tool reserves** — a router directory whose filenames
-  become URL segments, a migrations folder a tool writes into, a conventionally-loaded
-  plugin directory. Those are contracts with the tooling: renaming them breaks the build,
-  so they stay, and they are not evidence that kind-folders are fine here.
-- **A vendored-primitive folder a component kit generates into.** It's a vendor drop.
+Abstractions designed from one example encode that example's accidents; by the third you can
+see which parts are the shape.
 
-Everything else is banned. An existing kind-folder that isn't one of those three is debt,
-not a licence: leave it until you next touch that feature, and don't add to it.
+## Keep subfolders shallow
 
-The one sanctioned exception you may *create* is the shared tier described next.
+One level of nesting covers almost every case. Never go deeper than two levels below the
+module root without a documented reason.
 
-### Shared code is earned, not chosen — hoist on the third caller
+## Public entry per module
 
-A helper is born **next to its only caller**, inside that domain's folder. There is no
-"where does this go?" decision to make on the way in. It moves up only when callers
-force it:
+Every module exposes ONE public entry that is its API; callers never import an internal leaf.
+The exception: one symbol from a leaf where the entry would re-export a very large surface.
 
-| Callers | Where it lives |
-|---|---|
-| 1 | the caller's own folder |
-| 2 | either — copy it, or hoist; if the right shape isn't obvious yet, copy |
-| 3+ | hoist, no longer optional |
+## Module boundaries: ports and adapters
 
-Hoisting has two destinations, and the test is mechanical:
+- **Depend on ports, not implementations.** When module A needs behaviour module B provides,
+  A consumes an interface or registry and B registers into it.
+- **Layering is one-directional.** Generic layers never import specific ones; two specific
+  layers never import each other's internals. In this project: {{LAYER_BOUNDARY}}
+- **Registration side-effects happen in ONE composition root**, never scattered.
+- **No god nodes.** Extreme fan-in or fan-out is single-responsibility violated at graph
+  scale; split by responsibility.
 
-- **the shared tier (domain-aware)** — it names a domain term (`formatInvoiceTotal`).
-  Reachable by any domain; may import from the generic tier.
-- **the generic tier (product-agnostic)** — it would stand alone as its own published
-  package: no domain nouns, no app imports, no config. Imports nothing from the app.
-
-This repo names those tiers `{{SHARED_TIER}}` and `{{GENERIC_TIER}}`. Neither exists until
-a third caller creates it — that's the point, not an omission.
-
-**Imports flow upward only.** A domain may import both tiers; `lib/` may import
-`lib/generic/`; `lib/generic/` imports neither. Two consequences worth naming, because
-both are signals rather than judgment calls: a sibling-domain import (`checkout/`
-reaching into `orders/`) means the shared thing wants hoisting, and a domain type
-appearing inside `lib/generic/` means that file wants demoting.
-
-Waiting for the third caller is the point. Abstractions designed from one example
-encode that example's accidents; by the third you can see which parts are the shape
-and which were the accident.
-
-**Folder = domain, file = concept.** A file is named after the one concept it owns
-(`formatPrice` = amount→display-string mapping). A catch-all `types` file accreting every
-type in the module is the junk-drawer smell at file granularity; a small colocated one
-scoped to its own folder's domain is fine.
-
-### Keep subfolders shallow
-
-One level of nesting covers almost every case. Never go deeper than two levels below
-the module root without a documented reason.
-
-### Public entry per module
-
-Every module exposes ONE public entry that is its API — in this repo,
-`{{PUBLIC_ENTRY}}`. Callers never import an internal leaf. The exception: when only one
-symbol from a leaf is needed and the entry would re-export a very large surface, a direct
-leaf import is acceptable.
-
-Every ecosystem has this mechanism under a different name — a barrel file, a package
-`__init__`, a module declaration, an exported namespace. Whatever this repo's is, the rule
-is the same: one front door per module, and everything behind it is private.
-
-## Module boundaries — ports and adapters
-
-Modules communicate through explicit contracts, never by reaching into each other's
-internals (information hiding / dependency inversion).
-
-- **A module's public entry IS its API.** Cross-module imports may only target another
-  module's `{{PUBLIC_ENTRY}}`. Anything it doesn't re-export is private.
-- **Depend on ports, not implementations.** When module A needs behavior module B
-  provides, A consumes an interface/registry (the port) and B registers into it
-  (the adapter). A never imports B directly if B is a lower-trust or more specific layer.
-- **Layering is one-directional.** Generic/core layers must not import from specific
-  layers (adapters, domain packs, app features). Specific layers may import the
-  generic layer's public API; two specific layers never import each other's internals.
-  In this project: {{LAYER_BOUNDARY}}
-- **Side-effect imports for registration happen in exactly ONE composition root**
-  (the entry point that wires the app together), never scattered across consumers.
-- **No god nodes.** A module with extreme fan-in or fan-out is a Single-Responsibility
-  violation at graph scale — split it by responsibility.
-
-### Enforce mechanically where you can
-
-If the repo has a boundary linter — `dependency-cruiser` for JS/TS, `import-linter` for
-Python, the compiler's own visibility rules elsewhere — encode the layer rules there so a new leak fails the build instead of relying on review. Justified
-violations (vendored code, a migration in flight) go in a small explicit ignorelist
-next to the lint config — each entry scoped to one rule + one path glob, with a
-one-line reason. Never loosen the rule globally, never scatter inline disable comments.
-
-### Apply this rule uniformly
-
-This applies to every module in the codebase. When you add files to any folder,
-check whether the folder now needs splitting.
+Justified violations (vendored code, a migration in flight) go in the boundary linter's
+ignorelist, each entry one rule, one path glob, one reason. Never loosen the rule globally,
+never an inline disable.

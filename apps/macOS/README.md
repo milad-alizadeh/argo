@@ -132,8 +132,7 @@ one surface directory, and they left as `ArgoToolbarVessel`, `ArgoContextBar`, `
 `ArgoAgentsRail` and `ArgoRosterFoot`.
 
 What is left of `ArgoLayout` is the exception that is not one: the splits between panes describe
-the window, which is every surface and so no single one. `rules/design-system.md` lists all three
-populations by file.
+the window, which is every surface and so no single one.
 
 ## Screenshots
 

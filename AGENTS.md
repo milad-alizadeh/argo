@@ -33,11 +33,10 @@ House engineering rules live in `rules/`. Load the ones matching the files you
 touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code, any language** — `engineering-principles.md`, `code-style.md`,
-  `comments.md` (a comment is **one line** unless a future edit could make it false;
-  nothing here is published, so `///` earns no more room than `//`),
-  `file-structure.md`, `dependencies.md`
-- **TypeScript** — also `typescript-style.md` (how TS spells `code-style.md`)
-- **Swift** (`apps/macOS`) — also `swift-style.md` (how Swift spells it, SwiftUI included)
+  `comments.md` (a comment is **one line** unless a future edit could make it false),
+  `dependencies.md`. The arithmetic (length, complexity, arity, escape hatches) is a gate,
+  not prose: `biome.jsonc` and `.swiftlint.yml` are where those numbers live.
+- **Swift** (`apps/macOS`) — also `swift-style.md`
 - **Tests** — also `testing.md`
 - **UI work** — also `ui-components.md`, `design-system.md`, `designs.md`
 - **Skill authoring** — also `skill-authoring.md` (any `SKILL.md`)

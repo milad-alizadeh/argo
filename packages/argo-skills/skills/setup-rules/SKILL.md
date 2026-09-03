@@ -33,7 +33,7 @@ pragmas, its module entry file, its naming convention.
 | File | Subject |
 |---|---|
 | `engineering-principles.md` | SOLID/DRY/KISS, thin handlers, compute placement, ground-the-API |
-| `code-style.md` | guard clauses, parameter ceiling, line ceiling, naming, boundary validation |
+| `code-style.md` | guard clauses, exhaustive branching, naming, boundary validation — the caps themselves are the gate's |
 | `comments.md` | comment discipline |
 | `file-structure.md` | domain folders, public entry, hoisting tiers, layering |
 | `domain-types.md` | primitive obsession, illegal states unrepresentable, one owner per concept |
@@ -75,10 +75,11 @@ and say so. Its prose is runner-agnostic, so detection only has to name the tool
 
 These rules pair with the **`setup-quality-gates`** skill, which encodes the
 mechanically checkable subset (complexity, function length, parameter count, escape
-hatches, duplication) into whatever linter the repo runs, as errors. Prose for
-judgment, lint for arithmetic — and they must not contradict each other, so if the
-gates skill lands different numbers than a rule states, the rule text follows the
-config.
+hatches, duplication, unused code) into whatever linter the repo runs, as errors. **Prose
+for judgment, lint for arithmetic, and never both:** the templates state no number and no
+escape-hatch list, only a pointer at `{{LINT_CONFIG}}`. A rule you are tempted to add that
+a linter could check goes into the gates config instead, because a number in prose is
+re-read by whoever remembers it and a number in config is re-checked on every commit.
 
 ## 2. Detect the project's structure
 
@@ -87,6 +88,10 @@ Discover the concrete values before substituting — read each off the repo, nev
 - **Languages present** — count source files by extension, not by what the README claims.
   Anything holding a real share of the codebase needs a binding (§3). Ignore config and
   generated files.
+- **Linter config** — the file the repo's linter reads (`biome.jsonc`, `eslint.config.*`,
+  `ruff.toml`, `.swiftlint.yml`, one per language). `{{LINT_CONFIG}}` names it. No linter yet?
+  Name the file `setup-quality-gates` will create, and say in the report that the gate half
+  is still missing.
 - **Package manager / build tool** — the ecosystem's manifest and lockfile pair
   (`package.json` + `bun.lock`/`pnpm-lock.yaml`/`package-lock.json`, `pyproject.toml` +
   `uv.lock`/`poetry.lock`, `go.mod` + `go.sum`, `composer.json` + `composer.lock`,
@@ -223,6 +228,7 @@ Detect the values (§2); don't copy the examples. The full token set:
 | Token | Meaning | Example |
 |---|---|---|
 | `{{SOURCE_GLOBS}}` | every source glob `file-structure.md` governs, one per line | `apps/desktop/**/*.{ts,tsx}` + `packages/**/*.{ts,tsx}` |
+| `{{LINT_CONFIG}}` | the linter config(s) holding the caps and escape-hatch bans, one per language | `biome.jsonc` (Swift: `.swiftlint.yml`; Python: `ruff.toml`) |
 | `{{PUBLIC_ENTRY}}` | this stack's module front door | `index.ts` (Python: `__init__.py`; Rust: `mod.rs`) |
 | `{{SHARED_TIER}}` / `{{GENERIC_TIER}}` | where a helper hoists on its third caller | `lib/` / `lib/generic/` |
 | `{{MANIFEST}}` | the ecosystem's manifest glob | `**/package.json` (Python: `**/pyproject.toml`) |
@@ -364,21 +370,17 @@ Read each substituted file once and cut anything that doesn't apply here:
   these to a minimum; the ones that remain live in the binding's table, not in the core.
 
 - **Never trim `comments.md`'s two docblock sections away**, in either direction. Deleting
-  the published-surface one when nothing is published removes the sentences that do the
-  work — a `public`/exported marker is not an audience, an IDE hover popup is not
-  publishing — precisely in the case they are needed, and it strands the paragraph above
-  that points at them. Substitute the negative into `{{DOC_SURFACES}}` (§4) instead and
-  leave both sections standing, headings included: the self-check opens by deferring to
-  them, so a self-check with nothing to defer to reads as unconditional.
+  the rendered-surface one when nothing is published removes the sentences that do the work
+  (a `public`/exported marker is not an audience, an IDE hover popup is not publishing)
+  precisely where they are needed. Substitute the negative into `{{DOC_SURFACES}}` (§4) and
+  leave both sections standing. Inside "Where the comment is not a comment", cut the bullets
+  naming languages this repo does not have, keep every bullet for a language that is
+  present, and check the linter config before cutting the requires-a-comment one: a Go repo
+  running `revive`'s `exported` rule needs it.
 
-  Inside "Where the comment is not a comment", cut the bullets naming languages this repo
-  does not have — that is the per-language rule above, and it applies here like anywhere
-  else. **Keep every bullet for a language that is present**, and check the linter config
-  before cutting the requires-a-comment one: a Go repo running `revive`'s `exported` rule
-  or a Rust crate with `missing_docs` needs it, and cutting it installs a rule whose
-  self-check tells an agent to delete comments the build requires.
-
-Keep the forbidden-lists and self-checks — those are the parts that change behavior.
+Keep the forbidden-lists — those are the parts that change behavior. **Never add a
+self-check list or restate a gated cap**: the templates carry neither, and a number in prose
+is the drift `setup-quality-gates` §6b exists to catch.
 
 ## 6. Write the files
 
@@ -416,9 +418,9 @@ House engineering rules live in `rules/`. Load the ones matching the files you
 touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code** — `engineering-principles.md`, `code-style.md`, `comments.md` (a comment
-  is **one line** unless a future edit could make it false; a docblock earns more room
-  only where something renders it to a reader who never opens the file),
-  `file-structure.md`, `domain-types.md`, `dependencies.md`
+  is **one line** unless a future edit could make it false), `file-structure.md`,
+  `domain-types.md`, `dependencies.md`. The arithmetic (length, complexity, arity, escape
+  hatches) is a gate, not prose: <linter config> is where those numbers live.
 - **<Language> code** — also `<language>-style.md` (one line per language present)
 - **Tests** — also `testing.md`
 - **Database / migrations** — also `database.md`

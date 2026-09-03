@@ -32,8 +32,9 @@ Read each off the repo:
   up; don't recall it), configure it minimally, then continue.
 - **Package manager, test/lint scripts, pre-commit setup, CI workflows** — the wiring
   targets in §6.
-- **Whether `setup-rules` has run** (a `rules/` folder at the root). If it has, the
-  numbers you land here must match its prose; if not, note that the prose half is
+- **Whether `setup-rules` has run** (a `rules/` folder at the root). If it has, its
+  `code-style.md` and the binding point at `{{LINT_CONFIG}}` for every cap and escape hatch,
+  so the file you land here is the one they name; if not, note that the prose half is
   missing.
 
 ## 2. The intents to gate
