@@ -97,45 +97,55 @@ struct MinimapSettledDocumentTests {
         )
     }
 
-    /// D25's weight cap, as ADR-0030 leaves it: a row that draws less than it holds keeps the
-    /// WHOLE vertical span the settled document gave it, and the cap is on what is drawn inside.
+    /// D25's weight cap, as ADR-0030 leaves it: the cap is the row's own settled extent, and it
+    /// binds on BOTH sides.
     ///
-    /// A folded prompt is the case with a cap anybody can name — six lines of however many were
-    /// typed (`ArgoFeedRow.collapsedPromptLines`). The lane reports the six, and the row after it
-    /// still starts one settled height below rather than under the marks.
+    /// No mark may leave the row it belongs to — a row that reports more than the feed drew would
+    /// otherwise put ink over the row below it. And no row may be drawn SHORT of its extent, which
+    /// is the failure the 2026-08-12 amendment names: the old per-event ceiling "cut a long
+    /// message's block at its head and left the rest of its span as dead lane". Asserting only the
+    /// first would pass a reinstated ceiling.
+    ///
+    /// Over the whole synthetic document rather than a case built to make the point, so a row
+    /// shape nobody thought of is inside the claim too.
     @Test
-    func `a row drawing less than it holds keeps its whole span and caps the mark inside it`(
-    ) async throws {
-        let long = String(
-            repeating: "A prompt long enough to fold, and then rather more of it. ", count: 12,
-        )
-        let rows = [
-            FeedRow(id: 0, content: .prompt(text: long, shots: [])),
-            FeedRow(id: 1, content: .message("The answer.")),
-        ]
+    func `every mark fills its row's span and none of it leaves that row`() async throws {
+        let rows = try await Self.rows()
         let handle = FeedTableHandle()
         let table = await FeedTableFixture.laidOut(rows, in: Self.pane, through: handle)
-        let document = try #require(table.geometry.settled)
         let geometry = try MinimapGeometry(#require(table.reading()), lane: Self.lane)
-        let height = try #require(document.height(at: 0))
-        let measure = geometry.proseMeasure
 
-        // The span: the row after it starts exactly one settled height below, whatever was drawn.
-        #expect(geometry.documentY(row: 1) - geometry.documentY(row: 0) == height)
+        // The whole miniature, so every row of the fixture is walked — the lane itself only ever
+        // builds the band in front of the reader.
+        let drawn = geometry.rects(in: 0 ... geometry.miniatureHeight)
+        #expect(!drawn.isEmpty)
 
-        // The cap: the prompt holds more lines than the fold lets it draw, and the folded shape is
-        // held to them.
-        let held = MinimapRowShape.bubble(text: long, shots: [], isFolded: false)
-            .rects(across: measure, height: height)
-        let drawn = MinimapRowShape.bubble(text: long, shots: [], isFolded: true)
-            .rects(across: measure, height: height)
-        #expect(held.count > ArgoFeedRow.collapsedPromptLines)
-        #expect(drawn.count == ArgoFeedRow.collapsedPromptLines)
+        // The slack is the row height's own rounding: the table ceils every height to a whole
+        // point, so a run of lines can end a fraction past what it was measured at.
+        for rect in drawn {
+            let row = geometry.row(
+                startingAtOrBefore: rect.y / geometry.scale - geometry.reading.topInset,
+            )
+            #expect(rect.y + rect.height <= geometry.rectY(row: row + 1) + 1)
+        }
 
-        // And what the LANE puts on screen for the row stays inside the row's own span.
-        let foot = geometry.rectY(row: 1)
-        let inside = geometry.rects(in: 0 ... foot).filter { $0.y < foot }
-        #expect(!inside.isEmpty)
-        #expect(inside.allSatisfy { $0.y + $0.height <= foot + 1 })
+        // And the longest row in the document — the one a ceiling would cut — is drawn to its own
+        // foot rather than stopping part of the way down it.
+        let tallest = try #require(
+            geometry.reading.rows.indices.max(by: {
+                geometry.reading.rows[$0].height < geometry.reading.rows[$1].height
+            }),
+        )
+        let foot = geometry.rectY(row: tallest + 1)
+        let head = geometry.rectY(row: tallest) - 1
+        let ink = drawn.filter { $0.y >= head && $0.y < foot }
+        #expect(!ink.isEmpty)
+        // Nine tenths of its span, not all of it: a row's own bottom padding is inside the extent
+        // and the lane draws padding as nothing, so the ink stops a little short by construction
+        // (97% of it here). A tenth is more than that padding at any width and far less than any
+        // ceiling worth the name — the deleted `markMaximumShare` was 15% of the whole LANE, which
+        // on a row this long is barely half of it.
+        let reach = (ink.map { $0.y + $0.height }.max() ?? 0) - head
+        #expect(reach > (foot - head) * 0.9)
     }
 }

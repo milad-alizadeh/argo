@@ -46,11 +46,17 @@ extension SpecimenRegistry {
                 .argoDeckSurface()
                 .environment(\.argoFeedVacancy, .unread)
         },
-        // The same state on the WHOLE deck, which is where lane 5's half of it is visible: the
-        // overview lane is ABSENT while the document is being measured, never a second and
-        // approximate map (ADR-0030, Rule 7). Its column is held open beside the reading, because
-        // the lane's width comes out of what the rows are measured across — see
-        // `DeckContentRow.lane(_:)`.
+        // The whole deck with no document under it, which is where lane 5's half of the state can
+        // be LOOKED at: the overview lane is absent and its column is held open beside the reading
+        // (ADR-0030, Rule 7; `MinimapLaneZone`). Read beside `deckCanopy`, where the same column
+        // carries the lane, so the pair shows the swap and shows the width not moving with it.
+        //
+        // Said plainly, because a still cannot: this reaches the state through a reading with no
+        // ROWS, not through one being measured. Both are `FeedTableHandle.isSettled` being false
+        // and there is no third way to draw this column, but a measure is seconds long and a
+        // render that raced one would come out blank. That the lane and the feed's own word flip
+        // on the one fact is `FeedSettledDocumentTests`', where it can be asserted rather than
+        // photographed.
         SpecimenEntry("deckUnreadLane") {
             SpecimenScene.sessions([])
                 .environment(\.argoFeedVacancy, .unread)
