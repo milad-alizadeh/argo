@@ -51,12 +51,8 @@ extension SessionHeaderProjection {
         ].compactMap(\.self)
     }
 
-    /// The CLI, and the CLI ALONE — `Claude Code`.
-    ///
-    /// It used to read `Claude Code · Opus 5`. The model came off here in #558, when Model and
-    /// Effort became things the composer SETS: a value stated in two places is one you keep in sync
-    /// by eye, and the composer is where a reader can act on it (design decision 2). What is left
-    /// is the one fact about this Session the composer says nothing about.
+    /// The CLI, and the CLI ALONE — `Claude Code`. Model and Effort are the composer's, and a
+    /// value stated in two places is one you keep in sync by eye (#558, design decision 2).
     static func agent(cli: AgentCLI?) -> String? {
         cli?.readableName
     }

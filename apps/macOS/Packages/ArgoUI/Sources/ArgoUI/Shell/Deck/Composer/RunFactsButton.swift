@@ -54,14 +54,14 @@ struct RunFactsButton: View {
             .foregroundStyle(ink)
     }
 
-    /// Quiet at the defaults, brighter off them, and brighter again under the pointer. An
-    /// `unknown` on either side counts as off the defaults, because a fact Argo could not establish
-    /// is exactly the one worth looking at.
-    /// What this control says, unwrapped once so the body below reads as the design does.
+    /// What this control says, unwrapped once so the body above reads as the design does.
     private var facts: RunFacts {
         control.facts
     }
 
+    /// Quiet at the defaults, brighter off them, and brighter again under the pointer. An
+    /// `unknown` on either side counts as off the defaults, because a fact Argo could not
+    /// establish is exactly the one worth looking at.
     private var ink: ArgoColor {
         guard facts.isDefault, !isHovered else { return argo.color.text.primary }
         return argo.color.text.secondary
@@ -76,12 +76,14 @@ struct RunFactsButton: View {
     )
 }
 
-private func chooses(_ model: String?, _ effort: SessionEffortReading) -> RunFacts {
-    RunFacts(model: model, effort: effort, choosesModel: true, choosesEffort: true)
+/// A reading on an adapter that declares BOTH knobs — the state every case below but the last
+/// varies. Shared with `RunSettingsPopover`'s previews, which draw the other half of this control.
+func bothKnobs(_ model: String?, _ effort: SessionEffortReading) -> RunFacts {
+    RunFacts(model: model, effort: effort, chooses: .both)
 }
 
 #Preview("Run facts — at the defaults") {
-    button(chooses("claude-opus-5", .exactly(.medium, cli: "medium")))
+    button(bothKnobs("claude-opus-5", .exactly(.medium, cli: "medium")))
         .padding(ArgoSpacing.section)
         .argoDeckSurface()
         .argoAppearance()
@@ -89,11 +91,11 @@ private func chooses(_ model: String?, _ effort: SessionEffortReading) -> RunFac
 
 #Preview("Run facts — off the defaults, and off Argo's own table") {
     VStack(alignment: .trailing, spacing: ArgoSpacing.base) {
-        button(chooses("claude-sonnet-5", .exactly(.xhigh, cli: "xhigh")))
+        button(bothKnobs("claude-sonnet-5", .exactly(.xhigh, cli: "xhigh")))
         // Verbatim on both halves: an id the table has never heard of, and a level off the ladder.
-        button(chooses("claude-mythos-7", .unknown(cli: "ludicrous")))
+        button(bothKnobs("claude-mythos-7", .unknown(cli: "ludicrous")))
         // Neither fact established — the word itself, never a plausible value.
-        button(chooses(nil, .unknown(cli: nil)))
+        button(bothKnobs(nil, .unknown(cli: nil)))
     }
     .padding(ArgoSpacing.section)
     .argoDeckSurface()

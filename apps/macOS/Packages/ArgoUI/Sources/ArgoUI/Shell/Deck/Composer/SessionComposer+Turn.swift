@@ -113,7 +113,7 @@ extension SessionComposer {
     func resetRunFacts() {
         Task {
             do {
-                try await intents.settings.setMode(.code)
+                try await intents.settings.setMode(RunFacts.defaultMode)
                 try await intents.settings.setModel(RunFactsModel.default.id)
                 try await intents.settings.setEffort(RunFacts.defaultEffort)
             } catch {

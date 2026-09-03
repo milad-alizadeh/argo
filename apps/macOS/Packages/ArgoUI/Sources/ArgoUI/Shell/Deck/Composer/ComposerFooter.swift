@@ -44,8 +44,7 @@ private func atRest() -> ComposerFooter {
         runFacts: RunFactsControl(facts: RunFacts(
             model: "claude-opus-5",
             effort: .exactly(.medium, cli: "medium"),
-            choosesModel: true,
-            choosesEffort: true,
+            chooses: .both,
         )),
         send: SendButtonControl(isSendable: true),
     )
@@ -102,8 +101,7 @@ private func atRest() -> ComposerFooter {
     footer.runFacts = RunFactsControl(facts: RunFacts(
         model: "claude-sonnet-5",
         effort: .exactly(.xhigh, cli: "xhigh"),
-        choosesModel: true,
-        choosesEffort: true,
+        chooses: .both,
     ))
     return framed(footer)
 }

@@ -147,8 +147,8 @@ package struct SessionComposer: View {
     ///
     /// Over `AddMenu`, ⏎ does not insert at all — it OPENS the row's section (design decision 11),
     /// the same act a click makes; see `open(_:)`.
-    /// Not `private`: Swift scopes that to the file, and `SessionComposer+Footer.swift` hands this
-    /// to the send control — the same reason `menus` and `line` are not private either.
+    /// Not `private`, for the reason `menus` is not: `SessionComposer+Footer.swift` hands this to
+    /// the send control.
     func submit() {
         if let row = menus.addMenuPick(on: line) {
             return open(row)

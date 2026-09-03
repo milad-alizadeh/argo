@@ -12,16 +12,10 @@ struct RunFactsTests {
     private func facts(
         model: String? = "claude-opus-5",
         effort: SessionEffortReading = .exactly(.medium, cli: "medium"),
-        choosesModel: Bool = true,
-        choosesEffort: Bool = true,
+        chooses: RunFactKnobs = .both,
     )
         -> RunFacts {
-        RunFacts(
-            model: model,
-            effort: effort,
-            choosesModel: choosesModel,
-            choosesEffort: choosesEffort,
-        )
+        RunFacts(model: model, effort: effort, chooses: chooses)
     }
 
     @Test
@@ -76,9 +70,9 @@ struct RunFactsTests {
     @Test
     func `the trigger opens only where a knob is declared`() {
         #expect(facts().canOpen)
-        #expect(facts(choosesModel: false).canOpen)
-        #expect(facts(choosesEffort: false).canOpen)
-        #expect(!facts(choosesModel: false, choosesEffort: false).canOpen)
+        #expect(facts(chooses: RunFactKnobs(effort: true)).canOpen)
+        #expect(facts(chooses: RunFactKnobs(model: true)).canOpen)
+        #expect(!facts(chooses: RunFactKnobs()).canOpen)
     }
 
     /// The three the design offers, and no more — until the Session is on something else.
@@ -110,9 +104,12 @@ struct RunFactsTests {
 
     /// The reset NAMES what it restores rather than saying "default" — a reader should not have to
     /// open it to find out. All three, Mode included, because it sets all three.
+    ///
+    /// It names where the values LAND and never where the Session currently is: a Session on Auto
+    /// reading `Reset to Auto` would be the control lying about what pressing it does.
     @Test
-    func `the reset names all three of the values it restores`() {
-        #expect(RunFacts.resetWords(mode: .code) == "Reset to Code · Opus 5 · Medium")
-        #expect(RunFacts.resetWords(mode: .auto) == "Reset to Auto · Opus 5 · Medium")
+    func `the reset names the three values it restores to, whatever the Session is on`() {
+        #expect(RunFacts.resetWords == "Reset to Code · Opus 5 · Medium")
+        #expect(RunFacts.defaultMode == .code)
     }
 }

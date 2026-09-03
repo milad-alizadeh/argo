@@ -14,8 +14,7 @@ extension ComposerSpecimen {
         facts: RunFacts(
             model: "claude-opus-5",
             effort: .exactly(.medium, cli: "medium"),
-            choosesModel: true,
-            choosesEffort: true,
+            chooses: .both,
         ),
         standingAllows: [],
         isRunning: false,

@@ -11,7 +11,9 @@ extension FeedProjection {
         switch event {
         case let .model(id): .model(id)
         case let .effort(cli): .effort(cli)
-        default: nil
+        case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .branch, .mode, .entry,
+             .prompt, .message, .thought, .skillLoaded, .toolCall, .toolCallOutcome, .turnEnded,
+             .queued, .usage, .compaction, .plan, .unreadableLine, .excerpted: nil
         }
     }
 
@@ -24,20 +26,34 @@ extension FeedProjection {
     ///
     /// The two are counted SEPARATELY: a model that moved before any effort was read must not
     /// consume the effort's own opening reading.
+    ///
+    /// A BOUNDED read has no opening reading in it to drop. Its head is a stretch of the record
+    /// this reader has not seen, so the first `model` it does see is a value that moved somewhere
+    /// above — dropping it would hide exactly the change this mark exists to state.
     static func openingRunFacts(in events: [TranscriptEvent]) -> Set<Int> {
+        guard !events.contains(where: {
+            if case .excerpted = $0 {
+                true
+            } else {
+                false
+            }
+        }) else {
+            return []
+        }
         var opening = Set<Int>()
         var seenModel = false
         var seenEffort = false
         for (index, event) in events.enumerated() {
-            switch event {
-            case .model where !seenModel:
+            // A `where` clause leaves a `switch` inexhaustive whatever it lists, so the two arms
+            // are read as predicates rather than as cases — which is the open condition `if`
+            // is for (rules/house.md). `runFact(of:)` above is the exhaustive one.
+            guard let fact = runFact(of: event) else { continue }
+            if case .model = fact, !seenModel {
                 seenModel = true
                 opening.insert(index)
-            case .effort where !seenEffort:
+            } else if case .effort = fact, !seenEffort {
                 seenEffort = true
                 opening.insert(index)
-            default:
-                continue
             }
         }
         return opening

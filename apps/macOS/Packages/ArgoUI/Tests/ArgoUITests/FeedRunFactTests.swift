@@ -76,6 +76,24 @@ struct FeedRunFactTests {
         #expect(changed.map(\.words) == ["model · claude-mythos-7", "effort · ludicrous"])
     }
 
+    /// A BOUNDED reading has no opening value in it to drop (`.excerpted`). Its head is a stretch
+    /// of the record this reader has not seen, so the first `model` it does see moved somewhere
+    /// above — dropping it would hide exactly the change this mark exists to state.
+    @Test
+    func `an excerpted reading drops nothing, because its first value is already a change`() {
+        let excerpted = marks([
+            .excerpted,
+            .model("claude-sonnet-5"),
+            .effort(cli: "high"),
+        ])
+
+        #expect(excerpted == [
+            .excerpted,
+            .runFactChanged(.model("claude-sonnet-5")),
+            .runFactChanged(.effort("high")),
+        ])
+    }
+
     /// It is punctuation, not an act: the boundary ink like every other mark but the expiry, and
     /// it closes no Turn.
     @Test

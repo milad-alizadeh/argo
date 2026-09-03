@@ -37,17 +37,6 @@ public struct DriveSurface: Equatable, Sendable {
         self.resolvesMentions = resolvesMentions
         self.chooses = chooses
     }
-
-    /// Whether this surface can be put on a named model. DECLARED and never discovered: an adapter
-    /// that answers `false` has its Model section left OUT of the run-settings popover rather than
-    /// drawn greyed, because a control that cannot work gives no reason for not working.
-    public var choosesModel: Bool {
-        chooses.model
-    }
-
-    public var choosesEffort: Bool {
-        chooses.effort
-    }
 }
 
 /// Which of Model and Effort an adapter can be SET on (#558) — a declaration, never a discovery.

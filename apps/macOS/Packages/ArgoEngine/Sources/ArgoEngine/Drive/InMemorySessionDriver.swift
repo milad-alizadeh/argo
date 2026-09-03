@@ -104,12 +104,12 @@ public final class InMemorySessionDriver: SessionDriver {
     /// Records the id VERBATIM, which is the claim a surface has to be able to make about this one:
     /// the composer offers a short list, and what is asked for is whatever was picked (#558).
     public func setModel(_ modelID: String, for sessionID: String) async throws {
-        try refuseUnlessChosen(\.choosesModel)
+        try refuseUnlessChosen(\.chooses.model)
         models[sessionID, default: []].append(modelID)
     }
 
     public func setEffort(_ effort: SessionEffort, for sessionID: String) async throws {
-        try refuseUnlessChosen(\.choosesEffort)
+        try refuseUnlessChosen(\.chooses.effort)
         efforts[sessionID, default: []].append(effort)
     }
 

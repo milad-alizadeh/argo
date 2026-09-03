@@ -8,16 +8,15 @@ import ArgoUI
 /// one catalogue per subject keeps each under the file ceiling.
 extension ComposerSpecimen {
     /// The same Session off BOTH defaults (#558): the fact line brightens, and the reset comes
-    /// alive naming all three of what it restores. `Auto` on the Mode beside it, so the reset's
-    /// sentence has a rung to name that is not the one it restores to.
+    /// alive naming all three of what it restores. `Auto` on the Mode beside it, which is the
+    /// third thing the reset moves and the reason its inertness reads Mode too.
     static let runFactsChanged = SessionComposerProjection.Composer(
         sessionID: composer.sessionID,
         placeholder: composer.placeholder,
         facts: RunFacts(
             model: "claude-sonnet-5",
             effort: .exactly(.xhigh, cli: "xhigh"),
-            choosesModel: true,
-            choosesEffort: true,
+            chooses: .both,
         ),
         standingAllows: [],
         isRunning: false,
@@ -37,8 +36,7 @@ extension ComposerSpecimen {
         facts: RunFacts(
             model: "claude-mythos-7",
             effort: .unknown(cli: "ludicrous"),
-            choosesModel: true,
-            choosesEffort: true,
+            chooses: .both,
         ),
         standingAllows: [],
         isRunning: false,
@@ -57,7 +55,7 @@ extension ComposerSpecimen {
         facts: RunFacts(
             model: "claude-opus-5",
             effort: .exactly(.high, cli: "high"),
-            choosesEffort: true,
+            chooses: RunFactKnobs(effort: true),
         ),
         standingAllows: [],
         isRunning: false,

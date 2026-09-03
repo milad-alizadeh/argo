@@ -27,10 +27,10 @@ struct RunSettingsPopover: View {
 
     var body: some View {
         Form {
-            if facts.choosesModel {
+            if facts.chooses.model {
                 Section("Model") { models }
             }
-            if facts.choosesEffort {
+            if facts.chooses.effort {
                 Section("Effort") { efforts }
             }
             resetRow
@@ -42,16 +42,11 @@ struct RunSettingsPopover: View {
         .scrollContentBackground(.hidden)
     }
 
-    /// Rows with a checkmark, drawn rather than picked.
+    /// Rows with a checkmark, drawn rather than picked (#558).
     ///
-    /// **Corrected in build.** The design says `Picker(…).pickerStyle(.inline)`, and rendered
-    /// inside a grouped `Form` that control draws RADIO BUTTONS and re-synthesises each row from
-    /// its tag's label alone — so the name vanished and only the trailing note was left. Neither
-    /// half of what the design asks for survived: not the checkmark, and not the two-part row.
-    ///
-    /// Three buttons draw both. It is the same argument the design already makes about the pop-up
-    /// button it rejected: the control was chosen for what it would draw, and this is what it
-    /// draws here.
+    /// Buttons and not the `Picker(.inline)` the design names, because inside a grouped `Form`
+    /// that control draws RADIO BUTTONS and re-synthesises each row from its tag's label alone:
+    /// neither the checkmark nor the trailing note survives it.
     private var models: some View {
         ForEach(facts.models) { model in
             Button { control.acts.setModel(model.id) } label: { row(model) }
@@ -95,20 +90,27 @@ struct RunSettingsPopover: View {
 
     /// It NAMES what it restores rather than saying "default", and it is inert while the values
     /// already are the default — a control that does nothing is not offered as though it might.
+    ///
+    /// The sentence names the rung it RESTORES TO and never the one the Session is on: this act
+    /// sets Mode to Code, so a Session on Auto reading `Reset to Auto` would be the control lying
+    /// about what pressing it does.
     private var resetRow: some View {
         Button(action: control.acts.reset) {
-            Label(
-                RunFacts.resetWords(mode: mode.rung ?? .code),
-                systemImage: ArgoSymbol.reset,
-            )
-            .argoText(ArgoTypography.caption)
+            Label(RunFacts.resetWords, systemImage: ArgoSymbol.reset)
+                .argoText(ArgoTypography.caption)
         }
         .buttonStyle(.plain)
-        .disabled(facts.isDefault)
-        .foregroundStyle(facts.isDefault ? argo.color.text.tertiary : argo.color.text.secondary)
+        .disabled(isAtDefaults)
+        .foregroundStyle(isAtDefaults ? argo.color.text.tertiary : argo.color.text.secondary)
     }
 
-    /// `nil` selects nothing, which leaves every row unticked — see `models`.
+    /// Whether there is anything left for the reset to do. All THREE, because it sets all three:
+    /// inertness read off Model and Effort alone would draw a dead button on a Session sitting on
+    /// Auto, whose Mode this act would very much have moved.
+    private var isAtDefaults: Bool {
+        facts.isDefault && mode.rung == RunFacts.defaultMode
+    }
+
     /// What this popover says, unwrapped once so the body above reads as the design does.
     private var facts: RunFacts {
         control.facts
@@ -134,22 +136,18 @@ enum ArgoRunSettings {
     .argoAppearance()
 }
 
-private func chosen(_ model: String?, _ effort: SessionEffortReading) -> RunFacts {
-    RunFacts(model: model, effort: effort, choosesModel: true, choosesEffort: true)
-}
-
 #Preview("Run settings — at the defaults, so the reset is inert") {
-    popover(chosen("claude-opus-5", .exactly(.medium, cli: "medium")))
+    popover(bothKnobs("claude-opus-5", .exactly(.medium, cli: "medium")))
 }
 
 #Preview("Run settings — off the defaults, so the reset names them") {
-    popover(chosen("claude-sonnet-5", .exactly(.xhigh, cli: "xhigh")), mode: .auto)
+    popover(bothKnobs("claude-sonnet-5", .exactly(.xhigh, cli: "xhigh")), mode: .auto)
 }
 
 // The read-back that acceptance criterion 2 is about: an id off Argo's table gets a row of its own
 // so the tick has somewhere to land, and a level off the ladder ticks no segment at all.
 #Preview("Run settings — a model and a level Argo does not recognise") {
-    popover(chosen("claude-mythos-7", .unknown(cli: "ludicrous")))
+    popover(bothKnobs("claude-mythos-7", .unknown(cli: "ludicrous")))
 }
 
 // One knob declared and not the other: the section is ABSENT, not greyed.
@@ -157,6 +155,6 @@ private func chosen(_ model: String?, _ effort: SessionEffortReading) -> RunFact
     popover(RunFacts(
         model: "claude-opus-5",
         effort: .exactly(.high, cli: "high"),
-        choosesEffort: true,
+        chooses: RunFactKnobs(effort: true),
     ))
 }

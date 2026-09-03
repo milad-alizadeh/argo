@@ -125,8 +125,7 @@ package enum SessionComposerProjection {
                 // Read here rather than held: `effort` comes off the records verbatim, and what it
                 // means on the scale is the engine's to say (`ClaudeEffort`).
                 effort: session.effort.map(ClaudeEffort.reading) ?? .unknown(cli: nil),
-                choosesModel: can.chooses.model,
-                choosesEffort: can.chooses.effort,
+                chooses: can.chooses,
             ),
             standingAllows: StandingAllowProjection.allows(for: session),
             isRunning: isRunning,

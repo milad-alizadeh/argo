@@ -16,24 +16,19 @@ package struct RunFacts: Equatable {
     package let model: String?
     /// The effort as Argo can place it — a rung, or the CLI's own word off the ladder.
     package let effort: SessionEffortReading
-    /// Whether this Session's adapter can be put on a model at all (#761's rule for a new
-    /// capability). `false` leaves the Model section OUT of the popover rather than drawing it
-    /// greyed: a control that cannot work gives no reason for not working.
-    package let choosesModel: Bool
-    /// Whether it can be put on an effort level. Its own answer, because an adapter may expose one
-    /// knob and not the other.
-    package let choosesEffort: Bool
+    /// Which of the two the adapter can be SET on, as the port declared it (#761's rule for a new
+    /// capability). A knob answering `false` leaves its section OUT of the popover rather than
+    /// drawing it greyed: a control that cannot work gives no reason for not working.
+    package let chooses: RunFactKnobs
 
     package init(
         model: String?,
         effort: SessionEffortReading,
-        choosesModel: Bool = false,
-        choosesEffort: Bool = false,
+        chooses: RunFactKnobs = RunFactKnobs(),
     ) {
         self.model = model
         self.effort = effort
-        self.choosesModel = choosesModel
-        self.choosesEffort = choosesEffort
+        self.chooses = chooses
     }
 
     /// What a fact Argo could not establish reads as — the word itself, never a plausible value.
@@ -54,7 +49,7 @@ package struct RunFacts: Equatable {
     /// Whether either knob can be reached at all. `false` leaves the facts as WORDS — a trigger
     /// that opened onto nothing would be a promise the footer cannot keep.
     var canOpen: Bool {
-        choosesModel || choosesEffort
+        chooses.model || chooses.effort
     }
 
     /// Whether both facts are where a fresh Session starts. The trigger is chromeless at the
@@ -89,11 +84,18 @@ package struct RunFacts: Equatable {
         return models.first { $0.name == modelWords }
     }
 
+    /// The rung the reset puts the Session back on. Beside `defaultEffort` because the reset
+    /// restores all three together, and one of them naming a different value than it sets would be
+    /// the control lying about what pressing it does.
+    static let defaultMode = SessionMode.code
+
     /// What the reset RESTORES, named rather than called "default" — `Code · Opus 5 · Medium`. A
     /// reset that said "default" would make the reader open it to find out what that was.
-    static func resetWords(mode: SessionMode) -> String {
-        "Reset to \(mode.label) · \(RunFactsModel.default.name) · \(defaultEffort.label)"
-    }
+    ///
+    /// A constant, not a function of the Session's current stance: what it names is where the three
+    /// values LAND, which does not vary.
+    static let resetWords =
+        "Reset to \(defaultMode.label) · \(RunFactsModel.default.name) · \(defaultEffort.label)"
 }
 
 /// One row of the popover's Model list: what to ask the CLI for, what to call it, and the one-line
@@ -109,9 +111,7 @@ package struct RunFactsModel: Equatable, Hashable, Identifiable {
     /// The trailing caption `run.png` draws — what picking this row is FOR, in three words.
     package let note: String
 
-    /// The three the popover offers, in the design's own order. Three fit inline, which is the
-    /// whole reason Model is a list and not a pop-up button: a pop-up's menu overflowed the
-    /// popover's right edge and covered the Effort row, and nothing here opens on top of anything.
+    /// The three the popover offers, in the design's own order (#558).
     ///
     /// A pure data catalog, staleable by construction the way `ReadableModelName` is: the aliases
     /// belong to the CLI, and a row whose alias it stops resolving is a row that stops working

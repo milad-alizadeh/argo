@@ -142,7 +142,7 @@ struct SessionComposerProjectionTests {
             can: .init(chooses: RunFactKnobs(effort: true)),
         ))
         #expect(composer.facts.canOpen)
-        #expect(!composer.facts.choosesModel)
+        #expect(!composer.facts.chooses.model)
     }
 
     /// The stance is carried WHOLE rather than reduced to a rung: the `≈` and the CLI's own word
