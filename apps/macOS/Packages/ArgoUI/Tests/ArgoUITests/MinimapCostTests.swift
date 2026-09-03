@@ -44,28 +44,32 @@ struct MinimapCostTests {
     /// said the same thing with a number that would have survived the second pass being added
     /// back.
     @Test
-    func `the feed's measure pass costs one ruler measure a row`() {
+    func `the feed's measure pass costs one ruler measure a row`() async {
         let rows = Fixture.rows(301, tag: "measure")
 
-        #expect(Fixture.laid(rows).measurements == rows.count)
+        #expect(await Fixture.laid(rows).measurements == rows.count)
     }
 
     /// Reading the whole session, which happens on every reshape. It walks every row, so it must
     /// stay clear of glyphs: the markdown parse comes off `ProseReading`'s cache and nothing is
     /// measured until the lane asks for a band.
     @Test
-    func `reading a session at length costs no glyph work`() throws {
+    func `reading a session at length costs no glyph work`() async throws {
         let rows = Fixture.rows(301, tag: "read")
-        let table = Fixture.laid(rows)
+        let table = await Fixture.laid(rows)
         // Warm, so what is counted is the walk rather than the first parse of every string.
         _ = table.reading()
-        let typeset = ProseMetrics.typesets
-        let read = ProseReading.structureCost
-        let reading = try #require(table.reading())
 
-        #expect(reading.rows.count == rows.count)
-        #expect(ProseMetrics.typesets == typeset)
-        #expect(ProseReading.structureCost.misses == read.misses)
+        // Counted for THIS caller and not for the process: since ADR-0030 the whole-document
+        // measure pass fills the same stores from other threads, so a counter read either side of
+        // one walk is counting whatever else was measuring beside it.
+        var reading: MinimapReading?
+        let typeset = ProseMetrics.typesets { reading = table.reading() }
+        let missed = ProseStoreReads.during { _ = table.reading() }
+
+        #expect(try #require(reading).rows.count == rows.count)
+        #expect(typeset == 0)
+        #expect(missed == 0)
     }
 
     /// Painting one band, which happens when the reader scrolls out of the band the lane holds.
@@ -77,9 +81,9 @@ struct MinimapCostTests {
     /// worth a band, not a position — within a row or two of the head's, because the rows it lands
     /// on are of their own heights. The two readings are `PerfBudgets.bandPositionSlack`.
     @Test
-    func `painting a band is bounded by the band rather than by the session`() throws {
-        let short = try Fixture.geometry(over: Fixture.rows(301, tag: "band"))
-        let long = try Fixture.geometry(over: Fixture.rows(1204, tag: "wide"))
+    func `painting a band is bounded by the band rather than by the session`() async throws {
+        let short = try await Fixture.geometry(over: Fixture.rows(301, tag: "band"))
+        let long = try await Fixture.geometry(over: Fixture.rows(1204, tag: "wide"))
 
         #expect(Self.rowsIn(Fixture.band, of: long) == Self.rowsIn(Fixture.band, of: short))
         #expect(Self.rowsIn(Fixture.band, of: long) < 1204)
@@ -99,8 +103,11 @@ struct MinimapCostTests {
     /// decides whether the drop lands mid-paint, and the test ordering decides that. The readings
     /// and the fraction they buy are `PerfBudgets.repaintOffCachesFraction`.
     @Test
-    func `a band already painted is repainted off the caches`() throws {
-        let geometry = try Fixture.geometry(over: Fixture.rows(301, tag: "repaint"), atWidth: 617)
+    func `a band already painted is repainted off the caches`() async throws {
+        let geometry = try await Fixture.geometry(
+            over: Fixture.rows(301, tag: "repaint"),
+            atWidth: 617,
+        )
         let typeset = ProseMetrics.typesets
         #expect(!geometry.rects(in: Fixture.band).isEmpty)
         let cold = ProseMetrics.typesets - typeset
@@ -122,8 +129,11 @@ struct MinimapCostTests {
     /// had fallen off the caches would cost sixty of them. It also absorbs the eight-measure drop
     /// the repaint case above describes; the readings are `PerfBudgets.repaintOffCachesFraction`.
     @Test
-    func `a second of scrolling inside one band comes off the caches`() throws {
-        let geometry = try Fixture.geometry(over: Fixture.rows(301, tag: "scroll"), atWidth: 611)
+    func `a second of scrolling inside one band comes off the caches`() async throws {
+        let geometry = try await Fixture.geometry(
+            over: Fixture.rows(301, tag: "scroll"),
+            atWidth: 611,
+        )
         let first = ProseMetrics.typesets
         _ = geometry.rects(in: Fixture.band)
         let cold = ProseMetrics.typesets - first
@@ -148,9 +158,9 @@ struct MinimapCostTests {
     /// four times as long costs the same burst. The readings, and why the bound is twice rather
     /// than equality, are `PerfBudgets.seamOverSessionSlack`.
     @Test
-    func `dragging the seam re-measures the band and not the session`() throws {
-        let short = try Self.dragged(over: Fixture.rows(301, tag: "seam"))
-        let long = try Self.dragged(over: Fixture.rows(1204, tag: "seamwide"))
+    func `dragging the seam re-measures the band and not the session`() async throws {
+        let short = try await Self.dragged(over: Fixture.rows(301, tag: "seam"))
+        let long = try await Self.dragged(over: Fixture.rows(1204, tag: "seamwide"))
 
         #expect(short.typesets < Self.frames * short.rows)
         #expect(long.typesets < PerfBudgets.seamOverSessionSlack * short.typesets)
@@ -163,8 +173,9 @@ struct MinimapCostTests {
     private static let dragFrom: CGFloat = 700
 
     /// One seam let go over a session, and the glyph work the lane paid for the burst.
-    private static func dragged(over rows: [FeedRow]) throws -> (typesets: Int, rows: Int) {
-        var reading = try #require(Fixture.laid(rows).reading())
+    private static func dragged(over rows: [FeedRow]) async throws -> (typesets: Int, rows: Int) {
+        let laid = await Fixture.laid(rows)
+        var reading = try #require(laid.reading())
         reading.columnWidth = Self.dragFrom
         let held = MinimapGeometry(reading, lane: Fixture.lane)
         let typeset = ProseMetrics.typesets
@@ -180,11 +191,11 @@ struct MinimapCostTests {
     /// nothing here, and this is the reading that says what the ceiling actually is — in passes,
     /// which is what the 3.9 ms it used to assert on was made of.
     @Test
-    func `a session of nothing but long markdown pays only for the band`() throws {
+    func `a session of nothing but long markdown pays only for the band`() async throws {
         let heavy = (0 ..< 300).map { at in
             FeedRow(id: at, content: .message("## Turn \(at)\n\n\(MinimapText.paragraph) [\(at)]"))
         }
-        let geometry = try Fixture.geometry(over: heavy, atWidth: 613)
+        let geometry = try await Fixture.geometry(over: heavy, atWidth: 613)
         let typeset = ProseMetrics.typesets
         #expect(!geometry.rects(in: Fixture.band).isEmpty)
         let cold = ProseMetrics.typesets - typeset

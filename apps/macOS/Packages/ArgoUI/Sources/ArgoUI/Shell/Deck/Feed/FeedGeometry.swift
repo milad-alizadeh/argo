@@ -1,107 +1,56 @@
 import AppKit
 import SwiftUI
 
-/// Measured row heights for ONE reading, held above every view identity a switch destroys.
+/// The settled document for ONE reading, held above every view identity a switch destroys.
 ///
-/// Which reading's heights these are is `FeedGeometries`', which holds one of these per
+/// Which reading's document this is, is `FeedGeometries`', which holds one of these per
 /// `FeedReading`.
 ///
-/// A height is a measure of the whole row — see `FeedTableCoordinator.measuredHeight` — and
-/// `InstrumentDeckShell` draws each room in its own `switch` arm, so leaving the Sessions room
-/// tears
-/// the table down and coming back measured every row again (#858).
+/// It holds a whole document or nothing (`FeedSettledDocument`), and that is the entire correctness
+/// of outliving the table: there is no invalidation to get right and no order to get right, because
+/// the document carries the stamp it was measured against and a stamp that no longer describes the
+/// reading is a document nobody may consume. `InstrumentDeckShell` draws each room in its own
+/// `switch` arm, so leaving the Sessions room tears the table down — and coming back finds the
+/// document still here rather than measuring every row again (#858).
 ///
-/// Each height is kept with the whole of what it is a fact ABOUT, and answers only a question that
-/// matches. That is the entire correctness of outliving the table: there is no invalidation to get
-/// right and no order to get right, because a height that is no longer true of anything simply
-/// stops being found.
+/// What it is NOT any more is a per-row store answering `heightOfRow` on the spot. That was the
+/// defect ADR-0030 names: a height worked out when a row scrolled into view is a document whose
+/// total height keeps moving under the scroller and under the Minimap.
 ///
-/// What a height depends on splits in two, and so does this. The width and the ink are the same for
-/// every row of a pass, so they are the store's and are checked once — `settle(at:in:)`. The row,
-/// the row above it, its fold and whether it is open differ per row, and are the `Ground` that goes
-/// in with each question. Keeping the pass facts out of `Ground` is not tidiness: `heightOfRow` is
-/// asked for EVERY row each time the minimap re-reads the document, and a `FeedCellEnvironment`
-/// carries a palette and two closures.
-///
-/// NOT `@Observable`. A height is written per measured row, and a view invalidated at that rate
-/// would cost more than the measuring does.
+/// NOT `@Observable`. The document is written once per pass, and the deck learns that it landed
+/// through `FeedTableHandle.isSettled` rather than by re-rendering on this.
 @MainActor final class FeedGeometry {
-    private var held: [Int: Held] = [:]
-    private var width: CGFloat?
-    private var ink: FeedCellEnvironment.Ink?
-    /// Which row was drawing the Turn's copy chip when these heights were taken. The one thing a
-    /// ground cannot see — a chip is a fact about the row's whole Turn — and the one row whose
-    /// height changes without the row changing. Held HERE because it must survive the switch that
-    /// the heights survive. See `FeedTableDelta.chipRow` and `surrenderMovedChip()`.
-    var chipRow: Int?
+    /// The reading at its width with every row's final height, or nothing at all while a pass is
+    /// still to run. Never a half of one.
+    private(set) var settled: FeedSettledDocument?
+
+    /// Whether the deck may draw the reading. The one question every surface over this asks.
+    var isSettled: Bool {
+        settled != nil
+    }
 
     var count: Int {
-        held.count
+        settled?.count ?? 0
     }
 
     var isEmpty: Bool {
-        held.isEmpty
+        settled?.count ?? 0 <= 0
     }
 
-    /// The pass's own facts, checked once for the whole reading. A width or an ink nothing was
-    /// measured under retires every height, because not one of them is true of it.
-    func settle(at width: CGFloat, in ink: FeedCellEnvironment) {
-        guard self.width != width || self.ink != ink.ink else { return }
-        held.removeAll()
-        self.width = width
-        self.ink = ink.ink
+    /// What row `index` stands at, or `nil` where this document does not hold that row.
+    func height(at index: Int) -> CGFloat? {
+        settled?.height(at: index)
     }
 
-    func height(at index: Int, under ground: Ground) -> CGFloat? {
-        guard let known = held[index], known.ground == ground else { return nil }
-        return known.height
+    /// A document landed. The only way anything in here changes.
+    func settle(_ document: FeedSettledDocument?) {
+        settled = document
     }
 
-    func record(_ height: CGFloat, at index: Int, under ground: Ground) {
-        held[index] = Held(height: height, ground: ground)
-    }
-
-    /// Measured heights surrendered — all of them, or the rows named.
-    func drop(_ rows: IndexSet? = nil) {
-        guard let rows else { return held.removeAll() }
-        for row in rows {
-            held[row] = nil
-        }
-    }
-
-    /// Every height for a row the reading no longer has. A reading that shrank — a compaction, a
-    /// Session with less in it than the last — would otherwise leave an entry per lost index that
-    /// no question can ever match again, held for the life of the window.
-    func dropBeyond(_ count: Int) {
-        held = held.filter { $0.key < count }
-    }
-
-    /// What one row's height is true of, beyond the pass it was measured in.
-    ///
-    /// The row itself, because its words are what wrapped. The row above it, because
-    /// `FeedRow.step(to:from:)` puts the gap above a row INSIDE that row's height. Whether it is
-    /// unfolded, because a folded prompt is three lines and an unfolded one is the whole of it.
-    /// Whether it is the open row, because a survey draws a line per call when it is
-    /// (`FeedSurveyLine`) and nothing when it is not.
-    @MainActor struct Ground: Equatable {
-        let row: FeedRow
-        let above: FeedRow?
-        let isUnfolded: Bool
-        let isOpen: Bool
-
-        /// Built from the model the row is drawn out of, so the list above cannot drift from what
-        /// `FeedTableModel.content(at:)` actually reads.
-        init(at index: Int, of model: FeedTableModel) {
-            let row = model.rows[index]
-            self.row = row
-            self.above = index > 0 ? model.rows[index - 1] : nil
-            self.isUnfolded = model.unfolded.wrappedValue.contains(row.id)
-            self.isOpen = model.selection.open == row.id
-        }
-    }
-
-    private struct Held {
-        let height: CGFloat
-        let ground: Ground
+    /// The document surrendered, because it is a document of a reading that is no longer being
+    /// shown at a width that is no longer in force — a re-wrap. Its absence is what puts the deck
+    /// back into its provisional state (`FeedVacancy.unread`).
+    func surrender() {
+        settled = nil
     }
 }

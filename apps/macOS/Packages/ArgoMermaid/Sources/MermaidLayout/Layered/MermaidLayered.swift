@@ -11,7 +11,6 @@ import Foundation
 /// widest rank and no column can change that, so one too wide for the prose it sits in is scrolled
 /// rather than reflowed — which also means the renderer and the lane read one geometry whatever
 /// width either of them happens to ask at.
-@MainActor
 struct MermaidLayered {
     let boxes: [String: CGRect]
     /// One per `graph.edges`, in that order. `nil` where an end was never placed; the place is kept

@@ -37,9 +37,17 @@ public enum ProseEngine: CaseIterable {
 /// Once per face per process, kept by `ProseProbe`. The advance between two lines is NOT measured —
 /// the ruler agrees with `box + leading` on every face on both machines, and only the first line's
 /// box was ever in doubt.
+///
+/// A ruler runs on the main actor and the whole-document measure pass does not (ADR-0030, Rule 3),
+/// so an ask off the main actor is answered out of the store alone. The pass warms the faces it
+/// will set before it starts — `warm(_:)` — and `coldAsks` counts every ask that arrived off the
+/// main actor with nothing held, which is a warm list that has fallen behind the faces the feed
+/// sets rather than something a reader can see. A suite holds it at zero over every prose fixture.
 public enum ProseLineBox {
-    @MainActor public static func of(_ face: ProseFace) -> CGFloat {
-        boxes.of(face, measuring: measured)
+    /// This face's line box. Measured where a ruler can be reached and read out of the store where
+    /// one cannot.
+    public static func of(_ face: ProseFace) -> CGFloat {
+        answered(by: boxes, for: face, measuring: measured)
     }
 
     /// What a run holding NO characters stands at, which is neither this face's line box nor a
@@ -49,30 +57,72 @@ public enum ProseLineBox {
     /// One construct in the feed reaches it: a fence the agent opened and closed with nothing in
     /// between (`FeedRowMeasure`). Measured rather than named, because "the same at every rung" is
     /// an observation about an engine rather than a rule it publishes.
-    @MainActor public static func ofEmptyRun(_ face: ProseFace) -> CGFloat {
-        empties.of(face) { ProseProbe.measured(ProseProbe.run("", in: $0)) }
+    public static func ofEmptyRun(_ face: ProseFace) -> CGFloat {
+        answered(by: empties, for: face) { ProseProbe.measured(ProseProbe.run("", in: $0)) }
     }
+
+    /// Every face a pass is about to set, measured while a ruler can still be reached.
+    ///
+    /// The caller names the list, because which faces a document sets is a fact about the surface
+    /// drawing it and not about this module. Both probes are warmed together: a fence with nothing
+    /// in it is as ordinary as one with something in it, and a warm that covered only the first
+    /// would leave the second cold on the row that has one.
+    @MainActor public static func warm(_ faces: [ProseFace]) {
+        for face in faces {
+            _ = of(face)
+            _ = ofEmptyRun(face)
+        }
+    }
+
+    #if DEBUG
+        /// Every ask, across every probe in this module, that arrived off the main actor with
+        /// nothing held — see the type's note. Published here because this is the public name the
+        /// probes are reached through.
+        public static var coldAsks: Int {
+            ProseProbe.colds.withLock { $0 }
+        }
+
+        /// Every ruler pass this has paid for — three hosting measures each, and the count that
+        /// holds the claim above to something a test can see rather than reason about.
+        public static var rulings: Int {
+            ruled.withLock { $0 }
+        }
+
+        public static func forgetCounts() {
+            ProseProbe.colds.withLock { $0 = 0 }
+            ruled.withLock { $0 = 0 }
+        }
+    #endif
+
+    private static let ruled = ProseTally(0)
 
     /// The line counts the candidates are judged on. One, because it is the box on its own; and two
     /// more, because a candidate wrong by less than a point can still be right at one line and
     /// wrong once the advances have pushed the total past an integer.
     private static let counts = [1, 3, 8]
 
-    @MainActor private static var boxes = ProseProbe()
-    @MainActor private static var empties = ProseProbe()
+    private static let boxes = ProseProbe()
+    private static let empties = ProseProbe()
 
-    #if DEBUG
-        /// Every ruler pass this has paid for — three hosting measures each, and the count that
-        /// holds the claim above to something a test can see rather than reason about.
-        @MainActor public private(set) static var rulings = 0
-    #endif
+    /// The one shape both probes are asked through — see `ProseProbe.answer(for:cold:measuring:)`.
+    /// The cold answer is this face's fractional box, which is the box the module took before any
+    /// of this and the one that cannot overlap the row below.
+    private static func answered(
+        by probe: borrowing ProseProbe,
+        for face: ProseFace,
+        measuring: @MainActor (ProseFace) -> CGFloat,
+    )
+        -> CGFloat {
+        probe.answer(
+            for: face,
+            cold: { (face: ProseFace) in face.lineBox(under: ProseEngine.fractional) },
+            measuring: measuring,
+        )
+    }
 
-    /// Falls to the fractional box where no candidate accounts for every count, which is the box
-    /// the module took before any of this and the one that cannot overlap the row below.
+    /// Falls to the fractional box where no candidate accounts for every count.
     @MainActor private static func measured(_ face: ProseFace) -> CGFloat {
-        #if DEBUG
-            rulings += 1
-        #endif
+        ruled.withLock { $0 += 1 }
         let heights = Self.counts.map { drawn(face, lines: $0) }
         let step = face.step
         for engine in ProseEngine.allCases {

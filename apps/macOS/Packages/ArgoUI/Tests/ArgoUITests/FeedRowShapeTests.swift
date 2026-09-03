@@ -46,10 +46,10 @@ struct FeedRowShapeTests {
     }
 
     @Test
-    func `a cell is recycled only onto a row of its own shape`() throws {
+    func `a cell is recycled only onto a row of its own shape`() async throws {
         let rows = FeedProjection.longRows
         let handle = FeedTableHandle()
-        let coordinator = FeedTableFixture.laidOut(rows, in: Self.column, through: handle)
+        let coordinator = await FeedTableFixture.laidOut(rows, in: Self.column, through: handle)
         let table = try #require(coordinator.table)
 
         // Every cell the table hands back carries its own shape's identifier, so AppKit's pool can

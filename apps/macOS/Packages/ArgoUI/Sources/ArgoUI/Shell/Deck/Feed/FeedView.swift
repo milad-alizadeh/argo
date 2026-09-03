@@ -10,6 +10,8 @@ import SwiftUI
 package struct FeedView: View {
     @Environment(\.argo) private var argo
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Why the deck has nothing to read, where the reading really is empty — see the overlay.
+    @Environment(\.argoFeedVacancy) private var vacancy
     /// Whether a deck seam is being dragged — the table degrades its re-measure to the visible rows
     /// for exactly that long.
     @Environment(\.deckIsResizing) private var isResizing
@@ -120,10 +122,21 @@ package struct FeedView: View {
         .overlay(alignment: .bottomTrailing) { tail }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {
-            if rows.isEmpty {
+            if rows.isEmpty || !table.isSettled {
                 // Centred in what the canopy leaves: this word does not scroll, so it cannot use
                 // the table's inset the way the rows do.
+                //
+                // A reading Argo has not measured yet says the same thing as a deck with no
+                // reading in it, because it IS the same thing to the reader: nothing is on screen
+                // and Argo is why (ADR-0030, Rule 3). The vacancy the window set stands where the
+                // reading really is empty; where rows are waiting on a pass, `unread` is the honest
+                // one — see `FeedVacancy.unread`, which the deck already used for the frame between
+                // the click and the reading.
                 FeedSilence()
+                    .environment(
+                        \.argoFeedVacancy,
+                        rows.isEmpty ? vacancy : .unread,
+                    )
                     .argoUnderCanopy()
             }
         }

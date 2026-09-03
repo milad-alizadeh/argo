@@ -7,7 +7,6 @@ import ProseText
 /// A self-message is the one that is not a line between two: it loops out of its own lifeline and
 /// back, which is the only way to draw a call that never leaves its column without the arrow
 /// vanishing into the line it started on.
-@MainActor
 enum MermaidThreads {
     static func drawn(
         _ stage: MermaidStage,

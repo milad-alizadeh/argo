@@ -8,7 +8,7 @@ import Foundation
 
 extension MarkdownTable {
     /// The table's cells as rectangles, and how tall the whole table stands.
-    @MainActor func laid(across measure: CGFloat) -> (rects: [MinimapRowRect], height: CGFloat) {
+    func laid(across measure: CGFloat) -> (rects: [MinimapRowRect], height: CGFloat) {
         let widths = widths(across: measure)
         let heights = heights(on: widths)
         guard !widths.isEmpty else { return ([], 0) }

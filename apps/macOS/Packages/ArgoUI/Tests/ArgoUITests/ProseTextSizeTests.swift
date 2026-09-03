@@ -9,7 +9,7 @@ import Testing
 ///
 /// The size is moved through the seam that reads it and not through System Settings, because
 /// nothing in process moves the real one: `NSFont.preferredFont(forTextStyle:)` answers an app-wide
-/// setting with no API to set it and no notification when it changes. So `ProseTextSize.moved`
+/// setting with no API to set it and no notification when it changes. So `ProseTextSize.move(to:)`
 /// stands in for the reader's hand, one line above the platform read, and everything below it —
 /// the epoch, the drop, the re-measure — is the shipped path exactly.
 @MainActor
@@ -24,45 +24,43 @@ struct ProseTextSizeTests {
 
     @Test
     func `a width measured at one size is re-measured once the size has moved`() {
-        defer { ProseTextSize.moved = nil }
+        defer { ProseTextSize.move(to: nil) }
         let text = Self.words + " width"
 
         _ = ProseMetrics.width(of: text)
-        let filled = ProseMetrics.typesets
-        _ = ProseMetrics.width(of: text)
-        #expect(ProseMetrics.typesets == filled)
+        #expect(ProseMetrics.typesets(during: { _ = ProseMetrics.width(of: text) }) == 0)
 
-        ProseTextSize.moved = Self.elsewhere
-        _ = ProseMetrics.width(of: text)
-        #expect(ProseMetrics.typesets == filled + 1)
+        ProseTextSize.move(to: Self.elsewhere)
+        #expect(ProseMetrics.typesets(during: { _ = ProseMetrics.width(of: text) }) == 1)
     }
 
     /// The word floor and the wrap, which are the other two stores and the ones a table's columns
     /// are dealt from — a floor answered at the old size deals a column the wrong room.
     @Test
     func `a word floor and a wrap are both re-measured once the size has moved`() {
-        defer { ProseTextSize.moved = nil }
+        defer { ProseTextSize.move(to: nil) }
         let text = Self.words + " floor and wrap"
         let measure = ProseMetrics.width(of: text) / 2
 
         _ = ProseMetrics.word(in: text)
         _ = ProseMetrics.lay(out: text, across: measure)
-        let filled = ProseMetrics.typesets
-        _ = ProseMetrics.word(in: text)
-        _ = ProseMetrics.lay(out: text, across: measure)
-        #expect(ProseMetrics.typesets == filled)
+        #expect(ProseMetrics.typesets {
+            _ = ProseMetrics.word(in: text)
+            _ = ProseMetrics.lay(out: text, across: measure)
+        } == 0)
 
-        ProseTextSize.moved = Self.elsewhere
-        _ = ProseMetrics.word(in: text)
-        _ = ProseMetrics.lay(out: text, across: measure)
-        #expect(ProseMetrics.typesets == filled + 2)
+        ProseTextSize.move(to: Self.elsewhere)
+        #expect(ProseMetrics.typesets {
+            _ = ProseMetrics.word(in: text)
+            _ = ProseMetrics.lay(out: text, across: measure)
+        } == 2)
     }
 
     /// The line box, which is the OTHER store keyed on a face and nothing else. A row placed at a
     /// box read for a size the reader has moved off is placed at the wrong height.
     @Test
     func `a line box measured at one size is re-ruled once the size has moved`() {
-        defer { ProseTextSize.moved = nil }
+        defer { ProseTextSize.move(to: nil) }
         let face = ProseFace(rung: .caption2, isBold: true, isMachine: true)
 
         _ = ProseLineBox.of(face)
@@ -70,7 +68,7 @@ struct ProseTextSizeTests {
         _ = ProseLineBox.of(face)
         #expect(ProseLineBox.rulings == ruled)
 
-        ProseTextSize.moved = Self.elsewhere
+        ProseTextSize.move(to: Self.elsewhere)
         _ = ProseLineBox.of(face)
         #expect(ProseLineBox.rulings == ruled + 1)
     }
@@ -83,25 +81,23 @@ struct ProseTextSizeTests {
         let text = Self.words + " across the window"
 
         _ = ProseMetrics.width(of: text)
-        let filled = ProseMetrics.typesets
         // Several times the 16 ms window, so the next ask really does re-read the platform.
         Thread.sleep(forTimeInterval: 0.05)
-        _ = ProseMetrics.width(of: text)
 
-        #expect(ProseMetrics.typesets == filled)
+        #expect(ProseMetrics.typesets(during: { _ = ProseMetrics.width(of: text) }) == 0)
     }
 
     /// And the epoch itself only turns on a move: two asks a window apart at one size are the same
     /// generation, which is what every store's `readAt` compares against.
     @Test
     func `the epoch turns on a move and not on the window`() {
-        defer { ProseTextSize.moved = nil }
+        defer { ProseTextSize.move(to: nil) }
 
         let standing = ProseTextSize.epoch()
         Thread.sleep(forTimeInterval: 0.05)
         #expect(ProseTextSize.epoch() == standing)
 
-        ProseTextSize.moved = Self.elsewhere
+        ProseTextSize.move(to: Self.elsewhere)
         #expect(ProseTextSize.epoch() == standing + 1)
     }
 }

@@ -5,7 +5,6 @@ import Foundation
 ///
 /// The steps are drawn as strokes rather than as rings. Rendered as rings the two states differed
 /// only in hue and neither read as filled, which is the one thing a rating mark has to do.
-@MainActor
 enum MermaidBandsGauge {
     static var width: CGFloat {
         CGFloat(MermaidJourney.scale) * MermaidMeasure.ratingStep

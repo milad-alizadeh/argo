@@ -5,7 +5,6 @@ import Foundation
 /// The names are the whole of this file: points cluster, and a name drawn at a fixed offset from
 /// its own mark is a name drawn over its neighbour's. Each takes the first place clear of every
 /// mark and every word already settled, the field's own title, axis ends and corners INCLUDED.
-@MainActor
 enum MermaidQuadrantPoints {
     static func dots(of field: MermaidQuadrantField) -> [CGRect] {
         field.chart.points.map { point in

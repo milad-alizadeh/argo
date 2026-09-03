@@ -18,7 +18,7 @@ extension FeedReadingSwitchTests {
     /// The lane's own claim, taken the way the shell now takes it.
     @Test
     func `a switch taken in two passes still measures each reading once`() async {
-        let deck = FeedSwitchDeck()
+        let deck = await FeedSwitchDeck()
 
         await deck.switching(to: FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
         let firstAlpha = deck.coordinator.measurements
@@ -38,7 +38,7 @@ extension FeedReadingSwitchTests {
     /// land the reader at the top of a reading that opens at its tail (ADR-0029).
     @Test
     func `a reading deferred by a pass still opens at its own end`() async throws {
-        let deck = FeedSwitchDeck()
+        let deck = await FeedSwitchDeck()
         await deck.switching(to: FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
 
         await deck.switching(to: FeedSwitchFixture.bravoRows, of: FeedSwitchFixture.bravo)
@@ -54,7 +54,7 @@ extension FeedReadingSwitchTests {
     /// the rows are gone and the deck says so.
     @Test
     func `a reading that empties draws no rows`() async {
-        let deck = FeedSwitchDeck()
+        let deck = await FeedSwitchDeck()
         await deck.switching(to: FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
 
         await deck.show([], of: FeedSwitchFixture.alpha)

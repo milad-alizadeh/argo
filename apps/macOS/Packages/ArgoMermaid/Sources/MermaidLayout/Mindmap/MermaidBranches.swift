@@ -7,7 +7,6 @@ import Foundation
 /// map, and only this one places rectangular labels without them ever meeting: two nodes of the
 /// same depth stand in disjoint BANDS down the page, and two of different depths in disjoint
 /// columns across it, so non-overlap holds by construction rather than by luck (#867).
-@MainActor
 struct MermaidBranches {
     /// One box per `MermaidMindmap.walk` step, in that order.
     let boxes: [CGRect]

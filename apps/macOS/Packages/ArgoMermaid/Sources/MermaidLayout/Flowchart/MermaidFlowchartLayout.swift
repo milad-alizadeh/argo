@@ -4,7 +4,6 @@ import Foundation
 // spelled here — this states the graph, names the figures its shapes draw, and hands the pass's own
 // placements back as one plan.
 
-@MainActor
 extension MermaidFlowchart {
     var laid: MermaidPlan {
         let laid = MermaidLayered.of(graph)

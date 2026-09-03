@@ -6,7 +6,6 @@ import Foundation
 /// Every event tells whichever blocks are open which lifelines they now have to reach, so a frame's
 /// span is exactly what it contains — a block closing over a participant it never mentions is the
 /// one mistake a reader would see immediately.
-@MainActor
 struct MermaidFrameWalk {
     let stage: MermaidStage
     /// Every block that has closed, and where. NOT placed yet, and that is the point: a frame's

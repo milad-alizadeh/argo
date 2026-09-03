@@ -11,7 +11,7 @@ import ProseText
 ///
 /// Built once per distinct row and kept, because a view body is evaluated far more often than its
 /// text changes — see `ProseReading.frame(of:chip:across:)`.
-@MainActor struct FeedProseFrame {
+struct FeedProseFrame {
     /// The blocks, in the order they are drawn.
     var parts: [Placed] = []
     /// How tall the blocks stand together. The row's own height adds room for the Turn's copy chip

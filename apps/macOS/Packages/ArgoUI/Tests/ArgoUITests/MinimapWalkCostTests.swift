@@ -37,15 +37,11 @@ struct MinimapWalkCostTests {
         }
     }
 
-    /// A mount left until the feed says its own heights are final — every deferred pass run out.
-    /// The lane is laid out on each turn of the wait, as it is in the app.
+    /// A mount left until the feed has a settled document to be mapped. The lane is laid out
+    /// after the wait, as it is in the app.
     private static func settled(over rows: [FeedRow]) async -> MinimapLaneFixture.Mounted {
-        let deck = MinimapLaneFixture.mounted(over: rows)
-        // Bounded: a count that never came back would otherwise hang the suite rather than fail it.
-        for _ in 0 ..< 2000 where deck.table.deferredPasses > 0 {
-            deck.lane.layoutSubtreeIfNeeded()
-            try? await Task.sleep(for: .milliseconds(2))
-        }
+        let deck = await MinimapLaneFixture.mounted(over: rows)
+        await FeedTableFixture.settled(deck.table)
         deck.lane.layoutSubtreeIfNeeded()
         return deck
     }
@@ -68,7 +64,7 @@ struct MinimapWalkCostTests {
 
     /// One seam let go over `rows`, and what the lane read for the burst of batches it made.
     private static func walksAcrossAReMeasure(over rows: [FeedRow]) async throws -> Int {
-        let deck = MinimapLaneFixture.mounted(over: rows)
+        let deck = await MinimapLaneFixture.mounted(over: rows)
         let scroller = try #require(deck.table.scroller)
         deck.lane.layoutSubtreeIfNeeded()
         let walked = deck.lane.readingWalks
@@ -77,7 +73,7 @@ struct MinimapWalkCostTests {
         scroller.frame = NSRect(x: 0, y: 0, width: 240, height: MinimapLaneFixture.column.height)
         deck.table.settleAfterResize()
         try await Self.pumping(deck.lane) {
-            try await #require(deck.table.tailing).value
+            await FeedTableFixture.settled(deck.table)
         }
         deck.lane.layoutSubtreeIfNeeded()
 

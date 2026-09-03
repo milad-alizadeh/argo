@@ -3,11 +3,10 @@ import Foundation
 // The words a Gantt chart sets, in the order its plan places them: the title, then every tick on
 // the axis, then every line down the gutter.
 //
-// The extension is `@MainActor` because the ticks are: which dates the axis is marked at is a
-// question about how wide the words on them RUN — see `MermaidGanttAxis` — and nothing measures
-// words off the main actor. The rest of the list would not need it on its own.
+// Which dates the axis is marked at is itself a question about how wide the words on them RUN —
+// see `MermaidGanttAxis`. That is why this list was the main actor's until ADR-0030 moved every
+// prose measurement off it.
 
-@MainActor
 extension MermaidGantt {
     var labels: [MermaidLabel] {
         (titleLabel.map { [$0] } ?? [])

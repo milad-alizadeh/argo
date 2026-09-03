@@ -30,12 +30,13 @@ package struct MinimapReadingStamp: Equatable {
     var viewportHeight: CGFloat = 0
     var topInset: CGFloat = 0
     var bottomInset: CGFloat = 0
-    /// Whether the feed's own heights are provisional — a width burst whose full pass it has
-    /// deferred, or that pass still running a batch a turn.
+    /// Whether the feed has no settled document to be mapped — a pass still running, or none
+    /// started yet (ADR-0030, Rule 3).
     ///
     /// Part of the stamp rather than beside it, so the moment it clears reads as a change like any
-    /// other. A walk taken while it is set re-measures the whole document at burst rate, which is
-    /// exactly the work the feed sliced into batches so that nothing would.
+    /// other. There is no third answer any more: a settled document is complete or absent, so the
+    /// lane is either drawing the reading's true positions or holding what it last drew — and
+    /// where what it holds is another reading's, it draws nothing at all.
     var isProvisional = false
 
     /// Whether the two stamps are of the same DOCUMENT — the same rows, folded the same way.

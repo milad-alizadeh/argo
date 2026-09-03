@@ -23,7 +23,6 @@ extension MarkdownTable {
     }
 }
 
-@MainActor
 extension MarkdownTable {
     /// What each column asks for: its widest cell's words on one line, and the floor its longest
     /// word cannot be broken below. Both measured — see `ProseMetrics` — because a column's width

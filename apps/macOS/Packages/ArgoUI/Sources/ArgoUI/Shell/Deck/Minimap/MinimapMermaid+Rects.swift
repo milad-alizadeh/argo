@@ -14,7 +14,7 @@ extension MermaidDiagram {
     /// The measure CLIPS rather than lays out. A diagram is laid out at its own width and scrolls
     /// where the column cannot hold it, so what the lane draws is what a reader who has not
     /// scrolled can see — a mark past the column's edge is one that is not on screen.
-    @MainActor func mapped(across measure: CGFloat) -> (rects: [MinimapRowRect], height: CGFloat) {
+    func mapped(across measure: CGFloat) -> (rects: [MinimapRowRect], height: CGFloat) {
         let plan = ProseReading.plan(of: self)
         return (plan.figures.compactMap { $0.mapped(within: measure) }, plan.size.height)
     }

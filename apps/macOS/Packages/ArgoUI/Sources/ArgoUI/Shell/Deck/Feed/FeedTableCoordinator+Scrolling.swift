@@ -40,41 +40,57 @@ extension FeedTableCoordinator {
     /// `pace` is the way-back control's animation. Every other landing is instant, because a feed
     /// easing once per arriving line would be permanently in motion.
     func execute(_ decision: FeedScrollDecision, over pace: TimeInterval? = nil) {
-        // Memory, not correctness — a ground answers for its own row or for nothing. A reading
-        // that re-numbered leaves an entry per index that no question will ever match again, and
-        // nothing else would ever reclaim them (#858).
-        if decision.delta == .reload {
-            dropMeasuredHeights()
-        }
         insert(decision.delta)
         remeasure(decision.remeasure)
         land(decision.landing, over: pace)
         if decision.settle == .whenQuiet {
-            settleSoon()
+            settleWhenQuiet()
         }
     }
 
-    /// The opening scroll, once per reading. Claimed now and landed a runloop turn later, then
-    /// re-aimed across a few more: the rows a scroll realises on its way to the landing replace
-    /// their lazy heights on the NEXT turn, so a single pass lands a line or two short. The first
-    /// pass waits too, because there is no layout to scroll until `apply` returns.
+    /// The opening scroll, once per reading: claimed on the turn a settled document lands and
+    /// landed on the next.
     ///
-    /// It is claimed on this turn because `apply` runs again before the deferred pass, and a second
-    /// claim would start a second run.
+    /// ONE turn, where it used to be four. The re-aiming was for estimated heights — the rows a
+    /// scroll realised on its way to the landing replaced theirs on the next turn, so a single pass
+    /// landed a line or two short — and ADR-0030 leaves nothing to correct. What the turn is still
+    /// for is `NSTableView`: `reloadData` marks its rows and defers, so the document has no height
+    /// of its own until a layout has happened, and a scroll aimed before that lands at the top of a
+    /// reading that opens at its tail.
     ///
-    /// The pass count and the spacing are here and not in the policy because they are facts about
-    /// `NSTableView`, not rules about where the reading goes.
+    /// It is claimed on THIS turn because a fresh model may arrive before the deferred one runs,
+    /// and a second claim would start a second scroll.
     func place() {
-        guard let handle, handle.isOpeningOwed else { return }
-        _ = handle.resolve(.readingOpened(held: model?.held))
-        DispatchQueue.main.async { [weak self] in self?.openReading(passes: 3) }
+        guard let handle, handle.isOpeningOwed, placing == nil else { return }
+        // ASKED here and executed a turn later, and the two halves are not interchangeable. Asked
+        // now, because the policy is answering about a reading that has just been given its rows
+        // and is still following it; asked after the layout below, it would be answering about a
+        // reading parked at its head, and a reading that opens at its tail would open at its top.
+        //
+        // The decision held here is also the claim: `apply` may run again before the deferred turn,
+        // and a second claim would start a second scroll.
+        placing = handle.resolve(.readingOpened(held: model?.held))
+        DispatchQueue.main.async { [weak self] in self?.openReading() }
+    }
+
+    /// The opening scroll landed, against a table that has been laid out.
+    ///
+    /// The turn is `NSTableView`'s: `reloadData` marks its rows and defers, so the document has no
+    /// height of its own until a layout has happened — and the scroll is aimed at that height.
+    private func openReading() {
+        guard let decision = placing else { return }
+        placing = nil
+        scroller?.layoutSubtreeIfNeeded()
+        execute(decision)
     }
 
     /// The one full re-measure a live resize defers — run the moment the seam or the window lets
     /// go, when the width is finally a fact rather than a frame of a drag.
     func settleAfterResize() {
-        settling?.cancel()
+        quieting?.cancel()
+        finishedQuiet()
         decide(.resizeEnded(anchor: anchor()))
+        settleIfOwed()
     }
 
     /// The reader moved the reading — by wheel, flick, key or overview lane.
@@ -117,13 +133,6 @@ extension FeedTableCoordinator {
         return FeedAnchor(row: shown[index].id, into: top - table.rect(ofRow: index).minY)
     }
 
-    private func openReading(passes: Int) {
-        let decision = handle?.resolve(.readingOpened(held: model?.held)) ?? .stay
-        execute(decision)
-        guard passes > 0, decision.landing != .stay else { return }
-        DispatchQueue.main.async { [weak self] in self?.openReading(passes: passes - 1) }
-    }
-
     @objc private func readerScrolled(_: Notification) {
         reportFollowing()
     }
@@ -146,32 +155,17 @@ extension FeedTableCoordinator {
             passes -= 1
             pane = scroller.contentView.bounds.size
         }
+        // The width the rows were measured across may have moved with the pane.
+        settleIfOwed()
         // Out of passes with the clip still moving: nothing else will post for the size it is at
-        // now, so the settle timer is what lays the reading out against it.
+        // now, so the quiet wait is what lays the reading out against it.
         guard !hasLaidOut(pane) else { return }
-        settleSoon()
+        settleWhenQuiet()
     }
 
-    /// One settle per burst: each width frame pushes the full pass back, and only the quiet after
-    /// the last one runs it. `settleAfterResize` retires this timer.
-    private func settleSoon() {
-        settling?.cancel()
-        // Owed from the moment it is ARMED rather than from when its body first runs, a turn of
-        // the run loop later — a whole-document reader that caught the burst in that gap would
-        // read heights the pass is about to move as settled (see `deferredPasses`).
-        deferredPasses += 1
-        settling = Task { [weak self] in await self?.settleWhenQuiet() }
-    }
-
-    /// The quiet after the last width frame, and the full pass it was waiting for.
-    ///
-    /// Owed for the whole of its length, the wait included: a height measured while a burst is
-    /// still arriving is a height against a width that is about to move. Cancelling it still
-    /// runs this body, which is what pays the count back.
-    private func settleWhenQuiet() async {
-        defer { deferredPasses -= 1 }
-        try? await Task.sleep(for: .milliseconds(250))
-        guard !Task.isCancelled else { return }
+    /// What the quiet wait reports to the policy — the burst is over, at whatever width it ended
+    /// on.
+    func settleElapsed() {
         let live = model?.isResizing == true || table?.inLiveResize == true
         decide(.settleElapsed(stillLive: live, anchor: anchor()))
     }
@@ -184,7 +178,7 @@ extension FeedTableCoordinator {
             table.insertRows(at: IndexSet(integersIn: arrived), withAnimation: [])
         }
         if !rewritten.isEmpty {
-            refresh(rows: rewritten, remeasuring: true)
+            refresh(rows: rewritten)
         }
     }
 

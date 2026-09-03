@@ -15,12 +15,26 @@ import SwiftUI
 /// the engine's, which is a fact about the machine rather than about the ladder.
 ///
 /// Once per face per process, kept by `ProseProbe`.
+/// Asked off the main actor by everything that reads a `ProseRun`'s geometry, so the probe is
+/// warmed and read the way `ProseLineBox`'s two are — see there for what a cold ask off the main
+/// actor means.
 public enum ProseBaseline {
-    @MainActor public static func under(_ face: ProseFace) -> CGFloat {
-        hangs.of(face, measuring: measured)
+    /// Cold off the main actor, this is the font's own descent: the closest arithmetic there is to
+    /// what the engine leaves under a baseline, and what the module compared its measurement
+    /// against when it was written.
+    public static func under(_ face: ProseFace) -> CGFloat {
+        hangs.answer(for: face, cold: { -$0.font.descender }, measuring: measured)
     }
 
-    @MainActor private static var hangs = ProseProbe()
+    /// Measured while a ruler can still be reached — the same warm `ProseLineBox.warm(_:)` makes,
+    /// and made in the same breath.
+    @MainActor public static func warm(_ faces: [ProseFace]) {
+        for face in faces {
+            _ = under(face)
+        }
+    }
+
+    private static let hangs = ProseProbe()
 
     /// A mark far taller than any line, aligned to this face's first baseline: what the row comes
     /// out at, less the mark itself, IS what hangs under the baseline.

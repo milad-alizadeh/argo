@@ -5,7 +5,6 @@ import Foundation
 /// Only the filled head is the plan's own `arrowhead`. An open head and a cross are STROKED marks —
 /// two of the three say what they say by being hollow, and filling either of them would make it the
 /// third.
-@MainActor
 enum MermaidArrowMark {
     static func figures(
         of head: MermaidSequence.Head,

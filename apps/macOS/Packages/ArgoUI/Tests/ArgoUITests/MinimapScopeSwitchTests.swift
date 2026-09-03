@@ -27,9 +27,9 @@ struct MinimapScopeSwitchTests {
         _ deck: MinimapLaneFixture.Mounted,
         onto rows: [FeedRow],
     )
-        -> FeedTableCoordinator {
+        async -> FeedTableCoordinator {
         deck.lane.attach(to: deck.feed)
-        let scoped = FeedTableFixture.laidOut(
+        let scoped = await FeedTableFixture.laidOut(
             rows,
             in: MinimapLaneFixture.column,
             through: deck.feed,
@@ -59,7 +59,7 @@ struct MinimapScopeSwitchTests {
     @Test
     func `a reading replaced under one handle opens at its own end`() async throws {
         let handle = FeedTableHandle()
-        let session = FeedTableFixture.laidOut(
+        let session = await FeedTableFixture.laidOut(
             FeedProjection.longRows,
             in: MinimapLaneFixture.column,
             through: handle,
@@ -68,7 +68,7 @@ struct MinimapScopeSwitchTests {
         session.settle(at: 0, over: nil)
         #expect(!handle.isFollowing)
 
-        let scoped = FeedTableFixture.laidOut(
+        let scoped = await FeedTableFixture.laidOut(
             Self.delegated(60),
             in: MinimapLaneFixture.column,
             through: handle,
@@ -87,20 +87,16 @@ struct MinimapScopeSwitchTests {
     /// runs no `didSet` at all. Nothing orders SwiftUI's teardown of the old representable against
     /// the new one's `makeNSView`, so whether a table stood cannot be read off `oldValue`.
     @Test
-    func `a reading replaced after the last was let go opens at its own end`() {
+    func `a reading replaced after the last was let go opens at its own end`() async {
         let handle = FeedTableHandle()
-        autoreleasepool {
-            let session = FeedTableFixture.laidOut(
-                FeedProjection.longRows,
-                in: MinimapLaneFixture.column,
-                through: handle,
-            )
-            session.settle(at: 0, over: nil)
-        }
+        // Built and let go inside a scope of its own, so the coordinator is gone before the claim
+        // below is asked. `autoreleasepool` cannot hold the await the measure is, which is why the
+        // scope does it instead.
+        await Self.letGo(under: handle)
         #expect(!handle.isFollowing)
         #expect(handle.coordinator == nil)
 
-        _ = FeedTableFixture.laidOut(
+        _ = await FeedTableFixture.laidOut(
             Self.delegated(60),
             in: MinimapLaneFixture.column,
             through: handle,
@@ -110,20 +106,30 @@ struct MinimapScopeSwitchTests {
         #expect(handle.leftAt == nil)
     }
 
+    /// One reading opened under `handle`, scrolled to its head, and released.
+    private static func letGo(under handle: FeedTableHandle) async {
+        let session = await FeedTableFixture.laidOut(
+            FeedProjection.longRows,
+            in: MinimapLaneFixture.column,
+            through: handle,
+        )
+        session.settle(at: 0, over: nil)
+    }
+
     /// A deck that opens its reading HELD at a row — a still, or a specimen. The row is a dense
     /// position, so the fresh policy has to be seeded with the row THIS reading is held at rather
     /// than the one the last was.
     @Test
-    func `a replaced reading is held at its own row`() {
+    func `a replaced reading is held at its own row`() async {
         let handle = FeedTableHandle(held: 250)
-        _ = FeedTableFixture.laidOut(
+        _ = await FeedTableFixture.laidOut(
             FeedProjection.longRows,
             in: MinimapLaneFixture.column,
             through: handle,
             held: 250,
         )
 
-        _ = FeedTableFixture.laidOut(
+        _ = await FeedTableFixture.laidOut(
             Self.delegated(60),
             in: MinimapLaneFixture.column,
             through: handle,
@@ -141,8 +147,8 @@ struct MinimapScopeSwitchTests {
     /// nothing, and the map of the reading that left stayed up. `MinimapReadingStamp` says why a
     /// height cannot stand for a document; this is where not saying it costs the reader the map.
     @Test
-    func `a reading replaced at the same document height is mapped afresh`() throws {
-        let deck = MinimapLaneFixture.mounted(over: Self.delegated(3))
+    func `a reading replaced at the same document height is mapped afresh`() async throws {
+        let deck = await MinimapLaneFixture.mounted(over: Self.delegated(3))
         deck.lane.layoutSubtreeIfNeeded()
         let height = deck.table.scroller?.documentView?.frame.height
 
@@ -151,6 +157,7 @@ struct MinimapScopeSwitchTests {
             showing: Self.delegated(2, saying: "other"),
             of: FeedReading(session: "one", scope: .subagent(1)),
         ))
+        await FeedTableFixture.settled(deck.table)
         deck.lane.layoutSubtreeIfNeeded()
 
         // The precondition, stated: without it this suite would be asserting the reshape path.
@@ -163,11 +170,11 @@ struct MinimapScopeSwitchTests {
     }
 
     @Test
-    func `a feed scoped onto a subagent is the reading the lane maps`() throws {
-        let deck = MinimapLaneFixture.mounted(over: FeedProjection.longRows)
+    func `a feed scoped onto a subagent is the reading the lane maps`() async throws {
+        let deck = await MinimapLaneFixture.mounted(over: FeedProjection.longRows)
         deck.lane.layoutSubtreeIfNeeded()
 
-        let scoped = Self.rescope(deck, onto: Self.delegated())
+        let scoped = await Self.rescope(deck, onto: Self.delegated())
 
         let reading = try #require(deck.feed.reading())
         #expect(scoped.scroller === deck.feed.scroller)
@@ -190,14 +197,15 @@ struct HostedMinimapScopeSwitchTests {
     /// A → B → A, which is the case a height cannot see: two Subagents' readings are both shorter
     /// than the pane, so the document stands at exactly the same height for each of them.
     @Test(.enabled(if: WindowedTests.areAvailable))
-    func `the lane beside a scoped feed maps that subagent's reading`() throws {
+    func `the lane beside a scoped feed maps that subagent's reading`() async throws {
         let deck = HostedDeck()
+        await deck.settled()
         for _ in 0 ..< 12 {
-            deck.grow()
+            await deck.grow()
         }
 
         for subagent in ["a-one", "a-two", "a-one"] {
-            try deck.scope(onto: subagent)
+            try await deck.scope(onto: subagent)
             let reading = try #require(deck.coordinator.reading())
             let lane = try deck.lane
             #expect(lane.geometry.documentHeight == MinimapGeometry(

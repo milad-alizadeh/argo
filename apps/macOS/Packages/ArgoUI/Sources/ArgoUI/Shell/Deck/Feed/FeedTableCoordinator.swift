@@ -11,9 +11,10 @@ import SwiftUI
     var model: FeedTableModel?
     /// The shared scroll authority, which holds the policy this coordinator reports to.
     weak var handle: FeedTableHandle?
-    /// What the table currently draws, diffed against each fresh model — the table is not a
-    /// SwiftUI view, so nothing re-renders it on a change.
-    private(set) var shown: [FeedRow] = []
+    /// What the table currently draws — the rows of the settled document that stands, and never
+    /// the rows of a model no pass has measured yet. Written in one place, the turn a document
+    /// lands (`FeedTableCoordinator+Settling`).
+    var shown: [FeedRow] = []
     /// What the visible cells were last drawn against. Not `private`, because the opening half
     /// re-seats all three when another reading arrives — see `FeedTableCoordinator+Opening`.
     var folds: Set<FeedRow.ID> = []
@@ -43,31 +44,59 @@ import SwiftUI
         didSet { redrawCursor(focusedRow) }
     }
 
-    /// The full re-measure waiting for a width burst to go quiet — see `FeedSettle`.
+    /// The whole-document measure pass in flight — see `FeedTableCoordinator+Settling`.
     var settling: Task<Void, Never>?
-    /// How many deferred measure passes are IN FLIGHT — the quiet-wait a width burst pushes
-    /// back, and the chunked pass behind it. Neither `settling` nor `tailing` can answer that: a
-    /// `Task` property is assigned once and never cleared, so a finished pass looks exactly like
-    /// a running one. Written by the two passes themselves, in `+Scrolling` and `+Remeasure`.
-    ///
-    /// Read by the overview lane, the one caller that walks the WHOLE document: while a pass is
-    /// in flight every measured height is provisional, and a walk would re-measure the document
-    /// at burst rate — the work these passes are sliced up to avoid.
-    var deferredPasses = 0
-    /// The rows nobody can see, measured a batch at a time behind the visible ones — see
-    /// `remeasureEverything`.
-    var tailing: Task<Void, Never>?
+    /// The quiet a width burst is waited out in, before the pass that answers its last frame —
+    /// see `settleWhenQuiet()`. One wait, and both places a burst is seen arm this one.
+    var quieting: Task<Void, Never>?
 
-    /// Measured row heights, by row index — the store behind `heightOfRow`.
+    /// Whether a settle decision is on the stack — see `settleIfOwed()`.
+    var isDecidingSettle = false
+
+    /// The opening scroll, decided and not yet landed — see `place()`.
+    var placing: FeedScrollDecision?
+
+    /// Whether the deck owes the reader a measure — a pass in flight, or a width burst whose pass
+    /// is armed and has not started. The one question every surface over the geometry asks besides
+    /// "is there a document", and the two together are what `isProvisional` means to the lane.
+    var isMeasuring: Bool {
+        settlingFor != nil || quieting != nil
+    }
+
+    /// The quiet-wait finished or was retired. Cleared HERE and not where it is armed, because a
+    /// `Task` property is assigned once and never cleared, so a finished wait looks exactly like a
+    /// running one.
+    func finishedQuiet() {
+        quieting = nil
+    }
+
+    /// The measure run out — every pass in flight, and every pass a burst has armed but not
+    /// started. What says the deck is showing geometry rather than standing in for it.
+    ///
+    /// Bounded, so a pass that never comes back fails a case rather than hanging it: a landing may
+    /// start another, and a width burst arms one per frame.
+    func measured(over passes: Int = 12) async {
+        for _ in 0 ..< passes where isMeasuring {
+            await quieting?.value
+            await settling?.value
+        }
+    }
+
+    /// The stamp that pass is FOR. A `Task` property is assigned once and never cleared, so a
+    /// finished pass looks exactly like a running one; this says which reading, at which width,
+    /// the answer on its way is a document of, and a landing that no longer matches is dropped.
+    var settlingFor: FeedMeasureStamp?
+
+    /// The settled document this table opens on — the store behind `heightOfRow`.
     ///
     /// Manual heights rather than `usesAutomaticRowHeights`, and that is the scroll's frame
     /// budget: automatic heights answer through the constraint engine, where an `NSHostingView`
     /// runs THREE full SwiftUI layout passes per row scrolled in (its min, ideal and max size
-    /// constraints). Profiled, not surmised — the stutter was that tower. A delegate height is
-    /// one arithmetic or Core Text measure, paid once per row per width (ADR-0030).
+    /// constraints). Profiled, not surmised — the stutter was that tower. A delegate height here
+    /// is an array read: the measuring happened before the table drew anything (ADR-0030).
     ///
     /// A reference, and OUTLIVING this coordinator wherever the shell hands one in: the deck is
-    /// destroyed and rebuilt on a room switch, and heights held here alone were measured again
+    /// destroyed and rebuilt on a room switch, and a document held here alone was measured again
     /// every time the reader came back to a reading nothing had changed about (#858). Its own by
     /// default, so a preview, a specimen and a suite each measure into one of their own.
     private(set) var geometry = FeedGeometry()
@@ -78,8 +107,8 @@ import SwiftUI
     var exposures = 0
 
     /// How many rows have actually been measured, ever. Not a statistic: it is what #856's claim is
-    /// about, and the only honest way for a suite to ask what a re-measure COST rather than what it
-    /// left behind.
+    /// about, and the only honest way for a suite to ask what a pass COST rather than what it left
+    /// behind. Counted where the pass lands, because that is the one place measuring happens now.
     private(set) var measurements = 0
 
     /// The pane size the reading was last laid out against. Written when a derivation RUNS rather
@@ -99,10 +128,10 @@ import SwiftUI
         private(set) var paneCost = FeedPaneCost()
     #endif
 
-    /// One measurement paid for. Here rather than beside `measuredHeight` because a `private(set)`
-    /// is writable in this file alone.
-    func noted() {
-        measurements += 1
+    /// The rows one pass paid for. Here rather than beside the pass because a `private(set)` is
+    /// writable in this file alone.
+    func noted(_ rows: Int) {
+        measurements += rows
     }
 
     /// One frame notification arrived — see `FeedPaneCost`.
@@ -148,39 +177,24 @@ import SwiftUI
         // Before anything is resolved against it: a table that replaced another under this handle
         // is a fresh reading, and the policy answering it is the last one's.
         handle?.reopenIfOwed(held: fresh.held)
-        let stale = shown
         let staleEnvironment = model?.environment
         // Asked of the model that stands, before it is replaced. `model != nil` and not the reading
-        // alone: the FIRST apply is a mount, not a switch, and it takes the append path below into
-        // an empty table the way it always has.
+        // alone: the FIRST apply is a mount, not a switch.
         let switched = model != nil && model?.reading != fresh.reading
         model = fresh
-        shown = fresh.rows
-        // Both of these read the fresh rows as the WHOLE of what the reading now holds, so both
-        // are skipped where there are none. An empty reading is not a reading that shrank to
-        // nothing: it is a deck standing in for one — a Session whose reading has not been taken
-        // yet (`DrawnSession`), or a room whose deck is off screen (ADR-0028 Rule 5) — and the
-        // heights held are still true of the rows on their way back. Dropped there, a switch away
-        // and back measured the whole reading twice, which is the cost `FeedGeometries` exists to
-        // have removed (#858).
-        //
-        // What it leaves behind is an entry per index of a Session that really did empty, held
-        // until its store is evicted. They answer nothing wrong — a height is only handed back
-        // under a matching `Ground` — so this is bounded memory against a whole re-measure.
-        if !fresh.rows.isEmpty {
-            surrenderMovedChip()
-            geometry.dropBeyond(fresh.rows.count)
-        }
         guard table != nil else { return }
         if switched {
             openAfresh()
-        } else if fresh.rows.isSameReading(as: stale) {
-            touchUp(against: fresh, from: staleEnvironment)
         } else {
-            decide(.rowsChanged(from: stale, to: fresh.rows))
+            touchUp(against: fresh, from: staleEnvironment)
         }
-        // The seam letting go is the moment the width is final: one full re-measure squares
-        // every off-screen row that rode the drag on a stale height.
+        // The rows themselves are NOT taken here. What the table draws changes in one place only —
+        // the turn a settled document lands on (`FeedTableCoordinator+Settling`) — because the
+        // rows and the heights they are drawn at have to change together or the feed spends a
+        // frame drawing one reading at another's geometry, which is every defect ADR-0030 names.
+        //
+        // The seam letting go is the moment the width is final: the pass a live drag deferred runs
+        // then, against a width that is a fact rather than a frame of a drag.
         if wasResizing, !fresh.isResizing {
             settleAfterResize()
         }
@@ -196,27 +210,37 @@ import SwiftUI
         // Never: the overview lane stands beside every reading and its lit rectangle IS this
         // scrollbar, so the platform's own would draw a second one between the reading and its map.
         scroller?.hasVerticalScroller = false
-        place()
+        // And NOT `place()`: the opening scroll is owed to the ROWS, and this pass has none of them
+        // until a document lands. Claimed on the turn one does — see `landed(_:for:)`.
+        settleIfOwed()
     }
 
-    /// Measured heights surrendered — all of them for a re-wrap, or the rows named.
-    func dropMeasuredHeights(_ rows: IndexSet? = nil) {
-        geometry.drop(rows)
-    }
-
-    /// The chip the arriving rows moved, and the row it moved off — both measured with a chip they
-    /// no longer have, or without one they now do.
+    /// The model as the table DRAWS it: the freshest facts the deck holds — the open row, the
+    /// folds, the wash, the ink — over the rows of the settled document that stands.
     ///
-    /// The one height a ground cannot judge: `FeedTableModel.content(at:)` asks
-    /// `FeedCopy.chipOffer(of:at:)`, which reads the row's whole Turn, where a ground reads the row
-    /// and the row above it. Only the reading's LAST message can gain or lose one — every chip
-    /// above it is inside a Turn an arrival cannot reach (`FeedTableDelta.chipRow`) — so this is
-    /// two rows on the passes that move it and nothing at all on every other.
-    private func surrenderMovedChip() {
-        let moved = shown.lastIndex { $0.kind.isMessage }
-        guard moved != geometry.chipRow else { return }
-        geometry.drop(IndexSet([geometry.chipRow, moved].compactMap(\.self)))
-        geometry.chipRow = moved
+    /// The two halves move at different rates and this is where they are put back together. A fold
+    /// or a wash changes what a cell draws and nothing about the document, so those are taken from
+    /// the model that arrived last. The ROWS are the document's, because a cell built from a row
+    /// the table has no height for is a cell drawn at another row's height — and a model that
+    /// shrank would be read past its end by an index the table still holds.
+    var drawn: FeedTableModel? {
+        guard var drawn = model else { return nil }
+        drawn.rows = shown
+        return drawn
+    }
+
+    /// The settled document surrendered, because it is a document of a reading that is no longer
+    /// being shown. Its absence is what puts the deck in its provisional state.
+    func surrenderDocument() {
+        // Nothing to surrender is nothing to do, and saying so is not tidiness: a reload moves the
+        // table's frame, which is where a settle is decided from (`reshaped()`) — so a surrender
+        // that reloaded an already-empty table would reload it again on the frame change it caused,
+        // for as long as the pass it is waiting on takes to land.
+        guard geometry.isSettled || !shown.isEmpty else { return }
+        geometry.surrender()
+        shown = []
+        handle?.settled(false)
+        table?.reloadData()
     }
 
     /// Where the reading's measured heights are kept, when the shell keeps them somewhere that
@@ -228,23 +252,17 @@ import SwiftUI
         self.geometry = geometry
     }
 
-    /// Re-draws and, when asked, re-measures the named rows. Cells exist only for realised rows,
-    /// but a height note is honest for any row — which is what keeps a rewritten row that is OFF
-    /// screen from coming back at its old height.
-    func refresh(rows: IndexSet, remeasuring: Bool) {
-        guard let table, let model else { return }
-        let rows = rows.filteredIndexSet { shown.indices.contains($0) }
-        for row in rows {
+    /// Re-draws the named rows. Cells exist only for realised rows, so this is what a row whose
+    /// drawn facts moved without its height moving costs — a cursor, a wash, a panel closing.
+    ///
+    /// It never re-measures. A height comes off the settled document and changes when a fresh one
+    /// lands, which is the whole of ADR-0030 Rule 5.
+    func refresh(rows: IndexSet) {
+        guard let table, let drawn else { return }
+        let drawable = rows.filteredIndexSet(includeInteger: { shown.indices.contains($0) })
+        for row in drawable {
             let cell = table.view(atColumn: 0, row: row, makeIfNecessary: false) as? FeedRowCell
-            cell?.host.rootView = model.content(at: row, hasCursor: row == cursorRow)
-        }
-        guard remeasuring, !rows.isEmpty else { return }
-        dropMeasuredHeights(rows)
-        // Zero duration: this is a correction, not motion. Left to the default, every unfolded
-        // prompt would ease the rows below it down.
-        NSAnimationContext.runAnimationGroup { pass in
-            pass.duration = 0
-            table.noteHeightOfRows(withIndexesChanged: rows)
+            cell?.host.rootView = drawn.content(at: row, hasCursor: row == cursorRow)
         }
     }
 
@@ -266,10 +284,10 @@ import SwiftUI
         against fresh: FeedTableModel,
         from staleEnvironment: FeedCellEnvironment?,
     ) {
-        // A theme or type-size flip re-inks everything and retires every measured height.
+        // A theme or type-size flip re-inks everything. The heights it retires are the settling
+        // half's — a fresh ink is a fresh stamp, which is a re-wrap.
         if fresh.environment.reInks(against: staleEnvironment) {
-            dropMeasuredHeights()
-            refresh(rows: visibleRows(), remeasuring: true)
+            refresh(rows: visibleRows())
         }
         var affected = IndexSet()
         if fresh.selection.open != drawnOpen {
@@ -277,8 +295,7 @@ import SwiftUI
             affected.formUnion(IndexSet([drawnOpen, fresh.selection.open].compactMap(\.self)))
         }
         let unfolded = fresh.unfolded.wrappedValue
-        let refolded = unfolded != folds
-        if refolded {
+        if unfolded != folds {
             affected.formUnion(IndexSet(folds.symmetricDifference(unfolded)))
         }
         if fresh.washed != drawnWashed {
@@ -288,6 +305,6 @@ import SwiftUI
         drawnWashed = fresh.washed
         drawnOpen = fresh.selection.open
         guard !affected.isEmpty else { return }
-        refresh(rows: affected, remeasuring: refolded)
+        refresh(rows: affected)
     }
 }

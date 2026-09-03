@@ -19,7 +19,6 @@ import ProseText
 /// It answers for every prose row and declines nothing (ADR-0030, Rule 1): a table and a diagram
 /// size THEMSELVES, so each is taken at the height its own layout gives it rather than rounded like
 /// a line of glyphs.
-@MainActor
 enum FeedRowMeasure {
     /// The column a row's own words wrap across, at a table this wide — `argoFeedMeasure`'s cap and
     /// the row's gutters, which is the pair `FeedTableModel.content(at:)` applies in that order.
@@ -32,7 +31,12 @@ enum FeedRowMeasure {
     /// `chip` rather than the offer itself: the height a chip takes is the same whatever it hands
     /// over, and resolving the words is a walk over the row's whole Turn.
     static func height(ofProse words: String, chip: Bool, across measure: CGFloat) -> CGFloat {
-        ProseReading.frame(of: words, across: measure).height
+        // `FeedProseFrame.of` and not `ProseReading.frame`: this is asked by the whole-document
+        // measure pass, off the main actor, and the store behind that name is the main actor's —
+        // a placed frame holds the `CTLine`s it was placed from (`ProseStore`). The two are the
+        // same pure function over the same string at the same measure, so the height a row is set
+        // to and the frame the surface inks are still one answer (ADR-0030, Rule 2).
+        FeedProseFrame.of(text: words, across: measure).height
             + (chip ? FeedProseFrame.chipHeight : 0)
     }
 }

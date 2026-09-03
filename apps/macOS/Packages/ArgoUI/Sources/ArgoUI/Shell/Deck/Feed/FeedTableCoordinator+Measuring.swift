@@ -1,46 +1,20 @@
 import AppKit
 
-// The one place a row's height comes from, and the fork in it: a prose row is typeset by
-// `FeedRowMeasure` and every other row is worked out by `FeedShapeHeight`. Neither asks SwiftUI —
-// the ruler left production with ADR-0030 and survives only as the test oracle. In front of both
-// stands `FeedGeometry`, which is what lets a height outlive the table that took it (#858).
+// Where a row's height comes from now: the settled document, and nowhere else (ADR-0030, Rule 3).
+//
+// There is no measuring on this path any more. A height AppKit asks for was worked out or typeset
+// by `FeedMeasurePass`, off the main actor, before the table was shown a single row — which is the
+// whole of what "the geometry never changes under the scroller" means. The store in front of it is
+// `FeedGeometry`, which is what lets a document outlive the table that opened on it (#858).
 
 extension FeedTableCoordinator {
-    /// A row's height, kept — see `geometry`.
-    func measuredHeight(at index: Int, in table: NSTableView) -> CGFloat {
-        let width = table.bounds.width
-        guard let model, shown.indices.contains(index), width > 0 else {
-            return Self.estimatedRowHeight
-        }
-        // The pass's facts once, then the row's own with the question. A height kept under either
-        // is not an answer to this one, which is what lets the store outlive the table that filled
-        // it (#858).
-        geometry.settle(at: width, in: model.environment)
-        let ground = FeedGeometry.Ground(at: index, of: model)
-        if let known = geometry.height(at: index, under: ground) {
-            return known
-        }
-        // Rounded UP to a whole point: a non-integral row height still blurs baselines on
-        // current macOS, and up rather than to-nearest so text is never clipped by rounding.
-        let height = Self.usableHeight(ceil(measure(at: index, of: model, atWidth: width)))
-        geometry.record(height, at: index, under: ground)
-        return height
-    }
-
-    /// The row worked out. The step above it is added here rather than inside a formula: it is the
-    /// cell's own padding, and the same number whatever the row draws (`FeedRow.step(to:from:)`).
-    private func measure(
-        at index: Int,
-        of model: FeedTableModel,
-        atWidth width: CGFloat,
-    )
-        -> CGFloat {
-        let row = model.rows[index]
-        let step = FeedRow.step(to: row, from: index > 0 ? model.rows[index - 1] : nil)
-        noted()
-        return step + FeedShapeHeight(
-            standing: FeedRowStanding(at: index, of: model),
-            measure: FeedRowMeasure.measure(atWidth: width),
-        ).height(of: row.content)
+    /// A row's height, off the settled document.
+    ///
+    /// The estimate is unreachable in the shipped path and is not a fallback: the table draws no
+    /// row until a document stands (`show(_:against:freshly:on:)`), so an index this document does
+    /// not hold is an index no row exists at. It is here because `NSTableView` takes a `CGFloat`
+    /// and there is nothing honest to return for a row that is not there.
+    func measuredHeight(at index: Int, in _: NSTableView) -> CGFloat {
+        geometry.height(at: index) ?? Self.estimatedRowHeight
     }
 }

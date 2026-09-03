@@ -10,7 +10,7 @@ extension FeedTableCoordinator: NSTableViewDataSource, NSTableViewDelegate {
     }
 
     func tableView(_ table: NSTableView, viewFor _: NSTableColumn?, row index: Int) -> NSView? {
-        guard let model, shown.indices.contains(index) else { return nil }
+        guard let drawn, shown.indices.contains(index) else { return nil }
         // Recycled per shape — see `FeedRow.Content.Shape`. A pool shared across shapes hands a
         // cell the wrong tree and pays a full rebuild for every row a scroll exposes.
         let shape = shown[index].content.shape
@@ -19,7 +19,7 @@ extension FeedTableCoordinator: NSTableViewDataSource, NSTableViewDelegate {
             owner: nil,
         ) as? FeedRowCell
             ?? FeedRowCell(shape: shape)
-        cell.host.rootView = model.content(at: index, hasCursor: index == cursorRow)
+        cell.host.rootView = drawn.content(at: index, hasCursor: index == cursorRow)
         exposures += 1
         return cell
     }
@@ -45,7 +45,7 @@ extension FeedTableCoordinator {
     /// The rows whose cursor may have changed, re-drawn and never re-measured: the cursor is an
     /// overlay, so a row is exactly as tall with one as without.
     func redrawCursor(_ rows: Int?...) {
-        refresh(rows: IndexSet(rows.compactMap(\.self)), remeasuring: false)
+        refresh(rows: IndexSet(rows.compactMap(\.self)))
     }
 
     func step(focusBy delta: Int) {
@@ -80,9 +80,9 @@ extension FeedTableCoordinator {
     }
 
     func activateFocusedRow() -> Bool {
-        guard let model, let index = focusedRow, shown.indices.contains(index) else { return false }
+        guard let drawn, let index = focusedRow, shown.indices.contains(index) else { return false }
         let row = shown[index]
-        return row.activate(selection: model.selection, isExpanded: model.unfolding(row.id))
+        return row.activate(selection: drawn.selection, isExpanded: drawn.unfolding(row.id))
     }
 
     /// The deck handing the keyboard back — `FeedRowSelection.close()` names a row, and the row

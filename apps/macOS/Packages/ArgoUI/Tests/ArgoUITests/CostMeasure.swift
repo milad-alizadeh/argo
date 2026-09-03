@@ -31,6 +31,24 @@ func cpuSeconds(_ work: () -> Void) -> Double {
     return threadCPUSeconds() - before
 }
 
+/// How long `work` took on the WALL CLOCK — the one measurement a thread's CPU clock cannot make.
+///
+/// `cpuSeconds` above is the right unit for work that happens on the thread that asked for it, and
+/// it is the wrong unit for the whole-document measure pass: that pass runs off the main actor and
+/// across cores (ADR-0030, Rule 3), so `CLOCK_THREAD_CPUTIME_ID` on the calling thread charges it
+/// almost nothing and the sum across its children is a figure about the box's core count.
+///
+/// What ADR-0030 gates is what the READER waits, which is wall-clock seconds by definition — and
+/// the budget it gates with is a ceiling of three seconds against a pass that takes a fraction of
+/// one, so it is a bound a loaded box does not falsify. Everything `CostMeasure` says about wall
+/// clocks still applies: never use this where a count exists, and never for a tight ratio.
+@MainActor func elapsedSeconds(_ work: () async -> Void) async -> Double {
+    let before = ContinuousClock.now
+    await work()
+    let taken = ContinuousClock.now - before
+    return Double(taken.components.seconds) + Double(taken.components.attoseconds) / 1e18
+}
+
 /// The cheapest `work` came out over `trials`, which is the best available estimate of what it
 /// COSTS rather than of what happened to it.
 ///

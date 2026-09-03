@@ -22,9 +22,9 @@ struct FeedRowHeightTests {
     """
 
     /// The height the table itself would ask the delegate for, at a width a cell wraps at.
-    private static func height(of content: FeedRow.Content) -> CGFloat {
+    private static func height(of content: FeedRow.Content) async -> CGFloat {
         let handle = FeedTableHandle()
-        let coordinator = FeedTableFixture.laidOut(
+        let coordinator = await FeedTableFixture.laidOut(
             [FeedRow(id: 0, content: content)],
             in: CGSize(width: width, height: 800),
             through: handle,
@@ -34,8 +34,8 @@ struct FeedRowHeightTests {
     }
 
     @Test
-    func `a row holding a pipe table is measured at the table's own height`() {
-        let height = Self.height(of: .message(Self.table))
+    func `a row holding a pipe table is measured at the table's own height`() async {
+        let height = await Self.height(of: .message(Self.table))
 
         #expect(height.isFinite)
         // Above the estimate, because a fallback would also be finite: the row has to have been
@@ -45,12 +45,13 @@ struct FeedRowHeightTests {
     }
 
     @Test
-    func `a table is no taller than the prose of the same words`() {
-        let prose = Self.height(of: .message("Ticket #474 is ready-for-agent, and #623 is a bug."))
+    func `a table is no taller than the prose of the same words`() async {
+        let prose = await Self
+            .height(of: .message("Ticket #474 is ready-for-agent, and #623 is a bug."))
 
         // The rules used to take the whole proposal, so the table stood at 1.2e308 against a
         // sentence's two lines. Generous, but any factor is a fixed ceiling the old bug clears.
-        #expect(Self.height(of: .message(Self.table)) < prose * 10)
+        await #expect(Self.height(of: .message(Self.table)) < prose * 10)
     }
 
     /// The guard behind the measurement, asked directly: no row content can reach it any more —

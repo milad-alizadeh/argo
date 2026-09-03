@@ -31,12 +31,12 @@ public enum ProseRhythm {
     /// the platform resolves: the two differ at every rung by an amount with no fixed sign, so a
     /// line whose leading came off the nominal one stood over the height its name promises here and
     /// under it on another machine — #1026.
-    @MainActor public static var proseLineSpacing: CGFloat {
+    public static var proseLineSpacing: CGFloat {
         max(0, lineHeight - proseRung.drawnLineBox)
     }
 
     /// The same rhythm for machine output. Tighter than prose.
-    @MainActor public static var machineLineSpacing: CGFloat {
+    public static var machineLineSpacing: CGFloat {
         max(0, machineLineHeight - machineRung.drawnLineBox)
     }
 }

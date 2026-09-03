@@ -8,7 +8,6 @@ import ProseText
 /// figure adds to the words are one decision each, spelled HERE and nowhere else: a second reader
 /// spelling any of them itself would be one edit away from two diagram types measuring the same
 /// words two ways.
-@MainActor
 enum MermaidWords {
     /// The label at the feed's own prose metrics, plus the breathing room around it. Whole points,
     /// so the height the lane reports is the height SwiftUI draws rather than a fraction either of

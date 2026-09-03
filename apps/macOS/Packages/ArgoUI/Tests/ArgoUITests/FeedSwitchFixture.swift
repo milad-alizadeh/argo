@@ -21,8 +21,8 @@ import AppKit
 
     /// Opened on nothing, so the first `show` is itself a switch off the unattached reading — what
     /// a deck mounting onto an already-selected Session does.
-    init() {
-        self.coordinator = FeedTableFixture.laidOut(
+    init() async {
+        self.coordinator = await FeedTableFixture.laidOut(
             [], in: Self.pane,
             keeping: FeedTableFixture.Kept(handle: FeedTableHandle(), geometry: FeedGeometry()),
         )

@@ -80,6 +80,15 @@ package enum FeedVacancy: Equatable, Sendable {
         self == .unread && !overdue ? "" : words
     }
 
+    /// Whether the deck draws its activity indicator beneath those words (ADR-0030, Rule 3).
+    ///
+    /// The same clock and exactly one state: `unread` is the only one of the four that is a WAIT.
+    /// The other three are settled facts about the window, and a thing moving under a settled fact
+    /// would say Argo is still working on it.
+    func isWorking(overdue: Bool) -> Bool {
+        self == .unread && overdue
+    }
+
     /// What a titlebar with no Session name announces instead — see `TitlebarTitle`.
     ///
     /// The canopy takes its name off the reading, so a switch leaves it blank until the reading

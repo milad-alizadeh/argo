@@ -186,6 +186,23 @@ enum PerfBudgets {
     /// the gate, as `repeatReadingFold` above; never rounded down to fit a red run.
     static let keyedTextSizeFold = 5.55 / 3
 
+    /// `SettledSessionCostTests` — the largest Session Argo has been given, measured whole before
+    /// a row of it is drawn (ADR-0030, Rule 3).
+    ///
+    /// Three seconds, agreed in the grilling session #1109 records: a first open of a 63 MB Session
+    /// may take that long, and a document whose geometry is still moving is not accepted at any
+    /// speed. Recorded: 0.100 s of thread CPU over the checked-in synthetic's 459 rows taken
+    /// serially, against 0.020 s of wall clock for the same document across cores · M4 Pro,
+    /// loaded · debug · single pass, because a first pass over a cold prose cache IS the
+    /// measurement.
+    ///
+    /// The one SECONDS budget in this file, and the one place a seconds budget is sound: what is
+    /// bounded is what the reader WAITS, which is wall-clock by definition, and the bound is a
+    /// ceiling somebody agreed to sit through rather than a ratio (`elapsedSeconds`). The slack is
+    /// the argument — thirty times the recorded pass — so a loaded box moves the figure and
+    /// not the verdict, while a pass that went back to a SwiftUI layout a row would read minutes.
+    static let settledDocument = 3.0
+
     /// The seconds `MinimapFigureRecording` re-records, one entry a figure it prints.
     ///
     /// Recorded: over the 301-row reading · M4 Pro, **loaded** · both, as the two halves · the

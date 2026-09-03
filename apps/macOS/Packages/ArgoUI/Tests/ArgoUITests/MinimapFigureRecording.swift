@@ -43,24 +43,28 @@ struct MinimapFigureRecording {
             + "fold=\(fold)")
     }
 
-    /// The feed's own measure pass, cold: one hosting-ruler `sizeThatFits` a row over the 301-row
-    /// reading, and the most expensive thing the feed does. Single-sample — a first pass over a
-    /// cold prose cache IS the measurement.
+    /// The feed's own measure pass, cold: the whole 301-row document typeset and worked out
+    /// before a row of it is drawn, which is the most expensive thing the feed does. Single-sample
+    /// — a first pass over a cold prose cache IS the measurement.
+    ///
+    /// On the wall clock and not the thread's, for `elapsedSeconds`' reason: the pass runs off the
+    /// main actor and across cores since ADR-0030, and the calling thread's CPU clock is charged
+    /// for none of it.
     @Test
-    func `the feed's measure pass, cold`() {
+    func `the feed's measure pass, cold`() async {
         let rows = Fixture.rows(301, tag: "figure-measure")
-        Self.record(
+        await Self.record(
             "feed-measure-pass-cold",
             PerfBudgets.feedMeasurePass,
-            cpuSeconds { _ = Fixture.laid(rows) },
+            elapsedSeconds { _ = await Fixture.laid(rows) },
         )
     }
 
     /// Reading the whole session warm, which happens on every reshape. Least of N: repeating the
     /// walk is honest, because the walk is what runs on every reshape after the first.
     @Test
-    func `reading a session, warm`() {
-        let table = Fixture.laid(Fixture.rows(301, tag: "figure-read"))
+    func `reading a session, warm`() async {
+        let table = await Fixture.laid(Fixture.rows(301, tag: "figure-read"))
         _ = table.reading()
         Self.record(
             "session-reading-warm",
@@ -72,8 +76,8 @@ struct MinimapFigureRecording {
     /// Painting one band cold, then the repaint the reader feels. Cold is single-sample by
     /// definition; the repaint is the least of N.
     @Test
-    func `painting a band, cold and warm`() throws {
-        let geometry = try Fixture.geometry(
+    func `painting a band, cold and warm`() async throws {
+        let geometry = try await Fixture.geometry(
             over: Fixture.rows(301, tag: "figure-band"),
             atWidth: 619,
         )
@@ -91,8 +95,8 @@ struct MinimapFigureRecording {
 
     /// One second of reading at frame rate inside the band the lane holds.
     @Test
-    func `sixty scrolled frames`() throws {
-        let geometry = try Fixture.geometry(
+    func `sixty scrolled frames`() async throws {
+        let geometry = try await Fixture.geometry(
             over: Fixture.rows(301, tag: "figure-scroll"),
             atWidth: 618,
         )
@@ -107,8 +111,9 @@ struct MinimapFigureRecording {
     /// Thirty frames of a seam drag: the column moves every frame, so every wrapped answer is a
     /// fresh measure and the wrapped store turns over. The worst case the design has.
     @Test
-    func `thirty seam frames`() throws {
-        var reading = try #require(Fixture.laid(Fixture.rows(301, tag: "figure-seam")).reading())
+    func `thirty seam frames`() async throws {
+        let laid = await Fixture.laid(Fixture.rows(301, tag: "figure-seam"))
+        var reading = try #require(laid.reading())
         Self.record("thirty-seam-frames", PerfBudgets.thirtySeamFrames, leastCPUSeconds {
             for at in 0 ..< 30 {
                 reading.columnWidth = 700 - CGFloat(at)
@@ -119,11 +124,11 @@ struct MinimapFigureRecording {
 
     /// A session of nothing but long markdown, so every row in the band is a fresh Core Text pass.
     @Test
-    func `a band of nothing but long markdown, cold`() throws {
+    func `a band of nothing but long markdown, cold`() async throws {
         let heavy = (0 ..< 300).map { at in
             FeedRow(id: at, content: .message("## Turn \(at)\n\n\(MinimapText.paragraph) [f\(at)]"))
         }
-        let geometry = try Fixture.geometry(over: heavy, atWidth: 616)
+        let geometry = try await Fixture.geometry(over: heavy, atWidth: 616)
         Self.record(
             "markdown-band-cold",
             PerfBudgets.markdownBandCold,

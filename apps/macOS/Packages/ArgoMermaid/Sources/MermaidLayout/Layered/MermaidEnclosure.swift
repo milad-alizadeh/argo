@@ -15,7 +15,7 @@ struct MermaidEnclosure: Equatable, Sendable {
 extension MermaidEnclosure {
     /// The frame around these members. `nil` where they were all unplaced, which is a group no
     /// reader produces.
-    @MainActor static func around(_ members: [String], in boxes: [String: CGRect]) -> Self? {
+    static func around(_ members: [String], in boxes: [String: CGRect]) -> Self? {
         let placed = members.compactMap { boxes[$0] }
         guard let first = placed.first else { return nil }
         let band = ceil(MermaidMeasure.groupFace.lineBox)

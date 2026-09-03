@@ -31,19 +31,21 @@ struct ProseCacheCostTests {
     /// literal a 900-row reading walks past.
     @Test
     func `a whole-document walk past the old ceiling hits everything on its second pass`() {
-        // Sampled BEFORE the table is built, because building it measures every row and a prose
-        // row's height is read off its markdown structure now (`FeedRowMeasure`) — so the store is
-        // already partly filled by the time the lane's own walk runs. The claim is the same either
-        // way: over the two walks together, each distinct text is read once.
-        let opening = ProseReading.structureCost
-        let handle = FeedTableHandle()
-        let table = FeedTableFixture.laidOut(Self.rows, in: Self.column, through: handle)
+        // Driven through a store of its OWN, held the way `ProseReading.holding(rows:)` holds the
+        // shared ones. The property is `ProseCache`'s — a ceiling raised to the document rather
+        // than left at a literal the document walks past — and it cannot be read off the shared
+        // stores any more: since ADR-0030 the whole-document measure pass fills those from other
+        // threads, so another suite's document can evict this one's entries between two samples
+        // and a rate of 1 becomes a rate of 0.997.
+        var store = ProseCache<[MinimapProseBlock]>()
+        store.hold(atLeast: Self.rows.count)
+        let opening = store.cost
 
         // Cold is a single sample, because a first pass over an empty store IS the measurement.
-        let coldCPU = cpuSeconds { _ = table.reading() }
-        let cold = ProseReading.structureCost
-        let warmCPU = leastCPUSeconds { _ = table.reading() }
-        let warm = ProseReading.structureCost
+        let coldCPU = cpuSeconds { Self.walked(through: &store) }
+        let cold = store.cost
+        let warmCPU = leastCPUSeconds { Self.walked(through: &store) }
+        let warm = store.cost
 
         // The cold pass really is one read per row: a walk that emptied itself mid-pass would read
         // more than the document has rows.
@@ -56,6 +58,17 @@ struct ProseCacheCostTests {
         // are a Core Text typeset walk and a dictionary hit, unlike enough that 3.8× of the 39 is
         // the machine rather than the cache, and the counts say the same thing exactly.
         #expect(warm.hitRate(since: cold) == 1, "cold \(coldCPU)s warm \(warmCPU)s")
+    }
+
+    /// Every row of the reading read for its shape, which is what a whole-document walk does —
+    /// `MinimapProseBlock.blocks(from:)` over the row's markdown, exactly as `ProseReading` reads
+    /// it, into the store the caller is holding.
+    private static func walked(through store: inout ProseCache<[MinimapProseBlock]>) {
+        for row in rows {
+            guard case let .message(text) = row.content else { continue }
+            _ = store
+                .reading(of: text) { MinimapProseBlock.blocks(from: MarkdownBlock.blocks(in: $0)) }
+        }
     }
 
     /// The bound the hit rate is bought with. A reading longer than the cap is held to the cap, so

@@ -6,7 +6,6 @@ import Foundation
 // They are placed by ZIPPING `MermaidQuadrant.labels` with the places below, so the pairing the
 // view rests on — one `Text` per label, on the caption at the same index — holds by construction.
 
-@MainActor
 extension MermaidQuadrantField {
     /// One caption per fixed label, in `MermaidQuadrant.labels`' own order, held clear of the marks
     /// already plotted. The points' own names follow, from `MermaidQuadrantPoints`.
