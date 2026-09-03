@@ -56,12 +56,13 @@ Renaming one of these later is a migration, and seven of them were: #751's colla
 menus into one family retired every `CommandMenu*` and `FileMenu*` name at once, and #752 added
 two more of its own. The middle column below carries what each shipped name was frozen as, and
 [`cockpit-composer-picker.inventory.md`](cockpit-composer-picker.inventory.md) records why each
-one moved. **The shipped name is the one to cite**; the frozen name is kept here so a reader
-holding an older document can find its way forward, and for no other reason. Rows marked *added*
-were never frozen: they came out of a build, and are listed here so the whole family reads in one
-place rather than half here and half in the inventory.
+one moved. **The shipped name is the one to cite**; the older name is kept here so a reader holding
+an older document can find its way forward, and for no other reason. Rows marked *added* were never
+frozen and were never renamed; rows whose middle column names a build's own name were renamed too,
+but from a name this table never carried, so they are not among the seven. Both kinds are listed
+here so the whole family reads in one place rather than half here and half in the inventory.
 
-| name | frozen as | what it is |
+| name | was | what it is |
 |---|---|---|
 | `AddButton` | `AttachButton` | the footer's leading `+`. **Renamed in #708** — see below |
 | `AddMenu` | `AddMenu` | the two-row menu `AddButton` opens: files, skills & commands |
@@ -72,8 +73,8 @@ place rather than half here and half in the inventory.
 | `ComposerMenuSection` | `CommandMenuSection` | the origin header, with its count and where its group came from |
 | `ComposerMenuStatusLine` | `CommandMenuStatus` | the pinned strip that says the built-in half is late or unavailable |
 | `ComposerMenuZeroLine` | `CommandMenuEmpty` | the one line drawn when nothing matches |
-| `ComposerMenuCursor` | *added, #685* | where the keyboard is in whichever menu is open |
-| `ComposerMenu` | *added, #751* | the derive and the values it answers in — `Listing`, `Section`, `Row`, `Status`, `Sigil`, `Pick`, `AddRow` — with one file per sigil |
+| `ComposerMenuCursor` | `CommandMenuCursor` — #685's own name, renamed by #687 | where the keyboard is in whichever menu is open |
+| `ComposerMenu` | `CommandMenuProjection` · `WorkspaceFileProjection` — #685's and #687's own names, both collapsed by #751 | the derive and the values it answers in — `Listing`, `Section`, `Row`, `Status`, `Sigil`, `Pick`, `AddRow` — with one file per sigil |
 | `ComposerMenus` | *added, #752* | which menu the line has open, and where the keyboard is in it |
 | `ComposerMenuLine` | *added, #752* | everything about the draft and the Session that decides which menu opens |
 | `MentionSpan` | `MentionSpan` | an `@` mention inside the user's own bubble in the feed. **Unbuilt** — claimed by no ticket |

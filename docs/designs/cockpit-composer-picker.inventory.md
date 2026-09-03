@@ -1,11 +1,21 @@
 # The composer's command menu — build inventory (#707)
 
-What building [`cockpit-composer-picker.md`](cockpit-composer-picker.md) actually forced out of it.
-One section per ticket, appended in the order each landed: **#685** (`/`), **#686** (built-ins),
-**#687** (`@`), **#688** (the feed marker) and **#689** (`+`). The names were frozen at approval and
-renaming one is a migration — seven were renamed, and *Every frozen name that moved* at the foot of
-this file is that migration's record. **Read the shipped name off the design's table, not out of a
-section below**: a section written during a build says the name that was true that week.
+What building [`cockpit-composer-picker.md`](cockpit-composer-picker.md) actually forced out of it,
+under #707: **#685** (`/`), **#686** (built-ins), **#687** (`@`), **#688** (the feed marker) and
+**#689** (`+`). Sections are grouped by ticket and **appended, never re-ordered**, so a ticket's
+later sections sit after a younger ticket's — #687's review and measurement notes follow #688's
+block, because that is when they were written. #685's four sections carry no `— #685` suffix
+because it was the first and had nothing to be distinguished from.
+
+Two of the parent's tickets have no section of their own, and both are deliberate: **#698** landed
+the engine seam and no component, so what it left shows up in #685's *Engine changes this needed*
+where that build met it; **#708** renamed one control, which the design's own name table carries.
+
+The names were frozen at approval and renaming one is a migration — seven were renamed, and *Every
+name that moved* at the foot of this file is that migration's record. **Read the shipped name off
+the design's table, not out of a section below**: a section written during a build says the name
+that was true that week. The last section says which screens `/pixel-review` has actually judged,
+and which it has not.
 
 #685's own framing, kept because it dates every name in its section: *this ticket builds the `/`
 half only — the `+` menu (`AddMenu`), the `@` file rows (`FileMenuRow`), the built-ins strip
@@ -463,7 +473,7 @@ None. `AddMenu`'s two rows read `line.workspaceRoot` and `line.canRunCommands`, 
 None. `AddMenuRow` reuses `ComposerMenuSurface`, `ArgoComposerVessel.commandRowHeight` and the
 existing `body` / `machineCaption` roles unchanged — no token promoted.
 
-## Every frozen name that moved — reconciled by #707
+## Every name that moved — reconciled by #707
 
 The design froze ten names at approval, `FileMenu` joined them during #687's build, and it said
 renaming one is a migration. **Seven of the eleven were renamed and the inventory recorded none of
@@ -479,14 +489,18 @@ the `/` half and the `@` half separately. That is precisely why nothing recorded
 inventory is appended by the ticket that builds against the design, and no ticket that touched
 these names was one.
 
-| frozen | shipped | by | why |
+Five rows below are the seven frozen names (two rows carry two each); the sixth is the pair of derives
+#685 and #687 named for themselves, which #751 collapsed in the same pass and which belongs here
+because the collapse is one move, not two.
+
+| was | shipped | by | why |
 |---|---|---|---|
 | `CommandMenu` · `FileMenu` | `ComposerMenuList` | #751 | One list body. `CommandMenu.swift:26-46` and `FileMenu.swift:22-39` were the same `if isEmpty / else ScrollView + LazyVStack + Button` — `listHeight` differed only in adding header heights |
 | `CommandMenuRow` · `FileMenuRow` | `ComposerMenuRow` | #751 | One row. The `ground`/`fill` pair was character-for-character identical, plus the same `isHovered`, the same height and the same `.accessibilityAddTraits` |
 | `CommandMenuEmpty` | `ComposerMenuZeroLine` | #751 | The two zero lines held the identical string literal — *". Your line is still just text — ⏎ sends it as written."* — in two homes, free to diverge. `Zero` and not `Empty` because the line is about a query that matched nothing, not about a menu with no rows |
 | `CommandMenuSection` | `ComposerMenuSection` | #751 | Not duplicated, but carried into the one family so the whole surface reads under one prefix. Sections stay `/`-only: the shared list draws them when the `Listing` has them |
 | `CommandMenuStatus` | `ComposerMenuStatusLine` | #751 | The `/`-only strip became the one line the shared list draws above any `Listing` carrying a `Status`. #686's pair collapsed into one type: the enclosing `CommandMenuStatus` was a switch over `BuiltinStatus`, and that switch is now `ComposerMenu.status(of:)` on the derive, answering `Status?` |
-| `CommandMenuProjection` · `WorkspaceFileProjection` | `ComposerMenu` | #751 | Two projections carrying the same shape — a `Menu` with `rows`/`query`/`isEmpty`, a `Row: Identifiable where ID == String`, one `menu(for:in:)` entry. `ComposerMenuCursor.row(in:)` was ALREADY generic over exactly that shape, which is the abstraction arriving before its name did. The two derive RULES survive untouched as `ComposerMenu+Commands` and `+Files`, substring and subsequence, each with its own suite |
+| `CommandMenuProjection` · `WorkspaceFileProjection` — never frozen | `ComposerMenu` | #751 | Two projections carrying the same shape — a `Menu` with `rows`/`query`/`isEmpty`, a `Row: Identifiable where ID == String`, one `menu(for:in:)` entry. `ComposerMenuCursor.row(in:)` was ALREADY generic over exactly that shape, which is the abstraction arriving before its name did. The two derive RULES survive untouched as `ComposerMenu+Commands` and `+Files`, substring and subsequence, each with its own suite |
 
 `CommandMenuCursor` → `ComposerMenuCursor` (#687, one cursor for both menus, keyed by id) is the
 eighth rename and the only one already recorded — under *Amended during the build — #687* above.
@@ -518,3 +532,27 @@ Grepped and fixed with this reconciliation, because a stale citation is how a re
 `MentionSpan` is the one frozen name that is still unbuilt, which the *Not claimed by any
 ticket* section above already records. It is the one entry where the table and the tree disagree on
 purpose.
+
+## What `/pixel-review` has and has not judged — as of #707
+
+#707's second *Done when* asks that every screen be judged against its render in
+`composer-picker/`. **It is not satisfied, and it cannot be ticked from a desk.** Each ticket's PR
+says for itself whether a judge ever looked, and three of the five say no or not-since. Read off
+PRs #715 (#685), #727 (#686), #730 (#687), #721 (#688) and #1135 (#689):
+
+| ticket | renders | judged? |
+|---|---|---|
+| #685 | the `/` menu's own screens | **No, on purpose.** The build amended the design away from four of its own renders — the cursor's Ion Blue edge — so a blind judge given the PNGs would report every amendment as a defect. It needs the amended prose as its reference, which is why the design carries the stale-render warning at its head |
+| #686 | `slash-late.png`, `slash-fail.png` | **No.** `screenshot.sh` answered `could not create image from window` — a sleeping or locked display, not a permission. The two Specimen cases are registered and were never rendered |
+| #687 | the `@` menu's screens | **Yes.** A judge that saw only the renders and the design measured the cursor row at zero luminance variation where `at.png` marks row one at +14.6, which is how the settle bug was caught from the pixels as well as from the diff. Re-measured at +14.9 after the fix |
+| #688 | `loaded.png` | **Partly.** The marker was judged and one finding rejected on measurement — the render draws marker and message flush at x≈602 and x≈600, so the indent the judge asked for is not the design. But three later fixes — the failure ink, the hairline rim, the shortened panel path — landed after the last successful render and were never re-judged |
+| #689 | `plus.png`, `plus-files.png` | **Yes.** One finding, the missing row icons, fixed and re-verified |
+
+**What is outstanding is a machine's display, not a decision.** `slash-late.png` and `slash-fail.png`
+have never been judged at all, and #688's three fixes have not been re-judged since they landed.
+Both need a render, which needs a woken display and Screen Recording permission — a screenshot taken
+without it is a silently blank PNG (`docs/agents/visual-verification.md`).
+
+#685's screens are the different case: they should be judged against the **measurement tables**
+above and in the design, never against `slash*.png`, until somebody re-runs the study that produced
+those PNGs. That is not a gap a render closes.
