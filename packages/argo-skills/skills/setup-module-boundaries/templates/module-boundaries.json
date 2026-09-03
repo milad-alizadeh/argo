@@ -67,6 +67,7 @@
       "comment": "A symbol earns the domain-aware shared tier on its THIRD caller, but the gate enforces the FLOOR at two — the house rule calls two callers 'either, copy it or hoist', and arithmetic must not adjudicate a judgement call. Counted per SYMBOL across modules, never per file: everything leaves the tier through a barrel, so a file-level graph shows every module depending on every leaf behind it and proves nothing. `exclude` carries paths earned by CATEGORY rather than by caller count (a vendored primitive kit would stand alone as a published package, so it belongs there from its first caller).",
       "module": "example-shared",
       "minImportingModules": 2,
+      "aliases": { "@/": "src/" },
       "exclude": [],
       "ratchet": {}
     }

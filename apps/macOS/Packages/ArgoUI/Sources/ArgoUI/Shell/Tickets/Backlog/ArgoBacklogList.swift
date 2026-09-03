@@ -2,7 +2,7 @@ import ArgoDesign
 import SwiftUI
 
 /// What the deck's leading pane is measured at (`docs/designs/cockpit-work-room.md` — the backlog
-/// list). Beside the surface, per `rules/design-system.md`: a measure is not a token.
+/// list). Beside the surface, per `rules/swift.md`: a measure is not a token.
 package enum ArgoBacklogList {
     /// The width the pane RESTS at: the smallest at which all twelve of the repo's real titles read
     /// whole at depth three. At 480 three of them clip, which is the arithmetic that moved the

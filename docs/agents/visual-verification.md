@@ -58,7 +58,7 @@ is the only source for rhythm, density and type size. Prose in the decision log 
 satisfied while the approved pixels are not.
 
 The rhythm itself lives in `ArgoDesign`, rendered by the `foundations` specimen.
-That, not an HTML page, is the living token contract (`rules/design-system.md`). The directory
+That, not an HTML page, is the living token contract (`rules/swift.md`). The directory
 holds tokens only: the shared views drawn with them are `ArgoAtoms`, and one surface's own
 measures — the feed's column, the composer's vessel, the minimap's lane, the plan pill, the
 toolbar's vessel, the context bar, the Connect panel, the agents rail, the roster's foot — sit in

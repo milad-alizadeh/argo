@@ -1,81 +1,58 @@
 ---
 name: prototype-to-design
-description: Turn an agreed prototype variant into the approved design — values snapped to the token contract, a render committed beside it. Once per screen, before any code. Use when the user picks a variant ("variant A looks right", "go with the second one"), wants a design approved or settled, or asks what to do with a finished prototype.
+description: Approve one prototype variant as the design, once per screen, before any code. Use when the user picks a variant ("go with the second one"), asks for a design to be approved, or asks what to do with a finished prototype.
 ---
 
 # Prototype To Design
 
-`/prototype` explores. This approves **one** of what it explored, and leaves on `main`
-the two artifacts everything downstream needs: an **HTML design** that speaks only the
-token contract, and a **render** of it.
-
-Run it **once per screen**. `design-to-code` then runs once per ticket against what
-this produces.
+`/prototype` explores. This approves one of what it explored and leaves on `main` the two
+artifacts everything downstream needs: an HTML design that speaks only the token contract,
+and a render of it. `design-to-code` then runs once per ticket against them.
 
 ## Gate
 
-Needs a prototype whose variant is **agreed**. If the user has not picked one, stop
-and ask — approving a screen nobody chose is the one failure this skill can't undo.
-
-If the token contract is missing a whole family the prototype uses (no typography
-roles at all, no spacing steps), stop and ask the user to run
-`/setup-design-foundations` with the prototype as raw material, then come back. **This
-skill reconciles a screen against foundations; designing a scale belongs there.**
+Needs a prototype whose variant is agreed. If the user has not picked one, stop and ask. If
+the token contract is missing a whole family the prototype uses (no typography roles, no
+spacing steps), stop and ask the user to run `/setup-design-foundations` with the prototype
+as raw material, then come back.
 
 ## 1. Drop the losing variants
 
-The agreed variant only. Delete the others, the variant switcher, and the URL
-plumbing that selected them.
+Delete the other variants, the switcher and their URL plumbing. Keep every state reachable
+by URL: error, empty and loading are what `design-to-code` extracts against and what
+`pixel-review` judges. Note what the prototype learned that the render will not show (a fact
+the data exposed, a case that overflowed) for step 6.
 
-Keep, and carry forward, anything the prototype learned that is **not** visible in the
-winning render — a fact the data exposed, a case that overflowed, a figure that turned
-out unavailable. Those go in the report at step 6; they are the reason the prototype
-was built and they are invisible in a PNG.
-
-**Keep every state reachable by URL.** A prototype that showed error/empty/loading via
-a search param keeps that — those states are what `design-to-code` extracts against and
-what `pixel-review` judges. A state you cannot link to is a state nobody re-checks.
+Done when the file renders only the agreed variant and every state is reachable by URL.
 
 ## 2. Dump every raw value
 
-Per family — colors, font sizes, spacing, radii, durations:
+Per family (colours, font sizes, spacing, radii, durations), one list of distinct values,
+including values inherited from a hand-written stylesheet.
 
-```bash
-grep -oE 'font-size:\s*[^;]+' <prototype>.html | sort | uniq -c | sort -rn
-```
-
-Include values inherited from a hand-written stylesheet, not just inline ones.
-
-## 3. Snap or promote — nothing stays raw
+## 3. Snap or promote, nothing stays raw
 
 For each distinct value, exactly one of:
 
-- **Snap** to the nearest existing token. Exploration jitter (11 vs 11.5px) collapses
-  here, and **the token keeps its clean value** — never inherit the prototype's jitter.
-- **Promote** to a new token, named by *role*, never by value (`--text-label`, not
-  `--text-10-5`). Typography roles are full tuples: size + line-height + weight +
-  tracking.
+- **Snap** to the nearest existing token. Exploration jitter collapses here and the token
+  keeps its clean value.
+- **Promote** to a new token, named by role (`--text-label`, not `--text-10-5`). Typography
+  roles are full tuples: size, line-height, weight, tracking.
 
-A promotion is a **contract change**: a mini `setup-design-foundations` bless, shown to
-the user before it lands, in all theme variants, with its framework wiring in the same
-change.
-
-**Show the user the snap/promote table before proceeding.** Collapsing near-duplicate
-values changes how the screen looks in the small; they should see what moved.
+Show the user the snap/promote table before proceeding; a promotion is a contract change and
+lands with its framework wiring in every theme variant.
 
 ## 4. Write the design
 
-Move the winner to `docs/designs/<screen>.html`, from `design-template.html`:
+Move the winner to `docs/designs/<screen>.html`, from the design template and token mirror
+`docs/designs/stack.md` names (`design-template.html` and `tokens.css` by default):
 
-- imports `docs/designs/tokens.css` — the mirror of the real contract, so the design
-  cannot say anything the app can't;
-- **every** value via `var(--token)` or a role class; no literals survive step 3;
-- every meaningful region carries `data-component="PascalCaseName"`. Those names are
-  **frozen** — they become component files and ticket titles, and renaming later is a
-  migration;
-- repeated shapes call a named render function in `kit.js` rather than copying markup.
+- every value via `var(--token)` or a role class;
+- every meaningful region carries `data-component="PascalCaseName"`. Those names are frozen:
+  they become component files and ticket titles;
+- repeated shapes call a named render function in `kit.js`.
 
-Then add the front matter that says what this file is:
+Add the front matter:
 
 ```html
 <!-- status: approved
@@ -83,29 +60,23 @@ Then add the front matter that says what this file is:
      prototype: <throwaway branch> -->
 ```
 
-Three values, in order: **`approved`** (agreed, not yet in the app) → **`built`**
-(`design-to-code` finished the screen) → **`stale`** (the app has since changed this
-screen without coming through here).
+Three values, in order: `approved` (agreed, not yet in the app), `built` (`design-to-code`
+finished the screen), `stale` (the app has since changed this screen without coming through
+here). A `stale` design is re-based before it is edited: screenshot the shipped screen,
+correct the design to match, then explore.
 
-**Stale is fine** — labelling it beats pretending. A stale design is **re-based before it is edited, never after**. Re-basing
-means screenshotting the shipped screen, correcting the design to match, and only then
-exploring. Editing a stale design silently reverts whatever shipped since.
+Done when the no-raw-values check passes on the file and every region has a
+`data-component`.
 
 ## 5. Render it
 
-Screenshot the design via the render method in `docs/designs/stack.md`, and commit the
-PNG beside the HTML. One per state if the screen has several.
-
-**The PNG is the artifact that gets linked and judged** — tickets link it, `pixel-review`
-judges against it, humans open it. The HTML is there so the screen can be explored
-again later without starting over.
+Screenshot the design via the render method in `stack.md` and commit one PNG per state
+beside the HTML. Tickets link the PNG and `pixel-review` judges against it.
 
 ## 6. Report
 
 - The snap/promote table, and any token that landed in the contract.
-- **The measurements the tickets must carry** — the numbers this screen settled that
-  prose would lose. A ticket that states them can fail review for getting them wrong;
-  one that links only an HTML file cannot.
-- What the prototype exposed that the render doesn't show (step 1).
+- The measurements the tickets must carry: the numbers this screen settled.
+- What the prototype exposed that the render doesn't show.
 - Where the design and its PNG live, and the next step: `/to-tickets`, then
   `design-to-code` per ticket.

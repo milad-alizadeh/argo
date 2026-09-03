@@ -1,139 +1,109 @@
 ---
 name: audit-agent-context
-description: Measure what a project loads into every agent session before the first prompt, and cut it. Use when the user says their CLAUDE.md or AGENTS.md is too long or bloated, asks why context fills up so fast or why sessions cost so much, asks how much of the usable window is gone before the first prompt, asks what the agent reads before it does anything, or wants rules and skills with no subject in the tree found and removed.
+description: Price what a project loads into every agent session before the first prompt, find the bloat in its agent documents, and cut it. Use when CLAUDE.md or AGENTS.md feels bloated, sessions cost or fill up too fast, rules restate what the linter already gates, or rules and skills with no subject in the tree should be found and removed.
 ---
 
 # Audit Agent Context
 
-Every other `setup-*` skill *writes* into a project. This one reads what is already there,
-prices it, and proposes cuts. Report first, edit only what the user accepts.
-
-**The case is spend and headroom, never adherence.** Never tell the user a smaller context
-file makes the agent follow instructions better — the largest study to test that directly
-(1,650 sessions) returned affirmative-null Bayes factors for context-file size against
-compliance. **Spend** and **headroom** are true, checkable, and enough. §1 prices both.
+Report first, edit only what the user accepts. Argue **spend** and **headroom**, which §1
+prices, never adherence: a smaller context file has not been shown to make an agent follow
+instructions better, and the claim is uncheckable here.
 
 ## 1. Measure what loads before the first prompt
 
-Work from the repo root (`git rev-parse --show-toplevel`). Always-on is everything the model
-receives before the user types:
+Work from `git rev-parse --show-toplevel`. Always-on is everything the model receives before
+the user types:
 
 | Source | How to find it |
 |---|---|
 | Root agent file | `CLAUDE.md`, `AGENTS.md`, and any other root file the harness reads |
-| Its `@`-import chain | Every `@path` line, **resolved transitively** — an import pastes the whole file into every request |
+| Its `@`-import chain | Every `@path` line, **resolved transitively**: an import pastes the whole file into every request |
 | Output style | The one named by `.claude/settings.json`'s `outputStyle`, if any |
-| Skill frontmatter | The `name` + `description` of every installed skill, in each skills directory. Dedupe by skill name — a `.claude/skills/<n>` symlink into `.agents/skills/<n>` is one skill loaded once |
+| Skill frontmatter | `name` + `description` of every installed skill, deduped by name across skills directories |
 | Memory index | The always-on index file, not the memories it points at |
 
-Report bytes per source, then convert to tokens. Three ways, best first.
+Report bytes per source, then tokens, and say which of three conversions you used:
 
-**Weigh each source by difference.** Most agent CLIs have a headless mode that reports token
-usage for one exchange. Run a trivial prompt twice against a scratch copy of the project —
-once whole, once with a single source removed — and the drop is that source's real cost, in
-the harness's own accounting. Claude Code:
+- **Weigh by difference.** Run a trivial prompt against a scratch copy of the project, whole
+  and then with one source removed; the drop is that source's cost in the harness's own
+  accounting (Claude Code: `claude -p "Reply with exactly: ok" --output-format json`, cost =
+  input + cache creation + cache read). Reproduce the whole import chain in the copy, or a
+  file loaded only through an import measures a confident zero. Weigh the few dominant
+  sources, since each probe is a paid call.
+- **A count the harness reports.** Take its per-source figures, never its grouping: a bucket
+  named for the vendor can hold project-owned content, an output style commonly does.
+- **Bytes ÷ 2.6.** Agent files are dense in tables and paths; prose's 3.5 under-reports them.
 
-```bash
-cd <scratch-copy> && claude -p "Reply with exactly: ok" --output-format json
-# cost = input_tokens + cache_creation_input_tokens + cache_read_input_tokens
-```
-
-Copy the project to a scratch directory and remove sources there. Never measure by deleting
-from the real tree. Reproduce the **whole import chain** in the copy — a root file that is
-only loaded because another file imports it costs nothing on its own, and you will measure a
-confident zero. Each probe is a paid API call, so weigh the few sources that dominate rather
-than all of them.
-
-**A count the harness reports.** Cheaper, and it is what the user is billed on. Take its
-per-source figures, never its grouping: a bucket named for the vendor can hold project-owned
-content, and an output style commonly lands in one, so total the table's sources yourself.
-
-**Bytes ÷ 2.6**, when neither is available. Agent files are dense in tables, backticks and
-paths; the 3.5 that suits prose under-reports them by a quarter. Say which of the three you
-used.
-
-Then price that total twice, and report both beside the bytes.
-
-**Spend** — tokens × turns per session, because always-on content is re-sent every turn. A
-20k file over a 40-turn session is 800k tokens of re-sent context.
-
-**Headroom** — the same tokens as a share of the *working region*, because they sit there for
-the whole session and nothing evicts them. The window is the hard limit; the working region
-is the span a model still reasons well across, roughly 100–140k tokens whatever the window
-says. **Compute against 120k.** That is a property of the models, so do not ask the user for
-a figure and do not scale it to the advertised window — a 1M window has the same working
-region as a 200k one. A 20k preamble against it is 17% gone before the first prompt, on every
-session including the ones that never touch its subject.
-
-Do not rank the project against other repos. A percentile needs a corpus the user cannot
-see, ages the moment it ships, and implies a better and worse end of a distribution — which
-is the adherence claim in numeric clothing. Report bytes and tokens.
+Price the total twice. **Spend** is tokens × turns per session, because always-on content is
+re-sent every turn. **Headroom** is the same tokens as a share of a **120k working region**,
+the span a model still reasons well across, which is a property of the models and not of the
+advertised window. Report bytes and tokens, never a percentile against other repos.
 
 ## 2. Find what does not earn its place
 
-Six checks. Each one ends in a byte count and a named file, or it did not run.
+Run the bundled script first; it measures checks 2 and 6–10 mechanically and prints a file
+and a byte count per finding:
+
+```bash
+node <this-skill-dir>/scripts/audit-bloat.mjs <repo-root>
+```
+
+Each check ends in a byte count and a named file, or it did not run.
 
 1. **The content-expanding `@` import.** A root file importing a large document moves it
-   from pull to push. Rare, and the single largest finding when present. Report the imported
-   file's size next to the importer's.
-2. **Duplicate root files.** `CLAUDE.md` and `AGENTS.md` with the same body, or three copies
-   of one file. Diff them; identical content loaded twice is paid twice.
-3. **Rules and skills with no subject.** A rule about a language the tree does not contain,
-   a skill for a framework nothing imports. Check each rule's `paths:` frontmatter against
-   the working tree, and each skill's subject against the manifest — a rule matching zero
-   files can only misfire. Verify before claiming absence, and search **tracked files on the
-   current branch** — `git grep -l <subject> -- . ':(exclude).claude/worktrees'` — never a
-   bare recursive grep of the working directory. Sibling worktrees, build output and vendored
-   copies all hold stale mentions, and one hit in any of them clears a dead subject as live.
-4. **Inlined runbooks.** Step-by-step procedures, command sequences, and troubleshooting in
-   an always-on file. These are read once a task starts, which makes them pull material.
-5. **Per-tool-call hook injection.** Read the harness's hook config for hooks that return
-   context. Measure one fire by running the command against a realistic payload and counting
-   the bytes it emits, then multiply by plausible call counts. **No byte-count of files can
-   see this**, and it is the only cost that grows with session length — a hook on a
-   frequently-used tool routinely outweighs the root file.
-6. **Skill frontmatter as a whole.** Every installed skill is billed every turn whether or
-   not it is ever used. If the count is large, the honest finding is that the bundle costs
-   more than any single document, and installing a subset is the fix.
+   from pull to push. Report the imported file's size next to the importer's.
+2. **Duplicate root files.** `CLAUDE.md` and `AGENTS.md` with the same body; identical content
+   loaded twice is paid twice.
+3. **Rules and skills with no subject.** Check each rule's `paths:` frontmatter against the
+   working tree and each skill's subject against the manifest; a rule matching zero files can
+   only misfire. A subject is dead only when the report quotes its zero-hit search over
+   **tracked files on the current branch**, excluding every path `git worktree list` names,
+   build output and vendored copies, since one stale hit in any of those clears a dead subject
+   as live.
+4. **Inlined runbooks.** Step-by-step procedures and troubleshooting in an always-on file are
+   read once a task starts, which makes them pull material.
+5. **Per-tool-call hook injection.** Read the hook config for hooks that return context, run
+   one against a realistic payload, count the bytes, multiply by plausible call counts. No
+   byte-count of files can see this, and it is the only cost that grows with session length.
+6. **Prose that restates a gate.** A rule stating a cap or a ban the linter config already
+   errors on (a line count, a parameter count, `any`, a force unwrap). The config is the
+   source and the prose a cache that drifts; the fix is a pointer at the config. The script
+   lists caps and escape-hatch names found in `rules/` beside the lint configs it found.
+7. **Self-check lists.** A section that restates the rules above it as questions. Delete it.
+8. **Decision history inside instruction.** Issue numbers, ADR names, study citations and
+   "this shipped backwards once" inside a rule or skill are reasoning, not instruction; they
+   belong in an ADR, a design doc or the commit. The script reports reference density per
+   file and which rule files the most commits touched, since a rule file that grows on every
+   feature PR is being used as a changelog.
+9. **The same sentence in more than one file.** The script lists repeated sentences across
+   the root file, `rules/` and installed skills with every site. Count the sites, name the
+   survivor, and re-point the rest.
+10. **Skill size.** Frontmatter is billed every turn whether or not a skill fires, so a large
+    bundle costs more than any single document and installing a subset is the fix. A body is
+    billed when it fires; the script flags bodies over 8 KB, and for each one ask what belongs
+    behind a pointer in a sibling file.
 
-## 3. Offer three placements, not two
+## 3. Three placements, not two
 
-For each finding, the choice is not only "keep or delete":
+- **Inline** stays always-on. Correct only when a session that never touches the subject is
+  still worse off without it.
+- **Pointer** is a path in prose, read on demand. The default; it fails when the session does
+  not follow it, so it suits detail a task will go looking for anyway.
+- **Nested** is a context file in the directory it governs, loaded when work happens there.
+  The right home for anything scoped to one part of the tree. Check the harness first: one
+  that does not walk the tree cannot see a nested file, so choose pointer instead.
 
-- **Inline** — stays always-on. Correct when a task that never touches the subject still
-  needs it, and for anything a session must not be able to miss.
-- **Pointer** — a path in prose, read on demand. Cheapest, and it fails when the session
-  does not follow it, so it suits detail a task will go looking for anyway.
-- **Nested** — a context file in the directory it governs, loaded when work happens there.
-  Answers pointer-rot mechanically rather than by spending always-on budget, and it is the
-  right home for anything scoped to one part of the tree.
-
-Two things decide between them: does a session that never touches this subject still need
-it (inline), and is the subject confined to a directory (nested)?
-
-**Pointer is the default; inline is the exception that gets argued for.** Inline is the only
-one of the three that spends working region on every session, so the test a section has to
-pass is not "is this true and useful" but "would a session that never touches this subject
-be worse off without it". Apply that test to each section of the always-on file, not to the
-file as a whole, and put the verdict in the report beside the byte count.
-
-**Check the harness first.** Nested loading is a per-harness behaviour and the filename
-matters. If the project's agents include one that does not walk the tree, a nested file is
-invisible to it — say so and choose pointer instead. If the project already uses nested
-files, follow the convention it has rather than introducing a second one.
+Apply the two questions per section of the always-on file, not to the file as a whole, and put
+the verdict beside the byte count. Done when every section carries one of the three words.
 
 ## 4. Report, then cut what the user accepts
 
-Rank findings by bytes. Each line gets a file, a byte count, and the edit — not an
-adjective. Say what a finding would save and what it would cost:
+Rank findings by bytes. Each line names a file, a byte count and the edit. Before proposing a
+move, grep the tree for references to what is moving; a section other files cite by name
+cannot become a pointer without re-pointing them, and the citation count goes in the report.
+A cut whose failure is silent, content that will simply stop being read, is called out as such
+and left for the user to decide.
 
-- Nothing that only one always-on file states may leave without a home. Before proposing a
-  move, grep the tree for references to what is moving; a section other files cite by name
-  cannot become a pointer without re-pointing them, and the count of citations goes in the
-  report.
-- A cut whose failure is silent — content that will simply stop being read, with nothing
-  raising an error — is called out as such and left for the user to decide.
-
-Then apply only the accepted findings, and re-run §1. Report the before and after totals and
-the before and after headroom share. If the after figure is not lower, say so rather than
-reporting the plan as the outcome.
+Apply only the accepted findings, then re-run §1 and the script. Report before and after
+totals and the headroom share. If the after figure is not lower, say so rather than reporting
+the plan as the outcome.

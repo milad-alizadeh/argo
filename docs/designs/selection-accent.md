@@ -1,6 +1,6 @@
 # Where the accent is spent
 
-Ion Blue is brand, selection and focus and nothing else (`rules/design-system.md`). Rationing
+Ion Blue is brand, selection and focus and nothing else (`rules/swift.md`). Rationing
 it is only half the rule: a hue reserved for selection and then spent nowhere the reader meets
 selection buys a shell that reads as a stock, greyed-out Mac app. #875 put it back. These are
 its placements, and only these.

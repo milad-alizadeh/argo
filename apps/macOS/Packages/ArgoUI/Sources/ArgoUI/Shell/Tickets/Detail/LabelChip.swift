@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// The hue is a READING of the tracker, not a state Argo is claiming: it says which label this is,
 /// the way it does on the tracker itself, and never what the ticket is doing. The four operational
-/// states keep their own hues and are drawn elsewhere (`rules/design-system.md`).
+/// states keep their own hues and are drawn elsewhere (`rules/swift.md`).
 struct LabelChip: View {
     @Environment(\.argo) private var argo
 

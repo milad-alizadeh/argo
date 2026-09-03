@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Fixed measures that define the shell's structural proportions — the panes the window is divided
 /// into and the splits between them. A measure read by ONE surface belongs beside that surface
-/// instead (`rules/design-system.md`); what is here describes the window, which is every surface
+/// instead (`rules/swift.md`); what is here describes the window, which is every surface
 /// and therefore no single one.
 public enum ArgoLayout {
     public static let windowMinimumWidth: CGFloat = 960

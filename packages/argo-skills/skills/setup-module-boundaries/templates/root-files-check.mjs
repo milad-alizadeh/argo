@@ -5,26 +5,13 @@
  *
  *   node scripts/root-files-check.mjs --map <workspace>/scripts/module-boundaries.json
  *
- * `dependency-cruiser` can only see EDGES — who imports whom. A feature's own hook parked at its
- * module root imports that module through its declared public entry, so every edge is legal and the
- * boundary gate passes; the file is simply in the wrong place. Placement is not an edge, which is
- * why it needs its own arithmetic instead of a review note (`rules/file-structure.md`: group by
- * domain, never let a folder root accumulate peer files).
- *
- * A module root keeps only what genuinely belongs to no sub-domain: the public entry, a bootstrap,
- * the container that wires the parts together. Everything else belongs inside the folder that owns
- * it — and "there was nowhere to put it" is the report that a sub-domain is missing, not a licence
- * to use the root as one.
- *
- * THE DEFAULT IS GUARDED (ADR-0021). This gate replaced a predecessor that guarded one hardcoded
- * path, which meant a module absent from the config was silently exempt — and every module added
- * after it inherited that exemption and flattened. So a module declared in `modules` with no
- * `placement.rootFiles.modules` entry is a FAILURE, not a pass. Adding a module costs one key.
- *
- * Per module: `path` overrides the root pattern derived from the module's own `path` (the renderer
- * needs it — its module path is `src/renderer/`, its root is `src/renderer/src/`); `allow` is for
- * files permanently the root's (KIND) and `ratchet` for debt (RATCHET), a list that may only
- * shrink. Exits 0 clean, 1 on a breach or a stale entry, 2 on bad usage.
+ * dependency-cruiser sees EDGES only; a module's own file parked at its root imports through the
+ * public entry and passes every boundary rule. A root keeps only what belongs to no sub-domain:
+ * the public entry, a bootstrap, the container. THE DEFAULT IS GUARDED: a module in `modules`
+ * with no `placement.rootFiles.modules` entry FAILS, so a module added later cannot inherit an
+ * exemption nobody chose. Per module: `path` overrides the root pattern derived from the module's
+ * own `path`; `allow` is KIND (permanent), `ratchet` is debt that may only shrink. Exits 0 clean,
+ * 1 on a breach or a stale entry, 2 on bad usage.
  */
 
 import { glob } from 'node:fs/promises'

@@ -4,7 +4,7 @@ import Foundation
 ///
 /// They are a clump: production supplies none of them and every test that supplies one supplies
 /// several, so five parameters on `Engine.init` were five ways to say the same thing
-/// (`rules/code-style.md` — the fourth positional parameter is forbidden; pass a structure).
+/// (`rules/house.md` — the fourth positional parameter is forbidden; pass a structure).
 ///
 /// Stored `var`s with no hand-written initializer, so the memberwise one carries every default and
 /// a caller names only the read it is about — and so this file declares no initializer over the

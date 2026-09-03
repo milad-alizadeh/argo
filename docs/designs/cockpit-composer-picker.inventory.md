@@ -293,4 +293,4 @@ carrying a leading ellipsis.
 
 The width matters to the case. The specimen's default window is wide enough that every path fits,
 which is exactly why this survived the first render of the same case — `ARGO_WINDOW_SIZE` is part of
-the state here, the way `rules/designs.md` says it is for anything laid out in columns.
+the state here, the way `rules/swift.md` says it is for anything laid out in columns.

@@ -24,7 +24,7 @@ let package = Package(
         // The `mermaid` renderer, which is a package rather than a leaf of the feed (#1087).
         .package(path: "../ArgoMermaid"),
         // Syntax highlighting: highlight.js under a SwiftUI surface, MIT. A grammar per language is
-        // a solved problem and not one to hand-roll (`rules/dependencies.md`), and this one ships
+        // a solved problem and not one to hand-roll (`rules/house.md`), and this one ships
         // Xcode's own theme, which is the theme the panel wants.
         .package(url: "https://github.com/appstefan/HighlightSwift.git", from: "1.1.0"),
     ],

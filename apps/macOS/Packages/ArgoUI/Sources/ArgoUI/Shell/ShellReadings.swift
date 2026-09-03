@@ -6,7 +6,7 @@ import ArgoEngine
 ///
 /// One value rather than three parameters, for `CockpitPresentation.Readings`' reason (#755): they
 /// cross one seam, not one of them is a Hub fact the projection restates, and the cap is lowered by
-/// grouping rather than raised to fit an initialiser (rules/code-style.md).
+/// grouping rather than raised to fit an initialiser (rules/house.md).
 public struct ShellReadings: Equatable, Sendable {
     /// How the active Project's provider Bindings are reading. Not a Hub fact: the cockpit is a
     /// projection of the Hub, and Accounts and Bindings are registry facts the Hub never heard of.

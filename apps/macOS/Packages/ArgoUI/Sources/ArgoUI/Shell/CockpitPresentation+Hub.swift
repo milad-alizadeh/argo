@@ -119,7 +119,7 @@ extension CockpitPresentation.Session {
     /// Edge 5 also requires each fact below to land on the slot of its own name, unless a
     /// `renamed:` line here says otherwise (ADR-0027, amended by #755).
     ///
-    /// renamed: location <- cwd — "Names are words, not abbreviations" (rules/code-style.md).
+    /// renamed: location <- cwd — "Names are words, not abbreviations" (rules/house.md).
     /// renamed: claimed <- ticket — the slot sits beside a title reading also about the ticket, and
     /// one of the two has to say WHICH fact about it (#881).
     init(observed session: HubSession, readings: CockpitPresentation.Readings) {

@@ -175,18 +175,6 @@
       "skillPath": "packages/argo-skills/skills/setup-quality-gates/SKILL.md",
       "computedHash": "b0d2e767e74854e871f442154da95dba4cf37c605f7bdbc68e7d888f6f83f558"
     },
-    "setup-rules": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/setup-rules/SKILL.md",
-      "computedHash": "4020870a700d1b6bd236de6543d255e004dc469f418a162653eb10ea077d2bf8"
-    },
-    "setup-task-tracking": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/setup-task-tracking/SKILL.md",
-      "computedHash": "e2e9cb98fecd14b35d305f74aade6502909c788d8ef0e3e80c05870b696c3c86"
-    },
     "ship": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",

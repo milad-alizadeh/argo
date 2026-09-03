@@ -2,7 +2,7 @@
 ///
 /// Its own family rather than a rung on the ink ramp: what it dims is a WHOLE surface — title,
 /// branch, age and the state dot together — and a ramp answers for one run of text at a time
-/// (`rules/design-system.md`).
+/// (`rules/swift.md`).
 public enum ArgoOpacity {
     /// Fully present. Worth one and kept anyway: it lets a view spell both arms of a choice in the
     /// contract's own names rather than dropping to a bare `1`.

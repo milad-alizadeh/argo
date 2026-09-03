@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Deterministic screenshots of UI states for visual verification.
 // Usage: node scripts/screenshot-states.mjs <states.json> [out-dir]
-// states.json: [{ "name": "status-row", "url": "http://localhost:6006/iframe.html?id=cockpit-statusrow--default&viewMode=story",
+// states.json: [{ "name": "status-row", "url": "http://localhost:6006/iframe.html?id=<story-id>&viewMode=story",
 //                 "waitFor": ".status-row", "fullPage": false, "colorScheme": "dark" }]
 import { mkdir, readFile } from 'node:fs/promises'
 import path from 'node:path'

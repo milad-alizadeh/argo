@@ -1,4 +1,4 @@
-# SwiftLint — the arithmetic half of rules/swift-style.md and rules/code-style.md, as a
+# SwiftLint — the arithmetic half of rules/swift.md and rules/house.md, as a
 # build failure. Every rule here is an ERROR: a warning is a note nobody reads, and the
 # caps are the rules. Exemptions are ratchets, listed at the bottom with a reason.
 #
@@ -54,7 +54,7 @@ closure_body_length:
   # The same 50 as a function body, deliberately. A SwiftUI `body` IS a closure, so a tighter
   # cap here would hold view code to a stricter ceiling than the JSX it is the counterpart of
   # — and biome gates that at 50. The fix when it fires is the same either way: the nested
-  # layers are subviews (rules/swift-style.md, "a body is a composition").
+  # layers are subviews (rules/swift.md, "a body is a composition").
   error: 50
   warning: 50
 
@@ -294,7 +294,7 @@ disabled_rules:
   # SwiftFormat owns wrapping and blank lines; two formatters disagreeing is a loop.
   - opening_brace
   - trailing_comma
-  # `todo` is a warning-shaped rule in an errors-only config, and rules/comments.md already
+  # `todo` is a warning-shaped rule in an errors-only config, and rules/house.md already
   # says where a TODO may live.
   - todo
 
@@ -302,7 +302,7 @@ custom_rules:
   unchecked_sendable:
     name: "@unchecked Sendable"
     regex: '@unchecked\s+Sendable'
-    message: "A promise to the concurrency checker that nothing verifies — make the type a value type, or put it behind an actor (rules/swift-style.md)."
+    message: "A promise to the concurrency checker that nothing verifies — make the type a value type, or put it behind an actor (rules/swift.md)."
     severity: error
 
   swiftlint_disable:

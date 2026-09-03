@@ -5,7 +5,7 @@ import Testing
 
 /// What the readings ask the file system to spell, and when (#959).
 ///
-/// These cases assert a CALL COUNT, which `rules/testing.md` otherwise warns off: a count is an
+/// These cases assert a CALL COUNT, which `rules/house.md` otherwise warns off: a count is an
 /// implementation fact, and a suite that pins one pins the implementation. It is the subject here.
 /// The defect was `realpath(3)` twice per Session per read of the roster, on the main actor, and
 /// "how often the file system was asked" is the whole of what was wrong — an assertion about the

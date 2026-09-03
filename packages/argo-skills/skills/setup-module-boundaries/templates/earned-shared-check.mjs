@@ -5,21 +5,10 @@
  *
  *   node scripts/earned-shared-check.mjs --map <workspace>/scripts/module-boundaries.json
  *
- * `rules/file-structure.md` — "shared code is earned, not chosen" — puts a one-caller helper in its
- * caller's own folder and hoists on the third. Nothing mechanical held that line: a shared file
- * with a single caller exports through the tier's declared public entry, so the boundary gate sees
- * a legal edge and passes. Waiting for the third caller is the point, so it gets counted.
- *
- * Counting is per SYMBOL, not per file, because everything leaves the tier through a barrel: a
- * file-level graph shows every module depending on every leaf behind it and can prove nothing.
- * Named import specifiers are what actually record who wanted what.
- *
- * Caller-counting only judges the DOMAIN-AWARE half of the tier. `file-structure.md` earns the
- * generic tier by category instead — "it would stand alone as its own published package" — so a
- * vendored primitive or an icon belongs to the kit on its first caller and forever after. Those
- * paths are excluded by config, not by 60 ratchet entries.
- *
- * Config lives in the map's `placement.earnedShared` block. Exits 0 clean, 1 on a breach or on a
+ * Counted per SYMBOL, never per file: everything leaves the tier through a barrel, so a file-level
+ * graph shows every module depending on every leaf and proves nothing. The generic tier is earned
+ * by category and excluded by config. Config: the map's `placement.earnedShared` block, whose
+ * `aliases` map import prefixes to paths (`{"@/": "src/"}`). Exits 0 clean, 1 on a breach or a
  * stale ratchet entry, 2 on bad usage.
  */
 
@@ -29,10 +18,6 @@ import { fail, moduleOf, placementBlock, readModuleMap } from './module-map.mjs'
 
 const GATE = 'earned-shared-check'
 const IMPORTS = /import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/g
-const ALIASES = [
-  ['@/', 'src/renderer/src/'],
-  ['@renderer/', 'src/renderer/src/'],
-]
 
 const argv = process.argv.slice(2)
 const mapFlag = argv.indexOf('--map')
@@ -44,6 +29,7 @@ const { map, workspace } = await readModuleMap(argv[mapFlag + 1]).catch((error) 
   fail(GATE, `cannot read the module map: ${error.message}`),
 )
 const config = placementBlock(map, GATE, 'earnedShared')
+const ALIASES = Object.entries(config.aliases ?? {})
 const modules = map.modules ?? []
 const target = modules.find((module) => module.name === config.module)
 if (target === undefined) fail(GATE, `no module named "${config.module}" in the map`)

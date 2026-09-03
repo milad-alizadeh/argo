@@ -164,7 +164,7 @@ A fourth, found by `pixel-review` on #818's pair and left standing:
 ### Two numbers this build did not take from the design
 
 - **`labelInsetY` is `ArgoSpacing.hair` 2, where `.label` sets `padding: 1px`.** The rhythm has no
-  1, and `rules/design-system.md` says snap rather than promote a rung for one call site.
+  1, and `rules/swift.md` says snap rather than promote a rung for one call site.
   `ArgoBadge` spends the same step for the same reason. Not in the measurement table.
 - **The head-to-strip gap is `ArgoSpacing.section` 24.** The design reaches ~20 there as two
   stacked CSS paddings rather than as a step, and 24 is the rung under the measurement off

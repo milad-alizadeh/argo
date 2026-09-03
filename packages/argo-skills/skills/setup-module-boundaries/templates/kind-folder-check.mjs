@@ -5,13 +5,8 @@
  *
  *   node scripts/kind-folder-check.mjs --map <workspace>/scripts/module-boundaries.json
  *
- * `rules/file-structure.md` bans these outright — "they become junk drawers: touching one feature
- * means hopping across five kind-buckets, and deleting a feature leaves orphans in each". The ban
- * had no teeth, and a kind-folder is the one structural mistake that looks tidy while it spreads,
- * so it gets counted. `components/` is not on the list: this repo's slices are `<slice>/components/`
- * by contract, and each one holds a single feature's components rather than the whole app's.
- *
- * Exits 0 clean, 1 on a breach or on a stale ratchet entry, 2 on bad usage.
+ * The banned names and the reason for each exemption live in the map's `placement.kindFolders`.
+ * Exits 0 clean, 1 on a breach or a stale ratchet entry, 2 on bad usage.
  */
 
 import { glob } from 'node:fs/promises'

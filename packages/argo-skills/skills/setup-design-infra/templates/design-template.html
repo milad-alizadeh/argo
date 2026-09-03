@@ -1,14 +1,7 @@
 <!doctype html>
-<!-- Design template (design-studies rule):
-     · every value = var(-token) from tokens.css; a value the contract lacks is a
-       PROPOSAL — mark it "PROPOSAL" in a comment; it snaps or gets promoted when
-       prototype-to-design approves this screen
-     · every meaningful region carries data-component="PascalCaseName" — that name is
-       final: it becomes the component file, its stories, and its ticket
-     · repeated shapes: add a render function to kit.js and call it, don't copy markup
-     · type comes from a .text-<role> class in tokens.css, never a `font:` declaration
-       here — that mirrors the app, where type is applied by the one Text component -->
-<html lang="en" class="dark">
+<!-- A design speaks only tokens (var(--token), .text-<role>) and names every region with
+     data-component; repeated shapes are kit.js render functions. Rules: rules/design.md -->
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>DESIGN — screen name</title>

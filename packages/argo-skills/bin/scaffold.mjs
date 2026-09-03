@@ -221,6 +221,22 @@ function selectedNames(manifest, selection) {
 
 const argv = process.argv.slice(2)
 const has = (...flags) => flags.some((f) => argv.includes(f))
+const KNOWN_FLAGS = ['--dry-run', '-n', '--skill', '--hooks', '--no-hooks', '--help', '-h']
+if (has('--help', '-h')) {
+  console.log(
+    `argo-skills — install Argo's skill bundle into the current project.\n\n` +
+      `  npx github:milad-alizadeh/argo [--dry-run|-n] [--skill a,b] [--hooks|--no-hooks]\n\n` +
+      `  --dry-run   print what would be installed, install nothing\n` +
+      `  --skill     install a subset (comma- or space-separated names from skills-lock.json)\n` +
+      `  --hooks     also install the guardrail hooks (placement, worktree guards, reaper)\n`,
+  )
+  process.exit(0)
+}
+// An unrecognised flag used to fall through into a real install; refuse it instead.
+const unknownFlag = argv.find(
+  (a) => a.startsWith('-') && !KNOWN_FLAGS.includes(a) && !SCOPE_FLAGS.includes(a),
+)
+if (unknownFlag) fail(`unknown flag ${unknownFlag} — see --help`)
 const dryRun = has('--dry-run', '-n')
 // Guardrail hooks are opt-in: they impose Argo's worktree discipline (apps/+packages/
 // edit guard, worktree reaper) on the project, so a consumer chooses them explicitly.

@@ -12,7 +12,7 @@ the renders the app itself produces.
 `apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign/` **is** the contract: the colour
 roles, Apple's macOS type scale, spacing, radii, elevation and motion, each a value with a
 documented reason. Tokens only — the shared views drawn with them are `ArgoAtoms`, and a
-surface's own measures live in that surface's directory under `Shell/` (`rules/design-system.md`). `ArgoUI/Specimen/ContractSpecimen.swift` is the
+surface's own measures live in that surface's directory under `Shell/` (`rules/swift.md`). `ArgoUI/Specimen/ContractSpecimen.swift` is the
 contract's living specimen — every role enumerated on the surfaces it is read against:
 
 ```sh
@@ -21,7 +21,7 @@ cd apps/macOS && ARGO_SPECIMEN=contract sh scripts/screenshot.sh out.png
 
 It replaces the deleted `foundations.html`, and it is good at that job for the same reason the
 page was: it renders the real tokens rather than a copy, so it cannot drift. It is the one
-non-disposable design artifact (`rules/designs.md`).
+non-disposable design artifact (`rules/swift.md`).
 
 **It cannot go partial, either.** Each role group's `all` array is what the specimen iterates,
 and a `Mirror`-based assertion in `VisualContractTests` fails the build if a stored role is

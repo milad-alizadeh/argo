@@ -22,7 +22,7 @@ the card rather than about any one question, and a view holding it as loose `@St
 
 `FeedKeycap` is a **promotion, not a new component**: it was `PermissionKeycap`, private inside
 `PermissionPromptFooter`, and the design says the ask's keycap takes "`PermissionKeycap`'s own
-values". A second region picking a part up *is* the promotion (`rules/ui-components.md`).
+values". A second region picking a part up *is* the promotion (`rules/swift.md`).
 
 ## What stayed inline
 
@@ -39,7 +39,7 @@ values". A second region picking a part up *is* the promotion (`rules/ui-compone
 ## Contract changes this needed
 
 - **`ArgoComposerVessel.askBoxSize = 14`** — the design's one proposal, promoted here as
-  `rules/designs.md` requires: the token lands with the view that reads it. Everything else on
+  `rules/swift.md` requires: the token lands with the view that reads it. Everything else on
   this screen snapped to a token that already existed.
 
 ## What the build corrected in the design
