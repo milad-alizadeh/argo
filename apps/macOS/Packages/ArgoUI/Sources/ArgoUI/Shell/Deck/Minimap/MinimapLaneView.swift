@@ -83,6 +83,7 @@ package final class MinimapLaneView: NSView {
     /// feed does not already know. See `MinimapReadingStamp` for why a height is not a sound stamp.
     private var read: MinimapReading?
     private var readAt: MinimapReadingStamp?
+
     /// Whether a pass has already asked for another one — see `waitForSettle()`.
     private var isWaiting = false
 
@@ -219,11 +220,10 @@ package final class MinimapLaneView: NSView {
     /// the lane holds stands until the burst settles — but only ever a reading of THIS document,
     /// and only where it has one: with nothing held it walks, burst or no burst.
     private func reading(at stamp: MinimapReadingStamp) -> MinimapReading? {
-        if let read, DeckProbe.time("readAt==stamp", rows: stamp.rows.count, { readAt == stamp }) {
+        if let read, readAt == stamp {
             return read
         }
         if read != nil, stamp.isProvisional, readAt?.isOfSameDocument(as: stamp) == true {
-            DeckProbe.mark("waitForSettle.armed", "rows=\(stamp.rows.count)")
             return waitForSettle()
         }
         #if DEBUG
@@ -312,5 +312,43 @@ package final class MinimapLaneView: NSView {
         guard let palette else { return nil }
         let lit = palette.text.primary
         return (isLit ? palette.state.muted(lit) : palette.state.wash(lit)).cgColor
+    }
+}
+
+/// The reading the lane holds, given up when another deck arrives under it (#1132). An extension
+/// so the view's own body stays inside its length gate; `private` members are reachable from here
+/// because this is the same file.
+extension MinimapLaneView {
+    /// Everything the lane holds ABOUT A PARTICULAR READING, given up (#1132).
+    ///
+    /// Called where another deck arrives under this lane. The view itself is reused across a
+    /// Session switch — `DeckContentRow` places the zone at one structural position with no `.id`,
+    /// and the zone tears the lane down only over an unsettled feed, which a deck the reader has
+    /// opened before never is. So without this the lane carries the previous Session's reading, its
+    /// stamp and its derived geometry into a feed they say nothing about.
+    ///
+    /// The geometry goes with them, and that is the half that was missing. Where the arriving deck
+    /// has no settled document yet — which for a live Session is every visit, because its reading
+    /// grew while the reader was away — `refresh()` returns above the line that writes `geometry`,
+    /// so the old one simply stays painted, scrolling faithfully against an offset that means
+    /// nothing in the space it is drawing. Nothing retires it afterwards: the reshape notice that
+    /// would is dropped, because on a revisited deck the document lands during `apply()` while this
+    /// lane's closure is still nil, and the scroll notice only re-places the layers.
+    ///
+    /// An empty geometry draws nothing, which is what `MinimapReadingStamp` already promises: where
+    /// what the lane holds is another reading's, it draws nothing at all.
+    ///
+    /// The pixels go with it. `refresh()` returns without painting when there is nothing to derive,
+    /// so a lane that only dropped the reading would keep the previous deck's marks on screen —
+    /// retiring the band here is what makes "draws nothing at all" true of what the reader SEES,
+    /// rather than only of what the lane holds.
+    func forgetReading() {
+        read = nil
+        readAt = nil
+        geometry = MinimapGeometry(MinimapReading(), lane: .zero)
+        derivation += 1
+        drawnBand = nil
+        paintedAt = nil
+        settleViewport()
     }
 }

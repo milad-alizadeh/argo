@@ -42,9 +42,17 @@ struct FeedMeasureStamp: Equatable, Sendable {
     /// Whether a document taken against `other` would have to be thrown away whole. Only the
     /// pass-wide facts are here: a row that changed is one row to re-measure, and a re-wrap is the
     /// document — the difference `FeedMeasureDelta` is built on.
+    /// The MEASURE and not the width, because the measure is what a height is a function of
+    /// (#1132). `ArgoFeedRow.column` caps it, so every width at or above the column wraps the
+    /// reading identically and a table resized between two of them owes nothing.
+    ///
+    /// It used to compare the width. A tile cascade putting the table through 1023 → 766 → 1023 →
+    /// 766 — all of which measure 672 — was four whole-document passes over 3 349 rows for no
+    /// height at all, each cancelling the last, leaving the feed with no settled document for as
+    /// long as they ran. Every seam drag on a deck wider than the column did the same, quietly.
     func rewraps(against other: FeedMeasureStamp?) -> Bool {
         guard let other else { return true }
-        return width != other.width || ink != other.ink
+        return measure != other.measure || ink != other.ink
     }
 
     /// Whether the two stamps are of the same reading, whatever else moved. What lets a width
@@ -52,6 +60,23 @@ struct FeedMeasureStamp: Equatable, Sendable {
     /// frame.
     func isReading(of other: FeedMeasureStamp) -> Bool {
         rows.isSameReading(as: other.rows)
+    }
+
+    /// Whether the document taken against THIS stamp still stands under `other`: the same reading,
+    /// or that reading grown at its tail (#1132).
+    ///
+    /// The grown half is what a live Session needs. `isReading` is exact, and a Session that is
+    /// running is never exactly what it was — it gains rows, and it rewrites its last one as a call
+    /// is answered. So the document that stands was surrendered on every re-wrap of every live
+    /// reading, which is precisely the readings a reader is watching.
+    ///
+    /// And a surrender is not just a measure: `surrenderDocument` empties `shown`, `anchor()` reads
+    /// `shown`, so the anchor comes back nil and `show()` takes the branch it takes for a reading
+    /// nobody has opened — the tail. The reader is thrown to the end of the session for a width
+    /// change. Growth at the tail cannot move a row already measured, so the standing document is
+    /// still true of every row it has, and keeping it keeps the reader's place.
+    func stands(under other: FeedMeasureStamp) -> Bool {
+        isReading(of: other) || other.rows.extends(rows)
     }
 }
 
