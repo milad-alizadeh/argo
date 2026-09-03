@@ -72,14 +72,22 @@ extension EnvironmentValues {
     @Entry var deckIsResizing: Bool = false
 }
 
+@MainActor private func seamPreviewPane(_ name: String) -> some View {
+    Text(name)
+        .argoText(ArgoTypography.machineCaption)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+}
+
 #Preview("Deck seam — a rail the reader can widen") {
     @Previewable @State var width: CGFloat = ArgoAgentsRail.width
 
     HStack(spacing: ArgoSpacing.flush) {
-        DeckSlot(zone: .rail)
+        // Two named panes and nothing in them: what this preview is about is the seam between
+        // them, and the deck's real zones would each bring a fixture the seam does not read.
+        seamPreviewPane("Rail")
             .frame(width: width)
         DeckSeam(width: $width, limits: ArgoLayout.railWidths, growsRightward: true)
-        DeckSlot(zone: .tabs)
+        seamPreviewPane("Feed")
     }
     .frame(width: 720, height: 260)
     .argoDeckSurface()

@@ -65,9 +65,9 @@ shipped placement supersedes it.
 
 The Issue row #894 built reached one surface — a line of text inside the ⓘ panel — and nothing
 about it was pressable. `TabLineInstruments` is the trailing group and already spoken for; the
-line's LEADING edge is where the ticket goes, ahead of the tabs zone, which draws nothing at all
-until #401–#404 land (`DeckSlot`'s own placeholder). That is the one stretch of this 40pt line
-that was empty, and it is where a reader's eye already lands first.
+line's LEADING edge is where the ticket goes, ahead of the tabs zone, which drew nothing at all
+until #404 built it (`DeckTabs`; it was `DeckSlot`'s own placeholder before). That is the one
+stretch of this 40pt line that was empty, and it is where a reader's eye already lands first.
 
 `SessionIssueLink` draws the three readings `TicketLinkReading` carries, the same three the ⓘ
 panel's `Issue` row already draws from `row(for:)`:

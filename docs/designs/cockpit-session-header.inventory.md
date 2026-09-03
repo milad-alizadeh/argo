@@ -30,6 +30,10 @@ type roles the 40pt line forced — `CONTEXT` from `caption` to `badge`, and the
 
 **Deleted:** `SessionHeader`, and `ArgoLayout.deckHeaderHeight` with it.
 
+**Extracted while passing:** `argoPressedByKey` (`ArgoAtoms`) — Space and Return handed back to a
+`Button` that took its own key events with `.focusable()`. `PlanPill` had the pair inline and this
+was the second site, so it moved rather than being pasted.
+
 **Contract:** no promotions. Every value the build spends was already in the contract.
 
 ## #694 — the ⓘ panel says what the header stopped saying
@@ -63,3 +67,38 @@ state the happy path cannot show.
 
 **Contract:** one promotion, `ArgoContextBar.guideTermWidth` 96. See the design's *Contract
 changes*.
+
+## #404 — the tabs zone becomes a control
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `DeckTabs` | shell zone | `ArgoUI/Shell/Deck/Header/` — beside the line it sits in | `selection: Binding<DeckTab>` | `DeckTab` | the design's own tabs, row two's leading edge |
+| `DeckTab` | value | the same folder | — | — | `cockpit-session-interior-decisions.md` C2.2 |
+
+**Why it was extracted:** the zone drew `Deck tabs · placeholder` and could hold no keyboard,
+which is the criterion #404 was left holding. A tab is a focus stop and a press, so it is a
+component and not a `Text` in the line.
+
+**One tab is drawn, and the model carries two.** C2.2 froze `Activity · Delivery`, and only
+Activity has a pane behind it — Delivery's is #269. `DeckTab.shown` is the drawn list and the one
+edit that adds a tab; `allCases` stays the design's set. A tab whose press changed nothing would
+be a promise the deck cannot honour, which is why the second one is named here and not drawn.
+
+**Deleted:** `DeckZone` and `DeckSlot`. The tabs were the last zone laid out and unbuilt — the
+rail has drawn since #401 — so the placeholder list had nothing left in it.
+
+**Measurements:** none new. The label is `ArgoTypography.control`, the rule is `ArgoStroke.indicator`
+2 in `interaction.selectionIndicator` flush to the line's bottom edge, and the gap between tabs is
+`ArgoSpacing.loose` — every one of them the design's own table. The label takes no inset of its
+own, so that gap is the whole distance between two tabs and between the Ticket link and the first
+of them; a ring inset would have quietly added itself to both.
+
+**Isolated states:** `deckTabs` (the zone at rest, `docs/designs/renders/404-deck-tabs.png`) and
+`cursoredDeckTabs` (the keyboard on the tab, ring and all, `404-deck-tabs-cursored.png`). The
+second is the ticket's actual subject: a still is the only place the focus ring can be looked at.
+
+**Extracted while passing:** `argoPressedByKey` (`ArgoAtoms`) — Space and Return handed back to a
+`Button` that took its own key events with `.focusable()`. `PlanPill` had the pair inline and this
+was the second site, so it moved rather than being pasted.
+
+**Contract:** no promotions.

@@ -13,28 +13,6 @@ struct SessionsDeckTests {
     }
 
     @Test
-    func `no two zones read the same on the deck`() {
-        let titles = DeckZone.allCases.map(\.title)
-        #expect(Set(titles).count == titles.count)
-    }
-
-    @Test
-    func `every zone says what it is`() {
-        #expect(DeckZone.allCases.allSatisfy { !$0.title.isEmpty })
-    }
-
-    /// The list is what is still UNBUILT, so a surface shipping means a case leaves it.
-    @Test
-    func `the feed is no longer a placeholder`() {
-        #expect(!DeckZone.allCases.map(\.title).contains("Feed"))
-    }
-
-    @Test
-    func `the minimap is no longer a placeholder`() {
-        #expect(!DeckZone.allCases.map(\.title).contains("Minimap lane"))
-    }
-
-    @Test
     func `the feed keeps the widest share of the row at the narrowest deck`() {
         let beside = narrowestDeckWidth - ArgoAgentsRail.width - ArgoLayout.seamGrabWidth
         let lane = ArgoLayout.minimapLaneWidth(sharing: beside)

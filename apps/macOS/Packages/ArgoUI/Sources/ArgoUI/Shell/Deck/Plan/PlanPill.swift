@@ -51,12 +51,6 @@ package struct PlanPill: View {
         isOpen.toggle()
     }
 
-    /// Space and Return, answered exactly as the click is.
-    private func pressed() -> KeyPress.Result {
-        toggleList()
-        return .handled
-    }
-
     /// A Button rather than a tap gesture, so Space and Return open the list for a keyboard the
     /// same way a click does — and `ESC` gives it back, since the list stands over the reading.
     ///
@@ -75,8 +69,7 @@ package struct PlanPill: View {
             .focusEffectDisabled()
             .argoFocusRing(isFocused, in: .capsule)
             // `.focusable()` above takes the key events a focused Button would answer itself.
-            .onKeyPress(.space) { pressed() }
-            .onKeyPress(.return) { pressed() }
+            .argoPressedByKey { toggleList() }
             .onExitCommand { isOpen = false }
             // The focus a Tab would have placed. Order against the specimen's own event note does
             // not matter: the ring reads the visibility as an `@Observable`.

@@ -91,6 +91,13 @@ extension SpecimenRegistry {
                 intents: DeckIntents(draft: .constant(ComposerDraft(text: "Something to send."))),
             )
         },
+        // The tabs zone, which read `Deck tabs · placeholder` in every deck render until #404.
+        // At rest first — one drawn tab under its Ion rule, because Delivery's pane is #269 and a
+        // tab is only drawn once pressing it would change what the deck reads.
+        SpecimenEntry("deckTabs") { DeckTabsSpecimen() },
+        // Then the ring: the zone is a control now, so the keyboard has somewhere to land in it,
+        // which is the one criterion #404 was left holding.
+        SpecimenEntry("cursoredDeckTabs") { DeckTabsSpecimen(isCursored: true) },
         SpecimenEntry("floatingControls") { FloatingControlsSpecimen() },
         // A shipping gate: the three stay legible and pressable with the optical response gone.
         SpecimenEntry("flatFloatingControls") { FloatingControlsSpecimen(isFlat: true) },

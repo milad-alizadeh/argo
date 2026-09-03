@@ -25,7 +25,8 @@ open docs/designs/prototypes/roster-header-prototype.html
 *What should the Sessions roster row and the Session deck header show?*
 
 Both were re-opened from scratch. The roster row's content had shipped; the header had never
-been built (`DeckZone.header` still renders `Session header · placeholder`). The prior content
+been built (the deck's header zone still rendered a placeholder; the placeholder type itself went
+with #404). The prior content
 lists in `cockpit-spec.md` §4.1/§4.2 and D30/D31 were treated as one prior proposal rather than
 as settled.
 
