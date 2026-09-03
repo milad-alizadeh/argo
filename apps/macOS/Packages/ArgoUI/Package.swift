@@ -48,7 +48,14 @@ let package = Package(
         // is read from the source tree by a suite and a generator, and `ArgoSpecimens` links this
         // target while the app links `ArgoSpecimens` — a resource here would ship a transcript
         // inside the product.
-        .target(name: "ArgoFixtures", dependencies: ["ArgoEngine"], exclude: ["Fixtures"]),
+        // `ArgoDesign` is declared rather than borrowed: two files here import it, and SwiftPM
+        // resolves that through ArgoUI's own dependency while `xcodebuild` does not — so an
+        // undeclared edge compiles under `swift test` and fails the app build.
+        .target(
+            name: "ArgoFixtures",
+            dependencies: ["ArgoEngine", .product(name: "ArgoDesign", package: "ArgoDesign")],
+            exclude: ["Fixtures"],
+        ),
         // The fixtures' own generator. An executable rather than a test, because writing a file
         // into the tree is not something a suite may do — and in this package because proving the
         // synthetic stands for its source means projecting both, which is ArgoUI's `package`
