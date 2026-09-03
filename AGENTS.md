@@ -60,18 +60,12 @@ goes, and the verification recipe: `docs/agents/quality-gates.md`.
 
 ## Session isolation
 
-Multiple agent sessions run against this repo concurrently. Implementation work (ticket
-builds, any multi-file change) must **never** run in the shared main checkout: if your cwd is
-the repo root rather than a path under `.claude/worktrees/`, enter a worktree first (Claude
-Code: the `EnterWorktree` tool — this section is your standing instruction to use it,
-**unprompted**; other harnesses: `git worktree add`) and commit to a ticket branch there.
-Read-only work (review, triage, Q&A) may stay in the main checkout. `scripts/worktree-guard.mjs`
-enforces this on agent `Edit`/`Write` to `apps/**` and `packages/**`; doc, memory and config
-edits stay free.
-
-Everything else about worktrees — naming, resuming, recovery, the sub-agent rule, and reaping
-landed ones with `bun run worktrees:gc` — is in `docs/agents/worktrees.md`, and applies to
-**all** implementation work, not just `/implement` runs.
+Implementation work (a ticket build, any multi-file change) runs in a worktree under
+`.claude/worktrees/`, never in the shared main checkout: from the repo root, enter one first
+(Claude Code: `EnterWorktree`, unprompted; other harnesses: `git worktree add`) and commit to a
+ticket branch there. Read-only work (review, triage, Q&A) may stay in the main checkout.
+Naming, resuming, recovery, the sub-agent rule and `bun run worktrees:gc`:
+`docs/agents/worktrees.md`.
 
 ## Cross-CLI guardrail hooks
 
@@ -182,21 +176,7 @@ The vocabulary below is the part every session needs. Use these words, never a s
 - **Workspace** — the git working context. It holds `branch`, which is the join key.
 - **Compaction** — a marker where history was condensed. **Usage** — token, cost and context telemetry.
 
-**L4 · Delivery detail**
-
-- **Diff** — a Delivery's change-set, branch against base, addressed by commit SHA.
-- **Review** — one submitted review round. **Finding** — one resolvable issue inside it.
-- **Check** — one CI check, name taken verbatim from the code host.
-- **Outcome** — what a Session produced. Session-keyed and persisted.
-
-**Autonomy** — **Mode** (`Read Only | Plan | Code | Auto`, each rung a boundary the agent asks to
-cross), **Permission** (a per-action prompt), **Standing
-allow** (one tool that stopped asking), **Permission expiry** (Argo's own clock refused it), and
-**Gate** (Argo's policy on a Delivery step).
-
-**Ports** — **Ticket provider** and **Code host**. An **MCP server** is not a port, because it
-is something an observed Session connects to rather than something Argo reads through.
-
-**Surfaces, not entities** — Cockpit, Roster, Panels, rooms. The **Hub** is the in-memory
-projection that assembles the join. A **Fold** is one Roster row standing for the
-`headless` Sessions that share a working directory; it is opened, never selected.
+**L4 · Delivery detail, Autonomy, Ports, Surfaces** — Diff, Review, Finding, Check, Outcome;
+Mode, Permission, Standing allow, Permission expiry, Gate; Ticket provider, Code host; Cockpit,
+Roster, Panels, Hub, Fold. Each is defined in its `CONTEXT.md` section: read it before naming,
+rendering or changing one of them.

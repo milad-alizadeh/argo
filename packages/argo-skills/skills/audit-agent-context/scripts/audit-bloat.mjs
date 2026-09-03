@@ -8,6 +8,14 @@ import { documentChecks } from './checks.mjs'
 import { scanSkills } from './skills.mjs'
 
 const root = path.resolve(process.argv[2] ?? '.')
+// A linked worktree's `.git` is a file naming the main checkout's gitdir. The harness reads
+// `.claude/` (settings, hooks, rules, skills, memory) from that checkout, not the worktree.
+const harnessRoot = (() => {
+  const dotGit = path.join(root, '.git')
+  if (!existsSync(dotGit) || statSync(dotGit).isDirectory()) return root
+  const m = readFileSync(dotGit, 'utf8').match(/^gitdir:\s*(.+?)\/\.git\/worktrees\//m)
+  return m ? path.resolve(m[1]) : root
+})()
 const SKIP_DIRS = new Set(['node_modules', '.git', 'worktrees', '.build', 'build', 'dist', '.next'])
 const TOKENS_PER_BYTE = 1 / 2.6
 const WORKING_REGION = 120_000
@@ -45,17 +53,17 @@ const addSource = (label, file) => {
 for (const name of ['CLAUDE.md', 'AGENTS.md', 'CLAUDE.local.md'])
   addSource('root', path.join(root, name))
 addSource('user-global', path.join(homedir(), '.claude', 'CLAUDE.md'))
-for (const f of walk(path.join(root, '.claude', 'rules')))
+for (const f of walk(path.join(harnessRoot, '.claude', 'rules')))
   if (f.endsWith('.md')) addSource('.claude/rules (auto-loaded)', f)
 
 let settings = {}
 try {
-  settings = JSON.parse(read(path.join(root, '.claude', 'settings.json')))
+  settings = JSON.parse(read(path.join(harnessRoot, '.claude', 'settings.json')))
 } catch {}
 if (settings.outputStyle) {
   const styleName = `${settings.outputStyle.toLowerCase().replace(/\s+/g, '-')}.md`
   for (const dir of [
-    path.join(root, '.claude', 'output-styles'),
+    path.join(harnessRoot, '.claude', 'output-styles'),
     path.join(homedir(), '.claude', 'output-styles'),
   ]) {
     addSource(`output style "${settings.outputStyle}"`, path.join(dir, styleName))
@@ -65,19 +73,20 @@ const memoryIndex = path.join(
   homedir(),
   '.claude',
   'projects',
-  `-${root.replace(/^\//, '').replace(/\//g, '-')}`,
+  `-${harnessRoot.replace(/^\//, '').replace(/\//g, '-')}`,
   'memory',
   'MEMORY.md',
 )
 addSource('memory index', memoryIndex)
 
+if (harnessRoot !== root) row('         ', `harness root: ${harnessRoot}`, '(linked worktree)')
 let total = 0
 for (const [file, label] of alwaysOn) {
   total += size(file)
   row(kb(size(file)).padStart(9), rel(file), `(${label})`)
 }
 
-const { frontmatterBytes, skillBodies } = scanSkills({ root, walk, read, size })
+const { frontmatterBytes, skillBodies } = scanSkills({ root: harnessRoot, walk, read, size })
 total += frontmatterBytes
 row(
   kb(frontmatterBytes).padStart(9),
@@ -85,7 +94,13 @@ row(
   '(name + description, every turn)',
 )
 
-const mcp = path.join(root, '.mcp.json')
+const rulesDir = path.join(root, 'rules')
+const rulesBytes = walk(rulesDir)
+  .filter((f) => f.endsWith('.md'))
+  .reduce((n, f) => n + size(f), 0)
+if (rulesBytes) row(kb(rulesBytes).padStart(9), 'rules/', '(pull: reached by pointer, not counted)')
+
+const mcp = path.join(harnessRoot, '.mcp.json')
 if (existsSync(mcp)) {
   const servers = Object.keys(JSON.parse(read(mcp)).mcpServers ?? {})
   row(

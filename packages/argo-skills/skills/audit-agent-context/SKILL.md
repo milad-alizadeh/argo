@@ -1,6 +1,7 @@
 ---
 name: audit-agent-context
-description: Price what a project loads into every agent session before the first prompt, find the bloat in its agent documents, and cut it. Use when CLAUDE.md or AGENTS.md feels bloated, sessions cost or fill up too fast, rules restate what the linter already gates, or rules and skills with no subject in the tree should be found and removed.
+description: Price what a project loads into every agent session before the first prompt, find the bloat in its agent documents, and cut it.
+disable-model-invocation: true
 ---
 
 # Audit Agent Context
