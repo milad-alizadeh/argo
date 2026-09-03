@@ -326,6 +326,16 @@
   #ctx.lit { border-left-color: var(--dh, #7fe8ff);
     background: linear-gradient(100deg,
       color-mix(in srgb, var(--dh, #7fe8ff) 13%, transparent), transparent 62%); }
+  /* Back sits with the trail, because it IS the trail read one step at a time — a button
+     somewhere else would be a second answer to the same question. */
+  #ctx .back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 8px;
+    padding: 4px 9px 4px 7px; border: 1px solid rgba(126,214,240,.24); border-radius: 7px;
+    background: rgba(126,214,240,.09); color: var(--text-1); cursor: pointer;
+    font: 500 var(--t-callout) var(--sans);
+    transition: background 140ms var(--ease-out), border-color 140ms var(--ease-out); }
+  #ctx .back:hover { background: rgba(127,232,255,.18); border-color: rgba(126,214,240,.42); }
+  #ctx .back:focus-visible { outline: 2px solid rgba(127,232,255,.55); outline-offset: 1px; }
+  #ctx .back kbd { font: var(--t-footnote) var(--mono); opacity: .55; }
   #ctx .crumbs { display: flex; flex-wrap: wrap; align-items: baseline;
     font: var(--t-footnote) var(--mono); color: var(--text-off); margin: 0 -6px; }
   /* Every crumb but the last is a control, so it is a target with a ground of its own —
@@ -1400,19 +1410,6 @@ const aimBox = () => aim || tree();
    either: the ride passes straight through the build-only chains rather than spending a
    notch on each of them. */
 function upOf(b) { let p = b.up; while (p && p.ghost) p = p.up; return p || null; }
-function downUnder(b, mx, my) {
-  for (const k of b.kids) {
-    if (k.file) continue;
-    const r = rectOf(k);
-    const x0 = Math.min(r[0], r[0] + r[2]), x1 = Math.max(r[0], r[0] + r[2]);
-    const y0 = Math.min(r[1], r[1] + r[3]), y1 = Math.max(r[1], r[1] + r[3]);
-    if (mx < x0 || mx > x1 || my < y0 || my > y1) continue;
-    if (!k.ghost) return k;
-    const d = downUnder(k, mx, my);
-    if (d) return d;
-  }
-  return null;
-}
 /* The scope is READ OFF the camera rather than kept beside it, so the crumb, the rail and
    the reading can never name a folder the map is not standing in. */
 function scopeTo(b) {
@@ -1432,59 +1429,20 @@ function setAim(b) {
   scopeTo(aimBox());
 }
 
-/* THE WHEEL IS THE CLICK, WITHOUT THE AIMING. A notch carries no distance worth honouring —
-   a mouse wheel says 120 and a trackpad says 3 for the same flick of the hand — so it is read
-   for its DIRECTION and nothing else, and it does exactly what a click does: in, the child
-   under the pointer; out, the parent. Same flight, same landing, one level per gesture.
+/* GOING BACK IS A CONTROL, NOT A GESTURE. The wheel used to carry the navigation and it
+   never earned it: a notch has no distance worth honouring, in and out do not mean the same
+   kind of thing, and every rule that made one of them behave made the other worse. So the
+   map has two ways through it and they are both things you press — a click to go in, and
+   Back to come out one level. Nothing is hidden in the scroll.
 
-   A gesture is not an event. A trackpad sends a burst of them and then coasts, so the first
-   event of a burst acts and the rest of the burst is swallowed: a new gesture is one that
-   arrives after a gap, with no flight still early in its travel. Late in a flight the wheel
-   is live again, because a second flick while the camera is nearly there is a reader asking
-   for the next level, not the same one twice. */
-const WHEEL_GAP = 140;     // quiet for this long, and the next event starts a new gesture
-const WHEEL_LIVE = 0.55;   // ... or the flight is this far along, whichever comes first
-let wheelAt = 0;
-/* IN AND OUT ARE NOT MIRROR IMAGES, because going in and coming out are not the same act.
-   Going in is a choice: there are twenty things under the pointer and one of them is meant,
-   so it snaps — the same flight a click gives, to the same seated, centred landing.
-   Coming out is not a choice. There is only one way out and the reader is usually just
-   backing off to see where they are, so it PULLS BACK: a plain continuous zoom about the
-   middle, as far as the notch says and no further. A snap out lands on the parent's frame
-   whether or not that is where the reader was going, and one notch out of a build-only
-   chain is the whole repo — losing your place is the cost, and it buys nothing. */
-const PULL = 0.0022;     // how much of a wheel notch becomes scale, coming out
-const KEEP = 0.55;       // the aim holds until it covers less than this of the frame
-
-function wheelIn(mx, my) {
-  const now = performance.now();
-  const fresh = now - wheelAt > WHEEL_GAP;
-  wheelAt = now;
-  if (!fresh) return;
-  if (fly && now - fly.t0 < SNAP_MS * WHEEL_LIVE) return;
-  const d = downUnder(aimBox(), mx, my);
-  if (d) goTo(d);
-}
-
-/* Pulling back does not choose a scope, it REPORTS one: the aim keeps its level until it no
-   longer holds the frame, and then hands over to its parent. The camera is not touched by
-   that, so the crumb stays honest without the picture ever jumping. */
-function wheelOut(dy) {
-  const st = $('stage'), e = camFor(null, 1);
-  fly = null;
-  const k = Math.max(e.scale, cam.scale * Math.exp(-dy * PULL)) / cam.scale;
-  const cx = st.clientWidth / 2, cy = st.clientHeight / 2;
-  cam.ox = cx - (cx - cam.ox) * k;
-  cam.oy = cy - (cy - cam.oy) * k;
-  cam.scale *= k;
+   The plan therefore does not zoom by hand at all. Where you can be is exactly the set of
+   folders, each seen whole, and that is a smaller promise than free zoom but it is one the
+   map can keep. */
+function back() {
   const root = tree();
-  for (let n = 0; n < 24 && aimBox() !== root && ratioOf(aimBox()) < KEEP; n++)
-    setAim(upOf(aimBox()) || root);
-  /* Pulled all the way back is the opening view, whatever share of it one folder happens to
-     own — a repo whose biggest plate covers four fifths of the frame would otherwise sit at
-     the top still scoped to that plate, with the rest of itself dimmed. */
-  if (cam.scale <= e.scale + 0.5 && aimBox() !== root) setAim(root);
-  rebuild();
+  if (aimBox() === root) return false;
+  goTo(upOf(aimBox()) || root);
+  return true;
 }
 
 /* A CLICK IS THE SAME ARRIVAL, flown. It is one flight and not one per level, because with
@@ -1492,7 +1450,9 @@ function wheelOut(dy) {
 function goTo(b) {
   if (!b) return false;
   setAim(b);
-  if (state.plan) flyTo(seatCam(aimBox(), SEAT));
+  /* The root is framed the way the opening view frames it, not seated hard against the
+     edge, so Back's last step and the reset button agree on where "all of it" is. */
+  if (state.plan) flyTo(aimBox() === tree() ? camFor(null, 1) : seatCam(aimBox(), SEAT));
   else flyHere();
   return true;
 }
@@ -2946,7 +2906,10 @@ function ctxBar() {
   else el.removeAttribute('style');
   el.classList.toggle('lit', !!c);
   const list = crumbList();
-  el.innerHTML = `<div class="crumbs">` + list.map((x, i) => i === list.length - 1
+  const up = state.folder || (state.dom === 'group' && state.domSel !== null);
+  el.innerHTML = (up ? `<button class="back" id="up" title="Back one level (Backspace)">`
+      + `\u2039 Back <kbd>\u232b</kbd></button>` : '')
+    + `<div class="crumbs">` + list.map((x, i) => i === list.length - 1
       ? `<b aria-current="page">${esc(x.label)}</b>`
       : `<a role="button" tabindex="0" data-k="${x.k}" data-i="${x.i === undefined ? '' : x.i}" `
         + `title="Back to ${esc(x.label)}">${esc(x.label)}</a><i>\u203a</i>`).join('')
@@ -2955,6 +2918,8 @@ function ctxBar() {
          + ` &nbsp;\u00b7&nbsp; ${esc(c.tokens.join(' \u00b7 '))}</div>` : '')
     + (!c && state.folder ? `<div class="row"><b>${leaves(folderAt(state.folder).n).length} files`
          + `</b> &nbsp;\u00b7&nbsp; ${esc(state.folder)}</div>` : '');
+  if (up) $('up').onclick = () => { if (state.dom === 'group' && state.domSel !== null && !state.folder)
+    selectDomain(null); else back(); };
   for (const a of el.querySelectorAll('[data-k]')) {
     const go = () => goCrumb(a.dataset.k, a.dataset.i);
     a.onclick = go;
@@ -3689,13 +3654,15 @@ Promise.all([
   /* In the treemap the wheel is the whole of the navigation and it rides the leg (see
      `ride`). In the city there are no levels to ride, so it stays what it always was:
      a plain zoom about the pointer, bounded off the fitted scale. */
+  /* The treemap has no wheel gesture: it is clicked into and Backed out of, and a scroll
+     over it is not an instruction. The city still zooms freely, because a city has no levels
+     to land on and the camera is the only way to get near anything. */
   cv.onwheel = e => {
+    if (state.plan) return;
     e.preventDefault();
     const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
     state.hover = null;
-    /* Only the city's free zoom writes the camera under a flight, and it has to end one. */
-    if (!state.plan) fly = null;
-    if (state.plan) return e.deltaY < 0 ? wheelIn(mx, my) : wheelOut(e.deltaY);
+    fly = null;                       // the free zoom writes the camera, so it ends a flight
     const base = baseScale();
     const want = cam.scale * Math.exp(-e.deltaY * 0.0014);
     const next = Math.min(base * 90, Math.max(base * 0.5, want)) / cam.scale;
@@ -3792,6 +3759,9 @@ Promise.all([
     if (e.key === "Escape") {
       if (state.page) closePage(); else { state.pinned = null; detail(null); }
     }
+    /* Backspace is what every file browser has meant by "up" for thirty years, and nothing
+       on this page takes typed text except the search field, which keeps its own. */
+    if (e.key === 'Backspace') { e.preventDefault(); back(); }
     if (e.key === "r" || e.key === "R") reset();
     if (e.key === 'Escape') hideDef();
     if (e.key === "t" || e.key === "T") $('ties').onclick();
