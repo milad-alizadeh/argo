@@ -188,9 +188,11 @@ enum PerfBudgets {
 
     /// The seconds `MinimapFigureRecording` re-records, one entry a figure it prints.
     ///
-    /// Recorded: over the 301-row reading · M4 Pro, **loaded**, load average 125–164 on 12 cores ·
-    /// both, as the two halves · the least of five interleaved rounds, each figure cold or
-    /// least-of-N inside a round as its case describes.
+    /// Recorded: over the 301-row reading · M4 Pro, **loaded** · both, as the two halves · the
+    /// least of five interleaved rounds, each figure cold or least-of-N inside a round as its case
+    /// describes. Re-recorded whole on the same box for #1111, which is why every figure moved:
+    /// a prose row is now measured by the frame that draws it, so the measure pass no longer builds
+    /// the lane's rectangles on its way past.
     ///
     /// Interleaved because a box picking up a neighbour drifts over a run: five debug rounds
     /// followed by five release ones read the measure pass as SLOWER optimised, purely because the
@@ -199,20 +201,20 @@ enum PerfBudgets {
     /// Nothing gates on these — a seconds gate on a shared laptop reads the box (`CostMeasure`).
     /// What they are for is the question no count can answer: what the app that SHIPS costs
     /// (ADR-0028 Consequences, and #998).
-    static let feedMeasurePass = Figure(debug: 158.76, release: 154.97)
+    static let feedMeasurePass = Figure(debug: 87.18, release: 79.42)
     /// A warm walk of the whole session, which happens on every reshape. The one path here the
     /// optimiser is worth more than a rounding error on, and ADR-0028 says why.
-    static let sessionReading = Figure(debug: 1.08, release: 0.29)
+    static let sessionReading = Figure(debug: 1.10, release: 0.28)
     /// One band painted cold — the Core Text pass.
-    static let bandPaintCold = Figure(debug: 4.36, release: 3.61)
+    static let bandPaintCold = Figure(debug: 4.44, release: 3.37)
     /// The same band repainted, which is what the reader feels on a scroll.
-    static let bandPaintWarm = Figure(debug: 1.42, release: 1.11)
+    static let bandPaintWarm = Figure(debug: 1.29, release: 0.89)
     /// One second of reading at frame rate inside the band the lane holds.
-    static let sixtyScrolledFrames = Figure(debug: 92.89, release: 72.67)
+    static let sixtyScrolledFrames = Figure(debug: 75.47, release: 54.95)
     /// Thirty frames of a seam drag: the worst case the design has.
-    static let thirtySeamFrames = Figure(debug: 90.55, release: 76.70)
+    static let thirtySeamFrames = Figure(debug: 80.27, release: 61.74)
     /// A band of nothing but long markdown, cold — the ceiling.
-    static let markdownBandCold = Figure(debug: 8.46, release: 7.82)
+    static let markdownBandCold = Figure(debug: 9.04, release: 7.65)
 
     /// One recorded figure in milliseconds, in each of the two configurations. Both halves, because
     /// the gap is the finding: until #953 every figure in the epic was a `-Onone` number.

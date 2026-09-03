@@ -61,9 +61,15 @@ cd "$APP_DIR/Packages/ArgoUI"
 
 # Both configurations are BUILT before either is timed. A compile landing beside a measurement is
 # the loudest neighbour a run can have, and it is the one neighbour this script owns.
+# The release arm carries `-enable-testing` because the suites are `@testable`: SwiftPM turns it on
+# for a debug build and not for a release one, so without it the release arm stops at
+# `module 'ArgoUI' was not compiled for testing` and the run ends having measured one arm.
+RELEASE='-c release -Xswiftc -DDEBUG -Xswiftc -enable-testing'
+
 echo "record-figures: building both configurations"
 swift build --build-tests
-swift build --build-tests -c release -Xswiftc -DDEBUG
+# shellcheck disable=SC2086 # RELEASE is a word list, not one argument.
+swift build --build-tests $RELEASE
 
 round=1
 while [ "$round" -le "$ROUNDS" ]; do
@@ -71,7 +77,7 @@ while [ "$round" -le "$ROUNDS" ]; do
   for configuration in $ARMS; do
     case "$configuration" in
       debug) flags='' ;;
-      release) flags='-c release -Xswiftc -DDEBUG' ;;
+      release) flags="$RELEASE" ;;
     esac
     echo "record-figures: round $round of $ROUNDS ($configuration)"
     status=0
