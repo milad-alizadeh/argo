@@ -226,7 +226,9 @@ extension FeedSettledDocumentTests {
 
         #expect(document?.count == Self.rows.count)
         // The counter really ran: a pass nobody counted reports zero of everything and passes.
-        #expect(ran.chunks > 1, "the document must have been split across cores")
+        // Not `> 1`: how many chunks a document splits into is `activeProcessorCount`'s, and a
+        // single-core runner would redden a gate about where the chunks RAN.
+        #expect(ran.chunks > 0, "the counter must have seen the pass at all")
         #expect(ran.onMainThread == 0, "\(ran.onMainThread) of \(ran.chunks) chunks")
     }
 }

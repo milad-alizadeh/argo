@@ -28,6 +28,10 @@ import Testing
 struct MinimapCostTests {
     private typealias Fixture = MinimapCostFixture
 
+    /// Short enough to fit an 800pt lane at this fixture's own grain, and long enough that fitting
+    /// it is a claim: a hundred rows of the projection's prose.
+    private static let fitting = 100
+
     /// How many rows a band spans — the exact range `rects(in:)` walks, which is the whole of what
     /// "bounded by the band rather than by the session" claims.
     private static func rowsIn(_ band: ClosedRange<CGFloat>, of geometry: MinimapGeometry) -> Int {
@@ -89,9 +93,9 @@ struct MinimapCostTests {
         let long = try await Fixture.geometry(over: Fixture.rows(2408, tag: "wide"))
 
         // Within a rounding of each other rather than equal to the row: past the grain the scale
-        // follows the reading's AVERAGE row, and four times the same cyclic fixture does not land
-        // on exactly the same average. Two rows in four hundred is that rounding; four times the
-        // session would be four times the band.
+        // follows the reading's own lower quartile row, and four times the same cyclic fixture does
+        // not land on exactly the same quartile. A few rows in six hundred is that rounding; four
+        // times the session would be four times the band.
         let bands = (short: Self.rowsIn(Fixture.band, of: short), long: Self.rowsIn(
             Fixture.band, of: long,
         ))
@@ -106,19 +110,19 @@ struct MinimapCostTests {
     /// the lane fits into itself is painted whole, every row of it, in one pass.
     ///
     /// What bounds that is the grain, and the bound is worth stating because it is not obvious. The
-    /// lane only fits a session while the average row still earns a mark and the gap under it, so
+    /// lane only fits a session while three rows in four still earn a mark and the gap under it, so
     /// the most rows a fitted miniature can hold is the lane's own height over that — 400 for an
     /// 800pt lane, whatever the session's length in points. Past that the grain holds the scale,
     /// the miniature stands taller than the lane, and the band above bounds it again.
     @Test
     func `a session the lane fits is painted whole, and the grain bounds how much that is`(
     ) async throws {
-        let fitted = try await Fixture.geometry(over: Fixture.rows(301, tag: "fit"))
+        let fitted = try await Fixture.geometry(over: Fixture.rows(Self.fitting, tag: "fit"))
         #expect(fitted.miniatureHeight <= Fixture.lane.height)
 
         let mark = ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap
         let ceiling = Int(Fixture.lane.height / mark)
-        #expect(Self.rowsIn(Fixture.band, of: fitted) == 301)
+        #expect(Self.rowsIn(Fixture.band, of: fitted) == Self.fitting)
         #expect(Self.rowsIn(Fixture.band, of: fitted) <= ceiling)
 
         // The ceiling really is a ceiling: a session past it does NOT fit, so no fitted paint is
@@ -244,13 +248,12 @@ struct MinimapCostTests {
         // `PerfBudgets.markdownPassesPerRow`.
         #expect(cold <= PerfBudgets.markdownPassesPerRow * Self.rowsIn(Fixture.band, of: geometry))
 
-        // And the repaint is NOT a fraction here, unlike the case above, because since #1132 the
-        // lane fits a session this long into itself: the band is the whole three hundred rows, and
-        // the texts they ask for outnumber `ProseCache`'s own ceiling — so the cold paint evicts
-        // its own head before it reaches its foot and the second paint pays again. The claim that
-        // survives is the one above it, which is the one that bounds the work: a paint is worth
-        // the band's rows. Repaints stay rare in this regime for the same reason they are
-        // expensive — a miniature that fits does not slide, so nothing moves the band.
-        #expect(ProseMetrics.typesets - warm <= cold)
+        // And the repaint comes off the caches here as it does above, which since #1132 it only
+        // does because the paint HOLDS the wrapped store to what it is about to ask for
+        // (`MinimapGeometry.rects(in:)`). The band can be a whole session now, and a row of headed
+        // markdown asks for more than one text: left at the store's own literal the cold paint
+        // evicted its own head before it reached its foot and every repaint paid every parse
+        // again — ADR-0028 Rule 4's named defect, and a 4x loosening of this very line.
+        #expect((ProseMetrics.typesets - warm) * PerfBudgets.repaintOffCachesFraction <= cold)
     }
 }

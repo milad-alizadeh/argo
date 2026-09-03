@@ -101,9 +101,12 @@ struct MinimapRectTests {
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: 600))
         let head = lane.rects(in: 0 ... 600)
         let rows = lane.row(startingAtOrBefore: 600 / lane.scale)
-
-        #expect(head.count >= rows, "\(head.count) marks for \(rows) rows in the band")
         let apart = ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap
+
+        // DISTINCT positions, not marks. Every row contributes at least one rect at any scale —
+        // `rects(at:)` resets its crowding watermark per row, so a mark per row is true of a lane
+        // squeezed to one smear too, and counting marks would be a claim about nothing.
+        #expect(Set(head.map(\.y)).count >= rows, "\(head.count) marks for \(rows) rows")
         #expect(zip(head, head.dropFirst()).allSatisfy { $1.y == $0.y || $1.y - $0.y >= apart })
     }
 

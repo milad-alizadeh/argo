@@ -214,3 +214,30 @@ struct MinimapGeometryTests {
         #expect(abs(lane.viewportY(at: landed) + lane.viewportHeightInLane / 2 - 400) < 0.001)
     }
 }
+
+/// How the compression answers a reading whose rows are NOT all one size, which is every real one.
+/// An extension so the suite's own body stays inside its length gate.
+extension MinimapGeometryTests {
+    /// The shape a real transcript actually has: mostly one-line messages, with a long tool output
+    /// or a gallery every so often. The compression has to hold for the MANY short rows, and the
+    /// mean is the one statistic the long tail moves freely — 90% of this reading is 20pt and its
+    /// mean is 98, so a grain taken off the mean draws those 810 rows at 0.41pt each, a fifth of
+    /// the floor, and 270 of 300 adjacent pairs in the head band land closer than a mark and a gap.
+    /// That is the smear #658 is about, arriving on the ordinary reading rather than the extreme
+    /// one. Measured on a real 459-row session: 329 of 459 rows starved off the mean, 20 off the
+    /// lower quartile.
+    @Test
+    func `a reading of many short rows and a few long ones keeps the short ones apart`() {
+        let heights = (0 ..< 900).map { $0.isMultiple(of: 10) ? CGFloat(800) : CGFloat(20) }
+        let reading = MinimapReading(
+            rows: Self.rows(heights), columnWidth: 800, viewportHeight: 600,
+        )
+        let lane = Self.geometry(reading)
+        let apart = ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap
+
+        // The quartile, not the mean: the short rows are what the lane is mostly drawing.
+        #expect(lane.scale == apart / 20)
+        let starved = heights.filter { $0 * lane.scale < apart }.count
+        #expect(starved <= heights.count / 4, "\(starved) of \(heights.count) rows starved")
+    }
+}
