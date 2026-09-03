@@ -36,7 +36,7 @@ struct FeedAgentsCeilingTests {
     @Test
     func `a handover exactly at the ceiling has not passed it`() {
         #expect(!DelegationCeiling.passed(
-            handedOverAtMs: Self.now - DelegationCeiling.reportWindowMs,
+            sinceMs: Self.now - DelegationCeiling.reportWindowMs,
             nowMs: Self.now,
         ))
     }
@@ -44,7 +44,7 @@ struct FeedAgentsCeilingTests {
     @Test
     func `a handover one millisecond older has`() {
         #expect(DelegationCeiling.passed(
-            handedOverAtMs: Self.now - DelegationCeiling.reportWindowMs - 1,
+            sinceMs: Self.now - DelegationCeiling.reportWindowMs - 1,
             nowMs: Self.now,
         ))
     }
@@ -54,7 +54,7 @@ struct FeedAgentsCeilingTests {
     /// judge, so it is left to the two facts that were already there.
     @Test
     func `a delegation the record never timestamped is left to the other two facts`() {
-        #expect(!DelegationCeiling.passed(handedOverAtMs: nil, nowMs: Self.now))
+        #expect(!DelegationCeiling.passed(sinceMs: nil, nowMs: Self.now))
         #expect(FeedAgents.all(in: Self.undated, of: .running, at: Self.now)
             .map(\.isRunning) == [true])
         #expect(FeedAgents.all(in: Self.undated, of: .notRunning, at: Self.now)

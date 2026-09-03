@@ -68,7 +68,7 @@ package enum FeedAgents {
     )
         -> Bool {
         session.isRunning && call.ending == .pending
-            && !DelegationCeiling.passed(handedOverAtMs: call.startedAtMs, nowMs: nowMs)
+            && !DelegationCeiling.passed(sinceMs: call.startedAtMs, nowMs: nowMs)
     }
 
     /// The delegation a row is, or `nil` — which is also what says the rail has nothing to show

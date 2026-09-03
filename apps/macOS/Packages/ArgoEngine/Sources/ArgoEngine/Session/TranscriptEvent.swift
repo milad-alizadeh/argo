@@ -13,8 +13,9 @@ public enum TranscriptEvent: Sendable, Equatable {
     case originSession(id: String)
     /// The host's own title for the session, verbatim.
     case title(String)
-    /// The working directory the records report. Emitted on its first reading and again only when
-    /// it changes, rather than once per record.
+    /// The working directory the records report. LATEST reading wins, and it is emitted only when
+    /// it changes rather than once per record: `EnterWorktree` moves a run's root mid-session, and
+    /// a Workspace pinned to the folder it started in reads the wrong repository (#1118).
     case cwd(String)
     /// The model id off an assistant record. Its LATEST reading is what the session is on now.
     case model(String)

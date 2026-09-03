@@ -31,8 +31,9 @@ struct EntryReadingTests {
         #expect(read == ["sdk-cli"])
     }
 
-    /// The cwd's rule, and for the cwd's reason: a file's entrypoint is settled when it is opened,
-    /// and re-announcing it once per record would bury every event anybody is watching for.
+    /// FIRST reading only, unlike the cwd beside it: a file's entrypoint is settled when it is
+    /// opened, where the folder a run works in is not (#1118). Re-announcing either once per record
+    /// would bury every event anybody is watching for.
     @Test
     func `the word is announced on its first reading only`() async {
         let reader = TranscriptReader()
