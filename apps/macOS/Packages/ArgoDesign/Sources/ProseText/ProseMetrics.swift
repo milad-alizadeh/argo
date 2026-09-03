@@ -19,7 +19,7 @@ public enum ProseMetrics {
     /// single store would be emptied by every row that followed a table. Held to a handful and then
     /// dropped whole, because a seam under the reader's finger asks at a different measure every
     /// frame.
-    private static var lays: [CGFloat: ProseCache<ProseLay>] = [:]
+    private static var lays: [CGFloat: ProseCache<ProseTypeset>] = [:]
     private static let measuresHeld = 8
 
     /// The setting the stores were filled at — see `atCurrentSize()`.
@@ -55,17 +55,30 @@ public enum ProseMetrics {
     /// How `text` came out once it wrapped across `measure` — see `ProseLay`.
     public static func lay(out text: String, across measure: CGFloat, in face: ProseFace = .body)
         -> ProseLay {
-        guard measure > 0 else { return ProseLay() }
+        typeset(text, across: measure, in: face)?.lay ?? ProseLay()
+    }
+
+    /// The same wrap as the LINES it broke into, so what draws the words is what measured them
+    /// (ADR-0030, Rule 2). One store answers both: a caller that measures and a caller that inks
+    /// are asking one question.
+    public static func run(of text: String, across measure: CGFloat, in face: ProseFace = .body)
+        -> ProseRun {
+        typeset(text, across: measure, in: face)?.run ?? ProseRun(lines: [], face: face)
+    }
+
+    private static func typeset(_ text: String, across measure: CGFloat, in face: ProseFace)
+        -> ProseTypeset? {
+        guard measure > 0 else { return nil }
         atCurrentSize()
         if lays[measure] == nil, lays.count >= measuresHeld {
             lays.removeAll()
         }
-        var store = lays[measure] ?? ProseCache<ProseLay>()
-        let lay = store.reading(of: keyed(text, in: face)) { _ in
-            counted { laid(out: text, across: measure, in: face) }
+        var store = lays[measure] ?? ProseCache<ProseTypeset>()
+        let laid = store.reading(of: keyed(text, in: face)) { _ in
+            counted { self.laid(out: text, across: measure, in: face) }
         }
         lays[measure] = store
-        return lay
+        return laid
     }
 
     /// Drops what was measured at a size the reader has since moved off (#1027).

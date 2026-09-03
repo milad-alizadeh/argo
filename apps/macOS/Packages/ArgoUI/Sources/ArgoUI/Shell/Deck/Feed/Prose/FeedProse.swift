@@ -35,14 +35,15 @@ struct FeedProse: View {
             .accessibilityLabel(voice.spokenAs.map { "\($0): \(text)" } ?? text)
     }
 
-    /// Selectable: this is the record, so the reader gets to take it away as the agent wrote it.
+    /// The voice, readable rather than drawn: the surface inks every glyph itself off the frame
+    /// that measured it, so the ink is a value it is handed and not a style it inherits.
+    ///
+    /// Not selectable, and deliberately: ADR-0030 Rule 8 makes selection a LAYER over the table
+    /// rather than a property of a cell, and the frame this row exposes is what that layer will
+    /// hit-test. What a reader can still take away whole is the Turn, through its copy chip.
     private var prose: some View {
         FeedMarkdown(text: text)
-            .foregroundStyle(ink)
-            // The same ink again, readable: `foregroundStyle` DRAWS the words and nothing can read
-            // it back, so a span inside the block cannot ask what it is inheriting.
             .environment(\.proseVoice, ink)
-            .textSelection(.enabled)
     }
 
     private var ink: ArgoColor {

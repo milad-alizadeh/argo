@@ -1,23 +1,62 @@
 import ArgoDesign
-import MermaidView
+import ProseText
 import SwiftUI
 
 /// A message's markdown, drawn with the shape the agent gave it.
 ///
-/// The blocks are found by `MarkdownBlock` and drawn here — nothing is reworded on either side of
-/// that line.
+/// The blocks are found by `MarkdownBlock`, placed by `FeedProseFrame` and inked by `ProseSurface`
+/// — nothing is reworded on any side of those lines. Since ADR-0030 Rule 2 the row is DRAWN by the
+/// Core Text frame that measured it, so its height cannot drift from what it draws.
+///
+/// A representable and not a stack of `Text`: the stack asked SwiftUI to lay every block out again
+/// on every scrolled frame, and its height was a second answer to a question `FeedRowMeasure` had
+/// already answered.
 package struct FeedMarkdown: View {
     @Environment(\.argo) private var argo
+    @Environment(\.proseVoice) private var voice
+    @Environment(\.openURL) private var open
 
     let text: String
 
     package var body: some View {
-        VStack(alignment: .leading, spacing: ArgoFeedRow.blockStep) {
-            ForEach(Array(ProseReading.blocks(in: text).enumerated()), id: \.offset) { _, block in
-                FeedMarkdownBlock(block: block)
-            }
+        ProseSurfaceView(showing: showing, theme: argo, open: { open($0) })
+    }
+
+    /// What the surface is asked to show. The measure is the surface's own — a representable is
+    /// handed a proposal, and the words wrap across whatever it is given.
+    private var showing: (CGFloat) -> ProseShowing {
+        { measure in
+            ProseShowing(
+                text: text, measure: measure, ink: ink, marker: argo.color.text.tertiary,
+            )
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The ink the row is set in. `proseVoice` is the block's own claim; the rest is the
+    /// contract's.
+    private var ink: ProseInk {
+        let body = voice ?? argo.color.text.primary
+        return ProseInk(
+            body: body,
+            link: argo.color.interaction.accent,
+            span: span(under: body),
+            marked: ProseMarkedInk(
+                ground: argo.color.surface.marked,
+                inset: CGSize(
+                    width: ArgoFeedRow.markedSpanInsetX,
+                    height: ArgoFeedRow.markedSpanInsetY,
+                ),
+                radius: ArgoRadius.marker,
+            ),
+        )
+    }
+
+    /// What a `code` span is inked in: nothing at all, unless the voice around it would fall under
+    /// the contrast floor once the span's ground lifts the backdrop out from under it. The choice
+    /// itself is the palette's — see `TextRoles.marked(on:)`.
+    private func span(under voice: ArgoColor) -> ArgoColor? {
+        let floored = argo.color.text.marked(on: voice)
+        return floored == voice ? nil : floored
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
@@ -26,53 +65,38 @@ package struct FeedMarkdown: View {
     }
 }
 
-/// One block. Each arm decides only a role and a shape — the words are `FeedProseText`'s, so the
-/// inline marks inside a heading or a list item are read the same way they are inside a paragraph.
-private struct FeedMarkdownBlock: View {
-    @Environment(\.argo) private var argo
+/// The surface, sized by the frame it is about to draw. Nothing here lays anything out: the height
+/// is `FeedProseFrame`'s answer at the width the proposal offered.
+private struct ProseSurfaceView: NSViewRepresentable {
+    let showing: (CGFloat) -> ProseShowing
+    let theme: ArgoTheme
+    let open: (URL) -> Void
 
-    let block: MarkdownBlock
-
-    var body: some View {
-        switch block {
-        case let .paragraph(text):
-            FeedProseText(text: text, rung: ArgoFeedRow.proseRung)
-                .fixedSize(horizontal: false, vertical: true)
-        case let .heading(level, text):
-            // Three rungs for six levels, and the deepest of them is the prose's own size at a
-            // heavier weight — never smaller than the paragraph under it.
-            FeedProseText(text: text, rung: headingRung(level), weight: .semibold)
-                .foregroundStyle(argo.color.text.primary)
-                .fixedSize(horizontal: false, vertical: true)
-        case let .bullet(text):
-            item(marker: "•", text: text)
-        case let .numbered(marker, text):
-            item(marker: marker, text: text)
-        case let .fenced(code, info):
-            FeedMarkdownFence(code: code, info: info)
-        case let .diagram(diagram):
-            MermaidView(diagram: diagram)
-        case let .table(table):
-            FeedMarkdownTable(table: table)
-        }
+    func makeNSView(context _: Context) -> ProseSurface {
+        ProseSurface()
     }
 
-    private func headingRung(_ level: Int) -> ArgoTypeScale {
-        switch level {
-        case 1: .title1
-        case 2: .title2
-        default: .title3
-        }
+    /// The ink and the opener only. NEVER a measure: `bounds` here is whatever the last layout
+    /// left, which is nothing at all on the first update, and a row placed across nothing is a row
+    /// that draws nothing and is never asked again.
+    func updateNSView(_ surface: ProseSurface, context _: Context) {
+        surface.open = open
+        surface.reink(theme, pending: showing)
     }
 
-    /// A marker in a column of its own, so list words line up and a wrapped item stays inside its
-    /// own words rather than running back under its marker.
-    private func item(marker: String, text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.markerGap) {
-            FeedMarker(text: marker)
-            FeedProseText(text: text, rung: ArgoFeedRow.proseRung)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+    /// The measure is the proposal's, and the height is the frame's answer at it. A proposal with
+    /// no width of its own is SwiftUI asking what this would LIKE to be, which prose cannot answer
+    /// — words wrap across the measure they are given — so that one is declined and the surface
+    /// falls back to its own bounds once it has some.
+    func sizeThatFits(
+        _ proposal: ProposedViewSize,
+        nsView surface: ProseSurface,
+        context _: Context,
+    )
+        -> CGSize? {
+        guard let measure = proposal.width, measure > 0 else { return nil }
+        surface.show(showing(measure), theme: theme)
+        return CGSize(width: measure, height: surface.placed.height)
     }
 }
 
