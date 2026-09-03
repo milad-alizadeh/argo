@@ -122,7 +122,7 @@ extension CockpitPresentation.Session {
     /// renamed: location <- cwd — "Names are words, not abbreviations" (rules/house.md).
     /// renamed: claimedAt <- ticket — the slot sits beside a title reading also about the ticket,
     /// and beside the reader's own pin, which is a second DIRECT number about it (#1092): the name
-    /// has to say WHICH fact and WHEN it was taken (#881). `Issue.direct` ranks the two.
+    /// has to say WHICH fact and WHEN it was taken (#881). `Issue.directNumber` ranks the two.
     init(observed session: HubSession, readings: CockpitPresentation.Readings) {
         // Read once and handed to both: the Workspace draws the branch and the Ticket link joins
         // on it, and two readings of one fact would let the two disagree.
@@ -143,7 +143,7 @@ extension CockpitPresentation.Session {
                 workspace: workspace,
                 ticket: TicketLinkReading(
                     link: Issue(
-                        claimed: Issue.direct(
+                        claimed: Issue.directNumber(
                             pinnedTo: readings.annotations.pinnedTicket(session.id),
                             claimedAt: session.ticket,
                         ),
@@ -215,17 +215,6 @@ extension CockpitPresentation.Session.Issue {
     /// branch carrying no `#<N>`, and — once the host has been asked — a number it has nothing
     /// behind. A number nobody has asked about yet keeps its link and carries no title, which
     /// `SessionTitle` drops back to the derived name.
-    /// The DIRECT number a Session is on, out of the two facts Argo owns about it: the Ticket a
-    /// reader attached by hand, and the one Argo was told at the spawn (#1092).
-    ///
-    /// The pin wins. It is the LATER of the two and the only one a reader can revise: a Session
-    /// spawned on the wrong ticket, or spawned on none at all, has no other repair — where a spawn
-    /// claim, once made, is a fact about a moment that has passed. Both are DIRECT either way, so
-    /// nothing downstream renders them as each other.
-    static func direct(pinnedTo pin: Int?, claimedAt spawn: Int?) -> Int? {
-        pin ?? spawn
-    }
-
     init?(claimed: Int?, branch: String?, location: String?, title: TicketTitleReading?) {
         // The claim is asked first and is never dropped by the host: Argo was TOLD this number at
         // the spawn, so an `absent` lookup says the host could not name it, not that the Session is
@@ -238,6 +227,18 @@ extension CockpitPresentation.Session.Issue {
         guard let number = Self.derived(branch: branch, location: location, title: title)
         else { return nil }
         self.init(number: number, title: title?.title, tier: .derived)
+    }
+
+    /// Which of the two numbers Argo OWNS about a Session is the one it is on: the Ticket a reader
+    /// attached by hand, and the one Argo was told at the spawn (#1092). Both land on `claimed`
+    /// above, which is why the ranking is here rather than inside it — the init sees one number.
+    ///
+    /// The pin wins. It is the LATER of the two and the only one a reader can revise: a Session
+    /// spawned on the wrong ticket, or spawned on none at all, has no other repair — where a spawn
+    /// claim, once made, is a fact about a moment that has passed. Both are DIRECT either way, so
+    /// nothing downstream renders them as each other.
+    static func directNumber(pinnedTo pin: Int?, claimedAt spawn: Int?) -> Int? {
+        pin ?? spawn
     }
 
     /// The number a git context names, once the host has had its say. `nil` where the branch names

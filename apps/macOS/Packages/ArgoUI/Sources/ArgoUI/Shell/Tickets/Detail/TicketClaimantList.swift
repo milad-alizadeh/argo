@@ -26,9 +26,24 @@ package struct TicketClaimantList: View {
                     }
                 }
                 .buttonStyle(.plain)
+                // The dot is ink, and ink is not something a screen reader or a pointer can read.
+                // The same sentence goes to both, on `SessionRow`'s own shape: the name, then the
+                // state word where the vocabulary spends one. It spends none on `running` or
+                // `idle` and nothing here invents one — the roster's own announcement is silent
+                // about those two for the same reason (`cockpit-status-vocabulary.md`).
+                .accessibilityLabel(Self.announcement(of: claimant))
+                .help(Self.announcement(of: claimant))
             }
         }
         .padding(ArgoSpacing.loose)
+    }
+
+    /// What one row says out loud and on hover — `SessionRosterProjection.Row.announcement`'s
+    /// shape, over the two facts a claimant carries.
+    static func announcement(of claimant: TicketClaims.Claimant) -> String {
+        [claimant.name, SessionState.word(for: claimant.status)]
+            .compactMap(\.self)
+            .joined(separator: ", ")
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).

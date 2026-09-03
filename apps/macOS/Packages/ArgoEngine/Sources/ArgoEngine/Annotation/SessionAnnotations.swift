@@ -132,9 +132,11 @@ public struct SessionAnnotations: Equatable, Sendable {
         annotation(for: sessionID).pinnedTicket
     }
 
-    /// A ticket number is a positive integer, and nothing else is one. Public for the same reason
-    /// `name(from:)` is: a number out of a hand-edited file obeys the rule a picked one does.
-    public static func ticketNumber(from number: Int?) -> Int? {
+    /// A ticket number is a positive integer, and nothing else is one — so a number out of a
+    /// hand-edited file obeys the rule a picked one does. Internal, unlike `name(from:)` above:
+    /// nothing outside this module spells a ticket number, and the picker only ever offers one the
+    /// provider already named.
+    static func ticketNumber(from number: Int?) -> Int? {
         guard let number, number > 0 else { return nil }
         return number
     }

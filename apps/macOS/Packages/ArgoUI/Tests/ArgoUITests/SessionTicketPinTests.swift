@@ -16,8 +16,7 @@ import Testing
 struct SessionTicketPinTests {
     /// A worktree named after words rather than a number, on a branch that names none either — the
     /// checkout most of this repo's own work happens in.
-    private static let slugLocation =
-        "/Users/milad/Developer/argo/.claude/worktrees/ticket-hub-roster"
+    private static let slugLocation = "/tmp/project/.claude/worktrees/ticket-hub-roster"
     private static let slugBranch = "argo/hub-roster"
 
     @Test
@@ -95,9 +94,12 @@ struct SessionTicketPinTests {
     /// started on the wrong ticket has no other repair.
     @Test
     func `the pin outranks the number the spawn claimed`() {
-        #expect(CockpitPresentation.Session.Issue.direct(pinnedTo: 1092, claimedAt: 741) == 1092)
-        #expect(CockpitPresentation.Session.Issue.direct(pinnedTo: nil, claimedAt: 741) == 741)
-        #expect(CockpitPresentation.Session.Issue.direct(pinnedTo: nil, claimedAt: nil) == nil)
+        #expect(CockpitPresentation.Session.Issue
+            .directNumber(pinnedTo: 1092, claimedAt: 741) == 1092)
+        #expect(CockpitPresentation.Session.Issue
+            .directNumber(pinnedTo: nil, claimedAt: 741) == 741)
+        #expect(CockpitPresentation.Session.Issue
+            .directNumber(pinnedTo: nil, claimedAt: nil) == nil)
     }
 
     /// A store over a location that is not the machine's own: one pointed at Application Support

@@ -34,12 +34,12 @@ struct SessionIssueLink: View {
             }
             .buttonStyle(.plain)
             .help(helpForLink(named: link.label))
-            .contextMenu { picker }
+            .contextMenu { SessionTicketPicker(linking: linking) }
         case .unlinked where linking.isOffered:
             // Nothing to route to, so the press is the repair itself rather than a menu hidden
             // behind a secondary click nobody would look for on a word that reads as a dead end.
             Menu {
-                picker
+                SessionTicketPicker(linking: linking)
             } label: {
                 // The accent, like every other pressable thing on this line: the reading it
                 // replaces is quiet because it is a statement, and this one is an offer.
@@ -61,18 +61,6 @@ struct SessionIssueLink: View {
             )
         case nil:
             EmptyView()
-        }
-    }
-
-    /// The backlog to pick from, and the way back out of a pin. Shared by the two shapes above so
-    /// the linked row's secondary click and the unlinked row's press can never offer two lists.
-    @ViewBuilder private var picker: some View {
-        ForEach(linking.options) { option in
-            Button(option.label) { linking.link(option.number) }
-        }
-        if linking.pinned != nil {
-            Divider()
-            Button("Unlink from this Ticket") { linking.link(nil) }
         }
     }
 
