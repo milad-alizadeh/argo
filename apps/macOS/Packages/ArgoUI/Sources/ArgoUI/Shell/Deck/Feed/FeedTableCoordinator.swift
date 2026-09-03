@@ -131,12 +131,22 @@ import SwiftUI
     #if DEBUG
         /// See `FeedPaneCost`.
         private(set) var paneCost = FeedPaneCost()
+
+        /// See `FeedConvergeCost`.
+        private(set) var convergeCost = FeedConvergeCost()
     #endif
 
     /// The rows one pass paid for. Here rather than beside the pass because a `private(set)` is
     /// writable in this file alone.
     func noted(_ rows: Int) {
         measurements += rows
+    }
+
+    /// One row height asked for — see `FeedConvergeCost.heightAsks`.
+    func askedHeight() {
+        #if DEBUG
+            convergeCost.heightAsks += 1
+        #endif
     }
 
     /// One frame notification arrived — see `FeedPaneCost`.

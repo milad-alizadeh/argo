@@ -30,10 +30,9 @@ extension FeedTableCoordinator {
             // deadlock: asked as the raw width here, a resize between two widths both at or above
             // `ArgoFeedRow.column` is a settle that correctly says nothing is owed — so the stamp
             // keeps the width it was measured at — against a lane comparing it to a table that
-            // moved. Nothing re-settles it, so nothing ever clears it, and a permanently
-            // provisional
-            // lane never re-walks: it holds the reading it last drew and re-arms its layout every
-            // turn of the run loop waiting for a settle that already happened.
+            // moved. Nothing re-settles it, so nothing ever clears it, and a lane that is
+            // permanently provisional never re-walks: it holds the reading it last drew and re-arms
+            // its layout every turn of the run loop waiting for a settle that already happened.
             isProvisional: !geometry.isSettled || isMeasuring
                 || geometry.settled?.stamp.measure
                 != FeedRowMeasure.measure(atWidth: table.bounds.width),

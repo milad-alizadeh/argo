@@ -2,30 +2,27 @@ import AppKit
 @testable import ArgoUI
 import Testing
 
-/// What the landing's converge walk COSTS, which is the claim its own comment makes and could not
-/// otherwise back (#1132, ADR-0028 Rule 3).
+/// What the landing's converge walk COSTS, said as the count it is (#1132, ADR-0028 Rules 3 and 8).
 ///
-/// `FeedTableCoordinator.converge` asks `rect(ofRow:)` for every row of the reading, because that
-/// is the only thing that brings AppKit's own row geometry up to the document the pass settled —
-/// left alone the table stands a fifth short of its own heights and the reader can scroll below
-/// everything the overview lane maps. It is O(rows) on the main actor, on a path every landing
-/// takes, so the size of it is a fact a gate has to hold rather than a sentence in a comment.
+/// `FeedTableCoordinator.converge` asks `rect(ofRow:)` for every row, because that is the only
+/// thing that brings AppKit's own row geometry up to the document the pass settled — left alone
+/// the table stands a fifth short of its own heights and the reader scrolls below everything the
+/// overview lane maps. It is O(rows) on the main actor, on a path every landing and every adopt
+/// takes, so its size is gated rather than described.
 ///
-/// A RATIO and not a second: the machine is a variable, and least-of-N over paired trials is the
-/// only shape that survives a loaded box (`CostMeasure`). Linear work over four times the rows may
-/// cost about four times as much; the bound is what says it has not quietly become quadratic.
+/// A COUNT and not a stopwatch, and the counted thing is `heightAsks` — what AppKit actually asks
+/// the coordinator for. That is the real code rather than a copy of the loop, it is measured cold
+/// on a path that is only ever cold, and the regression worth catching is a count: a landing that
+/// walks twice, or an adopt that walks a third time. A duration would read those as noise.
 @Suite("Feed converge cost", .serialized)
 @MainActor
 struct FeedConvergeCostTests {
     private static let pane = CGSize(width: 620, height: 500)
 
-    /// Four times apart, which is enough for a quadratic walk to show up as sixteen.
-    private static let few = 300
-    private static let many = 1200
-
-    /// The recorded bound and the reasoning behind it live with every other figure this package
-    /// gates on (ADR-0028 Rule 7).
-    private static let ceiling = PerfBudgets.convergeWalkRatio
+    /// Two lengths, four times apart, so a walk that had become quadratic reads sixteen rather than
+    /// four against the shorter one.
+    private static let few = 200
+    private static let many = 800
 
     private static func reading(_ count: Int) -> [FeedRow] {
         (0 ..< count).map {
@@ -33,29 +30,62 @@ struct FeedConvergeCostTests {
         }
     }
 
-    /// The walk itself, warm, over both lengths.
-    private static func walked(_ rows: [FeedRow]) async throws -> Double {
-        let handle = FeedTableHandle()
-        let coordinator = await FeedTableFixture.laidOut(rows, in: Self.pane, through: handle)
+    /// Every height AppKit asked for over one mount and its first landing.
+    private static func asked(over count: Int) async -> Int {
+        let coordinator = await FeedTableFixture
+            .laidOut(Self.reading(count), in: Self.pane, through: FeedTableHandle())
         await FeedTableFixture.settled(coordinator)
-        let table = try #require(coordinator.table)
-        return leastCPUSeconds {
-            for index in 0 ..< table.numberOfRows {
-                _ = table.rect(ofRow: index)
-            }
-        }
+        return coordinator.convergeCost.heightAsks
     }
 
+    /// The shape: the asks follow the reading, and are not a multiple of it that grows with it.
     @Test
-    func `the converge walk stays proportional to the reading`() async throws {
-        let small = try await Self.walked(Self.reading(Self.few))
-        let large = try await Self.walked(Self.reading(Self.many))
+    func `the converge walk follows the reading and not the square of it`() async {
+        let small = await Self.asked(over: Self.few)
+        let large = await Self.asked(over: Self.many)
 
-        #expect(small > 0, "the walk must be measurable at all")
-        let ratio = large / small
+        #expect(small > 0, "AppKit must have asked for heights at all")
+        let ratio = Double(large) / Double(small)
         #expect(
-            ratio <= Self.ceiling,
-            "converge over \(Self.many) rows cost \(ratio)x the walk over \(Self.few)",
+            ratio <= PerfBudgets.convergeWalkRatio,
+            "\(Self.many) rows asked \(large) heights against \(small) for \(Self.few) — \(ratio)x",
         )
+    }
+
+    /// And EXACTLY one ask a row over a mount and its landing — no height is taken twice.
+    ///
+    /// Gated exactly rather than with slack because the number is exact: `rect(ofRow:)` resolves a
+    /// row once and answers from AppKit's own cache after, so a second walk cannot reach the
+    /// delegate again unless something invalidated the cache in between. A landing that converged
+    /// inside a loop, an `adoptSettled` running a second walk after a landing's, or a reload
+    /// slipped between the two, all read as more than one and none of them read as a duration.
+    @Test
+    func `a mount and its landing ask for each height exactly once`() async {
+        let asks = await Self.asked(over: Self.few)
+
+        #expect(asks == Self.few * PerfBudgets.convergeAsksPerRow)
+    }
+
+    /// And the same of the ADOPT path, which is the one no pass ever lands on (#858).
+    ///
+    /// Its own case because the landing's does not reach it: `laidOut` measures, so a walk added to
+    /// or removed from `adoptSettled` moves nothing above. A deck the reader has opened before
+    /// takes
+    /// this route on every re-click, and it is where the converge walk was missing entirely.
+    @Test
+    func `a kept document adopted asks for each height exactly once`() async {
+        let rows = Self.reading(Self.few)
+        let settled = await FeedTableFixture
+            .laidOut(rows, in: Self.pane, through: FeedTableHandle())
+        await FeedTableFixture.settled(settled)
+
+        let adopting = FeedTableFixture.mounting(
+            rows,
+            in: Self.pane,
+            keeping: FeedTableFixture.Kept(handle: FeedTableHandle(), geometry: settled.geometry),
+        )
+
+        #expect(adopting.measurements == 0, "the adopt branch must be the one taken")
+        #expect(adopting.convergeCost.heightAsks == Self.few * PerfBudgets.convergeAsksPerRow)
     }
 }

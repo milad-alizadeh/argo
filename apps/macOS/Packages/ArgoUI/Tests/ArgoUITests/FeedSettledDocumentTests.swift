@@ -47,10 +47,10 @@ struct FeedSettledDocumentTests {
     /// How long the control watch runs — comfortably longer than the pass it is a control for, so
     /// the two loops are asked the same question over the same kind of span.
     private static let watched = 250
-    /// How many times each side is measured — see the note above the comparison. Three, because the
-    /// claim is about a machine that is otherwise busy and two rounds cannot tell the quiet one
-    /// from the pair.
-    private static let rounds = 3
+    /// How many times each side is measured — see the note above the comparison. Five, because the
+    /// claim is about a machine that is otherwise busy: the verdict is the quietest round of each
+    /// side, and a run of three can have its quiet round taken by a hiccup on either side.
+    private static let rounds = 5
 
     /// Rows appended at the tail are measured and inserted with every other height untouched —
     /// ADR-0030 Rule 5, and the whole of what a live Session does to a document.
@@ -252,17 +252,23 @@ extension FeedSettledDocumentTests {
         // same span with no pass under it, so a pass that ran on the main actor still fails: it
         // would show up as one gap as long as itself.
         //
-        // The QUIETEST round of each, and the two are interleaved so neither side gets the calmer
-        // half of the run. A machine hiccup lands on one round and is dropped by the minimum; a
-        // pass that really ran on the main actor blocks in EVERY round, so its own minimum is still
-        // as long as the pass. Read against one round each, this case failed about one run in four
-        // on a loaded box — both sides reading whole SECONDS, and the verdict turning on which of
-        // the two happened to meet the hiccup.
-        let allowed = max(Self.frame, idled.min() ?? 0)
+        // The QUIETEST round of each, interleaved so neither side gets the calmer half of the run,
+        // and the idle given the slack in `PerfBudgets.mainActorIdleSlack` before it is a ceiling.
+        // Both of those are about the same thing: on a box running the suite's two thousand other
+        // cases these numbers are seconds, and they are seconds on BOTH sides. Read strictly, one
+        // round each, this failed about one run in four — gaps [4.70, 8.61, 2.96] against idles
+        // [10.75, 2.23, 1.20], the idles themselves nine times apart, and the verdict turning on
+        // which side met the hiccup.
+        //
+        // Pairing each gap with its own round's idle was tried instead and is WORSE: an idle that
+        // hiccups hands its own round a ceiling the pass can hide under, and a 120ms block injected
+        // into the pass passed under it (0.12s gaps against idles [0.269, 0.005, 0.0003]). The
+        // minimum over the idles refuses that credit, because the quiet rounds set the ceiling.
+        let allowed = max(Self.frame, (idled.min() ?? 0) * PerfBudgets.mainActorIdleSlack)
         let blocked = measured.min() ?? 0
         #expect(
             blocked <= allowed,
-            "quietest gap \(blocked)s against a quietest idle \(allowed)s; rounds \(measured) against \(idled)",
+            "quietest gap \(blocked)s against \(allowed)s; rounds \(measured) against \(idled)",
         )
         // The watch really ran: a loop that never ticked would report a gap of zero and pass.
         #expect(ticked > 1)

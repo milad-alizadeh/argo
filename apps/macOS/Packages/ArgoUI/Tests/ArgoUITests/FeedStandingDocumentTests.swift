@@ -52,6 +52,34 @@ struct FeedStandingDocumentTests {
         #expect(stood.stands(under: Self.stamp([])) == false)
     }
 
+    /// The one asymmetry `stands` deliberately allows, and the reason `extends` drops the last row
+    /// rather than comparing all of them: a live Session grows at its tail AND rewrites its last
+    /// row as a call is answered. Both at once is the ordinary case for a Session being watched,
+    /// and the document still stands under it — the rewritten row is one of the rows the pass is
+    /// about to measure anyway.
+    @Test
+    func `a reading that grew and rewrote its last row keeps the document`() {
+        let stood = Self.stamp(Self.reading(10))
+        var grown = Self.reading(10)
+        grown[9] = FeedRow(id: 9, content: .message("The Result arrived, and this row is longer."))
+        grown += Self.reading(2, from: 10)
+
+        #expect(stood.stands(under: Self.stamp(grown)))
+    }
+
+    /// But a row rewritten ABOVE the last is a height the document holds and no longer has, so the
+    /// document does not stand — the pass that follows is a whole one and the rows it draws
+    /// meanwhile would be at the wrong heights.
+    @Test
+    func `a reading that rewrote a row above its last does not keep the document`() {
+        let stood = Self.stamp(Self.reading(10))
+        var grown = Self.reading(10)
+        grown[4] = FeedRow(id: 4, content: .message("A row in the middle, rewritten."))
+        grown += Self.reading(2, from: 10)
+
+        #expect(stood.stands(under: Self.stamp(grown)) == false)
+    }
+
     /// A different reading of the same length is not this one.
     @Test
     func `another reading of the same length does not keep the document`() {
