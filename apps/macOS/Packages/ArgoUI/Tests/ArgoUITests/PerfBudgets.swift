@@ -70,6 +70,25 @@ enum PerfBudgets {
     /// and a reload decided at the seam 0.29 µs against 1.21 ms. Rule 3's 1.3, as above.
     static let rowsCompareFlat = 1.3
 
+    /// `FeedConvergeCostTests` — the landing's converge walk follows the reading and not the square
+    /// of it.
+    ///
+    /// `FeedTableCoordinator.converge` asks `rect(ofRow:)` for every row, which is the only thing
+    /// that brings AppKit's own row geometry up to the document the pass settled: left alone the
+    /// table stands a fifth short of its own heights, and the reader scrolls below everything the
+    /// overview lane maps (#1132). O(rows) on the main actor, on the path every landing takes, so
+    /// its shape is gated rather than described.
+    ///
+    /// Recorded: 0.58 µs a row cold and 0.13 µs warm over the 459-row synthetic, and a quotient of
+    /// about 4 at 1 200 rows against 300 · Apple silicon laptop · debug · least of 5. The
+    /// counterfactuals it was read against: `tile()` alone moved the table's height not at all,
+    /// `noteHeightOfRows` over every row moved it 938 pt of the 8 663 owed, and setting the frame
+    /// outright was taken back by the next tile — the walk is the only thing that converges it.
+    ///
+    /// Slack to 7 rather than the linear 4, for the constant a 300-row reading pays proportionally
+    /// more of. A quadratic walk reads about 16 and this still catches it.
+    static let convergeWalkRatio = 7.0
+
     /// `FeedScaleTests` — telling two same-named files apart grows with the record and not with
     /// the square of it.
     ///

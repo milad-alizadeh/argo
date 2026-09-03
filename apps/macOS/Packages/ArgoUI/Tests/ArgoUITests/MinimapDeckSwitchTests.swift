@@ -32,9 +32,13 @@ struct MinimapDeckSwitchTests {
         ))
     }
 
-    /// The lane re-pointed at another deck maps THAT deck, not the one it came from.
+    /// The lane re-pointed at another SETTLED deck maps that one. A control, and named as one:
+    /// `attach(to:)` calls `refresh()` afterwards, and over a settled deck that walk re-derives the
+    /// geometry whether or not the old reading was given up — so this case passes with
+    /// `forgetReading()` removed and pins nothing on its own. It is here to say that giving the
+    /// reading up did not COST the ordinary switch its map.
     @Test
-    func `a lane moved to another deck stops mapping the one it left`() async throws {
+    func `a lane moved to another settled deck maps that one`() async throws {
         let long = await MinimapLaneFixture.mounted(over: Self.longReading)
         long.lane.layoutSubtreeIfNeeded()
         let held = long.lane.geometry.documentHeight
@@ -49,21 +53,24 @@ struct MinimapDeckSwitchTests {
         #expect(abs(long.lane.geometry.documentHeight - fresh.totalHeight) <= 1)
     }
 
-    /// And the other order — a lane that mapped a SHORT reading must not keep drawing a miniature
-    /// far shorter than the feed it is now beside.
+    /// The other order of the case that PINS it: a lane that mapped a long reading must not go on
+    /// drawing a miniature far taller than the short feed it is now beside.
     @Test
-    func `a lane moved from a short deck maps the long one it arrived at`() async throws {
-        let short = await MinimapLaneFixture.mounted(over: Self.shortReading)
-        short.lane.layoutSubtreeIfNeeded()
-        let held = short.lane.geometry.documentHeight
-
+    func `a lane moved from a long deck draws none of it over a shorter unsettled one`() async {
         let long = await MinimapLaneFixture.mounted(over: Self.longReading)
-        let fresh = try #require(long.table.geometry.settled)
-        short.lane.attach(to: long.feed)
-        short.lane.layoutSubtreeIfNeeded()
+        long.lane.layoutSubtreeIfNeeded()
+        let held = long.lane.geometry.documentHeight
 
-        #expect(short.lane.geometry.documentHeight != held)
-        #expect(abs(short.lane.geometry.documentHeight - fresh.totalHeight) <= 1)
+        let short = await MinimapLaneFixture.mounted(over: Self.shortReading)
+        short.table.surrenderDocument()
+
+        long.lane.attach(to: short.feed)
+        long.lane.layoutSubtreeIfNeeded()
+
+        // Nothing of the reading it came from, and nothing at all: an unsettled feed has no map,
+        // and a lane that drew one anyway would be drawing the Session the reader just left.
+        #expect(long.lane.geometry.documentHeight != held)
+        #expect(long.lane.geometry.documentHeight == 0)
     }
 
     /// The case the two above cannot reach, and the one the reader meets: the deck arrived at has

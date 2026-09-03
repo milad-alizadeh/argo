@@ -321,27 +321,22 @@ package final class MinimapLaneView: NSView {
 extension MinimapLaneView {
     /// Everything the lane holds ABOUT A PARTICULAR READING, given up (#1132).
     ///
-    /// Called where another deck arrives under this lane. The view itself is reused across a
-    /// Session switch — `DeckContentRow` places the zone at one structural position with no `.id`,
-    /// and the zone tears the lane down only over an unsettled feed, which a deck the reader has
-    /// opened before never is. So without this the lane carries the previous Session's reading, its
-    /// stamp and its derived geometry into a feed they say nothing about.
+    /// The view is reused across a Session switch: the zone is placed at one structural position
+    /// with no `.id`, and torn down only over an unsettled feed — which a deck the reader has
+    /// opened before never is. So the reading, its stamp and the geometry derived from it would
+    /// otherwise cross into a feed they say nothing about.
     ///
-    /// The geometry goes with them, and that is the half that was missing. Where the arriving deck
-    /// has no settled document yet — which for a live Session is every visit, because its reading
-    /// grew while the reader was away — `refresh()` returns above the line that writes `geometry`,
-    /// so the old one simply stays painted, scrolling faithfully against an offset that means
-    /// nothing in the space it is drawing. Nothing retires it afterwards: the reshape notice that
-    /// would is dropped, because on a revisited deck the document lands during `apply()` while this
-    /// lane's closure is still nil, and the scroll notice only re-places the layers.
+    /// The geometry is the half that matters. Where the arriving deck has no settled document yet
+    /// — for a live Session, every visit, because its reading grew while the reader was away —
+    /// `refresh()` returns above the line that writes it, so the old one simply stays painted
+    /// against an offset that means nothing in the space it is drawing. Nothing retires it
+    /// afterwards: the reshape notice that would is dropped, because on a revisited deck the
+    /// document lands during `apply()` while this lane's closure is still nil.
     ///
-    /// An empty geometry draws nothing, which is what `MinimapReadingStamp` already promises: where
-    /// what the lane holds is another reading's, it draws nothing at all.
-    ///
-    /// The pixels go with it. `refresh()` returns without painting when there is nothing to derive,
-    /// so a lane that only dropped the reading would keep the previous deck's marks on screen —
-    /// retiring the band here is what makes "draws nothing at all" true of what the reader SEES,
-    /// rather than only of what the lane holds.
+    /// The pixels go with it, for the same reason — `refresh()` returns without painting, so a lane
+    /// that only dropped the reading would keep the previous deck's marks on screen. Together they
+    /// make `MinimapReadingStamp`'s promise true of what the reader SEES: where what the lane holds
+    /// is another reading's, it draws nothing at all.
     func forgetReading() {
         read = nil
         readAt = nil

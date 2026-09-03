@@ -47,6 +47,12 @@ struct FeedSettleLatchTests {
 
         #expect(coordinator.isMeasuring == false)
         #expect(coordinator.settlingFor == nil)
+        // And the HOLD goes with the latch. `surrenderHeld` acts only while a pass is in flight
+        // (`surrendersHeld` is `settlingFor != nil`), so a hold still armed after the latch was
+        // given back is one whose clock runs out and does nothing — leaving the deck on rows at a
+        // wrap nothing is going to correct, which is the half of ADR-0030 Rule 6 that says a held
+        // document is not held for ever.
+        #expect(coordinator.holding == nil)
     }
 
     /// And the ordinary landing still clears it — the guard above must not have been bought by

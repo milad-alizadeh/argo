@@ -179,18 +179,28 @@ extension FeedTableCoordinator {
     /// the heights it draws them at and the document the overview lane maps all change together,
     /// so there is no frame in which the feed is showing one reading's rows at another's heights.
     private func landed(_ document: FeedSettledDocument?, for stamp: FeedMeasureStamp) {
-        // The latch comes back FIRST, and on every way out of here (#1132). It used to be cleared
-        // after the document and the table had been guarded on the same line, so a pass that came
-        // back with nothing — or came back to a deck `KeptDecks` had evicted, since `table` is weak
-        // — left `settlingFor` set with nothing that could ever clear it: the only other writes are
-        // the ones a pass makes when it STARTS. A latched `settlingFor` is a permanently
-        // `isMeasuring` coordinator, which is a permanently provisional lane, which is a lane that
-        // never walks again and draws one reading's miniature over another's feed until the app is
-        // quit (ADR-0030, Rule 3).
+        // The latch comes back FIRST, and on every way out of here (#1132). Nothing else can give
+        // it back: the only other writes to it are the ones a pass makes when it STARTS. So a pass
+        // that returns with no document — or returns to a deck `KeptDecks` has evicted, since
+        // `table` is weak — would leave a permanently `isMeasuring` coordinator, which is a
+        // permanently provisional lane, which is a lane that never walks again and draws one
+        // reading's miniature over another's feed until the app is quit (ADR-0030, Rule 3).
         guard settlingFor == stamp else { return }
         settlingFor = nil
-        guard let document, let table else { return }
+        // With the latch, and for the same reason. `surrendersHeld` IS `settlingFor != nil`, so a
+        // hold left armed past the line above can never fire: the clock runs out, reads that no
+        // pass is in flight, and returns — leaving the deck drawing rows at a wrap that is no
+        // longer true, with nothing on its way to replace them. ADR-0030 Rule 6 holds the stale
+        // document so a drag does not blank the deck AND gives it up so the reader is not left in
+        // front of it; this is the second half.
         releaseHold()
+        // A table that has gone is a deck `KeptDecks` evicted, and its document is kept ON PURPOSE
+        // — surrendering it here would throw away the store that makes coming back free (#858).
+        guard let table else { return }
+        // A pass that came back with nothing, with no fresher stamp behind it — the first guard
+        // would have caught that — is a deck drawing rows at a wrap nothing is going to correct.
+        // Given up rather than left, which is the same decision the hold's clock reaches.
+        guard let document else { return surrenderDocument() }
         // Read BEFORE the heights move and landed after them — that pair IS the holding, and it is
         // what keeps a late Result from scrolling the reader away from what they were reading.
         let held = handle?.resolve(.rowsMeasured(anchor: anchor()))
@@ -254,6 +264,15 @@ extension FeedTableCoordinator {
     /// It must run after `FeedMeasureStamp.rewraps` learned to compare the measure rather than the
     /// width: a tile taken from inside these getters reports a frame change, and while that was
     /// read as a re-wrap this walk would have started a whole-document pass per landing.
+    ///
+    /// WHERE it is called from is load-bearing, and not for the reason the re-entrancy guard above
+    /// might suggest. `landed` runs in the settling Task's continuation, OUTSIDE `settleIfOwed`, so
+    /// `isDecidingSettle` is not holding anything here: `rect(ofRow:)` tiles, the tile resizes the
+    /// table, `FeedTableView.setFrameSize` reports it, and `settleIfOwed` re-enters freely. What
+    /// stops it recurring is that `geometry.settle` and `show` have ALREADY run by this line, so
+    /// the nested decision reads `.settled`, reaches `adoptSettled`, finds `shown` is the
+    /// document's
+    /// own rows and returns. Move this call above those two and it becomes a loop.
     private func converge(_ table: FeedTableView) {
         for index in 0 ..< table.numberOfRows {
             _ = table.rect(ofRow: index)

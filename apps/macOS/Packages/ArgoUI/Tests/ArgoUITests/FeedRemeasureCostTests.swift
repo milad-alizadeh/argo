@@ -77,7 +77,7 @@ struct FeedRemeasureCostTests {
     /// `.visible` and `.rebuild` each leave a pass owing that the next layout pays for, so each of
     /// them reads one with the guard removed. `.none` reads zero either way — it is held by the
     /// early return rather than by the guard — and is here because removing that return is the same
-    /// defect. The case below is what says the counter can see a forced layout at all.
+    /// defect. `a forced layout is counted` is what says the counter can see one at all.
     ///
     /// Mounted in a real window, because a windowless table lays nothing out for `.rebuild`: its
     /// `reloadData` marks and defers.
@@ -112,6 +112,22 @@ struct FeedRemeasureCostTests {
         mounted.coordinator.remeasure(.all)
 
         #expect(try mounted.layouts == before)
+    }
+
+    /// The positive control the four cases above rest on, and the reason it has to exist: every one
+    /// of them now asserts that the counter did NOT move, so a `layouts` that stopped incrementing
+    /// — or a fixture whose table never lays out at all — would leave the lot of them green while
+    /// saying nothing. This is the case that fails if the instrument breaks.
+    @Test
+    func `a forced layout is counted`() async throws {
+        let mounted = try await Self.mounted()
+        let table = try #require(mounted.coordinator.table)
+        let before = try mounted.layouts
+
+        table.needsLayout = true
+        mounted.coordinator.scroller?.layoutSubtreeIfNeeded()
+
+        #expect(try mounted.layouts > before)
     }
 
     /// A reading long enough that most of it is off screen, every row wrapping the pane.

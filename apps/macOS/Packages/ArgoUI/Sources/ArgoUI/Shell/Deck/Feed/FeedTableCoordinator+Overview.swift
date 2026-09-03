@@ -21,11 +21,22 @@ extension FeedTableCoordinator {
             topInset: scroller.contentInsets.top,
             bottomInset: scroller.contentInsets.bottom,
             // The feed's own statement that what it holds is not a geometry of what it is drawing:
-            // no document at all, a pass owed or in flight, or a document measured at a width the
-            // table has since left. A lane that walked then would map the reading at positions
+            // no document at all, a pass owed or in flight, or a document measured across a MEASURE
+            // the table has since left. A lane that walked then would map the reading at positions
             // about to be replaced — which is the whole of what ADR-0030 took away.
+            //
+            // The measure and not the width, because that is what `FeedMeasureStamp.rewraps` owes a
+            // pass for (#1132), and the two have to mean the same thing by the width or they
+            // deadlock: asked as the raw width here, a resize between two widths both at or above
+            // `ArgoFeedRow.column` is a settle that correctly says nothing is owed — so the stamp
+            // keeps the width it was measured at — against a lane comparing it to a table that
+            // moved. Nothing re-settles it, so nothing ever clears it, and a permanently
+            // provisional
+            // lane never re-walks: it holds the reading it last drew and re-arms its layout every
+            // turn of the run loop waiting for a settle that already happened.
             isProvisional: !geometry.isSettled || isMeasuring
-                || geometry.settled?.stamp.width != table.bounds.width,
+                || geometry.settled?.stamp.measure
+                != FeedRowMeasure.measure(atWidth: table.bounds.width),
         )
     }
 

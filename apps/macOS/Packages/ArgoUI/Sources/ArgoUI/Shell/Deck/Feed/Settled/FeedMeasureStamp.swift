@@ -75,8 +75,22 @@ struct FeedMeasureStamp: Equatable, Sendable {
     /// nobody has opened — the tail. The reader is thrown to the end of the session for a width
     /// change. Growth at the tail cannot move a row already measured, so the standing document is
     /// still true of every row it has, and keeping it keeps the reader's place.
+    /// Two guards before `extends`, and neither is defensive tidiness.
+    ///
+    /// It reads `self[stale.count - 2]` with no bound of its own — its only other caller proves the
+    /// count first (`FeedTableDelta.between`) — so a reading that SHRANK by two rows or more traps.
+    /// A compaction is one, and it arrives here on the `.whole` branch, which an ink change alone
+    /// is enough to reach.
+    ///
+    /// And a document of one row may not keep itself: `extends` compares against the stale rows
+    /// MINUS the last, which for one row is nothing at all, so every reading trivially extends it.
+    /// One row is one height to take again, and taking it is cheaper than being wrong about it.
     func stands(under other: FeedMeasureStamp) -> Bool {
-        isReading(of: other) || other.rows.extends(rows)
+        if isReading(of: other) {
+            return true
+        }
+        guard rows.count > 1, other.rows.count >= rows.count else { return false }
+        return other.rows.extends(rows)
     }
 }
 
