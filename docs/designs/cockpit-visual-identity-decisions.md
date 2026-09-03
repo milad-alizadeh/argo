@@ -519,6 +519,16 @@ its approved study are authoritative for the replacement look and feel.
   outgrow its true share of the scroll — but the old per-event ceiling cut a long message's block at
   its head and left the rest of its span as dead lane, which read as a hole in the session. The cap's
   claim survives as the extent itself: weight is the row's real length, never more.
+- **Amended by [ADR-0030](../adr/0030-geometry-is-settled-before-it-is-shown.md) — 2026-09-03:**
+  **the lane is drawn only over settled heights, and never over an estimate.** The 08-13 amendment
+  made the rows report their own geometry; until now the lane could still be handed a document whose
+  off-screen rows were estimated and corrected as they scrolled into view, so the map and the scroll
+  ratio disagreed and the map moved under the reader. The lane now appears in the same frame as the
+  feed, after every row has its final height, and a row's vertical span in the lane is its true share
+  of the settled document — position coincides with the scroller or the map is wrong. The weight cap
+  above stays a cap on what is DRAWN inside that span, never on the span. While the document is
+  being measured the lane is absent, not provisional: the deck stands in the status vocabulary's
+  `Argo has not read this Session yet`, and there is no second, approximate map.
 
 ## D26 — Heavy evidence summarizes, then expands inline
 

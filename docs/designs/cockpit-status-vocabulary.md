@@ -206,3 +206,15 @@ Empty-state and error **copy** is surface-local (harvested per-prototype), but i
   surface owes the reader a word. A switch that resolves inside the delay says nothing, draws
   nothing and animates nothing. The clock times the BLANK rather than the click: two switches with
   no drawn deck between them share one, which is the wait the reader has actually been given.
+
+  **Amended by [ADR-0030](../adr/0030-geometry-is-settled-before-it-is-shown.md) — 2026-09-03:
+  the word covers the measure, and past the delay it moves.** The wait this state names is no
+  longer a frame or two: a Session's whole document is measured before any of it is drawn, and on
+  a first open of a large one that is seconds. The same word covers every such wait — a first
+  open, an evicted Session's rebuild, a remeasure after a resize — and the delay above still
+  decides whether it is drawn at all. Past the delay the word gains an indeterminate activity
+  indicator beside it. "It does not move" is amended by exactly that much: the ban on skeletons
+  and shimmer stands, because those imitate content Argo has not read; an indicator that says
+  Argo is working on its own account imitates nothing, and a multi-second wait with a still word
+  reads as a hang rather than a wait. The Minimap lane is absent for the same span, never
+  approximate (D25 as amended).
