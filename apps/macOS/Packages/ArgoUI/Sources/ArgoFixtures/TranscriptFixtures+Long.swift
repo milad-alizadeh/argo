@@ -9,7 +9,15 @@ extension TranscriptFixtures {
     /// word and some say nothing at all, the looking runs two to five files deep, and the work is
     /// a different shape every few turns. Identical turns wrap identically and stand every row at
     /// the same height, which proves nothing about rhythm.
-    package static let longTranscript: [TranscriptEvent] = (0 ..< longTurns).flatMap(turn(_:))
+    package static let longTranscript: [TranscriptEvent] = longTranscript(from: 0)
+
+    /// The same session with its turns numbered from `first`, which is what makes two of them
+    /// tellable apart: a turn's edit names `FeedView<number>.swift`, so readings generated from
+    /// different starts share no row. Without it a case switching between Sessions is asserting
+    /// against readings it cannot tell one from the other.
+    package static func longTranscript(from first: Int) -> [TranscriptEvent] {
+        (first ..< first + longTurns).flatMap(turn(_:))
+    }
 
     /// Enough turns to put hundreds of events through the projection, which is where "a six-hour
     /// run" starts.

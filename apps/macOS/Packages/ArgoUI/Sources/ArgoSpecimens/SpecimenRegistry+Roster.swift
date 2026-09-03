@@ -49,6 +49,9 @@ extension SpecimenRegistry {
         // A pane's state must die with its Session, which `FeedRow.ID` being a POSITION otherwise
         // carries across.
         SpecimenEntry("twoReadings") { RosterSpecimen(presentation: .twoReadings) },
+        // Five readings and a cap of six decks: what a reader browsing actually does, and the state
+        // the kept decks are driven through (ADR-0030, Rule 4).
+        SpecimenEntry("fiveReadings") { RosterSpecimen(presentation: .fiveReadings) },
         SpecimenEntry("toolbarScope") { ToolbarSpecimen(presentation: .preview) },
         SpecimenEntry("emptyToolbarScope") { ToolbarSpecimen(presentation: .unregisteredPreview) },
         // The bar's two degrade-down states — `emptyPreview` is the one fixture on a detached HEAD.
