@@ -1445,19 +1445,46 @@ function setAim(b) {
 const WHEEL_GAP = 140;     // quiet for this long, and the next event starts a new gesture
 const WHEEL_LIVE = 0.55;   // ... or the flight is this far along, whichever comes first
 let wheelAt = 0;
-function wheelStep(dy, mx, my) {
+/* IN AND OUT ARE NOT MIRROR IMAGES, because going in and coming out are not the same act.
+   Going in is a choice: there are twenty things under the pointer and one of them is meant,
+   so it snaps — the same flight a click gives, to the same seated, centred landing.
+   Coming out is not a choice. There is only one way out and the reader is usually just
+   backing off to see where they are, so it PULLS BACK: a plain continuous zoom about the
+   middle, as far as the notch says and no further. A snap out lands on the parent's frame
+   whether or not that is where the reader was going, and one notch out of a build-only
+   chain is the whole repo — losing your place is the cost, and it buys nothing. */
+const PULL = 0.0022;     // how much of a wheel notch becomes scale, coming out
+const KEEP = 0.55;       // the aim holds until it covers less than this of the frame
+
+function wheelIn(mx, my) {
   const now = performance.now();
   const fresh = now - wheelAt > WHEEL_GAP;
   wheelAt = now;
   if (!fresh) return;
   if (fly && now - fly.t0 < SNAP_MS * WHEEL_LIVE) return;
+  const d = downUnder(aimBox(), mx, my);
+  if (d) goTo(d);
+}
+
+/* Pulling back does not choose a scope, it REPORTS one: the aim keeps its level until it no
+   longer holds the frame, and then hands over to its parent. The camera is not touched by
+   that, so the crumb stays honest without the picture ever jumping. */
+function wheelOut(dy) {
+  const st = $('stage'), e = camFor(null, 1);
+  fly = null;
+  const k = Math.max(e.scale, cam.scale * Math.exp(-dy * PULL)) / cam.scale;
+  const cx = st.clientWidth / 2, cy = st.clientHeight / 2;
+  cam.ox = cx - (cx - cam.ox) * k;
+  cam.oy = cy - (cy - cam.oy) * k;
+  cam.scale *= k;
   const root = tree();
-  if (dy < 0) { const d = downUnder(aimBox(), mx, my); if (d) goTo(d); return; }
-  /* Out of the root there is no parent, so the last notch out is the one that undoes the
-     first notch in: back to the opening framing, which is what fit() and the reset agree on. */
-  if (aimBox() !== root) return void goTo(upOf(aimBox()) || root);
-  const e = camFor(null, 1);
-  if (Math.abs(cam.scale - e.scale) > 0.5) flyTo(e);
+  for (let n = 0; n < 24 && aimBox() !== root && ratioOf(aimBox()) < KEEP; n++)
+    setAim(upOf(aimBox()) || root);
+  /* Pulled all the way back is the opening view, whatever share of it one folder happens to
+     own — a repo whose biggest plate covers four fifths of the frame would otherwise sit at
+     the top still scoped to that plate, with the rest of itself dimmed. */
+  if (cam.scale <= e.scale + 0.5 && aimBox() !== root) setAim(root);
+  rebuild();
 }
 
 /* A CLICK IS THE SAME ARRIVAL, flown. It is one flight and not one per level, because with
@@ -3668,7 +3695,7 @@ Promise.all([
     state.hover = null;
     /* Only the city's free zoom writes the camera under a flight, and it has to end one. */
     if (!state.plan) fly = null;
-    if (state.plan) return wheelStep(e.deltaY, mx, my);
+    if (state.plan) return e.deltaY < 0 ? wheelIn(mx, my) : wheelOut(e.deltaY);
     const base = baseScale();
     const want = cam.scale * Math.exp(-e.deltaY * 0.0014);
     const next = Math.min(base * 90, Math.max(base * 0.5, want)) / cam.scale;
@@ -3720,6 +3747,11 @@ Promise.all([
     if (state.page && state.pinned && state.pinned.path === hit.path) {
       closePage(); state.pinned = null; detail(null); railMark(); return;
     }
+    /* A file is also a PLACE, and the place is the folder holding it: clicking one goes to
+       stand where it lives — the same arrival a click on that folder's own ground gives —
+       and then reads it. In that order, because arriving somewhere puts down the reading
+       that belonged to where you were. */
+    goTo(upOf(hit) || tree());
     openPage(hit);
   };
   /* The ball is a proxy for the same gesture, so it is anchored at the press the same way:
