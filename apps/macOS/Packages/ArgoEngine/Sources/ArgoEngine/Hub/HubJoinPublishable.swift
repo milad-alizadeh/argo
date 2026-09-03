@@ -11,6 +11,12 @@
 /// lets the parent's arrival ABSORB it: one row vanishes and another changes under the cursor. So a
 /// settled transcript is held back where the link it declares points at something unresolved — a
 /// handful of resume files for the length of one read, never the whole set.
+///
+/// Held back ONCE, though: a transcript that has stood on the roster stands through every later
+/// sweep, whatever its link says. A Session resumed from a file outside the window declares a leaf
+/// nobody in the set owns, and re-asking on every sweep took that row away for the length of each
+/// read (#1134). The trade: a parent admitted AFTER its continuation stood absorbs it when it
+/// settles — one move, on the rare sweep that widens the window, instead of a vanish on every one.
 struct HubJoinPublishable {
     /// The transcripts to fold, in the join's own order — which is what keeps the rows already on
     /// screen in the order they are already in.
@@ -20,7 +26,8 @@ struct HubJoinPublishable {
     /// (`HubRoster.holdWrites`).
     let isComplete: Bool
 
-    init(of transcripts: [HubTranscript], owners: [String: String]) {
+    /// `standing` is the ids the previous fold published — what stays published now.
+    init(of transcripts: [HubTranscript], owners: [String: String], standing: Set<String>) {
         let unsettled = Set(transcripts.lazy.filter { !$0.isSettled }.map(\.sessionID))
         guard !unsettled.isEmpty else {
             self.transcripts = transcripts
@@ -32,6 +39,7 @@ struct HubJoinPublishable {
         // an origin naming an unread file is the same ambiguity — both resolve down to waiting.
         let published = transcripts.filter { transcript in
             guard transcript.isSettled else { return false }
+            guard !standing.contains(transcript.id) else { return true }
             if let leaf = transcript.session.headLeafUUID {
                 guard let owner = owners[leaf], settled.contains(owner) else { return false }
             }

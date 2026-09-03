@@ -14,12 +14,38 @@ struct HubTranscript {
     /// in the join — so the records it claims are attributed in tail-start order — but the roster
     /// it belongs to is not published.
     var isSettled = false
+    /// The empty reading the NEXT batch begins from, while this transcript is being read again
+    /// from the start (`HubJoin.reread`). Held beside `session` rather than in its place: the
+    /// stale reading stays published until the new one lands, so a refold taken for some other
+    /// transcript's batch in the meantime cannot drop the row (#1134).
+    private(set) var rereading: HubSession?
 
     init(observation: TranscriptObservation) {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
         self.sessionID = observation.sourceURL.deletingPathExtension().lastPathComponent
         self.session = HubSession(observation: observation)
+    }
+
+    /// Begin reading again from the start. The reading on screen stands; the one that replaces
+    /// it is empty until a batch arrives.
+    mutating func reread(_ observation: TranscriptObservation) {
+        rereading = HubSession(observation: observation)
+    }
+
+    /// The reading a batch lands in. The first batch after a reread lands in the fresh one, so
+    /// nothing the stale reading saw is counted twice. Answers whether the reading was swapped,
+    /// which is a move of the row.
+    mutating func beginBatch() -> Bool {
+        guard let fresh = rereading else { return false }
+        session = fresh
+        rereading = nil
+        return true
+    }
+
+    /// A reread whose tail delivered nothing. The stale reading stays as it was.
+    mutating func abandonReread() {
+        rereading = nil
     }
 }
 
