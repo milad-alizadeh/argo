@@ -45,6 +45,14 @@ public actor SessionAnnotationStore {
         persist(load().reading(ticket, sessionID: sessionID))
     }
 
+    /// Attach a Session to a Ticket by hand, or — with `nil` — drop the attachment (#1092). A
+    /// gesture, unlike `setTicket` above: this is the one write that puts a Session on a Ticket
+    /// nothing about its branch or its folder names.
+    @discardableResult
+    public func setPinnedTicket(_ number: Int?, sessionID: String) -> SessionAnnotations {
+        persist(load().pinning(number, sessionID: sessionID))
+    }
+
     /// A file that cannot be written still holds for this launch and is forgotten by the next
     /// one. Refusing the gesture is a worse answer to a full disk than losing the memory of it.
     private func persist(_ annotations: SessionAnnotations) -> SessionAnnotations {

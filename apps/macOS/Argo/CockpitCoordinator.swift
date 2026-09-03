@@ -143,6 +143,16 @@ final class CockpitCoordinator {
         annotations = await annotationStore.setName(name, sessionID: sessionID)
     }
 
+    /// Attach a Session to a Ticket by hand, or drop the attachment (#1092). Only ever the tab
+    /// line's picker: nothing observed puts a Session on a Ticket the reader did not name.
+    ///
+    /// The title behind the number is not read here. Pinning makes the link untitled, and the
+    /// window already asks for a resolve the moment an untitled number appears (`ArgoApp`) — one
+    /// trigger, so a pinned link and a derived one are named the same way.
+    func setPinnedTicket(_ number: Int?, sessionID: String) async {
+        annotations = await annotationStore.setPinnedTicket(number, sessionID: sessionID)
+    }
+
     /// Name each Session's ticket through the Project's Ticket port (#745). What is resolved and
     /// what triggers a resolve are both `CockpitPresentation`'s (`+Tickets`).
     ///

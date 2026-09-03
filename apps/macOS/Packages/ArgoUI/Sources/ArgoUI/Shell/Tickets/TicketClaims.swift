@@ -8,11 +8,20 @@ package struct TicketClaims: Equatable, Sendable {
     package struct Claimant: Equatable, Sendable, Identifiable {
         package let id: CockpitPresentation.Session.ID
         package let name: String
+        /// What that Session is doing, so a head naming two of them can say WHICH is running
+        /// (#1092) rather than leaving a reader to open both and find out. `unknown` is the honest
+        /// default: it draws the outlined dot every unread state on this app draws.
+        package let status: SessionStatus
 
         /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-        package init(id: CockpitPresentation.Session.ID, name: String) {
+        package init(
+            id: CockpitPresentation.Session.ID,
+            name: String,
+            status: SessionStatus = .unknown,
+        ) {
             self.id = id
             self.name = name
+            self.status = status
         }
     }
 
@@ -70,8 +79,11 @@ extension TicketClaims {
         for session in sessions {
             switch session.ticket {
             case let .linked(issue):
-                placed[issue.number, default: []]
-                    .append(Claimant(id: session.id, name: SessionTitle.resolved(for: session)))
+                placed[issue.number, default: []].append(Claimant(
+                    id: session.id,
+                    name: SessionTitle.resolved(for: session),
+                    status: session.status,
+                ))
             case .unlinked: short += 1
             case .unread: blind += 1
             }

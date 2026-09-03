@@ -19,10 +19,8 @@ extension CockpitCoordinator {
     private func spawn(_ seed: SessionSeed) async -> String? {
         do {
             return try await hub.spawnSession(seed: seed).value
-        } catch let failure as AgentSpawnError {
-            report(detail: failure.detail)
         } catch {
-            report(detail: error.localizedDescription)
+            report(detail: AgentRefusal.detail(of: error))
         }
         return nil
     }
@@ -32,15 +30,13 @@ extension CockpitCoordinator {
     ///
     /// A refusal leaves the Session exactly as it was: read-only, with no composer (#546).
     func resumeSession(sessionID: String) async {
-        let title = "Could not continue this session"
         do {
             try await hub.resumeSession(sessionID: sessionID)
-        } catch let failure as SessionResumeError {
-            report(detail: failure.detail, title: title)
-        } catch let failure as AgentSpawnError {
-            report(detail: failure.detail, title: title)
         } catch {
-            report(detail: error.localizedDescription, title: title)
+            report(
+                detail: AgentRefusal.detail(of: error),
+                title: "Could not continue this session",
+            )
         }
     }
 
@@ -80,12 +76,8 @@ extension CockpitCoordinator {
             return try await SessionHandoff(host: hub, root: Hub.handoffRoot)
                 .run(SessionHandoff.Request(sessionID: sessionID, cwd: cwd, issue: issue))
                 .sessionID
-        } catch let failure as SessionHandoff.Failure {
-            report(detail: failure.detail)
-        } catch let failure as AgentSpawnError {
-            report(detail: failure.detail)
         } catch {
-            report(detail: error.localizedDescription)
+            report(detail: AgentRefusal.detail(of: error))
         }
         return nil
     }

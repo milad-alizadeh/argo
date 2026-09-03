@@ -15,11 +15,12 @@ struct TicketClaimsTests {
     private static func session(
         id: String = "s1",
         title: String = "A Session",
+        status: SessionStatus = .idle,
         ticket: CockpitPresentation.Session.TicketLinkReading,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
-            id: id, title: title, access: .managed, status: .idle, work: .init(ticket: ticket),
+            id: id, title: title, access: .managed, status: status, work: .init(ticket: ticket),
         )
     }
 
@@ -38,9 +39,9 @@ struct TicketClaimsTests {
         ])
 
         #expect(claims.numbers == [812])
-        #expect(
-            claims.claimants[812] == [TicketClaims.Claimant(id: "s1", name: "Fix login flow bug")],
-        )
+        #expect(claims.claimants[812] == [
+            TicketClaims.Claimant(id: "s1", name: "Fix login flow bug", status: .idle),
+        ])
         #expect(claims.unplaced == .zero)
         #expect(claims.unread == .zero)
         #expect(claims.wasRead)
@@ -107,9 +108,21 @@ struct TicketClaimsTests {
 
         #expect(claims.numbers == [812])
         #expect(claims.claimants[812] == [
-            TicketClaims.Claimant(id: "a", name: "Fix login flow bug"),
-            TicketClaims.Claimant(id: "b", name: "/implement 812"),
+            TicketClaims.Claimant(id: "a", name: "Fix login flow bug", status: .idle),
+            TicketClaims.Claimant(id: "b", name: "/implement 812", status: .idle),
         ])
+    }
+
+    /// Each claimant carries what its Session is DOING (#1092), so a head naming two of them can
+    /// say which is running rather than leaving a reader to open both and find out.
+    @Test
+    func `a claimant carries the state of the Session that placed it`() {
+        let claims = Self.claims([
+            Self.session(id: "a", status: .running, ticket: .linked(.init(number: 812))),
+            Self.session(id: "b", status: .permission, ticket: .linked(.init(number: 812))),
+        ])
+
+        #expect(claims.claimants[812]?.map(\.status) == [.running, .permission])
     }
 
     /// The back-compat initializer every fixture that asks only WHICH tickets are claimed uses —

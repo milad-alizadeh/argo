@@ -58,6 +58,13 @@ extension SpecimenRegistry {
         SpecimenEntry("tabLineIssueUnread") {
             SessionHeaderSpecimen(header: SessionHeaderFixture.unread)
         },
+        // The same `unlinked` reading with a backlog behind it (#1092): the dead-end word becomes
+        // the verb that attaches this Session to a Ticket, which is the only link most Sessions
+        // will ever have — nothing about a `ticket-<words>` worktree names a number.
+        SpecimenEntry("tabLineIssueOffered") {
+            SessionHeaderSpecimen(header: SessionHeaderFixture.unlinked)
+                .environment(\.argoTicketLinking, SessionHeaderFixture.offering)
+        },
     ]
 
     private static let postures: [SpecimenEntry] = [

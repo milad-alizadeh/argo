@@ -31,6 +31,13 @@ public extension CockpitActions {
         /// Give a Session a name of the user's own, or — with `nil` — drop it and let the derived
         /// title come back (#502, stories 18 and 20).
         public var setName: (String, String?) -> Void = { _, _ in }
+        /// Attach a Session to a Ticket by hand, or — with `nil` — drop the attachment and let
+        /// whatever its branch names come back (#1092).
+        ///
+        /// Beside `setName` and not on the Tickets port: nothing is being asked of a provider —
+        /// this is Argo remembering a decision of the reader's, which is the one kind of thing
+        /// `CONTEXT.md` lets it store.
+        public var setTicketLink: (String, Int?) -> Void = { _, _ in }
         /// Say the Turn the CLI never heard has been put back in the composer (#682), so the Hub
         /// stops reporting it. Not on the drive port: nothing is being asked of the Session — this
         /// is Argo taking back its own news, and the port is what Argo does TO an agent.

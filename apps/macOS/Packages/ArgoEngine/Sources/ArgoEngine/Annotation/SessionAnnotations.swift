@@ -23,15 +23,25 @@ public struct SessionAnnotations: Equatable, Sendable {
         /// `explicitName` above because Argo writes this one and the user writes that one: merged,
         /// a resolve would silently overwrite a rename.
         public var ticket: TicketTitleReading?
+        /// The Ticket a reader attached to this Session by hand, `nil` for one they never did
+        /// (#1092). The user's own gesture, so DIRECT — and the only link a Session gets when
+        /// nothing about its branch or its folder names a number, which is most of them.
+        ///
+        /// Beside `ticket` above rather than folded into it, on `explicitName`'s reasoning: Argo
+        /// writes the title and the user writes the number, and one slot for the two would let a
+        /// resolve overwrite a decision.
+        public var pinnedTicket: Int?
 
         public init(
             isArchived: Bool = false,
             explicitName: String? = nil,
             ticket: TicketTitleReading? = nil,
+            pinnedTicket: Int? = nil,
         ) {
             self.isArchived = isArchived
             self.explicitName = SessionAnnotations.name(from: explicitName)
             self.ticket = ticket
+            self.pinnedTicket = SessionAnnotations.ticketNumber(from: pinnedTicket)
         }
 
         /// An annotation that asserts nothing, which is what every Session has until somebody
@@ -59,6 +69,17 @@ public struct SessionAnnotations: Equatable, Sendable {
         func reading(_ ticket: TicketTitleReading?) -> Annotation {
             var next = self
             next.ticket = ticket
+            return next
+        }
+
+        /// And for the pin — which also DROPS the held title (#1092). The title was read for the
+        /// number that was there before, so a pin moved to another ticket keeping it would print
+        /// one ticket's words under another ticket's number until the next resolve.
+        func pinned(_ number: Int?) -> Annotation {
+            var next = self
+            next.pinnedTicket = SessionAnnotations.ticketNumber(from: number)
+            guard next.pinnedTicket != pinnedTicket else { return next }
+            next.ticket = nil
             return next
         }
     }
@@ -105,6 +126,19 @@ public struct SessionAnnotations: Equatable, Sendable {
         annotation(for: sessionID).ticket
     }
 
+    /// The Ticket a reader attached to this Session by hand, and `nil` where they never did
+    /// (#1092). Which link WINS is the projection's, the way the title's rendering is.
+    public func pinnedTicket(_ sessionID: String) -> Int? {
+        annotation(for: sessionID).pinnedTicket
+    }
+
+    /// A ticket number is a positive integer, and nothing else is one. Public for the same reason
+    /// `name(from:)` is: a number out of a hand-edited file obeys the rule a picked one does.
+    public static func ticketNumber(from number: Int?) -> Int? {
+        guard let number, number > 0 else { return nil }
+        return number
+    }
+
     /// Archive a Session, or put one back. Keyed on the chain id and on nothing observed, which
     /// is why re-reading a transcript cannot disturb it: a record arriving for an archived
     /// Session is new activity, and new activity is not a decision (#502, story 16).
@@ -122,6 +156,12 @@ public struct SessionAnnotations: Equatable, Sendable {
     /// `naming` above.
     func reading(_ ticket: TicketTitleReading?, sessionID: String) -> SessionAnnotations {
         setting(annotation(for: sessionID).reading(ticket), for: sessionID)
+    }
+
+    /// Attach a Session to a Ticket by hand, or — with `nil` — drop the attachment and let whatever
+    /// its branch names come back (#1092). The reset is `nil`, on `naming` above's reasoning.
+    func pinning(_ number: Int?, sessionID: String) -> SessionAnnotations {
+        setting(annotation(for: sessionID).pinned(number), for: sessionID)
     }
 
     /// The one write path, so an annotation that has fallen back to asserting nothing is dropped

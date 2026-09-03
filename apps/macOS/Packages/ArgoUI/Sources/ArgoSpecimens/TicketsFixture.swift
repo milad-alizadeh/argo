@@ -125,9 +125,12 @@ package enum TicketsFixture {
     /// #272 with a SECOND live Session on it too — the head's other honest state (#1092): two
     /// claimants, neither of which may draw the ticket's own words as a name
     /// (`SessionTitle.namesOneRow`), so both take names of their own.
+    /// One running and one idle, deliberately: the list the count opens onto answers WHICH of the
+    /// two is working, and a fixture where both read the same would render a list that has never
+    /// been asked to tell them apart.
     package static let twoClaimants: [TicketClaims.Claimant] = [
-        .init(id: "session-272-a", name: "Fix the generic node tree crash"),
-        .init(id: "session-272-b", name: "/implement 272"),
+        .init(id: "session-272-a", name: "Fix the generic node tree crash", status: .running),
+        .init(id: "session-272-b", name: "/implement 272", status: .idle),
     ]
 
     /// Two live Sessions whose own ticket link Argo could not name, so the claim join is SHORT by

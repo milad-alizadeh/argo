@@ -154,6 +154,12 @@ extension SpecimenRegistry {
         SpecimenEntry("twoClaimantsTicketHead") {
             TicketDetailSpecimen(reading: TicketsFixture.claimedAndBlocked)
         },
+        // …and what that count OPENS onto (#1092): a row per claimant, each a route of its own,
+        // each led by the roster's state dot so the list says which of the two is running. The
+        // popover it is drawn in cannot be shot, so the list itself is the specimen.
+        SpecimenEntry("claimantList") {
+            TicketClaimantList(claimants: TicketsFixture.twoClaimants)
+        },
         // A link followed to a number nothing has been read for: while the read is in flight, and
         // after one that came back with nothing. Not an empty pane, which means "nothing selected".
         SpecimenEntry("unreadTicketNumber") {

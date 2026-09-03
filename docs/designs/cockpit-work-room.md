@@ -701,11 +701,19 @@ One claimant is a route: the diamond `ClaimMark.symbol` — reused rather than a
 `TicketStart.run(on:in:)` already does after a spawn: `navigation.session` then
 `navigation.room = .sessions`, the established gesture and not a second one.
 
-Two or more claimants is a fact the head states rather than a route it cannot honestly offer:
-`n Sessions are on this`, in `text.tertiary` and not a button. Naming one of the two silently
-would be a claim nobody made, and `Ticket.oldestFirst`'s tie-break is the wrong tool here — that
-order settles a contested PARENT edge, a different question, and borrowing it would give one rule
-two meanings.
+Two or more claimants still refuses to pick one: `n Sessions are on this`. Naming one of the two
+silently would be a claim nobody made, and `Ticket.oldestFirst`'s tie-break is the wrong tool here
+— that order settles a contested PARENT edge, a different question, and borrowing it would give one
+rule two meanings.
+
+**Amended #1092: the count opens onto the list.** Stating a number a reader cannot act on answers
+half the question — it tells them two Sessions are on this ticket and leaves them to find both by
+hand, and says nothing about which is working. So the count is a button in `interaction.accent`
+like the single claimant above it, and it opens a popover: one row per claimant, each a route of
+its own, each led by `SessionStateIndicator` — the roster's own state dot, in the roster's own ink,
+so the list answers "which one is running" with the mark that already means it everywhere else. No
+new vocabulary: the dot is `SessionState.role(for:)` and nothing invents a word for a state the
+status vocabulary spends none on.
 
 No claimant draws no row at all — not an empty one, the same absence rule the rest of this head
 already follows.

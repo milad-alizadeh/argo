@@ -193,6 +193,9 @@ struct ArgoApp: App {
         actions.sessions.setName = { id, name in
             Task { await cockpit.setName(name, sessionID: id) }
         }
+        actions.sessions.setTicketLink = { id, ticket in
+            Task { await cockpit.setPinnedTicket(ticket, sessionID: id) }
+        }
         actions.sessions.clearLostTurn = { id in cockpit.hub.clearLostTurn(for: id) }
         actions.sessions.handOff = { id, issue in
             await cockpit.handOff(sessionID: id, issue: issue)

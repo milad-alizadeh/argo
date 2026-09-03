@@ -140,6 +140,20 @@ enum SessionHeaderFixture {
         spend: .init(contextTokens: 67175),
     ))
 
+    /// A backlog to attach the `unlinked` Session above to (#1092) — this repo's own open tickets,
+    /// as the picker orders them. What turns that reading's dead-end word into the one gesture that
+    /// puts a Session on a Ticket whatever its branch is called.
+    ///
+    /// Computed, not stored: the offering carries the write that lands a choice, and a closure is
+    /// not `Sendable` — so this is a value built per read rather than one shared across tasks.
+    static var offering: SessionTicketLinking {
+        SessionTicketLinking(options: [
+            .init(number: 1092, title: "Route between Session and Ticket"),
+            .init(number: 812, title: "The Work room reads the backlog"),
+            .init(number: 388, title: "Ticket read path: listing, status, dependency edges"),
+        ])
+    }
+
     static func header(for access: CockpitPresentation.Session.Access)
         -> SessionHeaderProjection.Header {
         SessionHeaderProjection.header(from: session(
