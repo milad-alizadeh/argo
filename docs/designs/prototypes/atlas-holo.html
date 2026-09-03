@@ -1701,6 +1701,12 @@ const inDomain = (path, id) => { const d = DOM && DOM.byPath.get(path); return !
 function inScope(path) {
   if (HITS && !HITS.has(path)) return false;
   if (state.domSel !== null && DOM && !inDomain(path, state.domSel)) return false;
+  /* WHERE YOU ARE IS NOT A QUESTION THE MAP ANSWERS BY DIMMING. In the treemap the level you
+     are in fills the frame, so what is left round the edge of it is not an answer being
+     withheld — it is the neighbourhood, and greying it out only made the map look broken
+     while you moved. Search and a chosen domain still dim, because those ARE questions the
+     reader asked and the whole map is the answer. */
+  if (state.plan) return true;
   if (state.folder && !under(path, state.folder)) return false;
   const p = state.peek;
   if (!p) return true;
