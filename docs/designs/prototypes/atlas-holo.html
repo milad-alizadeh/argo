@@ -777,7 +777,11 @@ function domainRoot() {
 }
 
 /* ---------- layout ---------- */
-function layout(root, mArea, mHeight, maxH) {
+/* `prefix` is what the root's own path hangs off, so a tree laid out from one folder carries
+   the SAME absolute paths as the whole-city one. Every index on this page is keyed by path —
+   notes, ties, the rail, the scope, picking — and a re-tiling that renamed its boxes would
+   quietly disconnect all of them. */
+function layout(root, mArea, mHeight, maxH, prefix = '') {
   /* `rank` counts the plates you can actually see above a box, which is not the same as
      its depth in the tree: Packages, Sources and ArgoEngine-inside-ArgoEngine are folders
      of the build, not places in the code, and none of them is drawn. Sizing the gutters by
@@ -828,7 +832,7 @@ function layout(root, mArea, mHeight, maxH) {
       me.kids.push(walk(b.it.c, b.x, b.y, b.w, b.h, depth + 1, rank + (ghost ? 0 : 1), here));
     return me;
   }
-  const t = walk(root, 0, 0, PLAN, PLAN, 0, 0, '');
+  const t = walk(root, 0, 0, PLAN, PLAN, 0, 0, prefix);
   occlude(t);
   return t;
 }
@@ -856,15 +860,53 @@ function occlude(box) {
 
 /* The plan does not depend on the camera, and turning the model must not pay for a
    fresh treemap — so the tree is kept and only the paint order is redone. */
+/* The data node one box path names, found the way walk() spells a path rather than by any
+   second convention: a domain plate by the name fixPaths gave it, a folder by its segments. */
+function nodeAt(n, path, prefix = '') {
+  const here = prefix ? prefix + '/' + n.name : n.name;
+  if (here === path) return n;
+  if (!path.startsWith(here + '/')) return null;
+  for (const c of n.children || []) {
+    const hit = nodeAt(c, path, here);
+    if (hit) return hit;
+  }
+  return null;
+}
+/* WHY THE TREEMAP RE-TILES AND THE CITY DOES NOT.
+   Descending is a filter, which keeps one map under the reader at every altitude — and that
+   is right for the city, where the plate you entered is a place you can still see. But a
+   filter cannot give a folder more room than the top-level tiling gave it, and squarify
+   cannot help that: with 85,491 lines under one sibling and 596 under another, the small one
+   is a sliver, and a sliver's inner rect collapses past `iw <= 2` and takes its whole subtree
+   with it. Measured on this repo, three of four top-level folders were 19px wide and drew
+   NONE of their 33 files — a fifth of the folders holding a fortieth of the code, invisible.
+   Bostock's zoomable treemap does not have the problem because entering a node re-tiles that
+   node into the whole frame, and this is that: in plan view the entered folder IS the root of
+   the tiling. The paths do not change (see layout's `prefix`), so the scope, the crumb, the
+   rail and every note and tie still name the same boxes; only the rectangles move. */
+function scopeRoot(grouped) {
+  if (!state.plan || !state.folder) return null;
+  const root = grouped ? domainRoot() : live();
+  if (state.folder.startsWith('@domain/')) {
+    const name = state.folder.slice(8);
+    return (root.children || []).find(c => c.name === name) || null;
+  }
+  return nodeAt(root, state.folder);
+}
 let TREE = null, treeKey = '';
 function tree() {
   const grouped = state.dom === 'group' && domainsReady();
+  const scope = scopeRoot(grouped);
   const k = state.area + '|' + state.height + '|' + (grouped ? domKey + 'g' : 'f')
-          + (state.noTests ? '|t' : '');
+          + (state.noTests ? '|t' : '') + (scope ? '|@' + state.folder : '');
   if (k !== treeKey) {
     const files = leaves(live());
     const maxH = Math.max(...files.map(f => at(f, state.height)), 1);
-    TREE = layout(grouped ? domainRoot() : live(), state.area, state.height, maxH);
+    /* maxH stays the whole repo's, so a tower means the same number of commits at every
+       altitude — a per-scope maximum would make the tallest thing in view always full height. */
+    TREE = layout(scope || (grouped ? domainRoot() : live()), state.area, state.height, maxH,
+                  scope && !state.folder.startsWith('@domain/')
+                    ? state.folder.split('/').slice(0, -1).join('/') : '');
     fixPaths(TREE);
     treeKey = k;
   }
@@ -1184,6 +1226,10 @@ function flyTo(to) {
    the list are one-to-one, so a route that moved the scope and left the camera behind would
    make where you are depend on which of the two you used. */
 function flyHere() {
+  /* In plan view the LAYOUT zooms (beginZoom) and the camera only ever holds the whole plan
+     square, so the two cannot fight; in the city the layout is fixed and the camera is the
+     only thing that can frame a folder. Same gesture, and the view decides which half moves. */
+  if (state.plan) return flyTo(camFor(null, 1));
   flyTo(state.folder ? camFor(paintOrder(folderAt(state.folder)), SNAP_FILL) : camFor(null, 1));
 }
 /* Anyone else who writes the camera wins. The tween remembers its own last write, so a wheel
@@ -1252,6 +1298,10 @@ function setView(plan) {
   hideDef(); segUI();
   if (CALM) { setFlat(plan ? 1 : 0); fit(); rebuild(); }
   else { vFrom = ZK; vTo = plan ? 0 : 1; vT0 = performance.now(); turning = true; }
+  /* Inside a folder the two views are two different tilings, so the frame the camera was
+     holding is not a frame in the other one. Re-framing here is the same act flying into the
+     folder was; at the top there is only one tiling and the camera is left alone. */
+  if (state.folder) flyHere();
   detail(null); stamp();
 }
 /* ---------- the reshuffle ---------- */
@@ -1306,9 +1356,88 @@ function setDom(mode) {
   else { apply(); treeKey = ''; fit(); rebuild(); detail(null); stamp(); }
 }
 
+/* ---------- zooming into a level ----------
+   In plan view the tiling is rebuilt around the folder you entered (see tree()), so arriving
+   cannot be a cut: what the folder holds is drawn squeezed into the rect that folder ITSELF
+   occupied a moment ago, and grows from there to fill the frame. Coming out is the same
+   function with the two rects the other way round.
+   One affine map, shared by every box, taken from where the anchor was and where it now is —
+   which is Bostock's domain interpolation exactly, the identity the camera flight already
+   relies on (see flyTo), applied to the layout instead of to the viewport. So the camera
+   holds still through it: two zooms at once read as one overshooting. */
+function seatOf(path) {
+  const b = path ? folderAt(path) : TREE;
+  return b ? [b.x, b.y, b.w, b.h] : null;
+}
+/* `was` is the anchor's rect in the tiling being left; the anchor is found again in the one
+   being entered. A remap of both the box and the inner rect the captions are measured in,
+   because a band placed off an unmoved inner would slide while its plate travelled. */
+const screenRect = r => {
+  const a = raw(r[0], r[1], 0), b = raw(r[0] + r[2], r[1] + r[3], 0);
+  return [a[0] * cam.scale + cam.ox, a[1] * cam.scale + cam.oy,
+          (b[0] - a[0]) * cam.scale, (b[1] - a[1]) * cam.scale];
+};
+function beginZoom(anchor, was) {
+  if (CALM || !view || !was) return;
+  const now = anchor ? folderAt(anchor) : tree();
+  const sx = was[2] / (now.w || 1), sy = was[3] / (now.h || 1);
+  const remap = (x, y, w, h) => [was[0] + (x - now.x) * sx, was[1] + (y - now.y) * sy, w * sx, h * sy];
+  const from = new Map(), inner = new Map();
+  for (const b of paintOrder(TREE)) {
+    b.mx = b.x; b.my = b.y; b.mw = b.w; b.mh = b.h; b.mi = b.inner;
+    from.set(b.path, remap(b.x, b.y, b.w, b.h));
+    if (b.inner) inner.set(b.path, remap(b.inner[0], b.inner[1], b.inner[2], b.inner[3]));
+  }
+  /* The half that is LEAVING. The boxes around the anchor are not in the new tiling at all, so
+     without this the surround cuts to nothing and the arriving folder dissolves in out of an
+     empty stage — which is the "it just appears" the layout zoom was supposed to end. The last
+     frame is kept as a picture and scaled by the anchor's own growth, so the two halves travel
+     on ONE transform and the old map is seen to be the thing being zoomed into. A picture and
+     not a second tree: nothing in it is picked, measured or labelled, only faded out. */
+  const shot = document.createElement('canvas');
+  shot.width = model.width; shot.height = model.height;
+  shot.getContext('2d').drawImage(model, 0, 0);
+  morph = { t0: performance.now(), from, inner, plate: 1, kind: 'zoom',
+            ghost: shot, box: now, a0: screenRect(was) };
+}
+/* The outgoing picture, placed so the rect the anchor held then sits exactly where the rect it
+   holds now is — so it is the same zoom, drawn once for each of the two tilings. */
+function drawGhost(e) {
+  const b = morph.box, a0 = morph.a0;
+  const at = screenRect([b.x, b.y, b.w, b.h]);
+  const k = at[2] / (a0[2] || 1);
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, 1 - e * 1.35);
+  ctx.translate(at[0] - a0[0] * k, at[1] - a0[1] * k);
+  ctx.scale(k, k);
+  ctx.drawImage(morph.ghost, 0, 0, W, H);
+  ctx.restore();
+}
+function zoomStep(now) {
+  const u = Math.min(1, (now - morph.t0) / SNAP_MS), e = glide(u);
+  const lerp = (f, t) => f + (t - f) * e;
+  morph.e = e;
+  for (const b of paintOrder(TREE)) {
+    const src = morph.from.get(b.path);
+    if (!src || b.mx === undefined) continue;
+    b.x = lerp(src[0], b.mx); b.y = lerp(src[1], b.my);
+    b.w = lerp(src[2], b.mw); b.h = lerp(src[3], b.mh);
+    const si = morph.inner.get(b.path);
+    if (si && b.mi) b.inner = si.map((v, i) => lerp(v, b.mi[i]));
+  }
+  if (u < 1) { rebuild(true); return; }
+  for (const b of paintOrder(TREE)) if (b.mx !== undefined) {
+    b.x = b.mx; b.y = b.my; b.w = b.mw; b.h = b.mh;
+    if (b.mi) b.inner = b.mi;
+  }
+  morph = null;
+  rebuild(); detail(null);
+}
+
 /* The stagger is by destination domain, not by distance: the reader is being shown that a
    domain is one thing, so it has to arrive as one thing. */
 function morphStep(now) {
+  if (morph.kind === 'zoom') return zoomStep(now);
   const span = DOM_MS + DOM_STAGGER;
   const u = Math.min(1, (now - morph.t0) / span);
   const ranks = DOM ? DOM.clusters.length : 1;
@@ -2415,6 +2544,9 @@ function frame(now) {
   }
   const t0 = performance.now();
   ctx.clearRect(0, 0, W, H);
+  /* under the model, never over it: the half that is arriving stays at its own contrast the
+     whole way, and the half that is leaving goes out behind it */
+  if (morph && morph.kind === 'zoom' && morph.ghost) drawGhost(morph.e || 0);
   ctx.drawImage(model, 0, 0, W, H);
 
   /* Ties are drawn over the model, because a filament that disappears behind a tower is
@@ -2572,9 +2704,10 @@ function hoverRim(b) {
   traceLines([wireframe(box, box.z1)[0]], 1);
 }
 
-/* Pinned is committed: the whole volume drawn edge by edge and then held, plus a caret
-   standing clear of the roof so the pin is findable from the far side of the map where the
-   wireframe itself is four pixels across. Neither mark may touch the band's own colour. */
+/* Pinned is committed: the whole volume drawn edge by edge and then held. It used to carry a
+   caret over the roof as well, on the argument that a pin is hard to find from the far side
+   of the map — but the mark sat in the air over a rectangle it did not touch, and read as a
+   thing on the map rather than as this box being the one. The rim carries it alone. */
 const PIN_MS = 420;
 let pinPath = null, pinT0 = 0;
 function pinMark(b, now) {
@@ -2584,15 +2717,6 @@ function pinMark(b, now) {
   ctx.lineJoin = 'round';
   ctx.strokeStyle = 'rgba(232,252,255,.95)'; ctx.lineWidth = 2;
   traceLines(wireframe(box, box.z1), p);
-
-  const a = Math.max(0, (p - 0.6) / 0.4);
-  if (a <= 0) return;
-  const head = project(box.x + box.w / 2, box.y + box.h / 2, box.z1);
-  const ty = head[1] - 15;
-  ctx.fillStyle = `rgba(232,252,255,${a.toFixed(3)})`;
-  ctx.beginPath();
-  ctx.moveTo(head[0], ty + 7); ctx.lineTo(head[0] - 4.5, ty); ctx.lineTo(head[0] + 4.5, ty);
-  ctx.closePath(); ctx.fill();
 }
 
 /* everything the old draw path called `render` still means "the model changed" */
@@ -2860,8 +2984,11 @@ function folderAt(path) {
 function enterFolder(path, name) {
   beginFade();
   closePage();
+  /* read where the plate sits NOW, because the next two lines are what re-tiles it away */
+  const was = state.plan ? seatOf(path) : null;
   state.trail.push({ path: state.folder, name: state.folderName, top: $('rows').scrollTop });
   state.folder = path; state.folderName = name;
+  beginZoom(path, was);
   /* Where you are is carried by the plate's own rim, whichever control put you there — so
      the frame lands on the folder you entered from the map and from the list alike. */
   state.pinned = folderAt(path);
@@ -2872,8 +2999,13 @@ function enterFolder(path, name) {
 function goFolder(i) {
   const t = state.trail[i] || { path: null, name: null, top: 0 };
   beginFade();
+  /* Coming out, the anchor is the level being LEFT and the rect it held is the whole frame,
+     so the new tiling starts magnified around it and settles back — the way in, reversed. */
+  const leaving = state.folder;
+  const was = state.plan && leaving ? seatOf(null) : null;
   state.trail = state.trail.slice(0, i);
   state.folder = t.path; state.folderName = t.name;
+  beginZoom(leaving, was);
   state.pinned = t.path ? folderAt(t.path) : null;
   railIndex(); restoreTop(t.top); rebuild(); key(view.lo, view.hi); detail(null); railMark();
   flyHere();
@@ -3570,7 +3702,16 @@ Promise.all([
     if (moved > 4) return;              // a drag that ended on a plate is not a click
     const r = cv.getBoundingClientRect();
     const hit = pick(e.clientX - r.left, e.clientY - r.top);
-    if (!hit) return;
+    /* Ground with nothing on it is not a target, so a click there is a click on none of them —
+       the same gesture as Esc, and the only way to put the panel down without first finding
+       something else to point at. The SCOPE is not a selection and is left alone: a folder is
+       somewhere you are, and the breadcrumb is the way out of it. */
+    if (!hit) {
+      if (state.page) closePage();
+      state.pinned = null; state.hover = null;
+      detail(null); railMark(); rebuild();
+      return;
+    }
     /* PROBING THIS: MouseEvent.clientX is a `long`, so a real click ALWAYS lands on an
        integer pixel, and a plate's rim is thin enough that the half-pixel out of project()
        misses it. A synthetic click dispatched at fractional coordinates therefore tests a
