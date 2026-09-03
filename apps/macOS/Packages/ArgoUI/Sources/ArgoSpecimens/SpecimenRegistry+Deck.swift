@@ -46,6 +46,9 @@ extension SpecimenRegistry {
                 .argoDeckSurface()
                 .environment(\.argoFeedVacancy, .unread)
         },
+        // The deck mid-drag: the reading at the width it was measured across, cut off by a pane the
+        // reader has narrowed since (ADR-0030, Rule 6). See `FrozenResizeSpecimen`.
+        SpecimenEntry("deckFrozenResize") { FrozenResizeSpecimen() },
         SpecimenEntry("planPill") { PlanSpecimen(plan: PlanFixture.working) },
         // Reachable only by hovering or tabbing.
         SpecimenEntry("openPlanPill") {

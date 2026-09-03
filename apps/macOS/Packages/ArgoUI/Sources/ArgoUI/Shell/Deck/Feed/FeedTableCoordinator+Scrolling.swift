@@ -90,7 +90,11 @@ extension FeedTableCoordinator {
         quieting?.cancel()
         finishedQuiet()
         decide(.resizeEnded(anchor: anchor()))
-        settleIfOwed()
+        // Promptly, and this is the whole difference between a drag frame and a drag ENDING: a
+        // width that moved under a hand is waited out, and a width the hand has let go of is a
+        // fact. Waiting the quiet again here would spend another 250 ms drawing the wrap the
+        // reader has just left.
+        settleIfOwed(promptly: true)
     }
 
     /// The reader moved the reading — by wheel, flick, key or overview lane.
@@ -166,8 +170,7 @@ extension FeedTableCoordinator {
     /// What the quiet wait reports to the policy — the burst is over, at whatever width it ended
     /// on.
     func settleElapsed() {
-        let live = model?.isResizing == true || table?.inLiveResize == true
-        decide(.settleElapsed(stillLive: live, anchor: anchor()))
+        decide(.settleElapsed(stillLive: isDragging, anchor: anchor()))
     }
 
     /// The rows the fresh reading added, and the ones it invalidated. Appends are the live case
