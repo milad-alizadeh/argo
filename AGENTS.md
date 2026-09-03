@@ -37,7 +37,6 @@ touch (each rule's `paths:` frontmatter states its scope):
   and `.swiftlint.yml` are where those numbers live.
 - **Swift and the cockpit** (`apps/macOS`) — also `swift.md`: the Swift spelling, the views,
   the token contract, rendering.
-- **Skill authoring** — also `skill-authoring.md` (any `SKILL.md`)
 
 ### Module boundaries
 
