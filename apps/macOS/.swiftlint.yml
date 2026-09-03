@@ -103,7 +103,8 @@ function_parameter_count:
   # INIT: ConnectPanelActions.swift 8 — one closure per connect step
   # INIT: ToolCall.swift 7 — a call as the transcript declares it
   # INIT: ComposerDraft.swift 7 — what the composer holds between sends
-  # INIT: ArgoPalette.swift 7 — the palette's role groups, one per family
+  # INIT: ArgoPalette.swift 8 — the palette's role groups, one per family
+  # INIT: AtlasRoles.swift 8 — one material per surface the map draws
   # INIT: ArgoPalette.swift 7 — one colour per interaction role
   # INIT: DeliveryPullRequest.swift 6 — the PR's own fields; its git facts are grouped already
   # INIT: CockpitPresentation.swift 6 — one project row, a field per column

@@ -88,5 +88,36 @@ public extension ArgoPalette {
         ]), // Source code takes no ink from this palette: the evidence panel reads a patch in
         // Xcode's
         // own dark theme (`SyntaxTheme`).
+        atlas: AtlasRoles(
+            // A traffic light, and the one family here that knowingly sits inside the 0.25 held
+            // between a hue and an operational state — the exemption is stated on `MeasureRoles`
+            // and measured in `MeasureRampTests`.
+            measure: MeasureRoles(
+                quiet: ArgoColor(hex: 0x609884),
+                middling: ArgoColor(hex: 0xBC9658),
+                hot: ArgoColor(hex: 0xC26450),
+            ),
+            // Measured, not chosen: at 0.44 the worst case over every domain count from 2 to 40 is
+            // 0.282 from anything else drawn on the map. See `DomainWheel`.
+            domain: DomainWheel(
+                saturationLeast: 0.14,
+                saturationFull: 0.44,
+                lightness: 0.47,
+                turn: 137.508,
+            ),
+            materials: MaterialRoles(
+                desktop: ArgoColor(hex: 0x0D0E10),
+                plate1: ArgoColor(hex: 0x263138),
+                plate2: ArgoColor(hex: 0x1E282E),
+                plate3: ArgoColor(hex: 0x182127),
+                fog: ArgoColor(hex: 0x1A3440),
+                unassigned: ArgoColor(hex: 0x566068),
+                hushed: ArgoColor(hex: 0x2E383F),
+                // The text ramp's own quietest voice, spelled again rather than referenced: this
+                // list is a table of values, and every other entry in it is one. The two are held
+                // together by a claim rather than by a `var`.
+                inferred: ArgoColor(hex: 0x929AA1),
+            ),
+        ),
     )
 }

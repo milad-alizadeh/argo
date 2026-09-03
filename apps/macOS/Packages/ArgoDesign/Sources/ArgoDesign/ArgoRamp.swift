@@ -22,6 +22,37 @@ public struct ArgoRamp: Sendable {
         self.stops = stops
     }
 
+    /// What the ramp resolves to at one point along it — the lookup banding a measure is made of,
+    /// and the one thing a `LinearGradient` cannot be asked.
+    ///
+    /// The fraction CLAMPS: it arrives from arithmetic over a repository, and a division that went
+    /// somewhere resolves to an end of the ramp rather than to nothing.
+    ///
+    /// A band is two stops at one colour, and a pair of stops that share a colour returns it
+    /// exactly rather than mixing it with itself — floating-point arithmetic on identical
+    /// endpoints does not always land back on the endpoint, and a banded measure whose lookup
+    /// missed its own band by a thousandth is a file drawn in a colour that is in no legend.
+    public func color(at fraction: Double) -> ArgoColor {
+        guard let first = stops.first, let last = stops.last else { return .transparent }
+        let point = min(max(fraction, 0), 1)
+        guard point > first.location else { return first.color }
+        guard point < last.location else { return last.color }
+        // The LAST pair that spans the point, so a point on a band edge belongs to the louder
+        // band: a file at the boundary is reported up, never down.
+        var span = (lower: first, upper: last)
+        for pair in zip(stops, stops.dropFirst())
+            where pair.0.location <= point && point <= pair.1.location {
+            span = (pair.0, pair.1)
+        }
+        guard span.lower.color != span.upper.color else { return span.upper.color }
+        let width = span.upper.location - span.lower.location
+        guard width > 0 else { return span.upper.color }
+        return span.lower.color.mixed(
+            with: span.upper.color,
+            by: (point - span.lower.location) / width,
+        )
+    }
+
     /// The ramp as one horizontal pass, tail at the leading edge. Every surface takes the pass
     /// rather than the stops, so no call site can spend the ramp running the other way.
     public var pass: LinearGradient {
@@ -57,6 +88,6 @@ public extension ArgoPalette {
     /// DERIVED from roles rather than stored beside them, so `Mirror` cannot reach it and this
     /// list is what one has to appear in to be drawn and to be checked.
     var ramps: [(name: String, ramp: ArgoRamp)] {
-        [("ion", ion)]
+        [("ion", ion), ("measure", atlas.measure.ramp)]
     }
 }

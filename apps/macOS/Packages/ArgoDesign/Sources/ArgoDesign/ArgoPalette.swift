@@ -8,6 +8,10 @@ public struct ArgoPalette: Sendable {
     public let state: StateRoles
     public let diff: DiffRoles
     public let series: SeriesRoles
+    /// The map's own families, held together rather than spread across this list: a measure ramp,
+    /// a domain wheel and the materials the place is made of are one reading (#1142), and none of
+    /// them means anything off the map.
+    public let atlas: AtlasRoles
 
     public init(
         surface: SurfaceRoles,
@@ -17,6 +21,7 @@ public struct ArgoPalette: Sendable {
         state: StateRoles,
         diff: DiffRoles,
         series: SeriesRoles,
+        atlas: AtlasRoles,
     ) {
         self.surface = surface
         self.text = text
@@ -25,6 +30,7 @@ public struct ArgoPalette: Sendable {
         self.state = state
         self.diff = diff
         self.series = series
+        self.atlas = atlas
     }
 }
 
@@ -227,14 +233,18 @@ public extension ArgoPalette {
         }
 
         /// The same role at chip strength: a tinted ground rather than an ink.
+        ///
+        /// The three weights below are `ArgoTint`, which is where they are now spelled — one
+        /// ladder for every family that lays a hue down under something else, so a wash is the
+        /// same strength whether it is a state or the brand (#1142).
         public func muted(_ role: ArgoColor) -> ArgoColor {
-            role.opacity(0.16)
+            role.opacity(ArgoTint.muted.rawValue)
         }
 
         /// The same role as the EDGE of a surface rather than as an ink on it: the amber rim a
         /// Permission vessel wears. Half strength — louder than `muted`, which a word is read ON.
         public func rim(_ role: ArgoColor) -> ArgoColor {
-            role.opacity(0.5)
+            role.opacity(ArgoTint.rim.rawValue)
         }
 
         /// The same role laid over a WHOLE surface while it invites something — the accent the
@@ -246,7 +256,7 @@ public extension ArgoPalette {
         /// against the approved render, `muted` at this size read as a panel laid over the vessel
         /// rather than as the vessel lit up.
         public func wash(_ role: ArgoColor) -> ArgoColor {
-            role.opacity(0.1)
+            role.opacity(ArgoTint.wash.rawValue)
         }
     }
 }
