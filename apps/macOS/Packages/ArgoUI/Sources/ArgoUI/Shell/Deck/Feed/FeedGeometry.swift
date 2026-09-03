@@ -6,9 +6,10 @@ import SwiftUI
 /// Which reading's heights these are is `FeedGeometries`', which holds one of these per
 /// `FeedReading`.
 ///
-/// A height is a full SwiftUI layout against the ruler — see `FeedTableCoordinator.measuredHeight`
-/// — and `InstrumentDeckShell` draws each room in its own `switch` arm, so leaving the Sessions
-/// room tears the table down and coming back measured every row again (#858).
+/// A height is a measure of the whole row — see `FeedTableCoordinator.measuredHeight` — and
+/// `InstrumentDeckShell` draws each room in its own `switch` arm, so leaving the Sessions room
+/// tears
+/// the table down and coming back measured every row again (#858).
 ///
 /// Each height is kept with the whole of what it is a fact ABOUT, and answers only a question that
 /// matches. That is the entire correctness of outliving the table: there is no invalidation to get

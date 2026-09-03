@@ -83,7 +83,7 @@ struct DeckContentRow: View {
                     railEdge(zoning)
                 }
                 // NO `.id(rail.scope)`: destroying the column to re-key its state took the
-                // table, the ten rulers and every measured height with it. What a scope switch
+                // table and every measured height with it. What a scope switch
                 // actually invalidates is named instead — `reading` carries the scope, and
                 // everything keyed on a row position resets on it (`FeedReading`).
                 FeedColumn(

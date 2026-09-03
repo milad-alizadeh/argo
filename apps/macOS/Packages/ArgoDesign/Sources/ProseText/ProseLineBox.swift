@@ -20,9 +20,9 @@ public enum ProseEngine: CaseIterable {
 /// from the font.
 ///
 /// The arithmetic was the bug. `ProseFace` took the fractional box for every face, and
-/// `FeedTypesetHeightTests` holds a typeset row against what SwiftUI draws at zero tolerance — so
-/// the suite passed here and failed a point a block on CI, and the error walked down the document
-/// until a click on a Turn opened the reading 22 points off it.
+/// `FeedTypesetHeightTests` holds a typeset row against what SwiftUI draws — so the suite passed
+/// here and failed a point a block on CI, and the error walked down the document until a click on a
+/// Turn opened the reading 22 points off it.
 ///
 /// It is not one rule per machine, which is what the first fix assumed. On ONE machine the body and
 /// a `### heading` stand at their fractional box while a `## heading` and a section label stand at
@@ -30,21 +30,27 @@ public enum ProseEngine: CaseIterable {
 /// fractional. So the choice is made per FACE, by drawing that face and reading the answer: three
 /// line counts, and the candidate that accounts for all three wins.
 ///
-/// Once per face per process. The advance between two lines is NOT measured — the ruler agrees with
-/// `box + leading` on every face on both machines, and only the first line's box was ever in doubt.
+/// The face is drawn in ITS OWN design, mono included: `.system(.subheadline, design: .monospaced)`
+/// stands at 15 where the sans at the same rung stands at 16, so a probe that drew the sans for
+/// both would report a mono caption a point taller than it is — and a point is an overlap.
+///
+/// Once per face per process, kept by `ProseProbe`. The advance between two lines is NOT measured —
+/// the ruler agrees with `box + leading` on every face on both machines, and only the first line's
+/// box was ever in doubt.
 public enum ProseLineBox {
     @MainActor public static func of(_ face: ProseFace) -> CGFloat {
-        let epoch = ProseTextSize.epoch()
-        if epoch != readAt {
-            read.removeAll()
-            readAt = epoch
-        }
-        if let known = read[face.key] {
-            return known
-        }
-        let box = measured(face)
-        read[face.key] = box
-        return box
+        boxes.of(face, measuring: measured)
+    }
+
+    /// What a run holding NO characters stands at, which is neither this face's line box nor a
+    /// smaller face's: SwiftUI falls back to the platform's own empty box, the same number at every
+    /// rung and in both designs. 14 points here, where a body line is 18.
+    ///
+    /// One construct in the feed reaches it: a fence the agent opened and closed with nothing in
+    /// between (`FeedRowMeasure`). Measured rather than named, because "the same at every rung" is
+    /// an observation about an engine rather than a rule it publishes.
+    @MainActor public static func ofEmptyRun(_ face: ProseFace) -> CGFloat {
+        empties.of(face) { ProseProbe.measured(ProseProbe.run("", in: $0)) }
     }
 
     /// The line counts the candidates are judged on. One, because it is the box on its own; and two
@@ -52,11 +58,8 @@ public enum ProseLineBox {
     /// wrong once the advances have pushed the total past an integer.
     private static let counts = [1, 3, 8]
 
-    @MainActor private static var read: [String: CGFloat] = [:]
-
-    /// The setting those boxes were drawn at. A box is the RESOLVED face's ascent over its descent,
-    /// so it moves with the Accessibility text size and the face's key does not say which (#1027).
-    @MainActor private static var readAt = ProseTextSize.epoch()
+    @MainActor private static var boxes = ProseProbe()
+    @MainActor private static var empties = ProseProbe()
 
     #if DEBUG
         /// Every ruler pass this has paid for — three hosting measures each, and the count that
@@ -86,18 +89,11 @@ public enum ProseLineBox {
     }
 
     /// This face's own words through a hosting controller, exactly as `FeedProseText` sets them and
-    /// exactly as `FeedTableCoordinator` measures a row.
+    /// exactly as the feed's own oracle measures a row.
     @MainActor private static func drawn(_ face: ProseFace, lines: Int) -> CGFloat {
-        let ruler = NSHostingController(rootView: AnyView(
-            Text(Array(repeating: "A", count: lines).joined(separator: "\n"))
-                .argoText(face.rung, face.isBold ? .semibold : nil)
+        ProseProbe.measured(
+            ProseProbe.run(Array(repeating: "A", count: lines).joined(separator: "\n"), in: face)
                 .lineSpacing(face.leading),
-        ))
-        ruler.sizingOptions = []
-        let height = ruler.sizeThatFits(
-            in: NSSize(width: 400, height: CGFloat.greatestFiniteMagnitude),
-        ).height
-        ruler.rootView = AnyView(EmptyView())
-        return height
+        )
     }
 }

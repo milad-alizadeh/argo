@@ -1,9 +1,10 @@
 import AppKit
 @testable import ArgoSpecimens
 @testable import ArgoUI
+import ProseText
 import Testing
 
-/// What a prose row's height COSTS, counted in the SwiftUI layout passes it did not need.
+/// What a row's height COSTS, now that no row's height is a SwiftUI layout pass at all.
 ///
 /// The gate on #856's remaining half. `FeedRemeasureCostTests` holds the COUNT of measurements a
 /// pass makes; nothing held what one of them costs, and the count is already as low as it goes. The
@@ -63,51 +64,55 @@ struct FeedTypesetCostTests {
     }
 
     /// The claim at the length the argument is about: a whole document of prose is given a height
-    /// per row and costs not one SwiftUI layout pass to do it. The old CPU ratio said this in
-    /// seconds over the same 4 000 rows; this says it in the passes those seconds were.
+    /// per row, and the glyph work it pays for is its own words rather than a pass per row.
     @Test
-    func `a whole document of four thousand prose rows costs no layout pass`() {
+    func `a whole document of four thousand prose rows is measured once a row`() {
         let rows = Self.prose(Self.rows)
         ProseReading.holding(rows: rows.count)
         let coordinator = Self.remeasured(rows)
 
         #expect(coordinator.measurements >= Self.rows)
-        #expect(coordinator.layouts == 0)
     }
 
     /// The same claim as a shape rather than as a length: thirteen times the rows is thirteen times
-    /// the heights and still no layout pass at all. O(0), which is the only bound on a cost that
-    /// cannot be paid.
+    /// the heights, and neither length reaches SwiftUI — which edge 9 of `swift-boundaries.sh` now
+    /// holds for the whole target, since there is no ruler left to count.
     @Test
-    func `a prose reading of any length reaches the ruler for no row`() {
+    func `a prose reading of any length is measured once a row`() {
         let short = Self.remeasured(Self.prose(300))
         let long = Self.remeasured(Self.prose(Self.rows))
 
         #expect(short.measurements >= 300)
         #expect(long.measurements >= Self.rows)
-        #expect(short.layouts == 0)
-        #expect(long.layouts == 0)
     }
 
+    /// What an arithmetic row costs: nothing at all. A call, a mark and a survey are worked out
+    /// from tokens and a line box, so a document of four thousand of them pays no Core Text pass
+    /// on top of the ones a warm process has already taken for the faces themselves.
+    ///
+    /// Counted in `ProseMetrics.typesets`, which is the glyph work itself — the unit the overview
+    /// lane's budgets are in, and one that reads the same idle and loaded (`CostMeasure`).
     @Test
-    func `a mixed reading reaches the ruler for the rows Core Text declined`() {
-        let rows = FeedProjection.longRows
-        let handle = FeedTableHandle()
-        let coordinator = FeedTableFixture.laidOut(rows, in: Self.pane, through: handle)
-        let table = coordinator.table
-        coordinator.dropMeasuredHeights()
-        let before = coordinator.layouts
-        var declined = 0
-        for at in rows.indices {
-            _ = table.map { coordinator.measuredHeight(at: at, in: $0) }
-            declined += FeedRowMeasure.height(
-                of: rows[at].content,
-                chip: FeedCopy.drawsChip(of: rows, at: at),
-                across: FeedRowMeasure.measure(atWidth: Self.pane.width),
-            ) == nil ? 1 : 0
-        }
+    func `a document of four thousand worked-out rows pays no glyph work`() {
+        // Warm: the first row of any shape settles its faces, and a face is a fact about the
+        // PROCESS rather than about the document being measured.
+        _ = Self.remeasured(Self.worked(2))
+        let before = ProseMetrics.typesets
+        _ = Self.remeasured(Self.worked(Self.rows))
 
-        #expect(coordinator.layouts - before == declined)
-        #expect(declined < rows.count)
+        #expect(ProseMetrics.typesets == before)
+    }
+
+    /// A document of rows that are worked out rather than typeset — the shapes ADR-0030 Rule 1
+    /// gives a formula, alternating so no fold collapses them into one row.
+    private static func worked(_ count: Int) -> [FeedRow] {
+        (0 ..< count).map { at in
+            FeedRow(
+                id: at,
+                content: at.isMultiple(of: 2)
+                    ? .call(RowKindFixture.answeredCall)
+                    : .mark(.turnEnded(.endTurn)),
+            )
+        }
     }
 }

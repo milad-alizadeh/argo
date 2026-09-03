@@ -6,7 +6,7 @@ import Foundation
 /// another: row 12 of a Session is row 12 of the next one. Every piece of per-reading state below
 /// the deck — the folds, the wash, the wait's clock, the measured heights — is keyed on this
 /// instead, which is what replaced `.id(session)` on the deck (ADR-0028 Rule 5). Destroying the
-/// view identity reset all of it for free and destroyed the table, the rulers and the minimap with
+/// view identity reset all of it for free and destroyed the table and the minimap with
 /// it; naming the reading resets the same facts and keeps the geometry.
 ///
 /// Both halves are here because both re-key the rows: a Session switch replaces the reading, and so
