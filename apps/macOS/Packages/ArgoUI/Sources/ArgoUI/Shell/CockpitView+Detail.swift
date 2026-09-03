@@ -69,6 +69,8 @@ extension CockpitView {
         // Injected from ABOVE the deck, which is the whole point of it: the room switch below
         // destroys the table that measured them (#858).
         .environment(\.argoFeedGeometries, feedGeometries)
+        // Beside the heights, and from the same view, for the same reason — see `KeptDecks`.
+        .environment(\.argoFeedDecks, feedDecks)
         // Why the deck has nothing to read, where an empty feed alone cannot say. The header is
         // what answers "did a Session resolve" — it is `nil` exactly when the selection named
         // none — so this costs no second lookup into a roster that moves under an id (#957).

@@ -149,9 +149,15 @@ import Testing
     /// the measure behind it is somebody else's thread.
     private static let turns = 200
 
-    /// The first view of a kind under `view`. The deck builds all of these for itself, so a suite
-    /// that held one instead would be asserting against a view nothing on screen is.
+    /// The first view of a kind ON SCREEN under `view`. The deck builds all of these for itself, so
+    /// a suite that held one instead would be asserting against a view nothing on screen is.
+    ///
+    /// Hidden subtrees are skipped, and that is load-bearing rather than tidy: the reader's other
+    /// decks stand beside this one inside `FeedDeckStack`, hidden (ADR-0030, Rule 4), and a search
+    /// that took the first table it found would answer with whichever deck happens to be first in
+    /// the stack's subviews.
     static func find<V: NSView>(_ kind: V.Type, in view: NSView) -> V? {
+        guard !view.isHidden else { return nil }
         if let hit = view as? V {
             return hit
         }

@@ -17,28 +17,29 @@ import Testing
 extension FeedReadingSwitchTests {
     /// The lane's own claim, taken the way the shell now takes it.
     @Test
-    func `a switch taken in two passes still measures each reading once`() async {
-        let deck = await FeedSwitchDeck()
+    func `a switch taken in two passes still measures each reading once`() async throws {
+        let deck = FeedSwitchDeck()
 
         await deck.switching(to: FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
-        let firstAlpha = deck.coordinator.measurements
+        let alpha = try #require(deck.kept(FeedSwitchFixture.alpha))
+        let firstAlpha = alpha.coordinator.measurements
         await deck.switching(to: FeedSwitchFixture.bravoRows, of: FeedSwitchFixture.bravo)
-        let throughBravo = deck.coordinator.measurements
+        let bravo = try #require(deck.kept(FeedSwitchFixture.bravo))
         await deck.switching(to: FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
 
         // Each reading really was measured on first sight, or the equality below is a table that
         // never asked anything.
         #expect(firstAlpha >= FeedSwitchFixture.alphaRows.count)
-        #expect(throughBravo - firstAlpha >= FeedSwitchFixture.bravoRows.count)
+        #expect(bravo.coordinator.measurements >= FeedSwitchFixture.bravoRows.count)
         // And the way back is still free, through the empty pass rather than around it.
-        #expect(deck.coordinator.measurements == throughBravo)
+        #expect(alpha.coordinator.measurements == firstAlpha)
     }
 
     /// The opening scroll is owed to the rows, not to the pass that had none — or a switch would
     /// land the reader at the top of a reading that opens at its tail (ADR-0029).
     @Test
     func `a reading deferred by a pass still opens at its own end`() async throws {
-        let deck = await FeedSwitchDeck()
+        let deck = FeedSwitchDeck()
         await deck.switching(to: FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
 
         await deck.switching(to: FeedSwitchFixture.bravoRows, of: FeedSwitchFixture.bravo)
@@ -50,15 +51,20 @@ extension FeedReadingSwitchTests {
         #expect(deck.handle.isFollowing)
     }
 
-    /// A Session that really does empty is not the case above, and must not be answered as one:
-    /// the rows are gone and the deck says so.
+    /// The empty pass is a DEFERRAL and never a reading that emptied, and a kept deck is where the
+    /// difference shows: the deck the reader is coming back to goes on drawing the rows that are on
+    /// their way to it, so nothing blinks and the offset they left it at is still theirs.
     @Test
-    func `a reading that empties draws no rows`() async {
-        let deck = await FeedSwitchDeck()
+    func `an empty feed does not blank the deck it arrives at`() async throws {
+        let deck = FeedSwitchDeck()
         await deck.switching(to: FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
+        let drawn = try #require(deck.coordinator.table?.numberOfRows)
+        let offset = try #require(deck.coordinator.offset())
 
         await deck.show([], of: FeedSwitchFixture.alpha)
 
-        #expect(deck.coordinator.table?.numberOfRows == 0)
+        #expect(deck.coordinator.table?.numberOfRows == drawn)
+        #expect(deck.coordinator.offset() == offset)
+        #expect(deck.handle.isDrawing)
     }
 }

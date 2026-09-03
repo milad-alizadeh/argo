@@ -64,7 +64,7 @@ struct FeedHeightPerRowTests {
     /// of row. A store one entry short is a store answering one row with another's height.
     @Test
     func `rows that say the same words each hold a height of their own`() async throws {
-        let deck = await FeedSwitchDeck()
+        let deck = FeedSwitchDeck()
         await deck.show(Self.repeated, of: Self.session)
         _ = try Self.read(deck)
 
@@ -103,13 +103,13 @@ struct FeedHeightPerRowTests {
     @Test
     func `a reading that came through an excerpt stands at the heights a cold one does`(
     ) async throws {
-        let warmed = await FeedSwitchDeck()
+        let warmed = FeedSwitchDeck()
         await warmed.show(Self.excerpted, of: Self.session)
         _ = try Self.read(warmed)
         await warmed.show(Self.whole, of: Self.session)
         let warm = try Self.read(warmed)
 
-        let colded = await FeedSwitchDeck()
+        let colded = FeedSwitchDeck()
         await colded.show(Self.whole, of: Self.session)
         let cold = try Self.read(colded)
 
@@ -132,11 +132,11 @@ struct FeedHeightPerRowTests {
     /// lane, and because the arithmetic between them is not otherwise held anywhere.
     @Test
     func `the lane maps the document the table scrolls through`() async throws {
-        let deck = await FeedSwitchDeck()
+        let deck = FeedSwitchDeck()
         await deck.show(Self.repeated, of: Self.session)
         let reading = try Self.read(deck)
         let lane = MinimapGeometry(reading, lane: CGSize(width: 60, height: 300))
-        let document = try #require(deck.scroller?.documentView?.frame.height)
+        let document = try #require(deck.scroller.documentView?.frame.height)
         #expect(abs(lane.documentHeight - document) < 0.5)
 
         #expect(lane.isScrollable)

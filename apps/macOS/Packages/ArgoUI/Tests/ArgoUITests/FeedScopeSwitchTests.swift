@@ -111,12 +111,13 @@ struct FeedScopeSwitchTests {
 
     // MARK: - the table the rows land in
 
-    /// The claim at the far end of the path: the `NSTableView` the deck holds is showing the scoped
-    /// rows, not the ones it was handed before. A scope switch is another `FeedReading` of the same
-    /// Session, and the table is never destroyed for one (ADR-0028 Rule 5).
+    /// The claim at the far end of the path: the `NSTableView` on screen is showing the scoped
+    /// rows, not the ones the deck beside it holds. A scope switch is another `FeedReading` of the
+    /// same Session, so it is another kept deck — and each table is asked, because the two decks
+    /// stand side by side with one of them hidden (ADR-0030, Rule 4).
     @Test
     func `a scope switch puts the subagent's rows in the table`() async throws {
-        let deck = await FeedSwitchDeck()
+        let deck = FeedSwitchDeck()
         let session = FeedReading(session: "one")
         let scoped = FeedReading(session: "one", scope: .subagent(1))
         let sessionRows = FeedSwitchFixture.rows("Session", count: 40)
@@ -125,13 +126,12 @@ struct FeedScopeSwitchTests {
         await deck.show(sessionRows, of: session)
         await deck.show(subagentRows, of: scoped)
 
-        let table = try #require(deck.coordinator.table)
         #expect(deck.coordinator.shown == subagentRows)
-        #expect(table.numberOfRows == subagentRows.count)
+        #expect(try #require(deck.coordinator.table).numberOfRows == subagentRows.count)
 
         await deck.show(sessionRows, of: session)
         #expect(deck.coordinator.shown == sessionRows)
-        #expect(table.numberOfRows == sessionRows.count)
+        #expect(try #require(deck.coordinator.table).numberOfRows == sessionRows.count)
     }
 }
 

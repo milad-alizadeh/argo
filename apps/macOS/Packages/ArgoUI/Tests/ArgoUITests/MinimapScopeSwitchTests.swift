@@ -3,13 +3,17 @@ import AppKit
 @testable import ArgoUI
 import Testing
 
-/// What survives the reading being REPLACED rather than grown.
+/// What the lane does when ANOTHER DECK arrives under it.
 ///
-/// A rail chip scopes the feed onto a Subagent, which replaces every row under one handle. Two
-/// shapes of that, and the lane is blind to both on its own. The table can be built again — the
-/// lane's notifications are then registered on views the switch discarded, and the deck's own
-/// update runs BEFORE the replacement exists (#1002). Or the table stands and only the reading is
-/// replaced, which reaches the lane as a frame report it answers by its height (#1012).
+/// A rail chip scopes the feed onto a Subagent, which is another reading and so another kept deck
+/// (ADR-0030, Rule 4). The lane is blind to that on its own: its notifications are registered on
+/// the views of the deck that left, and the deck's own update runs before the lane is re-dressed
+/// (#1002). The sharper shape is #1012 — the fresh deck's document can stand at exactly the height
+/// the lane already answered for, so the frame report carries nothing and the map of the reading
+/// that left would stay up.
+///
+/// Where a reading LANDS on a switch is not here any more: a deck opens with a scroll policy of its
+/// own and never inherits one, which `FeedReadingSwitchTests` asks over the real store.
 @Suite("Minimap scope switch")
 @MainActor
 struct MinimapScopeSwitchTests {
@@ -21,148 +25,43 @@ struct MinimapScopeSwitchTests {
         }
     }
 
-    /// The deck re-scoping its one feed, in the order SwiftUI runs it: the lane is dressed with the
-    /// handle it already holds, and the replacement table repoints that handle afterwards.
+    /// The deck re-scoping, in the order SwiftUI runs it: the scope's own deck is built and laid
+    /// out, and the lane beside it is re-dressed with that deck's handle — which is what
+    /// `MinimapLane.dress` does on every update of the deck.
     private static func rescope(
         _ deck: MinimapLaneFixture.Mounted,
         onto rows: [FeedRow],
     )
-        async -> FeedTableCoordinator {
-        deck.lane.attach(to: deck.feed)
+        async -> MinimapLaneFixture.Mounted {
+        let feed = FeedTableHandle()
         let scoped = await FeedTableFixture.laidOut(
             rows,
             in: MinimapLaneFixture.column,
-            through: deck.feed,
+            through: feed,
         )
+        deck.lane.attach(to: feed)
         deck.lane.layoutSubtreeIfNeeded()
-        return scoped
+        return MinimapLaneFixture.Mounted(lane: deck.lane, feed: feed, table: scoped)
     }
 
-    /// Where the reading sits once the opening scroll it was owed has landed.
+    /// The document of ANOTHER DECK, standing at exactly the height the lane already answered
+    /// for (#1012).
     ///
-    /// Polled rather than slept on: the opening is claimed now and landed over a few runloop turns
-    /// (`place()`), and there is no task to await — a fixed nap would be either a flake or a wait
-    /// nobody needs.
-    private static func settled(_ reading: NSScrollView) async throws -> CGFloat {
-        for _ in 0 ..< 100 {
-            let offset = reading.contentView.bounds.origin.y
-            if offset > 0 {
-                return offset
-            }
-            try await Task.sleep(for: .milliseconds(5))
-        }
-        return reading.contentView.bounds.origin.y
-    }
-
-    /// The scroll policy is a fact about the READING — where the reader left it, and how many rows
-    /// have arrived since. A rail chip replaces every row under it.
-    @Test
-    func `a reading replaced under one handle opens at its own end`() async throws {
-        let handle = FeedTableHandle()
-        let session = await FeedTableFixture.laidOut(
-            FeedProjection.longRows,
-            in: MinimapLaneFixture.column,
-            through: handle,
-        )
-        // The state a chip is clicked in: the reader has scrolled back up through the Session.
-        session.settle(at: 0, over: nil)
-        #expect(!handle.isFollowing)
-
-        let scoped = await FeedTableFixture.laidOut(
-            Self.delegated(60),
-            in: MinimapLaneFixture.column,
-            through: handle,
-        )
-        // Held for the length of the wait: the coordinator's references down to its views are weak,
-        // as the deck's are, and SwiftUI is what keeps them alive in the app.
-        let reading = try #require(scoped.scroller)
-
-        #expect(handle.isFollowing)
-        #expect(handle.leftAt == nil)
-        let offset = try await Self.settled(reading)
-        #expect(offset > MinimapLaneFixture.column.height / 2)
-    }
-
-    /// The same claim with the table it replaced already gone — a weak reference zeroed by a deinit
-    /// runs no `didSet` at all. Nothing orders SwiftUI's teardown of the old representable against
-    /// the new one's `makeNSView`, so whether a table stood cannot be read off `oldValue`.
-    @Test
-    func `a reading replaced after the last was let go opens at its own end`() async {
-        let handle = FeedTableHandle()
-        // Built and let go inside a scope of its own, so the coordinator is gone before the claim
-        // below is asked. `autoreleasepool` cannot hold the await the measure is, which is why the
-        // scope does it instead.
-        await Self.letGo(under: handle)
-        #expect(!handle.isFollowing)
-        #expect(handle.coordinator == nil)
-
-        _ = await FeedTableFixture.laidOut(
-            Self.delegated(60),
-            in: MinimapLaneFixture.column,
-            through: handle,
-        )
-
-        #expect(handle.isFollowing)
-        #expect(handle.leftAt == nil)
-    }
-
-    /// One reading opened under `handle`, scrolled to its head, and released.
-    private static func letGo(under handle: FeedTableHandle) async {
-        let session = await FeedTableFixture.laidOut(
-            FeedProjection.longRows,
-            in: MinimapLaneFixture.column,
-            through: handle,
-        )
-        session.settle(at: 0, over: nil)
-    }
-
-    /// A deck that opens its reading HELD at a row — a still, or a specimen. The row is a dense
-    /// position, so the fresh policy has to be seeded with the row THIS reading is held at rather
-    /// than the one the last was.
-    @Test
-    func `a replaced reading is held at its own row`() async {
-        let handle = FeedTableHandle(held: 250)
-        _ = await FeedTableFixture.laidOut(
-            FeedProjection.longRows,
-            in: MinimapLaneFixture.column,
-            through: handle,
-            held: 250,
-        )
-
-        _ = await FeedTableFixture.laidOut(
-            Self.delegated(60),
-            in: MinimapLaneFixture.column,
-            through: handle,
-            held: 12,
-        )
-
-        #expect(!handle.isFollowing)
-        #expect(handle.leftAt == 12)
-    }
-
-    /// The document REPLACED under a table whose frame never moved (#1012).
-    ///
-    /// Two readings shorter than the pane stand at the same document height — the table is at least
+    /// Two readings shorter than the pane stand at the same document height — a table is at least
     /// as tall as its clip view — so the frame report the lane answers a reshape by carries
     /// nothing, and the map of the reading that left stayed up. `MinimapReadingStamp` says why a
     /// height cannot stand for a document; this is where not saying it costs the reader the map.
     @Test
-    func `a reading replaced at the same document height is mapped afresh`() async throws {
+    func `another deck at the same document height is mapped afresh`() async throws {
         let deck = await MinimapLaneFixture.mounted(over: Self.delegated(3))
         deck.lane.layoutSubtreeIfNeeded()
         let height = deck.table.scroller?.documentView?.frame.height
 
-        deck.table.keep(FeedGeometry())
-        deck.table.apply(FeedTableFixture.model(
-            showing: Self.delegated(2, saying: "other"),
-            of: FeedReading(session: "one", scope: .subagent(1)),
-        ))
-        await FeedTableFixture.settled(deck.table)
-        deck.lane.layoutSubtreeIfNeeded()
+        let scoped = await Self.rescope(deck, onto: Self.delegated(2, saying: "other"))
 
         // The precondition, stated: without it this suite would be asserting the reshape path.
-        #expect(deck.table.scroller?.documentView?.frame.height == height)
-        let reading = try #require(deck.feed.reading())
+        #expect(scoped.table.scroller?.documentView?.frame.height == height)
+        let reading = try #require(scoped.feed.reading())
         #expect(deck.lane.geometry.documentHeight == MinimapGeometry(
             reading,
             lane: deck.lane.bounds.size,
@@ -176,8 +75,8 @@ struct MinimapScopeSwitchTests {
 
         let scoped = await Self.rescope(deck, onto: Self.delegated())
 
-        let reading = try #require(deck.feed.reading())
-        #expect(scoped.scroller === deck.feed.scroller)
+        let reading = try #require(scoped.feed.reading())
+        #expect(scoped.table.scroller === scoped.feed.scroller)
         #expect(deck.lane.geometry.documentHeight == MinimapGeometry(
             reading,
             lane: deck.lane.bounds.size,

@@ -92,27 +92,6 @@ import Testing
 
     private static var held: [NSScrollView] = []
 
-    /// Another reading arriving in the SAME table — what a Session switch is now that the deck no
-    /// longer carries `.id(session)`. The store is swapped first, exactly as `FeedTable.bind` does,
-    /// so the coordinator holds the fresh reading's heights before it is handed its rows.
-    /// `async` because the opening scroll is: `FeedTableCoordinator.place()` claims it now and
-    /// lands it over the next few turns of the run loop, so a synchronous caller would read the
-    /// offset of the reading that left.
-    static func show(
-        _ rows: [FeedRow],
-        of reading: FeedReading,
-        on coordinator: FeedTableCoordinator,
-        keeping geometries: FeedGeometries,
-    ) async {
-        coordinator.keep(geometries.geometry(for: reading))
-        coordinator.apply(model(showing: rows, of: reading))
-        coordinator.scroller?.layoutSubtreeIfNeeded()
-        await settled(coordinator)
-        for _ in 0 ... FeedTableCoordinator.panePasses {
-            try? await Task.sleep(for: .milliseconds(1))
-        }
-    }
-
     /// The whole-document pass run to completion.
     ///
     /// A table draws no row until one lands (ADR-0030, Rule 3), so a suite that asserted straight
@@ -161,13 +140,11 @@ import Testing
     static func model(
         showing rows: [FeedRow],
         unfolded: Set<FeedRow.ID> = [],
-        of reading: FeedReading = .unattached,
         held: FeedRow.ID? = nil,
     )
         -> FeedTableModel {
         let focus = FocusState<FeedFocus?>()
         return FeedTableModel(
-            reading: reading,
             rows: rows,
             selection: FeedRowSelection(
                 open: .constant(nil), step: .constant(nil), lit: .constant(nil),

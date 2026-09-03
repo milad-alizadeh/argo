@@ -88,12 +88,11 @@ struct FeedResizeFreezeTests {
     /// dropped or re-measured every store it could reach would fail on the reading nobody was
     /// looking at; a freeze that stuck on would fail on the one they were.
     ///
-    /// A floor rather than the whole of what #1116 asks for. "Hidden kept decks are not remeasured"
-    /// is a claim about decks, and a deck a reader has left does not survive at all until #1113 —
-    /// so until it does, a reading's heights are all there is to be spared.
+    /// This half is about the HEIGHTS alone. The deck half — that a reader's place, its own table,
+    /// really does survive being left — is `KeptDeckEvictionTests` and `FeedReadingSwitchTests`'.
     @Test
     func `the drag re-wraps the reading on screen and no other`() async throws {
-        let deck = await FeedSwitchDeck()
+        let deck = FeedSwitchDeck()
         await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
         await deck.show(FeedSwitchFixture.bravoRows, of: FeedSwitchFixture.bravo)
         let alpha = deck.geometries.geometry(for: FeedSwitchFixture.alpha)
@@ -112,9 +111,14 @@ struct FeedResizeFreezeTests {
 
     /// The other half: the reading that was spared the drag's pass pays for it on its next SHOW,
     /// at the width the reader actually left the window at.
+    ///
+    /// Every kept deck answers to the same STACK (`FeedDeckStack`), and only the one on screen is
+    /// resized by it while it is being dragged — so the window really has grown by the time alpha
+    /// comes back, and `FeedDeckStack.show` is what carries that width onto a deck the moment it
+    /// stops being hidden (ADR-0030, Rule 4). This is that seam, not a second freeze mechanism.
     @Test
     func `the reading measures at the fresh width on its next show`() async throws {
-        let deck = await FeedSwitchDeck()
+        let deck = FeedSwitchDeck()
         await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
         await deck.show(FeedSwitchFixture.bravoRows, of: FeedSwitchFixture.bravo)
         let alpha = deck.geometries.geometry(for: FeedSwitchFixture.alpha)
@@ -123,6 +127,11 @@ struct FeedResizeFreezeTests {
         dragged.began()
         dragged.widen(to: Self.widths[0])
         await dragged.ended()
+        // The window itself, at the width the drag let go on — what makes the reader's next click
+        // find a stack already this wide, rather than a scroller nobody told.
+        deck.stack.frame = NSRect(
+            x: 0, y: 0, width: Self.widths[0], height: FeedSwitchDeck.pane.height,
+        )
         await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
 
         #expect(alpha.settled?.stamp.width == Self.widths[0])

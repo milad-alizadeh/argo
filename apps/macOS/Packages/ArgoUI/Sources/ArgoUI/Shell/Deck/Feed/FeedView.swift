@@ -31,44 +31,38 @@ package struct FeedView: View {
     /// (`FeedTail`), the fade that lets rows run under the vessel, and how far the way-back control
     /// lifts — all three being one fact about the column's bottom edge.
     var isUnderComposer = false
-    /// The reading's scroll authority — see `FeedTableHandle`. Taken rather than owned, because the
-    /// overview lane beside the reading holds the same one, and because it has to be seeded with
-    /// `held` before this view exists.
-    let table: FeedTableHandle
+    /// This reading's deck — see `KeptDeck`. Taken rather than owned, because the overview lane
+    /// beside the reading reads the same one's scroll authority, and because a deck has to outlive
+    /// every view identity a switch destroys.
+    let deck: KeptDeck
 
     /// Which prompts the reading OPENS unfolded. A parameter for the reason `held` is one: a still
     /// cannot press a control, and the unfolded state is otherwise unreachable.
     var opensUnfolded: Set<FeedRow.ID> = []
 
-    /// Which prompts the reader has unfolded, and WHICH READING they unfolded them in. Held here so
-    /// it survives the row being rebuilt when the projection hands the feed a newer copy of it.
-    /// `nil` until the reader has folded anything, which is what lets `opensUnfolded` stand from
-    /// the FIRST frame — a still seeded a frame later renders the folded state and calls it the
-    /// unfolded one.
-    @State private var unfolded: FeedFact<Set<FeedRow.ID>>?
+    /// This deck's scroll authority — what the tail, the way-back control and the provisional word
+    /// are all drawn off. See `FeedTableHandle`.
+    private var table: FeedTableHandle {
+        deck.handle
+    }
 
     /// The reader's folds, or what the reading was opened on while they have made none.
     ///
-    /// The reading is compared HERE rather than cleared in an `onChange`: a fold is a row position,
-    /// so one carried into another Session unfolds whatever now sits there — and an `onChange`
-    /// fires after the pass that already handed those folds to the table.
+    /// The DECK's, so they are kept and evicted with everything else the reader did to the reading
+    /// (ADR-0030, Rule 4). A fold is a row position, and `FeedRow.ID` is a dense one, so folds that
+    /// outlived their reading would let out whatever now sits where they were.
     private var folds: Binding<Set<FeedRow.ID>> {
-        Binding(
-            get: { Self.folds(unfolded, of: reading, opening: opensUnfolded) },
-            set: { unfolded = FeedFact(reading: reading, value: $0) },
+        let deck = deck
+        return Binding(
+            get: { Self.folds(deck.folds, opening: opensUnfolded) },
+            set: { deck.folds = $0 },
         )
     }
 
-    /// The folds the reader made in THIS reading, or what it opens on. Out of the binding so a
-    /// suite can ask it: a fold is a row position, so folds carried into another Session unfold
-    /// whatever now sits where they were.
-    static func folds(
-        _ held: FeedFact<Set<FeedRow.ID>>?,
-        of reading: FeedReading,
-        opening: Set<FeedRow.ID>,
-    )
-        -> Set<FeedRow.ID> {
-        held.flatMap { $0.reading == reading ? $0.value : nil } ?? opening
+    /// The folds the reader made in this deck, or what its reading opens on. Out of the binding so
+    /// a suite can ask it.
+    static func folds(_ made: Set<FeedRow.ID>?, opening: Set<FeedRow.ID>) -> Set<FeedRow.ID> {
+        made ?? opening
     }
 
     /// The row the user's own words just landed on, while the accent wash stands over it.
@@ -89,7 +83,7 @@ package struct FeedView: View {
             isUnderComposer: isUnderComposer,
             washed: washed,
             unfolded: folds,
-            handle: table,
+            deck: deck,
         )
         // The backstop for anything that still hands the keyboard back by writing a row into the
         // focus space: no row resolves there, so the value is translated into the table's focus on
@@ -122,7 +116,11 @@ package struct FeedView: View {
         .overlay(alignment: .bottomTrailing) { tail }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {
-            if rows.isEmpty || !table.isSettled {
+            if !table.isDrawing {
+                // Asked of what the DECK has on screen, never of the rows this pass carries: the
+                // shell hands the deck it is coming back to an empty feed for the pass that paints
+                // the click (`DrawnSession`), and that deck is already drawing the reading.
+                //
                 // Centred in what the canopy leaves: this word does not scroll, so it cannot use
                 // the table's inset the way the rows do.
                 //
@@ -181,7 +179,7 @@ package struct FeedView: View {
         selection: FeedRowSelection,
         held: FeedRow.ID? = nil,
         isUnderComposer: Bool = false,
-        table: FeedTableHandle,
+        deck: KeptDeck,
         opensUnfolded: Set<FeedRow.ID> = [],
         washed: FeedRow.ID? = nil,
     ) {
@@ -190,7 +188,7 @@ package struct FeedView: View {
         self.selection = selection
         self.held = held
         self.isUnderComposer = isUnderComposer
-        self.table = table
+        self.deck = deck
         self.opensUnfolded = opensUnfolded
         _washed = State(wrappedValue: washed)
     }

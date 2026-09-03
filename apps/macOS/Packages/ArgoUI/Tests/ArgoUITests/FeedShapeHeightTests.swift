@@ -79,7 +79,6 @@ struct FeedShapeHeightTests {
     private static func model(for row: Row) -> FeedTableModel {
         let focus = FocusState<FeedFocus?>()
         return FeedTableModel(
-            reading: .unattached,
             rows: [FeedRow(id: 0, content: row.content)],
             selection: FeedRowSelection(
                 open: .constant(row.isOpen ? 0 : nil),

@@ -26,7 +26,7 @@ struct FeedRemeasureCostTests {
     /// is nothing for a pass to be about (`FeedMeasureDelta.settled`).
     @Test
     func `a full re-measure of an unchanged reading measures nothing`() async {
-        let laid = await FeedSwitchDeck()
+        let laid = FeedSwitchDeck()
         await laid.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
         let measured = laid.coordinator.measurements
         #expect(measured >= FeedSwitchFixture.alphaRows.count)
@@ -46,12 +46,13 @@ struct FeedRemeasureCostTests {
     /// and a message that grew a line is the same kind of row it was.
     @Test
     func `a row the reading rewrote is measured again and its neighbours are not`() async throws {
-        let laid = await FeedSwitchDeck()
+        let laid = FeedSwitchDeck()
         await laid.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
-        let table = try #require(laid.coordinator.table)
-        let was = laid.coordinator.measuredHeight(at: Self.rewritten, in: table)
+        let alpha = try #require(laid.kept(FeedSwitchFixture.alpha))
+        let table = try #require(alpha.coordinator.table)
+        let was = alpha.coordinator.measuredHeight(at: Self.rewritten, in: table)
         await laid.show(FeedSwitchFixture.bravoRows, of: FeedSwitchFixture.bravo)
-        let before = laid.coordinator.measurements
+        let before = alpha.coordinator.measurements
 
         var grown = FeedSwitchFixture.alphaRows
         grown[Self.rewritten] = FeedRow(
@@ -62,8 +63,8 @@ struct FeedRemeasureCostTests {
         )
         await laid.show(grown, of: FeedSwitchFixture.alpha)
 
-        #expect(laid.coordinator.measurements - before == 1)
-        #expect(laid.coordinator.measuredHeight(at: Self.rewritten, in: table) > was)
+        #expect(alpha.coordinator.measurements - before == 1)
+        #expect(alpha.coordinator.measuredHeight(at: Self.rewritten, in: table) > was)
     }
 
     /// The forced synchronous layout a re-measure does NOT pay for (#955, ADR-0028 Rule 2).

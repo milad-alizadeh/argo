@@ -66,13 +66,24 @@ extension FeedTableCoordinator {
         geometry.surrender()
         shown = []
         handle?.settled(false)
+        handle?.drawing(false)
         table?.reloadData()
     }
 
     /// The table emptied without the document being — see `settleIfOwed`.
+    ///
+    /// A deck holding a document keeps drawing it. The empty feed is the shell's deferral, not a
+    /// reading that emptied: the pass that paints a click hands the deck it is coming back to no
+    /// rows (`DrawnSession`), and a deck that blanked itself for that pass would throw away the
+    /// offset the reader left it at — which is the whole of what ADR-0030 Rule 4 keeps.
+    ///
+    /// The two cases are not otherwise tellable apart here, and they do not have to be: a settled
+    /// reading cannot empty. The streams under one are append-only, which is the same property
+    /// `SessionsRoomReadingCache` stamps a remembered reading on.
     private func drawNothing() {
-        guard !shown.isEmpty else { return }
+        guard !shown.isEmpty, !geometry.isSettled else { return }
         shown = []
+        handle?.drawing(false)
         table?.reloadData()
         notedReshape()
     }
@@ -239,12 +250,12 @@ extension FeedTableCoordinator {
         on table: NSTableView,
     ) {
         shown = rows
+        handle?.drawing(!rows.isEmpty)
         guard !freshly, !stale.isEmpty else {
-            // The reading OPENS here. `openAfresh` reopened the policy on the rows the table had,
-            // which for a reading nobody had measured yet was none of them — so where a landing is
-            // the first rows this table has drawn, the policy is given them now. Without it the
-            // reading opens at the top of a feed that opens at its tail (ADR-0029), and the follow
-            // latch names a row in a reading of no rows.
+            // The reading OPENS here: a landing whose table had no rows before it is the first
+            // pass a deck ever draws, so the policy is given the rows now rather than assumed to
+            // have them already. Without it the reading opens at the top of a feed that opens at
+            // its tail (ADR-0029), and the follow latch names a row in a reading of no rows.
             handle?.reopen(on: rows, held: model?.held)
             table.reloadData()
             // Noted as well as reloaded: `reloadData` marks the rows and defers, and until the

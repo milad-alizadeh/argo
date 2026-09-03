@@ -19,7 +19,7 @@ package struct FeedReading: Hashable {
     var scope: FeedScope = .session
 
     /// What a reading with no shell above it is: a preview, a specimen, a `#Preview`.
-    static let unattached = FeedReading(session: nil)
+    package static let unattached = FeedReading(session: nil)
 }
 
 /// One fact about the reading, paired with the reading it is a fact ABOUT.
