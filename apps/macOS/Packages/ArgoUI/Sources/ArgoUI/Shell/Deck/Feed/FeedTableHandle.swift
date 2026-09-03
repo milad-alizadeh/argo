@@ -73,10 +73,10 @@ import SwiftUI
     /// and that deck is already drawing the reading those rows are on their way back to.
     private(set) var isDrawing = false
 
-    /// How many rows the table draws, reported where that changes (`FeedTableCoordinator.show`).
-    func drawing(_ rows: Int) {
-        guard isDrawing != (rows > 0) else { return }
-        isDrawing = rows > 0
+    /// Reported where the table's rows land or leave (`FeedTableCoordinator.show`).
+    func drawing(_ hasRows: Bool) {
+        guard isDrawing != hasRows else { return }
+        isDrawing = hasRows
     }
 
     /// Another reading in the same table — see `FeedScrollPolicy.reopen(on:held:)`. Called by the

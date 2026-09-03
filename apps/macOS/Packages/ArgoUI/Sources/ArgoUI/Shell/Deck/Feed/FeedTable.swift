@@ -24,21 +24,20 @@ struct FeedTable: NSViewRepresentable {
     let isUnderComposer: Bool
     let washed: FeedRow.ID?
     @Binding var unfolded: Set<FeedRow.ID>
-    /// Every deck the reader has open, from the one view above every switch that would destroy
-    /// them — see `KeptDecks`.
-    let decks: KeptDecks
+    /// This reading's deck, from the one view above every switch that would destroy it — see
+    /// `KeptDecks`. Taken as a value: which deck is on screen is decided once a pass, above.
+    let deck: KeptDeck
 
     func makeNSView(context _: Context) -> FeedDeckStack {
         FeedDeckStack()
     }
 
     func updateNSView(_ stack: FeedDeckStack, context: Context) {
-        let deck = decks.show(reading, opening: held)
         // Per READING and not per shell: one store shared across Sessions is overwritten by
         // whichever was looked at last, so coming back re-measures. See `FeedGeometries`. Taken
         // before the model, so nothing already measured is thrown away by the first apply.
         deck.coordinator.keep(context.environment.argoFeedGeometries?.geometry(for: reading))
-        stack.show(deck, of: decks.decks)
+        stack.show(deck)
         deck.coordinator.apply(model(in: context))
     }
 

@@ -54,8 +54,13 @@ struct DeckContentRow: View {
         kept ?? ownDecks
     }
 
-    /// This reading's deck. The feed draws through it and the minimap maps the same one, which is
-    /// what keeps the two surfaces from ever disagreeing about where the reading is.
+    /// This reading's deck, opened here and nowhere else. The feed draws through it and the minimap
+    /// maps the same one, which is what keeps the two surfaces from ever disagreeing about where
+    /// the
+    /// reading is — and it is handed DOWN as a value, so no view below decides which deck it is on.
+    ///
+    /// This is the one call that opens a deck, which is what makes the store's order the reader's
+    /// own: the pass that draws a reading is the pass that says they are reading it.
     private var deck: KeptDeck {
         decks.show(reading, opening: held)
     }
@@ -105,7 +110,7 @@ struct DeckContentRow: View {
                     held: held,
                     vessel: vessel,
                     intents: intents,
-                    decks: decks,
+                    deck: deck,
                 )
                 DeckSeparator()
                     .argoUnderCanopy()

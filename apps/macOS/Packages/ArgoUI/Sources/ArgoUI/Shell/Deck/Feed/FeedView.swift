@@ -31,21 +31,14 @@ package struct FeedView: View {
     /// (`FeedTail`), the fade that lets rows run under the vessel, and how far the way-back control
     /// lifts — all three being one fact about the column's bottom edge.
     var isUnderComposer = false
-    /// Every deck the reader has open — see `KeptDecks`. Taken rather than owned, because the
-    /// overview lane beside the reading reads the same deck's scroll authority, and because a deck
-    /// has to outlive every view identity a switch destroys.
-    let decks: KeptDecks
+    /// This reading's deck — see `KeptDeck`. Taken rather than owned, because the overview lane
+    /// beside the reading reads the same one's scroll authority, and because a deck has to outlive
+    /// every view identity a switch destroys.
+    let deck: KeptDeck
 
     /// Which prompts the reading OPENS unfolded. A parameter for the reason `held` is one: a still
     /// cannot press a control, and the unfolded state is otherwise unreachable.
     var opensUnfolded: Set<FeedRow.ID> = []
-
-    /// This reading's deck, made on first sight and kept until the cap pushes it out. Asked per
-    /// pass rather than held: the store answers in a scan of at most a handful, and holding one
-    /// would be a second authority over which deck is on screen.
-    private var deck: KeptDeck {
-        decks.show(reading, opening: held)
-    }
 
     /// This deck's scroll authority — what the tail, the way-back control and the provisional word
     /// are all drawn off. See `FeedTableHandle`.
@@ -90,7 +83,7 @@ package struct FeedView: View {
             isUnderComposer: isUnderComposer,
             washed: washed,
             unfolded: folds,
-            decks: decks,
+            deck: deck,
         )
         // The backstop for anything that still hands the keyboard back by writing a row into the
         // focus space: no row resolves there, so the value is translated into the table's focus on
@@ -186,7 +179,7 @@ package struct FeedView: View {
         selection: FeedRowSelection,
         held: FeedRow.ID? = nil,
         isUnderComposer: Bool = false,
-        decks: KeptDecks,
+        deck: KeptDeck,
         opensUnfolded: Set<FeedRow.ID> = [],
         washed: FeedRow.ID? = nil,
     ) {
@@ -195,7 +188,7 @@ package struct FeedView: View {
         self.selection = selection
         self.held = held
         self.isUnderComposer = isUnderComposer
-        self.decks = decks
+        self.deck = deck
         self.opensUnfolded = opensUnfolded
         _washed = State(wrappedValue: washed)
     }

@@ -17,9 +17,9 @@ struct FeedColumn: View {
     var vessel = DeckVessel.none
     /// What that vessel's controls do.
     var intents = DeckIntents.inert
-    /// Every deck the reader has open, from above the deck — the minimap beside this column reads
-    /// this reading's out of the same store. See `KeptDecks`.
-    let decks: KeptDecks
+    /// This reading's deck, from above the column — the minimap beside it maps the same one. See
+    /// `KeptDeck`.
+    let deck: KeptDeck
 
     var body: some View {
         FeedView(
@@ -28,7 +28,7 @@ struct FeedColumn: View {
             selection: selection,
             held: held,
             isUnderComposer: vessel.isFloating,
-            decks: decks,
+            deck: deck,
         )
         // Over the feed rather than in the column's stack: a row in the stack would take
         // height from the reading it is meant to sit above. Bounded to this column so it

@@ -10,22 +10,28 @@ import AppKit
 /// Only the shown deck tracks this view's size. A hidden one keeps the frame it was left at, so a
 /// window resized while it is away costs it nothing until it is shown again — which is where the
 /// one re-wrap it owes is taken (ADR-0030, Rule 6).
+///
+/// It keeps its own list of what it has put on screen rather than taking the store's. A deck is
+/// evicted during a SwiftUI pass and this is an AppKit view: the retired deck leaves the tree here,
+/// on the update, rather than out of the body that decided it.
 final class FeedDeckStack: NSView {
-    /// The deck on screen. Weak, because `KeptDecks` owns every deck and may evict this one.
+    private var kept: [KeptDeck] = []
+    /// The deck on screen. Weak, because `KeptDecks` owns every deck.
     private weak var shown: NSScrollView?
 
-    /// `kept` in the store's own order, `deck` the one the reader is reading.
-    func show(_ deck: KeptDeck, of kept: [KeptDeck]) {
-        let scrollers = kept.map(\.scroller)
-        for view in subviews where !scrollers.contains(where: { $0 === view }) {
-            view.removeFromSuperview()
+    func show(_ deck: KeptDeck) {
+        if !kept.contains(where: { $0 === deck }) {
+            kept.append(deck)
+            deck.scroller.autoresizingMask = []
+            addSubview(deck.scroller)
         }
-        for scroller in scrollers where scroller.superview !== self {
-            scroller.autoresizingMask = []
-            addSubview(scroller)
+        kept.removeAll { held in
+            guard held.isRetired else { return false }
+            held.scroller.removeFromSuperview()
+            return true
         }
-        for scroller in scrollers {
-            scroller.isHidden = scroller !== deck.scroller
+        for held in kept {
+            held.scroller.isHidden = held !== deck
         }
         shown = deck.scroller
         layoutShown()

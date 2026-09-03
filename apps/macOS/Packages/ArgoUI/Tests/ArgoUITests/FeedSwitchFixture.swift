@@ -4,12 +4,13 @@ import AppKit
 /// A real deck per reading, kept the way the shell keeps them, with the heights beside them in the
 /// store that outlives eviction (ADR-0030, Rule 4).
 ///
-/// Nothing here stands in for anything: the decks are `KeptDecks`', so each one's table, scroll
-/// view
-/// and rulers are the ones the shell builds, and a claim about what a switch costs is a claim about
-/// the shipped store. A hand-rolled deck per reading would agree with whatever the suite expected.
+/// Nothing here stands in for anything: the decks are `KeptDecks`' and they are shown through the
+/// `FeedDeckStack` the deck zone puts on screen, so a claim about a switch is a claim about the
+/// shipped store. A hand-rolled deck per reading would agree with whatever the suite expected.
 @MainActor final class FeedSwitchDeck {
     let decks: KeptDecks
+    /// The view the decks are shown through — one on screen, the rest hidden behind it.
+    let stack = FeedDeckStack()
     /// The heights, held above the decks and bounded far wider — which is what lets an evicted
     /// Session re-open over known geometry.
     let geometries = FeedGeometries()
@@ -24,6 +25,7 @@ import AppKit
 
     init(cap: Int? = nil) {
         self.decks = KeptDecks(cap: cap)
+        stack.frame = NSRect(origin: .zero, size: Self.pane)
     }
 
     /// The deck on screen, and the three things every case here asks it.
@@ -61,10 +63,19 @@ import AppKit
     /// the same beat. The measure it starts is left in flight deliberately.
     @discardableResult func click(_ rows: [FeedRow], of reading: FeedReading) -> KeptDeck {
         self.reading = reading
+        // Asked BEFORE the deck is opened: only a deck being built needs the fixture to stand in
+        // for a window, and one already drawing a document has a table sized to that document.
+        let isFresh = decks.kept(reading) == nil
         let deck = decks.show(reading)
-        lay(deck)
+        stack.show(deck)
+        if isFresh {
+            lay(deck)
+        }
         deck.coordinator.keep(geometries.geometry(for: reading))
-        deck.coordinator.apply(FeedTableFixture.model(showing: rows))
+        // The deck's own folds, as the shipped binding hands them down (`FeedView.folds`).
+        deck.coordinator.apply(
+            FeedTableFixture.model(showing: rows, unfolded: deck.folds ?? []),
+        )
         return deck
     }
 
@@ -89,11 +100,10 @@ import AppKit
         decks.kept(reading)
     }
 
-    /// The shown deck at the pane, which is what `FeedDeckStack` does for the deck on screen and
-    /// does not do for the ones behind it.
+    /// A fresh deck's table sized to the scroller the stack has just framed. A scroll view in no
+    /// window lays its document view out for nobody, so the suite does what a window would — once,
+    /// because every size after this one is the document's own.
     private func lay(_ deck: KeptDeck) {
-        guard deck.scroller.frame.size != Self.pane else { return }
-        deck.scroller.frame = NSRect(origin: .zero, size: Self.pane)
         deck.coordinator.table?.frame = deck.scroller.frame
     }
 }

@@ -15,7 +15,7 @@ import AppKit
 /// the SwiftUI pass that hands the table its next model.
 @MainActor @Observable package final class KeptDeck {
     /// Which reading this deck is of. Fixed for its life: a deck is never re-pointed at another
-    /// reading, which is the whole of what ADR-0030 replaced ADR-0028 Rule 5 with.
+    /// reading.
     @ObservationIgnored let reading: FeedReading
     @ObservationIgnored package let handle: FeedTableHandle
     @ObservationIgnored let coordinator: FeedTableCoordinator
@@ -26,6 +26,11 @@ import AppKit
     /// Which prompts the reader has let out in this reading, or `nil` while they have folded
     /// nothing — which is what lets `FeedView.opensUnfolded` stand from the first frame.
     var folds: Set<FeedRow.ID>?
+
+    /// Whether this deck has been evicted. Read by `FeedDeckStack`, which takes the scroller out of
+    /// the view tree on its next update — an eviction is decided inside a SwiftUI pass, and the
+    /// view tree is not that pass's to change.
+    @ObservationIgnored private(set) var isRetired = false
 
     init(of reading: FeedReading, opening held: FeedRow.ID? = nil) {
         self.reading = reading
@@ -38,10 +43,16 @@ import AppKit
         self.coordinator = coordinator
     }
 
+    /// The deck a surface with nothing to switch between holds — a preview, a specimen, a
+    /// `#Preview`, where the one reading has no Session behind it.
+    package convenience init(opening held: FeedRow.ID? = nil) {
+        self.init(of: .unattached, opening: held)
+    }
+
     /// Evicted: the deck is dropped and the reading it held let go. The measure in flight goes with
     /// it — its answer is a document nothing will ever draw.
     func retire() {
+        isRetired = true
         coordinator.retire()
-        scroller.removeFromSuperview()
     }
 }

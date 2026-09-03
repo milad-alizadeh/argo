@@ -15,8 +15,7 @@ import SwiftUI
     /// the rows of a model no pass has measured yet. Written in one place, the turn a document
     /// lands (`FeedTableCoordinator+Settling`).
     var shown: [FeedRow] = []
-    /// What the visible cells were last drawn against. Not `private`, because the opening half
-    /// re-seats all three when another reading arrives — see `FeedTableCoordinator+Opening`.
+    /// What the visible cells were last drawn against.
     var folds: Set<FeedRow.ID> = []
     var drawnOpen: FeedRow.ID?
     /// See `FeedTableModel.washed`.
@@ -186,9 +185,8 @@ import SwiftUI
         let staleEnvironment = model?.environment
         model = fresh
         guard table != nil else { return }
-        // No switch arm, and there is no longer one to have: a coordinator is made per reading and
-        // kept with its deck (`KeptDecks`), so the only reading it is ever applied is its own.
-        // ADR-0030 Rule 4 replaced ADR-0028 Rule 5's re-pointed table, and `openAfresh` with it.
+        // The only reading this is ever applied is its own: a coordinator is made per reading and
+        // kept with its deck (`KeptDecks`).
         touchUp(against: fresh, from: staleEnvironment)
         // The rows themselves are NOT taken here. What the table draws changes in one place only —
         // the turn a settled document lands on (`FeedTableCoordinator+Settling`) — because the
@@ -242,7 +240,7 @@ import SwiftUI
         geometry.surrender()
         shown = []
         handle?.settled(false)
-        handle?.drawing(0)
+        handle?.drawing(false)
         table?.reloadData()
     }
 

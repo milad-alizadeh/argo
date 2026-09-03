@@ -2,19 +2,46 @@ import AppKit
 @testable import ArgoUI
 import Testing
 
-/// What eviction costs the reader, and what a burst of clicks may never do to a deck.
+/// What the reader keeps across a switch, what an eviction costs them, and what a burst of clicks
+/// may never put on screen.
 ///
-/// Two halves of ADR-0030 Rule 4 that only a real deck can answer: the heights outlive the deck
-/// they were measured for, and no deck ever holds two readings at once.
+/// Three halves of ADR-0030 Rule 4 that only a real deck can answer: the folds are the deck's, the
+/// heights outlive the deck they were measured for, and one deck is on screen at a time.
 @Suite("Kept deck eviction")
 @MainActor
 struct KeptDeckEvictionTests {
     private static let charlie = FeedReading(session: "charlie")
     private static let charlieRows = FeedSwitchFixture.rows("Charlie", count: 70)
 
+    /// A fold is a row position, and it belongs to the deck the reader made it in — so it is still
+    /// there on the way back, and it is not in the deck they went to. Read off the COORDINATOR,
+    /// which is what the cells were actually drawn against.
+    @Test
+    func `a fold made in one deck is still there on the way back`() async throws {
+        let deck = FeedSwitchDeck()
+        await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
+        let alpha = try #require(deck.kept(FeedSwitchFixture.alpha))
+        alpha.folds = [3, 9]
+        await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
+        #expect(alpha.coordinator.folds == [3, 9])
+
+        await deck.show(FeedSwitchFixture.bravoRows, of: FeedSwitchFixture.bravo)
+        let bravo = try #require(deck.kept(FeedSwitchFixture.bravo))
+        await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
+
+        #expect(bravo.folds == nil)
+        #expect(bravo.coordinator.folds.isEmpty)
+        #expect(alpha.folds == [3, 9])
+        #expect(alpha.coordinator.folds == [3, 9])
+    }
+
     /// The heights are held under a wider bound than the decks, so a Session pushed out re-opens
     /// over geometry nothing has to measure again — the second half of the cap's argument, and the
     /// reason a small cap costs the reader a table rather than a wait.
+    ///
+    /// Nothing here is gated in SECONDS, and the criterion's "inside the delay" is exactly this
+    /// count: a re-open that measures no row has no pass to wait for. A seconds gate on a shared
+    /// laptop reads the box rather than the code (ADR-0028 Rule 8).
     @Test
     func `a Session evicted from the decks re-opens with no measure`() async throws {
         let deck = FeedSwitchDeck(cap: 2)
@@ -35,12 +62,15 @@ struct KeptDeckEvictionTests {
         #expect(reopened.handle.isDrawing)
     }
 
-    /// The overprint on `9f6cd7d4`, and why it cannot happen again.
+    /// Two clicks inside one beat, which is what the overprint on `9f6cd7d4` was: the second
+    /// reading's rows landed through a reload the first one's document had already asked for, and
+    /// the reader saw both drawn over each other.
     ///
-    /// Two clicks inside the same beat used to arrive at ONE table: the second reading's rows were
-    /// landed through the reload the first one's document had already asked for, and the reader saw
-    /// both drawn over each other. There is no shared table to overprint now — each reading's rows
-    /// are drawn by the deck that measured them, and this asks every deck the burst touched.
+    /// It is a guard rather than that defect's reproduction, and the difference is worth stating:
+    /// there is no shared table left for a burst to overprint, so what this holds is that the
+    /// construction stays — one deck per reading, one of them on screen, and each drawing only the
+    /// rows it measured. A case written against the old single table could not be carried over,
+    /// because the API it drove is deleted.
     @Test
     func `a rapid double switch never draws two readings in one deck`() async throws {
         let deck = FeedSwitchDeck()
@@ -58,6 +88,10 @@ struct KeptDeckEvictionTests {
             #expect(kept.coordinator.shown.allSatisfy { Self.said($0)?.hasPrefix(named) == true })
             #expect(kept.coordinator.table?.numberOfRows == kept.coordinator.shown.count)
         }
+        // And exactly one of them is what the reader is looking at: the last one clicked.
+        let shown = deck.stack.subviews.filter { !$0.isHidden }
+        #expect(shown.count == 1)
+        #expect(shown.first === deck.kept(FeedSwitchFixture.alpha)?.scroller)
     }
 
     /// Which reading a row came from, spelled into its words by the fixture: `alpha`'s rows all

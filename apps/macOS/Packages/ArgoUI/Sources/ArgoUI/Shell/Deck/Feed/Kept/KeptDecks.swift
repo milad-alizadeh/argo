@@ -6,18 +6,15 @@ import SwiftUI
 /// One deck per Session — per READING, since scoping the rail onto a Subagent re-keys every row —
 /// made on first sight and kept until the cap pushes it out. Leaving a deck is a hide and coming
 /// back is a show, so a reader moving between Sessions never reloads a table and never re-measures
-/// a document. That is what replaced ADR-0028 Rule 5's one table re-pointed at each reading in
-/// turn, and with it the overprint two readings drawn through one reloaded table gave (`9f6cd7d4`).
+/// a document.
 ///
 /// Bounded by COUNT alone, and by a much smaller count than the heights beside it: a deck holds an
-/// `NSTableView` with realised cells in it, where a `FeedGeometry` holds one number per row. Six,
-/// which is what a reader keeps in play; `ReadingCeilings.readings` of them would be a window
-/// holding twenty tables nobody is reading.
+/// `NSTableView` with realised cells in it, where a `FeedGeometry` holds one number per row.
 ///
 /// NOT `@Observable`. Showing a deck touches the order, and a store that published that write would
 /// re-render the view that asked from inside its own body pass. Every fact anything renders off is
 /// on the deck itself.
-@MainActor package final class KeptDecks {
+@MainActor final class KeptDecks {
     /// The hidden `UserDefaults` default that moves the cap — no preference screen, because this is
     /// a number for the reader who has hit the ceiling rather than one anybody browses to.
     static let capDefault = "argo.keptSessions"
@@ -41,9 +38,8 @@ import SwiftUI
     /// Least recently shown first, which is the order they are evicted in.
     private(set) var decks: [KeptDeck] = []
 
-    /// `nil` takes the launch's own cap. Named rather than defaulted to it, because a default
-    /// argument is evaluated outside this actor and the launch cap is on it.
-    package init(cap: Int? = nil) {
+    /// `nil` takes the launch's own cap.
+    init(cap: Int? = nil) {
         self.cap = max(1, cap ?? Self.launchCap)
     }
 
@@ -52,7 +48,7 @@ import SwiftUI
     /// Touching the order is the whole of the write, which is why a `body` may ask: nothing
     /// observes this store, so nothing re-renders for it — the same arrangement `FeedGeometries`
     /// has, and for the same reason.
-    package func show(_ reading: FeedReading, opening held: FeedRow.ID? = nil) -> KeptDeck {
+    func show(_ reading: FeedReading, opening held: FeedRow.ID? = nil) -> KeptDeck {
         if let found = decks.firstIndex(where: { $0.reading == reading }) {
             decks.append(decks.remove(at: found))
             return decks[decks.count - 1]
