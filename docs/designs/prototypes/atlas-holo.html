@@ -1226,9 +1226,10 @@ function flyTo(to) {
    the list are one-to-one, so a route that moved the scope and left the camera behind would
    make where you are depend on which of the two you used. */
 function flyHere() {
-  /* In plan view the LAYOUT zooms (beginZoom) and the camera only ever holds the whole plan
-     square, so the two cannot fight; in the city the layout is fixed and the camera is the
-     only thing that can frame a folder. Same gesture, and the view decides which half moves. */
+  /* The rail and the crumb have no scale of their own to continue from, so they land on the
+     level fitted: in the treemap that is the re-tiled level whole, in the city the plate and
+     everything standing on it. The wheel and a click on the map never come through here —
+     they carry the scale across the crossing themselves (see levelCheck). */
   if (state.plan) return flyTo(camFor(null, 1));
   flyTo(state.folder ? camFor(paintOrder(folderAt(state.folder)), SNAP_FILL) : camFor(null, 1));
 }
@@ -1356,81 +1357,150 @@ function setDom(mode) {
   else { apply(); treeKey = ''; fit(); rebuild(); detail(null); stamp(); }
 }
 
-/* ---------- zooming into a level ----------
-   In plan view the tiling is rebuilt around the folder you entered (see tree()), so arriving
-   cannot be a cut: the frame being left is zoomed in on the plate being entered, the frame
-   being entered is zoomed out to sit inside that same plate, and the two are crossed over
-   somewhere in the middle. Coming out is the identical code with the two rects swapped.
-   The camera does not move in plan view — two zooms at once read as one overshooting — so
-   the whole gesture is one transform over two pictures, and no rectangle is re-laid out
-   while it runs. In the city there is only ONE tiling, so there is nothing to cross over
-   and the camera flight is the zoom (see flyHere). */
-function seatOf(path) {
-  const b = path ? folderAt(path) : TREE;
-  return b ? [b.x, b.y, b.w, b.h] : null;
-}
-/* Layout coordinates to canvas pixels, through the camera that is drawing right now. */
+/* ---------- levels, and the one zoom that crosses them ----------
+   The treemap is not a stack of screens with animations between them: it is ONE continuous
+   zoom, and a level is a thing that happens on the way. Scrolling in magnifies about the
+   pointer, and the moment the plate under the pointer covers the frame — its width or its
+   height has reached the window edge, so its siblings are off screen and nothing else is
+   being looked at — that plate IS the view, and the map re-tiles into it. Scrolling out is
+   the same rule read backwards: once a level's own map has shrunk a tenth inside the frame,
+   the level is no longer what is being looked at and the parent takes it back.
+   So there is no gesture for "go up" and none for "go down". There is only the scale, and
+   the levels are the scale's own landmarks. The bands do not touch (1.0 in, 0.9 out) because
+   a single threshold read from both sides oscillates on the notch that reaches it, and a
+   crossing only ever fires in the direction the wheel is already going.
+   What CANNOT be continuous is the contents. A folder packed into a 17px sliver and the same
+   folder packed into the whole frame are two different tilings — that is the entire reason
+   going in is worth anything — so the frame is seamless and the contents dissolve. */
+const ENTER = 1.0;      // a plate that covers the frame IS the frame
+const EXIT = 0.9;       // a level's map, pulled a tenth inside the frame, is no longer it
+const LAND = 0.98;      // where a level is seated on arrival, just inside its own edge
+const BACK = 0.94;      // and where the level you left is seated when it hands you back
+const CROSS_MS = 220;
+const DRIVE_MS = 420;
+
+/* Layout coordinates to canvas pixels, through the camera that is drawing right now. Exact
+   in plan view, where the projection is flat and `raw` is affine. */
 const screenRect = r => {
   const a = raw(r[0], r[1], 0), b = raw(r[0] + r[2], r[1] + r[3], 0);
   return [a[0] * cam.scale + cam.ox, a[1] * cam.scale + cam.oy,
           (b[0] - a[0]) * cam.scale, (b[1] - a[1]) * cam.scale];
 };
+const rectOf = b => screenRect([b.x, b.y, b.w, b.h]);
+/* How much of the window a box covers, on whichever axis covers more of it. 1 is the edge. */
+function ratioOf(b) {
+  const st = $('stage'), r = rectOf(b);
+  return Math.max(Math.abs(r[2]) / st.clientWidth, Math.abs(r[3]) / st.clientHeight);
+}
+/* The camera that puts one box on the stage at exactly `fill` of it. Centred, so arriving
+   and being handed back both land on a frame the box is the middle of. */
+function seatCam(b, fill) {
+  const st = $('stage'), W = st.clientWidth, H = st.clientHeight;
+  const p = raw(b.x, b.y, 0), q = raw(b.x + b.w, b.y + b.h, 0);
+  const k = fill * Math.min(W / Math.abs(q[0] - p[0]), H / Math.abs(q[1] - p[1]));
+  return { scale: k, ox: W / 2 - (p[0] + q[0]) / 2 * k, oy: H / 2 - (p[1] + q[1]) / 2 * k };
+}
 /* The affine that puts rect P exactly where rect Q is, as [kx, ky, tx, ty]. */
 const fitRect = (P, Q) => {
   const kx = Q[2] / (P[2] || 1), ky = Q[3] / (P[3] || 1);
   return [kx, ky, Q[0] - P[0] * kx, Q[1] - P[1] * ky];
 };
-let fx = null;      // { t0, a, b, ghost } — the screen-space zoom between two tilings
-function beginZoom(anchor, was) {
-  if (CALM || !view || !was || !state.plan) return;
-  const now = anchor ? folderAt(anchor) : tree();
-  if (!now) return;
+
+/* THE DISSOLVE. The picture being left is kept as a bitmap and drawn over the new one while
+   it fades, through the map that puts the rect it held THEN onto the rect the same thing
+   holds NOW — so the zoom carries on underneath it and the old picture stays registered to
+   the new one instead of hanging in the air. Going in, that thing is the plate entered and
+   it is now the whole frame; coming out it is the frame left, and it is now a plate. */
+let fx = null;
+function snapshot() {
   const shot = document.createElement('canvas');
   shot.width = model.width; shot.height = model.height;
   shot.getContext('2d').drawImage(model, 0, 0);
-  fx = { t0: performance.now(), e: 0, ghost: shot,
-         a: screenRect(was), b: screenRect([now.x, now.y, now.w, now.h]) };
+  return shot;
 }
-/* WHAT MOVES, and why it is not the rectangles.
-   The two tilings are not the same tiling: what a folder's plate held a moment ago is
-   subdivided differently once that folder is the whole frame, so interpolating box against
-   box makes them travel PAST each other, which is a slide however it is eased. A zoom is one
-   transform over everything on screen. So neither picture is re-laid out at all: the frame
-   being left is kept as a bitmap and the frame being entered is the model as it now stands,
-   and both are drawn through the SAME pair of transforms — the one that takes the anchor
-   where it was to the anchor where it is, and its inverse. Nothing on either picture moves
-   relative to anything else on it, which is what makes it read as a zoom and not a shuffle.
-   Coming out is the identical code with the two rects the other way round. */
+/* clamped low as well as high: a frame's timestamp can predate the call that started the
+   fade, and an alpha over 1 is not a value the canvas has an opinion about */
 function fxStep(now) {
-  const u = Math.min(1, (now - fx.t0) / SNAP_MS);
-  fx.e = glide(u);
-  if (u >= 1) { fx = null; rebuild(); detail(null); }
+  fx.e = Math.max(0, Math.min(1, (now - fx.t0) / CROSS_MS));
+  if (fx.e >= 1) fx = null;
 }
-/* THE RECT BOTH PICTURES ARE PINNED TO. Size travels geometrically, because equal RATIOS
-   and not equal differences are what reads as one speed: a linear ramp across a ten-fold
-   change spends its first two frames crossing half the apparent distance and the rest of
-   the tween creeping. The centre is carried on the progress the size has already made, so
-   the anchor is in one place at every instant, and both pictures are drawn through the map
-   that puts THEIR copy of the anchor onto it. That is the whole trick: the two halves agree
-   about the anchor frame by frame, so a fade between them has nothing to slide. */
-const lerpRect = (P, Q, e) => {
-  const w = P[2] * Math.pow(Q[2] / P[2], e), h = P[3] * Math.pow(Q[3] / P[3], e);
-  const f = Math.abs(Q[2] - P[2]) > 1e-6 ? (w - P[2]) / (Q[2] - P[2]) : e;
-  const cx = P[0] + P[2] / 2 + (Q[0] + Q[2] / 2 - (P[0] + P[2] / 2)) * f;
-  const cy = P[1] + P[3] / 2 + (Q[1] + Q[3] / 2 - (P[1] + P[3] / 2)) * f;
-  return [cx - w / 2, cy - h / 2, w, h];
-};
-function drawZoom() {
-  const e = fx.e, seat = lerpRect(fx.a, fx.b, e);
-  const paint = (img, m, alpha) => {
-    if (alpha <= 0) return;
-    ctx.save(); ctx.globalAlpha = Math.min(1, alpha);
-    ctx.transform(m[0], 0, 0, m[1], m[2], m[3]);
-    ctx.drawImage(img, 0, 0, W, H);
-    ctx.restore();
-  };
-  paint(fx.ghost, fitRect(fx.a, seat), 1 - e);   // the frame being left, opening out
-  paint(model, fitRect(fx.b, seat), e * 1.6);    // the frame being entered, closing in
+function drawGhost() {
+  const ref = fx.refPath ? folderAt(fx.refPath) : tree();
+  if (!ref) { fx = null; return; }
+  const m = fitRect(fx.a, rectOf(ref));
+  ctx.save();
+  ctx.globalAlpha = 1 - fx.e;
+  ctx.transform(m[0], 0, 0, m[1], m[2], m[3]);
+  ctx.drawImage(fx.ghost, 0, 0, W, H);
+  ctx.restore();
+}
+
+/* The immediate child of the level you are on that the pointer is inside — never a deeper
+   one, because the wheel crosses one level at a time and the deeper ones get their turn as
+   the scale keeps going. */
+function kidUnder(mx, my) {
+  for (const k of folderAt(state.folder).kids) {
+    if (k.file) continue;
+    const r = rectOf(k);
+    const x0 = Math.min(r[0], r[0] + r[2]), x1 = Math.max(r[0], r[0] + r[2]);
+    const y0 = Math.min(r[1], r[1] + r[3]), y1 = Math.max(r[1], r[1] + r[3]);
+    if (mx >= x0 && mx <= x1 && my >= y0 && my <= y1) return k;
+  }
+  return null;
+}
+/* Run after anything that changed the scale, with the direction it changed in. `only` binds
+   it to one plate, which is what a click needs: a drive at the frame's centre must not be
+   captured by whichever neighbour happens to reach the edge first. */
+function levelCheck(mx, my, inward, only) {
+  if (!state.plan || CALM) return;
+  for (let n = 0; n < 8; n++) {
+    if (inward) {
+      const kid = kidUnder(mx, my);
+      if (!kid || (only && kid.path !== only) || ratioOf(kid) < ENTER) return;
+      enterFolder(kid.path, kid.n.name, LAND);
+    } else {
+      if (!state.folder || ratioOf(tree()) > EXIT) return;
+      goFolder(state.trail.length - 1, BACK);
+    }
+  }
+}
+
+/* A CLICK IS THE SAME ZOOM, driven. It travels the levels rather than jumping them, so a
+   plate three deep is reached by crossing the two above it — the same two crossings the
+   wheel would have made, at the same scales, in the same order. One leg per level: the
+   camera runs geometrically onto the seat where that level's plate covers the frame, the
+   crossing fires there, and the next leg starts from wherever that left the camera. */
+let drive = null;
+function legTo(path) {
+  const kid = folderAt(state.folder).kids.find(k => !k.file && under(path, k.path));
+  if (!kid) return null;
+  return { t0: performance.now(), from: { ...cam }, to: seatCam(kid, ENTER * 1.02),
+           mid: kid.path, scope: state.folder };
+}
+function driveTo(path) {
+  if (!state.plan || CALM || state.folder === path) return false;
+  drive = { path, leg: null };
+  return true;
+}
+function driveStep(now) {
+  if (state.folder === drive.path) { drive = null; return; }
+  if (!drive.leg) drive.leg = legTo(drive.path);
+  if (!drive.leg) { drive = null; return; }
+  const L = drive.leg, u = Math.min(1, (now - L.t0) / DRIVE_MS);
+  /* Geometrically, because equal RATIOS and not equal differences are what reads as one
+     speed; the offsets ride on the progress the scale has already made, so the pan and the
+     zoom cannot disagree about where they are. */
+  const s = L.from.scale * Math.pow(L.to.scale / L.from.scale, glide(u));
+  const d = L.to.scale - L.from.scale;
+  const f = Math.abs(d) > 1e-9 ? (s - L.from.scale) / d : glide(u);
+  cam.scale = s;
+  cam.ox = L.from.ox + (L.to.ox - L.from.ox) * f;
+  cam.oy = L.from.oy + (L.to.oy - L.from.oy) * f;
+  rebuild(true);
+  const st = $('stage');
+  levelCheck(st.clientWidth / 2, st.clientHeight / 2, true, L.mid);
+  if (state.folder === drive.path) { drive = null; return; }
+  if (u >= 1 || state.folder !== L.scope) drive.leg = null;
 }
 
 /* The stagger is by destination domain, not by distance: the reader is being shown that a
@@ -2535,6 +2605,7 @@ function frame(now) {
     else rebuild(true);
   }
   if (morph) morphStep(now);
+  if (drive) driveStep(now);
   if (fx) fxStep(now);
   if (fly) flyStep(now);
   if (rising) {
@@ -2543,10 +2614,10 @@ function frame(now) {
   }
   const t0 = performance.now();
   ctx.clearRect(0, 0, W, H);
-  /* A zoom owns the whole canvas while it runs: the rims, the ties and the names are measured
-     off the layout, and the layout is not where either picture is at this instant. */
-  if (fx) { drawZoom(); return; }
   ctx.drawImage(model, 0, 0, W, H);
+  /* over the model, because it is the picture being LEFT: it covers what replaced it for as
+     long as it takes to fade, and the new tiling is what is underneath all along */
+  if (fx) drawGhost();
 
   /* Ties are drawn over the model, because a filament that disappears behind a tower is
      worse than one that floats. The near end is whatever the pointer holds. */
@@ -2980,34 +3051,39 @@ function folderAt(path) {
    because a map that set a scope of its own beside this one would be a second drill-down
    agreeing with the first by coincidence and drifting the week after — and the camera moves
    from in here for the same reason, so the two controls cannot end anywhere different. */
-function enterFolder(path, name) {
+function enterFolder(path, name, fill) {
   beginFade();
   closePage();
-  /* read where the plate sits NOW, because the next two lines are what re-tiles it away */
-  const was = state.plan ? seatOf(path) : null;
+  /* Read the plate, and keep the picture, BEFORE the next lines re-tile both away. */
+  const shot = state.plan && !CALM ? snapshot() : null;
+  const a = shot ? rectOf(folderAt(path)) : null;
   state.trail.push({ path: state.folder, name: state.folderName, top: $('rows').scrollTop });
   state.folder = path; state.folderName = name;
-  beginZoom(path, was);
   /* Where you are is carried by the plate's own rim, whichever control put you there — so
      the frame lands on the folder you entered from the map and from the list alike. */
   state.pinned = folderAt(path);
-  railIndex(); rebuild(); key(view.lo, view.hi); detail(null); railMark(); flyHere();
+  railIndex(); rebuild(); key(view.lo, view.hi); detail(null); railMark();
+  /* `fill` is the wheel and the drive saying where to seat the level they just crossed into.
+     Without one this is the rail or the crumb, which has no scale of its own to continue. */
+  if (state.plan && fill) { Object.assign(cam, seatCam(tree(), fill)); rebuild(); }
+  else flyHere();
+  if (shot) fx = { t0: performance.now(), e: 0, ghost: shot, a, refPath: null };
 }
-/* The trail, not the path: a collapsed chain has levels the reader never stood on, and
-   stepping up into one of those is a place they cannot have come from. */
-function goFolder(i) {
+
+function goFolder(i, fill) {
   const t = state.trail[i] || { path: null, name: null, top: 0 };
   beginFade();
-  /* Coming out, the anchor is the level being LEFT and the rect it held is the whole frame,
-     so the new tiling starts magnified around it and settles back — the way in, reversed. */
   const leaving = state.folder;
-  const was = state.plan && leaving ? seatOf(null) : null;
+  const shot = state.plan && leaving && !CALM ? snapshot() : null;
+  const a = shot ? rectOf(tree()) : null;      // the whole frame being handed back
   state.trail = state.trail.slice(0, i);
   state.folder = t.path; state.folderName = t.name;
-  beginZoom(leaving, was);
   state.pinned = t.path ? folderAt(t.path) : null;
   railIndex(); restoreTop(t.top); rebuild(); key(view.lo, view.hi); detail(null); railMark();
-  flyHere();
+  if (state.plan && fill && leaving) {
+    Object.assign(cam, seatCam(folderAt(leaving), fill)); rebuild();
+  } else flyHere();
+  if (shot) fx = { t0: performance.now(), e: 0, ghost: shot, a, refPath: leaving };
 }
 
 /* The rail's rows are chainDown() of the current folder's children, so a plate click walks
@@ -3032,16 +3108,6 @@ function railSteps(box) {
    enterFolder, and the camera flight is the only thing the map adds on top of what the rail
    already does. Scope is dim plus crumb, camera is size; a snap is the one gesture that is
    both, because it is a selection that happens to move the viewport. */
-/* The folder a file is standing in, as a box in the tiling being drawn — what the wheel
-   enters when the pointer happens to be over a file rather than over open roof. */
-function plateUnder(box) {
-  let best = null;
-  for (const b of paintOrder(folderAt(state.folder)))
-    if (!b.file && b !== box && under(box.path, b.path)
-        && (!best || b.path.length > best.path.length)) best = b;
-  return best;
-}
-
 function snapTo(box) {
   const steps = railSteps(box);
   if (!steps || !steps.length) return false;
@@ -3534,7 +3600,7 @@ function adopt(j, co) {
 /* The boot tail, minus the camera: a rebuild is the same map of a moved repository, so where
    the reader had got to in it is the one thing that must survive. `fit()` is the difference. */
 function reseat() {
-  morph = null; fx = null; pinPath = null;
+  morph = null; fx = null; drive = null; pinPath = null;
   state.hover = state.pinned = state.peek = null; state.peekKey = '';
   state.domSel = null; state.folder = null; state.folderName = null; state.trail = [];
   closePage(); hideDef();
@@ -3646,6 +3712,7 @@ Promise.all([
      and more disorienting act, so it asks for option first. The choice is read once, at
      the press, so letting go of option mid-drag cannot swap the gesture under the hand. */
   cv.onmousedown = e => {
+    drive = null;                       // a hand on the map outranks a click still travelling
     /* Nothing to turn in a plan: a treemap seen from anywhere but straight down is neither
        view, so the gesture that would break it is simply not offered. */
     drag = { x: e.clientX, y: e.clientY, turn: (e.altKey || e.button === 2) && !state.plan,
@@ -3679,40 +3746,29 @@ Promise.all([
 
   cv.oncontextmenu = e => e.preventDefault();
 
-  /* THE WHEEL IS THE NAVIGATION, not a magnifier. Scrolling in enters the plate under the
-     pointer — the same act as clicking it — and scrolling out leaves for the parent, so the
-     map has exactly one way to move between levels and the pointer says which one. A free
-     scale would only ever show the same tiling bigger; entering re-tiles, which is the whole
-     reason the level below is worth going to.
-     One hop per gesture: a trackpad sends a notch as thirty events with momentum behind it,
-     so the deltas are summed to a threshold and the hop is refused while the last one is
-     still travelling. Otherwise a single flick lands five levels down. */
-  const WHEEL_STEP = 40;
-  let wheelAcc = 0, wheelAt = 0;
+  /* Zoom about the pointer, so the thing under the cursor stays under it — and in the
+     treemap that is the whole of the navigation, because the levels are landmarks on the
+     scale rather than places a separate gesture takes you to (see levelCheck). */
   cv.onwheel = e => {
     e.preventDefault();
-    const now = performance.now();
-    if (now - wheelAt > 400) wheelAcc = 0;    // a pause ends the gesture
-    wheelAt = now;
-    if (fly || morph || fx) { wheelAcc = 0; return; }
-    wheelAcc += e.deltaY;
-    if (Math.abs(wheelAcc) < WHEEL_STEP) return;
-    const inward = wheelAcc < 0;
-    wheelAcc = 0;
-    if (!inward) {
-      if (state.trail.length) goFolder(state.trail.length - 1);
-      return;
-    }
-    const r = cv.getBoundingClientRect();
-    const hit = pick(e.clientX - r.left, e.clientY - r.top);
-    const plate = hit && !hit.file ? hit : hit ? plateUnder(hit) : null;
-    if (plate) snapTo(plate);
+    drive = null;                       // a hand on the wheel outranks a click still travelling
+    const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    /* bounded against the fitted scale, not against itself — a per-event clamp is no clamp
+       at all. Inside a level the crossings arrive long before either bound. */
+    const base = baseScale();
+    const want = cam.scale * Math.exp(-e.deltaY * 0.0014);
+    const next = Math.min(base * 90, Math.max(base * 0.5, want)) / cam.scale;
+    cam.ox = mx - (mx - cam.ox) * next;
+    cam.oy = my - (my - cam.oy) * next;
+    cam.scale *= next;
+    state.hover = null; rebuild();
+    levelCheck(mx, my, e.deltaY < 0);
   };
 
   /* Hover is an overlay, not a model change: the pointer must never pay for fifteen
      hundred volumes being repainted. */
   cv.onmousemove = e => {
-    if (drag || fx) return;
+    if (drag || drive) return;
     const r = cv.getBoundingClientRect();
     const hit = pick(e.clientX - r.left, e.clientY - r.top);
     if (hit === state.hover) return;
@@ -3723,7 +3779,7 @@ Promise.all([
   };
   cv.onmouseleave = () => { if (drag) return; state.hover = null; };
   cv.onclick = e => {
-    if (moved > 4 || fx) return;              // a drag that ended on a plate is not a click
+    if (moved > 4) return;              // a drag that ended on a plate is not a click
     const r = cv.getBoundingClientRect();
     const hit = pick(e.clientX - r.left, e.clientY - r.top);
     /* Ground with nothing on it is not a target, so a click there is a click on none of them —
@@ -3745,7 +3801,7 @@ Promise.all([
        same act as clicking that folder's row in the rail, down to the trail entry, with the
        camera following it — and clicking a file opens its reading. A plate already at or
        above where you are does nothing here: the breadcrumb is the only way out. */
-    if (!hit.file) { snapTo(hit); return; }
+    if (!hit.file) { if (!driveTo(hit.path)) snapTo(hit); return; }
     /* pin it so the numbers stay while the pointer goes to the controls */
     /* Clicking what is already open closes it, which is the same gesture as Esc. */
     if (state.page && state.pinned && state.pinned.path === hit.path) {
