@@ -8,11 +8,6 @@ public extension View {
     /// is switched off at the table by the probe this carries (`ListSelectionFill`, #1137): the
     /// platform paints the pressed row on mouse-down, and the binding this ground follows moves on
     /// mouse-up.
-    ///
-    /// One weight for one meaning: the backlog spent a run on the accent at FULL strength, on the
-    /// argument that the room's subject should be louder than a rail beside it (#1071). What that
-    /// bought was the loudest band in the window on the row a reader spends all day in, and a
-    /// selected row no other list's row was read the same way as. #1165 gave it up.
     func argoSelectedRowGround(isSelected: Bool) -> some View {
         modifier(SelectedRowGround(isSelected: isSelected))
     }

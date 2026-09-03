@@ -27,6 +27,7 @@ package struct BlockageMark: View {
     @Environment(\.argo) private var argo
 
     let blockage: TicketsRoomProjection.Blockage
+
     package var body: some View {
         ArgoGlyph(Self.symbol, .inline)
             .foregroundStyle(ink.color)

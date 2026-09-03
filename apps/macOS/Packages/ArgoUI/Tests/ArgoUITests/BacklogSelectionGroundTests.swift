@@ -97,21 +97,17 @@ struct BacklogSelectionGroundTests {
 
     /// What the row's marks are, and what makes them legible: they carry the Route's own inks, and
     /// on this ground each is read within a hair of its reading on the deck. That is what retires
-    /// the plate #1071 laid under them — on the accent at full strength the same two inks read at
-    /// 1.2:1, and nothing but an opaque backdrop could save them.
+    /// the plate laid under them, so the two floors are held apart rather than levelled — on the
+    /// deck each mark still clears `contrastFloor`, which is what the plate's own suite held, and
+    /// the selection ground is held to the 3:1 a mark is read at.
     @Test(arguments: palettes)
-    func `the trailing marks' inks clear the mark floor on both of a row's grounds`(
+    func `the trailing marks' inks clear their floor on both of a row's grounds`(
         _ appearance: (name: String, palette: ArgoPalette),
     ) {
         let palette = appearance.palette
-        for ground in [palette.surface.base, palette.interaction.selectionGround] {
-            for ink in [palette.state.running, palette.state.failure, palette.state.idle] {
-                #expect(ink.contrastRatio(on: ground) >= Self.markFloor)
-            }
-            // And the reading the plate was there for is the one it cannot survive: on the accent
-            // at full strength these are under 1.6:1, which is why the loud rung needed one.
-            #expect(palette.state.failure
-                .contrastRatio(on: palette.interaction.accent) < Self.markFloor)
+        for ink in [palette.state.running, palette.state.failure, palette.state.idle] {
+            #expect(ink.contrastRatio(on: palette.surface.base) >= Self.floor)
+            #expect(ink.contrastRatio(on: palette.interaction.selectionGround) >= Self.markFloor)
         }
     }
 

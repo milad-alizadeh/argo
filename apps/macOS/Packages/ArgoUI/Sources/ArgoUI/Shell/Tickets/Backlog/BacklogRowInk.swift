@@ -21,12 +21,10 @@ package struct BacklogRowInk: Equatable {
         self.readOn = isSelected ? palette.interaction.selectionGround : palette.surface.base
         // The neutral ramp on BOTH grounds, unchanged by selection: `secondary` reads 5.91:1 on
         // the selection ground and `tertiary` 4.63:1, so the ground alone says which row is
-        // selected — which is what it says in the roster, and what #1071's full-strength accent
-        // took away by forcing one near-black ink onto all three voices.
+        // selected (#1165).
         //
         // A rail is on screen for a descendant's sake rather than for its own match, so its title
-        // takes the demotion the `#id` beside it already carries (#873). On the loud rung there
-        // was no quieter rung left to demote to; here there is.
+        // takes the demotion the `#id` beside it already carries (#873).
         self.title = isRail ? palette.text.tertiary : palette.text.secondary
         self.machine = palette.text.tertiary
         self.caption = palette.text.disabled

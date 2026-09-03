@@ -15,10 +15,9 @@ struct LabelChip: View {
     /// The label this chip draws, where it is one. `nil` says this chip is Argo's own overflow
     /// count rather than a provider label, which has no hue to spend either way.
     var label: TicketLabel?
-    /// The opaque surface the chip sits on. BOTH readings are taken against it — the word is
-    /// carried away from it, and the chip's wash resolves over it — so a chip on a selected
-    /// backlog row reads exactly as one on the deck does (#1165). `nil` says the deck, which is
-    /// where every chip outside the backlog's rows sits.
+    /// The surface the chip's word is measured against, where the caller knows one the chip does
+    /// not: a selected backlog row's ground, so the word is carried away from what is actually
+    /// under it (#1165). `nil` reads the deck, which is what every chip outside those rows sits on.
     var readOn: ArgoColor?
 
     init(label: TicketLabel, on readOn: ArgoColor? = nil) {
@@ -34,22 +33,17 @@ struct LabelChip: View {
         self.readOn = readOn
     }
 
-    /// The surface every reading below is taken against: what the caller says the chip sits on, or
-    /// the deck. Resolved here rather than at the call site because the fallback is a palette fact
-    /// only a view holds — see `LabelInk`.
-    private var under: ArgoColor {
-        readOn ?? argo.color.surface.base
-    }
-
+    /// Read here rather than at the call site because the treatment needs the surface the chip sits
+    /// on, and the deck is a palette fact only a view holds — see `LabelInk`.
     private var ink: LabelInk? {
-        label.flatMap { LabelInk($0, on: under) }
+        label.flatMap { LabelInk($0, on: readOn ?? argo.color.surface.base) }
     }
 
-    /// The chip's own wash, resolved OPAQUE over that surface: the word is carried to a ratio
-    /// against it, so a wash left translucent over some other ground is a reading nobody took. On
-    /// the deck this resolves to exactly what the translucent wash drew.
+    /// The chip's own wash, left TRANSLUCENT: whatever is under the chip is what it resolves over,
+    /// which is the surface `ink` was measured against. Compositing it here instead would name that
+    /// surface a second time, and be wrong wherever a caller passed none.
     private var ground: ArgoColor {
-        (ink?.ground ?? argo.color.surface.control).composited(over: under)
+        ink?.ground ?? argo.color.surface.control
     }
 
     var body: some View {

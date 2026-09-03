@@ -11,10 +11,8 @@ import SwiftUI
 /// pressed row wearing the platform's blue for the length of every held click, beside the old row
 /// still on Argo's ground (#1137). Switched off at the table, there is nothing to cover.
 ///
-/// Named for a `List` rather than for a sidebar since #1165, when the backlog gave up the loud
-/// rung it laid itself and took the ground: `.inset` is `NSTableView`-backed like `.sidebar` and
-/// honours the same property, which was measured on the room's own render rather than assumed
-/// from the rails.
+/// `.inset` is `NSTableView`-backed like `.sidebar` and honours the same property, measured rather
+/// than assumed — `InsetListSelectionFillTests` (#1165).
 ///
 /// Placed UNDER a row rather than beside the `List`: SwiftUI hosts a `.background` of the list
 /// outside the scroll view, where no walk up the superviews reaches the table. A row's content sits
