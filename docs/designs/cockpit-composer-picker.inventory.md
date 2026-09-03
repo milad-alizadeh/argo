@@ -1,10 +1,15 @@
-# The composer's command menu — build inventory (#685)
+# The composer's command menu — build inventory (#707)
 
-What assembling the `/` menu actually forced out of
-[`cockpit-composer-picker.md`](cockpit-composer-picker.md). The names were frozen at approval;
-renaming one is a migration. This ticket builds the `/` half only — the `+` menu (`AddMenu`), the
-`@` file rows (`FileMenuRow`), the built-ins strip (`CommandMenuStatus`) and the feed's
-`MentionSpan` belong to #686, #687 and #689. `SkillLoadedMarker` is #688, appended below.
+What building [`cockpit-composer-picker.md`](cockpit-composer-picker.md) actually forced out of it.
+One section per ticket, appended in the order each landed: **#685** (`/`), **#686** (built-ins),
+**#687** (`@`), **#688** (the feed marker) and **#689** (`+`). The names were frozen at approval and
+renaming one is a migration — seven were renamed, and *Every frozen name that moved* at the foot of
+this file is that migration's record. **Read the shipped name off the design's table, not out of a
+section below**: a section written during a build says the name that was true that week.
+
+#685's own framing, kept because it dates every name in its section: *this ticket builds the `/`
+half only — the `+` menu (`AddMenu`), the `@` file rows (`FileMenuRow`), the built-ins strip
+(`CommandMenuStatus`) and the feed's `MentionSpan` belong to #686, #687 and #689.*
 
 ## Extracted — #685
 
@@ -96,6 +101,94 @@ at the ceiling — which is what those two derivations are for.
   the same name side by side, on the grounds that Argo had not measured which the CLI runs. The
   design settles it: the nearer origin wins, the shadowed copy is not listed, and the winning row
   says `shadows yours`. Only `project` over `user` can collide — a plugin's commands are namespaced.
+
+## Extracted — #686
+
+> **Written after the fact, by #707.** #686 landed without an inventory section — the omission the
+> parent's third *Done when* catches. What follows is read off the ticket's own two commits
+> (`4eebf3db`, `09835bc8`) and the shipped tree, not off the build's memory. Where the other
+> sections say *why the builder split it there*, this one can only say what the split IS, and it
+> stops rather than inventing a reason.
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `CommandMenuStatus` | molecule | `ArgoUI/Shell/Deck/Composer/` — one caller (`CommandMenu`) | `builtins: BuiltinStatus` | one `CommandMenuStatusLine`, or nothing at all | frozen table, `CommandMenuStatus`; [`slash-late.png`](composer-picker/slash-late.png), [`slash-fail.png`](composer-picker/slash-fail.png) |
+| `CommandMenuStatusLine` | molecule | same — one caller (`CommandMenuStatus`) | `words: String` · `mark: Mark` (`waiting` · `failed`) | one mark and one `Text`, on `ArgoComposerVessel.commandRowHeight` | added by the review fix — see below |
+| `CommandCatalog` | value | `ArgoEngine/Commands/` — public | `commands: [Command]` · `builtins: BuiltinStatus`, with `.empty` and `joined(skills:builtins:)` | — | decisions 7, 9 |
+| `BuiltinStatus` | value | same — public | `read` · `reading` · `unavailable` | — | decisions 9 and 10 |
+| `BuiltinCommand` | value | same | one command as the Help panel printed it, before curation | — | the panel's own rows |
+| `BuiltinCommandReader` | port impl | same — public | reads once per CLI version | `HelpPanelSession`, `HelpPanel`, `BuiltinCommandStore`, `AgentVersion` | Acceptance: opening the picker never waits on a spawn |
+| `BuiltinCommandStore` | value | same | one read's answer, keyed by the version string alone | — | a CLI is upgraded in place, so its path is not a key |
+| `BuiltinCuration` | value | same | which built-ins the `/` picker offers | — | the #589 grill's per-command table |
+| `HelpPanel` | value | same | a pure function of the rendered screen | — | the parse |
+| `HelpPanelSession` | value | same | one hidden `claude`, killed once the panel is painted | — | Acceptance: no roster row for the read |
+| `HelpPanelError` · `HelpPanelPace` | value | same | why the read failed · how long each step waits and how often it asks | — | split out by the review — see below |
+| `AgentVersion` | value | same | the installed CLI's own version string, a key and not a number | — | the store's key |
+| `TerminalScreen` | port | same — public, implemented by `SwiftTermScreen` in `ArgoTerminal` | what a terminal would have DRAWN for a stream of PTY bytes, one string per row | — | the panel exists only on a rendered screen |
+
+Extraction evidence, as the shape shows it:
+
+- **`TerminalScreen` is a port and not a helper** because the emulator that can answer it links
+  AppKit, and `ArgoEngine` may not. The engine names the shape; `ArgoTerminal` renders it. That is
+  the module boundary deciding the seam, not a preference.
+- **`BuiltinStatus` is a third value beside the list**, not a flag on it. A catalog that is a list
+  alone cannot say *the rest is still coming*, which is the whole of decision 9 — and
+  `CommandCatalog.empty` degrades DOWN to `unavailable` for exactly that reason, spelled in its own
+  doc comment against `CONTEXT.md` L2 · Honesty tier.
+- **`BuiltinCuration` names what to leave OUT**, so a command it has never heard of is shown
+  un-curated. A list of names fails hard in the one direction that matters: a name it is missing is
+  the picker denying a command the Session really accepts.
+
+## What stayed inline — #686
+
+- **The status strip's place in the list** — pinned above it by `CommandMenu`, not drawn where the
+  Claude Code section would fall. In its own place it sits below ten rows of skills, where the
+  reader about to conclude the CLI has no `/compact` never scrolls to it.
+- **Saying nothing once the read lands** — a `case .read: EmptyView()` inside the status view. A
+  strip saying the list is complete is a line the reader must read every time to learn nothing.
+
+## Amended during the build — #686
+
+- **Decision 6 is retired: there is no argument hint on a row.** No CLI surface exposes
+  `argumentHint` — neither the Help panel nor the CLI's own `/` popup prints one, and the field
+  exists only inside the binary. The design says so, and the row's spec table strikes the line
+  rather than deleting it.
+- **`Skill` became `Command` and `SkillOrigin` became `CommandOrigin`**, with a fourth case. The
+  catalog now carries both kinds and the CLI addresses them identically as `/name`, so a type
+  called `Skill` would have been the name of only half of what it held. `SkillCatalog` survives as
+  the internal filesystem walk behind `CommandCatalog`; nothing is called `SkillOrigin`.
+
+## What review changed after the build — #686
+
+Two axes read the diff. Both Spec findings were real bugs:
+
+- **The panel's closing prose could become the last command's description.**
+  `append(description:)` took the next non-empty line, so a last command that printed none was
+  given `For more help: https://…`. Descriptions are recognised by INDENT now — the panel indents a
+  name by 5, its description by 7, its closing prose by 3 — so a line shallower than the name above
+  it belongs to no command.
+- **A failed read was permanent.** `inFlight` was never cleared, so one slow TUI meant no built-ins
+  until the app was relaunched. It is let go on failure, and a test asks twice.
+
+From the Standards axis: `HelpPanelError`, `HelpPanelPace` and `BuiltinStatus` got files of their
+own (three files owned two units each), `CommandCatalog.empty` replaced eleven copies of the same
+literal, and the comments were cut to `comments.md`'s budget — what stayed is falsifiable, and the
+rejected alternative went where it belongs, in the commit message.
+
+`CommandMenuStatusLine` is that pass's own extraction: the status view held two spellings of one
+row, and the line became a type so the strip and the rows under it provably stand on one rhythm.
+
+## Measured, not reasoned about — #686
+
+Three facts about the real CLI that only a run against it could have produced:
+
+- **The panel renders its whole list on a tall enough PTY** and marks a truncated one with a `↓`.
+  That marker is what lets a short read fail loudly rather than answer short.
+- **A `claude` opening a folder it has never seen swallows the first keystrokes it is sent**, with
+  nothing drawn to wait for. Waiting longer does not help; the reader asks AGAIN rather than asking
+  earlier.
+- **SwiftTerm pads an unwritten cell with NUL rather than a space**, which reads as a painted
+  screen to anything that trims whitespace. Only the test over real PTY bytes could have found it.
 
 ## Extracted — #687
 
@@ -369,3 +462,59 @@ None. `AddMenu`'s two rows read `line.workspaceRoot` and `line.canRunCommands`, 
 
 None. `AddMenuRow` reuses `ComposerMenuSurface`, `ArgoComposerVessel.commandRowHeight` and the
 existing `body` / `machineCaption` roles unchanged — no token promoted.
+
+## Every frozen name that moved — reconciled by #707
+
+The design froze ten names at approval, `FileMenu` joined them during #687's build, and it said
+renaming one is a migration. **Seven of the eleven were renamed and the inventory recorded none of
+them** — what it recorded was `ComposerMenuCursor` and `ComposerMenuSurface`, one a rename of a
+name that was never frozen and the other an addition. So the frozen table and the shipped tree
+disagreed for as long as both were true. This section is the missing half of that migration: the
+design's table now carries the shipped name in its first column and the frozen one beside it, and
+what follows is why each moved.
+
+**Not one of these renames came from a ticket under #707.** All of them are #748's deep-module
+work, which read the picker as it stood and found the duplication the design had invited by naming
+the `/` half and the `@` half separately. That is precisely why nothing recorded them here: an
+inventory is appended by the ticket that builds against the design, and no ticket that touched
+these names was one.
+
+| frozen | shipped | by | why |
+|---|---|---|---|
+| `CommandMenu` · `FileMenu` | `ComposerMenuList` | #751 | One list body. `CommandMenu.swift:26-46` and `FileMenu.swift:22-39` were the same `if isEmpty / else ScrollView + LazyVStack + Button` — `listHeight` differed only in adding header heights |
+| `CommandMenuRow` · `FileMenuRow` | `ComposerMenuRow` | #751 | One row. The `ground`/`fill` pair was character-for-character identical, plus the same `isHovered`, the same height and the same `.accessibilityAddTraits` |
+| `CommandMenuEmpty` | `ComposerMenuZeroLine` | #751 | The two zero lines held the identical string literal — *". Your line is still just text — ⏎ sends it as written."* — in two homes, free to diverge. `Zero` and not `Empty` because the line is about a query that matched nothing, not about a menu with no rows |
+| `CommandMenuSection` | `ComposerMenuSection` | #751 | Not duplicated, but carried into the one family so the whole surface reads under one prefix. Sections stay `/`-only: the shared list draws them when the `Listing` has them |
+| `CommandMenuStatus` | `ComposerMenuStatusLine` | #751 | The `/`-only strip became the one line the shared list draws above any `Listing` carrying a `Status`. #686's pair collapsed into one type: the enclosing `CommandMenuStatus` was a switch over `BuiltinStatus`, and that switch is now `ComposerMenu.status(of:)` on the derive, answering `Status?` |
+| `CommandMenuProjection` · `WorkspaceFileProjection` | `ComposerMenu` | #751 | Two projections carrying the same shape — a `Menu` with `rows`/`query`/`isEmpty`, a `Row: Identifiable where ID == String`, one `menu(for:in:)` entry. `ComposerMenuCursor.row(in:)` was ALREADY generic over exactly that shape, which is the abstraction arriving before its name did. The two derive RULES survive untouched as `ComposerMenu+Commands` and `+Files`, substring and subsequence, each with its own suite |
+
+`CommandMenuCursor` → `ComposerMenuCursor` (#687, one cursor for both menus, keyed by id) is the
+eighth rename and the only one already recorded — under *Amended during the build — #687* above.
+It is not in the table because `CommandMenuCursor` was #685's own name and was never frozen.
+
+Two names arrived with no frozen counterpart, both from #752's lift of the orchestration out of the
+`View` body: **`ComposerMenus`**, the value holding which menu the line has open and where the
+keyboard is in it, and **`ComposerMenuLine`**, everything about the draft and the Session that
+decides which menu opens. The design could not have frozen either — they name a seam a build found,
+not a thing the renders draw.
+
+**`CommandMenu` cannot be restored.** SwiftUI ships a `CommandMenu`, and `ArgoUI` builds two of
+them — `Shell/NavigateCommands.swift:16` and `Argo/ArgoApp.swift:135`, both added after the
+rename. A same-module type of that name shadows the framework's at both call sites, so the frozen
+name is not merely stale, it is unavailable. Renaming the family back was the parent's other
+option; this is why it was not taken.
+
+### What still cited a retired name
+
+Grepped and fixed with this reconciliation, because a stale citation is how a rename half-lands:
+
+- `docs/designs/README.md` — the inventory's own one-line summary still described "`CommandMenu`
+  and its three parts".
+- `AddMenuRow.swift` and `ComposerMenu+Add.swift` — two doc comments written during #689's build
+  distinguishing `AddMenuRow` from "a `CommandMenuRow` or `FileMenuRow`", neither of which exists.
+- `CommandMenuBuiltinTests` — the one suite still carrying the retired prefix, renamed
+  `ComposerMenuBuiltinTests` with its file.
+
+`MentionSpan` is the one frozen name that is still unbuilt, which the *Not claimed by any
+ticket* section above already records. It is the one entry where the table and the tree disagree on
+purpose.

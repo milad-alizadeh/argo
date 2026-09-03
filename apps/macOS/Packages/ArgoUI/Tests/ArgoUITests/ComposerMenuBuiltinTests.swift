@@ -3,8 +3,8 @@ import ArgoEngine
 import Testing
 
 /// The CLI's own commands in the `/` menu, and what the menu says while it has none (#686).
-@Suite("Command menu built-ins")
-struct CommandMenuBuiltinTests {
+@Suite("Composer menu built-ins")
+struct ComposerMenuBuiltinTests {
     /// The design's order, with the CLI's own last because it is the origin furthest from this
     /// Project — `cockpit-composer-picker.md`, section headers.
     @Test

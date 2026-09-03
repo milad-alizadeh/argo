@@ -52,21 +52,32 @@ too big, and this holds a filtering catalogue of 75 things.
 
 ## Component names — frozen
 
-Renaming one of these later is a migration.
+Renaming one of these later is a migration, and seven of them were: #751's collapse of the twin
+menus into one family retired every `CommandMenu*` and `FileMenu*` name at once, and #752 added
+two more of its own. The middle column below carries what each shipped name was frozen as, and
+[`cockpit-composer-picker.inventory.md`](cockpit-composer-picker.inventory.md) records why each
+one moved. **The shipped name is the one to cite**; the frozen name is kept here so a reader
+holding an older document can find its way forward, and for no other reason. Rows marked *added*
+were never frozen: they came out of a build, and are listed here so the whole family reads in one
+place rather than half here and half in the inventory.
 
-| name | what it is |
-|---|---|
-| `AddButton` | the footer's leading `+`. **Renamed from `AttachButton`** — see below |
-| `AddMenu` | the two-row menu `AddButton` opens: files, skills & commands |
-| `FileMenu` | the `@` surface itself. **Added during #687's build** — the table named its row and not the list it sits in, and the two menus share only their plane (`ComposerMenuSurface`): this one has no sections and no status strip |
-| `CommandMenu` | the surface itself: status strip, sectioned list, keyboard cursor |
-| `CommandMenuRow` | one invocable thing — name, description, origin |
-| `CommandMenuSection` | the sticky origin header, with its count and where it came from |
-| `CommandMenuStatus` | the pinned strip that says the built-in half is late or unavailable |
-| `CommandMenuEmpty` | the one line drawn when nothing matches |
-| `FileMenuRow` | one file — name, then its directory, dimmed and cut from the left |
-| `MentionSpan` | an `@` mention inside the user's own bubble in the feed |
-| `SkillLoadedMarker` | the feed marker, with its evidence affordance when there is a body behind it |
+| name | frozen as | what it is |
+|---|---|---|
+| `AddButton` | `AttachButton` | the footer's leading `+`. **Renamed in #708** — see below |
+| `AddMenu` | `AddMenu` | the two-row menu `AddButton` opens: files, skills & commands |
+| `AddMenuRow` | *added, #689* | one row of it: the mark, the words, the shortcut key |
+| `ComposerMenuList` | `CommandMenu`, `FileMenu` | the list a sigil opens: a status strip where there is one, then the rows, sectioned where the sigil groups them. **One list for both sigils** |
+| `ComposerMenuSurface` | *added, #687* | the graphite plane all three menus stand on |
+| `ComposerMenuRow` | `CommandMenuRow`, `FileMenuRow` | one pickable thing — what it is, what identifies it, any mark it carries. **One row for both sigils** |
+| `ComposerMenuSection` | `CommandMenuSection` | the origin header, with its count and where its group came from |
+| `ComposerMenuStatusLine` | `CommandMenuStatus` | the pinned strip that says the built-in half is late or unavailable |
+| `ComposerMenuZeroLine` | `CommandMenuEmpty` | the one line drawn when nothing matches |
+| `ComposerMenuCursor` | *added, #685* | where the keyboard is in whichever menu is open |
+| `ComposerMenu` | *added, #751* | the derive and the values it answers in — `Listing`, `Section`, `Row`, `Status`, `Sigil`, `Pick`, `AddRow` — with one file per sigil |
+| `ComposerMenus` | *added, #752* | which menu the line has open, and where the keyboard is in it |
+| `ComposerMenuLine` | *added, #752* | everything about the draft and the Session that decides which menu opens |
+| `MentionSpan` | `MentionSpan` | an `@` mention inside the user's own bubble in the feed. **Unbuilt** — claimed by no ticket |
+| `SkillLoadedMarker` | `SkillLoadedMarker` | the feed marker, with its evidence affordance when there is a body behind it |
 
 `AttachButton` **becomes `AddButton`**, accessibility label *Add to this turn*. It opens files,
 skills and commands, and two of those three are not attachments; a name that says `Attach` makes
@@ -76,24 +87,30 @@ dies the moment the glyph changes) and `ComposerMenuButton` (names the mechanism
 touches built code (`ArgoUI/Shell/Deck/Composer/`), so it is a migration step on the
 implementation ticket, not a side effect of another change.
 
+**`CommandMenu` is not a name this app can take back.** SwiftUI ships its own `CommandMenu`, and
+`ArgoUI` uses it — `Shell/NavigateCommands.swift` and `Argo/ArgoApp.swift` each build one. A type
+of that name inside the module shadows the framework's, so restoring the frozen name would break
+both call sites. The collapse in #751 is why the family reads `ComposerMenu*`; this is why it
+cannot read `CommandMenu*` again.
+
 ## Measurements
 
 Everything below is a token, or derived from one. Nothing here is a number to copy into a view
 except where it says *measured*.
 
-**The surface** — `CommandMenu`
+**The surface** — `ComposerMenuSurface`, and `ComposerMenuList` standing on it
 
 | what | value |
 |---|---|
 | material | `.regularMaterial`, the run-settings popover's recipe. **Not glass** |
 | radius | `ArgoRadius.popover` (12) |
-| border | `ArgoStroke.border` (1) at `surface.glassRim` — the restrained edge D14 allows |
+| border | `ArgoStroke.border` (1) at `edge.glassRim` — the restrained edge D14 allows |
 | inset | `ArgoSpacing.tight` on all four sides |
 | width | the vessel's own. **No stated width**: the description is the content, and at 560 two thirds of a real one is an ellipsis |
 | anchor | the vessel's leading edge, rising `ArgoSpacing.base` above its top |
 | list ceiling | **300** = 10 rows (27) + one section header (30). Derived, not measured — it moves with the header, which grew to 30 during #685's build |
 
-**A row** — `CommandMenuRow`, `FileMenuRow`
+**A row** — `ComposerMenuRow`, one for both sigils
 
 | what | value |
 |---|---|
@@ -106,12 +123,12 @@ except where it says *measured*.
 | description | `ArgoTypography.rowMeta` (11), ink `tertiary`, one line, tail-truncated |
 | origin | `ArgoTypography.badge` (10, semibold, tracking 0.6), ink `disabled`, upper-cased |
 | shadow marker | the same `badge` role in `state.attention` |
-| matched characters | ink `accentBright`, weight `semibold` — **on `CommandMenuRow` only. Amended during #687's build: a file row inks none.** There the match is a subsequence over the whole path, so six characters land in six different segments and inking them speckles the row; over a command name the match is one contiguous run, which is what makes the rule work there. `at-filter.png` already drew it this way |
+| matched characters | ink `accentBright`, weight `semibold` — **on a COMMAND row only. Amended during #687's build: a file row inks none.** There the match is a subsequence over the whole path, so six characters land in six different segments and inking them speckles the row; over a command name the match is one contiguous run, which is what makes the rule work there. `at-filter.png` already drew it this way |
 | hover | `surface.hover` (0.045), no edge |
 | keyboard cursor | `surface.marked` (0.07), the ground alone. On the cursor row the description lifts to `secondary`, which is `TextRoles.marked(on:)`'s own floor. **Amended during #685's build: no leading Ion Blue edge.** The cockpit draws no leading rules on rows, and one here would have been the only one in the shell — the two grounds are still different inks, which is what the rule below actually asks for |
 | file row | name at `machine`, then the directory at `machineCaption` in `tertiary`, **cut from the left** — a nine-segment path is a column of identical prefixes |
 
-**A section header** — `CommandMenuSection`
+**A section header** — `ComposerMenuSection`
 
 | what | value |
 |---|---|
