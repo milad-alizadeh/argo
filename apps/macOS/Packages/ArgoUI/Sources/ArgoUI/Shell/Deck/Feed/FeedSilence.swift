@@ -39,7 +39,9 @@ package struct FeedSilence: View {
     }
 
     package var body: some View {
-        VStack(spacing: ArgoSpacing.snug) {
+        // A step of air, not a hair: measured on the render, `snug` put the indicator close
+        // enough under the words to read as their underline.
+        VStack(spacing: ArgoSpacing.base) {
             Text(vacancy.words(overdue: isPast))
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.disabled)

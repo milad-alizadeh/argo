@@ -34,11 +34,15 @@ struct FeedReadingIon: View {
         .accessibilityAddTraits(.updatesFrequently)
     }
 
-    /// Quieter than the ion the reading's own live surfaces are drawn in: the reader is being told
-    /// that a wait is Argo's, and the accent belongs to what the Session is doing.
+    /// A MARK and not a voice, which is the whole of why it is the rule ink rather than a text
+    /// rung. Measured on the render: at `text.disabled` it was the word's own colour exactly, and a
+    /// short bar in the text's ink under the text reads as an underline.
+    ///
+    /// Not the accent either — that is the ion the SESSION's live surfaces are drawn in, and this
+    /// wait is Argo's own (`CONTEXT.md` · Honesty tier).
     private var capsule: some View {
         Capsule()
-            .fill(argo.color.text.disabled)
+            .fill(argo.color.edge.subtle)
             .frame(width: ArgoFeedRow.readingIonLength, height: ArgoStroke.indicator)
     }
 

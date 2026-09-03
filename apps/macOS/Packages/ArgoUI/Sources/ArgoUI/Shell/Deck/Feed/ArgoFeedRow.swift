@@ -144,7 +144,10 @@ public enum ArgoFeedRow {
     /// ion that crosses it — see `FeedReadingIon`. A LENGTH and not a share of the column, because
     /// this one sits under a centred word rather than across the reading: it has to read as a
     /// fixed small thing beside that word at any window width.
-    public static let readingIonLane: CGFloat = 96
+    ///
+    /// The lane is over four ion-lengths, measured on the render: at 96 the travel was too short to
+    /// read as travel, and a bar that never visibly moves is a rule somebody drew.
+    public static let readingIonLane: CGFloat = 132
     public static let readingIonLength: CGFloat = 28
     /// Where the ion starts and ends, in multiples of its own length — both bounds clear of the
     /// lane, as `workingThreadTravel` is and for the same reason.
