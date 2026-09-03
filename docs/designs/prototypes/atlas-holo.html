@@ -1396,12 +1396,6 @@ function upOf(b) { let p = b.up; while (p && p.ghost) p = p.up; return p || null
 /* The scope is READ OFF the camera rather than kept beside it, so the crumb, the rail and
    the reading can never name a folder the map is not standing in. */
 function scopeTo(b) {
-  /* A NEW SCOPE IS A NEW COLOUR ON THE MAP, so it repaints here and dissolves like every
-     other colour change. The treemap hid this: its flight repaints every frame anyway. The
-     city does not fly, so a scope chosen there was true in the crumb and in the rail and
-     nowhere on the map — the hush arrived later, whenever something else happened to
-     redraw. The snapshot must be taken before the scope moves, which is why it is first. */
-  beginFade();
   const root = tree();
   const chain = [];
   for (let x = b; x && x !== root; x = x.up) if (!x.ghost) chain.unshift(x);
@@ -1410,7 +1404,6 @@ function scopeTo(b) {
   state.folder = chain.length ? chain[chain.length - 1].path : null;
   state.folderName = chain.length ? chain[chain.length - 1].n.name : null;
   closePage();
-  rebuild();
   railIndex(); key(view.lo, view.hi); detail(null); railMark();
 }
 function setAim(b) {
@@ -1685,47 +1678,19 @@ function pickFace(x, y, a, e) {
    before and a single after to interpolate between rather than a rule per feature.
    A search is a question about the whole map, so the map answers it: what does not match goes
    to the ground colour and what does keeps whatever it was already saying. */
-/* ONE question, asked once, in TWO layers: what a click COMMITTED and what the pointer is
-   PREVIEWING over the top of it. A search, a chosen domain, a folder the rail descended into
-   and a row under the pointer are narrowings of the same kind, so they compose — a file is
-   lit when it is inside ALL of them, and everything else drops to the ground colour.
-   Dim is the only channel scope uses: nothing here moves a box, recolours one, or stops one
-   being picked. An out-of-scope box is still drawn, still hit-tested and still readable. */
-const under = (path, dir) => path === dir || path.startsWith(dir + '/');
+/* WHERE YOU ARE IS NOT A QUESTION THE MAP ANSWERS BY DIMMING, in either view. Going into a
+   folder, and hovering a row that names one, both used to grey everything else; both read as
+   the map breaking rather than answering, because neither was a question anybody asked. A
+   SEARCH and a CHOSEN DOMAIN are questions, and the whole map is the answer — those two are
+   the only things left that can put a file on the ground colour. Dim is still the only
+   channel they use: an unlit box is drawn, hit-tested and readable exactly as before. */
 const inDomain = (path, id) => { const d = DOM && DOM.byPath.get(path); return !!d && d.id === id; };
 
 function inScope(path) {
   if (HITS && !HITS.has(path)) return false;
   if (state.domSel !== null && DOM && !inDomain(path, state.domSel)) return false;
-  /* WHERE YOU ARE IS NOT A QUESTION THE MAP ANSWERS BY DIMMING. In the treemap the level you
-     are in fills the frame, so what is left round the edge of it is not an answer being
-     withheld — it is the neighbourhood, and greying it out only made the map look broken
-     while you moved. Search and a chosen domain still dim, because those ARE questions the
-     reader asked and the whole map is the answer. */
-  if (state.plan) return true;
-  if (state.folder && !under(path, state.folder)) return false;
-  const p = state.peek;
-  if (!p) return true;
-  if (p.dir !== undefined && !under(path, p.dir)) return false;
-  if (p.dom !== undefined && !inDomain(path, p.dom)) return false;
-  if (p.file !== undefined && path !== p.file) return false;
   return true;
 }
-
-/* The preview never commits and never survives the pointer leaving. Setting it to what it
-   already is does nothing, which is what makes the restore idempotent however fast the
-   pointer crosses the list. */
-function setPeek(p) {
-  const key = p ? JSON.stringify(p) : '';
-  if (key === (state.peekKey || '')) return;
-  beginFade(PEEK_MS);
-  state.peek = p; state.peekKey = key;
-  rebuild(true);
-}
-const rowScope = r => !r ? null
-  : r.dataset.dir !== undefined ? { dir: r.dataset.dir }
-  : r.dataset.dom !== undefined ? { dom: +r.dataset.dom }
-  : r.dataset.go !== undefined ? { file: r.dataset.go } : null;
 
 /* Where a box SITS and what colour it IS are two questions with two controls. The MODE
    answers the colour one — Domains mode lights by domain, Folders mode by the measured
@@ -1740,9 +1705,6 @@ function fileBase(b) {
    one of them out, typing in the search — each of those repaints most of the map at once, and
    at that size a cut reads as the map being replaced rather than answering. */
 const FADE_MS = 420;
-/* A preview is quicker in and quicker out than a commitment: a hover that animates at the
-   weight of a click reads as though the click already happened. */
-const PEEK_MS = 150;
 let fading = null;
 function beginFade(ms) {
   if (CALM || !view) return;
@@ -3058,7 +3020,6 @@ function folderIndex() {
 }
 
 function railIndex() {
-  state.peek = null; state.peekKey = '';
   if (state.dom === 'off' && !HITS) return folderIndex();
   const d = domains();
   const c = state.domSel !== null && d ? d.clusters[d.rank.get(state.domSel)] : null;
@@ -3372,7 +3333,7 @@ function reset() {
   setFlat(state.plan ? 1 : 0);
   closePage(); hideDef();
   aim = null;
-  state.hover = state.pinned = state.peek = null; state.peekKey = '';
+  state.hover = state.pinned = null;
   state.folder = null; state.folderName = null; state.trail = [];
   selectDomain(null);
   fit(); rebuild(); rise(); detail(null); railIndex(); railMark(); stamp();
@@ -3527,7 +3488,7 @@ function adopt(j, co) {
    the reader had got to in it is the one thing that must survive. `fit()` is the difference. */
 function reseat() {
   morph = null; aim = null; pinPath = null;
-  state.hover = state.pinned = state.peek = null; state.peekKey = '';
+  state.hover = state.pinned = null;
   state.domSel = null; state.folder = null; state.folderName = null; state.trail = [];
   closePage(); hideDef();
   if (state.dom !== 'off' && !domainsReady()) state.dom = 'off';
@@ -3563,7 +3524,6 @@ Promise.all([
             hover: null, pinned: null, ties: q.get('ties') === '1',
             dom: q.get('dom') === 'group' ? 'group' : 'off', domSel: null,
             noTests: q.get('tests') === 'no', q: q.get('find') || '',
-            peek: null, peekKey: '',
             page: false, rowsTop: 0, domTop: 0,
             folder: null, folderName: null, trail: [],
             plan: q.get('view') === 'plan' };
@@ -3809,10 +3769,6 @@ Promise.all([
   };
   $('hide').onclick = () => sidebar(false);
   $('reveal').onclick = () => sidebar(true);
-  /* Delegated, because the list is rebuilt on every navigation and a per-row handler would
-     have to be re-attached each time. mouseover bubbles, so moving between rows re-fires. */
-  $('rows').onmouseover = e => setPeek(rowScope(e.target.closest('.drow,.frow')));
-  $('rows').onmouseleave = () => setPeek(null);
   /* the list has no end and no button: it grows where it is, so its scroll is never lost */
   $('rows').onscroll = () => {
     const el = $('rows');
