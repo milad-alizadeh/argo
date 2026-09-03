@@ -67,7 +67,6 @@
   #find #qn { position: absolute; right: 30px; top: 50%; transform: translateY(-50%);
               font: var(--t-footnote) var(--mono); color: #7fe8ff; pointer-events: none; }
 
-  #read .kind.pinned { display: flex; align-items: center; gap: 10px; }
   #read .kind .back { margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
                       cursor: pointer; padding: 3px 8px; border-radius: 6px; font: inherit;
                       text-transform: none; letter-spacing: 0; color: var(--text-1);
@@ -2990,6 +2989,17 @@ function folderAt(path) {
    here PINS: where you are is the crumb's job, and the rim on a plate means "you pointed
    at this" and nothing else. */
 function enterFolder(path) { goTo(folderAt(path)); }
+/* A ROW IS A SELECTION, NOT ONLY A DOOR. Going into a folder from the rail moved the camera
+   and the crumb and left the map itself unanswered — in the city, which does not fly, a row
+   click had nothing to show for it at all. The folder it names is now marked on the map and
+   opened in the panel, in both views, which is the same pair a click on a file gets. */
+function selectFolder(path) {
+  const box = folderAt(path);
+  if (!box) return;
+  goTo(box);
+  state.pinned = box;
+  detail(null); railMark(); rebuild();
+}
 function goFolder(i) {
   const t = state.trail[i];
   goTo(t && t.path ? folderAt(t.path) : tree());
@@ -3060,7 +3070,7 @@ function wireRail() {
       openPage(box || { n, path, file: true });
     };
   for (const r of $('rows').querySelectorAll('.drow[data-dir]'))
-    r.onclick = () => enterFolder(r.dataset.dir, r.dataset.name);
+    r.onclick = () => selectFolder(r.dataset.dir);
 }
 
 /* Which row is open is a property of the row, not of the list, so it is stamped rather
@@ -3069,6 +3079,8 @@ function railMark() {
   const path = state.pinned && state.pinned.path;
   for (const r of document.querySelectorAll('#rows .frow'))
     r.setAttribute('aria-selected', String(r.dataset.go === path));
+  for (const r of document.querySelectorAll('#rows .drow[data-dir]'))
+    r.setAttribute('aria-selected', String(r.dataset.dir === path));
 }
 
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -3170,13 +3182,10 @@ function detail(b) {
         : 'Higher than ' + Math.round(r * 100) + '% of the files in this repo.'}</div>
     </div>`;
 
-  /* A pin is the only state this panel cannot leave by moving the mouse, and until now the
-     only way out was a key nothing mentioned. The way back is a control, next to the word
-     that says why you are stuck. */
-  d.innerHTML = (b || state.page ? `<div class="kind">${it.file ? 'File' : 'Folder'}</div>`
-      : `<div class="kind pinned"><span>${it.file ? 'File' : 'Folder'} \u00b7 pinned</span>`
-        + `<button class="back" title="Stop holding this file (Esc)">`
-        + `Unpin<kbd>esc</kbd></button></div>`)
+  /* THE PANEL SAYS WHAT IT IS SHOWING AND NOTHING ELSE. "Pinned", and a button to undo it,
+     described a mechanism rather than a thing: what is open is open because the reader
+     opened it, and it closes on Esc, on clicking it again, and on clicking the ground. */
+  d.innerHTML = `<div class="kind">${it.file ? 'File' : 'Folder'}</div>`
     + `<div class="name">${n.name}</div>`
     + `<div class="where">${it.path}</div>`
     + (it.file ? '' : `<div class="pin">${leaves(n).length} files inside</div>`)
@@ -3260,8 +3269,6 @@ function hideDef() {
 /* The panel is rebuilt on every pointer move, so its controls are wired where they are
    built rather than once at boot. */
 function wireRead() {
-  const back = $('read').querySelector('.back');
-  if (back) back.onclick = () => { state.pinned = null; hideDef(); detail(null); };
   for (const b of $('read').querySelectorAll('[data-dom]')) {
     const pick = () => selectDomain(b.dataset.dom === '' ? null
       : b.classList.contains('chip') && state.domSel === +b.dataset.dom ? null : +b.dataset.dom);
@@ -3739,8 +3746,13 @@ Promise.all([
     clearTimeout(orbStamp); orbStamp = setTimeout(stamp, 400);
   };
   addEventListener('keydown', e => {
+    /* ONE Esc puts it all the way down. It used to take two — the first closed the reading
+       and left the thing still marked on the map, on the argument that the pin outlived the
+       page. There is no pin any more, so a mark with no panel beside it is just a rim
+       nobody asked for. */
     if (e.key === "Escape") {
-      if (state.page) closePage(); else { state.pinned = null; detail(null); }
+      if (state.page) closePage();
+      state.pinned = null; detail(null); railMark();
     }
     /* Backspace is what every file browser has meant by "up" for thirty years, and nothing
        on this page takes typed text except the search field, which keeps its own. */
