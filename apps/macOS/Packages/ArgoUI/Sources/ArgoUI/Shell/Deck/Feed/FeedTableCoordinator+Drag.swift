@@ -23,20 +23,25 @@ extension FeedTableCoordinator {
     /// The window's edge taken up, which freezes the reading.
     func dragBegan() {
         isWindowDragging = true
-        froze()
+        noteDrag()
     }
 
     /// The window's edge let go: the width is a fact again, and the pass the drag deferred runs.
+    ///
+    /// Asked of the flag rather than done unconditionally, because the table reports the end of a
+    /// window drag from two places — AppKit's own, and the table leaving its window, which is the
+    /// drag that would otherwise never end (`FeedTableView.viewDidMoveToWindow`).
     func dragEnded() {
+        guard isWindowDragging else { return }
         isWindowDragging = false
-        froze()
+        noteDrag()
         settleAfterResize()
     }
 
-    /// The table held at the width its rows were measured across, for exactly as long as an edge is
-    /// in the reader's hand. Unfreezing applies the size AppKit asked for while it was held, which
-    /// is the frame change the deferred pass is asked from.
-    func froze() {
+    /// The table told where the drag now stands: held at the width its rows were measured across
+    /// for exactly as long as an edge is in the reader's hand. Letting go applies the size AppKit
+    /// asked for meanwhile, which is the frame change the deferred pass is asked from.
+    func noteDrag() {
         table?.isFrozen = isDragging
     }
 }

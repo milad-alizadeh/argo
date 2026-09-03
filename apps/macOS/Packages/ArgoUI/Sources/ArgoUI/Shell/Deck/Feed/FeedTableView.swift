@@ -135,6 +135,19 @@ final class FeedTableView: NSTableView {
         liveResizeEnded?()
     }
 
+    /// The table taken out of its window, which is the OTHER way a drag ends.
+    ///
+    /// AppKit sends `viewDidEndLiveResize` to the views in the window it is resizing, so a view
+    /// removed from that window mid-drag never hears the end of the drag it is in. A reading frozen
+    /// for a drag that can no longer end is a reading nothing measures again, so the end is
+    /// reported here too — the deck that goes off screen under the reader's hand comes back
+    /// measurable.
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard window == nil else { return }
+        liveResizeEnded?()
+    }
+
     /// Every route AppKit resizes this view by ends here, which is what makes it the seam the
     /// document's own frame notification used to be. Reported unconditionally, for the reason that
     /// notification was: a size that did not move is the routine case, and the decision about it
@@ -144,13 +157,10 @@ final class FeedTableView: NSTableView {
     /// is the rows the coordinator has already put up, and refusing that would draw the reading
     /// short of its own end.
     override func setFrameSize(_ newSize: NSSize) {
-        guard isFrozen else {
-            super.setFrameSize(newSize)
-            return reshaped?() ?? ()
-        }
+        defer { reshaped?() }
+        guard isFrozen else { return super.setFrameSize(newSize) }
         owedSize = newSize
         super.setFrameSize(NSSize(width: frame.width, height: newSize.height))
-        reshaped?()
     }
 
     private func isActivation(_ event: NSEvent) -> Bool {

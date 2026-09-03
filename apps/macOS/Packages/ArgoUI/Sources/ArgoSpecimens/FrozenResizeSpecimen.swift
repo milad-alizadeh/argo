@@ -10,9 +10,12 @@ import SwiftUI
 /// width. A drag that reflowed would show the same rows re-wrapped at the narrow measure with the
 /// wide measure's heights around them, which is the tear this lane exists to stop.
 ///
-/// It is produced by the mechanism the app uses rather than staged: the reading is given the width
-/// it was measured at and the pane clips it, which is exactly what `FeedTableView.isFrozen` leaves
-/// on screen while an edge is in the reader's hand.
+/// The clip is STAGED — the reading is given a width and a narrower box clips it, and no drag and
+/// no `FeedTableView.isFrozen` are involved. What that buys is a still: the app's own frozen state
+/// lasts exactly as long as a hand is on an edge, which is not a thing a render can catch. It is
+/// the same picture by construction, because the freeze is a table drawn wider than the pane that
+/// shows it — but nothing here exercises the freeze, and the suite is where that claim is made
+/// (`FeedResizeFreezeTests`).
 struct FrozenResizeSpecimen: View {
     /// The width the reading was measured across — the pane the reader started the drag from,
     /// wide enough that the deck's reading column is at its full measure in it.

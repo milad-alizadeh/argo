@@ -203,7 +203,7 @@ import SwiftUI
         // then, against a width that is a fact rather than a frame of a drag.
         if wasResizing != fresh.isResizing {
             wasResizing = fresh.isResizing
-            froze()
+            noteDrag()
             if !fresh.isResizing {
                 settleAfterResize()
             }

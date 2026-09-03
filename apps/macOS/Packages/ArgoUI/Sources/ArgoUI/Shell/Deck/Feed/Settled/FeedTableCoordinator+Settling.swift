@@ -44,11 +44,11 @@ extension FeedTableCoordinator {
             // frame thrown away, so the pass waits for the quiet after the last one and the rows
             // ride the drag at the wrap they have (ADR-0030, Rule 6). Nothing is surrendered
             // there: blanking the deck on a drag frame is the flash the delay exists to stop.
-            guard geometry.settled?.stamp.isReading(of: stamp) == true else {
+            if geometry.settled?.stamp.isReading(of: stamp) != true {
                 surrenderDocument()
-                return settle(stamp, measuring: nil)
+            } else if !promptly {
+                return settleWhenQuiet()
             }
-            guard promptly else { return settleWhenQuiet() }
             settle(stamp, measuring: nil)
         case let .rows(owed):
             settle(stamp, measuring: owed)
@@ -208,11 +208,19 @@ extension FeedTableCoordinator {
         }
     }
 
-    /// The hold given up, where the pass it was covering for is still in flight. Asked of
-    /// `settlingFor` and not of the task: a pass that landed already put its own document up.
-    private func surrenderHeld() {
+    /// Whether the held document is one there is still anything to give up: a pass that has landed
+    /// already put its own document on screen.
+    ///
+    /// The DECISION the clock above reaches, split out so a case can reach it without one —
+    /// `FeedVacancy.words(overdue:)` is split the same way, for the same reason.
+    var surrendersHeld: Bool {
+        settlingFor != nil
+    }
+
+    /// The hold given up — what `holdDocument()`'s clock does when it runs out.
+    func surrenderHeld() {
         holding = nil
-        guard settlingFor != nil else { return }
+        guard surrendersHeld else { return }
         surrenderDocument()
     }
 

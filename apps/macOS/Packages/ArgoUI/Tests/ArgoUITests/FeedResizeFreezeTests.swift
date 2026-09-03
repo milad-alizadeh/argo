@@ -12,9 +12,6 @@ import Testing
 @Suite("Feed resize freeze")
 @MainActor
 struct FeedResizeFreezeTests {
-    /// The pane a deck column is about this wide, and short enough that most of a reading is off
-    /// screen — which is where the heights a re-wrap moves actually live.
-    private static let opening = CGSize(width: 460, height: 300)
     /// The widths one drag crosses, and the one it ends on. Far enough apart that every row of the
     /// fixture re-wraps at each of them.
     private static let widths: [CGFloat] = [400, 340, 300]
@@ -29,7 +26,7 @@ struct FeedResizeFreezeTests {
 
     @Test
     func `a drag through three widths measures nothing and moves no row`() async throws {
-        let deck = try await Dragged.opened(over: Self.rows)
+        let deck = try await FeedDraggedDeck.opened(over: Self.rows)
         let measured = deck.coordinator.measurements
         let stood = try deck.heights()
 
@@ -41,15 +38,15 @@ struct FeedResizeFreezeTests {
 
         #expect(deck.coordinator.measurements == measured)
         #expect(try deck.heights() == stood)
-        #expect(deck.coordinator.geometry.settled?.stamp.width == Self.opening.width)
+        #expect(deck.coordinator.geometry.settled?.stamp.width == FeedDraggedDeck.opening.width)
         // Clipped and unreflowed: the rows are still DRAWN across the width they were measured at,
         // so no visible cell re-wraps at drag rate under heights that are not allowed to follow.
-        #expect(deck.table.frame.width == Self.opening.width)
+        #expect(deck.table.frame.width == FeedDraggedDeck.opening.width)
     }
 
     @Test
     func `the drag ending measures the reading once, at the width it ended on`() async throws {
-        let deck = try await Dragged.opened(over: Self.rows)
+        let deck = try await FeedDraggedDeck.opened(over: Self.rows)
         let measured = deck.coordinator.measurements
 
         deck.began()
@@ -68,7 +65,7 @@ struct FeedResizeFreezeTests {
     /// document the reader would have had by opening the reading at that width to begin with.
     @Test
     func `the heights a drag ends on are the heights a fresh measure gives`() async throws {
-        let deck = try await Dragged.opened(over: Self.rows)
+        let deck = try await FeedDraggedDeck.opened(over: Self.rows)
 
         deck.began()
         for width in Self.widths {
@@ -78,23 +75,31 @@ struct FeedResizeFreezeTests {
 
         let afresh = await FeedTableFixture.laidOut(
             Self.rows,
-            in: CGSize(width: Self.landed, height: Self.opening.height),
+            in: CGSize(width: Self.landed, height: FeedDraggedDeck.opening.height),
             through: FeedTableHandle(),
         )
         #expect(try deck.heights() == afresh.geometry.settled?.everyHeight)
     }
 
-    /// A reading the reader has left is not re-wrapped by a drag on the one they are looking at:
-    /// heights are held per reading (`FeedGeometries`), and only the reading on screen has a table
-    /// whose width moved.
+    /// One reading re-wraps and the other does not: heights are held per reading
+    /// (`FeedGeometries`), so a drag moves the width of the reading on screen and of nothing else.
+    ///
+    /// The CONTRAST is the claim, and it is why both halves are asserted in one case. A drag that
+    /// dropped or re-measured every store it could reach would fail on the reading nobody was
+    /// looking at; a freeze that stuck on would fail on the one they were.
+    ///
+    /// A floor rather than the whole of what #1116 asks for. "Hidden kept decks are not remeasured"
+    /// is a claim about decks, and a deck a reader has left does not survive at all until #1113 —
+    /// so until it does, a reading's heights are all there is to be spared.
     @Test
-    func `a reading that is not on screen is not measured by the drag`() async throws {
+    func `the drag re-wraps the reading on screen and no other`() async throws {
         let deck = await FeedSwitchDeck()
         await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
         await deck.show(FeedSwitchFixture.bravoRows, of: FeedSwitchFixture.bravo)
         let alpha = deck.geometries.geometry(for: FeedSwitchFixture.alpha)
+        let bravo = deck.geometries.geometry(for: FeedSwitchFixture.bravo)
         let stood = try #require(alpha.settled)
-        let dragged = try Dragged(deck.coordinator)
+        let dragged = try FeedDraggedDeck(deck.coordinator)
 
         dragged.began()
         dragged.widen(to: Self.widths[0])
@@ -102,17 +107,18 @@ struct FeedResizeFreezeTests {
 
         #expect(alpha.settled?.everyHeight == stood.everyHeight)
         #expect(alpha.settled?.stamp.width == stood.stamp.width)
+        #expect(bravo.settled?.stamp.width == Self.widths[0])
     }
 
-    /// The other half of the same claim: the pass the hidden reading was spared is the pass its
-    /// next SHOW runs.
+    /// The other half: the reading that was spared the drag's pass pays for it on its next SHOW,
+    /// at the width the reader actually left the window at.
     @Test
     func `the reading measures at the fresh width on its next show`() async throws {
         let deck = await FeedSwitchDeck()
         await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
         await deck.show(FeedSwitchFixture.bravoRows, of: FeedSwitchFixture.bravo)
         let alpha = deck.geometries.geometry(for: FeedSwitchFixture.alpha)
-        let dragged = try Dragged(deck.coordinator)
+        let dragged = try FeedDraggedDeck(deck.coordinator)
 
         dragged.began()
         dragged.widen(to: Self.widths[0])
@@ -122,51 +128,74 @@ struct FeedResizeFreezeTests {
         #expect(alpha.settled?.stamp.width == Self.widths[0])
     }
 
+    /// A drag that ends on a reading Argo cannot measure inside the motion ceiling gives its stale
+    /// document up, and the deck stands in `FeedVacancy.unread` — the same word and indicator a
+    /// first open shows (ADR-0030, Rule 6).
+    ///
+    /// Driven at the decision rather than through the clock that reaches it, so the case is not a
+    /// half-second sleep whose answer depends on the machine. `FeedVacancy.words(overdue:)` is
+    /// reached the same way, for the same reason.
+    @Test
+    func `a re-wrap that outlasts the delay gives up the document it was holding`() async throws {
+        let deck = try await FeedDraggedDeck.opened(over: Self.rows)
+        deck.began()
+        deck.widen(to: Self.landed)
+        deck.table.liveResizeEnded?()
+
+        // The pass is in flight and the rows the reader had are still on screen: a drag end that
+        // blanked the deck outright would flash on every reading Argo measures inside a frame.
+        #expect(deck.coordinator.surrendersHeld)
+        #expect(deck.coordinator.geometry.isSettled)
+        deck.coordinator.surrenderHeld()
+
+        #expect(!deck.coordinator.geometry.isSettled)
+        await FeedTableFixture.settled(deck.coordinator)
+        #expect(deck.coordinator.geometry.settled?.stamp.width == Self.landed)
+    }
+
+    /// The other side of that decision: a pass that has already landed put its own document up, so
+    /// a clock running out behind it has nothing to give up.
+    @Test
+    func `a landed pass leaves nothing for the hold to give up`() async throws {
+        let deck = try await FeedDraggedDeck.opened(over: Self.rows)
+        deck.began()
+        deck.widen(to: Self.landed)
+        await deck.ended()
+
+        #expect(!deck.coordinator.surrendersHeld)
+        deck.coordinator.surrenderHeld()
+
+        #expect(deck.coordinator.geometry.settled?.stamp.width == Self.landed)
+    }
+
+    /// The drag that can never end: a table taken out of its window mid-drag hears no
+    /// `viewDidEndLiveResize` from AppKit, and a freeze left latched there is a reading nothing
+    /// would measure again for the life of the window.
+    @Test
+    func `a table taken out of its window mid-drag is not left frozen`() async throws {
+        let deck = try await FeedDraggedDeck.opened(over: Self.rows)
+        // In a real window, because that is the whole subject: the callback under test fires on a
+        // view whose window CHANGES, and a table that never had one has nothing to be taken out of.
+        let window = NSWindow(
+            contentRect: deck.scroller.frame,
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false,
+        )
+        window.contentView = deck.scroller
+        deck.began()
+        deck.widen(to: Self.landed)
+        #expect(deck.table.isFrozen)
+
+        window.contentView = NSView(frame: deck.scroller.frame)
+
+        #expect(!deck.coordinator.isDragging)
+        #expect(!deck.table.isFrozen)
+    }
+
     /// Longer than the quiet a width burst is normally answered after, so a case that measured
     /// nothing measured nothing because the table was frozen rather than because it did not wait.
     private static func quietElapsed() async throws {
         try await Task.sleep(for: .milliseconds(FeedTableCoordinator.quietMilliseconds + 150))
-    }
-
-    /// A real table with a real edge in a hand — the two reports a window drag is, driven at the
-    /// seam the table hears them at (`FeedTableView.liveResizeBegan`).
-    @MainActor private struct Dragged {
-        let coordinator: FeedTableCoordinator
-        let scroller: NSScrollView
-        let table: FeedTableView
-
-        init(_ coordinator: FeedTableCoordinator) throws {
-            self.coordinator = coordinator
-            self.scroller = try #require(coordinator.scroller)
-            self.table = try #require(coordinator.table)
-        }
-
-        static func opened(over rows: [FeedRow]) async throws -> Dragged {
-            let coordinator = await FeedTableFixture.laidOut(
-                rows, in: FeedResizeFreezeTests.opening, through: FeedTableHandle(),
-            )
-            return try Dragged(coordinator)
-        }
-
-        func began() {
-            table.liveResizeBegan?()
-        }
-
-        /// The edge let go of, and the one pass it owes run to completion.
-        func ended() async {
-            table.liveResizeEnded?()
-            await FeedTableFixture.settled(coordinator)
-        }
-
-        /// One frame of the drag: the pane at a fresh width, reported the way AppKit reports it.
-        func widen(to width: CGFloat) {
-            scroller.frame = NSRect(x: 0, y: 0, width: width, height: scroller.frame.height)
-            scroller.layoutSubtreeIfNeeded()
-            FeedTableFixture.postFrameChange(on: scroller.contentView)
-        }
-
-        func heights() throws -> [CGFloat] {
-            try #require(coordinator.geometry.settled).everyHeight
-        }
     }
 }
