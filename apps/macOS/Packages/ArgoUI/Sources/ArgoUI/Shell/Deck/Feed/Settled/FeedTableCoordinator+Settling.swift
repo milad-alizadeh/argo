@@ -1,4 +1,5 @@
 import AppKit
+import ArgoDesign
 
 // When a measure runs, and what the table does when one lands. The measuring itself is
 // `FeedMeasurePass`', off the main actor; what is here is the main actor's half — the stamp, the
@@ -7,7 +8,11 @@ import AppKit
 extension FeedTableCoordinator {
     /// The reading measured, if anything is owed. Asked from the two places a stamp can change:
     /// a fresh model arriving, and the pane resolving to another width.
-    func settleIfOwed() {
+    ///
+    /// `promptly` says the width is a fact rather than a frame of a drag — the seam or the window
+    /// has just been let go of, or a burst's quiet has run out. A re-wrap is then measured now
+    /// instead of arming the wait that a live width is ridden out on.
+    func settleIfOwed(promptly: Bool = false) {
         // Re-entrant by construction: landing a document reloads the table, which lays it out,
         // which moves the table's frame, which is where this is asked from (`reshaped()`). One
         // decision at a time — the pass a nested ask would owe is the same one the outer ask is
@@ -15,7 +20,10 @@ extension FeedTableCoordinator {
         guard !isDecidingSettle else { return }
         isDecidingSettle = true
         defer { isDecidingSettle = false }
-        guard let table, let model, table.bounds.width > 0, !model.isResizing else { return }
+        // Frozen for the length of a drag (ADR-0030, Rule 6): the rows keep the heights they were
+        // measured at and the content is clipped, because a document measured against a width the
+        // reader is still moving is one the next frame throws away.
+        guard let table, let model, table.bounds.width > 0, !isDragging else { return }
         // An empty reading is not a reading that shrank to nothing: it is a deck standing in for
         // one — a Session whose reading has not been taken yet (`DrawnSession`), or a room whose
         // deck is off screen — and the document held is still true of the rows on their way back.
@@ -36,14 +44,30 @@ extension FeedTableCoordinator {
             // frame thrown away, so the pass waits for the quiet after the last one and the rows
             // ride the drag at the wrap they have (ADR-0030, Rule 6). Nothing is surrendered
             // there: blanking the deck on a drag frame is the flash the delay exists to stop.
-            guard geometry.settled?.stamp.isReading(of: stamp) != true else {
+            if geometry.settled?.stamp.isReading(of: stamp) != true {
+                surrenderDocument()
+            } else if !promptly {
                 return settleWhenQuiet()
             }
-            surrenderDocument()
             settle(stamp, measuring: nil)
         case let .rows(owed):
             settle(stamp, measuring: owed)
         }
+    }
+
+    /// The settled document surrendered, because it is a document of a reading that is no longer
+    /// being shown. Its absence is what puts the deck in its provisional state.
+    func surrenderDocument() {
+        // Nothing to surrender is nothing to do, and saying so is not tidiness: a reload moves the
+        // table's frame, which is where a settle is decided from (`reshaped()`) — so a surrender
+        // that reloaded an already-empty table would reload it again on the frame change it caused,
+        // for as long as the pass it is waiting on takes to land.
+        guard geometry.isSettled || !shown.isEmpty else { return }
+        geometry.surrender()
+        shown = []
+        handle?.settled(false)
+        handle?.drawing(false)
+        table?.reloadData()
     }
 
     /// The table emptied without the document being — see `settleIfOwed`.
@@ -88,6 +112,7 @@ extension FeedTableCoordinator {
     func settleWhenQuiet() {
         settling?.cancel()
         settlingFor = nil
+        releaseHold()
         quieting?.cancel()
         quieting = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(Self.quietMilliseconds))
@@ -98,17 +123,15 @@ extension FeedTableCoordinator {
 
     /// The pass a burst deferred, at the width the burst ended on.
     ///
-    /// It measures rather than asking again: `settleIfOwed` would read the same re-wrap it read
-    /// when it armed this wait and arm another, which is a wait that never ends.
+    /// `promptly`, because asking again the ordinary way would read the same re-wrap this wait was
+    /// armed for and arm another — a wait that never ends.
     private func settleAfterQuiet() {
         finishedQuiet()
         settleElapsed()
-        guard let table, let model, table.bounds.width > 0 else { return }
-        let stamp = FeedMeasureStamp(of: model, atWidth: table.bounds.width)
-        guard case .whole = FeedMeasureDelta.between(geometry.settled, and: stamp) else {
-            return settleIfOwed()
-        }
-        settle(stamp, measuring: nil)
+        // A quiet that ran out with an edge still in the reader's hand — a drag that paused rather
+        // than finished — is held by `settleIfOwed`'s own freeze, and the pass it owes runs when
+        // the hand lets go (`settleAfterResize`).
+        settleIfOwed(promptly: true)
     }
 
     /// How long after a width frame the pass runs, where nothing else has arrived meanwhile. The
@@ -123,6 +146,12 @@ extension FeedTableCoordinator {
         finishedQuiet()
         settling?.cancel()
         settlingFor = stamp
+        // A re-wrap over a document that stands: the rows on screen are drawn at the wrap the
+        // reader has just left, and they are kept for as long as that reads as a swap rather than
+        // as a hang.
+        if owed == nil, geometry.isSettled {
+            holdDocument()
+        }
         let measuring = owed?.count ?? stamp.rows.count
         let standing = geometry.settled
         settling = Task { [weak self] in
@@ -153,6 +182,7 @@ extension FeedTableCoordinator {
     private func landed(_ document: FeedSettledDocument?, for stamp: FeedMeasureStamp) {
         guard let document, let table, settlingFor == stamp else { return }
         settlingFor = nil
+        releaseHold()
         // Read BEFORE the heights move and landed after them — that pair IS the holding, and it is
         // what keeps a late Result from scrolling the reader away from what they were reading.
         let held = handle?.resolve(.rowsMeasured(anchor: anchor()))
@@ -171,6 +201,47 @@ extension FeedTableCoordinator {
         land(held?.landing ?? .stay, over: nil)
     }
 
+    /// The document of the width the reader has LEFT, held while the pass for the width they
+    /// landed on runs — and given up once that wait outlasts the motion ceiling.
+    ///
+    /// Neither half is optional. A drag that ends on a reading Argo measures inside a frame must
+    /// not blank the feed for that frame, which is why the stale document is not surrendered
+    /// outright; a drag that ends on the largest Session leaves the reader in front of rows at a
+    /// wrap that is no longer true for up to three seconds, which is why it is not held for ever.
+    /// `ArgoMotion.unreadDelay` is the line between the two, and past it the deck says the same
+    /// word a first open says and the overview lane goes absent with it (ADR-0030, Rule 6).
+    private func holdDocument() {
+        holding?.cancel()
+        holding = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(ArgoMotion.unreadDelay))
+            guard !Task.isCancelled else { return }
+            self?.surrenderHeld()
+        }
+    }
+
+    /// Whether the held document is one there is still anything to give up: a pass that has landed
+    /// already put its own document on screen.
+    ///
+    /// The DECISION the clock above reaches, split out so a case can reach it without one —
+    /// `FeedVacancy.words(overdue:)` is split the same way, for the same reason.
+    var surrendersHeld: Bool {
+        settlingFor != nil
+    }
+
+    /// The hold given up — what `holdDocument()`'s clock does when it runs out.
+    func surrenderHeld() {
+        holding = nil
+        guard surrendersHeld else { return }
+        surrenderDocument()
+    }
+
+    /// The hold retired, because the pass it covers for has landed or been called off. Cleared
+    /// HERE and not inside the task, because a `Task` property is assigned once and never cleared.
+    private func releaseHold() {
+        holding?.cancel()
+        holding = nil
+    }
+
     /// The rows the table draws now, and the cheapest true way to get from the ones it drew.
     private func show(
         _ rows: [FeedRow],
@@ -181,11 +252,10 @@ extension FeedTableCoordinator {
         shown = rows
         handle?.drawing(!rows.isEmpty)
         guard !freshly, !stale.isEmpty else {
-            // The reading OPENS here. `openAfresh` reopened the policy on the rows the table had,
-            // which for a reading nobody had measured yet was none of them — so where a landing is
-            // the first rows this table has drawn, the policy is given them now. Without it the
-            // reading opens at the top of a feed that opens at its tail (ADR-0029), and the follow
-            // latch names a row in a reading of no rows.
+            // The reading OPENS here: a landing whose table had no rows before it is the first
+            // pass a deck ever draws, so the policy is given the rows now rather than assumed to
+            // have them already. Without it the reading opens at the top of a feed that opens at
+            // its tail (ADR-0029), and the follow latch names a row in a reading of no rows.
             handle?.reopen(on: rows, held: model?.held)
             table.reloadData()
             // Noted as well as reloaded: `reloadData` marks the rows and defers, and until the

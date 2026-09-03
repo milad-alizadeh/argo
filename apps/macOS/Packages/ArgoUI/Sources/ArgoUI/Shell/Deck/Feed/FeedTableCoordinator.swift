@@ -24,6 +24,9 @@ import SwiftUI
     /// runs.
     private var wasResizing = false
 
+    /// Whether the window's own edge is in the reader's hand — see `FeedTableCoordinator+Drag`.
+    var isWindowDragging = false
+
     weak var table: FeedTableView?
     weak var scroller: NSScrollView?
 
@@ -48,6 +51,9 @@ import SwiftUI
     /// The quiet a width burst is waited out in, before the pass that answers its last frame —
     /// see `settleWhenQuiet()`. One wait, and both places a burst is seen arm this one.
     var quieting: Task<Void, Never>?
+
+    /// The stale document held while the pass for a fresh width runs — see `holdDocument()`.
+    var holding: Task<Void, Never>?
 
     /// Whether a settle decision is on the stack — see `settleIfOwed()`.
     var isDecidingSettle = false
@@ -195,10 +201,13 @@ import SwiftUI
         //
         // The seam letting go is the moment the width is final: the pass a live drag deferred runs
         // then, against a width that is a fact rather than a frame of a drag.
-        if wasResizing, !fresh.isResizing {
-            settleAfterResize()
+        if wasResizing != fresh.isResizing {
+            wasResizing = fresh.isResizing
+            noteDrag()
+            if !fresh.isResizing {
+                settleAfterResize()
+            }
         }
-        wasResizing = fresh.isResizing
         // The gutter under the last row is part of the content — grown under a composer so the
         // newest line genuinely ends clear of the vessel, and every follow lands below it.
         scroller?.contentInsets.bottom = fresh.isUnderComposer
@@ -227,21 +236,6 @@ import SwiftUI
         guard var drawn = model else { return nil }
         drawn.rows = shown
         return drawn
-    }
-
-    /// The settled document surrendered, because it is a document of a reading that is no longer
-    /// being shown. Its absence is what puts the deck in its provisional state.
-    func surrenderDocument() {
-        // Nothing to surrender is nothing to do, and saying so is not tidiness: a reload moves the
-        // table's frame, which is where a settle is decided from (`reshaped()`) — so a surrender
-        // that reloaded an already-empty table would reload it again on the frame change it caused,
-        // for as long as the pass it is waiting on takes to land.
-        guard geometry.isSettled || !shown.isEmpty else { return }
-        geometry.surrender()
-        shown = []
-        handle?.settled(false)
-        handle?.drawing(false)
-        table?.reloadData()
     }
 
     /// Where the reading's measured heights are kept, when the shell keeps them somewhere that
