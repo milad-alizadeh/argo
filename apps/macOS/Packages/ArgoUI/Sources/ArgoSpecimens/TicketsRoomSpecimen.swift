@@ -77,6 +77,7 @@ struct TicketsPanesSpecimen: View {
             room: TicketsRoomProjection.room(from: reading, in: view, matching: query),
             cockpitRoom: $cockpitRoom,
             ticket: $ticket,
+            session: .constant(nil),
             view: $view,
             backlogWidth: $backlogWidth,
             shut: $shut,

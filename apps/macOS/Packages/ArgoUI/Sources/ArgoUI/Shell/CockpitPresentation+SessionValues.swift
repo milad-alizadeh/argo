@@ -139,10 +139,19 @@ public extension CockpitPresentation.Session {
     struct Annotations: Equatable, Sendable {
         public let isArchived: Bool
         public let explicitName: String?
+        /// The Ticket a reader attached by hand, `nil` where they never did (#1092). Beside the
+        /// link itself rather than inside it: the link says which Ticket this Session is ON, and
+        /// this says whether the reader may take that decision back.
+        public let pinnedTicket: Int?
 
-        public init(isArchived: Bool = false, explicitName: String? = nil) {
+        public init(
+            isArchived: Bool = false,
+            explicitName: String? = nil,
+            pinnedTicket: Int? = nil,
+        ) {
             self.isArchived = isArchived
             self.explicitName = explicitName
+            self.pinnedTicket = pinnedTicket
         }
     }
 

@@ -37,6 +37,7 @@ extension CockpitView {
             ),
             cockpitRoom: $navigation.room,
             ticket: $navigation.ticket,
+            session: $navigation.session,
             view: $navigation.ticketsView,
             backlogWidth: $navigation.backlogWidth,
             shut: $navigation.shutParents,

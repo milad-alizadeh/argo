@@ -29,6 +29,16 @@ extension CockpitView {
         )
     }
 
+    /// What the tab line's Ticket picker offers over the selected Session (#1092) — the backlog
+    /// the room already read, and the write that lands a choice.
+    var linking: SessionTicketLinking {
+        SessionTicketLinking.over(
+            tickets: tickets,
+            session: presentation.session(navigation.session),
+            link: actions.sessions.setTicketLink,
+        )
+    }
+
     /// Takes the room and the reading already assembled rather than reading `ticketsRoom` or
     /// `reading` again — see the notes there. `isDrawn` is why the reading may be `none` beside a
     /// Session that is very much selected — see `DrawnSession`.
@@ -62,6 +72,13 @@ extension CockpitView {
         // What the chain link at the foot of a handed-off reading does. Injected here because
         // this is the one view that holds the navigation.
         .environment(\.argoOpenSession) { fresh in navigation.session = fresh }
+        // What the tab line's Ticket link does (#1092) — the mirror of the Session link above,
+        // reaching the OTHER room rather than another row of this one.
+        .environment(\.argoOpenTicket) { navigation.openTicket($0) }
+        // …and what the same link's picker does (#1092). Injected from here for the reason above,
+        // plus one of its own: the offering is over the SELECTED Session, and this is where the
+        // selection and the backlog behind it are both in hand.
+        .environment(\.argoTicketLinking, linking)
         // What a waiting ask row's options and its `Answer` do (#712). Injected here for the
         // reason above: the rows are hosted per table cell, and this is where the Session the
         // answer addresses is known.

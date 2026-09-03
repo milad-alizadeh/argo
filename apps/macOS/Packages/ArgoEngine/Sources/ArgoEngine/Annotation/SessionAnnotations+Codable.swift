@@ -29,16 +29,19 @@ extension SessionAnnotations.Annotation: Codable {
         case name
         case ticketTitle
         case ticketAbsent
+        case ticketNumber
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let archived = try container.decodeIfPresent(Bool.self, forKey: .archived)
         let name = try container.decodeIfPresent(String.self, forKey: .name)
+        let pinned = try container.decodeIfPresent(Int.self, forKey: .ticketNumber)
         try self.init(
             isArchived: archived ?? false,
             explicitName: name,
             ticket: Self.ticket(from: container),
+            pinnedTicket: pinned,
         )
     }
 
@@ -64,6 +67,7 @@ extension SessionAnnotations.Annotation: Codable {
         try container.encode(isArchived, forKey: .archived)
         try container.encodeIfPresent(explicitName, forKey: .name)
         try container.encodeIfPresent(ticket?.title, forKey: .ticketTitle)
+        try container.encodeIfPresent(pinnedTicket, forKey: .ticketNumber)
         if ticket == .absent {
             try container.encode(true, forKey: .ticketAbsent)
         }

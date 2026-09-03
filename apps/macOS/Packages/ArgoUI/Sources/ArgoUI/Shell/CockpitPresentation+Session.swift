@@ -123,6 +123,11 @@ public extension CockpitPresentation {
         /// would have nothing to go back to (#502, story 20). Argo's own fact, and absent for a
         /// Session nobody renamed. Which of the two the surfaces DRAW is `SessionTitle`'s.
         public let explicitName: String?
+        /// The Ticket the user attached this Session to by hand (#1092), and `nil` for one they
+        /// never did — which is every Session whose link Argo derived off a branch. Argo's own
+        /// fact, on `explicitName`'s ground, and the only thing that says whether the reader has a
+        /// decision here to take back.
+        public let pinnedTicket: Int?
         /// The Permission the Session's agent is blocked on, verbatim from the engine — DIRECT,
         /// because Argo holds the blocked hook itself. Absent for every Session that is not
         /// waiting on one, which is what returns the composer to its slot.
@@ -201,6 +206,7 @@ public extension CockpitPresentation {
             self.modeDidNotTake = autonomy.modeDidNotTake
             self.isArchived = annotations.isArchived
             self.explicitName = annotations.explicitName
+            self.pinnedTicket = annotations.pinnedTicket
             self.transcript = transcript
         }
     }

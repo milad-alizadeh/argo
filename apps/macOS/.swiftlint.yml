@@ -132,8 +132,8 @@ function_parameter_count:
   # INIT: FeedRowKind.swift 12 — Kind, what a row IS, one flag per question the feed asks of it
   # INIT: FrameProbeSummary.swift 12 — one measurement window reduced to the figures a frame budget
   # INIT: LinearIssue.swift 11 — one issue as Linear's GraphQL API serves it, edges included
-  # INIT: TicketsRoom.swift 11 — the room's view, whose slots are the Bindings the cockpit owns
-  # INIT: TicketsRoomProjection+Detail.swift 11 — Detail, everything the trailing pane draws about
+  # INIT: TicketsRoom.swift 12 — the room's view, widened for `session` (#1092), the whole
+  # INIT: TicketsRoomProjection+Detail.swift 12 — Detail, widened for `claimants` (#1092), off
   # INIT: ConnectPanelProjection.swift 10 — Panel, the connect panel's whole reading, one slot per
   # INIT: DeckIntents.swift 10 — one closure per thing the deck's vessel does; every intent is
   # INIT: FeedCall.swift 10 — one tool call as a sentence, a slot per part of it

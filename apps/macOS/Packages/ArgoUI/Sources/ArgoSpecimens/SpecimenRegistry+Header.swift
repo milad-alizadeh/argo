@@ -42,11 +42,28 @@ extension SpecimenRegistry {
                 header: SessionHeaderFixture.handedOff,
             )
         },
-        // The ordinary managed Session, which the two families above vary from.
+        // The ordinary managed Session, which the two families above vary from. Its ticket is
+        // `.linked` (#1092), so this is also the tab line's pressable Issue link at rest.
         SpecimenEntry("tabLineInstruments") { SessionHeaderSpecimen(access: .managed) },
         // Only `permission`, `asking` and `stopped` spend a state word, and no family varies it.
         SpecimenEntry("tabLineStateWord") {
             SessionHeaderSpecimen(header: SessionHeaderFixture.needsInput)
+        },
+        // The tab line's Issue link over the other two readings (#1092): `unlinked` states the
+        // word with no route, and `unread` draws nothing at all — `tabLineInstruments` above is
+        // the third, `.linked`.
+        SpecimenEntry("tabLineIssueUnlinked") {
+            SessionHeaderSpecimen(header: SessionHeaderFixture.unlinked)
+        },
+        SpecimenEntry("tabLineIssueUnread") {
+            SessionHeaderSpecimen(header: SessionHeaderFixture.unread)
+        },
+        // The same `unlinked` reading with a backlog behind it (#1092): the dead-end word becomes
+        // the verb that attaches this Session to a Ticket, which is the only link most Sessions
+        // will ever have — nothing about a `ticket-<words>` worktree names a number.
+        SpecimenEntry("tabLineIssueOffered") {
+            SessionHeaderSpecimen(header: SessionHeaderFixture.unlinked)
+                .environment(\.argoTicketLinking, SessionHeaderFixture.offering)
         },
     ]
 

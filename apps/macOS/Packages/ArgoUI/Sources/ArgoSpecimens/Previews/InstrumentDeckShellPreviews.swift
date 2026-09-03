@@ -15,6 +15,7 @@ import SwiftUI
 
 #Preview("Instrument Deck — the Tickets room") {
     @Previewable @State var ticket: Int? = 272
+    @Previewable @State var session: CockpitPresentation.Session.ID?
     @Previewable @State var cockpitRoom = CockpitRoom.tickets
     @Previewable @State var view = TicketsView.allOpen
     @Previewable @State var width = ArgoBacklogList.width
@@ -23,8 +24,8 @@ import SwiftUI
     InstrumentDeckShell(
         room: .tickets,
         tickets: TicketsRoom(
-            room: TicketsFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket, view: $view,
-            backlogWidth: $width, shut: $shut,
+            room: TicketsFixture.room, cockpitRoom: $cockpitRoom, ticket: $ticket,
+            session: $session, view: $view, backlogWidth: $width, shut: $shut,
         ),
     )
     .frame(width: ArgoBacklogList.width + ArgoTicketDetail.idealWidth, height: 620)

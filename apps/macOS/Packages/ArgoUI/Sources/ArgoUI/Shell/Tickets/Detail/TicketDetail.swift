@@ -1,4 +1,5 @@
 import ArgoDesign
+import ArgoEngine
 import SwiftUI
 
 /// The deck's trailing pane: one scrolling column, no inner split. There is no 240pt facts sidebar
@@ -16,6 +17,9 @@ package struct TicketDetail: View {
     /// What opening a child or a blocker does — the pane never reads back what it opened, so this
     /// is a closure and not a binding that could disagree with `ticket`.
     let open: (Int) -> Void
+    /// What pressing the head's claimant line does — a different room, so this is its own closure
+    /// rather than `open` above, which stays inside this one (#1092).
+    var openSession: (CockpitPresentation.Session.ID) -> Void = { _ in }
 
     package var body: some View {
         // Only the ticket SCROLLS. A one-line sentence in a scroll view sits at the top of it,
@@ -42,7 +46,7 @@ package struct TicketDetail: View {
         // this spends the same step again under it.
         VStack(alignment: .leading, spacing: ArgoTicketDetail.stripStep) {
             VStack(alignment: .leading, spacing: ArgoTicketDetail.stripLift) {
-                TicketHead(ticket: ticket)
+                TicketHead(ticket: ticket, openSession: openSession)
                 TicketFactStrip(ticket: ticket)
             }
             TicketBody(ticket: ticket, open: open)
@@ -58,10 +62,12 @@ package struct TicketDetail: View {
         ticket: TicketsRoomProjection.Detail?,
         unreadNumber: Int? = nil,
         open: @escaping (Int) -> Void,
+        openSession: @escaping (CockpitPresentation.Session.ID) -> Void = { _ in },
     ) {
         self.ticket = ticket
         self.unreadNumber = unreadNumber
         self.open = open
+        self.openSession = openSession
     }
 }
 
