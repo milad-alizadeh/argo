@@ -43,20 +43,30 @@
   }
   #q:focus { border-color: #38505e; }
   #q::placeholder { color: var(--mute); }
-  #filters { display: flex; flex-wrap: wrap; gap: 4px; padding: 9px 14px; border-bottom: 1px solid var(--rule); }
-  .chip {
-    font: 10px/1 var(--mono); letter-spacing: .04em; padding: 5px 7px; border-radius: 4px;
-    border: 1px solid var(--rule2); color: var(--mute); text-transform: lowercase;
+
+  /* Four stacked lists in one column is what made this rail unreadable: every axis competed
+     for the same height and the type list — the one a reader is actually in — lost. So the rail
+     shows ONE list at a time, chosen by a segmented control, at the full height of the column.
+     Kind is the exception: five cheap toggles that belong beside the search, not in a list. */
+  #kinds { display: flex; flex-wrap: wrap; gap: 4px 5px; margin-top: 10px; }
+  .ktog {
+    display: flex; align-items: center; gap: 5px; padding: 3px 8px;
+    border: 1px solid transparent; border-radius: 20px;
+    font: 11px var(--sans); color: var(--mute); opacity: .5;
   }
-  .chip[aria-pressed="true"] { color: #04090c; font-weight: 600; }
-  .chip.k-struct[aria-pressed="true"]   { background: var(--struct);   border-color: var(--struct); }
-  .chip.k-class[aria-pressed="true"]    { background: var(--class);    border-color: var(--class); }
-  .chip.k-enum[aria-pressed="true"]     { background: var(--enum);     border-color: var(--enum); }
-  .chip.k-protocol[aria-pressed="true"] { background: var(--protocol); border-color: var(--protocol); }
-  .chip.k-actor[aria-pressed="true"]    { background: var(--actor);    border-color: var(--actor); }
-  .chip.plain[aria-pressed="true"]      { background: #22323c; color: var(--ink); border-color: #3a4d59; }
+  .ktog:hover { background: #16202a; }
+  .ktog[aria-pressed="true"] { opacity: 1; color: var(--ink); border-color: var(--rule2); background: #131c24; }
+  .ktog i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .ktog i.dim { background: var(--mid); }
+  #tabs { display: flex; border-bottom: 1px solid var(--rule); flex: none; }
+  #tabs button {
+    flex: 1; padding: 9px 0 7px; border-bottom: 2px solid transparent;
+    font: 600 10px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--mute);
+  }
+  #tabs button:hover { color: var(--mid); }
+  #tabs button[aria-pressed="true"] { color: var(--ink); border-bottom-color: #7fe8ff; background: #121a21; }
   #count { padding: 8px 14px; font: 10px var(--mono); color: var(--mute); letter-spacing: .05em; }
-  #list { flex: 1; overflow: auto; padding-bottom: 60px; }
+  #list { flex: 1 1 auto; min-height: 200px; overflow: auto; padding-bottom: 60px; }
   .grp {
     position: sticky; top: 0; z-index: 1; background: var(--sheet);
     padding: 9px 14px 5px; font: 600 10px var(--sans); letter-spacing: .14em;
@@ -83,6 +93,36 @@
     display: grid; place-content: center; text-align: center; color: var(--mute);
     font: 12px var(--mono); letter-spacing: .06em; pointer-events: none;
   }
+  .canvas-wrap { position: relative; }
+  .canvas-wrap svg { cursor: grab; }
+  .canvas-wrap svg:active { cursor: grabbing; }
+  .zoom-hud {
+    position: absolute; top: 14px; right: 14px; z-index: 10;
+    display: flex; flex-direction: column; gap: 1px;
+    background: rgba(14, 20, 26, .93); border: 1px solid var(--rule2); border-radius: 6px;
+    overflow: hidden;
+  }
+  .zoom-hud button {
+    width: 30px; height: 28px; display: grid; place-content: center;
+    font: 15px/1 var(--mono); color: var(--mute); border-bottom: 1px solid var(--rule2);
+  }
+  .zoom-hud button:last-child { border-bottom: 0; }
+  /* `#view > *` stretches its children to fill the stage, which is right for a canvas and wrong
+     for a button sitting on top of one. */
+  #view > .back-btn { inset: 14px auto auto 14px; }
+  .back-btn {
+    position: absolute; top: 14px; left: 14px; z-index: 10; text-align: left;
+    display: flex; align-items: center; gap: 7px; padding: 7px 12px 8px;
+    background: rgba(14, 20, 26, .93); border: 1px solid var(--rule2); border-radius: 6px;
+    font: 600 10px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--mid);
+  }
+  .back-btn:hover { color: var(--ink); border-color: #3a4d59; }
+  .back-btn span { font: 13px/1 var(--mono); }
+  .back-btn b {
+    font: 400 10px var(--mono); letter-spacing: .02em; text-transform: none;
+    color: var(--mute); padding-left: 10px; margin-left: 3px; border-left: 1px solid var(--rule2);
+  }
+  .zoom-hud button:hover { color: var(--ink); background: #16202a; }
 
   /* ---- the bottom bar -------------------------------------------------------------- */
   #bar {
@@ -109,6 +149,7 @@
   #card .kind { font: 600 10px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--mute); }
   #card h2 { margin: 4px 0 2px; font: 500 19px var(--mono); letter-spacing: -.01em; }
   #card .where { font: 10px var(--mono); color: var(--mute); word-break: break-all; line-height: 1.55; }
+  #card .doc { margin: 10px 0 0; font: 12px/1.55 var(--sans); color: var(--ink); }
   #card dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 12px 0 0; }
   #card dt { font: 10px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
   #card dd { margin: 0; font: 11px var(--mono); }
@@ -122,8 +163,6 @@
   #card .lnk:hover { text-decoration: underline; }
 
   /* ---- drafting sheet -------------------------------------------------------------- */
-  .sheet-bg { fill: var(--sheet); }
-  .grid line { stroke: #131c23; stroke-width: 1; }
   .tick { stroke: var(--rule2); stroke-width: 1; }
   .box-fill { fill: #101820; stroke: var(--rule2); }
   .box-fill.on { stroke: #4b6675; }
@@ -136,6 +175,7 @@
   .titleblock line { stroke: var(--rule2); }
   .titleblock .k { font: 9px var(--sans); letter-spacing: .12em; fill: var(--mute); }
   .titleblock .v { font: 10.5px var(--mono); fill: var(--ink); }
+
   .hit { cursor: pointer; }
 
   /* ---- orrery ---------------------------------------------------------------------- */
@@ -176,8 +216,9 @@
   <div id="head">
     <div class="brand">Atlas · <b>type graph</b></div>
     <input id="q" placeholder="search types  /" spellcheck="false" autocomplete="off">
+    <div id="kinds"></div>
   </div>
-  <div id="filters"></div>
+  <div id="tabs"></div>
   <div id="count"></div>
   <div id="list"></div>
 </aside>
@@ -195,3 +236,4 @@
 <script src="atlas-class-plate.js"></script>
 <script src="atlas-class-wheel.js"></script>
 <script src="atlas-class-ledger.js"></script>
+<script src="atlas-class-domain.js"></script>

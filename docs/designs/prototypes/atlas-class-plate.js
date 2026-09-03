@@ -5,7 +5,7 @@
    outgoing on the right, the subject in the middle drawn as a full UML box, and a title block
    in the corner saying which revision of which repository this sheet was plotted from. */
 
-const PW = 250, CW = 400, ROWH = 17, HEADH = 34, SATH = 44, CAP = 9;
+const PW = 250, CW = 400, ROWH = 22, HEADH = 42, SATH = 50, CAP = 9;
 const elk = new ELK();
 
 /* The layout is ELK's, not ours. The hand-rolled version ran every left-hand elbow down the
@@ -44,9 +44,13 @@ async function plate() {
   const secs = [props.length, funcs.length, cases.length].filter(Boolean).length;
   const cH = HEADH + 14 + lines * ROWH + secs * 10 + 20;
 
+  /* The Domain view drills into the plate rather than drawing a second, worse version of it, so
+     this renders for either view — and stamps the way back when it was reached from a domain. */
+  const drilled = state.v === 'domain' && state.focus;
   const laid = await elk.layout(sheet(ins, outs, cH));
-  if (mine !== plateRun || state.v !== 'plate') return;
+  if (mine !== plateRun || !(state.v === 'plate' || drilled)) return;
   draw(t, laid, ins, outs, allIn.length, allOut.length, props, funcs, cases);
+  if (drilled) $('view').appendChild(domainBack());
 }
 
 /* Ports, one per relation, are the whole reason for ELK here: FIXED_ORDER keeps the heaviest
@@ -95,35 +99,38 @@ function draw(t, g, ins, outs, insAll, outsAll, props, funcs, cases) {
   const svg = el('svg');
   svg.appendChild(markers());
 
-  /* The sheet has a floor size, so clicking from a 39-relation type to a lone one keeps the
-     scale: type that doubles between selections reads as a different drawing, not the next one. */
-  const padX = Math.max(190, (1180 - g.width) / 2 + 190);
-  const padY = Math.max(96, (560 - g.height) / 2 + 96);
+  const padX = 190, padY = 96;
   const x0 = -padX, x1 = g.width + padX, y0 = -padY, y1 = g.height + padY + 32;
-  svg.setAttribute('viewBox', `${x0} ${y0} ${x1 - x0} ${y1 - y0}`);
-  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-  svg.appendChild(el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, class: 'sheet-bg' }));
-  svg.appendChild(grid(x0, y0, x1, y1));
 
-  for (const n of g.children) if (n.id !== 'centre') svg.appendChild(satellite(n));
-  svg.appendChild(centre(t, C, props, funcs, cases));
+  /* Everything the sheet draws goes inside one group, so a pan/zoom transform on THIS node
+     moves the drawing, the grid and the title block together as one sheet of paper. */
+  const zoomG = el('g', { id: 'zoomG' });
+  zoomG.appendChild(gridBG());
+  zoomG.appendChild(corners(x0, y0, x1, y1));
+
+  for (const n of g.children) if (n.id !== 'centre') zoomG.appendChild(satellite(n));
+  zoomG.appendChild(centre(t, C, props, funcs, cases));
 
   /* The runs go on TOP of the boxes. A tail marker is drawn backwards from the start point, so
      under the boxes the filled diamond that says which end is the whole was never once visible;
      ELK's routes stay out of every box, so there is nothing for them to hide. */
   const runs = el('g', { class: 'runs' });
   for (const e of g.edges) runs.appendChild(wire(e));
-  svg.appendChild(runs);
+  zoomG.appendChild(runs);
 
   /* An empty column has no box to sit over, so its header falls back to the centre box's edge —
      both at x=0 they printed on top of each other and read as one word. */
   const colX = (list, side, away) => list.length ? nodes.get(side + list[0].id).x : away;
-  svg.appendChild(el('text', { class: 'colhead', x: colX(ins, 'in:', x0 + 60), y: y0 + 62 }, `NEEDED BY — ${insAll}`));
-  svg.appendChild(el('text', { class: 'colhead', x: colX(outs, 'out:', C.x + C.width + 40), y: y0 + 62 }, `NEEDS — ${outsAll}`));
-  more(svg, nodes, ins, 'in:', insAll);
-  more(svg, nodes, outs, 'out:', outsAll);
-  svg.appendChild(titleBlock(t, x1, y1, insAll + outsAll));
-  $('view').appendChild(svg);
+  zoomG.appendChild(el('text', { class: 'colhead', x: colX(ins, 'in:', x0 + 60), y: y0 + 62 }, `NEEDED BY — ${insAll}`));
+  zoomG.appendChild(el('text', { class: 'colhead', x: colX(outs, 'out:', C.x + C.width + 40), y: y0 + 62 }, `NEEDS — ${outsAll}`));
+  more(zoomG, nodes, ins, 'in:', insAll);
+  more(zoomG, nodes, outs, 'out:', outsAll);
+  zoomG.appendChild(titleBlock(t, x1, y1, insAll + outsAll));
+  svg.appendChild(zoomG);
+
+  $('view').appendChild(canvasWrap(svg));
+
+  setupZoom(svg, zoomG, x0, y0, x1 - x0, y1 - y0);
 }
 
 function more(svg, nodes, list, side, all) {
@@ -151,12 +158,8 @@ function markers() {
 
 /* Corner ticks — a plotted sheet is trimmed to them, and they are the cheapest possible
    signal that what you are looking at claims to be a drawing rather than a picture. */
-function grid(x0, y0, x1, y1) {
+function corners(x0, y0, x1, y1) {
   const g = el('g');
-  const lines = el('g', { class: 'grid' });
-  for (let gx = Math.ceil(x0 / 40) * 40; gx < x1; gx += 40) lines.appendChild(el('line', { x1: gx, y1: y0, x2: gx, y2: y1 }));
-  for (let gy = Math.ceil(y0 / 40) * 40; gy < y1; gy += 40) lines.appendChild(el('line', { x1: x0, y1: gy, x2: x1, y2: gy }));
-  g.appendChild(lines);
   for (const [cx, cy, dx, dy] of [[x0 + 14, y0 + 14, 1, 1], [x1 - 14, y0 + 14, -1, 1],
     [x0 + 14, y1 - 14, 1, -1], [x1 - 14, y1 - 14, -1, -1]]) {
     g.appendChild(el('path', { class: 'tick', d: `M${cx} ${cy + 26 * dy} L${cx} ${cy} L${cx + 26 * dx} ${cy}`, fill: 'none' }));
@@ -205,8 +208,8 @@ function satellite(n) {
   const g = el('g', { class: 'hit', transform: `translate(${n.x} ${n.y})` });
   g.appendChild(el('rect', { class: 'box-fill', width: n.width, height: n.height, rx: 3 }));
   g.appendChild(el('rect', { width: 3, height: n.height, fill: KCOLOR[t.kind] }));
-  g.appendChild(el('text', { class: 'name', x: 13, y: 20 }, t.name.slice(0, 26)));
-  g.appendChild(el('text', { class: 'stereo', x: 13, y: 34 }, `«${t.kind}» ${t.module} · ${t.members}`));
+  g.appendChild(el('text', { class: 'name', x: 18, y: 24 }, t.name.slice(0, 26)));
+  g.appendChild(el('text', { class: 'stereo', x: 18, y: 39 }, `«${t.kind}» ${t.module} · ${t.members}`));
   g.onclick = () => select(id);
   return g;
 }
@@ -215,15 +218,15 @@ function centre(t, C, props, funcs, cases) {
   const g = el('g', { transform: `translate(${C.x} ${C.y})` });
   g.appendChild(el('rect', { class: 'box-fill on', width: C.width, height: C.height, rx: 3 }));
   g.appendChild(el('rect', { width: C.width, height: 3, fill: KCOLOR[t.kind] }));
-  g.appendChild(el('text', { class: 'stereo', x: 14, y: 19 }, `«${t.kind}»  ${t.access}  ${t.module}`));
-  g.appendChild(el('text', { class: 'name', x: 14, y: 36, style: 'font-size:15px' }, t.name));
+  g.appendChild(el('text', { class: 'stereo', x: 18, y: 24 }, `«${t.kind}»  ${t.access}  ${t.module}`));
+  g.appendChild(el('text', { class: 'name', x: 18, y: 41, style: 'font-size:15px' }, t.name));
   let y = HEADH + 16;
   const rule = () => { g.appendChild(el('line', { x1: 0, y1: y - 11, x2: C.width, y2: y - 11, stroke: '#22303a' })); };
-  const put = s => { g.appendChild(el('text', { class: 'member', x: 14, y }, s)); y += ROWH; };
+  const put = s => { g.appendChild(el('text', { class: 'member', x: 18, y }, s)); y += ROWH; };
   if (props.length) {
     rule();
     for (const p of props) put(`${p.mods.includes('static') ? '+ ' : '- '}${p.name}: ${p.type.slice(0, 34)}${p.arity === 'many' ? '  [*]' : p.arity === 'maybe' ? '  [0..1]' : ''}`);
-    if (t.props.length > props.length) { g.appendChild(el('text', { class: 'more', x: 14, y: y - 3 }, `…${t.props.length - props.length} more`)); y += 14; }
+    if (t.props.length > props.length) { g.appendChild(el('text', { class: 'more', x: 18, y: y - 3 }, `…${t.props.length - props.length} more`)); y += 14; }
   }
   if (cases.length) {
     rule(); y += 4;
@@ -233,7 +236,7 @@ function centre(t, C, props, funcs, cases) {
   if (funcs.length) {
     rule();
     for (const f of funcs) put(`${f.name}(${f.args ? '…' : ''})${f.ret ? ' → ' + f.ret.slice(0, 20) : ''}`);
-    if (t.funcs.length > funcs.length) g.appendChild(el('text', { class: 'more', x: 14, y: y - 3 }, `…${t.funcs.length - funcs.length} more`));
+    if (t.funcs.length > funcs.length) g.appendChild(el('text', { class: 'more', x: 18, y: y - 3 }, `…${t.funcs.length - funcs.length} more`));
   }
   return g;
 }

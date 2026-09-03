@@ -69,6 +69,17 @@ const TS = {
 const PACKS = [SWIFT, TS];
 const packFor = p => PACKS.find(L => L.ext.includes(extname(p)));
 
+/* The doc comment for a declaration, read from the ORIGINAL (unblanked) source: only a comment
+   block touching the declaration line with no blank line between counts as documenting it — a
+   file-header comment three lines up is not a claim about this type. */
+function docComment(pre) {
+  let m = pre.match(/\/\*\*?[\s\S]*?\*\/[ \t]*$/);
+  if (!m) m = pre.match(/(?:^|\n)((?:[ \t]*\/\/\/?[^\n]*\n?)+)[ \t]*$/);
+  if (!m) return '';
+  return m[0].split('\n').map(l => l.trim().replace(/^\/\*\*?|\*\/$|^\/\/\/?|^\*/g, '').trim())
+    .filter(Boolean).join(' ').slice(0, 400);
+}
+
 /* Where a declaration's body ends. Braces only: the comment and string blanking above is what
    makes that honest, and a file whose braces do not balance yields a body that runs to EOF. */
 function bodyEnd(src, open) {
@@ -88,8 +99,8 @@ const raw = [];
 
 for (const path of files) {
   const L = packFor(path);
-  let src;
-  try { src = blank(readFileSync(join(ROOT, path), 'utf8')); } catch { continue; }
+  let orig, src;
+  try { orig = readFileSync(join(ROOT, path), 'utf8'); src = blank(orig); } catch { continue; }
   L.decl.lastIndex = 0;
   let m;
   while ((m = L.decl.exec(src))) {
@@ -101,6 +112,7 @@ for (const path of files) {
       start: m.index, end, line: src.slice(0, m.index + 1).split('\n').length,
       body: src.slice(open + 1, end), module: L.module(path),
       lang: L === SWIFT ? 'swift' : 'ts',
+      doc: docComment(orig.slice(0, m.index)),
     });
   }
 }
@@ -128,7 +140,7 @@ for (const d of raw) {
     types.set(id, {
       id, name: d.name, kind: d.kind === 'extension' ? null : d.kind, module: d.module,
       lang: d.lang, path: d.path, line: d.line, access: 'internal', props: [], funcs: [],
-      cases: [], conforms: [], parent: null, files: [], exts: 0, loc: 0,
+      cases: [], conforms: [], parent: null, files: [], exts: 0, loc: 0, doc: '',
     });
   }
   const T = types.get(id);
@@ -136,6 +148,7 @@ for (const d of raw) {
   else {
     T.kind = d.kind; T.path = d.path; T.line = d.line; T.module = d.module;
     T.access = (d.mods.match(/\b(open|public|package|private|fileprivate)\b/) || [, 'internal'])[1];
+    if (d.doc) T.doc = d.doc;
   }
   if (!T.files.includes(d.path)) T.files.push(d.path);
   T.loc += d.body.split('\n').length;
