@@ -1452,8 +1452,14 @@ function goTo(b) {
   setAim(b);
   /* The root is framed the way the opening view frames it, not seated hard against the
      edge, so Back's last step and the reset button agree on where "all of it" is. */
-  if (state.plan) flyTo(aimBox() === tree() ? camFor(null, 1) : seatCam(aimBox(), SEAT));
-  else flyHere();
+  /* THE CITY DOES NOT FLY. A click there chooses a scope and nothing else — the camera is
+     the reader's, moved by the hand on the wheel and the drag, and a click that also flew it
+     took the view away from whoever was looking through it. The treemap is the opposite case
+     for the opposite reason: it has no wheel, so the flight IS the navigation. */
+  if (!state.plan) return true;
+  /* The root is framed the way the opening view frames it, not seated hard against the
+     edge, so Back's last step and the reset button agree on where "all of it" is. */
+  flyTo(aimBox() === tree() ? camFor(null, 1) : seatCam(aimBox(), SEAT));
   return true;
 }
 
@@ -3694,11 +3700,14 @@ Promise.all([
   cv.onclick = e => {
     if (moved > 4) return;              // a drag that ended on a plate is not a click
     const r = cv.getBoundingClientRect();
-    const hit = pick(e.clientX - r.left, e.clientY - r.top);
-    /* Ground with nothing on it is not a target, so a click there is a click on none of them —
-       the same gesture as Esc, and the only way to put the panel down without first finding
-       something else to point at. The SCOPE is not a selection and is left alone: a folder is
-       somewhere you are, and the breadcrumb is the way out of it. */
+    let hit = pick(e.clientX - r.left, e.clientY - r.top);
+    /* GROUND IS A CLICK ON NONE OF THEM — the same gesture as Esc, and the only way to put
+       the panel down without first finding something else to point at. Off the map is ground,
+       and so is the ground you are STANDING on: once a level fills the frame its own margin
+       and caption band are most of what is left to click, and a click there that navigated
+       nowhere read as the map having stopped responding. The scope is not a selection and is
+       left alone either way — a folder is somewhere you are, and Back is the way out. */
+    if (hit && !hit.file && (hit === aimBox() || hit.ghost)) hit = null;
     if (!hit) {
       if (state.page) closePage();
       state.pinned = null; state.hover = null;
@@ -3714,7 +3723,7 @@ Promise.all([
        same act as clicking that folder's row in the rail, down to the trail entry, with the
        camera following it — and clicking a file opens its reading. A plate already at or
        above where you are does nothing here: the breadcrumb is the only way out. */
-    if (!hit.file) { goTo(hit.ghost ? (upOf(hit) || tree()) : hit); return; }
+    if (!hit.file) { goTo(hit); return; }
     /* pin it so the numbers stay while the pointer goes to the controls */
     /* Clicking what is already open closes it, which is the same gesture as Esc. */
     if (state.page && state.pinned && state.pinned.path === hit.path) {
