@@ -294,3 +294,78 @@ carrying a leading ellipsis.
 The width matters to the case. The specimen's default window is wide enough that every path fits,
 which is exactly why this survived the first render of the same case — `ARGO_WINDOW_SIZE` is part of
 the state here, the way `rules/swift.md` says it is for anything laid out in columns.
+
+## Extracted — #689
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `AddMenu` | organism | `ArgoUI/Shell/Deck/Composer/` — one caller (`SessionComposer`) | `rows: [ComposerMenu.AddRow]` · `current: String?` · `pick: (AddRow) -> Void` | `AddMenuRow` on `ComposerMenuSurface`, `.fixedSize` so it hugs its longest row | frozen table, `AddMenu`; [`plus.png`](composer-picker/plus.png) |
+| `AddMenuRow` | molecule | same — one caller (`AddMenu`) | `row: ComposerMenu.AddRow` · `isCurrent: Bool` | one `ArgoGlyph`, two `Text` runs | `plus.png` — not in the frozen table, which names no per-row type for `AddMenu` |
+| `ComposerMenu.AddRow` | value | same, plus `ComposerMenu+Add.swift` | `id` · `label` · `sigil`; `key` and `icon` are DERIVED off `sigil` rather than stored | — | design decision 11 |
+
+Extraction evidence, in the order it arrived:
+
+- **`AddMenuRow`** — repetition, immediately: the two-row drawer draws the same shape twice.
+- **`AddMenu`** — the frozen name, and it holds the one thing nothing below it can: `.fixedSize`,
+  which is what makes it hug its longest row rather than take the vessel's own width the way
+  `ComposerMenuList` does on purpose.
+- **`ComposerMenu.AddRow`** — the same "value types live under the `ComposerMenu` namespace, not
+  the View" convention `Listing`/`Row`/`Sigil` already set in #685 and #687, extended here:
+  `ComposerMenus` (a plain, non-`View` struct) reads `addRows(on:)` from a non-isolated context,
+  and putting the derive on `AddMenu` itself would have coloured every caller `@MainActor` for no
+  reason a View's own isolation should ever force on a value type.
+
+## What stayed inline — #689
+
+- **Which listing a pick opens** — `ComposerMenus.addOpened()` / `addClosed()` / `addMenuPick(on:)`
+  / `addMenuPicked(_:)`, beside the state they read in `ComposerMenus+Add.swift`. Not a value of
+  its own: each is a few lines of transition over fields `ComposerMenus` already owns.
+- **The insertion** — reuses `ComposerDraft.take(_:)` and `ComposerMenu.Listing.pick(_:)`
+  unchanged. A pick off a requested listing is the SAME `Pick` value, with `dropping: 0` rather
+  than `query.count + 1` — see *Amended* below.
+- **Where the opened listing is drawn** — the SAME `SessionComposer.menu` slot `/` and `@` already
+  render into, branching on `menus.isAddMenuOpen` first. `AddMenu` never gets a slot of its own.
+
+## Amended during the build — #689
+
+- **The `+` control's own absence rule reads `workspaceRoot` and `canRunCommands`, not
+  `canAttach`.** The acceptance criterion says "a Session that declares neither attachments nor
+  commands draws no `+` at all", but the Files row is no longer an attachment (design decision 12)
+  — a drop and a paste answer to `canAttach` on their own, through `AttachmentDropTarget`, which
+  `+` was never part of. Gating the CONTROL on `canAttach` would show `+` for a Session that can
+  attach by drop but has no Workspace and no command surface, opening onto an empty `AddMenu`.
+  `ComposerFooter.canAdd` is `!ComposerMenu.addRows(on: line).isEmpty` instead, which is the
+  reading decision 12 actually asks for.
+- **The row spec table names no icon, but `plus.png` draws one per row** — a folder before "Files
+  in this Workspace", a mark before "Skills & commands". The render is the spec where the table is
+  silent (`cockpit-composer-picker.md`'s own framing). `ArgoSymbol.addMenuFiles` and
+  `.addMenuCommands` derive off the row's own `sigil` rather than becoming a fourth stored field,
+  which is also what keeps `AddRow` under edge 6's 4-parameter cap on a synthesized init.
+- **A pick off `AddMenu` drops nothing, where a typed `/` or `@` drops the sigil and whatever
+  followed it.** `ComposerMenu.Listing` gained a `dropping: Int` field — it was computed inline as
+  `query.count + 1` — so `AddMenu`'s row can open the SAME derive (`ComposerMenu.commands(for:
+  "/", in:)`, `ComposerMenu.files(for: "@", in:touched:)`) with `dropping: 0`: the sigil there was
+  never typed, so there is nothing of its own for a pick to remove before inserting.
+- **No live filtering behind a listing `AddMenu` opened.** Typing a character — as opposed to a
+  pick — closes it and falls back to the ordinary text-driven derivation. The renders show the
+  field's placeholder unchanged across the `plus.png` → `plus-files.png` transition, and none of
+  the eighteen numbered decisions asks for continued keystroke filtering from this entrance: `+`
+  buys discovery of the SAME two listings `/` and `@` already filter, not a third interaction of
+  its own.
+- **`ComposerMenusOpening`**, a `package` enum (`.closed` · `.addMenu` · `.files` · `.commands`)
+  threaded through `SessionComposer.init` and `ComposerSpecimen.init` — the seam that lets a
+  Specimen seed `AddMenu`'s open state before the first render, since nothing about it is reachable
+  from `draft.text` the way `/` and `@` are. Production always passes `.closed`. Applied in the
+  SAME `onChange(of: composer.sessionID, initial: true)` pass `sessionChanged(to:)` runs in, and
+  never a second `onChange`: `sessionChanged` itself clears any seeded opening, so applying the
+  seed after it in the same closure is what makes it survive the mount.
+
+## Engine changes this needed — #689
+
+None. `AddMenu`'s two rows read `line.workspaceRoot` and `line.canRunCommands`, both already on
+`ComposerMenuLine` since #685 and #687.
+
+## Contract changes these needed — #689
+
+None. `AddMenuRow` reuses `ComposerMenuSurface`, `ArgoComposerVessel.commandRowHeight` and the
+existing `body` / `machineCaption` roles unchanged — no token promoted.

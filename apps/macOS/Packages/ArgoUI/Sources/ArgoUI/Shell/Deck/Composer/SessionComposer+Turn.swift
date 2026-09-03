@@ -24,16 +24,11 @@ extension SessionComposer {
         }
     }
 
-    /// The footer's `+`, and `nil` where the adapter takes nothing — which is what takes the
-    /// control off the row rather than greying it (design decision 9).
-    var footerAttach: (([SessionAttachment]) -> Void)? {
-        guard composer.canAttach else { return nil }
-        return { incoming in take(incoming) }
-    }
-
-    /// What a drop, a paste and the `+` all end in — one act, so the three gestures cannot come to
-    /// mean three different things. The capability is answered inside the draft rather than at each
-    /// gesture, which is what lets a refused drop say why.
+    /// What a drop and a paste both end in — one act, so the two gestures cannot come to mean two
+    /// different things. The capability is answered inside the draft rather than at each gesture,
+    /// which is what lets a refused drop say why. `+` no longer reaches here at all: `AddMenu`'s
+    /// own Files section is Argo's in-app Workspace tree, and a pick there becomes a mention in the
+    /// text rather than an attachment (design decision 12, #689).
     func take(_ incoming: [SessionAttachment]) {
         draft.attach(incoming, canAttach: composer.canAttach)
     }

@@ -23,6 +23,7 @@ public enum SpecimenRegistry {
         + vessel
         + commands
         + mentions
+        + add
         + connect
         + project
         + tickets

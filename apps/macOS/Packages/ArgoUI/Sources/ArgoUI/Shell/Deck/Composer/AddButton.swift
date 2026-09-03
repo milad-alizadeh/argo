@@ -1,30 +1,28 @@
 import ArgoAtoms
 import ArgoDesign
-import ArgoEngine
 import SwiftUI
-import UniformTypeIdentifiers
 
-/// The leading `+` — the third way to give a Session a file, beside a drop and a paste (#540).
+/// The leading `+` — the drawer onto files, skills and commands (design decision 11,
+/// `cockpit-composer-picker.md`, #689).
 ///
-/// A `+` and not a paperclip: what it opens is "give the agent something", which is the same act
-/// all three gestures make, and a paperclip would name only the one that goes through a picker.
+/// A `+` and not a paperclip: what it opens is "give the agent something", and a paperclip would
+/// name only a picker — which this control no longer opens at all. The system panel cannot
+/// produce a mention (decision 12), so a file now comes from the SAME in-app Workspace tree `@`
+/// already reads; only a drop or a paste still make an `AttachmentChip` (#540).
 ///
-/// Named for the act rather than for attachment (`cockpit-composer-picker.md`, #708): #689 gives
-/// this control a menu of files, skills and commands, and two of those three are not attachments.
-/// Its sentence still says *Attach a file*, because until that menu exists a file is all it opens.
-///
-/// **It is absent, never disabled, for an adapter that takes no attachments** (design decision 9).
-/// That absence is the caller's — this view exists only where the capability holds, because a
-/// control that renders itself away is one whose disabled state somebody will eventually add back.
+/// **It is absent, never disabled, for a Session offering neither a Workspace nor a command
+/// surface** (design decision 9, read by `AddMenu.rows(on:)`). That absence is the caller's —
+/// this view exists only where `AddMenu` would have a row, because a control that renders itself
+/// away is one whose disabled state somebody will eventually add back.
 struct AddButton: View {
     @Environment(\.argo) private var argo
 
-    let attach: ([SessionAttachment]) -> Void
-
-    @State private var isPicking = false
+    /// Whether `AddMenu` is the surface currently standing over the vessel.
+    let isOpen: Bool
+    let toggle: () -> Void
 
     var body: some View {
-        Button { isPicking = true } label: {
+        Button(action: toggle) {
             ArgoGlyph(ArgoSymbol.attach, .control)
                 .foregroundStyle(argo.color.text.secondary)
                 .frame(
@@ -34,24 +32,21 @@ struct AddButton: View {
                 .contentShape(.circle)
         }
         .buttonStyle(.plain)
-        .help(AttachmentProjection.attach)
-        .accessibilityLabel(AttachmentProjection.attach)
-        // Every type, because the agent reads a path and Argo has no business deciding which files
-        // a person may point it at. What the chip draws differs by kind; what may be attached does
-        // not.
-        .fileImporter(
-            isPresented: $isPicking,
-            allowedContentTypes: [.item],
-            allowsMultipleSelection: true,
-        ) { result in
-            guard case let .success(urls) = result else { return }
-            attach(urls.map(SessionAttachment.file(at:)))
-        }
+        .help(AddMenu.label)
+        .accessibilityLabel(AddMenu.label)
+        .accessibilityValue(isOpen ? "Expanded" : "Collapsed")
     }
 }
 
 #Preview("Add button") {
-    AddButton(attach: { _ in })
+    AddButton(isOpen: false, toggle: {})
+        .padding(ArgoSpacing.section)
+        .argoDeckSurface()
+        .argoAppearance()
+}
+
+#Preview("Add button — open") {
+    AddButton(isOpen: true, toggle: {})
         .padding(ArgoSpacing.section)
         .argoDeckSurface()
         .argoAppearance()
