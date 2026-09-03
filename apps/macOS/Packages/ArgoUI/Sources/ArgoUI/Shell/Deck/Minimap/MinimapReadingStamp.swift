@@ -47,6 +47,9 @@ package struct MinimapReadingStamp: Equatable {
     /// would draw a confident picture of something that is not there. Degrade-down: waiting is
     /// allowed only where what is held is still a reading OF this document.
     func isOfSameDocument(as other: Self) -> Bool {
-        rows == other.rows && unfolded == other.unfolded
+        let sameRows = DeckProbe.time("MinimapReadingStamp.rows==", rows: rows.count) {
+            rows == other.rows
+        }
+        return sameRows && unfolded == other.unfolded
     }
 }

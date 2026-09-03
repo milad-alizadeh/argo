@@ -219,10 +219,11 @@ package final class MinimapLaneView: NSView {
     /// the lane holds stands until the burst settles — but only ever a reading of THIS document,
     /// and only where it has one: with nothing held it walks, burst or no burst.
     private func reading(at stamp: MinimapReadingStamp) -> MinimapReading? {
-        if let read, readAt == stamp {
+        if let read, DeckProbe.time("readAt==stamp", rows: stamp.rows.count, { readAt == stamp }) {
             return read
         }
         if read != nil, stamp.isProvisional, readAt?.isOfSameDocument(as: stamp) == true {
+            DeckProbe.mark("waitForSettle.armed", "rows=\(stamp.rows.count)")
             return waitForSettle()
         }
         #if DEBUG

@@ -90,9 +90,11 @@ extension FeedTableCoordinator {
 
     /// The document that stands, put on screen where the table is not already drawing it.
     private func adoptSettled() {
-        guard let table, let document = geometry.settled, shown != document.stamp.rows else {
-            return
+        guard let table, let document = geometry.settled else { return }
+        let changed = DeckProbe.time("adoptSettled.shown!=rows", rows: document.stamp.rows.count) {
+            shown != document.stamp.rows
         }
+        guard changed else { return }
         let stale = shown
         show(document.stamp.rows, against: stale, freshly: stale.isEmpty, on: table)
         handle?.settled(true)

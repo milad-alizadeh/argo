@@ -23,7 +23,10 @@ enum FeedMeasureDelta: Equatable {
     static func between(_ settled: FeedSettledDocument?, and fresh: FeedMeasureStamp)
         -> FeedMeasureDelta {
         guard let stale = settled?.stamp, !fresh.rewraps(against: stale) else { return .whole }
-        guard stale != fresh else { return .settled }
+        let unequal = DeckProbe.time("FeedMeasureDelta.between", rows: fresh.rows.count) {
+            stale != fresh
+        }
+        guard unequal else { return .settled }
         let owed = owing(from: stale, to: fresh)
         // A reading that SHRANK — a compaction, a Session with less in it than the last — owes no
         // measurement at all where its surviving rows are unchanged, and is still not the document
