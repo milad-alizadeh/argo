@@ -19,7 +19,7 @@ struct TicketsBacklogBandsTests {
         let bands = TicketsRoomProjection.bands(of: Self.roots)
 
         #expect(bands.map(\.priority) == ["high", "medium", "low"])
-        #expect(bands.map { $0.roots.map(\.id) } == [[607], [763], [275, 185, 160]])
+        #expect(bands.map { $0.roots.map(\.id) } == [[607], [763], [160, 185, 275]])
     }
 
     /// The conflict the design resolves: #273 and #334 are `medium` and #336 is `low`, and all
@@ -29,7 +29,7 @@ struct TicketsBacklogBandsTests {
         let bands = TicketsRoomProjection.bands(of: Self.roots)
 
         #expect(TicketsRoomProjection.drawn(bands[0], shut: []).map(\.id)
-            == [607, 609, 388, 334, 336, 335, 273, 272])
+            == [607, 272, 273, 334, 335, 336, 388, 609])
         #expect(bands[1].roots.map(\.id) == [763])
     }
 
@@ -53,8 +53,8 @@ struct TicketsBacklogBandsTests {
 
         let drawn = TicketsRoomProjection.drawn(bands[0], shut: [])
         let stated = drawn.filter { $0.odd != nil }
-        #expect(stated.map(\.id) == [334, 336, 335, 273])
-        #expect(stated.map(\.odd) == ["medium", "low", "medium", "medium"])
+        #expect(stated.map(\.id) == [273, 334, 335, 336])
+        #expect(stated.map(\.odd) == ["medium", "medium", "medium", "low"])
     }
 
     /// A root always agrees with the header it is under — the header is derived from it.
@@ -127,15 +127,15 @@ struct TicketsBacklogBandsTests {
 
     /// A tracker that spells one of its own words `Low` must not open a second band beside the
     /// `low` one, headed with the same word. The match folds case; the WORD is still the
-    /// provider's, verbatim, and `GroupLabel` is what uppercases it.
+    /// provider's, verbatim — the band's first root's — and `GroupLabel` is what uppercases it.
     @Test
     func `two spellings of one word are one band`() {
-        let reading = TicketsFixture.reading { priorities in priorities[275] = "Low" }
+        let reading = TicketsFixture.reading { priorities in priorities[160] = "Low" }
         let room = TicketsRoomProjection.room(from: reading)
 
         let bands = TicketsRoomProjection.bands(of: room.backlog)
         #expect(bands.count == 3)
-        #expect(bands[2].roots.map(\.id) == [275, 185, 160])
+        #expect(bands[2].roots.map(\.id) == [160, 185, 275])
         #expect(bands[2].priority == "Low")
     }
 
