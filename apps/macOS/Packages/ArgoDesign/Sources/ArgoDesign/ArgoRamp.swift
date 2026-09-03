@@ -37,20 +37,17 @@ public struct ArgoRamp: Sendable {
         let point = min(max(fraction, 0), 1)
         guard point > first.location else { return first.color }
         guard point < last.location else { return last.color }
-        // The LAST pair that spans the point, so a point on a band edge belongs to the louder
-        // band: a file at the boundary is reported up, never down.
-        var span = (lower: first, upper: last)
-        for pair in zip(stops, stops.dropFirst())
-            where pair.0.location <= point && point <= pair.1.location {
-            span = (pair.0, pair.1)
-        }
-        guard span.lower.color != span.upper.color else { return span.upper.color }
-        let width = span.upper.location - span.lower.location
-        guard width > 0 else { return span.upper.color }
-        return span.lower.color.mixed(
-            with: span.upper.color,
-            by: (point - span.lower.location) / width,
-        )
+        // The FIRST pair that spans the point, so a point ON a band edge belongs to the quieter
+        // band. That is the approved design's own arithmetic — it cuts at the 50th and 85th
+        // percentiles with `v > cut ? next : this` — and it is not a rounding preference: a repo
+        // where half the files share one value has that whole mass sitting exactly on a cut, and
+        // reporting it up would paint half the map amber.
+        let span = zip(stops, stops.dropFirst())
+            .first { $0.location <= point && point <= $1.location } ?? (first, last)
+        guard span.0.color != span.1.color else { return span.0.color }
+        let width = span.1.location - span.0.location
+        guard width > 0 else { return span.1.color }
+        return span.0.color.mixed(with: span.1.color, by: (point - span.0.location) / width)
     }
 
     /// The ramp as one horizontal pass, tail at the leading edge. Every surface takes the pass

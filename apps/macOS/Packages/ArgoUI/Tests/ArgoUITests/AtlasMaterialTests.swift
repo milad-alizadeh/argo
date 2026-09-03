@@ -75,4 +75,23 @@ struct AtlasMaterialTests {
     ) {
         #expect(appearance.palette.atlas.materials.inferred == appearance.palette.text.tertiary)
     }
+
+    /// The ink's own distance from the states, measured rather than left out.
+    ///
+    /// It is the ONE promoted colour that does not clear 0.25: it sits 0.079 from `state.idle`,
+    /// because both are the same neutral grey and it is `text.tertiary`, which this contract has
+    /// never held off a state — every rung of the text ramp would fail that rule. What it buys is
+    /// that the number is in a test: an `inferred` that stops being `text.tertiary` and drifts
+    /// toward a state reds here rather than passing on the strength of a doc comment.
+    @Test(arguments: palettes)
+    func `the inferred ink's own distance from the states is stated, not skipped`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let palette = appearance.palette
+        let inferred = palette.atlas.materials.inferred
+        #expect(abs(inferred.distance(to: palette.state.idle) - 0.079) < 0.001)
+        for status in palette.state.all where status.name != "idle" {
+            #expect(inferred.distance(to: status.color) > 0.25)
+        }
+    }
 }

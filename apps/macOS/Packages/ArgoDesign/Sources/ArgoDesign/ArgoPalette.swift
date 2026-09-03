@@ -238,13 +238,13 @@ public extension ArgoPalette {
         /// ladder for every family that lays a hue down under something else, so a wash is the
         /// same strength whether it is a state or the brand (#1142).
         public func muted(_ role: ArgoColor) -> ArgoColor {
-            role.opacity(ArgoTint.muted.rawValue)
+            role.tinted(.muted)
         }
 
         /// The same role as the EDGE of a surface rather than as an ink on it: the amber rim a
         /// Permission vessel wears. Half strength — louder than `muted`, which a word is read ON.
         public func rim(_ role: ArgoColor) -> ArgoColor {
-            role.opacity(ArgoTint.rim.rawValue)
+            role.tinted(.rim)
         }
 
         /// The same role laid over a WHOLE surface while it invites something — the accent the
@@ -256,7 +256,7 @@ public extension ArgoPalette {
         /// against the approved render, `muted` at this size read as a panel laid over the vessel
         /// rather than as the vessel lit up.
         public func wash(_ role: ArgoColor) -> ArgoColor {
-            role.opacity(ArgoTint.wash.rawValue)
+            role.tinted(.wash)
         }
     }
 }

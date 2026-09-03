@@ -87,7 +87,7 @@ extension ContractSpecimen {
     ///
     /// Read off `ramps` rather than naming the ion, so adding a ramp adds a row here.
     var ramps: some View {
-        section("Ramps — transparent at both ends, a blue tail into a mint head") {
+        section("Ramps — every pass in the contract, as a band and across the type it crosses") {
             ForEach(argo.color.ramps, id: \.name) { role in
                 VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
                     label(role.name)

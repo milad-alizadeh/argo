@@ -73,6 +73,13 @@ public struct ArgoColor: Sendable, Hashable {
         ArgoColor(red: red, green: green, blue: blue, opacity: opacity)
     }
 
+    /// The same hue laid down as a ground or an edge rather than drawn as an ink. One call for
+    /// every family that does it — `StateRoles` and `InteractionRoles` both spell it this way, so
+    /// neither can drift on what a wash is worth.
+    func tinted(_ tint: ArgoTint) -> ArgoColor {
+        opacity(tint.rawValue)
+    }
+
     /// The same pigment, lit. Every channel by the same factor and nothing else touched, which is
     /// the whole of `ArgoLight`'s rule: a lit face is the colour of its legend swatch, darker or
     /// brighter, never a different hue and never washed toward white.

@@ -26,19 +26,22 @@ struct ArgoRampLookupTests {
         }
     }
 
-    /// Where each band gives way to the next: green is half the files, red is the top 15%. A
-    /// fraction ON an edge belongs to the louder band — a file at the boundary is reported up,
-    /// never down.
+    /// Where each band gives way to the next: green is half the files, red is the top 15%.
+    ///
+    /// A fraction ON an edge belongs to the QUIETER band, which is the approved design's own
+    /// arithmetic — it cuts at the two percentiles with `v > cut`. Not a rounding preference: a
+    /// repository where half the files share one value has that whole mass sitting exactly on a
+    /// cut, and reporting it up would paint half the map amber.
     @Test(arguments: palettes)
     func `the bands change hands at the halfway mark and at the top fifteen percent`(
         _ appearance: (name: String, palette: ArgoPalette),
     ) {
         let measure = appearance.palette.atlas.measure
         #expect(measure.ramp.color(at: 0) == measure.quiet)
-        #expect(measure.ramp.color(at: 0.499) == measure.quiet)
-        #expect(measure.ramp.color(at: 0.5) == measure.middling)
-        #expect(measure.ramp.color(at: 0.849) == measure.middling)
-        #expect(measure.ramp.color(at: 0.85) == measure.hot)
+        #expect(measure.ramp.color(at: 0.5) == measure.quiet)
+        #expect(measure.ramp.color(at: 0.501) == measure.middling)
+        #expect(measure.ramp.color(at: 0.85) == measure.middling)
+        #expect(measure.ramp.color(at: 0.851) == measure.hot)
         #expect(measure.ramp.color(at: 1) == measure.hot)
     }
 

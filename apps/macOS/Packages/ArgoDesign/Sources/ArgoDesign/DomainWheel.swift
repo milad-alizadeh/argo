@@ -24,9 +24,14 @@ public extension ArgoPalette {
         ///
         /// Measured, not chosen. At full confidence the wheel must stay clear of the only things
         /// beside it ON THE MAP — `materials.unassigned`, `materials.hushed`, the three plate tones
-        /// and `materials.fog`. At 0.38 a 21-domain repo puts one region 0.247 from `unassigned`,
-        /// which would read as "belongs to nothing"; at 0.44 the worst case over every count from
-        /// 2 to 40 is 0.282. `DomainWheelTests` asserts that number.
+        /// and `materials.fog`. At 0.38 the wheel is worst in a 21-domain repository, where one
+        /// region reads as "belongs to nothing"; at 0.44 the worst case over every count from 2 to
+        /// 40 is 0.282, and `DomainWheelTests` asserts that number.
+        ///
+        /// One figure did not reproduce. The design (#1142, and `cockpit-atlas.html`) puts that
+        /// 0.38 worst case 0.203 from `unassigned`; re-measuring it here gives 0.247, at the same
+        /// 21 domains. The number that GOVERNS — 0.282 at the shipped 0.44 — reproduced to three
+        /// decimals, so the choice stands and only the discarded alternative's figure is in doubt.
         public let saturationFull: Double
         /// One lightness for every domain: a region is not lighter for being bigger or older.
         public let lightness: Double

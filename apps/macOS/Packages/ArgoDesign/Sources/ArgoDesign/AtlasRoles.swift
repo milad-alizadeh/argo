@@ -51,7 +51,7 @@ public extension ArgoPalette {
         /// rather than DIRECT or DERIVED, and every label on one is drawn in this.
         ///
         /// It IS `text.tertiary` rather than a new grey — a second quietest voice is a value
-        /// nobody decided on. `AtlasPaletteTests` holds the two together.
+        /// nobody decided on. `AtlasMaterialTests` holds the two together.
         public let inferred: ArgoColor
 
         public init(
@@ -85,16 +85,18 @@ public extension ArgoPalette {
         /// the ink — `inferred` is drawn as words on a label, and a grey ink beside a grey state
         /// is not a confusion the map can make. The claims about what a colour may not resolve
         /// near run over this rather than over `all`.
+        ///
+        /// The list, rather than `all` minus a name: a catalogue filtered on a display label is a
+        /// rule a caption can break.
         public var grounds: [(name: String, color: ArgoColor)] {
-            all.filter { $0.name != "inferred" }
-        }
-
-        public var all: [(name: String, color: ArgoColor)] {
             [
                 ("desktop", desktop), ("plate1", plate1), ("plate2", plate2), ("plate3", plate3),
                 ("fog", fog), ("unassigned", unassigned), ("hushed", hushed),
-                ("inferred", inferred),
             ]
+        }
+
+        public var all: [(name: String, color: ArgoColor)] {
+            grounds + [("inferred", inferred)]
         }
     }
 }

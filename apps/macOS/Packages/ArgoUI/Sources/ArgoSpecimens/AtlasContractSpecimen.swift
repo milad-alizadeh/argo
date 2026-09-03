@@ -13,7 +13,7 @@ import SwiftUI
 /// It is drawn on the DESKTOP rather than on the deck. That is the ground every one of these
 /// colours is really read against, and a plate judged over the deck is a plate judged over the
 /// wrong tone.
-struct AtlasContractSpecimen: View {
+struct AtlasContractSpecimen: View, SpecimenSheet {
     @Environment(\.argo) var argo
 
     var body: some View {
@@ -29,27 +29,6 @@ struct AtlasContractSpecimen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(argo.color.atlas.materials.desktop)
-    }
-
-    func section(
-        _ title: String,
-        @ViewBuilder content: () -> some View,
-    )
-        -> some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-            Text(title)
-                .argoText(ArgoTypography.sectionLabel)
-                .foregroundStyle(argo.color.text.tertiary)
-            content()
-        }
-    }
-
-    /// A row's own name, at the width the other sheets set, so two rows' swatches line up.
-    func label(_ name: String) -> some View {
-        Text(name)
-            .argoText(ArgoTypography.machineCaption)
-            .foregroundStyle(argo.color.text.tertiary)
-            .frame(width: 132, alignment: .leading)
     }
 
     /// A run of swatches, touching — which is how they are really read: two regions of a map share

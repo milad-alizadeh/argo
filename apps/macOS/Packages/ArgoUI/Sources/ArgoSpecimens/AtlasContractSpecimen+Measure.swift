@@ -27,11 +27,19 @@ extension AtlasContractSpecimen {
             VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
                 argo.color.atlas.measure.ramp.pass
                     .frame(width: 420, height: ArgoIconSize.control.rawValue)
-                Text("0 — quiet — 0.5 — middling — 0.85 — hot — 1")
+                Text(edges)
                     .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(argo.color.text.tertiary)
             }
         }
+    }
+
+    /// Where the bands change hands, read off the tokens rather than typed under the picture — a
+    /// caption that repeats a number is a second place the cut points live.
+    private var edges: String {
+        let middling = ArgoPalette.MeasureRoles.middlingFrom
+        let hot = ArgoPalette.MeasureRoles.hotFrom
+        return "0 — quiet — \(middling) — middling — \(hot) — hot — 1"
     }
 
     /// The lookup, drawn: eleven fractions across the range, each at the colour the ramp resolves
@@ -64,10 +72,10 @@ extension AtlasContractSpecimen {
     var ladder: some View {
         section("Accent ladder — one hue at the three weights a tint is laid down at") {
             HStack(spacing: ArgoSpacing.loose) {
-                ForEach(argo.color.interaction.ladder, id: \.name) { rung in
+                ForEach(ArgoTint.allCases, id: \.self) { tint in
                     VStack(spacing: ArgoSpacing.tight) {
-                        rungMark(rung)
-                        Text(rung.name)
+                        rungMark(tint)
+                        Text("accent \(tint.name)")
                             .argoText(ArgoTypography.machineCaption)
                             .foregroundStyle(argo.color.text.tertiary)
                     }
@@ -76,17 +84,21 @@ extension AtlasContractSpecimen {
         }
     }
 
-    /// A rung on the plate it is laid on. `rim` is drawn as the edge it is; the other two are
+    /// A rung on the plate it is laid on. `rim` is drawn as the edge it IS; the other two are
     /// grounds, with the words they have to stay under.
-    private func rungMark(_ rung: (name: String, color: ArgoColor)) -> some View {
-        Text("ArgoEngine")
+    ///
+    /// Keyed on the weight rather than on the caption under it: a sheet that branched on the label
+    /// would draw something else the day a caption is reworded.
+    private func rungMark(_ tint: ArgoTint) -> some View {
+        let rung = argo.color.interaction.accent(at: tint)
+        return Text("ArgoEngine")
             .argoText(ArgoTypography.body)
             .foregroundStyle(argo.color.text.primary)
             .frame(width: 132, height: 40)
-            .background(rung.name == "accent rim" ? ArgoColor.transparent : rung.color)
+            .background(tint == .rim ? ArgoColor.transparent : rung)
             .overlay {
                 Rectangle().strokeBorder(
-                    rung.name == "accent rim" ? rung.color : argo.color.edge.hairline,
+                    tint == .rim ? rung : argo.color.edge.hairline,
                     lineWidth: ArgoStroke.border,
                 )
             }

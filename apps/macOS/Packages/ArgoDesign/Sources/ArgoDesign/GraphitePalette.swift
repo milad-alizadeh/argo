@@ -1,6 +1,11 @@
 /// The one implemented appearance: near-black graphite with Ion Blue. Every neutral is a true
 /// grey with at most a few points of cool lift — more than that and the surfaces start to tint.
 public extension ArgoPalette {
+    /// The quietest voice, spelled once. It is `text.tertiary` AND the ink every inferred label on
+    /// the map is drawn in (#1142) — two roles, one value, and a literal written twice is a value
+    /// that drifts on whichever of the two is edited first (`rules/house.md`).
+    private static let quietestVoice = ArgoColor(hex: 0x929AA1)
+
     static let graphite = ArgoPalette(
         surface: SurfaceRoles(
             // Sampled from the approved study, not chosen — see D17. Re-sample before moving
@@ -31,7 +36,7 @@ public extension ArgoPalette {
             secondary: ArgoColor(hex: 0xA8AEB5),
             // The quietest voice, so the rung `TextRoles.contrastFloor` binds hardest on. It is
             // read on three grounds, not just the deck, and clears the floor on each.
-            tertiary: ArgoColor(hex: 0x929AA1),
+            tertiary: quietestVoice,
             disabled: ArgoColor(hex: 0x4E545A),
             onAccent: ArgoColor(hex: 0x05070A),
             // There is no `code` ink. A marked span is drawn on `surface.marked` and keeps the
@@ -113,10 +118,10 @@ public extension ArgoPalette {
                 fog: ArgoColor(hex: 0x1A3440),
                 unassigned: ArgoColor(hex: 0x566068),
                 hushed: ArgoColor(hex: 0x2E383F),
-                // The text ramp's own quietest voice, spelled again rather than referenced: this
-                // list is a table of values, and every other entry in it is one. The two are held
-                // together by a claim rather than by a `var`.
-                inferred: ArgoColor(hex: 0x929AA1),
+                // The same value `text.tertiary` is, by name rather than by a second literal.
+                // `AtlasMaterialTests` states the identity as a claim as well, so a future
+                // appearance that splits them has to say so out loud.
+                inferred: quietestVoice,
             ),
         ),
     )

@@ -10,7 +10,7 @@ public extension ArgoPalette.InteractionRoles {
     /// Derived rather than stored, so `Mirror` cannot reach these and no reflected list can catch
     /// one going undrawn. `ladder` is what stands in, and the specimen draws it by hand.
     func accent(at tint: ArgoTint) -> ArgoColor {
-        accent.opacity(tint.rawValue)
+        accent.tinted(tint)
     }
 
     /// Every rung, quietest first — the catalogue the contract sheet draws and the claims run
