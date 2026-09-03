@@ -288,6 +288,7 @@ extension FeedTableCoordinator {
     /// `adoptSettled` calls it too, and there the re-entrancy really is held by `isDecidingSettle`:
     /// that path runs inside `settleIfOwed`.
     private func converge(_ table: FeedTableView) {
+        walkedRows(table.numberOfRows)
         for index in 0 ..< table.numberOfRows {
             _ = table.rect(ofRow: index)
         }

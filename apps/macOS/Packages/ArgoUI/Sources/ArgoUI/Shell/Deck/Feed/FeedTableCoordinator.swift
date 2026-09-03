@@ -142,13 +142,6 @@ import SwiftUI
         measurements += rows
     }
 
-    /// One row height asked for — see `FeedConvergeCost.heightAsks`.
-    func askedHeight() {
-        #if DEBUG
-            convergeCost.heightAsks += 1
-        #endif
-    }
-
     /// One frame notification arrived — see `FeedPaneCost`.
     func notedPane() {
         #if DEBUG
@@ -311,5 +304,17 @@ import SwiftUI
         drawnOpen = fresh.selection.open
         guard !affected.isEmpty else { return }
         refresh(rows: affected)
+    }
+}
+
+/// The DEBUG counters' writers. An extension so the class body stays inside its length gate; a
+/// `private(set)` is writable in this file, which is why they may sit here at all.
+extension FeedTableCoordinator {
+    /// One converge walk, over the rows it is about to visit — see `FeedConvergeCost`.
+    func walkedRows(_ rows: Int) {
+        #if DEBUG
+            convergeCost.walks += 1
+            convergeCost.walkedRows += rows
+        #endif
     }
 }

@@ -70,43 +70,22 @@ enum PerfBudgets {
     /// and a reload decided at the seam 0.29 µs against 1.21 ms. Rule 3's 1.3, as above.
     static let rowsCompareFlat = 1.3
 
-    /// `FeedConvergeCostTests` — the converge walk follows the reading and takes each height once.
+    /// How many times the converge walk may run for one landing, and for one adopt (#1132).
     ///
-    /// `FeedTableCoordinator.converge` asks `rect(ofRow:)` for every row, which is the only thing
-    /// that brings AppKit's own row geometry up to the document the pass settled: left alone the
-    /// table stands a fifth short of its own heights, and the reader scrolls below everything the
-    /// overview lane maps (#1132). O(rows) on the main actor, on the path every landing and every
-    /// adopt takes, so its shape is gated rather than described.
+    /// Recorded: exactly 1 walk over exactly the document's rows — 200 rows walked once on a mount
+    /// and its landing, once again over 212 when the reading grew, once on an adopt · Apple silicon
+    /// laptop · debug · exact. Counted rather than timed, and counted at the walk rather than at
+    /// the delegate: `show` notes every row before the walk runs and `noteHeightOfRows` asks
+    /// eagerly, so by the time `converge` reaches a row AppKit already has its height and the walk
+    /// asks the delegate for nothing. A gate on the delegate's asks stayed green with both
+    /// `converge` calls deleted.
     ///
-    /// Recorded: exactly 1 `tableView(_:heightOfRow:)` a row over a mount and its first landing —
-    /// 200 asks at 200 rows, 800 at 800 — and a quotient of exactly 4.0 across those two lengths ·
-    /// Apple silicon laptop · debug · exact. Counted rather than timed: `rect(ofRow:)` resolves a
-    /// row once and answers from AppKit's cache after, so the regressions worth catching (a second
-    /// walk, a reload slipped between the landing and the walk) are integers, and a stopwatch would
-    /// read them as noise.
-    ///
-    /// The counterfactuals it was read against, on the 459-row synthetic: `tile()` alone moved the
-    /// table's height not at all, `noteHeightOfRows` over every row moved it 938pt of the 8 663
-    /// owed, and setting the frame outright was taken back by the next tile. Walking only from the
-    /// first row whose height moved is also not sound — `show` reloads, and a reload drops the row
-    /// cache wholesale, which left a twelve-row append 8 819pt short.
-    static let convergeAsksPerRow = 1
-
-    /// The quotient the two lengths above are gated by. Slack to 7 over the recorded 4.0, which
-    /// still catches the 16 a quadratic walk reads.
-    static let convergeWalkRatio = 7.0
-
-    /// How much longer than the quietest idle window the quietest measured gap may be, before the
-    /// settle pass is called blocking (`FeedSettledDocumentTests`, ADR-0028 Rule 3).
-    ///
-    /// Recorded: with the pass off the main actor, gaps under a millisecond against idles under a
-    /// millisecond · Apple silicon laptop · debug · quiet. Under the whole suite both sides read
-    /// whole seconds and the two are not the same second — one loaded run gave gaps
-    /// [4.70, 8.61, 2.96] against idles [10.75, 2.23, 1.20], the idles themselves nine times apart
-    /// while nothing at all was being measured. Three is what covers that spread; it still catches
-    /// the injected control, a 120ms block inside the pass, which reads 0.12s against a ceiling of
-    /// one frame on a quiet box.
-    static let mainActorIdleSlack = 3.0
+    /// The counterfactuals the walk itself was read against, on the 459-row synthetic: `tile()`
+    /// alone moved the table's height not at all, `noteHeightOfRows` over every row moved it 938pt
+    /// of the 8 663 owed, and setting the frame outright was taken back by the next tile. Walking
+    /// only from the first row whose height moved is also not sound — `show` reloads, and a reload
+    /// drops the row cache wholesale, which left a twelve-row append 8 819pt short.
+    static let convergeWalksPerLanding = 1
 
     /// `FeedScaleTests` — telling two same-named files apart grows with the record and not with
     /// the square of it.

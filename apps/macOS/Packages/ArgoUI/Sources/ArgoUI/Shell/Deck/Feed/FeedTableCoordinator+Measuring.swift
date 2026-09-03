@@ -15,7 +15,6 @@ extension FeedTableCoordinator {
     /// not hold is an index no row exists at. It is here because `NSTableView` takes a `CGFloat`
     /// and there is nothing honest to return for a row that is not there.
     func measuredHeight(at index: Int, in _: NSTableView) -> CGFloat {
-        askedHeight()
-        return geometry.height(at: index) ?? Self.estimatedRowHeight
+        geometry.height(at: index) ?? Self.estimatedRowHeight
     }
 }

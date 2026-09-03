@@ -27,11 +27,17 @@ struct FeedPaneCost {
 /// notification costs, and this is what a landing and an adopt cost — different paths, different
 /// occasions, and four is the cap on a list a memberwise init takes (#755, edge 6).
 struct FeedConvergeCost {
-    /// How many row heights AppKit has asked the coordinator for.
+    /// How many times the walk has run, and how many rows it walked over all of them.
     ///
-    /// What `FeedConvergeCostTests` gates on, and a count rather than a duration because that is
-    /// what the regression IS: the converge walk resolves the table's own row geometry by asking
-    /// after every row, so a landing that walked twice, or an adopt that walked a third time, shows
-    /// up here exactly and shows up in a stopwatch only as noise.
-    var heightAsks = 0
+    /// The WALK and not the heights it asks for. `show` notes every row before the walk reaches it
+    /// and `noteHeightOfRows` asks eagerly, so by the time `converge` runs, AppKit has the heights
+    /// and the walk itself asks the delegate for nothing at all — a counter on the delegate's
+    /// height accessor stays green with both `converge` calls deleted, which is a gate that cannot
+    /// see its own subject. What the walk costs is the rows it visits, so that is what is counted.
+    ///
+    /// A count rather than a duration because that is what the regression IS: a landing that walked
+    /// twice, an adopt that walked a third time, a walk moved inside a loop. Each of those is an
+    /// integer here and noise in a stopwatch.
+    var walks = 0
+    var walkedRows = 0
 }

@@ -58,7 +58,15 @@ struct MinimapAnnotationTests {
         let turn = try #require(MinimapTurn.extents(of: lane.geometry.reading.rows)
             .dropFirst().first { $0.rows.count > 1 })
         let slide = lane.geometry.laneOffset(at: deck.feed.offset() ?? 0)
-        return (turn, turn.rows.map { lane.geometry.rectY(row: $0) + 1 - slide })
+        // The middle of each row's own drawn extent, not a point past its head. Since #1132 the
+        // lane compresses to fit, so one point of lane can be several tens of points of reading —
+        // a fixed point past a short row's head lands in the row after it, and the pointer would
+        // be asked about a Turn the case did not mean.
+        let geometry = lane.geometry
+        return (turn, turn.rows.map { row in
+            let height = geometry.reading.rows[row].height * geometry.scale
+            return geometry.rectY(row: row) + height / 2 - slide
+        })
     }
 
     /// #732 read the mark as covering the prompt alone. It does not: standing over ANY of the

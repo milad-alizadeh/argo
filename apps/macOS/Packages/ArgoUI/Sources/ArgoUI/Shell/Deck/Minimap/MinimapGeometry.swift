@@ -3,9 +3,12 @@ import Foundation
 /// The overview lane's arithmetic: the reading drawn as a proportionate miniature, and a place on
 /// the lane mapped back onto the scroll.
 ///
-/// The miniature is TALLER than the lane at any real session's length, because its scale comes from
-/// the widths rather than from what would fit vertically. So the lane shows a window onto it and
-/// everything past that is below the fold, exactly as the feed's own content is (#658).
+/// The miniature FITS the lane wherever the session can be drawn at all: the scale is the tightest
+/// of the widths' ratio and what the lane's own height would hold, so the whole session is mapped
+/// at once and the lit rectangle walks the lane end to end (#1132). Past the length where the rows
+/// would be thinner than the smallest mark the lane can draw, it stands taller than the lane again
+/// and shows a window onto itself, everything past that below the fold as the feed's own content is
+/// (#658) — see `scale`.
 ///
 /// It holds no scroll offset. Everything here is still, which is what lets the lane freeze one of
 /// these for the length of a drag and repaint nothing while the reader scrolls.
@@ -43,14 +46,68 @@ struct MinimapGeometry: Equatable {
         reading.topInset + documentHeight + reading.bottomInset
     }
 
-    /// One ratio, applied to BOTH axes — which is what keeps the miniature at the reading's own
-    /// aspect ratio, so a row twice as wide as it is tall stays that in the lane.
+    /// How far the reading is compressed into the lane: the tightest of what the lane's width
+    /// gives, what its height would need to hold the whole session, and the grain below which the
+    /// session stops being drawn at all (#1132).
     ///
-    /// Capped at 1:1, because a lane wider than the column beside it would magnify rather than
-    /// compress. A column not yet laid out has no ratio to give and answers 1:1 too.
+    /// The width alone was the ratio before, and at a real session's length it maps a lane the
+    /// reader can only see a fourteenth of at once — 57 000pt of reading became a 9 500pt
+    /// miniature in an 800pt lane, so the map of the session was itself a thing to scroll. A map
+    /// you scroll to read is not a map, and "the lane mimics the feed's structure" is not reachable
+    /// at that compression.
+    ///
+    /// So the lane FITS the session where it can. What stops it fitting always is `grain`: past a
+    /// certain length the rows are thinner than the smallest mark the lane can draw, and a lane
+    /// that keeps compressing past that draws a session as one grey smear. There the miniature
+    /// stands taller than the lane again and slides inside it exactly as it always did (#658) —
+    /// which is why none of `laneTravel`, `viewportY` or `offset(forLaneY:)` changes here.
     var scale: CGFloat {
+        let column = columnScale
+        guard !reading.rows.isEmpty, scrollableHeight > 0, lane.height > 0 else { return column }
+        return min(column, max(fitScale, grain))
+    }
+
+    /// What the lane's width gives, capped at 1:1 — a lane wider than the column beside it would
+    /// magnify rather than compress, and a column not yet laid out has no ratio to give.
+    private var columnScale: CGFloat {
         guard reading.columnWidth > 0 else { return 1 }
         return min(1, lane.width / reading.columnWidth)
+    }
+
+    /// The compression that puts the whole session in the lane and leaves the lit rectangle ending
+    /// flush with the lane's foot at the end of the reading.
+    ///
+    /// Two quotients and not one, because the rectangle has a floor of its own: where the visible
+    /// range compresses under `viewportMinimumHeight` the rectangle is drawn taller than it truly
+    /// is, and a miniature fitted to the plain quotient would need the rectangle to hang past the
+    /// lane's foot to mark the end of the reading. Fitting the TRAVEL into the lane less the floor
+    /// is what the rectangle can actually walk.
+    private var fitScale: CGFloat {
+        let travel = scrollableHeight - reading.viewportHeight
+        guard travel > 0 else { return columnScale }
+        let room = lane.height - ArgoMinimapLane.viewportMinimumHeight
+        guard room > 0 else { return lane.height / scrollableHeight }
+        let held = room / travel
+        let plain = lane.height / scrollableHeight
+        return reading.viewportHeight * held >= ArgoMinimapLane.viewportMinimumHeight
+            ? plain
+            : held
+    }
+
+    /// The compression at which the AVERAGE row is still drawn as its own mark: a rect at the
+    /// floor, and the gap that keeps it off the row above it. Exactly the distance
+    /// `MinimapGeometry.isCrowded` needs between two stacked rects to draw both — past this the
+    /// lane starts dropping every other row's mark and the map stops mimicking the reading's
+    /// structure, which is the whole of what #658 found and what the lane is for.
+    ///
+    /// The average and not the shortest row: a session's rules and its one-line Turns are a point
+    /// each already, and holding the whole map to those would keep a long session at a compression
+    /// where nothing fits.
+    private var grain: CGFloat {
+        let rows = CGFloat(reading.rows.count)
+        let average = rows > 0 ? documentHeight / rows : 0
+        guard average > 0 else { return columnScale }
+        return (ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap) / average
     }
 
     /// The whole miniature's height, the lane's own height notwithstanding.

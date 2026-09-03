@@ -74,6 +74,12 @@ enum FeedMeasurePass {
     /// One chunk, measured where it stands. Synchronous on purpose: a chunk is the unit of work a
     /// core takes, and an await inside it would hand the rows back to the scheduler one at a time.
     private static func measured(_ chunk: [Int], of stamp: FeedMeasureStamp) -> [Int: CGFloat] {
+        #if DEBUG
+            running?.withLock { ran in
+                ran.chunks += 1
+                ran.onMainThread += Thread.isMainThread ? 1 : 0
+            }
+        #endif
         var measured: [Int: CGFloat] = [:]
         for index in chunk {
             // A width burst arms a pass a frame and retires all but the last. Answered per row and
@@ -110,4 +116,39 @@ enum FeedMeasurePass {
     /// The fewest rows worth a task of its own. Below this the scheduling costs more than the
     /// measuring, which is every re-measure of a tail or of one changed row.
     private static let leastChunk = 32
+
+    #if DEBUG
+        /// Where one pass's chunks RAN — the count ADR-0030 Rule 3's headline claim is, and the
+        /// count ADR-0028 Rule 8 asks for in place of the stopwatch that was here (#1132).
+        ///
+        /// "The main thread is free while the pass runs" was gated by watching a clock only the
+        /// main actor advances and comparing the longest gap against an idle control. That gate is
+        /// blind where it matters: run inside the whole suite — the way CI runs it — a 120ms block
+        /// injected into the pass PASSED, because on a loaded box the idle control reads seconds
+        /// too and the ceiling it sets swallows the block. A count reads the same idle and loaded,
+        /// and catches a block of any length, because a chunk that ran on the main thread is one
+        /// whatever it cost.
+        struct Ran: Sendable {
+            var chunks = 0
+            var onMainThread = 0
+        }
+
+        /// What ONE caller's pass did, counted over `work` and nothing else — the task local is
+        /// inherited by the group's children and by nothing else in the process, which is the whole
+        /// reason it is a task local: since ADR-0030 other documents are measuring beside this one.
+        /// `isolation` so the work runs where the CALLER is — the coordinator calls the pass from
+        /// the main actor, and a helper that hopped off it first would be counting a pass nobody
+        /// makes.
+        static func ran<Answer>(
+            isolation _: isolated (any Actor)? = #isolation,
+            during work: () async -> Answer,
+        ) async
+            -> (ran: Ran, answer: Answer) {
+            let own = ProseTally(Ran())
+            let answer = await $running.withValue(own) { await work() }
+            return (own.withLock { $0 }, answer)
+        }
+
+        @TaskLocal static var running: ProseTally<Ran>?
+    #endif
 }

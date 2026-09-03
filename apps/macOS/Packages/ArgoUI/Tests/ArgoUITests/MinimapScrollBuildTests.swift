@@ -55,12 +55,18 @@ struct MinimapScrollBuildTests {
 
     /// And a scroll far enough to leave the band paints a new one, which is the case the whole
     /// band mechanism exists for. Without this, a lane that built nothing ever would pass above.
+    ///
+    /// Over the DEEP session, because a reading the lane fits into itself has no band to leave —
+    /// the miniature is the lane, it never slides, and nothing past its foot is ever painted
+    /// (#1132). A fold to fall out of is what this case is about, so it takes a session that has
+    /// one.
     @Test
     func `a scroll out of the painted band paints a new one`() async {
-        let mounted = await MinimapLaneFixture.mounted(over: Self.rows)
+        let mounted = await MinimapLaneFixture.mounted(over: MinimapLaneFixture.deepRows)
         let drawn = mounted.lane.rectRedraws
 
-        Self.scroll(mounted, through: 12000)
+        // Far enough to leave a band three lane-heights deep, at the grain's two points a row.
+        Self.scroll(mounted, through: 60000)
 
         #expect(mounted.lane.rectRedraws > drawn)
     }
