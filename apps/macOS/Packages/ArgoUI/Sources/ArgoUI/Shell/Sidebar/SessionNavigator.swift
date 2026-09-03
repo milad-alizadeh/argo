@@ -120,7 +120,7 @@ package struct SessionNavigator: View {
             drawn
                 // Holds its colour while the list is not first responder, where the platform would
                 // grey its own selection out: this is the one piece of state a reader tracks all
-                // day. The platform's own fill is switched off under it (`SidebarSelectionFill`),
+                // day. The platform's own fill is switched off under it (`ListSelectionFill`),
                 // so a row this misses draws no selection at all rather than the wrong one
                 // (D30, 2026-08-31; #1137).
                 .argoSelectedRowGround(isSelected: reading.isSelected(row))

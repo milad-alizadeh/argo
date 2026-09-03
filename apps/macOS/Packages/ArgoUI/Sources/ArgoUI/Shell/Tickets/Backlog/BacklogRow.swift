@@ -63,12 +63,12 @@ package struct BacklogRow: View {
             // Inboard of both marks below, which is what leaves an already-blocked row drawn
             // exactly where it was when the claim mark was added (#1074).
             if row.marks.isClaimed {
-                ClaimMark(backdrop: ink.backdrop)
+                ClaimMark()
             }
             // Inboard of the caption, so the caption keeps the trailing edge it has always been
             // right-aligned to and an unblocked row is drawn exactly where it was.
             if let blockage = row.marks.blockage {
-                BlockageMark(blockage: blockage, backdrop: ink.backdrop)
+                BlockageMark(blockage: blockage)
             }
             // The same slot, and they never contend: a closed ticket's blockers are not read at
             // all, and one still in the open set has no closure to draw (#1075).
@@ -88,12 +88,12 @@ package struct BacklogRow: View {
         let reading = BacklogRowLabels(row.labels)
         if !reading.shown.isEmpty, paneWidth >= ArgoBacklogList.labelsAppearAt {
             HStack(spacing: ArgoBacklogList.labelGap) {
-                ForEach(reading.shown) { LabelChip(label: $0, backdrop: ink.backdrop) }
+                ForEach(reading.shown) { LabelChip(label: $0, on: ink.readOn) }
                 // Counted rather than listed: the row has no width for the rest, and silence about
                 // them would leave a ticket whose distinguishing label is third looking like one
                 // with two labels.
                 if let marker = reading.marker {
-                    LabelChip(counting: marker, backdrop: ink.backdrop)
+                    LabelChip(counting: marker, on: ink.readOn)
                 }
             }
             .lineLimit(1)

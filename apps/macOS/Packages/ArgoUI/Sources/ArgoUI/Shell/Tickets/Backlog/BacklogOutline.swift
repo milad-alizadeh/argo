@@ -1,3 +1,4 @@
+import ArgoAtoms
 import ArgoDesign
 import SwiftUI
 
@@ -25,8 +26,12 @@ package struct BacklogOutline: View {
 
     package var body: some View {
         ForEach(drawn) { drawn in
+            // ONE reading of "is this row selected", for both halves that draw it: the ground and
+            // the ink read on that ground. Two would be two selected states the moment they
+            // disagree — the roster's own rule (`SessionRosterProjection.Selection`).
+            let isSelected = drawn.id == selection
             let ink = BacklogRowInk(
-                isSelected: drawn.id == selection,
+                isSelected: isSelected,
                 isRail: drawn.row.isRail,
                 palette: argo.color,
             )
@@ -39,7 +44,10 @@ package struct BacklogOutline: View {
             .previewSafeListRow()
             // On the ROW and from HERE: a `listRowBackground` declared inside the row's own body
             // reaches nothing, and the band it would have drawn is the platform's instead (#1071).
-            .listRowBackground(ink.ground.color)
+            // The rails' own modifier, not a second copy of its ternary (#906): since #1165 the
+            // backlog wears the same ground they do, and it carries the probe that switches the
+            // platform's own fill off under a held click (#1137).
+            .argoSelectedRowGround(isSelected: isSelected)
             // On the ROW, not the list: declared on the `List` the modifier reaches nothing. A rule
             // under every row turns a list into a table.
             .listRowSeparator(.hidden)

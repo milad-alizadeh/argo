@@ -878,8 +878,8 @@ its approved study are authoritative for the replacement look and feel.
   TWO fills for one state — the `AccentColor` asset at full strength while the list is first
   responder, `#464646` while it is not — and their luminances are five times apart. A floor of
   4.5:1 on the light one forces a near-black ink and on the dark one a near-white, so no single ink
-  clears the floor on both; `LoudSelectionGroundTests` proves that by sweeping the greys. So the
-  row draws `interaction.accent` as an opaque `listRowBackground`, covering whichever fill the
+  clears the floor on both; the suite of the day proved it by sweeping the greys. So the row
+  draws `interaction.accent` as an opaque `listRowBackground`, covering whichever fill the
   platform put there, exactly as the roster's quiet ground does and for the same stated reason: it
   holds its colour while the list is not first responder, because this is the row the reader is
   working in.
@@ -895,7 +895,7 @@ its approved study are authoritative for the replacement look and feel.
     `state.idle` or `state.failure` inside it, both of which read at 1.2:1 on the accent. Neither
     is re-coloured — the hue is a reading of the tracker, and the mark's ink is the Route's. Each
     is handed the deck's own surface as an opaque backdrop, so every hue on the row is read
-    exactly where it was chosen (`BacklogRowInk.backdrop`).
+    exactly where it was chosen (`BacklogRowInk.backdrop`, retired by #1165).
   - **What is NOT fixed here, and is recorded rather than left to be rediscovered:** the delivery
     dot. Its five hues are 6pt marks with no ground of their own, and `open` is `interaction
     .accent` itself — invisible on this ground, and the `absent` ring the shipping room draws
@@ -911,9 +911,10 @@ its approved study are authoritative for the replacement look and feel.
     it, so no capture route reaches the state. What the render DOES settle is the ground: before,
     the platform's own fill under `text.secondary` at 4.22:1; after, `interaction.accent` —
     `#5799F8` off a P3 capture, which is `#3E9BFF` in the sRGB the contract is written in — under
-    `#05070A`. The readings are held absolutely by `LoudSelectionGroundTests`, and the claim only a
-    click can make is `BacklogSelectionE2ETests`: the band is the loud rung with the list first
-    responder, and the SAME band once focus has left it.
+    `#05070A`. The readings were held absolutely by that suite, which #1165 replaced with
+    `BacklogSelectionGroundTests`, and the claim only a click can make is
+    `BacklogSelectionE2ETests`: the band is the loud rung with the list first responder, and the
+    SAME band once focus has left it.
 
   ![The selected backlog row before and after #1071](renders/1071-selected-backlog-row.png)
 - **Amended — 2026-09-02: a row that cannot carry the ground may not be selectable either.** The
@@ -942,13 +943,15 @@ its approved study are authoritative for the replacement look and feel.
   beside the row still on Argo's ground. No rule about which row the ground is drawn on can close a
   gap that is between two moments of one click.
 
-  So `argoSelectedRowGround` now carries a probe (`SidebarSelectionFill`) that reaches the table
+  So `argoSelectedRowGround` now carries a probe (`ListSelectionFill`, named `Sidebar…` until
+  #1165) that reaches the table
   under it and sets `selectionHighlightStyle = .none`. The platform draws no selection in any rail
   that takes the ground — the roster and the Work room's view list — and the ground is the ONLY
   selection paint there, at rest, under a held click, and whether or not the list is first
   responder. The backlog is untouched: its rows lay the loud rung themselves (#1071) and never went
-  through the ground. `SidebarSelectionFillTests` holds the property; the held click is judged off
-  the frames below, both on macOS 26.5.1, since a still specimen has no pressed state to show.
+  through the ground — until #1165 took them through it. `ListSelectionFillTests` holds the
+  property; the held click is judged off the frames below, both on macOS 26.5.1, since a still
+  specimen has no pressed state to show.
   That `.sidebar` honours the property was measured there and not assumed. The before frame is a
   hand on the mouse, deliberately: a synthetic press (`scripts/HoldClick.swift`) never drew the
   platform's fill on the old code, and a human hold drew it within a second.
@@ -956,6 +959,60 @@ its approved study are authoritative for the replacement look and feel.
   ![A held click on the roster before and after #1137](renders/1137-pressed-row.png)
 
   **Still not reopened, a sixth time:** the leading Ion Blue rail. Selection is the ground alone.
+- **Amended by [#1165](https://github.com/milad-alizadeh/argo/issues/1165) — 2026-09-03: the
+  backlog gives the LOUD rung up and takes the same ground every other selected row wears.**
+  #1071 put the accent at full strength under the backlog's selected row and considered exactly
+  this alternative, declining it in one sentence: "the loud fill on the row the reader is working
+  IN is wanted — the backlog is the room's subject, not a rail beside it." On screen the subject
+  argument does not pay. The band is the loudest thing in the window, louder than the ticket the
+  reader is actually reading in the pane beside it, and the row it marks is the one they look at
+  for hours at a time.
+
+  So the row now draws `interaction.selectionGround` through `.argoSelectedRowGround(isSelected:)`
+  — the rails' own modifier, not a second copy of its ternary (#906) — and three things fall away
+  with the rung that needed them:
+
+  - **The ground-dependent ink.** #1071 reversed #922's refusal of a ramp that changes with its
+    ground, for the accent alone: on it `text.tertiary` and Ion Blue have the same luminance, so
+    all three of the row's voices had to be `text.onAccent` and the row lost its hierarchy to face
+    and size. On the quiet ground the neutral ramp reads 5.91:1 (`secondary`) and 4.63:1
+    (`tertiary`), so #922's refusal stands again with nothing carved out of it, and selection
+    changes the row's ground and none of its voices. `text.onAccent` keeps its other placements —
+    Send, Allow, the Ask rows — and is no longer read on a row anywhere.
+  - **The rail's lost demotion.** A rail is on screen for a descendant's sake (#873) and its title
+    takes `text.tertiary` for it. On the loud rung there was no quieter rung to demote to and the
+    demotion was dropped while selected; it is back, and a selected rail reads as an unselected
+    one does.
+  - **The opaque plate under anything carrying its own colour.** The label chip's wash and the two
+    trailing marks read at about 1.2:1 on the accent, so #1071 laid `surface.base` under each of
+    them and spent horizontal padding on the capsule. On the quiet ground `state.running` reads
+    7.01:1, `state.failure` 3.92:1 and `state.idle` 3.98:1 — each within a hair of its reading on
+    the deck, and every one of them clear of the 3:1 a mark is held to. So the plate is gone, and
+    with it a geometry that moved the marks sideways when a row was selected. The chip is handed
+    the surface it sits on instead (`BacklogRowInk.readOn`) and takes BOTH its readings against it,
+    so a chip on a selected row is measured where it is drawn rather than where it was chosen.
+
+  **The delivery dot's open item closes here.** #1071 recorded it as not fixed: `open` is
+  `interaction.accent` itself, invisible on that ground, and the `absent` ring read 2.30:1 under
+  the 3:1 a mark is held to. The dot is read on the deck's own neighbourhood again, so nothing
+  about it is owed to selection. What the ring reads on the deck is still the dot's own question.
+
+  **The platform's fill goes off here too.** #1137 left the backlog out, in as many words, because
+  its rows laid the loud rung themselves and never went through the ground. Taking the ground takes
+  the probe with it, which is what this amendment most needed: a quiet ground under a full-strength
+  platform fill on the pressed row would have been a worse divergence than the one that shipped.
+  `ListSelectionFill` is renamed off `Sidebar`, since a `.inset` list is now one of the tables it
+  reaches — that `.inset` honours `selectionHighlightStyle = .none` was measured on the room's own
+  render, not inherited from the rails.
+
+  Both frames are the `ticketsRoom` specimen, one build apart. What they settle is the ground and
+  what came off with it — the plate under the chips and the mark, and the geometry that plate's
+  padding moved. Sampled off the after frame, the backlog's band and the roster's `All open` read
+  the same three bytes, which is the whole of what was asked for.
+
+  ![The selected backlog row before and after #1165](renders/1165-selected-backlog-row.png)
+
+  **Still not reopened, a seventh time:** the leading Ion Blue rail. Selection is the ground alone.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.

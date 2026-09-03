@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Switches off the selection paint `.listStyle(.sidebar)`'s own `NSTableView` draws, so the only
-/// selection in a sidebar is the ground Argo draws (`argoSelectedRowGround`).
+/// Switches off the selection paint a `List`'s own `NSTableView` draws, so the only selection in
+/// the list is the ground Argo draws (`argoSelectedRowGround`).
 ///
 /// The table's fill is the `AccentColor` asset at full strength while the list is first responder,
 /// and it moves to the pressed row on mouse-DOWN. Argo's ground follows the `List`'s selection
@@ -11,10 +11,13 @@ import SwiftUI
 /// pressed row wearing the platform's blue for the length of every held click, beside the old row
 /// still on Argo's ground (#1137). Switched off at the table, there is nothing to cover.
 ///
+/// `.inset` is `NSTableView`-backed like `.sidebar` and honours the same property, measured rather
+/// than assumed — `InsetListSelectionFillTests` (#1165).
+///
 /// Placed UNDER a row rather than beside the `List`: SwiftUI hosts a `.background` of the list
 /// outside the scroll view, where no walk up the superviews reaches the table. A row's content sits
 /// inside the table's own cell, so from there the walk is short and certain.
-public enum SidebarSelectionFill {
+public enum ListSelectionFill {
     /// Walks up from `view` to the nearest `NSTableView` and turns its selection drawing off.
     /// Answers with the table it changed, or `nil` when there was none or it was already off, so a
     /// probe landing on a recycled cell writes nothing the second time.
@@ -34,7 +37,7 @@ public enum SidebarSelectionFill {
 }
 
 /// A zero-size view that, once in a window, switches off the fill of the table above it.
-struct SidebarSelectionFillProbe: NSViewRepresentable {
+struct ListSelectionFillProbe: NSViewRepresentable {
     func makeNSView(context _: Context) -> ProbeView {
         ProbeView()
     }
@@ -56,7 +59,7 @@ struct SidebarSelectionFillProbe: NSViewRepresentable {
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             guard window != nil else { return }
-            SidebarSelectionFill.switchOff(above: self)
+            ListSelectionFill.switchOff(above: self)
         }
     }
 }

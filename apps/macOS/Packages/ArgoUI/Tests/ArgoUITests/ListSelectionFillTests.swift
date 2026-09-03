@@ -2,12 +2,13 @@ import AppKit
 import ArgoAtoms
 import Testing
 
-/// The platform's own selection paint, switched off under every sidebar row (#1137). The fill is
+/// The platform's own selection paint, switched off under every row that carries Argo's ground —
+/// both rails, and the backlog since #1165 (#1137). The fill is
 /// the platform's, so the regression would be an absence of code, and this suite is what keeps the
-/// switch thrown; why it is thrown at all is `SidebarSelectionFill`'s.
-@Suite("Sidebar selection fill")
+/// switch thrown; why it is thrown at all is `ListSelectionFill`'s.
+@Suite("List selection fill")
 @MainActor
-struct SidebarSelectionFillTests {
+struct ListSelectionFillTests {
     @Test
     func `the enclosing table stops drawing its own selection`() {
         let table = NSTableView()
@@ -16,7 +17,7 @@ struct SidebarSelectionFillTests {
         table.addSubview(row)
         row.addSubview(content)
 
-        let found = SidebarSelectionFill.switchOff(above: content)
+        let found = ListSelectionFill.switchOff(above: content)
 
         #expect(found === table)
         #expect(table.selectionHighlightStyle == .none)
@@ -30,7 +31,7 @@ struct SidebarSelectionFillTests {
         let content = NSView()
         host.addSubview(content)
 
-        #expect(SidebarSelectionFill.switchOff(above: content) == nil)
+        #expect(ListSelectionFill.switchOff(above: content) == nil)
     }
 
     /// Cells are recycled, so the probe lands many times on one table. The second landing is a
@@ -43,7 +44,7 @@ struct SidebarSelectionFillTests {
         table.addSubview(content)
         table.selectionHighlightStyle = .none
 
-        #expect(SidebarSelectionFill.switchOff(above: content) == nil)
+        #expect(ListSelectionFill.switchOff(above: content) == nil)
         #expect(table.selectionHighlightStyle == .none)
     }
 }
