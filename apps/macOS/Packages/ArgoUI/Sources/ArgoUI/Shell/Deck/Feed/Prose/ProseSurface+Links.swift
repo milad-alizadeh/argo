@@ -20,12 +20,17 @@ extension ProseSurface {
     @MainActor static func places(in placed: FeedProseFrame) -> [ProseLinkPlace] {
         placed.parts.flatMap { part -> [ProseLinkPlace] in
             guard case let .words(run, _, indent) = part.part else { return [] }
+            // Held inside the row. A run's typographic box is the FONT's ascent over its descent,
+            // which stands a little proud of the line box the rhythm is counted at — so the first
+            // line's box reaches above the row it is in, and a target there would be a press on the
+            // row above.
+            let row = CGRect(x: 0, y: 0, width: part.rect.width, height: placed.height)
             return run.spans.compactMap { span in
                 guard let url = span.url else { return nil }
-                return ProseLinkPlace(
-                    url: url,
-                    rect: span.rect.offsetBy(dx: part.rect.minX + indent, dy: part.rect.minY),
-                )
+                let rect = span.rect
+                    .offsetBy(dx: part.rect.minX + indent, dy: part.rect.minY)
+                    .intersection(row)
+                return rect.isNull ? nil : ProseLinkPlace(url: url, rect: rect)
             }
         }
     }

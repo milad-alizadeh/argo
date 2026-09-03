@@ -10,6 +10,9 @@ public struct ProseFace: Hashable, Sendable {
     public var rung: ArgoTypeScale = ProseRhythm.proseRung
     /// The heavier weight a heading and a table's header both take. Wider at every rung.
     public var isBold = false
+    /// The slant the agent asked for between asterisks. A property of one RUN and never of a block,
+    /// so no named face carries it: it is set on the run while a paragraph is typeset.
+    public var isItalic = false
     /// Set in the mono: a command, a count, a patch. Wider per character than the interface sans.
     public var isMachine = false
 
@@ -54,8 +57,15 @@ public extension ProseFace {
         let base = isMachine
             ? NSFont.monospacedSystemFont(ofSize: sans.pointSize, weight: .regular)
             : sans
-        guard isBold else { return base }
-        return NSFontManager.shared.convert(base, toHaveTrait: .boldFontMask)
+        var traits: NSFontTraitMask = []
+        if isBold {
+            traits.insert(.boldFontMask)
+        }
+        if isItalic {
+            traits.insert(.italicFontMask)
+        }
+        guard !traits.isEmpty else { return base }
+        return NSFontManager.shared.convert(base, toHaveTrait: traits)
     }
 
     /// This same face in the mono, which is what a `code` span inside it is set in.
@@ -145,6 +155,6 @@ public extension ProseFace {
     /// that drops what it holds when that number moves is cheaper than a key that carries it — see
     /// `ProseTextSize` and `ProseMetrics.atCurrentSize()` (#1027).
     var key: String {
-        "\(rung)\u{0}\(isBold)\u{0}\(isMachine)"
+        "\(rung)\u{0}\(isBold)\u{0}\(isItalic)\u{0}\(isMachine)"
     }
 }

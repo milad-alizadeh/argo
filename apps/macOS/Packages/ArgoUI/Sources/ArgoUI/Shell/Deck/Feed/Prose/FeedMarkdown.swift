@@ -20,7 +20,6 @@ package struct FeedMarkdown: View {
 
     package var body: some View {
         ProseSurfaceView(showing: showing, theme: argo, open: { open($0) })
-            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// What the surface is asked to show. The measure is the surface's own — a representable is
@@ -75,23 +74,25 @@ private struct ProseSurfaceView: NSViewRepresentable {
         ProseSurface()
     }
 
+    /// The ink and the opener only. NEVER a measure: `bounds` here is whatever the last layout
+    /// left, which is nothing at all on the first update, and a row placed across nothing is a row
+    /// that draws nothing and is never asked again.
     func updateNSView(_ surface: ProseSurface, context _: Context) {
         surface.open = open
-        surface.show(showing(surface.bounds.width), theme: theme)
+        surface.reink(theme, pending: showing)
     }
 
+    /// The measure is the proposal's, and the height is the frame's answer at it. A proposal with
+    /// no width of its own is SwiftUI asking what this would LIKE to be, which prose cannot answer
+    /// — words wrap across the measure they are given — so that one is declined and the surface
+    /// falls back to its own bounds once it has some.
     func sizeThatFits(
         _ proposal: ProposedViewSize,
         nsView surface: ProseSurface,
         context _: Context,
     )
         -> CGSize? {
-        // A proposal with no width of its own is SwiftUI asking what this would LIKE to be, which
-        // a scroll view does before it knows its own content size. The feed's column is the answer
-        // — every container that draws prose caps at it — and a measure of nothing would place the
-        // row at no height at all and never be asked again.
-        let offered = proposal.width ?? ArgoFeedRow.column
-        let measure = offered > 0 ? offered : ArgoFeedRow.column
+        guard let measure = proposal.width, measure > 0 else { return nil }
         surface.show(showing(measure), theme: theme)
         return CGSize(width: measure, height: surface.placed.height)
     }

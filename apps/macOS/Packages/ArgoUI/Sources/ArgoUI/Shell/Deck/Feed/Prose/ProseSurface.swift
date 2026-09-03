@@ -42,16 +42,25 @@ final class ProseSurface: NSView {
     /// measure is part of, which AppKit ends by throwing.
     private var laid: [(view: NSHostingView<AnyView>, rect: CGRect)] = []
     private var hosted: ProseShowing?
+    /// What to show at a measure, once one turns up — see `reink(_:pending:)`.
+    private var pending: ((CGFloat) -> ProseShowing)?
 
     /// Top-down, so every offset in the frame is read the way it was counted.
     override var isFlipped: Bool {
         true
     }
 
-    /// Nothing here has an intrinsic size worth reporting: the frame is the table's to set and the
-    /// height is `FeedProseFrame`'s to state.
+    /// The height the frame states, and no width of its own: words wrap across the measure they are
+    /// given, so a width here would be a claim the surface is in no position to make.
     override var intrinsicContentSize: NSSize {
-        .zero
+        NSSize(width: NSView.noIntrinsicMetric, height: placed.height)
+    }
+
+    /// The palette, and what to show once a measure turns up — for the update that knows the words
+    /// and the ink but not yet the width they wrap across.
+    @MainActor func reink(_ theme: ArgoTheme, pending: @escaping (CGFloat) -> ProseShowing) {
+        self.theme = theme
+        self.pending = pending
     }
 
     /// The row placed at `showing`'s measure. Skipped whole where nothing moved, which is most
@@ -63,6 +72,7 @@ final class ProseSurface: NSView {
         self.showing = showing
         placed = ProseReading.frame(of: showing.text, across: showing.measure)
         links = Self.places(in: placed)
+        invalidateIntrinsicContentSize()
         needsLayout = true
         needsDisplay = true
     }
@@ -72,6 +82,11 @@ final class ProseSurface: NSView {
     /// it was measured at.
     override func layout() {
         super.layout()
+        // The measure of last resort. A container that never proposed a width still gives this view
+        // one by laying it out, and a row placed across nothing would draw nothing for ever.
+        if showing == nil, bounds.width > 0, let pending {
+            show(pending(bounds.width), theme: theme)
+        }
         if hosted != showing {
             hosted = showing
             host(placed)
