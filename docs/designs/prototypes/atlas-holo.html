@@ -1173,12 +1173,6 @@ function fit() {
 }
 
 /* ---------- the snap ---------- */
-/* Every system in the survey that snaps well leaves the parent visible round the edge:
-   ECharts' zoomToNodeRatio is 0.32 of each linear dimension, FoamTree documents
-   groupExposureZoomMargin: 0 as the degenerate case you configure away from, and MapLibre's
-   fitBounds takes padding as a first-class argument. ~90% linear fill is the survey's own
-   target (atlas-snap-zoom.md §8.3). */
-const SNAP_FILL = 0.9;
 /* 500ms and ease-out, taken from the evidence rather than from taste: the field clusters at
    500–750ms, and the low end is where the two systems whose hops are short and repeated sit —
    Highcharts' animObject (500ms, easeInOutSine) and MapLibre's easeTo (500ms, CSS ease).
@@ -1231,18 +1225,6 @@ function flyTo(to) {
   queueMicrotask(() => { calmStamp = false; stamp(); });
 }
 
-/* Arriving at a level flies the camera onto it, and EVERY control that moves the scope comes
-   through here — a plate on the map, a row in the rail, a crumb on the way back. The map and
-   the list are one-to-one, so a route that moved the scope and left the camera behind would
-   make where you are depend on which of the two you used. */
-function flyHere() {
-  /* The rail and the crumb have no scale of their own to continue from, so they land on the
-     level fitted: in the treemap that is the re-tiled level whole, in the city the plate and
-     everything standing on it. The wheel and a click on the map never come through here —
-     they carry the scale themselves, on the leg they are riding (see `ride`). */
-  if (state.plan) return flyTo(camFor(null, 1));
-  flyTo(state.folder ? camFor(paintOrder(folderAt(state.folder)), SNAP_FILL) : camFor(null, 1));
-}
 /* Anyone else who writes the camera wins. The tween remembers its own last write, so a wheel
    notch, a drag, a turn, a resize or a view change during a flight ends it instead of fighting
    it a frame at a time — and it ends without touching the scope, because a wheel is a size and
@@ -1309,10 +1291,11 @@ function setView(plan) {
   hideDef(); segUI();
   if (CALM) { setFlat(plan ? 1 : 0); fit(); rebuild(); }
   else { vFrom = ZK; vTo = plan ? 0 : 1; vT0 = performance.now(); turning = true; }
-  /* Inside a folder the two views are two different tilings, so the frame the camera was
-     holding is not a frame in the other one. Re-framing here is the same act flying into the
-     folder was; at the top there is only one tiling and the camera is left alone. */
-  if (state.folder) flyHere();
+  /* The turn refits every frame, so the camera it lands on is the whole map either way. The
+     treemap then seats the level you were in, because that is the only framing it has; the
+     city is left fitted, because the camera there is the reader's and free zoom is all of it.
+     Both happen where the turn ENDS — a flight started here is written over by the next
+     refit and reads as the framing having been ignored. */
   detail(null); stamp();
 }
 /* ---------- the reshuffle ---------- */
@@ -2568,7 +2551,11 @@ function frame(now) {
     const u = Math.min(1, (now - vT0) / VIEW_MS);
     setFlat(1 - (vFrom + (vTo - vFrom) * glide(u)));
     fit();
-    if (u >= 1) { turning = false; setFlat(1 - vTo); fit(); rebuild(); detail(null); }
+    if (u >= 1) {
+      turning = false; setFlat(1 - vTo); fit();
+      if (state.plan && aim) Object.assign(cam, seatCam(aimBox(), SEAT));
+      rebuild(); detail(null);
+    }
     else rebuild(true);
   }
   if (fading) {
