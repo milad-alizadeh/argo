@@ -13,12 +13,18 @@
     // KIND — the companion plugin's `Plugin/` resources are TEMPLATES, not documents: they
     // carry `__ARGO_*__` placeholders that the spawn substitutes, and one of them stands where
     // a number goes, which is not JSON until it is written out.
+    //
+    // KIND — `ArgoFixtures/Fixtures` is written by `argo-synthesise` and read by a test. Its
+    // shape file is a RECORD of what the fixture beside it holds, so formatting it here would
+    // put every regeneration one whitespace edit away from a red build for a document nobody
+    // reads by hand.
     "includes": [
       "**",
       "!docs",
       "!**/*.xcodeproj",
       "!**/*.xcassets",
-      "!**/ArgoEngine/Companion/Plugin"
+      "!**/ArgoEngine/Companion/Plugin",
+      "!**/ArgoFixtures/Fixtures"
     ]
   },
   "formatter": {

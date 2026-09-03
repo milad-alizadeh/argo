@@ -44,7 +44,16 @@ let package = Package(
         // Sample data, and nothing that draws: the transcripts the cockpit is judged against and
         // the Tickets they hang off. A leaf under both targets above it, so the fixtures cannot
         // reach a view and a view cannot reach a fixture.
-        .target(name: "ArgoFixtures", dependencies: ["ArgoEngine"]),
+        // `Fixtures/` is excluded rather than declared a resource: the settled-session synthetic
+        // is read from the source tree by a suite and a generator, and `ArgoSpecimens` links this
+        // target while the app links `ArgoSpecimens` — a resource here would ship a transcript
+        // inside the product.
+        .target(name: "ArgoFixtures", dependencies: ["ArgoEngine"], exclude: ["Fixtures"]),
+        // The fixtures' own generator. An executable rather than a test, because writing a file
+        // into the tree is not something a suite may do — and in this package because proving the
+        // synthetic stands for its source means projecting both, which is ArgoUI's `package`
+        // surface.
+        .executableTarget(name: "argo-synthesise", dependencies: ["ArgoUI", "ArgoFixtures"]),
         // The specimen harness: the surfaces `scripts/specimens.sh` renders, the registry that
         // names them and the launch that dispatches to one. It sees ArgoUI's `package` surface,
         // and ArgoUI sees nothing of it.

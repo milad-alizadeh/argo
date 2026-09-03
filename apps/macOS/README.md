@@ -186,6 +186,34 @@ actually arrived. A switch that takes twenty seconds to put content up drops alm
 it does, so cadence alone would call it instant. Nothing on CI renders a view, so the surface half
 is a human looking at the screen (see `docs/agents/visual-verification.md`).
 
+## The largest Session, synthesised
+
+Every gate over a settled document is measured against one Session — 4 800 records, 63 MB, the one
+whose geometry ADR-0030 is about. That transcript is somebody's own words and this repository is
+public, so what is checked in is a SYNTHETIC of it, in
+`Packages/ArgoUI/Sources/ArgoFixtures/Fixtures/`, read through the same reader a real transcript
+is.
+
+What it holds is the shape: the same records, the same row kinds, the same tool calls, the same
+joins between a call and its result, and the same line count in every string. What it does not
+hold is anybody's words — every string, **keys included**, is replaced by lorem of the same
+length. Two deliberate exceptions, both named in `SyntheticTranscript` and re-stated by a test:
+the fields a reading BRANCHES on (`type`, `role`, a tool's `name`, `timestamp`, `model`,
+`gitBranch`, …), which decide a row's kind, and a picture's bytes, which become a one-pixel PNG —
+so the fixture stands for a Session's geometry and not for what its screenshots cost.
+
+```bash
+cp <a real transcript>.jsonl apps/macOS/Fixtures/settled-session.jsonl   # gitignored
+sh apps/macOS/scripts/synthesise-fixture.sh
+```
+
+The generator writes nothing when the two documents stop reading alike: it projects both and
+prints every counted fact that moved. `SettledSessionFixtureTests` holds the synthetic to the
+shape file beside it on every run, and `SettledSessionFigureRecording` makes the comparison
+against the real file on a machine that has one — and records a **named skip** where there is
+none, because a gate that exits green having looked at nothing is the failure this fixture exists
+to prevent.
+
 ## Deployment target
 
 macOS 26.0, no fallback. There is no `#available` branching anywhere — Liquid Glass comes

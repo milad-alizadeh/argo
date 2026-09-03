@@ -89,6 +89,12 @@ package enum TranscriptFixtures {
         )
     }
 
+    /// The smallest thing that is genuinely a PNG: one opaque pixel. Real bytes rather than an
+    /// arbitrary string, because half of what a gallery does with a shot depends on the image
+    /// decoding at all.
+    package static let onePixelPNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z"
+        + "8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="
+
     /// A transcript writes base64 as one unbroken run; source cannot hold a 1000-character line.
     /// The wrapping is the fixture's, so it comes off here rather than in the decoder: production
     /// bytes have no newlines and nothing should tolerate any.
