@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Turn-granularity overview lane — prototype (#1174)</title>
+<!--
+  PROTOTYPE — #1174. Five variants of what a Turn's mark in the overview lane could be, drawn
+  against three real sessions at the shipped lane width.
+
+  Throwaway. No build, no server: open the file. It reads `turn-lane-specimens.js`, which
+  `turn-lane-specimens.mjs` writes off three real transcripts — so the row counts, the Turn
+  boundaries and the power-law shape are the record's, not invented. Row HEIGHTS are modelled
+  (see that script's header); every number this page prints, it re-derives from those heights
+  rather than quoting #1173.
+
+  The feed on the left is real rows at real scale, so the lit rectangle, the click and the drag
+  can be judged rather than argued about.
+-->
+<style>
+  /* Graphite, forced dark. One theme (ArgoDesign/GraphitePalette). */
+  :root {
+    --sunken: #191A1D; --base: #1E2024; --raised: #252729; --overlay: #2E3136;
+    --text-primary: #F2F4F6; --text-secondary: #A8AEB5; --text-tertiary: #929AA1;
+    --text-disabled: #4E545A;
+    --hairline: rgba(255,255,255,.08); --subtle: rgba(255,255,255,.13);
+    --accent: #3E9BFF; --attention: #E8B24A; --failure: #F2555C;
+    --added: #A9D18E; --removed: #D98C93;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--base); color: var(--text-primary);
+    font: 13px/20px -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    overflow: hidden;
+  }
+  /* 800pt of deck, which is the height every figure in #1173 is quoted against. A taller window
+     would flatter every variant, so the lane is held at the height the arithmetic assumes.
+     `?deck=<pt>` overrides it. */
+  #page { display: flex; height: 100vh; }
+  #stage { flex: 1; display: flex; align-items: center; min-width: 0; }
+  #deck { display: flex; flex: 1; height: 800px; min-width: 0; border-block: 1px solid var(--hairline); }
+  /* The feed: a real scroll container over the document's real height, painted by canvas. */
+  #feedZone { flex: 1; position: relative; min-width: 320px; overflow: hidden; }
+  #feedScroll { position: absolute; inset: 0; overflow-y: scroll; overflow-x: hidden; }
+  #feedSpacer { width: 1px; }
+  #feedPaint { position: absolute; inset: 0; pointer-events: none; }
+  #seam { width: 9px; background: transparent; border-left: 1px solid var(--hairline); }
+  /* The lane. Its width is ArgoLayout.minimapLaneWidth(sharing:) — 15% of the deck, 72…120. */
+  #laneZone { position: relative; background: var(--sunken); }
+  #lanePaint { display: block; cursor: pointer; }
+  #laneLabel {
+    position: absolute; right: 100%; margin-right: 4px; max-width: 260px;
+    background: var(--overlay); border: 1px solid var(--subtle); border-radius: 5px;
+    padding: 4px 6px; font-size: 11px; line-height: 14px; color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+    display: none; z-index: 5;
+  }
+
+  /* Everything below is prototype chrome, deliberately not part of the design being judged. */
+  #panel {
+    width: 320px; background: var(--sunken); border-left: 1px solid var(--hairline);
+    padding: 14px; overflow-y: auto; font-size: 12px; line-height: 17px;
+    color: var(--text-secondary); flex: 0 0 320px; height: 100vh;
+  }
+  #panel h1 { font-size: 13px; color: var(--text-primary); margin: 0 0 2px; }
+  #panel h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-tertiary); margin: 16px 0 6px; font-weight: 600;
+  }
+  #panel p { margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 2px 0; vertical-align: top; }
+  td.n { text-align: right; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  td.bad { color: var(--failure); }
+  td.good { color: var(--added); }
+  .k { color: var(--text-tertiary); }
+  .legend span { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; }
+  .swatch { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+  label.toggle { display: flex; gap: 6px; align-items: center; margin: 3px 0; cursor: pointer; }
+  #bar {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 2px; z-index: 20;
+    background: var(--overlay); border: 1px solid rgba(255,255,255,.3);
+    border-radius: 999px; padding: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  }
+  #bar button {
+    background: transparent; border: 0; color: var(--text-primary); font: inherit;
+    padding: 4px 10px; border-radius: 999px; cursor: pointer;
+  }
+  #bar button:hover { background: rgba(255,255,255,.08); }
+  #bar .now { padding: 4px 12px; color: var(--text-primary); font-weight: 600; }
+  #bar .spec { display: flex; gap: 2px; border-left: 1px solid var(--subtle); margin-left: 6px; padding-left: 6px; }
+  #bar .spec button.on { background: var(--accent); color: #05070A; }
+  code { color: var(--text-primary); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+</style>
+</head>
+<body>
+<div id="page">
+<div id="stage">
+<div id="deck">
+  <div id="feedZone">
+    <div id="feedScroll"><div id="feedSpacer"></div></div>
+    <canvas id="feedPaint"></canvas>
+  </div>
+  <div id="seam"></div>
+  <div id="laneZone">
+    <canvas id="lanePaint"></canvas>
+    <div id="laneLabel"></div>
+  </div>
+</div>
+</div>
+  <div id="panel">
+    <h1 id="variantTitle">—</h1>
+    <p id="variantWhat" class="k"></p>
+    <h2>Specimen</h2>
+    <p id="specimenNote" class="k"></p>
+    <table id="specimenTable"></table>
+    <h2>What this lane draws</h2>
+    <table id="laneTable"></table>
+    <h2>Turn size</h2>
+    <table id="turnTable"></table>
+    <h2>Ink</h2>
+    <p class="legend" id="legend"></p>
+    <h2>Show</h2>
+    <div id="toggles"></div>
+    <h2>Honesty</h2>
+    <p class="k">
+      Rows, Turn boundaries and words are read off the real transcript. Row heights are
+      <em>modelled</em> (average advance, not Core Text), so every figure here is a re-derivation
+      over modelled heights — the same class of claim #1173's table makes, at real geometry.
+    </p>
+  </div>
+</div>
+<div id="bar">
+  <button id="prev" title="Previous variant (←)">‹</button>
+  <span class="now" id="now">A</span>
+  <button id="next" title="Next variant (→)">›</button>
+  <span class="spec" id="specButtons"></span>
+</div>
+
+<script src="turn-lane-specimens.js"></script>
+<script type="module">
+// ── The lane's own measures, transcribed from ArgoMinimapLane / ArgoLayout ────────────────────
+const RECT_MIN = 1          // ArgoMinimapLane.rectMinimumHeight
+const RECT_GAP = 1          // ArgoMinimapLane.rectGap
+const FLOOR = RECT_MIN + RECT_GAP
+const RECT_INSET = 12       // ArgoMinimapLane.rectInset (ArgoSpacing.comfortable)
+const RUN_OPACITY = 0.4     // ArgoMinimapLane.runOpacity
+const VIEWPORT_MIN = 24     // ArgoMinimapLane.viewportMinimumHeight
+const TURN_LINE_WIDTH = 2   // ArgoMinimapLane.turnLineWidth
+const LANE_SHARE = 0.15     // ArgoLayout.minimapLaneShare
+const LANE_WIDTHS = [72, 120]
+const COLUMN_WIDTH = 720    // ArgoFeedRow.column
+const TOP_INSET = 24, BOTTOM_INSET = 24
+
+// FeedInk.role(in:), GraphitePalette.
+const INK = {
+  prompt: '#F2F4F6', message: '#A8AEB5', thought: '#929AA1', command: '#A8AEB5',
+  added: '#A9D18E', removed: '#D98C93', media: '#A8AEB5', failure: '#F2555C',
+  attention: '#E8B24A', boundary: '#4E545A', unreadable: '#929AA1', link: '#3E9BFF',
+  table: '#A8AEB5', diagram: '#A8AEB5',
+}
+// Which row kinds count as WORK, for the banding B needs and the numbers the panel prints.
+const WORK = new Set(['call', 'survey', 'ask', 'skill'])
+const PROMPTISH = new Set(['prompt'])
+
+const VARIANTS = {
+  A: {
+    name: 'Proportional bars',
+    what: 'One bar per Turn at its true document extent, floored at 1pt. The honest baseline — ' +
+      'the panel counts how much of it is floor-height slivers.',
+  },
+  B: {
+    name: 'Proportional, banded',
+    what: 'The same bars, each split into its prompt / work / prose shares, so a Turn’s ' +
+      'character survives the compression its height does not.',
+  },
+  C: {
+    name: 'Equal ticks beside a rail',
+    what: 'Marks evenly spaced and legible; the thin rail on the trailing edge keeps the true ' +
+      'proportional position and carries the viewport rectangle. The rectangle is on the rail, ' +
+      'not on the marks.',
+  },
+  D: {
+    name: 'Proportional + boundary comb',
+    what: 'Bars stay proportional, and every Turn boundary also draws a 1pt tick in a leading ' +
+      'comb at its true position — so a run of trivial Turns is countable rather than a stipple.',
+  },
+  E: {
+    name: 'Adaptive compression',
+    what: 'A fisheye in the document dimension: extent^γ, renormalised to the lane. Legible, ' +
+      'linear nowhere — the rectangle and the drag map through the same curve, so the cost is ' +
+      'what it feels like under the hand.',
+  },
+}
+const KEYS = Object.keys(VARIANTS)
+
+// ── State ────────────────────────────────────────────────────────────────────────────────────
+const url = new URL(location.href)
+let variant = KEYS.includes(url.searchParams.get('variant')) ? url.searchParams.get('variant') : 'A'
+let specimenKey = url.searchParams.get('s') ?? 'ordinary'
+const shows = {
+  ink: url.searchParams.get('ink') !== '0',
+  starved: url.searchParams.get('starved') === '1',
+  rows: url.searchParams.get('rows') === '1',
+  gamma: Number(url.searchParams.get('gamma') ?? 0.5),
+}
+
+let data = null
+let specimen = null
+let geo = null
+
+const feedScroll = document.getElementById('feedScroll')
+const feedSpacer = document.getElementById('feedSpacer')
+const feedPaint = document.getElementById('feedPaint')
+const lanePaint = document.getElementById('lanePaint')
+const laneZone = document.getElementById('laneZone')
+const laneLabel = document.getElementById('laneLabel')
+
+// ── Geometry — MinimapGeometry, transcribed ──────────────────────────────────────────────────
+function buildGeometry(spec, lane, viewportHeight) {
+  const heights = spec.heights
+  const starts = new Float64Array(heights.length + 1)
+  for (let i = 0; i < heights.length; i += 1) starts[i + 1] = starts[i] + heights[i]
+  const documentHeight = starts[heights.length]
+  const scrollableHeight = TOP_INSET + documentHeight + BOTTOM_INSET
+
+  // The extents the marks are drawn from, at the granularity in play.
+  const turnExtents = spec.turns.map(([from, to]) => starts[to + 1] - starts[from])
+
+  const quarter = (values) => {
+    if (!values.length) return 0
+    const counts = new Int32Array(2049)
+    for (const v of values) counts[Math.min(2048, Math.max(0, Math.floor(v)))] += 1
+    const want = Math.max(1, Math.floor(values.length / 4))
+    let seen = 0
+    for (let h = 0; h < counts.length; h += 1) {
+      seen += counts[h]
+      if (seen >= want) return h
+    }
+    return 2048
+  }
+
+  const columnScale = Math.min(1, lane.width / COLUMN_WIDTH)
+  const travel = scrollableHeight - viewportHeight
+  let fitScale
+  if (travel <= 0) fitScale = columnScale
+  else {
+    const room = lane.height - VIEWPORT_MIN
+    if (room <= 0) fitScale = lane.height / scrollableHeight
+    else {
+      const held = room / travel
+      const plain = lane.height / scrollableHeight
+      fitScale = viewportHeight * held >= VIEWPORT_MIN ? plain : held
+    }
+  }
+  const grainOver = (values) => {
+    const short = quarter(values)
+    return short > 0 ? FLOOR / short : columnScale
+  }
+  const rowGrain = grainOver(heights)
+  const turnGrain = grainOver(turnExtents)
+  // MinimapGeometry.scale, and #1173's rule: rows if they fit, else Turns, else Turns and window.
+  const scaleAt = (grain) => Math.min(columnScale, Math.max(fitScale, grain))
+  const rowScale = scaleAt(rowGrain)
+  const turnScale = scaleAt(turnGrain)
+  const granularity = rowGrain <= fitScale ? 'rows' : (turnGrain <= fitScale ? 'turns' : 'windowed')
+  const scale = granularity === 'rows' ? rowScale : turnScale
+
+  const miniatureHeight = scrollableHeight * scale
+  const overflow = miniatureHeight - lane.height
+  const viewportHeightInLane = Math.min(lane.height, Math.max(VIEWPORT_MIN, viewportHeight * scale))
+  const laneTravel = overflow > 0 ? overflow + viewportHeightInLane - viewportHeight * scale : 0
+  const offsetFloor = -TOP_INSET
+  const offsetCeiling = Math.max(offsetFloor, documentHeight + BOTTOM_INSET - viewportHeight)
+
+  return {
+    starts, heights, documentHeight, scrollableHeight, turnExtents,
+    columnScale, fitScale, rowGrain, turnGrain, granularity, scale,
+    miniatureHeight, laneTravel, viewportHeightInLane, lane, viewportHeight,
+    offsetRange: [offsetFloor, offsetCeiling],
+    coverage: Math.min(1, lane.height / miniatureHeight),
+    progress(offset) {
+      const t = offsetCeiling - offsetFloor
+      return t > 0 ? Math.min(1, Math.max(0, (offset - offsetFloor) / t)) : 0
+    },
+    laneOffset(offset) { return laneTravel * this.progress(offset) },
+    viewportY(offset) {
+      const top = (offset + TOP_INSET) * scale - this.laneOffset(offset)
+      return Math.min(Math.max(0, top), Math.max(0, lane.height - viewportHeightInLane))
+    },
+    // MinimapGeometry.offset(forLaneY:) — a point of lane is worth slightly more than 1/scale.
+    offsetForLaneY(laneY) {
+      const t = offsetCeiling - offsetFloor
+      const solved = t > 0 ? scale - laneTravel / t : scale
+      const landed = laneY / (solved > 0 ? solved : scale) - TOP_INSET
+      return Math.min(offsetCeiling, Math.max(offsetFloor, landed))
+    },
+  }
+}
+
+// ── The marks each variant draws ─────────────────────────────────────────────────────────────
+// Every variant answers with the same shape: marks in lane coordinates, plus how it maps a lane
+// point back onto the reading — which is the thing the ticket says must not be given up.
+function marksFor(key, g, spec, offset) {
+  const laneOffset = g.laneOffset(offset)
+  const turns = spec.turns
+  const at = (row) => g.starts[row]
+  const y = (documentY) => (documentY + TOP_INSET) * g.scale - laneOffset
+
+  if (key === 'C') {
+    // Even spacing over the WHOLE session: the marks stop carrying position, and the rail keeps it.
+    const step = Math.max(FLOOR, g.lane.height / turns.length)
+    const drawn = turns.length * step <= g.lane.height
+    return {
+      linear: false, rail: true,
+      marks: turns.map(([from, to], i) => ({
+        y: i * step, height: Math.max(RECT_MIN, step - RECT_GAP), turn: i, from, to,
+        trueY: y(at(from)), trueHeight: g.turnExtents[i] * g.scale,
+      })),
+      fits: drawn,
+    }
+  }
+  if (key === 'E') {
+    // Fisheye: each Turn's drawn height is its extent raised to gamma, renormalised so the whole
+    // session fills the lane exactly. Monotone, so order and direction survive; linear nowhere.
+    const gamma = shows.gamma
+    const weights = g.turnExtents.map((e) => Math.pow(Math.max(1, e), gamma))
+    const total = weights.reduce((a, b) => a + b, 0)
+    const room = g.lane.height - RECT_GAP * turns.length
+    let cursor = 0
+    const marks = turns.map(([from, to], i) => {
+      const height = Math.max(RECT_MIN, (weights[i] / total) * room)
+      const mark = { y: cursor, height, turn: i, from, to, trueY: y(at(from)) }
+      cursor += height + RECT_GAP
+      return mark
+    })
+    return { linear: false, rail: false, marks, fits: cursor <= g.lane.height + 1 }
+  }
+  // A, B, D — proportional. The mapping is untouched; only what is drawn inside a bar changes.
+  const marks = turns.map(([from, to], i) => ({
+    y: y(at(from)),
+    height: Math.max(RECT_MIN, g.turnExtents[i] * g.scale - RECT_GAP),
+    turn: i, from, to,
+    trueY: y(at(from)),
+  }))
+  return { linear: true, rail: false, marks, fits: g.coverage >= 1 }
+}
+
+// The shares a Turn is made of, for B's bands and the panel's own arithmetic.
+function sharesOf(spec, from, to) {
+  let prompt = 0, work = 0, prose = 0
+  for (let i = from; i <= to; i += 1) {
+    const h = spec.heights[i]
+    const kind = spec.kinds[i]
+    if (PROMPTISH.has(kind)) prompt += h
+    else if (WORK.has(kind)) work += h
+    else prose += h
+  }
+  const total = prompt + work + prose || 1
+  return { prompt: prompt / total, work: work / total, prose: prose / total, total }
+}
+
+// The ink a Turn is drawn in where one ink has to stand for all of it: the loudest state wins,
+// then whatever the Turn spent most of its height on.
+function dominantInk(spec, from, to) {
+  let spent = {}
+  for (let i = from; i <= to; i += 1) {
+    const ink = spec.inks[i]
+    if (ink === 'failure' || ink === 'attention') return ink
+    spent[ink] = (spent[ink] ?? 0) + spec.heights[i]
+  }
+  return Object.entries(spent).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'message'
+}
+
+// ── Painting ─────────────────────────────────────────────────────────────────────────────────
+function fit(canvas, width, height) {
+  const ratio = window.devicePixelRatio || 2
+  canvas.width = Math.round(width * ratio)
+  canvas.height = Math.round(height * ratio)
+  canvas.style.width = `${width}px`
+  canvas.style.height = `${height}px`
+  const ctx = canvas.getContext('2d')
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
+  return ctx
+}
+
+function paintLane(offset) {
+  const g = geo
+  const { width, height } = g.lane
+  const ctx = fit(lanePaint, width, height)
+  ctx.clearRect(0, 0, width, height)
+
+  const shape = marksFor(variant, g, specimen, offset)
+  const drawable = { from: RECT_INSET, to: width - RECT_INSET }
+  const inner = drawable.to - drawable.from
+
+  // C's rail: the true proportional position, kept off to the trailing edge.
+  if (shape.rail) {
+    const railX = width - 5
+    ctx.globalAlpha = 1
+    ctx.fillStyle = 'rgba(255,255,255,.06)'
+    ctx.fillRect(railX, 0, 3, height)
+    ctx.globalAlpha = RUN_OPACITY
+    for (const mark of shape.marks) {
+      ctx.fillStyle = INK[shows.ink ? dominantInk(specimen, mark.from, mark.to) : 'message']
+      ctx.fillRect(railX, mark.trueY, 3, Math.max(0.5, mark.trueHeight))
+    }
+    ctx.globalAlpha = 1
+  }
+
+  // D's comb: every boundary at its true position, whatever the bar beside it could hold.
+  if (variant === 'D') {
+    ctx.globalAlpha = 0.55
+    ctx.fillStyle = INK.boundary
+    for (const mark of shape.marks) {
+      ctx.fillRect(2, Math.round(mark.trueY) + 0.5, 6, RECT_MIN)
+    }
+    ctx.globalAlpha = 1
+  }
+
+  const laneFrom = variant === 'D' ? drawable.from + 4 : drawable.from
+  const laneWidth = (variant === 'C' ? drawable.to - 8 : drawable.to) - laneFrom
+
+  ctx.globalAlpha = RUN_OPACITY
+  let starved = 0
+  for (const mark of shape.marks) {
+    if (mark.y + mark.height < -2 || mark.y > height + 2) continue
+    const shares = variant === 'B' ? sharesOf(specimen, mark.from, mark.to) : null
+    const atFloor = mark.height <= RECT_MIN + 0.01
+    if (atFloor) starved += 1
+    if (shows.starved && atFloor) {
+      ctx.globalAlpha = 1
+      ctx.fillStyle = INK.failure
+      ctx.fillRect(laneFrom, mark.y, laneWidth, Math.max(RECT_MIN, mark.height))
+      ctx.globalAlpha = RUN_OPACITY
+      continue
+    }
+    if (shares) {
+      // Prompt, work, prose — stacked in the Turn's own proportion, in the Turn's own order.
+      let cursor = mark.y
+      const band = (share, ink) => {
+        const h = share * mark.height
+        if (h <= 0) return
+        ctx.fillStyle = INK[shows.ink ? ink : 'message']
+        ctx.fillRect(laneFrom, cursor, laneWidth, Math.max(0.5, h))
+        cursor += h
+      }
+      // A prompt is drawn narrower — it is somebody's words, not the agent's work.
+      const promptHeight = shares.prompt * mark.height
+      if (promptHeight > 0) {
+        ctx.fillStyle = INK[shows.ink ? 'prompt' : 'message']
+        ctx.fillRect(laneFrom, cursor, laneWidth * 0.55, Math.max(0.5, promptHeight))
+        cursor += promptHeight
+      }
+      band(shares.work, 'command')
+      band(shares.prose, 'message')
+    } else {
+      ctx.fillStyle = INK[shows.ink ? dominantInk(specimen, mark.from, mark.to) : 'message']
+      ctx.fillRect(laneFrom, mark.y, laneWidth, Math.max(RECT_MIN, mark.height))
+    }
+  }
+  ctx.globalAlpha = 1
+
+  // The lit viewport rectangle. On the rail for C, over the marks everywhere else.
+  const vy = g.viewportY(offset)
+  const vh = g.viewportHeightInLane
+  if (shape.rail) {
+    ctx.fillStyle = 'rgba(62,155,255,.20)'
+    ctx.fillRect(width - 9, vy, 9, vh)
+    ctx.strokeStyle = 'rgba(62,155,255,.75)'
+    ctx.strokeRect(width - 8.5, vy + 0.5, 8, Math.max(1, vh - 1))
+    // Where the reading is, said again beside the marks — C's whole claim is that these two
+    // columns are the same session, and an unmarked marks column would not say so.
+    const lit = litTurns(shape, g, offset)
+    if (lit) {
+      ctx.fillStyle = 'rgba(62,155,255,.10)'
+      ctx.fillRect(0, lit.from, width - 10, Math.max(2, lit.to - lit.from))
+    }
+  } else if (shape.linear) {
+    ctx.fillStyle = 'rgba(62,155,255,.14)'
+    ctx.fillRect(0, vy, width, vh)
+    ctx.strokeStyle = 'rgba(62,155,255,.65)'
+    ctx.strokeRect(0.5, vy + 0.5, width - 1, Math.max(1, vh - 1))
+  } else {
+    // E's rectangle is drawn through E's OWN curve, not the linear one. Anything else would put
+    // the lit range somewhere the marks under it do not stand for — which is the failure the
+    // variant exists to expose, so it must not be papered over here.
+    const lit = litTurns(shape, g, offset) ?? { from: vy, to: vy + vh }
+    const height2 = Math.max(VIEWPORT_MIN, lit.to - lit.from)
+    ctx.fillStyle = 'rgba(62,155,255,.14)'
+    ctx.fillRect(0, lit.from, width, height2)
+    ctx.strokeStyle = 'rgba(62,155,255,.65)'
+    ctx.strokeRect(0.5, lit.from + 0.5, width - 1, Math.max(1, height2 - 1))
+  }
+  return { shape, starved }
+}
+
+// Which of C's evenly spaced marks the reading is actually inside — the join between the two
+// columns, and the thing that decides whether C reads as one control or two.
+function litTurns(shape, g, offset) {
+  const top = offset, bottom = offset + g.viewportHeight
+  let from = null, to = null
+  shape.marks.forEach((mark) => {
+    const start = g.starts[mark.from], end = g.starts[mark.to + 1]
+    if (end < top || start > bottom) return
+    if (from === null) from = mark.y
+    to = mark.y + mark.height
+  })
+  return from === null ? null : { from, to }
+}
+
+// The feed. Real rows at real heights, painted rather than laid out — 4 000 divs is not the
+// question this prototype is asking.
+function paintFeed(offset) {
+  const width = feedPaint.clientWidth, height = feedPaint.clientHeight
+  const ctx = fit(feedPaint, width, height)
+  ctx.clearRect(0, 0, width, height)
+  const column = Math.min(COLUMN_WIDTH, width)
+  const left = (width - column) / 2 + 24
+  const measure = column - 48
+  const g = geo
+  // The first row on screen, by binary search into the prefix sums.
+  let low = 0, high = specimen.heights.length - 1
+  while (low < high) {
+    const mid = (low + high + 1) >> 1
+    if (g.starts[mid] <= offset) low = mid
+    else high = mid - 1
+  }
+  for (let i = low; i < specimen.heights.length; i += 1) {
+    const y = g.starts[i] - offset
+    if (y > height) break
+    const h = specimen.heights[i] - 16
+    const kind = specimen.kinds[i]
+    const ink = specimen.inks[i]
+    ctx.globalAlpha = 0.55
+    ctx.fillStyle = INK[ink] ?? INK.message
+    if (kind === 'prompt') {
+      const w = measure * 0.78
+      ctx.globalAlpha = 0.10
+      ctx.fillStyle = '#FFFFFF'
+      roundRect(ctx, left + measure - w, y, w, h, 10)
+      ctx.globalAlpha = 0.75
+      ctx.fillStyle = INK.prompt
+      lines(ctx, left + measure - w + 16, y + 12, w - 32, h - 24)
+    } else if (kind === 'call' || kind === 'survey' || kind === 'skill') {
+      ctx.fillRect(left, y + 6, measure * 0.62, 8)
+    } else if (kind === 'mark') {
+      ctx.globalAlpha = 0.5
+      ctx.fillRect(left, y + h / 2, measure, 1)
+    } else if (kind === 'ask') {
+      ctx.globalAlpha = 0.9
+      ctx.strokeStyle = INK.attention
+      ctx.strokeRect(left + 0.5, y + 0.5, measure - 1, Math.max(2, h - 1))
+    } else {
+      lines(ctx, left, y, measure, h)
+    }
+    ctx.globalAlpha = 1
+  }
+  // The Turn the reading is in, named down the leading edge as the lane names it.
+  ctx.globalAlpha = 1
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+  ctx.fill()
+}
+
+function lines(ctx, x, y, w, h) {
+  for (let line = 0; line * 20 < h; line += 1) {
+    const last = (line + 1) * 20 >= h
+    ctx.fillRect(x, y + line * 20 + 6, last ? w * (0.35 + (line % 5) * 0.12) : w, 8)
+  }
+}
+
+// ── The numbers, re-derived ──────────────────────────────────────────────────────────────────
+function report(painted) {
+  const g = geo, spec = specimen, shape = painted.shape
+  const turnCount = spec.turns.length
+  const extents = g.turnExtents
+  const drawnHeights = shape.marks.map((m) => m.height)
+  const atFloor = drawnHeights.filter((h) => h <= RECT_MIN + 0.01).length
+  const under2 = drawnHeights.filter((h) => h < FLOOR).length
+  const sorted = [...extents].map((e, i) => [e, i]).sort((a, b) => b[0] - a[0])
+  const topThree = sorted.slice(0, 3).reduce((a, [e]) => a + e, 0) / extents.reduce((a, b) => a + b, 0)
+  const maxMarks = Math.floor(g.lane.height / FLOOR)
+  let holdsFailure = 0, holdsAttention = 0
+  for (const [from, to] of spec.turns) {
+    let failure = false, attention = false
+    for (let i = from; i <= to; i += 1) {
+      if (spec.inks[i] === 'failure') failure = true
+      if (spec.inks[i] === 'attention') attention = true
+    }
+    if (failure) holdsFailure += 1
+    if (attention) holdsAttention += 1
+  }
+  const rowsAtRowGrain = Math.min(1, g.lane.height / (g.scrollableHeight * Math.min(g.columnScale, Math.max(g.fitScale, g.rowGrain))))
+
+  const row = (label, value, cls = '') =>
+    `<tr><td class="k">${label}</td><td class="n ${cls}">${value}</td></tr>`
+  const pc = (v) => `${Math.round(v * 100)}%`
+
+  document.getElementById('specimenTable').innerHTML = [
+    row('rows (unfolded)', spec.stats.rows),
+    row('rows if work folded', spec.stats.foldedRows),
+    row('Turns', turnCount),
+    row('rows per Turn', spec.stats.rowsPerTurn),
+    row('document', `${Math.round(g.documentHeight).toLocaleString()}pt`),
+    row('Turns of 3 rows or fewer', pc(spec.stats.trivialShare)),
+    row('Turns with no work at all', pc(spec.stats.worklessShare)),
+    row('3 biggest Turns hold', pc(topThree)),
+    // Loudest-wins is the obvious rule for a Turn's one ink, and this is its bill: every Turn
+    // holding one failed call goes red, however little of the Turn that call was.
+    row('Turns holding a failure', pc(holdsFailure / turnCount),
+      holdsFailure / turnCount > 0.15 ? 'bad' : ''),
+    row('Turns holding a question', pc(holdsAttention / turnCount)),
+  ].join('')
+
+  document.getElementById('laneTable').innerHTML = [
+    row('lane', `${Math.round(g.lane.width)} × ${Math.round(g.lane.height)}pt`),
+    row('marks the lane can hold', maxMarks, turnCount > maxMarks ? 'bad' : 'good'),
+    row('marks drawn', shape.marks.length),
+    row('granularity chosen', g.granularity),
+    row('coverage at row grain', pc(rowsAtRowGrain)),
+    row('coverage at Turn grain', pc(g.coverage), g.coverage >= 0.999 ? 'good' : ''),
+    row('marks at the 1pt floor', `${atFloor} (${pc(atFloor / shape.marks.length)})`,
+      atFloor / shape.marks.length > 0.3 ? 'bad' : ''),
+    row('marks under 2pt', `${under2} (${pc(under2 / shape.marks.length)})`,
+      under2 / shape.marks.length > 0.3 ? 'bad' : ''),
+    row('linear in scroll distance', shape.linear ? 'yes' : 'no',
+      shape.linear ? 'good' : 'bad'),
+    row('whole session at once', shape.fits ? 'yes' : 'no', shape.fits ? 'good' : 'bad'),
+  ].join('')
+
+  const t = spec.stats.turnRows
+  document.getElementById('turnTable').innerHTML = [
+    row('min / p25 / median', `${t.min} / ${t.p25} / ${t.median}`),
+    row('p75 / p90', `${t.p75} / ${t.p90}`),
+    row('p99 / max', `${t.p99} / ${t.max}`),
+    row('work share p10 / med / p90',
+      `${pc(spec.stats.workShare.p10)} / ${pc(spec.stats.workShare.median)} / ${pc(spec.stats.workShare.p90)}`),
+  ].join('')
+}
+
+// ── Wiring ───────────────────────────────────────────────────────────────────────────────────
+const deckHeight = Number(url.searchParams.get('deck') ?? 800)
+document.getElementById('deck').style.height = `${deckHeight}px`
+
+function layout() {
+  const deckWidth = window.innerWidth - 320 - 9
+  const laneWidth = Math.min(LANE_WIDTHS[1], Math.max(LANE_WIDTHS[0], deckWidth * LANE_SHARE))
+  laneZone.style.width = `${laneWidth}px`
+  const height = deckHeight
+  const viewportHeight = height
+  geo = buildGeometry(specimen, { width: laneWidth, height }, viewportHeight)
+  feedSpacer.style.height = `${geo.documentHeight + BOTTOM_INSET}px`
+  feedPaint.style.width = `${feedPaint.parentElement.clientWidth}px`
+  feedPaint.style.height = `${height}px`
+  draw()
+}
+
+function draw() {
+  const offset = feedScroll.scrollTop
+  paintFeed(offset)
+  const painted = paintLane(offset)
+  report(painted)
+}
+
+function pickVariant(key) {
+  variant = key
+  url.searchParams.set('variant', key)
+  history.replaceState(null, '', url)
+  document.getElementById('now').textContent = `${key} · ${VARIANTS[key].name}`
+  document.getElementById('variantTitle').textContent = `${key} — ${VARIANTS[key].name}`
+  document.getElementById('variantWhat').textContent = VARIANTS[key].what
+  draw()
+}
+
+function pickSpecimen(key) {
+  specimenKey = key
+  specimen = data.specimens.find((s) => s.key === key) ?? data.specimens[0]
+  url.searchParams.set('s', specimen.key)
+  history.replaceState(null, '', url)
+  document.getElementById('specimenNote').textContent =
+    `${specimen.title} · ${specimen.id} — ${specimen.note}`
+  for (const button of document.querySelectorAll('#specButtons button')) {
+    button.classList.toggle('on', button.dataset.key === specimen.key)
+  }
+  feedScroll.scrollTop = 0
+  layout()
+}
+
+document.getElementById('prev').onclick = () =>
+  pickVariant(KEYS[(KEYS.indexOf(variant) + KEYS.length - 1) % KEYS.length])
+document.getElementById('next').onclick = () =>
+  pickVariant(KEYS[(KEYS.indexOf(variant) + 1) % KEYS.length])
+window.addEventListener('keydown', (event) => {
+  const tag = document.activeElement?.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return
+  if (event.key === 'ArrowLeft') document.getElementById('prev').click()
+  else if (event.key === 'ArrowRight') document.getElementById('next').click()
+  else if (KEYS.includes(event.key.toUpperCase())) pickVariant(event.key.toUpperCase())
+  else if ('123'.includes(event.key)) {
+    const spec = data.specimens[Number(event.key) - 1]
+    if (spec) pickSpecimen(spec.key)
+  }
+})
+
+feedScroll.addEventListener('scroll', draw, { passive: true })
+window.addEventListener('resize', layout)
+
+// Click and drag on the lane, through the same mapping the app uses.
+let dragging = false
+function laneYOf(event) {
+  return event.clientY - lanePaint.getBoundingClientRect().top
+}
+lanePaint.addEventListener('pointerdown', (event) => {
+  dragging = true
+  lanePaint.setPointerCapture(event.pointerId)
+  const laneY = laneYOf(event)
+  feedScroll.scrollTop = Math.max(0, offsetForLane(laneY - geo.viewportHeightInLane / 2))
+})
+lanePaint.addEventListener('pointermove', (event) => {
+  const laneY = laneYOf(event)
+  if (dragging) {
+    feedScroll.scrollTop = Math.max(0, offsetForLane(laneY - geo.viewportHeightInLane / 2))
+    return
+  }
+  // The label a hover draws: which Turn is under the pointer, and what it opened with.
+  const shape = marksFor(variant, geo, specimen, feedScroll.scrollTop)
+  const found = shape.marks.find((m) => laneY >= m.y && laneY <= m.y + Math.max(2, m.height))
+  if (!found) { laneLabel.style.display = 'none'; return }
+  const words = specimen.prompts[found.turn]
+  const rows = found.to - found.from + 1
+  laneLabel.style.display = 'block'
+  laneLabel.style.top = `${Math.max(0, laneY - 10)}px`
+  laneLabel.textContent = words
+    ? `Turn ${found.turn + 1} · ${rows} rows — ${words}`
+    : `Turn ${found.turn + 1} · ${rows} rows — (no prompt)`
+})
+lanePaint.addEventListener('pointerleave', () => { laneLabel.style.display = 'none' })
+lanePaint.addEventListener('pointerup', () => { dragging = false })
+
+// A lane point → a place in the reading. Linear for A/B/D; through each of C's and E's own
+// mappings otherwise, which is exactly the cost those two are being judged on.
+function offsetForLane(laneY) {
+  if (variant === 'A' || variant === 'B' || variant === 'D') return geo.offsetForLaneY(laneY)
+  const shape = marksFor(variant, geo, specimen, feedScroll.scrollTop)
+  if (variant === 'C') {
+    // The rail is linear; the marks are not. A press on the marks names a TURN and scrolls to its
+    // head — which is a different gesture from a scrub, and that is the thing to feel.
+    const step = geo.lane.height / shape.marks.length
+    const at = Math.min(shape.marks.length - 1, Math.max(0, Math.floor(laneY / step)))
+    return geo.starts[shape.marks[at].from] - TOP_INSET
+  }
+  // E: walk the fisheye back. Inside the Turn the press landed in, interpolate linearly.
+  let found = shape.marks[shape.marks.length - 1]
+  for (const mark of shape.marks) {
+    if (laneY <= mark.y + mark.height) { found = mark; break }
+  }
+  const inside = Math.min(1, Math.max(0, (laneY - found.y) / Math.max(1, found.height)))
+  const head = geo.starts[found.from], foot = geo.starts[found.to + 1]
+  return head + (foot - head) * inside - TOP_INSET
+}
+
+// Toggles.
+const toggles = [
+  ['ink', 'Ink by what the Turn holds'],
+  ['starved', 'Light every mark at the 1pt floor'],
+]
+document.getElementById('toggles').innerHTML = toggles.map(([key, label]) =>
+  `<label class="toggle"><input type="checkbox" data-key="${key}" ${shows[key] ? 'checked' : ''}>${label}</label>`,
+).join('') +
+  `<label class="toggle">γ for E <input type="range" min="0.2" max="1" step="0.05" value="${shows.gamma}" data-key="gamma"></label>`
+document.getElementById('toggles').addEventListener('input', (event) => {
+  const key = event.target.dataset.key
+  shows[key] = event.target.type === 'range' ? Number(event.target.value) : event.target.checked
+  url.searchParams.set(key, event.target.type === 'range' ? shows[key] : (shows[key] ? '1' : '0'))
+  history.replaceState(null, '', url)
+  draw()
+})
+
+document.getElementById('legend').innerHTML = [
+  ['prompt', 'prompt'], ['message', 'prose'], ['thought', 'thought'], ['command', 'work'],
+  ['attention', 'question'], ['failure', 'failed'], ['boundary', 'punctuation'],
+].map(([ink, label]) =>
+  `<span><i class="swatch" style="background:${INK[ink]}"></i>${label}</span>`,
+).join('')
+
+data = window.TURN_LANE
+document.getElementById('specButtons').innerHTML = data.specimens.map((s, i) =>
+  `<button data-key="${s.key}" title="${s.title} (${i + 1})">${s.title}</button>`,
+).join('')
+document.getElementById('specButtons').addEventListener('click', (event) => {
+  const key = event.target.dataset.key
+  if (key) pickSpecimen(key)
+})
+pickSpecimen(specimenKey)
+pickVariant(variant)
+</script>
+</body>
+</html>
