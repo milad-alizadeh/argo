@@ -122,7 +122,6 @@ function_parameter_count:
   # INIT: SessionSignals.swift 5 — the signals one transcript record carries
   # INIT: SessionSeed.swift 5 — what a New Session opens with
   # INIT: LiveClaudeFixture.swift 5 — a live-CLI fixture's collaborators
-  # INIT: CockpitPresentation.swift 5 — the cockpit reading's parts
   # INIT: ComposerSpecimen.swift 6 — the composer specimen's inputs, `opening` (#689) among them
   # INIT: TextRoles.swift 5 — one colour per text role
   #

@@ -32,8 +32,8 @@ package struct ConnectPortRow: View {
     private var menu: some View {
         HStack(spacing: ArgoSpacing.snug) {
             chooser
-            // BESIDE the menu, for the reason `GitVessel` gives: a menu re-synthesises its
-            // label, so a chevron inside it never draws at all.
+            // BESIDE the menu, never inside it: a `Menu` re-synthesises its label from icon and
+            // title alone, so a chevron placed within one never draws at all (#875).
             ArgoDisclosure(.below)
         }
     }

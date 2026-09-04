@@ -51,8 +51,8 @@ package struct ShellToolbar: ToolbarContent {
         }
         if let evidence {
             // The region packs from its own leading edge, so without this the toggle sits against
-            // the checkout rather than at the window's trailing edge, which is where a right-hand
-            // column's control belongs.
+            // the scope vessel rather than at the window's trailing edge, which is where a
+            // right-hand column's control belongs.
             ToolbarSpacer(.flexible, placement: .primaryAction)
             ToolbarItem(placement: .primaryAction) {
                 evidence

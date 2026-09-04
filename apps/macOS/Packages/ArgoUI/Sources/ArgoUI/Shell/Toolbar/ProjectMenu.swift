@@ -28,6 +28,21 @@ package struct ProjectMenu: View {
                 }
             }
             .pickerStyle(.inline)
+            Divider()
+            // Inside the `else`, so it is absent rather than disabled when nothing is registered:
+            // with no active Project there is no checkout to read again, and a live verb over a
+            // checkout Argo does not have is the `CONTEXT.md` degrade-down rule broken. It sits
+            // with the picker because it acts on the Project already chosen, not on the registered
+            // set below (#1232).
+            //
+            // The shortcut only fires while this menu is open — a `keyboardShortcut` outside the
+            // menu bar reaches no further, which is the reach it had on the control it came from.
+            Button(
+                "Refresh checkout",
+                systemImage: ArgoSymbol.retry,
+                action: actions.retry.checkout,
+            )
+            .keyboardShortcut("r", modifiers: [.command, .shift])
         }
         Divider()
         // **Add Project…**, not "Register a Project": registration is the domain term, not the

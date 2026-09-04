@@ -179,7 +179,6 @@ struct RosterMarksTheShownSessionTests {
             projects: [],
             activeProjectID: nil,
             sessions: sessions,
-            checkout: .unavailable,
             connection: .idle,
         )
     }

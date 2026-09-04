@@ -77,7 +77,26 @@ there — in the Sessions room, the session Dock (#161).
   chrome this amendment removes. They fold into the Tickets rail's `BACKLOG · BY PRIORITY` row,
   beside the count already there.
 
-### Global git / checkout chrome
+### Global git / checkout chrome — RETIRED (#1232)
+
+**Nothing below this line still ships.** The group was only ever built as far as a branch label
+opening onto one item, `Refresh checkout` — no branch list, no ahead/behind, no manage menu. A
+control that names a branch and draws a chevron promises a choice, so the half-built version was
+worse than none: it offered a switch it could not perform. #1232 removed it, moved `Refresh
+checkout` into the Project menu with its `⇧⌘R` shortcut, and took back the space.
+
+All work runs in worktrees, so the shared checkout's branch is not something the header picks. The
+branch that matters is the Session's own, at the altitude the last bullet below already named.
+
+**What no surface states in visible text, as of #1232:** the Session's branch reaches the reader
+only on hover (`Header.tooltip`) and in the ⓘ guide panel's `Branch` fact; the roster row marks
+the checkout KIND but not the name. The shared checkout's branch is now shown nowhere at all.
+#1232 left open whether the Session's branch should become visible text in the Session header —
+decide that before adding any branch chrome back.
+
+The rest is kept as the record of what was ratified and why, so a future ticket proposing branch
+chrome starts from this argument instead of rediscovering it. **Do not build from it without a
+new decision.**
 
 Moved here from `cockpit-code-room-spec.md` (#183 surfaced it; it is shell chrome, not a
 Code-room widget). **Present in all three rooms, always meaning the project's primary

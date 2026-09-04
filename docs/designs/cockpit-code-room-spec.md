@@ -77,12 +77,15 @@ it were a fact.
 - A plain **PTY in the checkout's cwd, attached to no agent** (tagged `no agent`) — the shell
   sibling of first-party file editing. Docked below the editor, expandable; `New` opens another.
 
-## Global git chrome — RATIFIED into the shell spec (#201)
+## Global git chrome — RATIFIED into the shell spec (#201), then RETIRED (#1232)
 
 The branch control is project-global chrome, not owned by the Code room. #201 moved the whole
 definition into `cockpit-app-shell-spec.md` → **Canonical chrome / Global git · checkout
-chrome**, and put it in **all three rooms** (always the primary checkout). Read it there; this
-surface is just where it was discovered.
+chrome**, and put it in **all three rooms** (always the primary checkout). This surface is just
+where it was discovered.
+
+**It no longer ships.** #1232 removed the control and moved `Refresh checkout` into the Project
+menu. Read the retired section for the argument, not for a thing to build.
 
 ## Shell chrome refinements — RATIFIED into the shell spec (#201)
 

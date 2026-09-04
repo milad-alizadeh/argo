@@ -131,7 +131,6 @@ public extension CockpitPresentation {
                 spend: .init(contextTokens: 472_233),
             ),
         ],
-        checkout: .branch("main"),
         connection: .connected,
     )
 
@@ -167,7 +166,6 @@ public extension CockpitPresentation {
                 transcript: .init(events: TranscriptFixtures.longTranscript),
             ),
         ],
-        checkout: .branch("main"),
         connection: .connected,
     )
 
@@ -176,7 +174,6 @@ public extension CockpitPresentation {
         projects: [],
         activeProjectID: nil,
         sessions: [],
-        checkout: .unavailable,
         connection: .idle,
     )
 
@@ -185,7 +182,6 @@ public extension CockpitPresentation {
         projects: previewProjects,
         activeProjectID: "moved",
         sessions: [],
-        checkout: .unavailable,
         connection: .idle,
     )
 
@@ -193,7 +189,6 @@ public extension CockpitPresentation {
         projects: previewProjects,
         activeProjectID: "argo",
         sessions: [],
-        checkout: .detached(shortSHA: "9011669"),
         connection: .idle,
     )
 }

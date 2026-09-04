@@ -41,7 +41,6 @@ extension CockpitPresentation {
                 work: .init(ticket: .linked(.init(number: $0))),
             )
         },
-        checkout: .branch("main"),
         connection: .connected,
     )
 }

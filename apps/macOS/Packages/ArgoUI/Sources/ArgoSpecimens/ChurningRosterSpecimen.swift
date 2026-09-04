@@ -47,7 +47,6 @@ struct ChurningRosterSpecimen: View {
             projects: settled.projects,
             activeProjectID: settled.activeProjectID,
             sessions: sessions,
-            checkout: settled.checkout,
             connection: settled.connection,
         )
     }

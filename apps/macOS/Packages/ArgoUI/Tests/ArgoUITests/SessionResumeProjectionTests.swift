@@ -13,7 +13,6 @@ struct SessionResumeProjectionTests {
             projects: [],
             activeProjectID: nil,
             sessions: [RosterSessionFixture.session(id: "a", access: access)],
-            checkout: .unavailable,
             connection: .idle,
         )
     }

@@ -194,4 +194,5 @@ Built, in `RosterArchiveFoot.swift` and `SessionNavigator.archivedFoot`:
    shut specimen and presses the label rather than the mark.
 7. Every chevron went onto the rung, including the ones no `ArgoGlyph` call site owned:
    `ConnectPortRow`'s menu was drawing the system's indicator at the system's size, so it now hides
-   it and draws `ArgoDisclosure` beside the menu the way `GitVessel` does.
+   it and draws `ArgoDisclosure` beside the menu — the idiom `GitVessel` carried until #1232
+   removed it.

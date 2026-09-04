@@ -45,8 +45,7 @@ public struct CockpitPresentation: Equatable, Sendable {
         }
     }
 
-    /// The engine's own enums, named for the shell rather than restated as it.
-    public typealias Checkout = CheckoutProjection.Head
+    /// The engine's own enum, named for the shell rather than restated as it.
     public typealias Connection = HubConnection
 
     /// The registered set, plus — on a launch that named a folder nobody registered — the one it
@@ -54,7 +53,6 @@ public struct CockpitPresentation: Equatable, Sendable {
     public let projects: [Project]
     public let activeProjectID: Project.ID?
     public let sessions: [Session]
-    public let checkout: Checkout
     public let connection: Connection
     /// Where a Subagent's own reading is asked for — see `FeedAgentReader`. A reader rather than
     /// the readings, so a child's bytes reach the lane that draws them and not this value (#858).
@@ -81,13 +79,11 @@ public struct CockpitPresentation: Equatable, Sendable {
         projects: [Project],
         activeProjectID: Project.ID?,
         sessions: [Session],
-        checkout: Checkout,
         connection: Connection,
     ) {
         self.projects = projects
         self.activeProjectID = activeProjectID
         self.sessions = sessions
-        self.checkout = checkout
         self.connection = connection
     }
 }

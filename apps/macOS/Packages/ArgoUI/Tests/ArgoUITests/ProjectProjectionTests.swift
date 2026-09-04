@@ -32,7 +32,7 @@ struct ProjectProjectionTests {
         #expect(projection.projects.map(\.liveSessionCount) == [1, nil])
     }
 
-    /// Roster, checkout and connection are read from the Hub every time, so the teardown half of a
+    /// Roster and connection are read from the Hub every time, so the teardown half of a
     /// switch takes all three together — no row of the Project being left can survive it.
     @Test
     @MainActor
@@ -45,7 +45,6 @@ struct ProjectProjectionTests {
         let switched = presentation(of: hub, activeProjectID: "cockpit")
 
         #expect(switched.sessions.isEmpty)
-        #expect(switched.checkout == CheckoutProjection.Head.unavailable)
         #expect(switched.activeProject?.name == "cockpit")
         #expect(switched.activeProject?.liveSessionCount == 0)
     }
