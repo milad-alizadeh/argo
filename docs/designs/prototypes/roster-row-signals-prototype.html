@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PROTOTYPE — Roster row signals: agents, PR, ready to ship</title>
+<!--
+  THROWAWAY PROTOTYPE (#1310, plus the PR badge and the ready-to-ship affordance).
+  Four variants of the Sessions roster row, switchable via ?variant=A|B|C|D, the floating
+  bar, or the ← / → keys.
+
+  THE QUESTION
+  The row says what one Session is DOING. It says nothing about the machinery under it or the
+  product coming out of it. Three facts want in at once, and they compete for the same two
+  lines:
+    1. how many Agents run under the Session right now      (#1310)
+    2. which pull request it is attached to, and its state   (merged / open / closed / draft)
+    3. that it is ready to ship, and the action that ships it
+  A variant is a position on how many of those three a dense row can carry, and where.
+
+  Every colour, radius, spacing step and type role is transcribed from
+  apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ — GraphitePalette.swift,
+  ArgoRadius.swift, ArgoSpacing.swift, ArgoLayout.swift, ArgoTypography.swift.
+  The four PR inks are the ONE thing here that is not in the contract; see --pr-* below.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift — ground */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --hover:      rgba(255,255,255,.045);
+    --selected:   rgba(255,255,255,.058);
+
+    /* text */
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #868D94;
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    /* edges */
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+
+    /* accent + state */
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    --running:   #46D3A8;
+    --idle:      #868E96;
+    --attention: #E8B24A;
+    --failure:   #F2555C;
+
+    /* PR state — NOT in the visual contract. The code host's own dark-theme inks, because
+       "merged is purple" is a fact the reader already carries in from GitHub, and the domain
+       says a code-host fact keeps the host's vocabulary. The contract has no purple at all,
+       and --pr-open sits a hue away from --running: see the .md, this is the open risk. */
+    --pr-open:   #3FB950;
+    --pr-merged: #A371F7;
+    --pr-closed: #F85149;
+    --pr-draft:  #8B949E;
+
+    /* ArgoRadius.swift */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+    /* ArgoSpacing.swift */
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px;
+
+    /* ArgoLayout.swift */
+    --sidebar-w: 320px;
+    --dot: 6px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0d0e10; color: var(--text-1);
+    font: 13px/1.45 var(--sans); -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* ---------- window ---------- */
+  .window {
+    position: fixed; inset: var(--s-section) var(--s-section) 72px;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--subtle); box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    background: var(--base); min-width: 1080px;
+  }
+  .panes { display: grid; grid-template-columns: var(--sidebar-w) 1fr; height: 100%; }
+
+  /* ---------- sidebar ---------- */
+  .sidebar {
+    display: flex; flex-direction: column; border-right: 1px solid var(--hairline);
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    backdrop-filter: blur(34px) saturate(140%); min-height: 0;
+  }
+  .sidebar-head {
+    display: flex; align-items: center; gap: var(--s-base);
+    height: 46px; flex: none; padding: 0 var(--s-comfortable);
+  }
+  .eyebrow {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .6px;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  .roster { flex: 1; overflow-y: auto; padding: 0 var(--s-base) var(--s-base); min-height: 0; }
+  .sidebar-foot {
+    flex: none; padding: var(--s-base) var(--s-comfortable) var(--s-comfortable);
+    border-top: 1px solid var(--hairline); color: var(--text-3); font-size: 12px;
+    display: flex; align-items: center; gap: var(--s-snug);
+  }
+
+  /* ---------- roster row ---------- */
+  .row {
+    position: relative; border-radius: var(--r-control);
+    padding: 7px var(--s-base); margin-bottom: 1px;
+    cursor: default; transition: background 120ms ease;
+  }
+  .row:hover { background: var(--hover); }
+  /* Selection is the neutral wash alone — no leading accent rule (D30 as amended by #875). */
+  .row.sel { background: var(--selected); }
+  .row.ext { opacity: .58; }
+
+  .flex { display: flex; align-items: center; min-width: 0; }
+  .g4 { gap: var(--s-tight); } .g6 { gap: var(--s-snug); } .g8 { gap: var(--s-base); }
+  .grow { flex: 1; min-width: 0; }
+  .col { display: flex; flex-direction: column; min-width: 0; }
+
+  .dot { width: var(--dot); height: var(--dot); border-radius: 50%; flex: none; }
+  .dot.running   { background: var(--running); box-shadow: 0 0 6px rgba(70,211,168,.5); }
+  .dot.attn      { background: var(--attention); }
+  .dot.fail      { background: var(--failure); }
+  .dot.idle      { background: var(--idle); }
+  /* "Argo cannot say" is an outline and never a colour — SessionStateIndicator's own rule. */
+  .dot.unknown   { background: transparent; box-shadow: inset 0 0 0 1px var(--text-off); }
+
+  .title {
+    font-size: 13px; font-weight: 500; color: var(--text-1); letter-spacing: -.05px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .meta {
+    font-family: var(--mono); font-size: 11px; color: var(--text-3);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .time { font-family: var(--mono); font-size: 11px; color: var(--text-3); flex: none; }
+  .badge {
+    flex: none; font-size: 10px; font-weight: 600; letter-spacing: .5px;
+    text-transform: uppercase; color: var(--attention);
+  }
+  .badge.fail { color: var(--failure); }
+  .g { width: 11px; height: 11px; flex: none; }
+
+  /* ---------- the agent count, four ways ---------- */
+
+  /* A — pips stacked under the state dot, in the leading marker column. */
+  .marker { width: var(--dot); flex: none; display: flex; flex-direction: column;
+            align-items: center; gap: 3px; padding-top: 4px; }
+  .pip { width: 4px; height: 4px; border-radius: 1px; background: var(--running); flex: none; }
+  .pip.more { width: 5px; height: 4px; border-radius: 1px; background: var(--text-off);
+              box-shadow: 0 0 0 0; }
+  .pip.unknown { background: transparent; box-shadow: inset 0 0 0 1px var(--text-off); border-radius: 50%; }
+  /* A landed delegation is a DASH, never an outlined pip: an outline here is already spoken for
+     by the unknown state, and two outlines under one dot read as two dots. */
+  .pip.spent { width: 5px; height: 1px; border-radius: 0; background: var(--text-off); }
+
+  /* B / C / D — a labelled figure. Never a bare number: `3` beside a title is a number
+     nobody can name, which is the trap AgentMeter.swift already names. */
+  .agents {
+    display: inline-flex; align-items: center; gap: 3px; flex: none;
+    font: 11px var(--mono); color: var(--running);
+  }
+  .agents.spent   { color: var(--text-off); }
+  .agents.unknown { color: var(--text-off); }
+  .agents svg { stroke: currentColor; }
+
+  /* ---------- the PR badge ---------- */
+  .pr {
+    display: inline-flex; align-items: center; gap: var(--s-tight); flex: none;
+    font: 11px var(--mono); border-radius: var(--r-marker);
+  }
+  .pr.open   { color: var(--pr-open); }
+  .pr.merged { color: var(--pr-merged); }
+  .pr.closed { color: var(--pr-closed); }
+  .pr.draft  { color: var(--pr-draft); }
+  /* The filled form some variants use, where the badge has to hold its own beside a title. */
+  .pr.fill { padding: 1px var(--s-snug); font-size: 10.5px; }
+  .pr.fill.open   { background: rgba(63,185,80,.14);  box-shadow: inset 0 0 0 1px rgba(63,185,80,.32); }
+  .pr.fill.merged { background: rgba(163,113,247,.16); box-shadow: inset 0 0 0 1px rgba(163,113,247,.34); }
+  .pr.fill.closed { background: rgba(248,81,73,.14);  box-shadow: inset 0 0 0 1px rgba(248,81,73,.32); }
+  .pr.fill.draft  { background: rgba(139,148,158,.12); box-shadow: inset 0 0 0 1px rgba(139,148,158,.28); }
+  .pr svg { stroke: currentColor; }
+
+  /* ---------- ready to ship ---------- */
+  /* The claim arrives over the companion channel, so it is CONVENTION and never DIRECT — it is
+     drawn as a thing the Session SAID, and a Session that says nothing simply has no strip. */
+  .ready {
+    display: inline-flex; align-items: center; gap: var(--s-tight); flex: none;
+    font: 600 10px var(--sans); letter-spacing: .5px; text-transform: uppercase;
+    color: var(--pr-open);
+  }
+  .ship {
+    display: inline-flex; align-items: center; gap: var(--s-tight); flex: none;
+    border: none; cursor: pointer; font: 600 11px var(--sans);
+    padding: 3px var(--s-base); border-radius: var(--r-control);
+    background: rgba(63,185,80,.16); color: #7EE787;
+    box-shadow: inset 0 0 0 1px rgba(63,185,80,.34);
+  }
+  .ship:hover { background: rgba(63,185,80,.26); color: #A6F0AE; }
+  .ship svg { stroke: currentColor; width: 11px; height: 11px; }
+  /* B's third line: the strip only a ready row grows. */
+  .shipline {
+    display: flex; align-items: center; gap: var(--s-snug);
+    margin-top: var(--s-snug); padding-top: var(--s-snug);
+    border-top: 1px solid var(--hairline);
+  }
+  .shipwhy { font: 11px var(--mono); color: var(--text-3); overflow: hidden;
+             text-overflow: ellipsis; white-space: nowrap; }
+
+  /* D's trailing gutter: one fixed column, one fact, ranked. */
+  .gutter { width: 46px; flex: none; display: flex; flex-direction: column;
+            align-items: flex-end; gap: 3px; }
+  .gutter .slot { height: 15px; display: flex; align-items: center; }
+  .ship.mini { padding: 2px 5px; font-size: 10px; }
+
+  /* C's fact bar. */
+  .factbar { display: flex; align-items: center; gap: var(--s-snug); min-width: 0; }
+  .sep { color: var(--text-off); }
+
+  /* fold row */
+  .chev { width: 11px; height: 11px; color: var(--text-3); flex: none; }
+  .row.fold .title { color: var(--text-2); font-weight: 400; }
+
+  /* ---------- deck ---------- */
+  .deck { display: flex; flex-direction: column; background: var(--base); min-width: 0; }
+  .deck-head {
+    height: 46px; flex: none; display: flex; align-items: center; gap: var(--s-comfortable);
+    padding: 0 var(--s-section); border-bottom: 1px solid var(--hairline);
+  }
+  .deck-title { font-size: 13px; font-weight: 600; }
+  .deck-body { flex: 1; display: grid; grid-template-columns: 220px 1fr; min-height: 0; }
+
+  /* the Agents rail, so the roster's figure can be checked against the rail's own count line */
+  .rail { border-right: 1px solid var(--hairline); padding: var(--s-comfortable); overflow-y: auto; }
+  .rail h5 {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: var(--s-base);
+  }
+  .chip {
+    display: flex; align-items: center; gap: var(--s-snug);
+    padding: var(--s-snug); border-radius: var(--r-control); margin-bottom: var(--s-tight);
+  }
+  .chip:hover { background: var(--hover); }
+  .chip .cn { font-size: 11.5px; color: var(--text-2); overflow: hidden;
+              text-overflow: ellipsis; white-space: nowrap; }
+
+  /* the answers card — the prototype's own readout, not part of the design */
+  .answers { padding: var(--s-loose) var(--s-section); overflow-y: auto; }
+  .answers h4 {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--accent-bright); margin-bottom: var(--s-comfortable);
+  }
+  .qa { display: grid; grid-template-columns: 200px 1fr; gap: var(--s-base) var(--s-loose);
+        font-size: 12px; align-items: baseline; }
+  .qa .q { color: var(--text-3); }
+  .qa .a { color: var(--text-1); }
+  .qa .a em { color: var(--text-3); font-style: normal; }
+  .answers .note {
+    margin-top: var(--s-loose); padding-top: var(--s-comfortable);
+    border-top: 1px solid var(--hairline); font-size: 11.5px; color: var(--text-3);
+    max-width: 62ch;
+  }
+  .answers .note b { color: var(--attention); font-weight: 600; }
+
+  /* ---------- switcher (not part of the design under evaluation) ---------- */
+  .switch {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 50;
+    display: flex; align-items: center; gap: 2px;
+    background: #fff; color: #111; border-radius: 999px; padding: 4px 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55); font: 600 12px/1 var(--sans);
+  }
+  .switch button {
+    border: none; background: none; cursor: pointer; width: 26px; height: 26px;
+    border-radius: 999px; font-size: 15px; color: #111;
+  }
+  .switch button:hover { background: rgba(0,0,0,.08); }
+  .switch span { padding: 0 var(--s-base); white-space: nowrap; }
+  .switch .toggle {
+    width: auto; padding: 0 10px; height: 22px; font: 600 11px var(--sans);
+    background: rgba(0,0,0,.07); border-radius: 999px;
+  }
+  .switch .toggle.on { background: #111; color: #fff; }
+
+  /* Q8 — the motion the toggle turns on, so the reader can see why a list of these is a list
+     nobody can scan. Off by default, and the recommendation is that it stays off. */
+  body.motion .pip,
+  body.motion .agents svg { animation: breathe 1.6s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <div class="panes">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <span class="eyebrow" id="eyebrow">Sessions</span>
+      </div>
+      <div class="roster" id="roster"></div>
+      <div class="sidebar-foot" id="foot"></div>
+    </aside>
+
+    <section class="deck">
+      <div class="deck-head">
+        <span class="deck-title" id="deck-title"></span>
+        <span class="grow"></span>
+        <span id="deck-pr"></span>
+      </div>
+      <div class="deck-body">
+        <div class="rail" id="rail"></div>
+        <div class="answers" id="answers"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="switch">
+  <button onclick="cycle(-1)" aria-label="Previous variant">‹</button>
+  <span id="switch-label"></span>
+  <button onclick="cycle(1)" aria-label="Next variant">›</button>
+  <button class="toggle" id="motion-toggle" onclick="toggleMotion()">Motion</button>
+</div>
+
+<script>
+/* ============ GLYPHS ============ */
+const SVG = {
+  /* delegation: a stem that forks. Not the branch glyph — that one is git's on this row. */
+  agents: `<path d="M4 13.2V6.4a2 2 0 0 1 2-2h6"/><circle cx="4" cy="14.4" r="1.4"/>
+           <path d="M12.6 4.4 10.6 2.4M12.6 4.4l-2 2"/><path d="M7.6 13.2a2 2 0 0 1 2-2h3"/>`,
+  /* the code host's pull-request mark */
+  pr: `<circle cx="4.2" cy="4" r="1.7"/><circle cx="4.2" cy="12.2" r="1.7"/><path d="M4.2 5.7v4.8"/>
+       <circle cx="11.8" cy="12.2" r="1.7"/><path d="M11.8 10.5V6.6a2 2 0 0 0-2-2H7.2"/>
+       <path d="M8.8 3 7.2 4.6l1.6 1.6"/>`,
+  merged: `<circle cx="4.2" cy="4" r="1.7"/><circle cx="4.2" cy="12.2" r="1.7"/><path d="M4.2 5.7v4.8"/>
+           <circle cx="11.8" cy="4" r="1.7"/><path d="M11.8 5.7v.8a4 4 0 0 1-4 4H5.9"/>`,
+  ship: `<path d="M8 12.6V3.4"/><path d="M4.6 6.8 8 3.4l3.4 3.4"/><path d="M3.4 13.6h9.2"/>`,
+  chevD: `<path d="M4 6.5 8 10.5l4-4"/>`,
+  chevR: `<path d="M6.5 4 10.5 8l-4 4"/>`,
+};
+const glyph = (d, cls = 'g') => `<svg class="${cls}" viewBox="0 0 16 16" fill="none"
+  stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+/* ============ FIXTURES ============ */
+/* One row per case the ticket asks a variant to answer. Read the comment, not just the row.
+
+   agents: how many Subagents are RUNNING at this second — the same reading
+           FeedAgents.running(of:) gives the rail (#1269 says the two must agree).
+     n     — Argo can say: n are running.  0 is a real answer.
+     null  — Argo CANNOT say (an open delegation under a Session whose silence says nothing,
+             #1076). Never drawn as a number, in any variant.
+   spent:  how many have LANDED. Only there to tell "delegated nothing" from "delegated and
+           they are all home" — two different facts, per the ticket's question 4.
+   pr:     { n, state } or null. state ∈ open | merged | closed | draft, the host's own words.
+   ready:  what the Session CLAIMED over the companion channel, or null. CONVENTION tier. */
+const sessions = [
+  { id:'s1', title:'The rail reads the Subagents’ own records', state:'running', access:'managed',
+    act:'Editing FeedAgentReader.swift', clock:'4m 12s',
+    agents:3, spent:1, pr:{n:1312,state:'open'}, ready:null },
+
+  /* Q5 — the ceiling. Twelve marks do not fit on a 320pt row in ANY variant. */
+  { id:'s2', title:'Sweep every stop reason in the corpus', state:'running', access:'managed',
+    act:'Reading 41 transcripts', clock:'22m 07s',
+    agents:12, spent:4, pr:null, ready:null },
+
+  /* Q4a — delegated NOTHING. The honest mark here is no mark at all. */
+  { id:'s3', title:'Fix the worktree naming guard', state:'running', access:'managed',
+    act:'Running scripts/swift-boundaries.sh', clock:'1m 30s',
+    agents:0, spent:0, pr:{n:1289,state:'merged'}, ready:null },
+
+  /* Q4b — delegated five, and all five are home. Different fact from the row above. */
+  { id:'s4', title:'Graphite and Ion Blue across the shell', state:'idle', access:'managed',
+    act:null, told:'#375', clock:'18m',
+    agents:0, spent:5, pr:{n:1301,state:'closed'}, ready:null },
+
+  /* THE SHIP CASE — the Session says it is done and there is no PR yet. */
+  { id:'s5', title:'Roster archive foot', state:'idle', access:'managed',
+    act:null, told:'/implement 1288', clock:'2m',
+    agents:0, spent:2, pr:null,
+    ready:{ why:'8 files · 2 commits · quality green' } },
+
+  /* Q6 — the DERIVED, cannot-tell count, on an external Session Argo owns no terminal of. */
+  { id:'s6', title:'codex — refactor the relay', state:'unknown', access:'external',
+    act:null, told:'external', clock:'6m ago',
+    agents:null, spent:0, pr:{n:1305,state:'draft'}, ready:null },
+
+  /* An orphaned run: ghosted, and its PR outlives the process that opened it. */
+  { id:'s7', title:'The checkout mark’s previews', state:'idle', access:'orphaned',
+    act:null, told:'#1276', clock:'3d',
+    agents:0, spent:3, pr:{n:1279,state:'open'}, ready:null },
+
+  { id:'s8', title:'Screenshots go in the ticket body', state:'attn', access:'managed',
+    word:'Needs input', act:'Waiting on gh auth', clock:'40s',
+    agents:1, spent:0, pr:{n:1286,state:'open'}, ready:null },
+
+  /* The edge that decides where the ship affordance may live: the Session claims ready AND a
+     PR is already open. The claim is stale; the PR outranks it and the strip must not draw. */
+  { id:'s9', title:'The branch control goes', state:'idle', access:'managed',
+    act:null, told:'#1232', clock:'1h',
+    agents:0, spent:1, pr:{n:1285,state:'open'},
+    ready:{ why:'12 files · 3 commits' } },
+
+  /* Q7 — the fold. It stands for four headless runs at once, so every fact on it is a SUM or
+     it is a claim about runs it is hiding. */
+  { id:'f1', fold:true, title:'4 runs', told:'ticket-1194-fold', clock:'12m',
+    state:null, access:'managed', agents:6, spent:9, prs:{open:2,merged:1}, ready:null },
+];
+
+let selected = 's1';
+let motion = false;
+
+/* ============ SHARED READINGS ============ */
+/* Whether the row may draw the ship affordance at all. A claim with a PR already open is a
+   stale claim — the product moved on and the Session did not hear. The PR wins: it is DERIVED
+   from the code host, and the claim is only what an agent SAID. */
+const shipsNow = s => s.ready != null && s.pr == null;
+const word = s => s.word ?? null;
+const dotClass = s => s.access === 'external' ? 'unknown' : (s.state ?? 'idle');
+const fact = s => s.act ?? s.told ?? null;
+
+/* The count line the RAIL draws for the same Session, so a variant can be checked against it. */
+const railHeader = s =>
+  s.agents == null ? 'Background Agents · state unknown' : `Background Agents · ${s.agents} running`;
+
+/* The PR badge, in the two weights the variants need. `#1312` and a state ink — the number is
+   the thing the reader is looking for, and the colour is what the state costs nothing to say. */
+function prBadge(s, { fill = false, glyphOn = true } = {}) {
+  if (!s.pr) return '';
+  const mark = s.pr.state === 'merged' ? SVG.merged : SVG.pr;
+  return `<span class="pr ${s.pr.state} ${fill ? 'fill' : ''}" title="Pull request #${s.pr.n} — ${s.pr.state}">
+    ${glyphOn ? glyph(mark) : ''}#${s.pr.n}</span>`;
+}
+
+/* The fold's PR reading: never one badge, because a fold has no one PR. A tally or nothing. */
+function foldPRs(s) {
+  if (!s.prs) return '';
+  return `<span class="pr open" title="2 open pull requests under this fold">${glyph(SVG.pr)}${s.prs.open}</span>
+          <span class="pr merged" title="1 merged pull request under this fold">${glyph(SVG.merged)}${s.prs.merged}</span>`;
+}
+
+/* ============ VARIANTS ============ */
+/* Each is a POSITION, not a skin. Read the comment above each one: it says what that variant
+   is willing to give up, which is the only thing that tells four dense rows apart. */
+const NAMES = {
+  A: 'Pips in the leading column',
+  B: 'Trailing meta column, ship on a third line',
+  C: 'Second line is a fact bar',
+  D: 'One trailing gutter, one ranked fact',
+};
+
+const roster = {
+
+  /* ── A ────────────────────────────────────────────────────────────────────────────────
+     The leading marker column is where the MACHINERY lives. The state dot keeps its place
+     and grows a stack of pips beneath it — one per running Agent, ceiling 3 and then a wider
+     bar that means "and more". The PR badge takes the leading edge of line 2, ahead of the
+     activity fact, so the clock at the trailing edge is untouched. Ready-to-ship takes the
+     state-word slot on line 1, and the Create PR button replaces it on the selected row.
+     GIVES UP: the exact figure above 3, and some of line 2's width for the activity. */
+  A: s => {
+    const pips = s.agents == null
+      ? `<span class="pip unknown" title="Argo cannot say how many run here"></span>`
+      : s.agents === 0
+        ? (s.spent ? `<span class="pip spent" title="${s.spent} delegations, all landed"></span>` : '')
+        : Array.from({length: Math.min(s.agents, 3)}, () => `<span class="pip"></span>`).join('')
+          + (s.agents > 3 ? `<span class="pip more" title="${s.agents} running"></span>` : '');
+    return `
+    <div class="flex g8" style="align-items:flex-start">
+      <span class="marker">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        ${pips}
+      </span>
+      <span class="col grow g4" style="gap:var(--s-hair)">
+        <span class="flex g6">
+          <span class="title grow">${s.title}</span>
+          ${shipsNow(s)
+            ? (s.id === selected
+                ? `<button class="ship" onclick="event.stopPropagation();ship('${s.id}')">${glyph(SVG.ship)}Create PR</button>`
+                : `<span class="ready">${glyph(SVG.ship)}Ready</span>`)
+            : (word(s) ? `<span class="badge">${word(s)}</span>` : '')}
+        </span>
+        <span class="flex g6">
+          ${s.fold ? foldPRs(s) : prBadge(s)}
+          <span class="meta grow">${fact(s) ?? ''}</span>
+          <span class="time">${s.clock}</span>
+        </span>
+      </span>
+    </div>`;
+  },
+
+  /* ── B ────────────────────────────────────────────────────────────────────────────────
+     Line 1 ends in a fixed-width meta column: the labelled agent figure, then the PR badge
+     as a filled chip. A figure has NO ceiling, which is exactly what it buys — s2 reads
+     `⑂12` where A can only say "more than 3". Ready-to-ship is not squeezed in anywhere: the
+     row GROWS a third line for it, with the reason the Session gave and the button.
+     GIVES UP: the title's width, and a uniform row height down the list. */
+  B: s => `
+    <div class="col g4" style="gap:var(--s-hair)">
+      <div class="flex g6">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        <span class="title grow">${s.title}</span>
+        ${agentFigure(s)}
+        ${s.fold ? foldPRs(s) : prBadge(s, {fill:true, glyphOn:false})}
+      </div>
+      <div class="flex g6">
+        ${word(s) ? `<span class="badge">${word(s)}</span>` : ''}
+        <span class="meta grow">${fact(s) ?? ''}</span>
+        <span class="time">${s.clock}</span>
+      </div>
+      ${shipsNow(s) ? `
+      <div class="shipline">
+        <span class="ready">${glyph(SVG.ship)}Ready to ship</span>
+        <span class="shipwhy grow">${s.ready.why}</span>
+        <button class="ship" onclick="event.stopPropagation();ship('${s.id}')">Create PR</button>
+      </div>` : ''}
+    </div>`,
+
+  /* ── C ────────────────────────────────────────────────────────────────────────────────
+     The most opinionated of the four: it says the activity SENTENCE is worth less on a
+     scanned list than the delivery facts, and gives line 2 over to a chip bar — agents, PR,
+     clock — moving the activity onto the title's tooltip. A row you scan for machinery, not
+     for prose. When the Session is ready to ship, the whole bar becomes the ship strip.
+     GIVES UP: the activity line, which is the single thing #1199 put there. */
+  C: s => `
+    <div class="col" style="gap:var(--s-hair)">
+      <div class="flex g6">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        <span class="title grow" title="${fact(s) ?? ''}">${s.title}</span>
+        ${word(s) ? `<span class="badge">${word(s)}</span>` : ''}
+      </div>
+      ${shipsNow(s) ? `
+      <div class="factbar" style="padding-left:14px">
+        <span class="ready">${glyph(SVG.ship)}Ready</span>
+        <span class="shipwhy grow">${s.ready.why}</span>
+        <button class="ship" onclick="event.stopPropagation();ship('${s.id}')">Create PR</button>
+      </div>` : `
+      <div class="factbar" style="padding-left:14px">
+        ${agentFigure(s)}
+        ${(s.agents || s.agents == null || s.spent) && (s.pr || s.fold) ? `<span class="sep">·</span>` : ''}
+        ${s.fold ? foldPRs(s) : prBadge(s)}
+        <span class="grow"></span>
+        <span class="time">${s.clock}</span>
+      </div>`}
+    </div>`,
+
+  /* ── D ────────────────────────────────────────────────────────────────────────────────
+     The row cannot grow, so it carries exactly ONE extra fact and ranks them: ready-to-ship
+     beats the agent count, the agent count beats the PR. All three live in one fixed trailing
+     gutter under the clock, so the row's width is decided once and never by its content. The
+     facts that lose the slot are still reachable — the deck header carries the PR, the rail
+     carries the count.
+     GIVES UP: seeing two of the three facts at once on the same row. */
+  D: s => `
+    <div class="flex g8" style="align-items:flex-start">
+      ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}" style="margin-top:5px"></span>`}
+      <span class="col grow" style="gap:var(--s-hair)">
+        <span class="flex g6">
+          <span class="title grow">${s.title}</span>
+          ${word(s) ? `<span class="badge">${word(s)}</span>` : ''}
+        </span>
+        <span class="meta">${fact(s) ?? ''}</span>
+      </span>
+      <span class="gutter">
+        <span class="slot"><span class="time">${s.clock}</span></span>
+        <span class="slot">${
+          shipsNow(s)
+            ? `<button class="ship mini" onclick="event.stopPropagation();ship('${s.id}')" title="Ready to ship — ${s.ready.why}">${glyph(SVG.ship)}PR</button>`
+            : (s.agents == null || s.agents > 0)
+              ? agentFigure(s)
+              : (s.fold ? foldPRs(s) : prBadge(s, {glyphOn:false}))
+        }</span>
+      </span>
+    </div>`,
+};
+
+/* The labelled figure B, C and D share. The glyph IS the label — a bare `3` on a row is the
+   unnamed number AgentMeter.swift refuses. `?` for the count Argo cannot establish, because a
+   number there would be the #1269 untruth written in one character. */
+function agentFigure(s) {
+  if (s.agents == null)
+    return `<span class="agents unknown" title="An open delegation Argo cannot resolve">${glyph(SVG.agents)}?</span>`;
+  if (s.agents > 0)
+    return `<span class="agents" title="${s.agents} Agents running">${glyph(SVG.agents)}${s.agents}</span>`;
+  if (s.spent)
+    return `<span class="agents spent" title="${s.spent} delegations, all landed">${glyph(SVG.agents)}0</span>`;
+  return '';  /* delegated nothing — no mark at all */
+}
+
+/* ============ WHAT EACH VARIANT ANSWERS ============ */
+/* The ticket's eight questions, plus the three the PR badge and the ship affordance add.
+   Rendered beside the roster so a reader never has to hold a variant's position in their head. */
+const ANSWERS = {
+  A: {
+    'Shape': 'A repeated mark. One pip per Agent, in the leading column under the dot.',
+    'Where it sits': 'The marker column widens by nothing — pips stack under the dot. Line 2 keeps the activity and the clock.',
+    'Project total': 'Sidebar foot: <em>9 sessions · 22 agents</em>.',
+    '0 vs never delegated': 'Never delegated draws nothing. 0-of-5-landed draws one hollow pip.',
+    'Above the ceiling': '3 pips, then a wider grey bar. The exact figure is in the rail, never on the row.',
+    'Cannot tell': 'One hollow round pip. No count, because there is none to give.',
+    'The Fold': 'Pips summed across the runs it hides, same ceiling.',
+    'Motion': 'None. Toggle it on to see why.',
+    'PR badge': 'Leading edge of line 2, ahead of the activity. Glyph + number, state as ink.',
+    'Ready to ship': 'Takes the state-word slot; becomes a Create PR button on the selected row.',
+    'Stale claim': 'A ready claim with a PR already open is dropped — the PR is DERIVED and outranks it.',
+  },
+  B: {
+    'Shape': 'A labelled figure. The delegation glyph plus a number.',
+    'Where it sits': 'A trailing meta column on line 1, after the title. Line 2 untouched.',
+    'Project total': 'The roster eyebrow: <em>SESSIONS · 22 AGENTS</em>.',
+    '0 vs never delegated': 'Never delegated draws nothing. 0-of-5-landed draws a dimmed <em>0</em>.',
+    'Above the ceiling': 'No ceiling — a figure reads at 12 as well as at 3. That is the whole trade.',
+    'Cannot tell': 'The glyph and a <em>?</em>, dimmed. Never a number.',
+    'The Fold': 'The summed figure. No single PR badge — a fold has no one PR, so it tallies.',
+    'Motion': 'None.',
+    'PR badge': 'Filled chip beside the figure, line 1 trailing. The number carries the ink.',
+    'Ready to ship': 'A third line the row grows, holding the reason the Session gave and the button.',
+    'Stale claim': 'Same rule; the third line never appears for a Session with a PR.',
+  },
+  C: {
+    'Shape': 'A labelled figure in a chip bar.',
+    'Where it sits': 'Line 2 IS the bar — agents, PR, clock. The activity sentence moves to the tooltip.',
+    'Project total': 'Nowhere on the roster. C says the total belongs in the deck, beside the rail.',
+    '0 vs never delegated': 'As B: nothing, versus a dimmed 0.',
+    'Above the ceiling': 'No ceiling.',
+    'Cannot tell': 'Glyph and <em>?</em>.',
+    'The Fold': 'The bar with a summed figure and a PR tally.',
+    'Motion': 'None.',
+    'PR badge': 'Second chip in the bar, beside the count.',
+    'Ready to ship': 'The bar is replaced whole by the ship strip. One row, one message.',
+    'Stale claim': 'Same rule.',
+  },
+  D: {
+    'Shape': 'A figure, but only when it wins the slot.',
+    'Where it sits': 'A fixed 46pt trailing gutter: clock above, one ranked fact below. The row cannot grow.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'A 0 count never wins the slot, so the PR takes it. The distinction lives in the rail.',
+    'Above the ceiling': 'No ceiling.',
+    'Cannot tell': 'Glyph and <em>?</em>, and it still outranks the PR — an unresolved delegation is the louder fact.',
+    'The Fold': 'The summed count, by the same ranking — a fold with runs delegating always wins the slot with the figure, so its PRs are never drawn.',
+    'Motion': 'None.',
+    'PR badge': 'Third in the ranking. Visible only when nothing is delegated and nothing is ready.',
+    'Ready to ship': 'Wins the gutter outright, as a mini Create PR button.',
+    'Stale claim': 'Same rule.',
+  },
+};
+
+const RISK = `<b>Open risk, all four variants.</b> The three PR inks are the code host's, not
+  Argo's — the visual contract has no purple at all, and <code>--pr-open</code> (#3FB950) sits one
+  hue from <code>--running</code> (#46D3A8), the ink the state dot spends on a Session that is
+  working. A green PR number beside a teal running dot is two greens on one row saying two
+  unrelated things. Either the roster takes the host's colours and the running dot changes, or the
+  PR state is drawn by its glyph and its position and only <em>merged</em> keeps a colour. This
+  prototype draws it the risky way on purpose, so the collision is visible rather than argued
+  about.`;
+
+/* ============ RENDER ============ */
+function current() {
+  const v = (new URLSearchParams(location.search).get('variant') || 'A').toUpperCase();
+  return ['A','B','C','D'].includes(v) ? v : 'A';
+}
+
+/* The Project total, as A, B and D each spend it. Summed the ONE way the rail counts:
+   the running Agents, and never the ones that landed. */
+const totalAgents = sessions.reduce((n, s) => n + (s.agents ?? 0), 0);
+const liveSessions = sessions.filter(s => !s.fold).length;
+
+function render() {
+  const v = current();
+  const s = sessions.find(x => x.id === selected) ?? sessions[0];
+
+  document.getElementById('roster').innerHTML = sessions.map(x => `
+    <div class="row ${x.id === selected ? 'sel' : ''} ${x.access !== 'managed' ? 'ext' : ''} ${x.fold ? 'fold' : ''}"
+         onclick="selected='${x.id}';render()">${roster[v](x)}</div>`).join('');
+
+  document.getElementById('eyebrow').textContent =
+    v === 'B' ? `Sessions · ${totalAgents} agents` : 'Sessions';
+  document.getElementById('foot').innerHTML =
+    v === 'C'
+      ? `Archived (2)`
+      : `Archived (2) <span class="sep">·</span> <span class="agents">${glyph(SVG.agents)}${totalAgents}</span> across ${liveSessions} sessions`;
+
+  document.getElementById('deck-title').textContent = s.title;
+  document.getElementById('deck-pr').innerHTML = s.fold ? '' : prBadge(s, {fill:true});
+
+  /* The rail, so the roster's figure can be read against the one the rail draws for it. */
+  const running = s.agents ?? 0;
+  document.getElementById('rail').innerHTML = `
+    <h5>${railHeader(s)}</h5>
+    ${s.agents == null
+      ? `<div class="chip"><span class="dot unknown"></span><span class="cn">One delegation, unresolved</span></div>`
+      : Array.from({length: running}, (_, i) =>
+          `<div class="chip"><span class="dot running"></span><span class="cn">Subagent ${i + 1}</span></div>`).join('')
+        + (s.spent ? `<div class="chip"><span class="cn" style="color:var(--text-3)">${s.spent} finished</span></div>` : '')
+        + (!running && !s.spent ? `<div class="chip"><span class="cn" style="color:var(--text-off)">Nothing delegated</span></div>` : '')}`;
+
+  const a = ANSWERS[v];
+  document.getElementById('answers').innerHTML = `
+    <h4>Variant ${v} — ${NAMES[v]}</h4>
+    <div class="qa">
+      ${Object.entries(a).map(([q, ans]) => `<span class="q">${q}</span><span class="a">${ans}</span>`).join('')}
+    </div>
+    <p class="note">${RISK}</p>`;
+
+  document.getElementById('switch-label').textContent = `${v} — ${NAMES[v]}`;
+}
+
+function cycle(d) {
+  const ks = ['A','B','C','D'];
+  history.replaceState(null, '', '?variant=' + ks[(ks.indexOf(current()) + d + ks.length) % ks.length]);
+  render();
+}
+
+function toggleMotion() {
+  motion = !motion;
+  document.body.classList.toggle('motion', motion);
+  document.getElementById('motion-toggle').classList.toggle('on', motion);
+}
+
+/* The prototype wires no mutation: what Create PR would DO is run /ship, and the question here
+   is what the row looks like, not whether the skill works. */
+function ship(id) {
+  const s = sessions.find(x => x.id === id);
+  document.getElementById('answers').insertAdjacentHTML('afterbegin',
+    `<p class="note" style="margin:0 0 var(--s-loose);border:0;padding:0;color:var(--accent-bright)">
+       Create PR on “${s.title}” → runs <code>/ship</code> in that Session. Nothing is wired here.</p>`);
+}
+
+addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (e.key === 'ArrowLeft') cycle(-1);
+  if (e.key === 'ArrowRight') cycle(1);
+});
+
+render();
+</script>
+</body>
+</html>
