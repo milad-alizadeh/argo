@@ -102,6 +102,45 @@ package extension FeedProjection {
         ).ask,
     )
 
+    /// The same one-of question once the record has settled it — the FOLD (#1207). The offer goes
+    /// and one row under the question carries the way it went, so a settled ask stops costing the
+    /// vertical a waiting one does.
+    ///
+    /// Beside `previewAskOneOf` on purpose: the pair is the whole judgement of the ticket, and the
+    /// two rows are only comparable drawn over the same work at the same width.
+    static let previewAskAnswered = answeredRows(
+        previewAskDecision,
+        "#713 — PlanPill shows the system focus ring on a click",
+    )
+
+    /// An answer that named none of the options. Its mark is `ArgoSymbol.answered` rather than a
+    /// tick, since `chosen(in:)` matched nothing (#1207).
+    static let previewAskAnsweredUnnamed = answeredRows(
+        previewAskDecision,
+        "None of those — I opened #722 for it instead.",
+    )
+
+    /// The other answer that names no option: a free-form question, which offered none to name.
+    static let previewAskAnsweredFreeForm = answeredRows(
+        [Ask.Question(text: "What should I call the roll-up?", options: [])],
+        "The delivery digest",
+    )
+
+    /// The question under the work that led to it, with what came back — the settled reading, built
+    /// through the SHIPPING projection so a render here is the row the cockpit draws.
+    private static func answeredRows(_ questions: [Ask.Question], _ answer: String) -> [FeedRow] {
+        rows(from: askTranscript(questions) + [
+            .toolCallOutcome(ToolCallOutcome(
+                id: previewAskID,
+                resolution: ToolCallOutcome.Resolution(
+                    status: .completed,
+                    result: .output(OutputEvidence(tier: .direct, text: answer)),
+                    endedAtMs: nil,
+                ),
+            )),
+        ])
+    }
+
     /// The Session those renders are drawn for, blocked on the one-of question.
     internal static let previewAskWaiting = SessionAsk(
         id: previewAskID,

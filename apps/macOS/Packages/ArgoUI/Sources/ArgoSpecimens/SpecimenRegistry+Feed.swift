@@ -3,45 +3,10 @@ import ArgoUI
 import SwiftUI
 
 /// The reading itself, at rest: every kind of row, and the evidence panel over them. What the feed
-/// does while a Turn is RUNNING is `SpecimenRegistry+Live.swift`, and the minimap beside it is
-/// `SpecimenRegistry+Lane.swift`.
+/// does while a Turn is RUNNING is `SpecimenRegistry+Live.swift`, the minimap beside it is
+/// `SpecimenRegistry+Lane.swift`, and the question rows are `SpecimenRegistry+Ask.swift`.
 extension SpecimenRegistry {
     static let feed: [SpecimenEntry] = rows + asks + diagrams + evidence + shots + lane
-
-    /// The question while it WAITS — one render per shape a call can put one in (#712), judged
-    /// against `docs/designs/feed-ask/`. The settled reading is `feedAttention` above; these are
-    /// the states where the row is the thing you press.
-    private static let asks: [SpecimenEntry] = [
-        SpecimenEntry("feedAskOneOf") { SpecimenScene.sessions(FeedProjection.previewAskOneOf) },
-        SpecimenEntry("feedAskManyOf") { SpecimenScene.sessions(FeedProjection.previewAskManyOf) },
-        SpecimenEntry("feedAskFreeForm") {
-            SpecimenScene.sessions(FeedProjection.previewAskFreeForm)
-        },
-        SpecimenEntry("feedAskTwoQuestions") {
-            SpecimenScene.sessions(FeedProjection.previewAskTwoQuestions)
-        },
-        // A Session Argo cannot drive draws no affordance at all (#546) — the same question, read.
-        SpecimenEntry("feedAskUnavailable") {
-            SpecimenScene.sessions(FeedProjection.previewAskUnavailable)
-        },
-        // The state between the two: driveable, but the gate is not holding this question — Argo
-        // restarted under a CLI that still is. No cards, and the attention ground STAYS, because
-        // it is genuinely still waiting.
-        SpecimenEntry("feedAskUnreached") {
-            SpecimenScene.sessions(FeedProjection.previewAskUnreached)
-        },
-        // The other way round (#1190): the GATE holds the question and the record does not carry
-        // it. The row stands beside the stream, at the foot of the work it interrupted.
-        SpecimenEntry("feedAskStanding") {
-            SpecimenScene.sessions(FeedProjection.previewAskStanding)
-        },
-        // The same shape one tier down (#1205): the agent REPORTED this question over the plugin,
-        // so Argo holds nothing to answer with. Judged against the row above it — a CONVENTION row
-        // that reads as one Argo owns is the false DIRECT this state exists to catch.
-        SpecimenEntry("feedAskReported") {
-            SpecimenScene.sessions(FeedProjection.previewAskReported)
-        },
-    ]
 
     private static let rows: [SpecimenEntry] = [
         SpecimenEntry("feed") {

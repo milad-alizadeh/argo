@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The settled ask, folded (#1207)</title>
+<!--
+  THROWAWAY. One question: what shape does an ANSWERED AskUserQuestion take in the feed?
+
+  Today it takes the same vertical a waiting one does — the question in full, then every option
+  it offered, one line each, with a tick beside the one taken. This draws the fold against that
+  control, at the same width, and MEASURES both, because "materially less vertical" is a number
+  and not an opinion.
+
+  THE THESIS. A question and its answer are ONE FACT, so they are ONE PARAGRAPH. The answer on
+  its own says nothing — "The design route" is not a fact until you know what was asked — and
+  the question on its own is finished business. Stacking them as two rows is the lazy reading of
+  that; setting the answer inline, as the resolution of the question's own sentence, is the
+  honest one. It also costs the least: where the answer fits on the question's last line, the
+  whole decision is one line and the fold paid nothing for it.
+
+  The palette, the radii, the spacing steps and the single typeface are NOT open here: they are
+  ArgoDesign's, and the app has one theme. What is open is the SETTING, which is where the whole
+  of this drawing spends itself.
+
+  Not production code: no tests, no abstractions, one file.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift — ground */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --hover:   rgba(255,255,255,.045);
+    --control: rgba(255,255,255,.06);
+    --marked:  rgba(255,255,255,.07);
+
+    /* text */
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #868D94;
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    /* edges */
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+
+    /* accent + state */
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    --running: #46D3A8;
+    --attention: #E8B24A;
+    /* ArgoPalette.state — muted(role) = .16, rim(role) = .5, wash(role) = .10 */
+    --attention-muted: rgba(232,178,74,.16);
+    --attention-rim:   rgba(232,178,74,.5);
+    --attention-wash:  rgba(232,178,74,.10);
+
+    /* ArgoRadius.swift, ArgoSpacing.swift */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px;
+
+    /* ArgoFeedRow.swift — markerWidth 18, markerGap 6, stepBeforeProse 2 (hair),
+       askOptionGap 4 (tight), blockStep 12 (comfortable), askCardInset 12, lineHeight 20 */
+    --marker-w: 18px; --marker-gap: 6px; --feed-column: 720px;
+    --feed-inset: 24px; --feed-gap: 16px; --line-h: 20px;
+    --indent: 24px;                        /* markerWidth + markerGap */
+
+    --decision-h: 27px;                    /* ArgoComposerVessel.swift */
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0d0e10; color: var(--text-1);
+    font: 13px/1.54 var(--sans);           /* 13 on 20 — ProseRhythm.lineHeight */
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px;
+                   border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* ---------- the window ---------- */
+  .window {
+    position: fixed; inset: var(--s-loose) var(--s-loose) 96px;
+    border-radius: 10px; overflow: hidden; border: 1px solid var(--subtle);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6); background: var(--base); min-width: 1040px;
+    display: grid; grid-template-columns: 1fr 76px 320px;
+  }
+  .deck { overflow-y: auto; min-width: 0; }
+  .col {
+    max-width: var(--feed-column); margin: 0 auto;
+    padding: var(--s-section) var(--feed-inset) 64px;
+    display: flex; flex-direction: column; gap: var(--feed-gap);
+  }
+
+  /* Scenery captions — deliberately on no feed rung, so they cannot be mistaken for the design. */
+  .cap { font: 600 10px/1 var(--mono); letter-spacing: .8px; text-transform: uppercase;
+         color: var(--text-off); padding-left: var(--indent); }
+  .cap b { color: var(--attention); font-weight: 600; }
+  .rule { height: 1px; background: var(--hairline); }
+  .prose { color: var(--text-1); }
+  .prose.q { color: var(--text-2); }
+  .call { display: flex; gap: var(--marker-gap); color: var(--text-2); }
+  .call .sym { width: var(--marker-w); text-align: right; color: var(--text-3); flex: none; }
+  .call .mono { font-family: var(--mono); font-size: 12px; color: var(--text-3); }
+
+  /* ---------- the ask card ---------- *
+   * Carried by its GROUND alone while it waits; settled, the ground goes and nothing moves. */
+  .ask { padding: var(--s-comfortable); border-radius: var(--r-control);
+         display: flex; flex-direction: column; gap: var(--s-comfortable); }
+  .ask.waiting { background: var(--attention-muted); }
+  .askq { display: flex; flex-direction: column; gap: var(--s-hair); }
+  .ask.waiting .askq { gap: var(--s-comfortable); }
+
+  /* ---------- the marker grid ---------- *
+   * The feed sets everything on one column of marks and one column of words. A settled ask is
+   * not exempt from it: the ask glyph takes the marker column its offers were numbered in, and
+   * the words take the column after it. */
+  .grid { display: flex; gap: var(--marker-gap); align-items: flex-start; }
+  .mark { width: var(--marker-w); height: var(--line-h); flex: none;
+          display: flex; align-items: center; justify-content: flex-end; color: var(--text-3); }
+  .mark svg { display: block; }
+  .ask.waiting .mark { color: var(--attention); }
+  .words { min-width: 0; flex: 1; }
+
+  /* ---------- THE SIGNATURE: one question, one answer, one paragraph ---------- *
+   * The answer is set INLINE, as the resolution of the sentence it answers — not as a second
+   * row under it. Nothing is truncated, nothing competes for a share of the column, and where
+   * the answer fits on the question's last line the whole decision is one line. */
+  .say { color: var(--text-2); }           /* the question: the label on the fact */
+  .say .a { color: var(--text-1); white-space: normal; }
+  .say .a .tick { display: inline-flex; vertical-align: -2px; margin-right: 3px; }
+  /* The space before the answer is a real one and slightly wider than a word space, so the two
+     halves read as a turn rather than as a run-on. */
+  .say .gap { display: inline-block; width: var(--marker-gap); }
+
+  /* — chip — the same paragraph, with the answer wrapped as an object. `clone` so a chip that
+       wraps keeps a rounded end on both fragments instead of one long torn box. */
+  .say.chip .a {
+    background: var(--control); border: 1px solid var(--hairline);
+    border-radius: var(--r-control); padding: 1px var(--s-snug) 2px;
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  }
+
+  /* — stacked — the reading this drawing started from, kept as the thing to beat. */
+  .stack { margin-top: var(--s-hair); display: flex; gap: var(--marker-gap); }
+  .stack .a { color: var(--text-1); min-width: 0; }
+  .stack .mark { color: var(--text-1); }
+  .stack.qloud .mark { color: var(--text-3); }
+  .stack .a .chipped {
+    display: inline-flex; gap: var(--s-tight); align-items: baseline;
+    background: var(--control); border: 1px solid var(--hairline);
+    border-radius: var(--r-control); padding: 1px var(--s-snug) 2px;
+  }
+
+  /* The inverted reading: the question keeps the prose rung and the answer is its continuation. */
+  .say.qloud { color: var(--text-1); }
+  .say.qloud .a { color: var(--text-2); }
+  .stack.qloud .a { color: var(--text-2); }
+
+  /* The caption a row drawn off the companion plugin carries (#1205). */
+  .caption { display: flex; gap: var(--marker-gap); color: var(--text-3); font-size: 11px; }
+  .caption .sym { width: var(--marker-w); flex: none; display: flex;
+                  justify-content: flex-end; padding-top: 3px; }
+
+  /* ---------- WAITING: the pressable options, exactly as #712 shipped them ---------- */
+  .opts { display: flex; flex-direction: column; gap: var(--s-snug); margin-left: var(--indent); }
+  .opt { display: flex; gap: var(--marker-gap); width: 100%;
+         background: var(--control); border: 1px solid var(--hairline);
+         border-radius: var(--r-control); padding: var(--s-base) var(--s-comfortable); }
+  .opt .n { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-3);
+            flex: none; width: var(--marker-w); text-align: right; }
+  .opt .l { color: var(--text-1); }
+  .opt .d { color: var(--text-3); font-size: 11px; }
+  .typed { display: flex; gap: var(--s-base); align-items: center; margin-left: var(--indent); }
+  .field { flex: 1; height: var(--decision-h); border: 1px solid var(--hairline);
+           border-radius: var(--r-control); padding: 0 var(--s-comfortable);
+           display: flex; align-items: center; color: var(--text-3); }
+  .send { height: var(--decision-h); min-width: 80px; border-radius: var(--r-control);
+          background: var(--accent); color: var(--on-accent); font: 500 12px/1 var(--sans);
+          display: grid; place-items: center; }
+
+  /* ---------- the offer, where it is still drawn ---------- */
+  .read { display: flex; flex-direction: column; gap: var(--s-tight); margin-top: var(--s-hair); }
+  .rline { display: flex; gap: var(--marker-gap); }
+  .rline .n { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-3);
+              flex: none; width: var(--marker-w); text-align: right; }
+  .rline .l { color: var(--text-1); min-width: 0; }
+  .rline.quiet .l { color: var(--text-2); }
+  .rline .tick { flex: none; display: inline-flex; vertical-align: -2px;
+                 margin-left: var(--s-tight); color: var(--text-1); }
+
+  .disc { background: none; border: 0; cursor: pointer; color: var(--text-off);
+          padding: 0 2px; display: inline-flex; vertical-align: -1px; }
+  .disc:hover { color: var(--text-1); }
+  .disc svg { transition: transform 140ms ease-out; }   /* ArgoMotion.selection */
+  .disc.open svg { transform: rotate(180deg); }
+
+  /* ---------- the lane (MinimapAskCard) ---------- */
+  .lane { background: var(--sunken); border-left: 1px solid var(--hairline);
+          border-right: 1px solid var(--hairline); padding: var(--s-section) 10px; overflow: hidden; }
+  .lane h4 { font: 600 9px/1 var(--mono); letter-spacing: .6px; text-transform: uppercase;
+             color: var(--text-off); margin-bottom: var(--s-comfortable); }
+  .card { position: relative; margin-bottom: var(--s-comfortable); }
+  .card.ruled { outline: 1px solid var(--attention); border-radius: 2px; }
+  .lbar { position: absolute; height: 3px; border-radius: 1px; background: var(--text-off); }
+  .lbar.att { background: var(--attention); }
+
+  /* ---------- the readout ---------- */
+  .side { background: var(--sunken); padding: var(--s-section) var(--s-loose); overflow-y: auto; }
+  .side h3 { font: 600 10px/1 var(--mono); letter-spacing: .8px; text-transform: uppercase;
+             color: var(--text-off); margin-bottom: var(--s-comfortable); }
+  .side p { color: var(--text-2); font-size: 12px; margin-bottom: var(--s-comfortable); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: var(--s-loose); }
+  th, td { text-align: left; padding: var(--s-tight) 0; border-bottom: 1px solid var(--hairline); }
+  th { color: var(--text-off); font-weight: 500; font-size: 10px; text-transform: uppercase;
+       letter-spacing: .6px; }
+  td { color: var(--text-2); }
+  td.num { text-align: right; font-family: var(--mono); color: var(--text-1);
+           font-variant-numeric: tabular-nums; }
+  td.num.win { color: var(--running); }
+  .note { font-size: 11px; color: var(--text-3); line-height: 1.55; }
+  .note b { color: var(--text-2); font-weight: 500; }
+
+  /* ---------- the bar ---------- */
+  .bar-fixed {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: var(--s-base); z-index: 20; flex-wrap: wrap;
+    justify-content: center; max-width: calc(100vw - 40px);
+    background: var(--overlay); border: 1px solid var(--strong); border-radius: 14px;
+    padding: 8px 12px; box-shadow: 0 10px 30px rgba(0,0,0,.6);
+  }
+  .bar-fixed button { background: var(--control); border: 1px solid var(--hairline);
+                      border-radius: 999px; color: var(--text-1); font: 500 12px/1 var(--sans);
+                      padding: 6px 10px; cursor: pointer; }
+  .bar-fixed button.on { background: var(--accent); color: var(--on-accent);
+                         border-color: var(--accent); }
+  .bar-fixed .grp { display: flex; gap: 4px; }
+  .bar-fixed .lbl { font: 600 9px/1 var(--mono); letter-spacing: .6px; text-transform: uppercase;
+                    color: var(--text-off); padding-right: 2px; }
+  .bar-fixed .sp { width: 1px; height: 18px; background: var(--hairline); }
+
+  /* ---------- render mode ---------- *
+   * `?render=1` drops the comparison scaffolding and leaves the settled row in a feed column,
+   * which is what a spec render is: the state, in its surface, and nothing explaining it. */
+  body.render .lane, body.render .side, body.render .bar-fixed { display: none; }
+  body.render .window { grid-template-columns: 1fr; inset: 0; border: 0; border-radius: 0;
+                        box-shadow: none; min-width: 0; }
+  body.render .cap, body.render .rule { display: none; }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <div class="deck"><div class="col" id="col"></div></div>
+  <div class="lane"><h4>lane</h4><div id="lane"></div></div>
+  <div class="side" id="side"></div>
+</div>
+
+<div class="bar-fixed">
+  <span class="lbl">fold</span><div class="grp" id="variants"></div>
+  <span class="sp"></span>
+  <span class="lbl">loud</span><div class="grp" id="inks"></div>
+  <span class="sp"></span>
+  <span class="lbl">offer</span><div class="grp" id="offers"></div>
+  <span class="sp"></span>
+  <span class="lbl">case</span><div class="grp" id="cases"></div>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ *
+ * The symbols, drawn. SF's questionmark.bubble and checkmark at
+ * ArgoIconSize.inline. A "?" typed as a character sits on the text
+ * baseline at the text weight and reads as punctuation somebody left
+ * behind; these are marks.
+ * ------------------------------------------------------------------ */
+const SVG = {
+  asked:
+    '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M14 4.1a2.5 2.5 0 0 0-2.5-2.5h-7A2.5 2.5 0 0 0 2 4.1v4.3a2.5 2.5 0 0 0 2.5 2.5h.6'
+    + 'v3l3.2-3h3.2A2.5 2.5 0 0 0 14 8.4z"/>'
+    + '<path d="M6.5 5.3a1.6 1.6 0 0 1 3.1.5c0 1-1.5 1.2-1.5 2.1"/>'
+    + '<circle cx="8.05" cy="9.5" r=".62" fill="currentColor" stroke="none"/></svg>',
+  chosen:
+    '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M2.8 8.5 6.1 11.8 13.2 4.3"/></svg>',
+  /* Where the answer named nothing that was offered, the mark says CONTINUES rather than
+     CHOSEN: a tick over words nobody offered claims a pick that never happened. */
+  said:
+    '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M4 3.4v4.1a2 2 0 0 0 2 2h6"/><path d="M9.6 7.1 12.2 9.5 9.6 11.9"/></svg>',
+  mcp:
+    '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M3 9.5 8 4.5l5 5"/><path d="M5.5 12 8 9.5l2.5 2.5"/></svg>',
+  chevron:
+    '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M3.5 6 8 10.5 12.5 6"/></svg>',
+};
+
+/* ------------------------------------------------------------------ *
+ * The cases. Six shapes a settled ask actually arrives in — including
+ * the two the code today draws badly and nobody looking at `pick` sees.
+ * ------------------------------------------------------------------ */
+const CASES = {
+  pick: {
+    name: 'one-of, answered',
+    questions: [{
+      text: 'Which ink should a settled ask take in the feed?',
+      options: [
+        { label: 'The attention ink', detail: 'the same amber it wears while it waits' },
+        { label: 'The ordinary ink', detail: 'the rung every other settled row takes' },
+        { label: 'Neither — drop the ground and the mark together', detail: null },
+      ],
+    }],
+    answer: 'The ordinary ink',
+  },
+  long: {
+    name: 'one-of, long question and five offers',
+    questions: [{
+      text: 'The Session has been idle for eleven minutes with an uncommitted worktree on '
+          + 'worktree-ticket-1207-settled-ask-fold. What should Argo do with the branch before '
+          + 'it hands the deck back?',
+      options: [
+        { label: 'Commit it on the ticket branch and leave the worktree in place', detail: null },
+        { label: 'Stash it and report the stash on the row', detail: 'recoverable, off the branch' },
+        { label: 'Leave it exactly as it is', detail: null },
+        { label: 'Open a draft pull request from what is there', detail: 'no CI runs on a draft' },
+        { label: 'Ask again in ten minutes', detail: null },
+      ],
+    }],
+    answer: 'Commit it on the ticket branch and leave the worktree in place',
+  },
+  two: {
+    name: 'two questions, one call',
+    questions: [
+      {
+        text: 'Which route should #1207 take?',
+        options: [
+          { label: 'The design route', detail: 'prototype, then design, then code' },
+          { label: 'Straight to code', detail: null },
+        ],
+      },
+      {
+        text: 'Should the full offer stay reachable?',
+        options: [
+          { label: 'Yes, behind a disclosure', detail: null },
+          { label: 'No — a settled offer is history', detail: null },
+        ],
+      },
+    ],
+    answer: 'The design route; No — a settled offer is history',
+  },
+  free: {
+    name: 'free-form, answered',
+    questions: [{ text: 'What should the branch be called?', options: [] }],
+    answer: 'worktree-ticket-1207-settled-ask-fold',
+  },
+  none: {
+    name: 'answered, but no option was named',
+    questions: [{
+      text: 'Which ink should a settled ask take in the feed?',
+      options: [
+        { label: 'The attention ink', detail: null },
+        { label: 'The ordinary ink', detail: null },
+        { label: 'Neither — drop the ground and the mark together', detail: null },
+      ],
+    }],
+    answer: 'Neither of those — quieten the ground and keep the mark where it is.',
+  },
+  /* The two rows the fold must LEAVE ALONE. Both are pending — nothing has answered them — so
+     there is no answer to fold to, and the numbered offer stays exactly as #534 shipped it.
+     They are here because today's code branches on `waiting == nil`, which lumps them in with
+     the settled row; the fold has to branch on `isAnswered` instead. */
+  reported: {
+    name: 'asked over the companion plugin (#1205) — PENDING',
+    pending: true,
+    questions: [{
+      text: 'Which ink should a settled ask take in the feed?',
+      options: [
+        { label: 'The attention ink', detail: null },
+        { label: 'The ordinary ink', detail: null },
+      ],
+    }],
+    caption: 'asked over the companion plugin · answer in the composer',
+  },
+  unavailable: {
+    name: 'a question on a Session Argo cannot drive (#546) — PENDING',
+    pending: true,
+    questions: [{
+      text: 'Which ink should a settled ask take in the feed?',
+      options: [
+        { label: 'The attention ink', detail: null },
+        { label: 'The ordinary ink', detail: null },
+        { label: 'Neither — drop the ground and the mark together', detail: null },
+      ],
+    }],
+  },
+};
+
+const VARIANTS = {
+  now:    'now — the question, then every offer',
+  inline: 'inline — one question, one answer, one paragraph',
+  chip:   'inline chip — the answer as an object in the sentence',
+  stack:  'stacked — the answer as a row of its own',
+};
+const INKS   = { answer: 'the answer', question: 'the question' };
+const OFFERS = { out: 'folded out', disclose: 'disclosure' };
+
+/* `FeedAsk.chosen(in:)`, transcribed: DERIVED and deliberately weak — the answer is prose, so
+   the reading is that it CONTAINS the label, and where two are named the longer wins. */
+function chosen(question, answer) {
+  if (!answer) return null;
+  const named = question.options.map(o => o.label).filter(l => answer.includes(l));
+  if (!named.length) return null;
+  return named.reduce((a, b) => (b.length > a.length ? b : a));
+}
+
+/* `FeedAskOffer.numbered`, transcribed: only the FIRST match is ticked. */
+function offers(question, answer) {
+  const taken = chosen(question, answer);
+  const at = taken == null ? -1 : question.options.findIndex(o => o.label === taken);
+  return question.options.map((o, i) => ({
+    ordinal: i + 1, marker: (i + 1) + '.', label: o.label, detail: o.detail, isChosen: i === at,
+  }));
+}
+
+/* What the fold says the answer to ONE question was: the chosen option's words where an option
+   was named, and the record's own prose where none was — which is every free-form ask, and
+   every answer that agreed with nothing on the list. Today both draw nothing at all. */
+function said(q, answer) {
+  const taken = chosen(q, answer);
+  return { text: taken != null ? taken : (answer || ''), isLabel: taken != null };
+}
+
+/* ------------------------------------------------------------------ *
+ * Drawing
+ * ------------------------------------------------------------------ */
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+};
+const icon = (name, cls) => {
+  const n = el('span', cls || null);
+  n.innerHTML = SVG[name];
+  return n;
+};
+const markerCell = name => {
+  const n = el('span', 'mark');
+  n.innerHTML = SVG[name];
+  return n;
+};
+
+function caption(text) {
+  const c = el('div', 'caption');
+  c.append(icon('mcp', 'sym'));
+  c.append(el('div', null, text));
+  return c;
+}
+
+/* WAITING — the control the fold is measured against. Untouched by this ticket. */
+function drawWaiting(kase) {
+  const card = el('div', 'ask waiting');
+  for (const q of kase.questions) {
+    const block = el('div', 'askq');
+    const row = el('div', 'grid');
+    row.append(markerCell('asked'));
+    row.append(el('div', 'words', q.text));
+    block.append(row);
+    if (q.options.length) {
+      const list = el('div', 'opts');
+      for (const o of offers(q, null)) {
+        const line = el('div', 'opt');
+        line.append(el('span', 'n', o.marker));
+        const words = el('div');
+        words.append(el('div', 'l', o.label));
+        if (o.detail) words.append(el('div', 'd', o.detail));
+        line.append(words);
+        list.append(line);
+      }
+      block.append(list);
+    } else {
+      const typed = el('div', 'typed');
+      typed.append(el('div', 'field', 'Type an answer…'));
+      typed.append(el('div', 'send', 'Answer'));
+      block.append(typed);
+    }
+    card.append(block);
+  }
+  if (kase.caption) card.append(caption(kase.caption));
+  return card;
+}
+
+/* The full numbered offer, as `FeedAskOptions` ships it. `now` is this; the disclosure
+   reveals it. */
+function fullOffer(q, answer) {
+  const list = el('div', 'read');
+  const drawn = offers(q, answer);
+  const any = drawn.some(o => o.isChosen);
+  for (const o of drawn) {
+    const line = el('div', 'rline' + (any && !o.isChosen ? ' quiet' : ''));
+    line.append(el('span', 'n', o.marker));
+    line.append(el('div', 'l', o.label));
+    if (o.isChosen) line.append(icon('chosen', 'tick'));
+    list.append(line);
+  }
+  return list;
+}
+
+/* The answer, as the run of words that resolves the question — a `<span>`, so it flows in the
+   question's own paragraph rather than opening a row of its own. */
+function answerRun(q, answer, asChip) {
+  const s = said(q, answer);
+  const run = el('span', 'a');
+  run.append(icon(s.isLabel ? 'chosen' : 'said', 'tick'));
+  run.append(document.createTextNode(s.text));
+  /* A capsule says "a thing that was offered, and taken". An answer that named no offer is not
+     that — it is the record's own prose — so it stays bare whatever the treatment, or the shape
+     claims a pick the mark is careful not to. */
+  return { run, chipped: asChip && s.isLabel };
+}
+
+function foldQuestion(q, answer, state, isPending) {
+  const block = el('div', 'askq');
+  const row = el('div', 'grid');
+  row.append(markerCell('asked'));
+  const words = el('div', 'words');
+  row.append(words);
+  block.append(row);
+
+  const loudAnswer = state.ink === 'answer';
+
+  /* Nothing has answered it, so there is nothing to fold to. The row keeps the numbered offer
+     as a reading — the state #534 shipped, and the one this ticket must not touch. */
+  if (isPending || state.variant === 'now') {
+    words.style.color = 'var(--text-1)';
+    words.textContent = q.text;
+    if (q.options.length) block.append(fullOffer(q, answer));
+    return block;
+  }
+
+  const showOffer = state.offer === 'disclose' && q.options.length;
+
+  if (state.variant === 'stack') {
+    words.style.color = loudAnswer ? 'var(--text-2)' : 'var(--text-1)';
+    words.textContent = q.text;
+    const s = said(q, answer);
+    const line = el('div', 'stack' + (loudAnswer ? '' : ' qloud'));
+    /* Stacked, the mark takes the marker column the offers were numbered in, rather than
+       leading the words the way it does inside a sentence. */
+    line.append(markerCell(s.isLabel ? 'chosen' : 'said'));
+    line.append(el('div', 'a', s.text));
+    block.append(line);
+    if (showOffer) attachDisclosure(words, block, line, q, answer);
+    return block;
+  }
+
+  /* inline, and inline chip — the signature. */
+  const say = el('div', 'say' + (state.variant === 'chip' ? ' chip' : '')
+    + (loudAnswer ? '' : ' qloud'));
+  say.append(document.createTextNode(q.text));
+  say.append(el('span', 'gap'));
+  const { run, chipped } = answerRun(q, answer, state.variant === 'chip');
+  if (!chipped) say.classList.remove('chip');
+  say.append(run);
+  words.append(say);
+  if (showOffer) attachDisclosure(say, block, null, q, answer);
+  return block;
+}
+
+/* The offer, still reachable. The chevron sits at the END of the sentence, because that is
+   where the sentence finishes — and what it opens REPLACES the answer rather than joining it,
+   since the list already ticks the option that was taken. */
+function attachDisclosure(host, block, stackLine, q, answer) {
+  const open = el('button', 'disc');
+  open.innerHTML = SVG.chevron;
+  open.setAttribute('aria-label', 'Show what was offered');
+  host.append(document.createTextNode(' '));
+  host.append(open);
+  let shown = null;
+  const hide = stackLine || host.querySelector('.a');
+  open.addEventListener('click', () => {
+    if (shown) {
+      shown.remove(); shown = null; open.classList.remove('open');
+      hide.style.display = '';
+    } else {
+      hide.style.display = 'none';
+      shown = fullOffer(q, answer);
+      block.append(shown);
+      open.classList.add('open');
+    }
+    measure();
+  });
+}
+
+function drawSettled(kase, state) {
+  const card = el('div', 'ask');
+  for (const q of kase.questions) {
+    card.append(foldQuestion(q, kase.answer, state, kase.pending === true));
+  }
+  if (kase.caption) card.append(caption(kase.caption));
+  return card;
+}
+
+/* ------------------------------------------------------------------ *
+ * The lane. `MinimapRowShape.card` draws the SAME lines the row does,
+ * on the same indents — so a fold the lane does not follow is a map
+ * that stops matching the column.
+ * ------------------------------------------------------------------ */
+const SCALE = 0.14;
+
+function drawLane(cardEl, isRuled) {
+  const box = el('div', 'card' + (isRuled ? ' ruled' : ''));
+  const origin = cardEl.getBoundingClientRect();
+  box.style.height = Math.max(6, origin.height * SCALE) + 'px';
+  const inset = 12 * SCALE;
+  for (const line of cardEl.querySelectorAll('.words, .rline .l, .stack .a, .opt .l, .caption div')) {
+    for (const r of line.getClientRects()) {
+      if (!r.height) continue;
+      const bar = el('div', 'lbar' + (isRuled ? ' att' : ''));
+      bar.style.top = ((r.top - origin.top) * SCALE + inset) + 'px';
+      bar.style.left = ((r.left - origin.left) * SCALE + inset) + 'px';
+      bar.style.width = Math.max(3, Math.min(r.width, 420) * SCALE) + 'px';
+      box.append(bar);
+    }
+  }
+  return box;
+}
+
+/* ------------------------------------------------------------------ *
+ * Render
+ * ------------------------------------------------------------------ */
+const params = new URLSearchParams(location.search);
+const pick = (map, key, fallback) => (map[params.get(key)] ? params.get(key) : fallback);
+const state = {
+  variant: pick(VARIANTS, 'variant', 'inline'),
+  ink:     pick(INKS, 'ink', 'answer'),
+  offer:   pick(OFFERS, 'offer', 'out'),
+  case:    pick(CASES, 'case', 'pick'),
+};
+
+let refs = {};
+
+/* The render: the settled row in a feed column and nothing else, for the PNG the design cites.
+   The scaffolding that makes the prototype ARGUABLE is exactly what a spec render must not have
+   in it — `pixel-review` judges the state, not the case for it. */
+function renderOnly() {
+  const kase = CASES[state.case];
+  const col = document.getElementById('col');
+  col.replaceChildren();
+  col.append(el('div', 'prose q',
+    'Which ink should a settled ask take in the feed? I can go either way.'));
+  const call = el('div', 'call');
+  call.append(el('span', 'sym', '⌁'));
+  call.append(el('span', 'mono', 'Read  FeedAskOptions.swift'));
+  col.append(call);
+  const folded = drawSettled(kase, state);
+  col.append(folded);
+  col.append(el('div', 'prose', 'Right — I’ll take the ordinary ink, and fold the offer out.'));
+  const after = el('div', 'call');
+  after.append(el('span', 'sym', '⌁'));
+  after.append(el('span', 'mono', 'Edit  FeedAskOptions.swift'));
+  col.append(after);
+  refs = { waiting: folded, today: folded, folded, kase };
+}
+
+function render() {
+  if (params.get('render')) { document.body.classList.add('render'); return renderOnly(); }
+  const kase = CASES[state.case];
+  const col = document.getElementById('col');
+  col.replaceChildren();
+
+  col.append(el('div', 'prose q',
+    'Fold the settled ask so history stops costing what a live question does.'));
+  const call = el('div', 'call');
+  call.append(el('span', 'sym', '⌁'));
+  call.append(el('span', 'mono', 'Read  FeedAskOptions.swift'));
+  col.append(call);
+
+  const cap = el('div', 'cap');
+  cap.append(document.createTextNode('waiting — '));
+  cap.append(el('b', null, 'untouched by this ticket'));
+  col.append(cap);
+  const waiting = drawWaiting(kase);
+  col.append(waiting);
+
+  col.append(el('div', 'rule'));
+  col.append(el('div', 'cap', 'settled — as it ships today'));
+  const today = drawSettled(kase, { variant: 'now', ink: state.ink, offer: 'out' });
+  col.append(today);
+
+  col.append(el('div', 'rule'));
+  col.append(el('div', 'cap', 'settled — ' + VARIANTS[state.variant]));
+  const folded = drawSettled(kase, state);
+  col.append(folded);
+
+  col.append(el('div', 'prose q', 'And the column carries on underneath, which is the point.'));
+
+  refs = { waiting, today, folded, kase };
+  measure();
+  paintBar();
+}
+
+function measure() {
+  const h = n => Math.round(n.getBoundingClientRect().height);
+  const w = h(refs.waiting), t = h(refs.today), f = h(refs.folded);
+
+  const lane = document.getElementById('lane');
+  lane.replaceChildren();
+  lane.append(drawLane(refs.waiting, true));
+  lane.append(drawLane(refs.today, false));
+  lane.append(drawLane(refs.folded, false));
+
+  const side = document.getElementById('side');
+  side.replaceChildren();
+  side.append(el('h3', null, 'the numbers'));
+  side.append(el('p', null, refs.kase.name + ' · at the '
+    + Math.round(refs.today.getBoundingClientRect().width) + 'pt column the feed actually draws.'));
+
+  const table = el('table');
+  const thead = el('tr');
+  ['', 'height', 'vs waiting'].forEach(x => thead.append(el('th', null, x)));
+  table.append(thead);
+  const row = (label, height, cls) => {
+    const tr = el('tr');
+    tr.append(el('td', null, label));
+    tr.append(el('td', 'num' + (cls || ''), height + 'pt'));
+    tr.append(el('td', 'num' + (cls || ''), Math.round((height / w) * 100) + '%'));
+    table.append(tr);
+  };
+  row('waiting', w);
+  row('settled, today', t);
+  row('settled, ' + state.variant, f, f < t ? ' win' : '');
+  side.append(table);
+
+  const saved = t - f;
+  const note = el('div', 'note');
+  note.append(el('b', null, saved >= 0 ? saved + 'pt saved' : Math.abs(saved) + 'pt added'));
+  note.append(document.createTextNode(' against what ships today, and the settled row is '));
+  note.append(el('b', null, Math.round((f / w) * 100) + '%'));
+  note.append(document.createTextNode(' of the waiting one.'));
+  note.append(el('br')); note.append(el('br'));
+  note.append(document.createTextNode(NOTES[state.variant]));
+  note.append(el('br')); note.append(el('br'));
+  note.append(el('b', null, 'Case notes. '));
+  note.append(document.createTextNode(CASE_NOTES[state.case] || '—'));
+  side.append(note);
+}
+
+const NOTES = {
+  now: 'The control. The question wraps in full and every offer takes a line, so a settled '
+     + 'question keeps the vertical of a live one — which is the whole of #1207.',
+  inline: 'One question, one answer, one paragraph. The answer resolves the sentence rather than '
+        + 'opening a row under it, so nothing is truncated, nothing competes for a share of the '
+        + 'column, and where the answer fits on the question’s last line the decision is ONE '
+        + 'line and the fold paid nothing for it. What it gives up is a fixed x for the answer: '
+        + 'you scan the marker column for where a decision happened, then read it, rather than '
+        + 'scanning a column of answers.',
+  chip: 'The same paragraph with the answer set as an object — a capsule at surface.control that '
+      + 'wraps with the text. It buys back some of the scannability the bare inline setting '
+      + 'gives up, and costs a shape in the middle of a sentence.',
+  stack: 'The answer as a row of its own under the question. The reading this drawing started '
+       + 'from, kept as the thing to beat: it always costs a whole line, even when the answer is '
+       + 'two words and the question ended mid-column.',
+};
+
+const CASE_NOTES = {
+  pick: 'The ordinary shape, and the one the ticket was reported against. Watch whether the '
+      + 'answer joins the question’s line here — that is the whole argument for inline.',
+  long: 'Where the cost is worst: five offers and a question that wraps to three lines.',
+  two: 'One call is one ground. The fold applies per question, and the step between the two '
+     + 'stays blockStep 12. Judge every treatment here, not only on pick.',
+  free: 'A free-form ask offers nothing, so today the settled row draws the question and NOTHING '
+      + 'ELSE — the answer is not on screen at all. Every fold here draws it. That is a bug the '
+      + 'fold fixes, not a cost it pays. It also has nothing to disclose.',
+  none: 'chosen(in:) is weak: it reads the answer for a label it CONTAINS. Where none is named, '
+      + 'today every offer stays full-length and unquieted, and the answer is again nowhere. The '
+      + 'folds draw the record’s own prose, the mark says CONTINUES rather than CHOSEN, and the '
+      + 'chip treatment declines to draw a capsule around words nobody offered.',
+  reported: 'NOT a settled row. FeedProjection+Ask.reported builds it isAnswered: false, so it '
+          + 'is PENDING with no live handle — the offer stays, and the fold never applies. It is '
+          + 'here because today’s code branches on `waiting == nil`, which draws it and a settled '
+          + 'row identically; the fold has to branch on isAnswered instead.',
+  unavailable: 'The same trap from the other side (#546): a driveable-less Session’s question is '
+             + 'pending, draws no cards, and keeps its offer. Fold this one and the row would '
+             + 'claim an answer nobody gave.',
+};
+
+/* ------------------------------------------------------------------ *
+ * The bar
+ * ------------------------------------------------------------------ */
+function href() {
+  return '?' + new URLSearchParams({
+    variant: state.variant, ink: state.ink, offer: state.offer, case: state.case,
+  });
+}
+
+function group(id, map, key) {
+  const host = document.getElementById(id);
+  host.replaceChildren();
+  for (const k of Object.keys(map)) {
+    const b = el('button', state[key] === k ? 'on' : null, k);
+    b.title = map[k];
+    b.addEventListener('click', () => { state[key] = k; history.replaceState(null, '', href()); render(); });
+    host.append(b);
+  }
+}
+
+function paintBar() {
+  group('variants', VARIANTS, 'variant');
+  group('inks', INKS, 'ink');
+  group('offers', OFFERS, 'offer');
+  group('cases', CASES, 'case');
+}
+
+/* ←/→ cycle the treatment; ↑/↓ cycle the case. A state you cannot link to is a state nobody
+   re-checks, so every axis is in the URL either way. */
+addEventListener('keydown', e => {
+  const step = (map, at, by) => {
+    const list = Object.keys(map);
+    return list[(list.indexOf(at) + by + list.length) % list.length];
+  };
+  const set = (key, value) => { state[key] = value; history.replaceState(null, '', href()); render(); };
+  if (e.key === 'ArrowLeft')  set('variant', step(VARIANTS, state.variant, -1));
+  if (e.key === 'ArrowRight') set('variant', step(VARIANTS, state.variant, +1));
+  if (e.key === 'ArrowUp')    set('case', step(CASES, state.case, -1));
+  if (e.key === 'ArrowDown')  set('case', step(CASES, state.case, +1));
+});
+
+addEventListener('resize', () => measure());
+render();
+</script>
+</body>
+</html>

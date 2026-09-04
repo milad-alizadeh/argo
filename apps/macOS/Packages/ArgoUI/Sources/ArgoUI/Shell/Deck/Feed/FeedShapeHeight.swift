@@ -70,7 +70,7 @@ struct FeedShapeHeight {
     /// A stretch nothing could read: its own line, and the raw text under it once it is let out.
     private func unread(_ unreadable: FeedUnreadable) -> CGFloat {
         guard standing.isUnfolded else { return pressedLine }
-        let inset = ArgoFeedRow.callSymbolWidth + ArgoFeedRow.callGap
+        let inset = Self.symbolIndent
         return pressedLine + ArgoFeedRow.callStep
             + Self.unleaded(unreadable.raw, in: .machine, across: measure - inset)
     }

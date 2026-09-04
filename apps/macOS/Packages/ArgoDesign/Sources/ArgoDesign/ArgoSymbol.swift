@@ -96,6 +96,9 @@ public enum ArgoSymbol {
     public static let asked = "questionmark.bubble"
     /// The option an answer named — the one tick in the feed, marking a CHOICE and not a success.
     public static let chosen = "checkmark"
+    /// The way a settled question went, where the answer named no option it offered (#1207). Says
+    /// CONTINUES, not chosen. Its own role beside `delegated`, which carries the same SF name.
+    public static let answered = "arrow.turn.down.right"
     /// A line of the record nothing could parse. Deliberately not a failure's mark: nothing went
     /// wrong with the agent's work here.
     public static let unreadable = "questionmark.square.dashed"

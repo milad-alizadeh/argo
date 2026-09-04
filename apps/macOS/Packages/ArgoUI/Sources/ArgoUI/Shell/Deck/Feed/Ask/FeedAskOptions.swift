@@ -3,7 +3,8 @@ import ArgoDesign
 import ArgoEngine
 import SwiftUI
 
-/// The options a question offered, one per line, numbered, in the order they were offered.
+/// The options a question offered, one per line, numbered, in the order they were offered — the
+/// PENDING reading, and only that one (#1207); a settled question draws `FeedAskAnswer` instead.
 ///
 /// Drawn on the feed's own marker grid, at the feed's own prose rung — the same shape a numbered
 /// list in the prose above takes, because that is the shape the prompt put them in. Nothing here is

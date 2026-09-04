@@ -26,6 +26,27 @@ extension View {
     func feedMarkerColumn() -> some View {
         frame(width: ArgoFeedRow.markerWidth, alignment: .trailing)
     }
+
+    /// The column a row's own GLYPH is drawn in — CENTRED in a narrower width, which is what every
+    /// verb in the feed already uses (`FeedCallLine`, `FeedFoldLine`, `SkillLoadedMarker`,
+    /// `FeedUnreadableLine`).
+    ///
+    /// Apart from `feedMarkerColumn()`, and 15 against its 18: a marker is trailing so `9.` and
+    /// `10.` set their words on one edge, and a glyph has no digits to stack. Trailing-aligning a
+    /// glyph in the wider column lands it 3pt right of the icons above it and its words 3pt right
+    /// of theirs, which is a row that will not read as one of them (#1207).
+    func feedSymbolColumn() -> some View {
+        frame(width: ArgoFeedRow.callSymbolWidth, height: ArgoIconSize.inline.rawValue)
+    }
+
+    /// Which of the two a question's own glyph takes, by reading (#1207).
+    @ViewBuilder func feedAskMarkColumn(isSettled: Bool) -> some View {
+        if isSettled {
+            feedSymbolColumn()
+        } else {
+            feedMarkerColumn()
+        }
+    }
 }
 
 #Preview("Feed marker — one vertical either side of ten") {

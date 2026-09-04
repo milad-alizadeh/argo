@@ -1,7 +1,12 @@
 <!-- status: built
      approved-at: 068e7370
      built-at: 8188bad7
-     prototype: worktree-ticket-534-ask-options -->
+     prototype: worktree-ticket-534-ask-options
+     amended-at: d641ebdb
+     amendment: #1207 — the settled fold. BUILT at 072a1010: every row of
+                "Settled — the reading" marked `to build` is now what the app draws.
+     amendment-prototype: worktree-ticket-1207-settled-ask-fold
+     amendment-built-at: 072a1010 -->
 
 # Answering an ask, in the feed
 
@@ -72,8 +77,15 @@ foot as `ComposerUnavailable` already draws it. The row above stays a reading.
 | many-of, waiting | [`many-of.png`](feed-ask/many-of.png) | `state.muted(attention)` | `state.attention` |
 | two questions, one call | [`two-questions.png`](feed-ask/two-questions.png) | one ground for both | `state.attention` |
 | free-form, waiting | [`free-form.png`](feed-ask/free-form.png) | `state.muted(attention)` | `state.attention` |
-| answered | [`answered.png`](feed-ask/answered.png) | none | `text.tertiary` |
-| undriveable (#546) | [`unavailable.png`](feed-ask/unavailable.png) | none — the row is a reading | `text.tertiary` |
+| answered — **folded** (#1207) | [`answered.png`](feed-ask/answered.png) | none | `text.tertiary` |
+| answered, no option named (#1207) | [`answered-unnamed.png`](feed-ask/answered-unnamed.png) | none | `text.tertiary` |
+| undriveable (#546) — pending, so **not folded** | [`unavailable.png`](feed-ask/unavailable.png) | none — the row is a reading | `text.tertiary` |
+
+**#1207's two renders are column crops, not window shots**, unlike the six above them: the fold
+changes a row, not a screen, and a half-built shell around it would be a drawing of chrome
+nobody checked. `/pixel-review` judges the built row against the running app — the three
+specimens it renders are `feedAskAnswered`, `feedAskAnsweredUnnamed` and `feedAskAnsweredFreeForm`,
+judged against `feedAskOneOf`, which is the same question waiting.
 
 **The row is carried by its ground alone.** No rule around it and no leading accent bar: an
 amber stroke on four edges reads as an alert banner dropped into the column rather than as a row
@@ -100,7 +112,7 @@ corrected to the code, not the other way round.
 | Glyph ink | `state.attention` waiting, `text.tertiary` settled | ships | |
 | Glyph column | `ArgoFeedRow.markerWidth` 18 trailing, `markerGap` 6 | ships | the feed's own marker grid, via `feedMarkerColumn()` |
 | Question type | `ArgoFeedRow.proseRung` — body 13, regular, `text.primary` | ships | no weight of its own: the ground and the mark already carry it |
-| Question head → its list | `stepBeforeProse` — `hair` 2 settled | ships | |
+| Question head → what is under it | `stepBeforeProse` — `hair` 2 | ships | the offer where the row is a pending reading, the answer where it is settled (#1207) |
 | Question head → its options | `ArgoSpacing.comfortable` 12 waiting | **to build** | pressable cards need the room a bare list does not |
 
 ### Waiting — the pressable options
@@ -130,17 +142,96 @@ All **to build**. `FeedAskOfferList`, `FeedAskOfferRow`, `FeedAskAnswerRow`.
 | Keycap | `ArgoTypography.machineCaption` on `surface.marked`, radius `marker` 3, padding `hair` 2 × `tight` 4 | `PermissionKeycap`'s own values |
 | Hover motion | `ArgoMotion.selection` — 0.14, easeOut | it is a selection |
 
+### The three readings a row that is not pressable can be
+
+**Amended by #1207.** #534 and #712 branched on one question — *is this row the thing you
+press?* — and everything that was not got the same drawing: the question, then every option it
+offered, one line each. That put two different facts in one shape. There are **three** readings,
+and the fold applies to exactly one of them.
+
+| Reading | When | What it draws | |
+|---|---|---|---|
+| **waiting** | `isPending && live != nil` | the pressable cards, the field, `Answer` | ships |
+| **pending, not pressable** | `isPending && live == nil` | the numbered offer, exactly as #534 built it | ships |
+| **settled** | `isAnswered` | the fold below — the question and the way it went | **to build** |
+
+**The branch is on `isAnswered`, not on `waiting == nil`.** Three rows are pending and not
+pressable, and every one of them would be wrecked by folding: a question on a Session Argo
+cannot drive (#546), one whose gate has not raised it yet, and one reported over the companion
+plugin — which `FeedProjection+Ask.reported` builds `isAnswered: false`, so it is **never** a
+settled row whatever the caption says. None of the three has an answer, so a fold there would
+draw a decision nobody made.
+
 ### Settled — the reading
 
-All **ships**, and #712 changes none of it. `FeedAskOptions`, as #534 built it.
+**A settled ask is a reading of the column, so it sets like one.** It draws no ground, so it takes
+no card padding, and its glyph sits in the same column the verbs above it do — a settled question
+that hangs 15pt right of the `Read` and `Ran` lines it follows is a card pretending to be a card.
 
-| Measurement | Value |
-|---|---|
-| Between options | `ArgoSpacing.tight` 4 |
-| Number | `FeedMarker` — `proseRung`, monospaced digits, `text.tertiary`, 18 trailing, `markerGap` 6 |
-| Taken | label `text.primary`, `ArgoSymbol.chosen` at `.inline` in `text.primary` |
-| Untaken, once one is taken | label `text.secondary` — a step back, not out |
-| Untaken, where the answer named none | unchanged, exactly as offered |
+**The offer folds out; the question stays whole.** What a settled ask loses is its list of
+options, not the words somebody was asked: a truncated question is a fact the row stops stating,
+and truncating it saves 18pt where dropping the offer saves 96. So the settled block is the
+question, wrapping in full, and **one row under it carrying the way it went** — on the same
+marker grid the offers were numbered on.
+
+**Every option that was not taken stops being a line, and is not reachable.** No disclosure: an
+offer the record has settled is history, and a control to reopen it is a control for reading
+what the answer already tells you.
+
+**Where the answer named no option, the prose stands in only for a call that put ONE question.**
+A call's answer is a single payload covering every question in it, so drawn under each of two it
+would state one fact twice. A question of a longer call whose answer named none of its options
+draws no answer row at all — degrade-down takes the quieter reading over a repeated one. This is
+the one rule here the prototype did not draw: it is invisible until a two-question call is
+answered in prose, which no variant put on screen.
+
+| Measurement | Value | | Source |
+|---|---|---|---|
+| Question | `ArgoFeedRow.proseRung`, `text.primary`, wraps in full, never truncated | ships | the loud half: the answer is meaningless without it |
+| Question → its answer | `ArgoFeedRow.stepBeforeProse` — `hair` 2 | ships | the step the offer used to take |
+| Answer mark | `ArgoSymbol.chosen` at `ArgoIconSize.inline` 10, `text.tertiary` | **to build** | in `callSymbolWidth` 15 **centred**, `callGap` 6 — the column every verb in the feed takes, not the marker column |
+| Answer mark, where the answer named no option | **`ArgoSymbol.answered`** at `.inline`, `text.tertiary` | **to build** | a **promotion** — see below |
+| Answer words | `ArgoFeedRow.proseRung`, `text.secondary`, wraps | **to build** | a step back, not out: it is history, and the question above it is what a reader needs first |
+| The offer | **not drawn** | **to build** | |
+| Answer row, where a call of TWO questions was answered in prose | **not drawn** | **to build** | one payload, one fact: under each question it would be stated twice |
+| Between two questions in one call | `ArgoFeedRow.blockStep` 12, unchanged | ships | the fold applies per question; one call is still one ground |
+| Card padding | **none** | **to build** | `askCardInset` 12 is what holds the words off the GROUND. A settled card draws none, so 12 on four sides is an indent under a card nobody can see |
+| Mark column | **`feedSymbolColumn()`** — 15 centred, `callGap` 6 | **to build** | a settled question has no numbered options left, so its glyph leaves the marker column for the one `FeedCallLine`, `FeedFoldLine` and `SkillLoadedMarker` already draw in. The marker column is 18 **trailing** so `9.` and `10.` set their words on one edge; a glyph has no digits to stack, and trailing-aligning one lands it 3pt right of the icons above and its words 3pt right of theirs |
+
+**Heights it settles**, measured in the PROTOTYPE at the 672pt column, against what the same row
+costs waiting. The built row was measured again at the same column and comes in lower than the
+drawing promised, because the prototype kept the card inset a groundless card has no use for —
+one question with three options: **208 waiting, 106 settled today, 38 folded**, which is 18% of
+waiting. `FeedAskFoldTests` is where those numbers are held:
+
+| The ask | waiting | settled today | settled folded |
+|---|---|---|---|
+| one-of, 3 offers | 216 | 116 | **68** |
+| one-of, 5 offers, question wraps to 2 lines | 324 | 184 | **88** |
+| two questions in one call | 281 | 172 | **124** |
+| free-form | 83 | 44 | **68** |
+| answered, no option named | 182 | 116 | **68** |
+
+A settled ask is **27–41%** of the same ask waiting. `free-form` is the one row that grows, 44 →
+68, and it grows because **today it draws no answer at all** — `FeedAskQuestion` draws the
+options only `if !offers.isEmpty`, so what the person typed has never been on screen. Same for an
+answer that named no option: `chosen(in:)` matches nothing, `anyChosen` is false, and today every
+offer stays full-length while the answer appears nowhere. The fold puts both on screen for the
+first time.
+
+### The one promotion
+
+**`ArgoSymbol.answered` = `arrow.turn.down.right`.** The answer row needs a mark, and it cannot
+always be `chosen`: `FeedAsk.chosen(in:)` is DERIVED and deliberately weak — it reads the answer
+for a label it *contains* — so a free-form answer, and any answer that agreed with nothing on the
+list, names no option. A tick over words nobody offered claims a pick that never happened, which
+is the one thing degrade-down forbids. The mark says **continues** there instead.
+
+It carries the same SF name as `ArgoSymbol.delegated`, and is a second role rather than a reuse
+of that one: `delegated` means *a subagent went from here*, and one word has one meaning
+(`externalFile` and `openOnHost` already share `arrow.up.forward.square` on the same ground).
+
+Everything else on this screen **snapped** to a token that already existed.
 
 ### The one proposal
 
@@ -158,8 +249,9 @@ Frozen names — they become the view files and the ticket titles.
 
 | Name | What it is | Status |
 |---|---|---|
-| `FeedAskLine` | the card: one call, one ground, its questions | exists (#534) — gains the waiting branch, and **loses its stroked edge** |
-| `FeedAskOptions` | the settled reading, numbered and quieted | exists (#534) — unchanged |
+| `FeedAskLine` | the card: one call, one ground, its questions | exists (#534) — gains the waiting branch, and **loses its stroked edge**. #1207 splits its reading branch in two, on `isAnswered` |
+| `FeedAskOptions` | the offer as a reading, numbered and quieted | exists (#534) — #1207 narrows it to the **pending** reading; a settled row no longer draws it |
+| `FeedAskAnswer` | the settled row: the mark, and the way it went | new — #1207, built |
 | `FeedMarker` | the marker column, for numbers and marks alike | exists (#534) — unchanged |
 | `FeedAskOfferList` | the pressable options while it waits | new |
 | `FeedAskOfferRow` | one option — number, label, detail, box | new |
@@ -176,3 +268,27 @@ Frozen names — they become the view files and the ticket titles.
    stop — a seam that is obvious in motion and easy to miss in prose.
 4. **`min-height` is not a height.** The field and its button, both floored at 27 and stretched,
    still settled a couple of points apart. Both now state the height.
+
+## What the #1207 prototype exposed
+
+Drawn in `settled-ask-fold-prototype.html` on `worktree-ticket-1207-settled-ask-fold`, against
+the shipped row at the same width, with every height measured.
+
+1. **A settled free-form ask has never drawn its answer.** `FeedAskQuestion` draws its options
+   only `if !offers.isEmpty`, and a free-form question offered none, so the row states the
+   question and stops. Nobody saw it because nobody drew that case beside the others.
+2. **Neither has an answer that named no option.** `chosen(in:)` matches nothing, `anyChosen` is
+   false, so every offer stays full-length and unquieted and the answer is again nowhere. Today
+   that is the worst row in the feed: full height, no mark, no answer.
+3. **Three readings, not two** — the finding that decides the build. Today's branch is
+   `waiting == nil`, which draws a settled row and a pending-but-unpressable one identically. The
+   fold must branch on `isAnswered`, or it folds #546's row and #1205's into an answer neither
+   of them has.
+4. **Truncating the question was the wrong economy.** Drawn first, and it reads badly: the row
+   states a question nobody can finish, and it saves 18pt where taking the offer out saves 96.
+5. **The lane folds with the row or the map stops matching the column.**
+   `MinimapRowShape.asked` lays a line per offer at `askOptionGap`; under the fold a settled card
+   is the question's lines plus one. `askOptionGap` survives — the pending reading still uses it.
+6. **A disclosure was drawn and dropped.** Keeping the offer behind a chevron costs a control on
+   a row that has never had one, and re-reads what the answer already says. It also has to
+   *replace* the answer rather than sit above it, or the chosen option appears twice.

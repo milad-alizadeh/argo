@@ -13,10 +13,21 @@ struct MinimapAskCard: Equatable, Sendable {
         var label: String
     }
 
-    /// One question and the options offered under it, in the order they were offered.
+    /// One question and what stands under it, which is never two things at once (#1207).
     struct Question: Equatable, Sendable {
+        /// What the lane lays under the question, matching what the feed's row draws under it.
+        enum Under: Equatable, Sendable {
+            /// The options as they were offered, numbered — a waiting or pending question.
+            case offered([Offer])
+            /// The answer's words, where the record has settled it. Carried without a marker: the
+            /// row puts a GLYPH in that column, and a glyph is not text the lane can size.
+            case answered(String)
+            /// A question that offered nothing, and one settled with nothing readable.
+            case nothing
+        }
+
         var text: String
-        var offers: [Offer]
+        var under: Under
     }
 
     var questions: [Question]
@@ -45,7 +56,7 @@ extension MinimapRowShape {
     /// changed is that it is a container with content rather than a fill.
     @MainActor static func card(_ card: MinimapAskCard, across measure: CGFloat, height: CGFloat)
         -> [MinimapRowRect] {
-        let inset = ArgoFeedRow.askCardInset
+        let inset = card.isRuled ? ArgoFeedRow.askCardInset : 0
         let inside = measure - inset * 2
         guard inside > 0 else { return [] }
         var rects = card.isRuled
@@ -76,15 +87,23 @@ extension MinimapRowShape {
     )
         -> (rects: [MinimapRowRect], height: CGFloat) {
         let asked = line(question.text, marker: nil, ink: ink, across: measure)
-        guard !question.offers.isEmpty else { return (asked.rects, asked.height) }
-        var rects = asked.rects
-        var y = asked.height + ArgoFeedRow.stepBeforeProse
-        for offer in question.offers {
-            let drawn = line(offer.label, marker: offer.marker, ink: ink, across: measure)
-            rects += drawn.rects.map { $0.lowered(by: y) }
-            y += drawn.height + ArgoFeedRow.askOptionGap
+        switch question.under {
+        case .nothing:
+            return (asked.rects, asked.height)
+        case let .answered(answer):
+            let y = asked.height + ArgoFeedRow.stepBeforeProse
+            let drawn = line(answer, marker: nil, ink: ink, across: measure)
+            return (asked.rects + drawn.rects.map { $0.lowered(by: y) }, y + drawn.height)
+        case let .offered(offers):
+            var rects = asked.rects
+            var y = asked.height + ArgoFeedRow.stepBeforeProse
+            for offer in offers {
+                let drawn = line(offer.label, marker: offer.marker, ink: ink, across: measure)
+                rects += drawn.rects.map { $0.lowered(by: y) }
+                y += drawn.height + ArgoFeedRow.askOptionGap
+            }
+            return (rects, max(asked.height, y - ArgoFeedRow.askOptionGap))
         }
-        return (rects, max(asked.height, y - ArgoFeedRow.askOptionGap))
     }
 
     /// One line of the card: its rect in the marker column, and its words on the vertical after it.

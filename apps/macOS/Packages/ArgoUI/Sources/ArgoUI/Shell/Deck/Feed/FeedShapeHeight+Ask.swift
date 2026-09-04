@@ -3,21 +3,20 @@ import ArgoEngine
 import CoreGraphics
 import ProseText
 
-// A question, at the height its card stands.
-//
-// Two shapes and not one: a settled question is a READING — the words and the options as they were
-// offered — and a question Argo is holding open draws the cards you press, a field and an `Answer`.
-// `FeedAskLine` forks on `ask.isWaiting`, so this does too.
+// A question, at the height its card stands — one shape per `FeedAsk.Reading` (#1207), which is
+// the fork `FeedAskLine` draws on.
 
 extension FeedShapeHeight {
     /// The card: every question inside it, and the card's own breathing room.
     func asked(_ ask: FeedAsk) -> CGFloat {
-        let inside = measure - ArgoFeedRow.askCardInset * 2
+        // Only a card with a ground is inset: with none there is nothing to hold the words off, and
+        // the row sets flush with the reading above it (#1207).
+        let inset = ask.hasGround ? ArgoFeedRow.askCardInset : 0
+        let inside = measure - inset * 2
         guard inside > 0 else { return 0 }
         let questions = ask.questions.map { question(ask, asking: $0, across: inside) }
         let parts = questions + [reported(ask, across: inside)].compactMap(\.self)
-        return Self.stacked(parts, step: ArgoFeedRow.blockStep)
-            + ArgoFeedRow.askCardInset * 2
+        return Self.stacked(parts, step: ArgoFeedRow.blockStep) + inset * 2
     }
 
     /// The caption a question that arrived over the companion plugin carries, and `nil` for every
@@ -33,15 +32,34 @@ extension FeedShapeHeight {
         )
     }
 
-    /// One question: its words on the marker grid, and whatever stands under them.
+    /// One question: its words on whichever column its glyph takes, and whatever stands under
+    /// them.
     private func question(_ ask: FeedAsk, asking question: Ask.Question, across inside: CGFloat)
         -> CGFloat {
-        let step = ask.isWaiting ? ArgoSpacing.comfortable : ArgoFeedRow.stepBeforeProse
-        let asked = Self.gridLine(question.text, across: inside)
-        let offers = ask.isWaiting
-            ? held(question, across: inside)
-            : listed(ask.offers(in: question), across: inside)
-        return Self.stacked([asked, offers].compactMap(\.self), step: step)
+        let step = ask.reading == .waiting ? ArgoSpacing.comfortable : ArgoFeedRow.stepBeforeProse
+        let asked = ask.reading == .settled
+            ? Self.symbolLine(question.text, across: inside)
+            : Self.gridLine(question.text, across: inside)
+        return Self.stacked(
+            [asked, under(ask, question, across: inside)].compactMap(\.self),
+            step: step,
+        )
+    }
+
+    /// What stands under one question, per `FeedAsk.reading`. `nil` where the reading draws
+    /// nothing at all: a pending question that offered none, and a settled one nothing readable
+    /// answered.
+    private func under(_ ask: FeedAsk, _ question: Ask.Question, across inside: CGFloat)
+        -> CGFloat? {
+        switch ask.reading {
+        case .waiting:
+            held(question, across: inside)
+        case .pending:
+            listed(ask.offers(in: question), across: inside)
+        case .settled:
+            // One line on the glyph column, the same one the question above it takes.
+            ask.answered(question).map { Self.symbolLine($0.words, across: inside) }
+        }
     }
 
     /// The options as they were offered, one per line on the same grid — `FeedAskOptions`. `nil`
@@ -64,6 +82,17 @@ extension FeedShapeHeight {
     /// gap after it, which is the pair `FeedMarker` and `feedMarkerColumn()` draw.
     static var markerIndent: CGFloat {
         ArgoFeedRow.markerWidth + ArgoFeedRow.markerGap
+    }
+
+    /// One line on the GLYPH column instead — what a settled question and its answer take, and what
+    /// every verb in the feed takes (`feedSymbolColumn()`).
+    static func symbolLine(_ text: String, across inside: CGFloat) -> CGFloat {
+        max(bodyLine, unleaded(text, in: .body, across: inside - symbolIndent))
+    }
+
+    /// The glyph column and the gap after it — `feedSymbolColumn()` and `ArgoFeedRow.callGap`.
+    static var symbolIndent: CGFloat {
+        ArgoFeedRow.callSymbolWidth + ArgoFeedRow.callGap
     }
 }
 
