@@ -35,9 +35,6 @@ extension AtlasContractSpecimen {
             Text(reading(lamp.lamp))
                 .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(argo.color.text.tertiary)
-            // Every lamp here is unjudged until the Metal renderer draws one, and the sheet says
-            // so rather than letting three undrawn values pass for settled ones.
-            unwired(ArgoLight.unwired[lamp.name])
         }
     }
 

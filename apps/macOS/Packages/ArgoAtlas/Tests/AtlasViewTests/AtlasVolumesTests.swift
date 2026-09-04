@@ -80,17 +80,22 @@ struct AtlasVolumesTests {
     /// it stands on, so the plates come first and outermost first — which is the order the plan
     /// already holds them in, and this is the claim that nothing here re-sorts it.
     ///
-    /// Two faces per plate: its rim, then its ground inside that.
+    /// Two faces per plate: its rim, then its ground inside that. Then a shadow decal per tile
+    /// tall enough to cast one — both of the fixture's files clear the floor — landing after
+    /// every plate and before every file, so a file standing where its own shadow falls draws
+    /// over it (#1151).
     @Test func `the plates are handed over before the files that stand on them`() {
         let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
 
-        #expect(volumes.count == 6)
+        #expect(volumes.count == 8)
         #expect(volumes[0].pigment == Self.pigments.rim(at: 0).simd)
         #expect(volumes[1].pigment == Self.pigments.plate(at: 0).simd)
         #expect(volumes[2].pigment == Self.pigments.rim(at: 1).simd)
         #expect(volumes[3].pigment == Self.pigments.plate(at: 1).simd)
-        #expect(volumes[4].pigment == Self.measure.hot.simd)
-        #expect(volumes[5].pigment == ArgoPalette.graphite.atlas.materials.unassigned.simd)
+        #expect(volumes[4].shade < 1)
+        #expect(volumes[5].shade < 1)
+        #expect(volumes[6].pigment == Self.measure.hot.simd)
+        #expect(volumes[7].pigment == ArgoPalette.graphite.atlas.materials.unassigned.simd)
     }
 
     /// The shader does not blend, so a role carrying an opacity has to be resolved before it gets
@@ -128,8 +133,8 @@ struct AtlasVolumesTests {
 
         let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
 
-        #expect(volumes[4].origin == SIMD2<Float>(2 + gap, 28 + gap))
-        #expect(volumes[4].size == SIMD2<Float>(46 - gap * 2, 40 - gap * 2))
+        #expect(volumes[6].origin == SIMD2<Float>(2 + gap, 28 + gap))
+        #expect(volumes[6].size == SIMD2<Float>(46 - gap * 2, 40 - gap * 2))
     }
 
     /// The gap may not turn a small file into a face covering the map. `CGRect.insetBy` returns a
@@ -156,8 +161,8 @@ struct AtlasVolumesTests {
     @Test func `a file's roof stands at the height the plan gave it`() {
         let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
 
-        #expect(volumes[4].heights == SIMD2<Float>(0, 40))
-        #expect(volumes[5].heights == SIMD2<Float>(0, 3))
+        #expect(volumes[6].heights == SIMD2<Float>(0, 40))
+        #expect(volumes[7].heights == SIMD2<Float>(0, 3))
     }
 
     /// A PLATE is foot and roof at one height. It is what makes the ground a flat face rather than
