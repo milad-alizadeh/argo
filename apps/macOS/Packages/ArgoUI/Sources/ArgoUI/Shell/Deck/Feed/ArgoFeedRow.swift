@@ -150,6 +150,11 @@ public enum ArgoFeedRow {
     /// The share of the COLUMN the working thread's filament runs. A share and not a length, so the
     /// ion tracks `column` the way a bubble does instead of freezing at one window's width.
     public static let workingThreadShare: CGFloat = 0.3
+    /// The filament's own length: the column's share, taken once here and never off a lane's own
+    /// width. Two lanes of different width taking the share each would give two different
+    /// filaments — and the shorter one would cover less ground per pass, reading slower at the
+    /// same period. One length is what makes one period one velocity.
+    public static let workingThreadLength: CGFloat = column * workingThreadShare
     /// Where that filament starts and ends, in multiples of its OWN length. Both bounds are clear
     /// of the lane, so it fades in and out at the measure's edges rather than appearing mid-air.
     public static let workingThreadTravel: ClosedRange<CGFloat> = -1.05 ... 3.4

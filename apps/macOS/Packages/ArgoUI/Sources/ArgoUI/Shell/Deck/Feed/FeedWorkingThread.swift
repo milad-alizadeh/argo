@@ -31,7 +31,7 @@ struct FeedWorkingThread: View {
     /// a gradient's stops is not compositor-owned, and a blur on a moving element repaints every
     /// frame of a loop that never ends.
     private func filament(across lane: CGFloat) -> some View {
-        let length = lane * ArgoFeedRow.workingThreadShare
+        let length = ArgoFeedRow.workingThreadLength
         let parked = (lane - length) / 2
         return FeedIonLoop { phase, aged in
             Filament(length: length, glow: glow(at: phase, aged: aged))
