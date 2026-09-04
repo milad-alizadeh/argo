@@ -1,7 +1,22 @@
-# The default gate for every PR: biome, the duplication gate and the guardrail-hook tests on
-# Linux, and the native macOS app — build, swift-testing, SwiftLint (#415) — on macOS.
-# Unfiltered on purpose — a workflow skipped by path filtering stays Pending forever when
-# required, so the expensive jobs opt out per-job instead (a skipped job reports Success).
+# The default gate for every PR: biome, the duplication gate and the guardrail-hook tests, on
+# Linux. That is the whole of it.
+#
+# The Swift half — build, swift-testing, SwiftLint, SwiftFormat, module boundaries — used to be
+# a `macos-26` job here. It is now `.husky/pre-push`, which calls `scripts/swift-gate.sh` (#1340).
+# The reason is money, and the numbers were one-sided: GitHub bills a macOS runner at about ten
+# times a Linux one, and over one measured day that job took 228 minutes against 21 for
+# everything else on this workflow put together. It was about 99% of the bill, to repeat from a
+# cold cache what the author's own Mac had already built.
+#
+# The gate itself did not shrink. `scripts/swift-gate.sh` runs the same three commands, in the
+# same order, under the same `ARGO_REQUIRE_SWIFT_TOOLS=1`, over the same pathspec this file's
+# `changes` job used to compute — and it BLOCKS THE PUSH, which is one step earlier than a red
+# CI run. `scripts/swift-gate.test.mjs` is the proof it fires, and it runs in the `check` job
+# below, so this workflow still gates the gate.
+#
+# What is genuinely lost, and is the accepted trade in #1340: nothing verifies the Swift tree on
+# a machine that is not the author's. With one contributor, all on macOS, that machine does not
+# exist. Bring the job back for `pull_request` only — never for `push` — the day it does.
 name: ci
 
 on:
@@ -19,47 +34,13 @@ permissions:
   contents: read
 
 jobs:
-  changes:
-    name: detect non-markdown changes
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      swift: ${{ steps.filter.outputs.swift }}
-    steps:
-      - uses: actions/checkout@v5
-        # fetch-depth: 0 is what makes origin/$BASE_REF resolvable below.
-        with:
-          fetch-depth: 0
-
-      - id: filter
-        env:
-          BASE_REF: ${{ github.base_ref }}
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          if [ "$EVENT_NAME" != 'pull_request' ]; then
-            echo 'swift=true' >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          # A git pathspec glob spans '/', so ':(exclude)*.md' drops nested markdown too.
-          changed() { [ -n "$(git diff --name-only "origin/$BASE_REF...HEAD" -- "$@")" ]; }
-
-          # The macOS job's own scope — everything that can change what it does: the app, the
-          # shared Swift shell scripts, the manifests that define the commands it runs
-          # (`quality:swift`, the turbo task graph), and the workflow and setup action.
-          if changed apps/macOS 'scripts/swift-*.sh' package.json turbo.json \
-               .github/workflows/ci.yml .github/actions/setup ':(exclude)*.md'; then
-            echo 'swift=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'swift=false' >> "$GITHUB_OUTPUT"
-          fi
-
   check:
     name: lint · duplication · hook tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
-      # The one unconditional job, so it owns the bun cache write for the whole workflow.
+      # The one job left, so it owns the bun cache write for the whole workflow.
       - uses: ./.github/actions/setup
         with:
           save-cache: "true"
@@ -76,107 +57,11 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run quality:duplication
 
-      # Guardrail-hook tests (worktree edit guard + cross-CLI hook projection) live
-      # outside the turbo `test` pipeline — plain node scripts, not a workspace suite. They
-      # are the only executable suite left on Linux: retiring the Electron cockpit took the
-      # last TypeScript workspace with it, so `turbo run test` reaches nothing here and the
-      # Swift suites run in the `macos` job below rather than skipping green in this one.
+      # Guardrail-hook tests (worktree edit guard, cross-CLI hook projection, and the push-time
+      # Swift gate) live outside the turbo `test` pipeline — plain node scripts, not a workspace
+      # suite. They are the only executable suite on Linux: retiring the Electron cockpit took
+      # the last TypeScript workspace with it, so `turbo run test` reaches nothing here and the
+      # Swift suites run at push time via `scripts/swift-gate.sh`.
       - name: Hook tests
         if: ${{ !cancelled() }}
         run: bun run test:hooks
-
-  macos:
-    name: macos build · swift tests · lint
-    # Pinned image, no OS matrix: apps/macOS declares `platforms: [.macOS("26.0")]` and
-    # ships to exactly that. macos-latest would move under us on GitHub's own schedule.
-    runs-on: macos-26
-    needs: changes
-    if: needs.changes.outputs.swift == 'true'
-    timeout-minutes: 30
-    env:
-      # Every skip in the three Swift shell scripts becomes a failure here. Without it a
-      # runner missing a binary reports Success having checked nothing — the exact way a
-      # gate rots (scripts/swift-tooling.test.mjs is the proof it holds).
-      ARGO_REQUIRE_SWIFT_TOOLS: "1"
-      # The image's default today, named anyway: a default is not a pin.
-      XCODE_APP: /Applications/Xcode_26.6.app
-      # Both linters are pinned and downloaded rather than taken from the image, and for the
-      # same reason in both directions: a new version means new rules, and a gate that
-      # changes its mind on somebody else's release schedule fails PRs that changed nothing.
-      # (The image ships SwiftFormat and not SwiftLint today — neither fact is a contract.)
-      SWIFTLINT_VERSION: 0.65.0
-      SWIFTFORMAT_VERSION: 0.62.1
-    steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/setup
-
-      - name: Select the pinned Xcode
-        run: |
-          sudo xcode-select -s "$XCODE_APP"
-          xcodebuild -version
-          swift --version
-
-      # No restore-keys: a partial hit would put an unpinned version on PATH, which is the one
-      # outcome a pin exists to prevent.
-      - name: Cache the pinned SwiftLint and SwiftFormat
-        id: swift-tools-cache
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/argo-swift-tools
-          key: swift-tools-${{ runner.os }}-${{ runner.arch }}-${{ env.SWIFTLINT_VERSION }}-${{ env.SWIFTFORMAT_VERSION }}
-
-      # Both releases ship the same shape — one universal binary at the root of a zip.
-      - name: Install the pinned SwiftLint and SwiftFormat
-        if: steps.swift-tools-cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p "$HOME/.cache/argo-swift-tools"
-          install_tool() {
-            curl -fsSL -o "$RUNNER_TEMP/$1.zip" "$2"
-            unzip -oq "$RUNNER_TEMP/$1.zip" -d "$RUNNER_TEMP/$1"
-            install -m 755 "$RUNNER_TEMP/$1/$1" "$HOME/.cache/argo-swift-tools/$1"
-          }
-          install_tool swiftlint \
-            "https://github.com/realm/SwiftLint/releases/download/$SWIFTLINT_VERSION/portable_swiftlint.zip"
-          install_tool swiftformat \
-            "https://github.com/nicklockwood/SwiftFormat/releases/download/$SWIFTFORMAT_VERSION/swiftformat.zip"
-
-      # The versions are asserted, not assumed: a cache restored from a key that ever meant
-      # something else would otherwise lint the tree with a version nobody chose.
-      - name: Put them on PATH at the pinned versions
-        run: |
-          echo "$HOME/.cache/argo-swift-tools" >> "$GITHUB_PATH"
-          [ "$("$HOME/.cache/argo-swift-tools/swiftlint" version)" = "$SWIFTLINT_VERSION" ]
-          [ "$("$HOME/.cache/argo-swift-tools/swiftformat" --version)" = "$SWIFTFORMAT_VERSION" ]
-
-      # Keyed on the sources themselves, with a prefix fallback so a one-file change restores
-      # the previous run's products and rebuilds incrementally instead of from scratch. The
-      # arch and Xcode app are IN the prefix, not just the key: derived data from a different
-      # compiler is what the fallback would otherwise happily restore.
-      - name: Cache Swift build products
-        uses: actions/cache@v5
-        with:
-          path: |
-            apps/macOS/build
-            apps/macOS/Packages/ArgoEngine/.build
-            apps/macOS/Packages/ArgoUI/.build
-            ~/Library/Caches/org.swift.swiftpm
-          key: swift-build-${{ runner.os }}-${{ runner.arch }}-${{ env.XCODE_APP }}-${{ hashFiles('apps/macOS/**/*.swift', 'apps/macOS/**/project.pbxproj') }}
-          restore-keys: swift-build-${{ runner.os }}-${{ runner.arch }}-${{ env.XCODE_APP }}-
-
-      # Same gates, same order, same scripts a commit runs locally — the formatter first,
-      # since a reformat would change what the linter reads.
-      - name: SwiftFormat · SwiftLint · module boundaries
-        run: bun run quality:swift
-
-      - name: Build the app
-        if: ${{ !cancelled() }}
-        run: bun run build --filter=@argo/macos
-
-      - name: Swift tests
-        if: ${{ !cancelled() }}
-        run: bun run test --filter=@argo/macos
-
-      # `bun run test:e2e` is deliberately NOT here. It launches and drives the real app, so it
-      # needs a macOS runner — the most expensive minutes GitHub bills — and it takes them on
-      # every push, to walk a handful of clicks. It is a local gate: run it when you touch the
-      # drawer or the toolbar. See apps/macOS/scripts/e2e-test.sh.
